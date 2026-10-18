@@ -1,0 +1,7 @@
+VSTest version 18.7.0 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+Results File: /home/domingo/allegiance-codex-p734b/docs/reports/P734b_assets/focus-090-3.trx
+
+Passed!  - Failed:     0, Passed:     3, Skipped:     0, Total:     3, Duration: 71 ms - Allegiance.Core.Tests.dll (net10.0)

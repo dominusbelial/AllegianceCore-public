@@ -1,0 +1,24 @@
+{
+  "rows": 473,
+  "changed_rows": [
+    "SIM-0104",
+    "SIM-0108",
+    "SIM-0112",
+    "SIM-0113",
+    "SIM-0114",
+    "SIM-0115",
+    "SIM-0117",
+    "SIM-0118"
+  ],
+  "all_other_master_rows_preserved": true,
+  "implemented": true,
+  "LF_only": true,
+  "merged_line_citations_refreshed": [
+    "SIM-0104",
+    "SIM-0108",
+    "SIM-0112",
+    "SIM-0114",
+    "SIM-0115"
+  ],
+  "final_recheck": true
+}

@@ -1,0 +1,9 @@
+/home/domingo/allegiance-codex-p734/docs/reports/P734_assets/showcase-ring/Program.cs(27,100): error CS0117: 'MapGenConfig' does not contain a definition for 'Seed' [/home/domingo/allegiance-codex-p734/docs/reports/P734_assets/showcase-ring/showcase.csproj]
+
+Build FAILED.
+
+/home/domingo/allegiance-codex-p734/docs/reports/P734_assets/showcase-ring/Program.cs(27,100): error CS0117: 'MapGenConfig' does not contain a definition for 'Seed' [/home/domingo/allegiance-codex-p734/docs/reports/P734_assets/showcase-ring/showcase.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:03.35

@@ -1,0 +1,16 @@
+--- P708/Ship.NpcUpdates.cs
++++ P734/Ship.NpcUpdates.cs
+@@ -213,9 +213,11 @@
+     private void PlotWingmanCombat(float dt)
+     {
+         int previousState = StateM;
+-        StateM &= ~(ShipControlState.WeaponsMask | ShipControlState.MissileFire | ShipControlState.MineFire |
+-            ShipControlState.MoveButtonsMask | ShipControlState.AfterburnerButton);
++        StateM &= ~(ShipControlState.WeaponsMask | ShipControlState.MissileFire | ShipControlState.MineFire);
+         if (ActiveWingmanTarget is not { } target) return;
++        // P699c: an idle combat plot must preserve the native docking/travel
++        // controls computed by ApplyNpcAutopilot (common.cpp:1287-1540).
++        StateM &= ~(ShipControlState.MoveButtonsMask | ShipControlState.AfterburnerButton);
+         bool local = target is Ship s ? s.Sector == Sector : Sector?.Models.Contains(target) == true;
+         if (!local || !IsWingmanEnemy(target)) { ReleaseWingmanTarget(target); return; }
+         var weapon = Weapons.FirstOrDefault(w => w.MountId == 0);

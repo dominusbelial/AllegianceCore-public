@@ -1,0 +1,11 @@
+Test run for /home/domingo/allegiance-codex-p708/tests/Allegiance.ClientCore.MonoGame.Tests/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.96]     Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists [SKIP]
+[xUnit.net 00:00:00.96]     Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before [SKIP]
+  Skipped Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists [1 ms]
+  Skipped Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before [< 1 ms]
+[xUnit.net 00:00:00.96]     Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set [SKIP]
+  Skipped Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set [< 1 ms]
+Results File: /home/domingo/allegiance-codex-p708/docs/reports/P708_assets/suite-ClientCore.MonoGame.trx
+
+Passed!  - Failed:     0, Passed:  2234, Skipped:     3, Total:  2237, Duration: 15 m 33 s - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)

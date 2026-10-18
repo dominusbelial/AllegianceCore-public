@@ -1,0 +1,10 @@
+[station] station 1 destroyed (launcher 8184) => STATION_DESTROYED(59) -> 91 peer(s) [WHOLE MISSION]
+[sideinactive] side 1 deactivated (lost last restart station) => SIDE_INACTIVE(68) bActive=false -> 91 peer(s)
+[sideinactive] side 1 elimination chat "Bravo is no more." -> 91 peer(s)
+[gameover] mission #0 -> Stage Over, iSideWinner=0, 91 peer(s)
+P734b Stage Over 1/2 at wall=198.3s
+[station] station 0 destroyed (launcher 8264) => STATION_DESTROYED(59) -> 91 peer(s) [WHOLE MISSION]
+[sideinactive] side 0 deactivated (lost last restart station) => SIDE_INACTIVE(68) bActive=false -> 91 peer(s)
+[sideinactive] side 0 elimination chat "Alpha is no more." -> 91 peer(s)
+[gameover] mission #0 -> Stage Over, iSideWinner=1, 91 peer(s)
+P734b Stage Over 2/2 at wall=245.2s

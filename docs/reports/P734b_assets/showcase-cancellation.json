@@ -1,0 +1,5 @@
+{
+  "reason": "No Stage Over after fifteen minutes; preserve incomplete diagnostic and retry with optional finale disabled",
+  "mechanism": "Task-owned output path becomes directory; next write unwinds through driver finally/disposal",
+  "last": 933.6528596
+}

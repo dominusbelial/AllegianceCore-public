@@ -1,0 +1,31 @@
+Test run for /home/domingo/allegiance-codex-p708/tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:45.34]     Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic [FAIL]
+  Failed Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic [15 s]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: 0
+Actual:   1
+  Stack Trace:
+     at Allegiance.Core.Tests.P699bPodLoadTests.Run(Boolean rescueTraffic) in /home/domingo/allegiance-codex-p708/tests/Allegiance.Core.Tests/P699bPodLoadTests.cs:line 145
+   at Allegiance.Core.Tests.P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic() in /home/domingo/allegiance-codex-p708/tests/Allegiance.Core.Tests/P699bPodLoadTests.cs:line 15
+   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Standard Output Messages:
+ FAILED ship=20197 outcome=oxygen route=1052,1062,1051 homeAt=353.150000000046 radiusAt= endPosition=-1583.8683,-2222.2388,-33.28036 seconds=300.0000000000659
+ baseline=False rescueTraffic=False docked=199 rescued=0 total=199/200 oxygen=1 other=0 homeReached=200 launchTraffic=136 median=215.75 p95=282.15 bays=1:2587,0:2240
+
+
+[xUnit.net 00:09:35.51]     Allegiance.Core.Tests.MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction [FAIL]
+  Failed Allegiance.Core.Tests.MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction [24 s]
+  Error Message:
+   B must receive the mine's EXPORT once its scanner net spots it
+  Stack Trace:
+     at Allegiance.Core.Tests.MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction() in /home/domingo/allegiance-codex-p708/tests/Allegiance.Core.Tests/MineCrossSideVisibilityLiveTests.cs:line 212
+   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+Results File: /home/domingo/allegiance-codex-p708/docs/reports/P708_assets/suite-Core-final.trx
+
+Failed!  - Failed:     2, Passed:  4727, Skipped:     0, Total:  4729, Duration: 13 m 12 s - Allegiance.Core.Tests.dll (net10.0)

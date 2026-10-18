@@ -1,0 +1,10 @@
+{
+  "revision": "5556eb0f459095fe18e6fcf3b919c1786331c877",
+  "root": "/tmp/p708-entry-baseline",
+  "source": {
+    "src/Allegiance.Core/Sim/Ship.cs": "eb06ac74e13257fef66424e6604fe282684d579b5d70049c3d3f22d2fec0afe2",
+    "src/Allegiance.Core/Sim/ShipControlState.cs": "eaa21b3365f156374ab985f61fee2f082e788a0630806605fbefca7d0d07ffa8",
+    "src/Allegiance.Server/Server.ShipCommands.cs": "c071514c28b5df19d7ef591c5c604c0b7776ae43521340151d5e327ef0ab95f3"
+  },
+  "matches_entry_revision": true
+}

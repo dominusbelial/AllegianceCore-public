@@ -407,7 +407,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         ChatTarget target = ChatTarget.Everyone,
         short oidRecipient = 0,
         short voiceOver = -1,
-        short commandId = 0,
+        short commandId = -1,
         bool objectModel = false,
         short oidTarget = -1,
         short otTarget = -1,
@@ -429,6 +429,18 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>Igc/igc.h:4812-4825: formatted chat uses the same wire path.</summary>
+    public void SendChatf(ChatTarget target, short recipient, short voice, string format, params object?[] args) =>
+        SendChat(CallbackText.Format(format, args), target, recipient, voice);
+
+    /// <summary>WinTrek.cpp:10627-10652; clintlib.cpp:2564-2574.</summary>
+    public void SendPlayerDonation(PlayerDonate donation) => Send(FedPacket.Pack(new[] { donation.Encode() }));
+
+    public void SendMoneyRequest(int amount, short hullId) => Send(FedPacket.Pack(new[]
+    {
+        new RequestMoney { Amount = amount, HidFor = hullId, ShipIdRequest = -1 }.Encode(),
+    }));
+
     /// <summary>Send a real <c>FM_CS_CHATBUOY(108)</c> — the message the native
     /// <c>BaseClient::SendChat</c> actually uses when the chat targets a buoy
     /// object (<c>clintlib.cpp:2460-2469</c>: <c>otTarget == OT_buoy</c> →
@@ -449,7 +461,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         short oidRecipient,
         DataBuoyIGC db,
         short voiceOver = -1,
-        short commandId = 0,
+        short commandId = -1,
         bool objectModel = false)
     {
         var msg = new ChatBuoy
@@ -1112,6 +1124,9 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // P442 — per-ship money delta (bucket spend, purchase,
                         // refund, player donation).
                         _world.Apply(MoneyChange.Decode(m));
+                        break;
+                    case RequestMoney.Fmid:
+                        _world.Apply(RequestMoney.Decode(m));
                         break;
                     case AutoDonateUpdate.Fmid:
                         // P442 — a player's auto-donate relationship (payday

@@ -1,0 +1,117 @@
+using System.Diagnostics;
+using System.Text.Json;
+using Allegiance.Core;
+using Allegiance.Core.Sim;
+using Allegiance.Server;
+using Allegiance.Tools.McpSpawner;
+using Srv = Allegiance.Server.Server;
+
+// A local battle driver, separate from the unchanged suite. No forced damage,
+// game-over calls, pose writes, or finale implementation changes.
+ConsoleLog.Install();
+var output = Path.GetFullPath(args[0]);
+using var server = new Srv();
+server.SpawnInitialMinersAtBoot = false;
+server.Boot(new ServerConfig
+{
+    Port = 0,
+    Transport = new() { MaxConnectionsPerIp = 128 },
+    Showcase = new() { TechMode = "unlocked" },
+    LiveSettings = new()
+    {
+        TimeDilation = "off",
+        AutoNextMatch = new() { Enabled = true, IntermissionSeconds = 5 },
+        TestUnlock = new() { Enabled = true, AllTech = true, Money = 1_000_000 },
+        TestHarness = new() { Enabled = true, Money = 1_000_000, IgnoreTechGate = true },
+    },
+    Games = [new() { Name = "P734b local two-match showcase", MapGen = new() { Type = "Brawl" }, Teams = 2,
+        CivIds = [25, 3], SideNames = ["Alpha", "Bravo"], MaxTeamImbalance = 32767 }],
+});
+using var stop = new CancellationTokenSource();
+Exception? tickerError = null;
+var guard = new object();
+var ticker = new Thread(() =>
+{
+    try
+    {
+        while (!stop.IsCancellationRequested)
+        {
+            lock (guard) server.TickSim();
+            Thread.Sleep(20);
+        }
+    }
+    catch (Exception ex) { tickerError = ex; }
+}) { IsBackground = true };
+Console.CancelKeyPress += (_, e) => { e.Cancel = true; stop.Cancel(); };
+ticker.Start();
+try
+{
+    using var manager = new BotManager("127.0.0.1", server.BoundPort);
+    var spawnArgs = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>("""
+        {"preset":"showcase","size_scale":6,"finale_side":"both","staging":true,
+         "finale_after_minutes":1,"finale_min_relaunch_share":0.5,"finale_min_kills_last_5_minutes":5,"finale_escort_share":1,"finale_escort_cap":12}
+        """)!;
+    // Existing explicit-fleet API, using loaded-core role representatives.
+    // Keep 45 ships per side while assigning a full 12-bomber strike wing.
+    var core = Catalog.RepresentativeCore();
+    string HullName(Showcase.HullRole role) =>
+        (Showcase.RepresentativeHullOfRole(core, role) ?? throw new InvalidOperationException($"No hull for {role}")).Name;
+    spawnArgs.Remove("preset");
+    spawnArgs.Remove("size_scale");
+    spawnArgs["fleet"] = JsonSerializer.SerializeToElement(new[]
+    {
+        new { hull = HullName(Showcase.HullRole.Fighter), count = 21 },
+        new { hull = HullName(Showcase.HullRole.Interceptor), count = 6 },
+        new { hull = HullName(Showcase.HullRole.Scout), count = 6 },
+        new { hull = HullName(Showcase.HullRole.Bomber), count = 12 },
+    });
+    spawnArgs["target_sector"] = JsonSerializer.SerializeToElement(server.Missions[0].Sectors.First().Id.ToString());
+    var spawned = McpTools.Handle("spawn_scenario", spawnArgs, manager);
+    if (spawned.IsError == true) throw new Exception(JsonSerializer.Serialize(spawned));
+    if (manager.ActiveBots().Count != 90) throw new Exception("Expected all 90 showcase bots to spawn");
+    var watch = Stopwatch.StartNew();
+    var timeline = new List<object>();
+    var missions = new List<Allegiance.Core.Model.Mission> { server.Missions[0] };
+    var ended = new HashSet<Allegiance.Core.Model.Mission>();
+    double nextSample = 0;
+    while (!stop.IsCancellationRequested && watch.Elapsed.TotalMinutes < 20)
+    {
+        if (File.Exists(output + ".cancel")) throw new OperationCanceledException("Proof canceled by task controller");
+        if (tickerError is not null) throw new Exception("sim ticker failed", tickerError);
+        lock (guard)
+        {
+            var current = server.Missions[0];
+            if (!missions.Contains(current)) missions.Add(current);
+            foreach (var mission in missions.Where(m => m.Stage == MissionStage.Over && !ended.Contains(m)))
+            {
+                ended.Add(mission);
+                timeline.Add(JsonSerializer.SerializeToElement(new { kind = "Stage Over", match = missions.IndexOf(mission) + 1,
+                    wallSeconds = watch.Elapsed.TotalSeconds, sim = server.SimNow,
+                    combat = manager.GetCombatSummary(), finale = manager.FinaleStatus() }));
+                Console.WriteLine($"P734b Stage Over {ended.Count}/2 at wall={watch.Elapsed.TotalSeconds:F1}s");
+            }
+            if (watch.Elapsed.TotalSeconds >= nextSample || ended.Count >= 2)
+            {
+                timeline.Add(JsonSerializer.SerializeToElement(new { kind = "sample", wallSeconds = watch.Elapsed.TotalSeconds,
+                    sim = server.SimNow, match = missions.IndexOf(current) + 1, stage = current.Stage.ToString(),
+                    bots = manager.ActiveBots(), combat = manager.GetCombatSummary(), finale = manager.FinaleStatus(),
+                    stations = current.Sectors.SelectMany(s => s.StationRuntimes).Select(s => new { s.SideId, s.ArmorFraction, s.ShieldFraction }).ToArray() }));
+                File.WriteAllText(output, JsonSerializer.Serialize(new { techMode = "unlocked", civs = new[] {25, 3},
+                    map = "Brawl", fleetPerSide = 45, fleetComposition = new { fighters = 21, interceptors = 6, scouts = 6, bombers = 12 }, victoryMode = "base elimination", finaleEnabled = true,
+                    stageOverCount = ended.Count, simFailures = server.SimPassStageFailures, timeline },
+                    new JsonSerializerOptions { WriteIndented = true }));
+                nextSample = watch.Elapsed.TotalSeconds + 15;
+            }
+            if (server.SimPassStageFailures != 0) throw new Exception("simulation stage failure");
+            if (ended.Count >= 2) return 0;
+        }
+        Thread.Sleep(100);
+    }
+    throw new Exception("Two natural Stage Over transitions did not complete within 20 minutes");
+}
+finally
+{
+    stop.Cancel();
+    if (!ticker.Join(5000)) throw new Exception("ticker did not stop");
+    ConsoleLog.Shutdown();
+}

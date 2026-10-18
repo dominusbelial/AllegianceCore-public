@@ -1,0 +1,112 @@
+[
+  {
+    "file": "src/Allegiance.ClientCore.Game/Flight/CommandActionInput.cs",
+    "changed": true,
+    "added": false
+  },
+  {
+    "file": "src/Allegiance.ClientCore.Game/Game1.Orders.cs",
+    "changed": true,
+    "added": false
+  },
+  {
+    "file": "src/Allegiance.ClientCore/Session/ConnectionSession.cs",
+    "changed": true,
+    "added": false
+  },
+  {
+    "file": "src/Allegiance.ClientCore/State/ClientWorld.Callbacks.cs",
+    "changed": true,
+    "added": true
+  },
+  {
+    "file": "src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs",
+    "changed": true,
+    "added": false
+  },
+  {
+    "file": "src/Allegiance.ClientCore/State/ClientWorld.cs",
+    "changed": true,
+    "added": false
+  },
+  {
+    "file": "src/Allegiance.Core/Sim/CallbackText.cs",
+    "changed": true,
+    "added": true
+  },
+  {
+    "file": "src/Allegiance.Core/Sim/IIgcSite.cs",
+    "changed": true,
+    "added": false
+  },
+  {
+    "file": "src/Allegiance.Core/Sim/Ship.NpcUpdates.cs",
+    "changed": true,
+    "added": true
+  },
+  {
+    "file": "src/Allegiance.Core/Sim/Ship.cs",
+    "changed": true,
+    "added": false
+  },
+  {
+    "file": "src/Allegiance.Core/Sim/ShipControlState.cs",
+    "changed": true,
+    "added": false
+  },
+  {
+    "file": "src/Allegiance.Server/Server.Callbacks.cs",
+    "changed": true,
+    "added": true
+  },
+  {
+    "file": "src/Allegiance.Server/Server.Lifecycle.cs",
+    "changed": true,
+    "added": false
+  },
+  {
+    "file": "src/Allegiance.Server/Server.ShipCommands.cs",
+    "changed": true,
+    "added": false
+  },
+  {
+    "file": "src/Allegiance.Server/ServerHost.cs",
+    "changed": true,
+    "added": false
+  },
+  {
+    "file": "tests/Allegiance.ClientCore.MonoGame.Tests/P709MoneyRequestInputTests.cs",
+    "changed": true,
+    "added": true
+  },
+  {
+    "file": "tests/Allegiance.ClientCore.Tests/P709CallbacksLiveTests.cs",
+    "changed": true,
+    "added": true
+  },
+  {
+    "file": "tests/Allegiance.ClientCore.Tests/P709ClientCallbacksTests.cs",
+    "changed": true,
+    "added": true
+  },
+  {
+    "file": "tests/Allegiance.Core.Tests/NpcWingmanRangeMaintenanceLiveTests.cs",
+    "changed": true,
+    "added": false
+  },
+  {
+    "file": "tests/Allegiance.Core.Tests/P676SimRulesTests.cs",
+    "changed": true,
+    "added": false
+  },
+  {
+    "file": "tests/Allegiance.Core.Tests/P708ShipUpdateTests.cs",
+    "changed": true,
+    "added": true
+  },
+  {
+    "file": "tests/Allegiance.Core.Tests/P709CallbackTextTests.cs",
+    "changed": true,
+    "added": true
+  }
+]

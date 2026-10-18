@@ -1,0 +1,27 @@
+{
+  "docs/TEST_FLAKES.md": {
+    "1": "7c83c8c4c2102107615901171aff8e25e72de96d",
+    "2": "72a41cea025f79e6d477db6222b61ab5c9d25f67",
+    "3": "5291efe3e37b5a11889d0c252a8465d85f2063ea"
+  },
+  "docs/parity/sim-rules-matrix.csv": {
+    "1": "fc4e6f04c1629eb8e10a1130f9210813876641e8",
+    "2": "a06f4cb63502fd73f69595348390c6f82bc1a705",
+    "3": "55529941df6c0ae3d2710e9a0716613944007abc"
+  },
+  "src/Allegiance.ClientCore/Session/ConnectionSession.cs": {
+    "1": "7cc68bc07a53e621bf343874fa07ea21660801e7",
+    "2": "fb128022f58ad4330a962328df5ee98135787184",
+    "3": "2c396c87575c23c2148b8790d33c979cc227c960"
+  },
+  "src/Allegiance.ClientCore/State/ClientWorld.cs": {
+    "1": "bbbf1a4684a99544d35b014bf269ab1164f8ec9e",
+    "2": "6a13b8347b56c63ceca0fef49ca6fa18c44dc2fa",
+    "3": "b0012bf59e526f0dbfc8b6371670b36984947f13"
+  },
+  "src/Allegiance.Core/Sim/IIgcSite.cs": {
+    "1": "738b2ee5ac755a8da34348d4224610ad3eae5786",
+    "2": "f9d0549c5d997232bae673ab9c813f5271d73637",
+    "3": "5597a1174dc78a83e441a93ff404aa64f8971d2e"
+  }
+}

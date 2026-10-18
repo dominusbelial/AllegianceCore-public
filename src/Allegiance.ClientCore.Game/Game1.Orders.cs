@@ -56,6 +56,7 @@ public sealed partial class Game1
                 _session.SendChat("", Allegiance.Core.Sim.ChatTarget.Individual, pickup.TargetId,
                     commandId: OrderChange.CidPickup, objectModel: true, oidTarget: rescuer, otTarget: (short)IgcObjectType.Ship);
         }
+        if (result.Donation is { } donation) _session.SendPlayerDonation(donation);
         if (result.Request is { CommandId: not OrderChange.CidNone }) _sound?.PlayCommandAccepted();
         if (result.Request is { } request)
             _session.SendOrderChange(request.ShipID, request.CommandId, request.Command, request.ObjectType, request.ObjectID);

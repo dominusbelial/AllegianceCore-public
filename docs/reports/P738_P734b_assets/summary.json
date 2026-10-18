@@ -1,0 +1,74 @@
+{
+  "completed_utc": "2026-10-18T09:15:21.519726+00:00",
+  "clean": true,
+  "focused_methods": 285,
+  "focused": {
+    "invocations": 855,
+    "passed": 1320,
+    "failed": 0,
+    "skipped": 0
+  },
+  "showcase": {
+    "invocations": 5,
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0
+  },
+  "suites": {
+    "Core": {
+      "invocations": 1,
+      "passed": 4851,
+      "failed": 1,
+      "skipped": 0
+    },
+    "ClientCore": {
+      "invocations": 1,
+      "passed": 1299,
+      "failed": 0,
+      "skipped": 0
+    },
+    "ClientCore.MonoGame": {
+      "invocations": 1,
+      "passed": 2430,
+      "failed": 0,
+      "skipped": 3
+    }
+  },
+  "qualified_failure_cases": [
+    {
+      "project": "Core",
+      "method": "Allegiance.Core.Tests.LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count",
+      "case": "Allegiance.Core.Tests.LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count",
+      "three_clean_passes": true,
+      "invocations": [
+        "isolation-000-1",
+        "isolation-000-2",
+        "isolation-000-3"
+      ]
+    }
+  ],
+  "skipped_cases": [
+    {
+      "project": "ClientCore.MonoGame",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+      "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+    },
+    {
+      "project": "ClientCore.MonoGame",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+      "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+    },
+    {
+      "project": "ClientCore.MonoGame",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+    }
+  ],
+  "sources_unchanged_since_build": true,
+  "no_git_commands_executed": true,
+  "excluded_git_invoking_guards": [
+    "MeshyGuardTests",
+    "PrivatePathGuardTests"
+  ],
+  "base_comparison_required": false
+}

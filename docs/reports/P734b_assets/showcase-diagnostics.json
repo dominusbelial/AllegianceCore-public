@@ -1,0 +1,56 @@
+[
+  {
+    "attempt": 1,
+    "configuration": "SingleRing, 45/side, finale at 5 min",
+    "lastSampleSeconds": 933.6528596,
+    "stageOverCount": 0,
+    "simFailures": 0,
+    "receiptKills": 629,
+    "disposition": "incomplete; cooperatively canceled; not gate certification"
+  },
+  {
+    "attempt": 2,
+    "configuration": "SingleRing, 45/side, finale off",
+    "lastSampleSeconds": 271.1736309,
+    "stageOverCount": 0,
+    "simFailures": 0,
+    "receiptKills": 213,
+    "disposition": "incomplete; cooperatively canceled; not gate certification"
+  },
+  {
+    "attempt": 3,
+    "configuration": "SingleRing, 45/side, ordinary 100-kill-goal diagnostic",
+    "lastSampleSeconds": 511.908607,
+    "stageOverCount": 0,
+    "simFailures": 0,
+    "receiptKills": 437,
+    "disposition": "incomplete; cooperatively canceled; not gate certification"
+  },
+  {
+    "attempt": 4,
+    "configuration": "Brawl, 45/side, finale off",
+    "lastSampleSeconds": 240.9557896,
+    "stageOverCount": 0,
+    "simFailures": 0,
+    "receiptKills": 397,
+    "disposition": "incomplete; cooperatively canceled; not gate certification"
+  },
+  {
+    "attempt": 5,
+    "configuration": "Brawl, 45/side, finale at 1 min",
+    "lastSampleSeconds": 286.1305299,
+    "stageOverCount": 0,
+    "simFailures": 0,
+    "receiptKills": 458,
+    "disposition": "incomplete; cooperatively canceled; not gate certification"
+  },
+  {
+    "attempt": 6,
+    "configuration": "Brawl, 90/side, finale at 1 min",
+    "lastSampleSeconds": 331.6971551,
+    "stageOverCount": 0,
+    "simFailures": 0,
+    "receiptKills": 21,
+    "disposition": "incomplete; cooperatively canceled; not gate certification"
+  }
+]

@@ -1,0 +1,63 @@
+--- src/Allegiance.Core/Sim/Ship.cs (merge conflict)
++++ src/Allegiance.Core/Sim/Ship.cs (resolved)
+@@ -6900,33 +6900,7 @@
+     /// <summary>Native attack gate: angle to the lead <= 0.10 rad and
+     /// intercept time <= 95% of effective lifespan (shipIGC.cpp:2463-2477,2600).
+     /// Time, rather than centre distance, includes radius and relative velocity.</summary>
+-<<<<<<< HEAD
+-    private void UpdateWingmanCombat(float dt)
+-    {
+-        StateM &= ~(ShipControlState.WeaponsMask | ShipControlState.MineFire);
+-        if (AttackTarget is not { } target) return;
+-        StateM &= ~ShipControlState.MoveButtonsMask;
+-        if (target.Dead || target.StationId is not null || target.Sector != Sector ||
+-            SideId is null || target.SideId is null || IsFriendlySide(target.SideId))
+-        {
+-            AttackTarget = null;
+-            return;
+-        }
+-        var weapon = Weapons.FirstOrDefault(w => w.MountId == 0);
+-        if (weapon is null) return;
+-        float t = SolveForLead(target, weapon, WingmanShootSkill, out var direction);
+-        if (direction.LengthSquared() < 1e-6f) return;
+-        float angle = TurnWingmanToFace(direction, dt, 0.75f);
+-        float throttle = 0.5f + (MathF.PI - angle) / (2f * MathF.PI); // shipIGC.cpp:2474
+-        if (angle < MathF.PI * 0.5f && t < weapon.GetLifespan() * 0.45f)
+-            throttle = ComputeWingmanRangeThrottle(target); // closest band, :2493-2512
+-        Controls = Controls with { Throttle = throttle };
+-        if (angle <= 0.10f && t <= weapon.GetLifespan() * 0.95f)
+-            StateM |= ShipControlState.AllWeapons;
+-    }
+-=======
+     private void UpdateWingmanCombat(float dt) => PlotWingmanCombat(dt);
+->>>>>>> codex/p708
+ 
+     /// <summary>Native c_cidRepair target (shipIGC.cpp:2608-2678). Stations
+     /// have a separate runtime representation in this port.</summary>
+--- docs/TEST_FLAKES.md (merge conflict)
++++ docs/TEST_FLAKES.md (resolved)
+@@ -4,7 +4,6 @@
+ by **P647**; the full historical ledger is preserved verbatim in the History section
+ at the end).
+ 
+-<<<<<<< HEAD
+ ## P716 observation (2026-10-16)
+ 
+ Full-suite run 2 reported Core **4,706 pass / 1 fail / 0 skip** with a single
+@@ -210,7 +209,7 @@
+ 0 fail / 3 existing optional Meshy-pack skips**, including the 605-second
+ human-flight soak. Lobby completed **19 pass / 0 fail / 0 skip**. No additional
+ failures required classification. See the [P703 report](reports/P703_RESEARCH_COMMANDER.md).
+-=======
++
+ ## P708 observation (2026-10-16)
+ 
+ The first unfiltered Core run passed **4,729/4,729**. The final-build Core rerun
+@@ -240,7 +239,6 @@
+ See [P708 report](reports/P708_PARITY_WAVE11.md),
+ [invocation ledger](reports/P708_assets/verification.json), and
+ [scope audit](reports/P708_assets/scope-audit.json).
+->>>>>>> codex/p708
+ 
+ ## P702 observation (2026-10-15)
+ 

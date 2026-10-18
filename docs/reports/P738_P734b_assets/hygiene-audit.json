@@ -1,0 +1,14 @@
+{
+  "parent_manifest_paths": 20708,
+  "supplementary_file_audit_only": true,
+  "media_offenders": [],
+  "private_path_offenders": [],
+  "excluded_manifest_documents": [
+    "src/Allegiance.ClientCore.MonoGame/Content/Models/MODELS_MANIFEST_P287.json",
+    "src/Allegiance.ClientCore.MonoGame/Content/Models/MODELS_MANIFEST_P287.md"
+  ],
+  "excluded_git_invoking_tests": [
+    "MeshyGuardTests",
+    "PrivatePathGuardTests"
+  ]
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count",
+    "case": "Allegiance.Core.Tests.LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count",
+    "three_clean_passes": true,
+    "invocations": [
+      "isolation-000-1",
+      "isolation-000-2",
+      "isolation-000-3"
+    ]
+  }
+]

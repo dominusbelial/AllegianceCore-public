@@ -1,0 +1,38 @@
+{
+  "ours": "29174b282a24903e113b991efd8ff2742b9bb149",
+  "unchanged": 2392,
+  "changed": [
+    [
+      "src/Allegiance.ClientCore.Game/Flight/CommandActionInput.cs",
+      "changed"
+    ],
+    [
+      "src/Allegiance.ClientCore.Game/Game1.Orders.cs",
+      "changed"
+    ],
+    [
+      "src/Allegiance.ClientCore/Session/ConnectionSession.cs",
+      "changed"
+    ],
+    [
+      "src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs",
+      "changed"
+    ],
+    [
+      "src/Allegiance.ClientCore/State/ClientWorld.cs",
+      "changed"
+    ],
+    [
+      "src/Allegiance.Core/Sim/IIgcSite.cs",
+      "changed"
+    ],
+    [
+      "src/Allegiance.Server/Server.Lifecycle.cs",
+      "changed"
+    ],
+    [
+      "src/Allegiance.Server/ServerHost.cs",
+      "changed"
+    ]
+  ]
+}

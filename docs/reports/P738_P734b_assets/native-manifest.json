@@ -1,0 +1,177 @@
+{
+  "Igc/igc.h": {
+    "sha256": "9e151addcbed45df98ff78fc9352aca8a796f69a5cfbb947425d52e9ab649a66",
+    "ranges": [
+      [
+        4792,
+        4828
+      ],
+      [
+        4847,
+        4850
+      ],
+      [
+        4899,
+        4900
+      ],
+      [
+        784,
+        792
+      ]
+    ]
+  },
+  "Igc/shipIGC.cpp": {
+    "sha256": "2f5d1cd1dde51bafdf6d1a71e5ff375bd44c1f633f8a167f202620dce7cb12d3",
+    "ranges": [
+      [
+        2000,
+        2080
+      ],
+      [
+        2249,
+        2260
+      ],
+      [
+        2370,
+        2790
+      ],
+      [
+        4154,
+        4228
+      ]
+    ]
+  },
+  "Igc/common.cpp": {
+    "sha256": "853757a6c9f981d56f1d6c0c3544035c58e77bfdbf25b8bd1764adb10d69b955",
+    "ranges": [
+      [
+        1287,
+        1303
+      ],
+      [
+        1530,
+        1540
+      ],
+      [
+        1580,
+        1751
+      ]
+    ]
+  },
+  "Igc/shipIGC.h": {
+    "sha256": "78a7b0e7b445a95b6949fb6c299e61987ddf5981cdcc67e62bbdd9bfe44ba782",
+    "ranges": [
+      [
+        213,
+        213
+      ],
+      [
+        380,
+        389
+      ],
+      [
+        743,
+        787
+      ]
+    ]
+  },
+  "Igc/magazineigc.cpp": {
+    "sha256": "7ebcffdff044c3dd152f685ffc9da077bbda4968898d420d5d553a4416fd00a5",
+    "ranges": [
+      [
+        103,
+        167
+      ]
+    ]
+  },
+  "clintlib/clintlib.cpp": {
+    "sha256": "700e0cf5d48d28175aeceb88722d89eb5177d95b3456fd3b05a2012b862a9f0e",
+    "ranges": [
+      [
+        2160,
+        2172
+      ],
+      [
+        2564,
+        2581
+      ]
+    ]
+  },
+  "clintlib/appmsg.cpp": {
+    "sha256": "f12f70605aa2cf1461298cfa8af6d232f65d7b4af9bbeb51935c1e8a63169c3e",
+    "ranges": [
+      [
+        2630,
+        2688
+      ],
+      [
+        2797,
+        2805
+      ],
+      [
+        2899,
+        2906
+      ]
+    ]
+  },
+  "WinTrek/trekigc.cpp": {
+    "sha256": "87271a00ed3838f50cccdbdeae248cacb8eb0d54ca0d1f431bfcf6e55338e6ea",
+    "ranges": [
+      [
+        2994,
+        3018
+      ],
+      [
+        3067,
+        3102
+      ],
+      [
+        4462,
+        4465
+      ],
+      [
+        4480,
+        4560
+      ],
+      [
+        4788,
+        4822
+      ]
+    ]
+  },
+  "WinTrek/WinTrek.cpp": {
+    "sha256": "e1432f46067641fcd61daa5304b3932a7028b8adc3b2be5774dec389068080b7",
+    "ranges": [
+      [
+        7686,
+        7687
+      ],
+      [
+        10627,
+        10652
+      ],
+      [
+        10728,
+        10759
+      ]
+    ]
+  },
+  "WinTrek/WinTrek.h": {
+    "sha256": "73f23b8fe3987cc951d01ede4144e50c766ad8dd82929a0c8ca797eb6466a8ba",
+    "ranges": [
+      [
+        258,
+        258
+      ]
+    ]
+  },
+  "FedSrv/FedSrv.CPP": {
+    "sha256": "7b8938f2fdfcfe09a299ac642b79ca54991a4222dce79e93b2ba5d356199a014",
+    "ranges": [
+      [
+        13652,
+        13693
+      ]
+    ]
+  }
+}

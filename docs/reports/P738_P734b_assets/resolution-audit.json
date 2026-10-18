@@ -1,0 +1,85 @@
+{
+  "merge_target": "codex/p734b",
+  "conflicted_files": {
+    "docs/TEST_FLAKES.md": {
+      "1": "7c83c8c4c2102107615901171aff8e25e72de96d",
+      "2": "72a41cea025f79e6d477db6222b61ab5c9d25f67",
+      "3": "5291efe3e37b5a11889d0c252a8465d85f2063ea"
+    },
+    "docs/parity/sim-rules-matrix.csv": {
+      "1": "fc4e6f04c1629eb8e10a1130f9210813876641e8",
+      "2": "a06f4cb63502fd73f69595348390c6f82bc1a705",
+      "3": "55529941df6c0ae3d2710e9a0716613944007abc"
+    },
+    "src/Allegiance.ClientCore/Session/ConnectionSession.cs": {
+      "1": "7cc68bc07a53e621bf343874fa07ea21660801e7",
+      "2": "fb128022f58ad4330a962328df5ee98135787184",
+      "3": "2c396c87575c23c2148b8790d33c979cc227c960"
+    },
+    "src/Allegiance.ClientCore/State/ClientWorld.cs": {
+      "1": "bbbf1a4684a99544d35b014bf269ab1164f8ec9e",
+      "2": "6a13b8347b56c63ceca0fef49ca6fa18c44dc2fa",
+      "3": "b0012bf59e526f0dbfc8b6371670b36984947f13"
+    },
+    "src/Allegiance.Core/Sim/IIgcSite.cs": {
+      "1": "738b2ee5ac755a8da34348d4224610ad3eae5786",
+      "2": "f9d0549c5d997232bae673ab9c813f5271d73637",
+      "3": "5597a1174dc78a83e441a93ff404aa64f8971d2e"
+    }
+  },
+  "metadata_unchanged": true,
+  "conflict_markers": [],
+  "matrices": {
+    "docs/parity/parity-matrix.csv": {
+      "rows": 438,
+      "changed_from_ours": [],
+      "lf_only": true
+    },
+    "docs/parity/sim-rules-matrix.csv": {
+      "rows": 473,
+      "changed_from_ours": [
+        "SIM-0104",
+        "SIM-0108",
+        "SIM-0112",
+        "SIM-0113",
+        "SIM-0114",
+        "SIM-0115",
+        "SIM-0117",
+        "SIM-0118",
+        "SIM-0172",
+        "SIM-0173",
+        "SIM-0174",
+        "SIM-0175",
+        "SIM-0193",
+        "SIM-0194",
+        "SIM-0195",
+        "SIM-0228"
+      ],
+      "lf_only": true
+    },
+    "docs/parity/fedmsg-wiring.csv": {
+      "rows": 137,
+      "changed_from_ours": [],
+      "lf_only": true
+    }
+  },
+  "unique_sound_event_playback_pairs": 51,
+  "master_source_files_changed": [
+    "src/Allegiance.ClientCore.Game/Game1.Orders.cs",
+    "src/Allegiance.Server/ServerHost.cs",
+    "src/Allegiance.Server/Server.Lifecycle.cs",
+    "src/Allegiance.Server/Server.ShipCommands.cs",
+    "src/Allegiance.Core/Sim/ShipControlState.cs",
+    "src/Allegiance.Core/Sim/Ship.cs",
+    "src/Allegiance.Core/Sim/IIgcSite.cs",
+    "src/Allegiance.ClientCore/Session/ConnectionSession.cs",
+    "src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs",
+    "src/Allegiance.ClientCore/State/ClientWorld.cs",
+    "src/Allegiance.ClientCore.Game/Flight/CommandActionInput.cs",
+    "tests/Allegiance.Core.Tests/NpcWingmanRangeMaintenanceLiveTests.cs",
+    "tests/Allegiance.Core.Tests/P676SimRulesTests.cs"
+  ],
+  "no_source_changes_outside_incoming_scope": true,
+  "both_flake_histories_preserved": true,
+  "master_versions_of_both_added_reports_preserved": []
+}

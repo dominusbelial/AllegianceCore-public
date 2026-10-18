@@ -1,0 +1,47 @@
+[
+  {
+    "run": "parking-01",
+    "reached": 25,
+    "longest": 1.804,
+    "shots": 3624,
+    "hits": 1206,
+    "kills": 13,
+    "line": "P700 local 15v15: 94.2s, samples=941, reached=25/30, longest speed<1 with target=1.804s, shots=3624, hits=1206, kills=13"
+  },
+  {
+    "run": "parking-02",
+    "reached": 26,
+    "longest": 2.014,
+    "shots": 3604,
+    "hits": 1497,
+    "kills": 13,
+    "line": "P700 local 15v15: 96.6s, samples=965, reached=26/30, longest speed<1 with target=2.014s, shots=3604, hits=1497, kills=13"
+  },
+  {
+    "run": "parking-03",
+    "reached": 26,
+    "longest": 1.912,
+    "shots": 4031,
+    "hits": 1576,
+    "kills": 12,
+    "line": "P700 local 15v15: 95.5s, samples=954, reached=26/30, longest speed<1 with target=1.912s, shots=4031, hits=1576, kills=12"
+  },
+  {
+    "run": "parking-04",
+    "reached": 26,
+    "longest": 1.904,
+    "shots": 3840,
+    "hits": 1552,
+    "kills": 16,
+    "line": "P700 local 15v15: 97.9s, samples=978, reached=26/30, longest speed<1 with target=1.904s, shots=3840, hits=1552, kills=16"
+  },
+  {
+    "run": "parking-05",
+    "reached": 24,
+    "longest": 1.612,
+    "shots": 4382,
+    "hits": 1558,
+    "kills": 14,
+    "line": "P700 local 15v15: 93.2s, samples=931, reached=24/30, longest speed<1 with target=1.612s, shots=4382, hits=1558, kills=14"
+  }
+]

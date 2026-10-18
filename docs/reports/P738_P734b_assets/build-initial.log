@@ -1,0 +1,9 @@
+/home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/State/ClientWorld.Callbacks.cs(15,75): error CS1503: Argument 4: cannot convert from 'bool' to 'Allegiance.ClientCore.State.FeedbackExtraSound' [/home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/Allegiance.ClientCore.csproj]
+
+
+
+/home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/State/ClientWorld.Callbacks.cs(15,75): error CS1503: Argument 4: cannot convert from 'bool' to 'Allegiance.ClientCore.State.FeedbackExtraSound' [/home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/Allegiance.ClientCore.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:09.07

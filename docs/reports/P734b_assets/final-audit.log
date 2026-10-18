@@ -1,0 +1,66 @@
+{
+  "focused_methods": 208,
+  "focused_invocations": 624,
+  "focused_passes": 978,
+  "exact_triplets_passed": true,
+  "parking_runs": 5,
+  "parking_clean": true,
+  "suites": [
+    {
+      "project": "Core",
+      "passed": 4812,
+      "failed": 1,
+      "skipped": [],
+      "seconds": 975.918
+    },
+    {
+      "project": "ClientCore",
+      "passed": 1190,
+      "failed": 0,
+      "skipped": [],
+      "seconds": 2107.481
+    },
+    {
+      "project": "ClientCore.MonoGame",
+      "passed": 2263,
+      "failed": 0,
+      "skipped": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists"
+      ],
+      "seconds": 958.094
+    },
+    {
+      "project": "Lobby",
+      "passed": 19,
+      "failed": 0,
+      "skipped": [],
+      "seconds": 0.81
+    }
+  ],
+  "one_complete_sweep": true,
+  "suite_failures_recovered": true,
+  "failed_methods": [
+    {
+      "project": "Core",
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn"
+    }
+  ],
+  "source_fingerprints_match": true,
+  "native_fingerprints_match": true,
+  "whole_solution_build_0_0": true,
+  "showcase_driver_fingerprints_match": true,
+  "showcase_process_exit_zero": true,
+  "human_flight_soak": {
+    "testName": "Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_flies_for_ten_minutes_with_turns_boost_tidi_and_recovers_from_correction",
+    "outcome": "Passed",
+    "duration": "00:10:05.2572375"
+  },
+  "human_flight_soak_passed": true,
+  "matrix_final_check": true,
+  "merge_metadata_unchanged": true,
+  "no_conflict_markers": true,
+  "only_optional_skips": true,
+  "clean": true
+}

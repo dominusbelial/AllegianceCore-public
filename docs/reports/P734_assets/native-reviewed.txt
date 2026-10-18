@@ -1,0 +1,973 @@
+Igc/shipIGC.cpp:2000:     }
+Igc/shipIGC.cpp:2001: }
+Igc/shipIGC.cpp:2002: 
+Igc/shipIGC.cpp:2003: static bool ModelHasTargetPriority(ImodelIGC* pmodel, IshipIGC* pship) {
+Igc/shipIGC.cpp:2004:     ZAssert(pmodel);
+Igc/shipIGC.cpp:2005:     if (pmodel->GetSide() != pship->GetSide() && !IsideIGC::AlliedSides(pmodel->GetSide(), pship->GetSide()) && pship->CanSee(pmodel)) {
+Igc/shipIGC.cpp:2006:         // Sector wide aggro
+Igc/shipIGC.cpp:2007:         if (pship->GetWingmanBehaviour() & c_wbbmTempSectorAggressive) {
+Igc/shipIGC.cpp:2008:             return true;
+Igc/shipIGC.cpp:2009:         }
+Igc/shipIGC.cpp:2010: 
+Igc/shipIGC.cpp:2011:         // See if it came too close
+Igc/shipIGC.cpp:2012:         float dist = (pship->GetPosition() - pmodel->GetPosition()).Length();
+Igc/shipIGC.cpp:2013:         if (dist < 800.0f) {
+Igc/shipIGC.cpp:2014:             Orientation toShip = Orientation(pmodel->GetPosition() - pship->GetPosition());
+Igc/shipIGC.cpp:2015:             float ownDirSpeed = toShip.CosForward(pship->GetVelocity())*pship->GetVelocity().Length();
+Igc/shipIGC.cpp:2016:             float targetDirSpeed = toShip.CosForward(pmodel->GetVelocity())*pmodel->GetVelocity().Length();
+Igc/shipIGC.cpp:2017:             float relSpeed = ownDirSpeed - targetDirSpeed;
+Igc/shipIGC.cpp:2018: 
+Igc/shipIGC.cpp:2019:             if ((relSpeed > 0.0f && relSpeed < 100.0f) ||
+Igc/shipIGC.cpp:2020:                 (relSpeed > -20.0f && relSpeed < 150.0f && dist < 550.0f) ||
+Igc/shipIGC.cpp:2021:                 (relSpeed > -100.0f && relSpeed < 200.0f && dist < 400.0f))
+Igc/shipIGC.cpp:2022:             {
+Igc/shipIGC.cpp:2023:                 return true;
+Igc/shipIGC.cpp:2024:             }
+Igc/shipIGC.cpp:2025:         }
+Igc/shipIGC.cpp:2026:     }
+Igc/shipIGC.cpp:2027:     return false;
+Igc/shipIGC.cpp:2028: }
+Igc/shipIGC.cpp:2029: 
+Igc/shipIGC.cpp:2030: static IshipIGC* FindTargetShip(IshipIGC* pOwnShip, const Vector* pposition, float &distance, int ttMask, char pilotType) {
+Igc/shipIGC.cpp:2031:     ZAssert(pOwnShip);
+Igc/shipIGC.cpp:2032:     ZAssert(pilotType >= -2);
+Igc/shipIGC.cpp:2033:     if (!pposition)
+Igc/shipIGC.cpp:2034:         pposition = &(pOwnShip->GetPosition());
+Igc/shipIGC.cpp:2035:     IshipIGC* pMinDistShip = NULL;
+Igc/shipIGC.cpp:2036:     for (ShipLinkIGC* l = pOwnShip->GetCluster()->GetShips()->first(); l != NULL; l = l->next()) {
+Igc/shipIGC.cpp:2037:         IshipIGC* s = l->data();
+Igc/shipIGC.cpp:2038:         ZAssert(s);
+Igc/shipIGC.cpp:2039:         if ((pilotType == NA ||
+Igc/shipIGC.cpp:2040:             (pilotType == -2 && (s->GetPilotType() == c_ptWingman || s->GetPilotType() >= c_ptPlayer)) ||
+Igc/shipIGC.cpp:2041:             (s->GetPilotType() == pilotType)) &&
+Igc/shipIGC.cpp:2042:             (((ttMask & c_ttFriendly) && s->GetSide() == pOwnShip->GetSide()) ||
+Igc/shipIGC.cpp:2043:             ((ttMask & c_ttEnemy) && s->GetSide() != pOwnShip->GetSide() && pOwnShip->CanSee(s))))
+Igc/shipIGC.cpp:2044:         {
+Igc/shipIGC.cpp:2045:             if (!(ttMask & c_ttNearest))
+Igc/shipIGC.cpp:2046:                 return s;
+Igc/shipIGC.cpp:2047:             else {
+Igc/shipIGC.cpp:2048:                 float dist = (s->GetPosition() - *pposition).Length();
+Igc/shipIGC.cpp:2049:                 if (dist < distance) {
+Igc/shipIGC.cpp:2050:                     pMinDistShip = s;
+Igc/shipIGC.cpp:2051:                     distance = dist;
+Igc/shipIGC.cpp:2052:                 }
+Igc/shipIGC.cpp:2053:             }
+Igc/shipIGC.cpp:2054:         }
+Igc/shipIGC.cpp:2055:     }
+Igc/shipIGC.cpp:2056:     return pMinDistShip;
+Igc/shipIGC.cpp:2057: }
+Igc/shipIGC.cpp:2058: 
+Igc/shipIGC.cpp:2059: void    CshipIGC::PlotShipMove(Time          timeStop)
+Igc/shipIGC.cpp:2060: {
+Igc/shipIGC.cpp:2061:     if (m_bAutopilot && (m_pshipParent == NULL))
+Igc/shipIGC.cpp:2062:     {
+Igc/shipIGC.cpp:2063:         Time    timeStart = GetMyLastUpdate();
+Igc/shipIGC.cpp:2064: 
+Igc/shipIGC.cpp:2065:         {
+Igc/shipIGC.cpp:2066:             if (m_pclusterRequestRipcord && (m_timeRequestRipcord > timeStart) && (GetCluster() != m_pclusterRequestRipcord))
+Igc/shipIGC.cpp:2067:             {
+Igc/shipIGC.cpp:2068:                 if (IsSafeToRipcord())
+Igc/shipIGC.cpp:2069:                 {
+Igc/shipIGC.cpp:2070:                     GetMyMission()->GetIgcSite()->RequestRipcord(this, m_pclusterRequestRipcord);
+Igc/shipIGC.cpp:2071:                     m_pclusterRequestRipcord = NULL;
+Igc/shipIGC.cpp:2072: 					//Xynth #47 7/2010					
+Igc/shipIGC.cpp:2073: 					SetStateBits(droneRipMaskIGC, droneRipMaskIGC);
+Igc/shipIGC.cpp:2074: 					SetStateBits(miningMaskIGC, 0); //stop mining when you rip
+Igc/shipIGC.cpp:2075:                 }
+Igc/shipIGC.cpp:2076:                 else
+Igc/shipIGC.cpp:2077:                 {
+Igc/shipIGC.cpp:2078:                     m_timeRequestRipcord = timeStart + 5.0f;
+Igc/shipIGC.cpp:2079:                 }
+Igc/shipIGC.cpp:2080:             }
+Igc/shipIGC.cpp:2249:                 // Keep facing the target, and add a little roll for effect
+Igc/shipIGC.cpp:2250:                 Vector  dp = pasteroid->GetPosition() - GetPosition();
+Igc/shipIGC.cpp:2251:                 turnToFace(dp, dT, this, &m_controls, 1.0f);
+Igc/shipIGC.cpp:2252: 
+Igc/shipIGC.cpp:2253:                 m_controls.jsValues[c_axisRoll] = 1.0f;
+Igc/shipIGC.cpp:2254:                 m_controls.jsValues[c_axisThrottle] = -1.0f;
+Igc/shipIGC.cpp:2255: 
+Igc/shipIGC.cpp:2256: 		        // Zero the motion & weapon bits
+Igc/shipIGC.cpp:2257:                 SetStateBits(weaponsMaskIGC | (buttonsMaskIGC & ~miningMaskIGC), 0);
+Igc/shipIGC.cpp:2258: 
+Igc/shipIGC.cpp:2259:                 return;
+Igc/shipIGC.cpp:2260:             }
+Igc/shipIGC.cpp:2370: 
+Igc/shipIGC.cpp:2371:                         if (m_checkCooldown)
+Igc/shipIGC.cpp:2372:                             m_checkCooldown--;
+Igc/shipIGC.cpp:2373:                         else if (m_commandIDs[c_cmdAccepted] == c_cidDefend) {
+Igc/shipIGC.cpp:2374:                             // Check if we should rather return to the c_cidDefend target
+Igc/shipIGC.cpp:2375:                             bool shouldReturn = false;
+Igc/shipIGC.cpp:2376:                             if (GetCluster() != m_commandTargets[c_cmdAccepted]->GetCluster())
+Igc/shipIGC.cpp:2377:                                 shouldReturn = true;
+Igc/shipIGC.cpp:2378:                             else {
+Igc/shipIGC.cpp:2379:                                 float distToProtectee = (m_commandTargets[c_cmdAccepted]->GetPosition() - m_commandTargets[c_cmdPlan]->GetPosition()).Length();
+Igc/shipIGC.cpp:2380:                                 if (distToProtectee > 3500.0f) 
+Igc/shipIGC.cpp:2381:                                     shouldReturn = true;
+Igc/shipIGC.cpp:2382:                                 else if (distToProtectee > 2200.0f) {
+Igc/shipIGC.cpp:2383:                                     float dist = 2500.0f;
+Igc/shipIGC.cpp:2384:                                     IshipIGC* pTarget = FindTargetShip(this, &(m_commandTargets[c_cmdAccepted]->GetPosition()), dist, c_ttEnemy | c_ttNearest, -2);
+Igc/shipIGC.cpp:2385:                                     if (pTarget && dist < (distToProtectee - 1000.0f)) {
+Igc/shipIGC.cpp:2386:                                         GetMyMission()->GetIgcSite()->SendChatf(this, CHAT_TEAM, GetSide()->GetObjectID(),
+Igc/shipIGC.cpp:2387:                                             droneInTransitSound,
+Igc/shipIGC.cpp:2388:                                             "Attacking %s (%fm) to defend %s", GetModelName(pTarget), dist, GetModelName(m_commandTargets[c_cmdAccepted]));
+Igc/shipIGC.cpp:2389:                                         SetCommand(c_cmdPlan, pTarget, c_cidAttack);
+Igc/shipIGC.cpp:2390:                                     }
+Igc/shipIGC.cpp:2391:                                     else {
+Igc/shipIGC.cpp:2392:                                         // don't follow if he is just running away
+Igc/shipIGC.cpp:2393:                                         Orientation oToDefendee = Orientation(m_commandTargets[c_cmdAccepted]->GetPosition() - m_commandTargets[c_cmdCurrent]->GetPosition());
+Igc/shipIGC.cpp:2394:                                         float targetDirSpeed = oToDefendee.CosForward(m_commandTargets[c_cmdPlan]->GetVelocity())*m_commandTargets[c_cmdPlan]->GetVelocity().Length();
+Igc/shipIGC.cpp:2395:                                         if (targetDirSpeed < -30.0f)
+Igc/shipIGC.cpp:2396:                                             shouldReturn = true;
+Igc/shipIGC.cpp:2397:                                     }
+Igc/shipIGC.cpp:2398:                                 }
+Igc/shipIGC.cpp:2399:                             }
+Igc/shipIGC.cpp:2400:                             if (shouldReturn) {
+Igc/shipIGC.cpp:2401:                                 GetMyMission()->GetIgcSite()->SendChatf(this, CHAT_TEAM, GetSide()->GetObjectID(),
+Igc/shipIGC.cpp:2402:                                     droneInTransitSound,
+Igc/shipIGC.cpp:2403:                                     "Returning to defend %s", GetModelName(m_commandTargets[c_cmdAccepted]));
+Igc/shipIGC.cpp:2404:                                 SetCommand(c_cmdPlan, m_commandTargets[c_cmdAccepted], c_cidDefend);
+Igc/shipIGC.cpp:2405:                             }
+Igc/shipIGC.cpp:2406:                             m_checkCooldown = 200;
+Igc/shipIGC.cpp:2407:                         }
+Igc/shipIGC.cpp:2408: 
+Igc/shipIGC.cpp:2409:                         if (!CanSee(m_commandTargets[c_cmdPlan])) {
+Igc/shipIGC.cpp:2410:                             if (!bDodge)
+Igc/shipIGC.cpp:2411:                                 state |= forwardButtonIGC;
+Igc/shipIGC.cpp:2412:                             if (m_targetFirstNotSeen == Time(0)) {
+Igc/shipIGC.cpp:2413:                                 m_targetFirstNotSeen = GetMyLastUpdate();
+Igc/shipIGC.cpp:2414:                             }
+Igc/shipIGC.cpp:2415:                             else if (GetMyLastUpdate() > m_targetFirstNotSeen + 5.0f) {
+Igc/shipIGC.cpp:2416:                                 //find something else to do
+Igc/shipIGC.cpp:2417:                                 if (m_commandTargets[c_cmdAccepted] == m_commandTargets[c_cmdPlan]) {
+Igc/shipIGC.cpp:2418:                                     // see if we should investigate
+Igc/shipIGC.cpp:2419:                                     bool investigate = true;
+Igc/shipIGC.cpp:2420:                                     for (ShipLinkIGC* l = GetCluster()->GetShips()->first(); l != NULL; l = l->next()) {
+Igc/shipIGC.cpp:2421:                                         IshipIGC* s = l->data();
+Igc/shipIGC.cpp:2422:                                         if (s->GetSide() != GetSide() && !GetSide()->AlliedSides(GetSide(), s->GetSide()) && CanSee(s)) {
+Igc/shipIGC.cpp:2423:                                             if ((s->GetPosition() - GetPosition()).Length() < (m_commandTargets[c_cmdPlan]->GetPosition() - GetPosition()).Length()*1.5) {
+Igc/shipIGC.cpp:2424:                                                 investigate = false;
+Igc/shipIGC.cpp:2425:                                                 break;
+Igc/shipIGC.cpp:2426:                                             }
+Igc/shipIGC.cpp:2427:                                         }
+Igc/shipIGC.cpp:2428:                                     }
+Igc/shipIGC.cpp:2429:                                     if (investigate) {
+Igc/shipIGC.cpp:2430:                                         debugf("%s: Going to investigate %s\n", GetName(), m_commandTargets[c_cmdPlan]->GetName());
+Igc/shipIGC.cpp:2431:                                         DataBuoyIGC lastKnownPosBuoy;
+Igc/shipIGC.cpp:2432:                                         lastKnownPosBuoy.clusterID = GetCluster()->GetObjectID();
+Igc/shipIGC.cpp:2433:                                         lastKnownPosBuoy.position = m_commandTargets[c_cmdPlan]->GetPosition();
+Igc/shipIGC.cpp:2434:                                         lastKnownPosBuoy.type = c_buoyWaypoint;
+Igc/shipIGC.cpp:2435:                                         lastKnownPosBuoy.visible = false;
+Igc/shipIGC.cpp:2436:                                         ImodelIGC* buoyLastKnown = (ImodelIGC*)GetMission()->CreateObject(GetLastUpdate(), OT_buoy, &lastKnownPosBuoy, sizeof(lastKnownPosBuoy));
+Igc/shipIGC.cpp:2437: 
+Igc/shipIGC.cpp:2438:                                         SetCommand(c_cmdAccepted, buoyLastKnown, c_cidGoto);
+Igc/shipIGC.cpp:2439:                                         SetWingmanBehaviour(GetWingmanBehaviour() | c_wbbmTempSectorAggressive);
+Igc/shipIGC.cpp:2440:                                     }
+Igc/shipIGC.cpp:2441:                                     else {
+Igc/shipIGC.cpp:2442:                                         debugf("%s: notSeen - Set c_cmdAccepted null", GetName());
+Igc/shipIGC.cpp:2443:                                         SetCommand(c_cmdAccepted, NULL, c_cidNone);
+Igc/shipIGC.cpp:2444:                                     }
+Igc/shipIGC.cpp:2445:                                 }
+Igc/shipIGC.cpp:2446:                                 else {
+Igc/shipIGC.cpp:2447:                                     debugf("%s: notSeen - Set c_cmdPlan null", GetName());
+Igc/shipIGC.cpp:2448:                                     SetCommand(c_cmdPlan, NULL, c_cidNone);
+Igc/shipIGC.cpp:2449:                                 }
+Igc/shipIGC.cpp:2450:                                 return;
+Igc/shipIGC.cpp:2451:                             }
+Igc/shipIGC.cpp:2452:                             else if (GetMyLastUpdate() > m_targetFirstNotSeen + 3.0f) {
+Igc/shipIGC.cpp:2453:                                 //move in last known direction for 2 more seconds
+Igc/shipIGC.cpp:2454:                                 SetStateBits(~selectedWeaponMaskIGC, state);
+Igc/shipIGC.cpp:2455:                                 return;
+Igc/shipIGC.cpp:2456:                             }
+Igc/shipIGC.cpp:2457:                             else {
+Igc/shipIGC.cpp:2458:                                 //can still guess where the target is
+Igc/shipIGC.cpp:2459:                                 fShootSkill = 0.5f;
+Igc/shipIGC.cpp:2460:                             }
+Igc/shipIGC.cpp:2461:                         }
+Igc/shipIGC.cpp:2462: 
+Igc/shipIGC.cpp:2463:                         Vector  direction;
+Igc/shipIGC.cpp:2464:                         float   t = solveForLead(this,
+Igc/shipIGC.cpp:2465:                             m_commandTargets[c_cmdPlan],
+Igc/shipIGC.cpp:2466:                             m_mountedWeapons[0],
+Igc/shipIGC.cpp:2467:                             &direction,
+Igc/shipIGC.cpp:2468:                             fShootSkill);
+Igc/shipIGC.cpp:2469: 
+Igc/shipIGC.cpp:2470:                         float   angleToLead = turnToFace(direction, dT, this, &m_controls, fTurnSkill);
+Igc/shipIGC.cpp:2471: 
+Igc/shipIGC.cpp:2472:                         // make the drone always fly hard - throttle range 0.5 to 1.0, depending on how they are
+Igc/shipIGC.cpp:2473:                         // angled to their target
+Igc/shipIGC.cpp:2474:                         m_controls.jsValues[c_axisThrottle] = 0.5f + ((pi - angleToLead) / (2.0f * pi));
+Igc/shipIGC.cpp:2475: 
+Igc/shipIGC.cpp:2476:                         const float c_fMaxOffAngle = 0.10f;
+Igc/shipIGC.cpp:2477:                         float lifespan = m_mountedWeapons[0]->GetLifespan();
+Igc/shipIGC.cpp:2478: 
+Igc/shipIGC.cpp:2479:                         float ownDirSpeed = GetOrientation().CosForward(GetVelocity())*GetVelocity().Length();
+Igc/shipIGC.cpp:2480:                         float targetDirSpeed = GetOrientation().CosForward(m_commandTargets[c_cmdPlan]->GetVelocity())*m_commandTargets[c_cmdPlan]->GetVelocity().Length();
+Igc/shipIGC.cpp:2481:                         float relativeSpeed = ownDirSpeed - targetDirSpeed;
+Igc/shipIGC.cpp:2482: 
+Igc/shipIGC.cpp:2483:                         //float targetDistance = (this->GetPosition() - m_commandTargets[c_cmdPlan]->GetPosition()).Length();
+Igc/shipIGC.cpp:2484:                         //float weaponRange = t*m_mountedWeapons[0]->GetProjectileType()->GetSpeed();
+Igc/shipIGC.cpp:2485:                         if (bDodge)
+Igc/shipIGC.cpp:2486:                             m_dodgeCooldown = 100;
+Igc/shipIGC.cpp:2487:                         else if (m_dodgeCooldown) {
+Igc/shipIGC.cpp:2488:                             m_dodgeCooldown--;
+Igc/shipIGC.cpp:2489:                             state = GetStateM() & ~allWeaponsIGC;
+Igc/shipIGC.cpp:2490:                         }
+Igc/shipIGC.cpp:2491:                         else {
+Igc/shipIGC.cpp:2492:                             if (angleToLead < pi * 0.5f) {
+Igc/shipIGC.cpp:2493:                                 if (t < lifespan * 0.45f) {
+Igc/shipIGC.cpp:2494:                                     if (relativeSpeed < -20.0f) {
+Igc/shipIGC.cpp:2495:                                         state |= forwardButtonIGC;
+Igc/shipIGC.cpp:2496:                                         if (relativeSpeed < -50.0f)
+Igc/shipIGC.cpp:2497:                                             criticalMovement = true;
+Igc/shipIGC.cpp:2498:                                     }
+Igc/shipIGC.cpp:2499:                                     else if (relativeSpeed > 20.0f) {
+Igc/shipIGC.cpp:2500:                                         state |= backwardButtonIGC;
+Igc/shipIGC.cpp:2501:                                         if (relativeSpeed > 50.0f)
+Igc/shipIGC.cpp:2502:                                             criticalMovement = true;
+Igc/shipIGC.cpp:2503:                                     }
+Igc/shipIGC.cpp:2504:                                     else {
+Igc/shipIGC.cpp:2505:                                         // match speed
+Igc/shipIGC.cpp:2506:                                         float myMaxSpeed = GetHullType()->GetMaxSpeed();
+Igc/shipIGC.cpp:2507:                                         float throttle = (targetDirSpeed >= myMaxSpeed)
+Igc/shipIGC.cpp:2508:                                             ? 1.0f
+Igc/shipIGC.cpp:2509:                                             : (targetDirSpeed <= 0.0f ? -1.0f : 2.0f * targetDirSpeed / myMaxSpeed - 1.0f);
+Igc/shipIGC.cpp:2510:                                         ZAssert(throttle >= -1.0f && throttle <= 1.0f);
+Igc/shipIGC.cpp:2511:                                         m_controls.jsValues[c_axisThrottle] = throttle;
+Igc/shipIGC.cpp:2512:                                     }
+Igc/shipIGC.cpp:2513: 
+Igc/shipIGC.cpp:2514:                                 }
+Igc/shipIGC.cpp:2515:                                 else if (t < lifespan * (openFireDistPercentage - 0.05)) {
+Igc/shipIGC.cpp:2516:                                     if (relativeSpeed > 50.0f)
+Igc/shipIGC.cpp:2517:                                         state |= backwardButtonIGC;
+Igc/shipIGC.cpp:2518:                                     else if (relativeSpeed < 10.0f) {
+Igc/shipIGC.cpp:2519:                                         state |= forwardButtonIGC;
+Igc/shipIGC.cpp:2520:                                         if (relativeSpeed < -10.0f) {
+Igc/shipIGC.cpp:2521:                                             criticalMovement = true;
+Igc/shipIGC.cpp:2522:                                             if (relativeSpeed < -15 && (GetStateM() & afterburnerButtonIGC))
+Igc/shipIGC.cpp:2523:                                                 state |= afterburnerButtonIGC;
+Igc/shipIGC.cpp:2524:                                             else if (relativeSpeed < -30)
+Igc/shipIGC.cpp:2525:                                                 state |= afterburnerButtonIGC;
+Igc/shipIGC.cpp:2526:                                         }
+Igc/shipIGC.cpp:2527:                                         else if (t > lifespan * (openFireDistPercentage - 0.1))
+Igc/shipIGC.cpp:2528:                                             criticalMovement = true;
+Igc/shipIGC.cpp:2529:                                     }
+Igc/shipIGC.cpp:2530:                                 }
+Igc/shipIGC.cpp:2531:                                 else if (t < lifespan * 1.5f) {
+Igc/shipIGC.cpp:2532:                                     if (relativeSpeed > 120)
+Igc/shipIGC.cpp:2533:                                         state |= backwardButtonIGC;
+Igc/shipIGC.cpp:2534:                                     else if (relativeSpeed < 80) {
+Igc/shipIGC.cpp:2535:                                         state |= forwardButtonIGC;
+Igc/shipIGC.cpp:2536:                                         if (relativeSpeed < 40) {
+Igc/shipIGC.cpp:2537:                                             criticalMovement = true;
+Igc/shipIGC.cpp:2538:                                             if (relativeSpeed < 20)
+Igc/shipIGC.cpp:2539:                                                 state |= afterburnerButtonIGC;
+Igc/shipIGC.cpp:2540:                                         }
+Igc/shipIGC.cpp:2541:                                     }
+Igc/shipIGC.cpp:2542: 
+Igc/shipIGC.cpp:2543:                                 }
+Igc/shipIGC.cpp:2544:                                 else {
+Igc/shipIGC.cpp:2545:                                     if ((m_wingmanBehaviour & c_wbbmInRangeAggressive) && (m_timeRanAway + 10.0f <= timeStop)) { //m_timeRanAway gets set on SetCommand c_cmdPlan
+Igc/shipIGC.cpp:2546:                                         ImodelIGC* newTarget = NULL;
+Igc/shipIGC.cpp:2547:                                         for (ShipLinkIGC* l = GetCluster()->GetShips()->first(); (l != NULL); l = l->next()) {
+Igc/shipIGC.cpp:2548:                                             if (ModelHasTargetPriority(l->data(), this)) {
+Igc/shipIGC.cpp:2549:                                                 newTarget = l->data();
+Igc/shipIGC.cpp:2550:                                                 break;
+Igc/shipIGC.cpp:2551:                                             }
+Igc/shipIGC.cpp:2552:                                         }
+Igc/shipIGC.cpp:2553:                                         if (!newTarget)
+Igc/shipIGC.cpp:2554:                                             for (ProbeLinkIGC* l = GetCluster()->GetProbes()->first(); (l != NULL); l = l->next()) {
+Igc/shipIGC.cpp:2555:                                                 if (ModelHasTargetPriority(l->data(), this)) {
+Igc/shipIGC.cpp:2556:                                                     newTarget = l->data();
+Igc/shipIGC.cpp:2557:                                                     break;
+Igc/shipIGC.cpp:2558:                                                 }
+Igc/shipIGC.cpp:2559:                                             }
+Igc/shipIGC.cpp:2560:                                         if (newTarget) {
+Igc/shipIGC.cpp:2561:                                             GetMyMission()->GetIgcSite()->SendChatf(this, CHAT_TEAM, GetSide()->GetObjectID(),
+Igc/shipIGC.cpp:2562:                                                 droneInTransitSound,
+Igc/shipIGC.cpp:2563:                                                 "Switching target to %s", GetModelName(newTarget));
+Igc/shipIGC.cpp:2564:                                             SetCommand(c_cmdPlan, newTarget, c_cidAttack);
+Igc/shipIGC.cpp:2565:                                         }
+Igc/shipIGC.cpp:2566:                                         else
+Igc/shipIGC.cpp:2567:                                             state |= afterburnerButtonIGC;
+Igc/shipIGC.cpp:2568:                                     }
+Igc/shipIGC.cpp:2569:                                     else
+Igc/shipIGC.cpp:2570:                                         state |= afterburnerButtonIGC;
+Igc/shipIGC.cpp:2571:                                 }
+Igc/shipIGC.cpp:2572: 
+Igc/shipIGC.cpp:2573:                                 if (GetMountedPart(ET_Magazine, 0) && (m_wingmanBehaviour & c_wbbmUseMissiles)) {
+Igc/shipIGC.cpp:2574:                                     ImagazineIGC* pmissile = (ImagazineIGC*)GetMountedPart(ET_Magazine, 0);
+Igc/shipIGC.cpp:2575:                                     if (pmissile->GetLock() >= 1.0f) {
+Igc/shipIGC.cpp:2576:                                         float targetOrthRight2 = GetOrientation().CosRight2(m_commandTargets[c_cmdPlan]->GetVelocity());
+Igc/shipIGC.cpp:2577:                                         float targetOrthUp2 = GetOrientation().CosUp2(m_commandTargets[c_cmdPlan]->GetVelocity());
+Igc/shipIGC.cpp:2578:                                         float evasionSpeed = sqrt(abs(targetOrthRight2) + abs(targetOrthUp2))*m_commandTargets[c_cmdPlan]->GetVelocity().Length();
+Igc/shipIGC.cpp:2579:                                         float maxEvasionSpeed = 20.0f + pmissile->GetMissileType()->GetMaxLock() * 30.0f;
+Igc/shipIGC.cpp:2580: 
+Igc/shipIGC.cpp:2581:                                         if (evasionSpeed < maxEvasionSpeed) {
+Igc/shipIGC.cpp:2582:                                             //debugf("Missile fire for %s's %s (turn rate: %f) - targetOrthRight2: %f, targetOrthUp2: %f, evasionSpeed: %f; targetOrthSpeedRight: %f, targetOrthSpeedUp: %f\n", GetName(), pmissile->GetMissileType()->GetName(), pmissile->GetMissileType()->GetTurnRate(), targetOrthRight2, targetOrthUp2, evasionSpeed);
+Igc/shipIGC.cpp:2583:                                             state |= missileFireIGC;
+Igc/shipIGC.cpp:2584:                                         }
+Igc/shipIGC.cpp:2585:                                     }
+Igc/shipIGC.cpp:2586:                                 }
+Igc/shipIGC.cpp:2587:                             }
+Igc/shipIGC.cpp:2588: 
+Igc/shipIGC.cpp:2589:                             else if (!criticalMovement && t <= lifespan * openFireDistPercentage) {
+Igc/shipIGC.cpp:2590:                                 if (m_wingmanBehaviour & c_wbbmStrafe)
+Igc/shipIGC.cpp:2591:                                     state |= leftButtonIGC; // strafe - possibly use a pattern instead
+Igc/shipIGC.cpp:2592:                                 if (angleToLead < pi * 0.5f) {
+Igc/shipIGC.cpp:2593:                                     if (angleToLead > c_fMaxOffAngle) //too close to aim ... back off
+Igc/shipIGC.cpp:2594:                                         state |= backwardButtonIGC;
+Igc/shipIGC.cpp:2595:                                 }
+Igc/shipIGC.cpp:2596:                             }
+Igc/shipIGC.cpp:2597:                         }
+Igc/shipIGC.cpp:2598: 
+Igc/shipIGC.cpp:2599:                         SetStateBits(~selectedWeaponMaskIGC,
+Igc/shipIGC.cpp:2600:                             ((angleToLead <= c_fMaxOffAngle) && (t <= lifespan * openFireDistPercentage))
+Igc/shipIGC.cpp:2601:                             ? (state | allWeaponsIGC)
+Igc/shipIGC.cpp:2602:                             : state);
+Igc/shipIGC.cpp:2603: 
+Igc/shipIGC.cpp:2604:                         return;
+Igc/shipIGC.cpp:2605:                     }
+Igc/shipIGC.cpp:2606: 
+Igc/shipIGC.cpp:2607:                     //AEM 7.9.07 allow wingman to repair if they are equipped with a nan
+Igc/shipIGC.cpp:2608:                     else if (m_commandIDs[c_cmdPlan] == c_cidRepair && m_mountedWeapons[0] && m_mountedWeapons[0]->GetProjectileType()->GetPower() < 0.0)
+Igc/shipIGC.cpp:2609:                     {
+Igc/shipIGC.cpp:2610:                         //In the same cluster as the target ... we dodge, turn to face the aim point and fire if close enough
+Igc/shipIGC.cpp:2611:                         float   fShootSkill = 1.00f;
+Igc/shipIGC.cpp:2612:                         float   fTurnSkill = 1.00f;
+Igc/shipIGC.cpp:2613:                         int     state = 0;
+Igc/shipIGC.cpp:2614:                         bool    bDodge = Dodge(this, NULL, &state);
+Igc/shipIGC.cpp:2615: 
+Igc/shipIGC.cpp:2616:                         Vector  direction;
+Igc/shipIGC.cpp:2617:                         float   t = solveForLead(this,
+Igc/shipIGC.cpp:2618:                             m_commandTargets[c_cmdPlan],
+Igc/shipIGC.cpp:2619:                             m_mountedWeapons[0],
+Igc/shipIGC.cpp:2620:                             &direction,
+Igc/shipIGC.cpp:2621:                             fShootSkill);
+Igc/shipIGC.cpp:2622: 
+Igc/shipIGC.cpp:2623:                         float   da = turnToFace(direction, dT, this, &m_controls, fTurnSkill);
+Igc/shipIGC.cpp:2624: 
+Igc/shipIGC.cpp:2625:                         // make the drone always fly hard - throttle range 0.5 to 1.0, depending on how they are
+Igc/shipIGC.cpp:2626:                         // angled to their target
+Igc/shipIGC.cpp:2627:                         m_controls.jsValues[c_axisThrottle] = 0.5f + ((pi - da) / (2.0f * pi));
+Igc/shipIGC.cpp:2628: 
+Igc/shipIGC.cpp:2629:                         const float c_fMaxOffAngle = 0.10f;
+Igc/shipIGC.cpp:2630:                         float lifespan = m_mountedWeapons[0]->GetLifespan();
+Igc/shipIGC.cpp:2631: 
+Igc/shipIGC.cpp:2632:                         if ((!bDodge) && (t <= lifespan * 0.25f))
+Igc/shipIGC.cpp:2633:                         {
+Igc/shipIGC.cpp:2634:                             //We are close and not dodging anything so ...
+Igc/shipIGC.cpp:2635:                             //strafe
+Igc/shipIGC.cpp:2636:                             if (m_wingmanBehaviour & c_wbbmStrafe)
+Igc/shipIGC.cpp:2637:                                 state = leftButtonIGC;
+Igc/shipIGC.cpp:2638:                             if (da < pi * 0.5f)
+Igc/shipIGC.cpp:2639:                             {
+Igc/shipIGC.cpp:2640:                                 if (da > c_fMaxOffAngle)
+Igc/shipIGC.cpp:2641:                                 {
+Igc/shipIGC.cpp:2642:                                     //too close ... back off
+Igc/shipIGC.cpp:2643:                                     state |= backwardButtonIGC;
+Igc/shipIGC.cpp:2644: 
+Igc/shipIGC.cpp:2645:                                 }
+Igc/shipIGC.cpp:2646:                                 else
+Igc/shipIGC.cpp:2647:                                     state |= forwardButtonIGC;
+Igc/shipIGC.cpp:2648:                             }
+Igc/shipIGC.cpp:2649:                         }
+Igc/shipIGC.cpp:2650: 
+Igc/shipIGC.cpp:2651:                         // Check for mine usage
+Igc/shipIGC.cpp:2652:                         if ((m_wingmanBehaviour & c_wbbmUseMines) && m_mountedOthers[ET_Dispenser]) {
+Igc/shipIGC.cpp:2653:                             IdispenserIGC* d = (IdispenserIGC*)m_mountedOthers[ET_Dispenser];
+Igc/shipIGC.cpp:2654:                             if (d->GetExpendableType()->GetObjectType() == OT_mineType) {
+Igc/shipIGC.cpp:2655:                                 for (ShipLinkIGC* l = GetCluster()->GetShips()->first(); l != NULL; l = l->next()) {
+Igc/shipIGC.cpp:2656:                                     if (l->data()->GetSide() != GetSide()) {
+Igc/shipIGC.cpp:2657:                                         float distance = (l->data()->GetPosition() - GetPosition()).Length();
+Igc/shipIGC.cpp:2658:                                         PilotType pt = l->data()->GetPilotType();
+Igc/shipIGC.cpp:2659:                                         if (distance < 2500.0f && (pt == c_ptWingman || pt >= c_ptPlayer)) {
+Igc/shipIGC.cpp:2660:                                             state |= mineFireIGC;
+Igc/shipIGC.cpp:2661:                                             break;
+Igc/shipIGC.cpp:2662:                                         }
+Igc/shipIGC.cpp:2663:                                     }
+Igc/shipIGC.cpp:2664:                                 }
+Igc/shipIGC.cpp:2665:                             }
+Igc/shipIGC.cpp:2666:                         }
+Igc/shipIGC.cpp:2667: 
+Igc/shipIGC.cpp:2668:                         bool needsNan = true;
+Igc/shipIGC.cpp:2669:                         if (m_commandTargets[c_cmdPlan]->GetObjectType() == OT_ship)
+Igc/shipIGC.cpp:2670:                             if (((IshipIGC*)m_commandTargets[c_cmdPlan])->GetFraction() == 1.0f)
+Igc/shipIGC.cpp:2671:                                 needsNan = false;
+Igc/shipIGC.cpp:2672: 
+Igc/shipIGC.cpp:2673:                         SetStateBits(~selectedWeaponMaskIGC,
+Igc/shipIGC.cpp:2674:                             ((da <= c_fMaxOffAngle) && (t <= lifespan * 0.95f) && (needsNan))
+Igc/shipIGC.cpp:2675:                             ? (state | allWeaponsIGC)
+Igc/shipIGC.cpp:2676:                             : state);
+Igc/shipIGC.cpp:2677: 
+Igc/shipIGC.cpp:2678:                         return;
+Igc/shipIGC.cpp:2679:                     }
+Igc/shipIGC.cpp:2680:                     else if (m_commandIDs[c_cmdPlan] == c_cidDefend && m_mountedWeapons[0] && m_mountedWeapons[0]->GetProjectileType()->GetPower() > 0.0)
+Igc/shipIGC.cpp:2681:                     {
+Igc/shipIGC.cpp:2682:                         if (m_checkCooldown) {
+Igc/shipIGC.cpp:2683:                             m_checkCooldown--;
+Igc/shipIGC.cpp:2684:                             if (GetStateM() & afterburnerButtonIGC)
+Igc/shipIGC.cpp:2685:                                 bWingmanUseAfterburner = true;
+Igc/shipIGC.cpp:2686:                         }
+Igc/shipIGC.cpp:2687:                         else {
+Igc/shipIGC.cpp:2688:                             m_checkCooldown = 200;
+Igc/shipIGC.cpp:2689:                             float dist = 1500.0f; //max distance and returned actual distance
+Igc/shipIGC.cpp:2690:                             IshipIGC* pTarget = FindTargetShip(this, &(m_commandTargets[c_cmdAccepted]->GetPosition()), dist, c_ttEnemy | c_ttNearest, -2);
+Igc/shipIGC.cpp:2691:                             if (pTarget) {
+Igc/shipIGC.cpp:2692:                                 GetMyMission()->GetIgcSite()->SendChatf(this, CHAT_TEAM, GetSide()->GetObjectID(),
+Igc/shipIGC.cpp:2693:                                     droneInTransitSound,
+Igc/shipIGC.cpp:2694:                                     "Attacking %s (%f) to defend %s*", GetModelName(pTarget), dist, GetModelName(m_commandTargets[c_cmdPlan]));
+Igc/shipIGC.cpp:2695:                                 SetCommand(c_cmdPlan, pTarget, c_cidAttack);
+Igc/shipIGC.cpp:2696:                             }
+Igc/shipIGC.cpp:2697:                             else if ((GetPosition()-m_commandTargets[c_cmdPlan]->GetPosition()).Length() > 1000.0f) {
+Igc/shipIGC.cpp:2698:                                 float dist = 1000.0f;
+Igc/shipIGC.cpp:2699:                                 IshipIGC* pAttacker = FindTargetShip(this, NULL, dist, c_ttEnemy | c_ttNearest, -2);
+Igc/shipIGC.cpp:2700:                                 if (pAttacker) {
+Igc/shipIGC.cpp:2701:                                     bWingmanUseAfterburner = true;
+Igc/shipIGC.cpp:2702:                                 }
+Igc/shipIGC.cpp:2703:                             }
+Igc/shipIGC.cpp:2704:                         }
+Igc/shipIGC.cpp:2705:                     }
+Igc/shipIGC.cpp:2706:                 }
+Igc/shipIGC.cpp:2707:                 else if (m_commandIDs[c_cmdPlan] == c_cidAttack && !CanSee(m_commandTargets[c_cmdPlan])) {
+Igc/shipIGC.cpp:2708: 
+Igc/shipIGC.cpp:2709:                     //Handle trying to attack unseen enemy in another cluster
+Igc/shipIGC.cpp:2710:                     bool handled = false;
+Igc/shipIGC.cpp:2711:                     if (m_commandTargets[c_cmdAccepted] == m_commandTargets[c_cmdPlan] && m_commandTargets[c_cmdPlan]->GetObjectType() == OT_ship) {
+Igc/shipIGC.cpp:2712:                         IshipIGC* psTarget = (IshipIGC*)m_commandTargets[c_cmdPlan];
+Igc/shipIGC.cpp:2713:                         ZAssert(psTarget);
+Igc/shipIGC.cpp:2714:                         if (psTarget->GetCluster()) {
+Igc/shipIGC.cpp:2715:                             //Check if the enemy just changed cluster
+Igc/shipIGC.cpp:2716:                             ImodelIGC*  pmNearestAleph = FindTarget(psTarget,
+Igc/shipIGC.cpp:2717:                                 c_ttNeutral | c_ttWarp | c_ttNearest);
+Igc/shipIGC.cpp:2718:                             if (pmNearestAleph) {
+Igc/shipIGC.cpp:2719:                                 IwarpIGC* pNearestAleph = (IwarpIGC*)pmNearestAleph;
+Igc/shipIGC.cpp:2720:                                 if (pNearestAleph->GetDestination()->GetCluster() == GetCluster() &&
+Igc/shipIGC.cpp:2721:                                     (pmNearestAleph->GetPosition() - psTarget->GetPosition()).Length() < 800.0f &&
+Igc/shipIGC.cpp:2722:                                     GetHullType()->GetScannerRange() > 100.0f)  // Phoenix ...
+Igc/shipIGC.cpp:2723:                                 {
+Igc/shipIGC.cpp:2724:                                     // The enemy must have just went through an aleph, follow him!
+Igc/shipIGC.cpp:2725:                                     //  Create buoy
+Igc/shipIGC.cpp:2726:                                     DataBuoyIGC buoyData;
+Igc/shipIGC.cpp:2727:                                     buoyData.clusterID = psTarget->GetCluster()->GetObjectID();
+Igc/shipIGC.cpp:2728:                                     buoyData.type = c_buoyCluster;
+Igc/shipIGC.cpp:2729:                                     buoyData.position = Vector(0.0f, 0.0f, 0.0f);
+Igc/shipIGC.cpp:2730:                                     buoyData.visible = false;
+Igc/shipIGC.cpp:2731:                                     ImodelIGC* buoyTargetCluster = (ImodelIGC*)GetMission()->CreateObject(GetLastUpdate(), OT_buoy, &buoyData, sizeof(buoyData));
+Igc/shipIGC.cpp:2732: 
+Igc/shipIGC.cpp:2733:                                     //  Send to it
+Igc/shipIGC.cpp:2734:                                     debugf("%s: other cluster target near warp, goto.", GetName());
+Igc/shipIGC.cpp:2735:                                     SetCommand(c_cmdPlan, buoyTargetCluster, c_cidGoto);
+Igc/shipIGC.cpp:2736:                                     handled = true;
+Igc/shipIGC.cpp:2737:                                 }
+Igc/shipIGC.cpp:2738:                             }
+Igc/shipIGC.cpp:2739:                         }
+Igc/shipIGC.cpp:2740:                     }
+Igc/shipIGC.cpp:2741:                     if (!handled) {
+Igc/shipIGC.cpp:2742:                         Command c = c_cmdPlan;
+Igc/shipIGC.cpp:2743:                         if (m_commandTargets[c_cmdAccepted] == m_commandTargets[c_cmdPlan])
+Igc/shipIGC.cpp:2744:                             c = c_cmdAccepted;
+Igc/shipIGC.cpp:2745:                         debugf("%s: Can't see other cluster target, unset.", GetName());
+Igc/shipIGC.cpp:2746:                         SetCommand(c, NULL, c_cidNone);
+Igc/shipIGC.cpp:2747:                     }
+Igc/shipIGC.cpp:2748: 
+Igc/shipIGC.cpp:2749:                 }
+Igc/shipIGC.cpp:2750:                 if (m_commandIDs[c_cmdPlan] == c_cidGoto)
+Igc/shipIGC.cpp:2751:                 {
+Igc/shipIGC.cpp:2752:                     if (m_bRunningAway || m_bGettingAmmo) {
+Igc/shipIGC.cpp:2753:                         bWingmanUseAfterburner = true;
+Igc/shipIGC.cpp:2754:                         // handle after movement
+Igc/shipIGC.cpp:2755:                     }
+Igc/shipIGC.cpp:2756:                     else if (m_checkCooldown)
+Igc/shipIGC.cpp:2757:                         m_checkCooldown--;
+Igc/shipIGC.cpp:2758:                     else {
+Igc/shipIGC.cpp:2759:                         if (m_commandIDs[c_cmdAccepted] == c_cidAttack && CanSee(m_commandTargets[c_cmdAccepted])) {
+Igc/shipIGC.cpp:2760:                             // assume we just got a goto plan to find our actual target. Attack it.
+Igc/shipIGC.cpp:2761:                             SetCommand(c_cmdPlan, m_commandTargets[c_cmdAccepted], c_cidAttack);
+Igc/shipIGC.cpp:2762:                         }
+Igc/shipIGC.cpp:2763:                         if ((m_wingmanBehaviour & (c_wbbmInRangeAggressive | c_wbbmTempSectorAggressive)) && (m_timeRanAway + 10.0f <= timeStop)) {
+Igc/shipIGC.cpp:2764:                             ImodelIGC* newTarget = NULL;
+Igc/shipIGC.cpp:2765:                             for (ShipLinkIGC* l = GetCluster()->GetShips()->first(); (l != NULL); l = l->next()) {
+Igc/shipIGC.cpp:2766:                                 if (ModelHasTargetPriority(l->data(), this)) {
+Igc/shipIGC.cpp:2767:                                     newTarget = l->data();
+Igc/shipIGC.cpp:2768:                                     break;
+Igc/shipIGC.cpp:2769:                                 }
+Igc/shipIGC.cpp:2770:                             }
+Igc/shipIGC.cpp:2771:                             if (!newTarget)
+Igc/shipIGC.cpp:2772:                                 for (ProbeLinkIGC* l = GetCluster()->GetProbes()->first(); (l != NULL); l = l->next()) {
+Igc/shipIGC.cpp:2773:                                     if (ModelHasTargetPriority(l->data(), this)) {
+Igc/shipIGC.cpp:2774:                                         newTarget = l->data();
+Igc/shipIGC.cpp:2775:                                         break;
+Igc/shipIGC.cpp:2776:                                     }
+Igc/shipIGC.cpp:2777:                                 }
+Igc/shipIGC.cpp:2778:                             if (newTarget) {
+Igc/shipIGC.cpp:2779:                                 GetMyMission()->GetIgcSite()->SendChatf(this, CHAT_TEAM, GetSide()->GetObjectID(),
+Igc/shipIGC.cpp:2780:                                     droneInTransitSound,
+Igc/shipIGC.cpp:2781:                                     "Attacking %s", GetModelName(newTarget));
+Igc/shipIGC.cpp:2782:                                 Command c = c_cmdPlan;
+Igc/shipIGC.cpp:2783:                                 if (GetWingmanBehaviour() & c_wbbmTempSectorAggressive) {
+Igc/shipIGC.cpp:2784:                                     c = c_cmdAccepted;
+Igc/shipIGC.cpp:2785:                                     SetWingmanBehaviour(GetWingmanBehaviour() & ~c_wbbmTempSectorAggressive);
+Igc/shipIGC.cpp:2786:                                 }
+Igc/shipIGC.cpp:2787:                                 SetCommand(c, newTarget, c_cidAttack);
+Igc/shipIGC.cpp:2788:                             }
+Igc/shipIGC.cpp:2789:                         }
+Igc/shipIGC.cpp:2790:                         m_checkCooldown = 100;
+Igc/shipIGC.cpp:2965:             if (m_stateM & (leftButtonIGC | rightButtonIGC |
+Igc/shipIGC.cpp:2966:                             upButtonIGC | downButtonIGC |
+Igc/shipIGC.cpp:2967:                             forwardButtonIGC | backwardButtonIGC))
+Igc/shipIGC.cpp:2968:             {
+Igc/shipIGC.cpp:2969:                 //Under manual control: find out which direction to thrust in
+Igc/shipIGC.cpp:2970:                 //get the throttle setting, but ramp between 0.2 and 1.0 (instead of 0.0 & 1.0)
+Igc/shipIGC.cpp:2971:                 int   x = ((m_stateM & leftButtonIGC)     ? -1 : 0) + ((m_stateM & rightButtonIGC)   ?  1 : 0);
+Igc/shipIGC.cpp:2972:                 int   y = ((m_stateM & downButtonIGC)     ? -1 : 0) + ((m_stateM & upButtonIGC)      ?  1 : 0);
+Igc/shipIGC.cpp:2973:                 int   z = ((m_stateM & backwardButtonIGC) ?  1 : 0) + ((m_stateM & forwardButtonIGC) ? -1 : 0);
+Igc/shipIGC.cpp:2974: 
+Igc/shipIGC.cpp:2975:                 if (x || y || z)
+Igc/shipIGC.cpp:2976:                 {
+Igc/shipIGC.cpp:2977:                     //thrusting in at least one direction
+Igc/shipIGC.cpp:2978:                     localThrust.x = (thrust * (float)x);
+Igc/shipIGC.cpp:2979:                     localThrust.y = (thrust * (float)y);
+Igc/shipIGC.cpp:2980:                     localThrust.z = (thrust * (float)z);
+Igc/shipIGC.cpp:2981:                 }
+Igc/shipIGC.cpp:2982:                 else
+Igc/shipIGC.cpp:2983:                     localThrust = Vector::GetZero();
+Igc/shipIGC.cpp:2984:             }
+Igc/shipIGC.cpp:2985:             else
+Igc/shipIGC.cpp:2986:             {
+Igc/shipIGC.cpp:2987:                 if ((m_stateM & coastButtonIGC) && !afterF)
+Igc/shipIGC.cpp:2988:                     localThrust = pOrientation->TimesInverse(drag);
+Igc/shipIGC.cpp:2989:                 else
+Igc/shipIGC.cpp:2990:                 {
+Igc/shipIGC.cpp:2991:                     float   negDesiredSpeed;
+Igc/shipIGC.cpp:2992:                     if (afterF)
+Igc/shipIGC.cpp:2993:                         negDesiredSpeed = maxSpeed * (-1.0f - thrustRatio);
+Igc/shipIGC.cpp:2994:                     else
+Igc/shipIGC.cpp:2995:                         negDesiredSpeed = (-0.5f * (1.0f + m_controls.jsValues[c_axisThrottle])) *
+Igc/shipIGC.cpp:2996:                                           ((speed > maxSpeed) ? speed : maxSpeed);
+Igc/shipIGC.cpp:2997: 
+Igc/shipIGC.cpp:2998:                     Vector  desiredVelocity = myBackward * negDesiredSpeed;
+Igc/shipIGC.cpp:2999: 
+Igc/shipIGC.cpp:3000:                     //Find out how much thrust is required to obtain our desired velocity,
+Igc/shipIGC.cpp:3001:                     //accounting for drag
+Igc/shipIGC.cpp:3002: 					// mmf added zero check and debugf
+Igc/shipIGC.cpp:3003: 					if (thrustToVelocity == 0.0f) debugf("shipIGC.cpp ~2394 thrustToVelocity = 0 about to devide by zero\n");
+Igc/shipIGC.cpp:3004:                     localThrust = pOrientation->TimesInverse((desiredVelocity - *pVelocity) / thrustToVelocity + drag);
+Igc/shipIGC.cpp:3005:                 }
+Igc/shipIGC.cpp:4154:             {
+Igc/shipIGC.cpp:4155:                 IIgcSite*       pigc = GetMyMission()->GetIgcSite();
+Igc/shipIGC.cpp:4156:                 IclusterIGC*    pclusterTarget = pigc->GetCluster(this, m_commandTargets[c_cmdPlan]);
+Igc/shipIGC.cpp:4157: 
+Igc/shipIGC.cpp:4158:                 if (pclusterTarget && bShouldUseRipcord(pclusterTarget))
+Igc/shipIGC.cpp:4159:                 {
+Igc/shipIGC.cpp:4160:                     if (IsSafeToRipcord())
+Igc/shipIGC.cpp:4161: 					{
+Igc/shipIGC.cpp:4162:                         pigc->RequestRipcord(this, pclusterTarget);
+Igc/shipIGC.cpp:4163: 						//Xynth #47 7/2010
+Igc/shipIGC.cpp:4164: 						SetStateBits(droneRipMaskIGC, droneRipMaskIGC);
+Igc/shipIGC.cpp:4165: 						SetStateBits(miningMaskIGC, 0); //stop mining when you rip
+Igc/shipIGC.cpp:4166: 					}
+Igc/shipIGC.cpp:4167:                     else
+Igc/shipIGC.cpp:4168:                     {
+Igc/shipIGC.cpp:4169:                         m_pclusterRequestRipcord = pclusterTarget;
+Igc/shipIGC.cpp:4170:                         m_timeRequestRipcord = GetMyLastUpdate() + 5.0f;
+Igc/shipIGC.cpp:4171:                     }
+Igc/shipIGC.cpp:4172:                 }
+Igc/shipIGC.cpp:4173:                 else if (m_pmodelRipcord)
+Igc/shipIGC.cpp:4174: 				{
+Igc/shipIGC.cpp:4175:                     pigc->RequestRipcord(this, NULL);
+Igc/shipIGC.cpp:4176: 					//Xynth #182 7/2010					
+Igc/shipIGC.cpp:4177: 					SetStateBits(droneRipMaskIGC, 0);
+Igc/shipIGC.cpp:4178: 				}
+Igc/shipIGC.cpp:4179:             }
+Igc/shipIGC.cpp:4180:         }
+Igc/shipIGC.cpp:4181:         else
+Igc/shipIGC.cpp:4182:         {
+Igc/shipIGC.cpp:4183:             m_gotoplan.Reset();
+Igc/shipIGC.cpp:4184: 
+Igc/shipIGC.cpp:4185:             if (m_pmodelRipcord)
+Igc/shipIGC.cpp:4186: 			{
+Igc/shipIGC.cpp:4187:                 GetMyMission()->GetIgcSite()->RequestRipcord(this, NULL);
+Igc/shipIGC.cpp:4188: 				//Xynth #182 7/2010
+Igc/shipIGC.cpp:4189: 				SetStateBits(droneRipMaskIGC, 0);
+Igc/shipIGC.cpp:4190: 			}
+Igc/shipIGC.cpp:4191:         }
+Igc/shipIGC.cpp:4192:     }
+Igc/shipIGC.cpp:4193:     else
+Igc/shipIGC.cpp:4194:     {
+Igc/shipIGC.cpp:4195:         if (m_commandTargets[c_cmdPlan] == NULL)
+Igc/shipIGC.cpp:4196:             m_gotoplan.Reset();
+Igc/shipIGC.cpp:4197:     }
+Igc/shipIGC.cpp:4198: }
+Igc/shipIGC.cpp:4199: 
+Igc/shipIGC.cpp:4200: bool    CshipIGC::IsSafeToRipcord(void)
+Igc/shipIGC.cpp:4201: {
+Igc/shipIGC.cpp:4202:     float   speed2 = GetVelocity().LengthSquared();
+Igc/shipIGC.cpp:4203:     if (speed2 < 1.0f)
+Igc/shipIGC.cpp:4204:         return true;
+Igc/shipIGC.cpp:4205: 
+Igc/shipIGC.cpp:4206:     //How far are we going to drift over the ripcord time
+Igc/shipIGC.cpp:4207:     float   tRipcord = m_myHullType.GetRipcordSpeed();
+Igc/shipIGC.cpp:4208:     float   v0 = float(sqrt(speed2));
+Igc/shipIGC.cpp:4209: 
+Igc/shipIGC.cpp:4210:     float   vMax = m_myHullType.GetMaxSpeed();
+Igc/shipIGC.cpp:4211:     float   thrust = m_myHullType.GetThrust();
+Igc/shipIGC.cpp:4212:     float   mass = GetMass();
+Igc/shipIGC.cpp:4213: 
+Igc/shipIGC.cpp:4214:     float   k = thrust / (vMax * mass);
+Igc/shipIGC.cpp:4215: 
+Igc/shipIGC.cpp:4216:     //dV/dT for a ripcording ship is -k V(t)
+Igc/shipIGC.cpp:4217:     //
+Igc/shipIGC.cpp:4218:     // V(t) = v0 exp(-kt)
+Igc/shipIGC.cpp:4219:     // S(t) = -v0 (exp(-kt) - 1) / k
+Igc/shipIGC.cpp:4220: 
+Igc/shipIGC.cpp:4221:     float   s = v0 * float(1.0 - exp(-k * tRipcord)) / k;
+Igc/shipIGC.cpp:4222: 
+Igc/shipIGC.cpp:4223:     //"effective" time till we ripcord is s / current velocity
+Igc/shipIGC.cpp:4224: 
+Igc/shipIGC.cpp:4225:     int state = 0;
+Igc/shipIGC.cpp:4226:     Dodge(this, NULL, &state, false, 1.0f + s / v0);   //Add a bit of a fudge
+Igc/shipIGC.cpp:4227: 
+Igc/shipIGC.cpp:4228:     return (state == 0);
+Igc/shipIGC.h:213: 				SetStateBits(droneRipMaskIGC, 0);
+Igc/shipIGC.h:380:         bool             CanSee(ImodelIGC*   pModel) const
+Igc/shipIGC.h:381:         {
+Igc/shipIGC.h:382:             assert (pModel);
+Igc/shipIGC.h:383: 
+Igc/shipIGC.h:384:             IsideIGC*   side = GetSide();
+Igc/shipIGC.h:385: 
+Igc/shipIGC.h:386:             return (pModel->GetSide() == side) ||                               //Always see things on our side
+Igc/shipIGC.h:387:                    pModel->SeenBySide(side) ||
+Igc/shipIGC.h:388:                    InScannerRange(pModel);                                       //or we can see it ourselves
+Igc/shipIGC.h:389:         }
+Igc/shipIGC.h:743:                     case c_cmdCurrent:
+Igc/shipIGC.h:744:                     {
+Igc/shipIGC.h:745:                         if ((pmodelOld != target) && m_mountedOthers[ET_Magazine])
+Igc/shipIGC.h:746:                             ((ImagazineIGC*)m_mountedOthers[ET_Magazine])->SetLock(0.0f);
+Igc/shipIGC.h:747:                     }
+Igc/shipIGC.h:748:                     break;
+Igc/shipIGC.h:749: 
+Igc/shipIGC.h:750:                     case c_cmdPlan:
+Igc/shipIGC.h:751:                     {
+Igc/shipIGC.h:752:                         ResetWaypoint();
+Igc/shipIGC.h:753: 
+Igc/shipIGC.h:754:                         if (m_pilotType < c_ptPlayer) {
+Igc/shipIGC.h:755:                             //Clear the drilling mask (either it wasn't set or it no longer applies).
+Igc/shipIGC.h:756:                             m_stateM &= ~drillingMaskIGC;
+Igc/shipIGC.h:757: 
+Igc/shipIGC.h:758:                             m_fractionLastOrder = m_fraction;
+Igc/shipIGC.h:759:                             m_timeRanAway = GetMyLastUpdate();
+Igc/shipIGC.h:760:                             m_bRunningAway = false;
+Igc/shipIGC.h:761:                             m_bGettingAmmo = false;
+Igc/shipIGC.h:762:                             m_targetFirstNotSeen = 0;
+Igc/shipIGC.h:763:                             m_checkCooldown = 0;
+Igc/shipIGC.h:764:                         }
+Igc/shipIGC.h:765:                     }
+Igc/shipIGC.h:766:                     break;
+Igc/shipIGC.h:767: 
+Igc/shipIGC.h:768:                     case c_cmdAccepted:
+Igc/shipIGC.h:769:                     {
+Igc/shipIGC.h:770:                         if (m_bAutopilot && (m_pilotType < c_ptPlayer))
+Igc/shipIGC.h:771:                         {
+Igc/shipIGC.h:772:                             SetCommand(c_cmdCurrent, target, cid);
+Igc/shipIGC.h:773:                             SetCommand(c_cmdPlan, target, cid);
+Igc/shipIGC.h:774:                         }
+Igc/shipIGC.h:775:                     }
+Igc/shipIGC.h:776:                     break;
+Igc/shipIGC.h:777:                 }
+Igc/shipIGC.h:778: 
+Igc/shipIGC.h:779:                 if (pmodelOld)
+Igc/shipIGC.h:780:                 {
+Igc/shipIGC.h:781:                     if (pmodelOld->GetObjectType() == OT_buoy)
+Igc/shipIGC.h:782:                         ((IbuoyIGC*)pmodelOld)->ReleaseConsumer();
+Igc/shipIGC.h:783:                     pmodelOld->Release();
+Igc/shipIGC.h:784:                 }
+Igc/shipIGC.h:785: 
+Igc/shipIGC.h:786:                 if ((i == c_cmdAccepted || i == c_cmdCurrent) && 
+Igc/shipIGC.h:787:                     (cidOld != cid || pmodelOld != target))
+Igc/common.cpp:1580:     float   x = dP * orientation.GetRight();
+Igc/common.cpp:1581: 
+Igc/common.cpp:1582:     double  absX = fabs(x);
+Igc/common.cpp:1583:     double  absY = fabs(y);
+Igc/common.cpp:1584:     double  absZ = fabs(z);
+Igc/common.cpp:1585: 
+Igc/common.cpp:1586:     int stateX = (x >= 0.0f ? rightButtonIGC   : leftButtonIGC);
+Igc/common.cpp:1587:     int stateY = (y >= 0.0f ? upButtonIGC      : downButtonIGC);
+Igc/common.cpp:1588:     int stateZ = (z <= 0.0f ? forwardButtonIGC : backwardButtonIGC);
+Igc/common.cpp:1589: 
+Igc/common.cpp:1590:     const float c_fT = 2.0f;
+Igc/common.cpp:1591:     #define GetState(a,b,c)   (abs##a > c_fT * abs##b)                                              \
+Igc/common.cpp:1592:                               ? state##a                                                            \
+Igc/common.cpp:1593:                               : (abs##a > c_fT * abs##c)                                            \
+Igc/common.cpp:1594:                                 ? (state##a | state##b)                                             \
+Igc/common.cpp:1595:                                 : (stateX | stateY | stateZ)
+Igc/common.cpp:1596: 
+Igc/common.cpp:1597:     int state;
+Igc/common.cpp:1598:     if (absX > absY)
+Igc/common.cpp:1599:     {
+Igc/common.cpp:1600:         //x > y
+Igc/common.cpp:1601:         if (absY > absZ)
+Igc/common.cpp:1602:         {
+Igc/common.cpp:1603:             //x > y > z
+Igc/common.cpp:1604:             state = GetState(X, Y, Z);
+Igc/common.cpp:1605:         }
+Igc/common.cpp:1606:         else if (absX > absZ)
+Igc/common.cpp:1607:         {
+Igc/common.cpp:1608:             // x > z > y
+Igc/common.cpp:1609:             state = GetState(X, Z, Y);
+Igc/common.cpp:1610:         }
+Igc/common.cpp:1611:         else
+Igc/common.cpp:1612:         {
+Igc/common.cpp:1613:             //z > x > y
+Igc/common.cpp:1614:             state = GetState(Z, X, Y);
+Igc/common.cpp:1615:         }
+Igc/common.cpp:1616:     }
+Igc/common.cpp:1617:     else
+Igc/common.cpp:1618:     {
+Igc/common.cpp:1619:         //y > x
+Igc/common.cpp:1620:         if (absX > absZ)
+Igc/common.cpp:1621:         {
+Igc/common.cpp:1622:             //y > x > z
+Igc/common.cpp:1623:             state = GetState(Y, X, Z);
+Igc/common.cpp:1624:         }
+Igc/common.cpp:1625:         else if (absY > absZ)
+Igc/common.cpp:1626:         {
+Igc/common.cpp:1627:             // y > z > x
+Igc/common.cpp:1628:             state = GetState(Y, Z, X);
+Igc/common.cpp:1629:         }
+Igc/common.cpp:1630:         else
+Igc/common.cpp:1631:         {
+Igc/common.cpp:1632:             //z > y > x
+Igc/common.cpp:1633:             state = GetState(Z, Y, X);
+Igc/common.cpp:1634:         }
+Igc/common.cpp:1635:     }
+Igc/common.cpp:1636: 
+Igc/common.cpp:1637:     #undef GetState
+Igc/common.cpp:1638: 
+Igc/common.cpp:1639:     return state;
+Igc/common.cpp:1640: }
+Igc/common.cpp:1641: 
+Igc/common.cpp:1642: bool    Ignore(IshipIGC*   pship, ImodelIGC* pmodel)
+Igc/common.cpp:1643: {
+Igc/common.cpp:1644:     bool    ignore = false;
+Igc/common.cpp:1645:     IsideIGC*   mySide = pship->GetSide();
+Igc/common.cpp:1646:     IsideIGC*   hisSide = pmodel->GetSide();
+Igc/common.cpp:1647: 
+Igc/common.cpp:1648:     ObjectType  type = pmodel->GetObjectType();
+Igc/common.cpp:1649: 
+Igc/common.cpp:1650:     if (type == OT_ship)
+Igc/common.cpp:1651:     {
+Igc/common.cpp:1652:         IshipIGC*   pshipHim = (IshipIGC*)pmodel;
+Igc/common.cpp:1653:         IhullTypeIGC*   phtHim = pshipHim->GetBaseHullType();
+Igc/common.cpp:1654:         if (phtHim == NULL)
+Igc/common.cpp:1655:             ignore = true;
+Igc/common.cpp:1656:         else
+Igc/common.cpp:1657:         {
+Igc/common.cpp:1658: 			if ((mySide == hisSide) || IsideIGC::AlliedSides(mySide, hisSide)) // #ALLY Imago 7/8/09
+Igc/common.cpp:1659:             {
+Igc/common.cpp:1660: 
+Igc/common.cpp:1661:                 if ((pshipHim->GetObjectID() < pship->GetObjectID()) &&                 //he has a lower ship ID
+Igc/common.cpp:1662:                     (pship->GetPilotType() < c_ptPlayer) &&                             //if we are a drone &
+Igc/common.cpp:1663:                     (pshipHim->GetPilotType() < c_ptPlayer) &&                          //he a drone that
+Igc/common.cpp:1664:                     ((pshipHim->GetStateM() & miningMaskIGC) == 0) &&                   //isn't mining
+Igc/common.cpp:1665:                     (pshipHim->GetRipcordModel() == NULL))                              //isn't ripcording
+Igc/common.cpp:1666:                 {
+Igc/common.cpp:1667:                     ignore = true;                                                      //ignore him
+Igc/common.cpp:1668:                 }
+Igc/common.cpp:1669:                 else
+Igc/common.cpp:1670:                 {
+Igc/common.cpp:1671:                     HullAbilityBitMask  habmHim = phtHim->GetCapabilities();
+Igc/common.cpp:1672:                     HullAbilityBitMask  habmMe  = pship->GetBaseHullType()->GetCapabilities();
+Igc/common.cpp:1673: 
+Igc/common.cpp:1674:                     ignore = ((habmMe & c_habmLifepod) && (habmHim & c_habmRescue))  ||
+Igc/common.cpp:1675:                              ((habmMe & c_habmRescue)  && (habmHim & c_habmLifepod)) ||
+Igc/common.cpp:1676:                              ((habmMe & c_habmCarrier) && (habmHim & c_habmLandOnCarrier));
+Igc/common.cpp:1677:                 }
+Igc/common.cpp:1678:             }
+Igc/common.cpp:1679:             else if (pship->GetPilotType() < c_ptPlayer)
+Igc/common.cpp:1680:                 ignore = true;                                                          //trucker rules of road: we're heavier
+Igc/common.cpp:1681:         }
+Igc/common.cpp:1682:     }
+Igc/common.cpp:1683:     else if ((type == OT_mine) && ((mySide == hisSide) || IsideIGC::AlliedSides(mySide,hisSide)))   //#ALLY    FIXED IMAGO 7/8/09                    //We can ignore friendly minefields
+Igc/common.cpp:1684:     {
+Igc/common.cpp:1685:         ignore = true;
+Igc/common.cpp:1686:     }
+Igc/common.cpp:1687:     else if (type == OT_buoy)
+Igc/common.cpp:1688:         ignore = true; // No need to dodge/evade other ship's waypoints
+Igc/common.cpp:1689: 
+Igc/common.cpp:1690:     return ignore;
+Igc/common.cpp:1691: }
+Igc/common.cpp:1692: 
+Igc/common.cpp:1693: bool    Dodge(IshipIGC*     pship,
+Igc/common.cpp:1694:               ImodelIGC*    pmodelIgnore,
+Igc/common.cpp:1695:               int*          pstate,
+Igc/common.cpp:1696:               bool          bShipsOnly,
+Igc/common.cpp:1697:               float         tMax)
+Igc/common.cpp:1698: {
+Igc/common.cpp:1699:     IclusterIGC*    pcluster = pship->GetCluster();
+Igc/common.cpp:1700:     assert (pcluster);
+Igc/common.cpp:1701: 
+Igc/common.cpp:1702:     const Vector&       myPosition = pship->GetPosition();
+Igc/common.cpp:1703:     const Vector&       myVelocity = pship->GetVelocity();
+Igc/common.cpp:1704:     const Orientation&  myOrientation = pship->GetOrientation();
+Igc/common.cpp:1705:     float               speed = myVelocity.Length();
+Igc/common.cpp:1706:     float               myRadius = pship->GetRadius() + 1.0f;
+Igc/common.cpp:1707:     float               myAcceleration = pship->GetHullType()->GetThrust() / pship->GetMass();
+Igc/common.cpp:1708: 
+Igc/common.cpp:1709:     HitTest*    myHitTest = pship->GetHitTest();
+Igc/common.cpp:1710: 
+Igc/common.cpp:1711:     ImodelIGC*  pmodelCollide = NULL;
+Igc/common.cpp:1712:     float       tCollide = FLT_MAX;
+Igc/common.cpp:1713:     for (ModelLinkIGC*  pml = (bShipsOnly
+Igc/common.cpp:1714:                                ? (ModelLinkIGC*)(pcluster->GetShips()->first())
+Igc/common.cpp:1715:                                : pcluster->GetPickableModels()->first());
+Igc/common.cpp:1716:          (pml != NULL); pml = pml->next())
+Igc/common.cpp:1717:     {
+Igc/common.cpp:1718:         ImodelIGC*  pmodel = pml->data();
+Igc/common.cpp:1719:         if ((pmodel != pship) &&
+Igc/common.cpp:1720:             (pmodel != pmodelIgnore) &&
+Igc/common.cpp:1721:             (pmodel->GetHitTest()->GetNoHit() != myHitTest))
+Igc/common.cpp:1722: 
+Igc/common.cpp:1723:         {
+Igc/common.cpp:1724:             //Ignore the appropriate things plus minefields if we are going slowly enough.
+Igc/common.cpp:1725:             if (!Ignore(pship, pmodel) && ((speed > 50.0f) || (pmodel->GetObjectType() != OT_mine)))
+Igc/common.cpp:1726:             {
+Igc/common.cpp:1727:                 //Get the distance of closest approach
+Igc/common.cpp:1728:                 const Vector&   hisPosition = pmodel->GetPosition();
+Igc/common.cpp:1729:                 const Vector&   hisVelocity = pmodel->GetVelocity();
+Igc/common.cpp:1730: 
+Igc/common.cpp:1731:                 float   r = pmodel->GetRadius() + myRadius;
+Igc/common.cpp:1732:                 Vector  dp = hisPosition - myPosition;
+Igc/common.cpp:1733:                 float   d2 = dp.LengthSquared();
+Igc/common.cpp:1734: 
+Igc/common.cpp:1735:                 Vector  direction;
+Igc/common.cpp:1736:                 float   t = (d2 > r * r)
+Igc/common.cpp:1737:                             ? solveForImpact(dp,
+Igc/common.cpp:1738:                                              hisVelocity - myVelocity,
+Igc/common.cpp:1739:                                              0.0f,
+Igc/common.cpp:1740:                                              r,
+Igc/common.cpp:1741:                                              &direction)
+Igc/common.cpp:1742:                             : 0.0f;
+Igc/common.cpp:1743: 
+Igc/common.cpp:1744: 
+Igc/common.cpp:1745:                 assert (t >= 0.0f);
+Igc/common.cpp:1746: 
+Igc/common.cpp:1747:                 if (t < tCollide)
+Igc/common.cpp:1748:                 {
+Igc/common.cpp:1749:                     if (tMax >= 0.0f
+Igc/common.cpp:1750:                         ? (t <= tMax)
+Igc/common.cpp:1751:                         : (t*t <= (4.0f * r / myAcceleration)))
+Igc/igc.h:784: typedef short WingmanBehaviourBitMask;
+Igc/igc.h:785: const WingmanBehaviourBitMask   c_wbbmStrafe = 0x01;
+Igc/igc.h:786: const WingmanBehaviourBitMask   c_wbbmUseMissiles = 0x02;
+Igc/igc.h:787: const WingmanBehaviourBitMask   c_wbbmUseMines = 0x04; //needs mines already equipped
+Igc/igc.h:788: //const WingmanBehaviourBitMask   c_wbbmUseChaff = 0x08;
+Igc/igc.h:789: const WingmanBehaviourBitMask   c_wbbmRunAt30Hull = 0x10;
+Igc/igc.h:790: const WingmanBehaviourBitMask   c_wbbmRunAt60Hull = 0x20;
+Igc/igc.h:791: const WingmanBehaviourBitMask   c_wbbmInRangeAggressive = 0x40;
+Igc/igc.h:792: const WingmanBehaviourBitMask   c_wbbmTempSectorAggressive = 0x80;
+Igc/igc.h:2282:         void            Set(const Vector&   v)
+Igc/igc.h:2283:         {
+Igc/igc.h:2284:             float   speed = v.Length();
+Igc/igc.h:2285:             if (speed < 1.0f)
+Igc/igc.h:2286:             {
+Igc/igc.h:2287:                 m_speed = 0;
+Igc/igc.h:2288:             }
+Igc/igc.h:2289:             else
+Igc/igc.h:2290:             {
+Igc/igc.h:2291:                 assert (speed < 1000.0f);
+Igc/igc.h:2292: 
+Igc/igc.h:2293:                 m_speed = ((unsigned short)(speed * 8.0f)) |
+Igc/igc.h:2294:                                      ((unsigned short)(v.x >= 0.0f ? 0 : 0x2000)) |
+Igc/igc.h:2295:                                      ((unsigned short)(v.y >= 0.0f ? 0 : 0x4000)) |
+Igc/igc.h:2296:                                      ((unsigned short)(v.z >= 0.0f ? 0 : 0x8000));
+Igc/igc.h:2297: 
+Igc/igc.h:2298:                 m_xVelocity = (float)fabs(v.x / speed);
+Igc/igc.h:2299:                 m_yVelocity = (float)fabs(v.y / speed);
+Igc/igc.h:2300:                 m_zVelocity = (float)fabs(v.z / speed);
+Igc/igc.h:2301:             }
+Igc/igc.h:2302:         }
+Igc/igc.h:2303: 
+Igc/igc.h:2304:         void            Export(Vector* pVelocity)  const
+Igc/igc.h:2305:         {
+Igc/igc.h:2306:             float   speed =  0.125f * (float)(m_speed & 0x1fff);
+Igc/igc.h:2307: 
+Igc/igc.h:2308:             pVelocity->x = m_xVelocity * ((m_speed & 0x2000) ? -speed : speed);
+Igc/igc.h:2309:             pVelocity->y = m_yVelocity * ((m_speed & 0x4000) ? -speed : speed);
+Igc/igc.h:2310:             pVelocity->z = m_zVelocity * ((m_speed & 0x8000) ? -speed : speed);
+Igc/igc.h:2444: class  ServerSingleShipUpdate : public ServerLightShipUpdate  //46 bytes
+Igc/igc.h:2445: {
+Igc/igc.h:2446:     public:
+Igc/igc.h:2447:         Time                    time;                   //4
+Igc/igc.h:2448:         Vector                  position;               //12
+Igc/igc.h:2449: 
+Igc/igc.h:2450:         CompactOrientation      orientation;            //8
+Igc/igc.h:2451:         CompactVelocity         velocity;               //5
+Igc/igc.h:2452:         CompactTurnRates        turnRates;              //3
+Igc/igc.h:2453:         CompactShipFractions    fractions;              //5
+Igc/igc.h:2454:         BytePercentage          power;                  //1
+Igc/magazineigc.cpp:103:     {
+Igc/magazineigc.cpp:104:         if (m_ship->GetRipcordModel() != NULL)
+Igc/magazineigc.cpp:105:             m_lock = 0.0f;
+Igc/magazineigc.cpp:106:         else
+Igc/magazineigc.cpp:107:         {
+Igc/magazineigc.cpp:108:             ImodelIGC*  ptarget = m_ship->GetCommandTarget(c_cmdCurrent);
+Igc/magazineigc.cpp:109: 
+Igc/magazineigc.cpp:110:             float   maxLock = m_missileType->GetMaxLock();
+Igc/magazineigc.cpp:111:             if (m_ship->GetStateM() & missileFireIGC)
+Igc/magazineigc.cpp:112:             {
+Igc/magazineigc.cpp:113:                 //Twizzle anything now so that nothing needs to be adjusted after shooting (which may cause a terminate)
+Igc/magazineigc.cpp:114:                 float   oldLock = m_lock;
+Igc/magazineigc.cpp:115:                 m_lock = 0.0f;
+Igc/magazineigc.cpp:116:                 m_timeLoaded = now + m_missileType->GetLoadTime();
+Igc/magazineigc.cpp:117: 
+Igc/magazineigc.cpp:118:                 m_pMission->GetIgcSite()->FireMissile(m_ship,
+Igc/magazineigc.cpp:119:                                                       this,
+Igc/magazineigc.cpp:120:                                                       now,
+Igc/magazineigc.cpp:121:                                                       ptarget,
+Igc/magazineigc.cpp:122:                                                       oldLock * maxLock);
+Igc/magazineigc.cpp:123: 
+Igc/magazineigc.cpp:124:             }
+Igc/magazineigc.cpp:125:             else
+Igc/magazineigc.cpp:126:             {
+Igc/magazineigc.cpp:127:                 if (ptarget && (ptarget->GetCluster() == m_ship->GetCluster()) &&   //have a target,
+Igc/magazineigc.cpp:128:                     ((ptarget->GetSide() != m_ship->GetSide()) && (!IsideIGC::AlliedSides(ptarget->GetSide(),m_ship->GetSide()))) &&  //and not on friendly sides #ALLY mmf 11/08 added !   IMAGO FIXED 7/8/09
+Igc/magazineigc.cpp:129:                     (m_missileType->HasCapability(c_eabmWarpBomb)                   //is a warp bomb
+Igc/magazineigc.cpp:130:                      ? (ptarget->GetObjectType() == OT_warp)                        //and target is a warp
+Igc/magazineigc.cpp:131:                      : (ptarget->GetAttributes() & c_mtDamagable)) &&               //is not a warp bomb and we can do damage to it
+Igc/magazineigc.cpp:132:                     m_ship->CanSee(ptarget))                                        //and we can see it,
+Igc/magazineigc.cpp:133:                 {
+Igc/magazineigc.cpp:134:                     float   lifespan = m_missileType->GetLifespan();
+Igc/magazineigc.cpp:135:                     float   maxRange = m_missileType->GetInitialSpeed() * lifespan + 0.5f * m_missileType->GetAcceleration() * lifespan * lifespan;
+Igc/magazineigc.cpp:136: 
+Igc/magazineigc.cpp:137:                     Vector  dP = (ptarget->GetPosition() - m_ship->GetPosition());
+Igc/magazineigc.cpp:138:                     float   l2 = dP.LengthSquared();
+Igc/magazineigc.cpp:139: 
+Igc/magazineigc.cpp:140:                     float   oldLock = m_lock;
+Igc/magazineigc.cpp:141:                     m_lock = 0.0f;
+Igc/magazineigc.cpp:142: 
+Igc/magazineigc.cpp:143:                     if ((l2 > 1.0f) && (l2 < maxRange * maxRange))
+Igc/magazineigc.cpp:144:                     {
+Igc/magazineigc.cpp:145:                         if (maxLock == 0.0f)
+Igc/magazineigc.cpp:146:                             m_lock = 1.0f;
+Igc/magazineigc.cpp:147:                         else
+Igc/magazineigc.cpp:148:                         {
+Igc/magazineigc.cpp:149:                             dP.SetNormalize();
+Igc/magazineigc.cpp:150: 
+Igc/magazineigc.cpp:151:                             double  dot = -(dP * m_ship->GetOrientation().GetBackward());
+Igc/magazineigc.cpp:152:                             float   angleOffBow = (dot >= 1.0)
+Igc/magazineigc.cpp:153:                                                   ? 0.0f
+Igc/magazineigc.cpp:154:                                                   : ((dot <= -1.0f)
+Igc/magazineigc.cpp:155:                                                      ? pi
+Igc/magazineigc.cpp:156:                                                      : (float)acos(dot));
+Igc/magazineigc.cpp:157: 
+Igc/magazineigc.cpp:158:                             float   lockTime = m_missileType->GetLockTime();
+Igc/magazineigc.cpp:159:                             float   lockAngle = m_missileType->GetLockAngle();
+Igc/magazineigc.cpp:160: 
+Igc/magazineigc.cpp:161:                             float   v = (lockAngle - angleOffBow) / lockAngle;
+Igc/magazineigc.cpp:162:                             if (v < 0.0)
+Igc/magazineigc.cpp:163:                                 v *= lockTime;
+Igc/magazineigc.cpp:164: 
+Igc/magazineigc.cpp:165:                             m_lock = oldLock + v * dt / (ptarget->GetObjectType() == OT_ship 
+Igc/magazineigc.cpp:166:                                                          ? (lockTime * ((IshipIGC*)ptarget)->GetHullType()->GetECM())
+Igc/magazineigc.cpp:167:                                                          : lockTime);
+Igc/sounds.h:390: DEFSOUND(droneInTransit)        // In transit

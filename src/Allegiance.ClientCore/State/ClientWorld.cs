@@ -1698,6 +1698,7 @@ public sealed partial class ClientWorld
         _prevOwnAlarms = null;   // P711 — fresh session: re-arm the low-status alarm snapshots
         MyAcceptedCommand = null;
         _myQueuedCommand = null;
+        _moneyRequest = null;
         JoinedShipId = null;
         JoinedMissionCookie = null;
         JoinError = null;
@@ -1949,6 +1950,9 @@ public sealed partial class ClientWorld
                 // P442 — per-ship money delta (bucket spend, purchase, refund,
                 // player donation).
                 Apply(moneyChange);
+                break;
+            case RequestMoney requestMoney:
+                GetMoneyRequest(requestMoney.ShipIdRequest, requestMoney.Amount, requestMoney.HidFor);
                 break;
             case AutoDonateUpdate autoDonateUpdate:
                 // P442 — a player's auto-donate relationship (payday routing) +
@@ -2824,6 +2828,7 @@ public sealed partial class ClientWorld
     /// </summary>
     private void Apply(QueuedCommandUpdate u)
     {
+        if (u.HasPending) _moneyRequest = null;
         _myQueuedCommand = u.HasPending
             ? new QueuedCommandState(u.CommandId, u.TargetType, u.TargetId)
             : null;
@@ -3878,33 +3883,7 @@ public sealed partial class ClientWorld
             : ClientSoundEventKind.ChatRegular;       // (:4557)
     }
 
-    private void Apply(ChatMessage m)
-    {
-        if (IsPilotMuted(m.SidSender)) return;
-        var voice = Allegiance.Core.Audio.NativeVoiceCatalog.Resolve(m.VoiceOver, m.Message, m.MessageIsAbsent);
-        if (m.MessageIsAbsent && m.VoiceOver != Na)
-            m.Message = Allegiance.Core.Audio.NativeVoiceCatalog.Caption(m.VoiceOver);
-        _events.Record(m);
-        // P710 — drive the incoming-message announcement cue. The sender is a
-        // team leader when the per-side leader (SET_TEAM_LEADER) is the sender's
-        // own ship (native bIsLeader, trekigc.cpp:4464).
-        short sender = m.SidSender;
-        bool senderIsLeader =
-            sender != Na
-            && _ships.TryGetValue(sender, out var ent)
-            && TeamLeaderShipIdFor(ent.SideId) == sender;
-        var kind = ClassifyChatSound(m, MyShipId, senderIsLeader);
-        if (kind is { } k && (k != ClientSoundEventKind.ChatVoiceOver || voice is not null))
-            RecordSoundEvent(k, k == ClientSoundEventKind.ChatVoiceOver ? m.VoiceOver : sender, voice: voice);
-        // Server-hosted equivalents of WinTrek/trekigc.cpp:3019-3067,
-        // PostText's critical/noncritical sound and HUD tip (:3086-3135).
-        if (m.SidSender == -1 && m.ChatTarget == (int)ChatTarget.Individual &&
-            m.OidRecipient == MyShipId && NotificationCue.IsNotification(m.VoiceOver))
-        {
-            _feedbackLines.Add(new FeedbackLine(m.Message, m.VoiceOver == NotificationCue.Critical, NowSeconds(), SoundAlreadyQueued: true));
-            if (_feedbackLines.Count > MaxFeedbackLines) _feedbackLines.RemoveAt(0);
-        }
-    }
+    private void Apply(ChatMessage m) => ReceiveChat(m);
 
     /// <summary>P626 — <c>FM_S_BALLOT(17)</c>: a new in-flight ballot was
     /// announced (P187). The client latches it as the <see cref="ActiveBallot"/>
@@ -3921,19 +3900,7 @@ public sealed partial class ClientWorld
             ChatTarget = (int)ChatTarget.Everyone,
         });
     }
-    private void Apply(ChatBuoy m)
-    {
-        if (IsPilotMuted(m.Cd.SidSender)) return;
-        // Both messages share ChatData (Messages.h:204-223,716-722).
-        var voice = Allegiance.Core.Audio.NativeVoiceCatalog.Resolve(m.Cd.VoiceOver, m.Message, m.MessageIsAbsent);
-        if (m.MessageIsAbsent && m.Cd.VoiceOver != Na)
-            m.Message = Allegiance.Core.Audio.NativeVoiceCatalog.Caption(m.Cd.VoiceOver);
-        _events.Record(m);
-        var chat = new ChatMessage { Message = m.Message, Cd = m.Cd, MessageIsAbsent = m.MessageIsAbsent };
-        var kind = ClassifyChatSound(chat, MyShipId, senderIsLeader: false);
-        if (kind == ClientSoundEventKind.ChatVoiceOver && voice is not null)
-            RecordSoundEvent(kind.Value, m.Cd.VoiceOver, voice: voice);
-    }
+    private void Apply(ChatBuoy m) => ReceiveChat(m);
     private void Apply(KillShip m)
     {
         _events.Record(m);
@@ -3972,6 +3939,7 @@ public sealed partial class ClientWorld
             if (_cameraOverrideRequests.Count > MaxCameraOverrideRequests)
                 _cameraOverrideRequests.RemoveAt(0);
         }
+        ChangeGameState();
     }
 
     /// <summary>P578 — the best-effort display name for a ship entity: its
@@ -4306,6 +4274,7 @@ public sealed partial class ClientWorld
         MyShipId = null;
         MyAcceptedCommand = null;
         _myQueuedCommand = null;
+        _moneyRequest = null;
         JoinedShipId = null;
         JoinedMissionCookie = null;
         JoinError = null;

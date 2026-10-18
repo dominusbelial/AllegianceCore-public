@@ -42,6 +42,74 @@ unchanged. See the [HD-2 report](reports/HD2_PBR_CLIENT.md),
 [baseline triplet](reports/HD2_assets/voice-baseline.json) and
 [corrected triplet](reports/HD2_assets/voice-fixed.json).
 
+## P734b observation (2026-10-17)
+
+The 2026-10-17 light gate ran **one** unfiltered sweep: **8,284 pass /
+1 fail / 3 existing optional private Meshy-pack skips**. Project counts are recorded in the linked report and invocation ledger.
+After all projects finished, each failed method passed **3/3 fresh exact-method
+isolated invocations**:
+
+| Method | Full-suite observation | Isolated evidence |
+| --- | --- | --- |
+| `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | System.TimeoutException : no OnPeerJoined for raw peer | 3/3 pass: [1](reports/P734b_assets/suite-retry-000-1.trx.gz), [2](reports/P734b_assets/suite-retry-000-2.trx.gz), [3](reports/P734b_assets/suite-retry-000-3.trx.gz) |
+
+This meets the brief's explicit load/timing-flake rule. No assertion, timeout,
+transport behavior or quarantine setting was changed. The isolated passes
+do not establish an underlying fix.
+
+Separately, all **208 methods × 3** focused invocations passed (978 cases,
+zero skips), the unchanged never-parks test passed **5/5** (maximum stopped
+with target 2.014 seconds), and the local civ25/3 unlocked mixed-fleet Brawl
+showcase reached **two natural Stage Over events** with automatic rotation
+and zero simulation-stage failures. Earlier incomplete scene attempts are
+retained as diagnostics rather than passing proof. P733 is absent, so the
+brief's unlocked fallback was used. No second full sweep was run in this lane.
+
+See the [P734b merge report](reports/P709_PARITY_WAVE12.md#p734b-merge),
+[invocation ledger](reports/P734b_assets/verification.json), and
+[summary](reports/P734b_assets/summary.json).
+
+## P734 observation (2026-10-17)
+
+Both complete final suite sweeps were clean: **16,520 pass / 0 fail / 6
+existing optional Meshy-pack skips**. Each sweep recorded Core 4,807/0/0,
+ClientCore 1,174/0/0, MonoGame 2,260/0/3 and Lobby 19/0/0. The final affected
+cohort passed 91 methods × 3 exact-method runs / 537 case passes without skips;
+the final never-parks gate passed 10/10. The local unlocked civ25/3 showcase
+reached two natural Stage Over events with automatic rotation and no
+simulation-stage failures.
+
+Earlier overlapping **Core-only diagnostic attempts**, before the docking
+merge correction, observed two unrelated failures. After the completed final
+sweeps, both passed **3/3 fresh exact-method isolated invocations**, satisfying
+P734's explicit load/timing-flake rule:
+
+| Method | Diagnostic failure | Isolated evidence |
+| --- | --- | --- |
+| `GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer` | No matching fixture ship | `P734_assets/suite-retry-000-{1,2,3}.trx.gz`: 3/3 pass |
+| `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | No raw-peer join event before the original timeout | `P734_assets/suite-retry-001-{1,2,3}.trx.gz`: 3/3 pass |
+
+No assertion, deadline or quarantine setting was changed for these passes;
+they do not establish the underlying cause of the intermittent observations.
+The same diagnostics also caught
+`P699cStationCorpusTests.Npc_docking_thrusters_survive_idle_combat_and_clear_on_next_order`:
+that was a real merge regression, corrected by preserving autopilot thrust
+when the combat plot is idle. It passed the immediate three isolated checks,
+the full three-run affected cohort, and both final Core sweeps. It is **not
+classified as a flake**.
+
+One original MonoGame invocation returned zero without a completed TRX or final
+summary. That incomplete attempt is retained and excluded from the complete
+suite counts. An unfiltered direct VSTest invocation of the already-built
+assembly completed it, including the 605-second human-flight soak. Both
+completed MonoGame runs contain the same three existing optional private-pack
+skips; no required local proof was skipped.
+
+See the [P734 merge report](reports/P708_PARITY_WAVE11.md#p734-merge),
+[final ledger](reports/P734_assets/verification-final.json),
+[incomplete record](reports/P734_assets/verification-incomplete.json), and
+[final audit](reports/P734_assets/summary.json).
+
 ## P716 observation (2026-10-16)
 
 Full-suite run 2 reported Core **4,706 pass / 1 fail / 0 skip** with a single
@@ -258,6 +326,61 @@ including both P703 research matchups again. MonoGame completed **2,208 pass /
 0 fail / 3 existing optional Meshy-pack skips**, including the 605-second
 human-flight soak. Lobby completed **19 pass / 0 fail / 0 skip**. No additional
 failures required classification. See the [P703 report](reports/P703_RESEARCH_COMMANDER.md).
+
+## P708 observation (2026-10-16)
+
+The first unfiltered Core run passed **4,729/4,729**. The final-build Core rerun
+reported **4,727 pass / 2 fail / 0 skip**. Both failed methods then passed
+**3/3 exact-method isolated invocations**, satisfying P708's load-flake rule:
+
+| Method | Full-suite failure | Isolated evidence |
+| --- | --- | --- |
+| `P699bPodLoadTests.Hundred_pods_per_side_return_from_Alderan_with_relaunch_traffic` | One of 200 pods exhausted oxygen; 199 docked and all 200 reached home. | `P708_assets/suite-retry-001-{1,2,3}.trx.gz`: 3/3 pass |
+| `MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction` | B did not receive the mine EXPORT before the original deadline. | `P708_assets/suite-retry-000-{1,2,3}.trx.gz`: 3/3 pass |
+
+ClientCore passed **1,073/1,073**; MonoGame passed **2,234** with **0 failures**
+and the three existing optional Meshy-pack skips. The local P542 projectile
+proof and P660 15v15 showcase were enabled. Neither failed method, its
+assertions/deadlines, the pod/docking implementation, nor quarantine settings
+were changed to obtain the isolated passes.
+
+The separate required parking gate was **7 pass / 3 fail**, with stopped combat
+targets in runs 02, 03 and 10. Recovery in runs 04–06 does **not** satisfy its
+zero-failure requirement. The wave report preserves that integration hold,
+all ten attempts, and the entry-revision comparison; it does not relabel the
+parking gate as passed on the basis of the broad suites or isolated recovery.
+The separately built entry revision passed 3/3 parking runs, and the final P708
+build passed 3/3 post-suite parking retries. Those observations do not identify
+a cause or replace the required ten-run gate; no P707 attribution is claimed.
+
+See [P708 report](reports/P708_PARITY_WAVE11.md),
+[invocation ledger](reports/P708_assets/verification.json), and
+[scope audit](reports/P708_assets/scope-audit.json).
+
+## P709 observation (2026-10-16)
+
+The unfiltered sequential suites reported Core **4,691 pass / 2 fail / 0 skip**,
+ClientCore **1,087 pass / 0 fail / 0 skip** (local P660 showcase enabled), and
+MonoGame **2,237 pass / 0 fail / 3 existing optional private Meshy-pack skips**.
+After all three suites finished, both failed Core methods passed **3/3
+exact-method isolated invocations**:
+
+| Full-suite method | Symptom | Isolated result |
+| --- | --- | --- |
+| `LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy` | Owner/teammate loadout-change receipt collection empty at `Assert.Contains`. | 3/3 pass |
+| `LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission` | Countdown receipt collection empty at `Assert.Single`. | 3/3 pass |
+
+These satisfy P709's explicit load-flake rule. No assertions, timeouts,
+quarantine settings, or transport/receipt behavior were changed. Isolated
+passes do not establish an underlying fix. See the [P709 report](reports/P709_PARITY_WAVE12.md)
+and [invocation ledger](reports/P709_assets/verification.json) for commands,
+raw counters, messages/stacks, and individual TRX/log locations.
+
+The separate mandatory P700 parking gate was **8 pass / 2 fail** across ten
+isolated runs. That zero-failure gate remains **failed**; it is not waived by
+this receipt-flake classification. Parking/dispenser/readiness fixes are
+explicitly assigned to P707 by the brief. The report separately records the
+untouched-base comparison.
 
 ## P702 observation (2026-10-15)
 
@@ -1747,3 +1870,13 @@ See the [merge appendix](reports/HD2_PBR_CLIENT.md#p738-merge-onto-master),
 ### P738 / HD-2 completed assembly sweep
 
 The single ClientCore sweep passed **1279/0/0**. The single MonoGame sweep recorded **2427 pass / 0 fail / 3 skip**. The skipped cases and their prerequisite reasons are retained in the [validation summary](reports/P738_HD2_assets/validation-summary.json). The Core transport case above was the only failing method; it passed all three fresh isolated reruns. No second full sweep was run.
+
+## P738 / P734b merge observation
+
+The completed integration sweep retained these observed failures. Each originally failing case then passed in all three fresh isolated method invocations:
+
+| Case | Symptom | Qualification |
+|---|---|---|
+| `Allegiance.Core.Tests.LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count` | ship must have docked for the secure to fire | 3/3; `isolation-000-1, isolation-000-2, isolation-000-3` |
+
+These meet P738's explicit load-flake rule; isolated passes do not establish the underlying causes or a fix. No assertion, deadline, quarantine trait or product code was changed. [Ledger](reports/P738_P734b_assets/verification.json), [qualification](reports/P738_P734b_assets/flake-qualification.json), [raw evidence](reports/P738_P734b_assets/validation-logs.tar.gz).

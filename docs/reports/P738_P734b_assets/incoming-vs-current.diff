@@ -1,0 +1,2063 @@
+--- ours/src/Allegiance.ClientCore.Game/Flight/CommandActionInput.cs
++++ merged/src/Allegiance.ClientCore.Game/Flight/CommandActionInput.cs
+@@ -12,7 +12,7 @@
+     private readonly ActionPressEdges _edges = new();
+     private static readonly string[] Actions = ["AcceptCommand", "ExecuteCommand", "RejectCommand", "ClearCommand", "TargetCommand"];
+     internal readonly record struct Result(OrderChange? Request = null, bool ChangeSelection = false,
+-        QueuedCommandState? Selection = null, bool Engage = false, short? JoinWing = null);
++        QueuedCommandState? Selection = null, bool Engage = false, short? JoinWing = null, PlayerDonate? Donation = null);
+ 
+     internal void Prime(KeyboardState keys, ActionMap map) =>
+         _edges.Prime(Actions.Select(a => (a, map.IsDownMostSpecific(keys, a))));
+@@ -23,6 +23,11 @@
+             clear = Edge("ClearCommand"), target = Edge("TargetCommand");
+         bool Edge(string action) => _edges.Observe(action, map.IsDownMostSpecific(keys, action), suppressed);
+         if (world.MyShipId is not { } me) return default;
++        if (world.PendingMoneyRequest is not null)
++        {
++            if (accept || execute) return new(Donation: world.AcceptMoneyRequest());
++            if (reject) { world.RejectMoneyRequest(); return default; }
++        }
+         if ((accept || execute) && world.AcceptQueuedCommand() is { } command)
+         {
+             short? wing = command.CommandId == OrderChange.CidJoin ? world.Ships[me].WingId : null;
+--- ours/src/Allegiance.ClientCore.Game/Game1.Orders.cs
++++ merged/src/Allegiance.ClientCore.Game/Game1.Orders.cs
+@@ -56,6 +56,7 @@
+                 _session.SendChat("", Allegiance.Core.Sim.ChatTarget.Individual, pickup.TargetId,
+                     commandId: OrderChange.CidPickup, objectModel: true, oidTarget: rescuer, otTarget: (short)IgcObjectType.Ship);
+         }
++        if (result.Donation is { } donation) _session.SendPlayerDonation(donation);
+         if (result.Request is { CommandId: not OrderChange.CidNone }) _sound?.PlayCommandAccepted();
+         if (result.Request is { } request)
+             _session.SendOrderChange(request.ShipID, request.CommandId, request.Command, request.ObjectType, request.ObjectID);
+--- ours/src/Allegiance.ClientCore/Session/ConnectionSession.cs
++++ merged/src/Allegiance.ClientCore/Session/ConnectionSession.cs
+@@ -407,7 +407,7 @@
+         ChatTarget target = ChatTarget.Everyone,
+         short oidRecipient = 0,
+         short voiceOver = -1,
+-        short commandId = 0,
++        short commandId = -1,
+         bool objectModel = false,
+         short oidTarget = -1,
+         short otTarget = -1,
+@@ -428,6 +428,18 @@
+         };
+         Send(FedPacket.Pack(new[] { msg.Encode() }));
+     }
++
++    /// <summary>Igc/igc.h:4812-4825: formatted chat uses the same wire path.</summary>
++    public void SendChatf(ChatTarget target, short recipient, short voice, string format, params object?[] args) =>
++        SendChat(CallbackText.Format(format, args), target, recipient, voice);
++
++    /// <summary>WinTrek.cpp:10627-10652; clintlib.cpp:2564-2574.</summary>
++    public void SendPlayerDonation(PlayerDonate donation) => Send(FedPacket.Pack(new[] { donation.Encode() }));
++
++    public void SendMoneyRequest(int amount, short hullId) => Send(FedPacket.Pack(new[]
++    {
++        new RequestMoney { Amount = amount, HidFor = hullId, ShipIdRequest = -1 }.Encode(),
++    }));
+ 
+     /// <summary>Send a real <c>FM_CS_CHATBUOY(108)</c> — the message the native
+     /// <c>BaseClient::SendChat</c> actually uses when the chat targets a buoy
+@@ -449,7 +461,7 @@
+         short oidRecipient,
+         DataBuoyIGC db,
+         short voiceOver = -1,
+-        short commandId = 0,
++        short commandId = -1,
+         bool objectModel = false)
+     {
+         var msg = new ChatBuoy
+@@ -1113,6 +1125,9 @@
+                         // refund, player donation).
+                         _world.Apply(MoneyChange.Decode(m));
+                         break;
++                    case RequestMoney.Fmid:
++                        _world.Apply(RequestMoney.Decode(m));
++                        break;
+                     case AutoDonateUpdate.Fmid:
+                         // P442 — a player's auto-donate relationship (payday
+                         // routing) + any one-time gift.
+--- ours/src/Allegiance.ClientCore/State/ClientWorld.Callbacks.cs
++++ merged/src/Allegiance.ClientCore/State/ClientWorld.Callbacks.cs
+@@ -0,0 +1,115 @@
++using Allegiance.Core.Sim;
++using Allegiance.Core.Wire;
++
++namespace Allegiance.ClientCore.State;
++
++public sealed partial class ClientWorld
++{
++    /// <summary>The PostPlainText consumer, WinTrek/trekigc.cpp:3067-3083.
++    /// Game1.UpdateFeedback drains this queue into the HUD under the session gate.</summary>
++    public void PostPlainText(bool critical, string text) =>
++        PostPlainText(critical, text, soundAlreadyQueued: false);
++
++    private void PostPlainText(bool critical, string text, bool soundAlreadyQueued)
++    {
++        _feedbackLines.Add(new FeedbackLine(text, critical, NowSeconds(), SoundAlreadyQueued: soundAlreadyQueued));
++        if (_feedbackLines.Count > MaxFeedbackLines) _feedbackLines.RemoveAt(0);
++    }
++
++    /// <summary>WinTrek/trekigc.cpp:3086-3102. Composite format replaces printf.</summary>
++    public void PostText(bool critical, string format, params object?[] args) =>
++        PostPlainText(critical, CallbackText.Format(format, args));
++
++    /// <summary>Text belongs only to the actual local ship, including while boarded;
++    /// the source carrier is eligible for sound, not text (trekigc.cpp:2994-3018).</summary>
++    public void PostNotificationText(short modelShipId, bool critical, string format, params object?[] args)
++    {
++        if (MyShipId == modelShipId) PostText(critical, format, args);
++    }
++
++    public readonly record struct MoneyRequestState(short SenderId, int Amount, short HullId, double ExpiresAt);
++    private MoneyRequestState? _moneyRequest;
++
++    /// <summary>WinTrek.cpp:7686-7687,10728-10759: one queued request, 15 seconds;
++    /// expiry is strict. Reading it never transfers money.</summary>
++    public MoneyRequestState? PendingMoneyRequest =>
++        _moneyRequest is { } request && NowSeconds() <= request.ExpiresAt ? request : null;
++
++    public void GetMoneyRequest(short senderId, int amount, short hullId)
++    {
++        // appmsg.cpp:2633-2635 only calls back for a resolved ship.
++        if (!_ships.ContainsKey(senderId)) return;
++        _myQueuedCommand = null;
++        _moneyRequest = new(senderId, amount, hullId, NowSeconds() + 15);
++        if (senderId != MyShipId)
++        {
++            string hull = MissionCore?.HullTypes.TryGetValue(hullId, out var type) == true ? type.Name : $"hull {hullId}";
++            PostText(true, "{0} has requested ${1} to buy a {2}.  Press Accept command to approve it.",
++                DisplayNameFor(senderId), amount, hull);
++        }
++    }
++
++    /// <summary>WinTrek.cpp:10627-10652: consume once, clamp to the current wallet.
++    /// The caller sends PLAYER_DONATE; only the server changes the wallets.</summary>
++    public PlayerDonate? AcceptMoneyRequest()
++    {
++        var request = PendingMoneyRequest;
++        _moneyRequest = null;
++        if (request is not { } r || r.SenderId == MyShipId || !_ships.ContainsKey(r.SenderId)) return null;
++        int amount = Math.Min(r.Amount, MyMoney ?? 0);
++        return amount > 0 ? new PlayerDonate { ShipID = r.SenderId, MoneyGiven = amount } : null;
++    }
++
++    public void RejectMoneyRequest() => _moneyRequest = null;
++
++    /// <summary>Native ChangeGameState refreshes the game-state container after
++    /// KILL_SHIP (clintlib/appmsg.cpp:2905; WinTrek/WinTrek.h:258). Subscribers
++    /// observe the already-applied state, under the caller's gate.</summary>
++    public event Action? GameStateChanged;
++    public long GameStateRevision { get; private set; }
++    public void ChangeGameState()
++    {
++        GameStateRevision++;
++        GameStateChanged?.Invoke();
++    }
++
++    /// <summary>BaseClient::ReceiveChat notifies after insertion
++    /// (clintlib/clintlib.cpp:2160-2172; WinTrek/trekigc.cpp:4788-4822).
++    /// The same callback covers ordinary chat and chat carrying a buoy.</summary>
++    public event Action? ChatReceived;
++    public void ReceiveChat(ChatMessage message)
++    {
++        if (IsPilotMuted(message.SidSender)) return;
++        var voice = Allegiance.Core.Audio.NativeVoiceCatalog.Resolve(message.VoiceOver, message.Message, message.MessageIsAbsent);
++        if (message.MessageIsAbsent && message.VoiceOver != Na)
++            message.Message = Allegiance.Core.Audio.NativeVoiceCatalog.Caption(message.VoiceOver);
++        _events.Record(message);
++        // Resolve captions and voice before notifying listeners, retaining the
++        // P710 precedence and P732 immutable voice template (trekigc.cpp:4530-4560).
++        short sender = message.SidSender;
++        bool senderIsLeader = sender != Na
++            && _ships.TryGetValue(sender, out var entity)
++            && TeamLeaderShipIdFor(entity.SideId) == sender;
++        var kind = ClassifyChatSound(message, MyShipId, senderIsLeader);
++        if (kind is { } k && (k != ClientSoundEventKind.ChatVoiceOver || voice is not null))
++            RecordSoundEvent(k, k == ClientSoundEventKind.ChatVoiceOver ? message.VoiceOver : sender, voice: voice);
++        if (message.SidSender == -1 && message.ChatTarget == (int)ChatTarget.Individual
++            && message.OidRecipient == MyShipId && NotificationCue.IsNotification(message.VoiceOver))
++            PostPlainText(message.VoiceOver == NotificationCue.Critical, message.Message, soundAlreadyQueued: true);
++        ChatReceived?.Invoke();
++    }
++
++    public void ReceiveChat(ChatBuoy message)
++    {
++        if (IsPilotMuted(message.Cd.SidSender)) return;
++        var voice = Allegiance.Core.Audio.NativeVoiceCatalog.Resolve(message.Cd.VoiceOver, message.Message, message.MessageIsAbsent);
++        if (message.MessageIsAbsent && message.Cd.VoiceOver != Na)
++            message.Message = Allegiance.Core.Audio.NativeVoiceCatalog.Caption(message.Cd.VoiceOver);
++        _events.Record(message);
++        var chat = new ChatMessage { Message = message.Message, Cd = message.Cd, MessageIsAbsent = message.MessageIsAbsent };
++        var kind = ClassifyChatSound(chat, MyShipId, senderIsLeader: false);
++        if (kind == ClientSoundEventKind.ChatVoiceOver && voice is not null)
++            RecordSoundEvent(kind.Value, message.Cd.VoiceOver, voice: voice);
++        ChatReceived?.Invoke();
++    }
++}
+--- ours/src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs
++++ merged/src/Allegiance.ClientCore/State/ClientWorld.MissionEntry.cs
+@@ -45,6 +45,7 @@
+         _roster.Clear();
+         MyAcceptedCommand = null;
+         _myQueuedCommand = null;
++        _moneyRequest = null;
+         MarkSnapshotDirty();
+     }
+ 
+--- ours/src/Allegiance.ClientCore/State/ClientWorld.cs
++++ merged/src/Allegiance.ClientCore/State/ClientWorld.cs
+@@ -1698,6 +1698,7 @@
+         _prevOwnAlarms = null;   // P711 — fresh session: re-arm the low-status alarm snapshots
+         MyAcceptedCommand = null;
+         _myQueuedCommand = null;
++        _moneyRequest = null;
+         JoinedShipId = null;
+         JoinedMissionCookie = null;
+         JoinError = null;
+@@ -1949,6 +1950,9 @@
+                 // P442 — per-ship money delta (bucket spend, purchase, refund,
+                 // player donation).
+                 Apply(moneyChange);
++                break;
++            case RequestMoney requestMoney:
++                GetMoneyRequest(requestMoney.ShipIdRequest, requestMoney.Amount, requestMoney.HidFor);
+                 break;
+             case AutoDonateUpdate autoDonateUpdate:
+                 // P442 — a player's auto-donate relationship (payday routing) +
+@@ -2824,6 +2828,7 @@
+     /// </summary>
+     private void Apply(QueuedCommandUpdate u)
+     {
++        if (u.HasPending) _moneyRequest = null;
+         _myQueuedCommand = u.HasPending
+             ? new QueuedCommandState(u.CommandId, u.TargetType, u.TargetId)
+             : null;
+@@ -3878,33 +3883,7 @@
+             : ClientSoundEventKind.ChatRegular;       // (:4557)
+     }
+ 
+-    private void Apply(ChatMessage m)
+-    {
+-        if (IsPilotMuted(m.SidSender)) return;
+-        var voice = Allegiance.Core.Audio.NativeVoiceCatalog.Resolve(m.VoiceOver, m.Message, m.MessageIsAbsent);
+-        if (m.MessageIsAbsent && m.VoiceOver != Na)
+-            m.Message = Allegiance.Core.Audio.NativeVoiceCatalog.Caption(m.VoiceOver);
+-        _events.Record(m);
+-        // P710 — drive the incoming-message announcement cue. The sender is a
+-        // team leader when the per-side leader (SET_TEAM_LEADER) is the sender's
+-        // own ship (native bIsLeader, trekigc.cpp:4464).
+-        short sender = m.SidSender;
+-        bool senderIsLeader =
+-            sender != Na
+-            && _ships.TryGetValue(sender, out var ent)
+-            && TeamLeaderShipIdFor(ent.SideId) == sender;
+-        var kind = ClassifyChatSound(m, MyShipId, senderIsLeader);
+-        if (kind is { } k && (k != ClientSoundEventKind.ChatVoiceOver || voice is not null))
+-            RecordSoundEvent(k, k == ClientSoundEventKind.ChatVoiceOver ? m.VoiceOver : sender, voice: voice);
+-        // Server-hosted equivalents of WinTrek/trekigc.cpp:3019-3067,
+-        // PostText's critical/noncritical sound and HUD tip (:3086-3135).
+-        if (m.SidSender == -1 && m.ChatTarget == (int)ChatTarget.Individual &&
+-            m.OidRecipient == MyShipId && NotificationCue.IsNotification(m.VoiceOver))
+-        {
+-            _feedbackLines.Add(new FeedbackLine(m.Message, m.VoiceOver == NotificationCue.Critical, NowSeconds(), SoundAlreadyQueued: true));
+-            if (_feedbackLines.Count > MaxFeedbackLines) _feedbackLines.RemoveAt(0);
+-        }
+-    }
++    private void Apply(ChatMessage m) => ReceiveChat(m);
+ 
+     /// <summary>P626 — <c>FM_S_BALLOT(17)</c>: a new in-flight ballot was
+     /// announced (P187). The client latches it as the <see cref="ActiveBallot"/>
+@@ -3921,19 +3900,7 @@
+             ChatTarget = (int)ChatTarget.Everyone,
+         });
+     }
+-    private void Apply(ChatBuoy m)
+-    {
+-        if (IsPilotMuted(m.Cd.SidSender)) return;
+-        // Both messages share ChatData (Messages.h:204-223,716-722).
+-        var voice = Allegiance.Core.Audio.NativeVoiceCatalog.Resolve(m.Cd.VoiceOver, m.Message, m.MessageIsAbsent);
+-        if (m.MessageIsAbsent && m.Cd.VoiceOver != Na)
+-            m.Message = Allegiance.Core.Audio.NativeVoiceCatalog.Caption(m.Cd.VoiceOver);
+-        _events.Record(m);
+-        var chat = new ChatMessage { Message = m.Message, Cd = m.Cd, MessageIsAbsent = m.MessageIsAbsent };
+-        var kind = ClassifyChatSound(chat, MyShipId, senderIsLeader: false);
+-        if (kind == ClientSoundEventKind.ChatVoiceOver && voice is not null)
+-            RecordSoundEvent(kind.Value, m.Cd.VoiceOver, voice: voice);
+-    }
++    private void Apply(ChatBuoy m) => ReceiveChat(m);
+     private void Apply(KillShip m)
+     {
+         _events.Record(m);
+@@ -3972,6 +3939,7 @@
+             if (_cameraOverrideRequests.Count > MaxCameraOverrideRequests)
+                 _cameraOverrideRequests.RemoveAt(0);
+         }
++        ChangeGameState();
+     }
+ 
+     /// <summary>P578 — the best-effort display name for a ship entity: its
+@@ -4306,6 +4274,7 @@
+         MyShipId = null;
+         MyAcceptedCommand = null;
+         _myQueuedCommand = null;
++        _moneyRequest = null;
+         JoinedShipId = null;
+         JoinedMissionCookie = null;
+         JoinError = null;
+--- ours/src/Allegiance.Core/Sim/CallbackText.cs
++++ merged/src/Allegiance.Core/Sim/CallbackText.cs
+@@ -0,0 +1,19 @@
++using System.Globalization;
++
++namespace Allegiance.Core.Sim;
++
++/// <summary>Managed counterpart of the 256-byte formatting buffers in
++/// Igc/igc.h:4817-4825 and WinTrek/trekigc.cpp:2999-3005,3091-3100.
++/// Callers use .NET composite formats; plain text never passes through a formatter.
++/// The native unterminated-buffer overflow is not reproduced.</summary>
++public static class CallbackText
++{
++    public static string Format(string format, params object?[] args)
++    {
++        string text = string.Format(CultureInfo.InvariantCulture, format, args);
++        // Reserve the native buffer's terminator. Avoid splitting a UTF-16 pair.
++        int length = Math.Min(text.Length, 255);
++        if (length < text.Length && length > 0 && char.IsHighSurrogate(text[length - 1])) length--;
++        return text[..length];
++    }
++}
+--- ours/src/Allegiance.Core/Sim/IIgcSite.cs
++++ merged/src/Allegiance.Core/Sim/IIgcSite.cs
+@@ -18,8 +18,8 @@
+ /// global clock source here.</item>
+ /// <item>IGC object pointers → the empty marker interfaces in
+ /// <c>Sim/IgcMarkers.cs</c>.</item>
+-/// <item>Client/UI-only methods and variadic printf-style text helpers are
+-/// omitted; see README for the full skip list and rationale.</item>
++/// <item>Formatting helpers use invariant .NET composite formats in place of
++/// C varargs. Client-only text consumers live in ClientWorld.</item>
+ /// </list>
+ /// Where a C++ default body needs a member the empty markers cannot provide
+ /// (<c>KillTreasureEvent</c>, <c>GetCluster</c>, <c>GetRipcordCluster</c>), the
+@@ -92,8 +92,7 @@
+ 
+     // ── chat ───────────────────────────────────────────────────────────────
+     // igc.h:4792-4800. ReceiveChat is server-side host handling of incoming
+-    // chat; no-op default. (SendChatf, the variadic printf helper, is skipped —
+-    // see README.)
++    // chat; no-op default.
+     void ReceiveChat(
+         IShipIgc pshipSender,
+         ChatTarget ctRecipient,
+@@ -113,7 +112,7 @@
+         short soVoiceOver,
+         string szText,
+         short cid = -1,            // c_cidNone
+-        IgcObjectType otTarget = IgcObjectType.Ship,  // NA maps to Ship (0) — see README
++        IgcObjectType otTarget = (IgcObjectType)(-1), // native NA
+         short oidTarget = -1,      // NA
+         IModelIgc? pmodelTarget = null,
+         bool bObjectModel = false) { }
+@@ -132,6 +131,12 @@
+     /// default; a host that has not installed a handler behaves as before.
+     /// </summary>
+     void DroneChatEvent(Ship ship, short sideId, short soundId, string text) { }
++
++    /// <summary>igc.h:4812-4825: format once, then dispatch the virtual SendChat.
++    /// Managed call sites use invariant .NET composite formatting.</summary>
++    void SendChatf(IShipIgc pshipSender, ChatTarget ctRecipient, short oidRecipient,
++        short soVoiceOver, string format, params object?[] args) =>
++        SendChat(pshipSender, ctRecipient, oidRecipient, soVoiceOver, CallbackText.Format(format, args));
+ 
+     // ── economy ───────────────────────────────────────────────────────────
+     // igc.h:4828. Money is int, HullID is short (both igc.h:477,483,840).
+@@ -178,8 +183,15 @@
+     void TreasureGeneratedEvent(Treasure t) { }
+ 
+     // ── text (console messages to clients) ────────────────────────────────
+-    // igc.h:4847. (PostText / PostNotificationText variadic wrappers skipped.)
++    // igc.h:4847-4849.
+     void PostPlainText(bool bCritical, string pszText) { }
++
++    /// <summary>WinTrek/trekigc.cpp:3086-3102: format then call PostPlainText.</summary>
++    void PostText(bool bCritical, string format, params object?[] args) =>
++        PostPlainText(bCritical, CallbackText.Format(format, args));
++
++    // The base site has no local player/console (igc.h:4849).
++    void PostNotificationText(IModelIgc pmodel, bool bCritical, string format, params object?[] args) { }
+ 
+     /// <summary>Mounted sound and owner ready text: weaponIGC.h:44-46,
+     /// cloakigc.cpp:75-76, shieldIGC.cpp:82-83, afterburnerIGC.cpp:119-120.
+--- ours/src/Allegiance.Core/Sim/Ship.NpcUpdates.cs
++++ merged/src/Allegiance.Core/Sim/Ship.NpcUpdates.cs
+@@ -0,0 +1,354 @@
++using Allegiance.Core.Collision;
++using Allegiance.Core.Model;
++using Allegiance.Core.Wire;
++
++namespace Allegiance.Core.Sim;
++
++public sealed partial class Ship
++{
++    private const short DroneInTransitSound = 1337; // Igc/sounds.h:390 (DEFSOUND ordinal)
++    private int _wingmanCheckCooldown;
++    private int _wingmanDodgeCooldown;
++    private double? _targetFirstNotSeen;
++    private bool _wingmanDodgedThisTick;
++    private ControlData _wingmanControlsBeforePlot;
++    private int _wingmanDodgeState;
++    private Probe? _attackProbeTarget;
++    private Model? _acceptedWingmanAttackTarget;
++    private GotoOrder? _wingmanInterruptedGoto;
++    private Model? ActiveWingmanTarget => (Model?)AttackTarget ?? _attackProbeTarget;
++
++    /// <summary>The accepted attack survives a temporary goto used to find it
++    /// (Igc/shipIGC.cpp:2707-2758). Direct AttackTarget writes remain plan writes.</summary>
++    public void SetWingmanAttackOrder(Model target)
++    {
++        if (target is not Ship && target is not Probe) throw new ArgumentException("Expected ship or probe", nameof(target));
++        SetGoto(null);
++        RepairTarget = null; RepairStationTarget = null;
++        PlanTarget = null; PlanCommandId = OrderChange.CidNone;
++        AcceptedTarget = null; AcceptedCommandId = OrderChange.CidNone;
++        MiningAsteroidTarget = null; LayerAsteroidTarget = null; BuilderAsteroidTarget = null;
++        LayerBuildOrder = null; PickupTarget = null;
++        DefendTarget = null;
++        _acceptedWingmanAttackTarget = target;
++        _wingmanInterruptedGoto = null;
++        SetWingmanPlanAttack(target);
++    }
++
++    // Accepted replacement orders supersede the remembered attack, while a
++    // temporary damage-retreat plan preserves it (Igc/shipIGC.h:766-787).
++    private void ForgetAcceptedWingmanAttack()
++    {
++        if (!IsNpc) return;
++        AttackTarget = null;
++        _acceptedWingmanAttackTarget = null;
++        _wingmanInterruptedGoto = null;
++        _attackProbeTarget = null;
++    }
++
++    private void SetWingmanPlanAttack(Model? target)
++    {
++        AttackTarget = target as Ship;
++        _attackProbeTarget = target as Probe;
++        CommandTarget = target;
++        DronePlanChanged();
++    }
++
++    // CshipIGC::CanSee, Igc/shipIGC.h:380-389: side knowledge OR own scanner.
++    private bool CanSeeWingmanTarget(Model target)
++    {
++        if (Sector is not { } sector || SideId is not { } side) return false;
++        bool local = target is Ship ship ? ship.Sector == sector && ship.StationId is null
++            : sector.Models.Contains(target);
++        if (!local) return false;
++        if (EquipmentTarget.SideOf(target) == side || target.SeenBySide(side)) return true;
++        if (target is Ship { Flag: not null }) return true;
++        float signature = target is Ship s ? s.EffectiveSignature : ((Probe)target).ProbeType.Signature;
++        float scale = Mission?.Sides.FirstOrDefault(s => s.Id == EquipmentTarget.SideOf(target))?
++            .GlobalAttributes.Get(GlobalAttributeSet.Signature) ?? 1;
++        if (scale > 0) signature /= scale;
++        float radius = TargetRadius(target);
++        // Range check first: most invisible targets are outside the scanner.
++        var body = new VisibilityMath.SightBody(target.Position, radius);
++        if (!VisibilityMath.InDetectRange(new(Position, 0.5f * HullType.Length), EffectiveScannerRange(), body, signature)) return false;
++        foreach (var rock in sector.Mineable)
++        {
++            if (rock.Dead || rock.Data.Position is not { Length: 3 } p) continue;
++            if (!VisibilityMath.LineOfSightExist(Position, body,
++                [new(new(p[0], p[1], p[2]), rock.Radius)])) return false;
++        }
++        return true;
++    }
++
++    private static float TargetRadius(Model target) => target is Ship s ? 0.5f * s.HullType.Length : ((Probe)target).ProbeType.Radius;
++    private static Vector3 TargetVelocity(Model target) => target is Ship s ? s.Velocity : Vector3.Zero;
++
++    private bool IsWingmanEnemy(Model target) => SideId is not null && EquipmentTarget.SideOf(target) is { } side &&
++        !IsFriendlySide(side) && EquipmentTarget.IsDamageable(target) &&
++        (target is not Ship s || (!s.Dead && s.StationId is null));
++
++    // ModelHasTargetPriority, Igc/shipIGC.cpp:2000-2027. Ordered first match,
++    // ships before probes, rather than a nearest-target approximation.
++    private bool HasWingmanPriority(Model target)
++    {
++        if (!IsWingmanEnemy(target) || !CanSeeWingmanTarget(target)) return false;
++        if ((WingmanBehaviour & 0x80) != 0) return true;
++        var dp = target.Position - Position;
++        float distance = dp.Length();
++        if (distance >= 800 || distance <= 0) return false;
++        float relative = (Velocity - TargetVelocity(target)) * (dp / distance);
++        return (relative > 0 && relative < 100) ||
++            (distance < 550 && relative > -20 && relative < 150) ||
++            (distance < 400 && relative > -100 && relative < 200);
++    }
++
++    private Model? FindWingmanPriorityTarget()
++    {
++        if (Sector is not { } sector) return null;
++        foreach (var ship in sector.GetShipUpdateCandidates())
++            if (ship != this && HasWingmanPriority(ship)) return ship;
++        foreach (var probe in sector.Models.OfType<Probe>())
++            if (HasWingmanPriority(probe)) return probe;
++        return null;
++    }
++
++    // Igc/shipIGC.cpp:2707-2790: accepted attack near the destination mouth
++    // becomes a cluster buoy; goto periodically reacquires or attacks priority.
++    private void UpdateWingmanTravel(double now)
++    {
++        if (ActiveWingmanTarget is Ship target && target.Sector != Sector)
++        {
++            bool follow = false;
++            if (ReferenceEquals(_acceptedWingmanAttackTarget, target) && target.Sector is { } destination &&
++                !target.Dead && EffectiveScannerRange() > 100)
++            {
++                var nearest = destination.Warps.Where(w => w.Warp.Position is { Length: 3 })
++                    .MinBy(w => (new Vector3(w.Warp.Position[0], w.Warp.Position[1], w.Warp.Position[2]) - target.Position).LengthSquared());
++                if (nearest is not null && nearest.Destination == Sector && nearest.Warp.Position is { Length: 3 } p &&
++                    (new Vector3(p[0], p[1], p[2]) - target.Position).LengthSquared() < 800 * 800)
++                {
++                    var acceptedOrder = _acceptedWingmanAttackTarget;
++                    SetGoto(new(GotoKind.Cluster, destination.Id, Vector3.Zero));
++                    _acceptedWingmanAttackTarget = acceptedOrder;
++                    follow = true;
++                }
++            }
++            if (!follow)
++            {
++                if (ReferenceEquals(_acceptedWingmanAttackTarget, target)) _acceptedWingmanAttackTarget = null;
++                SetWingmanPlanAttack(null);
++            }
++        }
++        if (GotoWaypoint is null) return;
++        if (_wingmanCheckCooldown > 0) { _wingmanCheckCooldown--; return; }
++        if (_acceptedWingmanAttackTarget is { } accepted && CanSeeWingmanTarget(accepted) && IsWingmanEnemy(accepted))
++        {
++            GotoWaypoint = null;
++                SetWingmanPlanAttack(accepted);
++        }
++        if ((WingmanBehaviour & (0x40 | 0x80)) != 0 && _timeRanAway + 10 <= now &&
++            FindWingmanPriorityTarget() is { } priority)
++        {
++            _wingmanInterruptedGoto = GotoWaypoint;
++            GotoWaypoint = null;
++            if ((WingmanBehaviour & 0x80) != 0)
++            {
++                _acceptedWingmanAttackTarget = priority;
++                _wingmanInterruptedGoto = null;
++                WingmanBehaviour &= ~0x80;
++            }
++            SetWingmanPlanAttack(priority);
++            SendDroneChat(DroneInTransitSound, $"Attacking {priority.Id}");
++        }
++        _wingmanCheckCooldown = 100;
++    }
++
++    private void ReleaseWingmanTarget(Model target)
++    {
++        if (ReferenceEquals(_acceptedWingmanAttackTarget, target)) _acceptedWingmanAttackTarget = null;
++        SetWingmanPlanAttack(null);
++        if (_wingmanInterruptedGoto is { } previous)
++        {
++            GotoWaypoint = previous;
++            _wingmanInterruptedGoto = null;
++        }
++    }
++
++    // Igc/shipIGC.cpp:2410-2460: reduced lead skill through three seconds,
++    // preserve turn/throttle through five, then investigate or drop the order.
++    private bool PlotUnseenWingmanTarget(Model target, ref float shootSkill, ref int state)
++    {
++        if (CanSeeWingmanTarget(target)) return false;
++        if (!_wingmanDodgedThisTick) state |= ShipControlState.ForwardButton;
++        if (_targetFirstNotSeen is null) { _targetFirstNotSeen = LastUpdate; return false; }
++        double elapsed = LastUpdate - _targetFirstNotSeen.Value;
++        if (elapsed > 5)
++        {
++            if (ReferenceEquals(_acceptedWingmanAttackTarget, target))
++            {
++                float limit = (target.Position - Position).Length() * 1.5f;
++                bool investigate = !Sector!.GetShipUpdateCandidates().Any(s =>
++                    s != this && IsWingmanEnemy(s) && CanSeeWingmanTarget(s) && (s.Position - Position).Length() < limit);
++                _acceptedWingmanAttackTarget = null;
++                if (investigate)
++                {
++                    SetGoto(new(GotoKind.Waypoint, Sector.Id, target.Position));
++                    WingmanBehaviour |= 0x80;
++                }
++                else ReleaseWingmanTarget(target);
++            }
++            else ReleaseWingmanTarget(target);
++            return true;
++        }
++        if (elapsed > 3)
++        {
++            Controls = _wingmanControlsBeforePlot;
++            StateM = (StateM & ShipControlState.SelectedWeaponMask) | state;
++            return true;
++        }
++        shootSkill = 0.5f;
++        return false;
++    }
++
++    private void PlotWingmanCombat(float dt)
++    {
++        int previousState = StateM;
++        StateM &= ~(ShipControlState.WeaponsMask | ShipControlState.MissileFire | ShipControlState.MineFire);
++        if (ActiveWingmanTarget is not { } target) return;
++        // P699c: an idle combat plot must preserve the native docking/travel
++        // controls computed by ApplyNpcAutopilot (common.cpp:1287-1540).
++        StateM &= ~(ShipControlState.MoveButtonsMask | ShipControlState.AfterburnerButton);
++        bool local = target is Ship s ? s.Sector == Sector : Sector?.Models.Contains(target) == true;
++        if (!local || !IsWingmanEnemy(target)) { ReleaseWingmanTarget(target); return; }
++        var weapon = Weapons.FirstOrDefault(w => w.MountId == 0);
++        if (weapon is null) return;
++        float skill = WingmanShootSkill;
++        if (DefendTarget is null && _wingmanCheckCooldown > 0) _wingmanCheckCooldown--;
++        int state = _wingmanDodgedThisTick ? _wingmanDodgeState : 0;
++        if (PlotUnseenWingmanTarget(target, ref skill, ref state)) return;
++        float speed = weapon.ProjectileType.Speed;
++        if (weapon.Type.CAmmoPerShot != 0) speed *= GlobalAttributeFactor(GlobalAttributeSet.SpeedAmmo);
++        var delta = TargetVelocity(target) * skill;
++        if (!weapon.ProjectileType.AbsoluteF) delta -= Velocity;
++        float t = SolveForImpact(target.Position - Position, delta, speed, TargetRadius(target), out var direction);
++        if (direction.LengthSquared() < 1e-6f) return;
++        float angle = TurnWingmanToFace(direction, dt, 0.75f);
++        Controls = Controls with { Throttle = 0.5f + (MathF.PI - angle) / (2 * MathF.PI) };
++        if (_wingmanDodgedThisTick) _wingmanDodgeCooldown = 100;
++        else if (_wingmanDodgeCooldown > 0)
++        {
++            _wingmanDodgeCooldown--;
++            state = previousState & ~(ShipControlState.WeaponsMask | ShipControlState.MissileFire | ShipControlState.MineFire);
++        }
++        else if (angle < MathF.PI * 0.5f)
++        {
++            state |= WingmanRangeState(target, t, weapon.GetLifespan(), previousState, LastUpdate + dt);
++            // Igc/shipIGC.cpp:2578-2593. The magazine's normal update owns
++            // mount, load, ammo, lock construction, and actual firing.
++            if ((WingmanBehaviour & 2) != 0 && MissileLock >= 1 &&
++                _parts.FirstOrDefault(p => p.EquipmentType == EquipmentType.Magazine && p.MountId == 0)?.Type.Type
++                    is DataPartTypeIGC.MissileLauncher launcher &&
++                Mission!.Core.MissileTypes.TryGetValue(launcher.ExpendableTypeId, out var missile))
++            {
++                var velocity = Orientation.TimesInverse(TargetVelocity(target));
++                float transverse = MathF.Sqrt(velocity.X * velocity.X + velocity.Y * velocity.Y);
++                if (transverse < 20 + missile.MaxLock * 30)
++                {
++                    CommandTarget = target;
++                    state |= ShipControlState.MissileFire;
++                }
++            }
++        }
++        else if (t <= weapon.GetLifespan() * 0.95f && (WingmanBehaviour & 1) != 0)
++            state |= ShipControlState.LeftButton;
++        if (angle <= 0.10f && t <= weapon.GetLifespan() * 0.95f) state |= ShipControlState.AllWeapons;
++        StateM = (StateM & ShipControlState.SelectedWeaponMask) | state;
++    }
++
++    // Igc/shipIGC.cpp:2483-2576: every strict intercept-time and relative-speed
++    // boundary is native. Manual thrust buttons coexist with base throttle.
++    private int WingmanRangeState(Model target, float t, float life, int previous, double now)
++    {
++        float own = Orientation.GetForward() * Velocity;
++        float theirs = Orientation.GetForward() * TargetVelocity(target);
++        float relative = own - theirs;
++        int state = 0;
++        if (t < life * 0.45f)
++        {
++            if (relative < -20) state |= ShipControlState.ForwardButton;
++            else if (relative > 20) state |= ShipControlState.BackwardButton;
++            else Controls = Controls with { Throttle = theirs >= EffectiveMaxSpeed() ? 1 :
++                theirs <= 0 ? -1 : 2 * theirs / EffectiveMaxSpeed() - 1 };
++        }
++        else if (t < life * 0.9f)
++        {
++            if (relative > 50) state |= ShipControlState.BackwardButton;
++            else if (relative < 10)
++            {
++                state |= ShipControlState.ForwardButton;
++                if (relative < -30 || (relative < -15 && (previous & ShipControlState.AfterburnerButton) != 0))
++                    state |= ShipControlState.AfterburnerButton;
++            }
++        }
++        else if (t < life * 1.5f)
++        {
++            if (relative > 120) state |= ShipControlState.BackwardButton;
++            else if (relative < 80)
++            {
++                state |= ShipControlState.ForwardButton;
++                if (relative < 20) state |= ShipControlState.AfterburnerButton;
++            }
++        }
++        else if ((WingmanBehaviour & 0x40) != 0 && _timeRanAway + 10 <= now &&
++                 FindWingmanPriorityTarget() is { } priority)
++        {
++            SetWingmanPlanAttack(priority);
++            SendDroneChat(DroneInTransitSound, $"Switching target to {priority.Id}");
++        }
++        else state |= ShipControlState.AfterburnerButton;
++        return state;
++    }
++
++    // Native Ignore for the no-target ripcord scan (Igc/common.cpp:1648-1682).
++    private bool IgnoreRipcordShip(Ship other)
++    {
++        if (!IsFriendlySide(other.SideId)) return PilotType < PilotTypePlayer;
++        if (other.Id < Id && PilotType < PilotTypePlayer && other.PilotType < PilotTypePlayer &&
++            (other.StateM & ShipControlState.MiningMask) == 0 && !other.IsRipcordActive) return true;
++        return (HullType.HasCapability(DataHullTypeIGC.HabmLifepod) && other.HullType.HasCapability(DataHullTypeIGC.HabmRescue)) ||
++            (HullType.HasCapability(DataHullTypeIGC.HabmRescue) && other.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)) ||
++            (HullType.HasCapability(DataHullTypeIGC.HabmCarrier) && other.HullType.HasCapability(DataHullTypeIGC.HabmLandOnCarrier));
++    }
++
++    // Native getDirection, Igc/common.cpp:1580-1644, for the existing Dodge
++    // escape vector. Keep only the dominant axis when it is twice the next.
++    private int WingmanDodgeButtons(Vector3 away)
++    {
++        var local = Orientation.TimesInverse(away);
++        Span<float> magnitudes = stackalloc float[] { MathF.Abs(local.X), MathF.Abs(local.Y), MathF.Abs(local.Z) };
++        Span<int> buttons = stackalloc int[] {
++            local.X >= 0 ? ShipControlState.RightButton : ShipControlState.LeftButton,
++            local.Y >= 0 ? ShipControlState.UpButton : ShipControlState.DownButton,
++            local.Z <= 0 ? ShipControlState.ForwardButton : ShipControlState.BackwardButton };
++        for (int i = 0; i < 2; i++)
++            for (int j = i + 1; j < 3; j++)
++                if (magnitudes[j] > magnitudes[i])
++                {
++                    (magnitudes[i], magnitudes[j]) = (magnitudes[j], magnitudes[i]);
++                    (buttons[i], buttons[j]) = (buttons[j], buttons[i]);
++                }
++        return magnitudes[0] > 2 * magnitudes[1] ? buttons[0] :
++            magnitudes[0] > 2 * magnitudes[2] ? buttons[0] | buttons[1] : buttons[0] | buttons[1] | buttons[2];
++    }
++
++    // Igc/shipIGC.cpp:2249-2260: mining keeps facing the rock, with a roll,
++    // kill throttle and no motion/weapon inputs. Only NPC mining owns controls.
++    private void ApplyMiningControls(Asteroid rock, float dt)
++    {
++        var p = rock.Data.Position;
++        var direction = new Vector3(p[0], p[1], p[2]) - Position;
++        if (direction.LengthSquared() > 0) TurnWingmanToFace(direction.Normalize(), dt, 1);
++        Controls = Controls with { Roll = 1, Throttle = -1 };
++        StateM &= ShipControlState.SelectedWeaponMask | ShipControlState.MiningMask;
++    }
++}
+--- ours/src/Allegiance.Core/Sim/Ship.cs
++++ merged/src/Allegiance.Core/Sim/Ship.cs
+@@ -1291,9 +1291,13 @@
+ 
+     /// <summary><c>SetRipcordModel()</c> (<c>shipIGC.h:1836-1849</c>). The
+     /// native also turns off cloak and adjusts ripcord debt on ship-anchor
+-    /// swaps; this port has neither cloak nor debt accounting, so the model
+-    /// pointer assignment alone is the faithful subset.</summary>
+-    public void SetRipcordModel(RipcordTarget? model) => _ripcordModel = model;
++    /// swaps. Clearing the model also clears the drone indicator used by
++    /// cancellation and cluster changes (shipIGC.cpp:4177,4189; shipIGC.h:213).</summary>
++    public void SetRipcordModel(RipcordTarget? model)
++    {
++        _ripcordModel = model;
++        if (model is null) StateM &= ~ShipControlState.DroneRip;
++    }
+ 
+     /// <summary><c>GetRipcordTimeLeft()</c> (<c>shipIGC.h:1530-1535</c>) — the
+     /// remaining countdown, seeded by <see cref="ResetRipcordTimeLeft"/>.</summary>
+@@ -1595,6 +1599,7 @@
+         {
+             if (EqualityComparer<DataStationIGC?>.Default.Equals(_planTarget, value)) return;
+             _planTarget = value;
++            if (value is not null && !_changingRetreatPlan) ForgetAcceptedWingmanAttack();
+             DronePlanChanged();
+         }
+     }
+@@ -1754,10 +1759,8 @@
+     /// <see cref="DecideWingmanDefaultOrder"/> when the ship is idle and
+     /// undocked and an enemy is in its current sector; <see cref="OnUpdate"/>'s
+     /// combat leg (<see cref="UpdateWingmanCombat"/>) steers toward the
+-    /// target's <b>live</b> position each tick and clears it when the target
+-    /// dies, docks, or leaves the ship's current sector (no cross-sector
+-    /// pursuit — matching native's same-sector-only <c>FindTarget</c>, which
+-    /// passes no <c>c_ttAnyCluster</c>, <c>shipIGC.h:2441-2443</c>).
++    /// target's position. P708 adds native sight-loss memory and accepted-order
++    /// pursuit through a destination warp mouth in Ship.NpcUpdates.cs.
+     /// <c>null</c> = no current combat objective.</summary>
+     private Ship? _attackTarget;
+     public Ship? AttackTarget
+@@ -1767,6 +1770,8 @@
+         {
+             if (_attackTarget == value) return;
+             _attackTarget = value;
++            if (value is not null) _attackProbeTarget = null;
++            if (IsNpc && (PilotType == PilotTypeWingman || PilotType == PilotTypeCheatPlayer)) CommandTarget = value;
+             if (value is not null) { RepairTarget = null; RepairStationTarget = null; }
+             DronePlanChanged();
+         }
+@@ -1799,7 +1804,11 @@
+         {
+             if (_defendTarget == value) return;
+             _defendTarget = value;
+-            if (value is not null) { RepairTarget = null; RepairStationTarget = null; }
++            if (value is not null)
++            {
++                ForgetAcceptedWingmanAttack();
++                RepairTarget = null; RepairStationTarget = null;
++            }
+             DronePlanChanged();
+         }
+     }
+@@ -2310,6 +2319,7 @@
+             if (ship.SideId is not { } otherSide) continue;            // no side → c_ttNeutral, never c_ttEnemy
+             if (IsFriendlySide(otherSide)) continue;                  // common.cpp:269-273; igc.h:4297-4305
+ 
++            if (!CanSeeWingmanTarget(ship)) continue;
+             float dx = ship.Position.X - Position.X;
+             float dy = ship.Position.Y - Position.Y;
+             float dz = ship.Position.Z - Position.Z;
+@@ -2368,11 +2378,13 @@
+             if (ship.SideId is not { } otherSide) continue;            // no side → c_ttNeutral, never c_ttEnemy
+             if (IsFriendlySide(otherSide)) continue;                  // common.cpp:269-273; igc.h:4297-4305
+ 
++            if (ship.PilotType != PilotTypeWingman && ship.PilotType < PilotTypePlayer) continue;
++            if (!CanSeeWingmanTarget(ship)) continue;
+             float dx = ship.Position.X - center.X;
+             float dy = ship.Position.Y - center.Y;
+             float dz = ship.Position.Z - center.Z;
+             float d2 = dx * dx + dy * dy + dz * dz;                    // dp.LengthSquared() (common.cpp:575-578)
+-            if (d2 <= radiusSquared && d2 < bestDistanceSquared)
++            if (d2 < radiusSquared && d2 < bestDistanceSquared)
+             {
+                 bestDistanceSquared = d2;
+                 best = ship;
+@@ -5236,6 +5248,9 @@
+                 ConsoleLog.Write($"[goto] ship {Id} (side {SideId}) — goto to sector {g.ClusterId} refused: docked at station {StationId} (cannot autopilot while berthed)");
+                 return;
+             }
++            _attackProbeTarget = null;
++            _acceptedWingmanAttackTarget = null;
++            _wingmanInterruptedGoto = null;
+             // Mutual exclusion (native single c_cmdPlan): exactly one active objective.
+             PlanTarget = null; PlanCommandId = OrderChange.CidNone;
+             BuilderAsteroidTarget = null;
+@@ -5302,9 +5317,9 @@
+         // near a station drops it from arbitration and lets an enemy collect
+         // ore from a rock that is still contested. Departure/retreat plans
+         // fail readiness and continue through the ordinary travel path.
+-        if (MiningAsteroidTarget is { } mine && IsReadyToMine(mine))
+-        {
+-            SteerToward(Position, AutopilotArrivalRadius, AutopilotBrakeStartDistance);
++        if (IsNpc && MiningAsteroidTarget is { } mine && IsReadyToMine(mine))
++        {
++            ApplyMiningControls(mine, (float)Math.Max(0.001, now - LastUpdate));
+             return;
+         }
+ 
+@@ -5316,8 +5331,11 @@
+         // is found, the tick's steering is overridden with the temporary away
+         // goal and the rest of the chain is skipped; otherwise we fall through
+         // to the normal goal resolution unchanged.
++        _wingmanDodgedThisTick = false;
+         if (TryComputeDodgeGoal(out var dodgeGoal))
+         {
++            _wingmanDodgedThisTick = true;
++            _wingmanDodgeState = WingmanDodgeButtons(dodgeGoal - Position);
+             SteerToward(dodgeGoal, AutopilotArrivalRadius, AutopilotBrakeStartDistance);
+             return;
+         }
+@@ -6173,6 +6191,7 @@
+         if (!_npcRipcordCached || _npcRipcordKey != ripKey)
+         {
+             _npcRipcordKey = ripKey;
++            _npcRipcordRetryAt = double.NegativeInfinity;
+             _npcRipcordCached = true;
+             _npcCachedRipcordAnchor = FindRipcordAnchorCluster(target);
+         }
+@@ -6195,7 +6214,10 @@
+         {
+             _npcPendingRipcordTarget = null;
+             _npcRipcordRetryAt = double.NegativeInfinity;
+-            mission.Site.RequestRipcord(this, target);    // IIgcSite seam (native pigc->RequestRipcord, :4161)
++            mission.Site.RequestRipcord(this, target);
++            StateM = (StateM | ShipControlState.DroneRip) & ~ShipControlState.MiningMask;
++            IsMining = false; MiningAsteroid = null; // shipIGC.cpp:2073-2074
++            // IIgcSite seam (native pigc->RequestRipcord, :4161)
+             if (!_npcRipcordInitiatedLogged)
+             {
+                 ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) — cross-cluster {what} in sector '{target.Name}' ({target.Id}): ripcord anchor reachable & safe → initiating ripcord");
+@@ -6363,7 +6385,7 @@
+         float thrust = EffectiveThrust();         // GetThrust() (shipIGC.cpp:4211 — m_myHullType, GA-scaled)
+         float mass = Mass;                                // GetMass()
+         float k = thrust / (vMax * mass);                 // dV/dT = −kV (drag), :4213
+-        float s = v0 * (1.0f - MathF.Exp(-k * tRipcord)) / k;   // drift distance, :4216
++        float s = k > 0 ? v0 * (1.0f - MathF.Exp(-k * tRipcord)) / k : v0 * tRipcord;   // drift distance, :4216
+         float tMax = 1.0f + s / v0;                       // effective horizon, "a bit of a fudge" (:4220)
+ 
+         return !AnyHazardWithin(tMax);                    // state == 0 ⇔ nothing imminent within tMax (:4221-4228)
+@@ -6384,7 +6406,7 @@
+         foreach (var other in sector.GetShipUpdateCandidates())
+         {
+             if (ReferenceEquals(other, this)) continue;
+-            if (SideId is not { } ms || other.SideId is not { } os || os != ms) continue;   // same-side only (native Ignore)
++            if (IgnoreRipcordShip(other)) continue; // Igc/common.cpp:1648-1680
+             float r = 0.5f * other.HullType.Length + myRadius;
+             Vector3 rel = other.Position - Position;
+             float d2 = rel.LengthSquared();
+@@ -6409,6 +6431,18 @@
+             Vector3 rel = station.Center - Position;
+             float d2 = rel.LengthSquared();
+             float t = d2 > r * r ? SolveForImpact(rel, -Velocity, 0f, r, out _) : 0f;
++            if (t <= tMax) return true;
++        }
++        foreach (var model in sector.Models)
++        {
++            float radius;
++            if (model is Probe { Dead: false } probe) radius = probe.ProbeType.Radius;
++            else if (model is Mine { Fraction: > 0 } mine && Velocity.LengthSquared() > 50 * 50 && !IsFriendlySide(mine.SideId))
++                radius = mine.MineType.Radius;
++            else continue;
++            float r = radius + myRadius;
++            var rel = model.Position - Position;
++            float t = rel.LengthSquared() > r * r ? SolveForImpact(rel, -Velocity, 0, r, out _) : 0;
+             if (t <= tMax) return true;
+         }
+         return false;
+@@ -6692,21 +6726,9 @@
+     /// consistent stand-in for native's <c>bDocked</c> gate (this port's NPCs
+     /// spawn flying, not docked). Once it commits to an enemy it is no longer
+     /// idle, so it does not churn.</para>
+-    /// <para><b>Same-sector only.</b> <see cref="FindNearestEnemyShip"/> never
+-    /// leaves the ship's own sector — native passes no <c>c_ttAnyCluster</c>
+-    /// here (unlike the Miner/Layer searches), so a Wingman does not travel to
+-    /// find a fight; it only attacks enemies already sharing its sector. A
+-    /// fleeing enemy that warps out is simply lost (target cleared in
+-    /// <see cref="UpdateWingmanCombat"/>, stand by).</para>
+-    /// <para><b>Stated simplifications vs the native combat block.</b> Native's
+-    /// per-tick combat maneuvering (<c>shipIGC.cpp:2353-2787+</c>) is a large,
+-    /// sophisticated system — <c>Dodge()</c>, randomized <c>fShootSkill</c>/
+-    /// <c>fTurnSkill</c> skill tiers, the <c>c_cidDefend</c> protect-an-ally
+-    /// re-evaluation loop, <c>CanSee</c> sight gating, aim-leading — none of
+-    /// which this task ports. This Wingman always fires (at a fixed facing/range
+-    /// condition) with no dodging, no skill randomness, no defend logic, no
+-    /// shot prediction, and no cross-sector pursuit. Each is an explicit,
+-    /// separately-scoped exclusion; see NPC_WINGMAN_ATTACK_FOUNDATION_P162.md.</para>
++    /// <para>Default acquisition stays in the current sector (shipIGC.h:2441-2443).
++    /// Ship.NpcUpdates.cs owns native combat, sight-loss memory, and the
++    /// accepted-order pursuit/goto transitions.</para>
+     /// </remarks>
+     private void DecideWingmanDefaultOrder()
+     {
+@@ -6714,7 +6736,7 @@
+ 
+         if (FindNearestEnemyShip() is { } enemy)
+         {
+-            AttackTarget = enemy;
++            SetWingmanAttackOrder(enemy);
+             _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
+             ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) idle wingman (pilotType {PilotType}) → attacking enemy ship {enemy.Id} (side {enemy.SideId}) at ({enemy.Position.X:0},{enemy.Position.Y:0},{enemy.Position.Z:0})");
+         }
+@@ -6878,29 +6900,7 @@
+     /// <summary>Native attack gate: angle to the lead <= 0.10 rad and
+     /// intercept time <= 95% of effective lifespan (shipIGC.cpp:2463-2477,2600).
+     /// Time, rather than centre distance, includes radius and relative velocity.</summary>
+-    private void UpdateWingmanCombat(float dt)
+-    {
+-        StateM &= ~(ShipControlState.WeaponsMask | ShipControlState.MineFire);
+-        if (AttackTarget is not { } target) return;
+-        StateM &= ~ShipControlState.MoveButtonsMask;
+-        if (target.Dead || target.StationId is not null || target.Sector != Sector ||
+-            SideId is null || target.SideId is null || IsFriendlySide(target.SideId))
+-        {
+-            AttackTarget = null;
+-            return;
+-        }
+-        var weapon = Weapons.FirstOrDefault(w => w.MountId == 0);
+-        if (weapon is null) return;
+-        float t = SolveForLead(target, weapon, WingmanShootSkill, out var direction);
+-        if (direction.LengthSquared() < 1e-6f) return;
+-        float angle = TurnWingmanToFace(direction, dt, 0.75f);
+-        float throttle = 0.5f + (MathF.PI - angle) / (2f * MathF.PI); // shipIGC.cpp:2474
+-        if (angle < MathF.PI * 0.5f && t < weapon.GetLifespan() * 0.45f)
+-            throttle = ComputeWingmanRangeThrottle(target); // closest band, :2493-2512
+-        Controls = Controls with { Throttle = throttle };
+-        if (angle <= 0.10f && t <= weapon.GetLifespan() * 0.95f)
+-            StateM |= ShipControlState.AllWeapons;
+-    }
++    private void UpdateWingmanCombat(float dt) => PlotWingmanCombat(dt);
+ 
+     /// <summary>Native c_cidRepair target (shipIGC.cpp:2608-2678). Stations
+     /// have a separate runtime representation in this port.</summary>
+@@ -6910,6 +6910,9 @@
+ 
+     public void SetRepairOrder(Ship? target, Station? station = null)
+     {
++        _attackProbeTarget = null;
++        _acceptedWingmanAttackTarget = null;
++        _wingmanInterruptedGoto = null;
+         AttackTarget = null;
+         DefendTarget = null;
+         GotoWaypoint = null;
+@@ -6924,7 +6927,9 @@
+ 
+     private void UpdateWingmanRepair(double now, float dt)
+     {
+-        StateM &= ~(ShipControlState.WeaponsMask | ShipControlState.MineFire | ShipControlState.MoveButtonsMask);
++        // Igc/shipIGC.cpp:2673-2677 replaces all non-selection inputs,
++        // including missile and boost inputs from the preceding attack plot.
++        StateM &= ShipControlState.SelectedWeaponMask;
+         if (Dead || StationId is not null || ParentShip is not null) return;
+         var weapon = Weapons.FirstOrDefault(w => w.MountId == 0);
+         if (weapon is null || weapon.ProjectileType.Power >= 0 || Sector is null) return;
+@@ -6991,54 +6996,20 @@
+         if (part is not null) UpdateDispenser(part, now);
+     }
+ 
+-    /// <summary>
+-    /// P166 — the defending Wingman's per-tick decision leg, the counterpart of
+-    /// <see cref="DecideWingmanDefaultOrder"/> for a ship whose
+-    /// <see cref="DefendTarget"/> is set (the port of native's <c>c_cidDefend</c>
+-    /// logic, <c>Igc/shipIGC.cpp:2373-2407</c>, plus its companion acquisition
+-    /// block <c>shipIGC.cpp:2680-2705</c>). Owns the whole defend life cycle:
+-    /// when the Wingman has no valid <see cref="AttackTarget"/> it escorts the
+-    /// charge and scans for an enemy within 1500 of the charge to engage
+-    /// (Part A — acquisition); when it is attacking, it re-evaluates every tick
+-    /// whether to keep the current target, switch to a closer threat near the
+-    /// charge, or fall back to escorting (Part B — the cited re-evaluation
+-    /// block). Mutates only <see cref="AttackTarget"/>; the pursuit/fire
+-    /// mechanics stay entirely P162's <see cref="UpdateWingmanCombat"/>
+-    /// (unchanged).
+-    /// </summary>
+-    /// <remarks>
+-    /// <list type="number">
+-    /// <item><b>Every-tick re-evaluation (200-tick-cooldown simplification).</b>
+-    /// Native gates the block behind <c>m_checkCooldown = 200</c>
+-    /// (<c>shipIGC.cpp:2406</c>) — a pure performance optimization, not a
+-    /// behavioral requirement. This port re-evaluates every tick (its established
+-    /// per-tick <c>OnUpdate</c> cadence); checking more often only ever produces
+-    /// the same-or-better decision, never a worse one. Accepted, harmless.</item>
+-    /// <item><b>Charge-centered search.</b> Both scans center on the charge's
+-    /// LIVE position (<see cref="FindNearestEnemyNear"/>), not the Wingman's own
+-    /// — matching native's <c>FindTargetShip(..., &amp;chargePos, dist,
+-    /// c_ttEnemy|c_ttNearest, -2)</c> (<c>shipIGC.cpp:2384,2690</c>).</item>
+-    /// <item><b>Cross-sector charge → disengage.</b> Native's
+-    /// <c>GetCluster() != charge->GetCluster()</c> → shouldReturn
+-    /// (<c>shipIGC.cpp:2376-2377</c>). This port is same-sector-only (P162), and
+-    /// in this task's tests the charge always sits in the Wingman's sector, so it
+-    /// never fires there; the guard is kept defensively — if it ever does, the
+-    /// attack target is cleared and, the charge being unreachable across sectors,
+-    /// the Wingman holds position (the <see cref="ApplyNpcAutopilot"/> escort
+-    /// branch requires <c>charge.Sector == Sector</c>). Stated plainly, not
+-    /// silently dropped.</item>
+-    /// <item><b>"Just running away" reference.</b> Native measures the chased
+-    /// target's velocity along <c>Orientate(chargePos − c_cmdCurrentPos)</c>
+-    /// (<c>shipIGC.cpp:2393-2395</c>); <c>c_cmdCurrent</c> is the Wingman's own
+-    /// current-position reference in this context, so the port uses
+-    /// <c>normalize(charge.Position − Position)</c> — the component of the
+-    /// target's velocity toward the charge. Below −30 the target is fleeing the
+-    /// guarded area → return to escort.</item>
+-    /// </list>
+-    /// </remarks>
++    /// <summary>Native defend scan and return decisions, paced by the shared
++    /// 200-pass cooldown (Igc/shipIGC.cpp:2370-2407,2682-2705).</summary>
+     private void UpdateWingmanDefend()
+     {
+         if (DefendTarget is not { } charge) return;
++        if (_wingmanCheckCooldown > 0) { _wingmanCheckCooldown--; return; }
++        // SetCommand may reset this during the decision; native writes 200
++        // after that transition (shipIGC.cpp:2406,2687).
++        try { EvaluateWingmanDefend(charge); }
++        finally { _wingmanCheckCooldown = 200; }
++    }
++
++    private void EvaluateWingmanDefend(Ship charge)
++    {
+ 
+         // Cross-sector charge: disengage. (Native: GetCluster() !=
+         // charge->GetCluster() → shouldReturn, shipIGC.cpp:2376-2377. Same-sector
+@@ -7074,6 +7045,7 @@
+             float dist = WingmanDefendAcquireRadius;                 // 1500 (shipIGC.cpp:2689)
+             if (FindNearestEnemyNear(charge.Position, ref dist) is { } threat)
+             {
++                SendDroneChat(DroneInTransitSound, $"Attacking {threat.Id} to defend {charge.Id}");
+                 AttackTarget = threat;                               // SetCommand(c_cmdPlan, pTarget, c_cidAttack) (:2695)
+                 ConsoleLog.Write($"[npc] ship {Id} — escorting {charge.Id}; engaging threat {threat.Id} at {dist:0}u");
+             }
+@@ -7095,6 +7067,7 @@
+             if (FindNearestEnemyNear(charge.Position, ref dist) is { } closer
+                 && dist < (distToProtectee - WingmanDefendSwitchMargin))         // dist < distToProtectee − 1000 (:2385)
+             {
++                SendDroneChat(DroneInTransitSound, $"Attacking {closer.Id} to defend {charge.Id}");
+                 AttackTarget = closer;                                           // switch to the closer threat (:2389)
+                 ConsoleLog.Write($"[npc] ship {Id} — defending {charge.Id}; switching to closer threat {closer.Id} at {dist:0}u");
+             }
+@@ -7117,6 +7090,7 @@
+             // DefendTarget branch steers toward the charge instead.
+             ConsoleLog.Write($"[npc] ship {Id} — defending {charge.Id}; returning to escort (gave up chasing {target.Id})");
+             AttackTarget = null;
++            SendDroneChat(DroneInTransitSound, $"Returning to defend {charge.Id}");
+         }
+     }
+ 
+@@ -7156,6 +7130,8 @@
+     private void DronePlanChanged()
+     {
+         if (_changingRetreatPlan || !IsNpc) return;
++        _wingmanCheckCooldown = 0;
++        _targetFirstNotSeen = null;
+         _fractionLastOrder = Fraction;
+         _timeRanAway = LastUpdate;
+         IsRunningAway = false;
+@@ -7825,6 +7801,9 @@
+         // P155 — compute Controls for IsNpc ships with a reachable PlanTarget
+         // BEFORE the flight model reads them (ExecuteMove derives all motion
+         // from Controls). Real player ships (IsNpc false) are never touched.
++        if (IsNpc && (PilotType == PilotTypeWingman || PilotType == PilotTypeCheatPlayer) && !IsRunningAway)
++            UpdateWingmanTravel(now);
++        _wingmanControlsBeforePlot = Controls;
+         ApplyNpcAutopilot(now);
+ 
+         // P162 — the Wingman's per-tick combat leg (validate AttackTarget, then
+@@ -8059,7 +8038,7 @@
+                     // would instantly re-engage the very foe UpdateWingmanDefend
+                     // just broke off from to escort the charge.
+                     // P403 — an active goto also counts as non-idle.
+-                    if (!HasRepairOrder && DefendTarget is null && AttackTarget is null && StationId is null && GotoWaypoint is null)
++                    if (!HasRepairOrder && DefendTarget is null && ActiveWingmanTarget is null && StationId is null && GotoWaypoint is null)
+                         DecideWingmanDefaultOrder();
+                 }
+                 else if (PilotType == PilotTypeBuilder)
+--- ours/src/Allegiance.Core/Sim/ShipControlState.cs
++++ merged/src/Allegiance.Core/Sim/ShipControlState.cs
+@@ -34,6 +34,8 @@
+     /// Driven by <see cref="Ship.UpdateCloak"/>, which derives activation from
+     /// this bit like every other toggled control in <see cref="Ship.OnUpdate"/>.
+     /// </summary>
++    public const int DroneRip = 0x1000; // Igc/igc.h:821
++
+     public const int CloakActive = 0x800;    // 512*coastButtonIGC = 2048 (igc.h:820)
+ 
+     /// <summary>All six manual-thrust buttons (<c>left|right|up|down|forward|backward</c>), the gate for the manual-control branch (<c>shipIGC.cpp:2965</c>).</summary>
+--- ours/src/Allegiance.Server/Server.Callbacks.cs
++++ merged/src/Allegiance.Server/Server.Callbacks.cs
+@@ -0,0 +1,43 @@
++using Allegiance.Core.Model;
++using Allegiance.Core.Sim;
++using Allegiance.Core.Wire;
++
++namespace Allegiance.Server;
++
++public sealed partial class Server
++{
++    /// <summary>FedSrv/FedSrv.CPP:13652-13693 routes IIgcSite.SendChat through
++    /// ForwardChatMessage. Scope by the sender's mission before selecting a group;
++    /// no changes to broadcast scheduling or the player-chat dispatch.</summary>
++    private void SendSiteChat(Ship? sender, ChatMessage message)
++    {
++        Mission? mission = sender?.Mission ?? (_missions.Count == 1 ? _missions[0] : null);
++        if (mission is null) return;
++        var peers = _peerShips.Where(p => ReferenceEquals(p.Value.Ship.Mission, mission));
++        short? side = sender?.SideId;
++        switch ((ChatTarget)message.ChatTarget)
++        {
++            case ChatTarget.Everyone: break;
++            case ChatTarget.Team:
++                peers = peers.Where(p => p.Value.Ship.SideId == message.OidRecipient); break;
++            case ChatTarget.Group:
++            case ChatTarget.GroupNoEcho:
++                message.ChatTarget = (int)ChatTarget.Individual;
++                goto case ChatTarget.Individual;
++            case ChatTarget.Individual:
++            case ChatTarget.IndividualNoFilter:
++                peers = peers.Where(p => p.Value.Ship.Id == message.OidRecipient); break;
++            case ChatTarget.AllSector:
++                peers = peers.Where(p => p.Value.Sector.Id == message.OidRecipient); break;
++            case ChatTarget.FriendlySector:
++                peers = peers.Where(p => p.Value.Sector.Id == message.OidRecipient && p.Value.Ship.SideId == side); break;
++            case ChatTarget.Wing:
++                peers = peers.Where(p => p.Value.Ship.SideId == side && p.Value.Ship.WingId == message.OidRecipient); break;
++            case ChatTarget.Leaders:
++                peers = peers.Where(p => mission.Sides.Any(s => s.LeaderShipId == p.Value.Ship.Id)); break;
++            default: return;
++        }
++        byte[] packet = FedPacket.Pack(new[] { message.Encode() });
++        foreach (var peer in peers) SendPeer(peer.Key, packet);
++    }
++}
+--- ours/src/Allegiance.Server/Server.Lifecycle.cs
++++ merged/src/Allegiance.Server/Server.Lifecycle.cs
+@@ -814,6 +814,7 @@
+         _host.SideLostRestartStationHook = OnSideLostRestartStation;   // P455: wire the site's restart-station-loss seam to the station-elimination win (DeactivateSide)
+         _host.ProsperityArtifactComputedHook = OnProsperityArtifactComputed;  // P302: wire the prosperity/artifact recompute to GAME_STATE(155) + P178 GameOver
+         _host.FlagsKillsComputedHook = OnFlagsKillsComputed;  // P303: wire the flags/kills recompute to GAME_STATE(155) + P178 GameOver
++        _host.ChatRequested = SendSiteChat;
+         _host.Notable = OnNotable;              // wire the site's ReportNotable to the public spectator event
+         _host.RequestRipcordReceived = OnNpcRequestRipcord;  // P172: wire the site's IIgcSite.RequestRipcord (NPC) to the ripcord state machine
+         var transport = new TcpTransport(_host, _transportMode, _transportPoolWorkers)
+--- ours/src/Allegiance.Server/Server.ShipCommands.cs
++++ merged/src/Allegiance.Server/Server.ShipCommands.cs
+@@ -1868,7 +1868,7 @@
+             case OrderChange.CidAttack:
+                 if (model is Ship enemy)
+                 {
+-                    drone.AttackTarget = enemy;                     // P162 wingman attack
++                    drone.SetWingmanAttackOrder(enemy);                     // P162 wingman attack
+                     ConsoleLog.Write($"[drone] ship {sender.Id}: ordered NPC {drone.Id} (wingman) to ATTACK ship {enemy.Id} (side {enemy.SideId})");
+                     return true;
+                 }
+--- ours/src/Allegiance.Server/ServerHost.cs
++++ merged/src/Allegiance.Server/ServerHost.cs
+@@ -4,6 +4,7 @@
+ using Allegiance.Core.Model;
+ using Allegiance.Core.Sim;
+ using Allegiance.Core.Transport;
++using ChatMessage = Allegiance.Core.Wire.ChatMessage;
+ 
+ namespace Allegiance.Server;
+ 
+@@ -506,6 +507,19 @@
+     public bool QueueRipcordUse => true;
+     public Action<Ship, string>? WeaponReadyNotification;
+     public void WeaponReady(Ship ship, string partName) => WeaponReadyNotification?.Invoke(ship, partName);
++
++    public Action<Ship?, ChatMessage>? ChatRequested;
++    // Igc/igc.h:4801-4825; FedSrv/FedSrv.CPP:13652-13693.
++    public void SendChat(IShipIgc pshipSender, ChatTarget chatTarget, short oidRecipient,
++        short soVoiceOver, string szText, short cid = -1,
++        IgcObjectType otTarget = (IgcObjectType)(-1), short oidTarget = -1,
++        IModelIgc? pmodelTarget = null, bool bObjectModel = false) =>
++        ChatRequested?.Invoke(pshipSender as Ship, new ChatMessage
++        {
++            Message = szText, SidSender = pshipSender is Ship sender ? sender.Id : (short)-1,
++            ChatTarget = (int)chatTarget, OidRecipient = oidRecipient, VoiceOver = soVoiceOver,
++            CommandID = cid, OtTarget = (short)otTarget, OidTarget = oidTarget, BObjectModel = bObjectModel,
++        });
+     /// <summary>The world-mission site implementation of
+     /// <see cref="IIgcSite.LoadoutChangeEvent"/>: raise the
+     /// <see cref="LoadoutChange"/> hook so the owning <see cref="Server"/> can
+--- ours/tests/Allegiance.ClientCore.MonoGame.Tests/P709MoneyRequestInputTests.cs
++++ merged/tests/Allegiance.ClientCore.MonoGame.Tests/P709MoneyRequestInputTests.cs
+@@ -0,0 +1,57 @@
++using Allegiance.ClientCore.MonoGame.Flight;
++using Allegiance.ClientCore.MonoGame.Rendering;
++using Allegiance.ClientCore.State;
++using Allegiance.Core.Collision;
++using Allegiance.Core.Sim;
++using Allegiance.Core.Wire;
++using Microsoft.Xna.Framework.Input;
++
++namespace Allegiance.ClientCore.MonoGame.Tests;
++
++public sealed class P709MoneyRequestInputTests
++{
++    [Theory]
++    [InlineData(false)] [InlineData(true)]
++    public void Accept_or_execute_donates_once_without_selecting_or_engaging_a_flight_target(bool execute)
++    {
++        var world = World(); var map = Map(); var input = new CommandActionInput();
++        world.GetMoneyRequest(11, 100, 1);
++        var key = new KeyboardState(execute ? Keys.F16 : Keys.Home);
++        var result = input.Step(key, false, map, world);
++        Assert.Equal(80, result.Donation!.MoneyGiven); Assert.Equal(11, result.Donation.ShipID);
++        Assert.Null(result.Request); Assert.False(result.ChangeSelection); Assert.False(result.Engage);
++        Assert.Null(input.Step(key, false, map, world).Donation);
++    }
++
++    [Fact]
++    public void Composing_suppresses_approval_and_reject_clears_only_the_money_request()
++    {
++        var world = World(); var map = Map(); var input = new CommandActionInput();
++        world.GetMoneyRequest(11, 50, 1);
++        Assert.Null(input.Step(new(Keys.Home), true, map, world).Donation);
++        Assert.Null(input.Step(new(Keys.Home), false, map, world).Donation);
++        Assert.NotNull(world.PendingMoneyRequest);
++        input.Step(new(), false, map, world);
++        input.Step(new(Keys.Delete), false, map, world);
++        Assert.Null(world.PendingMoneyRequest); Assert.Equal(80, world.MyMoney);
++    }
++
++    private static ActionMap Map()
++    {
++        var map = new ActionMap(InputActionCatalog.Definitions);
++        map.SetBinding("AcceptCommand", new(Keys.Home, InputModifiers.None), force: true);
++        map.SetBinding("ExecuteCommand", new(Keys.F16, InputModifiers.None), force: true);
++        map.SetBinding("RejectCommand", new(Keys.Delete, InputModifiers.None), force: true);
++        return map;
++    }
++
++    private static ClientWorld World()
++    {
++        var world = new ClientWorld();
++        world.Apply(new SetCluster { SectorId = 1, Ship = ServerShipUpdate.FromValues(10, 0, default, 0,
++            Vector3.Zero, Orientation.Identity, Vector3.Zero, [0, 0, 0], 1, 1, 1, 1, 1, 0, 1) });
++        world.Apply(new ExportShip { ShipId = 11, SideId = 0, CharacterName = "Requester" });
++        world.Apply(new SetMoney { ShipId = 10, Money = 80 });
++        return world;
++    }
++}
+--- ours/tests/Allegiance.ClientCore.Tests/P709CallbacksLiveTests.cs
++++ merged/tests/Allegiance.ClientCore.Tests/P709CallbacksLiveTests.cs
+@@ -0,0 +1,90 @@
++using Allegiance.ClientCore.Session;
++using Allegiance.Core;
++using Allegiance.Core.Sim;
++using Allegiance.Core.Wire;
++using Allegiance.TestInfra;
++using Srv = Allegiance.Server.Server;
++
++namespace Allegiance.ClientCore.Tests;
++
++[Collection("LiveNetwork")]
++public sealed class P709CallbacksLiveTests
++{
++    private static void Barrier(Srv server, ConnectionSession peer)
++    {
++        peer.TakePingEchoes(); peer.SendPing();
++        P660NextMatchLiveTests.Pump(server, () => peer.TakePingEchoes().Count > 0);
++    }
++
++    [SkippableTheory]
++    [InlineData(false)] [InlineData(true)]
++    public void Site_chat_preserves_sender_command_target_and_routes_only_to_the_named_team(bool formatted)
++    {
++        Require.Artwork(); using var server = new Srv(); server.SpawnInitialMinersAtBoot = false;
++        server.Boot(P660NextMatchLiveTests.Config(false));
++        using var a = P660NextMatchLiveTests.Connect(server, "P709-A", 70901);
++        using var b = P660NextMatchLiveTests.Connect(server, "P709-B", 70902);
++        var sender = server.Ships.Single(s => s.Ship.Id == a.World.MyShipId).Ship;
++        Assert.NotEqual(sender.SideId, b.World.MySideId);
++        var site = sender.Mission!.Site;
++        if (formatted) site.SendChatf(sender, ChatTarget.Team, sender.SideId!.Value, 41, "P709 {0} ${1}", "chat", 123);
++        else site.SendChat(sender, ChatTarget.Team, sender.SideId!.Value, 41, "P709 chat $123",
++            OrderChange.CidGoto, IgcObjectType.Ship, sender.Id, sender, true);
++        P660NextMatchLiveTests.Pump(server, () => P660NextMatchLiveTests.Read(a,
++            () => a.World.Events.Chats.Any(c => c.Message == "P709 chat $123")));
++        Barrier(server, b);
++        lock (a.Gate)
++        {
++            var message = Assert.Single(a.World.Events.Chats, c => c.Message == "P709 chat $123");
++            Assert.Equal(sender.Id, message.SidSender); Assert.Equal(41, message.VoiceOver);
++            Assert.Equal(formatted ? OrderChange.CidNone : OrderChange.CidGoto, message.CommandID);
++            Assert.Equal(formatted ? -1 : sender.Id, message.OidTarget);
++            Assert.Equal(!formatted, message.BObjectModel);
++        }
++        Assert.True(P660NextMatchLiveTests.Read(b, () => b.World.Events.Chats.All(c => c.Message != "P709 chat $123")));
++    }
++
++    [SkippableFact]
++    public void Formatted_client_chat_reaches_peer_with_no_accidental_default_command()
++    {
++        Require.Artwork(); using var server = new Srv(); server.SpawnInitialMinersAtBoot = false;
++        server.Boot(P660NextMatchLiveTests.Config(false));
++        using var a = P660NextMatchLiveTests.Connect(server, "P709-A", 70911);
++        using var b = P660NextMatchLiveTests.Connect(server, "P709-B", 70912);
++        a.SendChatf(ChatTarget.Everyone, -1, -1, "P709 {0:F2}", 1.25);
++        P660NextMatchLiveTests.Pump(server, () => P660NextMatchLiveTests.Read(b,
++            () => b.World.Events.Chats.Any(c => c.Message == "P709 1.25")));
++        lock (b.Gate) Assert.Equal(OrderChange.CidNone, b.World.Events.Chats.Single(c => c.Message == "P709 1.25").CommandID);
++    }
++
++    [SkippableFact]
++    public void Money_request_arrives_without_payment_then_approval_uses_real_player_donate()
++    {
++        Require.Artwork(); using var server = new Srv(); server.SpawnInitialMinersAtBoot = false;
++        server.Boot(P660NextMatchLiveTests.Config(false));
++        using var a = P660NextMatchLiveTests.Connect(server, "P709-donor", 70921);
++        using var b = P660NextMatchLiveTests.Connect(server, "P709-requester", 70922);
++        var donor = server.Ships.Single(s => s.Ship.Id == a.World.MyShipId);
++        var requester = server.Ships.Single(s => s.Ship.Id == b.World.MyShipId);
++        donor.Ship.Mission!.Stage = MissionStage.Started;
++        Assert.True(server.TryJoinSide(requester.Ship, donor.Ship.SideId!.Value));
++        donor.Ship.Mission.ApplyStartingMoneyAndInitialPayday(donor.Ship.Mission.LastUpdate);
++        // Synchronize both join identity and the real starting payday.
++        Barrier(server, a); Barrier(server, b);
++        int beforeA = donor.Wallet.Money, beforeB = requester.Wallet.Money;
++        Assert.True(beforeA >= 100);
++        b.SendMoneyRequest(100, donor.Ship.HullType.HullId);
++        P660NextMatchLiveTests.Pump(server, () => P660NextMatchLiveTests.Read(a,
++            () => a.World.PendingMoneyRequest is not null));
++        Assert.Equal(beforeA, donor.Wallet.Money); Assert.Equal(beforeB, requester.Wallet.Money);
++        PlayerDonate donation;
++        lock (a.Gate)
++        {
++            donation = Assert.IsType<PlayerDonate>(a.World.AcceptMoneyRequest());
++            Assert.Equal(requester.Ship.Id, donation.ShipID); Assert.Equal(100, donation.MoneyGiven);
++        }
++        a.SendPlayerDonation(donation);
++        P660NextMatchLiveTests.Pump(server, () => donor.Wallet.Money == beforeA - 100 && requester.Wallet.Money == beforeB + 100);
++        Assert.True(P660NextMatchLiveTests.Read(a, () => a.World.PendingMoneyRequest is null));
++    }
++}
+--- ours/tests/Allegiance.ClientCore.Tests/P709ClientCallbacksTests.cs
++++ merged/tests/Allegiance.ClientCore.Tests/P709ClientCallbacksTests.cs
+@@ -0,0 +1,198 @@
++using Allegiance.ClientCore.State;
++using Allegiance.Core;
++using Allegiance.Core.Sim;
++using Allegiance.Core.Wire;
++
++namespace Allegiance.ClientCore.Tests;
++
++public sealed class P709ClientCallbacksTests
++{
++    internal static ClientWorld World()
++    {
++        var world = new ClientWorld();
++        world.Apply(new SetCluster { SectorId = 1, Ship = ServerShipUpdate.FromValues(10, 0, default, 0, Allegiance.Core.Collision.Vector3.Zero,
++            Orientation.Identity, Allegiance.Core.Collision.Vector3.Zero, [0, 0, 0], 1, 1, 1, 1, 1, 0, 1) });
++        world.Apply(new ExportShip { ShipId = 10, SideId = 0, CharacterName = "Donor" });
++        world.Apply(new ExportShip { ShipId = 11, SideId = 0, CharacterName = "Requester" });
++        world.Apply(new SetMoney { ShipId = 10, Money = 80 });
++        return world;
++    }
++
++    [Theory]
++    [InlineData(false)] [InlineData(true)]
++    public void Plain_text_preserves_literal_formats_and_formatted_text_is_bounded(bool critical)
++    {
++        var world = World(); world.NowSeconds = () => 12;
++        string plain = new('x', 300); plain += "{0} %s";
++        world.PostPlainText(critical, plain);
++        world.PostText(critical, "{0}: {1}", "Hull", new string('y', 300));
++        var lines = world.TakeFeedbackLines();
++        Assert.Equal(plain, lines[0].Text); Assert.Equal(255, lines[1].Text.Length);
++        Assert.All(lines, l => { Assert.Equal(critical, l.IsCritical); Assert.Equal(12, l.AtSeconds); });
++        Assert.Empty(world.Events.Chats); Assert.Empty(world.TakeFeedbackLines());
++    }
++
++    [Fact]
++    public void Notification_text_belongs_to_the_local_ship_and_never_to_its_source_carrier()
++    {
++        var world = World();
++        world.Apply(new ShipStatusMessage { ShipId = 10, SectorId = 1, ParentId = 11, StationId = -1 });
++        world.PostNotificationText(11, true, "carrier {0}", 1);
++        world.PostNotificationText(12, true, "observer");
++        world.PostNotificationText(10, false, "{0} ready.", "Part");
++        Assert.Equal("Part ready.", Assert.Single(world.TakeFeedbackLines()).Text);
++    }
++
++    [Fact]
++    public void Incoming_notification_uses_the_same_HUD_queue_once()
++    {
++        var world = World();
++        world.Apply(new ChatMessage { SidSender = -1, ChatTarget = (int)ChatTarget.Individual,
++            OidRecipient = 10, VoiceOver = NotificationCue.Critical, CommandID = -1, Message = "Warning {0} %s" });
++        Assert.Equal("Warning {0} %s", Assert.Single(world.TakeFeedbackLines()).Text);
++        Assert.Single(world.Events.Chats); Assert.Empty(world.TakeFeedbackLines());
++    }
++
++    [Fact]
++    public void Chat_and_buoy_callbacks_fire_once_after_the_event_log_is_updated()
++    {
++        var world = World(); int calls = 0;
++        world.ChatReceived += () => { calls++; Assert.Equal(calls, world.Events.Chats.Count + world.Events.ChatBuoys.Count); };
++        world.Apply(new ChatMessage { Message = "chat" });
++        world.Apply(new ChatBuoy { Message = "buoy" });
++        Assert.Equal(2, calls);
++    }
++
++    [Theory]
++    [InlineData(false)] [InlineData(true)]
++    public void Chat_callback_observes_sound_and_notification_once_on_wire_and_direct_delivery(bool direct)
++    {
++        var world = World();
++        world.TakeSoundEvents();
++        int calls = 0;
++        world.ChatReceived += () =>
++        {
++            calls++;
++            Assert.Equal(calls, world.Events.Chats.Count);
++            if (calls == 1)
++            {
++                Assert.Equal(ClientSoundEventKind.ChatPersonal, Assert.Single(world.TakeSoundEvents()).Kind);
++                Assert.Empty(world.TakeFeedbackLines());
++            }
++            else
++            {
++                var cue = Assert.Single(world.TakeSoundEvents());
++                Assert.Equal(ClientSoundEventKind.ChatVoiceOver, cue.Kind);
++                Assert.Equal("criticalmessage", cue.Voice!.Stem);
++                var line = Assert.Single(world.TakeFeedbackLines());
++                Assert.Equal("Warning {0} %s", line.Text);
++                Assert.True(line.IsCritical);
++                Assert.True(line.SoundAlreadyQueued);
++            }
++        };
++        var chat = new ChatMessage { SidSender = 11, ChatTarget = (int)ChatTarget.Individual,
++            OidRecipient = 10, VoiceOver = -1, CommandID = -1, Message = "Hello" };
++        var notification = new ChatMessage { SidSender = -1, ChatTarget = (int)ChatTarget.Individual,
++            OidRecipient = 10, VoiceOver = NotificationCue.Critical, CommandID = -1, Message = "Warning {0} %s" };
++        if (direct) { world.ReceiveChat(chat); world.ReceiveChat(notification); }
++        else { world.Apply(chat); world.Apply(notification); }
++        Assert.Equal(2, calls);
++        Assert.Empty(world.TakeSoundEvents());
++        Assert.Empty(world.TakeFeedbackLines());
++    }
++
++    // ~/Development/Allegiance/src/WinTrek/trekigc.cpp:4492,4507-4540,4788-4822:
++    // muted messages do not reach listeners; accepted chat has its caption and
++    // voice ready before the insertion callback, through either entry point.
++    [Theory]
++    [InlineData(false, false)] [InlineData(false, true)]
++    [InlineData(true, false)] [InlineData(true, true)]
++    public void Chat_callback_preserves_mute_caption_and_voice_for_chat_and_buoys(bool direct, bool buoy)
++    {
++        var world = World();
++        world.TakeSoundEvents();
++        int calls = 0;
++        world.ChatReceived += () =>
++        {
++            calls++;
++            string caption = buoy ? Assert.Single(world.Events.ChatBuoys).Message : Assert.Single(world.Events.Chats).Message;
++            Assert.Equal("Attack my target!", caption);
++            var cue = Assert.Single(world.TakeSoundEvents());
++            Assert.Equal(ClientSoundEventKind.ChatVoiceOver, cue.Kind);
++            Assert.Equal(10, cue.Id);
++            Assert.Equal("vo_player_attacktarget", cue.Voice!.Stem);
++        };
++        void Receive()
++        {
++            var chat = new ChatMessage { SidSender = 11, VoiceOver = 10, CommandID = -1,
++                ChatTarget = (int)ChatTarget.Team, MessageIsAbsent = true };
++            if (buoy)
++            {
++                var message = ChatBuoy.Decode(new ChatBuoy { Cd = chat.Cd, MessageIsAbsent = true }.Encode());
++                if (direct) world.ReceiveChat(message); else world.Apply(message);
++            }
++            else
++            {
++                chat = ChatMessage.Decode(chat.Encode());
++                if (direct) world.ReceiveChat(chat); else world.Apply(chat);
++            }
++        }
++        world.SetPilotMuted(11, true);
++        Receive();
++        Assert.Equal(0, calls);
++        Assert.Empty(world.Events.Chats);
++        Assert.Empty(world.Events.ChatBuoys);
++        Assert.Empty(world.TakeSoundEvents());
++        world.SetPilotMuted(11, false);
++        Receive();
++        Assert.Equal(1, calls);
++        Assert.Empty(world.TakeSoundEvents());
++        Assert.Empty(world.TakeFeedbackLines());
++    }
++
++    [Fact]
++    public void Money_request_replaces_queue_expires_strictly_and_cannot_change_wallets_on_receipt()
++    {
++        var world = World(); double now = 20; world.NowSeconds = () => now;
++        world.Apply(new QueuedCommandUpdate { CommandId = OrderChange.CidGoto, TargetId = 11, TargetType = IgcObjectType.Ship });
++        world.Apply(new RequestMoney { ShipIdRequest = 11, Amount = 100, HidFor = 7 });
++        Assert.Null(world.MyQueuedCommand); Assert.Equal(80, world.MyMoney);
++        Assert.Contains("Requester has requested $100", Assert.Single(world.TakeFeedbackLines()).Text);
++        now = 35; Assert.NotNull(world.PendingMoneyRequest);
++        now = 35.001; Assert.Null(world.PendingMoneyRequest); Assert.Null(world.AcceptMoneyRequest());
++        Assert.Equal(80, world.MyMoney);
++    }
++
++    [Fact]
++    public void Approval_clamps_to_current_wallet_once_and_reject_reset_and_new_order_clear_pending_request()
++    {
++        var world = World(); world.NowSeconds = () => 10;
++        world.GetMoneyRequest(11, 100, 1);
++        var gift = Assert.IsType<PlayerDonate>(world.AcceptMoneyRequest());
++        Assert.Equal(80, gift.MoneyGiven); Assert.Equal(11, gift.ShipID);
++        Assert.Null(world.AcceptMoneyRequest()); Assert.Equal(80, world.MyMoney);
++        world.GetMoneyRequest(11, 1, 1); world.RejectMoneyRequest(); Assert.Null(world.PendingMoneyRequest);
++        world.GetMoneyRequest(11, 1, 1);
++        world.Apply(new QueuedCommandUpdate { CommandId = OrderChange.CidGoto, TargetId = 11, TargetType = IgcObjectType.Ship });
++        Assert.Null(world.PendingMoneyRequest);
++        world.GetMoneyRequest(11, 1, 1); world.Reset(); Assert.Null(world.PendingMoneyRequest);
++    }
++
++    [Fact]
++    public void Unknown_request_sender_is_ignored_and_self_request_never_donates()
++    {
++        var world = World(); world.GetMoneyRequest(99, 100, 1);
++        Assert.Null(world.PendingMoneyRequest); Assert.Empty(world.FeedbackLines);
++        world.GetMoneyRequest(10, 100, 1); Assert.Null(world.AcceptMoneyRequest()); Assert.Empty(world.FeedbackLines);
++    }
++
++    [Theory]
++    [InlineData(false)] [InlineData(true)]
++    public void Kill_and_eject_refresh_game_state_after_mutation_without_ending_the_mission(bool killed)
++    {
++        var world = World(); int calls = 0;
++        world.GameStateChanged += () => { calls++; Assert.Equal(killed, world.Ships[11].IsDead); Assert.Single(world.Events.Kills); };
++        world.Apply(new KillShip { ShipId = 11, IdCredit = 10, BDeathCredit = killed });
++        Assert.Equal(1, calls); Assert.Equal(1, world.GameStateRevision);
++    }
++}
+--- ours/tests/Allegiance.Core.Tests/NpcWingmanRangeMaintenanceLiveTests.cs
++++ merged/tests/Allegiance.Core.Tests/NpcWingmanRangeMaintenanceLiveTests.cs
+@@ -285,38 +285,28 @@
+             wingman.AttackTarget = enemy;                                  // directly committed, bypassing nearest-search noise
+ 
+             const float approach = 120f;
+-            // Measure the Wingman's issued throttle on ONE tick each way, from a
+-            // freshly-reset state (wingman at rest at wp, nose toward the enemy),
+-            // so relativeSpeed is dominated by the target's prescribed motion.
+-            float ThrottleFor(Vector3 targetVel)
++            // Native range control uses manual thrust buttons with base throttle
++            // (Igc/shipIGC.cpp:2494-2509), replacing P171's throttle substitute.
++            (int Buttons, float ForwardSpeed) MovementFor(Vector3 targetVel)
+             {
+                 wingman.Position = wp;
+                 wingman.Velocity = Vector3.Zero;
+-                wingman.Orientation.Set(new Vector3(1f, 0f, 0f), new Vector3(0f, 1f, 0f)); // complete orthonormal +X frame
++                wingman.StateM = 0;
++                wingman.Orientation.Set(new Vector3(1f, 0f, 0f), new Vector3(0f, 1f, 0f));
+                 for (int axis = 0; axis < 3; axis++) wingman.SetTurnRate(axis, 0);
+                 enemy.Position = wp + new Vector3(sep, 0f, 0f);
+                 enemy.Velocity = targetVel;
+                 srv.TickSim();
+-                return wingman.Controls.Throttle;
++                return (wingman.StateM & ShipControlState.MoveButtonsMask, wingman.Velocity.X);
+             }
+-
+-            // Case A — target moving TOWARD the Wingman (closing too fast):
+-            // relativeSpeed = own(0) − targetDir(−120) = +120 > 20 → BACK OFF (−1).
+-            float closeThrottle = ThrottleFor(new Vector3(-approach, 0f, 0f));
+-            // Case B — target fleeing AWAY (falling behind): relativeSpeed =
+-            // own(0) − targetDir(+120) = −120 < −20 → PRESS IN (+1).
+-            float fleeThrottle = ThrottleFor(new Vector3(approach, 0f, 0f));
+-
+-            Console.WriteLine($"P171-LIVE-THR: closing={closeThrottle:F3}, fleeing={fleeThrottle:F3} (sep fixed at {sep:F1})");
+-
+-            Assert.True(closeThrottle <= -0.499f,
+-                $"target closing too fast must back off (Throttle −1): got {closeThrottle:F3} at fixed sep {sep:F1} — " +
+-                "the fixed standoff-hold would not issue a distinct back-off here");
+-            Assert.True(fleeThrottle >= 0.499f,
+-                $"target fleeing must press in (Throttle +1): got {fleeThrottle:F3} — " +
+-                "the fixed standoff-hold (distance-ramp) would give the same value for both cases, so this must differ to prove " +
+-                "the throttle is speed-driven");
+-            Assert.Same(enemy, wingman.AttackTarget);                  // still engaged after the measurements
++            var close = MovementFor(new Vector3(-approach, 0f, 0f));
++            var flee = MovementFor(new Vector3(approach, 0f, 0f));
++            Console.WriteLine($"P708 native range: closing={close}, fleeing={flee}");
++            Assert.Equal(ShipControlState.BackwardButton, close.Buttons);
++            Assert.Equal(ShipControlState.ForwardButton, flee.Buttons);
++            Assert.True(close.ForwardSpeed < 0, $"Backward input must produce real braking: {close}");
++            Assert.True(flee.ForwardSpeed > 0, $"Forward input must produce real acceleration: {flee}");
++            Assert.Same(enemy, wingman.AttackTarget);
+         }
+     }
+ }
+--- ours/tests/Allegiance.Core.Tests/P676SimRulesTests.cs
++++ merged/tests/Allegiance.Core.Tests/P676SimRulesTests.cs
+@@ -80,7 +80,11 @@
+     {
+         Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s, power);
+         var target = Place(m, 101, x: 500 * MathF.Sin(angle), z: -500 * MathF.Cos(angle)); target.SetFraction(health);
+-        s.SetRepairOrder(target); Call(s, "UpdateWingmanRepair", 0.1, 0.05f);
++        s.SetRepairOrder(target);
++        int previousAttack = ShipControlState.MissileFire | ShipControlState.AfterburnerButton | ShipControlState.CoastButton;
++        s.StateM |= previousAttack; // attack inputs from the previous plot
++        Call(s, "UpdateWingmanRepair", 0.1, 0.05f);
++        Assert.Equal(0, s.StateM & previousAttack);
+         Assert.Equal(fire, (s.StateM & ShipControlState.AllWeapons) != 0);
+         Assert.True(s.HasRepairOrder); Assert.Null(s.AttackTarget);
+         s.StationId = 31000;
+@@ -239,6 +243,7 @@
+         Require.Artwork(); var m = Domain(sideCount: 3); var s = Place(m); Gun(s);
+         Place(m, 101, 1, z: -50);
+         var enemy = Place(m, 102, 2, z: -500);
++        enemy.SideVisibility.SetSideVisibility(0, true); // defend now uses native CanSee
+         m.Sides[0].AllyGroup = 7; m.Sides[1].AllyGroup = 7;
+         Call(s, "DecideWingmanDefaultOrder"); Assert.Same(enemy, s.AttackTarget);
+         s.AttackTarget = null;
+--- ours/tests/Allegiance.Core.Tests/P708ShipUpdateTests.cs
++++ merged/tests/Allegiance.Core.Tests/P708ShipUpdateTests.cs
+@@ -0,0 +1,339 @@
++using System.Reflection;
++using Allegiance.Core.Collision;
++using Allegiance.Core.MapGen;
++using Allegiance.Core.Model;
++using Allegiance.Core.Sim;
++using Allegiance.Core.Wire;
++using Allegiance.TestInfra;
++
++namespace Allegiance.Core.Tests;
++
++public sealed class P708ShipUpdateTests
++{
++    private static Mission Domain(IIgcSite? site = null, int sideCount = 2)
++    {
++        var core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(TestArtRoot.Value, "PCore001.igc")));
++        var clusters = Enumerable.Range(0, 3).Select(i => DataClusterIGC.Decode(new byte[DataClusterIGC.Size]) with { ClusterId = (short)i }).ToArray();
++        var civ = core.Civilizations.Keys.First();
++        var m = Mission.Assemble(core, MissionMap.FromLists(clusters, [], [], []),
++            Enumerable.Range(0, sideCount).Select(i => new SideSpec((short)i, $"Side {i}", civ)).ToArray(), site ?? new NullIgcSite());
++        m.Stage = MissionStage.Started;
++        foreach (var side in m.Sides) side.GlobalAttributes = GlobalAttributeSet.Identity;
++        return m;
++    }
++
++    private static Ship Place(Mission m, short id = 100, short side = 0, short sector = 0, float x = 0, float z = 0, byte pilot = Ship.PilotTypeWingman, bool npc = true)
++    {
++        var hull = m.Core.HullTypes.Values.First() with
++        {
++            Mass = 100, Thrust = 0, Speed = 1000, MaxEnergy = 1000, MaxAmmo = 1000, RechargeRate = 0,
++            HitPoints = 1000, Length = 10, HabmCapabilities = 0, RipcordSpeed = 1,
++            MaxFixedWeapons = 1, MaxWeapons = 1, CapacityDispenser = 1000,
++            Hardpoints = [new(0, 0, "", "", short.MaxValue, true)], ScannerRange = 10000, Signature = 1
++        };
++        var s = new Ship(id, hull, new(x, 0, z), Vector3.Zero, Orientation.Identity)
++            { SideId = side, IsNpc = npc, PilotType = pilot };
++        m.PlaceShip(s, sector); return s;
++    }
++
++    private static DataPartTypeIGC Part(DataPartTypeIGC.Subtype subtype) =>
++        new(0, 0, "", "", "Test nan", "", 0, [], [], 0, 0, 32000, -1, 0, "", subtype);
++
++    private static MountedPart Gun(Ship ship, float power = 10, byte mounted = 240)
++    {
++        var core = ship.Mission!.Core;
++        var projectile = core.ProjectileTypes.Values.First() with { Speed = 100, Lifespan = 10, Power = power, AbsoluteF = true };
++        ((IDictionary<short, DataProjectileTypeIGC>)core.ProjectileTypes)[projectile.ProjectileTypeId] = projectile;
++        return ship.MountPart(Part(new DataPartTypeIGC.Weapon(0, 0.1f, 0, 0, 0, projectile.ProjectileTypeId, 0, 0, 0)), 1, 0, mounted)!;
++    }
++
++    private static void Call(Ship ship, string method, params object[] args) =>
++        typeof(Ship).GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(ship, args);
++
++    private static void Clock(Ship ship, double now) =>
++        typeof(Allegiance.Core.Sim.Model).GetField("_lastUpdate", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(ship, now);
++
++    private static T Read<T>(Ship ship, string name) => (T)typeof(Ship).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(ship)!;
++    private static void Write(Ship ship, string name, object value) => typeof(Ship).GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(ship, value);
++
++    [SkippableFact]
++    public void Defend_scans_only_after_two_hundred_complete_passes_and_rearms_on_new_plan()
++    {
++        Require.Artwork(); var site = new RecordingIgcSite(); var m = Domain(site); var s = Place(m); Gun(s);
++        var charge = Place(m, 101, x: 100); var enemy = Place(m, 102, 1, z: -1200);
++        s.DefendTarget = charge; Call(s, "UpdateWingmanDefend"); Assert.Same(enemy, s.AttackTarget);
++        enemy.Position = new(0, 0, -4000);
++        for (int i = 0; i < 200; i++) Call(s, "UpdateWingmanDefend");
++        Assert.Same(enemy, s.AttackTarget);
++        Call(s, "UpdateWingmanDefend"); Assert.Null(s.AttackTarget);
++        Assert.Equal(200, Read<int>(s, "_wingmanCheckCooldown"));
++        Assert.Contains(site.Calls, c => c.Contains("Returning to defend"));
++        s.DefendTarget = Place(m, 103, x: 200); Assert.Equal(0, Read<int>(s, "_wingmanCheckCooldown"));
++    }
++
++    [SkippableTheory]
++    [InlineData(1499f, Ship.PilotTypeWingman, true)]
++    [InlineData(1500f, Ship.PilotTypeWingman, false)]
++    [InlineData(1000f, Ship.PilotTypeMiner, false)]
++    public void Defend_acquisition_uses_strict_radius_and_combat_pilots(float distance, byte pilot, bool acquire)
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s); s.DefendTarget = Place(m, 101);
++        var enemy = Place(m, 102, 1, z: -distance, pilot: pilot);
++        Call(s, "UpdateWingmanDefend"); Assert.Equal(acquire, s.AttackTarget == enemy);
++    }
++
++    [SkippableFact]
++    public void Unseen_target_reduces_lead_then_coasts_at_strict_three_second_boundary()
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s);
++        s.ChangeHull(s.HullType with { ScannerRange = 0 });
++        var target = Place(m, 101, 1, z: -500); target.Velocity = new(40, 0, 0); s.SetWingmanAttackOrder(target);
++        Clock(s, 10); Call(s, "UpdateWingmanCombat", .05f);
++        Clock(s, 10.05); Call(s, "UpdateWingmanCombat", .05f);
++        var expected = Place(m, 102); Gun(expected); expected.SolveLead(target, expected.Weapons[0], .5f, out var direction);
++        Call(expected, "TurnWingmanToFace", direction, .05f, .75f);
++        Assert.Equal(expected.Controls.Yaw, s.Controls.Yaw, 5);
++        Clock(s, 13); Call(s, "UpdateWingmanCombat", .05f); Assert.NotEqual(0, s.Controls.Yaw);
++        var controls = s.Controls; Write(s, "_wingmanControlsBeforePlot", controls);
++        Clock(s, 13.001); Call(s, "UpdateWingmanCombat", .05f);
++        Assert.Equal(controls, s.Controls); Assert.Equal(ShipControlState.ForwardButton, s.StateM);
++    }
++
++    [SkippableTheory]
++    [InlineData(false)] [InlineData(true)]
++    public void After_five_seconds_accepted_attack_investigates_unless_a_visible_enemy_is_near(bool enemyNear)
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s); s.ChangeHull(s.HullType with { ScannerRange = 0 });
++        var target = Place(m, 101, 1, z: -500); s.SetWingmanAttackOrder(target);
++        if (enemyNear) { var other = Place(m, 102, 1, x: 300); other.SideVisibility.SetSideVisibility(0, true); }
++        Clock(s, 10); Call(s, "UpdateWingmanCombat", .05f);
++        Clock(s, 15); Call(s, "UpdateWingmanCombat", .05f); Assert.Same(target, s.AttackTarget);
++        Clock(s, 15.001); Call(s, "UpdateWingmanCombat", .05f); Assert.Null(s.AttackTarget);
++        Assert.Equal(!enemyNear, s.GotoWaypoint is not null);
++        if (!enemyNear) { Assert.Equal(target.Position, s.GotoWaypoint!.Value.Position); Assert.Equal(0x80, s.WingmanBehaviour & 0x80); }
++    }
++
++    [SkippableFact]
++    public void Plan_attack_loss_restores_interrupted_goto_and_new_target_resets_memory()
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s); s.ChangeHull(s.HullType with { ScannerRange = 0 });
++        var target = Place(m, 101, 1, z: -500); s.AttackTarget = target;
++        var route = new GotoOrder(GotoKind.Waypoint, 2, new(100, 0, 100)); Write(s, "_wingmanInterruptedGoto", route);
++        Clock(s, 10); Call(s, "UpdateWingmanCombat", .05f);
++        Clock(s, 16); Call(s, "UpdateWingmanCombat", .05f);
++        Assert.Null(s.AttackTarget); Assert.Equal(route, s.GotoWaypoint);
++        s.AttackTarget = Place(m, 102, 1, z: -600);
++        Assert.Null(Read<double?>(s, "_targetFirstNotSeen"));
++    }
++
++    private static int Range(Ship s, Allegiance.Core.Sim.Model target, float t, float life, int previous = 0, double now = 0) =>
++        (int)typeof(Ship).GetMethod("WingmanRangeState", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(s, [target, t, life, previous, now])!;
++
++    [SkippableTheory]
++    [InlineData(4.499f, -21f, ShipControlState.ForwardButton)]
++    [InlineData(4.499f, 21f, ShipControlState.BackwardButton)]
++    [InlineData(4.5f, 51f, ShipControlState.BackwardButton)]
++    [InlineData(4.5f, 50f, 0)]
++    [InlineData(8.999f, -31f, ShipControlState.ForwardButton | ShipControlState.AfterburnerButton)]
++    [InlineData(9f, 121f, ShipControlState.BackwardButton)]
++    [InlineData(9f, 80f, 0)]
++    [InlineData(9f, 19f, ShipControlState.ForwardButton | ShipControlState.AfterburnerButton)]
++    [InlineData(15f, 0f, ShipControlState.AfterburnerButton)]
++    public void Range_bands_use_native_strict_time_and_closing_speed_thresholds(float t, float relative, int expected)
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); var target = Place(m, 101, 1, z: -500);
++        s.Velocity = new(0, 0, -relative); Assert.Equal(expected, Range(s, target, t, 10));
++    }
++
++    [SkippableTheory]
++    [InlineData(-16f, 0, false)] [InlineData(-16f, ShipControlState.AfterburnerButton, true)]
++    [InlineData(-15f, ShipControlState.AfterburnerButton, false)]
++    public void Midrange_boost_has_native_hysteresis(float relative, int previous, bool boost)
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); var target = Place(m, 101, 1, z: -500);
++        s.Velocity = new(0, 0, -relative);
++        Assert.Equal(boost, (Range(s, target, 5, 10, previous) & ShipControlState.AfterburnerButton) != 0);
++    }
++
++    [SkippableFact]
++    public void Combat_preserves_dodge_for_one_hundred_passes_and_never_reuses_weapon_bits()
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s); s.AttackTarget = Place(m, 101, 1, z: -500);
++        Write(s, "_wingmanDodgedThisTick", true); Write(s, "_wingmanDodgeState", ShipControlState.LeftButton);
++        Call(s, "UpdateWingmanCombat", .05f); Assert.Equal(100, Read<int>(s, "_wingmanDodgeCooldown"));
++        Write(s, "_wingmanDodgedThisTick", false);
++        for (int i = 0; i < 100; i++) { Call(s, "UpdateWingmanCombat", .05f); Assert.NotEqual(0, s.StateM & ShipControlState.LeftButton); }
++        Call(s, "UpdateWingmanCombat", .05f); Assert.Equal(0, s.StateM & ShipControlState.LeftButton);
++    }
++
++    [SkippableTheory]
++    [InlineData(0, 1f, 0f, false)] [InlineData(2, .999f, 0f, false)]
++    [InlineData(2, 1f, 49.99f, true)] [InlineData(2, 1f, 50f, false)]
++    public void Missile_selection_requires_behavior_full_lock_and_strict_transverse_speed(int behavior, float quality, float transverse, bool fire)
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s); s.WingmanBehaviour = behavior;
++        var type = m.Core.MissileTypes.Values.First() with { MaxLock = 1 };
++        ((IDictionary<short, DataMissileTypeIGC>)m.Core.MissileTypes)[type.ExpendableTypeId] = type;
++        s.MountPart(Part(new DataPartTypeIGC.MissileLauncher(type.ExpendableTypeId)), 2, 0, 240);
++        var target = Place(m, 101, 1, z: -500); target.Velocity = new(transverse, 0, 0); s.AttackTarget = target;
++        typeof(Ship).GetProperty("MissileLock")!.SetValue(s, quality); Call(s, "UpdateWingmanCombat", .05f);
++        Assert.Equal(fire, (s.StateM & ShipControlState.MissileFire) != 0);
++        if (fire) Assert.Same(target, s.CommandTarget);
++    }
++
++    [SkippableFact]
++    public void Goto_opportunism_waits_ten_seconds_and_one_hundred_passes_then_resumes_route()
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s); s.WingmanBehaviour = 0x40;
++        var route = new GotoOrder(GotoKind.Waypoint, 0, new(1000, 0, 0)); s.SetGoto(route);
++        var target = Place(m, 101, 1, z: -300);
++        Call(s, "UpdateWingmanTravel", 9.999); Assert.Null(s.AttackTarget);
++        for (int i = 0; i < 100; i++) Call(s, "UpdateWingmanTravel", 10.0);
++        Assert.Null(s.AttackTarget); Call(s, "UpdateWingmanTravel", 10.0);
++        Assert.Same(target, s.AttackTarget); Assert.Null(s.GotoWaypoint);
++        target.SetFraction(0); Call(s, "UpdateWingmanCombat", .05f); Assert.Equal(route, s.GotoWaypoint);
++    }
++
++    [SkippableTheory]
++    [InlineData(799f, 101f, true)] [InlineData(800f, 101f, false)] [InlineData(799f, 100f, false)]
++    public void Cross_sector_chase_requires_accepted_order_destination_mouth_and_scanner(float distance, float scanner, bool follow)
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s); s.ChangeHull(s.HullType with { ScannerRange = scanner });
++        var dest = m.Sectors[1];
++        var warp = DataWarpIGC.Decode(new byte[DataWarpIGC.Size]) with { WarpId = 1, ClusterId = 1, Position = [0, 0, 0] };
++        ((List<ResolvedWarp>)dest.Warps).Add(new(warp, m.Sectors[0]));
++        var target = Place(m, 101, 1, sector: 1, z: -distance); s.SetWingmanAttackOrder(target);
++        Call(s, "UpdateWingmanTravel", 1.0);
++        Assert.Null(s.AttackTarget); Assert.Equal(follow, s.GotoWaypoint is not null);
++        if (follow) Assert.Equal(new GotoOrder(GotoKind.Cluster, 1, Vector3.Zero), s.GotoWaypoint);
++    }
++
++    [SkippableFact]
++    public void Goto_reacquires_visible_accepted_attack_and_temporary_aggression_is_consumed()
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s); var target = Place(m, 101, 1, z: -300);
++        s.SetWingmanAttackOrder(target); s.GotoWaypoint = new(GotoKind.Cluster, 1, Vector3.Zero); s.AttackTarget = null;
++        Call(s, "UpdateWingmanTravel", 1.0); Assert.Same(target, s.AttackTarget); Assert.Null(s.GotoWaypoint);
++        s.SetGoto(new(GotoKind.Waypoint, 0, new(1000, 0, 0))); s.WingmanBehaviour = 0x80;
++        Write(s, "_acceptedWingmanAttackTarget", target); // accepted target invisible to the scanner below
++        target.SideVisibility.SetSideVisibility(0, false); s.ChangeHull(s.HullType with { ScannerRange = 0 });
++        var other = Place(m, 102, 1, z: -500); other.SideVisibility.SetSideVisibility(0, true);
++        Call(s, "UpdateWingmanTravel", 20.0); Assert.Same(other, s.AttackTarget); Assert.Equal(0, s.WingmanBehaviour & 0x80);
++    }
++
++    [SkippableFact]
++    public void Mining_controls_face_roll_kill_throttle_and_clear_all_motion_and_fire_inputs()
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m, pilot: Ship.PilotTypeMiner);
++        var rock = new Asteroid(DataAsteroidIGC.Decode(new byte[DataAsteroidIGC.Size]) with { Position = [100, 0, 0] });
++        s.StateM = ShipControlState.SelectedWeaponOne | ShipControlState.MiningMask | ShipControlState.WeaponsMask |
++            ShipControlState.MoveButtonsMask | ShipControlState.AfterburnerButton | ShipControlState.MissileFire;
++        Call(s, "ApplyMiningControls", rock, .05f);
++        Assert.Equal(-1, s.Controls.Throttle); Assert.Equal(1, s.Controls.Roll); Assert.NotEqual(0, s.Controls.Yaw);
++        Assert.Equal(ShipControlState.SelectedWeaponOne | ShipControlState.MiningMask, s.StateM);
++    }
++
++    [SkippableFact]
++    public void Npc_tick_builds_lock_fires_real_missile_consumes_one_round_and_observes_reload()
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s);
++        var missile = m.Core.MissileTypes.Values.First() with { MaxLock = 1, LockTime = .1f, LockAngle = 1, Lifespan = 20, InitialSpeed = 1000, LoadTime = 10 };
++        ((IDictionary<short, DataMissileTypeIGC>)m.Core.MissileTypes)[missile.ExpendableTypeId] = missile;
++        var launcher = s.MountPart(Part(new DataPartTypeIGC.MissileLauncher(missile.ExpendableTypeId)), 2, 0, 240)!;
++        var target = Place(m, 101, 1, z: -500); target.SideVisibility.SetSideVisibility(0, true);
++        s.SetWingmanAttackOrder(target);
++        for (int i = 1; i <= 60; i++) s.Update(i * .05);
++        Assert.Single(s.Sector!.Models.OfType<Missile>());
++        Assert.Equal(1, launcher.Amount);
++        Assert.Same(target, s.CommandTarget);
++    }
++
++    [SkippableFact]
++    public void Priority_target_search_uses_ship_order_before_probes_and_probes_are_real_combat_targets()
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s); s.WingmanBehaviour = 0x80;
++        var probe = new Probe(200, s.Sector!, m.Core.ProbeTypes.Values.First() with { Signature = 1 }, new(0, 0, -200), 0, 1);
++        s.Sector!.Add(probe); probe.SideVisibility.SetSideVisibility(0, true);
++        var ship = Place(m, 101, 1, z: -500); ship.SideVisibility.SetSideVisibility(0, true);
++        s.SetGoto(new(GotoKind.Waypoint, 0, new(1000, 0, 0)));
++        Call(s, "UpdateWingmanTravel", 10.0); Assert.Same(ship, s.AttackTarget);
++        s.SetGoto(new(GotoKind.Waypoint, 0, new(1000, 0, 0))); ship.SetFraction(0); s.WingmanBehaviour = 0x80;
++        Call(s, "UpdateWingmanTravel", 20.0); Call(s, "UpdateWingmanCombat", .05f);
++        Assert.Same(probe, s.CommandTarget); Assert.NotEqual(0, s.StateM & ShipControlState.AllWeapons);
++        s.SetGoto(new(GotoKind.Waypoint, 0, new(0, 1000, 0)));
++        Assert.Null(Read<Probe?>(s, "_attackProbeTarget"));
++    }
++
++    [SkippableTheory]
++    [InlineData(9.999, false)] [InlineData(10.0, true)]
++    public void Long_range_retarget_observes_ten_second_gate(double now, bool retarget)
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s); s.WingmanBehaviour = 0x40;
++        var distant = Place(m, 101, 1, z: -10000); s.AttackTarget = distant;
++        var near = Place(m, 102, 1, z: -300);
++        int state = Range(s, distant, 15, 10, now: now);
++        Assert.Same(retarget ? near : distant, s.AttackTarget);
++        Assert.Equal(retarget ? 0 : ShipControlState.AfterburnerButton, state);
++    }
++
++    [SkippableFact]
++    public void Safe_ripcord_retry_waits_five_seconds_sets_indicator_stops_mining_and_clears_on_cancel()
++    {
++        Require.Artwork(); var site = new RecordingIgcSite(); var m = Domain(site); var s = Place(m);
++        var type = m.Core.StationTypes.Values.First(t => t.HasCapability(DataStationTypeIGC.SabmRipcord));
++        var data = new DataStationIGC([2000, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0, 1], 1, 0, 200,
++            type.StationTypeId, 1, 1, "Rip anchor");
++        m.PlaceStation(new Station(data, type), m.Sectors[1]);
++        s.Velocity = new(0, 0, -100);
++        var hazard = Place(m, 101, z: -50, pilot: Ship.PilotTypePlayer);
++        Call(s, "TryRipcordOrDefer", (short)1, 10.0, "test");
++        Assert.DoesNotContain(site.Calls, c => c.StartsWith("RequestRipcord"));
++        hazard.Position = new(10000, 0, 0); s.Velocity = Vector3.Zero;
++        s.StateM |= ShipControlState.MiningMask; s.IsMining = true;
++        Call(s, "TryRipcordOrDefer", (short)1, 14.999, "test");
++        Assert.DoesNotContain(site.Calls, c => c.StartsWith("RequestRipcord"));
++        Call(s, "TryRipcordOrDefer", (short)1, 15.0, "test");
++        Assert.Single(site.Calls, c => c.StartsWith("RequestRipcord"));
++        Assert.False(s.IsMining); Assert.Equal(ShipControlState.DroneRip, s.StateM & (ShipControlState.DroneRip | ShipControlState.MiningMask));
++        s.SetRipcordModel(null); Assert.Equal(0, s.StateM & ShipControlState.DroneRip);
++    }
++
++    [SkippableTheory]
++    [InlineData(true, false, false)] [InlineData(true, true, true)] [InlineData(false, false, false)]
++    public void Ripcord_safety_respects_allied_drone_id_and_mining_right_of_way(bool friendly, bool mining, bool blocked)
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m, id: 100); s.Velocity = new(0, 0, -100);
++        var other = Place(m, 99, friendly ? (short)0 : (short)1, z: -50);
++        if (mining) other.StateM |= ShipControlState.MiningMask;
++        Assert.Equal(!blocked, s.IsSafeToRipcord());
++    }
++
++    [SkippableFact]
++    public void Player_tick_keeps_wire_controls_and_weapon_inputs()
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m, pilot: Ship.PilotTypePlayer, npc: false);
++        var controls = new ControlData(.1f, .2f, .3f, .4f); s.Controls = controls;
++        s.StateM = ShipControlState.ForwardButton | ShipControlState.SelectedWeaponOne;
++        s.Update(.05);
++        Assert.Equal(controls, s.Controls);
++        Assert.Equal(ShipControlState.ForwardButton | ShipControlState.SelectedWeaponOne, s.StateM);
++    }
++
++    [SkippableTheory]
++    [InlineData(false)] [InlineData(true)]
++    public void Replacement_defend_or_station_order_forgets_the_previous_accepted_attack(bool station)
++    {
++        Require.Artwork(); var m = Domain(); var s = Place(m); Gun(s);
++        var enemy = Place(m, 101, 1, z: -500); s.SetWingmanAttackOrder(enemy);
++        if (station)
++            s.PlanTarget = new DataStationIGC([2000, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0, 1], 0, 0, 200,
++                m.Core.StationTypes.Keys.First(), 1, 1, "Return order");
++        else s.DefendTarget = Place(m, 102);
++        Assert.Null(Read<Allegiance.Core.Sim.Model?>(s, "_acceptedWingmanAttackTarget"));
++        Assert.Null(s.AttackTarget);
++        s.ChangeHull(s.HullType with { ScannerRange = 0 });
++        Clock(s, 10); Call(s, "UpdateWingmanCombat", .05f);
++        Clock(s, 16); Call(s, "UpdateWingmanCombat", .05f);
++        Assert.Null(s.GotoWaypoint); // old attack must not replace the new order with investigation
++    }
++}
+--- ours/tests/Allegiance.Core.Tests/P709CallbackTextTests.cs
++++ merged/tests/Allegiance.Core.Tests/P709CallbackTextTests.cs
+@@ -0,0 +1,46 @@
++using System.Globalization;
++using Allegiance.Core.Sim;
++
++namespace Allegiance.Core.Tests;
++
++public sealed class P709CallbackTextTests
++{
++    private sealed class Site : IIgcSite
++    {
++        public readonly List<(bool Critical, string Text)> Text = [];
++        public readonly List<(ChatTarget Target, short Recipient, short Voice, string Text, short Command, short Type)> Chats = [];
++        public void PostPlainText(bool bCritical, string pszText) => Text.Add((bCritical, pszText));
++        public void SendChat(IShipIgc sender, ChatTarget target, short recipient, short voice, string text,
++            short cid = -1, Allegiance.Core.IgcObjectType type = (Allegiance.Core.IgcObjectType)(-1),
++            short id = -1, IModelIgc? model = null, bool objectModel = false) =>
++            Chats.Add((target, recipient, voice, text, cid, (short)type));
++    }
++
++    [Fact]
++    public void Formatted_helpers_dispatch_virtual_callbacks_once_with_native_defaults()
++    {
++        var site = new Site(); IIgcSite callback = site;
++        callback.SendChatf(null!, ChatTarget.Team, 2, 41, "{0}: ${1}", "Miner", 120);
++        Assert.Equal((ChatTarget.Team, (short)2, (short)41, "Miner: $120", (short)-1, (short)-1), Assert.Single(site.Chats));
++        callback.PostText(true, "A {0} {{literal}} %s", 7);
++        Assert.Equal((true, "A 7 {literal} %s"), Assert.Single(site.Text));
++    }
++
++    [Theory]
++    [InlineData(254, 254)] [InlineData(255, 255)] [InlineData(256, 255)] [InlineData(1000, 255)]
++    public void Formatting_reserves_a_terminator_at_the_native_buffer_boundary(int input, int expected) =>
++        Assert.Equal(new string('x', expected), CallbackText.Format("{0}", new string('x', input)));
++
++    [Fact]
++    public void Formatting_is_invariant_and_does_not_split_a_unicode_pair()
++    {
++        var previous = CultureInfo.CurrentCulture;
++        try
++        {
++            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("fr-FR");
++            Assert.Equal("1.50", CallbackText.Format("{0:F2}", 1.5));
++            Assert.Equal(new string('x', 254), CallbackText.Format("{0}", new string('x', 254) + "🚀!"));
++        }
++        finally { CultureInfo.CurrentCulture = previous; }
++    }
++}

@@ -1,0 +1,4 @@
+{
+  "Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AcquirePart_RecordsNoPickupSound": "Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AcquirePart_RecordsPickupPartSound",
+  "Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifySonicChat_IsSilent": "Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifySonicChat_SelectsVoiceOverBeforePlainChat"
+}

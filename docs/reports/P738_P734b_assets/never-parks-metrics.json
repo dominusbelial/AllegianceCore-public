@@ -1,0 +1,52 @@
+[
+  {
+    "invocation": "showcase-1",
+    "seconds": 94.6,
+    "samples": 945,
+    "reached": 25,
+    "longest_idle_seconds": 1.904,
+    "shots": 3118,
+    "hits": 1605,
+    "kills": 14
+  },
+  {
+    "invocation": "showcase-2",
+    "seconds": 93.1,
+    "samples": 930,
+    "reached": 24,
+    "longest_idle_seconds": 2.015,
+    "shots": 3815,
+    "hits": 1199,
+    "kills": 13
+  },
+  {
+    "invocation": "showcase-3",
+    "seconds": 92.3,
+    "samples": 922,
+    "reached": 24,
+    "longest_idle_seconds": 2.004,
+    "shots": 2722,
+    "hits": 1395,
+    "kills": 16
+  },
+  {
+    "invocation": "showcase-4",
+    "seconds": 93.4,
+    "samples": 933,
+    "reached": 25,
+    "longest_idle_seconds": 1.915,
+    "shots": 3793,
+    "hits": 1284,
+    "kills": 10
+  },
+  {
+    "invocation": "showcase-5",
+    "seconds": 96.1,
+    "samples": 960,
+    "reached": 26,
+    "longest_idle_seconds": 2.005,
+    "shots": 3647,
+    "hits": 1282,
+    "kills": 11
+  }
+]

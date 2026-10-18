@@ -1,0 +1,380 @@
+--- docs/reports/P734_assets/Ship.cs.master	2026-10-17 06:41:25.536162035 -0500
++++ src/Allegiance.Core/Sim/Ship.cs	2026-10-17 06:40:49.906760121 -0500
+@@ -1291,9 +1291,13 @@
+ 
+     /// <summary><c>SetRipcordModel()</c> (<c>shipIGC.h:1836-1849</c>). The
+     /// native also turns off cloak and adjusts ripcord debt on ship-anchor
+-    /// swaps; this port has neither cloak nor debt accounting, so the model
+-    /// pointer assignment alone is the faithful subset.</summary>
+-    public void SetRipcordModel(RipcordTarget? model) => _ripcordModel = model;
++    /// swaps. Clearing the model also clears the drone indicator used by
++    /// cancellation and cluster changes (shipIGC.cpp:4177,4189; shipIGC.h:213).</summary>
++    public void SetRipcordModel(RipcordTarget? model)
++    {
++        _ripcordModel = model;
++        if (model is null) StateM &= ~ShipControlState.DroneRip;
++    }
+ 
+     /// <summary><c>GetRipcordTimeLeft()</c> (<c>shipIGC.h:1530-1535</c>) — the
+     /// remaining countdown, seeded by <see cref="ResetRipcordTimeLeft"/>.</summary>
+@@ -1595,6 +1599,7 @@
+         {
+             if (EqualityComparer<DataStationIGC?>.Default.Equals(_planTarget, value)) return;
+             _planTarget = value;
++            if (value is not null && !_changingRetreatPlan) ForgetAcceptedWingmanAttack();
+             DronePlanChanged();
+         }
+     }
+@@ -1754,10 +1759,8 @@
+     /// <see cref="DecideWingmanDefaultOrder"/> when the ship is idle and
+     /// undocked and an enemy is in its current sector; <see cref="OnUpdate"/>'s
+     /// combat leg (<see cref="UpdateWingmanCombat"/>) steers toward the
+-    /// target's <b>live</b> position each tick and clears it when the target
+-    /// dies, docks, or leaves the ship's current sector (no cross-sector
+-    /// pursuit — matching native's same-sector-only <c>FindTarget</c>, which
+-    /// passes no <c>c_ttAnyCluster</c>, <c>shipIGC.h:2441-2443</c>).
++    /// target's position. P708 adds native sight-loss memory and accepted-order
++    /// pursuit through a destination warp mouth in Ship.NpcUpdates.cs.
+     /// <c>null</c> = no current combat objective.</summary>
+     private Ship? _attackTarget;
+     public Ship? AttackTarget
+@@ -1767,6 +1770,8 @@
+         {
+             if (_attackTarget == value) return;
+             _attackTarget = value;
++            if (value is not null) _attackProbeTarget = null;
++            if (IsNpc && (PilotType == PilotTypeWingman || PilotType == PilotTypeCheatPlayer)) CommandTarget = value;
+             if (value is not null) { RepairTarget = null; RepairStationTarget = null; }
+             DronePlanChanged();
+         }
+@@ -1799,7 +1804,11 @@
+         {
+             if (_defendTarget == value) return;
+             _defendTarget = value;
+-            if (value is not null) { RepairTarget = null; RepairStationTarget = null; }
++            if (value is not null)
++            {
++                ForgetAcceptedWingmanAttack();
++                RepairTarget = null; RepairStationTarget = null;
++            }
+             DronePlanChanged();
+         }
+     }
+@@ -2310,6 +2319,7 @@
+             if (ship.SideId is not { } otherSide) continue;            // no side → c_ttNeutral, never c_ttEnemy
+             if (IsFriendlySide(otherSide)) continue;                  // common.cpp:269-273; igc.h:4297-4305
+ 
++            if (!CanSeeWingmanTarget(ship)) continue;
+             float dx = ship.Position.X - Position.X;
+             float dy = ship.Position.Y - Position.Y;
+             float dz = ship.Position.Z - Position.Z;
+@@ -2368,11 +2378,13 @@
+             if (ship.SideId is not { } otherSide) continue;            // no side → c_ttNeutral, never c_ttEnemy
+             if (IsFriendlySide(otherSide)) continue;                  // common.cpp:269-273; igc.h:4297-4305
+ 
++            if (ship.PilotType != PilotTypeWingman && ship.PilotType < PilotTypePlayer) continue;
++            if (!CanSeeWingmanTarget(ship)) continue;
+             float dx = ship.Position.X - center.X;
+             float dy = ship.Position.Y - center.Y;
+             float dz = ship.Position.Z - center.Z;
+             float d2 = dx * dx + dy * dy + dz * dz;                    // dp.LengthSquared() (common.cpp:575-578)
+-            if (d2 <= radiusSquared && d2 < bestDistanceSquared)
++            if (d2 < radiusSquared && d2 < bestDistanceSquared)
+             {
+                 bestDistanceSquared = d2;
+                 best = ship;
+@@ -5236,6 +5248,9 @@
+                 ConsoleLog.Write($"[goto] ship {Id} (side {SideId}) — goto to sector {g.ClusterId} refused: docked at station {StationId} (cannot autopilot while berthed)");
+                 return;
+             }
++            _attackProbeTarget = null;
++            _acceptedWingmanAttackTarget = null;
++            _wingmanInterruptedGoto = null;
+             // Mutual exclusion (native single c_cmdPlan): exactly one active objective.
+             PlanTarget = null; PlanCommandId = OrderChange.CidNone;
+             BuilderAsteroidTarget = null;
+@@ -5302,9 +5317,9 @@
+         // near a station drops it from arbitration and lets an enemy collect
+         // ore from a rock that is still contested. Departure/retreat plans
+         // fail readiness and continue through the ordinary travel path.
+-        if (MiningAsteroidTarget is { } mine && IsReadyToMine(mine))
++        if (IsNpc && MiningAsteroidTarget is { } mine && IsReadyToMine(mine))
+         {
+-            SteerToward(Position, AutopilotArrivalRadius, AutopilotBrakeStartDistance);
++            ApplyMiningControls(mine, (float)Math.Max(0.001, now - LastUpdate));
+             return;
+         }
+ 
+@@ -5316,8 +5331,11 @@
+         // is found, the tick's steering is overridden with the temporary away
+         // goal and the rest of the chain is skipped; otherwise we fall through
+         // to the normal goal resolution unchanged.
++        _wingmanDodgedThisTick = false;
+         if (TryComputeDodgeGoal(out var dodgeGoal))
+         {
++            _wingmanDodgedThisTick = true;
++            _wingmanDodgeState = WingmanDodgeButtons(dodgeGoal - Position);
+             SteerToward(dodgeGoal, AutopilotArrivalRadius, AutopilotBrakeStartDistance);
+             return;
+         }
+@@ -6173,6 +6191,7 @@
+         if (!_npcRipcordCached || _npcRipcordKey != ripKey)
+         {
+             _npcRipcordKey = ripKey;
++            _npcRipcordRetryAt = double.NegativeInfinity;
+             _npcRipcordCached = true;
+             _npcCachedRipcordAnchor = FindRipcordAnchorCluster(target);
+         }
+@@ -6195,7 +6214,10 @@
+         {
+             _npcPendingRipcordTarget = null;
+             _npcRipcordRetryAt = double.NegativeInfinity;
+-            mission.Site.RequestRipcord(this, target);    // IIgcSite seam (native pigc->RequestRipcord, :4161)
++            mission.Site.RequestRipcord(this, target);
++            StateM = (StateM | ShipControlState.DroneRip) & ~ShipControlState.MiningMask;
++            IsMining = false; MiningAsteroid = null; // shipIGC.cpp:2073-2074
++            // IIgcSite seam (native pigc->RequestRipcord, :4161)
+             if (!_npcRipcordInitiatedLogged)
+             {
+                 ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) — cross-cluster {what} in sector '{target.Name}' ({target.Id}): ripcord anchor reachable & safe → initiating ripcord");
+@@ -6363,7 +6385,7 @@
+         float thrust = EffectiveThrust();         // GetThrust() (shipIGC.cpp:4211 — m_myHullType, GA-scaled)
+         float mass = Mass;                                // GetMass()
+         float k = thrust / (vMax * mass);                 // dV/dT = −kV (drag), :4213
+-        float s = v0 * (1.0f - MathF.Exp(-k * tRipcord)) / k;   // drift distance, :4216
++        float s = k > 0 ? v0 * (1.0f - MathF.Exp(-k * tRipcord)) / k : v0 * tRipcord;   // drift distance, :4216
+         float tMax = 1.0f + s / v0;                       // effective horizon, "a bit of a fudge" (:4220)
+ 
+         return !AnyHazardWithin(tMax);                    // state == 0 ⇔ nothing imminent within tMax (:4221-4228)
+@@ -6384,7 +6406,7 @@
+         foreach (var other in sector.GetShipUpdateCandidates())
+         {
+             if (ReferenceEquals(other, this)) continue;
+-            if (SideId is not { } ms || other.SideId is not { } os || os != ms) continue;   // same-side only (native Ignore)
++            if (IgnoreRipcordShip(other)) continue; // Igc/common.cpp:1648-1680
+             float r = 0.5f * other.HullType.Length + myRadius;
+             Vector3 rel = other.Position - Position;
+             float d2 = rel.LengthSquared();
+@@ -6411,6 +6433,18 @@
+             float t = d2 > r * r ? SolveForImpact(rel, -Velocity, 0f, r, out _) : 0f;
+             if (t <= tMax) return true;
+         }
++        foreach (var model in sector.Models)
++        {
++            float radius;
++            if (model is Probe { Dead: false } probe) radius = probe.ProbeType.Radius;
++            else if (model is Mine { Fraction: > 0 } mine && Velocity.LengthSquared() > 50 * 50 && !IsFriendlySide(mine.SideId))
++                radius = mine.MineType.Radius;
++            else continue;
++            float r = radius + myRadius;
++            var rel = model.Position - Position;
++            float t = rel.LengthSquared() > r * r ? SolveForImpact(rel, -Velocity, 0, r, out _) : 0;
++            if (t <= tMax) return true;
++        }
+         return false;
+     }
+ 
+@@ -6692,21 +6726,9 @@
+     /// consistent stand-in for native's <c>bDocked</c> gate (this port's NPCs
+     /// spawn flying, not docked). Once it commits to an enemy it is no longer
+     /// idle, so it does not churn.</para>
+-    /// <para><b>Same-sector only.</b> <see cref="FindNearestEnemyShip"/> never
+-    /// leaves the ship's own sector — native passes no <c>c_ttAnyCluster</c>
+-    /// here (unlike the Miner/Layer searches), so a Wingman does not travel to
+-    /// find a fight; it only attacks enemies already sharing its sector. A
+-    /// fleeing enemy that warps out is simply lost (target cleared in
+-    /// <see cref="UpdateWingmanCombat"/>, stand by).</para>
+-    /// <para><b>Stated simplifications vs the native combat block.</b> Native's
+-    /// per-tick combat maneuvering (<c>shipIGC.cpp:2353-2787+</c>) is a large,
+-    /// sophisticated system — <c>Dodge()</c>, randomized <c>fShootSkill</c>/
+-    /// <c>fTurnSkill</c> skill tiers, the <c>c_cidDefend</c> protect-an-ally
+-    /// re-evaluation loop, <c>CanSee</c> sight gating, aim-leading — none of
+-    /// which this task ports. This Wingman always fires (at a fixed facing/range
+-    /// condition) with no dodging, no skill randomness, no defend logic, no
+-    /// shot prediction, and no cross-sector pursuit. Each is an explicit,
+-    /// separately-scoped exclusion; see NPC_WINGMAN_ATTACK_FOUNDATION_P162.md.</para>
++    /// <para>Default acquisition stays in the current sector (shipIGC.h:2441-2443).
++    /// Ship.NpcUpdates.cs owns native combat, sight-loss memory, and the
++    /// accepted-order pursuit/goto transitions.</para>
+     /// </remarks>
+     private void DecideWingmanDefaultOrder()
+     {
+@@ -6714,7 +6736,7 @@
+ 
+         if (FindNearestEnemyShip() is { } enemy)
+         {
+-            AttackTarget = enemy;
++            SetWingmanAttackOrder(enemy);
+             _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
+             ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) idle wingman (pilotType {PilotType}) → attacking enemy ship {enemy.Id} (side {enemy.SideId}) at ({enemy.Position.X:0},{enemy.Position.Y:0},{enemy.Position.Z:0})");
+         }
+@@ -6878,29 +6900,7 @@
+     /// <summary>Native attack gate: angle to the lead <= 0.10 rad and
+     /// intercept time <= 95% of effective lifespan (shipIGC.cpp:2463-2477,2600).
+     /// Time, rather than centre distance, includes radius and relative velocity.</summary>
+-    private void UpdateWingmanCombat(float dt)
+-    {
+-        StateM &= ~(ShipControlState.WeaponsMask | ShipControlState.MineFire);
+-        if (AttackTarget is not { } target) return;
+-        StateM &= ~ShipControlState.MoveButtonsMask;
+-        if (target.Dead || target.StationId is not null || target.Sector != Sector ||
+-            SideId is null || target.SideId is null || IsFriendlySide(target.SideId))
+-        {
+-            AttackTarget = null;
+-            return;
+-        }
+-        var weapon = Weapons.FirstOrDefault(w => w.MountId == 0);
+-        if (weapon is null) return;
+-        float t = SolveForLead(target, weapon, WingmanShootSkill, out var direction);
+-        if (direction.LengthSquared() < 1e-6f) return;
+-        float angle = TurnWingmanToFace(direction, dt, 0.75f);
+-        float throttle = 0.5f + (MathF.PI - angle) / (2f * MathF.PI); // shipIGC.cpp:2474
+-        if (angle < MathF.PI * 0.5f && t < weapon.GetLifespan() * 0.45f)
+-            throttle = ComputeWingmanRangeThrottle(target); // closest band, :2493-2512
+-        Controls = Controls with { Throttle = throttle };
+-        if (angle <= 0.10f && t <= weapon.GetLifespan() * 0.95f)
+-            StateM |= ShipControlState.AllWeapons;
+-    }
++    private void UpdateWingmanCombat(float dt) => PlotWingmanCombat(dt);
+ 
+     /// <summary>Native c_cidRepair target (shipIGC.cpp:2608-2678). Stations
+     /// have a separate runtime representation in this port.</summary>
+@@ -6910,6 +6910,9 @@
+ 
+     public void SetRepairOrder(Ship? target, Station? station = null)
+     {
++        _attackProbeTarget = null;
++        _acceptedWingmanAttackTarget = null;
++        _wingmanInterruptedGoto = null;
+         AttackTarget = null;
+         DefendTarget = null;
+         GotoWaypoint = null;
+@@ -6924,7 +6927,9 @@
+ 
+     private void UpdateWingmanRepair(double now, float dt)
+     {
+-        StateM &= ~(ShipControlState.WeaponsMask | ShipControlState.MineFire | ShipControlState.MoveButtonsMask);
++        // Igc/shipIGC.cpp:2673-2677 replaces all non-selection inputs,
++        // including missile and boost inputs from the preceding attack plot.
++        StateM &= ShipControlState.SelectedWeaponMask;
+         if (Dead || StationId is not null || ParentShip is not null) return;
+         var weapon = Weapons.FirstOrDefault(w => w.MountId == 0);
+         if (weapon is null || weapon.ProjectileType.Power >= 0 || Sector is null) return;
+@@ -6991,54 +6996,20 @@
+         if (part is not null) UpdateDispenser(part, now);
+     }
+ 
+-    /// <summary>
+-    /// P166 — the defending Wingman's per-tick decision leg, the counterpart of
+-    /// <see cref="DecideWingmanDefaultOrder"/> for a ship whose
+-    /// <see cref="DefendTarget"/> is set (the port of native's <c>c_cidDefend</c>
+-    /// logic, <c>Igc/shipIGC.cpp:2373-2407</c>, plus its companion acquisition
+-    /// block <c>shipIGC.cpp:2680-2705</c>). Owns the whole defend life cycle:
+-    /// when the Wingman has no valid <see cref="AttackTarget"/> it escorts the
+-    /// charge and scans for an enemy within 1500 of the charge to engage
+-    /// (Part A — acquisition); when it is attacking, it re-evaluates every tick
+-    /// whether to keep the current target, switch to a closer threat near the
+-    /// charge, or fall back to escorting (Part B — the cited re-evaluation
+-    /// block). Mutates only <see cref="AttackTarget"/>; the pursuit/fire
+-    /// mechanics stay entirely P162's <see cref="UpdateWingmanCombat"/>
+-    /// (unchanged).
+-    /// </summary>
+-    /// <remarks>
+-    /// <list type="number">
+-    /// <item><b>Every-tick re-evaluation (200-tick-cooldown simplification).</b>
+-    /// Native gates the block behind <c>m_checkCooldown = 200</c>
+-    /// (<c>shipIGC.cpp:2406</c>) — a pure performance optimization, not a
+-    /// behavioral requirement. This port re-evaluates every tick (its established
+-    /// per-tick <c>OnUpdate</c> cadence); checking more often only ever produces
+-    /// the same-or-better decision, never a worse one. Accepted, harmless.</item>
+-    /// <item><b>Charge-centered search.</b> Both scans center on the charge's
+-    /// LIVE position (<see cref="FindNearestEnemyNear"/>), not the Wingman's own
+-    /// — matching native's <c>FindTargetShip(..., &amp;chargePos, dist,
+-    /// c_ttEnemy|c_ttNearest, -2)</c> (<c>shipIGC.cpp:2384,2690</c>).</item>
+-    /// <item><b>Cross-sector charge → disengage.</b> Native's
+-    /// <c>GetCluster() != charge->GetCluster()</c> → shouldReturn
+-    /// (<c>shipIGC.cpp:2376-2377</c>). This port is same-sector-only (P162), and
+-    /// in this task's tests the charge always sits in the Wingman's sector, so it
+-    /// never fires there; the guard is kept defensively — if it ever does, the
+-    /// attack target is cleared and, the charge being unreachable across sectors,
+-    /// the Wingman holds position (the <see cref="ApplyNpcAutopilot"/> escort
+-    /// branch requires <c>charge.Sector == Sector</c>). Stated plainly, not
+-    /// silently dropped.</item>
+-    /// <item><b>"Just running away" reference.</b> Native measures the chased
+-    /// target's velocity along <c>Orientate(chargePos − c_cmdCurrentPos)</c>
+-    /// (<c>shipIGC.cpp:2393-2395</c>); <c>c_cmdCurrent</c> is the Wingman's own
+-    /// current-position reference in this context, so the port uses
+-    /// <c>normalize(charge.Position − Position)</c> — the component of the
+-    /// target's velocity toward the charge. Below −30 the target is fleeing the
+-    /// guarded area → return to escort.</item>
+-    /// </list>
+-    /// </remarks>
++    /// <summary>Native defend scan and return decisions, paced by the shared
++    /// 200-pass cooldown (Igc/shipIGC.cpp:2370-2407,2682-2705).</summary>
+     private void UpdateWingmanDefend()
+     {
+         if (DefendTarget is not { } charge) return;
++        if (_wingmanCheckCooldown > 0) { _wingmanCheckCooldown--; return; }
++        // SetCommand may reset this during the decision; native writes 200
++        // after that transition (shipIGC.cpp:2406,2687).
++        try { EvaluateWingmanDefend(charge); }
++        finally { _wingmanCheckCooldown = 200; }
++    }
++
++    private void EvaluateWingmanDefend(Ship charge)
++    {
+ 
+         // Cross-sector charge: disengage. (Native: GetCluster() !=
+         // charge->GetCluster() → shouldReturn, shipIGC.cpp:2376-2377. Same-sector
+@@ -7074,6 +7045,7 @@
+             float dist = WingmanDefendAcquireRadius;                 // 1500 (shipIGC.cpp:2689)
+             if (FindNearestEnemyNear(charge.Position, ref dist) is { } threat)
+             {
++                SendDroneChat(DroneInTransitSound, $"Attacking {threat.Id} to defend {charge.Id}");
+                 AttackTarget = threat;                               // SetCommand(c_cmdPlan, pTarget, c_cidAttack) (:2695)
+                 ConsoleLog.Write($"[npc] ship {Id} — escorting {charge.Id}; engaging threat {threat.Id} at {dist:0}u");
+             }
+@@ -7095,6 +7067,7 @@
+             if (FindNearestEnemyNear(charge.Position, ref dist) is { } closer
+                 && dist < (distToProtectee - WingmanDefendSwitchMargin))         // dist < distToProtectee − 1000 (:2385)
+             {
++                SendDroneChat(DroneInTransitSound, $"Attacking {closer.Id} to defend {charge.Id}");
+                 AttackTarget = closer;                                           // switch to the closer threat (:2389)
+                 ConsoleLog.Write($"[npc] ship {Id} — defending {charge.Id}; switching to closer threat {closer.Id} at {dist:0}u");
+             }
+@@ -7117,6 +7090,7 @@
+             // DefendTarget branch steers toward the charge instead.
+             ConsoleLog.Write($"[npc] ship {Id} — defending {charge.Id}; returning to escort (gave up chasing {target.Id})");
+             AttackTarget = null;
++            SendDroneChat(DroneInTransitSound, $"Returning to defend {charge.Id}");
+         }
+     }
+ 
+@@ -7156,6 +7130,8 @@
+     private void DronePlanChanged()
+     {
+         if (_changingRetreatPlan || !IsNpc) return;
++        _wingmanCheckCooldown = 0;
++        _targetFirstNotSeen = null;
+         _fractionLastOrder = Fraction;
+         _timeRanAway = LastUpdate;
+         IsRunningAway = false;
+@@ -7814,6 +7790,9 @@
+         // P155 — compute Controls for IsNpc ships with a reachable PlanTarget
+         // BEFORE the flight model reads them (ExecuteMove derives all motion
+         // from Controls). Real player ships (IsNpc false) are never touched.
++        if (IsNpc && (PilotType == PilotTypeWingman || PilotType == PilotTypeCheatPlayer) && !IsRunningAway)
++            UpdateWingmanTravel(now);
++        _wingmanControlsBeforePlot = Controls;
+         ApplyNpcAutopilot(now);
+ 
+         // P162 — the Wingman's per-tick combat leg (validate AttackTarget, then
+@@ -8048,7 +8027,7 @@
+                     // would instantly re-engage the very foe UpdateWingmanDefend
+                     // just broke off from to escort the charge.
+                     // P403 — an active goto also counts as non-idle.
+-                    if (!HasRepairOrder && DefendTarget is null && AttackTarget is null && StationId is null && GotoWaypoint is null)
++                    if (!HasRepairOrder && DefendTarget is null && ActiveWingmanTarget is null && StationId is null && GotoWaypoint is null)
+                         DecideWingmanDefaultOrder();
+                 }
+                 else if (PilotType == PilotTypeBuilder)
