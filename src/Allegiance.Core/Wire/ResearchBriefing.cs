@@ -17,6 +17,8 @@ public sealed class ResearchBriefing : IFedMessage
     public ResearchPlan Plan { get; set; } = new();
     public ResearchSettings Settings { get; set; } = new();
     public double IncomeMultiplier { get; set; } = 1;
+    public string TechMode { get; set; } = "unlocked";
+    public double ResearchTimeScale { get; set; } = 1;
     public bool Loop { get; set; }
     public List<short> CompletedDevelopments { get; set; } = [];
     public ushort GetFmid() => Fmid;

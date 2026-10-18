@@ -1,0 +1,21 @@
+{
+  "completed_utc": "2026-10-18T05:48:49.022355+00:00",
+  "all_required_invocations_completed": true,
+  "focused_three_repetitions": true,
+  "showcase_five_passes": true,
+  "all_observed_failures_qualified": true,
+  "observed_failure_methods": [
+    "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Slow_board_hull_26_transits_when_the_warp_approach_flies_through_the_aleph",
+    "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches",
+    "Allegiance.Core.Tests.LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count"
+  ],
+  "source_unchanged_since_build": true,
+  "metadata_unchanged": true,
+  "excluded_git_invoking_guards": [
+    "MeshyGuardTests",
+    "PrivatePathGuardTests"
+  ],
+  "excluded_historical_rig_opt_ins": true,
+  "recorded_skips": 3,
+  "skip_count_source": "Individual TRX outcomes; raw adapter counters retained unchanged"
+}

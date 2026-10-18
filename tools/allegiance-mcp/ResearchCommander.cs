@@ -42,6 +42,7 @@ internal sealed class ResearchCommander
     private readonly Dictionary<short, Work> _repairs = new();
     private readonly Dictionary<short, short> _reservations;
     private readonly bool _loop;
+    private readonly double _researchTimeScale;
     private int _index, _cycles;
     private double _firstTime = double.NaN, _lastIncomeTime, _income;
     private int? _lastWallet;
@@ -51,10 +52,10 @@ internal sealed class ResearchCommander
     internal string Epoch { get; }
 
     internal ResearchCommander(short side, string epoch, ResearchTree tree, ResearchPlan plan,
-        TechTreeBitMask initialTechs, Dictionary<short, short> reservations, bool loop = false)
+        TechTreeBitMask initialTechs, Dictionary<short, short> reservations, bool loop = false, double researchTimeScale = 1)
     {
         ResearchPlanCatalog.Validate(tree, plan.Core, plan);
-        Side = side; Epoch = epoch; _tree = tree; _plan = plan; _reservations = reservations; _loop = loop;
+        Side = side; Epoch = epoch; _tree = tree; _plan = plan; _reservations = reservations; _loop = loop; _researchTimeScale = researchTimeScale;
         // Freeze costs with CIV base attributes, never the post-research GA snapshot (bucketigc.cpp:66-74).
         _buckets = BucketCatalog.Describe(tree.Core, initialTechs, GlobalAttributeSet.FromArray(tree.Civ.GasBaseAttributes));
     }
@@ -171,12 +172,12 @@ internal sealed class ResearchCommander
                 // BUCKET_STATUS is donation-driven. Estimate between observations with the
                 // native money-proportional time ceiling (bucketigc.h:44-61), never as completion proof.
                 double seconds = Math.Min(Math.Floor(moneyFraction * bucket.TimeToBuildSec),
-                    funding.Milliseconds / 1000.0 + Math.Max(0, world.Time - work.FundingObservedAt));
+                    funding.Milliseconds / 1000.0 + Math.Max(0, world.Time - work.FundingObservedAt) * _researchTimeScale);
                 progress = Math.Min(moneyFraction, bucket.TimeToBuildSec == 0 ? 1 : seconds / bucket.TimeToBuildSec);
                 double rate = _income > 0 && _lastIncomeTime > _firstTime ? _income / (_lastIncomeTime - _firstTime) : 0;
                 double deficit = Math.Max(0, bucket.Price - funding.Money - world.Wallet);
-                eta = deficit == 0 ? Math.Max(0, bucket.TimeToBuildSec - seconds)
-                    : rate > 0 ? deficit / rate + Math.Max(0, bucket.TimeToBuildSec - seconds) : null;
+                eta = deficit == 0 ? Math.Max(0, bucket.TimeToBuildSec - seconds) / _researchTimeScale
+                    : rate > 0 ? deficit / rate + Math.Max(0, bucket.TimeToBuildSec - seconds) / _researchTimeScale : null;
                 status = funding.Money >= bucket.Price ? "building bucket" : world.Wallet == 0 ? "waiting for money" : "funding";
                 bool allowed = true;
                 if (step.Action == "drone" && world.Units.Count(u => u.Alive && u.DroneType == step.Id) >= MaxDronesPerType)
@@ -281,7 +282,7 @@ internal sealed class ResearchCommander
         double overall = _plan.Steps.Count == 0 ? 1 : Math.Clamp((_index + (progress < 1 ? progress : 0)) / _plan.Steps.Count, 0, 1);
         Telemetry = new(Side, _plan.Name, displayedStep ?? Math.Min(_index + 1, _plan.Steps.Count), _plan.Steps.Count,
             step?.Action ?? "idle", step?.Name ?? "", status, overall * 100, progress * 100, world.Wallet,
-            eta, "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
+            eta, "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
             world.CompletedDevelopments.Order().Select(id => _tree.Core.Developments.TryGetValue(id, out var d) ? d.Name : id.ToString()).ToArray(),
             world.Stations.Select(id => _tree.Core.StationTypes[id].Name).ToArray(), work?.Constructor, work?.Rock, _cycles);
     }

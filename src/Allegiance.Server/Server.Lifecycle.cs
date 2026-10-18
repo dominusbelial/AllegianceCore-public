@@ -70,6 +70,7 @@ public sealed partial class Server
             researchCore = LoadCore();
             foreach (var game in _config.Games) SelectShowcasePlans(researchCore, game);
         }
+        Console.WriteLine(FormattableString.Invariant($"[boot] showcase.researchTimeScale = {_config.Showcase.ResearchTimeScale}"));
         Console.WriteLine($"[boot] showcase.techMode = {_config.Showcase.TechMode}; incomeMultiplier={_config.Showcase.IncomeMultiplier}; researchCommander={(_config.Showcase.TechMode == "research" ? "on" : "per-plan")}");
         ResolveBroadcastSnapshot();
         // Reject invalid cadence before any other subsystem registers profiler
@@ -1151,7 +1152,7 @@ public sealed partial class Server
             sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
 
         var researchPlans = SelectShowcasePlans(core, g);
-        if (_config.Showcase.TechMode == "research") map = PrepareResearchMap(map, researchPlans);
+        if (_config.Showcase.TechMode == "research") map = PrepareResearchMap(core, map, researchPlans);
         var mission = Mission.Assemble(core, map, sides, _host, _simNow, new ResearchSettings
         {
             AllowDevelopments = g.AllowDevelopments,
@@ -1164,6 +1165,7 @@ public sealed partial class Server
             mission.ResearchPlans[side] = selection.Plan;
             Console.WriteLine($"[research-plan] side {side}: {selection.Message}");
         }
+        mission.ShowcaseResearchTimeScale = _config.Showcase.TechMode == "research" ? _config.Showcase.ResearchTimeScale : 1;
         mission.ShowcaseIncomeMultiplier = _config.Showcase.IncomeMultiplier;
         mission.AllowDevelopments = g.AllowDevelopments;
         mission.AllowAlliedRip = g.AllowAlliedRip;

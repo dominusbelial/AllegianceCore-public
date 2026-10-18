@@ -1,0 +1,327 @@
+{
+  "base": "43c77345fcf57ad582620691da7868aa990eb003",
+  "ours": "8cdd750f247afb4b43c40e1aa74f079f634c1a03",
+  "theirs": "bee6b30bbb52b8ce601c284f6b0e446c8cfbe547",
+  "file_counts": {
+    "base": 16493,
+    "ours": 16969,
+    "theirs": 16531
+  },
+  "incoming_blobs": {
+    "data/showcase-plans/README.md": {
+      "base": "3918eb86b24a3c893380ddb371d8ea1fa5cc4214",
+      "ours": "3918eb86b24a3c893380ddb371d8ea1fa5cc4214",
+      "theirs": "2fc2900ffd2aea4cf2e45a9572441982ed062690"
+    },
+    "docs/parity/sim-rules-matrix.csv": {
+      "base": "8593680e68a61c71c3fb1e08b3ef072644d282fb",
+      "ours": "a06f4cb63502fd73f69595348390c6f82bc1a705",
+      "theirs": "5bec20c339e862c499ecc5ebcdb4281d4587c5c9"
+    },
+    "docs/reports/P733_TECH_FINALE_AND_SPEED.md": {
+      "base": null,
+      "ours": null,
+      "theirs": "8c74fdc6ccbb44a032231526e313b971114bc124"
+    },
+    "docs/reports/P733_assets/build.log": {
+      "base": null,
+      "ours": null,
+      "theirs": "598bebbe0050a719613bc601d1e03190b747027f"
+    },
+    "docs/reports/P733_assets/focused-methods.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "0065ca26cbb0150aa31b2afaaf85d3819327a457"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-39-1-scale-1-90s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "dee74ca4107b7ac4808d7548e0dc47dbc55d9c5f"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-39-1-scale-8-90s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "db01b03274a9528000ca6c22e4eb12033de5424a"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-39-2-scale-1-90s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "dee74ca4107b7ac4808d7548e0dc47dbc55d9c5f"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-39-2-scale-8-90s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "db01b03274a9528000ca6c22e4eb12033de5424a"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-39-3-scale-1-90s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "dee74ca4107b7ac4808d7548e0dc47dbc55d9c5f"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-39-3-scale-8-90s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "db01b03274a9528000ca6c22e4eb12033de5424a"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-40-1-scale-1-1800s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "0f8261958098e36f78604e84b3a8eaee352581e2"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-40-1-scale-16-1800s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "765e2ab8cdf521739159a6139e0f23b71ebb9bc4"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-40-1-scale-4-1800s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "b47bc51d13f479d97fa10dd27b5bb910efd5d6cc"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-40-1-scale-8-1800s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "cd5d3b3bebeb901a57b8a9ef8d95d5ebfc7fbbf0"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-40-2-scale-1-1800s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "07961146c114f7c22e5a99df3072ba46bd50dc06"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-40-2-scale-16-1800s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "765e2ab8cdf521739159a6139e0f23b71ebb9bc4"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-40-2-scale-4-1800s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "b47bc51d13f479d97fa10dd27b5bb910efd5d6cc"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-40-2-scale-8-1800s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "d8a0bc4083dd509b4e050f61cac4d0ca23409e52"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-40-3-scale-1-1800s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "d7f738f837fc118b86736731ed69302bf6d695e4"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-40-3-scale-16-1800s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "765e2ab8cdf521739159a6139e0f23b71ebb9bc4"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-40-3-scale-4-1800s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "b47bc51d13f479d97fa10dd27b5bb910efd5d6cc"
+    },
+    "docs/reports/P733_assets/measurements/focused-Allegiance.ClientCore.Tests-40-3-scale-8-1800s.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "d8a0bc4083dd509b4e050f61cac4d0ca23409e52"
+    },
+    "docs/reports/P733_assets/never-parks-metrics.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "b635cac700b326b882a5bedcdd5dbc8a59d4ea1a"
+    },
+    "docs/reports/P733_assets/no-bomber-finales.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "cce21e85bd18ac822c470b3cdae5fbade2b77230"
+    },
+    "docs/reports/P733_assets/p705-civ25-3-1-timeline.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "97e188aa995ae66825fbd7948df79d3f75f0cb8c"
+    },
+    "docs/reports/P733_assets/p705-civ25-3-2-timeline.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "3467e6f3d29ce640046e095397ba230373a77aba"
+    },
+    "docs/reports/P733_assets/p705-civ25-3-3-timeline.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "3c15c297b6894d54c7667fff3b41e64cc2c1ea28"
+    },
+    "docs/reports/P733_assets/rig-showcase-delta.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "0d6deb11b8773823c03b92eea6800a920728d9c5"
+    },
+    "docs/reports/P733_assets/summary.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "1d3c6ed63fd66070cd75a170f1e68a9c7fc2e383"
+    },
+    "docs/reports/P733_assets/verification.json": {
+      "base": null,
+      "ours": null,
+      "theirs": "1fd42233f65483285a99cc1a0803f31566e9f527"
+    },
+    "src/Allegiance.ClientCore.Game/Audio/ShipLoopBeds.cs": {
+      "base": null,
+      "ours": "89f14f112f8ba7950968d155bf669bcbc54a6ad7",
+      "theirs": "89f14f112f8ba7950968d155bf669bcbc54a6ad7"
+    },
+    "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs": {
+      "base": "97768f0416a52d9a05a8931acb03acfece8f2611",
+      "ours": "1a8ce80d803adcd293526a123cb86d257edb823f",
+      "theirs": "3db00476fbd4c481c5b6d5cb3d429a9fad517a0b"
+    },
+    "src/Allegiance.ClientCore.Game/Game1.FlightInput.cs": {
+      "base": "906b4e935ad68806ba63cef6ce54c3cae6f9f7cc",
+      "ours": "6509164e3db6701a6d4ce116a45567c8fc12326e",
+      "theirs": "a42dffaf037762327d2fbd94cc90a8e8afe0a13f"
+    },
+    "src/Allegiance.ClientCore.MonoGame/Content/Content.mgcb": {
+      "base": "dbdffe48cee339a84e784059249e6caef8eb6287",
+      "ours": "6eb9dc9055329c86f693073932362504ee338b7e",
+      "theirs": "11d082a7b9c1c8bc4440a47df89d8c8c5b3c512b"
+    },
+    "src/Allegiance.ClientCore.MonoGame/Content/Sounds/accelcapital.ogg": {
+      "base": null,
+      "ours": "ccaf78bdf758d05338366dc0db3280418e09e093",
+      "theirs": "ccaf78bdf758d05338366dc0db3280418e09e093"
+    },
+    "src/Allegiance.ClientCore.MonoGame/Content/Sounds/lshipint.ogg": {
+      "base": null,
+      "ours": "3eef2bd10ccc9390d18642ab13360370ed856553",
+      "theirs": "3eef2bd10ccc9390d18642ab13360370ed856553"
+    },
+    "src/Allegiance.ClientCore/Session/ConnectionSession.cs": {
+      "base": "7cc68bc07a53e621bf343874fa07ea21660801e7",
+      "ours": "2516a1a9ae212522c301d63ecb66a2207cb280e6",
+      "theirs": "5f017bfb925620fab34a35b8e8dd5315efd655ee"
+    },
+    "src/Allegiance.Core/Model/Bucket.cs": {
+      "base": "3496ad59ac9fbd5138296fce8040e9b49890dcc6",
+      "ours": "3496ad59ac9fbd5138296fce8040e9b49890dcc6",
+      "theirs": "f9b7306973b690fc0bad6f8a0edac621e88bf351"
+    },
+    "src/Allegiance.Core/Model/Mission.cs": {
+      "base": "8e10806c8ef86d3d58e2e04cb81194db8254d747",
+      "ours": "8e10806c8ef86d3d58e2e04cb81194db8254d747",
+      "theirs": "8ced674ce45b7de21661d5128bace61e9e0c00de"
+    },
+    "src/Allegiance.Core/Model/Sector.cs": {
+      "base": "cfe91a592de28364a1ce1d0e85648b8a5b74b474",
+      "ours": "0ae2de44ca9318beddf25f26cdfce26c3313cd60",
+      "theirs": "73247b9d2f2e9d1c561d38c06c4d074806da0fb8"
+    },
+    "src/Allegiance.Core/Wire/FedMessageDumper.cs": {
+      "base": "00ad948a15461819e207608aa046972cdd1e2b12",
+      "ours": "00ad948a15461819e207608aa046972cdd1e2b12",
+      "theirs": "99520a46ad3290a9929860ea1ecd7daa72bd6c8c"
+    },
+    "src/Allegiance.Core/Wire/ResearchBriefing.cs": {
+      "base": "bacaca140fdbcf7f6b0d866c96d247b0bfc22632",
+      "ours": "bacaca140fdbcf7f6b0d866c96d247b0bfc22632",
+      "theirs": "fe361323d24dfe9a7cfba62182229800060468db"
+    },
+    "src/Allegiance.Core/Wire/ShowcaseFinaleRequest.cs": {
+      "base": null,
+      "ours": null,
+      "theirs": "fd12c81a7bc30ebcd1aa55b69325d518d2f9134b"
+    },
+    "src/Allegiance.Server/InboundPacket.cs": {
+      "base": "96c5b10ed7a9c5266df8ea42a8e044dc87edb765",
+      "ours": "221e7fc9d898a11379f44865ebb9d158a2108cf2",
+      "theirs": "2e58be8a37d7da4303ee87c69b923be56952adab"
+    },
+    "src/Allegiance.Server/Server.Broadcast.cs": {
+      "base": "4fb043f463a7c592582a925493b67bc09dfd6380",
+      "ours": "4fb043f463a7c592582a925493b67bc09dfd6380",
+      "theirs": "37b60371cb44cb577b10331d086da8d95e7d3b9d"
+    },
+    "src/Allegiance.Server/Server.Dispatch.cs": {
+      "base": "82088c8c15e7034e90321d59d55aadd33123f8cc",
+      "ours": "40e29ff28bbad7e3681a762684b48f087994df5f",
+      "theirs": "54373e758f97e2d3eb150bbdbd87fa2df708d2a4"
+    },
+    "src/Allegiance.Server/Server.Lifecycle.cs": {
+      "base": "3c1e6af9c21305edda2456e161cdcf5391baea7d",
+      "ours": "5130275d7454fdf3b42b892068bc8d7f5300f912",
+      "theirs": "40cffe5ac860dc2cafcfc87b3ebf282d57fdbe87"
+    },
+    "src/Allegiance.Server/Server.Lobby.cs": {
+      "base": "089bae8f36b7375acb2e1be26fd8011e40fa4335",
+      "ours": "089bae8f36b7375acb2e1be26fd8011e40fa4335",
+      "theirs": "ab626be2167f478c88a6e43fe37623a4cb1250f2"
+    },
+    "src/Allegiance.Server/Server.Showcase.cs": {
+      "base": "7a2b23450aa3b54cf072676eed66063f7c16edef",
+      "ours": "7a2b23450aa3b54cf072676eed66063f7c16edef",
+      "theirs": "0c7afb00eabec1c9a6b000518be21a707d119691"
+    },
+    "src/Allegiance.Server/ServerConfig.cs": {
+      "base": "347fb85757955dcde3c06b9b133814ecb67f7362",
+      "ours": "347fb85757955dcde3c06b9b133814ecb67f7362",
+      "theirs": "847dc567e22365aeaaf843fbdeec4c659ee44ab7"
+    },
+    "tests/Allegiance.ClientCore.MonoGame.Tests/P721ShipLoopBedsTests.cs": {
+      "base": null,
+      "ours": "e230268e4d8f53c8331ba0c2ad6f81e93eb3584e",
+      "theirs": "e230268e4d8f53c8331ba0c2ad6f81e93eb3584e"
+    },
+    "tests/Allegiance.ClientCore.MonoGame.Tests/P721ThrusterLoopSoundTests.cs": {
+      "base": null,
+      "ours": "15db2bc1c634abf5945168252c194ac5b69248d6",
+      "theirs": "15db2bc1c634abf5945168252c194ac5b69248d6"
+    },
+    "tests/Allegiance.ClientCore.Tests/P496CaptureProofLiveTests.cs": {
+      "base": "b8ec6d0ed0f274803ff33eba555217984a31ff95",
+      "ours": "b8ec6d0ed0f274803ff33eba555217984a31ff95",
+      "theirs": "67194fecf39d798fa5720810bc0a3f038c03ab7f"
+    },
+    "tests/Allegiance.ClientCore.Tests/P733FinaleDutyTests.cs": {
+      "base": null,
+      "ours": null,
+      "theirs": "3488a8e14305cd278221b8b711c9e1af35cc22ac"
+    },
+    "tests/Allegiance.ClientCore.Tests/P733ResearchTests.cs": {
+      "base": null,
+      "ours": null,
+      "theirs": "adaf40dcde5309fbe45a3a81d7e94e3935b7b978"
+    },
+    "tests/Allegiance.Core.Tests/P733ResearchTimeTests.cs": {
+      "base": null,
+      "ours": null,
+      "theirs": "6f54ea2eae5115550566f77e6750a1ef719df68b"
+    },
+    "tools/allegiance-mcp/BotManager.Finale.cs": {
+      "base": "0e16eebdc74fccdb1b49765c2588e26b9b4be2fe",
+      "ours": "0e16eebdc74fccdb1b49765c2588e26b9b4be2fe",
+      "theirs": "0308216c89b2af7dcb77e1dbea56af280f699e86"
+    },
+    "tools/allegiance-mcp/BotManager.Research.cs": {
+      "base": "c444dffaa3bafda6c0c005cef6f180dc30d637df",
+      "ours": "c444dffaa3bafda6c0c005cef6f180dc30d637df",
+      "theirs": "8730598b68de8dad836a254b35f70b863c8b7b05"
+    },
+    "tools/allegiance-mcp/BotManager.TechLoadouts.cs": {
+      "base": "c568a4bb37639144710a5cb2332b52fb12273fe5",
+      "ours": "c568a4bb37639144710a5cb2332b52fb12273fe5",
+      "theirs": "0218fa0e049a9ea869035959152c56f77b2d6174"
+    },
+    "tools/allegiance-mcp/BotManager.cs": {
+      "base": "2794f3a0b8b5807f052672f71d65db81db79bef0",
+      "ours": "2794f3a0b8b5807f052672f71d65db81db79bef0",
+      "theirs": "8b45af4b1fdb543d0ba39de6888af03f4d23a823"
+    },
+    "tools/allegiance-mcp/ResearchCommander.cs": {
+      "base": "86dfdfa624396e5a7d47fb0202690f68c2b47f1a",
+      "ours": "86dfdfa624396e5a7d47fb0202690f68c2b47f1a",
+      "theirs": "05d398900b709d0cec3fbdedb43b6e8856263c33"
+    },
+    "tools/allegiance-mcp/TechLoadoutSelector.cs": {
+      "base": "b5f93d7a7286ee3e97abd5d313d6882edf822cc2",
+      "ours": "b5f93d7a7286ee3e97abd5d313d6882edf822cc2",
+      "theirs": "22de01276d7899b2dca0b705963a2ea0be3e07b9"
+    }
+  }
+}

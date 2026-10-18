@@ -1,0 +1,450 @@
+--- ours/src/Allegiance.ClientCore/Session/ConnectionSession.cs
++++ merged/src/Allegiance.ClientCore/Session/ConnectionSession.cs
+@@ -576,6 +576,10 @@
+         Send(FedPacket.Pack(new[] { msg.Encode() }));
+     }
+ 
++    /// <summary>Arm the port-only, epoch-scoped research showcase finale deadline.</summary>
++    public void SendShowcaseFinale(Guid epoch, short winner) =>
++        Send(FedPacket.Pack([new ShowcaseFinaleRequest { Epoch = epoch, Winner = winner }.Encode()]));
++
+     /// <summary>Join the target wing (WinTrek.cpp:10659-10662).</summary>
+     public void SendWingId(short shipId, short wingId)
+     {
+--- ours/src/Allegiance.Core/Model/Bucket.cs
++++ merged/src/Allegiance.Core/Model/Bucket.cs
+@@ -294,7 +294,7 @@
+             long ttbms = (long)TimeToBuild * 1000;         // bucketigc.h:46
+             if (InvestedMilliseconds < ttbms)
+             {
+-                double deltaMs = (now - _lastUpdate) * 1000.0;
++                double deltaMs = (now - _lastUpdate) * 1000.0 * (Side?.Mission?.ShowcaseResearchTimeScale ?? 1);
+                 if (deltaMs < 0) deltaMs = 0;
+                 InvestedMilliseconds += (long)deltaMs;     // bucketigc.h:49
+                 if (InvestedMoney >= Price && InvestedMilliseconds >= ttbms)   // bucketigc.h:51
+--- ours/src/Allegiance.Core/Model/Mission.cs
++++ merged/src/Allegiance.Core/Model/Mission.cs
+@@ -459,6 +459,8 @@
+     public string ResearchEpoch { get; } = Guid.NewGuid().ToString("N");
+     /// <summary>P703 explicit showcase extension; scales periodic native income only, before
+     /// DoPayday distributes it to player wallets. Starting money and mining are unchanged.</summary>
++    /// <summary>Port-only showcase research accelerator. Native bucket and construction timers use 1.</summary>
++    public double ShowcaseResearchTimeScale { get; set; } = 1;
+     public double ShowcaseIncomeMultiplier { get; set; } = 1;
+ 
+     public ResearchSettings Research { get; private set; } = new();
+--- ours/src/Allegiance.Core/Model/Sector.cs
++++ merged/src/Allegiance.Core/Model/Sector.cs
+@@ -476,7 +476,7 @@
+ 
+         var side = builder.SideId
+             ?? throw new InvalidOperationException("builder has no SideId; a built station must belong to a side");
+-        var effect = new BuildingEffect(target, builder, stationType, side, now + BuildingEffect.BuildDuration);
++        var effect = new BuildingEffect(target, builder, stationType, side, now + BuildingEffect.BuildDuration / (builder.Mission?.ShowcaseResearchTimeScale ?? 1));
+         _buildingEffects.Add(effect);
+ 
+         // P294 — record the creation for the host to broadcast the
+--- ours/src/Allegiance.Core/Wire/FedMessageDumper.cs
++++ merged/src/Allegiance.Core/Wire/FedMessageDumper.cs
+@@ -29,7 +29,7 @@
+         [63]="GAME_OVER_PLAYERS", [64]="BUCKET_DONATE", [65]="BUCKET_STATUS", [67]="PLAYER_DONATE",
+         [68]="SIDE_INACTIVE", [70]="FIRE_MISSILE", [75]="SIDE_TECH_CHANGE", [76]="SIDE_ATTRIBUTE_CHANGE",
+         [77]="EJECT", [78]="SINGLE_SHIP_UPDATE", [80]="SUICIDE", [82]="FIRE_EXPENDABLE",
+-        [992]="RESEARCH_BRIEFING", [993]="RESEARCH_PRODUCTION",
++        [992]="RESEARCH_BRIEFING", [993]="RESEARCH_PRODUCTION", [994]="SHOWCASE_FINALE",
+         [83]="MISSILE_DESTROYED", [84]="MINE_DESTROYED", [85]="PROBE_DESTROYED", [86]="ASTEROID_DESTROYED",
+         [87]="FIRE_EXPENDABLE", [89]="TREASURE_SETS", [90]="SHIP_STATUS", [92]="PROBES_UPDATE",
+         [93]="ORDER_CHANGE", [94]="LEAVE_SHIP", [95]="JOINED_MISSION", [96]="LOADOUT_CHANGE",
+--- ours/src/Allegiance.Core/Wire/ResearchBriefing.cs
++++ merged/src/Allegiance.Core/Wire/ResearchBriefing.cs
+@@ -17,6 +17,8 @@
+     public ResearchPlan Plan { get; set; } = new();
+     public ResearchSettings Settings { get; set; } = new();
+     public double IncomeMultiplier { get; set; } = 1;
++    public string TechMode { get; set; } = "unlocked";
++    public double ResearchTimeScale { get; set; } = 1;
+     public bool Loop { get; set; }
+     public List<short> CompletedDevelopments { get; set; } = [];
+     public ushort GetFmid() => Fmid;
+--- ours/src/Allegiance.Server/InboundPacket.cs
++++ merged/src/Allegiance.Server/InboundPacket.cs
+@@ -60,6 +60,7 @@
+     // All authority and economy/loadout/hostile-input rules remain in its handlers.
+     private object? Decode() => Fmid switch
+     {
++        ShowcaseFinaleRequest.Fmid => ShowcaseFinaleRequest.Decode(Bytes),
+         Ping.Fmid => Ping.Decode(Bytes),
+         LogonRequest.Fmid => LogonRequest.Decode(Bytes),
+         ShipUpdate.Fmid => ShipUpdate.Decode(Bytes),
+--- ours/src/Allegiance.Server/Server.Broadcast.cs
++++ merged/src/Allegiance.Server/Server.Broadcast.cs
+@@ -138,6 +138,7 @@
+         // NotStarted mission armed after a game-over rotation whose restart
+         // deadline has passed enters the start countdown without a ready-up
+         // (native's unattended restart, fsmission.cpp:3539-3546).
++        Step("researchFinales", () => AdvanceResearchFinales(now));
+         Step("autoRestarts", () => AdvanceAutoRestarts(now));
+         // P660: refresh the absolute sim-clock sample during both timer phases.
+         // This PING broadcast is a port adaptation; native SET_START_TIME stays unchanged.
+--- ours/src/Allegiance.Server/Server.Dispatch.cs
++++ merged/src/Allegiance.Server/Server.Dispatch.cs
+@@ -80,6 +80,13 @@
+                 {
+                     Console.WriteLine($"[wire] bad PING from {from}: {e.Message}");
+                 }
++                continue;
++            }
++
++            if (fmid == ShowcaseFinaleRequest.Fmid)
++            {
++                try { ArmResearchFinale(from, command.Read<ShowcaseFinaleRequest>()); }
++                catch (ArgumentException e) { Console.WriteLine($"[wire] bad SHOWCASE_FINALE from {from}: {e.Message}"); }
+                 continue;
+             }
+ 
+--- ours/src/Allegiance.Server/Server.Lifecycle.cs
++++ merged/src/Allegiance.Server/Server.Lifecycle.cs
+@@ -70,6 +70,7 @@
+             researchCore = LoadCore();
+             foreach (var game in _config.Games) SelectShowcasePlans(researchCore, game);
+         }
++        Console.WriteLine(FormattableString.Invariant($"[boot] showcase.researchTimeScale = {_config.Showcase.ResearchTimeScale}"));
+         Console.WriteLine($"[boot] showcase.techMode = {_config.Showcase.TechMode}; incomeMultiplier={_config.Showcase.IncomeMultiplier}; researchCommander={(_config.Showcase.TechMode == "research" ? "on" : "per-plan")}");
+         ResolveBroadcastSnapshot();
+         // Reject invalid cadence before any other subsystem registers profiler
+@@ -1151,7 +1152,7 @@
+             sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
+ 
+         var researchPlans = SelectShowcasePlans(core, g);
+-        if (_config.Showcase.TechMode == "research") map = PrepareResearchMap(map, researchPlans);
++        if (_config.Showcase.TechMode == "research") map = PrepareResearchMap(core, map, researchPlans);
+         var mission = Mission.Assemble(core, map, sides, _host, _simNow, new ResearchSettings
+         {
+             AllowDevelopments = g.AllowDevelopments,
+@@ -1164,6 +1165,7 @@
+             mission.ResearchPlans[side] = selection.Plan;
+             Console.WriteLine($"[research-plan] side {side}: {selection.Message}");
+         }
++        mission.ShowcaseResearchTimeScale = _config.Showcase.TechMode == "research" ? _config.Showcase.ResearchTimeScale : 1;
+         mission.ShowcaseIncomeMultiplier = _config.Showcase.IncomeMultiplier;
+         mission.AllowDevelopments = g.AllowDevelopments;
+         mission.AllowAlliedRip = g.AllowAlliedRip;
+--- ours/src/Allegiance.Server/Server.Lobby.cs
++++ merged/src/Allegiance.Server/Server.Lobby.cs
+@@ -2938,6 +2938,7 @@
+             {
+                 Epoch = researchMission.ResearchEpoch, SideId = side.Id, Plan = plan,
+                 Settings = researchMission.Research, IncomeMultiplier = _config.Showcase.IncomeMultiplier,
++                TechMode = _config.Showcase.TechMode, ResearchTimeScale = researchMission.ShowcaseResearchTimeScale,
+                 Loop = _config.Showcase.LoopResearchPlans,
+                 CompletedDevelopments = side.Buckets.Where(b => b.Completed && b.Development.HasValue)
+                     .Select(b => b.Development!.Value.DevelopmentId).ToList(),
+--- ours/src/Allegiance.Server/Server.Showcase.cs
++++ merged/src/Allegiance.Server/Server.Showcase.cs
+@@ -1,22 +1,69 @@
+ using Allegiance.Core;
+ using Allegiance.Core.Model;
++using Allegiance.Core.Sim;
++using Allegiance.Core.Wire;
++using Allegiance.Core.Transport;
+ 
+ namespace Allegiance.Server;
+ 
+ public sealed partial class Server
+ {
++    private readonly Dictionary<Mission, (double Deadline, short Winner)> _researchFinales = new();
++
++    // Explicit port orchestration. A request is scoped to its seated peer's current mission
++    // and epoch; retries cannot postpone the deadline or arm the automatic next match.
++    private void ArmResearchFinale(ConnectionId from, ShowcaseFinaleRequest request)
++    {
++        if (_config.Showcase.TechMode != "research" || !_peerShips.TryGetValue(from, out var live)
++            || live.Ship.Mission is not { Stage: MissionStage.Started } mission
++            || live.Ship.SideId != request.Winner || !mission.Sides.Any(s => s.Id == request.Winner && s.Active)
++            || request.Epoch.ToString("N") != mission.ResearchEpoch || _researchFinales.ContainsKey(mission)) return;
++        double deadline = _simNow + _config.Showcase.FinaleTimeoutSeconds;
++        _researchFinales[mission] = (deadline, request.Winner);
++        Console.WriteLine(FormattableString.Invariant($"[finale] research showcase epoch={mission.ResearchEpoch} winner={request.Winner}: bounded finale armed; deadline={deadline:0.###}; timeout={_config.Showcase.FinaleTimeoutSeconds}s; legal loadouts only, native station damage may be unavailable"));
++    }
++
++    private void AdvanceResearchFinales(double now)
++    {
++        foreach (var (mission, finale) in _researchFinales.ToArray())
++        {
++            if (!_missions.Contains(mission) || mission.Stage != MissionStage.Started)
++            { _researchFinales.Remove(mission); continue; }
++            if (now < finale.Deadline) continue;
++            _researchFinales.Remove(mission);
++            const string reason = "Research showcase finale deadline: best available legal loadouts did not end the match";
++            Console.WriteLine($"[finale] {reason}; epoch={mission.ResearchEpoch}; winner={finale.Winner}");
++            DeclareGameOver(mission, finale.Winner, reason);
++        }
++    }
++
+     /// <summary>Showcase-only map content. Supply missing branch rocks from the selected
+     /// plans; constructors must still be funded, fly and build normally. Capability
+     /// matching is native (Igc/shipIGC.cpp:2814-2815); this resource layout is a port extension.</summary>
+-    private static MissionMap PrepareResearchMap(MissionMap map,
++    private static MissionMap PrepareResearchMap(StaticCore core, MissionMap map,
+         IReadOnlyDictionary<short, ResearchPlanCatalog.Selection> plans)
+     {
++        var stations = map.Stations.ToArray();
++        // File maps can bake a different civilization's home type. Research plans
++        // assume the selected civ's initial station (native generated homes:
++        // Igc/mapmakerigc.cpp:926-932). Align showcase map content with that plan.
++        foreach (var (side, selection) in plans.OrderBy(kv => kv.Key))
++        {
++            int home = Array.FindIndex(stations, st => st.SideId == side
++                && core.StationTypes.TryGetValue(st.StationTypeId, out var type)
++                && type.HasCapability(DataStationTypeIGC.SabmRestart));
++            if (home < 0) continue;
++            short initial = core.Civilizations[selection.Plan.CivId].InitialStationTypeId;
++            if (stations[home].StationTypeId == initial) continue;
++            Console.WriteLine($"[research-map] side={side} homeType={stations[home].StationTypeId}->{initial}: selected civilization starting station");
++            stations[home] = stations[home] with { StationTypeId = initial };
++        }
+         var rocks = map.Asteroids.ToList();
+         var usedIds = rocks.Select(r => r.AsteroidId).ToHashSet();
+         int nextId = 0;
+         foreach (var (side, selection) in plans.OrderBy(kv => kv.Key))
+         {
+-            var homes = map.Stations.Where(st => st.SideId == side).ToArray();
++            var homes = stations.Where(st => st.SideId == side).ToArray();
+             if (homes.Length == 0)
+                 throw new InvalidDataException($"showcase.techMode=research: side {side} has no home station for research map resources");
+             var home = homes[0];
+@@ -48,6 +95,6 @@
+                 Console.WriteLine($"[research-map] side={side} capability={mask} available={present + added} planned={requirement.Count()} added={added}");
+             }
+         }
+-        return MissionMap.FromLists(map.Clusters, map.Warps, map.Stations, rocks);
++        return MissionMap.FromLists(map.Clusters, map.Warps, stations, rocks);
+     }
+ }
+--- ours/src/Allegiance.Server/ServerConfig.cs
++++ merged/src/Allegiance.Server/ServerConfig.cs
+@@ -11,6 +11,10 @@
+     /// <summary>Opt-in orchestration; setters preserve absent source-generated JSON defaults.</summary>
+     public string TechMode { get; set; } = "unlocked";
+     public double IncomeMultiplier { get; set; } = 1;
++    /// <summary>Showcase research accelerator, not native gameplay. Ignored in unlocked mode.</summary>
++    public double ResearchTimeScale { get; set; } = 1;
++    /// <summary>Hard simulation-time bound after a research showcase finale fires. Port orchestration.</summary>
++    public double FinaleTimeoutSeconds { get; set; } = 300;
+     public bool LoopResearchPlans { get; set; }
+     public void Validate()
+     {
+@@ -18,6 +22,10 @@
+             throw new InvalidDataException("showcase.techMode must be unlocked|research");
+         if (!double.IsFinite(IncomeMultiplier) || IncomeMultiplier < 1 || IncomeMultiplier > 10000)
+             throw new InvalidDataException("showcase.incomeMultiplier must be finite and between 1 and 10000");
++        if (!double.IsFinite(FinaleTimeoutSeconds) || FinaleTimeoutSeconds < 1 || FinaleTimeoutSeconds > 3600)
++            throw new InvalidDataException("showcase.finaleTimeoutSeconds must be finite and between 1 and 3600");
++        if (!double.IsFinite(ResearchTimeScale) || ResearchTimeScale < 1 || ResearchTimeScale > 64)
++            throw new InvalidDataException("showcase.researchTimeScale must be finite and between 1 and 64");
+     }
+ }
+ 
+--- ours/tests/Allegiance.ClientCore.Tests/P496CaptureProofLiveTests.cs
++++ merged/tests/Allegiance.ClientCore.Tests/P496CaptureProofLiveTests.cs
+@@ -41,7 +41,9 @@
+         Games =
+         [
+             new Gm { Name = debug ? "P496 Capture Proof (debug)" : "P496 Capture Proof (normal)",
+-                     Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
++                     Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"],
++                     // The scenario seats all defenders before attackers; preserve those explicit sides.
++                     MaxTeamImbalance = 0x7fff },
+         ],
+     };
+ 
+--- ours/tools/allegiance-mcp/BotManager.Finale.cs
++++ merged/tools/allegiance-mcp/BotManager.Finale.cs
+@@ -130,6 +130,17 @@
+         var selected = TechLoadoutSelector.Select(core, civ, Showcase.HullRole.Bomber,
+             techs, shop.Value.StationTypeId, target)?.Strike;
+         if (selected is not null) return selected;
++        if (ResearchFinale(bot))
++        {
++            long budget = long.MaxValue;
++            if (bot.Cs is { } peer) lock (peer.Gate) budget = peer.World.MyMoney ?? 0;
++            var fallback = TechLoadoutSelector.SelectAvailableStrike(core, civ, techs, shop.Value.StationTypeId, target, budget);
++            if (fallback is not null)
++            {
++                Console.WriteLine($"[finale] side {bot.Side}, {bot.Name}: {fallback.Reason}");
++                return fallback.Strike;
++            }
++        }
+         var bombers = core.HullTypes.Values.Where(h => Showcase.IsPlayerBuyable(core, h)
+             && Showcase.ClassifyHull(h) == Showcase.HullRole.Bomber).ToArray();
+         var buyable = bombers.Where(h => TechTreeBitMask.RequiredTechsBuyable(h.TtbmRequired, shop.Value.TtbmLocal, techs)).ToArray();
+@@ -145,7 +156,8 @@
+             Console.WriteLine($"[finale] side {bot.Side}, {bot.Name}: no buyable bomber strike loadout: {reason}; "
+                 + $"developmentTechs={(knownTech ? developmentBits.ToString() : "unknown (no CREATE_BUCKETS/SIDE_TECH_CHANGE)")}, "
+                 + $"sideTechBits={techs.PopCount}, shopType={shop?.StationTypeId}, dock={dock}, "
+-                + $"ownedStations(id:type)=[{stationTypes}], targetType={target.StationTypeId}; keeping existing bomber loadout");
++                + $"ownedStations(id:type)=[{stationTypes}], targetType={target.StationTypeId}; "
++                + (ResearchFinale(bot) ? "research finale uses available combat loadout and bounded server deadline" : "keeping existing bomber loadout"));
+             return null;
+         }
+     }
+@@ -286,16 +298,30 @@
+             if (sides.Length == 0) continue;
+             run.Sides = sides;
+             run.TriggeredAt = now;
++            // Arm the server's simulation-time bound once at the actual maturity trigger.
++            // This remains effective if no legal starting weapon can damage a station.
++            var researchPeer = bots.FirstOrDefault(b => sides.Contains(b.Side) && ResearchFinale(b));
++            if (researchPeer?.Cs is { } peer)
++                lock (peer.Gate)
++                    if (Guid.TryParseExact(peer.World.ResearchBriefing?.Epoch, "N", out var epoch))
++                        peer.SendShowcaseFinale(epoch, researchPeer.Side);
+             foreach (short side in sides)
+             {
+-                var bombers = bots.Where(b => b.Side == side && IsFinaleBomber(b))
+-                    .OrderBy(b => b.ShipId).Take(run.Settings.Bombers).ToArray();
++                var bombers = bots.Where(b => b.Side == side && (IsFinaleBomber(b) || ResearchFinale(b)))
++                    .OrderByDescending(b => ResearchFinale(b) && b.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase))
++                    .ThenBy(b => b.ShipId).Take(run.Settings.Bombers).ToArray();
+                 foreach (var bot in bombers) bot.FinaleBomberReserved = true;
+                 var plan = run.Plans[side];
+                 plan.BomberBudget = bombers.Length;
+                 plan.EscortBudget = bombers.Length == 0 ? 0 : run.Settings.EscortBudget(bots.Count(b => b.Side == side && IsFinaleFighter(b)));
+             }
+         }
++    }
++
++    private static bool ResearchFinale(ActiveBot bot)
++    {
++        if (bot.Cs is not { } cs) return false;
++        lock (cs.Gate) return cs.World.ResearchBriefing?.TechMode == "research";
+     }
+ 
+     private static bool IsFinaleBomber(ActiveBot bot) =>
+--- ours/tools/allegiance-mcp/BotManager.Research.cs
++++ merged/tools/allegiance-mcp/BotManager.Research.cs
+@@ -62,7 +62,7 @@
+                                 {
+                                     commander?.ReleaseReservations();
+                                     commander = new(side, briefing.Epoch, new ResearchTree(core, briefing.Plan.CivId, briefing.Settings),
+-                                        briefing.Plan, initial.Value, _researchRocks, briefing.Loop);
++                                        briefing.Plan, initial.Value, _researchRocks, briefing.Loop, briefing.ResearchTimeScale);
+                                     _research[side] = commander;
+                                 }
+                                 foreach (var action in commander.Tick(ResearchSnapshot(peer, side)))
+--- ours/tools/allegiance-mcp/BotManager.TechLoadouts.cs
++++ merged/tools/allegiance-mcp/BotManager.TechLoadouts.cs
+@@ -109,6 +109,15 @@
+                     target = Catalog.RepresentativeCore().StationTypes[plan.TargetTypeId];
+                 if (!Enum.TryParse<Showcase.HullRole>(bot.Role, true, out var role)) role = Showcase.HullRole.Fighter;
+                 selected = PickTechLoadout(shop, role, target, allowRoleFallback: !bot.FinaleBomberActive);
++                if (selected is null && bot.FinaleBomberActive && target is { } station
++                    && cs.World.ResearchBriefing?.TechMode == "research")
++                {
++                    selected = TechLoadoutSelector.SelectAvailableStrike(Catalog.RepresentativeCore(), shop.Civ,
++                        shop.Techs, shop.DockType, station, shop.Budget);
++                    selected ??= PickTechLoadout(shop, role, target, allowRoleFallback: true) is { } available
++                        ? available with { Reason = "research finale: no legal station-damaging loadout; proceeding with best available combat loadout; bounded server finale armed; " + available.Reason }
++                        : null;
++                }
+             }
+             if (selected is null)
+             {
+--- ours/tools/allegiance-mcp/BotManager.cs
++++ merged/tools/allegiance-mcp/BotManager.cs
+@@ -2693,10 +2693,13 @@
+         }
+ 
+         // The requested role can be locked while this life flies a temporary
+-        // fighter/scout. Only a real bomber hull takes the station-attack duty.
++        // fighter/scout. Research finales can additionally assign a verified legal
++        // station-damaging strike loadout on another player hull.
+         if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase)
+             && Catalog.RepresentativeCore().HullTypes.TryGetValue(ActualHullId(bot), out var flyingHull)
+-            && Showcase.ClassifyHull(flyingHull) == Showcase.HullRole.Bomber
++            && (Showcase.ClassifyHull(flyingHull) == Showcase.HullRole.Bomber
++                || (bot.FinaleBomberActive && bot.FinaleGrantVerified && ResearchFinale(bot)
++                    && bot.PreviousLegalLoadout?.Strike is { } strike && strike.HullId == flyingHull.HullId))
+             && (bot.Arena || bot.TargetSector is null || bot.TargetSector == myCluster))
+         {
+             short? station;
+--- ours/tools/allegiance-mcp/ResearchCommander.cs
++++ merged/tools/allegiance-mcp/ResearchCommander.cs
+@@ -42,6 +42,7 @@
+     private readonly Dictionary<short, Work> _repairs = new();
+     private readonly Dictionary<short, short> _reservations;
+     private readonly bool _loop;
++    private readonly double _researchTimeScale;
+     private int _index, _cycles;
+     private double _firstTime = double.NaN, _lastIncomeTime, _income;
+     private int? _lastWallet;
+@@ -51,10 +52,10 @@
+     internal string Epoch { get; }
+ 
+     internal ResearchCommander(short side, string epoch, ResearchTree tree, ResearchPlan plan,
+-        TechTreeBitMask initialTechs, Dictionary<short, short> reservations, bool loop = false)
++        TechTreeBitMask initialTechs, Dictionary<short, short> reservations, bool loop = false, double researchTimeScale = 1)
+     {
+         ResearchPlanCatalog.Validate(tree, plan.Core, plan);
+-        Side = side; Epoch = epoch; _tree = tree; _plan = plan; _reservations = reservations; _loop = loop;
++        Side = side; Epoch = epoch; _tree = tree; _plan = plan; _reservations = reservations; _loop = loop; _researchTimeScale = researchTimeScale;
+         // Freeze costs with CIV base attributes, never the post-research GA snapshot (bucketigc.cpp:66-74).
+         _buckets = BucketCatalog.Describe(tree.Core, initialTechs, GlobalAttributeSet.FromArray(tree.Civ.GasBaseAttributes));
+     }
+@@ -171,12 +172,12 @@
+                 // BUCKET_STATUS is donation-driven. Estimate between observations with the
+                 // native money-proportional time ceiling (bucketigc.h:44-61), never as completion proof.
+                 double seconds = Math.Min(Math.Floor(moneyFraction * bucket.TimeToBuildSec),
+-                    funding.Milliseconds / 1000.0 + Math.Max(0, world.Time - work.FundingObservedAt));
++                    funding.Milliseconds / 1000.0 + Math.Max(0, world.Time - work.FundingObservedAt) * _researchTimeScale);
+                 progress = Math.Min(moneyFraction, bucket.TimeToBuildSec == 0 ? 1 : seconds / bucket.TimeToBuildSec);
+                 double rate = _income > 0 && _lastIncomeTime > _firstTime ? _income / (_lastIncomeTime - _firstTime) : 0;
+                 double deficit = Math.Max(0, bucket.Price - funding.Money - world.Wallet);
+-                eta = deficit == 0 ? Math.Max(0, bucket.TimeToBuildSec - seconds)
+-                    : rate > 0 ? deficit / rate + Math.Max(0, bucket.TimeToBuildSec - seconds) : null;
++                eta = deficit == 0 ? Math.Max(0, bucket.TimeToBuildSec - seconds) / _researchTimeScale
++                    : rate > 0 ? deficit / rate + Math.Max(0, bucket.TimeToBuildSec - seconds) / _researchTimeScale : null;
+                 status = funding.Money >= bucket.Price ? "building bucket" : world.Wallet == 0 ? "waiting for money" : "funding";
+                 bool allowed = true;
+                 if (step.Action == "drone" && world.Units.Count(u => u.Alive && u.DroneType == step.Id) >= MaxDronesPerType)
+@@ -281,7 +282,7 @@
+         double overall = _plan.Steps.Count == 0 ? 1 : Math.Clamp((_index + (progress < 1 ? progress : 0)) / _plan.Steps.Count, 0, 1);
+         Telemetry = new(Side, _plan.Name, displayedStep ?? Math.Min(_index + 1, _plan.Steps.Count), _plan.Steps.Count,
+             step?.Action ?? "idle", step?.Name ?? "", status, overall * 100, progress * 100, world.Wallet,
+-            eta, "current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null",
++            eta, "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+             world.CompletedDevelopments.Order().Select(id => _tree.Core.Developments.TryGetValue(id, out var d) ? d.Name : id.ToString()).ToArray(),
+             world.Stations.Select(id => _tree.Core.StationTypes[id].Name).ToArray(), work?.Constructor, work?.Rock, _cycles);
+     }
+--- ours/tools/allegiance-mcp/TechLoadoutSelector.cs
++++ merged/tools/allegiance-mcp/TechLoadoutSelector.cs
+@@ -180,14 +180,27 @@
+             $"role={role}; techBits={c.Techs.PopCount}; {rule}; stable ID ties; legal nonobsolete human hull {h.HullId} '{h.Name}'; cost={price}; "
+             + string.Join(", ", parts.Select(p => $"{Part(c.Core, p.PartId).EquipmentType}@{p.MountId}={p.PartId} '{Part(c.Core, p.PartId).Name}' x{p.Amount}")), strike);
+     }
+-    private static ShowcaseFinale.StrikeLoadout? SelectBomber(Context context, DataStationTypeIGC target)
++    // Same exhaustive station-damage ranking and native purchase gates as the bomber selector.
++    // Research finales may use another human combat hull while bomber tech is unavailable.
++    internal static Selection? SelectAvailableStrike(StaticCore core, short civId, TechTreeBitMask techs,
++        short dockTypeId, DataStationTypeIGC target, long budget)
++    {
++        if (!core.StationTypes.TryGetValue(dockTypeId, out var dock)) return null;
++        var context = Create(core, civId, techs, dock.TtbmLocal, [dockTypeId], budget);
++        var strike = SelectBomber(context, target, anyCombatHull: true);
++        if (strike is null) return null;
++        var selected = Describe(context, Showcase.HullRole.Bomber, strike.HullId, strike.Parts, strike);
++        return selected with { Reason = "research finale: no legal affordable bomber; best available station-damage loadout; " + selected.Reason };
++    }
++
++    private static ShowcaseFinale.StrikeLoadout? SelectBomber(Context context, DataStationTypeIGC target, bool anyCombatHull = false)
+     {
+         var core = context.Core;
+         var techs = context.Techs;
+         var stationLocal = context.Local;
+         var options = new List<ShowcaseFinale.StrikeLoadout>();
+         foreach (var hull in core.HullTypes.Values.Where(h => Showcase.IsPlayerBuyable(core, h)
+-                     && Showcase.ClassifyHull(h) == Showcase.HullRole.Bomber
++                     && (anyCombatHull || Showcase.ClassifyHull(h) == Showcase.HullRole.Bomber)
+                      && context.Hulls.Contains(h.HullId)
+                      && !SuccessorUpgrade.HullIsObsolete(core, h, stationLocal, techs)).OrderBy(h => h.HullId))
+         {

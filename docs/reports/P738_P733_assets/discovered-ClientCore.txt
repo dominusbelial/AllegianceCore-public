@@ -1,0 +1,1280 @@
+The following Tests are available:
+    Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights(killPod: False, botCount: 1)
+    Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights(killPod: True, botCount: 3)
+    Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.ScenarioBot_AutoAcceptsAndEngagesTheSpecificCommandedTarget
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseAlert_BoundedNearestWing_ResumesOriginalRouteAfterQuietAndMinimum
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseRepeatedAlerts_ExtendSameWing_AndRespectSideCapAcrossBases
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseRelaunch_EngagesVisibleBaseAttackerBeforeLeaving_AndPrioritizesBomber
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseTravellingFighter_AnswersReceivedHitOnSelfOrFriendlyAsset_ThenResumes(asset: False)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseTravellingFighter_AnswersReceivedHitOnSelfOrFriendlyAsset_ThenResumes(asset: True)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseDisableSwitch_RestoresTravelPastThreats_AndIgnoresAlerts
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseAfterArrival_ReturnsToOriginalObjective_AndPreservesStaging
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseDelayedWorldSync_GetsFullMinimumDeployment
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseDetour_FliesHomeWarp_PreservesObjectivePath_AndRecordsArrival
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseAlert_DoesNotPullOtherRoles(role: "bomber")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseAlert_DoesNotPullOtherRoles(role: "scout")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseObservations_IgnoreHiddenEnemiesAndUnrelatedChat_AndExpireOnRotation
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DefenseSettings_DefaultsClampAndInvalidValues
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DockedPod_BuysPlayerLoadoutAndLaunches_WithBoundedRetries
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.LostBot_CannotDriveOrReserveEngagers_AndIsReportedOnRemoval
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.LostBot_DoesNotHoldLivingWing
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.FailedArena_RemovesRegisteredEntry_AndReportsFailure
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.SameShipId_NewMissionGenerationStillResetsLife
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.ChangedIdentity_WithSameShipId_ResetsArrival(identity: "cookie")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.ChangedIdentity_WithSameShipId_ResetsArrival(identity: "session")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.Bomber_SelectsOnlyEnemyStationsInDestination_AndReactsOnlyToVisibleAttackers
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.HeadlessProjectiles_StorageStaysEmpty_BeforeAndAfterDrains
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.PlainBot_DisablesUnusedRawAccumulators
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.SpatialIndices_AreSharedWithinSideAndSector_AndExcludeOtherSides
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.Selector_DoesNotDependOnUnusedTeammateCount
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.Scheduler_DropsDebtAfterHitch_AndRecordsOverrun
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.KillAndChatSequences_SurviveRolloverAndReset_WithoutRecount
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.PendingOwnership_DisposesOnFailure_TransfersOnlyOnSuccess(kind: "combat")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.PendingOwnership_DisposesOnFailure_TransfersOnlyOnSuccess(kind: "plain")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.PendingOwnership_DisposesOnFailure_TransfersOnlyOnSuccess(kind: "commander")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.PendingOwnership_DisposesOnFailure_TransfersOnlyOnSuccess(kind: "probe")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.Arena_AllRolesUseArenaSector(role: "Bomber")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.Arena_AllRolesUseArenaSector(role: "Fighter")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.Arena_AllRolesUseArenaSector(role: "Scout")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.MissingTarget_EngagesInPlace(role: "Bomber")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.MissingTarget_EngagesInPlace(role: "Fighter")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DeadOrderedTarget_IsClearedBeforeAutonomousCombat(state: "dead")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DeadOrderedTarget_IsClearedBeforeAutonomousCombat(state: "gone")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DeadOrderedTarget_IsClearedBeforeAutonomousCombat(state: "missing")
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.SyncBarrier_ExaminesOtherWingsOfSameGoal_AndTimeoutStaggerWorks
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.Staging_UsesAssignedPrefix_AndFallbackAvoidsRendezvous
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.SpatialGrid_EnlargesCellsToCap_WithoutDroppingOccupants
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.ActualHull_UsesWorldGrant_IncludingPod_AheadOfRequestedHull
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.SnapshotAttitude_ExtrapolatesWithNativeAxisSigns
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DecisionReadMode_FollowsWorldFlag_AfterBotManagerInitialization(initialMode: False)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.DecisionReadMode_FollowsWorldFlag_AfterBotManagerInitialization(initialMode: True)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.FreshSnapshotPublish_AllocationStaysBoundedAt390Ships
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.SnapshotFrame_IsOneGeneration_EvenWhenWorldPublishesDuringDecision
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.HeldSnapshot_IsStableBeyondEightPublishes_AndAgeSamplesAreBounded
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(knownTech: False)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_NoBuyableBomberKeepsCurrentHullPartsAndVerifiesNormalLaunch(knownTech: True)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P656b_CapitalWithBomberRoleCannotBeReserved
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_RollingKillWindowExpiresAndCountsEachCreditedKillOnceAcrossClients
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled(elapsed: 1799, mature: True)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_BeforeTriggerControllerLeavesOpeningDecisionsIdenticalToDisabled(elapsed: 1801, mature: False)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_DefenseBomberPriorityRunsBeforeEitherP622Mode(legacy: False)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_DefenseBomberPriorityRunsBeforeEitherP622Mode(legacy: True)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_EscortControllerUsesBomberOwnHitEventsAndReturnsWhenOutsideLeash
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes(legacy: False)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StrikeKeepsAttackingItsGarrisonUnderFire_InBothP622Modes(legacy: True)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_StatusIncludesGatesOutcomeAndNextMissionReset
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P656_OnlyCompletedDeathDockAndRelaunchCountsAsMature_OffRegistersNothing
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.WorkerStagingUsesSupervisorReleaseAndRejectsHeldOrExpiredDecisions
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.WorkerAppliesGlobalRecallAndRestoresItsOriginalObjectiveWhenReleased
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.StopAndClearDisconnectRealPeersAndClearRemovalHistory
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_restored_bombers_and_escorts_can_join_the_next_finale_wing
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: False)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: False, ejected: True)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: False)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P682b_initial_launch_is_consumed_once_even_with_partial_grant_or_immediate_ejection(partial: True, ejected: True)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.Pod_outcome_counts_a_true_death_restart_separately_from_flying_home(trueDeath: False)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.Pod_outcome_counts_a_true_death_restart_separately_from_flying_home(trueDeath: True)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P700_ShipHitsInBattleSectorNeverBecomeStationDefense(friendlyAsset: False)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P700_ShipHitsInBattleSectorNeverBecomeStationDefense(friendlyAsset: True)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P700_PassiveVisibleEnemyDoesNotStartOrRefreshDefense
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P700_DefenderApproachesThenFires_AndDoesNotParkAtMatchedZeroSpeed
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P700_FriendlyObstruction_Repositions_AndFriendsBehindTargetDoNotBlock(behindTarget: False)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P700_FriendlyObstruction_Repositions_AndFriendsBehindTargetDoNotBlock(behindTarget: True)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P700_WarpExitClearancePrecedesImmediateDefense
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P700_StationHitStartsDefense_OriginalHitTimeBoundsAllClear
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P700_TargetDirectlyBehindCommandsTurn
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P700_GlobalRecallCannotDefendSectorWithoutFriendlyStation
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P700_IdleMetricSamplesActualBots_ExcludesDockedLostAndTargetless
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P700_AmbiguousOrWrongSectorShipHitDoesNotInventStationAttack(ambiguous: False)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P700_AmbiguousOrWrongSectorShipHitDoesNotInventStationAttack(ambiguous: True)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted(flyingHull: 14, attacksStation: False)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P704_Requested_bomber_role_attacks_stations_only_after_a_real_bomber_is_granted(flyingHull: 23, attacksStation: True)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P707_SubthresholdDriftDoesNotResetMovementClockOrHideIdle(speed: 0)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P707_SubthresholdDriftDoesNotResetMovementClockOrHideIdle(speed: 0.5)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P707_OwnVelocityRefreshesMovementClockEvenWithoutPositionChange(speed: 1)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P707_OwnVelocityRefreshesMovementClockEvenWithoutPositionChange(speed: 20)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P707_CloseCombatStrafesAfterTwoSecondsDespiteObserverDrift
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P707_FirstMovingEchoDoesNotCancelTheEscapePulse
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P733_Verified_available_strike_takes_station_duty_only_in_research(mode: "research", verified: True, attacks: True)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P733_Verified_available_strike_takes_station_duty_only_in_research(mode: "research", verified: False, attacks: False)
+    Allegiance.ClientCore.Tests.BotFixRegressionTests.P733_Verified_available_strike_takes_station_duty_only_in_research(mode: "unlocked", verified: True, attacks: False)
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.ResolvesHullByExactNameAgainstRealCorpus
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.ResolvesUniqueHullSubstringAgainstRealCorpus
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.UnknownHullThrowsASpecificError
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.BlankHullThrows
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.ResolvesPartByExactNameAgainstRealCorpus
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.UnknownPartThrowsASpecificError
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.AllPartsReportsARealCategoryPerPart
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.DefaultPartsIsTheRealFourCategoryPlayableLoadout
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.ResolvesSectorByNumericId
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.ResolvesSectorByExactName
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.ExactSectorNameBeatsSubstringMatch
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.UniqueSectorSubstringResolves
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.AmbiguousSectorNameThrowsSpecificError
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.UnknownSectorThrowsSpecificError
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.BlankSectorThrows
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.EmptySectorMapThrows
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.BomberPlanResolvesARealAntiBaseWeaponOnABomberHull
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.BomberPlanEscortIsTheRealFighter
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.CapturePlanResolvesARealBoardCapableHull
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.CapturePlanEscortIsTheRealFighter
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.IsSupportedScenarioPresetRecognisesThePresets(preset: "bomber_run", expected: True)
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.IsSupportedScenarioPresetRecognisesThePresets(preset: "capture_attempt", expected: True)
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.IsSupportedScenarioPresetRecognisesThePresets(preset: "elimination_run", expected: True)
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.IsSupportedScenarioPresetRecognisesThePresets(preset: "minefield", expected: False)
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.IsSupportedScenarioPresetRecognisesThePresets(preset: "", expected: False)
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.IsSupportedScenarioPresetRecognisesThePresets(preset: "bogus", expected: False)
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.RotationCompletedRequiresNotStartedSeatedAndActive(stage: 0, hasSeat: True, sideActive: True, expected: True)
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.RotationCompletedRequiresNotStartedSeatedAndActive(stage: 0, hasSeat: False, sideActive: True, expected: False)
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.RotationCompletedRequiresNotStartedSeatedAndActive(stage: 0, hasSeat: True, sideActive: False, expected: False)
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.RotationCompletedRequiresNotStartedSeatedAndActive(stage: 3, hasSeat: True, sideActive: True, expected: False)
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.RotationCompletedRequiresNotStartedSeatedAndActive(stage: 2, hasSeat: True, sideActive: True, expected: False)
+    Allegiance.ClientCore.Tests.BotSpawnerResolutionTests.RotationCompletedRequiresNotStartedSeatedAndActive(stage: null, hasSeat: True, sideActive: True, expected: False)
+    Allegiance.ClientCore.Tests.ChaffDropLiveTests.SendFireExpendable_DeploysChaffAndDecrementsAmmo_OverTheWire
+    Allegiance.ClientCore.Tests.ChaffDropLiveTests.SendFireExpendable_ClientWorldReceivesCreateChaff_OverTheWire
+    Allegiance.ClientCore.Tests.ChatBuoyLiveTests.SendChatBuoy_RelayedToPeers_LandsInReceiversChatBuoys
+    Allegiance.ClientCore.Tests.ChatBuoyLiveTests.SendChatBuoy_IndividualTarget_AddressesOnlyReceiver
+    Allegiance.ClientCore.Tests.ClientAutopilotDodgeTests.Autopilot_dodges_an_asteroid_on_the_straight_line_when_collision_is_imminent
+    Allegiance.ClientCore.Tests.ClientAutopilotDodgeTests.Autopilot_reverts_to_straight_line_and_arrives_when_no_longer_imminent
+    Allegiance.ClientCore.Tests.ClientAutopilotDodgeTests.Autopilot_with_dodge_clears_the_rock_and_arrives(useDodge: True)
+    Allegiance.ClientCore.Tests.ClientAutopilotDodgeTests.Autopilot_with_dodge_clears_the_rock_and_arrives(useDodge: False)
+    Allegiance.ClientCore.Tests.ClientAutopilotDodgeTests.Autopilot_does_not_dodge_the_station_it_is_flying_to
+    Allegiance.ClientCore.Tests.ClientJoinSideLiveTests.Teammate_side_change_updates_viewer_after_cross_side_stint
+    Allegiance.ClientCore.Tests.ClientJoinSideLiveTests.Own_ship_join_side_updates_MySideId_and_own_entity
+    Allegiance.ClientCore.Tests.ClientReadyUpUnfreezesNormalMapLiveTests.Harness_ready_up_starts_normal_map_mission_and_opposing_combat_bot_moves
+    Allegiance.ClientCore.Tests.ClientWalletLiveTests.Join_SetMoney_CarriesTheJoinersWallet_NotTheSideTreasury_Live
+    Allegiance.ClientCore.Tests.ClientWalletLiveTests.Payday_CreditsLeader_KeepsDonorsFlat_NonDonorGetsShare_Live
+    Allegiance.ClientCore.Tests.ClientWalletLiveTests.BucketDonation_DecrementsDonorClientsMyMoney_ExactlyOnce_Live
+    Allegiance.ClientCore.Tests.ClientWarpApproachDodgeLiveTests.Client_bot_with_shared_dodge_transits_two_hops_through_real_alderan_field
+    Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target
+    Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume
+    Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Slow_board_hull_26_transits_when_the_warp_approach_flies_through_the_aleph
+    Allegiance.ClientCore.Tests.ClientWorldAlephTransitTests.Departure_ThroughWarpInMySector_SignalsThatWarp
+    Allegiance.ClientCore.Tests.ClientWorldAlephTransitTests.Departure_NotNearAWarp_InMySector_DoesNotSignal
+    Allegiance.ClientCore.Tests.ClientWorldAlephTransitTests.Departure_NearAWarpInAnotherSector_DoesNotSignal
+    Allegiance.ClientCore.Tests.ClientWorldAlephTransitTests.Departure_DockingOrLoggingOff_DoesNotSignal
+    Allegiance.ClientCore.Tests.ClientWorldAlephTransitTests.OwnArrival_IntoANewSectorNearItsAleph_SignalsThatAleph
+    Allegiance.ClientCore.Tests.ClientWorldAlephTransitTests.OwnSetCluster_WithoutSectorChange_DoesNotSignal
+    Allegiance.ClientCore.Tests.ClientWorldAlephTransitTests.Arrival_ReSightingNearAnAleph_SignalsIt
+    Allegiance.ClientCore.Tests.ClientWorldAlephTransitTests.EnemyFirstSighting_AtAlephMovingOutward_SignalsThatAleph
+    Allegiance.ClientCore.Tests.ClientWorldAlephTransitTests.FirstSighting_NearAlephMovingInward_DoesNotSignal
+    Allegiance.ClientCore.Tests.ClientWorldAlephTransitTests.FirstSighting_FarFromAnyAleph_DoesNotSignal
+    Allegiance.ClientCore.Tests.ClientWorldAlephTransitTests.VisibleEnemyVanishing_InsideAleph_NonKill_SignalsIt
+    Allegiance.ClientCore.Tests.ClientWorldAlephTransitTests.Kill_InsideAleph_DoesNotSignal
+    Allegiance.ClientCore.Tests.ClientWorldBallotTests.Decoded_Ballot_sets_active_ballot_and_posts_system_line
+    Allegiance.ClientCore.Tests.ClientWorldBallotTests.New_ballot_queues_behind_the_previous_active_ballot
+    Allegiance.ClientCore.Tests.ClientWorldBucketFundingTests.BucketStatus_StoresMoneyAndTime_PerSideAndBucket
+    Allegiance.ClientCore.Tests.ClientWorldBucketFundingTests.BucketStatus_UpdatesInPlace_AndSeparatesSides
+    Allegiance.ClientCore.Tests.ClientWorldBucketFundingTests.BucketStatus_DoesNotTouchTheWallet
+    Allegiance.ClientCore.Tests.ClientWorldBuildingEffectTests.ExportBuildingEffect_UpsertsIntoTheBuildingEffectsTable
+    Allegiance.ClientCore.Tests.ClientWorldBuildingEffectTests.ExportBuildingEffect_IsUpsertByKey_LastWriteWins
+    Allegiance.ClientCore.Tests.ClientWorldBuildingEffectTests.BuildingEffectDestroyed_RemovesTheConstructionFromTheTable
+    Allegiance.ClientCore.Tests.ClientWorldBuildingEffectTests.ProgressFraction_RampsZeroToOneAcrossBuildDuration
+    Allegiance.ClientCore.Tests.ClientWorldBuildingEffectTests.PruneExpiredBuildingEffects_RemovesOnlyCompletedBuilds
+    Allegiance.ClientCore.Tests.ClientWorldChaffTests.CreateChaff_AppendsEntity_WithCapturedFields
+    Allegiance.ClientCore.Tests.ClientWorldChaffTests.CreateChaff_AppendsInArrivalOrder_NotKeyedById
+    Allegiance.ClientCore.Tests.ClientWorldChaffTests.ReceiptInstant_IsStampedPerChaff
+    Allegiance.ClientCore.Tests.ClientWorldChaffTests.Prune_RemovesExpired_KeepsAlive
+    Allegiance.ClientCore.Tests.ClientWorldChaffTests.Prune_KeepsMultipleYoung_RemovesOnlyExpired
+    Allegiance.ClientCore.Tests.ClientWorldChaffTests.Prune_UsesDefaultLifespan_WhenTypeTableAbsentOrUnknown
+    Allegiance.ClientCore.Tests.ClientWorldChaffTests.PositionAt_ExtrapolatesAlongVelocity
+    Allegiance.ClientCore.Tests.ClientWorldChaffTests.PositionAt_DoesNotTravelBeforeReceipt
+    Allegiance.ClientCore.Tests.ClientWorldChaffTests.CreateChaff_ArrivingViaTheDispatchSwitch_StillPopulatesTheTable
+    Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.Applies_StoresLevelPerSector_DefaultsNoThreat
+    Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.IncreaseEdge_FiresAlertCue_AndPostsDescInSectorLine
+    Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.SteadyOrDecreasingLevel_ProducesNothingBeyondFirstIncrease
+    Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.SecuredTransition_PostsSecuredLine_AndCues
+    Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.LostTransition_PostsLostLine_AndCues
+    Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.TakeClusterWarningCues_Drains
+    Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.Reset_ClearsWarnings_AndPendingCues
+    Allegiance.ClientCore.Tests.ClientWorldDeathTests.KillShip_MarksVictimIsDead_AndKeepsEntity
+    Allegiance.ClientCore.Tests.ClientWorldDeathTests.KillShip_ForUnknownShip_CreatesThenMarksDeadEntity
+    Allegiance.ClientCore.Tests.ClientWorldDeathTests.StatusBeforeExport_ForSameId_CollapsesOntoOneEntity
+    Allegiance.ClientCore.Tests.ClientWorldDeathTests.OwnIdExportBeforeSetCluster_FlipsSameEntityToIsMineOnAssignment
+    Allegiance.ClientCore.Tests.ClientWorldDockLoadoutTests.DockedNotify_SetsStationId_OnMyShip
+    Allegiance.ClientCore.Tests.ClientWorldDockLoadoutTests.DockedNotify_ClearsStationId_OnUndock
+    Allegiance.ClientCore.Tests.ClientWorldDockLoadoutTests.DockedNotify_BeforeMyShipId_IsANoOp
+    Allegiance.ClientCore.Tests.ClientWorldDockLoadoutTests.BuyLoadoutAck_SetsHullAndLoadout_OnMyShip
+    Allegiance.ClientCore.Tests.ClientWorldDockLoadoutTests.BuyLoadoutAck_EmptyParts_MeansHullOnlyLoadout
+    Allegiance.ClientCore.Tests.ClientWorldDockLoadoutTests.BuyLoadoutAck_BeforeMyShipId_IsANoOp
+    Allegiance.ClientCore.Tests.ClientWorldDockLoadoutTests.DockedNotify_And_BuyLoadoutAck_UpsertTheSameShipEntity
+    Allegiance.ClientCore.Tests.ClientWorldEjectTests.DecodeAndApplyEject_SwapsHullClearsPartsAndSetsPoseAndSpin
+    Allegiance.ClientCore.Tests.ClientWorldEjectTests.OwnShipEject_AdoptsCookieAndLatchesPendingEject
+    Allegiance.ClientCore.Tests.ClientWorldEjectTests.RemoteShipEject_SwapsHullButDoesNotLatchAutopilot
+    Allegiance.ClientCore.Tests.ClientWorldEjectTests.BoardedShipEject_UnboardsInsteadOfClearingParts
+    Allegiance.ClientCore.Tests.ClientWorldEventLogTests.FiveEventTypes_LandInTheirOwnLists_InArrivalOrder
+    Allegiance.ClientCore.Tests.ClientWorldEventLogTests.EventLog_IsAppendOnly_AcrossRepeatedCalls
+    Allegiance.ClientCore.Tests.ClientWorldEventLogTests.EventLog_RespectsItsBoundaryWindow
+    Allegiance.ClientCore.Tests.ClientWorldEventLogTests.MissionDef_PopulatesAllFields_AndStage_LastArrivalWins
+    Allegiance.ClientCore.Tests.ClientWorldEventLogTests.MissionStage_BeforeAnyMissionDef_MintsASnapshot_WithDefaultCoreFields
+    Allegiance.ClientCore.Tests.ClientWorldEventLogTests.Mission_IsNull_UntilFirstMissionMessage
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.ExplosionEvent_EncodesAndDecodes_RoundTripsAllFields
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.ExplosionEvent_IsFixedFortyBytes_HeaderMatches
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.ExplosionEvent_Decode_RejectsWrongFmid
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.ExplosionEvent_AppendsEntity_WithCapturedFields
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Explosions_AppendInArrivalOrder_NotKeyedById
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.UnknownCategory_IsIgnored_NotThrown
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.PruneExpiredExplosions_RemovesFinishedBlast_KeepsFreshOne
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.PruneExpiredExplosions_LeavesActiveBlast_AtBoundary
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Presets_MatchNativeAddExplosionTable(type: 1, radiusExplosion: 25, radiusWave: 50, count: 4)
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Presets_MatchNativeAddExplosionTable(type: 2, radiusExplosion: 1, radiusWave: 0, count: 6)
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Presets_MatchNativeAddExplosionTable(type: 3, radiusExplosion: 35, radiusWave: 70, count: 12)
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Presets_MatchNativeAddExplosionTable(type: 4, radiusExplosion: 165, radiusWave: 250, count: 16)
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Presets_MatchNativeAddExplosionTable(type: 5, radiusExplosion: 100, radiusWave: 800, count: 16)
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Presets_MatchNativeAddExplosionTable(type: 6, radiusExplosion: 150, radiusWave: 0, count: 5)
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Presets_MatchNativeAddExplosionTable(type: 7, radiusExplosion: 350, radiusWave: 1000, count: 24)
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Presets_TintColours_MatchNativeSwitch
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Presets_AssignTheCorrectSpriteFilms_PerCategory
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Durations_MatchNativeAnimationTiming
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Sample_AtZero_OnlyFirstSpriteBegin_WithShockWaveAtFullBright
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Sample_AdvancesFrames_AtTwentyFps
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Sample_Stagger_BringsInLaterSpritesOverTime
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Sample_SpritesFinish_WhenTheirFilmFramesExhaust
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Sample_ShockWave_FadesQuadratically_ExpandsLinearly
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Sample_NoShockWaveCategory_HasNone
+    Allegiance.ClientCore.Tests.ClientWorldExplosionTests.Sample_FireballOffsetAndAngle_AreDeterministic
+    Allegiance.ClientCore.Tests.ClientWorldExportTests.ExportCluster_LandsInClusters_KeyedByClusterId
+    Allegiance.ClientCore.Tests.ClientWorldExportTests.ExportStation_LandsInStations_KeyedByStationId
+    Allegiance.ClientCore.Tests.ClientWorldExportTests.ExportWarp_LandsInWarps_KeyedByWarpId
+    Allegiance.ClientCore.Tests.ClientWorldExportTests.ExportAsteroid_LandsInAsteroids_KeyedByAsteroidId
+    Allegiance.ClientCore.Tests.ClientWorldExportTests.ExportObjectDicts_AreIndependent_FromEachOther
+    Allegiance.ClientCore.Tests.ClientWorldExportTests.ExportShip_ForNonMine_EntersShips_WithIsMineFalse
+    Allegiance.ClientCore.Tests.ClientWorldExportTests.ExportShip_WithParts_PopulatesTeammateLoadout
+    Allegiance.ClientCore.Tests.ClientWorldExportTests.ExportShip_Resent_ReplacesTeammateLoadout_NotAppends
+    Allegiance.ClientCore.Tests.ClientWorldExportTests.PlayerInfo_AttachesToExistingShipEntity
+    Allegiance.ClientCore.Tests.ClientWorldExportTests.PlayerInfo_CanCreateShipAbsent_FromPlayerInfoAlone
+    Allegiance.ClientCore.Tests.ClientWorldExportTests.EarlyExportShip_ForStranger_StaysIsMineFalse_WhenMyShipAssignedLater
+    Allegiance.ClientCore.Tests.ClientWorldExportTests.ClusterInfo_PopulatesGraphOnce
+    Allegiance.ClientCore.Tests.ClientWorldExportTests.WorldReady_requires_graph_and_clusters_and_resets
+    Allegiance.ClientCore.Tests.ClientWorldGameOverBackTests.SideOnly_GameOver_does_not_flip_stage
+    Allegiance.ClientCore.Tests.ClientWorldGameOverBackTests.MissionStage_Over_resets_world_for_rotation_but_keeps_gameover_panel
+    Allegiance.ClientCore.Tests.ClientWorldGameOverBackTests.BeginNextMission_clears_world_but_keeps_gameover_and_side
+    Allegiance.ClientCore.Tests.ClientWorldGameOverBackTests.ClearGameOver_dismisses_the_panel
+    Allegiance.ClientCore.Tests.ClientWorldHullHitTests.ProjectileHullHit_EncodesAndDecodes_RoundTripsAllFields
+    Allegiance.ClientCore.Tests.ClientWorldHullHitTests.ProjectileHullHit_AbsorbedFlagClearsAndSetsOnDecode
+    Allegiance.ClientCore.Tests.ClientWorldHullHitTests.ProjectileHullHit_IsFixedFortyFourBytes_HeaderMatches
+    Allegiance.ClientCore.Tests.ClientWorldHullHitTests.ProjectileHullHit_Decode_RejectsWrongFmid
+    Allegiance.ClientCore.Tests.ClientWorldHullHitTests.ProjectileHullHit_AppendsEntity_WithCapturedFields
+    Allegiance.ClientCore.Tests.ClientWorldHullHitTests.ProjectileHullHit_BuffersHitSoundEvent_DistinctFromSparkStream
+    Allegiance.ClientCore.Tests.ClientWorldHullHitTests.HullHits_AppendInArrivalOrder
+    Allegiance.ClientCore.Tests.ClientWorldHullHitTests.TakeNewHullHits_DrainsAllExactlyOnce
+    Allegiance.ClientCore.Tests.ClientWorldKillBonusTests.Apply_sets_kill_bonus_and_overwrites_each_tick
+    Allegiance.ClientCore.Tests.ClientWorldKillBonusTests.Fresh_world_defaults_to_no_bonus
+    Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Decoded_Ore_Fraction_Matches_Real_Server_Asteroid_After_Partial_Mine
+    Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Depleting_More_Decreases_Client_Ore_Fraction
+    Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Decoded_Health_Fraction_Uses_Div240
+    Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Entity_Without_Export_Still_Records_Health_But_Zero_Ore_Fraction
+    Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Station_Live_Fractions_Decoded_From_StationsUpdate
+    Allegiance.ClientCore.Tests.ClientWorldMineTests.ExportMine_UpsertsIntoTheMinesTable
+    Allegiance.ClientCore.Tests.ClientWorldMineTests.ExportMine_IsUpsertByKey_LastWriteWins
+    Allegiance.ClientCore.Tests.ClientWorldMineTests.MineDestroyed_RemovesTheMineFromTheTable
+    Allegiance.ClientCore.Tests.ClientWorldMineTests.MineDestroyed_ForAnUntrackedMineIsAHarmlessNoOp
+    Allegiance.ClientCore.Tests.ClientWorldMineTests.ExportMine_ArrivingViaTheDispatchSwitch_StillPopulatesTheTable
+    Allegiance.ClientCore.Tests.ClientWorldMiningTests.MiningUpdate_Sets_The_Rock_Being_Drilled
+    Allegiance.ClientCore.Tests.ClientWorldMiningTests.Na_MiningUpdate_Clears_Back_To_Not_Mining
+    Allegiance.ClientCore.Tests.ClientWorldMissileTests.FireMissile_HydratesMissileEntity_WithTypeClusterAndSpawnPose
+    Allegiance.ClientCore.Tests.ClientWorldMissileTests.FireMissile_ZeroForward_FallsBackToNegativeZ
+    Allegiance.ClientCore.Tests.ClientWorldMissileTests.FireMissile_EmptySalvo_AddsNothing
+    Allegiance.ClientCore.Tests.ClientWorldMissileTests.MissileUpdate_UpsertsExistingEntity_RefreshingPositionAndHeading
+    Allegiance.ClientCore.Tests.ClientWorldMissileTests.MissileUpdate_HydratesUnseenId_WithoutPriorCreation
+    Allegiance.ClientCore.Tests.ClientWorldMissileTests.MissileDestroyed_RemovesEntityById
+    Allegiance.ClientCore.Tests.ClientWorldMissileTests.PruneExpiredMissiles_RemovesOnlyEntitiesNotRefreshedWithinHorizon
+    Allegiance.ClientCore.Tests.ClientWorldMoneyTests.MyMoney_IsNull_UntilTheLocalShipsSetMoneyArrives
+    Allegiance.ClientCore.Tests.ClientWorldMoneyTests.MyMoney_IsNull_WhenMyShipIsNotAssignedYet
+    Allegiance.ClientCore.Tests.ClientWorldMoneyTests.SetMoney_SetsThatShipsWalletAbsolutely
+    Allegiance.ClientCore.Tests.ClientWorldMoneyTests.MoneyChange_BucketSpend_DecrementsDonorsWalletExactlyOnce
+    Allegiance.ClientCore.Tests.ClientWorldMoneyTests.MoneyChange_PurchaseBroadcast_SidFromNa_DebitsBuyer
+    Allegiance.ClientCore.Tests.ClientWorldMoneyTests.MoneyChange_BucketRefund_SidFromNa_CreditsDonorAlone
+    Allegiance.ClientCore.Tests.ClientWorldMoneyTests.MoneyChange_PlayerToPlayerDonation_TransfersBothWallets
+    Allegiance.ClientCore.Tests.ClientWorldMoneyTests.MoneyChange_DoesNotDoubleCountWhenDonorIsUs_AndRecipientDiffers
+    Allegiance.ClientCore.Tests.ClientWorldMoneyTests.AutoDonate_SetsRelationship_AndAppliesGiftBothWays
+    Allegiance.ClientCore.Tests.ClientWorldMoneyTests.AutoDonate_NoTarget_ClearsRelationship
+    Allegiance.ClientCore.Tests.ClientWorldMoneyTests.Payday_LeaderGrowsByDMoneyTimesDonorsPlusSelf_DonorsFlat_NonDonorGrowsOnce
+    Allegiance.ClientCore.Tests.ClientWorldMoneyTests.Payday_DonorClient_KeepsItsOwnFlat
+    Allegiance.ClientCore.Tests.ClientWorldMoneyTests.Payday_NonDonorClient_GrowsByExactlyItsShare
+    Allegiance.ClientCore.Tests.ClientWorldMoneyTests.Reset_ClearsMoneyAndRelationships
+    Allegiance.ClientCore.Tests.ClientWorldNewContactCueTests.New_teammate_export_cues_friendly_once
+    Allegiance.ClientCore.Tests.ClientWorldNewContactCueTests.New_enemy_export_cues_enemy_once
+    Allegiance.ClientCore.Tests.ClientWorldNewContactCueTests.Refresh_export_of_visible_ship_does_not_recue
+    Allegiance.ClientCore.Tests.ClientWorldNewContactCueTests.Own_ship_export_never_cues
+    Allegiance.ClientCore.Tests.ClientWorldNewContactCueTests.Gone_ship_returns_via_export_and_recues
+    Allegiance.ClientCore.Tests.ClientWorldNewContactCueTests.Returning_identified_ship_cues_via_heavy_ships_update
+    Allegiance.ClientCore.Tests.ClientWorldNewContactCueTests.Unidentified_ship_on_heavy_path_does_not_cue
+    Allegiance.ClientCore.Tests.ClientWorldNewContactCueTests.Dead_ship_stays_silent_until_it_genuinely_respawns
+    Allegiance.ClientCore.Tests.ClientWorldNewContactCueTests.Multiple_cues_drain_in_order_then_empty
+    Allegiance.ClientCore.Tests.ClientWorldNewContactCueTests.Reset_clears_pending_cues
+    Allegiance.ClientCore.Tests.ClientWorldProbeTests.ExportProbe_UpsertsIntoTheProbesTable
+    Allegiance.ClientCore.Tests.ClientWorldProbeTests.ExportProbe_IsUpsertByKey_LastWriteWins
+    Allegiance.ClientCore.Tests.ClientWorldProbeTests.ProbeDestroyed_RemovesTheProbeFromTheTable
+    Allegiance.ClientCore.Tests.ClientWorldProbeTests.OwnShipDummyExport_CapturesMySideId
+    Allegiance.ClientCore.Tests.ClientWorldProjectileTests.ProjectileInstance_AppendsEntity_WithCapturedFields
+    Allegiance.ClientCore.Tests.ClientWorldProjectileTests.ProjectileInstances_AppendInArrivalOrder_NotKeyedById
+    Allegiance.ClientCore.Tests.ClientWorldProjectileTests.ReceiptInstant_IsStampedPerProjectile
+    Allegiance.ClientCore.Tests.ClientWorldProjectileTests.Prune_RemovesExpired_KeepsAlive
+    Allegiance.ClientCore.Tests.ClientWorldProjectileTests.Prune_KeepsMultipleYoung_RemovesOnlyExpired
+    Allegiance.ClientCore.Tests.ClientWorldProjectileTests.PositionAt_ExtrapolatesAlongVelocity
+    Allegiance.ClientCore.Tests.ClientWorldProjectileTests.PositionAt_DoesNotTravelBeforeReceipt
+    Allegiance.ClientCore.Tests.ClientWorldProjectileTests.OwnEchoPredicate_DropsOwnEcho_KeepsForeignEvenSameType
+    Allegiance.ClientCore.Tests.ClientWorldProjectileTests.EnemyRound_OfSameType_AdjacentToUs_IsKept
+    Allegiance.ClientCore.Tests.ClientWorldProjectileTests.PreFix_NoOwnRoundExistsBeforeServerEcho
+    Allegiance.ClientCore.Tests.ClientWorldProjectileTests.Probe_source_roundtrips_without_ship_id_collision_or_own_echo_drop
+    Allegiance.ClientCore.Tests.ClientWorldQueuedCommandTests.Queued_update_populates_my_queued_command
+    Allegiance.ClientCore.Tests.ClientWorldQueuedCommandTests.Clear_update_nullifies_my_queued_command
+    Allegiance.ClientCore.Tests.ClientWorldQueuedCommandTests.Dispatch_routes_through_apply_ifedmessage
+    Allegiance.ClientCore.Tests.ClientWorldRankTests.RankTable_IsEmpty_UntilRankInfoArrives
+    Allegiance.ClientCore.Tests.ClientWorldRankTests.RankInfo_Apply_StoresWholeTable
+    Allegiance.ClientCore.Tests.ClientWorldRankTests.RankInfo_Apply_ReplacesPriorTableWholesale
+    Allegiance.ClientCore.Tests.ClientWorldRankTests.LookupRankName_InRange_ReturnsTableName(rank: 0, expected: "Newbie")
+    Allegiance.ClientCore.Tests.ClientWorldRankTests.LookupRankName_InRange_ReturnsTableName(rank: 3, expected: "Novice 3")
+    Allegiance.ClientCore.Tests.ClientWorldRankTests.LookupRankName_InRange_ReturnsTableName(rank: 39, expected: "Master 9")
+    Allegiance.ClientCore.Tests.ClientWorldRankTests.LookupRankName_AboveCeiling_ClampsToHighest
+    Allegiance.ClientCore.Tests.ClientWorldRankTests.LookupRankName_EmptyTable_ReturnsEmpty
+    Allegiance.ClientCore.Tests.ClientWorldRankTests.LookupRankName_TrimsTrailingSpaces
+    Allegiance.ClientCore.Tests.ClientWorldRemoteDeadReckonTests.DeadReckonedRemote_MidInterval_TracksTrueShip_BeatsRawBaseline
+    Allegiance.ClientCore.Tests.ClientWorldRemoteDeadReckonTests.UnresolvableHull_FallsBackToRaw_NoReckonerSeeded
+    Allegiance.ClientCore.Tests.ClientWorldRemoteDeadReckonTests.ReseedSequence_AccumulatesCorrectionStats_AndStampsArrival
+    Allegiance.ClientCore.Tests.ClientWorldRosterTests.Roster_IsNeverNull_AndStartsEmpty
+    Allegiance.ClientCore.Tests.ClientWorldRosterTests.Roster_Upserts_LastReadyStateWins_WhileHistoryAccumulates
+    Allegiance.ClientCore.Tests.ClientWorldRosterTests.Roster_KeepsDistinctEntries_PerShipId
+    Allegiance.ClientCore.Tests.ClientWorldRosterTests.Roster_TogglingReadyAgain_ReplacesFlag_WithoutAddingDuplicate
+    Allegiance.ClientCore.Tests.ClientWorldShipResetTests.SetCluster_stamps_the_ship_cookie_on_the_own_ship
+    Allegiance.ClientCore.Tests.ClientWorldShipResetTests.ShipReset_adopts_new_cookie_updates_pose_and_flags_own_ship
+    Allegiance.ClientCore.Tests.ClientWorldShipResetTests.ShipReset_for_a_non_own_ship_updates_cookie_but_does_not_flag
+    Allegiance.ClientCore.Tests.ClientWorldShipUpdateTests.HeavyShipsUpdate_RefreshesForeignShipPose_KeepsIdentity
+    Allegiance.ClientCore.Tests.ClientWorldShipUpdateTests.HeavyShipsUpdate_WithoutPriorExport_GivesPoseButNoIdentity
+    Allegiance.ClientCore.Tests.ClientWorldShipUpdateTests.LightShipsUpdate_UpsertsEntity_LeavesPoseUntouched
+    Allegiance.ClientCore.Tests.ClientWorldShipUpdateTests.HeavyShipsUpdate_MultipleRecords_AllEnterTable
+    Allegiance.ClientCore.Tests.ClientWorldSideAttributeChangeTests.Decoded_SideAttributeChange_lands_in_ClientWorld
+    Allegiance.ClientCore.Tests.ClientWorldSideAttributeChangeTests.Later_broadcast_replaces_the_sides_set
+    Allegiance.ClientCore.Tests.ClientWorldSideAttributeChangeTests.Unknown_side_reads_identity
+    Allegiance.ClientCore.Tests.ClientWorldSideIdTests.OwnShip_gets_side_when_SetCluster_follows_dummy_export
+    Allegiance.ClientCore.Tests.ClientWorldSideIdTests.OwnShip_gets_side_when_dummy_export_follows_SetCluster
+    Allegiance.ClientCore.Tests.ClientWorldSideIdTests.RealId_export_of_own_ship_still_sets_side
+    Allegiance.ClientCore.Tests.ClientWorldSideIdTests.JoinSide_updates_a_known_teammate_side
+    Allegiance.ClientCore.Tests.ClientWorldSideIdTests.JoinSide_naming_own_ship_updates_MySideId_and_own_entity
+    Allegiance.ClientCore.Tests.ClientWorldSideIdTests.JoinSide_for_unknown_ship_creates_no_phantom
+    Allegiance.ClientCore.Tests.ClientWorldSideIdTests.JoinSide_with_SIDE_TEAMLOBBY_does_not_alias_to_a_real_side
+    Allegiance.ClientCore.Tests.ClientWorldSideInactiveTests.Decoded_SideInactive_marks_side_inactive
+    Allegiance.ClientCore.Tests.ClientWorldSideInactiveTests.Reactivation_flips_side_back_active
+    Allegiance.ClientCore.Tests.ClientWorldSideInactiveTests.AET_bit_only_updates_when_bChangeAET
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.DevCompleted_RecordsDevChimeEvent
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnStationDestroyed_RecordsDestroyed_AndRemovesStation
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.EnemyStationDestroyed_RecordsEnemyDestroyed
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.LostOurStationToEnemy_RecordsCaptured_AndReSides
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.TookEnemyStation_RecordsEnemyCaptured
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.SoundEvents_AreBoundedAndAtomic
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.Payday_RecordsPaydaySoundEvent
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AcquireTreasure_RecordsPerTypePickupSound(code: 2, expected: PickupPowerup)
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AcquireTreasure_RecordsPerTypePickupSound(code: 3, expected: PickupDevelopment)
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AcquireTreasure_RecordsPerTypePickupSound(code: 4, expected: PickupCash)
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AcquireTreasure_RecordsPerTypePickupSound(code: 5, expected: PickupDevelopment)
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AcquirePart_RecordsPickupPartSound
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyRegularChat_IsChatRegular
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyCommandChat_IsChatCommand
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyPersonalChatToMe_IsChatPersonal
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyLeaderPersonalChat_IsChatCommander
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyLeaderGeneralChat_IsChatCommander
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyOfflineChat_IsChatOffline
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifyOwnChatEcho_IsSilent
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ClassifySonicChat_SelectsVoiceOverBeforePlainChat
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.RegularChatWire_RecordsChatRegular
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.BecomingTeamLeader_RecordsCommanderElected
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AnotherShipBecomesLeader_RecordsNoSound
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.FirstDonorBeginsDonatingToMe_RecordsInvestor
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.SecondDonorDoesNotRefireInvestor
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.DonatingMyself_NoInvestor
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.StoppingDonation_NoInvestor
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.TeammateStealsEnemyFlag_RecordsEnemyFlagStolen
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.TeammateFindsArtifact_RecordsArtifactFound
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.EnemyStealsOurFlag_RecordsOurFlagStolen
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.SecureOrUnclassifiedGainFlag_NoSound
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnShipWarpsToNewSectorBesideAleph_RecordsSectorJump
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnShipSameSectorReSeat_NoSectorJump
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.RemoteShipSectorArrival_NoSectorJump
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.CollisionWire_IsBufferedForTheCollisionSoundPass
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnShipDeploysMine_RecordsMineDeployed
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.RemoteShipDeploysMine_RecordsNoDeploySound
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnShieldCollapses_RecordsShieldsOffline
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnShieldAlreadyDown_DoesNotRefire
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnShieldStaysOnline_NoShieldsOffline
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnCloakEngages_RecordsCloakEngaged
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnCloakAlreadyActive_DoesNotRefire
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnCloakUncloaks_NoEvent
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.DockingOwnShip_RecordsDockedAndWelcomeHome
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.RepeatingDockNotice_DoesNotRefireDockedCue
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.PassengerBoardsLocalShip_RecordsBoarded
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.PassengerAlreadyBoarded_DoesNotRefireBoarded
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.HighlightCluster_RecordsSectorHighlighted
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.PositionRequestToOurSide_RecordsPlayerWaiting
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.HumanJoinsOurSide_RecordsSalRecruitsArrived
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.HumanJoinsEnemySide_RecordsSalEnemyJoiners
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.HumanJoinsAlliedDifferentSide_RecordsNothing
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.DroneJoinsSide_RecordsNothing
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.MissionNotStarted_JoinRecordsNothing
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.SameSideHumanGoesLinkDead_RecordsSalMia
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.SameSideHumanSwitchesSides_RecordsSalChangeSides
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.EnemySideHumanLeaves_RecordsSalEnemyLeaves
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.AlliedSideHumanLeaves_RecordsSalQuit
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnShipQuitMission_RecordsNothing
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnAmmoReload_RecordsSalReloadingAmmoAndStartReload
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnFuelReload_RecordsSalReloadingFuel
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnMissileReload_RecordsSalReloadingMissiles
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnChaffReload_RecordsSalReloadingChaff
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OwnDispenserReload_RecordsSalReloadingDispenser
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.OtherShipReload_RecordsNothing
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.NonReloadableCargoType_StillRecordsGenericStartReload
+    Allegiance.ClientCore.Tests.ClientWorldSoundEventTests.ReloadOfAbsentCargoSlot_RecordsNothing
+    Allegiance.ClientCore.Tests.ClientWorldTreasureTests.TreasureSpawn_UpsertsIntoTheTreasuresTable
+    Allegiance.ClientCore.Tests.ClientWorldTreasureTests.TreasureSpawn_IsUpsertByKey_LastWriteWins
+    Allegiance.ClientCore.Tests.ClientWorldTreasureTests.DestroyTreasure_RemovesTheTreasureFromTheTable
+    Allegiance.ClientCore.Tests.ClientWorldTreasureTests.DestroyTreasure_ForAnUntrackedTreasureIsAHarmlessNoOp
+    Allegiance.ClientCore.Tests.ClientWorldTreasureTests.TreasureSpawn_WithoutAPositionFallsBackToZero
+    Allegiance.ClientCore.Tests.ClientWorldTreasureTests.TreasureSpawnAndDestroy_ArrivingViaTheDispatchSwitch_StillWork
+    Allegiance.ClientCore.Tests.ClientWorldUnitTests.ThreeMessageTypes_UpsertOneEntity_NotThree
+    Allegiance.ClientCore.Tests.ClientWorldUnitTests.SingleShipUpdate_ForNonSelfShip_MovesTeammateEntitysLatest
+    Allegiance.ClientCore.Tests.ClientWorldUnitTests.TryGetSideColor_resolves_from_applied_roster_and_defaults_to_gray
+    Allegiance.ClientCore.Tests.ClientWorldUnitTests.DistinctShipIds_ProduceDistinctEntities
+    Allegiance.ClientCore.Tests.ClientWorldUnitTests.IgnoresUnknownMessageTypes
+    Allegiance.ClientCore.Tests.ClientWorldUnitTests.GameOver_RetainsSnapshot_AndKeepsStageUntouched
+    Allegiance.ClientCore.Tests.ClientWorldUnitTests.DevelopmentTechMask_SeededByCreateBuckets_AndUpdatedBySideTechChange
+    Allegiance.ClientCore.Tests.ClientWorldVictimDamagedTests.VictimDamaged_EncodesAndDecodes_RoundTripsAllFields
+    Allegiance.ClientCore.Tests.ClientWorldVictimDamagedTests.VictimDamaged_IsTwelveBytes_HeaderMatches
+    Allegiance.ClientCore.Tests.ClientWorldVictimDamagedTests.VictimDamaged_Decode_RejectsWrongFmid
+    Allegiance.ClientCore.Tests.ClientWorldVictimDamagedTests.VictimDamaged_AppendsAttribution_AndDrainsExactlyOnce
+    Allegiance.ClientCore.Tests.ClientWorldVictimDamagedTests.VictimDamaged_NonPositiveDamage_IsIgnored
+    Allegiance.ClientCore.Tests.ClusterGraphFindPathTests.ShortestGanymedeToOrgania_IsTheThreeHopMinimum_OnRealMap
+    Allegiance.ClientCore.Tests.ClusterGraphFindPathTests.AlderanWaypointRoute_IsLongerThanTheTrueMinimum
+    Allegiance.ClientCore.Tests.ClusterGraphFindPathTests.SyntheticSmallGraph_FindsDeterministicShortestPath
+    Allegiance.ClientCore.Tests.ClusterGraphFindPathTests.UnreachableAndDegenerateInputs_AreHandledGracefully
+    Allegiance.ClientCore.Tests.ConfigDefaultsJsonTests.Mcp_worker_json_graphs_preserve_all_defaults
+    Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.CrossSide_WatcherSeesOpponent_Projectile_And_Missile_InRealTime
+    Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.SameSide_pairStillSeesProjectileAndMissile
+    Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return
+    Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.Fire_is_not_relayed_to_peers_in_other_sectors
+    Allegiance.ClientCore.Tests.CrossSideSectorIdTests.CrossSideShip_gets_own_sector_from_HeavyShipsUpdate
+    Allegiance.ClientCore.Tests.CrossSideSectorIdTests.CrossSideShip_sector_re_stamps_when_viewer_sector_changes
+    Allegiance.ClientCore.Tests.CrossSideSectorIdTests.SameSide_teammate_sector_from_HeavyShipsUpdate_consistent_with_status
+    Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock
+    Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Remote_client_sees_victim_again_after_death_and_respawn
+    Allegiance.ClientCore.Tests.DeadLatchRespawnTests.Own_ship_set_cluster_after_death_clears_the_death_latch
+    Allegiance.ClientCore.Tests.DeadLatchRespawnTests.Own_ship_ship_reset_after_death_clears_the_death_latch
+    Allegiance.ClientCore.Tests.DeadLatchRespawnTests.Remote_ship_heavy_ships_update_after_death_clears_the_death_latch
+    Allegiance.ClientCore.Tests.DeadLatchRespawnTests.Remote_ship_export_after_death_clears_the_death_latch
+    Allegiance.ClientCore.Tests.DeadLatchRespawnTests.Remote_ship_stays_dead_on_single_ship_update
+    Allegiance.ClientCore.Tests.DeadLatchRespawnTests.Death_relatches_after_a_respawn_clear
+    Allegiance.ClientCore.Tests.DecisionSnapshotAllocationTests.HeavyUpdateDecodeApplyAndPublish_StaysUnderPerShipAllocationCeiling
+    Allegiance.ClientCore.Tests.DecisionSnapshotTests.EmptyBeforeSeating
+    Allegiance.ClientCore.Tests.DecisionSnapshotTests.PublishedSnapshotReflectsAppliedWorld_AndSetsMyCluster
+    Allegiance.ClientCore.Tests.DecisionSnapshotTests.CapturedSnapshotIsImmutableAcrossLaterPublishes
+    Allegiance.ClientCore.Tests.DecisionSnapshotTests.PublishBumpsVersion_AndSwapsFreshShipsArray
+    Allegiance.ClientCore.Tests.DecisionSnapshotTests.PublishThrottlesWithinInterval
+    Allegiance.ClientCore.Tests.DecisionSnapshotTests.ResetClearsPublishedSnapshot
+    Allegiance.ClientCore.Tests.DecisionSnapshotTests.ConcurrentPublish_NeverYieldsTornSnapshot
+    Allegiance.ClientCore.Tests.DockLoadoutLiveTests.DockedNotify_SetsAndClearsStationId_Live
+    Allegiance.ClientCore.Tests.DockLoadoutLiveTests.BuyLoadout_RoundTrips_And_WithFLaunch_Undocks_Live
+    Allegiance.ClientCore.Tests.DockLoadoutLiveTests.BuyLoadout_WithRealParts_PopulatesShipLoadout_Live
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseCommand_maps_native_names_to_cids(name: "default", expectedCid: 0)
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseCommand_maps_native_names_to_cids(name: "attack", expectedCid: 1)
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseCommand_maps_native_names_to_cids(name: "defend", expectedCid: 3)
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseCommand_maps_native_names_to_cids(name: "goto", expectedCid: 5)
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseCommand_maps_native_names_to_cids(name: "mine", expectedCid: 8)
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseCommand_maps_native_names_to_cids(name: "build", expectedCid: 9)
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseCommand_maps_native_names_to_cids(name: "donothing", expectedCid: -3)
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseCommand_maps_native_names_to_cids(name: "hold", expectedCid: -3)
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseCommand_maps_native_names_to_cids(name: "repair", expectedCid: 6)
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseCommand_maps_native_names_to_cids(name: "pickup", expectedCid: 4)
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseCommand_maps_native_names_to_cids(name: "join", expectedCid: 7)
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseCommand_is_case_insensitive_and_trims
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseCommand_rejects_unknown_names
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseTarget_typed_ids_map_to_object_types
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseTarget_bare_integer_means_ship
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseTarget_empty_or_none_is_targetless
+    Allegiance.ClientCore.Tests.DroneCommandsTests.ParseTarget_rejects_names_and_bad_ids
+    Allegiance.ClientCore.Tests.ExplosionLiveTests.RealKill_BroadcastsExplosionEvent_ReceivedByPeerWorld
+    Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.EveryExpectedServerSentMessage_IsConsumed_NotUnknownFmid
+    Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.UnknownFmidDetector_RecordsUnconsumedServerSentMessage
+    Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.SupportedServerSentSet_IsFullyAccountedFor
+    Allegiance.ClientCore.Tests.FullSessionIntegrationTests.FullSession_Join_Ready_Loadout_Launch_Movement_Chat_Compose
+    Allegiance.ClientCore.Tests.FullSessionKillIntegrationTests.FullSession_ThreePeers_TeammateComposition_Then_RealCrossSideKill
+    Allegiance.ClientCore.Tests.GameOverBackLiveTests.Rotation_after_game_over_client_leaves_and_can_ready
+    Allegiance.ClientCore.Tests.GameOverBackLiveTests.Elimination_after_game_over_client_can_request_and_seat_another_side
+    Allegiance.ClientCore.Tests.GameOverBackPlannerTests.Stage_Over_leaves_the_mission_regardless_of_side_activity
+    Allegiance.ClientCore.Tests.GameOverBackPlannerTests.Rotated_next_game_NotStarted_returns_to_ready_check
+    Allegiance.ClientCore.Tests.GameOverBackPlannerTests.Eliminated_side_Started_returns_to_side_select
+    Allegiance.ClientCore.Tests.GameOverBackPlannerTests.Surviving_active_side_on_a_started_mission_returns_to_ready_check
+    Allegiance.ClientCore.Tests.GameOverBackPlannerTests.Unknown_stage_with_inactive_side_returns_to_side_select
+    Allegiance.ClientCore.Tests.HullSwapClientLiveTests.Hull_swap_updates_the_clients_ship_entity_to_the_real_new_hull_Live
+    Allegiance.ClientCore.Tests.HullSwapClientLiveTests.Hull_swap_into_an_incompatible_hull_drops_the_part_on_the_clients_loadout_Live
+    Allegiance.ClientCore.Tests.JoinFlowLiveTests.EntityTable_TracksARealTickingServer
+    Allegiance.ClientCore.Tests.KillShipLiveTests.VictimShipEntity_MarkedDead_WhenRealKillCrossesTheWire
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.ResolvesRealMissileLauncherByExactName
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.ResolvesRealMissileLauncherByUniqueSubstring
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.UnknownLauncherThrowsASpecificError
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.BlankLauncherThrows
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.DefaultLauncherPartIsARealLauncherThatMountsOnTheDefaultFighterHull
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.AppendLauncherMountsARealCompatibleLauncherIntoALoadout
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.AppendLauncherThatDoesNotFitFallsBackToGunOnly
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.AppendLauncherWithNoRequestLeavesLoadoutUnchanged
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.LauncherReadyTimeIsPositiveForARealLauncher
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.ResolvesRealMineDispenserByExactName
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.ResolvesRealChaffDispenserByExactName
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.ResolvesRealProbeDispenserByExactName
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.DispenserResolutionAndHullGatedMounting(kindIdx: 0)
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.DispenserResolutionAndHullGatedMounting(kindIdx: 1)
+    Allegiance.ClientCore.Tests.LauncherResolutionTests.DispenserResolutionAndHullGatedMounting(kindIdx: 2)
+    Allegiance.ClientCore.Tests.LeaderBotCommandTests.IsTeamLeader_DefaultsFalse_WithoutLeadershipAnnouncement
+    Allegiance.ClientCore.Tests.LeaderBotCommandTests.IsTeamLeader_True_WhenOurShipIsAnnouncedLeader
+    Allegiance.ClientCore.Tests.LeaderBotCommandTests.IsTeamLeader_False_AfterLeadershipTransfersAway
+    Allegiance.ClientCore.Tests.LeaderBotCommandTests.IsTeamLeader_False_WhenNotLeader_OfOurOwnSide
+    Allegiance.ClientCore.Tests.LeaderBotCommandTests.Reset_ClearsLeadershipState
+    Allegiance.ClientCore.Tests.LeaderBotCommandTests.NonLeader_SeesNoCommand_EvenWithSameSideBotSelected
+    Allegiance.ClientCore.Tests.LeaderBotCommandTests.Leader_CommandsFlyingBot_OffersDock
+    Allegiance.ClientCore.Tests.LeaderBotCommandTests.Leader_CommandsDockedBot_OffersLaunch
+    Allegiance.ClientCore.Tests.LeaderBotCommandTests.Leader_CannotCommandARealPeer_OnTheirOwnSide
+    Allegiance.ClientCore.Tests.LeaderBotCommandTests.Leader_CannotCommandCrossSideBot
+    Allegiance.ClientCore.Tests.LeaderBotCommandTests.Leader_NoCommand_WithoutSelectionOrUnknownShip
+    Allegiance.ClientCore.Tests.LeaderSameSideBotClientLiveTests.Leader_client_sees_same_side_bot_and_gets_command_non_leader_does_not_live
+    Allegiance.ClientCore.Tests.MissileFireLiveTests.SendFireMissile_LaunchesHomingMissileAndDecrementsAmmo_OverTheWire
+    Allegiance.ClientCore.Tests.MissileLockFeedbackTests.Classify_Maps_LockValue_To_DisplayState(value: 0, expected: None)
+    Allegiance.ClientCore.Tests.MissileLockFeedbackTests.Classify_Maps_LockValue_To_DisplayState(value: 0.00499999989, expected: Partial)
+    Allegiance.ClientCore.Tests.MissileLockFeedbackTests.Classify_Maps_LockValue_To_DisplayState(value: 0.5, expected: Partial)
+    Allegiance.ClientCore.Tests.MissileLockFeedbackTests.Classify_Maps_LockValue_To_DisplayState(value: 0.999000013, expected: Partial)
+    Allegiance.ClientCore.Tests.MissileLockFeedbackTests.Classify_Maps_LockValue_To_DisplayState(value: 1, expected: Full)
+    Allegiance.ClientCore.Tests.MissileLockFeedbackTests.Classify_Maps_LockValue_To_DisplayState(value: 1.39999998, expected: Full)
+    Allegiance.ClientCore.Tests.MissileLockFeedbackTests.Entering_Partial_From_None_Posts_Partial_Tip
+    Allegiance.ClientCore.Tests.MissileLockFeedbackTests.Entering_Full_Posts_Acquired_Tip_With_MissileName
+    Allegiance.ClientCore.Tests.MissileLockFeedbackTests.Dropping_To_None_Same_Target_Posts_Lost_Tip
+    Allegiance.ClientCore.Tests.MissileLockFeedbackTests.Dropping_To_None_On_Target_Change_Suppresses_Lost
+    Allegiance.ClientCore.Tests.MissileLockFeedbackTests.Holding_A_State_Posts_Nothing
+    Allegiance.ClientCore.Tests.MissileLockFeedbackTests.Partial_Into_Full_Does_Not_Repost_Partial
+    Allegiance.ClientCore.Tests.MissileLockLiveTests.MissileLock_BuildsPartialThenFull_AndPosts_Tips_OverTheWire
+    Allegiance.ClientCore.Tests.MissileTrackingLiveTests.FiredMissile_AppearsMovesAndDisappears_InClientWorld_OverTheWire
+    Allegiance.ClientCore.Tests.MissileTrackWarningLiveTests.EnemyMissileHomingOnLocalShip_ArmsWarning_ThenClearsOnDestruction_OverTheWire
+    Allegiance.ClientCore.Tests.NaniteRepairLiveTests.NanRound_RepairsFriendlyHull_InRealWireData
+    Allegiance.ClientCore.Tests.NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire
+    Allegiance.ClientCore.Tests.NativeOwnShipDockLiveTests.Own_ship_updates_keep_processing_through_dock_undock_hull_swap_and_warp
+    Allegiance.ClientCore.Tests.NativeOwnShipFlightLiveTests.Native_own_ship_flight_accepts_poses_in_normal_flight_and_recovers_from_reset
+    Allegiance.ClientCore.Tests.NativeShipUpdateWireTests.Native_pose_update_round_trips_preserving_time_cookie_and_full_pose
+    Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.FreshShipTargetOrder_AdoptsExactlyTheCommandedTarget_AndAccepts
+    Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.FreshShipTargetOrder_SupersedesPriorTarget
+    Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.NoPendingOrder_NoCurrentTarget_NothingToDo
+    Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.NoPendingOrder_KeepsOrderedTargetUntilSuperseded
+    Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.AlreadyAcceptedOrder_DoesNotReaccept_KeepsEngaging
+    Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.NonShipTargetlessOrder_IsAccepted_ButAdoptsNoShipTarget
+    Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.NonShipOrder_KeepsPriorTarget
+    Allegiance.ClientCore.Tests.OrderAcceptTranslateTests.ShipOrderWithInvalidTargetId_AdoptsNoShipTarget
+    Allegiance.ClientCore.Tests.OwnShipServerClockTests.ServerTimeMs_stays_within_the_gate_under_jittered_rtt
+    Allegiance.ClientCore.Tests.OwnShipServerClockTests.Ready_false_until_first_echo_and_zero_time_before
+    Allegiance.ClientCore.Tests.OwnShipServerClockTests.Single_echo_extrapolates_the_offset_at_slope_one
+    Allegiance.ClientCore.Tests.OwnShipServerClockTests.Multiple_echoes_absorb_a_consistent_rtt_offset
+    Allegiance.ClientCore.Tests.OwnShipSimulatorTests.ControlChange_MovesPoseOnSameStep
+    Allegiance.ClientCore.Tests.OwnShipSimulatorTests.Throttle_AdvancesPositionAlongForward
+    Allegiance.ClientCore.Tests.OwnShipSimulatorTests.NoHull_StepIsInert
+    Allegiance.ClientCore.Tests.OwnShipSimulatorTests.Freeze_HoldsPose_UntilResume
+    Allegiance.ClientCore.Tests.OwnShipSimulatorTests.Seed_SnapsToServerPose_AndContinues
+    Allegiance.ClientCore.Tests.OwnShipSimulatorTests.ReportedState_ReflectsLastSteppedControls
+    Allegiance.ClientCore.Tests.P493ClientWorldShipStatusTests.CrossSide_spotted_status_records_last_known_sector_and_state
+    Allegiance.ClientCore.Tests.P493ClientWorldShipStatusTests.CrossSide_hidden_status_flips_unknown_keeping_last_known_fields
+    Allegiance.ClientCore.Tests.P496CaptureProofLiveTests.Capture_attempt_on_the_normal_map
+    Allegiance.ClientCore.Tests.P496CaptureProofLiveTests.Capture_attempt_on_the_debug_map
+    Allegiance.ClientCore.Tests.P522ShieldParityLiveTests.Buy_loadout_restores_full_shield_after_hull_swap_Live
+    Allegiance.ClientCore.Tests.P522UndockReseedLiveTests.Three_dock_undock_cycles_zero_rejects_and_zero_SHIP_RESETs_with_reseed
+    Allegiance.ClientCore.Tests.P522UndockReseedLiveTests.Without_reseed_each_undock_adds_a_reject_and_SHIP_RESET
+    Allegiance.ClientCore.Tests.P539bCombatMetricTests.Hit_By_Teammate_Is_Not_Counted_For_ThisBot
+    Allegiance.ClientCore.Tests.P539bCombatMetricTests.Hit_On_Friendly_Is_Friendly_Not_Enemy
+    Allegiance.ClientCore.Tests.P539bCombatMetricTests.Enemy_Hits_Split_ShieldHull_And_None
+    Allegiance.ClientCore.Tests.P539bCombatMetricTests.Shots_ComeFrom_RealProjectileInstances_FilteredToOurLauncher
+    Allegiance.ClientCore.Tests.P539bCombatMetricTests.TechLevel0_IsNativePreferred_GunAndShieldMount
+    Allegiance.ClientCore.Tests.P539bCombatMetricTests.TechLevel_Advances_PreferredPart_Along_SuccessorChain
+    Allegiance.ClientCore.Tests.P539bCombatMetricTests.NativePreferredLoadout_Levels_ReflectAdvancedGun_AndShield
+    Allegiance.ClientCore.Tests.P539bCombatMetricTests.FriendlyInCone_HoldsFire_WhenTeammateInCone
+    Allegiance.ClientCore.Tests.P539bCombatProofLiveTests.Corrected_metric_5v5_equal_tech
+    Allegiance.ClientCore.Tests.P539bCombatProofLiveTests.TechBar_A_tech2_beats_B_tech0(runIdx: 1)
+    Allegiance.ClientCore.Tests.P539bCombatProofLiveTests.TechBar_A_tech2_beats_B_tech0(runIdx: 2)
+    Allegiance.ClientCore.Tests.P539bCombatProofLiveTests.TechBar_A_tech2_beats_B_tech0(runIdx: 3)
+    Allegiance.ClientCore.Tests.P539bCombatProofLiveTests.TechBar_B_tech2_beats_A_tech0(runIdx: 1)
+    Allegiance.ClientCore.Tests.P539bCombatProofLiveTests.TechBar_B_tech2_beats_A_tech0(runIdx: 2)
+    Allegiance.ClientCore.Tests.P539bCombatProofLiveTests.TechBar_B_tech2_beats_A_tech0(runIdx: 3)
+    Allegiance.ClientCore.Tests.P539CombatDecisionTests.CrossingTarget_LeadDirectionDiffersFromRawBearing_AndHitsIntercept
+    Allegiance.ClientCore.Tests.P539CombatDecisionTests.DogfightDefaultWeapon_IsNotTheDispersionZeroTestGun_AndMountsHull
+    Allegiance.ClientCore.Tests.P539CombatDecisionTests.LifepodHull_PicksGoDockOverCombat
+    Allegiance.ClientCore.Tests.P539CombatDecisionTests.LifepodHullIds_DetectedViaRealCapability
+    Allegiance.ClientCore.Tests.P539CombatProofLiveTests.Dogfight_at_20Hz
+    Allegiance.ClientCore.Tests.P539CombatProofLiveTests.Dogfight_at_10Hz
+    Allegiance.ClientCore.Tests.P539cReproLiveTests.Repro_side_dependent_acquisition_and_transit
+    Allegiance.ClientCore.Tests.P539dFairContactDecisionTests.Staging_HoldsUntilWholeSideAssembled
+    Allegiance.ClientCore.Tests.P539dFairContactDecisionTests.Staging_TimeoutBoundsABlockingStraggler
+    Allegiance.ClientCore.Tests.P539dFairContactDecisionTests.Staging_NoLivingBotsReleasesTrivially
+    Allegiance.ClientCore.Tests.P539dFairContactDecisionTests.Attack_BacksOff_WhenClosingTooFastInCloseBand
+    Allegiance.ClientCore.Tests.P539dFairContactDecisionTests.Attack_BacksOff_WhenClosingVeryFastInEngageBand
+    Allegiance.ClientCore.Tests.P539dFairContactDecisionTests.Attack_CloseBand_MatchedSpeed_HoldsWithoutForeAftButtons
+    Allegiance.ClientCore.Tests.P539dFairContactDecisionTests.DeathClassification_GunfireKillRequiresCreditedShipShooter
+    Allegiance.ClientCore.Tests.P539dFairContactDecisionTests.DeathClassification_RamAndUnknownAreCollisionOther
+    Allegiance.ClientCore.Tests.P539dFairContactDecisionTests.ArenaPlacements_AreMirroredAndEquidistantFromCentre
+    Allegiance.ClientCore.Tests.P539dFairContactDecisionTests.ArenaPlacements_SameSideBotsSpreadApart
+    Allegiance.ClientCore.Tests.P539dFairContactDecisionTests.ApproachAvoidance_DeflectsAroundAShipInThePath
+    Allegiance.ClientCore.Tests.P539dFairContactDecisionTests.ApproachAvoidance_IgnoredForEngagedTargetOutsideCone
+    Allegiance.ClientCore.Tests.P539dFairContactLiveTests.Probe_221_topology_and_routes
+    Allegiance.ClientCore.Tests.P539dFairContactLiveTests.Record_one_run
+    Allegiance.ClientCore.Tests.P539LogBaselineLiveTests.Baseline_20Hz
+    Allegiance.ClientCore.Tests.P539LogBaselineLiveTests.Baseline_10Hz
+    Allegiance.ClientCore.Tests.P542RemoteProjectilesLiveTests.EnemyShots_OfSameTypeAtCloseRange_AreReceivedAndDrawn
+    Allegiance.ClientCore.Tests.P553BotRockAvoidanceLiveTests.Probe_221_field
+    Allegiance.ClientCore.Tests.P553BotRockAvoidanceLiveTests.Record_staged_alderan
+    Allegiance.ClientCore.Tests.P553DodgeDecisionTests.Dodge_avoids_a_cross_side_enemy_ship
+    Allegiance.ClientCore.Tests.P553DodgeDecisionTests.Combat_approach_clears_cross_side_enemy_instead_of_ramming(dodgeEnemies: True)
+    Allegiance.ClientCore.Tests.P553DodgeDecisionTests.Combat_approach_clears_cross_side_enemy_instead_of_ramming(dodgeEnemies: False)
+    Allegiance.ClientCore.Tests.P553DodgeDecisionTests.Dodge_never_considers_self_or_the_skipped_goal_ship
+    Allegiance.ClientCore.Tests.P553DodgeDecisionTests.Dodge_owns_the_combat_tick_and_suppresses_fire
+    Allegiance.ClientCore.Tests.P553DodgeDecisionTests.Combat_approach_clears_a_rock_on_the_stand_off_path
+    Allegiance.ClientCore.Tests.P554AdminCheatLiveTests.Non_privileged_relocate_is_refused_and_broadcast_as_normal_chat
+    Allegiance.ClientCore.Tests.P554AdminCheatLiveTests.Relocate_refused_when_option_disabled_even_for_allowlisted_name
+    Allegiance.ClientCore.Tests.P554AdminCheatLiveTests.Privileged_relocate_moves_ship_sends_SET_CLUSTER_and_client_world_shows_new_sector
+    Allegiance.ClientCore.Tests.P554AdminCheatLiveTests.Privileged_admin_relocates_an_mcp_harness_bot_it_launched
+    Allegiance.ClientCore.Tests.P554AdminCheatLiveTests.Privileged_admin_cannot_relocate_a_non_harness_human_ship
+    Allegiance.ClientCore.Tests.P554AdminCheatLiveTests.Mcp_arena_against_a_refusing_server_returns_an_explicit_error
+    Allegiance.ClientCore.Tests.P554AdminCheatLiveTests.Relocate_without_the_secret_is_refused_and_broadcast_as_chat
+    Allegiance.ClientCore.Tests.P554AdminCheatLiveTests.Relocate_with_the_secret_moves_the_ship
+    Allegiance.ClientCore.Tests.P556TechHullShieldTests.AdvScout_SuccessorChain_IsHvyScout90_EndingThere
+    Allegiance.ClientCore.Tests.P556TechHullShieldTests.Tech0_FliesScenarioHull_WithNativePreferredLoadout_IncludingSmShield1
+    Allegiance.ClientCore.Tests.P556TechHullShieldTests.Tech2_FliesSuccessorHull_AndPartsAdvancedTwoSteps
+    Allegiance.ClientCore.Tests.P556TechHullShieldTests.Tech1_HullUnchanged_PartsAdvancedOneStep
+    Allegiance.ClientCore.Tests.P556TechHullShieldTests.Tech4_ChainEndRespected_HullAndPartsClampToFinal
+    Allegiance.ClientCore.Tests.P556TechHullShieldTests.ShieldStats_ReportsMountedShield_StrengthAndRegen
+    Allegiance.ClientCore.Tests.P556TechHullShieldTests.MeanOf_ComputesArithmeticMean_OrNullWhenEmpty
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.ResolveFleet_Resolves_Real_Hull_And_Validates
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.ResolveFleet_Unknown_Hull_Throws
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.ResolveFleet_DroneOrLifepod_Hull_Throws
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.ResolveFleet_Zero_Count_Throws
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.NativePreferredLoadout_Fighter_Has_Mountable_Gun
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.NativePreferredLoadout_Scout_Has_Native_Sm_Shield_After_P555
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.ComposeShowcaseFleet_Produces_Readable_Mixed_Fleet
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.ComposeShowcaseFleet_Scales_Exactly
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.ComposeShowcaseFleet_Is_Deterministic
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.PickMineDispenser_Returns_A_Mounting_Mine_Dispenser_Or_Null
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.MinefieldPlaced_InFront_Of_Arrival_Aleph
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.MinefieldPlacement_Never_Overshoots_Centre
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.EnemyWithinMineRange_Uses_Native_2500u
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.DecideWingmanMissile_Requires_Full_Lock
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.DecideWingmanMissile_Blocks_Too_Evasive_Target
+    Allegiance.ClientCore.Tests.P557ShowcaseFleetTests.Wingman_Flag_Helpers
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.ThrottleLaw_NoseOnLeadIsFullForward
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.ThrottleLaw_AngledNinetyDegreesIsHalf
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.MatchSpeedThrottle_ClampsAtMaxAndZero
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.MatchSpeedThrottle_LinearInterpolation
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.BandSelection_UsesNativeLifespanFractions
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.CloseBand_MovesForward_WhenTargetCloses
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.CloseBand_MatchesSpeedViaThrottle_WhenRelativeSpeedMatched
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.EngageBand_Brakes_WhenClosingVeryFast
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.EngageBand_Afterburners_OnFastClosure_WithPriorAfterburnerOrDeepNegative
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.ApproachBand_ClosesForward_AndAfterburnsBelowForty
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.LostBand_BurnsAfterEscapedTarget_ByDefault
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.LostBand_AggressiveWingman_FlagsEscapeForRetarget
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.LowAim_InReach_StrafesWhenStrafeFlagSet
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.LowAim_OutOfReach_DoesNotStrafe
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.FireGate_On_WhenNoseOnLeadAndInEnvelope
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.FireGate_Off_BeyondMaxOffAngle
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.FireGate_Off_BeyondOpenFireFraction
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.NativeLaw_DoesNotScaleAnOrbitToWeaponRange
+    Allegiance.ClientCore.Tests.P558NativeWingmanAttackTests.MissileGate_RequiresFullLock_AndBeatsEvasion
+    Allegiance.ClientCore.Tests.P560PodHomeStationTests.Picks_reachable_restart_station_over_a_closer_unreachable_one
+    Allegiance.ClientCore.Tests.P560PodHomeStationTests.Ignores_non_restart_stations_even_if_nearest
+    Allegiance.ClientCore.Tests.P560PodHomeStationTests.Prefers_the_same_sector_restart_station_zero_hops
+    Allegiance.ClientCore.Tests.P560PodHomeStationTests.Ignores_enemy_stations
+    Allegiance.ClientCore.Tests.P560PodHomeStationTests.Returns_null_when_no_reachable_restart_station
+    Allegiance.ClientCore.Tests.P560PodHomeStationTests.Ties_break_by_euclidean_within_same_hop_count
+    Allegiance.ClientCore.Tests.P560PodWarpLegClosedLoopTests.Pod_warp_leg_Pursue_never_returns_across_the_exited_aleph_but_slow_crossing_does
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.Self_VictimText_IsCriticalAndMatched(death: True, withKiller: False, expected: "You were killed")
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.Self_VictimText_IsCriticalAndMatched(death: False, withKiller: False, expected: "You ejected")
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.Self_VictimText_IsCriticalAndMatched(death: True, withKiller: True, expected: "You were killed by Bandit")
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.Self_VictimText_IsCriticalAndMatched(death: False, withKiller: True, expected: "You were forced to eject by Bandit")
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.Self_IsKiller_TextIsCritical(death: True, expected: "You killed Victim")
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.Self_IsKiller_TextIsCritical(death: False, expected: "You forced Victim to eject")
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.Other_Observer_IsNonCritical(death: True, expected: "Victim was killed")
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.Other_Observer_IsNonCritical(death: False, expected: "Victim ejected")
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.Rescue_IAmRescuer_NonCriticalWithRescueCue
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.Rescue_IAmRescuee_CriticalWithJumpCue
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.Rescue_NeitherEndpoint_NoLine
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.ApplyKillShip_TrueDeath_MarksDeadAndQueuesSelfCriticalAndOverride
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.ApplyKillShip_Eject_DoesNotMarkDead_QueuesForcedEjectCritical
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.ApplyKillShip_Observer_NonCriticalNoOverride
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.ApplyPlayerRescued_QueuesRescueLineForReceiver
+    Allegiance.ClientCore.Tests.P578EjectDeathFeedbackTests.ApplyPlayerRescued_NeitherEndpoint_NoLine
+    Allegiance.ClientCore.Tests.P591dShowcaseMinefieldPlacementTests.Side0_field_goes_across_the_enemy_Juniper_aleph_2183_not_Cirrus_2150
+    Allegiance.ClientCore.Tests.P591dShowcaseMinefieldPlacementTests.Side1_field_goes_across_the_enemy_Rigel_aleph_2187_not_Cirrus_2150
+    Allegiance.ClientCore.Tests.P591dShowcaseMinefieldPlacementTests.Neither_field_lands_at_the_far_Cirrus_aleph_2150
+    Allegiance.ClientCore.Tests.P591dShowcaseMinefieldPlacementTests.Resolver_routes_match_the_bots_shortest_path_machinery
+    Allegiance.ClientCore.Tests.P602AdminCheatSafetyTests.Boot_warning_is_null_when_admin_cheats_disabled
+    Allegiance.ClientCore.Tests.P602AdminCheatSafetyTests.Boot_warning_still_prints_active_banner_on_loopback_only
+    Allegiance.ClientCore.Tests.P602AdminCheatSafetyTests.Boot_warning_is_loud_when_enabled_on_non_loopback
+    Allegiance.ClientCore.Tests.P602AdminCheatSafetyTests.Boot_warning_names_the_secret_when_one_is_set
+    Allegiance.ClientCore.Tests.P602AdminCheatSafetyTests.Secret_prefix_accepted_and_stripped
+    Allegiance.ClientCore.Tests.P602AdminCheatSafetyTests.Secret_prefix_must_be_the_leading_token
+    Allegiance.ClientCore.Tests.P602AdminCheatSafetyTests.No_secret_configured_means_no_gate
+    Allegiance.ClientCore.Tests.P610AlephTrafficLiveTests.Record_aleph_traffic_run
+    Allegiance.ClientCore.Tests.P610AlephTrafficSpacingDecisionTests.EntryAim_DistinctAcrossAFleet_AndInsideCaptureRadius
+    Allegiance.ClientCore.Tests.P610AlephTrafficSpacingDecisionTests.EntryAim_IsDeterministic_PerShip
+    Allegiance.ClientCore.Tests.P610AlephTrafficSpacingDecisionTests.EntryAim_ZeroFraction_AimsAtCentre
+    Allegiance.ClientCore.Tests.P610AlephTrafficSpacingDecisionTests.IsClearOfAleph_FalseInside_TrueBeyond_RadiusPlusMargin
+    Allegiance.ClientCore.Tests.P610AlephTrafficSpacingDecisionTests.ExitClearGoal_LiesAlongExitRay_AndBeyondRadiusPlusMargin
+    Allegiance.ClientCore.Tests.P610AlephTrafficSpacingDecisionTests.EntryQueue_YieldsToAMateJustAheadInTheFunnel
+    Allegiance.ClientCore.Tests.P610AlephTrafficSpacingDecisionTests.EntryQueue_DoesNotYield_ForBehindOrDistantMates
+    Allegiance.ClientCore.Tests.P610AlephTrafficSpacingDecisionTests.TravelSeparation_PushesGoalAwayFromANearbyMate
+    Allegiance.ClientCore.Tests.P610AlephTrafficSpacingDecisionTests.TravelSeparation_IsZero_BeyondRange_And_ForNothingNear
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.LoneMiner_CapTwo_ThenRestHold
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.Caps_MinerIsTwo_FighterThree_BomberFour_CapitalSix
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.Threat_EngagedBeforeCombatAndMiners_EvenIfFarther
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.Threat_BomberAgainstOurStationBeatsAnIdleFighter
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.CombatPresent_MinerNotEngagedWhileFighterHasCapacity
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.CombatPresent_AllFightersOverCap_BotHoldsNotMiners
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.FocusFire_SecondBotFillsSameTarget
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.Spread_TieBreaksToNearestAtEqualEngagement
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.DeadTarget_Removed_CannotBeSelectedAndLivingTargetIsChosen
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.Classify_RealHullCues(name: "Miner Mk1", group: 0, habm: 16384, expect: MinerDrone)
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.Classify_RealHullCues(name: "Builder", group: 0, habm: 32768, expect: MinerDrone)
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.Classify_RealHullCues(name: "Lifepod", group: 0, habm: 4, expect: MinerDrone)
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.Classify_RealHullCues(name: "Rixian Drone", group: -1, habm: 0, expect: MinerDrone)
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.Classify_RealHullCues(name: "SB Bomber", group: 0, habm: 512, expect: Bomber)
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.Classify_RealHullCues(name: "Assault Bomber", group: 0, habm: 0, expect: Bomber)
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.Classify_RealHullCues(name: "Carrier", group: 0, habm: 1024, expect: Capital)
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.Classify_RealHullCues(name: "Hvy Destroyer", group: 0, habm: 0, expect: Capital)
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.Classify_RealHullCues(name: "Patrol Fighter", group: 0, habm: 128, expect: Fighter)
+    Allegiance.ClientCore.Tests.P622CombatTargetSpreadTests.OrbitOffset_SoloEngagerZero_HigherRanksDistinctLateral
+    Allegiance.ClientCore.Tests.P622TargetSpreadLiveTests.Record_target_spread_run
+    Allegiance.ClientCore.Tests.P629PenaltyLiveTests.Crowded_local_sector_damages_and_ejects_only_in_native_mode(mode: "native")
+    Allegiance.ClientCore.Tests.P629PenaltyLiveTests.Crowded_local_sector_damages_and_ejects_only_in_native_mode(mode: "off")
+    Allegiance.ClientCore.Tests.P629PenaltyLiveTests.Beyond_boundary_live_owner_takes_hull_damage_and_receives_warning_with_off
+    Allegiance.ClientCore.Tests.P629PenaltyLiveTests.Production_bots_reach_target_sector_with_crowding_off
+    Allegiance.ClientCore.Tests.P629ShipWarningTests.Wire_roundtrip_and_rising_edges_are_idempotent(bits: 0)
+    Allegiance.ClientCore.Tests.P629ShipWarningTests.Wire_roundtrip_and_rising_edges_are_idempotent(bits: 1)
+    Allegiance.ClientCore.Tests.P629ShipWarningTests.Wire_roundtrip_and_rising_edges_are_idempotent(bits: 2)
+    Allegiance.ClientCore.Tests.P629ShipWarningTests.Wire_roundtrip_and_rising_edges_are_idempotent(bits: 3)
+    Allegiance.ClientCore.Tests.P629ShipWarningTests.Both_bits_share_loop_and_reset_discards_pending_audio
+    Allegiance.ClientCore.Tests.P629ShipWarningTests.World_applies_owner_only_and_clears_on_sector_change_disconnect_and_rotation
+    Allegiance.ClientCore.Tests.P629ShipWarningTests.Malformed_wire_is_rejected
+    Allegiance.ClientCore.Tests.P632PortModeZeroKillsLiveTests.Record_port_mode_fair_fight
+    Allegiance.ClientCore.Tests.P632PortModeZeroKillsLiveTests.Assert_port_bots_kill_in_window
+    Allegiance.ClientCore.Tests.P633DecisionLoopTests.TwoPhase_SettleEqualsSequentialP622(seed: 1)
+    Allegiance.ClientCore.Tests.P633DecisionLoopTests.TwoPhase_SettleEqualsSequentialP622(seed: 7)
+    Allegiance.ClientCore.Tests.P633DecisionLoopTests.TwoPhase_SettleEqualsSequentialP622(seed: 12345)
+    Allegiance.ClientCore.Tests.P633DecisionLoopTests.TwoPhase_IsDeterministic
+    Allegiance.ClientCore.Tests.P633DecisionLoopTests.Selector_CapAndThreatPriority_Holds
+    Allegiance.ClientCore.Tests.P633DecisionLoopTests.SpatialIndex_Radius_MatchesBruteForce(seed: 11, radius: 250)
+    Allegiance.ClientCore.Tests.P633DecisionLoopTests.SpatialIndex_Radius_MatchesBruteForce(seed: 22, radius: 700)
+    Allegiance.ClientCore.Tests.P633DecisionLoopTests.SpatialIndex_Radius_MatchesBruteForce(seed: 33, radius: 40)
+    Allegiance.ClientCore.Tests.P633DecisionLoopTests.SpatialIndex_ClusterFilter_ReturnsOnlyItsCluster
+    Allegiance.ClientCore.Tests.P633DecisionLoopTests.DecisionMetrics_PassPercentiles_AreCorrect
+    Allegiance.ClientCore.Tests.P633DecisionLoopTests.DecisionMetrics_Rate_IsInverseOfPassTime
+    Allegiance.ClientCore.Tests.P633DecisionLoopTests.StagingRelease_DoesNotDeadlock_AndReleasesLateBots
+    Allegiance.ClientCore.Tests.P634JoinWorldSyncLiveTests.Record_join_world_sync_baseline
+    Allegiance.ClientCore.Tests.P635MultiRouteLiveTests.Record_multi_route_showcase
+    Allegiance.ClientCore.Tests.P635MultiRouteTests.FixtureGraph_EnumeratesDistinctEntryRoutes
+    Allegiance.ClientCore.Tests.P635MultiRouteTests.FixtureGraph_CapsAndDedupesRoutes
+    Allegiance.ClientCore.Tests.P635MultiRouteTests.RealMap_PinsDistinctEntryRoutesToAlderan
+    Allegiance.ClientCore.Tests.P635MultiRouteTests.RealMap_ClusterGraphAndWarpTable_Agree
+    Allegiance.ClientCore.Tests.P635MultiRouteTests.PickLeastLoaded_SplitsEvenlyAcrossRoutes
+    Allegiance.ClientCore.Tests.P635MultiRouteTests.PickLeastLoaded_ExcessGoesToLeastLoadedUnderCap
+    Allegiance.ClientCore.Tests.P635MultiRouteTests.PickLeastLoaded_AlwaysArgmin_ThreeRoutes
+    Allegiance.ClientCore.Tests.P635MultiRouteTests.SyncOffset_LongerRouteWaitsLonger
+    Allegiance.ClientCore.Tests.P635MultiRouteTests.ReleaseTiming_AssembledImmediately_VsTimeoutLater
+    Allegiance.ClientCore.Tests.P636bCadenceSnapshotTests.LoopCadence_NeverBusySpins_WhenPassOvershootsItsPeriod
+    Allegiance.ClientCore.Tests.P636bCadenceSnapshotTests.LoopCadence_PacesAtTarget_ForAnyBotCount(bots: 1)
+    Allegiance.ClientCore.Tests.P636bCadenceSnapshotTests.LoopCadence_PacesAtTarget_ForAnyBotCount(bots: 30)
+    Allegiance.ClientCore.Tests.P636bCadenceSnapshotTests.LoopCadence_PacesAtTarget_ForAnyBotCount(bots: 200)
+    Allegiance.ClientCore.Tests.P636bCadenceSnapshotTests.DecisionRate_ReflectsWallPeriod_NotWorkTime
+    Allegiance.ClientCore.Tests.P636bCadenceSnapshotTests.VisibleShips_IsExactlyTheVisibleSubsetOfShips
+    Allegiance.ClientCore.Tests.P636bCadenceSnapshotTests.VisibleShips_ExcludesDeadShips
+    Allegiance.ClientCore.Tests.P636cSnapshotLethalityTests.Snapshot_deadreckon_matches_live_pose_where_raw_freeze_misses
+    Allegiance.ClientCore.Tests.P636cSnapshotLethalityTests.Raw_frozen_pose_misses_beyond_hull_radius_at_publish_age
+    Allegiance.ClientCore.Tests.P636cSnapshotLethalityTests.DeadReckon_is_lockfree_pure_over_the_snapshot
+    Allegiance.ClientCore.Tests.P636dSnapshotPublishCostTests.NoPublish_WithoutARequest
+    Allegiance.ClientCore.Tests.P636dSnapshotPublishCostTests.Request_WithUnchangedWorld_SkipsRebuild
+    Allegiance.ClientCore.Tests.P636dSnapshotPublishCostTests.Request_WithChangedWorld_Rebuilds
+    Allegiance.ClientCore.Tests.P636dSnapshotPublishCostTests.OffMode_PerformsZeroPublishes
+    Allegiance.ClientCore.Tests.P636dSnapshotPublishCostTests.ActiveLevel_PublishesAtCadence_WhileHeld_AndCancelStopsIt
+    Allegiance.ClientCore.Tests.P636dSnapshotPublishCostTests.FreshSnapshot_KeepsPublishStamp_AndDeadReckon
+    Allegiance.ClientCore.Tests.P637BomberRoutingAndStagingTests.RoleTarget_BomberTargetsEnemyHome
+    Allegiance.ClientCore.Tests.P637BomberRoutingAndStagingTests.RoleTarget_NonBomberKeepsRendezvous
+    Allegiance.ClientCore.Tests.P637BomberRoutingAndStagingTests.RoleTarget_BomberFallsBackToRendezvousWhenNoEnemyHome
+    Allegiance.ClientCore.Tests.P637BomberRoutingAndStagingTests.StagingGroup_BomberAndFighterDifferentGoal_NotSameGroup
+    Allegiance.ClientCore.Tests.P637BomberRoutingAndStagingTests.StagingGroup_SameGoalSameRoute_IsSameGroup
+    Allegiance.ClientCore.Tests.P637BomberRoutingAndStagingTests.StagePhases_HoldNotReleased_ReleasedIs
+    Allegiance.ClientCore.Tests.P637BomberRoutingAndStagingTests.IdleRule_StillSlowAndUndocked_IsIdle
+    Allegiance.ClientCore.Tests.P637BomberRoutingAndStagingTests.FocusFire_FillsMostEngagedTargetBeforeStartingAnother
+    Allegiance.ClientCore.Tests.P637BomberRoutingAndStagingTests.FocusFire_CappedTargetOverflowsToNext
+    Allegiance.ClientCore.Tests.P637BomberRoutingAndStagingTests.SpreadSwitch_StillPicksLeastEngaged
+    Allegiance.ClientCore.Tests.P637BomberRoutingAndStagingTests.FocusFire_EqualEngagementTiesToNearest
+    Allegiance.ClientCore.Tests.P638FeedbackWireTests.TeleportAck_Denied_PostsRefusalSystemLine
+    Allegiance.ClientCore.Tests.P638FeedbackWireTests.TeleportAck_Accepted_QueuesArrivalJump
+    Allegiance.ClientCore.Tests.P638FeedbackWireTests.BoardNack_PostsNativeBoardingRefusalLine
+    Allegiance.ClientCore.Tests.P638FeedbackWireTests.MissileSpoofed_RetargetsMissileOntoLastChaff
+    Allegiance.ClientCore.Tests.P638FeedbackWireTests.EndSpoofing_ForgetsLastChaff_SoLaterSpoofDoesNotRetarget
+    Allegiance.ClientCore.Tests.P638FeedbackWireTests.EnterLifepod_ForcesOwnShipIntoPod
+    Allegiance.ClientCore.Tests.P638FeedbackWireTests.LeaveShip_ForOwnShip_DetachesAndBecomesPod
+    Allegiance.ClientCore.Tests.P638FeedbackWireTests.LeaveShip_ForSomeoneElse_AnnouncesWhoLeftOurShip
+    Allegiance.ClientCore.Tests.P638FeedbackWireTests.AsteroidMined_UpdatesLiveOreFraction
+    Allegiance.ClientCore.Tests.P640CommandingReceiveTests.Promote_dispatch_swaps_hull_seats_children_and_preserves_identity(own: 1, notice: "You have been demoted to a turret gunner")
+    Allegiance.ClientCore.Tests.P640CommandingReceiveTests.Promote_dispatch_swaps_hull_seats_children_and_preserves_identity(own: 2, notice: "You have been promoted to pilot")
+    Allegiance.ClientCore.Tests.P640CommandingReceiveTests.Promote_dispatch_swaps_hull_seats_children_and_preserves_identity(own: 3, notice: null)
+    Allegiance.ClientCore.Tests.P640CommandingReceiveTests.Promotion_transfers_mounted_fractions_and_cargo_and_preserves_own_ship_cookie
+    Allegiance.ClientCore.Tests.P640CommandingReceiveTests.Highlight_dispatch_is_per_sector_clearable_and_resets_with_session
+    Allegiance.ClientCore.Tests.P640CommandingReceiveTests.View_reply_changes_preview_without_reseating_the_pilot
+    Allegiance.ClientCore.Tests.P641BoosterPredictionTests.Latched_boost_release_and_removal_match_authoritative_flight(mounted: 255, fuel: 100, dt: 0.0500000007)
+    Allegiance.ClientCore.Tests.P641BoosterPredictionTests.Latched_boost_release_and_removal_match_authoritative_flight(mounted: 0, fuel: 100, dt: 0.0500000007)
+    Allegiance.ClientCore.Tests.P641BoosterPredictionTests.Latched_boost_release_and_removal_match_authoritative_flight(mounted: 255, fuel: 0, dt: 0.0500000007)
+    Allegiance.ClientCore.Tests.P641BoosterPredictionTests.Latched_boost_release_and_removal_match_authoritative_flight(mounted: 240, fuel: 100, dt: 0.0500000007)
+    Allegiance.ClientCore.Tests.P641BoosterPredictionTests.Latched_boost_release_and_removal_match_authoritative_flight(mounted: 239, fuel: 100, dt: 0.0500000007)
+    Allegiance.ClientCore.Tests.P641BoosterPredictionTests.Latched_boost_release_and_removal_match_authoritative_flight(mounted: 0, fuel: 100, dt: 0.00100000005)
+    Allegiance.ClientCore.Tests.P641BoosterPredictionTests.P666_Loaded_zero_and_small_mount_rates_do_not_become_the_default(rate: 0)
+    Allegiance.ClientCore.Tests.P641BoosterPredictionTests.P666_Loaded_zero_and_small_mount_rates_do_not_become_the_default(rate: 9.99999975E-06)
+    Allegiance.ClientCore.Tests.P641BoosterPredictionTests.P666_Thrust_GA_changes_acceleration_but_not_fuel_cadence
+    Allegiance.ClientCore.Tests.P641FlightPartsReceiveTests.Swap_echo_updates_exact_equipment_without_touching_pose_or_cookie(from: 0, to: -1)
+    Allegiance.ClientCore.Tests.P641FlightPartsReceiveTests.Swap_echo_updates_exact_equipment_without_touching_pose_or_cookie(from: -1, to: 0)
+    Allegiance.ClientCore.Tests.P641FlightPartsReceiveTests.Unmount_mount_and_drop_follow_server_echo_without_double_swapping
+    Allegiance.ClientCore.Tests.P641FlightPartsReceiveTests.Remote_exports_split_cargo_and_same_mount_is_a_noop
+    Allegiance.ClientCore.Tests.P642AllianceReceiveTests.Production_dispatch_updates_all_groups_and_changes_remove_old_allies
+    Allegiance.ClientCore.Tests.P642AllianceReceiveTests.Late_join_snapshot_preserves_existing_groups_and_unassigned_sides
+    Allegiance.ClientCore.Tests.P642AllianceReceiveTests.Mission_rotation_clears_old_alliance_groups
+    Allegiance.ClientCore.Tests.P648RelaunchVisibilityTests.LoadoutChange_RevivesDeadShip_AdoptsNewHullAndParts
+    Allegiance.ClientCore.Tests.P648RelaunchVisibilityTests.LoadoutChange_ToLifepodHull_DoesNotReviveDeadShip
+    Allegiance.ClientCore.Tests.P648RelaunchVisibilityTests.LoadoutChange_OnLiveShip_DoesNotDisturbReviveState
+    Allegiance.ClientCore.Tests.P648RelaunchVisibilityTests.LoadoutChange_ReparentsBoardedChildren
+    Allegiance.ClientCore.Tests.P648RelaunchVisibilityTests.ClassifyPlaceability_DeadNeverPosedStaleLive
+    Allegiance.ClientCore.Tests.P648RelaunchVisibilityTests.Projectile_FromLatchedDeadShooter_IncrementsFromLatchedDead
+    Allegiance.ClientCore.Tests.P648RelaunchVisibilityTests.Projectile_FromNeverPosedShooter_IncrementsFromNeverPosed
+    Allegiance.ClientCore.Tests.P651EquipmentFeedbackTests.Unknown_magazine_state_is_not_ready
+    Allegiance.ClientCore.Tests.P651EquipmentFeedbackTests.Static_target_identity_position_and_reload_readiness_reach_client(type: Station)
+    Allegiance.ClientCore.Tests.P651EquipmentFeedbackTests.Static_target_identity_position_and_reload_readiness_reach_client(type: Warp)
+    Allegiance.ClientCore.Tests.P651EquipmentFeedbackTests.Changing_object_type_with_same_id_suppresses_lost_tip
+    Allegiance.ClientCore.Tests.P651EquipmentLiveTests.Static_target_order_lock_and_not_ready_state_roundtrip_over_TCP(type: Station)
+    Allegiance.ClientCore.Tests.P651EquipmentLiveTests.Static_target_order_lock_and_not_ready_state_roundtrip_over_TCP(type: Warp)
+    Allegiance.ClientCore.Tests.P651EquipmentLiveTests.Local_battle_production_bot_missile_decision_fires_over_TCP_and_scores_kills
+    Allegiance.ClientCore.Tests.P655PositionRefusalTests.Session_tracks_only_own_refusal_and_clears_it_before_retry
+    Allegiance.ClientCore.Tests.P655ProbeWorkersLiveTests.Probe_reports_side_refusal_instead_of_waiting_for_seat_timeout
+    Allegiance.ClientCore.Tests.P655ProbeWorkersLiveTests.Actual_workers_two_seats_unique_probes_and_serves_MCP(authenticatedHarness: False)
+    Allegiance.ClientCore.Tests.P655ProbeWorkersLiveTests.Actual_workers_two_seats_unique_probes_and_serves_MCP(authenticatedHarness: True)
+    Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber(side: 0)
+    Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_client_selects_the_best_legal_bomber(side: 1)
+    Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted(side: 0)
+    Allegiance.ClientCore.Tests.P656cFinaleLiveTests.Rig_allTech_finale_buy_loadout_is_fully_accepted(side: 1)
+    Allegiance.ClientCore.Tests.P656cTechStateTests.Initial_bucket_mask_survives_research_and_clears_on_new_world(nextMission: False)
+    Allegiance.ClientCore.Tests.P656cTechStateTests.Initial_bucket_mask_survives_research_and_clears_on_new_world(nextMission: True)
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1799, shareA: 1, shareB: 1, recentKills: 100, expected: False)
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 0.48999999999999999, shareB: 1, recentKills: 100, expected: False)
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 1, shareB: 0.48999999999999999, recentKills: 100, expected: False)
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 1, shareB: 1, recentKills: 4, expected: False)
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_TriggerRequiresTimeBothSidesAndSustainedCombat(seconds: 1800, shareA: 0.5, shareB: 0.5, recentKills: 5, expected: True)
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: "leader", expected: 0)
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: "0", expected: 0)
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: "1", expected: 1)
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SideSelectionIsDeterministicIncludingTies(selection: "both", expected: 2)
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_SettingsSchemaAcceptsNumericSideAndRejectsMalformedValues
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_RealCoreLoadoutBeatsDefaultBomberAndEveryMountIsLegal
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656_EscortEngagesBomberAttackerOverNearIdleAndHonorsLeash
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_AllRealStationTargetsSelectOnlyBombersWithAllTech
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: "Flagship")
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: "Carrier")
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: "Heavy")
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: "Gunship")
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: "Capital")
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: "Destroyer")
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: "Cruiser")
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: "Frigate")
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P704_RolesIgnoreNamesAndUseCapabilities(name: "Corvette")
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_NoBomberCatalogueDoesNotSubstituteCapital
+    Allegiance.ClientCore.Tests.P656ShowcaseFinaleTests.P656b_RealCoreSelectionHonorsHullAndPartTechAvailability
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.MinuteAggregatesAndResets_WhileReadersPreserveCompletedMinute
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.DelayedMinuteUsesActualDuration_AndDoesNotReplayEmptyWindows
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 1000, starved: 10, expected: False)
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 1001, starved: 0, expected: True)
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 0, starved: 11, expected: True)
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentThresholdsAreStrict(late: 999, starved: 9, expected: False)
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.IncidentEpisodesAreRateLimited_AndRecoverImmediately
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.PoolStarvationRequiresBacklogAndNoCompletedWork_AndResetsOnProgress
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossSnapshotPreservesWatchdogAgeAndIncidentState_AndShowsUnfinishedPass
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.InstrumentedReadUsesFullFrameArrival_AndForwardsRealReceiveDispatcher(combat: True)
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.InstrumentedReadUsesFullFrameArrival_AndForwardsRealReceiveDispatcher(combat: False)
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.FakeClockWatchdogLogsLateWakeupAndMinute_WithoutCatchupOrReaderReset
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.WatchdogLogsReceiveStarvation_WithFreshLossSnapshotAndNoDuplicateLosses
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossReasonUsesActualTransportState(detail: "server closed connection (EOF)", intentional: False, reason: "server-eof")
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossReasonUsesActualTransportState(detail: "read I/O error", intentional: False, reason: "local-transport-error")
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LossReasonUsesActualTransportState(detail: "connection disposed", intentional: True, reason: "our-disposal")
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.LocalReceiveExceptionIsLoggedOnce_WithTypeAndDetail
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.PendingSpawnRollbackDisposesAndUntracksSession_WithOneReason
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.UnavailableLogWriterDoesNotInterruptClientCleanup_AndReportsDroppedLines
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.DedicatedWatchdogHasHighestPriority_AndLoggerFlushesOnShutdown
+    Allegiance.ClientCore.Tests.P657bStallTelemetryTests.GetPerfStatsExposesMinuteAndLiveStallFields_AndReadsDoNotResetThem
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: True, signal: "cluster")
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: False, signal: "cluster")
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: True, signal: "undock")
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: False, signal: "undock")
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: True, signal: "status")
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OwnSessionConfirmsLaunch_WhileProbeNeverSeesShip(combat: False, signal: "status")
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.StaleSeatAndPurchaseAck_WithoutOwnLaunch_TimeOutDisposeAndReportFailure(combat: True)
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.StaleSeatAndPurchaseAck_WithoutOwnLaunch_TimeOutDisposeAndReportFailure(combat: False)
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.LaunchOnSecondPurchase_SucceedsWithExactlyOneRetry(combat: True)
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.LaunchOnSecondPurchase_SucceedsWithExactlyOneRetry(combat: False)
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.RealWait_IsBounded_AndMissingAckIsReported
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OtherShipsFlyingStatus_CannotConfirmOwnLaunch(combat: True)
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.OtherShipsFlyingStatus_CannotConfirmOwnLaunch(combat: False)
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.DisconnectDuringLaunch_FailsWithoutSecondPurchase
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.RefusedLoadout_FailsEvenWhenOwnShipIsFlying
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.LateSeatAck_IsIgnoredUntilRequestedPurchaseAckArrives
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.ScenarioCountsSuccessfulSlotsPerSide_RefillRestoresBalance(refill: False, spawned: 1, failed: 1, refilled: 0)
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.ScenarioCountsSuccessfulSlotsPerSide_RefillRestoresBalance(refill: True, spawned: 2, failed: 0, refilled: 1)
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.PermanentlyFailedSlots_GetOnlyOneRefill_AndRetainBothReasons
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.BotDisposedWhileLaterSlotsSpawn_IsRemovedFromSummary_AndMayBeRefilled(refill: False, spawned: 0)
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.BotDisposedWhileLaterSlotsSpawn_IsRemovedFromSummary_AndMayBeRefilled(refill: True, spawned: 1)
+    Allegiance.ClientCore.Tests.P657SpawnReliabilityTests.SpawnBotError_ReportsRequestedSideCountsAndReason
+    Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 195, workers: 2, expected: [98, 97])
+    Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 13, workers: 2, expected: [7, 6])
+    Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 7, workers: 3, expected: [3, 2, 2])
+    Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 1, workers: 4, expected: [1, 0, 0, 0])
+    Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 0, workers: 2, expected: [0, 0])
+    Allegiance.ClientCore.Tests.P658SupervisorTests.SplitPreservesOddTotalsAndDefault(total: 195, workers: 1, expected: [195])
+    Allegiance.ClientCore.Tests.P658SupervisorTests.PartitionCountsEachSideIndependentlyAndKeepsOriginalSlotIndices
+    Allegiance.ClientCore.Tests.P658SupervisorTests.InvalidWorkerCountsFailBeforeStartup(count: "0")
+    Allegiance.ClientCore.Tests.P658SupervisorTests.InvalidWorkerCountsFailBeforeStartup(count: "-2")
+    Allegiance.ClientCore.Tests.P658SupervisorTests.InvalidWorkerCountsFailBeforeStartup(count: "abc")
+    Allegiance.ClientCore.Tests.P658SupervisorTests.OptionsDefaultAndInternalWorkerAreDistinct
+    Allegiance.ClientCore.Tests.P658SupervisorTests.LifecycleFansOutAndSumsActualCounts(name: "stop_bots", key: "stopped")
+    Allegiance.ClientCore.Tests.P658SupervisorTests.LifecycleFansOutAndSumsActualCounts(name: "clear_bots", key: "cleared")
+    Allegiance.ClientCore.Tests.P658SupervisorTests.LifecycleFansOutAndSumsActualCounts(name: "despawn_bot", key: "stopped")
+    Allegiance.ClientCore.Tests.P658SupervisorTests.PrivateWorkerRpcMethodsAreNotExposedAsMcpTools
+    Allegiance.ClientCore.Tests.P658SupervisorTests.SpawnRunsInParallelAndMergesHonestCountsFailuresAndBotList
+    Allegiance.ClientCore.Tests.P658SupervisorTests.MergeRemovesBotLostWhileAnotherWorkerWasStillSpawning
+    Allegiance.ClientCore.Tests.P658SupervisorTests.RefilledBotLostDuringParallelSpawnDoesNotInflateRefillCount
+    Allegiance.ClientCore.Tests.P658SupervisorTests.LaterScenarioStillSpawnsOnHealthyWorkerAndReportsLostPartition
+    Allegiance.ClientCore.Tests.P658SupervisorTests.ExitDuringSpawnContributesFailedRequestedSlots
+    Allegiance.ClientCore.Tests.P658SupervisorTests.WorkerEnvelopesAndPooledCadenceRetainStallCounters
+    Allegiance.ClientCore.Tests.P658SupervisorTests.WingWaitsForMembersOnBothWorkersAndHonorsSpawnHold
+    Allegiance.ClientCore.Tests.P658SupervisorTests.SupervisorHoldsAnAssembledWingWhenLiveWorkerDecisionSnapshotIsStale(age: 2500, epoch: 0, required: 0)
+    Allegiance.ClientCore.Tests.P658SupervisorTests.SupervisorHoldsAnAssembledWingWhenLiveWorkerDecisionSnapshotIsStale(age: 0, epoch: 1, required: 2)
+    Allegiance.ClientCore.Tests.P658SupervisorTests.SynchronizedWingsRespectObjectivesMissionsAndTimeout
+    Allegiance.ClientCore.Tests.P658SupervisorTests.RecallQuotaIsGlobalRankedOnceAndExpiresAfterQuietMinimum
+    Allegiance.ClientCore.Tests.P658SupervisorTests.RealChildExitMarksKnownBotsLostAndSupervisorStillServes
+    Allegiance.ClientCore.Tests.P658SupervisorTests.DisposingProcessWorkerKillsItsChildAndDrainsStderr
+    Allegiance.ClientCore.Tests.P660CountdownTests.Native_restart_deadline_is_replaced_by_briefing_and_tracks_dilation
+    Allegiance.ClientCore.Tests.P660CountdownTests.Side_elimination_preserves_result_until_a_real_next_match_stage
+    Allegiance.ClientCore.Tests.P660CountdownTests.Game_over_roster_accumulates_native_chunks_and_resets_for_the_next_result
+    Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: "off")
+    Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: "auto")
+    Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: True, dilation: "off")
+    Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: True, dilation: "auto")
+    Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Unready_players_wait_when_disabled_and_auto_start_when_enabled(enabled: False)
+    Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Unready_players_wait_when_disabled_and_auto_start_when_enabled(enabled: True)
+    Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Two_consecutive_matches_deliver_both_players_results_and_reseat_every_peer
+    Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms
+    Allegiance.ClientCore.Tests.P663TreasureLiveTests.AmbientGeneration_AndArtifactCaptureExpiryAndDeathRespawn_ReachRealClients
+    Allegiance.ClientCore.Tests.P663TreasureMotionTests.ExportedTrajectory_ClientSeesDecelerationLateArrivalAndCompleteStop
+    Allegiance.ClientCore.Tests.P663TreasureMotionTests.Prediction_IntegratesTimeScaleChanges_AndSectorEntryReplacesSnapshot
+    Allegiance.ClientCore.Tests.P671KeepAliveLiveTests.IdleDockedClient_StaysConnected_PastIdleWindow
+    Allegiance.ClientCore.Tests.P675CommandLiveTests.Real_session_loads_core_accepts_order_and_joins_wing_without_replacing_accepted_target
+    Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Join_dispatch_loads_shared_core_and_assigns_identity_before_launch_then_playerinfo_sets_side
+    Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Failed_core_rejects_join_without_assigning_identity_or_consuming_later_packet_messages
+    Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Discovery_formats_native_spotter_and_enemy_station_critical_feedback(type: 0, id: 10, prefix: "You've")
+    Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Discovery_formats_native_spotter_and_enemy_station_critical_feedback(type: 0, id: 11, prefix: "Scout has")
+    Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Discovery_formats_native_spotter_and_enemy_station_critical_feedback(type: 0, id: 12, prefix: "Ally (Ally) has")
+    Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Discovery_formats_native_spotter_and_enemy_station_critical_feedback(type: 1, id: 20, prefix: "Allied Garrison has")
+    Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Discovery_formats_native_spotter_and_enemy_station_critical_feedback(type: 4, id: 30, prefix: "One of your team's probes has")
+    Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Allied_discovery_is_noncritical_and_nonzero_wing_suppresses_other_critical_discoveries
+    Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Discovery_ignores_missing_entities_and_lobby_and_bounds_pending_feedback
+    Allegiance.ClientCore.Tests.P675MissionDiscoveryTests.Session_gate_serializes_discovery_receive_and_reader_drains
+    Allegiance.ClientCore.Tests.P676WeaponReadyLiveTests.Actual_weapon_mount_completion_sends_owner_only_ready_text_and_sound_once
+    Allegiance.ClientCore.Tests.P678LobbyMessageTests.Lobby_settings_follow_each_echo_independently_and_never_mutate_optimistically
+    Allegiance.ClientCore.Tests.P678LobbyMessageTests.Position_request_tracks_membership_and_gates_critical_notice_to_own_leader(leader: True, requestedSide: 0, notice: True)
+    Allegiance.ClientCore.Tests.P678LobbyMessageTests.Position_request_tracks_membership_and_gates_critical_notice_to_own_leader(leader: False, requestedSide: 0, notice: False)
+    Allegiance.ClientCore.Tests.P678LobbyMessageTests.Position_request_tracks_membership_and_gates_critical_notice_to_own_leader(leader: True, requestedSide: 1, notice: False)
+    Allegiance.ClientCore.Tests.P678LobbyMessageTests.Removal_is_scoped_idempotent_and_retains_reason_even_without_a_player(reason: Rejected)
+    Allegiance.ClientCore.Tests.P678LobbyMessageTests.Removal_is_scoped_idempotent_and_retains_reason_even_without_a_player(reason: Canceled)
+    Allegiance.ClientCore.Tests.P678LobbyMessageTests.Removal_is_scoped_idempotent_and_retains_reason_even_without_a_player(reason: SidesLocked)
+    Allegiance.ClientCore.Tests.P678LobbyMessageTests.Removal_is_scoped_idempotent_and_retains_reason_even_without_a_player(reason: SideGone)
+    Allegiance.ClientCore.Tests.P678LobbyMessageTests.Request_result_events_are_bounded
+    Allegiance.ClientCore.Tests.P678LobbyMessageTests.Cancel_removes_all_matching_active_and_queued_ballots_and_preserves_unrelated_votes
+    Allegiance.ClientCore.Tests.P678LobbyMessageTests.Ballot_expiration_is_strict_and_vote_advances_the_queue
+    Allegiance.ClientCore.Tests.P678LobbyMessageTests.Reconnect_and_rotation_clear_all_lobby_state(rotation: False)
+    Allegiance.ClientCore.Tests.P678LobbyMessageTests.Reconnect_and_rotation_clear_all_lobby_state(rotation: True)
+    Allegiance.ClientCore.Tests.P678LobbyRelayLiveTests.Real_lobby_relays_track_requests_rejections_locks_and_auto_accept_sweep
+    Allegiance.ClientCore.Tests.P680CountdownClockTests.Encoded_definition_and_start_update_drive_both_native_rounding_branches
+    Allegiance.ClientCore.Tests.P680CountdownClockTests.Late_join_uses_definition_epoch_and_corrects_server_samples_with_dilation
+    Allegiance.ClientCore.Tests.P680CountdownClockTests.Inactive_stages_and_untimed_games_are_silent(stage: 0, duration: 20)
+    Allegiance.ClientCore.Tests.P680CountdownClockTests.Inactive_stages_and_untimed_games_are_silent(stage: 3, duration: 20)
+    Allegiance.ClientCore.Tests.P680CountdownClockTests.Inactive_stages_and_untimed_games_are_silent(stage: 2, duration: 0)
+    Allegiance.ClientCore.Tests.P680CountdownClockTests.Reset_and_next_match_discard_old_epoch_and_new_definition_replaces_duration
+    Allegiance.ClientCore.Tests.P682MissionStateTests.New_mission_discards_research_attributes_and_bucket_funding(reconnect: False)
+    Allegiance.ClientCore.Tests.P682MissionStateTests.New_mission_discards_research_attributes_and_bucket_funding(reconnect: True)
+    Allegiance.ClientCore.Tests.P682MissionStateTests.Rotation_retires_viewer_references_preserves_accounting_and_invalidates_world_sync(pipeline: False)
+    Allegiance.ClientCore.Tests.P682MissionStateTests.Rotation_retires_viewer_references_preserves_accounting_and_invalidates_world_sync(pipeline: True)
+    Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: "port", pipeline: False)
+    Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: "native", pipeline: False)
+    Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: "port", pipeline: True)
+    Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts(model: "native", pipeline: True)
+    Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: "port", pipeline: False)
+    Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: "native", pipeline: False)
+    Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: "port", pipeline: True)
+    Allegiance.ClientCore.Tests.P682NextMatchCombatLiveTests.Mcp_bots_buy_launch_see_enemies_and_kill_in_both_matches(model: "native", pipeline: True)
+    Allegiance.ClientCore.Tests.P690EquipmentReadyLiveTests.Utility_mount_completion_delivers_owner_text_and_source_crew_sound_and_rearms(kind: Cloak)
+    Allegiance.ClientCore.Tests.P690EquipmentReadyLiveTests.Utility_mount_completion_delivers_owner_text_and_source_crew_sound_and_rearms(kind: Shield)
+    Allegiance.ClientCore.Tests.P690EquipmentReadyLiveTests.Utility_mount_completion_delivers_owner_text_and_source_crew_sound_and_rearms(kind: Afterburner)
+    Allegiance.ClientCore.Tests.P691BucketProgressLiveTests.Integer_progress_and_empty_use_the_native_side_or_prosperity_audience(prosperity: False)
+    Allegiance.ClientCore.Tests.P691BucketProgressLiveTests.Integer_progress_and_empty_use_the_native_side_or_prosperity_audience(prosperity: True)
+    Allegiance.ClientCore.Tests.P692EquipmentLiveTests.Held_dispenser_input_uses_production_callback_and_delivers_real_deployment(kind: "mine")
+    Allegiance.ClientCore.Tests.P692EquipmentLiveTests.Held_dispenser_input_uses_production_callback_and_delivers_real_deployment(kind: "probe")
+    Allegiance.ClientCore.Tests.P692EquipmentLiveTests.Held_dispenser_input_uses_production_callback_and_delivers_real_deployment(kind: "chaff")
+    Allegiance.ClientCore.Tests.P692EquipmentLiveTests.Teleport_activation_and_loss_reach_owner_and_enemy_with_native_criticality(allied: False)
+    Allegiance.ClientCore.Tests.P692EquipmentLiveTests.Teleport_activation_and_loss_reach_owner_and_enemy_with_native_criticality(allied: True)
+    Allegiance.ClientCore.Tests.P692EquipmentLiveTests.Dispenser_mount_completion_delivers_owner_only_native_ready_sound(chaff: False)
+    Allegiance.ClientCore.Tests.P692EquipmentLiveTests.Dispenser_mount_completion_delivers_owner_only_native_ready_sound(chaff: True)
+    Allegiance.ClientCore.Tests.P692EquipmentLiveTests.Undiscovered_enemy_teleport_does_not_disclose_its_location_in_feedback
+    Allegiance.ClientCore.Tests.P693TeamLimitsLiveTests.Batched_bots_consume_native_balance_refusal_and_choose_an_eligible_side(behavior: "combat")
+    Allegiance.ClientCore.Tests.P693TeamLimitsLiveTests.Batched_bots_consume_native_balance_refusal_and_choose_an_eligible_side(behavior: "idle")
+    Allegiance.ClientCore.Tests.P693TeamLimitsLiveTests.Batched_bots_consume_native_balance_refusal_and_choose_an_eligible_side(behavior: "weave")
+    Allegiance.ClientCore.Tests.P693TeamLimitsLiveTests.Full_team_falls_back_and_all_full_reports_the_native_reason_promptly(behavior: "combat")
+    Allegiance.ClientCore.Tests.P693TeamLimitsLiveTests.Full_team_falls_back_and_all_full_reports_the_native_reason_promptly(behavior: "idle")
+    Allegiance.ClientCore.Tests.P693TeamLimitsLiveTests.Showcase_30v30_completes_with_native_defaults_on_a_started_mission
+    Allegiance.ClientCore.Tests.P695ServerClockTests.Latest_ping_reanchors_after_a_dilation_rate_change
+    Allegiance.ClientCore.Tests.P695ServerClockTests.Sparse_keepalives_extrapolate_at_the_advertised_rate(rate: 0.10000000000000001)
+    Allegiance.ClientCore.Tests.P695ServerClockTests.Sparse_keepalives_extrapolate_at_the_advertised_rate(rate: 0.84999999999999998)
+    Allegiance.ClientCore.Tests.P695ServerClockTests.Sparse_keepalives_extrapolate_at_the_advertised_rate(rate: 1)
+    Allegiance.ClientCore.Tests.P695ServerClockTests.Reconnect_discards_the_old_epoch_but_duplicate_echoes_do_not_rewind_it
+    Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.Crowded_fight_orders_every_source_before_fire_even_outside_detection(native: True, floor: 2, tiers: False)
+    Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.Crowded_fight_orders_every_source_before_fire_even_outside_detection(native: False, floor: 2, tiers: False)
+    Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.Crowded_fight_orders_every_source_before_fire_even_outside_detection(native: True, floor: 0, tiers: False)
+    Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.Crowded_fight_orders_every_source_before_fire_even_outside_detection(native: True, floor: 2, tiers: True)
+    Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.First_emission_from_unexported_npc_orders_identity_sector_and_pose(kind: "missile")
+    Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.First_emission_from_unexported_npc_orders_identity_sector_and_pose(kind: "hit")
+    Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.First_emission_from_unexported_npc_orders_identity_sector_and_pose(kind: "mine")
+    Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.First_emission_from_unexported_npc_orders_identity_sector_and_pose(kind: "probe")
+    Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.Cloak_hidden_chaff_is_not_relayed_and_decloak_bootstraps_the_source
+    Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.Late_missile_tracking_establishes_source_and_cleanup_survives_launcher_warp
+    Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.Independently_detected_mine_does_not_reveal_its_departed_deployer
+    Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.Admin_camera_fire_follows_its_pose_sector_and_includes_its_visible_cloakers
+    Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.Static_emissions_and_cleanup_stay_in_the_owning_mission_when_side_ids_repeat
+    Allegiance.ClientCore.Tests.P697GhostBattleLiveTests.Armed_probe_keeps_its_own_source_pose_after_the_deployer_leaves
+    Allegiance.ClientCore.Tests.P698StaleShipTests.Identity_loadout_and_team_pose_cannot_resurrect_retired_sector_pose(reason: 2)
+    Allegiance.ClientCore.Tests.P698StaleShipTests.Identity_loadout_and_team_pose_cannot_resurrect_retired_sector_pose(reason: 3)
+    Allegiance.ClientCore.Tests.P698StaleShipTests.Identity_loadout_and_team_pose_cannot_resurrect_retired_sector_pose(reason: 1)
+    Allegiance.ClientCore.Tests.P698StaleShipTests.Hidden_status_stays_hidden_despite_in_cluster_telemetry_until_spotted
+    Allegiance.ClientCore.Tests.P698StaleShipTests.Dock_or_new_sector_status_retires_pose_without_delete(state: 2, sector: 1061)
+    Allegiance.ClientCore.Tests.P698StaleShipTests.Dock_or_new_sector_status_retires_pose_without_delete(state: 3, sector: 1051)
+    Allegiance.ClientCore.Tests.P698StaleShipTests.Set_cluster_caches_all_remote_ships_until_new_sector_pose(sector: 1061)
+    Allegiance.ClientCore.Tests.P698StaleShipTests.Set_cluster_caches_all_remote_ships_until_new_sector_pose(sector: 1051)
+    Allegiance.ClientCore.Tests.P698StaleShipTests.Docked_command_preview_accepts_fresh_team_pose_but_identity_alone_cannot_restore_it
+    Allegiance.ClientCore.Tests.P698StaleShipTests.Set_cluster_discards_wire_effects_including_return_to_same_sector
+    Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death(side: 0)
+    Allegiance.ClientCore.Tests.P699PodHomeLiveTests.Mcp_pod_flies_two_jumps_to_real_garrison_without_oxygen_death(side: 1)
+    Allegiance.ClientCore.Tests.P700IdleTargetMetricsTests.RollingMinuteCountsDistinctBots_ExpiresRecoveredAndRemovedBots_AndFilters
+    Allegiance.ClientCore.Tests.P700IdleTargetMetricsTests.SupervisorSumsIdleCounts_AndReportsOldestSampleAge
+    Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds
+    Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Remote_constructor_death_reaches_team_state_without_remote_combat_effects(quiet: False)
+    Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Remote_constructor_death_reaches_team_state_without_remote_combat_effects(quiet: True)
+    Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)
+    Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 1, civB: 2, generated: True)
+    Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Every_step_spends_real_wallet_and_waits_for_observed_completion
+    Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Constructor_death_rock_loss_and_lost_prerequisites_recover_without_tech_grants
+    Allegiance.ClientCore.Tests.P703ResearchCommanderTests.A_dead_paused_constructor_cannot_reserve_the_only_rock_needed_for_another_repair
+    Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Constructor_uses_native_goto_before_building_in_another_sector
+    Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Reservations_are_shared_across_three_sides_and_released_when_no_rock_survives
+    Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Donations_wait_for_ack_and_completion_is_not_inferred_from_elapsed_time
+    Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Waits_require_both_duration_and_live_tech_mask_and_loop_is_opt_in
+    Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Briefing_production_dev_history_and_asteroid_destruction_use_real_receive_dispatch
+    Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 25)
+    Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 3)
+    Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 1)
+    Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 2)
+    Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 4)
+    Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 35)
+    Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 101)
+    Allegiance.ClientCore.Tests.P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection
+    Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 1)
+    Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 60)
+    Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout
+    Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 25, civB: 3, size: 10)
+    Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 1, civB: 2, size: 2)
+    Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 4, civB: 35, size: 3)
+    Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 101, civB: 1, size: 5)
+    Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Wing_assignment_updates_known_teammates_and_notifies_only_commanded_self(wing: 0, name: "command")
+    Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Wing_assignment_updates_known_teammates_and_notifies_only_commanded_self(wing: 1, name: "attack")
+    Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Wing_assignment_updates_known_teammates_and_notifies_only_commanded_self(wing: 2, name: "defend")
+    Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Wing_assignment_updates_known_teammates_and_notifies_only_commanded_self(wing: 3, name: "escort")
+    Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Wing_assignment_updates_known_teammates_and_notifies_only_commanded_self(wing: 4, name: "search")
+    Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Wing_assignment_updates_known_teammates_and_notifies_only_commanded_self(wing: 5, name: "alpha")
+    Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Wing_assignment_updates_known_teammates_and_notifies_only_commanded_self(wing: 6, name: "bravo")
+    Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Wing_assignment_updates_known_teammates_and_notifies_only_commanded_self(wing: 7, name: "charlie")
+    Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Wing_assignment_updates_known_teammates_and_notifies_only_commanded_self(wing: 8, name: "delta")
+    Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Wing_assignment_updates_known_teammates_and_notifies_only_commanded_self(wing: 9, name: "echo")
+    Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Every_team_commander_can_toggle_both_directions_and_clears_own_afk
+    Allegiance.ClientCore.Tests.P713LobbyScreenStateTests.Eliminated_player_stays_in_picker_until_join_side_admits_an_active_team
+    Allegiance.ClientCore.Tests.P718InterfaceLoopbackTests.Native_bytes_cross_real_tcp_and_dispatch_in_packet_order(id: 51, hex: "0A003300000005000100")
+    Allegiance.ClientCore.Tests.P718InterfaceLoopbackTests.Native_bytes_cross_real_tcp_and_dispatch_in_packet_order(id: 86, hex: "0A005600010032000100")
+    Allegiance.ClientCore.Tests.P718InterfaceLoopbackTests.Native_bytes_cross_real_tcp_and_dispatch_in_packet_order(id: 92, hex: "0E005C00080006001E00781F00F0")
+    Allegiance.ClientCore.Tests.P718InterfaceLoopbackTests.Native_bytes_cross_real_tcp_and_dispatch_in_packet_order(id: 106, hex: "0A006A000A0009000100")
+    Allegiance.ClientCore.Tests.P718InterfaceLoopbackTests.Native_bytes_cross_real_tcp_and_dispatch_in_packet_order(id: 124, hex: "13007C00100003000B000000090000006F6B00")
+    Allegiance.ClientCore.Tests.P718InterfaceLoopbackTests.Native_bytes_cross_real_tcp_and_dispatch_in_packet_order(id: 126, hex: "13007E00100003000B0000000D0000006F6B00")
+    Allegiance.ClientCore.Tests.P718InterfaceLoopbackTests.Native_bytes_cross_real_tcp_and_dispatch_in_packet_order(id: 128, hex: "04008000")
+    Allegiance.ClientCore.Tests.P718InterfaceLoopbackTests.Native_bytes_cross_real_tcp_and_dispatch_in_packet_order(id: 155, hex: "1C009B000102030405060708090A0B0C0D0E0F101112131415"···)
+    Allegiance.ClientCore.Tests.P718InterfaceLoopbackTests.Own_mission_departure_closes_actual_session_socket_and_delivers_reason_once
+    Allegiance.ClientCore.Tests.P718InterfaceMessageTests.Civilization_echo_updates_roster_and_random_choice_without_losing_side_metadata
+    Allegiance.ClientCore.Tests.P718InterfaceMessageTests.Probe_updates_require_enter_game_and_current_flight_sector_and_iterate_backwards
+    Allegiance.ClientCore.Tests.P718InterfaceMessageTests.Asteroid_termination_removes_health_and_preserves_conversion_effect_only(explode: False)
+    Allegiance.ClientCore.Tests.P718InterfaceMessageTests.Asteroid_termination_removes_health_and_preserves_conversion_effect_only(explode: True)
+    Allegiance.ClientCore.Tests.P718InterfaceMessageTests.Wing_echo_notifies_only_commanded_self_and_does_not_create_unknown_or_enemy_roster_members
+    Allegiance.ClientCore.Tests.P718InterfaceMessageTests.Commanded_wing_assignment_notifies_joined_self_before_launch
+    Allegiance.ClientCore.Tests.P718InterfaceMessageTests.Quit_side_clears_team_privileges_and_money_preserves_ready_and_join_reseats_identity
+    Allegiance.ClientCore.Tests.P718InterfaceMessageTests.Own_quit_side_clears_sector_contents_but_keeps_mission_players_and_can_reenter
+    Allegiance.ClientCore.Tests.P718InterfaceMessageTests.Remote_quit_mission_removes_player_requests_and_ready_without_touching_other_players
+    Allegiance.ClientCore.Tests.P718InterfaceMessageTests.Own_quit_mission_clears_world_signals_loss_and_stops_remaining_packet_messages
+    Allegiance.ClientCore.Tests.P718InterfaceMessageTests.Enter_game_barrier_preserves_stage_and_inventory_game_state_replaces_every_side_and_resets
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Capture_missile_uses_native_station_gates_and_exact_capture_bytes(capability: True, friendly: False, pedestal: False, shield: 0, drainOnImpact: False, captures: True)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Capture_missile_uses_native_station_gates_and_exact_capture_bytes(capability: False, friendly: False, pedestal: False, shield: 0, drainOnImpact: False, captures: False)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Capture_missile_uses_native_station_gates_and_exact_capture_bytes(capability: True, friendly: True, pedestal: False, shield: 0, drainOnImpact: False, captures: False)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Capture_missile_uses_native_station_gates_and_exact_capture_bytes(capability: True, friendly: False, pedestal: True, shield: 0, drainOnImpact: False, captures: False)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Capture_missile_uses_native_station_gates_and_exact_capture_bytes(capability: True, friendly: False, pedestal: False, shield: 1, drainOnImpact: False, captures: False)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Capture_missile_uses_native_station_gates_and_exact_capture_bytes(capability: True, friendly: False, pedestal: False, shield: 1, drainOnImpact: True, captures: True)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Remote_lead_relay_grants_and_revokes_owner_indicator(friendly: True, inRange: True, boarded: False, granted: True)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Remote_lead_relay_grants_and_revokes_owner_indicator(friendly: False, inRange: True, boarded: False, granted: False)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Remote_lead_relay_grants_and_revokes_owner_indicator(friendly: True, inRange: False, boarded: False, granted: False)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Remote_lead_relay_grants_and_revokes_owner_indicator(friendly: True, inRange: True, boarded: True, granted: False)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Light_ripcord_anchor_obeys_both_hull_bits_and_activation_precedes_abort(lightRipper: True, lightAnchor: True, accepted: True)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Light_ripcord_anchor_obeys_both_hull_bits_and_activation_precedes_abort(lightRipper: False, lightAnchor: True, accepted: False)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Light_ripcord_anchor_obeys_both_hull_bits_and_activation_precedes_abort(lightRipper: False, lightAnchor: False, accepted: True)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Light_ripcord_anchor_obeys_both_hull_bits_and_activation_precedes_abort(lightRipper: True, lightAnchor: False, accepted: True)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(decouple: False)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(decouple: True)
+    Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Self_quit_delivers_exact_reason_and_clears_own_side_without_removing_teammate
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Muted_voice_chat_is_silent_and_unmute_restores_one_caption_and_cue(buoy: False, sonic: False)
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Muted_voice_chat_is_silent_and_unmute_restores_one_caption_and_cue(buoy: False, sonic: True)
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Muted_voice_chat_is_silent_and_unmute_restores_one_caption_and_cue(buoy: True, sonic: False)
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Muted_voice_chat_is_silent_and_unmute_restores_one_caption_and_cue(buoy: True, sonic: True)
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Wire_direct_id_selects_wave_before_command_and_personal_cues(id: 1131, text: "Donate credits", wave: "vo_player_donatecredits")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Wire_direct_id_selects_wave_before_command_and_personal_cues(id: 1328, text: "New miner requesting He3 asteroid.", wave: "vo_request_miner")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Wire_direct_id_selects_wave_before_command_and_personal_cues(id: 820, text: "Base under attack", wave: "vo_attack_garrison")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Wire_direct_id_selects_wave_before_command_and_personal_cues(id: 1178, text: "Affirmative.", wave: "vo_player_affirmative")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 1323, wave: "vo_miner_enemyonscope")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 1327, wave: "vo_miner_dontgetpaid")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 1328, wave: "vo_request_miner")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 1329, wave: "vo_sal_minerpartial")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 1331, wave: "vo_request_minefield")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 1332, wave: "vo_request_tower")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 1337, wave: "vo_miner_intransit")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 1342, wave: "vo_request_miner")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Drone_producer_ids_reach_the_native_voice_receiver_once(id: 1343, wave: "vo_cover_builder")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Sonic_indices_with_empty_or_legacy_caption_text_select_the_same_template(id: 0, caption: "Goto aleph", wave: "vo_player_meetatjump")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Sonic_indices_with_empty_or_legacy_caption_text_select_the_same_template(id: 10, caption: "Attack my target!", wave: "vo_player_attacktarget")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Sonic_indices_with_empty_or_legacy_caption_text_select_the_same_template(id: 28, caption: "Donate me your credits.", wave: "vo_player_donatecredits")
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Unknown_voice_and_unrelated_text_do_not_fall_back_to_command_or_index_zero
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Na_preserves_plain_command_cue
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Notification_has_one_audio_event_and_retains_hud_feedback
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Own_plain_echo_is_silent_and_own_sonic_echo_voices_once
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Chatbuoy_uses_the_same_voice_template
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Native_null_text_wire_preserves_index_and_displays_its_caption
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Null_text_never_falls_back_to_direct_sound_ids_and_present_empty_text_is_not_a_sonic_index
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Chatbuoy_null_text_wire_resolves_sonic_index_and_caption
+    Allegiance.ClientCore.Tests.P732VoiceOverTests.Missing_artwork_is_explicit_and_keeps_the_caption
+    Allegiance.ClientCore.Tests.P733ResearchTests.No_bomber_tech_finale_reaches_stage_over_and_automatic_next_match_twice
+    Allegiance.ClientCore.Tests.P733ResearchTests.Finale_bound_rejects_stale_epoch_wrong_side_and_unlocked_mode(mode: "research")
+    Allegiance.ClientCore.Tests.P733ResearchTests.Finale_bound_rejects_stale_epoch_wrong_side_and_unlocked_mode(mode: "unlocked")
+    Allegiance.ClientCore.Tests.P733ResearchTests.Available_strike_uses_native_gates_and_strongest_station_damage_without_bomber_hulls
+    Allegiance.ClientCore.Tests.P733ResearchTests.Headless_10v10_scale_eight_completes_at_least_five_times_native_steps
+    Allegiance.ClientCore.Tests.P733ResearchTests.Headless_30_minute_rig_matchup_measurement(scale: 1)
+    Allegiance.ClientCore.Tests.P733ResearchTests.Headless_30_minute_rig_matchup_measurement(scale: 4)
+    Allegiance.ClientCore.Tests.P733ResearchTests.Headless_30_minute_rig_matchup_measurement(scale: 8)
+    Allegiance.ClientCore.Tests.P733ResearchTests.Headless_30_minute_rig_matchup_measurement(scale: 16)
+    Allegiance.ClientCore.Tests.PerfStatsAggregationTests.EmptyInput_YieldsACleanZeroSummary
+    Allegiance.ClientCore.Tests.PerfStatsAggregationTests.BotsWithoutSamplesDoNotContribute
+    Allegiance.ClientCore.Tests.PerfStatsAggregationTests.MeanIsAveragedOverAllBotsPooledSamples
+    Allegiance.ClientCore.Tests.PerfStatsAggregationTests.P95IsTheNearestRankPercentile
+    Allegiance.ClientCore.Tests.PerfStatsAggregationTests.WorstOffenderIsTheBotWithTheLargestSingleSample
+    Allegiance.ClientCore.Tests.PerfStatsAggregationTests.SingleBotAggregateMatchesItsOwnSamples
+    Allegiance.ClientCore.Tests.PlayerReadyLiveTests.SendPlayerReady_RelaysToWholeTeam_UpdatesBothRosters
+    Allegiance.ClientCore.Tests.PlayerReadyLiveTests.SendPlayerReady_NotReadyToggle_FlipsRoster_KeepsHistory
+    Allegiance.ClientCore.Tests.ReadyCheckLiveTests.Mission_stays_not_started_while_any_same_side_peer_is_unready_then_starts_when_last_readies
+    Allegiance.ClientCore.Tests.ReadyCheckLiveTests.Only_the_mission_owner_can_force_team_ready_and_it_starts_the_mission
+    Allegiance.ClientCore.Tests.RetryCleanupTests.ClientWorld_Reset_ClearsMyShipIdAndAllEntityTables
+    Allegiance.ClientCore.Tests.RetryCleanupTests.ClientWorld_SameSessionSetClusterKeepsFirstAssignment_OnlyResetClearsIt
+    Allegiance.ClientCore.Tests.RetriedConnectLiveTests.RepeatedConnects_LeaveNoAccumulatedSocketsOrThreads
+    Allegiance.ClientCore.Tests.RetriedConnectLiveTests.RetriedConnect_StartsFromEmptyWorld_AndReseatsWithNewAssignment
+    Allegiance.ClientCore.Tests.RunHullMatrixLiveTests.RunHullMatrix_ReturnsRealPerCombinationRows_AndClearsEachCombinationsBots
+    Allegiance.ClientCore.Tests.RunHullMatrixPlanningTests.Plan_ExpandsFullCartesianProduct
+    Allegiance.ClientCore.Tests.RunHullMatrixPlanningTests.Plan_DefaultsWeaponToTheStandingDefaultLoadoutGun_WhenWeaponsOmitted
+    Allegiance.ClientCore.Tests.RunHullMatrixPlanningTests.Plan_LightGunMountsOnFastAndHeavyHulls_AcrossSizes
+    Allegiance.ClientCore.Tests.RunHullMatrixPlanningTests.Plan_HeavyCannonMountsOnlyOnTheHeavyHull_OthersGetASpecificError
+    Allegiance.ClientCore.Tests.RunHullMatrixPlanningTests.Plan_UnknownHullAbortsWithASpecificError
+    Allegiance.ClientCore.Tests.RunHullMatrixPlanningTests.Plan_NonWeaponPartNameIsRejected
+    Allegiance.ClientCore.Tests.RunHullMatrixPlanningTests.Plan_NonPositiveSizeIsRejected
+    Allegiance.ClientCore.Tests.RunHullMatrixPlanningTests.Plan_EmptyHullsOrSizesIsRejected
+    Allegiance.ClientCore.Tests.RunHullMatrixPlanningTests.PartsForWeapon_RequestsOnlyPartsThatMountOnTheTargetHull
+    Allegiance.ClientCore.Tests.RunHullMatrixPlanningTests.PartsForWeapon_UsesAMountingDefaultPerEquipmentType_WhenOneExists
+    Allegiance.ClientCore.Tests.ScoreRosterDeltaTests.Real_dispatch_applies_kills_deaths_joins_leaves_and_full_refresh_heals_a_gap
+    Allegiance.ClientCore.Tests.ScoreRosterDeltaTests.Reset_discards_baseline_and_incompatible_delta_waits_for_full_snapshot
+    Allegiance.ClientCore.Tests.ScoreRosterLiveTests.Human_scoreboard_tracks_real_damage_joins_leaves_rejoin_and_periodic_healing_harness_receives_none
+    Allegiance.ClientCore.Tests.SessionLossLiveTests.EstablishedSession_ServerKilled_RaisesLost_EventAndControlsGoSilent
+    Allegiance.ClientCore.Tests.ShipDeadReckonerTests.Interest_tier_TCP_poses_bound_extrapolation_error(hz: 5, manoeuvre: "turn")
+    Allegiance.ClientCore.Tests.ShipDeadReckonerTests.Interest_tier_TCP_poses_bound_extrapolation_error(hz: 2, manoeuvre: "turn")
+    Allegiance.ClientCore.Tests.ShipDeadReckonerTests.Interest_tier_TCP_poses_bound_extrapolation_error(hz: 5, manoeuvre: "throttle")
+    Allegiance.ClientCore.Tests.ShipDeadReckonerTests.Interest_tier_TCP_poses_bound_extrapolation_error(hz: 2, manoeuvre: "throttle")
+    Allegiance.ClientCore.Tests.ShipDeadReckonerTests.Interest_tier_TCP_poses_bound_extrapolation_error(hz: 5, manoeuvre: "reversal")
+    Allegiance.ClientCore.Tests.ShipDeadReckonerTests.Interest_tier_TCP_poses_bound_extrapolation_error(hz: 2, manoeuvre: "reversal")
+    Allegiance.ClientCore.Tests.ShipDeadReckonerTests.DeadReckon_TracksRealShip_OperativeGapSubMetre_StressSmall_BeatsRaw
+    Allegiance.ClientCore.Tests.ShipDeadReckonerTests.ExtrapolationBeyondCap_HoldsAtCap_NotFlingAway
+    Allegiance.ClientCore.Tests.ShipDeadReckonerTests.PastUpdate_DeltaTLessThanZero_BacksOutLinearlyLikeNative
+    Allegiance.ClientCore.Tests.ShipDeadReckonerTests.RawPose_UnfixedBaseline_FailsTheAccuracyBar
+    Allegiance.ClientCore.Tests.ShipDeleteGoneLiveTests.SameSide_WarperLeavesSector_WatcherLatchesGone_OwnPeerNotHidden
+    Allegiance.ClientCore.Tests.ShipDeleteGoneLiveTests.CrossSide_WarperLeavesSector_WatcherLatchesGone
+    Allegiance.ClientCore.Tests.ShipDeleteGoneLiveTests.DockOut_WatcherLatchesGone_UndockReturnsAndClears
+    Allegiance.ClientCore.Tests.ShipDeleteGoneTests.Docked_delete_marks_known_ship_gone_and_hidden
+    Allegiance.ClientCore.Tests.ShipDeleteGoneTests.LeftSector_delete_marks_known_ship_gone_and_hidden
+    Allegiance.ClientCore.Tests.ShipDeleteGoneTests.Delete_for_unknown_ship_creates_no_phantom
+    Allegiance.ClientCore.Tests.ShipDeleteGoneTests.KillShip_sets_dead_and_gone
+    Allegiance.ClientCore.Tests.ShipDeleteGoneTests.Gone_ship_stays_gone_on_cross_sector_single_ship_update
+    Allegiance.ClientCore.Tests.ShipDeleteGoneTests.Gone_ship_returns_and_clears_via_export
+    Allegiance.ClientCore.Tests.ShipDeleteGoneTests.Dead_ship_returns_and_renders_via_respawn_export
+    Allegiance.ClientCore.Tests.ShipDeleteGoneTests.Dead_ship_stays_hidden_on_cross_sector_single_ship_update
+    Allegiance.ClientCore.Tests.ShipDeleteGoneTests.ShipDelete_encodes_decodes_roundtrip(sdr: 3)
+    Allegiance.ClientCore.Tests.ShipDeleteGoneTests.ShipDelete_encodes_decodes_roundtrip(sdr: 2)
+    Allegiance.ClientCore.Tests.ShipDeleteGoneTests.ShipDelete_encodes_decodes_roundtrip(sdr: 1)
+    Allegiance.ClientCore.Tests.ShipDeleteGoneTests.ShipDelete_encodes_decodes_roundtrip(sdr: 4)
+    Allegiance.ClientCore.Tests.ShipDeleteGoneTests.ShipDelete_encodes_decodes_roundtrip(sdr: 5)
+    Allegiance.ClientCore.Tests.ShipStatusAlarmSoundTests.HullCrossingBelow_EmitsExactlyHullLow
+    Allegiance.ClientCore.Tests.ShipStatusAlarmSoundTests.CrossingsAboveThreshold_DoNotRefire
+    Allegiance.ClientCore.Tests.ShipStatusAlarmSoundTests.AllFourLowAlarms_FireIndependently
+    Allegiance.ClientCore.Tests.ShipStatusAlarmSoundTests.NoAmmo_And_NoFuel_Edge_FireOnFalseToTrue
+    Allegiance.ClientCore.Tests.ShipStatusAlarmSoundTests.NoAmmo_Persisting_DoesNotRefire
+    Allegiance.ClientCore.Tests.ShipStatusAlarmSoundTests.OwnShipHullDrop_RecordsHullLowEvent
+    Allegiance.ClientCore.Tests.ShipStatusAlarmSoundTests.OwnShipFiringEmptyMagazine_RecordsNoAmmoEvent
+    Allegiance.ClientCore.Tests.ShipStatusAlarmSoundTests.OwnShipNoStatusChange_RecordsNothing
+    Allegiance.ClientCore.Tests.ShipStatusAlarmSoundTests.RemoteShipStatusChange_DoesNotTriggerLocalAlarms
+    Allegiance.ClientCore.Tests.ShipStatusAlarmSoundTests.RipcordDeniedWire_RecordsSalNoRipcordEvent
+    Allegiance.ClientCore.Tests.ShipStatusAlarmSoundTests.RipcordActivateWire_SetsRipcordActive_ForLoopGate
+    Allegiance.ClientCore.Tests.ShipStatusAlarmSoundTests.MiningUpdate_SetsMiningAsteroidId_ForLoopGate
+    Allegiance.ClientCore.Tests.ShipUpdateCadenceTests.Fires_immediately_after_reset_then_every_cadence
+    Allegiance.ClientCore.Tests.ShipUpdateCadenceTests.Reset_forces_immediate_next_send
+    Allegiance.ClientCore.Tests.ShipUpdateCadenceTests.Long_pause_sends_immediately_on_resume
+    Allegiance.ClientCore.Tests.SideSwitchDevMaskLiveTests.Side_switch_teaches_the_client_the_new_sides_development_mask
+    Allegiance.ClientCore.Tests.SpectatorFrameHasPoseTests.SectorKnown_PoseUnknown_entry_is_hasPose_false_at_origin
+    Allegiance.ClientCore.Tests.SpectatorFrameHasPoseTests.PoseUpdate_flips_entry_to_hasPose_true_with_real_pos
+    Allegiance.ClientCore.Tests.SpectatorFrameHasPoseTests.ExtraShip_entry_is_hasPose_true
+    Allegiance.ClientCore.Tests.SpectatorFrameHasPoseTests.PoseUnknown_entry_keeps_full_classic_schema
+    Allegiance.ClientCore.Tests.SpectatorFrameLiveTests.Translates_ARealWorldAndARealKillShip
+    Allegiance.ClientCore.Tests.SpectatorFrameWarpDestResolutionTests.BuildSectorFrame_ResolvesDestSector_FromPartnersCluster
+    Allegiance.ClientCore.Tests.SpectatorFrameWarpDestResolutionTests.BuildSectorFrame_SkipsWarpWhosePartnerIsUnknown_NeverGuesses
+    Allegiance.ClientCore.Tests.SuccessorUpgradeLiveTests.Buy_loadout_grants_the_successor_hull_when_the_side_has_outteched_it_Live
+    Allegiance.ClientCore.Tests.SuccessorUpgradeLiveTests.Buy_loadout_mounts_the_successor_part_when_the_side_has_outteched_it_Live
+    Allegiance.ClientCore.Tests.SuicideLiveTests.SendSuicide_KillsOwnShip_OverTheWire
+    Allegiance.ClientCore.Tests.TeammateMovementLiveTests.TeammateMovement_StreamsIntoClientWorld_MultipleObservations_CrossSideEnemyVisible
+    Allegiance.ClientCore.Tests.TeammateMovementLiveTests.ChatMessage_RelayedToPeers_LandsInReceiversEventLog
+    Allegiance.ClientCore.Tests.ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility
+    Allegiance.ClientCore.Tests.TreasureDropLiveTests.SendDropPart_ClientWorldReceivesTreasureSpawn_OverTheWire
+    Allegiance.ClientCore.Tests.TurretServerClockTests.WrongTimeIfTickIndexReadAsSeconds
+    Allegiance.ClientCore.Tests.TurretServerClockTests.PingMsConvertedToGateSecondsStaysInsideTheGate
+    Allegiance.ClientCore.Tests.WorldPopulationLiveTests.PeersLearnSameSideTeammateShip_AndWorldPopulation_FromRealServer
+    Allegiance.ClientCore.Tests.P553BotRockAvoidanceLiveTests+P553ClassifierTests.Gunfire_kill_is_not_a_collision
+    Allegiance.ClientCore.Tests.P553BotRockAvoidanceLiveTests+P553ClassifierTests.Collision_with_asteroid_names_the_rock
+    Allegiance.ClientCore.Tests.P553BotRockAvoidanceLiveTests+P553ClassifierTests.Collision_with_station_names_the_base
+    Allegiance.ClientCore.Tests.P553BotRockAvoidanceLiveTests+P553ClassifierTests.Ship_ship_ram_names_the_other_ship_for_either_party
+    Allegiance.ClientCore.Tests.P553BotRockAvoidanceLiveTests+P553ClassifierTests.Old_unrelated_collision_is_not_attributed_to_the_death

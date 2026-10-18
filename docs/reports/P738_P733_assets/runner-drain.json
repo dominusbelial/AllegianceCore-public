@@ -1,0 +1,27 @@
+{
+  "started": 1792291551.721622,
+  "active": {
+    "label": "focused-076-3",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-076-3.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-integ-b2/docs/reports/P738_P733_assets",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P496CaptureProofLiveTests.Capture_attempt_on_the_debug_map"
+    ],
+    "started": 1792291496.86883
+  },
+  "reason": "Old tool-session Ctrl-C ended wrappers but orphaned descendants continued. Block only this evidence ledger write to stop all three drivers at their next completed test. Overlapping capture attempts do not qualify as isolated runs.",
+  "finished": 1792291832.9134777,
+  "stopped_runners": 3,
+  "qualified_invocations_retained": 229,
+  "excluded_labels": [
+    "focused-076-2",
+    "focused-076-3"
+  ]
+}

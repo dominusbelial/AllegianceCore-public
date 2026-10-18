@@ -1611,3 +1611,76 @@ in `validation-logs.tar.gz`, with compact qualifications in
 `flake-qualification.json`. No full assembly was rerun to obtain a clean total.
 The two guards that launch git were excluded to honor the explicit no-git
 instruction; ordinary live/loopback and LiveTiming tests were included.
+
+
+## P738 / P733 merge observation (2026-10-17)
+
+The once-per-assembly Core run recorded **4,795 pass / 1 fail / 0 skip**.
+The two guards that invoke git were excluded to honor this lane's explicit
+no-git instruction. The observed failing method passed **3/3 fresh
+single-method invocations**, satisfying the brief's load-flake criterion.
+These reruns ran in separate processes while the assembly sweep continued;
+they were not a claim of an otherwise idle machine.
+
+| Method | Full-suite symptom | Fresh qualification |
+|---|---|---|
+| `Allegiance.Core.Tests.LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count` | Assertion at `LiveGainFlagTests.cs:316`: `ship must have docked for the secure to fire`; `StationId` was null after a flag announcement was received. | 3/3 exact-method passes, one case per process. |
+
+No assertion, timeout, quarantine trait or product code was changed for this
+observation. Receipt timing is a hypothesis, not an established cause or fix.
+The failing full-suite result is retained in the
+[main ledger](reports/P738_P733_assets/verification.json); the
+[fresh rerun ledger](reports/P738_P733_assets/early-isolation/verification.json)
+records all three exact commands and outcomes. See the
+[P738 appendix](reports/P733_TECH_FINALE_AND_SPEED.md#p738-merge-onto-master)
+for the complete merge validation.
+
+
+### P738 / P733 ClientCore upgrade observation
+
+The broad ClientCore invocation also observed a P705 25/3, 10v10 second-match
+upgrade timeout. Match one completed, but match two did not observe newly
+legal upgraded launches on both sides within the unchanged 300-second
+predicate deadline (`P705TechModeLiveTests.cs:97,142`; sim 20157.75).
+
+`Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 25, civB: 3, size: 10)`
+then passed **3/3 fresh exact-case invocations**, one case per process, in
+**107.019 / 106.019 / 107.019 seconds**. The earlier focused triplet also
+passed all four civilization pairings, but qualification uses these new
+post-failure runs. The exact-case filter was verified to execute one case.
+These diagnostic processes ran sequentially while the broad sweep continued.
+
+This meets the brief's load-flake criterion without establishing its cause.
+The failed broad result is retained; no assertion, timeout, quarantine trait
+or product code was changed. Commands, counters and proofs are retained in
+the [fresh rerun ledger](reports/P738_P733_assets/early-isolation/verification.json)
+and the final raw evidence archive.
+
+
+### P738 / P733 slow-hull warp observation (2026-10-18)
+
+ClientCore completed **1,277 pass / 2 fail / 0 skip**. In addition to the
+qualified P705 case above,
+`Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Slow_board_hull_26_transits_when_the_warp_approach_flies_through_the_aleph`
+failed at `ClientWarpApproachSlowHullLiveTests.cs:345`: expected sector **1060**,
+observed **1052**. It then passed **3/3 fresh exact-method invocations**, one
+case per process, in **2.001 / 2.001 / 2.001 seconds** including process/runner
+overhead. The diagnostic processes ran sequentially while the broad sweep
+continued.
+
+This satisfies the brief's load-flake criterion; it does not establish a
+steering or receipt cause or fix. No assertion, timeout, quarantine trait or
+product code was changed. The failed broad result remains in the
+[main ledger](reports/P738_P733_assets/verification.json), and all three
+reruns are in the [fresh ledger](reports/P738_P733_assets/early-isolation/verification.json).
+
+### P738 / P733 completed assembly sweep
+
+| Assembly | Passed | Failed | Skipped |
+|---|---:|---:|---:|
+| Core | 4795 | 1 | 0 |
+| ClientCore | 1277 | 2 | 0 |
+| ClientCore.MonoGame | 2421 | 0 | 3 |
+
+
+All observed failing methods met the brief's 3/3 single-method criterion. Original failures remain in the [ledger](reports/P738_P733_assets/verification.json); [qualification details](reports/P738_P733_assets/flake-qualification.json) and [raw logs/TRX](reports/P738_P733_assets/validation-logs.tar.gz) are retained. No assertion, timeout, quarantine trait or product code was changed for these observations.

@@ -476,7 +476,7 @@ public sealed class Sector : IClusterIgc
 
         var side = builder.SideId
             ?? throw new InvalidOperationException("builder has no SideId; a built station must belong to a side");
-        var effect = new BuildingEffect(target, builder, stationType, side, now + BuildingEffect.BuildDuration);
+        var effect = new BuildingEffect(target, builder, stationType, side, now + BuildingEffect.BuildDuration / (builder.Mission?.ShowcaseResearchTimeScale ?? 1));
         _buildingEffects.Add(effect);
 
         // P294 — record the creation for the host to broadcast the

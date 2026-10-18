@@ -1,0 +1,27 @@
+[
+  {
+    "op": "add",
+    "path": "/showcase/techMode",
+    "value": "research"
+  },
+  {
+    "op": "add",
+    "path": "/showcase/incomeMultiplier",
+    "value": 5000
+  },
+  {
+    "op": "add",
+    "path": "/showcase/researchTimeScale",
+    "value": 8
+  },
+  {
+    "op": "add",
+    "path": "/showcase/finaleTimeoutSeconds",
+    "value": 300
+  },
+  {
+    "op": "add",
+    "path": "/showcase/loopResearchPlans",
+    "value": false
+  }
+]

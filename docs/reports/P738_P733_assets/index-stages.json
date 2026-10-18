@@ -1,0 +1,12 @@
+{
+  "docs/parity/sim-rules-matrix.csv": {
+    "1": "8593680e68a61c71c3fb1e08b3ef072644d282fb",
+    "2": "a06f4cb63502fd73f69595348390c6f82bc1a705",
+    "3": "5bec20c339e862c499ecc5ebcdb4281d4587c5c9"
+  },
+  "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs": {
+    "1": "97768f0416a52d9a05a8931acb03acfece8f2611",
+    "2": "1a8ce80d803adcd293526a123cb86d257edb823f",
+    "3": "3db00476fbd4c481c5b6d5cb3d429a9fad517a0b"
+  }
+}

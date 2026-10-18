@@ -1,0 +1,35 @@
+[
+  {
+    "project": "ClientCore",
+    "method": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Slow_board_hull_26_transits_when_the_warp_approach_flies_through_the_aleph",
+    "original_case": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Slow_board_hull_26_transits_when_the_warp_approach_flies_through_the_aleph",
+    "repetitions": [
+      "early-isolate-SlowHull-1",
+      "early-isolate-SlowHull-2",
+      "early-isolate-SlowHull-3"
+    ],
+    "three_clean_passes": true
+  },
+  {
+    "project": "ClientCore",
+    "method": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches",
+    "original_case": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 25, civB: 3, size: 10)",
+    "repetitions": [
+      "early-isolate-P70525-1",
+      "early-isolate-P70525-2",
+      "early-isolate-P70525-3"
+    ],
+    "three_clean_passes": true
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count",
+    "original_case": "Allegiance.Core.Tests.LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count",
+    "repetitions": [
+      "early-isolate-LiveGainFlag-1",
+      "early-isolate-LiveGainFlag-2",
+      "early-isolate-LiveGainFlag-3"
+    ],
+    "three_clean_passes": true
+  }
+]

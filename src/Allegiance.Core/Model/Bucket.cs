@@ -294,7 +294,7 @@ public sealed class Bucket : IBucketIgc
             long ttbms = (long)TimeToBuild * 1000;         // bucketigc.h:46
             if (InvestedMilliseconds < ttbms)
             {
-                double deltaMs = (now - _lastUpdate) * 1000.0;
+                double deltaMs = (now - _lastUpdate) * 1000.0 * (Side?.Mission?.ShowcaseResearchTimeScale ?? 1);
                 if (deltaMs < 0) deltaMs = 0;
                 InvestedMilliseconds += (long)deltaMs;     // bucketigc.h:49
                 if (InvestedMoney >= Price && InvestedMilliseconds >= ttbms)   // bucketigc.h:51

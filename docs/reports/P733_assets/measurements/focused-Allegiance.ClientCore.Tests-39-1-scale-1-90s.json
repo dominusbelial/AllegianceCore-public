@@ -1,0 +1,48 @@
+[
+  {
+    "Side": 0,
+    "Plan": "plan_a",
+    "Step": 2,
+    "TotalSteps": 157,
+    "Action": "drone",
+    "Name": ".TowerAC",
+    "Status": "building bucket",
+    "ProgressPercent": 1.1883227176220807,
+    "StepProgressPercent": 86.56666666666666,
+    "Money": 49328,
+    "EtaSeconds": 12.090000000000003,
+    "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+    "CompletedTechs": [
+      "Weedcore 03"
+    ],
+    "Stations": [
+      "Garrison"
+    ],
+    "Constructor": null,
+    "ReservedRock": null,
+    "Cycles": 0
+  },
+  {
+    "Side": 1,
+    "Plan": "plan_a",
+    "Step": 2,
+    "TotalSteps": 181,
+    "Action": "drone",
+    "Name": ".TowerAC",
+    "Status": "building bucket",
+    "ProgressPercent": 1.030755064456722,
+    "StepProgressPercent": 86.56666666666666,
+    "Money": 56521,
+    "EtaSeconds": 12.090000000000003,
+    "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+    "CompletedTechs": [
+      "Weedcore 03"
+    ],
+    "Stations": [
+      "Garrison"
+    ],
+    "Constructor": null,
+    "ReservedRock": null,
+    "Cycles": 0
+  }
+]

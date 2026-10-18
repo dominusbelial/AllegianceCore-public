@@ -1,0 +1,17 @@
+[
+  {
+    "repetition": 1,
+    "outcome": "Passed",
+    "output": "match 1: Stage Over, epoch b4447707d21d4b96ba9e1f3df5980e27, sim=83.19999999999742\nmatch 2: Stage Over, epoch fccc2bcc5ed848b6b3948ea95c3219e9, sim=108.34999999999599"
+  },
+  {
+    "repetition": 2,
+    "outcome": "Passed",
+    "output": "match 1: Stage Over, epoch 6114b0efd835462a8abc6ac86fc9b435, sim=83.19999999999742\nmatch 2: Stage Over, epoch e108ae830948473c9b6575b1cb4f3827, sim=108.34999999999599"
+  },
+  {
+    "repetition": 3,
+    "outcome": "Passed",
+    "output": "match 1: Stage Over, epoch 30dd3bb7f3e64387b4593e58e6764b7b, sim=83.29999999999741\nmatch 2: Stage Over, epoch a213a7d2da434e178d01136e0a6494a0, sim=108.44999999999598"
+  }
+]

@@ -41,7 +41,9 @@ public sealed class P496CaptureProofLiveTests
         Games =
         [
             new Gm { Name = debug ? "P496 Capture Proof (debug)" : "P496 Capture Proof (normal)",
-                     Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+                     Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"],
+                     // The scenario seats all defenders before attackers; preserve those explicit sides.
+                     MaxTeamImbalance = 0x7fff },
         ],
     };
 

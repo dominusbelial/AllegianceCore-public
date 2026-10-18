@@ -1,0 +1,164 @@
+[
+  {
+    "proof": "proof-focused-118-1/scale-1-90s.json",
+    "scale": 1.0,
+    "simulation_seconds": 90,
+    "completed_steps": [
+      1,
+      1
+    ]
+  },
+  {
+    "proof": "proof-focused-118-1/scale-8-90s.json",
+    "scale": 8.0,
+    "simulation_seconds": 90,
+    "completed_steps": [
+      7,
+      7
+    ]
+  },
+  {
+    "proof": "proof-focused-118-2/scale-1-90s.json",
+    "scale": 1.0,
+    "simulation_seconds": 90,
+    "completed_steps": [
+      1,
+      1
+    ]
+  },
+  {
+    "proof": "proof-focused-118-2/scale-8-90s.json",
+    "scale": 8.0,
+    "simulation_seconds": 90,
+    "completed_steps": [
+      7,
+      7
+    ]
+  },
+  {
+    "proof": "proof-focused-118-3/scale-1-90s.json",
+    "scale": 1.0,
+    "simulation_seconds": 90,
+    "completed_steps": [
+      1,
+      1
+    ]
+  },
+  {
+    "proof": "proof-focused-118-3/scale-8-90s.json",
+    "scale": 8.0,
+    "simulation_seconds": 90,
+    "completed_steps": [
+      7,
+      7
+    ]
+  },
+  {
+    "proof": "proof-focused-119-1/scale-1-1800s.json",
+    "scale": 1.0,
+    "simulation_seconds": 1800,
+    "completed_steps": [
+      15,
+      15
+    ]
+  },
+  {
+    "proof": "proof-focused-119-1/scale-16-1800s.json",
+    "scale": 16.0,
+    "simulation_seconds": 1800,
+    "completed_steps": [
+      109,
+      115
+    ]
+  },
+  {
+    "proof": "proof-focused-119-1/scale-4-1800s.json",
+    "scale": 4.0,
+    "simulation_seconds": 1800,
+    "completed_steps": [
+      43,
+      43
+    ]
+  },
+  {
+    "proof": "proof-focused-119-1/scale-8-1800s.json",
+    "scale": 8.0,
+    "simulation_seconds": 1800,
+    "completed_steps": [
+      74,
+      71
+    ]
+  },
+  {
+    "proof": "proof-focused-119-2/scale-1-1800s.json",
+    "scale": 1.0,
+    "simulation_seconds": 1800,
+    "completed_steps": [
+      15,
+      15
+    ]
+  },
+  {
+    "proof": "proof-focused-119-2/scale-16-1800s.json",
+    "scale": 16.0,
+    "simulation_seconds": 1800,
+    "completed_steps": [
+      109,
+      115
+    ]
+  },
+  {
+    "proof": "proof-focused-119-2/scale-4-1800s.json",
+    "scale": 4.0,
+    "simulation_seconds": 1800,
+    "completed_steps": [
+      43,
+      43
+    ]
+  },
+  {
+    "proof": "proof-focused-119-2/scale-8-1800s.json",
+    "scale": 8.0,
+    "simulation_seconds": 1800,
+    "completed_steps": [
+      74,
+      71
+    ]
+  },
+  {
+    "proof": "proof-focused-119-3/scale-1-1800s.json",
+    "scale": 1.0,
+    "simulation_seconds": 1800,
+    "completed_steps": [
+      15,
+      15
+    ]
+  },
+  {
+    "proof": "proof-focused-119-3/scale-16-1800s.json",
+    "scale": 16.0,
+    "simulation_seconds": 1800,
+    "completed_steps": [
+      109,
+      115
+    ]
+  },
+  {
+    "proof": "proof-focused-119-3/scale-4-1800s.json",
+    "scale": 4.0,
+    "simulation_seconds": 1800,
+    "completed_steps": [
+      43,
+      43
+    ]
+  },
+  {
+    "proof": "proof-focused-119-3/scale-8-1800s.json",
+    "scale": 8.0,
+    "simulation_seconds": 1800,
+    "completed_steps": [
+      74,
+      71
+    ]
+  }
+]

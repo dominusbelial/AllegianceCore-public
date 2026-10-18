@@ -1,0 +1,25 @@
+{
+  "reason": "Administrative correction: disable historical 221 optional proof flags. The in-progress second debug capture was interrupted and is rerun from the start. A second driver was accidentally launched when process lookup failed because tool invocations use separate PID namespaces; both drivers were stopped through their tool sessions before resuming. No assertion failure or additional completed repetition was recorded.",
+  "active": {
+    "label": "focused-076-2",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-076-2.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-integ-b2/docs/reports/P738_P733_assets",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P496CaptureProofLiveTests.Capture_attempt_on_the_debug_map"
+    ],
+    "started": 1792291167.2608864
+  },
+  "interruptedAt": 1792291192.7995377,
+  "stopped_tool_sessions": [
+    36482,
+    34796
+  ],
+  "correction": "Tool Ctrl-C ended wrappers but orphaned descendants continued; the earlier stopped assumption was incorrect. All three drivers subsequently stopped at blocked ledger writes; see runner-drain.json. Overlapping capture results are excluded."
+}

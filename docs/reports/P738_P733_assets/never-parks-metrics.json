@@ -1,0 +1,52 @@
+[
+  {
+    "invocation": "showcase-1",
+    "seconds": 92.7,
+    "samples": 926,
+    "reached": 26,
+    "longestIdleSeconds": 2.005,
+    "shots": 4368,
+    "hits": 2018,
+    "kills": 14
+  },
+  {
+    "invocation": "showcase-2",
+    "seconds": 91.5,
+    "samples": 914,
+    "reached": 26,
+    "longestIdleSeconds": 1.61,
+    "shots": 3788,
+    "hits": 1651,
+    "kills": 18
+  },
+  {
+    "invocation": "showcase-3",
+    "seconds": 91.3,
+    "samples": 912,
+    "reached": 25,
+    "longestIdleSeconds": 2.104,
+    "shots": 3225,
+    "hits": 1417,
+    "kills": 13
+  },
+  {
+    "invocation": "showcase-4",
+    "seconds": 92.0,
+    "samples": 919,
+    "reached": 26,
+    "longestIdleSeconds": 2.004,
+    "shots": 4316,
+    "hits": 1706,
+    "kills": 13
+  },
+  {
+    "invocation": "showcase-5",
+    "seconds": 91.7,
+    "samples": 916,
+    "reached": 26,
+    "longestIdleSeconds": 3.207,
+    "shots": 3968,
+    "hits": 1761,
+    "kills": 14
+  }
+]

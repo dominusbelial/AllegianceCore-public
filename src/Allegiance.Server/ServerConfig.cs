@@ -11,6 +11,10 @@ public sealed class ShowcaseConfig
     /// <summary>Opt-in orchestration; setters preserve absent source-generated JSON defaults.</summary>
     public string TechMode { get; set; } = "unlocked";
     public double IncomeMultiplier { get; set; } = 1;
+    /// <summary>Showcase research accelerator, not native gameplay. Ignored in unlocked mode.</summary>
+    public double ResearchTimeScale { get; set; } = 1;
+    /// <summary>Hard simulation-time bound after a research showcase finale fires. Port orchestration.</summary>
+    public double FinaleTimeoutSeconds { get; set; } = 300;
     public bool LoopResearchPlans { get; set; }
     public void Validate()
     {
@@ -18,6 +22,10 @@ public sealed class ShowcaseConfig
             throw new InvalidDataException("showcase.techMode must be unlocked|research");
         if (!double.IsFinite(IncomeMultiplier) || IncomeMultiplier < 1 || IncomeMultiplier > 10000)
             throw new InvalidDataException("showcase.incomeMultiplier must be finite and between 1 and 10000");
+        if (!double.IsFinite(FinaleTimeoutSeconds) || FinaleTimeoutSeconds < 1 || FinaleTimeoutSeconds > 3600)
+            throw new InvalidDataException("showcase.finaleTimeoutSeconds must be finite and between 1 and 3600");
+        if (!double.IsFinite(ResearchTimeScale) || ResearchTimeScale < 1 || ResearchTimeScale > 64)
+            throw new InvalidDataException("showcase.researchTimeScale must be finite and between 1 and 64");
     }
 }
 

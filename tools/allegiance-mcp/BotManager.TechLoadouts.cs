@@ -109,6 +109,15 @@ internal sealed partial class BotManager
                     target = Catalog.RepresentativeCore().StationTypes[plan.TargetTypeId];
                 if (!Enum.TryParse<Showcase.HullRole>(bot.Role, true, out var role)) role = Showcase.HullRole.Fighter;
                 selected = PickTechLoadout(shop, role, target, allowRoleFallback: !bot.FinaleBomberActive);
+                if (selected is null && bot.FinaleBomberActive && target is { } station
+                    && cs.World.ResearchBriefing?.TechMode == "research")
+                {
+                    selected = TechLoadoutSelector.SelectAvailableStrike(Catalog.RepresentativeCore(), shop.Civ,
+                        shop.Techs, shop.DockType, station, shop.Budget);
+                    selected ??= PickTechLoadout(shop, role, target, allowRoleFallback: true) is { } available
+                        ? available with { Reason = "research finale: no legal station-damaging loadout; proceeding with best available combat loadout; bounded server finale armed; " + available.Reason }
+                        : null;
+                }
             }
             if (selected is null)
             {

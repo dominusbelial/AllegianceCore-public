@@ -80,14 +80,39 @@ omitted. `auto` uses a generated fallback for every other civilization. Use
 
 Research mode disables test unlock and harness grants/bypasses. Explicit grant
 or bypass settings that conflict with research fail boot and name the key.
-`incomeMultiplier` remains optional (native pacing at 1); 500 is the local proof
-and proposed rig pacing. `loopResearchPlans` stays false unless requested.
+`incomeMultiplier` remains optional (native pacing at 1). `loopResearchPlans`
+stays false unless requested.
 
-Research mode also fills missing home-sector build-rock capabilities from each
+`showcase.researchTimeScale` defaults to **1**, accepts finite values **1–64**,
+and accelerates funded bucket research/production timers and the constructor's
+30-second station transformation timer. For example, `8` makes 80 seconds of
+bucket work take 10 simulation seconds. Costs, purchase gates, income, constructor
+travel and authored plan waits remain unchanged. This is a **showcase/benchmark
+accelerator, not native gameplay**. It is applied only with `techMode: "research"`;
+unlocked mode and ordinary servers retain native timers even if a scale is set.
+The server prints `[boot] showcase.researchTimeScale = N`; commander ETA estimates
+use the effective scale. Missing JSON keys preserve the native default.
+
+A research finale tries the best legal affordable bomber first, then the P704
+station-damage ranking across available player hulls. If no legal weapon can damage
+the station, it launches an available combat loadout. At the actual maturity trigger,
+MCP arms an epoch-scoped server deadline. `showcase.finaleTimeoutSeconds` defaults to
+**300**, accepts finite values **1–3600**, and bounds the remaining simulation time.
+Natural victory can end the match earlier; expiry calls the existing game-over,
+results, reseating and automatic-next-match path with an explicit showcase deadline
+reason. The triggering strike side wins (the first participating selected side if
+`finale_side` is `both`). This bounded outcome is showcase orchestration, not a native
+station kill or technology grant. Duplicate requests cannot extend the deadline;
+stale epochs, another side's requests and unlocked servers are ignored. A matching
+MCP build is required. Unlocked finales retain their existing behavior.
+
+Research mode aligns the starting home station with the selected civilization's
+initial station type when a file map bakes a different home type. It also fills
+missing home-sector build-rock capabilities from each
 selected plan, with one reserve per capability. This is showcase map content;
 normal purchases, constructor movement and construction still apply. The same
 resource preparation runs when the mission resets. `techMode: "unlocked"` is
 the default and preserves the existing configuration and map.
 
 See [P705's report](../../docs/reports/P705_SHOWCASE_TECH_MODE.md) for validation,
-local timelines and Claude's rig handoff.
+local timelines and Claude's rig handoff. See also [P733](../../docs/reports/P733_TECH_FINALE_AND_SPEED.md) for the accelerator measurements and updated rig delta.
