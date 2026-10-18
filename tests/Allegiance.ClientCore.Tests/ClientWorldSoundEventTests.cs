@@ -1182,4 +1182,69 @@ public class ClientWorldSoundEventTests
 
         Assert.Empty(w.TakeSoundEvents());
     }
+
+    // ── P742 (parity wave 26): station/economy sound-id chat voice cues ─────
+    // Both families share the established ChatVoiceOver path: the port server
+    // broadcasts a TEAM chat carrying a native SoundID as the wire VoiceOver,
+    // and the client resolves the id to its sounddef.mdl wave
+    // (ClassifyChatSound → ChatVoiceOver, trekigc.cpp:4530-4536;
+    // NativeVoiceCatalog.Resolve). The rows below were `partial` only because
+    // nobody reconciled the already-live producers.
+
+    [Theory]
+    [InlineData(805, "vo_builder_expansion")] // expansionCompletedSound (garrison-style station)
+    [InlineData(800, "vo_builder_garrison")]  // garrisonCompletedSound
+    [InlineData(808, "vo_builder_mine")]      // mineCompletedSound
+    public void StationCompletionChat_ResolvesToCompletionWave(short voice, string wave)
+    {
+        // P742 — SIM-0236: the port's server broadcasts the native station-
+        // completion chat "Finished building %s" carrying the station type's
+        // CompletionSound (Server.Research.cs:23, OnStationBuilt ↔ native
+        // SendChatf GetCompletionSound, buildingeffectigc.h:320). The client
+        // resolves the id to its per-station-type completion wave.
+        var world = new ClientWorld();
+        world.Apply(new ChatMessage
+        {
+            SidSender = 943,
+            ChatTarget = (int)Allegiance.Core.Sim.ChatTarget.Everyone,
+            VoiceOver = voice,
+            CommandID = -1,
+            Message = "Finished building Station",
+        });
+
+        var ev = Assert.Single(world.TakeSoundEvents());
+        Assert.Equal(ClientSoundEventKind.ChatVoiceOver, ev.Kind);
+        Assert.NotNull(ev.Voice);
+        Assert.Equal(wave, ev.Voice!.Stem);
+    }
+
+    [Theory]
+    [InlineData(746, "vo_request_buildercarbon")]
+    [InlineData(745, "vo_request_builderuranium")]
+    [InlineData(747, "vo_request_buildersilicon")]
+    [InlineData(748, "vo_request_builderhelium")]
+    [InlineData(749, "vo_request_special")]
+    public void ConstructorNeedRockChat_ResolvesToResourceWave(short voice, string wave)
+    {
+        // P742 — SIM-0255: the port's server broadcasts the constructor plea
+        // "New constructor requesting asteroid." carrying the station type's
+        // ConstructorNeedRockSound (Server.Economy.cs:843, P458
+        // BroadcastConstructorNeedRock ↔ native Complain GetConstructorNeedRockSound,
+        // shipIGC.cpp:2319). The client resolves it to the resource-specific
+        // vo_request_builder* wave (sounddef.mdl:1170-1175).
+        var world = new ClientWorld();
+        world.Apply(new ChatMessage
+        {
+            SidSender = 944,
+            ChatTarget = (int)Allegiance.Core.Sim.ChatTarget.Everyone,
+            VoiceOver = voice,
+            CommandID = -1,
+            Message = "New constructor requesting asteroid.",
+        });
+
+        var ev = Assert.Single(world.TakeSoundEvents());
+        Assert.Equal(ClientSoundEventKind.ChatVoiceOver, ev.Kind);
+        Assert.NotNull(ev.Voice);
+        Assert.Equal(wave, ev.Voice!.Stem);
+    }
 }
