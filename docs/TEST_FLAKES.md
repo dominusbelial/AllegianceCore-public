@@ -1971,3 +1971,16 @@ No assertion, deadline, quarantine trait or product code was changed for the two
 pre-existing flakes. The P674 CSV defect was a formatting mistake in this task's
 own parity-matrix edit and was fixed; the suite numbers above are as measured on
 the run that caught it.
+
+## TR-2 observation (2026-10-18)
+
+Required single Fast-tier sweep on the committed TR-2 tree
+(`tools/run-tests.sh --tier fast`): Lobby 19/19, MonoGame 2416 pass / 3 existing
+skips, Core 4802 pass, ClientCore 1335 pass / 1 fail. The one failure,
+`CrossSideCombatVisibilityLiveTests.Fire_is_not_relayed_to_peers_in_other_sectors`
+(the documented P699c load-flake above), passed **3/3 isolated runs** on the same
+binaries and is not training/UI code. The runner also flagged the live
+`P727SkirmishLiveTests.Local_start_battle_pause_resume_next_match_stop_leaves_no_processes`
+as exceeding the calibrated 10 s Fast limit (207 s) — a concurrent `allegiance-codex-tt1b`
+suite was running on this shared box (the P731 hazard), so both live-network timings
+were load-degraded. No product code was changed for these dispositions.

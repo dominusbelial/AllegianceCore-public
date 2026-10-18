@@ -250,6 +250,8 @@ public sealed partial class Game1
     protected override void Update(GameTime gameTime)
     {
         UpdateSkirmish(Keyboard.GetState());
+        // TR-2 — pump the active training mission every frame (native TrainingMission::Frame).
+        UpdateTraining(gameTime.ElapsedGameTime.TotalSeconds);
         using var frameUpdate = new Diagnostics.ClientFrameTelemetry.UpdateScope(_frameTelemetry);
         _sound?.UpdateAudioFrame((float)gameTime.ElapsedGameTime.TotalSeconds);
         UpdateSoundEvents();
@@ -1889,6 +1891,20 @@ public sealed partial class Game1
         // change moves the local render pose on the same frame (no round trip).
         // Skipped while a turret gunner is seated: no SHIP_UPDATE is sent then, so the
         // sim is held (inert) — the gunner's view is the locally-integrated turret facing.
+        //
+        // TR-2 — while a training mission is running, the mission's control masks gate the
+        // outgoing controls exactly as native's flight input does (ApproveControls/
+        // ApproveActions, Training.cpp:253-300, called behind IsTraining). Applied here, on
+        // the final command (after autopilot/spectator overrides), so the SAME masked value
+        // feeds the local sim and the wire — and the simulated pose reflects the training
+        // constraints. Inert when no mission is running (TrainingController.IsTraining false).
+        if (Allegiance.ClientCore.Training.TrainingController.IsTraining)
+        {
+            sentControls = Allegiance.ClientCore.Training.TrainingController.ApproveControls(sentControls);
+            sentStateM = Allegiance.ClientCore.Training.TrainingController.ApproveActions(sentStateM);
+            sentFireM = sentStateM;
+        }
+
         bool sendArm = !turretGunner;
         _ownShipSendArmed = sendArm;
         if (sendArm)

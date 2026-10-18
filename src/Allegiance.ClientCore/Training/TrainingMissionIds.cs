@@ -16,8 +16,18 @@ public static class TrainingMissionIds
     public const int Tm8Nanite = 8;
     public const int Tm10FreeFlight = 10;
 
-    // TrekKey values the training missions react to (src/Igc/igc.h:273)
-    public const int KeyFireBooster = 50; // TK_FireBooster — the SPACEBAR
+    // TrekKey values the training missions react to (src/Igc/igc.h:261-436)
+    public const int KeyFireBooster = 50; // TK_FireBooster — the SPACEBAR (igc.h:273)
+    public const int KeyPauseTm = 157;              // TK_PauseTM (igc.h:375) — pause/resume training
+    public const int KeyViewCommand = 38;           // TK_ViewCommand (igc.h:261)
+    public const int KeyRejectCommand = 42;         // TK_RejectCommand (igc.h:265)
+    public const int KeyToggleAutoPilot = 43;       // TK_ToggleAutoPilot (igc.h:266)
+    public const int KeyConModeGameState = 51;      // TK_ConModeGameState (igc.h:274)
+    public const int KeyConModeCommand = 68;        // TK_ConModeCommand (igc.h:291)
+    public const int KeyConModeInvest = 71;         // TK_ConModeInvest (igc.h:294)
+    public const int KeySuicide = 92;               // TK_Suicide (igc.h:315)
+    public const int KeyTargetSelf = 100;           // TK_TargetSelf (igc.h:323)
+    public const int KeyConModeTeleport = 210;      // TK_ConModeTeleport (igc.h:436)
 
     // Command ids (src/Igc/igc.h:898-912)
     public const int CmdDoNothing = -3; // c_cidDoNothing

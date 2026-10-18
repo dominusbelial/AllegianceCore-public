@@ -31,6 +31,9 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
+    <!-- TR-2 — the Single Player chooser and training screen models live in the MonoGame
+         (ClientCore.Game) assembly; the intro/navigation screen-model tests need it. -->
+    <ProjectReference Include="../../src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj" />
     <!-- Exercise the real server and owned single-player lifecycle; the
          ClientCore network library remains independent of hosting. -->
     <ProjectReference Include="../../src/Allegiance.Core/Allegiance.Core.csproj" />

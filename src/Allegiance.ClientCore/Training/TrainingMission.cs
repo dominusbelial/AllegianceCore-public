@@ -1,4 +1,5 @@
 using System.Numerics;
+using static Allegiance.ClientCore.Training.TrainingMissionIds;
 
 namespace Allegiance.ClientCore.Training;
 
@@ -96,14 +97,44 @@ public abstract class TrainingMission
     /// <summary><c>AddKeyCondition</c> (<c>trainingmission.cpp:416-419</c>).</summary>
     public void AddKeyCondition(Condition c) => _keyConditions.Insert(0, c);
 
-    /// <summary><c>RecordKeyPress</c> (<c>trainingmission.cpp:342-413</c>). The full key-disable switch
-    /// (TK_ConModeInvest, TK_Suicide, TK_ViewCommand, etc.) and command-view gating are deferred to TR-2;
-    /// TR-1 routes the press into the site's key queue so <c>GetKeyCondition</c> can consume it.</summary>
+    /// <summary>
+    /// <c>RecordKeyPress</c> (<c>trainingmission.cpp:342-413</c>) — the key gate the client's
+    /// flight-input path routes presses through while a training mission is running. Faithful
+    /// to native: a set of keys is hard-disabled except in Free Flight, and the command-view
+    /// keys are gated on <see cref="CommandViewEnabled"/>. Keys that pass are forwarded to the
+    /// site's key queue so <c>GetKeyCondition</c> can consume them. Returns whether the press
+    /// was accepted (native returns <c>false</c> to swallow a disabled key).
+    /// </summary>
     public bool RecordKeyPress(int key)
     {
+        // trainingmission.cpp:342-413
+        if (key == KeyPauseTm) // TK_PauseTM — pause/resume the training clock. In TR-2 the
+            // embedded-host pause is the host's concern; the framework returns true (consumed)
+            // without routing to a key condition, exactly as native (no key-condition iteration).
+            return true;
+
+        // "XXX hack to disable some keys in training" (trainingmission.cpp:388-396): these are
+        // swallowed outright except in Free Flight (mission 10).
+        bool hardDisabled = key is KeyConModeInvest or KeyTargetSelf or KeySuicide
+            or KeyConModeGameState or KeyConModeTeleport or KeyRejectCommand;
+        if (hardDisabled && GetMissionID() != Tm10FreeFlight)
+            return false;
+
+        // Command-view keys (trainingmission.cpp:397-401): gated on the mission having enabled
+        // command view. Free Flight's hard-disabled keys fall through to this same gate (native
+        // case fallthrough), so only a command-view-enabled mission lets them through.
+        bool commandViewKey = key is KeyViewCommand or KeyConModeCommand or KeyToggleAutoPilot;
+        if (commandViewKey && !CommandViewEnabled)
+            return false;
+
         Site.RecordKeyPress(key);
         return true;
     }
+
+    /// <summary>Whether this mission enables the command view (native <c>m_commandViewEnabled</c>;
+    /// missions that use the command map set it, <c>Training.h:44</c> <c>CommandViewEnabled()</c>).
+    /// Mission 2 (Basic Flight) does not, so the command-view keys stay disabled.</summary>
+    public virtual bool CommandViewEnabled => false;
 
     /// <summary><c>RecordChat</c> (<c>trainingmission.cpp:327-331</c>).</summary>
     public void RecordChat(int recipient) => Site.RecordChat(recipient);

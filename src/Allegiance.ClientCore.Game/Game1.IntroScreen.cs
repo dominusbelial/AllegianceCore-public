@@ -20,11 +20,23 @@ public sealed partial class Game1
 {
     /// <summary>Which intro sub-view is showing (native moved between the main
     /// screen and its popups  -  FindServerPopup/CreditsPopup/Options; the port
-    /// models each as a view of the same screen).</summary>
-    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, Credits }
+    /// models each as a view of the same screen). TR-2 splits Single Player into a
+    /// Training | Skirmish chooser (native's big single-player button trains,
+    /// introscreen.cpp:1221/:1558) plus a first-run training-suggestion dialog.</summary>
+    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSuggest, Credits }
 
     private IntroView _introView = IntroView.Main;
     private int _introIndex;
+
+    /// <summary>TR-2 — single-player entry point: the Training | Skirmish chooser.</summary>
+    private readonly SinglePlayerChooserModel _singlePlayerChooser = new();
+
+    /// <summary>TR-2 — the training mission list (Basic Flight playable in TR-2).</summary>
+    private readonly TrainingScreenModel _trainingScreen = new();
+
+    /// <summary>TR-2 — "don't ask me again" tick on the first-run training suggestion.</summary>
+    private bool _trainingSuggestDontAsk;
+    private bool _trainingSuggestHandled;
 
     /// <summary>Native's main-menu button slots and the port's labels. Citations:
     /// SinglePlayer←trainBigButtonPane (:1221)/OnButtonTraining(:1558);
@@ -87,6 +99,15 @@ public sealed partial class Game1
         _introView = _introProofDelayMs >= 0 && Environment.GetEnvironmentVariable("ALLEGIANCE_SKIRMISH_SETUP_PROOF") == "1"
             ? IntroView.SinglePlayer : IntroView.Main;
         _introIndex = 0;
+        // TR-2 — the native first-run training suggestion (introscreen.cpp:1305): shown once
+        // until the player trains or ticks "don't ask me again" (Ui.ShowStartupTrainingSuggestion).
+        _trainingSuggestDontAsk = false;
+        _trainingSuggestHandled = false;
+        if (_introView == IntroView.Main && prefs.ShowStartupTrainingSuggestion)
+        {
+            _introView = IntroView.TrainingSuggest;
+            Console.WriteLine("[intro] first-run training suggestion shown (Ui.ShowStartupTrainingSuggestion)");
+        }
         Console.WriteLine($"[intro] remembered pilot '{_playerName}', server '{prefs.Server}:{prefs.Port}'");
     }
 
@@ -155,8 +176,17 @@ public sealed partial class Game1
                 if (esc && !_iEsc) { _introView = IntroView.Main; _introIndex = 3; }
                 break;
 
-            case IntroView.SinglePlayer:
+            case IntroView.SinglePlayer:   // TR-2 — the Training | Skirmish chooser
+                UpdateSinglePlayerChooser(ks, up, down, enter, esc);
+                break;
+            case IntroView.SkirmishSetup: // P727 — the skirmish options behind "Skirmish"
                 UpdateSkirmishMenu(ks, up, down, enter, esc);
+                break;
+            case IntroView.Training:      // TR-2 — the native training mission list
+                UpdateTrainingScreen(ks, up, down, enter, esc);
+                break;
+            case IntroView.TrainingSuggest: // TR-2 — the one-shot first-run suggestion dialog
+                UpdateTrainingSuggest(ks, enter, esc);
                 break;
             case IntroView.Credits:
                 if (esc && !_iEsc) { _introView = IntroView.Main; _introIndex = 0; }
@@ -213,6 +243,76 @@ public sealed partial class Game1
                 Exit();
                 break;
         }
+    }
+
+    // ── TR-2 — Single Player: Training | Skirmish chooser ──────────────────
+    private void UpdateSinglePlayerChooser(KeyboardState ks, bool up, bool down, bool enter, bool esc)
+    {
+        if (up && !_iUp) _singlePlayerChooser.Move(-1);
+        if (down && !_iDown) _singlePlayerChooser.Move(1);
+        if (enter && !_iEnter)
+        {
+            _introView = _singlePlayerChooser.Activate() ? IntroView.Training : IntroView.SkirmishSetup;
+            Console.WriteLine($"[intro] Single Player -> {(_singlePlayerChooser.Activate() ? "Training" : "Skirmish")}");
+        }
+        if (esc && !_iEsc) { _introView = IntroView.Main; _introIndex = 0; }
+    }
+
+    // ── TR-2 — the training mission list (Basic Flight playable) ───────────
+    private void UpdateTrainingScreen(KeyboardState ks, bool up, bool down, bool enter, bool esc)
+    {
+        if (up && !_iUp) _trainingScreen.Move(-1);
+        if (down && !_iDown) _trainingScreen.Move(1);
+        if (enter && !_iEnter)
+        {
+            if (_trainingScreen.CanStart)
+                StartTrainingMission(_trainingScreen.Selected.MissionId);
+            else
+                Console.WriteLine($"[training] mission {_trainingScreen.Selected.MissionId} locked in TR-2 (coming soon)");
+        }
+        if (esc && !_iEsc) { _introView = IntroView.SinglePlayer; }
+    }
+
+    /// <summary>
+    /// TR-2 — begin a native training mission on the embedded single-player host
+    /// (training host mode, P727 + TR-1). See <see cref="BeginTrainingMission"/>.
+    /// </summary>
+    private void StartTrainingMission(int missionId)
+    {
+        BeginTrainingMission(missionId);
+    }
+
+    // ── TR-2 — the one-shot first-run training suggestion dialog ───────────
+    private void UpdateTrainingSuggest(KeyboardState ks, bool enter, bool esc)
+    {
+        // Tab toggles the "don't ask me again" checkbox; Enter accepts (begin training);
+        // Esc declines (clear the flag, go to the main menu).
+        bool tab = ks.IsKeyDown(XnaKeys.Tab);
+        if (tab && !_iTab) _trainingSuggestDontAsk = !_trainingSuggestDontAsk;
+        if ((enter || esc) && !_trainingSuggestHandled)
+        {
+            _trainingSuggestHandled = true;
+            ClearTrainingSuggestionFlag();
+            if (enter)
+            {
+                _introView = IntroView.SinglePlayer;      // jump into training
+                _singlePlayerChooser.Selected = 0;        // Training highlighted
+            }
+            else
+            {
+                _introView = IntroView.Main;
+                _introIndex = 0;
+            }
+            Console.WriteLine($"[intro] training suggestion dismissed (begin={enter}, dontAsk={_trainingSuggestDontAsk})");
+        }
+    }
+
+    /// <summary>Clear the first-run training-suggestion flag (native introscreen.cpp:1055).</summary>
+    private void ClearTrainingSuggestionFlag()
+    {
+        var prefs = IntroPreferences.Load();
+        prefs.ShowStartupTrainingSuggestion = false;
+        prefs.Save();
     }
 
     private void EnterIntroFindServer()
@@ -378,7 +478,10 @@ public sealed partial class Game1
                 case IntroView.Main: DrawIntroMain(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.FindServer: DrawIntroFindServer(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.DirectConnect: DrawIntroDirect(w, h, titleCol, dimCol, textCol); break;
-                case IntroView.SinglePlayer: DrawIntroSinglePlayer(w, h, titleCol, dimCol, textCol); break;
+                case IntroView.SinglePlayer: DrawIntroChooser(w, h, titleCol, dimCol, textCol); break;
+                case IntroView.SkirmishSetup: DrawIntroSkirmishSetup(w, h, titleCol, dimCol, textCol); break;
+                case IntroView.Training: DrawIntroTraining(w, h, titleCol, dimCol, textCol); break;
+                case IntroView.TrainingSuggest: DrawIntroTrainingSuggest(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.Credits: DrawIntroCredits(w, h, titleCol, dimCol, textCol); break;
             }
         }
@@ -498,7 +601,7 @@ public sealed partial class Game1
             new Vector2((w - fsz.X) / 2f, h - 40f), dimCol);
     }
 
-    private void DrawIntroSinglePlayer(float w, float h, Color titleCol, Color dimCol, Color textCol)
+    private void DrawIntroSkirmishSetup(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
         DrawIntroTitle(w, "Single Player", "Skirmish", titleCol, dimCol);
         var rows = _skirmishScreen.Rows;
@@ -516,6 +619,74 @@ public sealed partial class Game1
         _spriteBatch.DrawString(_hudSmall, message, new Vector2(24, layout.PilotY), Color.Orange);
         _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   LEFT/RIGHT change   ENTER choose   ESC back",
             new Vector2(24, layout.FooterY), dimCol);
+    }
+
+    // ── TR-2 — the Single Player chooser (Training | Skirmish) ─────────────
+    private void DrawIntroChooser(float w, float h, Color titleCol, Color dimCol, Color textCol)
+    {
+        DrawIntroTitle(w, "Single Player", "Training or Skirmish", titleCol, dimCol);
+        var rows = _singlePlayerChooser.Rows;
+        var layout = IntroLayout.Compute(w, h, rows.Length);
+        for (int i = 0; i < rows.Length; i++)
+        {
+            var label = (i == _singlePlayerChooser.Selected ? "> " : "  ") + rows[i];
+            var size = _hudSmall.MeasureString(label);
+            _spriteBatch.DrawString(_hudSmall, label, new Vector2((w - size.X) / 2, layout.Rows[i].Y + 4),
+                i == _singlePlayerChooser.Selected ? titleCol : textCol);
+        }
+        var fsz = _hudSmall.MeasureString("UP/DOWN select   ENTER choose   ESC back");
+        _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   ENTER choose   ESC back",
+            new Vector2((w - fsz.X) / 2f, layout.FooterY), dimCol);
+    }
+
+    // ── TR-2 — the training screen (native training mission list) ──────────
+    private void DrawIntroTraining(float w, float h, Color titleCol, Color dimCol, Color textCol)
+    {
+        DrawIntroTitle(w, "Training", "Choose a mission", titleCol, dimCol);
+        var rows = _trainingScreen.Rows();
+        var layout = IntroLayout.Compute(w, h, rows.Length);
+        for (int i = 0; i < rows.Length; i++)
+        {
+            var label = (i == _trainingScreen.Index ? "> " : "  ") + rows[i];
+            var size = _hudSmall.MeasureString(label);
+            _spriteBatch.DrawString(_hudSmall, label, new Vector2((w - size.X) / 2, layout.Rows[i].Y + 4),
+                i == _trainingScreen.Index ? titleCol : textCol);
+        }
+        // Show the selected mission's description (native missionInfoImage art; port text).
+        string desc = _trainingScreen.Selected.Description;
+        var dsz = _hudSmall.MeasureString(desc);
+        _spriteBatch.DrawString(_hudSmall, desc, new Vector2((w - dsz.X) / 2f, layout.PilotY),
+            _trainingScreen.CanStart ? Color.Orange : dimCol);
+        var fsz = _hudSmall.MeasureString("UP/DOWN select   ENTER start   ESC back");
+        _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   ENTER start   ESC back",
+            new Vector2((w - fsz.X) / 2f, layout.FooterY), dimCol);
+    }
+
+    // ── TR-2 — the one-shot first-run training suggestion dialog ───────────
+    private void DrawIntroTrainingSuggest(float w, float h, Color titleCol, Color dimCol, Color textCol)
+    {
+        DrawIntroTitle(w, "Welcome to Allegiance", "Training is strongly recommended before going online.", titleCol, dimCol);
+        string[] lines =
+        {
+            "ALLEGIANCE is a team-based massively-multiplayer space combat game,",
+            "in which your goal is to conquer the universe.",
+            "",
+            "Training is strongly recommended before going online, and will take",
+            "approximately 30 minutes. Press ENTER to begin training now.",
+            "",
+            ( _trainingSuggestDontAsk ? "[x]" : "[ ]" ) + " Don't ask me again",
+        };
+        float y = h * 0.36f;
+        foreach (var ln in lines)
+        {
+            var sz = _hudSmall.MeasureString(ln);
+            _spriteBatch.DrawString(_hudSmall, ln, new Vector2((w - sz.X) / 2f, y),
+                ln.Contains("Don't ask") ? ( _trainingSuggestDontAsk ? titleCol : dimCol ) : textCol);
+            y += 30f;
+        }
+        var fsz = _hudSmall.MeasureString("ENTER begin training   TAB don't-ask-again   ESC dismiss");
+        _spriteBatch.DrawString(_hudSmall, "ENTER begin training   TAB don't-ask-again   ESC dismiss",
+            new Vector2((w - fsz.X) / 2f, h - 40f), dimCol);
     }
 
     private void DrawIntroCredits(float w, float h, Color titleCol, Color dimCol, Color textCol)

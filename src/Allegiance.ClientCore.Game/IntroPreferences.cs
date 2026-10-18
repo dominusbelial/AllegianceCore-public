@@ -26,6 +26,13 @@ public sealed class IntroPreferences
     /// first, capped to a small size.</summary>
     public List<string> Recent { get; set; } = new();
 
+    /// <summary>TR-2 — the native <c>Ui.ShowStartupTrainingSuggestion</c> config flag
+    /// (WinTrek/introscreen.cpp:1305, 1055): the first-run dialog suggesting the player
+    /// train before going online is shown once, until they launch a mission or tick
+    /// "don't ask me again", which clears the flag. Default <c>true</c> on a fresh
+    /// install (native's <c>false == HasTrained</c>).</summary>
+    public bool ShowStartupTrainingSuggestion { get; set; } = true;
+
     public const int MaxRecent = 8;
 
     public static string DirectoryPath => Path.Combine(
