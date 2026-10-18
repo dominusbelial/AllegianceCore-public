@@ -501,6 +501,7 @@ public class PayloadDecodeTests
 
     [Trait("Requires", "Artwork")]
     [SkippableFact]
+    [Trait("Tier", "Live")]
     public void PartType_offsets_cross_reference_same_core()
     {
         Require.Artwork();

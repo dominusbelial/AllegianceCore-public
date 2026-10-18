@@ -11,6 +11,7 @@ using Srv = Allegiance.Server.Server;
 namespace Allegiance.ClientCore.Tests;
 
 [Collection("LiveNetwork")]
+[Trait("Tier", "Live")]
 public sealed class P703ResearchCommanderLiveTests(ITestOutputHelper output)
 {
     private static string PlanDirectory()
@@ -81,7 +82,7 @@ public sealed class P703ResearchCommanderLiveTests(ITestOutputHelper output)
         var config = new ServerConfig
         {
             ArtPath = Catalog.ArtRoot, StaticCore = "PCore001.igc", Port = 0, UpdatesPerSecond = 20,
-            Showcase = new() { IncomeMultiplier = 500 },
+            Showcase = new() { TechMode = "research", IncomeMultiplier = 500, ResearchTimeScale = 16 },
             LiveSettings = new()
             {
                 TestUnlock = new() { Enabled = false },

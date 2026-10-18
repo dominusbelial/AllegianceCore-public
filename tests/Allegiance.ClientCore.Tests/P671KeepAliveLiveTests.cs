@@ -23,6 +23,7 @@ namespace Allegiance.ClientCore.Tests;
 /// keep-alive thread must have sent a steady stream of pings (~6 s cadence).
 /// </summary>
 [Collection("LiveNetwork")]
+[Trait("Tier", "Live")]
 public class P671KeepAliveLiveTests
 {
     private static readonly string ArtRoot =

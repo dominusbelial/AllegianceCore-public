@@ -30,3 +30,6 @@ __pycache__/
 
 # P644 generated player archives and source cache
 dist/
+
+# TT-1 runner outputs (TRX, discovery manifests and per-tier summaries).
+TestResults/

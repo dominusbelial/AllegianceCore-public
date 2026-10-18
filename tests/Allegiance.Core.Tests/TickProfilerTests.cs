@@ -124,6 +124,7 @@ public class TickProfilerTests
     }
 
     [Fact]
+    [Trait("Tier", "Perf")]
     public void Disabled_profiler_has_negligible_overhead()
     {
         try

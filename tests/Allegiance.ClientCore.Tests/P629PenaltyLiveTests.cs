@@ -12,6 +12,7 @@ using Srv = Allegiance.Server.Server;
 namespace Allegiance.ClientCore.Tests;
 
 [Collection("LiveNetwork")]
+[Trait("Tier", "Live")]
 public sealed class P629PenaltyLiveTests
 {
     private static Allegiance.Server.ServerConfig Config(string mode) => new()

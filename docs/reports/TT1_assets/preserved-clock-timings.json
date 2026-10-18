@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_flies_for_ten_minutes_with_turns_boost_tidi_and_recovers_from_correction",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_flies_for_ten_minutes_with_turns_boost_tidi_and_recovers_from_correction",
+    "outcome": "Passed",
+    "seconds": 605.2165328
+  },
+  {
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_joins_moves_and_warps_after_automatic_rotations(rotations: 2, scale: 0.5)",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_joins_moves_and_warps_after_automatic_rotations",
+    "outcome": "Passed",
+    "seconds": 19.4727528
+  },
+  {
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_joins_moves_and_warps_after_automatic_rotations(rotations: 0, scale: 1)",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_joins_moves_and_warps_after_automatic_rotations",
+    "outcome": "Passed",
+    "seconds": 9.6817163
+  },
+  {
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Reconnecting_to_a_younger_server_replaces_the_real_game_clock_epoch",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Reconnecting_to_a_younger_server_replaces_the_real_game_clock_epoch",
+    "outcome": "Passed",
+    "seconds": 0.3120797
+  },
+  {
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_joins_moves_and_warps_after_automatic_rotations(rotations: 1, scale: 0.84999999999999998)",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P695HumanShipUpdatesLiveTests.Human_joins_moves_and_warps_after_automatic_rotations",
+    "outcome": "Passed",
+    "seconds": 11.5029864
+  },
+  {
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P540bPodAutopilotCrossSectorLiveTests.EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets",
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P540bPodAutopilotCrossSectorLiveTests.EjectedPod_routes_through_two_warps_and_docks_at_rescue_garrison_zero_resets",
+    "outcome": "Passed",
+    "seconds": 238.590318
+  }
+]

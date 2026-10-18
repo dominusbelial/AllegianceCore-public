@@ -1,0 +1,60 @@
+{
+  "P705TechModeLiveTests": {
+    "repeatTotalSeconds": [
+      187.56649819999998,
+      186.5501253,
+      187.6384091
+    ],
+    "rows": {
+      "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 4, civB: 35, size: 3)": [
+        65.5138497,
+        66.5519197,
+        64.6213218
+      ],
+      "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 1, civB: 2, size: 2)": [
+        41.1049438,
+        39.3318552,
+        40.8254635
+      ],
+      "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 25, civB: 3, size: 10)": [
+        37.3013036,
+        37.3240167,
+        40.1363579
+      ],
+      "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 101, civB: 1, size: 5)": [
+        43.6464011,
+        43.3423337,
+        42.0552659
+      ]
+    }
+  },
+  "P703ResearchCommanderLiveTests": {
+    "repeatTotalSeconds": [
+      58.431047899999996,
+      57.4580378,
+      58.7655417
+    ],
+    "rows": {
+      "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Remote_constructor_death_reaches_team_state_without_remote_combat_effects(quiet: False)": [
+        2.3662442,
+        2.3865726,
+        2.3625568
+      ],
+      "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 1, civB: 2, generated: True)": [
+        31.3687385,
+        31.8319716,
+        32.102467
+      ],
+      "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Remote_constructor_death_reaches_team_state_without_remote_combat_effects(quiet: True)": [
+        2.784025,
+        2.8125441,
+        2.7421788
+      ],
+      "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)": [
+        21.9120402,
+        20.4269495,
+        21.5583391
+      ]
+    }
+  }
+}

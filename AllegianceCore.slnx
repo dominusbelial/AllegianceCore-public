@@ -16,6 +16,7 @@
     <Project Path="tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/test-tiers/test-tiers.csproj" />
     <Project Path="tools/igcdump/igcdump.csproj" />
     <Project Path="tools/tech-tree/tech-tree.csproj" />
     <Project Path="tools/missiondump/missiondump.csproj" />

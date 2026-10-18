@@ -46,6 +46,7 @@ namespace Allegiance.ClientCore.Tests;
 /// SHIP_RESET fires once per undock).
 /// </summary>
 [Collection("LiveNetwork")]
+[Trait("Tier", "Live")]
 public sealed class P522UndockReseedLiveTests
 {
     private static readonly string ArtRoot =

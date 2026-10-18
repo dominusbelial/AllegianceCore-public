@@ -13,6 +13,7 @@ namespace Allegiance.ClientCore.Tests;
 
 [Collection("LiveNetwork")]
 [Trait("Requires", "Artwork")]
+[Trait("Tier", "Live")]
 public sealed class P655ProbeWorkersLiveTests
 {
     private sealed record Peer(string Name, short? Side, bool Ready);

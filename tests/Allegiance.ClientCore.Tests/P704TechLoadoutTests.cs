@@ -100,6 +100,7 @@ public sealed class P704TechLoadoutTests(ITestOutputHelper output)
 }
 
 [Collection("LiveNetwork")]
+[Trait("Tier", "Live")]
 public sealed class P704TechLoadoutLiveTests(ITestOutputHelper output)
 {
     private const BindingFlags Fields = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;

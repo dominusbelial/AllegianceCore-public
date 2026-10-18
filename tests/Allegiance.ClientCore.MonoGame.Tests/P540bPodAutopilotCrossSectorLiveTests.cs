@@ -34,6 +34,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// ZERO [ctrlak]-equivalent pose rejects.
 /// </summary>
 [Collection("LiveNetwork")]
+[Trait("Tier", "Live")]
 public sealed class P540bPodAutopilotCrossSectorLiveTests
 {
     private static readonly string ArtRoot =

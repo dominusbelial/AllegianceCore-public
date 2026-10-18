@@ -127,6 +127,7 @@ public abstract class TcpTransportGreetTimeoutTestsBase
     /// greeting read, so the second client's join could never complete.</summary>
     [Fact]
     [Trait("Lane", "LiveTiming")]   // P647 quarantine: live-socket greet-timeout join is load-sensitive (passes 10/10 isolated)
+    [Trait("Tier", "Perf")]
     public void Silent_connection_does_not_block_a_second_client_join()
     {
         var site = new Site();

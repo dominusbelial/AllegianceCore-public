@@ -15,6 +15,7 @@ namespace Allegiance.Core.Tests;
 /// <summary>Repeatable loopback measurement. Also runs unchanged against the
 /// pre-P672 tree to obtain actual socket egress, rather than a size estimate.</summary>
 [Collection("LiveNetwork")]
+[Trait("Tier", "Live")]
 public sealed class P672ScoreRosterTrafficTests(ITestOutputHelper output)
 {
     [SkippableFact]

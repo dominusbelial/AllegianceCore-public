@@ -195,6 +195,7 @@ public sealed class ConsoleVerbosityLiveTests
     /// enabled).</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
+    [Trait("Tier", "Perf")]
     public void Stalled_stdout_does_not_block_the_sim_thread_even_verbose_on()
     {
         Require.Artwork();
@@ -253,6 +254,7 @@ public sealed class ConsoleVerbosityLiveTests
     /// per-tick updates, and the whole window completes in bounded wall time.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
+    [Trait("Tier", "Perf")]
     public void Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout()
     {
         Require.Artwork();

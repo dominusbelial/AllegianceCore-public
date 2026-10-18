@@ -1,0 +1,17 @@
+{
+  "count": 8492,
+  "outcomes": {
+    "Passed": 8486,
+    "NotExecuted": 3,
+    "Failed": 3
+  },
+  "timingOffenders": [
+    {
+      "name": "Allegiance.Core.Tests.MeshyGuardTests.NoTrackedMeshyOutputRemainsAnywhere",
+      "method": "Allegiance.Core.Tests.MeshyGuardTests.NoTrackedMeshyOutputRemainsAnywhere",
+      "outcome": "Passed",
+      "seconds": 12.3924143
+    }
+  ],
+  "coveragePassed": true
+}

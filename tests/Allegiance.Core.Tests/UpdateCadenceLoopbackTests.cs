@@ -15,6 +15,7 @@ namespace Allegiance.Core.Tests;
 /// stationary subjects in one sector. Runs without environment gates. Ships
 /// carry no weapons/AI, isolating pose scheduling from combat and routing.</summary>
 [Collection("LiveNetwork")]
+[Trait("Tier", "Perf")]
 public sealed class UpdateCadenceLoopbackTests
 {
     private sealed class Receiver : ITransportSite

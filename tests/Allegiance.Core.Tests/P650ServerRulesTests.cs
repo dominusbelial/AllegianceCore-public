@@ -69,6 +69,7 @@ public sealed class P650ServerRulesTests
     }
 
     [SkippableFact, Trait("Requires", "Artwork")]
+    [Trait("Tier", "Live")]
     public void Local_mining_battle_reports_income_and_leaves_drained_rocks()
     {
         Require.Artwork();

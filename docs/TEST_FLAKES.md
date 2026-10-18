@@ -1880,3 +1880,23 @@ The completed integration sweep retained these observed failures. Each originall
 | `Allegiance.Core.Tests.LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count` | ship must have docked for the secure to fire | 3/3; `isolation-000-1, isolation-000-2, isolation-000-3` |
 
 These meet P738's explicit load-flake rule; isolated passes do not establish the underlying causes or a fix. No assertion, deadline, quarantine trait or product code was changed. [Ledger](reports/P738_P734b_assets/verification.json), [qualification](reports/P738_P734b_assets/flake-qualification.json), [raw evidence](reports/P738_P734b_assets/validation-logs.tar.gz).
+
+
+## TT-1 tier sweep (2026-10-18)
+
+The one full tier sweep observed these Fast failures. Each then passed all three
+fresh exact-method invocations, meeting TT-1's explicit load-flake qualification
+rule. No assertion, timeout, quarantine trait or production code was changed for
+these failures.
+
+| Case | Original symptom | Isolated result |
+| --- | --- | --- |
+| `Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock` | server rejected 1 native pose across death/respawn | 3/3 pass (4.472 / 4.465 / 4.468 s) |
+| `Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self` | B had not received HEAVY_SHIPS_UPDATE | 3/3 pass (0.178 / 0.174 / 0.183 s) |
+| `Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | TimeoutException: no OnPeerJoined for raw peer | 3/3 pass (0.218 / 0.217 / 0.216 s) |
+
+[Qualification ledger](reports/TT1_assets/qualification.json),
+[task report](reports/TT1_TEST_TIERS.md). Original and isolated TRX are archived
+under `docs/reports/TT1_assets/sweep/` and `docs/reports/TT1_assets/focused/`.
+The distinct hygiene-duration and deferred-theory accounting findings were fixed
+and verified separately; they are not classified as load flakes.

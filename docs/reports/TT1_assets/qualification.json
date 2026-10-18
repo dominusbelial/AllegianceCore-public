@@ -1,0 +1,1476 @@
+{
+  "affected": {
+    "MeshyGuardTests": [
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/MeshyGuardTests-1.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.MeshyGuardTests.NoTrackedMeshyOutputRemainsAnywhere",
+            "method": "Allegiance.Core.Tests.MeshyGuardTests.NoTrackedMeshyOutputRemainsAnywhere",
+            "outcome": "Passed",
+            "seconds": 0.0486575
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/MeshyGuardTests-1.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/MeshyGuardTests-2.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.MeshyGuardTests.NoTrackedMeshyOutputRemainsAnywhere",
+            "method": "Allegiance.Core.Tests.MeshyGuardTests.NoTrackedMeshyOutputRemainsAnywhere",
+            "outcome": "Passed",
+            "seconds": 0.0471679
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/MeshyGuardTests-2.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/MeshyGuardTests-3.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.MeshyGuardTests.NoTrackedMeshyOutputRemainsAnywhere",
+            "method": "Allegiance.Core.Tests.MeshyGuardTests.NoTrackedMeshyOutputRemainsAnywhere",
+            "outcome": "Passed",
+            "seconds": 0.0481109
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/MeshyGuardTests-3.trx.gz"
+      }
+    ],
+    "ConsoleLog-cleanup": [
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/ConsoleLog-cleanup-1.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Installed_plain_WriteLine_never_blocks_a_stalled_consumer_and_drops",
+            "method": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Installed_plain_WriteLine_never_blocks_a_stalled_consumer_and_drops",
+            "outcome": "Passed",
+            "seconds": 0.1965532
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/ConsoleLog-cleanup-1.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/ConsoleLog-cleanup-2.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Installed_plain_WriteLine_never_blocks_a_stalled_consumer_and_drops",
+            "method": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Installed_plain_WriteLine_never_blocks_a_stalled_consumer_and_drops",
+            "outcome": "Passed",
+            "seconds": 0.1844103
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/ConsoleLog-cleanup-2.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/ConsoleLog-cleanup-3.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Installed_plain_WriteLine_never_blocks_a_stalled_consumer_and_drops",
+            "method": "Allegiance.Core.Tests.Transport.ConsoleLogNonBlockingTests.Installed_plain_WriteLine_never_blocks_a_stalled_consumer_and_drops",
+            "outcome": "Passed",
+            "seconds": 0.1976241
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/ConsoleLog-cleanup-3.trx.gz"
+      }
+    ],
+    "TierConventionTests": [
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/TierConventionTests-1.trx",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery(tierList: \"fast\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery",
+            "outcome": "Passed",
+            "seconds": 0.000151
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved(tier: \"Perf\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved",
+            "outcome": "Passed",
+            "seconds": 0.0001328
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery(tierList: \"\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery",
+            "outcome": "Passed",
+            "seconds": 0.0005266
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved(tier: \"Fast\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved",
+            "outcome": "Passed",
+            "seconds": 6.8e-06
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Default_is_fast_and_preserves_orthogonal_traits",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Default_is_fast_and_preserves_orthogonal_traits",
+            "outcome": "Passed",
+            "seconds": 0.0074721
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery(tierList: \"Fast,Live\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery",
+            "outcome": "Passed",
+            "seconds": 6.1e-06
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery(tierList: \"Fast,Fast\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery",
+            "outcome": "Passed",
+            "seconds": 9.5e-06
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved(tier: \"Live\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved",
+            "outcome": "Passed",
+            "seconds": 0.0001636
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/TierConventionTests-1.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/TierConventionTests-2.trx",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery(tierList: \"Fast,Fast\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery",
+            "outcome": "Passed",
+            "seconds": 8.6e-06
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Default_is_fast_and_preserves_orthogonal_traits",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Default_is_fast_and_preserves_orthogonal_traits",
+            "outcome": "Passed",
+            "seconds": 0.005978
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved(tier: \"Live\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved",
+            "outcome": "Passed",
+            "seconds": 0.0001282
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery(tierList: \"\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery",
+            "outcome": "Passed",
+            "seconds": 0.0003776
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved(tier: \"Fast\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved",
+            "outcome": "Passed",
+            "seconds": 6e-06
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery(tierList: \"fast\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery",
+            "outcome": "Passed",
+            "seconds": 0.0001052
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery(tierList: \"Fast,Live\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery",
+            "outcome": "Passed",
+            "seconds": 4.4e-06
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved(tier: \"Perf\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved",
+            "outcome": "Passed",
+            "seconds": 9.65e-05
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/TierConventionTests-2.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/TierConventionTests-3.trx",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery(tierList: \"fast\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery",
+            "outcome": "Passed",
+            "seconds": 0.0001091
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Default_is_fast_and_preserves_orthogonal_traits",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Default_is_fast_and_preserves_orthogonal_traits",
+            "outcome": "Passed",
+            "seconds": 0.0072028
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery(tierList: \"\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery",
+            "outcome": "Passed",
+            "seconds": 0.000432
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved(tier: \"Fast\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved",
+            "outcome": "Passed",
+            "seconds": 6.1e-06
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery(tierList: \"Fast,Fast\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery",
+            "outcome": "Passed",
+            "seconds": 9.9e-06
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery(tierList: \"Fast,Live\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Empty_duplicate_and_invalid_tiers_fail_discovery",
+            "outcome": "Passed",
+            "seconds": 5.2e-06
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved(tier: \"Live\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved",
+            "outcome": "Passed",
+            "seconds": 0.0001443
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved(tier: \"Perf\")",
+            "method": "Allegiance.ClientCore.Tests.TierConventionTests.Explicit_tier_is_preserved",
+            "outcome": "Passed",
+            "seconds": 7.49e-05
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/TierConventionTests-3.trx.gz"
+      }
+    ],
+    "deferred-topologies": [
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/deferred-topologies-1.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = HiLo, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0028031
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = InsideOut, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.016159
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = Star, Teams = 2, MapSize = 0, Total = 12, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 19 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.4614699
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = HiLo, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0227866
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = HiLo, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0070264
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 1, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 3 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0148747
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = HiHigher, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0117234
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = DoubleRing, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0159721
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 0, Total = 3, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 2 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0102127
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = EastWest, Teams = 2, MapSize = 0, Total = 26, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 49, EverySectorMinable = False })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0033385
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = LargeSplit, Total = 15, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.002909
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = Grid, Teams = 2, MapSize = 0, Total = 10, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0027418
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = HiHigher, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0028687
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = BigRing, Total = 6, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0107937
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = LargeSplit, Total = 15, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0133969
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = BigRing, Total = 6, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0132103
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = EastWest, Teams = 2, MapSize = 0, Total = 26, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 49, EverySectorMinable = False })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0028606
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 1, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 3 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0112492
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = HiHigher, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0118792
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = Star, Teams = 2, MapSize = 0, Total = 12, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 19 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0029781
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = DiamondRing, Teams = 3, MapSize = 0, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.009781
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = SplitBase, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 8, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0024668
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = SplitBase, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 8, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0053964
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = Star, Teams = 2, MapSize = 0, Total = 12, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 19 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0028401
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = SnowFlake, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 13 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0024588
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent(c: TopologyCase { Type = Grid, Teams = 2, MapSize = 0, Total = 10, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent",
+            "outcome": "Passed",
+            "seconds": 0.0028252
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = SnowFlake, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 13 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0029786
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = DiamondRing, Teams = 3, MapSize = 0, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0038202
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = BigRing, Total = 6, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0176088
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = LargeSplit, Total = 15, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0028076
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = DiamondRing, Teams = 3, MapSize = 0, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0176535
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = SnowFlake, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 13 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0025198
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 0, Total = 3, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 2 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0025733
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 0, Total = 3, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 2 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0027367
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = LargeSplit, Total = 15, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0178899
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = HiHigher, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0108319
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = DoubleRing, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0223409
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = HiLo, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0030756
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = Grid, Teams = 2, MapSize = 0, Total = 10, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.6152563
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = BigRing, Total = 6, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0137559
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent(c: TopologyCase { Type = SplitBase, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 8, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent",
+            "outcome": "Passed",
+            "seconds": 0.0025188
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 0, Total = 3, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 2 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0024793
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = Grid, Teams = 2, MapSize = 0, Total = 10, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0027873
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = SnowFlake, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 13 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0024928
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = DoubleRing, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0039332
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 1, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 3 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0025595
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = InsideOut, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0029547
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 1, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 3 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0024009
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = DoubleRing, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0987438
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = SplitBase, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 8, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.00264
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = Star, Teams = 2, MapSize = 0, Total = 12, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 19 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0027924
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent(c: TopologyCase { Type = EastWest, Teams = 2, MapSize = 0, Total = 26, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 49, EverySectorMinable = False })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent",
+            "outcome": "Passed",
+            "seconds": 0.0009692
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = DiamondRing, Teams = 3, MapSize = 0, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0038681
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = EastWest, Teams = 2, MapSize = 0, Total = 26, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 49, EverySectorMinable = False })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0028837
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = InsideOut, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0140818
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = InsideOut, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0028331
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/deferred-topologies-1.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/deferred-topologies-2.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 0, Total = 3, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 2 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0014923
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = HiHigher, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0147297
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = HiHigher, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0175558
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 0, Total = 3, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 2 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.001838
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = HiLo, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0016165
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = DiamondRing, Teams = 3, MapSize = 0, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0087788
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = EastWest, Teams = 2, MapSize = 0, Total = 26, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 49, EverySectorMinable = False })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0018462
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 0, Total = 3, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 2 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0015433
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = EastWest, Teams = 2, MapSize = 0, Total = 26, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 49, EverySectorMinable = False })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0018494
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = InsideOut, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0016019
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = SplitBase, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 8, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.008382
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = SnowFlake, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 13 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0015111
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 0, Total = 3, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 2 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.014257
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = Grid, Teams = 2, MapSize = 0, Total = 10, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.5449845
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = DiamondRing, Teams = 3, MapSize = 0, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0092028
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = HiHigher, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0017042
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = BigRing, Total = 6, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0159656
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = LargeSplit, Total = 15, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0061843
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 1, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 3 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0015593
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = InsideOut, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0041118
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = SnowFlake, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 13 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0014693
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = SnowFlake, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 13 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0018366
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = Star, Teams = 2, MapSize = 0, Total = 12, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 19 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0019188
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = DiamondRing, Teams = 3, MapSize = 0, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0129744
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 1, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 3 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.00135
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = DoubleRing, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.105104
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = Star, Teams = 2, MapSize = 0, Total = 12, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 19 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.4792659
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = Star, Teams = 2, MapSize = 0, Total = 12, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 19 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0018854
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = BigRing, Total = 6, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0031308
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = HiLo, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0027176
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = Star, Teams = 2, MapSize = 0, Total = 12, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 19 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0017963
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent(c: TopologyCase { Type = Grid, Teams = 2, MapSize = 0, Total = 10, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent",
+            "outcome": "Passed",
+            "seconds": 0.0017883
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = EastWest, Teams = 2, MapSize = 0, Total = 26, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 49, EverySectorMinable = False })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0021984
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = HiLo, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0121056
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = DoubleRing, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0039899
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = LargeSplit, Total = 15, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0092272
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = SplitBase, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 8, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0014141
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = DoubleRing, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.018241
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = BigRing, Total = 6, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0101786
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 1, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 3 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0082824
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 1, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 3 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0013924
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = InsideOut, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0105833
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = DoubleRing, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0179717
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = Grid, Teams = 2, MapSize = 0, Total = 10, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0030867
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent(c: TopologyCase { Type = SplitBase, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 8, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent",
+            "outcome": "Passed",
+            "seconds": 0.0013998
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = LargeSplit, Total = 15, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0017754
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = BigRing, Total = 6, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0100077
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = HiLo, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0017185
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent(c: TopologyCase { Type = EastWest, Teams = 2, MapSize = 0, Total = 26, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 49, EverySectorMinable = False })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent",
+            "outcome": "Passed",
+            "seconds": 0.0010137
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = SplitBase, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 8, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0015482
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = Grid, Teams = 2, MapSize = 0, Total = 10, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0019149
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = DiamondRing, Teams = 3, MapSize = 0, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0034926
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = InsideOut, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0171028
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = LargeSplit, Total = 15, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0028054
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = SnowFlake, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 13 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0093356
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = HiHigher, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0113817
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/deferred-topologies-2.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/deferred-topologies-3.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = HiLo, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0135011
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = InsideOut, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.009591
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = SnowFlake, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 13 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.002741
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = LargeSplit, Total = 15, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0029845
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 1, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 3 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0024002
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = Star, Teams = 2, MapSize = 0, Total = 12, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 19 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0026849
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent(c: TopologyCase { Type = SplitBase, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 8, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent",
+            "outcome": "Passed",
+            "seconds": 0.0025648
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 0, Total = 3, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 2 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0025119
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 1, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 3 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0025932
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = BigRing, Total = 6, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0118765
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = EastWest, Teams = 2, MapSize = 0, Total = 26, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 49, EverySectorMinable = False })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0028783
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 0, Total = 3, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 2 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0124653
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent(c: TopologyCase { Type = EastWest, Teams = 2, MapSize = 0, Total = 26, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 49, EverySectorMinable = False })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent",
+            "outcome": "Passed",
+            "seconds": 0.0009829
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = SnowFlake, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 13 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0024501
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = SplitBase, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 8, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0024649
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = DoubleRing, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0035942
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = EastWest, Teams = 2, MapSize = 0, Total = 26, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 49, EverySectorMinable = False })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0032397
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = HiHigher, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0109573
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 1, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 3 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0023232
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = Star, Teams = 2, MapSize = 0, Total = 12, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 19 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0028082
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = Grid, Teams = 2, MapSize = 0, Total = 10, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0029114
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = HiLo, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0018158
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = HiLo, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0014632
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = DoubleRing, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0252697
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 1, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 3 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0024048
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = HiHigher, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0182755
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = BigRing, Total = 6, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0029076
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = InsideOut, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0134507
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = LargeSplit, Total = 15, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0017029
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = DiamondRing, Teams = 3, MapSize = 0, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0036945
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = SplitBase, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 8, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.002526
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = Star, Teams = 2, MapSize = 0, Total = 12, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 19 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0041287
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = SplitBase, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 8, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0026457
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = Star, Teams = 2, MapSize = 0, Total = 12, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 19 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.5491406
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = LargeSplit, Total = 15, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0126529
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = InsideOut, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0016595
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = SnowFlake, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 13 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0024321
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = DoubleRing, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.1258682
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = LargeSplit, Total = 15, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0021216
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent(c: TopologyCase { Type = Grid, Teams = 2, MapSize = 0, Total = 10, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_MinableAsteroidsPresent",
+            "outcome": "Passed",
+            "seconds": 0.0028327
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = BigRing, Total = 6, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.010453
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = DiamondRing, Teams = 3, MapSize = 0, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0054244
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = HiHigher, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0015853
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = InsideOut, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0028415
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 0, Total = 3, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 2 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0024944
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = DoubleRing, Total = 4, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0212724
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = DiamondRing, Teams = 3, MapSize = 0, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0036425
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids(c: TopologyCase { Type = HiLo, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_EverySectorHasMinableAsteroids",
+            "outcome": "Passed",
+            "seconds": 0.0028056
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = BigRing, Total = 6, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 6 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0181388
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = Grid, Teams = 2, MapSize = 0, Total = 10, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0027063
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = SnowFlake, Teams = 2, MapSize = 0, Total = 8, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 13 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.00243
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = DiamondRing, Teams = 3, MapSize = 0, Total = 9, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 12 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.0038119
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors(c: TopologyCase { Type = HiHigher, Total = 13, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20 })",
+            "method": "Allegiance.Core.Tests.MapGenRingFamilyTests.Topology_CorrectSectorCount_AndHomeSectors",
+            "outcome": "Passed",
+            "seconds": 0.0127867
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = PinWheel, Teams = 2, MapSize = 0, Total = 3, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 2 })",
+            "method": "Allegiance.Core.Tests.MapGenRadialFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0024704
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone(c: TopologyCase { Type = EastWest, Teams = 2, MapSize = 0, Total = 26, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 49, EverySectorMinable = False })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_HomeSectorsGetStations_NeutralSectorsHaveNone",
+            "outcome": "Passed",
+            "seconds": 0.0126946
+          },
+          {
+            "name": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph(c: TopologyCase { Type = Grid, Teams = 2, MapSize = 0, Total = 10, Homes = System.Int16[], Adjacency = System.Collections.Generic.Dictionary`2[System.Int16,System.Int16[]], EdgeCount = 20, EverySectorMinable = True })",
+            "method": "Allegiance.Core.Tests.MapGenGridFamilyTests.Topology_Adjacency_MatchesTracedNativeGraph",
+            "outcome": "Passed",
+            "seconds": 0.5247381
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/deferred-topologies-3.trx.gz"
+      }
+    ],
+    "P660-opt-in": [
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/P660-opt-in-1.trx",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+            "method": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+            "outcome": "Passed",
+            "seconds": 22.3300653
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/P660-opt-in-1.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/P660-opt-in-2.trx",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+            "method": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+            "outcome": "Passed",
+            "seconds": 22.2149544
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/P660-opt-in-2.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/P660-opt-in-3.trx",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+            "method": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+            "outcome": "Passed",
+            "seconds": 22.2339577
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/P660-opt-in-3.trx.gz"
+      }
+    ]
+  },
+  "isolation": {
+    "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock": [
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/isolation-0-1.trx",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock",
+            "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock",
+            "outcome": "Passed",
+            "seconds": 4.4721734
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/isolation-0-1.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/isolation-0-2.trx",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock",
+            "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock",
+            "outcome": "Passed",
+            "seconds": 4.4648117
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/isolation-0-2.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/isolation-0-3.trx",
+        "rows": [
+          {
+            "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock",
+            "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock",
+            "outcome": "Passed",
+            "seconds": 4.4682109
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/isolation-0-3.trx.gz"
+      }
+    ],
+    "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self": [
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/isolation-1-1.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+            "method": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+            "outcome": "Passed",
+            "seconds": 0.177721
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/isolation-1-1.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/isolation-1-2.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+            "method": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+            "outcome": "Passed",
+            "seconds": 0.1739323
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/isolation-1-2.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/isolation-1-3.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+            "method": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+            "outcome": "Passed",
+            "seconds": 0.1825435
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/isolation-1-3.trx.gz"
+      }
+    ],
+    "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn": [
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/isolation-2-1.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+            "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+            "outcome": "Passed",
+            "seconds": 0.2176784
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/isolation-2-1.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/isolation-2-2.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+            "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+            "outcome": "Passed",
+            "seconds": 0.2167437
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/isolation-2-2.trx.gz"
+      },
+      {
+        "code": 0,
+        "passed": true,
+        "trx": "/tmp/tt1-post/isolation-2-3.trx",
+        "rows": [
+          {
+            "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+            "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+            "outcome": "Passed",
+            "seconds": 0.2163044
+          }
+        ],
+        "archive": "docs/reports/TT1_assets/focused/isolation-2-3.trx.gz"
+      }
+    ]
+  },
+  "filteredFastCode": 0,
+  "auditCode": 0
+}

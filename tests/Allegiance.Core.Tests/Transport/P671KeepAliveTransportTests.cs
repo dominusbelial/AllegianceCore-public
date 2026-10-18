@@ -187,6 +187,7 @@ public class P671KeepAliveTransportTests
     /// that a 6 s keep-alive maintains indefinitely).
     /// </summary>
     [Fact]
+    [Trait("Tier", "Live")]
     public void PeriodicHealthyPeer_IsNotDropped()
     {
         var savedIdle = TcpTransport.DataLinkIdleTimeout;

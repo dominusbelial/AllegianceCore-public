@@ -141,6 +141,7 @@ public sealed class NonBlockingSendLiveTests
     /// forever). This is the core anti-freeze claim of P311.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
+    [Trait("Tier", "Perf")]
     public void Others_keep_ticking_and_mission_advances_while_one_peer_stalls_then_disconnects()
     {
         Require.Artwork();

@@ -10,6 +10,7 @@ using Srv = Allegiance.Server.Server;
 
 namespace Allegiance.Core.Tests;
 
+[Trait("Tier", "Live")]
 public sealed class P699bPodLoadTests(ITestOutputHelper output)
 {
     [SkippableFact, Trait("Requires", "Artwork")]

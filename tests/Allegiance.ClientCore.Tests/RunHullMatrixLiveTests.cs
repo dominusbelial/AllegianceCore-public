@@ -29,6 +29,7 @@ namespace Allegiance.ClientCore.Tests;
 ///     before the next ran, so measurements never bled.
 /// </summary>
 [Collection("LiveNetwork")]
+[Trait("Tier", "Live")]
 public sealed class RunHullMatrixLiveTests
 {
     private static readonly string ArtRoot =

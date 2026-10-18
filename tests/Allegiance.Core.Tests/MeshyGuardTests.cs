@@ -46,6 +46,10 @@ public class MeshyGuardTests
         Assert.False(string.IsNullOrEmpty(root), "could not locate the repo root (AllegianceCore.slnx marker)");
 
         var offenders = new List<string>();
+        // TT-1: reuse one repo-wide snapshot. Re-running git for each inventory
+        // row made this Fast guard exceed ten seconds.
+        var tracked = GitLsFilesAll(root);
+        var trackedSet = tracked.ToHashSet(StringComparer.Ordinal);
 
         // 1. Location-based.
         offenders.AddRange(Locate(root, "src/Allegiance.ClientCore.MonoGame/Content/Models"));
@@ -53,7 +57,7 @@ public class MeshyGuardTests
         offenders.AddRange(Locate(root, "assets/ships/thumbs"));
 
         // 2. Extension-based across the whole repo.
-        foreach (var rel in GitLsFilesAll(root))
+        foreach (var rel in tracked)
         {
             var lower = rel.ToLowerInvariant();
             if (ModelExtensions.Any(e => lower.EndsWith(e, StringComparison.Ordinal)))
@@ -61,7 +65,7 @@ public class MeshyGuardTests
         }
 
         // 3. Name-based across the whole repo (media files only), excluding allowed dirs.
-        foreach (var rel in GitLsFilesAll(root))
+        foreach (var rel in tracked)
         {
             var lower = rel.ToLowerInvariant();
             if (!MediaExtensions.Any(e => lower.EndsWith(e, StringComparison.Ordinal))) continue;
@@ -82,7 +86,7 @@ public class MeshyGuardTests
                 var cls = cols[2].Trim();
                 if (!string.Equals(cls, "a", StringComparison.Ordinal)) continue;
                 var rel = cols[0].Trim();
-                if (GitLsFilesAll(root).Contains(rel))
+                if (trackedSet.Contains(rel))
                     offenders.Add($"media-inventory.csv class=a: {rel}");
             }
         }

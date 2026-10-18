@@ -218,6 +218,7 @@ public class TcpTransportSendWorkerPoolTests
     /// would stall the healthy peer too; the pool's skip-not-writable logic
     /// keeps the healthy peer's delivery latency bounded.</summary>
     [Fact]
+    [Trait("Tier", "Perf")]
     public void Pool_stalled_peer_does_not_delay_a_neighbor_on_the_same_worker()
     {
         var site = new Site();
@@ -281,6 +282,7 @@ public class TcpTransportSendWorkerPoolTests
     /// queue; and the pool worker count is untouched (no worker leaked).
     /// Post-disconnect sends stay silent (P60).</summary>
     [Fact]
+    [Trait("Tier", "Perf")]
     public void Pool_overflow_drops_and_disconnects_a_stalled_peer_without_leaking_workers()
     {
         using var _ = ShortenOverflowTimer();
