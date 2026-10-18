@@ -312,6 +312,8 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _noFuel = null!;          // vo_sal_nofuel — salNoFuelSound (:811)
     private SoundEffect _noRipcord = null!;       // vo_sal_noripcord — salNoRipcordSound (:348)
     private SoundEffect _shieldsOffline = null!;  // P717 — vo_sal_shieldsoffline — salShieldsOfflineSound (:791)
+    private SoundEffect _shieldActivate = null!;  // P741 — shieldup — fastShieldActivate (sounddef.mdl:1310)
+    private SoundEffect _shieldDeactivate = null!;// P741 — noshld — fastShieldDeactivate (sounddef.mdl:1311)
     private SoundEffect _cloakEngage = null!;     // P735 — vo_sal_cloakengage — salCloakEngageSound (:807)
     // P714 — objective & status announce one-shots (appmsg.cpp:1238,2965,3149,3156,3169).
     // Waves from sounddef.mdl:771,773,776,779,780.
@@ -809,6 +811,8 @@ public sealed class SoundManager : IDisposable
             _noFuel = LoadSound("Sounds/vo_sal_nofuel");
             _noRipcord = LoadSound("Sounds/vo_sal_noripcord");
             _shieldsOffline = LoadSound("Sounds/vo_sal_shieldsoffline"); // P717 — salShieldsOfflineSound (:791)
+            _shieldActivate = LoadSound("Sounds/shieldup");      // P741 — fastShieldActivate (sounddef.mdl:1310)
+            _shieldDeactivate = LoadSound("Sounds/noshld");      // P741 — fastShieldDeactivate (sounddef.mdl:1311)
             _cloakEngage = LoadSound("Sounds/vo_sal_cloakengage"); // P735 — salCloakEngageSound (:807)
             // P714 — objective & status announce one-shots. Waves from
             // sounddef.mdl:771,773,776,779,780.
@@ -1189,6 +1193,8 @@ public sealed class SoundManager : IDisposable
     /// native <c>salShieldsOfflineSound</c>, shieldIGC.cpp:186). No-op when not
     /// loaded.</summary>
     public void PlayShieldsOffline() => PlayWarnOneShot(_shieldsOffline);
+    public void PlayShieldActivate() => PlayWarnOneShot(_shieldActivate);
+    public void PlayShieldDeactivate() => PlayWarnOneShot(_shieldDeactivate);
 
     /// <summary>P735 — play the cloak-engage cue (<c>vo_sal_cloakengage</c>,
     /// native <c>salCloakEngageSound</c>, shipIGC.cpp:1608). No-op when not
@@ -2139,6 +2145,8 @@ public sealed class SoundManager : IDisposable
             _noFuel?.Dispose();           // P711
             _noRipcord?.Dispose();        // P711
             _shieldsOffline?.Dispose();   // P717
+            _shieldActivate?.Dispose();   // P741
+            _shieldDeactivate?.Dispose(); // P741
             _cloakEngage?.Dispose();      // P735
             _ripcordLoop?.Dispose();      // P711
             _miningLoop?.Dispose();       // P711

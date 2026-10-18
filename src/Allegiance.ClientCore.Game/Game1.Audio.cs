@@ -541,6 +541,19 @@ public sealed partial class Game1
                     // salShieldsOfflineSound, shieldIGC.cpp:186; vo_sal_shieldsoffline).
                     snd.PlayShieldsOffline();
                     break;
+                case ClientSoundEventKind.ShieldActivate:
+                    // P741 — the own shield powered back up past 5% (native
+                    // m_typeData->activateSound, shieldIGC.cpp:94; shieldup).
+                    snd.PlayShieldActivate();
+                    Console.WriteLine("[monogame] audio: shield power up");
+                    break;
+                case ClientSoundEventKind.ShieldDeactivate:
+                    // P741 — the own shield went down to overload damage (native
+                    // m_typeData->deactivateSound, shieldIGC.cpp:185; noshld),
+                    // alongside the shields-offline VO.
+                    snd.PlayShieldDeactivate();
+                    Console.WriteLine("[monogame] audio: shield power down");
+                    break;
                 case ClientSoundEventKind.CloakEngaged:
                     // P735 — the own ship's cloak engaged (native
                     // salCloakEngageSound, shipIGC.cpp:1608; vo_sal_cloakengage,

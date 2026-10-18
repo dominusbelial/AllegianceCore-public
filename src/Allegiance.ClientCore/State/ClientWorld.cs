@@ -632,6 +632,12 @@ public sealed partial class ClientWorld
     /// first own-ship update is seen.</summary>
     private bool? _prevOwnShieldOnline;
 
+    /// <summary>P741 — SIM-0241: the local ship's own shield fraction at the last
+    /// <see cref="UpdateOwnStatusAlarms"/> sample, for the shield power-up edge
+    /// (regenerating from below to at-or-above the 5% threshold,
+    /// shieldIGC.cpp:94). Null until the first own-ship update is seen.</summary>
+    private float? _prevOwnShieldFraction;
+
     /// <summary>P735 — SIM-0248: the local ship's own CloakActive stateM bit at
     /// the last <see cref="UpdateOwnStatusAlarms"/> sample, for the cloak-engage
     /// edge (a cloak that was off and then turned on). Null until the first
@@ -674,11 +680,28 @@ public sealed partial class ClientWorld
         // shieldIGC.cpp:186) fires on the LOCAL ship's own shield collapsing
         // from online to ≈0 (native plays it when overload damage knocks the
         // shield past the downed threshold). Mirrored as a positive→≈0 edge on
-        // the streamed ShieldFraction, exactly once per collapse.
+        // the streamed ShieldFraction, exactly once per collapse. P741 —
+        // SIM-0242: native plays the positional shield power-DOWN cue
+        // (m_typeData->deactivateSound, shieldIGC.cpp:185) on the SAME overload
+        // branch, so the same edge also fires ShieldDeactivate (shieldup/noshld
+        // pair, sounddef.mdl:1310-1311).
         bool shieldOnline = u.ShieldFraction > ShipStatusAlarms.ShieldOfflineEpsilon;
         if (_prevOwnShieldOnline is { } prevOnline && prevOnline && !shieldOnline)
+        {
             RecordSoundEvent(ClientSoundEventKind.ShieldsOffline, me);
+            RecordSoundEvent(ClientSoundEventKind.ShieldDeactivate, me);
+        }
         _prevOwnShieldOnline = shieldOnline;
+
+        // P741 — SIM-0241: the shield power-UP cue (m_typeData->activateSound,
+        // shieldIGC.cpp:94) fires when the local ship's own shield regenerates
+        // from below 5% to at-or-above 5%. Mirrored as a rising-cross edge on
+        // the streamed ShieldFraction, exactly once per power-up.
+        if (_prevOwnShieldFraction is { } prevFraction &&
+            prevFraction < ShipStatusAlarms.ShieldActivateThreshold &&
+            u.ShieldFraction >= ShipStatusAlarms.ShieldActivateThreshold)
+            RecordSoundEvent(ClientSoundEventKind.ShieldActivate, me);
+        _prevOwnShieldFraction = u.ShieldFraction;
 
         // P735 — SIM-0248: the cloak-engage VO (salCloakEngageSound,
         // shipIGC.cpp:1608) fires when the ship's CloakActive state bit goes

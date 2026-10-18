@@ -68,6 +68,18 @@
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_shieldsoffline.ogg
 
+#begin Sounds/shieldup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/shieldup.ogg
+
+#begin Sounds/noshld.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/noshld.ogg
+
 #begin Sounds/sshipint.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

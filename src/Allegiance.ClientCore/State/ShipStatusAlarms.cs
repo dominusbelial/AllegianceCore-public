@@ -87,6 +87,13 @@ public static class ShipStatusAlarms
     /// <c>salShieldsOfflineSound</c> plays (shieldIGC.cpp:185-186).</summary>
     public const float ShieldOfflineEpsilon = 0.004f;
 
+    /// <summary>P741 — the native shield power-up threshold for the
+    /// <c>activateSound</c> edge (SIM-0241): a regenerating shield crossing from
+    /// below to at-or-above this fraction plays the shield power-up cue
+    /// (shieldIGC.cpp:94, <c>previousFraction &lt; 0.05 &amp;&amp; m_fraction &gt;=
+    /// 0.05</c>).</summary>
+    public const float ShieldActivateThreshold = 0.05f;
+
     /// <summary>
     /// Edge-detect the one-shot status alarms between two consecutive own-ship
     /// snapshots. Returns the alarms whose trigger condition JUST became true

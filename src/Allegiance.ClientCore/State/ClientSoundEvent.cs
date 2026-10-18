@@ -331,6 +331,26 @@ public enum ClientSoundEventKind
     /// on EVERY successful reload of any pool/launcher (clintlib.cpp:3219,3404;
     /// shipIGC.h:617,647; wave <c>mount</c>, sounddef.mdl:289).</summary>
     StartReload,
+
+    // ── P741 (parity wave 25: own-ship shield power edges + quit reasons) ──
+    // Native fires the shield power-up/down cues from CshieldIGC on the OWN
+    // shield object (shieldIGC.cpp:94,185): the power-up cue when the shield
+    // regenerates across the 5% threshold, the power-down cue when overload
+    // damage knocks it past the downed threshold (alongside the shields-offline
+    // VO). This pure-renderer client observes the LOCAL ship's own streamed
+    // <c>ShieldFraction</c> (the same source SIM-0243 uses) and edge-detects the
+    // two native thresholds, exactly once per transition.
+
+    /// <summary><c>m_typeData->activateSound</c> — the local ship's shield
+    /// regenerated from below 5% to 5% or more (shieldIGC.cpp:94; wave
+    /// <c>shieldup</c> — fastShieldActivate, sounddef.mdl:1310).</summary>
+    ShieldActivate,
+
+    /// <summary><c>m_typeData->deactivateSound</c> — the local ship's shield was
+    /// knocked offline by overload damage, alongside <see cref="ShieldsOffline"/>
+    /// (shieldIGC.cpp:185; wave <c>noshld</c> — fastShieldDeactivate,
+    /// sounddef.mdl:1311).</summary>
+    ShieldDeactivate,
 }
 
 /// <summary>A single observed sound event.</summary>

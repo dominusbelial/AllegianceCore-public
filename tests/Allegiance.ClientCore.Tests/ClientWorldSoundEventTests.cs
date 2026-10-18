@@ -499,7 +499,7 @@ public class ClientWorldSoundEventTests
     }
 
     [Fact]
-    public void OwnShieldCollapses_RecordsShieldsOffline()
+    public void OwnShieldCollapses_RecordsShieldsOffline_AndShieldDeactivate()
     {
         var w = ShieldArmedWorld(774, shieldFraction: 0.9f);
 
@@ -516,9 +516,103 @@ public class ClientWorldSoundEventTests
         });
         w.UpdateOwnStatusAlarms();
 
+        // Native plays BOTH the shields-offline VO (SIM-0243) and the positional
+        // shield power-down cue (SIM-0242) on the same overload branch
+        // (shieldIGC.cpp:185-186).
+        var evs = w.TakeSoundEvents();
+        Assert.Collection(evs,
+            e => Assert.Equal(ClientSoundEventKind.ShieldsOffline, e.Kind),
+            e => Assert.Equal(ClientSoundEventKind.ShieldDeactivate, e.Kind));
+        Assert.All(evs, e => Assert.Equal((short)774, e.Id));
+    }
+
+    // ── P741 (parity wave 25): own-ship shield power edges ───────────────
+
+    [Fact]
+    public void OwnShieldRegeneratesPast5Percent_RecordsShieldActivate()
+    {
+        var w = ShieldArmedWorld(774, shieldFraction: 0.02f);   // arm below 5%
+
+        w.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromValues(
+                774, stateM: 0, new ControlData(0f, 0f, 0f, 0f), time: 2u,
+                Vector3.Zero, Orientation.Identity, Vector3.Zero,
+                turnRates: new[] { 0f, 0f, 0f },
+                hullFrac: 0.9f, shieldFrac: 0.07f, ammoFrac: 1f, fuelFrac: 1f,
+                energyFrac: 1f, oreFrac: 0f, power: 1f),
+            Cookie = 0x2,
+        });
+        w.UpdateOwnStatusAlarms();
+
         var ev = Assert.Single(w.TakeSoundEvents());
-        Assert.Equal(ClientSoundEventKind.ShieldsOffline, ev.Kind);
+        Assert.Equal(ClientSoundEventKind.ShieldActivate, ev.Kind);
         Assert.Equal((short)774, ev.Id);
+    }
+
+    [Fact]
+    public void OwnShieldAlreadyAbove5Percent_NoShieldActivate()
+    {
+        var w = ShieldArmedWorld(774, shieldFraction: 0.8f);   // arm above 5%
+
+        w.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromValues(
+                774, stateM: 0, new ControlData(0f, 0f, 0f, 0f), time: 2u,
+                Vector3.Zero, Orientation.Identity, Vector3.Zero,
+                turnRates: new[] { 0f, 0f, 0f },
+                hullFrac: 0.9f, shieldFrac: 0.7f, ammoFrac: 1f, fuelFrac: 1f,
+                energyFrac: 1f, oreFrac: 0f, power: 1f),
+            Cookie = 0x2,
+        });
+        w.UpdateOwnStatusAlarms();
+
+        Assert.Empty(w.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void OwnShieldStaysBelow5Percent_NoShieldActivate()
+    {
+        var w = ShieldArmedWorld(774, shieldFraction: 0.007f);  // arm well under 5%
+
+        w.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromValues(
+                774, stateM: 0, new ControlData(0f, 0f, 0f, 0f), time: 2u,
+                Vector3.Zero, Orientation.Identity, Vector3.Zero,
+                turnRates: new[] { 0f, 0f, 0f },
+                hullFrac: 0.9f, shieldFrac: 0.013f, ammoFrac: 1f, fuelFrac: 1f,
+                energyFrac: 1f, oreFrac: 0f, power: 1f),
+            Cookie = 0x2,
+        });
+        w.UpdateOwnStatusAlarms();
+
+        Assert.Empty(w.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void OwnShieldCollapse_DoesNotAlsoFireShieldActivate()
+    {
+        var w = ShieldArmedWorld(774, shieldFraction: 0.9f);
+
+        w.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromValues(
+                774, stateM: 0, new ControlData(0f, 0f, 0f, 0f), time: 2u,
+                Vector3.Zero, Orientation.Identity, Vector3.Zero,
+                turnRates: new[] { 0f, 0f, 0f },
+                hullFrac: 0.9f, shieldFrac: 0f, ammoFrac: 1f, fuelFrac: 1f,
+                energyFrac: 1f, oreFrac: 0f, power: 1f),
+            Cookie = 0x2,
+        });
+        w.UpdateOwnStatusAlarms();
+
+        var evs = w.TakeSoundEvents();
+        Assert.DoesNotContain(evs, e => e.Kind == ClientSoundEventKind.ShieldActivate);
     }
 
     [Fact]
@@ -886,6 +980,57 @@ public class ClientWorldSoundEventTests
         world.Apply(new QuitMission { ShipId = 704, Reason = QuitSideReason.LinkDead });
 
         Assert.Equal(ClientSoundEventKind.SalQuit, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void SameSideHumanBootedByLeader_RecordsSalQuit()
+    {
+        // P741 — SIM-0454: a teammate booted by the team leader (QSR_LeaderBooted,
+        // clintlib.cpp:3934) voices salQuitSound. The port server broadcasts this
+        // reason via HandleQuitMission (Server.Moderation.cs:19), so the reachable
+        // ApplySideLeave default branch (any same-side reason that isn't
+        // LinkDead/SwitchingSides) fires SalQuit.
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 612, side: 2);
+
+        world.Apply(new QuitMission { ShipId = 612, Reason = QuitSideReason.LeaderBooted });
+
+        Assert.Equal(ClientSoundEventKind.SalQuit, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void SameSideHumanQuitsVoluntarily_RecordsSalQuit()
+    {
+        // P741 — SIM-0460: a teammate voluntarily quit (QSR_Quit, clintlib.cpp:3970)
+        // voices salQuitSound. Reachable via HandleQuitMission's self-quit path.
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 613, side: 2);
+
+        world.Apply(new QuitMission { ShipId = 613, Reason = QuitSideReason.Quit });
+
+        Assert.Equal(ClientSoundEventKind.SalQuit, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void DroneInTransitChat_RecordsChatVoiceOver()
+    {
+        // P741 — SIM-0260/0262: the port's drone combat AI broadcasts team chat
+        // carrying droneInTransitSound (1337, "Attacking"/"Switching target",
+        // Ship.NpcUpdates.cs:161,306). The client resolves any VoiceOver-carrying
+        // chat to ChatVoiceOver (trekigc.cpp:4530-4536) and the drone id to the
+        // vo_miner_intransit wave (DroneChatterCue.Resolve).
+        var world = new ClientWorld();
+        world.Apply(new ChatMessage
+        {
+            SidSender = 901,
+            ChatTarget = (int)Allegiance.Core.Sim.ChatTarget.Everyone,
+            VoiceOver = Allegiance.Core.Sim.DroneChatterCue.DroneInTransitSound,
+            CommandID = -1,
+        });
+
+        Assert.Equal(ClientSoundEventKind.ChatVoiceOver, Assert.Single(world.TakeSoundEvents()).Kind);
+        Assert.Equal("vo_miner_intransit",
+            Allegiance.Core.Sim.DroneChatterCue.Resolve(Allegiance.Core.Sim.DroneChatterCue.DroneInTransitSound));
     }
 
     [Fact]
