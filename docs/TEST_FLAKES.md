@@ -1900,3 +1900,21 @@ these failures.
 under `docs/reports/TT1_assets/sweep/` and `docs/reports/TT1_assets/focused/`.
 The distinct hygiene-duration and deferred-theory accounting findings were fixed
 and verified separately; they are not classified as load flakes.
+
+## TR-1 training framework observation (2026-10-18)
+
+The required single Fast-tier sweep ran the final code with the new training tests
+included. Allegiance.ClientCore.Tests MAIN passed **1301/1301** (including the 24
+new training tests). Failures surfaced in Allegiance.Core.Tests (not code this
+change touches) and were disposed per the load-flake rule:
+
+| Case | Symptom | Disposal |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.P674ParityScorecardTests.Both_repository_matrices_validate_and_print_scorecards` | parity-matrix.csv:348 expected 6 columns, got 11 | A comma slipped into the CSV cell this change edits; the CSV was fixed and the class passed **3/3 in isolation**. This was a defect in code this change touched and was corrected, not waived. |
+| `Allegiance.Core.Tests.PaydayTests.ZeroPlayerSide_does_not_crash_and_accrues_without_paying` | payday accrual check under suite load | Passed **3/3 exact-method isolated invocations**; load flake, not this change's code. |
+| `Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog` | quarantine lane; live-socket priority-lane ordering | Already listed in the P647 quarantine table below (`TcpTransportPriorityLane{Pool,ThreadPerPeer}Tests... 0/10 load-flake`); not this change's code. Retained in the quarantine lane. |
+
+No assertion, deadline, quarantine trait or product code was changed for the two
+pre-existing flakes. The P674 CSV defect was a formatting mistake in this task's
+own parity-matrix edit and was fixed; the suite numbers above are as measured on
+the run that caught it.
