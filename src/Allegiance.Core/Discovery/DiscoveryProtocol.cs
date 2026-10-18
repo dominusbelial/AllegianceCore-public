@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Allegiance.Core.Discovery;
 
@@ -38,12 +39,10 @@ public static class DiscoveryProtocol
 
     public static readonly Encoding Utf8 = Encoding.UTF8;
 
-    public static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-        // Replies are small; indentation costs bytes on UDP for no benefit here.
-        WriteIndented = false,
-    };
+    /// <summary>Case-insensitive, unindented options backed by the source-generated
+    /// <see cref="DiscoveryJsonContext"/> (the server publishes with native AOT, which
+    /// rejects reflection-based serialization).</summary>
+    public static JsonSerializerOptions JsonOptions => DiscoveryJsonContext.Default.Options;
 
     /// <summary>The client's one-datagram query.</summary>
     public sealed class Request
@@ -92,12 +91,12 @@ public static class DiscoveryProtocol
 
     public static byte[] EncodeRequest(string nonce)
     {
-        return Utf8.GetBytes(JsonSerializer.Serialize(new Request { Nonce = nonce }, JsonOptions));
+        return Utf8.GetBytes(JsonSerializer.Serialize(new Request { Nonce = nonce }, DiscoveryJsonContext.Default.Request));
     }
 
     public static byte[] EncodeReply(Reply reply)
     {
-        return Utf8.GetBytes(JsonSerializer.Serialize(reply, JsonOptions));
+        return Utf8.GetBytes(JsonSerializer.Serialize(reply, DiscoveryJsonContext.Default.Reply));
     }
 
     /// <summary>Best-effort parse of a request datagram; returns null when the
@@ -108,8 +107,8 @@ public static class DiscoveryProtocol
         if (length <= 0) return null;
         try
         {
-            var req = JsonSerializer.Deserialize<Request>(
-                Utf8.GetString(data, 0, length), JsonOptions);
+            var req = JsonSerializer.Deserialize(
+                Utf8.GetString(data, 0, length), DiscoveryJsonContext.Default.Request);
             if (req is null || req.Magic != Magic || req.V != Version)
                 return null;
             return req;
@@ -127,8 +126,8 @@ public static class DiscoveryProtocol
         if (length <= 0) return null;
         try
         {
-            var rep = JsonSerializer.Deserialize<Reply>(
-                Utf8.GetString(data, 0, length), JsonOptions);
+            var rep = JsonSerializer.Deserialize(
+                Utf8.GetString(data, 0, length), DiscoveryJsonContext.Default.Reply);
             if (rep is null || rep.Magic != Magic || rep.V != Version)
                 return null;
             return rep;
@@ -146,3 +145,9 @@ public static class DiscoveryProtocol
         return Convert.ToHexString(b);
     }
 }
+
+// Replies are small; indentation costs bytes on UDP for no benefit here.
+[JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true, WriteIndented = false)]
+[JsonSerializable(typeof(DiscoveryProtocol.Request))]
+[JsonSerializable(typeof(DiscoveryProtocol.Reply))]
+public partial class DiscoveryJsonContext : JsonSerializerContext;
