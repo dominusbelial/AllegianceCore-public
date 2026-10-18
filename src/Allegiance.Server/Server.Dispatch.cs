@@ -742,6 +742,11 @@ public sealed partial class Server
                     Console.WriteLine($"[wire] bad BUY_LOADOUT from {from}: {e.Message}");
                 }
             }
+            else if (fmid == QuitMission.Fmid)
+            {
+                try { HandleQuitMission(from, command.Read<QuitMission>()); }
+                catch (Exception e) { ConsoleLog.Write($"[wire] bad QUIT_MISSION from {from}: {e.Message}"); }
+            }
             else if (fmid == PositionReq.Fmid)   // FM_C_POSITIONREQ (Messages.h:320-323)
             {
                 // P184 — a client's request to be seated on a side. Port of

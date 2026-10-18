@@ -701,6 +701,7 @@ public sealed partial class Game1
     /// (the unchanged direct-connect path).</summary>
     private void BeginConnect(string host, ushort port)
     {
+        _moderation.Reset();
         _state = ClientState.Connecting;
         // P500 — record the ACTIVE target here, not just from LaunchOptions.
         // Every join (lobby, connect screen, resume) remembers where we are, so
@@ -794,6 +795,8 @@ public sealed partial class Game1
     // ── P214 — chat ──────────────────────────────────────────────────────────
     /// <summary>Sends the composed line to the current <see cref="_chatTarget"/>
     /// (default Team, P456) and closes the input.</summary>
+    private readonly ModerationModel _moderation = new();
+
     private void SendChatLine()
     {
         string text = _chatBuffer.ToString().Trim();
@@ -801,6 +804,14 @@ public sealed partial class Game1
         _chatBuffer.Clear();
         if (text.Length == 0)
             return;
+        lock (_session.Gate)
+        {
+            if (_moderation.Handle(text, _session.World, out var boot))
+            {
+                if (boot is { } id) _session.SendQuitMission(id, QuitSideReason.LeaderBooted);
+                return;
+            }
+        }
         Console.WriteLine($"[monogame] chat ({_chatTarget}) >> {text}");
         // P456: send to the compose's current target, not a hardcoded Everyone —
         // the recipient is client state (_chatTarget) so Tab cycling works and

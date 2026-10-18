@@ -1,0 +1,14 @@
+{
+  "all_report_evidence_links_exist": true,
+  "merge_metadata_unchanged": true,
+  "source_and_binary_fingerprints_match": true,
+  "all_evidence_scripts_parse": true,
+  "focused_methods": 250,
+  "focused_invocations": 750,
+  "focused_failed": 0,
+  "showcases_passed": 5,
+  "qualified_load_flake_methods": 2,
+  "LF_matrices": true,
+  "report_sha256": "26fff19546e2e27575fdb1bb4d51e7787e670a4694454767e69f08f58927a449",
+  "flake_ledger_sha256": "4ae8fb4c59a33417f3e5823d887f33a7bd201a0be6363d3a927811b8847a6597"
+}

@@ -1709,7 +1709,9 @@ public sealed partial class Server
     /// because of LOGOFF also hold the original frame for its guaranteed echo
     /// before releasing. Idempotent: a second call (LOGOFF, then the
     /// transport's own OnPeerLeft) is a no-op.</summary>
-    private void ReleasePeer(ConnectionId id)
+    private void ReleasePeer(ConnectionId id) => ReleasePeerWithReason(id, QuitSideReason.LinkDead);
+
+    private void ReleasePeerWithReason(ConnectionId id, QuitSideReason reason)
     {
         // P281 — a pending side-select peer (logged on, not yet spawned) is
         // released the same way: drop it from the pending hold.
@@ -1848,7 +1850,7 @@ public sealed partial class Server
             // P183 — broadcast QUIT_MISSION(124) to the whole mission. This
             // disconnect path previously sent nothing telling remaining peers
             // "ship X quit the mission" — a real, live gap now closed.
-            BroadcastQuitMission(mission, live.Ship.Id, QuitSideReason.LinkDead);
+            BroadcastQuitMission(mission, live.Ship.Id, reason);
 
             // P178 — win-by-elimination (native fsmission.cpp:5371-5427 →
             // CheckForVictoryByInactiveSides). P548 gates it with native's

@@ -1,0 +1,266 @@
+{
+  "suite_invocations": 8,
+  "suite_passes": 16270,
+  "suite_failures": 2,
+  "suite_skips": 8,
+  "second_sweep_clean": true,
+  "showcases_passed": 10,
+  "optin_p660_passed": 3,
+  "focused_invocations": 522,
+  "focused_unique_methods": 161,
+  "focused_case_passes": 675,
+  "focused_case_failures": 3,
+  "source_fingerprint_matches": true,
+  "head_unchanged": true,
+  "sim_matrix_unchanged": true,
+  "csv_lf_only": true,
+  "full_suites": [
+    {
+      "label": "suite-1-Core",
+      "counters": {
+        "total": "4725",
+        "executed": "4725",
+        "passed": "4723",
+        "failed": "2",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skips": [],
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.P655DuplicateIdentityTests.Disconnect_releases_pending_or_seated_name(seated: False)",
+          "message": "System.Reflection.TargetParameterCountException : Parameter count mismatch.",
+          "stack": "   at System.Reflection.MethodBaseInvoker.ThrowTargetParameterCountException()\n   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n   at Allegiance.Core.Tests.P655DuplicateIdentityTests.World.Call(String method, Object[] args)\n   at Allegiance.Core.Tests.P655DuplicateIdentityTests.Disconnect_releases_pending_or_seated_name(Boolean seated)\n   at InvokeStub_P655DuplicateIdentityTests.Disconnect_releases_pending_or_seated_name(Object, Span`1)\n   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)"
+        },
+        {
+          "name": "Allegiance.Core.Tests.P655DuplicateIdentityTests.Disconnect_releases_pending_or_seated_name(seated: True)",
+          "message": "System.Reflection.TargetParameterCountException : Parameter count mismatch.",
+          "stack": "   at System.Reflection.MethodBaseInvoker.ThrowTargetParameterCountException()\n   at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n   at Allegiance.Core.Tests.P655DuplicateIdentityTests.World.Call(String method, Object[] args)\n   at Allegiance.Core.Tests.P655DuplicateIdentityTests.Disconnect_releases_pending_or_seated_name(Boolean seated)\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)"
+        }
+      ],
+      "seconds": 818.4,
+      "trx_sha256": "ec3c49cf594eb792a87b6c174bb6ab07c4f7a365df039c1bb047383a43faf5f6"
+    },
+    {
+      "label": "suite-1-ClientCore",
+      "counters": {
+        "total": "1143",
+        "executed": "1142",
+        "passed": "1142",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skips": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+          "reason": "Set ALLEGIANCE_LIVE_P660_SHOWCASE=1 for the full 15v15 MCP proof"
+        }
+      ],
+      "failures": [],
+      "seconds": 683.331,
+      "trx_sha256": "62ecaaa583719fa9bdf7f697c5312bee010081e3a2856961a9835e82ecd277f8"
+    },
+    {
+      "label": "suite-1-ClientCore.MonoGame",
+      "counters": {
+        "total": "2253",
+        "executed": "2250",
+        "passed": "2250",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skips": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        }
+      ],
+      "failures": [],
+      "seconds": 958.204,
+      "trx_sha256": "fc10b683f92fe025f7274a3311bcb8c9bdb107b0a7e0a228f8aaa87455e44141"
+    },
+    {
+      "label": "suite-1-Lobby",
+      "counters": {
+        "total": "19",
+        "executed": "19",
+        "passed": "19",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skips": [],
+      "failures": [],
+      "seconds": 0.964,
+      "trx_sha256": "ff404ac19d86bc41f5244db33b937578e75ed1e3a3c0fa710c4f87fd256636c9"
+    },
+    {
+      "label": "suite-2-Core",
+      "counters": {
+        "total": "4725",
+        "executed": "4725",
+        "passed": "4725",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skips": [],
+      "failures": [],
+      "seconds": 800.015,
+      "trx_sha256": "8ec99463cc6159e62c75d725b1c50b4982638596a4d397edf6a67aebeed78074"
+    },
+    {
+      "label": "suite-2-ClientCore",
+      "counters": {
+        "total": "1143",
+        "executed": "1142",
+        "passed": "1142",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skips": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+          "reason": "Set ALLEGIANCE_LIVE_P660_SHOWCASE=1 for the full 15v15 MCP proof"
+        }
+      ],
+      "failures": [],
+      "seconds": 681.658,
+      "trx_sha256": "f3f70a843afec00d83dd6c34259324bc4c176e04bf893abebced2f47acfac00d"
+    },
+    {
+      "label": "suite-2-ClientCore.MonoGame",
+      "counters": {
+        "total": "2253",
+        "executed": "2250",
+        "passed": "2250",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skips": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        },
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        }
+      ],
+      "failures": [],
+      "seconds": 957.822,
+      "trx_sha256": "9fb034191509fb61d7cabcbeddb8a3d5fb6c5ef126d7ffc0a94ca5367c112dca"
+    },
+    {
+      "label": "suite-2-Lobby",
+      "counters": {
+        "total": "19",
+        "executed": "19",
+        "passed": "19",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "skips": [],
+      "failures": [],
+      "seconds": 0.981,
+      "trx_sha256": "02b122a942b838b24e501886e05be09751b6d585091f96c3b734f89c99ef3da4"
+    }
+  ]
+}

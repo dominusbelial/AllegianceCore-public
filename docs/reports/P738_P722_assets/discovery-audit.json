@@ -1,0 +1,23 @@
+{
+  "selected_methods": 250,
+  "missing": [
+    {
+      "index": 40,
+      "project": "ClientCore.MonoGame",
+      "method": "Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_footer_shows_money_ballot_and_wing_note"
+    }
+  ],
+  "corrected_selectors": [
+    {
+      "before": [
+        "ClientCore.MonoGame",
+        "Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_footer_shows_money_ballot_and_wing_note"
+      ],
+      "after": [
+        "ClientCore.MonoGame",
+        "Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_footer_shows_money_ballot_and_unknown_wing"
+      ]
+    }
+  ],
+  "missing_after_correction": []
+}

@@ -19,7 +19,7 @@ public class TeamPaneLayoutTests
     {
         var ships = new Dictionary<string, TeamPaneLayout.ShipBrief>
         {
-            ["Amy"] = new(301, 1, -1, false, false, IsLeader: true, Ready: false, WingId: 3),
+            ["Amy"] = new(301, 1, -1, false, false, IsLeader: true, Ready: false, WingId: 3, ShipId: 42),
             ["Bob"] = new(301, 1, 9, false, false, Ready: true),
         };
         var lines = TeamPaneLayout.Build([E("Amy", 0), E("Bob", 0)], Ranks, ships, null, null, null, false, "Amy");
@@ -27,10 +27,12 @@ public class TeamPaneLayoutTests
         Assert.Contains("[COMMANDER] [AFK]", commander.Text);
         Assert.Contains("SEC 1", commander.Text);
         Assert.Contains("WING:escort", commander.Text);
+        Assert.Contains("ID:42", commander.Text);
         var pilot = lines.Single(l => l.Kind == TeamPaneLayout.LineKind.Pilot && !l.Highlight);
         Assert.Contains("DOCKED", pilot.Text);
         Assert.DoesNotContain("[COMMANDER]", pilot.Text);
         Assert.DoesNotContain("[AFK]", pilot.Text);
+        Assert.DoesNotContain("ID:", pilot.Text);
     }
 
     private static ScoreRosterEntry E(string name, short side, short kills = 0, short deaths = 0, short rank = 0) =>

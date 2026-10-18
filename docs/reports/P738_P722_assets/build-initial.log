@@ -1,0 +1,39 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Allegiance.Lobby -> /home/domingo/allegiance-integ-b2/src/Allegiance.Lobby/bin/Release/net10.0/Allegiance.Lobby.dll
+  Allegiance.Lobby.Tests -> /home/domingo/allegiance-integ-b2/tests/Allegiance.Lobby.Tests/bin/Release/net10.0/Allegiance.Lobby.Tests.dll
+  Allegiance.Core -> /home/domingo/allegiance-integ-b2/src/Allegiance.Core/bin/Release/net10.0/Allegiance.Core.dll
+  p605synth -> /home/domingo/allegiance-integ-b2/tools/p605synth/bin/Release/net10.0/p605synth.dll
+  collision-perf-proof -> /home/domingo/allegiance-integ-b2/tools/collision-perf-proof/bin/Release/net10.0/collision-perf-proof.dll
+  igcdump -> /home/domingo/allegiance-integ-b2/tools/igcdump/bin/Release/net10.0/igcdump.dll
+  fedmsgdump -> /home/domingo/allegiance-integ-b2/tools/fedmsgdump/bin/Release/net10.0/fedmsgdump.dll
+  missiondump -> /home/domingo/allegiance-integ-b2/tools/missiondump/bin/Release/net10.0/missiondump.dll
+  tech-tree -> /home/domingo/allegiance-integ-b2/tools/tech-tree/bin/Release/net10.0/tech-tree.dll
+  corpusvalidate -> /home/domingo/allegiance-integ-b2/tools/corpusvalidate/bin/Release/net10.0/corpusvalidate.dll
+  Allegiance.Bot -> /home/domingo/allegiance-integ-b2/src/Allegiance.Bot/bin/Release/net10.0/Allegiance.Bot.dll
+  Allegiance.ClientCore -> /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore/bin/Release/net10.0/Allegiance.ClientCore.dll
+  allegiance-mcp -> /home/domingo/allegiance-integ-b2/tools/allegiance-mcp/bin/Release/net10.0/allegiance-mcp.dll
+  Allegiance.ClientCore.Game -> /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.Game/bin/Release/net10.0/Allegiance.ClientCore.Game.dll
+  Allegiance.ClientCore.MonoGame -> /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.MonoGame/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.dll
+  Allegiance.Server -> /home/domingo/allegiance-integ-b2/src/Allegiance.Server/bin/Release/net10.0/Allegiance.Server.dll
+  soft-frame-proof -> /home/domingo/allegiance-integ-b2/tools/soft-frame-proof/bin/Release/net10.0/soft-frame-proof.dll
+  fsr-proof -> /home/domingo/allegiance-integ-b2/tools/fsr-proof/bin/Debug/net10.0/fsr-proof.dll
+  shieldflare-proof -> /home/domingo/allegiance-integ-b2/tools/shieldflare-proof/bin/Release/net10.0/shieldflare-proof.dll
+  hullhit-proof -> /home/domingo/allegiance-integ-b2/tools/hullhit-proof/bin/Release/net10.0/hullhit-proof.dll
+  p629-proof -> /home/domingo/allegiance-integ-b2/tools/p629-proof/bin/Release/net10.0/p629-proof.dll
+  chatdemo -> /home/domingo/allegiance-integ-b2/tools/chatdemo/bin/Release/net10.0/chatdemo.dll
+  livecombat -> /home/domingo/allegiance-integ-b2/tools/livecombat/bin/Release/net10.0/livecombat.dll
+  Allegiance.ClientCore.Explorer -> /home/domingo/allegiance-integ-b2/src/Allegiance.ClientCore.Explorer/bin/Release/net10.0/Allegiance.ClientCore.Explorer.dll
+  warp-visual-proof -> /home/domingo/allegiance-integ-b2/tools/warp-visual-proof/bin/Release/net10.0/warp-visual-proof.dll
+  hullswap-proof -> /home/domingo/allegiance-integ-b2/tools/hullswap-proof/bin/Release/net10.0/hullswap-proof.dll
+  receive-proof -> /home/domingo/allegiance-integ-b2/tools/receive-proof/bin/Release/net10.0/receive-proof.dll
+  roster-capture -> /home/domingo/allegiance-integ-b2/tools/roster-capture/bin/Release/net10.0/roster-capture.dll
+  Allegiance.ClientCore.MonoGame.Tests -> /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests.dll
+  Allegiance.ClientCore.Tests -> /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests.dll
+  Allegiance.Core.Tests -> /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/bin/Release/net10.0/Allegiance.Core.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:13.28

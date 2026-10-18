@@ -7,8 +7,8 @@ namespace Allegiance.Core.Wire;
 /// <see cref="LinkDead"/> (a disconnect via the <c>ReleasePeer</c> path) and
 /// <see cref="SwitchingSides"/> (the internal quit-then-join half of the
 /// side-switch capability). The remaining ~15 native values
-/// (<c>QSR_LeaderBooted</c>…<c>QSR_BannedBySteam</c>) have no triggering logic
-/// in this port yet (no boot/kick/rank-limits/squad concepts), so they are
+/// (owner/admin boots, Steam bans, rank limits and squads) have no triggering logic
+/// in this port. P722 also names the native leader-boot and self-quit reasons. Others are
 /// intentionally absent as named members — a deliberate simplification, not a
 /// silent omission. The raw integer values here match native exactly, and the
 /// codecs encode/decode the reason as the underlying C++ <c>int</c> enum, so
@@ -16,6 +16,11 @@ namespace Allegiance.Core.Wire;
 /// </summary>
 public enum QuitSideReason
 {
+    /// <summary>Native Messages.h:789; a leader boots a teammate.</summary>
+    LeaderBooted = 0,
+
+    /// <summary>Native Messages.h:797; a player voluntarily leaves.</summary>
+    Quit = 8,
     /// <summary><c>QSR_LinkDead</c> — the only disconnect-path reason this
     /// port can reach (a peer dropped via <c>ReleasePeer</c>).</summary>
     LinkDead = 9,

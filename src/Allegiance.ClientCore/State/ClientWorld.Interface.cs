@@ -162,12 +162,16 @@ public sealed partial class ClientWorld
     {
         if (!_ships.TryGetValue(message.ShipId, out var ship)) return;
         if (message.ShipId == (JoinedShipId ?? MyShipId))
+        {
             Reset(); // OnQuitMission clears mission, player list and chats
+            OwnMissionDeparture = message;
+        }
         else
         {
             if (ship.SideId >= 0)
                 Apply(new QuitSide { ShipId = message.ShipId, Reason = (QuitSideReason)8 });
             _ships.Remove(message.ShipId);
+            _mutedPilots.Remove(message.ShipId);
             _roster.Remove(message.ShipId);
             _moneyByShipId.Remove(message.ShipId);
             _autoDonateTargetByShipId.Remove(message.ShipId);

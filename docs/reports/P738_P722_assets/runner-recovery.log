@@ -1,0 +1,1032 @@
+Selected 250 methods, each in three fresh individual invocations.
+{"label": "focused-000-1", "exit_code": 0, "seconds": 0.822, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-000-2", "exit_code": 0, "seconds": 0.798, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-000-3", "exit_code": 0, "seconds": 0.796, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-001-1", "exit_code": 0, "seconds": 0.705, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-001-2", "exit_code": 0, "seconds": 0.681, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-001-3", "exit_code": 0, "seconds": 0.672, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-002-1", "exit_code": 0, "seconds": 0.72, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-002-2", "exit_code": 0, "seconds": 0.691, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-002-3", "exit_code": 0, "seconds": 0.692, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-015-1", "exit_code": 0, "seconds": 1.008, "counters": {"total": "6", "executed": "6", "passed": "6", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-015-2", "exit_code": 0, "seconds": 1.008, "counters": {"total": "6", "executed": "6", "passed": "6", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-015-3", "exit_code": 0, "seconds": 0.979, "counters": {"total": "6", "executed": "6", "passed": "6", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-016-1", "exit_code": 1, "seconds": 1.92, "counters": {"total": "2", "executed": "2", "passed": "0", "failed": "2", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot
+{"label": "focused-016-2", "exit_code": 1, "seconds": 1.858, "counters": {"total": "2", "executed": "2", "passed": "0", "failed": "2", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot
+{"label": "focused-016-3", "exit_code": 1, "seconds": 1.874, "counters": {"total": "2", "executed": "2", "passed": "0", "failed": "2", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot
+{"label": "focused-017-1", "exit_code": 0, "seconds": 0.971, "counters": {"total": "4", "executed": "4", "passed": "4", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-017-2", "exit_code": 0, "seconds": 0.902, "counters": {"total": "4", "executed": "4", "passed": "4", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-017-3", "exit_code": 0, "seconds": 0.965, "counters": {"total": "4", "executed": "4", "passed": "4", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-018-1", "exit_code": 0, "seconds": 0.919, "counters": {"total": "4", "executed": "4", "passed": "4", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-018-2", "exit_code": 0, "seconds": 0.854, "counters": {"total": "4", "executed": "4", "passed": "4", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-018-3", "exit_code": 0, "seconds": 0.921, "counters": {"total": "4", "executed": "4", "passed": "4", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-019-1", "exit_code": 0, "seconds": 1.352, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-019-2", "exit_code": 0, "seconds": 1.328, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-019-3", "exit_code": 0, "seconds": 1.365, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-033-1", "exit_code": 0, "seconds": 0.806, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-033-2", "exit_code": 0, "seconds": 0.776, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-033-3", "exit_code": 0, "seconds": 0.757, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-034-1", "exit_code": 0, "seconds": 0.766, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-034-2", "exit_code": 0, "seconds": 0.79, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-034-3", "exit_code": 0, "seconds": 0.777, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-035-1", "exit_code": 1, "seconds": 0.758, "counters": {"total": "1", "executed": "1", "passed": "0", "failed": "1", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Quit_side_clears_own_relation_until_authoritative_join_and_retains_other_pilot
+{"label": "focused-035-2", "exit_code": 1, "seconds": 0.755, "counters": {"total": "1", "executed": "1", "passed": "0", "failed": "1", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Quit_side_clears_own_relation_until_authoritative_join_and_retains_other_pilot
+{"label": "focused-035-3", "exit_code": 1, "seconds": 0.74, "counters": {"total": "1", "executed": "1", "passed": "0", "failed": "1", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Quit_side_clears_own_relation_until_authoritative_join_and_retains_other_pilot
+{"label": "focused-036-1", "exit_code": 0, "seconds": 0.728, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-036-2", "exit_code": 0, "seconds": 0.779, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-036-3", "exit_code": 0, "seconds": 0.78, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-037-1", "exit_code": 0, "seconds": 0.783, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-037-2", "exit_code": 0, "seconds": 0.802, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-037-3", "exit_code": 0, "seconds": 0.766, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-038-1", "exit_code": 0, "seconds": 0.788, "counters": {"total": "2", "executed": "2", "passed": "2", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-038-2", "exit_code": 0, "seconds": 0.793, "counters": {"total": "2", "executed": "2", "passed": "2", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-038-3", "exit_code": 0, "seconds": 0.791, "counters": {"total": "2", "executed": "2", "passed": "2", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-039-1", "exit_code": 0, "seconds": 0.798, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-039-2", "exit_code": 0, "seconds": 0.738, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-039-3", "exit_code": 0, "seconds": 0.728, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-040-1", "exit_code": 0, "seconds": 0.704, "counters": {"total": "0", "executed": "0", "passed": "0", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_footer_shows_money_ballot_and_wing_note
+{"label": "focused-040-2", "exit_code": 0, "seconds": 0.703, "counters": {"total": "0", "executed": "0", "passed": "0", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_footer_shows_money_ballot_and_wing_note
+{"label": "focused-040-3", "exit_code": 0, "seconds": 0.709, "counters": {"total": "0", "executed": "0", "passed": "0", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_footer_shows_money_ballot_and_wing_note
+{"label": "focused-041-1", "exit_code": 0, "seconds": 0.758, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-041-2", "exit_code": 0, "seconds": 0.776, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-041-3", "exit_code": 0, "seconds": 0.77, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-042-1", "exit_code": 0, "seconds": 0.769, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-042-2", "exit_code": 0, "seconds": 0.787, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-042-3", "exit_code": 0, "seconds": 0.789, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-043-1", "exit_code": 0, "seconds": 0.722, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-043-2", "exit_code": 0, "seconds": 0.784, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-043-3", "exit_code": 0, "seconds": 0.79, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-044-1", "exit_code": 0, "seconds": 0.778, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-044-2", "exit_code": 0, "seconds": 0.778, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-044-3", "exit_code": 0, "seconds": 0.723, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-045-1", "exit_code": 0, "seconds": 0.732, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-045-2", "exit_code": 0, "seconds": 0.771, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-045-3", "exit_code": 0, "seconds": 0.749, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-046-1", "exit_code": 0, "seconds": 0.72, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-046-2", "exit_code": 0, "seconds": 0.701, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-046-3", "exit_code": 0, "seconds": 0.686, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-047-1", "exit_code": 0, "seconds": 0.724, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-047-2", "exit_code": 0, "seconds": 0.724, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-047-3", "exit_code": 0, "seconds": 0.76, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-048-1", "exit_code": 0, "seconds": 0.692, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-048-2", "exit_code": 0, "seconds": 0.694, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-048-3", "exit_code": 0, "seconds": 0.699, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-049-1", "exit_code": 0, "seconds": 0.691, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-049-2", "exit_code": 0, "seconds": 0.724, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-049-3", "exit_code": 0, "seconds": 0.687, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-050-1", "exit_code": 0, "seconds": 0.67, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-050-2", "exit_code": 0, "seconds": 0.694, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-050-3", "exit_code": 0, "seconds": 0.676, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-051-1", "exit_code": 0, "seconds": 0.713, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-051-2", "exit_code": 0, "seconds": 0.724, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-051-3", "exit_code": 0, "seconds": 0.729, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-052-1", "exit_code": 0, "seconds": 0.713, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-052-2", "exit_code": 0, "seconds": 0.664, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-052-3", "exit_code": 0, "seconds": 0.686, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-053-1", "exit_code": 0, "seconds": 0.654, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-053-2", "exit_code": 0, "seconds": 0.678, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-053-3", "exit_code": 0, "seconds": 0.698, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-054-1", "exit_code": 0, "seconds": 0.688, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-054-2", "exit_code": 0, "seconds": 0.704, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-054-3", "exit_code": 0, "seconds": 0.654, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-055-1", "exit_code": 0, "seconds": 0.699, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-055-2", "exit_code": 0, "seconds": 0.72, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-055-3", "exit_code": 0, "seconds": 0.694, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-056-1", "exit_code": 0, "seconds": 0.691, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-056-2", "exit_code": 0, "seconds": 0.71, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-056-3", "exit_code": 0, "seconds": 0.695, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-057-1", "exit_code": 0, "seconds": 0.708, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-057-2", "exit_code": 0, "seconds": 0.695, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-057-3", "exit_code": 0, "seconds": 0.692, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-101-1", "exit_code": 0, "seconds": 3.209, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-101-2", "exit_code": 0, "seconds": 3.257, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-101-3", "exit_code": 0, "seconds": 3.277, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Traceback (most recent call last):
+  File "/home/domingo/allegiance-integ-b2/docs/reports/P738_P722_assets/verify.py", line 123, in <module>
+    main()
+    ~~~~^^
+  File "/home/domingo/allegiance-integ-b2/docs/reports/P738_P722_assets/verify.py", line 109, in main
+    row = test(f'focused-{index:03}-{repeat}', project, 'FullyQualifiedName=' + method)
+  File "/home/domingo/allegiance-integ-b2/docs/reports/P738_P722_assets/verify.py", line 59, in test
+    ledger.write_text(json.dumps(records, indent=2) + '\n')
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 810, in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+IsADirectoryError: [Errno 21] Is a directory: '/home/domingo/allegiance-integ-b2/docs/reports/P738_P722_assets/verification.json'
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              {"label": "focused-095-1", "exit_code": 0, "seconds": 0.762, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-095-2", "exit_code": 0, "seconds": 0.761, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-095-3", "exit_code": 0, "seconds": 0.79, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-096-1", "exit_code": 0, "seconds": 0.747, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-096-2", "exit_code": 0, "seconds": 0.768, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-096-3", "exit_code": 0, "seconds": 0.776, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-097-1", "exit_code": 0, "seconds": 0.795, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-097-2", "exit_code": 0, "seconds": 0.771, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-097-3", "exit_code": 0, "seconds": 0.763, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-098-1", "exit_code": 0, "seconds": 0.765, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-098-2", "exit_code": 0, "seconds": 0.762, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-098-3", "exit_code": 0, "seconds": 0.773, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-099-1", "exit_code": 0, "seconds": 0.765, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-099-2", "exit_code": 0, "seconds": 0.774, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-099-3", "exit_code": 0, "seconds": 0.751, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-100-1", "exit_code": 0, "seconds": 0.783, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-100-2", "exit_code": 0, "seconds": 0.754, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-100-3", "exit_code": 0, "seconds": 0.743, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-101-1", "exit_code": 0, "seconds": 0.753, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-101-2", "exit_code": 0, "seconds": 0.744, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-101-3", "exit_code": 0, "seconds": 0.759, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-102-1", "exit_code": 0, "seconds": 0.752, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-102-2", "exit_code": 0, "seconds": 0.759, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-102-3", "exit_code": 0, "seconds": 0.76, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-103-1", "exit_code": 0, "seconds": 0.755, "counters": {"total": "6", "executed": "6", "passed": "6", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-103-2", "exit_code": 0, "seconds": 0.769, "counters": {"total": "6", "executed": "6", "passed": "6", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-103-3", "exit_code": 0, "seconds": 0.778, "counters": {"total": "6", "executed": "6", "passed": "6", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-104-1", "exit_code": 0, "seconds": 0.788, "counters": {"total": "12", "executed": "12", "passed": "12", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-104-2", "exit_code": 0, "seconds": 0.76, "counters": {"total": "12", "executed": "12", "passed": "12", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-104-3", "exit_code": 0, "seconds": 0.77, "counters": {"total": "12", "executed": "12", "passed": "12", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-105-1", "exit_code": 0, "seconds": 0.744, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-105-2", "exit_code": 0, "seconds": 0.783, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-105-3", "exit_code": 0, "seconds": 0.775, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-106-1", "exit_code": 0, "seconds": 0.978, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-106-2", "exit_code": 0, "seconds": 0.961, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-106-3", "exit_code": 0, "seconds": 0.994, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-107-1", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Case_insensitive_parse_handles_written_shape
+{"label": "focused-107-2", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Case_insensitive_parse_handles_written_shape
+{"label": "focused-107-3", "exit_code": 1, "seconds": 0.142}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Case_insensitive_parse_handles_written_shape
+{"label": "focused-108-1", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Parse_of_corrupt_json_does_not_throw
+{"label": "focused-108-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Parse_of_corrupt_json_does_not_throw
+{"label": "focused-108-3", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Parse_of_corrupt_json_does_not_throw
+{"label": "focused-109-1", "exit_code": 1, "seconds": 0.142}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Parse_of_empty_or_null_yields_empty_profile
+{"label": "focused-109-2", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Parse_of_empty_or_null_yields_empty_profile
+{"label": "focused-109-3", "exit_code": 1, "seconds": 0.143}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Parse_of_empty_or_null_yields_empty_profile
+{"label": "focused-110-1", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Round_trip_preserves_every_field
+{"label": "focused-110-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Round_trip_preserves_every_field
+{"label": "focused-110-3", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Round_trip_preserves_every_field
+{"label": "focused-111-1", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Saved_server_host_port_is_the_identity_key
+{"label": "focused-111-2", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Saved_server_host_port_is_the_identity_key
+{"label": "focused-111-3", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectProfileTests.Saved_server_host_port_is_the_identity_key
+{"label": "focused-112-1", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Button_centers_are_inside_their_rects
+{"label": "focused-112-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Button_centers_are_inside_their_rects
+{"label": "focused-112-3", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Button_centers_are_inside_their_rects
+{"label": "focused-113-1", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Buttons_sit_inside_the_viewport_and_do_not_overlap
+{"label": "focused-113-2", "exit_code": 1, "seconds": 0.143}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Buttons_sit_inside_the_viewport_and_do_not_overlap
+{"label": "focused-113-3", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Buttons_sit_inside_the_viewport_and_do_not_overlap
+{"label": "focused-114-1", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Row_contains_point_inside_but_not_adjacent_row
+{"label": "focused-114-2", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Row_contains_point_inside_but_not_adjacent_row
+{"label": "focused-114-3", "exit_code": 1, "seconds": 0.148}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Row_contains_point_inside_but_not_adjacent_row
+{"label": "focused-115-1", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Row_rects_step_downward_and_match_row_height
+{"label": "focused-115-2", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Row_rects_step_downward_and_match_row_height
+{"label": "focused-115-3", "exit_code": 1, "seconds": 0.127}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Row_rects_step_downward_and_match_row_height
+{"label": "focused-116-1", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Six_buttons_in_definition_order_with_connect_first
+{"label": "focused-116-2", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Six_buttons_in_definition_order_with_connect_first
+{"label": "focused-116-3", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.ConnectScreenLayoutTests.Six_buttons_in_definition_order_with_connect_first
+{"label": "focused-117-1", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_AddressColumn_IsSearched
+{"label": "focused-117-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_AddressColumn_IsSearched
+{"label": "focused-117-3", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_AddressColumn_IsSearched
+{"label": "focused-118-1", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_EmptyOrWhitespaceOrNull_ReturnsTrue
+{"label": "focused-118-2", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_EmptyOrWhitespaceOrNull_ReturnsTrue
+{"label": "focused-118-3", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_EmptyOrWhitespaceOrNull_ReturnsTrue
+{"label": "focused-119-1", "exit_code": 1, "seconds": 0.14, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_MissionNameColumn_IsSearched
+{"label": "focused-119-2", "exit_code": 1, "seconds": 0.141, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_MissionNameColumn_IsSearched
+{"label": "focused-119-3", "exit_code": 1, "seconds": 0.14, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_MissionNameColumn_IsSearched
+{"label": "focused-120-1", "exit_code": 1, "seconds": 0.14, "counters": {"total": "3", "executed": "3", "passed": "3", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_NameIsNotAnchoredToStart
+{"label": "focused-120-2", "exit_code": 1, "seconds": 0.145, "counters": {"total": "3", "executed": "3", "passed": "3", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_NameIsNotAnchoredToStart
+{"label": "focused-120-3", "exit_code": 1, "seconds": 0.133, "counters": {"total": "3", "executed": "3", "passed": "3", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_NameIsNotAnchoredToStart
+{"label": "focused-121-1", "exit_code": 1, "seconds": 0.128, "counters": {"total": "4", "executed": "4", "passed": "4", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_NameSubstring_IsCaseInsensitive
+{"label": "focused-121-2", "exit_code": 1, "seconds": 0.128, "counters": {"total": "4", "executed": "4", "passed": "4", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_NameSubstring_IsCaseInsensitive
+{"label": "focused-121-3", "exit_code": 1, "seconds": 0.14, "counters": {"total": "4", "executed": "4", "passed": "4", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_NameSubstring_IsCaseInsensitive
+{"label": "focused-122-1", "exit_code": 1, "seconds": 0.139, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_NullColumns_DoesNotThrow
+{"label": "focused-122-2", "exit_code": 1, "seconds": 0.143, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_NullColumns_DoesNotThrow
+{"label": "focused-122-3", "exit_code": 1, "seconds": 0.142, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.LobbyFilterTests.Matches_NullColumns_DoesNotThrow
+{"label": "focused-123-1", "exit_code": 1, "seconds": 0.142, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.ExactlyTheSelectedId_IsFlagged_AcrossAList
+{"label": "focused-123-2", "exit_code": 1, "seconds": 0.144, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.ExactlyTheSelectedId_IsFlagged_AcrossAList
+{"label": "focused-123-3", "exit_code": 1, "seconds": 0.137, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.ExactlyTheSelectedId_IsFlagged_AcrossAList
+{"label": "focused-124-1", "exit_code": 1, "seconds": 0.151, "counters": {"total": "7", "executed": "7", "passed": "7", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.Matching_Kind_And_Id_IsSelected
+{"label": "focused-124-2", "exit_code": 1, "seconds": 0.132, "counters": {"total": "7", "executed": "7", "passed": "7", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.Matching_Kind_And_Id_IsSelected
+{"label": "focused-124-3", "exit_code": 1, "seconds": 0.144, "counters": {"total": "7", "executed": "7", "passed": "7", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.Matching_Kind_And_Id_IsSelected
+{"label": "focused-125-1", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.Null_Selection_FlagsNothing
+{"label": "focused-125-2", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.Null_Selection_FlagsNothing
+{"label": "focused-125-3", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.Null_Selection_FlagsNothing
+{"label": "focused-126-1", "exit_code": 1, "seconds": 0.129}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.SameId_DifferentType_IsNotSelected
+{"label": "focused-126-2", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.SameId_DifferentType_IsNotSelected
+{"label": "focused-126-3", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.SameId_DifferentType_IsNotSelected
+{"label": "focused-127-1", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.SameType_DifferentId_IsNotSelected
+{"label": "focused-127-2", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.SameType_DifferentId_IsNotSelected
+{"label": "focused-127-3", "exit_code": 1, "seconds": 0.144}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.RadarTargetSelectionTests.SameType_DifferentId_IsNotSelected
+{"label": "focused-128-1", "exit_code": 1, "seconds": 0.146}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Chosen_Hue_Is_Cool_AquaBlue
+{"label": "focused-128-2", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Chosen_Hue_Is_Cool_AquaBlue
+{"label": "focused-128-3", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Chosen_Hue_Is_Cool_AquaBlue
+{"label": "focused-129-1", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Colours_DoNotAlias_TheRealLockSpriteHues
+{"label": "focused-129-2", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Colours_DoNotAlias_TheRealLockSpriteHues
+{"label": "focused-129-3", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Colours_DoNotAlias_TheRealLockSpriteHues
+{"label": "focused-130-1", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Enemy_Bracket_Is_Red_In_Both_States
+{"label": "focused-130-2", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Enemy_Bracket_Is_Red_In_Both_States
+{"label": "focused-130-3", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Enemy_Bracket_Is_Red_In_Both_States
+{"label": "focused-131-1", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Engaged_Border_Is_Thicker_Than_Selected
+{"label": "focused-131-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Engaged_Border_Is_Thicker_Than_Selected
+{"label": "focused-131-3", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Engaged_Border_Is_Thicker_Than_Selected
+{"label": "focused-132-1", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Engaged_Is_Brighter_Than_Selected
+{"label": "focused-132-2", "exit_code": 1, "seconds": 0.147}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Engaged_Is_Brighter_Than_Selected
+{"label": "focused-132-3", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Engaged_Is_Brighter_Than_Selected
+{"label": "focused-133-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Engaged_Is_Brighter_Within_Each_Side_Family
+{"label": "focused-133-2", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Engaged_Is_Brighter_Within_Each_Side_Family
+{"label": "focused-133-3", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Engaged_Is_Brighter_Within_Each_Side_Family
+{"label": "focused-134-1", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Friendly_Bracket_Is_Blue_In_Both_States
+{"label": "focused-134-2", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Friendly_Bracket_Is_Blue_In_Both_States
+{"label": "focused-134-3", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Friendly_Bracket_Is_Blue_In_Both_States
+{"label": "focused-135-1", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.HalfSize_Is_Positive_And_Reasonable
+{"label": "focused-135-2", "exit_code": 1, "seconds": 0.147}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.HalfSize_Is_Positive_And_Reasonable
+{"label": "focused-135-3", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.HalfSize_Is_Positive_And_Reasonable
+{"label": "focused-136-1", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.NonShip_Target_Keeps_Neutral_Aqua
+{"label": "focused-136-2", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.NonShip_Target_Keeps_Neutral_Aqua
+{"label": "focused-136-3", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.NonShip_Target_Keeps_Neutral_Aqua
+{"label": "focused-137-1", "exit_code": 1, "seconds": 0.144}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Selected_And_Engaged_Colours_Differ
+{"label": "focused-137-2", "exit_code": 1, "seconds": 0.143}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Selected_And_Engaged_Colours_Differ
+{"label": "focused-137-3", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.Selected_And_Engaged_Colours_Differ
+{"label": "focused-138-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.SideColours_DoNotAlias_TheRealLockSpriteHues
+{"label": "focused-138-2", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.SideColours_DoNotAlias_TheRealLockSpriteHues
+{"label": "focused-138-3", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.ClientCore.MonoGame.Tests.TargetSelectionStyleTests.SideColours_DoNotAlias_TheRealLockSpriteHues
+{"label": "focused-139-1", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.Applies_StoresLevelPerSector_DefaultsNoThreat
+{"label": "focused-139-2", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.Applies_StoresLevelPerSector_DefaultsNoThreat
+{"label": "focused-139-3", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.Applies_StoresLevelPerSector_DefaultsNoThreat
+{"label": "focused-140-1", "exit_code": 1, "seconds": 0.15}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.IncreaseEdge_FiresAlertCue_AndPostsDescInSectorLine
+{"label": "focused-140-2", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.IncreaseEdge_FiresAlertCue_AndPostsDescInSectorLine
+{"label": "focused-140-3", "exit_code": 1, "seconds": 0.142}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.IncreaseEdge_FiresAlertCue_AndPostsDescInSectorLine
+{"label": "focused-141-1", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.LostTransition_PostsLostLine_AndCues
+{"label": "focused-141-2", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.LostTransition_PostsLostLine_AndCues
+{"label": "focused-141-3", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.LostTransition_PostsLostLine_AndCues
+{"label": "focused-142-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.Reset_ClearsWarnings_AndPendingCues
+{"label": "focused-142-2", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.Reset_ClearsWarnings_AndPendingCues
+{"label": "focused-142-3", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.Reset_ClearsWarnings_AndPendingCues
+{"label": "focused-143-1", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.SecuredTransition_PostsSecuredLine_AndCues
+{"label": "focused-143-2", "exit_code": 1, "seconds": 0.144}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.SecuredTransition_PostsSecuredLine_AndCues
+{"label": "focused-143-3", "exit_code": 1, "seconds": 0.145}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.SecuredTransition_PostsSecuredLine_AndCues
+{"label": "focused-144-1", "exit_code": 1, "seconds": 0.148}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.SteadyOrDecreasingLevel_ProducesNothingBeyondFirstIncrease
+{"label": "focused-144-2", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.SteadyOrDecreasingLevel_ProducesNothingBeyondFirstIncrease
+{"label": "focused-144-3", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.SteadyOrDecreasingLevel_ProducesNothingBeyondFirstIncrease
+{"label": "focused-145-1", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.TakeClusterWarningCues_Drains
+{"label": "focused-145-2", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.TakeClusterWarningCues_Drains
+{"label": "focused-145-3", "exit_code": 1, "seconds": 0.127}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldClusterWarningTests.TakeClusterWarningCues_Drains
+{"label": "focused-146-1", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Decoded_Health_Fraction_Uses_Div240
+{"label": "focused-146-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Decoded_Health_Fraction_Uses_Div240
+{"label": "focused-146-3", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Decoded_Health_Fraction_Uses_Div240
+{"label": "focused-147-1", "exit_code": 1, "seconds": 0.146}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Decoded_Ore_Fraction_Matches_Real_Server_Asteroid_After_Partial_Mine
+{"label": "focused-147-2", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Decoded_Ore_Fraction_Matches_Real_Server_Asteroid_After_Partial_Mine
+{"label": "focused-147-3", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Decoded_Ore_Fraction_Matches_Real_Server_Asteroid_After_Partial_Mine
+{"label": "focused-148-1", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Depleting_More_Decreases_Client_Ore_Fraction
+{"label": "focused-148-2", "exit_code": 1, "seconds": 0.142}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Depleting_More_Decreases_Client_Ore_Fraction
+{"label": "focused-148-3", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Depleting_More_Decreases_Client_Ore_Fraction
+{"label": "focused-149-1", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Entity_Without_Export_Still_Records_Health_But_Zero_Ore_Fraction
+{"label": "focused-149-2", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Entity_Without_Export_Still_Records_Health_But_Zero_Ore_Fraction
+{"label": "focused-149-3", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Entity_Without_Export_Still_Records_Health_But_Zero_Ore_Fraction
+{"label": "focused-150-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Station_Live_Fractions_Decoded_From_StationsUpdate
+{"label": "focused-150-2", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Station_Live_Fractions_Decoded_From_StationsUpdate
+{"label": "focused-150-3", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.ClientCore.Tests.ClientWorldLiveAsteroidOreTests.Station_Live_Fractions_Decoded_From_StationsUpdate
+{"label": "focused-151-1", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.ClientCore.Tests.NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire
+{"label": "focused-151-2", "exit_code": 1, "seconds": 0.144}
+Focused failure retained: Allegiance.ClientCore.Tests.NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire
+{"label": "focused-151-3", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.ClientCore.Tests.NaniteThreatBonusLiveTests.Threat_target_earns_2x_repair_credit_over_wire
+{"label": "focused-152-1", "exit_code": 1, "seconds": 0.142}
+Focused failure retained: Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms
+{"label": "focused-152-2", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms
+{"label": "focused-152-3", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms
+{"label": "focused-153-1", "exit_code": 0, "seconds": 1.169, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-153-2", "exit_code": 0, "seconds": 1.188, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-153-3", "exit_code": 0, "seconds": 1.183, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-154-1", "exit_code": 0, "seconds": 1.323, "counters": {"total": "6", "executed": "6", "passed": "6", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-154-2", "exit_code": 0, "seconds": 1.318, "counters": {"total": "6", "executed": "6", "passed": "6", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-154-3", "exit_code": 0, "seconds": 1.313, "counters": {"total": "6", "executed": "6", "passed": "6", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-155-1", "exit_code": 0, "seconds": 1.136, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-155-2", "exit_code": 0, "seconds": 1.158, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-155-3", "exit_code": 0, "seconds": 1.17, "counters": {"total": "1", "executed": "1", "passed": "1", "failed": "0", "error": "0", "timeout": "0", "aborted": "0", "inconclusive": "0", "passedButRunAborted": "0", "notRunnable": "0", "notExecuted": "0", "disconnected": "0", "warning": "0", "completed": "0", "inProgress": "0", "pending": "0"}}
+{"label": "focused-156-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AlertSoundStem
+{"label": "focused-156-2", "exit_code": 1, "seconds": 0.13}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AlertSoundStem
+{"label": "focused-156-3", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AlertSoundStem
+{"label": "focused-157-1", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyAPCFighter
+{"label": "focused-157-2", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyAPCFighter
+{"label": "focused-157-3", "exit_code": 1, "seconds": 0.144}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyAPCFighter
+{"label": "focused-158-1", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyAPCNonFighter
+{"label": "focused-158-2", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyAPCNonFighter
+{"label": "focused-158-3", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyAPCNonFighter
+{"label": "focused-159-1", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyBomberFighter
+{"label": "focused-159-2", "exit_code": 1, "seconds": 0.145}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyBomberFighter
+{"label": "focused-159-3", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyBomberFighter
+{"label": "focused-160-1", "exit_code": 1, "seconds": 0.145}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyBomberNonFighter
+{"label": "focused-160-2", "exit_code": 1, "seconds": 0.144}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyBomberNonFighter
+{"label": "focused-160-3", "exit_code": 1, "seconds": 0.145}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyBomberNonFighter
+{"label": "focused-161-1", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyCarrier_PilotType
+{"label": "focused-161-2", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyCarrier_PilotType
+{"label": "focused-161-3", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyCarrier_PilotType
+{"label": "focused-162-1", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyFighterRipcordTarget_AddsTeleportShip
+{"label": "focused-162-2", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyFighterRipcordTarget_AddsTeleportShip
+{"label": "focused-162-3", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyFighterRipcordTarget_AddsTeleportShip
+{"label": "focused-163-1", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyFighter_HullFighterBit
+{"label": "focused-163-2", "exit_code": 1, "seconds": 0.15}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyFighter_HullFighterBit
+{"label": "focused-163-3", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyFighter_HullFighterBit
+{"label": "focused-164-1", "exit_code": 1, "seconds": 0.143}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyMiner_PilotType
+{"label": "focused-164-2", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyMiner_PilotType
+{"label": "focused-164-3", "exit_code": 1, "seconds": 0.143}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_EnemyMiner_PilotType
+{"label": "focused-165-1", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_FriendlyBuilder_PilotType
+{"label": "focused-165-2", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_FriendlyBuilder_PilotType
+{"label": "focused-165-3", "exit_code": 1, "seconds": 0.13}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_FriendlyBuilder_PilotType
+{"label": "focused-166-1", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_FriendlyFighter_HullFighterBit
+{"label": "focused-166-2", "exit_code": 1, "seconds": 0.129}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_FriendlyFighter_HullFighterBit
+{"label": "focused-166-3", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_FriendlyFighter_HullFighterBit
+{"label": "focused-167-1", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_FriendlyLifepod_IsZero
+{"label": "focused-167-2", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_FriendlyLifepod_IsZero
+{"label": "focused-167-3", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.AssetMask_FriendlyLifepod_IsZero
+{"label": "focused-168-1", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.ControlSoundStems
+{"label": "focused-168-2", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.ControlSoundStems
+{"label": "focused-168-3", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.ControlSoundStems
+{"label": "focused-169-1", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.WarningText_MatchesNative
+{"label": "focused-169-2", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.WarningText_MatchesNative
+{"label": "focused-169-3", "exit_code": 1, "seconds": 0.142}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.WarningText_MatchesNative
+{"label": "focused-170-1", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.WarningText_OutOfRange_IsEmpty
+{"label": "focused-170-2", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.WarningText_OutOfRange_IsEmpty
+{"label": "focused-170-3", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.WarningText_OutOfRange_IsEmpty
+{"label": "focused-171-1", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.Warning_InvulnerableStations_CollapsesStationThreats
+{"label": "focused-171-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.Warning_InvulnerableStations_CollapsesStationThreats
+{"label": "focused-171-3", "exit_code": 1, "seconds": 0.129}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.Warning_InvulnerableStations_CollapsesStationThreats
+{"label": "focused-172-1", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.Warning_Ladder
+{"label": "focused-172-2", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.Warning_Ladder
+{"label": "focused-172-3", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.ClusterWarningsTests.Warning_Ladder
+{"label": "focused-173-1", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.ConnectionCacheCleanupTests.Connection_scoped_caches_drain_to_zero_after_repeated_disconnects
+{"label": "focused-173-2", "exit_code": 1, "seconds": 0.146}
+Focused failure retained: Allegiance.Core.Tests.ConnectionCacheCleanupTests.Connection_scoped_caches_drain_to_zero_after_repeated_disconnects
+{"label": "focused-173-3", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.ConnectionCacheCleanupTests.Connection_scoped_caches_drain_to_zero_after_repeated_disconnects
+{"label": "focused-174-1", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorLiveTests.Moving_enemy_command_target_yields_a_real_offset_lead_over_the_wire
+{"label": "focused-174-2", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorLiveTests.Moving_enemy_command_target_yields_a_real_offset_lead_over_the_wire
+{"label": "focused-174-3", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorLiveTests.Moving_enemy_command_target_yields_a_real_offset_lead_over_the_wire
+{"label": "focused-175-1", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_between_one_and_two_radii_is_amber
+{"label": "focused-175-2", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_between_one_and_two_radii_is_amber
+{"label": "focused-175-3", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_between_one_and_two_radii_is_amber
+{"label": "focused-176-1", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_beyond_two_radii_is_red
+{"label": "focused-176-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_beyond_two_radii_is_red
+{"label": "focused-176-3", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_beyond_two_radii_is_red
+{"label": "focused-177-1", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_exactly_one_radius_is_second_branch
+{"label": "focused-177-2", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_exactly_one_radius_is_second_branch
+{"label": "focused-177-3", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_exactly_one_radius_is_second_branch
+{"label": "focused-178-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_first_branch_is_green_dominant
+{"label": "focused-178-2", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_first_branch_is_green_dominant
+{"label": "focused-178-3", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_first_branch_is_green_dominant
+{"label": "focused-179-1", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_zero_deviation_is_full_green
+{"label": "focused-179-2", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_zero_deviation_is_full_green
+{"label": "focused-179-3", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_zero_deviation_is_full_green
+{"label": "focused-180-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_zero_direction_is_not_green
+{"label": "focused-180-2", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_zero_direction_is_not_green
+{"label": "focused-180-3", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.LeadHitProbability_zero_direction_is_not_green
+{"label": "focused-181-1", "exit_code": 1, "seconds": 0.142}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.SolveLead_swings_toward_a_laterally_moving_target_and_intercepts
+{"label": "focused-181-2", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.SolveLead_swings_toward_a_laterally_moving_target_and_intercepts
+{"label": "focused-181-3", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.LeadIndicatorTests.SolveLead_swings_toward_a_laterally_moving_target_and_intercepts
+{"label": "focused-182-1", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Abrupt_drop_retires_the_ship_and_broadcasts_loggedoff
+{"label": "focused-182-2", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Abrupt_drop_retires_the_ship_and_broadcasts_loggedoff
+{"label": "focused-182-3", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Abrupt_drop_retires_the_ship_and_broadcasts_loggedoff
+{"label": "focused-183-1", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.An_observing_peer_witnesses_loggedoff_ship_delete
+{"label": "focused-183-2", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.An_observing_peer_witnesses_loggedoff_ship_delete
+{"label": "focused-183-3", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.An_observing_peer_witnesses_loggedoff_ship_delete
+{"label": "focused-184-1", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Carrier_logoff_detaches_boarded_children_and_retires_the_carrier
+{"label": "focused-184-2", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Carrier_logoff_detaches_boarded_children_and_retires_the_carrier
+{"label": "focused-184-3", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Carrier_logoff_detaches_boarded_children_and_retires_the_carrier
+{"label": "focused-185-1", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Docked_player_logoff_still_retires_the_ship
+{"label": "focused-185-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Docked_player_logoff_still_retires_the_ship
+{"label": "focused-185-3", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Docked_player_logoff_still_retires_the_ship
+{"label": "focused-186-1", "exit_code": 1, "seconds": 0.128}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Logoff_cleanup_matches_an_abrupt_disconnect_footprint
+{"label": "focused-186-2", "exit_code": 1, "seconds": 0.142}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Logoff_cleanup_matches_an_abrupt_disconnect_footprint
+{"label": "focused-186-3", "exit_code": 1, "seconds": 0.127}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Logoff_cleanup_matches_an_abrupt_disconnect_footprint
+{"label": "focused-187-1", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Logoff_echo_re_decodes_from_the_client_side
+{"label": "focused-187-2", "exit_code": 1, "seconds": 0.13}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Logoff_echo_re_decodes_from_the_client_side
+{"label": "focused-187-3", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Logoff_echo_re_decodes_from_the_client_side
+{"label": "focused-188-1", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Logoff_echoes_releases_and_retires_the_ship
+{"label": "focused-188-2", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Logoff_echoes_releases_and_retires_the_ship
+{"label": "focused-188-3", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Logoff_echoes_releases_and_retires_the_ship
+{"label": "focused-189-1", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Logoff_message_round_trips
+{"label": "focused-189-2", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Logoff_message_round_trips
+{"label": "focused-189-3", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.Logoff_message_round_trips
+{"label": "focused-190-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.ShipDelete_loggedoff_emits_exact_declared_bytes
+{"label": "focused-190-2", "exit_code": 1, "seconds": 0.128}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.ShipDelete_loggedoff_emits_exact_declared_bytes
+{"label": "focused-190-3", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.ShipDelete_loggedoff_emits_exact_declared_bytes
+{"label": "focused-191-1", "exit_code": 1, "seconds": 0.148}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.ShipDelete_loggedoff_round_trips
+{"label": "focused-191-2", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.ShipDelete_loggedoff_round_trips
+{"label": "focused-191-3", "exit_code": 1, "seconds": 0.144}
+Focused failure retained: Allegiance.Core.Tests.LiveLogoffTests.ShipDelete_loggedoff_round_trips
+{"label": "focused-192-1", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Any_disconnect_broadcasts_quit_mission_to_remaining_peers
+{"label": "focused-192-2", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Any_disconnect_broadcasts_quit_mission_to_remaining_peers
+{"label": "focused-192-3", "exit_code": 1, "seconds": 0.13}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Any_disconnect_broadcasts_quit_mission_to_remaining_peers
+{"label": "focused-193-1", "exit_code": 1, "seconds": 0.142}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.First_on_empty_side_becomes_leader_and_mission_owner
+{"label": "focused-193-2", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.First_on_empty_side_becomes_leader_and_mission_owner
+{"label": "focused-193-3", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.First_on_empty_side_becomes_leader_and_mission_owner
+{"label": "focused-194-1", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Leader_disconnect_promotes_first_other_player_exactly
+{"label": "focused-194-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Leader_disconnect_promotes_first_other_player_exactly
+{"label": "focused-194-3", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Leader_disconnect_promotes_first_other_player_exactly
+{"label": "focused-195-1", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Leader_last_on_side_migrates_mission_owner_to_other_occupied_side
+{"label": "focused-195-2", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Leader_last_on_side_migrates_mission_owner_to_other_occupied_side
+{"label": "focused-195-3", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Leader_last_on_side_migrates_mission_owner_to_other_occupied_side
+{"label": "focused-196-1", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Leadership_pair_codecs_round_trip_exact_bytes
+{"label": "focused-196-2", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Leadership_pair_codecs_round_trip_exact_bytes
+{"label": "focused-196-3", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Leadership_pair_codecs_round_trip_exact_bytes
+{"label": "focused-197-1", "exit_code": 1, "seconds": 0.129}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Multi_mission_leadership_scopes_per_mission
+{"label": "focused-197-2", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Multi_mission_leadership_scopes_per_mission
+{"label": "focused-197-3", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Multi_mission_leadership_scopes_per_mission
+{"label": "focused-198-1", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Non_leader_departure_broadcasts_only_quit_mission
+{"label": "focused-198-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Non_leader_departure_broadcasts_only_quit_mission
+{"label": "focused-198-3", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Non_leader_departure_broadcasts_only_quit_mission
+{"label": "focused-199-1", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Owner_side_leader_leaves_migrates_owner_to_auto_elected_leader_and_ends_game
+{"label": "focused-199-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Owner_side_leader_leaves_migrates_owner_to_auto_elected_leader_and_ends_game
+{"label": "focused-199-3", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Owner_side_leader_leaves_migrates_owner_to_auto_elected_leader_and_ends_game
+{"label": "focused-200-1", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Quit_codecs_round_trip_exact_bytes_with_message_blob
+{"label": "focused-200-2", "exit_code": 1, "seconds": 0.142}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Quit_codecs_round_trip_exact_bytes_with_message_blob
+{"label": "focused-200-3", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Quit_codecs_round_trip_exact_bytes_with_message_blob
+{"label": "focused-201-1", "exit_code": 1, "seconds": 0.143}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Second_on_occupied_side_does_not_become_leader
+{"label": "focused-201-2", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Second_on_occupied_side_does_not_become_leader
+{"label": "focused-201-3", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Second_on_occupied_side_does_not_become_leader
+{"label": "focused-202-1", "exit_code": 1, "seconds": 0.128}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Sole_leader_owner_disconnect_clears_both_roles
+{"label": "focused-202-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Sole_leader_owner_disconnect_clears_both_roles
+{"label": "focused-202-3", "exit_code": 1, "seconds": 0.149}
+Focused failure retained: Allegiance.Core.Tests.LiveTeamLeadershipTests.Sole_leader_owner_disconnect_clears_both_roles
+{"label": "focused-203-1", "exit_code": 1, "seconds": 0.143}
+Focused failure retained: Allegiance.Core.Tests.MissileCombatTests.Cross_side_missile_against_a_mounted_shield_absorbs_then_leaks_exactly_like_a_weapon
+{"label": "focused-203-2", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.MissileCombatTests.Cross_side_missile_against_a_mounted_shield_absorbs_then_leaks_exactly_like_a_weapon
+{"label": "focused-203-3", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.MissileCombatTests.Cross_side_missile_against_a_mounted_shield_absorbs_then_leaks_exactly_like_a_weapon
+{"label": "focused-204-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.MissileCombatTests.Cross_side_missile_impact_deals_computed_hull_damage_and_broadcasts_destroy_to_same_side_peer
+{"label": "focused-204-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.MissileCombatTests.Cross_side_missile_impact_deals_computed_hull_damage_and_broadcasts_destroy_to_same_side_peer
+{"label": "focused-204-3", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.MissileCombatTests.Cross_side_missile_impact_deals_computed_hull_damage_and_broadcasts_destroy_to_same_side_peer
+{"label": "focused-205-1", "exit_code": 1, "seconds": 0.147}
+Focused failure retained: Allegiance.Core.Tests.MissileCombatTests.Missile_and_weapon_projectile_coexist_in_one_collision_pass
+{"label": "focused-205-2", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.MissileCombatTests.Missile_and_weapon_projectile_coexist_in_one_collision_pass
+{"label": "focused-205-3", "exit_code": 1, "seconds": 0.144}
+Focused failure retained: Allegiance.Core.Tests.MissileCombatTests.Missile_and_weapon_projectile_coexist_in_one_collision_pass
+{"label": "focused-206-1", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.MissileCombatTests.Same_side_missile_passes_through_a_friendly_and_deals_no_damage_then_expires
+{"label": "focused-206-2", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.MissileCombatTests.Same_side_missile_passes_through_a_friendly_and_deals_no_damage_then_expires
+{"label": "focused-206-3", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.MissileCombatTests.Same_side_missile_passes_through_a_friendly_and_deals_no_damage_then_expires
+{"label": "focused-207-1", "exit_code": 1, "seconds": 0.13}
+Focused failure retained: Allegiance.Core.Tests.MissileUnitTests.Missile_flies_straight_and_expires_out_of_sector
+{"label": "focused-207-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.MissileUnitTests.Missile_flies_straight_and_expires_out_of_sector
+{"label": "focused-207-3", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.MissileUnitTests.Missile_flies_straight_and_expires_out_of_sector
+{"label": "focused-208-1", "exit_code": 1, "seconds": 0.142}
+Focused failure retained: Allegiance.Core.Tests.P655DuplicateIdentityTests.Disconnect_releases_pending_or_seated_name
+{"label": "focused-208-2", "exit_code": 1, "seconds": 0.143}
+Focused failure retained: Allegiance.Core.Tests.P655DuplicateIdentityTests.Disconnect_releases_pending_or_seated_name
+{"label": "focused-208-3", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.P655DuplicateIdentityTests.Disconnect_releases_pending_or_seated_name
+{"label": "focused-209-1", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.P676SimRulesTests.Reduced_light_anchor_is_valid_only_for_a_light_capable_ripper
+{"label": "focused-209-2", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.P676SimRulesTests.Reduced_light_anchor_is_valid_only_for_a_light_capable_ripper
+{"label": "focused-209-3", "exit_code": 1, "seconds": 0.144}
+Focused failure retained: Allegiance.Core.Tests.P676SimRulesTests.Reduced_light_anchor_is_valid_only_for_a_light_capable_ripper
+{"label": "focused-210-1", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureLiveTests.Hostile_boardable_ship_cannot_capture_full_shield_station
+{"label": "focused-210-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureLiveTests.Hostile_boardable_ship_cannot_capture_full_shield_station
+{"label": "focused-210-3", "exit_code": 1, "seconds": 0.145}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureLiveTests.Hostile_boardable_ship_cannot_capture_full_shield_station
+{"label": "focused-211-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureLiveTests.Hostile_boardable_ship_docks_and_captures_enemy_station
+{"label": "focused-211-2", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureLiveTests.Hostile_boardable_ship_docks_and_captures_enemy_station
+{"label": "focused-211-3", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureLiveTests.Hostile_boardable_ship_docks_and_captures_enemy_station
+{"label": "focused-212-1", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureLiveTests.Hostile_non_boardable_ship_does_not_capture_or_dock
+{"label": "focused-212-2", "exit_code": 1, "seconds": 0.147}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureLiveTests.Hostile_non_boardable_ship_does_not_capture_or_dock
+{"label": "focused-212-3", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureLiveTests.Hostile_non_boardable_ship_does_not_capture_or_dock
+{"label": "focused-213-1", "exit_code": 1, "seconds": 0.13}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureLiveTests.Same_side_ship_docks_own_station_unaffected
+{"label": "focused-213-2", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureLiveTests.Same_side_ship_docks_own_station_unaffected
+{"label": "focused-213-3", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureLiveTests.Same_side_ship_docks_own_station_unaffected
+{"label": "focused-214-1", "exit_code": 1, "seconds": 0.126}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureTests.Capture_again_halves_the_already_halved_fraction
+{"label": "focused-214-2", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureTests.Capture_again_halves_the_already_halved_fraction
+{"label": "focused-214-3", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureTests.Capture_again_halves_the_already_halved_fraction
+{"label": "focused-215-1", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureTests.Capture_halves_armor_sets_heroic_shield_and_resides
+{"label": "focused-215-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureTests.Capture_halves_armor_sets_heroic_shield_and_resides
+{"label": "focused-215-3", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureTests.Capture_halves_armor_sets_heroic_shield_and_resides
+{"label": "focused-216-1", "exit_code": 1, "seconds": 0.146}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureTests.Capture_on_shield_less_station_sets_shield_zero
+{"label": "focused-216-2", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureTests.Capture_on_shield_less_station_sets_shield_zero
+{"label": "focused-216-3", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.StationCaptureTests.Capture_on_shield_less_station_sets_shield_zero
+{"label": "focused-217-1", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.StationCombatLiveTests.Cross_side_missile_hits_station_shield_exact_fraction_armor_untouched
+{"label": "focused-217-2", "exit_code": 1, "seconds": 0.143}
+Focused failure retained: Allegiance.Core.Tests.StationCombatLiveTests.Cross_side_missile_hits_station_shield_exact_fraction_armor_untouched
+{"label": "focused-217-3", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.StationCombatLiveTests.Cross_side_missile_hits_station_shield_exact_fraction_armor_untouched
+{"label": "focused-218-1", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.StationCombatLiveTests.Lethal_hit_destroys_station_ejects_docked_ship_and_broadcasts_destroy_to_whole_mission
+{"label": "focused-218-2", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.StationCombatLiveTests.Lethal_hit_destroys_station_ejects_docked_ship_and_broadcasts_destroy_to_whole_mission
+{"label": "focused-218-3", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.StationCombatLiveTests.Lethal_hit_destroys_station_ejects_docked_ship_and_broadcasts_destroy_to_whole_mission
+{"label": "focused-219-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.StationCombatLiveTests.Same_side_friendly_missile_deals_no_damage
+{"label": "focused-219-2", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.StationCombatLiveTests.Same_side_friendly_missile_deals_no_damage
+{"label": "focused-219-3", "exit_code": 1, "seconds": 0.129}
+Focused failure retained: Allegiance.Core.Tests.StationCombatLiveTests.Same_side_friendly_missile_deals_no_damage
+{"label": "focused-220-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.StationCombatLiveTests.Shield_regenerates_over_real_ticks
+{"label": "focused-220-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.StationCombatLiveTests.Shield_regenerates_over_real_ticks
+{"label": "focused-220-3", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.StationCombatLiveTests.Shield_regenerates_over_real_ticks
+{"label": "focused-221-1", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Armor_regenerates_first_and_shield_waits_until_armor_full
+{"label": "focused-221-2", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Armor_regenerates_first_and_shield_waits_until_armor_full
+{"label": "focused-221-3", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Armor_regenerates_first_and_shield_waits_until_armor_full
+{"label": "focused-222-1", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Flag_pedestal_station_is_indestructible
+{"label": "focused-222-2", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Flag_pedestal_station_is_indestructible
+{"label": "focused-222-3", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Flag_pedestal_station_is_indestructible
+{"label": "focused-223-1", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Lethal_hit_marks_dead_returns_killed_and_leaves_removal_to_caller
+{"label": "focused-223-2", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Lethal_hit_marks_dead_returns_killed_and_leaves_removal_to_caller
+{"label": "focused-223-3", "exit_code": 1, "seconds": 0.13}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Lethal_hit_marks_dead_returns_killed_and_leaves_removal_to_caller
+{"label": "focused-224-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Negative_amount_repairs_hull_fraction
+{"label": "focused-224-2", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Negative_amount_repairs_hull_fraction
+{"label": "focused-224-3", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Negative_amount_repairs_hull_fraction
+{"label": "focused-225-1", "exit_code": 1, "seconds": 0.144}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Overflowing_hit_depletes_shield_and_converts_surplus_to_hull_by_exact_native_ratio
+{"label": "focused-225-2", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Overflowing_hit_depletes_shield_and_converts_surplus_to_hull_by_exact_native_ratio
+{"label": "focused-225-3", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Overflowing_hit_depletes_shield_and_converts_surplus_to_hull_by_exact_native_ratio
+{"label": "focused-226-1", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Same_side_friendly_fire_deals_no_damage
+{"label": "focused-226-2", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Same_side_friendly_fire_deals_no_damage
+{"label": "focused-226-3", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Same_side_friendly_fire_deals_no_damage
+{"label": "focused-227-1", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Shield_less_station_takes_no_damage_not_a_hull_fallback
+{"label": "focused-227-2", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Shield_less_station_takes_no_damage_not_a_hull_fallback
+{"label": "focused-227-3", "exit_code": 1, "seconds": 0.128}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Shield_less_station_takes_no_damage_not_a_hull_fallback
+{"label": "focused-228-1", "exit_code": 1, "seconds": 0.13}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Shield_regenerates_toward_max_at_documented_rate
+{"label": "focused-228-2", "exit_code": 1, "seconds": 0.145}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Shield_regenerates_toward_max_at_documented_rate
+{"label": "focused-228-3", "exit_code": 1, "seconds": 0.143}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Shield_regenerates_toward_max_at_documented_rate
+{"label": "focused-229-1", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Shield_up_hit_reduces_shield_fraction_and_leaves_armor_untouched
+{"label": "focused-229-2", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Shield_up_hit_reduces_shield_fraction_and_leaves_armor_untouched
+{"label": "focused-229-3", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.StationCombatTests.Shield_up_hit_reduces_shield_fraction_and_leaves_armor_untouched
+{"label": "focused-230-1", "exit_code": 1, "seconds": 0.142}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_Clamps_Green
+{"label": "focused-230-2", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_Clamps_Green
+{"label": "focused-230-3", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_Clamps_Green
+{"label": "focused-231-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_EmitsExactBytes
+{"label": "focused-231-2", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_EmitsExactBytes
+{"label": "focused-231-3", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_EmitsExactBytes
+{"label": "focused-232-1", "exit_code": 1, "seconds": 0.129}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_RejectsWrongFmid_AndShortBuffer
+{"label": "focused-232-2", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_RejectsWrongFmid_AndShortBuffer
+{"label": "focused-232-3", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_RejectsWrongFmid_AndShortBuffer
+{"label": "focused-233-1", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_RoundTrips_HasLead
+{"label": "focused-233-2", "exit_code": 1, "seconds": 0.129}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_RoundTrips_HasLead
+{"label": "focused-233-3", "exit_code": 1, "seconds": 0.143}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_RoundTrips_HasLead
+{"label": "focused-234-1", "exit_code": 1, "seconds": 0.133}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_RoundTrips_NoLead
+{"label": "focused-234-2", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_RoundTrips_NoLead
+{"label": "focused-234-3", "exit_code": 1, "seconds": 0.127}
+Focused failure retained: Allegiance.Core.Tests.Wire.LeadIndicatorUpdateWireTests.LeadIndicatorUpdate_RoundTrips_NoLead
+{"label": "focused-235-1", "exit_code": 1, "seconds": 0.13}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordAborted_EmitsExactBytes
+{"label": "focused-235-2", "exit_code": 1, "seconds": 0.142}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordAborted_EmitsExactBytes
+{"label": "focused-235-3", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordAborted_EmitsExactBytes
+{"label": "focused-236-1", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordAborted_FixedSize_IsSix
+{"label": "focused-236-2", "exit_code": 1, "seconds": 0.128}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordAborted_FixedSize_IsSix
+{"label": "focused-236-3", "exit_code": 1, "seconds": 0.145}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordAborted_FixedSize_IsSix
+{"label": "focused-237-1", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordAborted_RejectsWrongFmid_And_ShortBuffer
+{"label": "focused-237-2", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordAborted_RejectsWrongFmid_And_ShortBuffer
+{"label": "focused-237-3", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordAborted_RejectsWrongFmid_And_ShortBuffer
+{"label": "focused-238-1", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordAborted_RoundTrips_ShipId
+{"label": "focused-238-2", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordAborted_RoundTrips_ShipId
+{"label": "focused-238-3", "exit_code": 1, "seconds": 0.145}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordAborted_RoundTrips_ShipId
+{"label": "focused-239-1", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordActivate_EmitsExactBytes
+{"label": "focused-239-2", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordActivate_EmitsExactBytes
+{"label": "focused-239-3", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordActivate_EmitsExactBytes
+{"label": "focused-240-1", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordActivate_FixedSize_IsTwelve
+{"label": "focused-240-2", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordActivate_FixedSize_IsTwelve
+{"label": "focused-240-3", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordActivate_FixedSize_IsTwelve
+{"label": "focused-241-1", "exit_code": 1, "seconds": 0.131}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordActivate_RejectsWrongFmid_And_ShortBuffer
+{"label": "focused-241-2", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordActivate_RejectsWrongFmid_And_ShortBuffer
+{"label": "focused-241-3", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordActivate_RejectsWrongFmid_And_ShortBuffer
+{"label": "focused-242-1", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordActivate_RoundTrips_AllFourFields
+{"label": "focused-242-2", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordActivate_RoundTrips_AllFourFields
+{"label": "focused-242-3", "exit_code": 1, "seconds": 0.13}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordActivate_RoundTrips_AllFourFields
+{"label": "focused-243-1", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordDenied_IsHeaderOnly
+{"label": "focused-243-2", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordDenied_IsHeaderOnly
+{"label": "focused-243-3", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordDenied_IsHeaderOnly
+{"label": "focused-244-1", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordDenied_RejectsWrongFmid_And_ShortBuffer
+{"label": "focused-244-2", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordDenied_RejectsWrongFmid_And_ShortBuffer
+{"label": "focused-244-3", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordDenied_RejectsWrongFmid_And_ShortBuffer
+{"label": "focused-245-1", "exit_code": 1, "seconds": 0.138}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_EmitsExactBytes
+{"label": "focused-245-2", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_EmitsExactBytes
+{"label": "focused-245-3", "exit_code": 1, "seconds": 0.136}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_EmitsExactBytes
+{"label": "focused-246-1", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_FixedSize_IsSix
+{"label": "focused-246-2", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_FixedSize_IsSix
+{"label": "focused-246-3", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_FixedSize_IsSix
+{"label": "focused-247-1", "exit_code": 1, "seconds": 0.137}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_RejectsWrongFmid_And_ShortBuffer
+{"label": "focused-247-2", "exit_code": 1, "seconds": 0.135}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_RejectsWrongFmid_And_ShortBuffer
+{"label": "focused-247-3", "exit_code": 1, "seconds": 0.134}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_RejectsWrongFmid_And_ShortBuffer
+{"label": "focused-248-1", "exit_code": 1, "seconds": 0.129}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_RoundTrips_NA_Cancel
+{"label": "focused-248-2", "exit_code": 1, "seconds": 0.132}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_RoundTrips_NA_Cancel
+{"label": "focused-248-3", "exit_code": 1, "seconds": 0.14}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_RoundTrips_NA_Cancel
+{"label": "focused-249-1", "exit_code": 1, "seconds": 0.139}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_RoundTrips_RealSector
+{"label": "focused-249-2", "exit_code": 1, "seconds": 0.141}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_RoundTrips_RealSector
+{"label": "focused-249-3", "exit_code": 1, "seconds": 0.147}
+Focused failure retained: Allegiance.Core.Tests.Wire.RipcordWireTests.RipcordRequest_RoundTrips_RealSector
+Traceback (most recent call last):
+  File "/home/domingo/allegiance-integ-b2/docs/reports/P738_P722_assets/verify.py", line 122, in <module>
+    for project in ('Core', 'ClientCore', 'ClientCore.MonoGame'):
+    ^^^^^^
+  File "/home/domingo/allegiance-integ-b2/docs/reports/P738_P722_assets/verify.py", line 112, in main
+    previous.write_text(json.dumps(fingerprints, indent=2) + '\n')
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    print(f'Selected {len(selected)} methods, each in three fresh individual invocations.', flush=True)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/domingo/allegiance-integ-b2/docs/reports/P738_P722_assets/verify.py", line 58, in test
+    row['failures'] = [dict(method=methods[c.attrib['testId']], name=c.attrib['testName'],
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 810, in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+IsADirectoryError: [Errno 21] Is a directory: '/home/domingo/allegiance-integ-b2/docs/reports/P738_P722_assets/verification.json'

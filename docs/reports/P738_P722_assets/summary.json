@@ -1,0 +1,184 @@
+{
+  "task": "P738 merge codex/p722 onto master",
+  "completed_utc": "2026-10-18T00:46:29.201189+00:00",
+  "focused_methods": 250,
+  "focused_invocations": 750,
+  "full_suite_exclusions": [
+    "MeshyGuardTests",
+    "PrivatePathGuardTests (both invoke git)"
+  ],
+  "failure_classifications": [
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "case": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "classification": "load flake",
+      "isolated_invocations": 3,
+      "isolated_failed": 0
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+      "case": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+      "classification": "load flake",
+      "isolated_invocations": 3,
+      "isolated_failed": 0
+    }
+  ],
+  "source_and_binary_fingerprints_match": true,
+  "merge_metadata_unchanged": true,
+  "phases": {
+    "focused": {
+      "invocations": 750,
+      "exit_failures": 0,
+      "seconds": 787.355,
+      "passed": 1080,
+      "failed": 0,
+      "skipped": 0
+    },
+    "showcase": {
+      "invocations": 5,
+      "exit_failures": 0,
+      "seconds": 488.191,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0
+    },
+    "suite": {
+      "invocations": 3,
+      "exit_failures": 2,
+      "seconds": 3310.624,
+      "passed": 8444,
+      "failed": 2,
+      "skipped": 3
+    },
+    "post-isolate": {
+      "invocations": 6,
+      "exit_failures": 0,
+      "seconds": 14.687,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "focused_by_assembly": {
+    "Core": {
+      "methods": 97,
+      "invocations": 291,
+      "passed": 405,
+      "failed": 0,
+      "skipped": 0
+    },
+    "ClientCore": {
+      "methods": 90,
+      "invocations": 270,
+      "passed": 387,
+      "failed": 0,
+      "skipped": 0
+    },
+    "ClientCore.MonoGame": {
+      "methods": 63,
+      "invocations": 189,
+      "passed": 288,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "suites": [
+    {
+      "label": "suite-Core",
+      "exit_code": 1,
+      "seconds": 744.45,
+      "counters": {
+        "total": "4782",
+        "executed": "4782",
+        "passed": "4781",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "method": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+          "name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+          "message": "\n      \n        \n          peers must keep receiving per-tick updates while stdout is stalled\n             at Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout() in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/Transport/ConsoleVerbosityLiveTests.cs:line 281\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+        }
+      ],
+      "skips": []
+    },
+    {
+      "label": "suite-ClientCore",
+      "exit_code": 1,
+      "seconds": 1602.293,
+      "counters": {
+        "total": "1246",
+        "executed": "1246",
+        "passed": "1245",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "method": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+          "name": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+          "message": "\n      \n        \n          Assert.Equal() Failure: Values differ\nExpected: 1053\nActual:   1052\n             at Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume() in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/ClientWarpApproachSlowHullLiveTests.cs:line 314\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+        }
+      ],
+      "skips": []
+    },
+    {
+      "label": "suite-ClientCore.MonoGame",
+      "exit_code": 0,
+      "seconds": 963.881,
+      "counters": {
+        "total": "2421",
+        "executed": "2418",
+        "passed": "2418",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [],
+      "skips": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists"
+      ]
+    }
+  ],
+  "showcase_metrics": {
+    "minimum_reached": 26,
+    "longest_pause_seconds": 2.013,
+    "minimum_kills": 15,
+    "maximum_kills": 18
+  }
+}

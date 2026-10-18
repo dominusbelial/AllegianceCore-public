@@ -1987,7 +1987,7 @@ public sealed class Sector : IClusterIgc
                 // above — native projectileIGC.cpp:206-219, "Area effect weapon:
                 // create an explosion (no matter what)". See the probe branch
                 // below for why this same block lives in both target paths.
-                if (ord.BlastPower != 0f)
+                if (ord.BlastPower != 0f && ord is not Missile { MissileType.HasCaptureCapability: true })
                 {
                     var blast = new Explosion(
                         ord.DamageType,
@@ -2051,7 +2051,7 @@ public sealed class Sector : IClusterIgc
                 // shared helper) to keep each target branch self-contained,
                 // per the project's preference for a little duplication over a
                 // forced abstraction where the two paths genuinely differ.
-                if (ord.BlastPower != 0f)
+                if (ord.BlastPower != 0f && ord is not Missile { MissileType.HasCaptureCapability: true })
                 {
                     var blast = new Explosion(
                         ord.DamageType,
@@ -2111,6 +2111,27 @@ public sealed class Sector : IClusterIgc
                     spos,
                     ord.Launcher);
 
+                // Native missileigc.cpp:471-496: damage FIRST, then test the
+                // resulting shield fraction. Capture missiles suppress their
+                // explosion even when the capture gate fails (position1 = zero).
+                if (ord is Missile { MissileType.HasCaptureCapability: true } captureMissile
+                    && !captureMissile.MissileType.HasWarpBombCapability
+                    && ord.Launcher is Ship captor && captor.Mission is { } captureMission
+                    && captor.SideId is { } captureSide && !station.Dead
+                    && station.SideId != captureSide
+                    && !station.Type.HasCapability(DataStationTypeIGC.SabmPedestal)
+                    && station.ShieldFraction < DownedShieldFraction)
+                {
+                    short oldSide = station.SideId;
+                    captureMission.Site.CaptureStationEvent(captor, station);
+                    station.Capture(captureSide);
+                    SyncStationData(station);
+                    var (winner, changed) = captureMission.RecomputeConquestAndTerritory(null);
+                    if (changed || winner is not null)
+                        captureMission.Site.VictoryByStationsComputed(captureMission, changed, winner);
+                    captureMission.Site.SideLostRestartStation(captureMission, oldSide);
+                }
+
                 spent.Add(ord);
                 _models.Remove((Model)ord);            // HandleCollision → Terminate (projectileIGC.cpp:230)
 
@@ -2119,7 +2140,7 @@ public sealed class Sector : IClusterIgc
                 // matter what)", projectileIGC.cpp:206) — it must NOT care what
                 // the direct target was, nor the damage result. Same
                 // self-containment reasoning as the probe/asteroid branches.
-                if (ord.BlastPower != 0f)
+                if (ord.BlastPower != 0f && ord is not Missile { MissileType.HasCaptureCapability: true })
                 {
                     var blast = new Explosion(
                         ord.DamageType,
@@ -2206,7 +2227,7 @@ public sealed class Sector : IClusterIgc
                 // asteroid still creates the real Explosion at the impact position
                 // exactly as hitting a ship or probe. Duplicated here for the
                 // same self-containment reason noted in the probe branch.
-                if (ord.BlastPower != 0f)
+                if (ord.BlastPower != 0f && ord is not Missile { MissileType.HasCaptureCapability: true })
                 {
                     var blast = new Explosion(
                         ord.DamageType,

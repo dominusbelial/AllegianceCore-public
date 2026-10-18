@@ -605,6 +605,20 @@ public sealed partial class ClientWorld
     /// Keeping these separate preserves the launch contract for consumers.</summary>
     public short? MyShipId { get; private set; }
 
+    /// <summary>appmsg.cpp:2501-2528: the own mission departure returns to browsing.</summary>
+    public QuitMission? OwnMissionDeparture { get; private set; }
+
+    private readonly HashSet<short> _mutedPilots = new();
+    public bool IsPilotMuted(short shipId) => _mutedPilots.Contains(shipId);
+
+    /// <summary>WinTrek.cpp:3731-3734; trekigc.cpp:4492. Local chat preference,
+    /// never FM_CS_MUTE(117), which has no native sender/consumer.</summary>
+    public void SetPilotMuted(short shipId, bool muted)
+    {
+        if (shipId < 0 || shipId == MyShipId) return;
+        if (muted) _mutedPilots.Add(shipId); else _mutedPilots.Remove(shipId);
+    }
+
     // ── P711 — ship low-status / combat feedback alarms (trekigc.cpp:1264-1275).
     // Edge-triggered one-shots computed from the local ship's OWN streamed
     // ServerShipUpdate: the previous frame's snapshot (below) vs. the current
@@ -1662,6 +1676,8 @@ public sealed partial class ClientWorld
         ShipWarnings.Reset();
         MissionGeneration++;
         MyShipId = null;
+        OwnMissionDeparture = null;
+        _mutedPilots.Clear();
         _prevOwnAlarms = null;   // P711 — fresh session: re-arm the low-status alarm snapshots
         MyAcceptedCommand = null;
         _myQueuedCommand = null;
@@ -3779,6 +3795,7 @@ public sealed partial class ClientWorld
 
     private void Apply(ChatMessage m)
     {
+        if (IsPilotMuted(m.SidSender)) return;
         var voice = Allegiance.Core.Audio.NativeVoiceCatalog.Resolve(m.VoiceOver, m.Message, m.MessageIsAbsent);
         if (m.MessageIsAbsent && m.VoiceOver != Na)
             m.Message = Allegiance.Core.Audio.NativeVoiceCatalog.Caption(m.VoiceOver);
@@ -3821,6 +3838,7 @@ public sealed partial class ClientWorld
     }
     private void Apply(ChatBuoy m)
     {
+        if (IsPilotMuted(m.Cd.SidSender)) return;
         // Both messages share ChatData (Messages.h:204-223,716-722).
         var voice = Allegiance.Core.Audio.NativeVoiceCatalog.Resolve(m.Cd.VoiceOver, m.Message, m.MessageIsAbsent);
         if (m.MessageIsAbsent && m.Cd.VoiceOver != Na)

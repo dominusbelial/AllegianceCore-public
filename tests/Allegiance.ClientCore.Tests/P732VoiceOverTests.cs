@@ -13,6 +13,52 @@ public sealed class P732VoiceOverTests
         ChatTarget = (int)ChatTarget.Individual, OidRecipient = 7,
     };
 
+    // ~/Development/Allegiance/src/WinTrek/trekigc.cpp:4492,4507-4540:
+    // local mute precedes both the caption and the recorded-voice path.
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void Muted_voice_chat_is_silent_and_unmute_restores_one_caption_and_cue(bool buoy, bool sonic)
+    {
+        var world = new ClientWorld();
+        var chat = Chat(sonic ? (short)10 : (short)1178, sonic ? "" : "Affirmative.");
+        chat.MessageIsAbsent = sonic;
+        void Receive()
+        {
+            if (buoy)
+                world.Apply(ChatBuoy.Decode(new ChatBuoy
+                    { Cd = chat.Cd, Message = chat.Message, MessageIsAbsent = sonic }.Encode()));
+            else
+                world.Apply(ChatMessage.Decode(chat.Encode()));
+        }
+
+        world.SetPilotMuted(42, true);
+        Receive();
+        Assert.Empty(world.Events.Chats);
+        Assert.Empty(world.Events.ChatBuoys);
+        Assert.Empty(world.TakeSoundEvents());
+
+        world.SetPilotMuted(42, false);
+        Receive();
+        string caption = sonic ? "Attack my target!" : "Affirmative.";
+        if (buoy)
+        {
+            Assert.Equal(caption, Assert.Single(world.Events.ChatBuoys).Message);
+            Assert.Empty(world.Events.Chats);
+        }
+        else
+        {
+            Assert.Equal(caption, Assert.Single(world.Events.Chats).Message);
+            Assert.Empty(world.Events.ChatBuoys);
+        }
+        var cue = Assert.Single(world.TakeSoundEvents());
+        Assert.Equal(ClientSoundEventKind.ChatVoiceOver, cue.Kind);
+        Assert.Equal(sonic ? "vo_player_attacktarget" : "vo_player_affirmative", cue.Voice!.Stem);
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
     [Theory]
     [InlineData(1131, "Donate credits", "vo_player_donatecredits")]
     [InlineData(1328, "New miner requesting He3 asteroid.", "vo_request_miner")]

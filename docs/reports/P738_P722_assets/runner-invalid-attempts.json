@@ -1,0 +1,1136 @@
+[
+  {
+    "label": "focused-025-1",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-025-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Boot_requires_confirmation_and_rechecks_live_leadership_and_side"
+    ],
+    "exit_code": 1,
+    "seconds": 0.137
+  },
+  {
+    "label": "focused-025-2",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-025-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Boot_requires_confirmation_and_rechecks_live_leadership_and_side"
+    ],
+    "exit_code": 1,
+    "seconds": 0.143
+  },
+  {
+    "label": "focused-025-3",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-025-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Boot_requires_confirmation_and_rechecks_live_leadership_and_side"
+    ],
+    "exit_code": 1,
+    "seconds": 0.146
+  },
+  {
+    "label": "focused-026-1",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-026-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Local_mute_filters_incoming_chat_and_unmute_restores_it_without_a_wire_MUTE"
+    ],
+    "exit_code": 1,
+    "seconds": 0.141
+  },
+  {
+    "label": "focused-026-2",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-026-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Local_mute_filters_incoming_chat_and_unmute_restores_it_without_a_wire_MUTE"
+    ],
+    "exit_code": 1,
+    "seconds": 0.141
+  },
+  {
+    "label": "focused-026-3",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-026-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Local_mute_filters_incoming_chat_and_unmute_restores_it_without_a_wire_MUTE"
+    ],
+    "exit_code": 1,
+    "seconds": 0.14
+  },
+  {
+    "label": "focused-027-1",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-027-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Quit_side_clears_own_relation_until_authoritative_join_and_retains_other_pilot"
+    ],
+    "exit_code": 1,
+    "seconds": 0.13
+  },
+  {
+    "label": "focused-027-2",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-027-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Quit_side_clears_own_relation_until_authoritative_join_and_retains_other_pilot"
+    ],
+    "exit_code": 1,
+    "seconds": 0.14
+  },
+  {
+    "label": "focused-027-3",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-027-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Quit_side_clears_own_relation_until_authoritative_join_and_retains_other_pilot"
+    ],
+    "exit_code": 1,
+    "seconds": 0.131
+  },
+  {
+    "label": "focused-028-1",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-028-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Selection_treats_allies_as_friendly_and_drops_dead_or_departed_targets"
+    ],
+    "exit_code": 1,
+    "seconds": 0.129
+  },
+  {
+    "label": "focused-028-2",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-028-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Selection_treats_allies_as_friendly_and_drops_dead_or_departed_targets"
+    ],
+    "exit_code": 1,
+    "seconds": 0.136
+  },
+  {
+    "label": "focused-028-3",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-028-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Selection_treats_allies_as_friendly_and_drops_dead_or_departed_targets"
+    ],
+    "exit_code": 1,
+    "seconds": 0.129
+  },
+  {
+    "label": "focused-029-1",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-029-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Selection_uses_live_station_health_and_asteroid_ore_without_inventing_ship_fields"
+    ],
+    "exit_code": 1,
+    "seconds": 0.133
+  },
+  {
+    "label": "focused-029-2",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-029-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Selection_uses_live_station_health_and_asteroid_ore_without_inventing_ship_fields"
+    ],
+    "exit_code": 1,
+    "seconds": 0.137
+  },
+  {
+    "label": "focused-029-3",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-029-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Selection_uses_live_station_health_and_asteroid_ore_without_inventing_ship_fields"
+    ],
+    "exit_code": 1,
+    "seconds": 0.134
+  },
+  {
+    "label": "focused-030-1",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-030-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Threat_abilities_produce_the_native_client_warning_text"
+    ],
+    "exit_code": 1,
+    "seconds": 0.139
+  },
+  {
+    "label": "focused-030-2",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-030-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Threat_abilities_produce_the_native_client_warning_text"
+    ],
+    "exit_code": 1,
+    "seconds": 0.133
+  },
+  {
+    "label": "focused-030-3",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-030-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Threat_abilities_produce_the_native_client_warning_text"
+    ],
+    "exit_code": 1,
+    "seconds": 0.13
+  },
+  {
+    "label": "focused-031-1",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-031-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_derives_ship_status_from_entity"
+    ],
+    "exit_code": 1,
+    "seconds": 0.128
+  },
+  {
+    "label": "focused-031-2",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-031-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_derives_ship_status_from_entity"
+    ],
+    "exit_code": 1,
+    "seconds": 0.13
+  },
+  {
+    "label": "focused-031-3",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-031-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_derives_ship_status_from_entity"
+    ],
+    "exit_code": 1,
+    "seconds": 0.138
+  },
+  {
+    "label": "focused-032-1",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-032-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_footer_shows_money_ballot_and_wing_note"
+    ],
+    "exit_code": 1,
+    "seconds": 0.134
+  },
+  {
+    "label": "focused-032-2",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-032-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_footer_shows_money_ballot_and_wing_note"
+    ],
+    "exit_code": 1,
+    "seconds": 0.137
+  },
+  {
+    "label": "focused-032-3",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-032-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_footer_shows_money_ballot_and_wing_note"
+    ],
+    "exit_code": 1,
+    "seconds": 0.13
+  },
+  {
+    "label": "focused-033-1",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-033-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_groups_by_side_and_sorts_pilots_by_name"
+    ],
+    "exit_code": 1,
+    "seconds": 0.128
+  },
+  {
+    "label": "focused-033-2",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-033-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_groups_by_side_and_sorts_pilots_by_name"
+    ],
+    "exit_code": 1,
+    "seconds": 0.138
+  },
+  {
+    "label": "focused-033-3",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-033-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_groups_by_side_and_sorts_pilots_by_name"
+    ],
+    "exit_code": 1,
+    "seconds": 0.135
+  },
+  {
+    "label": "focused-034-1",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-034-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_hides_ballot_for_non_leaders"
+    ],
+    "exit_code": 1,
+    "seconds": 0.138
+  },
+  {
+    "label": "focused-034-2",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-034-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_hides_ballot_for_non_leaders"
+    ],
+    "exit_code": 1,
+    "seconds": 0.127
+  },
+  {
+    "label": "focused-034-3",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-034-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_hides_ballot_for_non_leaders"
+    ],
+    "exit_code": 1,
+    "seconds": 0.133
+  },
+  {
+    "label": "focused-035-1",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-035-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_highlights_the_self_row"
+    ],
+    "exit_code": 1,
+    "seconds": 0.13
+  },
+  {
+    "label": "focused-035-2",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-035-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_highlights_the_self_row"
+    ],
+    "exit_code": 1,
+    "seconds": 0.133
+  },
+  {
+    "label": "focused-035-3",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-035-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_highlights_the_self_row"
+    ],
+    "exit_code": 1,
+    "seconds": 0.132
+  },
+  {
+    "label": "focused-036-1",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-036-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_output_is_always_pure_ascii"
+    ],
+    "exit_code": 1,
+    "seconds": 0.14
+  },
+  {
+    "label": "focused-036-2",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-036-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_output_is_always_pure_ascii"
+    ],
+    "exit_code": 1,
+    "seconds": 0.133
+  },
+  {
+    "label": "focused-036-3",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-036-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_output_is_always_pure_ascii"
+    ],
+    "exit_code": 1,
+    "seconds": 0.133
+  },
+  {
+    "label": "focused-037-1",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-037-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_puts_rank_name_on_each_row"
+    ],
+    "exit_code": 1,
+    "seconds": 0.139
+  },
+  {
+    "label": "focused-037-2",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-037-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_puts_rank_name_on_each_row"
+    ],
+    "exit_code": 1,
+    "seconds": 0.143
+  },
+  {
+    "label": "focused-037-3",
+    "project": "ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests/bin/Release/net10.0/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-037-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.TeamPaneLayoutTests.Build_puts_rank_name_on_each_row"
+    ],
+    "exit_code": 1,
+    "seconds": 0.139
+  },
+  {
+    "label": "focused-038-1",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-038-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.EveryExpectedServerSentMessage_IsConsumed_NotUnknownFmid"
+    ],
+    "exit_code": 1,
+    "seconds": 0.134
+  },
+  {
+    "label": "focused-038-2",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-038-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.EveryExpectedServerSentMessage_IsConsumed_NotUnknownFmid"
+    ],
+    "exit_code": 1,
+    "seconds": 0.137
+  },
+  {
+    "label": "focused-038-3",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-038-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.EveryExpectedServerSentMessage_IsConsumed_NotUnknownFmid"
+    ],
+    "exit_code": 1,
+    "seconds": 0.139
+  },
+  {
+    "label": "focused-039-1",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-039-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.SupportedServerSentSet_IsFullyAccountedFor"
+    ],
+    "exit_code": 1,
+    "seconds": 0.137
+  },
+  {
+    "label": "focused-039-2",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-039-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.SupportedServerSentSet_IsFullyAccountedFor"
+    ],
+    "exit_code": 1,
+    "seconds": 0.132
+  },
+  {
+    "label": "focused-039-3",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-039-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.SupportedServerSentSet_IsFullyAccountedFor"
+    ],
+    "exit_code": 1,
+    "seconds": 0.131
+  },
+  {
+    "label": "focused-040-1",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-040-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.UnknownFmidDetector_RecordsUnconsumedServerSentMessage"
+    ],
+    "exit_code": 1,
+    "seconds": 0.13
+  },
+  {
+    "label": "focused-040-2",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-040-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.UnknownFmidDetector_RecordsUnconsumedServerSentMessage"
+    ],
+    "exit_code": 1,
+    "seconds": 0.134
+  },
+  {
+    "label": "focused-040-3",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-040-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.FedMsgDispatchCoverageTests.UnknownFmidDetector_RecordsUnconsumedServerSentMessage"
+    ],
+    "exit_code": 1,
+    "seconds": 0.128
+  },
+  {
+    "label": "focused-041-1",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-041-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Capture_missile_uses_native_station_gates_and_exact_capture_bytes"
+    ],
+    "exit_code": 1,
+    "seconds": 0.135
+  },
+  {
+    "label": "focused-041-2",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-041-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Capture_missile_uses_native_station_gates_and_exact_capture_bytes"
+    ],
+    "exit_code": 1,
+    "seconds": 0.137
+  },
+  {
+    "label": "focused-041-3",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-041-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Capture_missile_uses_native_station_gates_and_exact_capture_bytes"
+    ],
+    "exit_code": 1,
+    "seconds": 0.136
+  },
+  {
+    "label": "focused-042-1",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-042-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot"
+    ],
+    "exit_code": 1,
+    "seconds": 0.134
+  },
+  {
+    "label": "focused-042-2",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-042-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot"
+    ],
+    "exit_code": 1,
+    "seconds": 0.132
+  },
+  {
+    "label": "focused-042-3",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-042-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot"
+    ],
+    "exit_code": 1,
+    "seconds": 0.134
+  },
+  {
+    "label": "focused-043-1",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-043-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Light_ripcord_anchor_obeys_both_hull_bits_and_activation_precedes_abort"
+    ],
+    "exit_code": 1,
+    "seconds": 0.137
+  },
+  {
+    "label": "focused-043-2",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-043-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Light_ripcord_anchor_obeys_both_hull_bits_and_activation_precedes_abort"
+    ],
+    "exit_code": 1,
+    "seconds": 0.138
+  },
+  {
+    "label": "focused-043-3",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-043-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Light_ripcord_anchor_obeys_both_hull_bits_and_activation_precedes_abort"
+    ],
+    "exit_code": 1,
+    "seconds": 0.13
+  },
+  {
+    "label": "focused-044-1",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-044-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Remote_lead_relay_grants_and_revokes_owner_indicator"
+    ],
+    "exit_code": 1,
+    "seconds": 0.14
+  },
+  {
+    "label": "focused-044-2",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-044-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Remote_lead_relay_grants_and_revokes_owner_indicator"
+    ],
+    "exit_code": 1,
+    "seconds": 0.144
+  },
+  {
+    "label": "focused-044-3",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-044-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Remote_lead_relay_grants_and_revokes_owner_indicator"
+    ],
+    "exit_code": 1,
+    "seconds": 0.141
+  },
+  {
+    "label": "focused-045-1",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-045-1.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Self_quit_delivers_exact_reason_and_clears_own_side_without_removing_teammate"
+    ],
+    "exit_code": 1,
+    "seconds": 0.137
+  },
+  {
+    "label": "focused-045-2",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-045-2.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Self_quit_delivers_exact_reason_and_clears_own_side_without_removing_teammate"
+    ],
+    "exit_code": 1,
+    "seconds": 0.142
+  },
+  {
+    "label": "focused-045-3",
+    "project": "ClientCore.Tests/Allegiance.ClientCore",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-045-3.trx",
+      "--results-directory",
+      "/tmp/p738-p722-validation",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Self_quit_delivers_exact_reason_and_clears_own_side_without_removing_teammate"
+    ],
+    "exit_code": 1,
+    "seconds": 0.142
+  }
+]

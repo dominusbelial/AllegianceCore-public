@@ -152,11 +152,14 @@ public sealed class P718InterfaceMessageTests
     public void Remote_quit_mission_removes_player_requests_and_ready_without_touching_other_players()
     {
         using var session = new ConnectionSession(); Seed(session);
+        session.World.SetPilotMuted(11, true);
+        session.World.SetPilotMuted(12, true);
         Feed(session, new PlayerReady { ShipId = 11, FReady = true }, new PositionReqBroadcast { SideId = 1, ShipId = 11 },
             new PositionReqBroadcast { SideId = 0, ShipId = 12 },
             new QuitMission { ShipId = 11, Reason = QuitSideReason.LinkDead, Message = "gone" });
         var w = session.World;
         Assert.False(w.Ships.ContainsKey(11)); Assert.False(w.Roster.ReadyByShipId.ContainsKey(11));
+        Assert.False(w.IsPilotMuted(11)); Assert.True(w.IsPilotMuted(12));
         Assert.Equal(new ClientWorld.PositionRequest(0, 12), Assert.Single(w.PendingPositionRequests));
         Assert.Equal(new ClientWorld.Departure(11, QuitSideReason.LinkDead, "gone", true), w.LastDeparture);
         Assert.True(w.Ships.ContainsKey(10)); Assert.False(session.Lost);
@@ -172,6 +175,10 @@ public sealed class P718InterfaceMessageTests
         Assert.True(session.Lost); Assert.Equal(1, losses); Assert.Empty(session.World.Ships);
         Assert.Null(session.World.Mission); Assert.Null(session.World.MyShipId); Assert.False(session.World.InGame);
         Assert.Equal("removed", session.World.LastDeparture!.Value.Message);
+        Assert.Equal((QuitSideReason)2, session.World.OwnMissionDeparture!.Reason);
+        Assert.Equal("removed", session.World.OwnMissionDeparture.Message);
+        session.World.Reset();
+        Assert.Null(session.World.OwnMissionDeparture);
     }
 
     [Fact]

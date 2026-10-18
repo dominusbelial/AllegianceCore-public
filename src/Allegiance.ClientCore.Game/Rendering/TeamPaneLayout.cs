@@ -46,7 +46,7 @@ public static class TeamPaneLayout
     /// <c>ClientWorld.Ships</c> (kept MonoGame/ClientCore-free so this layout is
     /// headless-testable).</summary>
     public readonly record struct ShipBrief(short HullId, short SectorId, short StationId, bool Dead, bool Gone,
-        bool IsLeader = false, bool? Ready = null, short? WingId = null);
+        bool IsLeader = false, bool? Ready = null, short? WingId = null, short ShipId = -1);
 
     public enum LineKind { Blank, Title, SideHeader, Pilot, Money, Ballot, Note, Hint }
 
@@ -86,7 +86,9 @@ public static class TeamPaneLayout
                 bool self = selfName != null && string.Equals(e.CharacterName, selfName, StringComparison.Ordinal);
                 string rankName = RankNameLookup.Lookup(rankTable, e.Rank);
                 string status = StatusFor(ships, e.CharacterName);
-                string hull = ships.TryGetValue(e.CharacterName, out var sb) && sb.HullId > 0 ? $" HLD{sb.HullId}" : "";
+                bool hasShip = ships.TryGetValue(e.CharacterName, out var sb);
+                string hull = hasShip && sb.HullId > 0 ? $" HLD{sb.HullId}" : "";
+                string id = hasShip && sb.ShipId >= 0 ? $" ID:{sb.ShipId}" : "";
                 // teamscreen.cpp:452-477,497-505: leader and AFK are roster
                 // state, independent of a pilot's current ship location.
                 string role = sb.IsLeader ? " [COMMANDER]" : "";
@@ -94,7 +96,7 @@ public static class TeamPaneLayout
                 role += $" WING:{(sb.WingId is { } wing ? WingNames.For(wing) : "?")}";
                 string text = $"    {ScoreboardLayout.AsciiSafe(e.CharacterName),-18}  " +
                               $"{ScoreboardLayout.AsciiSafe(rankName),-14}  " +
-                              $"{status,-10}{hull}  K:{e.Kills}  D:{e.Deaths}{role}";
+                              $"{status,-10}{hull}  K:{e.Kills}  D:{e.Deaths}{role}{id}";
                 lines.Add(new Line(LineKind.Pilot, text, self));
             }
         }

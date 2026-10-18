@@ -1,0 +1,26 @@
+{
+  "ours": "9bed4a536f234a8736952a3c15248c64ca6c2d44",
+  "theirs": "adfe90806bf0e1abb4032ca033ca093d246d8d51",
+  "ours_files": {
+    "docs/TEST_FLAKES.md": "497ef0d8b45d7228477fc7575e0f207392533f04",
+    "docs/parity/fedmsg-wiring.csv": "a382d1e3993e76ba48ade7e3efb0733d0f3627b1",
+    "docs/parity/parity-matrix.csv": "c076a0881579931fff56f8da53cee0ee8c199513",
+    "docs/parity/sim-rules-matrix.csv": "d5bb020003aa51e854fa8f90107810a7e3a9f1b2",
+    "docs/reports/P710_PARITY_WAVE13.md": "a81edd63ff4c403c2dfbd38bb6b0d39d376e090f",
+    "docs/reports/P711_PARITY_WAVE14.md": "450dd49cdfa12a08f5cf456d4622bef5e62ab01f",
+    "docs/reports/P714_PARITY_WAVE15.md": "e3e811173320a4f5897b2536f2c39bacb7ca106a",
+    "docs/reports/P716_PARITY_WAVE16.md": "408ad0652e7164bafecd0417326bd7910408ce15",
+    "docs/reports/P717_PARITY_WAVE17.md": "30f7e1b63c4fa8354db7a49b54b3c81f0b68f81d",
+    "docs/reports/P719_PARITY_WAVE18.md": "873320dcbc106e4d24dd0fce6b608e6b0d1a7a25",
+    "docs/reports/P721_PARITY_WAVE19.md": "d8e80a7eba62c9e157254747219e01008028cb91",
+    "docs/reports/P723_PARITY_WAVE20.md": "911d7813d2c38f358c90c06118e4e52e8d6bcf8c",
+    "docs/reports/P725_PARITY_WAVE21.md": "67e5f5ba1459564b0d301675ceef272060b33526",
+    "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs": "152c8767d7f688c3b6f370893cbeb78bc7195332",
+    "src/Allegiance.ClientCore.Game/Game1.Audio.cs": "f7b13b74bf9cd00b3e2abdaf2de5d1c44612a027",
+    "src/Allegiance.ClientCore/State/ClientSoundEvent.cs": "21e0fc42b91b54c9889c6764261e82b53f5e0920",
+    "tests/Allegiance.ClientCore.Tests/FedMsgDispatchCoverageTests.cs": "e1e7559c74618899f15819006953825357f49d3b"
+  },
+  "theirs_files": {
+    "docs/TEST_FLAKES.md": "d53579cc2ffaa30b8b95740288bc04c342d74759"
+  }
+}

@@ -125,19 +125,9 @@ public sealed partial class Game1
     /// </summary>
     private TargetSelectionView? ComputeTargetSelectionBracket(Matrix view, Matrix proj, Vector3 cameraEye)
     {
-        // Snapshot the selection under the gate lock (P319 discipline: grab state
-        // under the lock, do no unlocked world reads). AutopilotTarget is a struct,
-        // so copying the selection and the engaged flag is race-safe. P359 — when
-        // the target is a SHIP, also snapshot its pilot name + live hull/shield
-        // fractions from the SAME per-ship ServerShipUpdate the player's own gauges
-        // read (works for any ship the server exported to this client, friendly or
-        // enemy — the client only ever knows ships the server actually sent it).
-        // P423 — the health-bar readout is extended to ANY damageable target, not
-        // just ships: a station (live STATIONS_UPDATE hull/shield) and an asteroid
-        // (live ASTEROIDS_UPDATE structural fraction) both feed the generic health
-        // bar; an asteroid additionally carries its live remaining-He3 ore fraction
-        // (OreFraction), rendered as the distinct ore readout. Only a ship has a
-        // pilot name; station/asteroid have none, so the name stays null for them.
+        // Native selpane.cpp:81-120 binds a selected model; consoledata.cpp
+        // supplies its name, damageable health and asteroid-only ore. Snapshot
+        // that data under the gate, then project outside the lock.
         AutopilotTarget target;
         bool engaged;
         string? charName = null;
@@ -149,44 +139,19 @@ public sealed partial class Game1
             if (_autoTarget is not { } t) return null;
             target = t;
             engaged = _autoPilotEngaged;
-            switch (target.Kind)
+            var kind = target.Kind switch
             {
-                case TargetKind.Ship:
-                    if (_session.World.Ships.TryGetValue(target.Id, out var targetShip)
-                        && !targetShip.IsNotVisible)
-                    {
-                        charName = string.IsNullOrEmpty(targetShip.CharacterName)
-                            ? $"ship {target.Id}" : targetShip.CharacterName;
-                        if (targetShip.Latest is { } sup)
-                        {
-                            hull = sup.HullFraction;
-                            shield = sup.ShieldFraction;
-                        }
-                        // P376 — friendly collapses to "same side as me" (no alliance concept
-                        // in this port), so ANY ship on a different side is an enemy. Same
-                        // resolution point (and same lock) as the pilot readout above.
-                        isEnemy = !(_session.World.MySideId is { } mySide && targetShip.SideId == mySide);
-                    }
-                    break;
-                case TargetKind.Asteroid:
-                    // P423 — a rock is a real damageable target: its live structural
-                    // fraction feeds the generic health bar, and its remaining He3 ore
-                    // (OreFraction) drives the distinct asteroid ore readout.
-                    if (_session.World.AsteroidLive.TryGetValue(target.Id, out var astLive))
-                    {
-                        hull = astLive.Fraction;
-                        ore = astLive.OreFraction;
-                    }
-                    break;
-                case TargetKind.Station:
-                    // P423 — a station is a real damageable target with an armor pool.
-                    if (_session.World.StationLive.TryGetValue(target.Id, out var stLive))
-                    {
-                        hull = stLive.HullFraction;
-                        shield = stLive.ShieldFraction;
-                    }
-                    break;
-            }
+                TargetKind.Ship => IgcObjectType.Ship,
+                TargetKind.Station => IgcObjectType.Station,
+                TargetKind.Asteroid => IgcObjectType.Asteroid,
+                _ => IgcObjectType.Warp,
+            };
+            if (SelectionPaneModel.Build(_session.World, kind, target.Id) is not { } info) return null;
+            charName = info.Name;
+            hull = info.Hull;
+            shield = info.Shield;
+            isEnemy = info.Enemy;
+            ore = info.Ore;
         }
 
         // Resolve the target's live world position (false when it has died/vanished),

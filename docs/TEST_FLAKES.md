@@ -1548,3 +1548,30 @@ failures or skips), and the standalone never-parks gate passed 5/5. See the
 [invocation ledger](reports/P738_P720_assets/verification.json),
 [case outcomes](reports/P738_P720_assets/case-results.json), and
 [raw logs/TRX archive](reports/P738_P720_assets/validation-logs.tar.gz).
+
+
+## P738 / P722 merge observation (2026-10-17)
+
+Raw broad Release results (passed / failed / skipped):
+
+- Core: **4781 / 1 / 0**.
+- ClientCore: **1245 / 1 / 0**.
+- ClientCore.MonoGame: **2418 / 0 / 3**.
+
+After the broad passes, every method/case below passed three fresh
+individual invocations on the same binaries. These meet the brief’s
+load-flake rule; isolated passes do not establish a cause or fix.
+
+- `Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume` — Assert.Equal() Failure: Values differ Expected: 1053 Actual: 1052 at Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume() in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/ClientWarpApproachS. Post-suite isolation: **3/3 passed**.
+- `Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout` — peers must keep receiving per-tick updates while stdout is stalled at Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout() in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/Transport/ConsoleVerbosityLiveTests.cs:li. Post-suite isolation: **3/3 passed**.
+
+No product behavior, assertion, deadline or quarantine was changed for
+these observations. Core’s two git-invoking guard classes were excluded
+to honor the explicit no-git instruction. Ordinary live/loopback and
+LiveTiming checks ran; the local P660 opt-in was enabled. MonoGame’s
+existing optional private Meshy-pack skips are retained in the counts.
+
+See the [P738 appendix](reports/P722_INTERFACE_WAVE.md#p738-merge-onto-master),
+[invocation ledger](reports/P738_P722_assets/verification.json),
+[case outcomes](reports/P738_P722_assets/case-results.json), and
+[raw logs/TRX](reports/P738_P722_assets/validation-logs.tar.gz).

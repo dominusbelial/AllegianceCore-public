@@ -1780,7 +1780,7 @@ public sealed partial class Game1
                         ent.HullId, ent.SectorId, ent.StationId, ent.IsDead, ent.IsGone,
                         _session.World.TeamLeaderShipIdFor(ent.SideId) == ent.ShipId,
                         _session.World.Roster.ReadyByShipId.TryGetValue(ent.ShipId, out var ready) ? ready : null,
-                        ent.SideId == _session.World.MySideId ? ent.WingId : null);
+                        ent.SideId == _session.World.MySideId ? ent.WingId : null, ShipId: ent.ShipId);
                 lines = Rendering.TeamPaneLayout.Build(
                     _session.World.ScoreRoster, _session.World.RankTable, briefs,
                     _session.World.IsSideActive,
@@ -1789,6 +1789,9 @@ public sealed partial class Game1
                     _session.World.IsTeamLeader,
                     ships.TryGetValue(_session.World.MyShipId ?? -1, out var tpe) ? tpe.CharacterName : null,
                     $"{KeyOf("TeamPane").Label} TOGGLE | {KeyOf("Scoreboard").Label} LEADERBOARD | {KeyOf("PilotInfo").Label} CHARACTER SHEET");
+                lines = lines.Append(new TeamPaneLayout.Line(TeamPaneLayout.LineKind.Hint, ModerationModel.Hint))
+                    .Append(new TeamPaneLayout.Line(TeamPaneLayout.LineKind.Note, _moderation.Notice ?? "Steam moderator bans unavailable."))
+                    .ToArray();
                 if (_consolePanes.Team == TeamConsoleSize.Mini)
                     lines = TeamPaneLayout.Compact(lines, _session.World.ScoreRoster, _session.World.MySideId);
             }

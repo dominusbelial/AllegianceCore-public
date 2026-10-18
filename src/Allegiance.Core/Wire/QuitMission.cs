@@ -4,9 +4,7 @@ namespace Allegiance.Core.Wire;
 /// <c>FM_CS_QUIT_MISSION</c> (id 124, <c>Messages.h:812-818</c>): a player has
 /// left the mission entirely — broadcast by the server on disconnect
 /// (P183's real, previously-missing gap) and, in the <c>CS</c> direction,
-/// usable by a player to quit or a leader to kick. P183 only builds the
-/// server-generated disconnect direction; the client-initiated quit/kick is a
-/// separate, not-yet-scoped task.
+/// usable by a player to quit or a leader to kick (P722 Server.Moderation).
 /// <code>
 /// DEFINE_FEDMSG(CS, QUIT_MISSION, 124)
 ///   FM_VAR_ITEM(szMessageParam);

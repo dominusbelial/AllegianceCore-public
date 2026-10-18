@@ -542,6 +542,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { new Logoff().Encode() }));
     }
 
+    /// <summary>Messages.h:812-818; teampane.cpp:1104-1108 (no defections).
+    /// Server validates leadership and the target's mission/side.</summary>
+    public void SendQuitMission(short shipId, QuitSideReason reason) =>
+        Send(FedPacket.Pack([new QuitMission { ShipId = shipId, Reason = reason }.Encode()]));
+
     /// <summary>P414 — send a real <c>FM_C_RIPCORD_REQUEST(184)</c> — the client's
     /// "start / re-target / cancel a ripcord countdown" request, the mirror of
     /// <c>Bot.SendRipcordRequest</c> (the P111-P113/P172 server state machine is

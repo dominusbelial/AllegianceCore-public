@@ -1,0 +1,866 @@
+{
+  "merge_target": "codex/p722",
+  "ours": "9bed4a536f234a8736952a3c15248c64ca6c2d44",
+  "theirs": "adfe90806bf0e1abb4032ca033ca093d246d8d51",
+  "conflicted_files": [
+    "docs/parity/fedmsg-wiring.csv",
+    "docs/parity/parity-matrix.csv",
+    "src/Allegiance.ClientCore.Game/Game1.Rendering.cs",
+    "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs",
+    "src/Allegiance.ClientCore/State/ClientWorld.cs",
+    "tests/Allegiance.ClientCore.Tests/FedMsgDispatchCoverageTests.cs"
+  ],
+  "conflict_count": 24,
+  "unchanged_master_files": [
+    "src/Allegiance.ClientCore.Game/Game1.Audio.cs",
+    "src/Allegiance.ClientCore/State/ClientSoundEvent.cs",
+    "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs",
+    "docs/parity/sim-rules-matrix.csv",
+    "tests/Allegiance.ClientCore.Tests/FedMsgDispatchCoverageTests.cs"
+  ],
+  "unchanged_sound_reports": [
+    "docs/reports/P710_PARITY_WAVE13.md",
+    "docs/reports/P711_PARITY_WAVE14.md",
+    "docs/reports/P714_PARITY_WAVE15.md",
+    "docs/reports/P716_PARITY_WAVE16.md",
+    "docs/reports/P717_PARITY_WAVE17.md",
+    "docs/reports/P719_PARITY_WAVE18.md",
+    "docs/reports/P721_PARITY_WAVE19.md",
+    "docs/reports/P723_PARITY_WAVE20.md",
+    "docs/reports/P725_PARITY_WAVE21.md"
+  ],
+  "sound_events": [
+    "ChatVoiceOver",
+    "StationDestroyed",
+    "StationEnemyDestroyed",
+    "StationCaptured",
+    "StationEnemyCaptured",
+    "DevCompleted",
+    "RipcordAborted",
+    "TeleportArrived",
+    "SectorHighlighted",
+    "PlayerWaiting",
+    "PaydayReceived",
+    "PickupPowerup",
+    "PickupDevelopment",
+    "PickupCash",
+    "ChatCommand",
+    "ChatCommander",
+    "ChatPersonal",
+    "ChatRegular",
+    "ChatOffline",
+    "HullLow",
+    "AmmoLow",
+    "FuelLow",
+    "EnergyLow",
+    "NoAmmo",
+    "NoFuel",
+    "RipcordDenied",
+    "CommanderElected",
+    "InvestorReceived",
+    "EnemyFlagStolen",
+    "ArtifactFound",
+    "OurFlagStolen",
+    "SectorJump",
+    "MineDeployed",
+    "ShieldsOffline",
+    "Docked",
+    "WelcomeHome",
+    "Boarded"
+  ],
+  "playback_cases": [
+    "ChatVoiceOver",
+    "StationDestroyed",
+    "StationEnemyDestroyed",
+    "StationCaptured",
+    "StationEnemyCaptured",
+    "DevCompleted",
+    "RipcordAborted",
+    "SectorHighlighted",
+    "PlayerWaiting",
+    "TeleportArrived",
+    "PaydayReceived",
+    "PickupPowerup",
+    "PickupDevelopment",
+    "PickupCash",
+    "ChatCommand",
+    "ChatCommander",
+    "ChatPersonal",
+    "ChatRegular",
+    "ChatOffline",
+    "HullLow",
+    "AmmoLow",
+    "FuelLow",
+    "EnergyLow",
+    "NoAmmo",
+    "NoFuel",
+    "RipcordDenied",
+    "CommanderElected",
+    "InvestorReceived",
+    "EnemyFlagStolen",
+    "ArtifactFound",
+    "OurFlagStolen",
+    "SectorJump",
+    "MineDeployed",
+    "ShieldsOffline",
+    "Docked",
+    "WelcomeHome",
+    "Boarded"
+  ],
+  "unique_complete_playback": true,
+  "flakes_union_preserved": true,
+  "LF_matrices": true,
+  "conflict_markers_remaining": false,
+  "score_before": [
+    "372",
+    "409",
+    "1370",
+    "1479"
+  ],
+  "score_after": [
+    "382",
+    "406",
+    "1399",
+    "1469"
+  ],
+  "changed_parity_rows": [
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "fedmsg",
+        "124 QUIT_MISSION"
+      ],
+      "decision": "both changed: more complete status and both evidences",
+      "base": {
+        "area": "fedmsg",
+        "native_item": "124 QUIT_MISSION",
+        "native_cite": "Inc/Messages.h:812",
+        "port_status": "partial",
+        "port_cite_or_reason": "Wire/QuitMission.cs (server handled; client consumer not found)",
+        "weight": "4"
+      },
+      "ours": {
+        "area": "fedmsg",
+        "native_item": "124 QUIT_MISSION",
+        "native_cite": "Inc/Messages.h:812-818; clintlib/appmsg.cpp:2501-2526; clintlib/clintlib.cpp:4037-4077,3805-3848",
+        "port_status": "done",
+        "port_cite_or_reason": "P718: design; Remote player/request/ready cleanup; own world reset, reason retention, socket closure and one session-loss event. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Remote_quit_mission_removes_player_requests_and_ready_without_touching_other_players; Own_quit_mission_clears_world_signals_loss_and_stops_remaining_packet_messages); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+        "weight": "4"
+      },
+      "theirs": {
+        "area": "fedmsg",
+        "native_item": "124 QUIT_MISSION",
+        "native_cite": "Inc/Messages.h:812",
+        "port_status": "partial",
+        "port_cite_or_reason": "P722 now consumes via ConnectionSession -> ClientWorld; client decode registry updated. Status retained for separate fedmsg audit of remaining native transitions/infrastructure; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "4"
+      },
+      "resolved": {
+        "area": "fedmsg",
+        "native_item": "124 QUIT_MISSION",
+        "native_cite": "Inc/Messages.h:812-818; clintlib/appmsg.cpp:2501-2526; clintlib/clintlib.cpp:4037-4077,3805-3848; Inc/Messages.h:812",
+        "port_status": "done",
+        "port_cite_or_reason": "P718: design; Remote player/request/ready cleanup; own world reset, reason retention, socket closure and one session-loss event. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Remote_quit_mission_removes_player_requests_and_ready_without_touching_other_players; Own_quit_mission_clears_world_signals_loss_and_stops_remaining_packet_messages); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md; P722 now consumes via ConnectionSession -> ClientWorld; client decode registry updated. Status retained for separate fedmsg audit of remaining native transitions/infrastructure; docs/reports/P722_INTERFACE_WAVE.md; P738: P718 completes the transitions that P722 left for the separate fedmsg audit; completion retained",
+        "weight": "4"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "fedmsg",
+        "126 QUIT_SIDE"
+      ],
+      "decision": "both changed: more complete status and both evidences",
+      "base": {
+        "area": "fedmsg",
+        "native_item": "126 QUIT_SIDE",
+        "native_cite": "Inc/Messages.h:825",
+        "port_status": "partial",
+        "port_cite_or_reason": "Wire/QuitSide.cs (server handled; client consumer not found)",
+        "weight": "4"
+      },
+      "ours": {
+        "area": "fedmsg",
+        "native_item": "126 QUIT_SIDE",
+        "native_cite": "Inc/Messages.h:825-829; clintlib/appmsg.cpp:2993-3002; clintlib/clintlib.cpp:3889-4034,3723-3787; Igc/missionigc.cpp:3804-3831",
+        "port_status": "done",
+        "port_cite_or_reason": "P718: design; SIDE_TEAMLOBBY transition; preserve ready; clear leadership/team state; own sector-world reset and re-entry. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Quit_side_clears_team_privileges_and_money_preserves_ready_and_join_reseats_identity; Own_quit_side_clears_sector_contents_but_keeps_mission_players_and_can_reenter); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md",
+        "weight": "4"
+      },
+      "theirs": {
+        "area": "fedmsg",
+        "native_item": "126 QUIT_SIDE",
+        "native_cite": "Inc/Messages.h:825",
+        "port_status": "partial",
+        "port_cite_or_reason": "P722 now consumes via ConnectionSession -> ClientWorld; client decode registry updated. Status retained for separate fedmsg audit of remaining native transitions/infrastructure; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "4"
+      },
+      "resolved": {
+        "area": "fedmsg",
+        "native_item": "126 QUIT_SIDE",
+        "native_cite": "Inc/Messages.h:825-829; clintlib/appmsg.cpp:2993-3002; clintlib/clintlib.cpp:3889-4034,3723-3787; Igc/missionigc.cpp:3804-3831; Inc/Messages.h:825",
+        "port_status": "done",
+        "port_cite_or_reason": "P718: design; SIDE_TEAMLOBBY transition; preserve ready; clear leadership/team state; own sector-world reset and re-entry. src/Allegiance.ClientCore/Session/ConnectionSession.cs; src/Allegiance.ClientCore/State/ClientWorld.Interface.cs; tests/Allegiance.ClientCore.Tests/P718InterfaceMessageTests.cs (Quit_side_clears_team_privileges_and_money_preserves_ready_and_join_reseats_identity; Own_quit_side_clears_sector_contents_but_keeps_mission_players_and_can_reenter); tests/Allegiance.ClientCore.Tests/P718InterfaceLoopbackTests.cs (native golden bytes and real TCP ordering); docs/reports/P718_INTERFACE_WAVE.md; P722 now consumes via ConnectionSession -> ClientWorld; client decode registry updated. Status retained for separate fedmsg audit of remaining native transitions/infrastructure; docs/reports/P722_INTERFACE_WAVE.md; P738: P718 completes the transitions that P722 left for the separate fedmsg audit; completion retained",
+        "weight": "4"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "screens",
+        "Intro screen"
+      ],
+      "decision": "incoming only",
+      "base": {
+        "area": "screens",
+        "native_item": "Intro screen",
+        "native_cite": "WinTrek/introscreen.cpp",
+        "port_status": "partial",
+        "port_cite_or_reason": "boots to connect screen; no animated intro sequence",
+        "weight": "2"
+      },
+      "ours": {
+        "area": "screens",
+        "native_item": "Intro screen",
+        "native_cite": "WinTrek/introscreen.cpp",
+        "port_status": "partial",
+        "port_cite_or_reason": "boots to connect screen; no animated intro sequence",
+        "weight": "2"
+      },
+      "theirs": {
+        "area": "screens",
+        "native_item": "Intro screen",
+        "native_cite": "WinTrek/introscreen.cpp:34-99",
+        "port_status": "done",
+        "port_cite_or_reason": "design with era constraints; native intro is login/directory state UI; port uses the server browser/connect UI without Zone login. src/Allegiance.ClientCore.Game/Game1.Session.cs:367; src/Allegiance.ClientCore.Game/Game1.Session.cs:690; ConnectScreenLayoutTests; ConnectProfileTests; LobbyFilterTests; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "2"
+      },
+      "resolved": {
+        "area": "screens",
+        "native_item": "Intro screen",
+        "native_cite": "WinTrek/introscreen.cpp:34-99",
+        "port_status": "done",
+        "port_cite_or_reason": "design with era constraints; native intro is login/directory state UI; port uses the server browser/connect UI without Zone login. src/Allegiance.ClientCore.Game/Game1.Session.cs:367; src/Allegiance.ClientCore.Game/Game1.Session.cs:690; ConnectScreenLayoutTests; ConnectProfileTests; LobbyFilterTests; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "2"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "screens",
+        "Splash / loading screen"
+      ],
+      "decision": "incoming only",
+      "base": {
+        "area": "screens",
+        "native_item": "Splash / loading screen",
+        "native_cite": "WinTrek/splashscreen.cpp",
+        "port_status": "partial",
+        "port_cite_or_reason": "connect/loading states exist",
+        "weight": "2"
+      },
+      "ours": {
+        "area": "screens",
+        "native_item": "Splash / loading screen",
+        "native_cite": "WinTrek/splashscreen.cpp",
+        "port_status": "partial",
+        "port_cite_or_reason": "connect/loading states exist",
+        "weight": "2"
+      },
+      "theirs": {
+        "area": "screens",
+        "native_item": "Splash / loading screen",
+        "native_cite": "WinTrek/splashscreen.cpp:20-46",
+        "port_status": "done",
+        "port_cite_or_reason": "native bug: unconditional quick-start (g_bQuickstart || true) skips splash after 0.01s; port directly enters browser/connect and displays connection progress. src/Allegiance.ClientCore.Game/Game1.cs:1519; src/Allegiance.ClientCore.Game/Game1.Session.cs:659; ConnectScreenLayoutTests; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "2"
+      },
+      "resolved": {
+        "area": "screens",
+        "native_item": "Splash / loading screen",
+        "native_cite": "WinTrek/splashscreen.cpp:20-46",
+        "port_status": "done",
+        "port_cite_or_reason": "native bug: unconditional quick-start (g_bQuickstart || true) skips splash after 0.01s; port directly enters browser/connect and displays connection progress. src/Allegiance.ClientCore.Game/Game1.cs:1519; src/Allegiance.ClientCore.Game/Game1.Session.cs:659; ConnectScreenLayoutTests; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "2"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "screens",
+        "Training screen"
+      ],
+      "decision": "incoming only",
+      "base": {
+        "area": "screens",
+        "native_item": "Training screen",
+        "native_cite": "WinTrek/trainingscreen.cpp",
+        "port_status": "partial",
+        "port_cite_or_reason": "docs/NATIVE_TRAINING_SCRIPT.md; no full training-mission UI",
+        "weight": "3"
+      },
+      "ours": {
+        "area": "screens",
+        "native_item": "Training screen",
+        "native_cite": "WinTrek/trainingscreen.cpp",
+        "port_status": "partial",
+        "port_cite_or_reason": "docs/NATIVE_TRAINING_SCRIPT.md; no full training-mission UI",
+        "weight": "3"
+      },
+      "theirs": {
+        "area": "screens",
+        "native_item": "Training screen",
+        "native_cite": "WinTrek/trainingscreen.cpp:175-230; WinTrek/WinTrek.cpp:7401-7421; training/trainingmission.cpp:651-788",
+        "port_status": "n/a",
+        "port_cite_or_reason": "era/runtime constraint: native standalone training screen launches a local WinTrek IGC mission and controls/camera scripting. This network-only client has no offline training runtime; porting that simulation is outside this interface lane. Native art/PCore014 DO exist; not excluded for missing assets. docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      },
+      "resolved": {
+        "area": "screens",
+        "native_item": "Training screen",
+        "native_cite": "WinTrek/trainingscreen.cpp:175-230; WinTrek/WinTrek.cpp:7401-7421; training/trainingmission.cpp:651-788",
+        "port_status": "n/a",
+        "port_cite_or_reason": "era/runtime constraint: native standalone training screen launches a local WinTrek IGC mission and controls/camera scripting. This network-only client has no offline training runtime; porting that simulation is outside this interface lane. Native art/PCore014 DO exist; not excluded for missing assets. docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "screens",
+        "Video screen (cinematic)"
+      ],
+      "decision": "incoming only",
+      "base": {
+        "area": "screens",
+        "native_item": "Video screen (cinematic)",
+        "native_cite": "WinTrek/videoscreen.cpp",
+        "port_status": "missing",
+        "port_cite_or_reason": "no cinematic playback",
+        "weight": "2"
+      },
+      "ours": {
+        "area": "screens",
+        "native_item": "Video screen (cinematic)",
+        "native_cite": "WinTrek/videoscreen.cpp",
+        "port_status": "missing",
+        "port_cite_or_reason": "no cinematic playback",
+        "weight": "2"
+      },
+      "theirs": {
+        "area": "screens",
+        "native_item": "Video screen (cinematic)",
+        "native_cite": "WinTrek/videoscreen.cpp:72-99; WinTrek/videoscreen.cpp:135-181",
+        "port_status": "n/a",
+        "port_cite_or_reason": "era constraint: Windows CDPath/VideoImage cinematic sequence; NextVideo body disabled under BUILD_DX9 in the native source; AVI sequence absent from available artwork. docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "2"
+      },
+      "resolved": {
+        "area": "screens",
+        "native_item": "Video screen (cinematic)",
+        "native_cite": "WinTrek/videoscreen.cpp:72-99; WinTrek/videoscreen.cpp:135-181",
+        "port_status": "n/a",
+        "port_cite_or_reason": "era constraint: Windows CDPath/VideoImage cinematic sequence; NextVideo body disabled under BUILD_DX9 in the native source; AVI sequence absent from available artwork. docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "2"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "screens",
+        "Selection pane"
+      ],
+      "decision": "both changed: more complete status and both evidences",
+      "base": {
+        "area": "screens",
+        "native_item": "Selection pane",
+        "native_cite": "WinTrek/selpane.cpp",
+        "port_status": "partial",
+        "port_cite_or_reason": "targeting/selection via RadarBracketRenderer + Game1.Targeting",
+        "weight": "3"
+      },
+      "ours": {
+        "area": "screens",
+        "native_item": "Selection pane",
+        "native_cite": "WinTrek/selpane.cpp:17-52; WinTrek/selpane.cpp:71-100",
+        "port_status": "na",
+        "port_cite_or_reason": "P713 native_intent=era constraint: native ValuePane/RowPane framework scaffolding; empty SelectionPane.OnSelChange only returns true and SelectModelPane wraps an externally supplied child; no standalone selection-screen behavior to port. Inventory correction only; actual targeting remains in Game1.Targeting and RadarBracketRenderer",
+        "weight": "3"
+      },
+      "theirs": {
+        "area": "screens",
+        "native_item": "Selection pane",
+        "native_cite": "WinTrek/selpane.cpp:81-120; WinTrek/consoledata.cpp:65-87; WinTrek/consoledata.cpp:202-279; WinTrek/consoledata.cpp:449-460",
+        "port_status": "done",
+        "port_cite_or_reason": "design; selected-model name/health/shields and asteroid-only ore from live ClientWorld; no hidden/dead ship data; allied classification. src/Allegiance.ClientCore.Game/Rendering/SelectionPaneModel.cs:9; src/Allegiance.ClientCore.Game/Game1.Camera.cs:126; P722InterfaceModelTests.Selection_uses_live_station_health_and_asteroid_ore_without_inventing_ship_fields; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      },
+      "resolved": {
+        "area": "screens",
+        "native_item": "Selection pane",
+        "native_cite": "WinTrek/selpane.cpp:17-52; WinTrek/selpane.cpp:71-100; WinTrek/selpane.cpp:81-120; WinTrek/consoledata.cpp:65-87; WinTrek/consoledata.cpp:202-279; WinTrek/consoledata.cpp:449-460",
+        "port_status": "done",
+        "port_cite_or_reason": "P713 native_intent=era constraint: native ValuePane/RowPane framework scaffolding; empty SelectionPane.OnSelChange only returns true and SelectModelPane wraps an externally supplied child; no standalone selection-screen behavior to port. Inventory correction only; actual targeting remains in Game1.Targeting and RadarBracketRenderer; design; selected-model name/health/shields and asteroid-only ore from live ClientWorld; no hidden/dead ship data; allied classification. src/Allegiance.ClientCore.Game/Rendering/SelectionPaneModel.cs:9; src/Allegiance.ClientCore.Game/Game1.Camera.cs:126; P722InterfaceModelTests.Selection_uses_live_station_health_and_asteroid_ore_without_inventing_ship_fields; docs/reports/P722_INTERFACE_WAVE.md; P738: P713 scaffolding classification retained as historical context; P722 now supplies the selected-model binding and tests, so done supersedes the inventory exclusion",
+        "weight": "3"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "parts",
+        "c_habmCaptureThreat"
+      ],
+      "decision": "incoming only",
+      "base": {
+        "area": "parts",
+        "native_item": "c_habmCaptureThreat",
+        "native_cite": "Igc/igc.h:729",
+        "port_status": "partial",
+        "port_cite_or_reason": "decoded (HabmCaptureThreat); station-capture threat scoring partial",
+        "weight": "3"
+      },
+      "ours": {
+        "area": "parts",
+        "native_item": "c_habmCaptureThreat",
+        "native_cite": "Igc/igc.h:729",
+        "port_status": "partial",
+        "port_cite_or_reason": "decoded (HabmCaptureThreat); station-capture threat scoring partial",
+        "weight": "3"
+      },
+      "theirs": {
+        "area": "parts",
+        "native_item": "c_habmCaptureThreat",
+        "native_cite": "Igc/igc.h:729; Igc/igc.h:5384-5389; Igc/common.cpp:2490-2495",
+        "port_status": "done",
+        "port_cite_or_reason": "design; classification only (not capture permission). src/Allegiance.Core/Sim/ClusterWarnings.cs:83; P722InterfaceModelTests.Threat_abilities_produce_the_native_client_warning_text; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      },
+      "resolved": {
+        "area": "parts",
+        "native_item": "c_habmCaptureThreat",
+        "native_cite": "Igc/igc.h:729; Igc/igc.h:5384-5389; Igc/common.cpp:2490-2495",
+        "port_status": "done",
+        "port_cite_or_reason": "design; classification only (not capture permission). src/Allegiance.Core/Sim/ClusterWarnings.cs:83; P722InterfaceModelTests.Threat_abilities_produce_the_native_client_warning_text; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "parts",
+        "c_habmRemoteLeadIndicator"
+      ],
+      "decision": "incoming only",
+      "base": {
+        "area": "parts",
+        "native_item": "c_habmRemoteLeadIndicator",
+        "native_cite": "Igc/igc.h:734",
+        "port_status": "partial",
+        "port_cite_or_reason": "decoded (HabmRemoteLeadIndicator); remote lead relay partial",
+        "weight": "3"
+      },
+      "ours": {
+        "area": "parts",
+        "native_item": "c_habmRemoteLeadIndicator",
+        "native_cite": "Igc/igc.h:734",
+        "port_status": "partial",
+        "port_cite_or_reason": "decoded (HabmRemoteLeadIndicator); remote lead relay partial",
+        "weight": "3"
+      },
+      "theirs": {
+        "area": "parts",
+        "native_item": "c_habmRemoteLeadIndicator",
+        "native_cite": "Igc/igc.h:734; WinTrek/indicator.cpp:296-320",
+        "port_status": "done",
+        "port_cite_or_reason": "design; same-side unboarded scanner relay grants owner lead and loss clears it. src/Allegiance.Server/Server.Broadcast.cs:3176; P722InterfaceLoopbackTests.Remote_lead_relay_grants_and_revokes_owner_indicator; LeadIndicatorUpdateWireTests; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      },
+      "resolved": {
+        "area": "parts",
+        "native_item": "c_habmRemoteLeadIndicator",
+        "native_cite": "Igc/igc.h:734; WinTrek/indicator.cpp:296-320",
+        "port_status": "done",
+        "port_cite_or_reason": "design; same-side unboarded scanner relay grants owner lead and loss clears it. src/Allegiance.Server/Server.Broadcast.cs:3176; P722InterfaceLoopbackTests.Remote_lead_relay_grants_and_revokes_owner_indicator; LeadIndicatorUpdateWireTests; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "parts",
+        "c_habmThreatToStation"
+      ],
+      "decision": "incoming only",
+      "base": {
+        "area": "parts",
+        "native_item": "c_habmThreatToStation",
+        "native_cite": "Igc/igc.h:735; Igc/igc.h:5390",
+        "port_status": "partial",
+        "port_cite_or_reason": "tools/allegiance-mcp/Showcase.cs:105; tools/allegiance-mcp/CombatTargetSelector.cs:82; BotFixRegressionTests.P656_DefenseBomberPriorityRunsBeforeEitherP622Mode (tests/Allegiance.ClientCore.Tests/P656ShowcaseFinaleTests.cs:424); P656 implements bomber/defense classification; tool policy does not close native simulation wingman command/behavior gaps, so partial retained.",
+        "weight": "3"
+      },
+      "ours": {
+        "area": "parts",
+        "native_item": "c_habmThreatToStation",
+        "native_cite": "Igc/igc.h:735; Igc/igc.h:5390",
+        "port_status": "partial",
+        "port_cite_or_reason": "tools/allegiance-mcp/Showcase.cs:105; tools/allegiance-mcp/CombatTargetSelector.cs:82; BotFixRegressionTests.P656_DefenseBomberPriorityRunsBeforeEitherP622Mode (tests/Allegiance.ClientCore.Tests/P656ShowcaseFinaleTests.cs:424); P656 implements bomber/defense classification; tool policy does not close native simulation wingman command/behavior gaps, so partial retained.",
+        "weight": "3"
+      },
+      "theirs": {
+        "area": "parts",
+        "native_item": "c_habmThreatToStation",
+        "native_cite": "Igc/igc.h:735; Igc/igc.h:5390-5394; Igc/shipIGC.cpp:1262; WinTrek/WinTrek.cpp:10166",
+        "port_status": "done",
+        "port_cite_or_reason": "design; native bit consumers are bomber classification/target filter and doubled repair credit. src/Allegiance.Core/Sim/ClusterWarnings.cs:87; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:548; NaniteThreatBonusLiveTests; P722InterfaceModelTests.Threat_abilities_produce_the_native_client_warning_text. Generic wingman gaps are separate simulation rows; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      },
+      "resolved": {
+        "area": "parts",
+        "native_item": "c_habmThreatToStation",
+        "native_cite": "Igc/igc.h:735; Igc/igc.h:5390-5394; Igc/shipIGC.cpp:1262; WinTrek/WinTrek.cpp:10166",
+        "port_status": "done",
+        "port_cite_or_reason": "design; native bit consumers are bomber classification/target filter and doubled repair credit. src/Allegiance.Core/Sim/ClusterWarnings.cs:87; src/Allegiance.ClientCore.Game/Game1.Targeting.cs:548; NaniteThreatBonusLiveTests; P722InterfaceModelTests.Threat_abilities_produce_the_native_client_warning_text. Generic wingman gaps are separate simulation rows; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "parts",
+        "c_habmIsLtRipcordTarget"
+      ],
+      "decision": "incoming only",
+      "base": {
+        "area": "parts",
+        "native_item": "c_habmIsLtRipcordTarget",
+        "native_cite": "Igc/igc.h:738",
+        "port_status": "partial",
+        "port_cite_or_reason": "decoded (HabmIsLtRipcordTarget); lt-ripcord target behavior partial",
+        "weight": "3"
+      },
+      "ours": {
+        "area": "parts",
+        "native_item": "c_habmIsLtRipcordTarget",
+        "native_cite": "Igc/igc.h:738",
+        "port_status": "partial",
+        "port_cite_or_reason": "decoded (HabmIsLtRipcordTarget); lt-ripcord target behavior partial",
+        "weight": "3"
+      },
+      "theirs": {
+        "area": "parts",
+        "native_item": "c_habmIsLtRipcordTarget",
+        "native_cite": "Igc/igc.h:738; FedSrv/FedSrv.CPP:13393-13429; Igc/shipIGC.cpp:3727-3729",
+        "port_status": "done",
+        "port_cite_or_reason": "design; light anchor requires CanLtRipcord on requester; ordinary anchor remains legal. src/Allegiance.Server/Server.cs:1145; src/Allegiance.Core/Model/Sector.cs:1573; P722InterfaceLoopbackTests.Light_ripcord_anchor_obeys_both_hull_bits_and_activation_precedes_abort; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      },
+      "resolved": {
+        "area": "parts",
+        "native_item": "c_habmIsLtRipcordTarget",
+        "native_cite": "Igc/igc.h:738; FedSrv/FedSrv.CPP:13393-13429; Igc/shipIGC.cpp:3727-3729",
+        "port_status": "done",
+        "port_cite_or_reason": "design; light anchor requires CanLtRipcord on requester; ordinary anchor remains legal. src/Allegiance.Server/Server.cs:1145; src/Allegiance.Core/Model/Sector.cs:1573; P722InterfaceLoopbackTests.Light_ripcord_anchor_obeys_both_hull_bits_and_activation_precedes_abort; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "parts",
+        "c_habmCanLtRipcord"
+      ],
+      "decision": "incoming only",
+      "base": {
+        "area": "parts",
+        "native_item": "c_habmCanLtRipcord",
+        "native_cite": "Igc/igc.h:739",
+        "port_status": "partial",
+        "port_cite_or_reason": "decoded (HabmCanLtRipcord); lt-ripcord partial",
+        "weight": "3"
+      },
+      "ours": {
+        "area": "parts",
+        "native_item": "c_habmCanLtRipcord",
+        "native_cite": "Igc/igc.h:739",
+        "port_status": "partial",
+        "port_cite_or_reason": "decoded (HabmCanLtRipcord); lt-ripcord partial",
+        "weight": "3"
+      },
+      "theirs": {
+        "area": "parts",
+        "native_item": "c_habmCanLtRipcord",
+        "native_cite": "Igc/igc.h:739; FedSrv/FedSrv.CPP:13400-13402; Igc/shipIGC.cpp:3727-3729",
+        "port_status": "done",
+        "port_cite_or_reason": "design; requester broadens anchor mask by OR (not replacement); accept/deny/abort exact bytes and order verified. src/Allegiance.Server/Server.cs:1145; P722InterfaceLoopbackTests.Light_ripcord_anchor_obeys_both_hull_bits_and_activation_precedes_abort; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      },
+      "resolved": {
+        "area": "parts",
+        "native_item": "c_habmCanLtRipcord",
+        "native_cite": "Igc/igc.h:739; FedSrv/FedSrv.CPP:13400-13402; Igc/shipIGC.cpp:3727-3729",
+        "port_status": "done",
+        "port_cite_or_reason": "design; requester broadens anchor mask by OR (not replacement); accept/deny/abort exact bytes and order verified. src/Allegiance.Server/Server.cs:1145; P722InterfaceLoopbackTests.Light_ripcord_anchor_obeys_both_hull_bits_and_activation_precedes_abort; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "parts",
+        "c_eabmCapture"
+      ],
+      "decision": "incoming only",
+      "base": {
+        "area": "parts",
+        "native_item": "c_eabmCapture",
+        "native_cite": "Igc equip ability",
+        "port_status": "partial",
+        "port_cite_or_reason": "decoded; capture-capable probe/equip partial",
+        "weight": "3"
+      },
+      "ours": {
+        "area": "parts",
+        "native_item": "c_eabmCapture",
+        "native_cite": "Igc equip ability",
+        "port_status": "partial",
+        "port_cite_or_reason": "decoded; capture-capable probe/equip partial",
+        "weight": "3"
+      },
+      "theirs": {
+        "area": "parts",
+        "native_item": "c_eabmCapture",
+        "native_cite": "Igc/igc.h:771; Igc/missileigc.cpp:471-496; Inc/Messages.h:429-434; FedSrv/fsship.cpp:619-631",
+        "port_status": "done",
+        "port_cite_or_reason": "design; capture MISSILE ability (not probes): damage before downed-shield gate; reject same-side/pedestal; capture seam before re-side; suppress impact blast. src/Allegiance.Core/Model/Sector.cs:2104; P722InterfaceLoopbackTests.Capture_missile_uses_native_station_gates_and_exact_capture_bytes; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      },
+      "resolved": {
+        "area": "parts",
+        "native_item": "c_eabmCapture",
+        "native_cite": "Igc/igc.h:771; Igc/missileigc.cpp:471-496; Inc/Messages.h:429-434; FedSrv/fsship.cpp:619-631",
+        "port_status": "done",
+        "port_cite_or_reason": "design; capture MISSILE ability (not probes): damage before downed-shield gate; reject same-side/pedestal; capture seam before re-side; suppress impact blast. src/Allegiance.Core/Model/Sector.cs:2104; P722InterfaceLoopbackTests.Capture_missile_uses_native_station_gates_and_exact_capture_bytes; docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "3"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "lobby",
+        "Create game / new game wizard"
+      ],
+      "decision": "incoming only",
+      "base": {
+        "area": "lobby",
+        "native_item": "Create game / new game wizard",
+        "native_cite": "WinTrek/newgamescreen.cpp",
+        "port_status": "partial",
+        "port_cite_or_reason": "mission is created from server config; no GUI create-game wizard",
+        "weight": "4"
+      },
+      "ours": {
+        "area": "lobby",
+        "native_item": "Create game / new game wizard",
+        "native_cite": "WinTrek/newgamescreen.cpp",
+        "port_status": "partial",
+        "port_cite_or_reason": "mission is created from server config; no GUI create-game wizard",
+        "weight": "4"
+      },
+      "theirs": {
+        "area": "lobby",
+        "native_item": "Create game / new game wizard",
+        "native_cite": "WinTrek/introscreen.cpp:78-99; WinTrek/newgamescreen.cpp:1034-1041; clintlib/clintlib.cpp:2013-2041",
+        "port_status": "n/a",
+        "port_cite_or_reason": "era/infrastructure constraint: remote server/core selection and CreateMissionReq require native lobby mission provisioning; current directory advertises boot-configured servers only. MISSIONPARAMS editing is also absent (separate fedmsg row). ServerConfig remains provisioning path; not claiming a GUI wizard. docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "4"
+      },
+      "resolved": {
+        "area": "lobby",
+        "native_item": "Create game / new game wizard",
+        "native_cite": "WinTrek/introscreen.cpp:78-99; WinTrek/newgamescreen.cpp:1034-1041; clintlib/clintlib.cpp:2013-2041",
+        "port_status": "n/a",
+        "port_cite_or_reason": "era/infrastructure constraint: remote server/core selection and CreateMissionReq require native lobby mission provisioning; current directory advertises boot-configured servers only. MISSIONPARAMS editing is also absent (separate fedmsg row). ServerConfig remains provisioning path; not claiming a GUI wizard. docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "4"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "lobby",
+        "Kick / ban / mute (moderation)"
+      ],
+      "decision": "incoming only",
+      "base": {
+        "area": "lobby",
+        "native_item": "Kick / ban / mute (moderation)",
+        "native_cite": "moderation",
+        "port_status": "partial",
+        "port_cite_or_reason": "src/Allegiance.Server/Server.AdminCheats.cs + Server.Dispatch ban; admin-cheat based, no native moderation UI",
+        "weight": "4"
+      },
+      "ours": {
+        "area": "lobby",
+        "native_item": "Kick / ban / mute (moderation)",
+        "native_cite": "moderation",
+        "port_status": "partial",
+        "port_cite_or_reason": "src/Allegiance.Server/Server.AdminCheats.cs + Server.Dispatch ban; admin-cheat based, no native moderation UI",
+        "weight": "4"
+      },
+      "theirs": {
+        "area": "lobby",
+        "native_item": "Kick / ban / mute (moderation)",
+        "native_cite": "Inc/Messages.h:787-818; WinTrek/teampane.cpp:1070-1125; WinTrek/WinTrek.cpp:3731-3761; FedSrv/FedSrv.CPP:6749-6818; WinTrek/trekigc.cpp:4492",
+        "port_status": "done",
+        "port_cite_or_reason": "design; confirmed /boot ID + /confirmboot (or /cancelboot) sends leader-gated QUIT_MISSION; /mute ID and /unmute ID local chat preference. src/Allegiance.Server/Server.Moderation.cs:11; src/Allegiance.ClientCore.Game/Rendering/ModerationModel.cs:9; P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot; P722InterfaceModelTests. Steam moderator ban/defection-side boot unavailable infrastructure; FMID117 dead. docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "4"
+      },
+      "resolved": {
+        "area": "lobby",
+        "native_item": "Kick / ban / mute (moderation)",
+        "native_cite": "Inc/Messages.h:787-818; WinTrek/teampane.cpp:1070-1125; WinTrek/WinTrek.cpp:3731-3761; FedSrv/FedSrv.CPP:6749-6818; WinTrek/trekigc.cpp:4492",
+        "port_status": "done",
+        "port_cite_or_reason": "design; confirmed /boot ID + /confirmboot (or /cancelboot) sends leader-gated QUIT_MISSION; /mute ID and /unmute ID local chat preference. src/Allegiance.Server/Server.Moderation.cs:11; src/Allegiance.ClientCore.Game/Rendering/ModerationModel.cs:9; P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot; P722InterfaceModelTests. Steam moderator ban/defection-side boot unavailable infrastructure; FMID117 dead. docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "4"
+      }
+    },
+    {
+      "file": "docs/parity/parity-matrix.csv",
+      "key": [
+        "lobby",
+        "Training missions (tutorial)"
+      ],
+      "decision": "incoming only",
+      "base": {
+        "area": "lobby",
+        "native_item": "Training missions (tutorial)",
+        "native_cite": "WinTrek/trainingscreen.cpp",
+        "port_status": "partial",
+        "port_cite_or_reason": "docs/NATIVE_TRAINING_SCRIPT.md server-scripted scenarios; no full client tutorial UI",
+        "weight": "4"
+      },
+      "ours": {
+        "area": "lobby",
+        "native_item": "Training missions (tutorial)",
+        "native_cite": "WinTrek/trainingscreen.cpp",
+        "port_status": "partial",
+        "port_cite_or_reason": "docs/NATIVE_TRAINING_SCRIPT.md server-scripted scenarios; no full client tutorial UI",
+        "weight": "4"
+      },
+      "theirs": {
+        "area": "lobby",
+        "native_item": "Training missions (tutorial)",
+        "native_cite": "WinTrek/trainingscreen.cpp:175-230; WinTrek/WinTrek.cpp:7401-7421; training/trainingmission.cpp:651-788",
+        "port_status": "n/a",
+        "port_cite_or_reason": "era/runtime constraint: native tutorials run local WinTrek IGC + input/control/camera mission scripts; no network training service or offline mission runtime in this client. Requires simulation work outside lane. PCore014 and tutorial artwork exist; docs/NATIVE_TRAINING_SCRIPT.md is a transcript rather than a playable port. docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "4"
+      },
+      "resolved": {
+        "area": "lobby",
+        "native_item": "Training missions (tutorial)",
+        "native_cite": "WinTrek/trainingscreen.cpp:175-230; WinTrek/WinTrek.cpp:7401-7421; training/trainingmission.cpp:651-788",
+        "port_status": "n/a",
+        "port_cite_or_reason": "era/runtime constraint: native tutorials run local WinTrek IGC + input/control/camera mission scripts; no network training service or offline mission runtime in this client. Requires simulation work outside lane. PCore014 and tutorial artwork exist; docs/NATIVE_TRAINING_SCRIPT.md is a transcript rather than a playable port. docs/reports/P722_INTERFACE_WAVE.md",
+        "weight": "4"
+      }
+    },
+    {
+      "file": "docs/parity/fedmsg-wiring.csv",
+      "key": "124",
+      "decision": "both changed: more complete status and both evidences",
+      "base": {
+        "message": "QUIT_MISSION",
+        "id": "124",
+        "direction": "CS",
+        "server site": "Server.Lifecycle, Server.Lobby",
+        "client decode": "Bot only (harness)",
+        "client effect": "Real client does NOT consume (candidate: QUIT_MISSION)",
+        "native handler": "appmsg.cpp:2501",
+        "status": "partial"
+      },
+      "ours": {
+        "message": "QUIT_MISSION",
+        "id": "124",
+        "direction": "CS",
+        "server site": "Server.Lifecycle, Server.Lobby",
+        "client decode": "ConnectionSession (real client)",
+        "client effect": "P718: Remote player/request/ready cleanup; own world reset, reason retention, socket closure and one session-loss event",
+        "native handler": "Inc/Messages.h:812-818; clintlib/appmsg.cpp:2501-2526; clintlib/clintlib.cpp:4037-4077,3805-3848",
+        "status": "done"
+      },
+      "theirs": {
+        "message": "QUIT_MISSION",
+        "id": "124",
+        "direction": "CS",
+        "server site": "Server.Lifecycle, Server.Lobby, Server.Moderation",
+        "client decode": "ConnectionSession -> ClientWorld (P722)",
+        "client effect": "Remove departed pilot and return own mission departure to browser (P722); Steam moderation unavailable",
+        "native handler": "appmsg.cpp:2501",
+        "status": "partial"
+      },
+      "resolved": {
+        "message": "QUIT_MISSION",
+        "id": "124",
+        "direction": "CS",
+        "server site": "Server.Lifecycle, Server.Lobby; Server.Lifecycle, Server.Lobby, Server.Moderation",
+        "client decode": "ConnectionSession (real client); ConnectionSession -> ClientWorld (P722)",
+        "client effect": "P718: Remote player/request/ready cleanup; own world reset, reason retention, socket closure and one session-loss event; Remove departed pilot and return own mission departure to browser (P722); Steam moderation unavailable",
+        "native handler": "Inc/Messages.h:812-818; clintlib/appmsg.cpp:2501-2526; clintlib/clintlib.cpp:4037-4077,3805-3848; appmsg.cpp:2501",
+        "status": "done"
+      }
+    },
+    {
+      "file": "docs/parity/fedmsg-wiring.csv",
+      "key": "126",
+      "decision": "both changed: more complete status and both evidences",
+      "base": {
+        "message": "QUIT_SIDE",
+        "id": "126",
+        "direction": "CS",
+        "server site": "Server.Lifecycle, Server.Lobby",
+        "client decode": "Bot only (harness)",
+        "client effect": "Real client does NOT consume (candidate: QUIT_SIDE)",
+        "native handler": "appmsg.cpp:2993",
+        "status": "partial"
+      },
+      "ours": {
+        "message": "QUIT_SIDE",
+        "id": "126",
+        "direction": "CS",
+        "server site": "Server.Lifecycle, Server.Lobby",
+        "client decode": "ConnectionSession (real client)",
+        "client effect": "P718: SIDE_TEAMLOBBY transition; preserve ready; clear leadership/team state; own sector-world reset and re-entry",
+        "native handler": "Inc/Messages.h:825-829; clintlib/appmsg.cpp:2993-3002; clintlib/clintlib.cpp:3889-4034,3723-3787; Igc/missionigc.cpp:3804-3831",
+        "status": "done"
+      },
+      "theirs": {
+        "message": "QUIT_SIDE",
+        "id": "126",
+        "direction": "CS",
+        "server site": "Server.Lifecycle, Server.Lobby",
+        "client decode": "ConnectionSession -> ClientWorld (P722)",
+        "client effect": "Clear departed side; JOIN_SIDE refreshes new side (P722); standalone defection-side boot unavailable",
+        "native handler": "appmsg.cpp:2993",
+        "status": "partial"
+      },
+      "resolved": {
+        "message": "QUIT_SIDE",
+        "id": "126",
+        "direction": "CS",
+        "server site": "Server.Lifecycle, Server.Lobby",
+        "client decode": "ConnectionSession (real client); ConnectionSession -> ClientWorld (P722)",
+        "client effect": "P718: SIDE_TEAMLOBBY transition; preserve ready; clear leadership/team state; own sector-world reset and re-entry; Clear departed side; JOIN_SIDE refreshes new side (P722); standalone defection-side boot unavailable",
+        "native handler": "Inc/Messages.h:825-829; clintlib/appmsg.cpp:2993-3002; clintlib/clintlib.cpp:3889-4034,3723-3787; Igc/missionigc.cpp:3804-3831; appmsg.cpp:2993",
+        "status": "done"
+      }
+    }
+  ],
+  "resolutions": [
+    "Mute both chat shapes before voice/caption/event resolution; retain native voice-over precedence and one cue.",
+    "Retain locked roster snapshot, commander/AFK/wing state and compact layout; append ship IDs and moderation hints.",
+    "Remove auto-merge duplicate departure switches and registry entries; preserve P718 full cleanup/shutdown and P722 own-departure notice/mute cleanup.",
+    "P722 side-departure fixture follows native SIDE_TEAMLOBBY=-2, preserving P718 behavior.",
+    "Selection pane now done with both P713 scaffolding classification and P722 concrete binding evidence.",
+    "QUIT_MISSION and QUIT_SIDE remain done with P718 transition evidence plus P722 moderation evidence."
+  ]
+}

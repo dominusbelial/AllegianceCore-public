@@ -1,0 +1,47 @@
+[
+  {
+    "trx": "/tmp/p738-p722-validation/focused-035-3.trx",
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Quit_side_clears_own_relation_until_authoritative_join_and_retains_other_pilot",
+    "message": "\n      \n        \n          Assert.Equal() Failure: Values differ\nExpected: -2\nActual:   null\n             at Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Quit_side_clears_own_relation_until_authoritative_join_and_retains_other_pilot() in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/P722InterfaceModelTests.cs:line 104\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+  },
+  {
+    "trx": "/tmp/p738-p722-validation/focused-035-2.trx",
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Quit_side_clears_own_relation_until_authoritative_join_and_retains_other_pilot",
+    "message": "\n      \n        \n          Assert.Equal() Failure: Values differ\nExpected: -2\nActual:   null\n             at Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Quit_side_clears_own_relation_until_authoritative_join_and_retains_other_pilot() in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/P722InterfaceModelTests.cs:line 104\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+  },
+  {
+    "trx": "/tmp/p738-p722-validation/focused-035-1.trx",
+    "name": "Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Quit_side_clears_own_relation_until_authoritative_join_and_retains_other_pilot",
+    "message": "\n      \n        \n          Assert.Equal() Failure: Values differ\nExpected: -2\nActual:   null\n             at Allegiance.ClientCore.MonoGame.Tests.P722InterfaceModelTests.Quit_side_clears_own_relation_until_authoritative_join_and_retains_other_pilot() in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/P722InterfaceModelTests.cs:line 104\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+  },
+  {
+    "trx": "/tmp/p738-p722-validation/focused-016-3.trx",
+    "name": "Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(decouple: False)",
+    "message": "\n      \n        \n          System.InvalidOperationException : Nullable object must have a value.\n             at System.Nullable`1.get_Value()\n   at Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Peer.get_Id() in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P722InterfaceLoopbackTests.cs:line 40\n   at Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(Boolean decouple) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P722InterfaceLoopbackTests.cs:line 244\n   at InvokeStub_P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(Object, Span`1)\n   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        \n      \n    "
+  },
+  {
+    "trx": "/tmp/p738-p722-validation/focused-016-3.trx",
+    "name": "Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(decouple: True)",
+    "message": "\n      \n        \n          System.InvalidOperationException : Nullable object must have a value.\n             at System.Nullable`1.get_Value()\n   at Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Peer.get_Id() in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P722InterfaceLoopbackTests.cs:line 40\n   at Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(Boolean decouple) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P722InterfaceLoopbackTests.cs:line 244\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)\n        \n      \n    "
+  },
+  {
+    "trx": "/tmp/p738-p722-validation/focused-016-2.trx",
+    "name": "Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(decouple: False)",
+    "message": "\n      \n        \n          System.InvalidOperationException : Nullable object must have a value.\n             at System.Nullable`1.get_Value()\n   at Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Peer.get_Id() in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P722InterfaceLoopbackTests.cs:line 40\n   at Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(Boolean decouple) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P722InterfaceLoopbackTests.cs:line 244\n   at InvokeStub_P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(Object, Span`1)\n   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        \n      \n    "
+  },
+  {
+    "trx": "/tmp/p738-p722-validation/focused-016-2.trx",
+    "name": "Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(decouple: True)",
+    "message": "\n      \n        \n          System.InvalidOperationException : Nullable object must have a value.\n             at System.Nullable`1.get_Value()\n   at Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Peer.get_Id() in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P722InterfaceLoopbackTests.cs:line 40\n   at Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(Boolean decouple) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P722InterfaceLoopbackTests.cs:line 244\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)\n        \n      \n    "
+  },
+  {
+    "trx": "/tmp/p738-p722-validation/focused-016-1.trx",
+    "name": "Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(decouple: False)",
+    "message": "\n      \n        \n          System.InvalidOperationException : Nullable object must have a value.\n             at System.Nullable`1.get_Value()\n   at Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Peer.get_Id() in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P722InterfaceLoopbackTests.cs:line 40\n   at Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(Boolean decouple) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P722InterfaceLoopbackTests.cs:line 244\n   at InvokeStub_P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(Object, Span`1)\n   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        \n      \n    "
+  },
+  {
+    "trx": "/tmp/p738-p722-validation/focused-016-1.trx",
+    "name": "Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(decouple: True)",
+    "message": "\n      \n        \n          System.InvalidOperationException : Nullable object must have a value.\n             at System.Nullable`1.get_Value()\n   at Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Peer.get_Id() in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P722InterfaceLoopbackTests.cs:line 40\n   at Allegiance.ClientCore.Tests.P722InterfaceLoopbackTests.Leader_boot_is_confirmed_by_exact_mission_notice_and_client_removes_departed_pilot(Boolean decouple) in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/P722InterfaceLoopbackTests.cs:line 244\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)\n        \n      \n    "
+  }
+]

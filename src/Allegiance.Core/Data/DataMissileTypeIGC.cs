@@ -72,6 +72,10 @@ public readonly record struct DataMissileTypeIGC(
     /// <summary>Exact payload size in bytes: <c>sizeof(DataMissileTypeIGC)</c>.</summary>
     public const int Size = 524;
 
+    /// <summary>c_eabmCapture (Igc/igc.h:771), consumed by missileigc.cpp:480-496.
+    /// This is a capture missile ability, not a probe ability.</summary>
+    public bool HasCaptureCapability => (EabmCapabilities & 0x01) != 0;
+
     /// <summary>
     /// Decode an <c>OT_missileType</c> payload.
     /// </summary>

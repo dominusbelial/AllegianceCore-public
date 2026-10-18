@@ -1,0 +1,32 @@
+{
+  "docs/parity/fedmsg-wiring.csv": {
+    "1": "4bc965c1464d459ad1acc46ec0b39da4df891e16",
+    "2": "a382d1e3993e76ba48ade7e3efb0733d0f3627b1",
+    "3": "1abe1fa6112319488c79f6eca0bb20f17b3cbcbd"
+  },
+  "docs/parity/parity-matrix.csv": {
+    "1": "55e3cd3e84da06f2183316c0c994b794fad4ccb9",
+    "2": "c076a0881579931fff56f8da53cee0ee8c199513",
+    "3": "0e5dbd45007604c1a5bbaccd2134120a05a7f79e"
+  },
+  "src/Allegiance.ClientCore.Game/Game1.Rendering.cs": {
+    "1": "d1bdf2155d1ff57d2e069f88d05f13dc6ddb164c",
+    "2": "9b6098ff9bfdf6a06270bf34a88e7f5df690762b",
+    "3": "88449e4534ec83066829e595ebdaafb92c505a3e"
+  },
+  "src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs": {
+    "1": "f71ae8c781808656d3ca8e03632d87a01039ed8f",
+    "2": "47a63c0d5f1ed666bc743c89e6c7c0befacdb42e",
+    "3": "9c49e14a8eb45344f120594b2c87c477a5b77693"
+  },
+  "src/Allegiance.ClientCore/State/ClientWorld.cs": {
+    "1": "683a40e0eb23aac25f3c8896c6eed0e218bea01e",
+    "2": "dd5c29f97902eaa9d4c26efeda6ed6ba78205e35",
+    "3": "f647ea17f858a77a33216e1b772da8a316acb12a"
+  },
+  "tests/Allegiance.ClientCore.Tests/FedMsgDispatchCoverageTests.cs": {
+    "1": "7e0647f830ad2815da008ea2885fde757923554b",
+    "2": "e1e7559c74618899f15819006953825357f49d3b",
+    "3": "1bd60931759162c6597ac2663dc7e5615dfecef8"
+  }
+}

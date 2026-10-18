@@ -304,6 +304,16 @@ public sealed partial class Game1
             return;
         }
 
+        // appmsg.cpp:2501-2528: mission boot/quit returns to the browser.
+        if (_state is ClientState.Flying or ClientState.ReadyCheck or ClientState.SideSelect
+            && world.OwnMissionDeparture is { } departure)
+        {
+            _state = ClientState.Lobby;
+            _lobbyError = departure.Reason == QuitSideReason.LeaderBooted
+                ? "You have been removed from the mission by your team leader." : "You left the mission.";
+            _session.Dispose();
+        }
+
         // P320 — session-loss detection (see ConnectionSession.SessionLost). The
         // transport reports the established connection to the server dropped
         // (server crash / network hiccup). Bail out of live play BEFORE any state
