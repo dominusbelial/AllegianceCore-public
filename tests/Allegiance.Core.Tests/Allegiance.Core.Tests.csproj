@@ -28,6 +28,8 @@
     <Compile Include="../_shared/TestRequire.cs" Link="_shared/TestRequire.cs" />
     <Compile Include="../_shared/EconomyLoadoutTestSetup.cs" Link="_shared/EconomyLoadoutTestSetup.cs" />
     <Compile Include="../_shared/DockTestPlacement.cs" Link="_shared/DockTestPlacement.cs" />
+    <!-- P744 — hardware-relative perf-budget calibration (PerfCalibration). -->
+    <Compile Include="../_shared/PerfCalibration.cs" Link="_shared/PerfCalibration.cs" />
   </ItemGroup>
 
   <ItemGroup>
