@@ -30,6 +30,9 @@ internal sealed partial class BotManager
         {
             try
             {
+                lock (_researchPauseGate)
+                if (!_paused)
+                {
                 ResearchBriefing? probeBriefing;
                 lock (Probe.Gate) probeBriefing = Probe.World.ResearchBriefing;
                 if (probeBriefing is not null)
@@ -89,6 +92,7 @@ internal sealed partial class BotManager
                 {
                     foreach (var row in ResearchStatus()) Console.WriteLine($"[research] side={row.Side} plan={row.Plan} step={row.Step}/{row.TotalSteps} {row.Action} '{row.Name}' progress={row.ProgressPercent:F1}% wallet={row.Money} eta={row.EtaSeconds?.ToString("F1") ?? "unknown"}s techs=[{string.Join(",", row.CompletedTechs)}] stations=[{string.Join(",", row.Stations)}] status={row.Status}");
                     nextLog = Now() + 10;
+                }
                 }
             }
             catch (OperationCanceledException) when (_loopCts.IsCancellationRequested) { break; }

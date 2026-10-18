@@ -757,12 +757,10 @@ public sealed partial class Server
     /// live <see cref="Missile"/> reaches a warp, P101) by broadcasting a real
     /// <c>FM_S_WARP_BOMB(188)</c> <see cref="WarpBomb"/> message — the
     /// "aleph destabilized" notice (<c>Inc/Messages.h:969-973</c>) that a missile
-    /// hit a warp and will explode there after the delay
-    /// (<see cref="Model.Sector.WarpBombDelaySeconds"/>). <c>timeExplosion</c> is
-    /// the future tick at which the sim resolves the real explosion at the warp —
-    /// the delay converted to server ticks (<c>_period</c>), stamped in this
-    /// project's uint-TickIndex wire-time convention (<c>(uint)TickIndex</c>,
-    /// same as every other broadcast).
+    /// hit a warp and will explode there at the captured simulation deadline.
+    /// Native FedSrv/FedSrv.CPP:12551-12558 uses loaded slot 32 and uint
+    /// milliseconds. Capture at the collision chunk so time dilation and later
+    /// core edits cannot disagree with the scheduled blast.
     /// <para><b>WHOLE MISSION — the one genuine behavioural departure from every
     /// prior ordnance broadcast in this project.</b> Native sends <c>WARP_BOMB</c>
     /// to <c>GetGroupRealSides()</c> (<c>FedSrv.CPP:12558</c>) — all real sides,
@@ -775,10 +773,14 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastWarpBomb(ResolvedWarp warp, Missile missile)
     {
-        long detonationTick = TickIndex + (long)Math.Round(Sector.WarpBombDelaySeconds / _period);
+        var mission = (missile.Launcher as Ship)?.Mission;
+        if (mission is null || !mission.Sectors.Any(s => s.Warps.Contains(warp))) return;
+        double timeExplosion = missile.WarpBombTime ??
+            mission.Sectors.First(s => s.Warps.Contains(warp)).LastUpdate +
+            mission.Core.Constants.FloatConstants[32];
         var msg = new WarpBomb
         {
-            TimeExplosion = (uint)detonationTick,
+            TimeExplosion = (uint)(timeExplosion * 1000.0), // native Time, same clock as PING
             WarpIdBombed = warp.Warp.WarpId,
             ExpendableIdMissile = missile.MissileType.ExpendableTypeId,
         };
@@ -786,11 +788,12 @@ public sealed partial class Server
 
         // Whole mission: every connected peer with a seated ship, regardless of
         // side (GetGroupRealSides()).
-        var targets = _peerShips.Select(kv => kv.Key).ToArray();
+        var targets = _peerShips.Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
+            .Select(kv => kv.Key).ToArray();
 
         Console.WriteLine($"[warpbomb] warp {warp.Warp.WarpId} bombed by missile {missile.Id} " +
                           $"(missileType {missile.MissileType.ExpendableTypeId}) -> WARP_BOMB(188) " +
-                          $"timeExplosion tick {msg.TimeExplosion} -> {targets.Length} peer(s) [WHOLE MISSION]");
+                          $"timeExplosion ms {msg.TimeExplosion} -> {targets.Length} peer(s) [WHOLE MISSION]");
         foreach (var t in targets)
             SendPeer(t, packet);
     }

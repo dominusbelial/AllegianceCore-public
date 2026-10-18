@@ -2,6 +2,10 @@ using Allegiance.ClientCore.MonoGame;
 using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.ClientCore.MonoGame.LiveProof;
 
+// P727: exercise the full local host before loading SDL/GL.
+if (args.Length > 0 && args[0] is "--skirmish-smoke" or "--skirmish-owner-proof")
+    return await Allegiance.SinglePlayer.SkirmishSmoke.RunAsync(args);
+
 // P644: handled before MonoGame initializes SDL, GL, audio, or networking.
 if (args.Contains("--check-assets") || args.Contains("--asset-census"))
     return PlayerBundleCheck.Run(args);
@@ -9,15 +13,16 @@ PlayerConfig? savedPlayer = null;
 if (args.Length == 0)
 {
     var player = savedPlayer = PlayerConfig.Load();
-    args = string.IsNullOrWhiteSpace(player.Server)
-        ? new[] { "--lobby", player.Lobby }
-        : new[] { player.Server, player.Port.ToString(System.Globalization.CultureInfo.InvariantCulture), player.Pilot };
+    // Keep P731's choice visible even after a multiplayer server was remembered.
+    // InitIntro offers that server through Direct Connect; explicit host/port
+    // arguments still take the direct-connect shortcut below.
+    args = new[] { "--lobby", player.Lobby };
 }
 
 // Entry point.
 //
-//   No positional args  → LOBBY (default): open the server browser against the
-//                         configured lobby URL, browse/join from the list.
+//   No positional args  → INTRO: choose Single Player or Multiplayer.
+//                         The remembered lobby URL remains available.
 //   [host] [port] [name]→ DIRECT connect (unchanged dev/testing shortcut):
 //                         skip the lobby and connect straight to the given
 //                         host:port, exactly as before.

@@ -1,0 +1,9 @@
+{
+  "Igc/igc.h": "9e151addcbed45df98ff78fc9352aca8a796f69a5cfbb947425d52e9ab649a66",
+  "Igc/missionigc.cpp": "cfedbec93ef07586e4564f26026405930efac779c1d10e13dca9335ed9eaf471",
+  "Igc/common.cpp": "853757a6c9f981d56f1d6c0c3544035c58e77bfdbf25b8bd1764adb10d69b955",
+  "Igc/mineigc.cpp": "21a8965762715687ac7d238271eb1351d1c2fa4068f99f3bc04393d0385372ab",
+  "FedSrv/fsmission.cpp": "93bb453f82cbcd33e36a706b90b7884815ac63b0a03ee8d9803ee2314c7cd7cb",
+  "FedSrv/FedSrv.CPP": "7b8938f2fdfcfe09a299ac642b79ca54991a4222dce79e93b2ba5d356199a014",
+  "FedSrv/fsship.h": "c777e0be7104cc9c9300ad600f35514294397478de16a5229167184a3d58affe"
+}

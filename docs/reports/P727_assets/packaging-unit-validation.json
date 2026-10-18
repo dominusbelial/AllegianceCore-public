@@ -1,0 +1,170 @@
+[
+  {
+    "method": "test_copy_never_includes_untracked_or_missing_assets",
+    "iteration": 1,
+    "exitCode": 0,
+    "seconds": 0.063,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  {
+    "method": "test_copy_never_includes_untracked_or_missing_assets",
+    "iteration": 2,
+    "exitCode": 0,
+    "seconds": 0.071,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  {
+    "method": "test_copy_never_includes_untracked_or_missing_assets",
+    "iteration": 3,
+    "exitCode": 0,
+    "seconds": 0.059,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  {
+    "method": "test_local_override_must_match_pin",
+    "iteration": 1,
+    "exitCode": 0,
+    "seconds": 0.057,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  {
+    "method": "test_local_override_must_match_pin",
+    "iteration": 2,
+    "exitCode": 0,
+    "seconds": 0.057,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  {
+    "method": "test_local_override_must_match_pin",
+    "iteration": 3,
+    "exitCode": 0,
+    "seconds": 0.057,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  {
+    "method": "test_mac_app_launcher_runs_from_resources_and_forwards_arguments",
+    "iteration": 1,
+    "exitCode": 0,
+    "seconds": 0.06,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.005s\n\nOK\n"
+  },
+  {
+    "method": "test_mac_app_launcher_runs_from_resources_and_forwards_arguments",
+    "iteration": 2,
+    "exitCode": 0,
+    "seconds": 0.063,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.006s\n\nOK\n"
+  },
+  {
+    "method": "test_mac_app_launcher_runs_from_resources_and_forwards_arguments",
+    "iteration": 3,
+    "exitCode": 0,
+    "seconds": 0.061,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.005s\n\nOK\n"
+  },
+  {
+    "method": "test_mac_smoke_rejects_lost_executable_permission",
+    "iteration": 1,
+    "exitCode": 0,
+    "seconds": 0.058,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.001s\n\nOK\n"
+  },
+  {
+    "method": "test_mac_smoke_rejects_lost_executable_permission",
+    "iteration": 2,
+    "exitCode": 0,
+    "seconds": 0.063,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.001s\n\nOK\n"
+  },
+  {
+    "method": "test_mac_smoke_rejects_lost_executable_permission",
+    "iteration": 3,
+    "exitCode": 0,
+    "seconds": 0.06,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.001s\n\nOK\n"
+  },
+  {
+    "method": "test_mac_zip_preserves_executable_bits_resources_and_icon",
+    "iteration": 1,
+    "exitCode": 0,
+    "seconds": 0.075,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.005s\n\nOK\n"
+  },
+  {
+    "method": "test_mac_zip_preserves_executable_bits_resources_and_icon",
+    "iteration": 2,
+    "exitCode": 0,
+    "seconds": 0.064,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.005s\n\nOK\n"
+  },
+  {
+    "method": "test_mac_zip_preserves_executable_bits_resources_and_icon",
+    "iteration": 3,
+    "exitCode": 0,
+    "seconds": 0.062,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.005s\n\nOK\n"
+  },
+  {
+    "method": "test_manifest_rejects_unsafe_duplicate_and_empty_entries",
+    "iteration": 1,
+    "exitCode": 0,
+    "seconds": 0.06,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  {
+    "method": "test_manifest_rejects_unsafe_duplicate_and_empty_entries",
+    "iteration": 2,
+    "exitCode": 0,
+    "seconds": 0.057,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  {
+    "method": "test_manifest_rejects_unsafe_duplicate_and_empty_entries",
+    "iteration": 3,
+    "exitCode": 0,
+    "seconds": 0.06,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.001s\n\nOK\n"
+  },
+  {
+    "method": "test_missing_runtime_sound_prevents_packaging",
+    "iteration": 1,
+    "exitCode": 0,
+    "seconds": 0.062,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.002s\n\nOK\n"
+  },
+  {
+    "method": "test_missing_runtime_sound_prevents_packaging",
+    "iteration": 2,
+    "exitCode": 0,
+    "seconds": 0.061,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.002s\n\nOK\n"
+  },
+  {
+    "method": "test_missing_runtime_sound_prevents_packaging",
+    "iteration": 3,
+    "exitCode": 0,
+    "seconds": 0.061,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.002s\n\nOK\n"
+  },
+  {
+    "method": "test_smoke_detects_windows_and_linux_by_layout_not_archive_suffix",
+    "iteration": 1,
+    "exitCode": 0,
+    "seconds": 0.057,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  {
+    "method": "test_smoke_detects_windows_and_linux_by_layout_not_archive_suffix",
+    "iteration": 2,
+    "exitCode": 0,
+    "seconds": 0.059,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  },
+  {
+    "method": "test_smoke_detects_windows_and_linux_by_layout_not_archive_suffix",
+    "iteration": 3,
+    "exitCode": 0,
+    "seconds": 0.059,
+    "output": ".\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nOK\n"
+  }
+]

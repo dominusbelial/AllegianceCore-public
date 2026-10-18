@@ -313,7 +313,7 @@ public sealed partial class ClientWorld
     public Func<double> NowSeconds { get; set; } = () => Environment.TickCount64 / 1000.0;
 
     /// <summary>
-    /// P612 — the server's sim time scale (<c>sim.timeScale</c>, 0.1–1.0, 1.0 =
+    /// P612 — the server's sim time scale (<c>sim.timeScale</c>, 0 for local pause, otherwise 0.1–1.0, 1.0 =
     /// normal). Defaults to 1.0 and is refreshed from the server's
     /// <see cref="TimescaleUpdate"/> message. The per-ship dead-reckoners use it
     /// to extrapolate with SIM time (wall elapsed × scale) so remote ships stay

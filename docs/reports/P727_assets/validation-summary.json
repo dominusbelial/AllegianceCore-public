@@ -1,0 +1,145 @@
+{
+  "final-focus-": {
+    "invocations": 135,
+    "passed": 201,
+    "failed": 0
+  },
+  "final-never-parks-": {
+    "invocations": 5,
+    "passed": 5,
+    "failed": 0
+  },
+  "isolation-P703-authored": {
+    "invocations": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "isolation-suite-": {
+    "invocations": 6,
+    "passed": 6,
+    "failed": 0
+  },
+  "optin-": {
+    "invocations": 3,
+    "passed": 3,
+    "failed": 0
+  },
+  "final-action-": {
+    "invocations": 72,
+    "passed": 255,
+    "failed": 0
+  },
+  "final-meshy-": {
+    "invocations": 9,
+    "passed": 9,
+    "failed": 0
+  },
+  "fullSweep": [
+    {
+      "label": "suite-Allegiance.Core.Tests",
+      "seconds": 955.36,
+      "counts": {
+        "total": "4854",
+        "executed": "4854",
+        "passed": "4853",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+          "message": "System.TimeoutException : no OnPeerJoined for raw peer"
+        }
+      ],
+      "evidence": "0397-suite-Allegiance.Core.Tests.trx.gz"
+    },
+    {
+      "label": "suite-Allegiance.ClientCore.Tests",
+      "seconds": 2647.15,
+      "counts": {
+        "total": "1322",
+        "executed": "1321",
+        "passed": "1321",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [],
+      "evidence": "0398-suite-Allegiance.ClientCore.Tests.trx.gz"
+    },
+    {
+      "label": "suite-Allegiance.ClientCore.MonoGame.Tests",
+      "seconds": 973.91,
+      "counts": {
+        "total": "2436",
+        "executed": "2433",
+        "passed": "2432",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapGuardTests.NoRawKeyLiteralsOutsideAllowList_InGameInputFiles",
+          "message": "Raw key literals must not appear in the game input files outside the documented allow-list:\n  Game1.FlightInput.cs:310 [Update] uses raw XnaKeys.Escape \u2014 route through ActionDown/KeyOf and remove it, or justify it in the P625b allow-list."
+        }
+      ],
+      "evidence": "0399-suite-Allegiance.ClientCore.MonoGame.Tests.trx.gz"
+    },
+    {
+      "label": "suite-Allegiance.Lobby.Tests",
+      "seconds": 1.58,
+      "counts": {
+        "total": "19",
+        "executed": "19",
+        "passed": "19",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [],
+      "evidence": "0400-suite-Allegiance.Lobby.Tests.trx.gz"
+    }
+  ]
+}

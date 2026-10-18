@@ -104,6 +104,16 @@ public sealed class GameConfig
     /// </summary>
     public bool AutoRestart { get; set; }
 
+    /// <summary>Permit countdown completion without connected players.
+    /// The dedicated server defaults to arena policy; FedSrv.CPP:8237-8243.</summary>
+    public bool AllowEmptyTeams { get; set; } = true;
+
+    /// <summary>Minimum connected players on each side when empty teams are disabled.</summary>
+    public int MinimumPlayersPerTeam { get; set; } = 1;
+
+    /// <summary>Optional match duration in simulation seconds (fsmission.cpp:2339-2342).</summary>
+    public double? GameLengthSeconds { get; set; }
+
     /// <summary>
     /// P598 — the port of native's <c>fRestartCountdown</c> (igc.h:1171,
     /// default <c>60.0f</c> at igc.h:1274): the seconds, when
@@ -730,6 +740,9 @@ public sealed class ServerConfig
 
     /// <summary>TCP port the logon transport listens on.</summary>
     public int Port { get; set; } = 6073;
+
+    /// <summary>Optional numeric listener address; null keeps dedicated hosting on all interfaces.</summary>
+    public string? BindAddress { get; set; }
 
     /// <summary>Tick cadence (Hz). Fixed period = 1000 / updatesPerSecond ms.</summary>
     public int UpdatesPerSecond { get; set; } = 20;

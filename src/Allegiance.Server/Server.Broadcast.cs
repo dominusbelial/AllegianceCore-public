@@ -77,6 +77,13 @@ public sealed partial class Server
     /// <summary>Pump transport, advance sim by exactly one period, tick every mission.</summary>
     private void SimPass()
     {
+        if (SinglePlayerPaused)
+        {
+            // Keep transport liveness running across an arbitrarily long pause.
+            // Dispatch admits only PING while the local world is frozen.
+            Step("pausedDrain", () => _host.Drain(HandleTransportEvent));
+            return;
+        }
         // P600 — the whole-SimPass wall time is the profiler's "tick" reference.
         // Closed by EndTick at the bottom of the method, folding per-bucket
         // samples into the report window. No-op when the profiler is off.
@@ -161,6 +168,7 @@ public sealed partial class Server
         // created during this tick's transport drain is resolved this same
         // tick if it already has every vote (e.g. an initiator-only side).
         Step("ballots", () => { foreach (var m in _missions) ResolveBallots(m, now); });
+        Step("periodicRules", () => AdvancePeriodicRules(now));
         lock (_statsLock) { _loopIterations++; _liveShipCount = _peerShips.Count; }
         // P112 — broadcast ripcord aborts raised during this tick's per-tick
         // revalidation pass (Sector.ResolveRipcordCountdowns). The sim cleared

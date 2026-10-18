@@ -146,5 +146,5 @@ public sealed class PendingBallot
     /// happens when the expiration passes OR every vote is in (whichever
     /// first), unless it was cancelled.</summary>
     public bool ShouldResolve(double now) =>
-        !Canceled && (now >= Expiration || AllVotesAreIn());
+        !Canceled && (now > Expiration || AllVotesAreIn());
 }

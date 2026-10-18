@@ -43,6 +43,7 @@ public sealed partial class Server
                 continue;
             }
             ushort fmid = command.Fmid;
+            if (SinglePlayerPaused && fmid != Ping.Fmid) continue;
             _host.InboundTrace?.Message(from, fmid, m.Length);
 
             if (fmid == Ping.Fmid)   // FM_CS_PING (Messages.h:280-284)
@@ -2138,15 +2139,14 @@ public sealed partial class Server
     // The port of native's chat budget (c_chatBudgetMax=100 / c_chatBudgetCost=20,
     // fsship.h:24-25; IncrementChatBudget +1/tick, FedSrv.CPP:8287). Charges are
     // made on the sim thread only (inside ProcessDatagram), so no locking.
-    // Refilled LAZILY by elapsed simulation ticks, so no per-tick hook.
+    // Refilled once per eligible player tick by AdvancePeriodicRules.
     private bool TryChargeChatBudget(ConnectionId peer)
     {
         long now = TickIndex;
         int budget;
         if (_chatBudgets.TryGetValue(peer, out var cur))
         {
-            long gained = Math.Max(0, now - cur.LastRefillTick) * (long)_chatBudgetRefillPerTick;
-            budget = (int)Math.Min((long)_chatBudgetMax, (long)cur.Budget + gained);
+            budget = cur.Budget;
         }
         else
         {

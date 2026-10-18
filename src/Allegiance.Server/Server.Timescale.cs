@@ -36,6 +36,22 @@ public sealed partial class Server
     /// controller, which runs inside <see cref="Tick"/>).</summary>
     private double _timeScale = 1.0;
 
+    /// <summary>Local host capability. Never enabled by dedicated-server config or a network command.</summary>
+    public bool AllowSinglePlayerPause { get; init; }
+    public bool SinglePlayerPaused { get; private set; }
+    private double _resumeTimeScale = 1;
+
+    /// <summary>Called by the owning embedded host on its simulation thread only.</summary>
+    public void SetSinglePlayerPaused(bool paused)
+    {
+        if (!AllowSinglePlayerPause) throw new InvalidOperationException("Pause is single-player only");
+        if (paused == SinglePlayerPaused) return;
+        if (paused) { _resumeTimeScale = _timeScale; _timeScale = 0; }
+        else _timeScale = _resumeTimeScale;
+        SinglePlayerPaused = paused;
+        BroadcastTimescale();
+    }
+
     /// <summary>P618 — <c>"off"</c> or <c>"auto"</c> (from <c>sim.timeDilation</c>).</summary>
     private string _timeDilationMode = "off";
 
@@ -223,7 +239,7 @@ public sealed partial class Server
     private void ObserveTimeDilation(double cost, double wallDeltaSeconds)
     {
         var c = _tidiController;
-        if (c is null) return;
+        if (c is null || SinglePlayerPaused) return;
         if (c.Observe(cost, wallDeltaSeconds))
             ApplyTimeDilationScale();
     }

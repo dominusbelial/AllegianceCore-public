@@ -322,7 +322,7 @@ public sealed partial class Server : IDisposable
     // chat budget (c_chatBudgetMax=100 / c_chatBudgetCost=20, fsship.h:24-25;
     // IncrementChatBudget +1/tick, FedSrv.CPP:8287). Keys are peers that have
     // spent budget (absent = full). Charged on the sim thread only (dispatch),
-    // refilled LAZILY by elapsed simulation time so no per-tick hook is needed.
+    // refilled once per eligible player tick by AdvancePeriodicRules.
     // Value: {Budget, LastRefillTick}. Removed on peer leave (ReleasePeer) so
     // the table stays bounded by the live peer set.
     private readonly Dictionary<ConnectionId, (int Budget, long LastRefillTick)> _chatBudgets = new();

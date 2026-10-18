@@ -8,7 +8,7 @@ using ModelContextProtocol.Server;
 
 namespace Allegiance.Tools.McpSpawner;
 
-internal sealed record DriverOptions(string Host, ushort Port, int Workers, WorkerPartition? Worker, int? Parent)
+internal sealed record DriverOptions(string Host, ushort Port, int Workers, WorkerPartition? Worker, int? Parent, string? Skirmish = null)
 {
     internal static DriverOptions Parse(string[] args)
     {
@@ -17,12 +17,14 @@ internal sealed record DriverOptions(string Host, ushort Port, int Workers, Work
         int workers = 1;
         WorkerPartition? worker = null;
         int? parent = null;
+        string? skirmish = null;
         bool explicitWorkers = false;
         for (int i = 2; i < args.Length; i += 2)
         {
             if (i + 1 >= args.Length) throw new ArgumentException($"missing value for {args[i]}");
             switch (args[i])
             {
+                case "--skirmish": skirmish = args[i + 1]; break;
                 case "--workers":
                     if (explicitWorkers || !int.TryParse(args[i + 1], out workers) || workers < 1) throw new ArgumentException("--workers requires a positive integer");
                     explicitWorkers = true;
@@ -30,7 +32,7 @@ internal sealed record DriverOptions(string Host, ushort Port, int Workers, Work
                 case "--worker":
                     var split = args[i + 1].Split('/');
                     if (worker is not null || split.Length != 2 || !int.TryParse(split[0], out int index) || !int.TryParse(split[1], out int count)
-                        || count < 2 || index < 1 || index > count) throw new ArgumentException("--worker requires i/N (1 <= i <= N, N > 1)");
+                        || count < 1 || index < 1 || index > count) throw new ArgumentException("--worker requires i/N (1 <= i <= N, N >= 1)");
                     worker = new(index - 1, count);
                     break;
                 case "--parent":
@@ -40,8 +42,8 @@ internal sealed record DriverOptions(string Host, ushort Port, int Workers, Work
                 default: throw new ArgumentException($"unknown option '{args[i]}'");
             }
         }
-        if (worker is not null && explicitWorkers || parent is not null && worker is null) throw new ArgumentException("--worker/--parent are internal child options; cannot combine with --workers");
-        return new(args[0], port, workers, worker, parent);
+        if (worker is not null && explicitWorkers || skirmish is not null && worker is not null) throw new ArgumentException("--worker/--parent are internal child options; cannot combine with --workers");
+        return new(args[0], port, workers, worker, parent, skirmish);
     }
 }
 
@@ -62,7 +64,14 @@ internal static class Program
         using var interrupt = OperatingSystem.IsWindows() ? null : PosixSignalRegistration.Create(PosixSignal.SIGINT, ctx => { ctx.Cancel = true; stop.Cancel(); });
         try
         {
-            if (options.Worker is { } partition)
+            if (options.Parent is { } ownerPid && options.Worker is null)
+                ProcessLifetime.WatchOwner(ownerPid, stop.Token);
+            if (options.Skirmish is not null)
+            {
+                Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.Idle;
+                await SkirmishDriver.RunAsync(options, stop.Token);
+            }
+            else if (options.Worker is { } partition)
             {
                 Console.Error.WriteLine($"allegiance-mcp worker {partition.Index + 1}/{partition.Count}: gc = {(GCSettings.IsServerGC ? "server" : "workstation")}; pid = {Environment.ProcessId}");
                 if (options.Parent is { } parent)

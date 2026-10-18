@@ -1,0 +1,16 @@
+{
+  "rid": "win-x64",
+  "archiveBytes": 594436406,
+  "unpackedBytes": 1326632664,
+  "artworkFiles": 2773,
+  "sources": {
+    "artwork": {
+      "url": "https://github.com/FreeAllegiance/Artwork.git",
+      "commit": "4a60aa636405de66bca6bf48bff99c25a16a2ca3"
+    },
+    "sky": {
+      "url": "https://github.com/dominusbelial/AllegianceCore-sky.git",
+      "commit": "5272ded6066429e4ac7fdbb21cec192c09da92a2"
+    }
+  }
+}

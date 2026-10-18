@@ -364,11 +364,13 @@ public sealed class TcpTransport : ITransport
     /// transports retain the null fast path. No send policy depends on it.</summary>
     public EgressAccounting? Egress { get; init; }
 
-    public void Host(ushort port = 0)
+    public void Host(ushort port = 0) => Host(port, null);
+
+    public void Host(ushort port, IPAddress? bindAddress)
     {
         if (_running) throw new InvalidOperationException("transport already running");
         _isHost = true;
-        _listener = new TcpListener(IPAddress.Any, port);
+        _listener = new TcpListener(bindAddress ?? IPAddress.Any, port);
         _listener.Start();
         _boundPort = (ushort)((IPEndPoint)_listener.LocalEndpoint).Port;
         _running = true;

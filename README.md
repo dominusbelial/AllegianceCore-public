@@ -84,6 +84,12 @@ dotnet run --project src/Allegiance.Server -- --config src/Allegiance.Server/ser
 dotnet run --project src/Allegiance.ClientCore.MonoGame -- 127.0.0.1 6073 "My Pilot"
 ```
 
+For **offline single player**, after the whole-solution build and artwork setup,
+run the client without host/port arguments and choose **Single Player → Skirmish**.
+The client owns the local server and bot driver. Select both races, size,
+technology and difficulty; **Ctrl+P** pauses/resumes and **Ctrl+F10** ends the game.
+A downloaded player bundle includes everything needed for this mode.
+
 **What you should see:** the client logs on and opens the **READY CHECK** screen. Pick a
 team, press **Y** to ready up — a game starts once every team with a player in it is ready,
 so alone you start right away — and after a 15 s countdown you launch into space.

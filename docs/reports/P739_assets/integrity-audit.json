@@ -1,0 +1,27 @@
+{
+  "head": "51f0c77fceaa5ca665e96ead80a94a9056fea7db",
+  "changed_matrix_rows": [
+    "SIM-0033",
+    "SIM-0070",
+    "SIM-0074",
+    "SIM-0133",
+    "SIM-0137",
+    "SIM-0138",
+    "SIM-0142",
+    "SIM-0143",
+    "SIM-0145",
+    "SIM-0207"
+  ],
+  "sector_update_unchanged": true,
+  "interface_matrix_unchanged": true,
+  "simulation_csv_lf": true,
+  "built_sources_unchanged": true,
+  "aot_binary_sha256": "f20560cd955cab044c0e4219029e62e1f20fbeca5d2a2c3eb6e86fe4900faf65",
+  "aot_il2026_or_il3050": false,
+  "final_head_unchanged": true,
+  "final_sources_match_build": true,
+  "final_matrix_audit": true,
+  "full_suite_failures_qualified": true,
+  "full_suite_invocations": 3,
+  "parking_passes": 5
+}

@@ -711,7 +711,7 @@ public sealed partial class Game1
         // last-used memory both work regardless of entry path.
         _connectHost = host;
         _connectPort = port;
-        if (_connectStore is not null && !string.IsNullOrEmpty(host))
+        if (_skirmish is null && _connectStore is not null && !string.IsNullOrEmpty(host))
         {
             _lastUsedKey = $"{host}:{port}";
             PersistConnectProfile();
@@ -739,6 +739,7 @@ public sealed partial class Game1
             if (_returnToIntroOnFailure)
             {
                 _returnToIntroOnFailure = false;
+                if (_skirmish is not null) { StopSkirmish(); _skirmishError = ex.Message; }
                 _state = ClientState.Intro;
                 _introFindError = $"Could not join {host}:{port} - {ex.Message}";
             }

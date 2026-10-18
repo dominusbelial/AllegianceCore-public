@@ -57,6 +57,8 @@ def smoke(archive):
         env = {k: v for k, v in os.environ.items() if not k.startswith('ALLEGIANCE_')}
         subprocess.run([str(exe), '--check-assets', '--asset-manifest', str(root / 'census.json')],
                        cwd=root, env=env, check=True)
+        subprocess.run([str(exe), '--skirmish-smoke', '60'],
+                       cwd=root, env=env, check=True, timeout=300)
 
 
 if __name__ == '__main__':

@@ -249,6 +249,7 @@ public sealed partial class Game1
 
     protected override void Update(GameTime gameTime)
     {
+        UpdateSkirmish(Keyboard.GetState());
         using var frameUpdate = new Diagnostics.ClientFrameTelemetry.UpdateScope(_frameTelemetry);
         _sound?.UpdateAudioFrame((float)gameTime.ElapsedGameTime.TotalSeconds);
         UpdateSoundEvents();
@@ -259,8 +260,8 @@ public sealed partial class Game1
             _sound?.UpdateShipWarnings(_session.World.ShipWarnings.Mask, _session.World.ShipWarnings.TakeRisingEdges());
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
         // P618 — advance the sim-scaled game clock (wall × live server time
-        // scale), clamped to [0,∞) so a scale=0 edge (never produced server-side;
-        // MinTimeScale is 0.1) can't run effects backwards. Guarded so a not-yet-
+        // scale), including the embedded single-player pause at scale=0.
+        // Clamp prevents malformed rates from running effects backwards. A not-yet-
         // connected session (no world) simply advances at full speed.
         double ts = 1.0;
         if (_session.World is { } w) ts = w.TimeScale;
@@ -300,6 +301,16 @@ public sealed partial class Game1
                 if (IsTurretGunner()) UpdateTurretGunner(neutral, 0, (float)gameTime.ElapsedGameTime.TotalSeconds);
                 else _session.CommandControls(neutral);
             }
+            base.Update(gameTime);
+            return;
+        }
+
+        if (_skirmish?.Paused == true)
+        {
+            bool escape = ActionDown(ks, "MainMenu");
+            if (escape && !_escWasDown) ToggleMainMenu();
+            _escWasDown = escape;
+            UpdateMainMenu(ks);
             base.Update(gameTime);
             return;
         }

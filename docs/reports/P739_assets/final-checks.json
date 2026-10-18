@@ -1,0 +1,418 @@
+{
+  "suites": [
+    {
+      "label": "suite-Core",
+      "project": "Core",
+      "method": null,
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/suite-Core"
+      ],
+      "exit": 1,
+      "seconds": 967.365,
+      "counts": {
+        "Passed": 4878,
+        "Failed": 1,
+        "NotExecuted": 0
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+          "message": "System.TimeoutException : no OnPeerJoined for raw peer"
+        }
+      ]
+    },
+    {
+      "label": "suite-ClientCore",
+      "project": "ClientCore",
+      "method": null,
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/suite-ClientCore"
+      ],
+      "exit": 1,
+      "seconds": 2679.564,
+      "counts": {
+        "Passed": 1305,
+        "Failed": 1,
+        "NotExecuted": 0
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 25, civB: 3, size: 10)",
+          "message": "both sides real development and newly legal upgraded launch timed out; sim=11463.199999973434"
+        }
+      ]
+    },
+    {
+      "label": "suite-ClientCore.MonoGame",
+      "project": "ClientCore.MonoGame",
+      "method": null,
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/suite-ClientCore.MonoGame"
+      ],
+      "exit": 0,
+      "seconds": 977.463,
+      "counts": {
+        "Passed": 2431,
+        "Failed": 0,
+        "NotExecuted": 3
+      },
+      "failures": []
+    }
+  ],
+  "parking": [
+    {
+      "label": "parking-1",
+      "project": "ClientCore",
+      "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/parking-1",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds"
+      ],
+      "exit": 0,
+      "seconds": 96.594,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": []
+    },
+    {
+      "label": "parking-2",
+      "project": "ClientCore",
+      "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/parking-2",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds"
+      ],
+      "exit": 0,
+      "seconds": 97.773,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": []
+    },
+    {
+      "label": "parking-3",
+      "project": "ClientCore",
+      "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/parking-3",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds"
+      ],
+      "exit": 0,
+      "seconds": 99.865,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": []
+    },
+    {
+      "label": "parking-4",
+      "project": "ClientCore",
+      "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/parking-4",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds"
+      ],
+      "exit": 0,
+      "seconds": 96.721,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": []
+    },
+    {
+      "label": "parking-5",
+      "project": "ClientCore",
+      "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/parking-5",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds"
+      ],
+      "exit": 0,
+      "seconds": 97.301,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": []
+    }
+  ],
+  "battle": {
+    "label": "local-battle",
+    "project": "ClientCore",
+    "method": "Allegiance.ClientCore.Tests.P632PortModeZeroKillsLiveTests.Assert_port_bots_kill_in_window",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-codex-p739/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+      "--no-build",
+      "--no-restore",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=result.trx",
+      "--results-directory",
+      "/tmp/p739/local-battle",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P632PortModeZeroKillsLiveTests.Assert_port_bots_kill_in_window"
+    ],
+    "exit": 0,
+    "seconds": 93.211,
+    "counts": {
+      "Passed": 1,
+      "Failed": 0,
+      "NotExecuted": 0
+    },
+    "failures": []
+  },
+  "retries": [
+    {
+      "label": "suite-retry-Core-0-1",
+      "project": "Core",
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/suite-retry-Core-0-1",
+        "--filter",
+        "FullyQualifiedName=Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn"
+      ],
+      "exit": 0,
+      "seconds": 2.133,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": []
+    },
+    {
+      "label": "suite-retry-Core-0-2",
+      "project": "Core",
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/suite-retry-Core-0-2",
+        "--filter",
+        "FullyQualifiedName=Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn"
+      ],
+      "exit": 0,
+      "seconds": 2.058,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": []
+    },
+    {
+      "label": "suite-retry-Core-0-3",
+      "project": "Core",
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/suite-retry-Core-0-3",
+        "--filter",
+        "FullyQualifiedName=Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn"
+      ],
+      "exit": 0,
+      "seconds": 2.403,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": []
+    },
+    {
+      "label": "suite-retry-ClientCore-0-1",
+      "project": "ClientCore",
+      "method": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches",
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/suite-retry-ClientCore-0-1",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches"
+      ],
+      "exit": 0,
+      "seconds": 1270.92,
+      "counts": {
+        "Passed": 4,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": []
+    },
+    {
+      "label": "suite-exact-ClientCore-25-2",
+      "project": "ClientCore",
+      "method": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches",
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/suite-exact-ClientCore-25-2",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches&DisplayName~civA: 25,"
+      ],
+      "exit": 0,
+      "seconds": 228.66,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": []
+    },
+    {
+      "label": "suite-exact-ClientCore-25-3",
+      "project": "ClientCore",
+      "method": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches",
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/suite-exact-ClientCore-25-3",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches&DisplayName~civA: 25,"
+      ],
+      "exit": 0,
+      "seconds": 225.512,
+      "counts": {
+        "Passed": 1,
+        "Failed": 0,
+        "NotExecuted": 0
+      },
+      "failures": []
+    }
+  ],
+  "retry_selection": "P705 retry1 ran all4 cases; retry2/3 each selected original civA25/civB3/size10 case using DisplayName, verified one case per process."
+}

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using ModelContextProtocol.Protocol;
@@ -14,6 +15,9 @@ internal sealed class WorkerSupervisor : IDisposable
     private readonly Dictionary<int, JsonElement[]> _knownBots = new();
     private readonly Task _coordination;
     private int _spawning, _next, _disposed;
+    private volatile bool _paused;
+    private readonly Stopwatch _coordinationClock = Stopwatch.StartNew();
+    internal double CoordinationSeconds { get { lock (_gate) return _coordinationClock.Elapsed.TotalSeconds; } }
     private static readonly HashSet<string> ToolNames = McpTools.Definitions(supervisor: true).Select(t => t.Name).ToHashSet();
     private static readonly JsonElement EmptyArgs = JsonSerializer.SerializeToElement(new { });
 
@@ -52,6 +56,7 @@ internal sealed class WorkerSupervisor : IDisposable
         var lastDecisions = CoordinationDecisions.Empty;
         while (!_stop.IsCancellationRequested)
         {
+            if (_paused) { await Task.Delay(200, _stop.Token); continue; }
             try
             {
                 using var timeout = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
@@ -69,6 +74,7 @@ internal sealed class WorkerSupervisor : IDisposable
                     }
                     catch (OperationCanceledException) { return null; }
                 }));
+                if (_paused) continue;
                 // A live but unresponsive worker may contain unstaged members. Hold
                 // fleet releases and new recalls until its state is known again.
                 bool incomplete = _workers.Where(w => w.Alive).Any(w => current[Array.IndexOf(_workers, w)] is not { SampleAgeMs: < 2000 });
@@ -77,7 +83,7 @@ internal sealed class WorkerSupervisor : IDisposable
                 // existing defence deployment. Missing/stale state fails closed.
                 var decisions = incomplete ? CoordinationDecisions.Empty : oldEpoch ? lastDecisions with { Releases = [] }
                     : _coordinator.Decide(current.OfType<WorkerState>().Select(s => s.Coordination),
-                        Environment.TickCount64 / 1000.0, Volatile.Read(ref _spawning) > 0);
+                        CoordinationSeconds, Volatile.Read(ref _spawning) > 0);
                 if (!incomplete && !oldEpoch) lastDecisions = decisions;
                 using var sendTimeout = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
                 sendTimeout.CancelAfter(1000);
@@ -96,6 +102,18 @@ internal sealed class WorkerSupervisor : IDisposable
     {
         if (bots.ValueKind == JsonValueKind.Array) _knownBots[index] = bots.EnumerateArray().Select(b => b.Clone()).ToArray();
     }
+    internal async Task PauseAsync(bool paused, CancellationToken ct)
+    {
+        lock (_gate)
+        {
+            _paused = paused;
+            if (paused) _coordinationClock.Stop(); else _coordinationClock.Start();
+        }
+        var replies = await FanOut("__pause", JsonSerializer.SerializeToElement(paused), ct);
+        if (replies.Any(r => r.IsError)) throw new IOException("Cannot pause: a bot worker was lost");
+    }
+    internal bool Healthy => _workers.All(w => w.Alive);
+    internal int[] ProcessIds => _workers.Select(w => w.Pid).ToArray();
     private object[] WorkerStatus() => _workers.Select(w => (object)new { worker = w.Index + 1, pid = w.Pid, status = w.Alive ? "running" : "lost", error = w.Failure }).ToArray();
     private JsonElement[] LostBots()
     {

@@ -24,10 +24,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Client library only. No server reference: this is a real network client
-         that talks to a separately-running Allegiance.Server, exactly like
-         Allegiance.Bot is used standalone — not a self-hosting demo. -->
     <ProjectReference Include="../Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
+    <ProjectReference Include="../Allegiance.SinglePlayer/Allegiance.SinglePlayer.csproj" />
   </ItemGroup>
 
 </Project>

@@ -59,6 +59,14 @@ public sealed class IntroScreenModel
         _ => IntroCommand.None,
     };
 
+    /// <summary>Restore a remembered endpoint without losing its port or IPv6 brackets.</summary>
+    public static string DirectAddress(string host, int port)
+    {
+        if (port is < 1 or > ushort.MaxValue) return host;
+        string address = host.Contains(':') && !host.StartsWith('[') ? $"[{host}]" : host;
+        return address + ":" + port.ToString(CultureInfo.InvariantCulture);
+    }
+
     /// <summary>Parse a direct-connect <c>host[:port]</c> string (hostname,
     /// IPv4/IPv6, or MagicDNS name). No port → <paramref name="defaultPort"/>.
     /// An IPv6 literal with brackets is handled (<c>[::1]:2326</c>); a bare

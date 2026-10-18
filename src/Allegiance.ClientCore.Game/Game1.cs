@@ -1709,6 +1709,7 @@ public sealed partial class Game1 : Game
 
     protected override void UnloadContent()
     {
+        DisposeSkirmish();
         _sound?.Dispose();
         _music?.Dispose();   // P304 — release the two music beds
         if (_asteroidRenderers != null)

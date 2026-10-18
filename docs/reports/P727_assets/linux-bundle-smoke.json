@@ -1,0 +1,18 @@
+{
+  "WallSeconds": 60.0055424,
+  "SimulationSeconds": 62.54999999999858,
+  "BotsAlive": true,
+  "Running": true,
+  "Bots": 9,
+  "Shots": 0,
+  "Hits": 0,
+  "PilotDistance": 2749.774658203125,
+  "Processes": [
+    5024,
+    5040,
+    5044,
+    5045,
+    5049
+  ],
+  "PilotShipId": 8111
+}

@@ -53,6 +53,18 @@ public class IntroScreenModelTests
     }
 
     [Theory]
+    [InlineData("127.0.0.1", 2326)]
+    [InlineData("myserver.local", 2500)]
+    [InlineData("2001:db8::1", 2500)]
+    public void Remembered_endpoint_keeps_its_nondefault_port(string address, ushort port)
+    {
+        var restored = IntroScreenModel.DirectAddress(address, port);
+        Assert.True(IntroScreenModel.TryParseDirect(restored, 6073, out var host, out var parsedPort));
+        Assert.Equal(address, host);
+        Assert.Equal(port, parsedPort);
+    }
+
+    [Theory]
     [InlineData("")]
     [InlineData("   ")]
     [InlineData("host:abc")]

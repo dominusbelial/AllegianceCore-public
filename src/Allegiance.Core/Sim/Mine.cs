@@ -292,7 +292,7 @@ public sealed class Mine : Model
     /// </summary>
     protected override void OnUpdate(double now, double dt)
     {
-        if (now >= _timeExpire)
+        if (now > _timeExpire)
         {
             // Expiry: remove from the sector + raise MineDestroyedEvent — the
             // identical pair of calls every removal path makes, via

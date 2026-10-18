@@ -1933,6 +1933,7 @@ public sealed partial class Game1
         // (SaveAsPng, not the P566 bad-CRC encoder) from this completed frame.
         FlushScheduledAutoshot();
 
+        DrawSkirmishStatus();
         base.Draw(gameTime);
     }
 

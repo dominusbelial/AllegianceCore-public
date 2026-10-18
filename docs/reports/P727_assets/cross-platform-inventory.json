@@ -1,0 +1,20 @@
+[
+  {
+    "rid": "win-x64",
+    "requiredFilesPresent": true,
+    "botApphostMagic": "4d5a9000",
+    "architecture": "0x8664",
+    "executableModeValid": true,
+    "authoredResearchPlans": 4,
+    "standaloneServerRuntimeExcluded": true
+  },
+  {
+    "rid": "osx-arm64",
+    "requiredFilesPresent": true,
+    "botApphostMagic": "cffaedfe",
+    "architecture": "0x100000c",
+    "executableModeValid": true,
+    "authoredResearchPlans": 4,
+    "standaloneServerRuntimeExcluded": true
+  }
+]

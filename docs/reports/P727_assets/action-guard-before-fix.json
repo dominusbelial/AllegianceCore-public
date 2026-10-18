@@ -1,0 +1,23 @@
+[
+  {
+    "iteration": 1,
+    "exitCode": 1,
+    "seconds": 1.04,
+    "log": "guard-before-fix-1.log",
+    "evidence": "guard-before-fix-1.log.gz"
+  },
+  {
+    "iteration": 2,
+    "exitCode": 1,
+    "seconds": 1.0,
+    "log": "guard-before-fix-2.log",
+    "evidence": "guard-before-fix-2.log.gz"
+  },
+  {
+    "iteration": 3,
+    "exitCode": 1,
+    "seconds": 1.04,
+    "log": "guard-before-fix-3.log",
+    "evidence": "guard-before-fix-3.log.gz"
+  }
+]

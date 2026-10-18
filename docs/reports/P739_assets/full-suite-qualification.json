@@ -1,0 +1,44 @@
+[
+  {
+    "failed_case": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "fresh_results": [
+      {
+        "label": "suite-retry-Core-0-1",
+        "outcome": "Passed",
+        "duration": "00:00:00.2313429"
+      },
+      {
+        "label": "suite-retry-Core-0-2",
+        "outcome": "Passed",
+        "duration": "00:00:00.2527213"
+      },
+      {
+        "label": "suite-retry-Core-0-3",
+        "outcome": "Passed",
+        "duration": "00:00:00.2322643"
+      }
+    ],
+    "qualified": true
+  },
+  {
+    "failed_case": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 25, civB: 3, size: 10)",
+    "fresh_results": [
+      {
+        "label": "suite-retry-ClientCore-0-1",
+        "outcome": "Passed",
+        "duration": "00:03:39.6135523"
+      },
+      {
+        "label": "suite-exact-ClientCore-25-2",
+        "outcome": "Passed",
+        "duration": "00:03:47.0809642"
+      },
+      {
+        "label": "suite-exact-ClientCore-25-3",
+        "outcome": "Passed",
+        "duration": "00:03:43.9293502"
+      }
+    ],
+    "qualified": true
+  }
+]

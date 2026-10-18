@@ -1,0 +1,12 @@
+{
+  "head": "51f0c77fceaa5ca665e96ead80a94a9056fea7db",
+  "configuration": "Debug",
+  "sha256": {
+    "tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.Tests.dll": "5fc2ade852b64f2fc025d013179edc210a6c3dce786d633edadca6be893bcb48",
+    "tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.dll": "a4e86fe2462785195568881f56a8ab4c56ecfd23f168aeaf1a6653d15c9692a3",
+    "tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.Bot.dll": "d493c6cacc17a78609f51f52759fcc8a57a025d0599046d4f64fb7c39bb5474b",
+    "tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.Core.dll": "3dce30e5c76ca8ef29fd14755de0eb4a884044f122af44d43f4491bd7206a1d3",
+    "tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/allegiance-mcp.dll": "f7ec0c0fe1210726c9e5ad0c0001121d8070c67392164b3a039cac31abc59b51",
+    "tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.Server.dll": "9cf9021f13c10620d78bf3b19ed5d380c328080bd4ad0b567d3dd48787fa1892"
+  }
+}

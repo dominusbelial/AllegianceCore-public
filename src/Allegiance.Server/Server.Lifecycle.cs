@@ -824,7 +824,7 @@ public sealed partial class Server
         LastEgressWindow = null;
         TickProfiler.WindowReported += EmitEgressWindow;
         _host.Transport = transport;
-        transport.Host((ushort)_config.Port);         // reproduce: bind the logon transport
+        transport.Host((ushort)_config.Port, _config.BindAddress is { } address ? System.Net.IPAddress.Parse(address) : null);         // reproduce: bind the logon transport
         Console.WriteLine($"[boot] transport listening on 0.0.0.0:{_host.BoundPort} (all interfaces)");
 
         StartDiscoveryResponder();
@@ -1173,6 +1173,7 @@ public sealed partial class Server
         mission.CrowdingPenaltyEnabled = _config.Sim.CrowdingEnabled;
         g.Treasure.Validate();
         mission.TreasureParameters = g.Treasure;
+        mission.CountdownDuration = g.GameLengthSeconds;
         if (mg is not null)
         {
             mission.PopulateTreasures(_simNow, mg.PlayerSectorTreasures ?? 0,

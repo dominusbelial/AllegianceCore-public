@@ -78,6 +78,8 @@ internal static class McpTools
                         fleet_a = new { type = "array", items = new { type = "object" }, description = "P557 mixed fleet for SIDE A specifically: array of { hull, count, tech? }. Overrides `fleet` for side A." },
                         fleet_b = new { type = "array", items = new { type = "object" }, description = "P557 mixed fleet for SIDE B specifically: array of { hull, count, tech? }. Overrides `fleet` for side B." },
                         preset = new { type = "string", @enum = new[] { "showcase" }, description = "P557: 'showcase' composes a readable per-side mixed fleet from the real core's player-buyable hulls (~15 per side × size_scale), selects legal equipment per role and enables native wingman UseMines/UseMissiles/Strafe." },
+                        count_a = new { type = "integer", minimum = 1, maximum = 200, description = "Exact showcase side A bot count; overrides size_scale." },
+                        count_b = new { type = "integer", minimum = 1, maximum = 200, description = "Exact showcase side B bot count; defaults to count_a." },
                         size_scale = new { type = "integer", @default = 1, minimum = 1, description = "P557: scales the showcase fleet size (15 × size_scale ships per side)." },
                         target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides, so they rendezvous and fight in one place." },
                         tech_a = new { type = "integer", @default = 0, minimum = 0, description = "Legacy compatibility field; ignored. Purchases use the real side techs at the dock." },
@@ -593,8 +595,13 @@ internal static class McpTools
         if (showcase)
         {
             int sizeScale = OptInt(args, "size_scale") ?? 1;
-            fleetA = Showcase.ComposeShowcaseFleet(core, sizeScale).ToList();
-            fleetB = Showcase.ComposeShowcaseFleet(core, sizeScale).ToList();
+            int countA = OptInt(args, "count_a") ?? 15 * Math.Max(1, sizeScale);
+            int countB = OptInt(args, "count_b") ?? countA;
+            if ((args.ContainsKey("count_a") && countA is < 1 or > 200)
+                || (args.ContainsKey("count_b") && countB is < 1 or > 200))
+                return Err("showcase count_a/count_b must be between 1 and 200");
+            fleetA = Showcase.ComposeShowcaseFleetCount(core, countA).ToList();
+            fleetB = Showcase.ComposeShowcaseFleetCount(core, countB).ToList();
         }
         else
         {

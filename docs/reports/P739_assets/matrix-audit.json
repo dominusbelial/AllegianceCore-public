@@ -1,0 +1,60 @@
+{
+  "SIM-0033": [
+    "port_status",
+    "port_cite_or_reason",
+    "evidence",
+    "notes"
+  ],
+  "SIM-0070": [
+    "port_status",
+    "port_cite_or_reason",
+    "evidence",
+    "notes"
+  ],
+  "SIM-0074": [
+    "port_status",
+    "port_cite_or_reason",
+    "evidence",
+    "notes"
+  ],
+  "SIM-0133": [
+    "port_status",
+    "port_cite_or_reason",
+    "evidence",
+    "notes"
+  ],
+  "SIM-0137": [
+    "port_status",
+    "port_cite_or_reason",
+    "evidence",
+    "notes"
+  ],
+  "SIM-0138": [
+    "port_status",
+    "port_cite_or_reason",
+    "evidence",
+    "notes"
+  ],
+  "SIM-0142": [
+    "port_cite_or_reason",
+    "evidence",
+    "notes"
+  ],
+  "SIM-0143": [
+    "port_status",
+    "port_cite_or_reason",
+    "evidence",
+    "notes"
+  ],
+  "SIM-0145": [
+    "port_cite_or_reason",
+    "evidence",
+    "notes"
+  ],
+  "SIM-0207": [
+    "port_status",
+    "port_cite_or_reason",
+    "evidence",
+    "notes"
+  ]
+}

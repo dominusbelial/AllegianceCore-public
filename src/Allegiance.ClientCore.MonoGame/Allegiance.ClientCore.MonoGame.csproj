@@ -62,4 +62,17 @@
     <None Update="Content/Shaders/*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- P727: only the client owns the runtime in a player bundle. Project-reference
+       traversal can collect both portable and RID-specific standalone server
+       host files; neither belongs in this embedded host's publish output. -->
+  <Target Name="RemoveEmbeddedServerHostFiles" BeforeTargets="_HandleFileConflictsForPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+        Condition="'%(ResolvedFileToPublish.RelativePath)' == 'Allegiance.Server.deps.json'
+          Or '%(ResolvedFileToPublish.RelativePath)' == 'Allegiance.Server.runtimeconfig.json'
+          Or '%(ResolvedFileToPublish.RelativePath)' == 'Allegiance.Server.exe'
+          Or '%(ResolvedFileToPublish.RelativePath)' == 'Allegiance.Server'" />
+    </ItemGroup>
+  </Target>
+
 </Project>

@@ -900,6 +900,16 @@ public sealed partial class Game1
         // P306 — headless capture auto-seats on side 0 (where all the stress
         // bots live) instead of waiting for a human to pick a side / the
         // server's 30s auto-assign, so the video starts promptly.
+        if (_skirmish is not null)
+        {
+            if (_session.World.MySideId == 0) { _state = ClientState.ReadyCheck; return; }
+            if (!_skirmishSideRequested && _session.World.SideRoster?.Sides.Length > 0)
+            {
+                _skirmishSideRequested = true;
+                _session.SendPositionReq(0);
+            }
+            return;
+        }
         if (_captureSpec is not null)
         {
             if (_session.World.MyShipId is not null)

@@ -82,11 +82,10 @@ public sealed partial class Game1
         _directBuf.Clear();
         if (!string.IsNullOrWhiteSpace(prefs.Server))
         {
-            _directBuf.Append(prefs.Server);
-            if (prefs.Port > 0 && _directBuf.Length == 0)
-                _directBuf.Append(prefs.Port);
+            _directBuf.Append(IntroScreenModel.DirectAddress(prefs.Server, prefs.Port));
         }
-        _introView = IntroView.Main;
+        _introView = _introProofDelayMs >= 0 && Environment.GetEnvironmentVariable("ALLEGIANCE_SKIRMISH_SETUP_PROOF") == "1"
+            ? IntroView.SinglePlayer : IntroView.Main;
         _introIndex = 0;
         Console.WriteLine($"[intro] remembered pilot '{_playerName}', server '{prefs.Server}:{prefs.Port}'");
     }
@@ -104,7 +103,7 @@ public sealed partial class Game1
             else if (_introProofStartMs > 0
                 && Environment.TickCount64 - _introProofStartMs >= _introProofDelayMs)
             {
-                _autoShotName = "intro_proof";
+                _autoShotName = _introView == IntroView.SinglePlayer ? "skirmish_setup_proof" : "intro_proof";
                 _autoShotScheduled = true;
                 _introProofWaitExit = true;
                 Console.WriteLine("[intro] ALLEGIANCE_AUTOSHOT: intro proof queued");
@@ -157,6 +156,8 @@ public sealed partial class Game1
                 break;
 
             case IntroView.SinglePlayer:
+                UpdateSkirmishMenu(ks, up, down, enter, esc);
+                break;
             case IntroView.Credits:
                 if (esc && !_iEsc) { _introView = IntroView.Main; _introIndex = 0; }
                 break;
@@ -500,20 +501,21 @@ public sealed partial class Game1
     private void DrawIntroSinglePlayer(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
         DrawIntroTitle(w, "Single Player", "Skirmish", titleCol, dimCol);
-        string[] lines =
+        var rows = _skirmishScreen.Rows;
+        var layout = IntroLayout.Compute(w, h, rows.Length);
+        for (int i = 0; i < rows.Length; i++)
         {
-            "Skirmish mode is under construction (P727).",
-            "Single-player training missions are planned as a later track.",
-            "",
-            "Press ESC to return to the main menu.",
-        };
-        float y = h * 0.4f;
-        foreach (var ln in lines)
-        {
-            var sz = _hudSmall.MeasureString(ln);
-            _spriteBatch.DrawString(_hudSmall, ln, new Vector2((w - sz.X) / 2f, y), textCol);
-            y += 30f;
+            var label = (i == _skirmishScreen.Selected ? "> " : "  ") + rows[i];
+            var size = _hudSmall.MeasureString(label);
+            _spriteBatch.DrawString(_hudSmall, label, new Vector2((w - size.X) / 2, layout.Rows[i].Y + 4),
+                i == _skirmishScreen.Selected ? titleCol : textCol);
         }
+        string message = _skirmishStart is not null ? "Starting local game... ESC cancels" : _skirmishError;
+        if (message.Length == 0) message = _skirmishScreen.Options.Warning;
+        if (message.Length == 0) message = "You fly on side 0. AI commanders manage both teams.";
+        _spriteBatch.DrawString(_hudSmall, message, new Vector2(24, layout.PilotY), Color.Orange);
+        _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   LEFT/RIGHT change   ENTER choose   ESC back",
+            new Vector2(24, layout.FooterY), dimCol);
     }
 
     private void DrawIntroCredits(float w, float h, Color titleCol, Color dimCol, Color textCol)

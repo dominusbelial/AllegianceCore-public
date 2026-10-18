@@ -35,7 +35,7 @@ public sealed class OwnShipServerClock
     /// new server simulation rate. Call on the main thread with a monotonic clock.</summary>
     public void SetTimeScale(double timeScale, long localMs)
     {
-        if (!double.IsFinite(timeScale) || timeScale is < 0.1 or > 1) return;
+        if (!double.IsFinite(timeScale) || timeScale is < 0 or > 1 || (timeScale > 0 && timeScale < .1)) return;
         if (timeScale == _timeScale) return;
         if (_ready)
         {

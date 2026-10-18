@@ -1,0 +1,30 @@
+[
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively"
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Lobby_json_and_configuration_binding_preserve_defaults"
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Game_without_or_with_empty_treasure_section_keeps_a_usable_default"
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Absent_sections_keep_their_defaults"
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Rig_style_json_boots_with_effective_defaults"
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Explicit_false_zero_and_nullable_overrides_still_bind"
+  },
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.ServerTests.Load_ParsesRealConfig_WithCommentsAndTrailingCommas"
+  }
+]

@@ -2,7 +2,7 @@ namespace Allegiance.Core.Wire;
 
 /// <summary>
 /// P612 — a PORT-EXTENSION server→client message telling the client the server's
-/// current sim time scale (<c>sim.timeScale</c>, 0.1–1.0). The server runs the
+/// current sim time scale (<c>sim.timeScale</c>, 0 for local pause, otherwise 0.1–1.0). The server runs the
 /// world in slow motion by advancing its sim clock by <c>period × scale</c>, so
 /// the client's REMOTE-SHIP dead-reckoning/interpolation must extrapolate with
 /// sim time (wall elapsed × scale), not wall time — otherwise ships would

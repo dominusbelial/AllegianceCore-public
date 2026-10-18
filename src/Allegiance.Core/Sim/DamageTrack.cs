@@ -13,32 +13,9 @@ namespace Allegiance.Core.Sim;
 /// descending by total damage so <see cref="TopDealer"/> is always the leading
 /// candidate.
 /// </summary>
-/// <remarks>
-/// Faithful to native within this slice, with the port's standing simplifications
-/// stated:
-/// <list type="bullet">
-/// <item><b>Buckets + sort.</b> <see cref="ApplyDamage"/> finds-or-creates a
-/// <c>DamageBucket</c> per launcher, adds the damage, and re-sorts descending —
-/// <c>DamageTrack::ApplyDamage</c>/<c>DamageTrack::sort</c>
-/// (<c>common.cpp:2592-2665</c>), an insertion sort that keeps the list sorted
-/// descending by <c>totalDamage</c>.</item>
-/// <item><b>Decay.</b> Native retains damage for 8 slots &times; 5 s
-/// (<c>c_iDamageSlotCount=8</c>, <c>c_dwDamageSlotInterval=5000 ms</c>,
-/// <c>igc.h:4927-4928</c>): a slot is retired every 5 s, subtracting that slot's
-/// accumulated damage from each bucket's total, and a bucket whose total drops
-/// below 0.5 f is deleted (<c>common.cpp:2574-2581</c>). This port drives the
-/// same 5 s slot retirement from the owning ship's per-tick update
-/// (<see cref="Ship.OnUpdate"/>), giving the identical 40 s retention — the only
-/// structural difference is that native shares one slot phase across all tracks
-/// via the mission's <c>DamageTrackSet</c>, whereas each ported track keeps its
-/// own self-timed slots (phase alignment is unobservable for kill credit).</item>
-/// <item><b>Flash / <c>m_timeLastDamage</c>.</b> The bucket's per-slot
-/// <c>m_damage[]</c> array (needed only for the shield <c>flash()</c> diagnostic)
-/// is omitted; only the running <c>totalDamage</c> and the slot partitioning that
-/// powers decay are kept. This is the one deliberate omission, documented: the
-/// flash is a client-only red-flash hint, out of this server task's scope.</item>
-/// </list>
-/// </remarks>
+/// <remarks>Mission-owned tracks share the slot phase of DamageTrackSet
+/// (Igc/igc.h:5070-5095; Igc/missionigc.cpp:3146). Standalone tracks retain
+/// an explicit Update clock for callers without a mission.</remarks>
 public sealed class DamageTrack
 {
     private const int SlotCount = 8;                  // c_iDamageSlotCount (igc.h:4928)
@@ -47,11 +24,20 @@ public sealed class DamageTrack
     private readonly List<DamageBucket> _buckets = [];
     private int _idSlot;
     private double _timeSlotChange;
+    private readonly DamageTrackClock? _clock;
+    private long _generation;
 
     /// <summary>Seed the first slot-retirement deadline at <paramref name="now"/>
     /// + 5 s, mirroring <c>DamageTrackSet::Initialize</c>
     /// (<c>igc.h:5075-5078</c>).</summary>
     public DamageTrack(double now) => _timeSlotChange = now + SlotIntervalSeconds;
+
+    internal DamageTrack(DamageTrackClock clock)
+    {
+        _clock = clock;
+        _generation = clock.Generation;
+        _idSlot = (int)(_generation % SlotCount);
+    }
 
     /// <summary>Record <paramref name="damage"/> from <paramref name="model"/> at
     /// sim time <paramref name="timeNow"/>, then re-sort the bucket list descending
@@ -73,7 +59,10 @@ public sealed class DamageTrack
     /// <summary>The launcher that has dealt the most total damage, or <c>null</c>
     /// when no damage has been recorded. Equals the <b>first</b> bucket of
     /// <c>GetDamageBuckets()</c> (<c>shipIGC.cpp:1320-1323</c>).</summary>
-    public Model? TopDealer => _buckets.Count == 0 ? null : _buckets[0].Model;
+    public Model? TopDealer
+    {
+        get { Synchronize(); return _buckets.Count == 0 ? null : _buckets[0].Model; }
+    }
 
     /// <summary>Advance slot retirement — the port of
     /// <c>DamageTrackSet::Update</c> + <c>DamageTrack::SwitchSlots</c>
@@ -84,18 +73,40 @@ public sealed class DamageTrack
     /// Called each tick from the owning ship's <see cref="Ship.OnUpdate"/>.</summary>
     public void Update(double now)
     {
-        while (now >= _timeSlotChange)
+        if (_clock is not null) { Synchronize(); return; }
+        // One retirement per outer update, including equality; never catch up
+        // multiple boundaries in one call (Igc/igc.h:5083-5092).
+        if (now >= _timeSlotChange)
         {
-            _idSlot = (_idSlot + 1) % SlotCount;
             _timeSlotChange += SlotIntervalSeconds;
-            for (int i = _buckets.Count - 1; i >= 0; i--)
-            {
-                var b = _buckets[i];
-                b.RetireSlot(_idSlot);                                   // db->SwitchSlots(m_pset->m_idSlot)
-                if (b.TotalDamage < 0.5f) _buckets.RemoveAt(i);          // delete when total < 0.5 (common.cpp:2576-2578)
-            }
-            if (_buckets.Count == 0) break;
+            RetireSlot();
         }
+    }
+
+    private void Synchronize()
+    {
+        if (_clock is null) return;
+        long elapsed = _clock.Generation - _generation;
+        if (elapsed >= SlotCount)
+        {
+            _buckets.Clear();
+            _idSlot = (int)(_clock.Generation % SlotCount);
+        }
+        else
+            for (long i = 0; i < elapsed; i++) RetireSlot();
+        _generation = _clock.Generation;
+    }
+
+    private void RetireSlot()
+    {
+        _idSlot = (_idSlot + 1) % SlotCount;
+        for (int i = _buckets.Count - 1; i >= 0; i--)
+        {
+            var bucket = _buckets[i];
+            bucket.RetireSlot(_idSlot);
+            if (bucket.TotalDamage < 0.5f) _buckets.RemoveAt(i);
+        }
+        // Igc/common.cpp:2591: defer sorting until the next damage application.
     }
 
     private void Sort() => _buckets.Sort((a, b) => b.TotalDamage.CompareTo(a.TotalDamage));

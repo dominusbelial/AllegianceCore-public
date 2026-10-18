@@ -141,9 +141,11 @@ def build(args):
     manifest = paths(REPO / 'packaging/artwork-manifest.txt')
     with tempfile.TemporaryDirectory(prefix='player-bundle-', dir=output) as staging:
         bundle = Path(staging) / f'Allegiance-{args.rid}'
+        # The server is a managed embedded library here. Disable the server
+        # executable's AOT default throughout this graph, including cross-RID builds.
         publish = ['dotnet', 'publish', str(PROJECT), '-c', 'Release', '-r', args.rid,
                    '--self-contained', 'true', '-o', str(bundle), '-m:1',
-                   '-p:AutoRestoreMGCBTool=false', '-p:NuGetAudit=false']
+                   '-p:AutoRestoreMGCBTool=false', '-p:NuGetAudit=false', '-p:PublishAot=false']
         if args.nuget_source:
             publish += [f'-p:RestoreSources={args.nuget_source}']
         tool = ['dotnet', 'tool', 'restore']
@@ -151,6 +153,17 @@ def build(args):
             tool += ['--add-source', args.nuget_source, '--ignore-failed-sources']
         run(*tool, cwd=REPO)
         run(*publish, cwd=REPO)
+        # P727: the embedded server arrives through the game project reference;
+        # publish the headless supervisor and all of its dependencies beside it.
+        bots = ['dotnet', 'publish', str(REPO / 'tools/allegiance-mcp/allegiance-mcp.csproj'),
+                '-c', 'Release', '-r', args.rid, '--self-contained', 'true',
+                '-o', str(bundle / 'bot-driver'), '-m:1', '-p:NuGetAudit=false', '-p:PublishAot=false']
+        if args.nuget_source:
+            bots += [f'-p:RestoreSources={args.nuget_source}']
+        run(*bots, cwd=REPO)
+        for name in ('Allegiance.Server.dll', 'Allegiance.SinglePlayer.dll'):
+            if not (bundle / name).is_file():
+                raise ValueError(f'Skirmish assembly missing: {name}')
         # Rename only the apphost; its embedded managed entry point stays intact.
         original = bundle / ('Allegiance.ClientCore.MonoGame.exe' if args.rid == 'win-x64' else 'Allegiance.ClientCore.MonoGame')
         original.rename(bundle / ('Allegiance.exe' if args.rid == 'win-x64' else 'Allegiance'))
@@ -180,7 +193,7 @@ def build(args):
         # Validate that compiled content actually made it through dotnet publish.
         validate_content(bundle)
         inventory = []
-        for folder in ('artwork', 'sky', 'Content'):
+        for folder in ('artwork', 'sky', 'Content', 'bot-driver', 'showcase-plans'):
             for p in sorted((bundle / folder).rglob('*')):
                 if p.is_file():
                     inventory.append(f'{checksum(p)}  {p.relative_to(bundle).as_posix()}\n')

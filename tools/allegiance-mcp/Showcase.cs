@@ -128,7 +128,12 @@ internal static class Showcase
     /// </summary>
     public static IReadOnlyList<FleetEntry> ComposeShowcaseFleet(StaticCore core, int sizeScale)
     {
-        int perSide = 15 * Math.Max(1, sizeScale);
+        return ComposeShowcaseFleetCount(core, 15 * Math.Max(1, sizeScale));
+    }
+
+    public static IReadOnlyList<FleetEntry> ComposeShowcaseFleetCount(StaticCore core, int perSide)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(perSide, 1);
         var weights = new (HullRole Role, double W)[]
         {
             (HullRole.Fighter, 0.46),

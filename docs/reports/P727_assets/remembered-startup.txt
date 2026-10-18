@@ -1,0 +1,4 @@
+[monogame] intro mode: no positional args (choose Single Player or Multiplayer at start)
+[intro] remembered pilot 'P727-local', server '127.0.0.1:9'
+[intro] ALLEGIANCE_AUTOSHOT: intro proof queued
+[autoproof] screenshot saved: screenshots/skirmish_setup_proof.png

@@ -73,6 +73,8 @@ public sealed partial class Mission
     /// </summary>
     public double LastUpdate { get; private set; }
 
+    internal DamageTrackClock DamageClock { get; } = new();
+
     /// <summary>
     /// The mission stage, controlling the tick's behaviour: only
     /// <see cref="MissionStage.Started"/> / <see cref="MissionStage.Starting"/>
@@ -573,6 +575,7 @@ public sealed partial class Mission
         // Seed BEFORE any ship placement or countdown can observe this world.
         var mission = new Mission(core, map, sectors, sideList, allWarps, dangling, site)
         { LastUpdate = initialTime, Research = research, AllowDevelopments = research.AllowDevelopments };
+        mission.DamageClock.Initialize(initialTime);
         foreach (var sector in sectors)
         {
             sector.Mission = mission;
@@ -654,6 +657,8 @@ public sealed partial class Mission
             Site.SideUpdated(side, now);               // observation hook (instrumentation)
         }
 
+        DamageClock.Update(now); // Igc/missionigc.cpp:3146, once before sector chunks
+
         // ── P259 — periodic per-side cluster-visibility refresh ──────────
         // Recomputed every VisibilityRefreshTicks Updates (not every tick) —
         // visibility changes slowly, so a per-tick pass would be wasteful. See
@@ -676,9 +681,13 @@ public sealed partial class Mission
         // Distribution to players (delta split + FM_S_PAYDAY send + deduction)
         // lives in the host's PaydayEvent handler, mirroring the split between
         // fsmission.cpp:2514-2552 (accrual) and fsmission.cpp:2294-2326 (payout).
-        if (Stage == MissionStage.Started && NextPaydayTime == 0)
+        // Timeout wins before DoTick's economy (FedSrv/fsmission.cpp:2508-2516).
+        // The host resolves the winner after movement; suppress a payday that
+        // otherwise occurs inside this port's combined mission/economy update.
+        bool countdownExpired = HasCountdownExpired(now);
+        if (Stage == MissionStage.Started && !countdownExpired && NextPaydayTime == 0)
             NextPaydayTime = now + PaydayInterval;     // fsmission.cpp:2253 (seeded at start + 60)
-        if (Stage == MissionStage.Started && now >= NextPaydayTime)
+        if (Stage == MissionStage.Started && !countdownExpired && now >= NextPaydayTime)
         {
             double treasureElapsed = PaydayInterval + now - NextPaydayTime;
             if (AllowDevelopments && TreasureParameters.AllowDevelopments) // fsmission.cpp:2520

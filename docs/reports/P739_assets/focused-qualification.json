@@ -1,0 +1,555 @@
+[
+  {
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Ballot_codec_round_trips_exact_bytes",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.CancelBallot_and_Vote_codecs_round_trip_exact_bytes",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Draw_end_to_end_offer_then_accept_then_game_over",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Multi_mission_ballot_scopes_per_mission_and_per_side",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Mutiny_from_non_leader_creates_ballot_and_broadcasts_to_side",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Mutiny_from_own_leader_refused_no_ballot",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Mutiny_passing_transfers_leadership_failing_keeps_it",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.PendingBallot_tally_matches_native_majority_rule",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Resign_passing_removes_every_player_on_side",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Second_mutiny_in_flight_refused_with_private_reply",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.BallotVotingLiveTests.Vote_from_non_eligible_ship_is_ignored",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.KillCreditDamageTrackTests.DamageTrack_reports_the_top_total_damage_dealer_not_the_last_hitter",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.KillCreditDamageTrackTests.Kill_credit_goes_to_the_top_damage_dealer_not_the_last_hitter",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.KillCreditDamageTrackTests.Lone_killer_still_gets_the_credit",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+    "project": "Core",
+    "prescribed_failures": 1,
+    "fresh_retry_passes": 3,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.LiveCountdownStartPingTests.P188_codecs_round_trip_exact_bytes",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.LiveCountdownStartPingTests.Ping_echoes_to_sender_only_with_server_timestamp",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_from_non_owner_is_refused",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_not_all_ready_is_refused",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_refused_once_starting_or_started",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.LivePlayerCountTests.LivePlayerCount_tracks_joined_peers",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.LobbyHeartbeatTests.Dispose_deregisters_listing",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.LobbyHeartbeatTests.First_heartbeat_registers_server_in_directory",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.LobbyHeartbeatTests.LobbyRegisterRequest_serializes_to_byte_identical_wire_shape",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.LobbyHeartbeatTests.LobbyRegisterResponse_roundtrips_exact_wire_shape",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.LobbyHeartbeatTests.Lobby_null_constructs_no_heartbeat_client",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.LobbyHeartbeatTests.Second_heartbeat_updates_same_listing_in_place",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.MineBroadcastTests.Directly_deployed_mine_broadcasts_create_and_destroy_to_teammate_but_not_enemy",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.MineCombatTests.Mine_with_no_intruder_expires_via_lifespan_and_broadcasts_destroy_unmodified",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.MineDomainTests.Mine_never_moves_and_expiry_removes_it_from_its_sector",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.MiningSellTests.Loopback_mine_then_dock_sells_ore_and_pays_FM_S_PAYDAY",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P598MissionRestartLiveTests.AutoRestart_config_restarts_rotated_mission_without_ready_up",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P598MissionRestartLiveTests.New_wave_after_rotation_enters_and_three_rotations_run_without_leak",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P598MissionRestartLiveTests.Rotated_mission_auto_starts_from_preserved_ready_after_game_over",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Dangling_warp_has_no_fabricated_destination_and_only_dual_can_hit_source",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Due_bombs_detonate_in_deadline_order_with_each_delay_captured_at_trigger",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Full_mission_tick_routes_a_warp_blast_regardless_of_sector_update_order",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P649CombatBlastParityTests.Warp_bomb_uses_core_delay_destination_and_optional_dual_source",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739LobbyPeriodicTests.Dirty_lobby_details_coalesce_at_ten_seconds_and_clean_lease_refreshes",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739LobbyPeriodicTests.Rejected_lobby_token_retries_without_token_after_rate_limit",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739PeriodicTests.Ballot_strict_expiry_all_votes_and_cancellation",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_obeys_native_victory_precedence",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739PeriodicTests.Countdown_strict_expiry_stage_and_kills_deaths_draw",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739PeriodicTests.Damage_slots_retire_one_boundary_per_call_and_sort_only_on_damage",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739PeriodicTests.Expired_match_suppresses_due_payday_but_exact_timeout_boundary_does_not",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739PeriodicTests.Match_timeout_uses_real_game_over_rotation_once",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739PeriodicTests.Mine_survives_exact_expiry_and_is_removed_after_it",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739PeriodicTests.Mission_damage_phase_is_shared_once_before_chunks_and_seeded_at_rotation_time",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739PeriodicTests.Restart_briefing_preserves_absolute_deadline_or_cancels_empty_match",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739PeriodicTests.Ships_damaged_at_different_times_share_mission_slot_phase",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739PeriodicTests.Start_countdown_requires_strict_expiry_and_players_or_arena_policy",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739TimerLiveTests.Chat_recovery_ticks_for_seated_players_and_stops_at_mission_over",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739TimerLiveTests.Non_arena_countdown_starts_when_a_connected_player_remains",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.Transport.P654DispatchHardeningTests.ChatBudget_BoundsRelayAmplification_WhileFirstMessagesFlow",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.WarpBombTests.Domain_missile_between_raw_and_visual_warp_radius_does_not_trigger_warp_bomb",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.WarpBombTests.Domain_missile_far_from_any_warp_expires_normally_and_raises_no_warp_bomb",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.WarpBombTests.Domain_missile_in_warp_radius_is_consumed_now_and_the_delayed_blast_hits_a_nearby_ship",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.WarpBombTests.Domain_non_warp_bomb_missile_in_warp_radius_arms_nothing",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.WarpBombTests.Domain_warp_bomb_missile_hitting_a_ship_deals_no_damage",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.WarpBombTests.Live_whole_mission_warp_bomb_reaches_the_cross_side_peer_and_the_delayed_blast_lands",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.BotAcceptsAndEngagesOrderLiveTests.Mcp_debug_bot_buys_relaunches_and_fights",
+    "project": "ClientCore",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P651EquipmentLiveTests.Local_battle_production_bot_missile_decision_fires_over_TCP_and_scores_kills",
+    "project": "ClientCore",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P660CountdownTests.Game_over_roster_accumulates_native_chunks_and_resets_for_the_next_result",
+    "project": "ClientCore",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P660CountdownTests.Native_restart_deadline_is_replaced_by_briefing_and_tracks_dilation",
+    "project": "ClientCore",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P660CountdownTests.Side_elimination_preserves_result_until_a_real_next_match_stage",
+    "project": "ClientCore",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump",
+    "project": "ClientCore",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Two_consecutive_matches_deliver_both_players_results_and_reseat_every_peer",
+    "project": "ClientCore",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P660NextMatchLiveTests.Unready_players_wait_when_disabled_and_auto_start_when_enabled",
+    "project": "ClientCore",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+    "project": "ClientCore",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Every_source_generated_context_preserves_all_defaults_recursively",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Lobby_json_and_configuration_binding_preserve_defaults",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Game_without_or_with_empty_treasure_section_keeps_a_usable_default",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Absent_sections_keep_their_defaults",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Rig_style_json_boots_with_effective_defaults",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.ConfigDefaultsJsonTests.Explicit_false_zero_and_nullable_overrides_still_bind",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  },
+  {
+    "method": "Allegiance.Core.Tests.ServerTests.Load_ParsesRealConfig_WithCommentsAndTrailingCommas",
+    "project": "Core",
+    "prescribed_failures": 0,
+    "fresh_retry_passes": 0,
+    "qualified": true
+  }
+]

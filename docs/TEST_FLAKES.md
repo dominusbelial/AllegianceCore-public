@@ -1901,6 +1901,59 @@ under `docs/reports/TT1_assets/sweep/` and `docs/reports/TT1_assets/focused/`.
 The distinct hygiene-duration and deferred-theory accounting findings were fixed
 and verified separately; they are not classified as load flakes.
 
+## P739 initial focused observation (2026-10-18)
+
+`Allegiance.Core.Tests.MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction` passed its first two isolated runs, then failed the third at line 212: “B must receive the mine's EXPORT once its scanner net spots it”. Three fresh exact-method invocations immediately afterward passed **3/3**. This meets the P739 brief's load-flake criterion; it does not establish the underlying cause or a fix. No assertion, timeout, quarantine or product behavior was relaxed. This observation belongs to the initial focused pass, before the final countdown/payday guard; final certification is recorded separately. See [invocation ledger](reports/P739_assets/verification.jsonl), labels `focus-054-3` and `focus-retry-054-1` through `focus-retry-054-3`, with corresponding log/TRX artifacts in [P739 assets](reports/P739_assets).
+
+
+## P739 final focused observation (2026-10-18)
+
+`Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission` failed the first final isolated invocation with `Assert.Single() Failure: The collection was empty`; the next two prescribed runs and three fresh exact-method retries passed. The three fresh retries satisfy the P739 load-flake rule. The same empty-receipt symptom was recorded by P709. No assertion, timeout, quarantine or product code was changed in response. Final focused verification otherwise passed: **237 prescribed invocations / 300 case executions**, one raw failure, plus **3/3 passing fresh retries**. See [ledger](reports/P739_assets/verification.jsonl), labels `certified-focus-039-1` and `certified-retry-039-1` through `certified-retry-039-3`.
+
+
+## P739 full-suite observations (2026-10-18)
+
+The single final Core/ClientCore/MonoGame sweep recorded these failures. Each was retried three times alone after all suites completed; no assertion, timeout, quarantine or product code was relaxed.
+
+| Method | Symptom | Isolated outcome |
+| --- | --- | --- |
+| `Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | System.TimeoutException : no OnPeerJoined for raw peer | 3/3 passed |
+| `Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches` | both sides real development and newly legal upgraded launch timed out; sim=11463.199999973434 | 3/3 passed |
+
+For P705, the table refers to the original civA25/civB3/size10 case: one fresh method invocation passed all 4 cases, then two fresh exact-case invocations each executed that one case. All 3 observations passed with unchanged assertions/deadlines.
+
+See [validation summary](reports/P739_assets/validation-summary.json) and [invocation ledger](reports/P739_assets/verification.jsonl). Passing three fresh isolated runs meets P739’s load-flake criterion and does not establish the underlying cause or a fix.
+
+## P727 local validation (2026-10-18)
+
+`P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)`
+failed in the third focused method invocation: only one side completed by the
+unchanged 300-second deadline while the Supremacy constructor was still
+travelling/building an Outpost (Hvy). The first two invocations passed both
+the authored and generated cases; the third passed the generated case.
+The exact authored case then passed **3/3 fresh isolated invocations** in
+91.16, 92.99, and 90.91 seconds. No deadline or assertion was relaxed.
+This matches the existing P703 constructor-timing observation and meets
+P727's explicit load-flake rule. See the
+[P727 invocation ledger](reports/P727_assets/validation.json), labels
+`focus-Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates`
+and `isolation-P703-authored`; the failed TRX and the three isolated TRXs
+are preserved beside that ledger as gzip files.
+
+P727's single full Core sweep also hit
+`Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn`
+with `TimeoutException: no OnPeerJoined for raw peer`. It passed **3/3 fresh
+exact-method isolated reruns** in 2.28, 2.38 and 2.28 seconds after the four
+project sweeps finished. The original deadline and assertions were unchanged.
+The invocation ledger above records the raw 4,853-pass/1-fail Core result
+and the `isolation-suite-Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn`
+triplet. This meets the same load-flake rule and matches earlier observations
+of this test.
+
+MonoGame's P625b input guard failure in this run was a deterministic P727
+regression and was corrected, rather than classified as a load flake; its
+before/after evidence is in the P727 report.
+
 ## TR-1 training framework observation (2026-10-18)
 
 The required single Fast-tier sweep ran the final code with the new training tests

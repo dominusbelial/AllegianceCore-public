@@ -4,7 +4,13 @@ Use Python 3.11+, git and .NET SDK 10.0.400. On Linux install DejaVu Sans Mono
 (`fonts-dejavu-core`) and FreeType for MGCB's two fonts. DesktopGL Content is
 platform-independent, so CI cross-publishes all three RIDs on Ubuntu and executes
 the Windows apphost on Windows and the arm64 app on macos-latest. No MonoGame
-graphics/audio objects are constructed by the self-check.
+graphics/audio objects are constructed by the self-check. P727 adds a 60-second
+Small skirmish smoke with a real auto-pilot client, embedded loopback server,
+and owned bot supervisor/workers. It verifies the match stays running, all nine
+bot pilots remain live, and the pilot moves. The server and research plans ship
+with the player; `bot-driver/` holds the self-contained bot runtime.
+`Allegiance --skirmish-smoke 60 [Small|Medium|Large|Epic]` is also a headless
+local benchmark; its JSON reports wall/sim time, combat, and pilot travel.
 
 ```
 python3 packaging/package.py --rid linux-x64

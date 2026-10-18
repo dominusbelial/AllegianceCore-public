@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/Allegiance.Core/Allegiance.Core.csproj" />
     <Project Path="src/Allegiance.Server/Allegiance.Server.csproj" />
+    <Project Path="src/Allegiance.SinglePlayer/Allegiance.SinglePlayer.csproj" />
     <Project Path="src/Allegiance.Bot/Allegiance.Bot.csproj" />
     <Project Path="src/Allegiance.Lobby/Allegiance.Lobby.csproj" />
     <Project Path="src/Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
@@ -17,6 +18,7 @@
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/test-tiers/test-tiers.csproj" />
+    <Project Path="tools/skirmish-proof/skirmish-proof.csproj" />
     <Project Path="tools/igcdump/igcdump.csproj" />
     <Project Path="tools/tech-tree/tech-tree.csproj" />
     <Project Path="tools/missiondump/missiondump.csproj" />

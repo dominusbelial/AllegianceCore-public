@@ -1,0 +1,23 @@
+{
+  "src/Allegiance.Core/Model/Mission.Countdown.cs": "410cfeecf54b531e696ae4267c0ccf2a04c22921e759742c59529827504fb2b8",
+  "src/Allegiance.Core/Model/Mission.cs": "80264d79abbcde8276e078d14a7efcd505a79e9c3325e7bed9f2c20214b51bf7",
+  "src/Allegiance.Core/Model/PendingBallot.cs": "38fb0336ddb45acb330e646259413237c02fb54fbacbf0e2ca4add452647b931",
+  "src/Allegiance.Core/Model/Sector.cs": "a4a7abd2f46d3b0759493a1ef7f1f83235a1e20706ac8df188d528d8a898fd5f",
+  "src/Allegiance.Core/Sim/DamageTrack.cs": "8b677d6a72ceb93649efbbf751341a26741eef765fa11e28f16c54ccbe7fed7d",
+  "src/Allegiance.Core/Sim/DamageTrackClock.cs": "c59f8f11811d438b56366fe2eb94f85c955febff3f9c5239ad36d0858c68d9ee",
+  "src/Allegiance.Core/Sim/Mine.cs": "9ceb5243afc97f344f0559e67f67420e8aac5524f17d68af3af71b94300a2c1a",
+  "src/Allegiance.Core/Sim/Missile.cs": "dead5f25c6db3a320a3d05d9e80f213f1003b4bdfd5d5b250efa24b9983693d0",
+  "src/Allegiance.Core/Sim/Ship.cs": "f4ecffa072cf3c36d7a6d9885e191fb51b2609d757c5d5cfffd0cba53032e950",
+  "src/Allegiance.Server/LobbyHeartbeat.cs": "b725700219524ee8aeb5387e705e69382c577e7bcb44818667bd799e31ac9150",
+  "src/Allegiance.Server/Server.Broadcast.cs": "d7b83f039a429f25ad03469ceb392ebcf87282b18b6c993bc1c65213cdbaf476",
+  "src/Allegiance.Server/Server.Combat.cs": "cd4ba4168ffc5bd129b76427cfebd0ce5f290a304ffc1239d05baeed4a0fcb9d",
+  "src/Allegiance.Server/Server.Dispatch.cs": "c9bc98dd5a4de83b3edb8b9b5ea4e4683b2920d460ec1d9d0dbc31da955df3eb",
+  "src/Allegiance.Server/Server.Lifecycle.cs": "f2415a11f117ff0eb900005e4619ca76de217838cb389261389442a6eae6db11",
+  "src/Allegiance.Server/Server.Lobby.cs": "a24c7a1b018a21b302bda963f1d36c074995eddf020d3ef43ec530044019e82a",
+  "src/Allegiance.Server/Server.Periodic.cs": "75c50f487ab17c410cc10e123b1d084b6459f2143263f186ac4119fb85005b55",
+  "src/Allegiance.Server/Server.cs": "56892313edef15715298701d880723404ec1b87a92c89059a963e3230f8e79bd",
+  "src/Allegiance.Server/ServerConfig.cs": "543a1148a7cb4abd5b97deb408372a7c9e9154a52c84487df7b485abe8e05654",
+  "tests/Allegiance.Core.Tests/P739LobbyPeriodicTests.cs": "c29369cf777c3197b2fd4a3ae30185135e480d4feaeddfee8238d002894f1254",
+  "tests/Allegiance.Core.Tests/P739PeriodicTests.cs": "7233167a2591389e44ee1c546dc880923db986ab22bd257650649cfe708825b7",
+  "tests/Allegiance.Core.Tests/P739TimerLiveTests.cs": "38c5fee952b922974088a5b5567d18ae899c014649a0d153fb0039d7808724eb"
+}

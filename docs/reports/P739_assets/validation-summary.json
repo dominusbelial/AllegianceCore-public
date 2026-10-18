@@ -1,0 +1,204 @@
+{
+  "cohort_methods": 79,
+  "cohort_prescribed_invocations": 237,
+  "cohort_counts": {
+    "Passed": 299,
+    "Failed": 1,
+    "NotExecuted": 0
+  },
+  "cohort_fresh_retry_counts": {
+    "Passed": 3,
+    "Failed": 0,
+    "NotExecuted": 0
+  },
+  "new_methods": 16,
+  "new_case_executions": 75,
+  "suites": [
+    {
+      "label": "suite-Core",
+      "project": "Core",
+      "method": null,
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/suite-Core"
+      ],
+      "exit": 1,
+      "seconds": 967.365,
+      "counts": {
+        "Passed": 4878,
+        "Failed": 1,
+        "NotExecuted": 0
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+          "message": "System.TimeoutException : no OnPeerJoined for raw peer"
+        }
+      ]
+    },
+    {
+      "label": "suite-ClientCore",
+      "project": "ClientCore",
+      "method": null,
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/suite-ClientCore"
+      ],
+      "exit": 1,
+      "seconds": 2679.564,
+      "counts": {
+        "Passed": 1305,
+        "Failed": 1,
+        "NotExecuted": 0
+      },
+      "failures": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 25, civB: 3, size: 10)",
+          "message": "both sides real development and newly legal upgraded launch timed out; sim=11463.199999973434"
+        }
+      ]
+    },
+    {
+      "label": "suite-ClientCore.MonoGame",
+      "project": "ClientCore.MonoGame",
+      "method": null,
+      "command": [
+        "dotnet",
+        "test",
+        "/home/domingo/allegiance-codex-p739/tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=result.trx",
+        "--results-directory",
+        "/tmp/p739/suite-ClientCore.MonoGame"
+      ],
+      "exit": 0,
+      "seconds": 977.463,
+      "counts": {
+        "Passed": 2431,
+        "Failed": 0,
+        "NotExecuted": 3
+      },
+      "failures": []
+    }
+  ],
+  "suite_failures": [
+    {
+      "project": "Core",
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "message": "System.TimeoutException : no OnPeerJoined for raw peer",
+      "fresh_passes": 3,
+      "fresh_runs": 3,
+      "qualified": true
+    },
+    {
+      "project": "ClientCore",
+      "method": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches",
+      "message": "both sides real development and newly legal upgraded launch timed out; sim=11463.199999973434",
+      "fresh_passes": 3,
+      "fresh_runs": 3,
+      "qualified": true
+    }
+  ],
+  "parking_summary": [
+    {
+      "label": "base-parking-1",
+      "passed": true,
+      "longest_stopped_with_target": 1.905,
+      "kills": 13,
+      "receipt": "P700 local 15v15: 97.2s, samples=971, reached=26/30, longest speed<1 with target=1.905s, shots=3776, hits=1547, kills=13",
+      "failures": []
+    },
+    {
+      "label": "base-parking-2",
+      "passed": true,
+      "longest_stopped_with_target": 1.504,
+      "kills": 12,
+      "receipt": "P700 local 15v15: 98.0s, samples=979, reached=26/30, longest speed<1 with target=1.504s, shots=4268, hits=1333, kills=12",
+      "failures": []
+    },
+    {
+      "label": "base-parking-3",
+      "passed": true,
+      "longest_stopped_with_target": 2.005,
+      "kills": 15,
+      "receipt": "P700 local 15v15: 96.1s, samples=960, reached=25/30, longest speed<1 with target=2.005s, shots=3703, hits=1597, kills=15",
+      "failures": []
+    },
+    {
+      "label": "base-parking-4",
+      "passed": true,
+      "longest_stopped_with_target": 1.913,
+      "kills": 13,
+      "receipt": "P700 local 15v15: 98.3s, samples=982, reached=26/30, longest speed<1 with target=1.913s, shots=3965, hits=1529, kills=13",
+      "failures": []
+    },
+    {
+      "label": "base-parking-5",
+      "passed": true,
+      "longest_stopped_with_target": 2.005,
+      "kills": 16,
+      "receipt": "P700 local 15v15: 97.7s, samples=976, reached=26/30, longest speed<1 with target=2.005s, shots=3728, hits=1612, kills=16",
+      "failures": []
+    },
+    {
+      "label": "parking-1",
+      "passed": true,
+      "longest_stopped_with_target": 1.913,
+      "kills": 13,
+      "receipt": "P700 local 15v15: 93.0s, samples=929, reached=24/30, longest speed<1 with target=1.913s, shots=3247, hits=1474, kills=13",
+      "failures": []
+    },
+    {
+      "label": "parking-2",
+      "passed": true,
+      "longest_stopped_with_target": 2.008,
+      "kills": 16,
+      "receipt": "P700 local 15v15: 94.1s, samples=939, reached=24/30, longest speed<1 with target=2.008s, shots=3160, hits=1365, kills=16",
+      "failures": []
+    },
+    {
+      "label": "parking-3",
+      "passed": true,
+      "longest_stopped_with_target": 2.004,
+      "kills": 12,
+      "receipt": "P700 local 15v15: 96.4s, samples=963, reached=25/30, longest speed<1 with target=2.004s, shots=3408, hits=1291, kills=12",
+      "failures": []
+    },
+    {
+      "label": "parking-4",
+      "passed": true,
+      "longest_stopped_with_target": 1.507,
+      "kills": 13,
+      "receipt": "P700 local 15v15: 92.9s, samples=928, reached=24/30, longest speed<1 with target=1.507s, shots=2728, hits=1138, kills=13",
+      "failures": []
+    },
+    {
+      "label": "parking-5",
+      "passed": true,
+      "longest_stopped_with_target": 2.017,
+      "kills": 15,
+      "receipt": "P700 local 15v15: 93.4s, samples=933, reached=24/30, longest speed<1 with target=2.017s, shots=3253, hits=1530, kills=15",
+      "failures": []
+    }
+  ],
+  "battle": "RESULT_P632 p739 model=port debug=1 size=15/side window=90s botsReached=30/30 killsA=2 killsB=0 killsTotal=2 deathsA=0 deathsB=2 shots=14911 hits=5972 hitRate=40.1 % friendly=0 shieldHits=3789 hullHits=2183 maxTargeted=28 maxVisibleEnemies=14"
+}

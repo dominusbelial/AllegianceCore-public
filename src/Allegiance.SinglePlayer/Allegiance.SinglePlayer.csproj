@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Allegiance.Server/Allegiance.Server.csproj" />
+    <ProjectReference Include="../Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Allegiance.ClientCore.Tests" />
+  </ItemGroup>
+</Project>

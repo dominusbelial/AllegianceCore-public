@@ -15,6 +15,9 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
     private float _impactTime;
     private bool _terminated;
 
+    /// <summary>Captured warp detonation time, in simulation seconds.</summary>
+    public double? WarpBombTime { get; internal set; }
+
     /// <summary>Construct a missile in <paramref name="sector"/> at
     /// <paramref name="position"/> with <paramref name="velocity"/>, facing
     /// <paramref name="forward"/>, born at <paramref name="now"/>. Its clock is

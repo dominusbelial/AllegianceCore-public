@@ -93,24 +93,30 @@ public sealed partial class Game1
         Console.WriteLine($"[p642] main menu={_mainMenuVisible}");
     }
 
+    private string[] CurrentMainMenuItems => _skirmish is null ? MainMenuItems
+        : MainMenuItems.Concat(new[] { _skirmish.Paused ? "Resume skirmish" : "Pause skirmish", "End skirmish" }).ToArray();
+
     private void UpdateMainMenu(KeyboardState keys)
     {
         foreach (var action in new[] { "MenuUp", "MenuDown", "MenuConfirm" })
         {
             bool edge = ConsoleEdge(keys, action);
             if (!_mainMenuVisible || !edge) continue;
-            if (action == "MenuUp") _mainMenuCursor = (_mainMenuCursor + MainMenuItems.Length - 1) % MainMenuItems.Length;
-            else if (action == "MenuDown") _mainMenuCursor = (_mainMenuCursor + 1) % MainMenuItems.Length;
+            if (action == "MenuUp") _mainMenuCursor = (_mainMenuCursor + CurrentMainMenuItems.Length - 1) % CurrentMainMenuItems.Length;
+            else if (action == "MenuDown") _mainMenuCursor = (_mainMenuCursor + 1) % CurrentMainMenuItems.Length;
             else
             {
                 _mainMenuVisible = false;
                 switch (_mainMenuCursor)
                 {
+                    case 0: if (_skirmish?.Paused == true) ToggleSkirmishPause(); break;
                     case 1: _helpVisible = true; break;
                     case 2: if (!_keyBindVisible) ToggleKeyBindings(); break;
                     case 3: _creditsVisible = true; break;
                     case 4: if (_state == ClientState.Flying) ApplyConsoleMode("ConModeGameState"); break;
                     case 5: Exit(); break;
+                    case 6: ToggleSkirmishPause(); break;
+                    case 7: StopSkirmish(); break;
                 }
             }
         }
@@ -144,8 +150,8 @@ public sealed partial class Game1
     {
         if (!_mainMenuVisible) return;
         var lines = new List<TeamPaneLayout.Line> { new(TeamPaneLayout.LineKind.Title, "MAIN MENU") };
-        for (int i = 0; i < MainMenuItems.Length; i++) lines.Add(new(TeamPaneLayout.LineKind.Pilot,
-            (i == _mainMenuCursor ? "> " : "  ") + MainMenuItems[i], i == _mainMenuCursor));
+        for (int i = 0; i < CurrentMainMenuItems.Length; i++) lines.Add(new(TeamPaneLayout.LineKind.Pilot,
+            (i == _mainMenuCursor ? "> " : "  ") + CurrentMainMenuItems[i], i == _mainMenuCursor));
         lines.Add(new(TeamPaneLayout.LineKind.Hint, $"{KeyOf("MenuUp").Label}/{KeyOf("MenuDown").Label} select | {KeyOf("MenuConfirm").Label} open | {KeyOf("MainMenu").Label} resume"));
         _teamPaneRenderer.Draw(GraphicsDevice.Viewport, lines);
     }

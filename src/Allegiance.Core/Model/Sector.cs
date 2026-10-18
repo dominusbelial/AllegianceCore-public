@@ -3760,6 +3760,7 @@ public sealed class Sector : IClusterIgc
 
                 // (1) schedule the pair's detonation using the loaded core delay.
                 double timeExplosion = now + EffectiveWarpBombDelay;
+                missile.WarpBombTime = timeExplosion;
                 ScheduleWarpBomb(timeExplosion, warp, missile.MissileType);
 
                 // (2) consume the missile NOW (at trigger, not at timeExplosion) —

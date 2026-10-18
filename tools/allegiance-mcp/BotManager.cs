@@ -283,6 +283,28 @@ internal sealed partial class BotManager : IDisposable
 
     private double Now() => _clock.Elapsed.TotalSeconds;
 
+    private readonly object _pauseGate = new();
+    private readonly object _researchPauseGate = new();
+    private bool _paused;
+    internal void SetPaused(bool paused)
+    {
+        lock (_pauseGate)
+        lock (_researchPauseGate)
+        {
+            _paused = paused;
+            if (paused) _clock.Stop(); else _clock.Start();
+        }
+    }
+    private readonly BotDifficulty _difficulty = BotDifficulty.FromEnvironment();
+    private static readonly ParallelOptions DecisionParallelOptions = new()
+    {
+        MaxDegreeOfParallelism = ComputeParallelism(Environment.GetEnvironmentVariable, Environment.ProcessorCount)
+    };
+    internal static int ComputeParallelism(Func<string, string?> environment, int cores) =>
+        int.TryParse(environment("ALLEGIANCE_BOT_COMPUTE_THREADS"), out int count) && count > 0
+            ? Math.Clamp(count, 1, Math.Max(1, cores)) : -1; // Preserve the standalone driver's existing default.
+
+
     // ── Startup probe (server validation + side roster) ────────────────────
 
     private static LogonRequest Request(string name) => new()
@@ -534,6 +556,7 @@ internal sealed partial class BotManager : IDisposable
             bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed())
             {
                 Cs = cs,
+                Difficulty = _difficulty,
                 TechLoadouts = true,
                 PurchasePacer = _loadoutPurchasePacer,
                 ShipId = shipId,
@@ -577,6 +600,7 @@ internal sealed partial class BotManager : IDisposable
             bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed())
             {
                 Bot = b,
+                Difficulty = _difficulty,
                 ShipId = shipId,
                 Launched = true,
                 Parts = finalParts,
@@ -1680,6 +1704,9 @@ internal sealed partial class BotManager : IDisposable
             _stallTelemetry.Metrics.BeginPass();
             try
             {
+                lock (_pauseGate)
+                if (!_paused)
+                {
                 double now = Now();
                 long coordinationEpoch = CoordinationEpoch;
                 ActiveBot[] snap;
@@ -1731,7 +1758,7 @@ internal sealed partial class BotManager : IDisposable
                 // equivalence unit test).
                 BuildPassSpatialIndices(snap);
                 var prep = new PreparedEngagement?[snap.Length];
-                System.Threading.Tasks.Parallel.For(0, snap.Length, i =>
+                System.Threading.Tasks.Parallel.For(0, snap.Length, DecisionParallelOptions, i =>
                 {
                     var b = snap[i];
                     if (!IsParticipating(b) || b.SpawnPending || b.ObjectivesPending || b.InScenario || b.Behavior != "combat" || b.Cs is not { } pcs) return;
@@ -1869,7 +1896,7 @@ bool isThreat =
                 try { ReReadyProbe(); } catch { }
                 SampleIdleTargets(snap, now);
                 if (Partition is not null) PublishCoordination(snap, now, coordinationEpoch);
-
+                }
             }
             catch { }
             finally
@@ -1887,7 +1914,18 @@ bool isThreat =
             // P636b — via the deadline scheduler, which NEVER busy-spins: even a
             // pass that overshoots its tick yields a minimum sleep so the loop
             // can't starve the receive threads (the P636 runaway at 200v200).
-            double sleepMs = _cadence.SleepForRemainder(Now() * 1000.0);
+            double sleepMs;
+            lock (_pauseGate)
+            {
+                if (_paused)
+                {
+                    // The gameplay clock is stopped. Do not accumulate future deadlines
+                    // while paused or delay the bot's first resumed decision.
+                    _cadence.Begin(Now() * 1000.0);
+                    sleepMs = 50;
+                }
+                else sleepMs = _cadence.SleepForRemainder(Now() * 1000.0);
+            }
             if (sleepMs > 0) Thread.Sleep((int)sleepMs);
         }
     }
@@ -2985,6 +3023,8 @@ bool isThreat =
         // Lead aim: where the round actually intercepts the moving target
         // (native solveForLead → the intercept time `t` powers the bands).
         float targetR = stationTarget ? stationRadius : HullRadius(targetHullId);
+        // Difficulty is host policy. Normal (accuracy=1) preserves the existing lead exactly.
+        targetR /= bot.Difficulty.Accuracy;
         Vector3 aim = Vector3.Zero;
         bool haveLead = false;
         float t = 0f;
@@ -3063,7 +3103,13 @@ bool isThreat =
 
         // Fire gate (shipIGC.cpp:2600): allWeapons iff angleToLead ≤ c_fMaxOffAngle
         // AND t ≤ lifespan·openFireDistPercentage, plus the kept friendly-line check.
-        bool fire = !friendlyBlocked && AttackFireGate(angleToLead, t, lifespan);
+        if (bot.DifficultyTarget != targetId)
+        {
+            bot.DifficultyTarget = targetId;
+            bot.DifficultyTargetSince = now;
+        }
+        bool reacted = now - bot.DifficultyTargetSince >= bot.Difficulty.ReactionSeconds;
+        bool fire = reacted && !friendlyBlocked && AttackFireGate(angleToLead, t / bot.Difficulty.Aggression, lifespan);
 
         int stateM = state | (fire ? ShipControlState.AllWeapons : 0);
         bot.AttackAfterburnerHeld = (stateM & ShipControlState.AfterburnerButton) != 0;
@@ -3073,7 +3119,7 @@ bool isThreat =
         // Missiles: native fires only while reasonably aimed at the target
         // (inside the `if (angleToLead < π/2)` block, shipIGC.cpp:2492/2573),
         // with the lock + evasion gate (shipIGC.cpp:2584-2596, P557).
-        MaybeFireMissile(bot, cs, now, aimOk: angleToLead < MathF.PI * 0.5f);
+        MaybeFireMissile(bot, cs, now, aimOk: reacted && angleToLead < MathF.PI * 0.5f);
         MaybeFireMine(bot, cs, now);
     }
 
@@ -5772,6 +5818,9 @@ bool isThreat =
         public short? LauncherPartId;
         public double MissileReadyTime;
         public double LastFireAt = double.NegativeInfinity;
+        public BotDifficulty Difficulty = new(1, 0, 1);
+        public short? DifficultyTarget;
+        public double DifficultyTargetSince;
         // P557 — the real MINE DISPENSER this bot carries (null = none). Set
         // when a showcase/fleet slot equipped a mine-type dispenser (the native
         // ET_Dispenser whose expendable is OT_mineType); gates MaybeFireMine.

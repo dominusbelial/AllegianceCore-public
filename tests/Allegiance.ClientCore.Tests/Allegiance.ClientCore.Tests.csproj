@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../tools/skirmish-proof/skirmish-proof.csproj" ReferenceOutputAssembly="false" />
     <Using Include="Xunit" />
   </ItemGroup>
 
@@ -30,10 +31,11 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
-    <!-- Server reference exists ONLY so tests can boot a real in-process Srv;
-         production code never references it. -->
+    <!-- Exercise the real server and owned single-player lifecycle; the
+         ClientCore network library remains independent of hosting. -->
     <ProjectReference Include="../../src/Allegiance.Core/Allegiance.Core.csproj" />
     <ProjectReference Include="../../src/Allegiance.Server/Allegiance.Server.csproj" />
+    <ProjectReference Include="../../src/Allegiance.SinglePlayer/Allegiance.SinglePlayer.csproj" />
     <!-- P426: prove the real hull/part name resolution in tools/allegiance-mcp
          against the same live PCore001.igc corpus (BotSpawnerResolutionTests). -->
     <ProjectReference Include="../../tools/allegiance-mcp/allegiance-mcp.csproj" />

@@ -4544,7 +4544,8 @@ public sealed partial class Ship : Model, IShipIgc
                 && trackLauncher.Mission is { } trackMission
                 && ReferenceEquals(trackMission, Mission))
             {
-                _damageTrack ??= new DamageTrack(now);
+                _damageTrack ??= Mission is { } damageMission
+                    ? new DamageTrack(damageMission.DamageClock) : new DamageTrack(now);
                 _damageTrack.ApplyDamage(now, trackLauncher, amount);
             }
 

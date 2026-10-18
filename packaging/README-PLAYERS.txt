@@ -18,9 +18,11 @@ Connection: edit player.json in your per-user AllegianceCore config directory:
   macOS: ~/Library/Application Support/AllegianceCore/player.json
 Example (replace the public example hostname with your server operator's address):
   {"Server":"game.example.org","Port":6073,"Pilot":"My Pilot","Lobby":"http://127.0.0.1:5000"}
-The launcher creates the file on first run. Server="" opens the in-client lobby;
-set Lobby to the directory URL supplied by your operator (the default is local).
-There is no bundled server or promised public server. Command-line overrides:
+The launcher creates the file on first run. The client opens the main menu.
+Single Player -> Skirmish runs entirely on your machine with the bundled host.
+Server/Port remember a Direct Connect destination; Lobby sets the multiplayer
+directory URL supplied by your operator (the default is local). No public server
+is promised. Command-line overrides:
   Linux: ./allegiance.sh game.example.org 6073 "My Pilot"
   Windows: play.bat game.example.org 6073 "My Pilot"
   macOS: /Applications/AllegianceCore.app/Contents/MacOS/Allegiance game.example.org 6073 "My Pilot"
@@ -55,3 +57,14 @@ Troubleshooting:
 Licenses: LICENSE, NOTICE, CREDITS.md; artwork/LICENSE; sky/CREDITS.md,
 sky/LICENSE and sky/licenses/; Content/Vfx/licenses/. Icon is original MIT artwork.
 Releases: https://github.com/dominusbelial/AllegianceCore-public/releases
+
+Single player (offline)
+----------------------
+Choose Single Player, then Skirmish from the main menu. Select both races,
+size, tech mode and bot difficulty. You fly on side 0; AI commanders run the
+teams. Small is 5v5 including you, Medium 15v15, Large 30v30, Epic 60v60.
+Epic needs more CPU and may run in automatic slow motion.
+Use Pause or Ctrl+P to pause/resume. Ctrl+F10 ends the skirmish and returns
+to setup. The in-game menu also offers Pause and End skirmish.
+For a headless local benchmark run: Allegiance --skirmish-smoke 60 Small
+(replace Allegiance with Allegiance.exe on Windows).

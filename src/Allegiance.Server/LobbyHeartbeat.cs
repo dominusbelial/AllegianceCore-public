@@ -34,6 +34,11 @@ public sealed class LobbyHeartbeat : IDisposable
     private readonly string _coreFile;
     private readonly string _version;
     private readonly int _intervalSeconds;
+    private readonly TimeProvider _clock;
+    private DateTimeOffset? _lastAttempt;
+    private int? _publishedPlayerCount;
+    private const double DirtyIntervalSeconds = 10; // FedSrv/fsmission.cpp:21,5606-5621
+
 
     // Ownership token/id from the last successful register. Cleared on a 409 so the
     // next tick re-registers fresh (a rejected token means the server-side listing
@@ -59,14 +64,15 @@ public sealed class LobbyHeartbeat : IDisposable
     /// not own it (disposal of the injected client is the caller's responsibility).
     /// </summary>
     internal LobbyHeartbeat(HttpClient http, LobbyConfig config, Func<int> livePlayerCount,
-        string missionName, string coreFile, string version, int port)
-        : this(http, ownsHttp: false, config, livePlayerCount, missionName, coreFile, version, port)
+        string missionName, string coreFile, string version, int port, TimeProvider? clock = null)
+        : this(http, ownsHttp: false, config, livePlayerCount, missionName, coreFile, version, port, clock)
     {
     }
 
     private LobbyHeartbeat(HttpClient http, bool ownsHttp, LobbyConfig config, Func<int> livePlayerCount,
-        string missionName, string coreFile, string version, int port)
+        string missionName, string coreFile, string version, int port, TimeProvider? clock = null)
     {
+        _clock = clock ?? TimeProvider.System;
         _http = http;
         _ownsHttp = ownsHttp;
         _displayName = config.DisplayName;
@@ -79,7 +85,7 @@ public sealed class LobbyHeartbeat : IDisposable
         _intervalSeconds = config.HeartbeatIntervalSeconds > 0 ? config.HeartbeatIntervalSeconds : 25;
 
         _timer = new Timer(_ => Fire(), null,
-            TimeSpan.FromSeconds(_intervalSeconds), TimeSpan.FromSeconds(_intervalSeconds));
+            TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
     }
 
     private static HttpClient BuildClient(string url) => new()
@@ -91,7 +97,7 @@ public sealed class LobbyHeartbeat : IDisposable
     /// <summary>Timer callback — re-entrancy-guarded by <see cref="PumpAsync"/> itself.</summary>
     private void Fire()
     {
-        _ = PumpAsync();   // PumpAsync swallows everything; it never throws into the timer.
+        _ = PumpAsync(periodic: true);   // PumpAsync swallows everything; it never throws into the timer.
     }
 
     /// <summary>
@@ -99,13 +105,25 @@ public sealed class LobbyHeartbeat : IDisposable
     /// still in flight this invocation returns immediately (skips) rather than
     /// overlapping. Never throws.
     /// </summary>
-    internal async Task PumpAsync()
+    internal async Task PumpAsync(bool periodic = false)
     {
         if (_disposed) return;
         if (!_gate.Wait(0)) return;   // previous tick still in flight — skip, no overlap
 
         try
         {
+            int playerCount = _livePlayerCount();
+            DateTimeOffset now = _clock.GetUtcNow();
+            if (periodic && _lastAttempt is { } previous)
+            {
+                double elapsed = (now - previous).TotalSeconds;
+                // Dirty mission details coalesce for ten seconds. HTTP leases
+                // additionally need a clean refresh; DirectPlay cookie/session
+                // handling is replaced by the directory's ownership token.
+                if (elapsed < DirtyIntervalSeconds ||
+                    (_token is not null && playerCount == _publishedPlayerCount && elapsed < _intervalSeconds)) return;
+            }
+            _lastAttempt = now;
             // Named payload mirroring Allegiance.Lobby's RegisterRequest wire shape
             // exactly (serialized camelCase by the source-generated ServerJsonContext —
             // byte-identical to the anonymous type System.Net.Http.Json used to emit; the
@@ -115,7 +133,7 @@ public sealed class LobbyHeartbeat : IDisposable
                 _displayName,
                 _publicAddress,
                 _port,
-                (int?)_livePlayerCount(),
+                (int?)playerCount,
                 0,                              // no player-cap concept in ServerConfig today — 0 signals unknown/unbounded
                 _missionName,
                 _coreFile,
@@ -134,6 +152,7 @@ public sealed class LobbyHeartbeat : IDisposable
                 return;
             }
 
+            using var responseLifetime = resp;
             if (resp.IsSuccessStatusCode)
             {
                 try
@@ -147,6 +166,7 @@ public sealed class LobbyHeartbeat : IDisposable
                     }
                     _id = reg.Id;
                     _token = reg.Token;
+                    _publishedPlayerCount = playerCount;
                     Console.WriteLine($"[lobby] heartbeat ok -> {reg.Id}, {_livePlayerCount()} player(s)");
                 }
                 catch (Exception e)   // JSON/deserialization error
@@ -209,7 +229,8 @@ public sealed class LobbyHeartbeat : IDisposable
         if (_ownsHttp)
             _http.Dispose();
 
-        _gate.Dispose();
+        // SemaphoreSlim.Wait(0) owns no native handle. An in-flight async pump
+        // must still be able to Release after the timer has been disposed.
     }
 
     private readonly bool _ownsHttp;

@@ -1,0 +1,19 @@
+[
+  {
+    "rid": "linux-x64",
+    "exitCode": 0
+  },
+  {
+    "rid": "linux-x64",
+    "check": "60-second extracted smoke",
+    "exitCode": 0
+  },
+  {
+    "rid": "win-x64",
+    "exitCode": 0
+  },
+  {
+    "rid": "osx-arm64",
+    "exitCode": 0
+  }
+]

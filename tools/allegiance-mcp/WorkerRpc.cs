@@ -153,6 +153,7 @@ internal sealed class ProcessWorker : IWorker
                         WorkerReply result;
                         switch (method)
                         {
+                            case "__pause": manager.SetPaused(args.GetBoolean()); result = new(false, JsonSerializer.SerializeToElement(true)); break;
                             case "__ping": result = new(false, JsonSerializer.SerializeToElement(new { pid = Environment.ProcessId })); break;
                             case "__hold": manager.HoldCoordination(args.GetBoolean()); result = new(false, JsonSerializer.SerializeToElement(true)); break;
                             case "__decisions": manager.SetCoordination(args.Deserialize<CoordinationDecisions>()!); result = new(false, JsonSerializer.SerializeToElement(true)); break;

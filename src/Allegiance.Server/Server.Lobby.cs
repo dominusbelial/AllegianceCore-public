@@ -483,6 +483,7 @@ public sealed partial class Server
         // score-roster throttle.
         _startCountdownDeadline.Remove(mission);
         _autoRestartDeadline.Remove(mission);
+        _restartWarnings.Remove(mission);
         _ballots.Remove(mission);
         _mapGenMissions.Remove(mission);
         _scoreRosterStates.Remove(mission);
@@ -1113,7 +1114,7 @@ public sealed partial class Server
     {
         if (mission.Stage != MissionStage.NotStarted || _autoRestartDeadline.ContainsKey(mission))
             return;   // intermission holds even when everybody is ready
-        if (!IsAllOccupiedSidesReady(mission))
+        if ((!GameSettings(mission).AllowEmptyTeams && !HasMinimumPlayers(mission)) || !IsAllOccupiedSidesReady(mission))
             return;   // at least one occupied side is not yet ready
 
         // P188 — route the ready-up auto-start through the real countdown
@@ -1202,7 +1203,8 @@ public sealed partial class Server
         {
             if (m.Stage != MissionStage.Starting) continue;
             if (!_startCountdownDeadline.TryGetValue(m, out var target)) continue;
-            if (now < target) continue;
+            if (now <= target) continue; // FedSrv.CPP:8238, strict expiry
+            if (!GameSettings(m).AllowEmptyTeams && !HasMissionPlayers(m)) continue;
             CompleteStartCountdown(m, now);
         }
     }
@@ -1223,22 +1225,50 @@ public sealed partial class Server
     {
         foreach (var m in _missions)
         {
-            if (m.Stage != MissionStage.NotStarted) { _autoRestartDeadline.Remove(m); continue; }
+            if (m.Stage != MissionStage.NotStarted) { _autoRestartDeadline.Remove(m); _restartWarnings.Remove(m); continue; }
             if (!_autoRestartDeadline.TryGetValue(m, out var deadline)) continue;
-            if (now < deadline) continue;
-            _autoRestartDeadline.Remove(m);
-            Console.WriteLine($"[autorestart] mission #{_missions.IndexOf(m)} auto-restart deadline reached -> start countdown (no ready-up required)");
+            var settings = GameSettings(m);
+            bool arenaNextMatch = (_config.LiveSettings?.AutoNextMatch ?? new AutoNextMatchConfig()).Enabled;
+            if (!arenaNextMatch)
+            {
+                double remaining = deadline - now;
+                if (remaining > BriefingCountdownSeconds)
+                {
+                    if (!settings.AllowEmptyTeams && remaining <= 2 * BriefingCountdownSeconds &&
+                        _restartWarnings.Add(m) && !HasMinimumPlayers(m))
+                        SendPeriodicNotice(m, "Warning: Game will be canceled if all teams are not ready in 30 seconds.");
+                    continue;
+                }
+                if (!settings.AllowEmptyTeams)
+                    foreach (var side in m.Sides) side.Ready = true; // native force-ready
+                if (!settings.AllowEmptyTeams && !HasMinimumPlayers(m))
+                {
+                    if (remaining <= 0)
+                    {
+                        m.Stage = MissionStage.Over;
+                        _autoRestartDeadline.Remove(m);
+                        _restartWarnings.Remove(m);
+                        BroadcastMissionStageToMission(m, MissionStage.Over);
+                        SendPeriodicNotice(m, "Game canceled due to lack of players");
+                    }
+                    continue;
+                }
+            }
+            else if (now < deadline) continue;
+            _restartWarnings.Remove(m);
             foreach (var peer in _peerShips.Where(kv => ReferenceEquals(kv.Value.Ship.Mission, m)))
                 _playerReady[peer.Key] = true;
             foreach (var peer in _peerShips.Values.Where(v => ReferenceEquals(v.Ship.Mission, m)).ToArray())
                 RecomputeSideReady(peer.Ship);
-            StartCountdown(m, BriefingCountdownSeconds);
+            _autoRestartDeadline.Remove(m);
+            StartCountdown(m, arenaNextMatch ? BriefingCountdownSeconds : (float)Math.Max(0, deadline - now));
         }
     }
 
 private void CompleteStartCountdown(Mission mission, double now)
     {
         mission.Stage = MissionStage.Started;
+        mission.CountdownStart = _startCountdownDeadline[mission];
         _startCountdownDeadline.Remove(mission);
 
         // P443 — the real Started transition is where the game begins: seed each
