@@ -1,0 +1,80 @@
+{
+  "baseAndFinalHead": "33fc6df2d92cce775f29f9fa5a4a609d613b22c4",
+  "committedOrPushed": false,
+  "build": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "selectedCohorts": {
+    "isolated": {
+      "invocations": 99,
+      "passedCases": 114
+    },
+    "pack-final": {
+      "invocations": 24,
+      "passedCases": 24
+    },
+    "pbr-final": {
+      "invocations": 18,
+      "passedCases": 18
+    },
+    "render-final": {
+      "invocations": 3,
+      "passedCases": 3
+    },
+    "voice-fixed": {
+      "invocations": 3,
+      "passedCases": 3
+    },
+    "transport-isolated": {
+      "invocations": 3,
+      "passedCases": 3
+    },
+    "p705-isolated": {
+      "invocations": 3,
+      "passedCases": 3
+    },
+    "p703-isolated": {
+      "invocations": 3,
+      "passedCases": 3
+    }
+  },
+  "suite": [
+    {
+      "project": "Core",
+      "passed": 4781,
+      "initialFailures": 2,
+      "skipped": 0,
+      "seconds": 989.104
+    },
+    {
+      "project": "ClientCore",
+      "passed": 1178,
+      "initialFailures": 2,
+      "skipped": 0,
+      "seconds": 2549.969
+    },
+    {
+      "project": "MonoGame",
+      "passed": 2324,
+      "initialFailures": 0,
+      "skipped": 3,
+      "seconds": 958.585
+    }
+  ],
+  "suiteOutcome": "one corrected stale fixture, three load flakes passing 3/3 exact-method/case isolation; no second sweep",
+  "showcase": {
+    "passed": 5,
+    "failed": 0,
+    "seconds": [
+      100.392,
+      98.528,
+      97.044,
+      100.827,
+      96.269
+    ]
+  },
+  "gpu": "llvmpipe software GL; real X11 window; hardware GPU unavailable",
+  "hdTextureBudgetBytes": 536870912,
+  "privateGeneratedMapsOrScreenshotsInRepository": false
+}

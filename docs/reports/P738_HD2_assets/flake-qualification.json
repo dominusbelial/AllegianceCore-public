@@ -1,0 +1,24 @@
+[
+  {
+    "project": "Core",
+    "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "original_failures": [
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+        "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+        "message": "\n      \n        \n          System.TimeoutException : no OnPeerJoined for raw peer\n             at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.ConnectRawPeer(TcpTransport host, Site site, String name, Boolean tinyReceiveWindow) in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 119\n   at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn() in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 346\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+      }
+    ],
+    "isolated_runs": [
+      "isolation-226",
+      "isolation-227",
+      "isolation-228"
+    ],
+    "seconds": [
+      1.508,
+      1.52,
+      1.494
+    ],
+    "classification": "load flake: 3/3 fresh isolated invocations passed"
+  }
+]

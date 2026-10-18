@@ -1,0 +1,98 @@
+[
+  {
+    "label": "suite-Core",
+    "project": "Core",
+    "filter": null,
+    "exitCode": 1,
+    "seconds": 989.104,
+    "counts": {
+      "total": "4783",
+      "executed": "4783",
+      "passed": "4781",
+      "failed": "2",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+        "message": "\n      \n        \n          System.TimeoutException : no OnPeerJoined for raw peer\n             at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.ConnectRawPeer(TcpTransport host, Site site, String name, Boolean tinyReceiveWindow) in /home/domingo/allegiance-codex-hd2/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 119\n   at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn() in /home/domingo/allegiance-codex-hd2/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 346\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+      },
+      {
+        "name": "Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff",
+        "message": "\n      \n        \n          Assert.Equal() Failure: Values differ\nExpected: 2\nActual:   0\n             at Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff() in /home/domingo/allegiance-codex-hd2/tests/Allegiance.Core.Tests/P652EconomyDroneAiTests.cs:line 581\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+      }
+    ]
+  },
+  {
+    "label": "suite-ClientCore",
+    "project": "ClientCore",
+    "filter": null,
+    "exitCode": 1,
+    "seconds": 2549.969,
+    "counts": {
+      "total": "1180",
+      "executed": "1180",
+      "passed": "1178",
+      "failed": "2",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [
+      {
+        "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+        "message": "\n      \n        [{\"Side\":0,\"Plan\":\"plan_a\",\"Step\":72,\"TotalSteps\":157,\"Action\":\"develop\",\"Name\":\"XRM Cruise 1\",\"Status\":\"building bucket\",\"ProgressPercent\":45.312139065817405,\"StepProgressPercent\":14.005833333333332,\"Money\":22663370,\"EtaSeconds\":103.193,\"EtaBasis\":\"current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null\",\"CompletedTechs\":[\"Upgrade Garrison\",\"Bomber\",\"Afterburner 2\",\"XRM Torpedo 1\",\"Cruise Booster\",\"Retro Booster\",\"Enh Constructor\",\"Enh Miner\",\"EW Utl Cannon 2\",\"EW Sniper Rifle 1\",\"PW Gattling Gun 2\",\"EW Disruptor 2\",\"PW Mini-Gun 2\",\"PW EMP Cannon 1\",\"PW Auto-Cannon 2\",\"PW SkyCap 2\",\"ER Nanite 2\",\"SRM Dumbfire 2\",\"MRM Seeker 2\",\"LRM Hunter 2\",\"LRM Killer 1\",\"SRM Anti-Base 2\",\"SRM Seismic\",\"SRM EMP Missile\",\"XRM Hunter Killer 2\",\"Sm Shield 2\",\"Med Shield 2\",\"Booster 2\",\"Lt Booster 1\",\"Sig Cloak 2\",\"Hvy Sig Cloak 1\",\"EWS Probe 2\",\"Pulse Probe\",\"Prox Mine 2\",\"Mine Pack 1\",\"Counter 2\",\"GA: Ship Acceleration 1\",\"GA: Ship Agility 1\",\"GA: Ship Energy 1\",\"GA: EW Range 1\",\"GA: PW\\u0026EW Damage 1\",\"GA: Faster He3 1\",\"GA: He3 Yield 1\",\"GA: Missile Damage 1\",\"GA: Missile Track 1\",\"GA: PW Range 1\",\"GA: Ripcord 1\",\"GA: Ship Sensors 1\",\"GA: Ship Hull 1\",\"GA: Ship Shield 1\",\"GA: Ship Signature 1\",\"GA: Ship Speed 1\",\"GA: Station Hull 1\",\"GA: Station Shield 1\",\"Weedcore 03\",\"Enh Carrier Drone\",\"MRM Quickfire 2\",\"EMP Mine 1\",\"XRM Anti-Base 1\",\"Tower SC Drone\"],\"Stations\":[\"Garrison\",\"Teleport (Hvy)\",\"Outpost (Hvy)\",\"Supremacy\",\"Expansion\",\"Tactical\",\"Shipyard\"],\"Constructor\":null,\"ReservedRock\":null,\"Cycles\":0},{\"Side\":1,\"Plan\":\"plan_b\",\"Step\":5,\"TotalSteps\":181,\"Action\":\"station\",\"Name\":\"Supremacy\",\"Status\":\"constructor travelling/building\",\"ProgressPercent\":2.4861878453038675,\"StepProgressPercent\":50,\"Money\":52218250,\"EtaSeconds\":null,\"EtaBasis\":\"current step estimate from BUCKET_STATUS and sim time; income from wallet credits; constructor travel/combat/unknown income = null\",\"CompletedTechs\":[\"Upgrade Garrison\"],\"Stations\":[\"Garrison\",\"Garrison (Str)\",\"[P]alisade\",\"[R]esearch\"],\"Constructor\":8106,\"ReservedRock\":10018,\"Cycles\":0}]\ncivs=25/3 generated=False wall=300.1s sim=10497.7s completed=0\nside 0: Garrison,Teleport (Hvy),Outpost (Hvy),Supremacy,Expansion,Tactical,Shipyard\nside 1: Garrison,Garrison (Str),[P]alisade,[R]esearch\n        \n          Assert.Equal() Failure: Values differ\nExpected: 2\nActual:   1\n             at Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(Int32 civA, Int32 civB, Boolean generated) in /home/domingo/allegiance-codex-hd2/tests/Allegiance.ClientCore.Tests/P703ResearchCommanderLiveTests.cs:line 177\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeDirectByRefWithFewArgs(Object obj, Span`1 copyOfArgs, BindingFlags invokeAttr)\n        \n      \n    "
+      },
+      {
+        "name": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 101, civB: 1, size: 5)",
+        "message": ",\"Name\":\"GA: Missile Track 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":310.2496866,\"sim\":15125.999999920134,\"detail\":{\"side\":1,\"development\":156,\"Name\":\"GA: Ripcord 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":311.9786098,\"sim\":15207.99999991894,\"detail\":{\"side\":1,\"development\":158,\"Name\":\"GA: Ship Sensors 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":313.7157531,\"sim\":15290.49999991774,\"detail\":{\"side\":1,\"development\":160,\"Name\":\"GA: Ship Hull 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":315.4892612,\"sim\":15375.499999916503,\"detail\":{\"side\":1,\"development\":162,\"Name\":\"GA: Ship Shield 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":317.2665739,\"sim\":15460.499999915266,\"detail\":{\"side\":1,\"development\":192,\"Name\":\"SRM Anti-Base 3\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":318.9820427,\"sim\":15542.74999991407,\"detail\":{\"side\":1,\"development\":221,\"Name\":\"Hvy Booster\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":320.7768866,\"sim\":15627.749999912832,\"detail\":{\"side\":1,\"development\":122,\"Name\":\"EWS Probe 3\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":322.5067034,\"sim\":15709.249999911646,\"detail\":{\"side\":1,\"development\":194,\"Name\":\"Teleport Probe 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":324.2148597,\"sim\":15791.999999910442,\"detail\":{\"side\":1,\"development\":254,\"Name\":\"XRM Anti-Base 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":325.9888566,\"sim\":15876.999999909205,\"detail\":{\"side\":1,\"development\":18,\"Name\":\"Adv Fighter\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":327.7080443,\"sim\":15961.749999907972,\"detail\":{\"side\":1,\"development\":175,\"Name\":\"Fighter/Bomber\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":329.2741446,\"sim\":16036.499999906884,\"detail\":{\"side\":1,\"development\":3,\"Name\":\"Upgrade Tactical Lab\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":336.7599733,\"sim\":16394.499999901676,\"detail\":{\"side\":1,\"development\":138,\"Name\":\"GA: Ship Agility 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":338.5153324,\"sim\":16479.749999900436,\"detail\":{\"side\":1,\"development\":140,\"Name\":\"GA: Ship Energy 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":340.2643044,\"sim\":16565.24999989919,\"detail\":{\"side\":1,\"development\":142,\"Name\":\"GA: EW Range 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":342.0345552,\"sim\":16650.49999989795,\"detail\":{\"side\":1,\"development\":150,\"Name\":\"GA: Missile Damage 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":343.7293364,\"sim\":16733.74999989674,\"detail\":{\"side\":1,\"development\":66,\"Name\":\"EW Utl Cannon 3\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":345.2350457,\"sim\":16807.499999895666,\"detail\":{\"side\":1,\"development\":69,\"Name\":\"EW Sniper Rifle 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":347.0545883,\"sim\":16894.749999894397,\"detail\":{\"side\":1,\"development\":92,\"Name\":\"LRM Hunter 3\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":348.7876293,\"sim\":16977.249999893196,\"detail\":{\"side\":1,\"development\":94,\"Name\":\"LRM Killer 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":350.525127,\"sim\":17059.499999892,\"detail\":{\"side\":1,\"development\":117,\"Name\":\"Sig Cloak 3\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":352.3049714,\"sim\":17144.499999890762,\"detail\":{\"side\":1,\"development\":166,\"Name\":\"GA: Ship Speed 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":354.016978,\"sim\":17226.999999889562,\"detail\":{\"side\":1,\"development\":195,\"Name\":\"SRM Nerve Gas\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":355.7850852,\"sim\":17311.999999888325,\"detail\":{\"side\":1,\"development\":247,\"Name\":\"EMP Mine 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":357.5554023,\"sim\":17396.999999887088,\"detail\":{\"side\":1,\"development\":33,\"Name\":\"Stealth Bomber\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":359.2753156,\"sim\":17479.749999885884,\"detail\":{\"side\":1,\"development\":24,\"Name\":\"Adv Stl Fighter\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":361.0481456,\"sim\":17565.749999884632,\"detail\":{\"side\":1,\"development\":5,\"Name\":\"Upgrade Expansion\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":367.5389658,\"sim\":17879.749999880063,\"detail\":{\"side\":1,\"development\":136,\"Name\":\"GA: Ship Acceleration 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":369.0503028,\"sim\":17951.249999879023,\"detail\":{\"side\":1,\"development\":144,\"Name\":\"GA: PW\\u0026EW Damage 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":370.8067766,\"sim\":18035.499999877797,\"detail\":{\"side\":1,\"development\":146,\"Name\":\"GA: Faster He3 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":372.5253819,\"sim\":18118.749999876585,\"detail\":{\"side\":1,\"development\":148,\"Name\":\"GA: He3 Yield 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":374.283484,\"sim\":18205.249999875326,\"detail\":{\"side\":1,\"development\":154,\"Name\":\"GA: PW Range 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":375.838669,\"sim\":18280.249999874235,\"detail\":{\"side\":1,\"development\":164,\"Name\":\"GA: Ship Signature 2\"}}\n{\"kind\":\"research-completed\",\"match\":2,\"wall\":377.5536263,\"sim\":18363.249999873027,\"detail\":{\"side\":1,\"development\":168,\"Name\":\"GA: Station Hull 2\"}}\n        \n          both sides real development and newly legal upgraded launch timed out; sim=18390.699999872628\n             at Allegiance.ClientCore.Tests.P705TechModeLiveTests.<>c__DisplayClass4_0.<Research_upgrades_and_resets_through_two_complete_local_matches>g__Wait|1(Func`1 done, String reason, Int32 seconds) in /home/domingo/allegiance-codex-hd2/tests/Allegiance.ClientCore.Tests/P705TechModeLiveTests.cs:line 97\n   at Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(Int32 civA, Int32 civB, Int32 size) in /home/domingo/allegiance-codex-hd2/tests/Allegiance.ClientCore.Tests/P705TechModeLiveTests.cs:line 142\n   at InvokeStub_P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(Object, Span`1)\n   at System.Reflection.MethodBaseInvoker.InvokeWithFewArgs(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)\n        \n      \n    "
+      }
+    ]
+  },
+  {
+    "label": "suite-MonoGame",
+    "project": "MonoGame",
+    "filter": null,
+    "exitCode": 0,
+    "seconds": 958.585,
+    "counts": {
+      "total": "2327",
+      "executed": "2324",
+      "passed": "2324",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": []
+  }
+]

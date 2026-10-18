@@ -1,0 +1,16 @@
+{
+  "parity-matrix.csv": {
+    "rows": 438,
+    "incoming_rows_unchanged_from_base": true,
+    "master_rows_preserved": true,
+    "LF": true,
+    "sha256": "17cbfd0d286877201bb8ac2ed0f20d25776abf89163da0392300b2603823c1af"
+  },
+  "sim-rules-matrix.csv": {
+    "rows": 473,
+    "incoming_rows_unchanged_from_base": true,
+    "master_rows_preserved": true,
+    "LF": true,
+    "sha256": "4eb153322f2dcf226af9a16ce35458101ee05441588d0e3965ed21ff63cb161e"
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "adapter": "llvmpipe (LLVM 21.1.8, 256 bits)",
+  "method": "P643/P687 GlFrameTimer; 20 warmup \u002B 80 sampled frames; 40 native hulls; readback outside queries",
+  "results": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "hd": false,
+      "fsrAndBloom": false,
+      "sceneSamples": 80,
+      "sceneMedianMs": 5.838901,
+      "sceneP95Ms": 7.918286,
+      "postMedianMs": 3.302217,
+      "residentBytes": 1747620
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "hd": true,
+      "fsrAndBloom": false,
+      "sceneSamples": 80,
+      "sceneMedianMs": 9.809568,
+      "sceneP95Ms": 12.322462,
+      "postMedianMs": 4.071097,
+      "residentBytes": 1747620
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "hd": false,
+      "fsrAndBloom": true,
+      "sceneSamples": 80,
+      "sceneMedianMs": 5.341991,
+      "sceneP95Ms": 8.74641,
+      "postMedianMs": 21.507714,
+      "residentBytes": 1747620
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "hd": true,
+      "fsrAndBloom": true,
+      "sceneSamples": 80,
+      "sceneMedianMs": 9.760252,
+      "sceneP95Ms": 27.097745,
+      "postMedianMs": 26.017829,
+      "residentBytes": 1747620
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "hd": false,
+      "fsrAndBloom": false,
+      "sceneSamples": 80,
+      "sceneMedianMs": 7.688603,
+      "sceneP95Ms": 11.099184,
+      "postMedianMs": 4.778811,
+      "residentBytes": 1747620
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "hd": true,
+      "fsrAndBloom": false,
+      "sceneSamples": 80,
+      "sceneMedianMs": 14.075946,
+      "sceneP95Ms": 17.246301,
+      "postMedianMs": 5.373204,
+      "residentBytes": 1747620
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "hd": false,
+      "fsrAndBloom": true,
+      "sceneSamples": 80,
+      "sceneMedianMs": 6.815539,
+      "sceneP95Ms": 9.597144,
+      "postMedianMs": 26.150755,
+      "residentBytes": 1747620
+    },
+    {
+      "width": 2560,
+      "height": 1440,
+      "hd": true,
+      "fsrAndBloom": true,
+      "sceneSamples": 80,
+      "sceneMedianMs": 9.706625,
+      "sceneP95Ms": 11.847966,
+      "postMedianMs": 26.009796,
+      "residentBytes": 1747620
+    }
+  ]
+}

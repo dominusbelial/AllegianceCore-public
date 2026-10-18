@@ -1,0 +1,15 @@
+{
+  "method": "Supplementary read-only indexed-file review; the git-invoking guard tests themselves were excluded.",
+  "existing_manifest_documents_under_models": [
+    "src/Allegiance.ClientCore.MonoGame/Content/Models/MODELS_MANIFEST_P287.json",
+    "src/Allegiance.ClientCore.MonoGame/Content/Models/MODELS_MANIFEST_P287.md"
+  ],
+  "generated_output_offenders": [],
+  "indexed_paths": 17085,
+  "source_text_files_checked": 2015,
+  "private_path_offenders": [],
+  "raw_location_or_media_flags": [
+    "src/Allegiance.ClientCore.MonoGame/Content/Models/MODELS_MANIFEST_P287.json",
+    "src/Allegiance.ClientCore.MonoGame/Content/Models/MODELS_MANIFEST_P287.md"
+  ]
+}

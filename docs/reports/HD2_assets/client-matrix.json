@@ -1,0 +1,282 @@
+[
+  {
+    "tag": "client-1080-native-off",
+    "width": 1920,
+    "height": 1080,
+    "hd": false,
+    "fsrAndBloom": false,
+    "exitCode": 0,
+    "frames": 993,
+    "measuredFrames": 722,
+    "scene_gpu_ms": {
+      "samples": 722,
+      "median": 2.4153000000000002,
+      "p95": 5.7237
+    },
+    "post_gpu_ms": {
+      "samples": 722,
+      "median": 0.1157,
+      "p95": 0.6607
+    },
+    "draw_submit_ms": {
+      "samples": 722,
+      "median": 0.98655,
+      "p95": 2.3847
+    },
+    "frame_ms": {
+      "samples": 722,
+      "median": 12.45015,
+      "p95": 31.6214
+    },
+    "draw_calls": {
+      "samples": 722,
+      "median": 8.0,
+      "p95": 8.0
+    }
+  },
+  {
+    "tag": "client-1080-native-hd",
+    "width": 1920,
+    "height": 1080,
+    "hd": true,
+    "fsrAndBloom": false,
+    "exitCode": 0,
+    "frames": 1563,
+    "measuredFrames": 1186,
+    "scene_gpu_ms": {
+      "samples": 1186,
+      "median": 2.4326499999999998,
+      "p95": 3.6281
+    },
+    "post_gpu_ms": {
+      "samples": 1186,
+      "median": 0.68295,
+      "p95": 1.4737
+    },
+    "draw_submit_ms": {
+      "samples": 1186,
+      "median": 1.08205,
+      "p95": 1.8656
+    },
+    "frame_ms": {
+      "samples": 1186,
+      "median": 6.869199999999999,
+      "p95": 19.4848
+    },
+    "draw_calls": {
+      "samples": 1186,
+      "median": 8.0,
+      "p95": 8.0
+    }
+  },
+  {
+    "tag": "client-1080-fsr-off",
+    "width": 1920,
+    "height": 1080,
+    "hd": false,
+    "fsrAndBloom": true,
+    "exitCode": 0,
+    "frames": 762,
+    "measuredFrames": 583,
+    "scene_gpu_ms": {
+      "samples": 583,
+      "median": 2.1268,
+      "p95": 2.9808
+    },
+    "post_gpu_ms": {
+      "samples": 583,
+      "median": 13.2619,
+      "p95": 18.1088
+    },
+    "draw_submit_ms": {
+      "samples": 583,
+      "median": 0.8008,
+      "p95": 0.989
+    },
+    "frame_ms": {
+      "samples": 583,
+      "median": 18.9566,
+      "p95": 24.6147
+    },
+    "draw_calls": {
+      "samples": 583,
+      "median": 15.0,
+      "p95": 15.0
+    }
+  },
+  {
+    "tag": "client-1080-fsr-hd",
+    "width": 1920,
+    "height": 1080,
+    "hd": true,
+    "fsrAndBloom": true,
+    "exitCode": 0,
+    "frames": 775,
+    "measuredFrames": 603,
+    "scene_gpu_ms": {
+      "samples": 603,
+      "median": 2.5261,
+      "p95": 3.5099
+    },
+    "post_gpu_ms": {
+      "samples": 603,
+      "median": 12.508,
+      "p95": 17.8248
+    },
+    "draw_submit_ms": {
+      "samples": 603,
+      "median": 0.8217,
+      "p95": 1.0243
+    },
+    "frame_ms": {
+      "samples": 603,
+      "median": 18.0047,
+      "p95": 24.1941
+    },
+    "draw_calls": {
+      "samples": 603,
+      "median": 15.0,
+      "p95": 15.0
+    }
+  },
+  {
+    "tag": "client-1440-native-off",
+    "width": 2560,
+    "height": 1440,
+    "hd": false,
+    "fsrAndBloom": false,
+    "exitCode": 0,
+    "frames": 1526,
+    "measuredFrames": 1139,
+    "scene_gpu_ms": {
+      "samples": 1139,
+      "median": 2.815,
+      "p95": 3.8645
+    },
+    "post_gpu_ms": {
+      "samples": 1139,
+      "median": 0.0334,
+      "p95": 0.5233
+    },
+    "draw_submit_ms": {
+      "samples": 1139,
+      "median": 1.0403,
+      "p95": 1.5508
+    },
+    "frame_ms": {
+      "samples": 1139,
+      "median": 8.5477,
+      "p95": 13.7621
+    },
+    "draw_calls": {
+      "samples": 1139,
+      "median": 8.0,
+      "p95": 8.0
+    }
+  },
+  {
+    "tag": "client-1440-native-hd",
+    "width": 2560,
+    "height": 1440,
+    "hd": true,
+    "fsrAndBloom": false,
+    "exitCode": 0,
+    "frames": 1387,
+    "measuredFrames": 1030,
+    "scene_gpu_ms": {
+      "samples": 1030,
+      "median": 4.1441,
+      "p95": 5.1935
+    },
+    "post_gpu_ms": {
+      "samples": 1030,
+      "median": 0.24955,
+      "p95": 1.0321
+    },
+    "draw_submit_ms": {
+      "samples": 1030,
+      "median": 1.0455,
+      "p95": 1.3887
+    },
+    "frame_ms": {
+      "samples": 1030,
+      "median": 9.7344,
+      "p95": 14.4642
+    },
+    "draw_calls": {
+      "samples": 1030,
+      "median": 8.0,
+      "p95": 8.0
+    }
+  },
+  {
+    "tag": "client-1440-fsr-off",
+    "width": 2560,
+    "height": 1440,
+    "hd": false,
+    "fsrAndBloom": true,
+    "exitCode": 0,
+    "frames": 483,
+    "measuredFrames": 369,
+    "scene_gpu_ms": {
+      "samples": 369,
+      "median": 2.6741,
+      "p95": 3.3497
+    },
+    "post_gpu_ms": {
+      "samples": 369,
+      "median": 18.4989,
+      "p95": 22.5592
+    },
+    "draw_submit_ms": {
+      "samples": 369,
+      "median": 0.9295,
+      "p95": 1.2848
+    },
+    "frame_ms": {
+      "samples": 369,
+      "median": 28.9154,
+      "p95": 35.8806
+    },
+    "draw_calls": {
+      "samples": 369,
+      "median": 15.0,
+      "p95": 15.0
+    }
+  },
+  {
+    "tag": "client-1440-fsr-hd",
+    "width": 2560,
+    "height": 1440,
+    "hd": true,
+    "fsrAndBloom": true,
+    "exitCode": 0,
+    "frames": 494,
+    "measuredFrames": 384,
+    "scene_gpu_ms": {
+      "samples": 384,
+      "median": 3.07505,
+      "p95": 3.7686
+    },
+    "post_gpu_ms": {
+      "samples": 384,
+      "median": 18.4239,
+      "p95": 22.3492
+    },
+    "draw_submit_ms": {
+      "samples": 384,
+      "median": 0.95655,
+      "p95": 1.3028
+    },
+    "frame_ms": {
+      "samples": 384,
+      "median": 27.866149999999998,
+      "p95": 33.9382
+    },
+    "draw_calls": {
+      "samples": 384,
+      "median": 15.0,
+      "p95": 15.0
+    }
+  }
+]

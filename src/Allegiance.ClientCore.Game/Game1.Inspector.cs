@@ -63,6 +63,7 @@ public sealed partial class Game1
     private bool _inspectAutoOrbit;
     private float _inspectCloak;              // 0 = off; else alpha fraction
     private bool _inspectSideBySide;
+    private bool _inspectHdCompare, _inspectHdOn = true, _inspectHWasDown;
     private bool _inspectWireframe, _inspectNormals, _inspectBackfaces, _inspectSideTint;
     private int _inspectLightingVariant;      // 0 stock, 1 bright, 2 dark, 3 Alderan
     private bool _inspectShowNative = true, _inspectShowMeshy = true;
@@ -559,7 +560,12 @@ public sealed partial class Game1
             _inspectHullTravel = 0f;
         }
 
-        if (Edge(ref _inspectMWasDown, XnaKeys.M) && !_inspectSideBySide)
+        // H selects native/HD material review on the same native hull. S shows
+        // both simultaneously; M switches the single-hull material.
+        if (Edge(ref _inspectHWasDown, XnaKeys.H) && !_inspectStations) _inspectHdCompare = !_inspectHdCompare;
+        if (_inspectHdCompare && Edge(ref _inspectMWasDown, XnaKeys.M) && !_inspectSideBySide)
+            _inspectHdOn = !_inspectHdOn;
+        if (!_inspectHdCompare && Edge(ref _inspectMWasDown, XnaKeys.M) && !_inspectSideBySide)
         {
             _inspectShowNative = !_inspectShowNative;
             _inspectShowMeshy = !_inspectShowNative;
@@ -576,7 +582,7 @@ public sealed partial class Game1
             _inspectUseRepaired = !_inspectUseRepaired;
             Console.WriteLine($"[inspect] repaired preview {( _inspectUseRepaired ? "ON (repaired Meshy model)" : "OFF (raw Meshy model)" )}");
         }
-        if (Edge(ref _inspectKWasDown, XnaKeys.K)) SaveInspectArtChoice();
+        if (Edge(ref _inspectKWasDown, XnaKeys.K) && !_inspectHdCompare) SaveInspectArtChoice();
 
         // P581b — catalogue browser: N and B cycle replacement models on the current hull
         // (repaired preferred via the catalogue's ResolveKey); K keeps the current choice.
@@ -1122,7 +1128,8 @@ public sealed partial class Game1
                 if (nref is not null && _nativeShipRenderer.MeshFor(nref.ModelStem!) is { } geo)
                 {
                     var ntex = nref.TextureStem is not null ? _nativeShipRenderer.TextureFor(nref.TextureStem) : null;
-                    _nativeShipRenderer.Draw(geo, ntex, worldRel, view, proj, opacity, nref.NativeScale, _sectorLighting);
+                    _nativeShipRenderer.Draw(geo, ntex, worldRel, view, proj, opacity, nref.NativeScale, _sectorLighting, nref.ModelStem, nref.TextureStem,
+                        _inspectHdCompare ? (_inspectSideBySide ? slotWorld.Translation.X > 0 : _inspectHdOn) : null);
                     drew = true;
                 }
             }
@@ -1142,6 +1149,16 @@ public sealed partial class Game1
     /// by side — native offset -X, meshy +X). Returns (world, meshyScale, isNative).</summary>
     private IEnumerable<(Matrix World, float MeshyScale, bool IsNative)> InspectHullDrawSlots(InspectorHullCatalog.InspectorHull h)
     {
+        if (_inspectHdCompare)
+        {
+            if (_inspectSideBySide)
+            {
+                yield return (Matrix.CreateTranslation(-h.Length * .9f, 0, 0), 1, true);
+                yield return (Matrix.CreateTranslation(h.Length * .9f, 0, 0), 1, true);
+            }
+            else yield return (Matrix.Identity, 1, true);
+            yield break;
+        }
         bool native = _inspectShowNative, meshy = _inspectShowMeshy;
         // P601 — without the optional Meshy pack there is no Meshy art to show,
         // so the inspector's meshy slots fall back to native (logged once).
@@ -1437,6 +1454,7 @@ public sealed partial class Game1
         void Line(string s, Color c) { _spriteBatch.DrawString(_hudSmall, s, new Vector2(14, y), c); y += 22; }
         var list = VisibleInspectHulls();
         Line($"HULL {_inspectIndex + 1}/{list.Count}  [{h.CivKey ?? "?"}]  {h.Name}  (id {h.HullId})", Color.White);
+        Line($"H: native/HD review {(_inspectHdCompare ? "ON" : "OFF")}  M: material  S: side by side (native left, HD right; missing HD uses native)", Color.LightGray);
         Line($"model={h.ModelName}  length={h.Length:0.#}  native={h.NativeAvailable}  meshy={h.MeshyAsset ?? "-"}  fallback={h.FallbackUsed}", Color.LightGray);
         Line($"cam={( _inspectCam == InspectCamMode.FlyBy ? "flyby" : "orbit" )}  yaw={_inspectOrbit.Yaw:0.##} pitch={_inspectOrbit.Pitch:0.##} dist={_inspectOrbit.Distance:0.#}  cloak={(_inspectCloak > 0f ? _inspectCloak.ToString("0.##") : "off")}", Color.LightGray);
         Line($"art={( _inspectShowNative && _inspectShowMeshy ? "both" : _inspectShowNative ? "native" : "meshy" )}" +

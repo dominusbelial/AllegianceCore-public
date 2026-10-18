@@ -1508,6 +1508,8 @@ public sealed partial class Game1 : Game
             _inspectLightTime = opts.InspectLightTime;
             _inspectPitch = opts.InspectPitch;
             _inspectNativeOnly = opts.InspectNativeOnly;
+            _inspectHdCompare = opts.InspectHd;
+            _inspectSideBySide = opts.InspectHd;
             _inspectAutoShotsRemaining = opts.InspectShots;
             _inspectAutoShotsRequested = opts.InspectShots;
             _inspectDemo = opts.InspectDemo;

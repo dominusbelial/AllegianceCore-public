@@ -575,6 +575,10 @@ public sealed class P652EconomyDroneAiTests
         var site = new RecordingIgcSite(); var m = Mission(site); var rock = Rock(m);
         var a = Drone(m, 1); var b = Drone(m, 2, side: 1);
         a.MiningAsteroidTarget = b.MiningAsteroidTarget = rock;
+        // P725 moved C# drone chatter onto DroneChatEvent; the merged resolver
+        // uses the native crowding cue 1342. Observe that seam while retaining the
+        // native complaint/backoff sequence (Igc/shipIGC.cpp:2199;
+        // Igc/shipIGC.h:1723-1734).
         m.Sectors[0].Update(29.99);
         Assert.DoesNotContain(site.Calls, c => c.StartsWith("DroneChatEvent("));
         m.Sectors[0].Update(30);

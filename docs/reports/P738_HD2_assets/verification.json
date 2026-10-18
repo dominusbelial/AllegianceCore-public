@@ -1,0 +1,6910 @@
+[
+  {
+    "label": "focused-1",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Valid_entry_resolves_case_insensitively_and_hashes_only_on_first_use",
+    "exitCode": 0,
+    "seconds": 1.331,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-2",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Valid_entry_resolves_case_insensitively_and_hashes_only_on_first_use",
+    "exitCode": 0,
+    "seconds": 1.334,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-3",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Valid_entry_resolves_case_insensitively_and_hashes_only_on_first_use",
+    "exitCode": 0,
+    "seconds": 1.321,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-4",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Missing_pack_or_unknown_model_falls_back_without_reading_artwork",
+    "exitCode": 0,
+    "seconds": 1.348,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-5",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Missing_pack_or_unknown_model_falls_back_without_reading_artwork",
+    "exitCode": 0,
+    "seconds": 1.307,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-6",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Missing_pack_or_unknown_model_falls_back_without_reading_artwork",
+    "exitCode": 0,
+    "seconds": 1.321,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-7",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Stale_texture_sha_is_ignored_and_logged_once",
+    "exitCode": 0,
+    "seconds": 1.365,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-8",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Stale_texture_sha_is_ignored_and_logged_once",
+    "exitCode": 0,
+    "seconds": 1.316,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-9",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Stale_texture_sha_is_ignored_and_logged_once",
+    "exitCode": 0,
+    "seconds": 1.308,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-10",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Changed_native_model_or_texture_override_falls_back",
+    "exitCode": 0,
+    "seconds": 1.353,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-11",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Changed_native_model_or_texture_override_falls_back",
+    "exitCode": 0,
+    "seconds": 1.325,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-12",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Changed_native_model_or_texture_override_falls_back",
+    "exitCode": 0,
+    "seconds": 1.363,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-13",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Missing_maps_and_unreadable_native_asset_fall_back",
+    "exitCode": 0,
+    "seconds": 1.316,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-14",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Missing_maps_and_unreadable_native_asset_fall_back",
+    "exitCode": 0,
+    "seconds": 1.338,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-15",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Missing_maps_and_unreadable_native_asset_fall_back",
+    "exitCode": 0,
+    "seconds": 1.337,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-16",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Rejected_review_and_corrupt_or_unsupported_manifest_fall_back",
+    "exitCode": 0,
+    "seconds": 1.28,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-17",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Rejected_review_and_corrupt_or_unsupported_manifest_fall_back",
+    "exitCode": 0,
+    "seconds": 1.33,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-18",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Rejected_review_and_corrupt_or_unsupported_manifest_fall_back",
+    "exitCode": 0,
+    "seconds": 1.349,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-19",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Malformed_entry_does_not_hide_other_entries",
+    "exitCode": 0,
+    "seconds": 1.319,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-20",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Malformed_entry_does_not_hide_other_entries",
+    "exitCode": 0,
+    "seconds": 1.298,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-21",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.Malformed_entry_does_not_hide_other_entries",
+    "exitCode": 0,
+    "seconds": 1.33,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-22",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.External_path_kind_exposes_hd_environment_setting",
+    "exitCode": 0,
+    "seconds": 1.291,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-23",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.External_path_kind_exposes_hd_environment_setting",
+    "exitCode": 0,
+    "seconds": 1.275,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-24",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.HdPackTests.External_path_kind_exposes_hd_environment_setting",
+    "exitCode": 0,
+    "seconds": 1.316,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-25",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Tangents_follow_native_uvs_and_mirrored_islands_have_opposite_handedness",
+    "exitCode": 0,
+    "seconds": 0.96,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-26",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Tangents_follow_native_uvs_and_mirrored_islands_have_opposite_handedness",
+    "exitCode": 0,
+    "seconds": 0.958,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-27",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Tangents_follow_native_uvs_and_mirrored_islands_have_opposite_handedness",
+    "exitCode": 0,
+    "seconds": 0.948,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-28",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Degenerate_uvs_and_normals_produce_finite_orthonormal_tangent_frames",
+    "exitCode": 0,
+    "seconds": 0.956,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-29",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Degenerate_uvs_and_normals_produce_finite_orthonormal_tangent_frames",
+    "exitCode": 0,
+    "seconds": 0.95,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-30",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Degenerate_uvs_and_normals_produce_finite_orthonormal_tangent_frames",
+    "exitCode": 0,
+    "seconds": 0.962,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-31",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Texture_budget_includes_every_mip_and_rejects_invalid_dimensions",
+    "exitCode": 0,
+    "seconds": 0.964,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-32",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Texture_budget_includes_every_mip_and_rejects_invalid_dimensions",
+    "exitCode": 0,
+    "seconds": 0.942,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-33",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Texture_budget_includes_every_mip_and_rejects_invalid_dimensions",
+    "exitCode": 0,
+    "seconds": 0.917,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-34",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Hd_setting_roundtrips_and_old_settings_keep_pack_enabled",
+    "exitCode": 0,
+    "seconds": 0.982,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-35",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Hd_setting_roundtrips_and_old_settings_keep_pack_enabled",
+    "exitCode": 0,
+    "seconds": 0.973,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-36",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Hd_setting_roundtrips_and_old_settings_keep_pack_enabled",
+    "exitCode": 0,
+    "seconds": 0.937,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-37",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.DesktopGl_shader_bytecode_matches_source",
+    "exitCode": 0,
+    "seconds": 0.954,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-38",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.DesktopGl_shader_bytecode_matches_source",
+    "exitCode": 0,
+    "seconds": 0.95,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-39",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.DesktopGl_shader_bytecode_matches_source",
+    "exitCode": 0,
+    "seconds": 0.953,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-40",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Synthetic_material_renders_through_native_geometry_bloom_and_fsr_on_real_gl",
+    "exitCode": 0,
+    "seconds": 2.186,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-41",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Synthetic_material_renders_through_native_geometry_bloom_and_fsr_on_real_gl",
+    "exitCode": 0,
+    "seconds": 2.194,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-42",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Synthetic_material_renders_through_native_geometry_bloom_and_fsr_on_real_gl",
+    "exitCode": 0,
+    "seconds": 2.183,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-43",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.CorrectWinding_reverses_each_triangle_indices",
+    "exitCode": 0,
+    "seconds": 0.951,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-44",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.CorrectWinding_reverses_each_triangle_indices",
+    "exitCode": 0,
+    "seconds": 0.959,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-45",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.CorrectWinding_reverses_each_triangle_indices",
+    "exitCode": 0,
+    "seconds": 0.905,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-46",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.CorrectWinding_flips_front_face_from_inward_to_outward",
+    "exitCode": 0,
+    "seconds": 0.915,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-47",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.CorrectWinding_flips_front_face_from_inward_to_outward",
+    "exitCode": 0,
+    "seconds": 0.894,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-48",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.CorrectWinding_flips_front_face_from_inward_to_outward",
+    "exitCode": 0,
+    "seconds": 0.958,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-49",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.NativeScaleForLength_maps_mesh_radius_to_hull_collision_radius",
+    "exitCode": 0,
+    "seconds": 0.939,
+    "counts": {
+      "total": "5",
+      "executed": "5",
+      "passed": "5",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 5
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-50",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.NativeScaleForLength_maps_mesh_radius_to_hull_collision_radius",
+    "exitCode": 0,
+    "seconds": 0.918,
+    "counts": {
+      "total": "5",
+      "executed": "5",
+      "passed": "5",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 5
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-51",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.NativeScaleForLength_maps_mesh_radius_to_hull_collision_radius",
+    "exitCode": 0,
+    "seconds": 0.98,
+    "counts": {
+      "total": "5",
+      "executed": "5",
+      "passed": "5",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 5
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-52",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.RealFig05_mesh_radius_and_scale_agree_with_native_radius_math",
+    "exitCode": 0,
+    "seconds": 0.991,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-53",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.RealFig05_mesh_radius_and_scale_agree_with_native_radius_math",
+    "exitCode": 0,
+    "seconds": 0.98,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-54",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.RealFig05_mesh_radius_and_scale_agree_with_native_radius_math",
+    "exitCode": 0,
+    "seconds": 0.988,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-55",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.Fig05_resolves_its_own_bmp_texture_namespace",
+    "exitCode": 0,
+    "seconds": 0.932,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-56",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.Fig05_resolves_its_own_bmp_texture_namespace",
+    "exitCode": 0,
+    "seconds": 0.945,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-57",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.Fig05_resolves_its_own_bmp_texture_namespace",
+    "exitCode": 0,
+    "seconds": 0.952,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-58",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.WcGcfig_resolves_shared_texture_not_own_stem",
+    "exitCode": 0,
+    "seconds": 0.927,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-59",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.WcGcfig_resolves_shared_texture_not_own_stem",
+    "exitCode": 0,
+    "seconds": 0.953,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-60",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.WcGcfig_resolves_shared_texture_not_own_stem",
+    "exitCode": 0,
+    "seconds": 0.946,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-61",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.Utl18a_resolves_shared_utl18bmp_not_utl18abmp",
+    "exitCode": 0,
+    "seconds": 0.963,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-62",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.Utl18a_resolves_shared_utl18bmp_not_utl18abmp",
+    "exitCode": 0,
+    "seconds": 0.986,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-63",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.Utl18a_resolves_shared_utl18bmp_not_utl18abmp",
+    "exitCode": 0,
+    "seconds": 0.937,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-64",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.HullTextureName_override_wins_when_present_and_distinct",
+    "exitCode": 0,
+    "seconds": 0.949,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-65",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.HullTextureName_override_wins_when_present_and_distinct",
+    "exitCode": 0,
+    "seconds": 0.986,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-66",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.HullTextureName_override_wins_when_present_and_distinct",
+    "exitCode": 0,
+    "seconds": 0.912,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-67",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.HullTextureName_equal_to_model_is_ignored_native_nullout",
+    "exitCode": 0,
+    "seconds": 0.964,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-68",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.HullTextureName_equal_to_model_is_ignored_native_nullout",
+    "exitCode": 0,
+    "seconds": 0.937,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-69",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.HullTextureName_equal_to_model_is_ignored_native_nullout",
+    "exitCode": 0,
+    "seconds": 0.958,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-70",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.No_resolvable_texture_unit_yields_null",
+    "exitCode": 0,
+    "seconds": 0.975,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-71",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.No_resolvable_texture_unit_yields_null",
+    "exitCode": 0,
+    "seconds": 0.943,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-72",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.No_resolvable_texture_unit_yields_null",
+    "exitCode": 0,
+    "seconds": 0.969,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-73",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.WeaponDoubledB_import_resolves_to_single_b_bmp_unit",
+    "exitCode": 0,
+    "seconds": 1.021,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-74",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.WeaponDoubledB_import_resolves_to_single_b_bmp_unit",
+    "exitCode": 0,
+    "seconds": 0.961,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-75",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.WeaponDoubledB_import_resolves_to_single_b_bmp_unit",
+    "exitCode": 0,
+    "seconds": 0.964,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-76",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.CaseInsensitiveProbe_finds_capitalised_texture_unit",
+    "exitCode": 0,
+    "seconds": 0.973,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-77",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.CaseInsensitiveProbe_finds_capitalised_texture_unit",
+    "exitCode": 0,
+    "seconds": 0.932,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-78",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.CaseInsensitiveProbe_finds_capitalised_texture_unit",
+    "exitCode": 0,
+    "seconds": 0.967,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-79",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.AftNozzleLocalOffset_uses_the_thrust_frame",
+    "exitCode": 0,
+    "seconds": 0.942,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-80",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.AftNozzleLocalOffset_uses_the_thrust_frame",
+    "exitCode": 0,
+    "seconds": 0.948,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-81",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.AftNozzleLocalOffset_uses_the_thrust_frame",
+    "exitCode": 0,
+    "seconds": 0.94,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-82",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.AftNozzleLocalOffset_falls_back_to_guessed_aft_centre",
+    "exitCode": 0,
+    "seconds": 0.954,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-83",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.AftNozzleLocalOffset_falls_back_to_guessed_aft_centre",
+    "exitCode": 0,
+    "seconds": 0.954,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-84",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.AftNozzleLocalOffset_falls_back_to_guessed_aft_centre",
+    "exitCode": 0,
+    "seconds": 0.94,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-85",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.LaunchOptions_default_ships_native",
+    "exitCode": 0,
+    "seconds": 0.982,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-86",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.LaunchOptions_default_ships_native",
+    "exitCode": 0,
+    "seconds": 0.97,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-87",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.NativeShipResolverTests.LaunchOptions_default_ships_native",
+    "exitCode": 0,
+    "seconds": 0.93,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-88",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P547ShaderTests.Mgfxo_staleness_each_committed_shader_matches_its_source_hash",
+    "exitCode": 0,
+    "seconds": 0.909,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-89",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P547ShaderTests.Mgfxo_staleness_each_committed_shader_matches_its_source_hash",
+    "exitCode": 0,
+    "seconds": 0.95,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-90",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P547ShaderTests.Mgfxo_staleness_each_committed_shader_matches_its_source_hash",
+    "exitCode": 0,
+    "seconds": 0.948,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-91",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P570NativeCullingTests.Shipped_native_winding_keeps_the_outside_under_the_game_perspective",
+    "exitCode": 0,
+    "seconds": 0.95,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-92",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P570NativeCullingTests.Shipped_native_winding_keeps_the_outside_under_the_game_perspective",
+    "exitCode": 0,
+    "seconds": 0.941,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-93",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P570NativeCullingTests.Shipped_native_winding_keeps_the_outside_under_the_game_perspective",
+    "exitCode": 0,
+    "seconds": 0.963,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-94",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Settings_roundtrip_all_fields_and_default_off",
+    "exitCode": 0,
+    "seconds": 1.004,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-95",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Settings_roundtrip_all_fields_and_default_off",
+    "exitCode": 0,
+    "seconds": 0.942,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-96",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Settings_roundtrip_all_fields_and_default_off",
+    "exitCode": 0,
+    "seconds": 0.966,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-97",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Corrupt_and_out_of_range_settings_fall_back_safely",
+    "exitCode": 0,
+    "seconds": 0.952,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-98",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Corrupt_and_out_of_range_settings_fall_back_safely",
+    "exitCode": 0,
+    "seconds": 0.996,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-99",
+    "project": "MonoGame",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Corrupt_and_out_of_range_settings_fall_back_safely",
+    "exitCode": 0,
+    "seconds": 0.959,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-100",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Lone_player_mines_by_proximity_without_npc_claim",
+    "exitCode": 0,
+    "seconds": 1.335,
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 4
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-101",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Lone_player_mines_by_proximity_without_npc_claim",
+    "exitCode": 0,
+    "seconds": 1.35,
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 4
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-102",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Lone_player_mines_by_proximity_without_npc_claim",
+    "exitCode": 0,
+    "seconds": 1.359,
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 4
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-103",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Geometric_player_participates_in_contested_rock_arbitration",
+    "exitCode": 0,
+    "seconds": 1.373,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-104",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Geometric_player_participates_in_contested_rock_arbitration",
+    "exitCode": 0,
+    "seconds": 1.379,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-105",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Geometric_player_participates_in_contested_rock_arbitration",
+    "exitCode": 0,
+    "seconds": 1.395,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-106",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Lone_sideless_drone_with_mine_order_accrues_identity_rate",
+    "exitCode": 0,
+    "seconds": 1.354,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-107",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Lone_sideless_drone_with_mine_order_accrues_identity_rate",
+    "exitCode": 0,
+    "seconds": 1.381,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-108",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Lone_sideless_drone_with_mine_order_accrues_identity_rate",
+    "exitCode": 0,
+    "seconds": 1.38,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-109",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Live_contention_geometry_keeps_stock_hull_miners_ready_and_locked_out",
+    "exitCode": 0,
+    "seconds": 1.604,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-110",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Live_contention_geometry_keeps_stock_hull_miners_ready_and_locked_out",
+    "exitCode": 0,
+    "seconds": 1.554,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-111",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Live_contention_geometry_keeps_stock_hull_miners_ready_and_locked_out",
+    "exitCode": 0,
+    "seconds": 1.563,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-112",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Stock_constructor_reaches_accepted_build_rock_and_starts_construction",
+    "exitCode": 0,
+    "seconds": 1.393,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-113",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Stock_constructor_reaches_accepted_build_rock_and_starts_construction",
+    "exitCode": 0,
+    "seconds": 1.347,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-114",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Stock_constructor_reaches_accepted_build_rock_and_starts_construction",
+    "exitCode": 0,
+    "seconds": 1.378,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-115",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Same_side_only_least_ore_ready_miner_accrues_regardless_of_insertion_order",
+    "exitCode": 0,
+    "seconds": 1.346,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-116",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Same_side_only_least_ore_ready_miner_accrues_regardless_of_insertion_order",
+    "exitCode": 0,
+    "seconds": 1.394,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-117",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Same_side_only_least_ore_ready_miner_accrues_regardless_of_insertion_order",
+    "exitCode": 0,
+    "seconds": 1.407,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-118",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_ready_miners_block_all_accrual_and_keep_their_orders",
+    "exitCode": 0,
+    "seconds": 1.337,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-119",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_ready_miners_block_all_accrual_and_keep_their_orders",
+    "exitCode": 0,
+    "seconds": 1.364,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-120",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_ready_miners_block_all_accrual_and_keep_their_orders",
+    "exitCode": 0,
+    "seconds": 1.364,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-121",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Distant_enemy_with_same_order_does_not_displace_ready_miner",
+    "exitCode": 0,
+    "seconds": 1.366,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-122",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Distant_enemy_with_same_order_does_not_displace_ready_miner",
+    "exitCode": 0,
+    "seconds": 1.347,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-123",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Distant_enemy_with_same_order_does_not_displace_ready_miner",
+    "exitCode": 0,
+    "seconds": 1.427,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-124",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Refinery_teleport_sells_without_docking_and_picks_new_order",
+    "exitCode": 0,
+    "seconds": 1.419,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-125",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Refinery_teleport_sells_without_docking_and_picks_new_order",
+    "exitCode": 0,
+    "seconds": 1.368,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-126",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Refinery_teleport_sells_without_docking_and_picks_new_order",
+    "exitCode": 0,
+    "seconds": 1.386,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-127",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Damaged_working_drone_interrupts_order_for_repair",
+    "exitCode": 0,
+    "seconds": 1.371,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-128",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Damaged_working_drone_interrupts_order_for_repair",
+    "exitCode": 0,
+    "seconds": 1.374,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-129",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Damaged_working_drone_interrupts_order_for_repair",
+    "exitCode": 0,
+    "seconds": 1.393,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-130",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Readiness_uses_strict_radius_and_velocity_bounds",
+    "exitCode": 0,
+    "seconds": 1.379,
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 4
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-131",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Readiness_uses_strict_radius_and_velocity_bounds",
+    "exitCode": 0,
+    "seconds": 1.398,
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 4
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-132",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Readiness_uses_strict_radius_and_velocity_bounds",
+    "exitCode": 0,
+    "seconds": 1.373,
+    "counts": {
+      "total": "4",
+      "executed": "4",
+      "passed": "4",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 4
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-133",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Non_miner_near_rock_cannot_accrue",
+    "exitCode": 0,
+    "seconds": 1.378,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-134",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Non_miner_near_rock_cannot_accrue",
+    "exitCode": 0,
+    "seconds": 1.397,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-135",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Non_miner_near_rock_cannot_accrue",
+    "exitCode": 0,
+    "seconds": 1.382,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-136",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Allied_miners_share_least_ore_selection_without_enemy_lockout",
+    "exitCode": 0,
+    "seconds": 1.397,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-137",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Allied_miners_share_least_ore_selection_without_enemy_lockout",
+    "exitCode": 0,
+    "seconds": 1.417,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-138",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Allied_miners_share_least_ore_selection_without_enemy_lockout",
+    "exitCode": 0,
+    "seconds": 1.434,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-139",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Equal_ore_tie_uses_sector_order_and_loser_can_return_to_land_only_station",
+    "exitCode": 0,
+    "seconds": 1.41,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-140",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Equal_ore_tie_uses_sector_order_and_loser_can_return_to_land_only_station",
+    "exitCode": 0,
+    "seconds": 1.387,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-141",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Equal_ore_tie_uses_sector_order_and_loser_can_return_to_land_only_station",
+    "exitCode": 0,
+    "seconds": 1.361,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-142",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Miner_damage_threshold_is_strict_95_percent",
+    "exitCode": 0,
+    "seconds": 1.367,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-143",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Miner_damage_threshold_is_strict_95_percent",
+    "exitCode": 0,
+    "seconds": 1.376,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-144",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Miner_damage_threshold_is_strict_95_percent",
+    "exitCode": 0,
+    "seconds": 1.375,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-145",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Mounted_shield_uses_75_percent_threshold_even_with_full_hull",
+    "exitCode": 0,
+    "seconds": 1.374,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-146",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Mounted_shield_uses_75_percent_threshold_even_with_full_hull",
+    "exitCode": 0,
+    "seconds": 1.377,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-147",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Mounted_shield_uses_75_percent_threshold_even_with_full_hull",
+    "exitCode": 0,
+    "seconds": 1.401,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-148",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_resumes_paused_work_only_after_ten_second_recheck",
+    "exitCode": 0,
+    "seconds": 1.35,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-149",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_resumes_paused_work_only_after_ten_second_recheck",
+    "exitCode": 0,
+    "seconds": 1.395,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-150",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_resumes_paused_work_only_after_ten_second_recheck",
+    "exitCode": 0,
+    "seconds": 1.343,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-151",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.New_order_baseline_and_player_cooldown_are_honored",
+    "exitCode": 0,
+    "seconds": 1.365,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-152",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.New_order_baseline_and_player_cooldown_are_honored",
+    "exitCode": 0,
+    "seconds": 1.352,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-153",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.New_order_baseline_and_player_cooldown_are_honored",
+    "exitCode": 0,
+    "seconds": 1.328,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-154",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_runs_on_any_new_damage_but_carriers_and_players_never_run",
+    "exitCode": 0,
+    "seconds": 1.362,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-155",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_runs_on_any_new_damage_but_carriers_and_players_never_run",
+    "exitCode": 0,
+    "seconds": 1.362,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-156",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_runs_on_any_new_damage_but_carriers_and_players_never_run",
+    "exitCode": 0,
+    "seconds": 1.322,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-157",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_build_distance_exception_compares_with_local_repair",
+    "exitCode": 0,
+    "seconds": 1.332,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-158",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_build_distance_exception_compares_with_local_repair",
+    "exitCode": 0,
+    "seconds": 1.381,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-159",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_build_distance_exception_compares_with_local_repair",
+    "exitCode": 0,
+    "seconds": 1.341,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-160",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.No_repair_destination_preserves_work_and_new_order_cancels_retreat",
+    "exitCode": 0,
+    "seconds": 1.338,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-161",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.No_repair_destination_preserves_work_and_new_order_cancels_retreat",
+    "exitCode": 0,
+    "seconds": 1.33,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-162",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.No_repair_destination_preserves_work_and_new_order_cancels_retreat",
+    "exitCode": 0,
+    "seconds": 1.312,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-163",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Wingman_retreat_flags_use_native_thresholds",
+    "exitCode": 0,
+    "seconds": 1.363,
+    "counts": {
+      "total": "5",
+      "executed": "5",
+      "passed": "5",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 5
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-164",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Wingman_retreat_flags_use_native_thresholds",
+    "exitCode": 0,
+    "seconds": 1.355,
+    "counts": {
+      "total": "5",
+      "executed": "5",
+      "passed": "5",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 5
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-165",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Wingman_retreat_flags_use_native_thresholds",
+    "exitCode": 0,
+    "seconds": 1.385,
+    "counts": {
+      "total": "5",
+      "executed": "5",
+      "passed": "5",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 5
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-166",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Teleport_unload_strict_range_and_no_velocity_gate",
+    "exitCode": 0,
+    "seconds": 1.419,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-167",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Teleport_unload_strict_range_and_no_velocity_gate",
+    "exitCode": 0,
+    "seconds": 1.379,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-168",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Teleport_unload_strict_range_and_no_velocity_gate",
+    "exitCode": 0,
+    "seconds": 1.385,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-169",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Teleport_requires_capability_goto_plan_and_miner",
+    "exitCode": 0,
+    "seconds": 1.353,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-170",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Teleport_requires_capability_goto_plan_and_miner",
+    "exitCode": 0,
+    "seconds": 1.358,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-171",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Teleport_requires_capability_goto_plan_and_miner",
+    "exitCode": 0,
+    "seconds": 1.37,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-172",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Miner_repaired_in_another_sector_picks_local_work_instead_of_old_rock",
+    "exitCode": 0,
+    "seconds": 1.372,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-173",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Miner_repaired_in_another_sector_picks_local_work_instead_of_old_rock",
+    "exitCode": 0,
+    "seconds": 1.368,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-174",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Miner_repaired_in_another_sector_picks_local_work_instead_of_old_rock",
+    "exitCode": 0,
+    "seconds": 1.364,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-175",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_search_uses_reachable_other_sectors",
+    "exitCode": 0,
+    "seconds": 1.363,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-176",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_search_uses_reachable_other_sectors",
+    "exitCode": 0,
+    "seconds": 1.362,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-177",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_search_uses_reachable_other_sectors",
+    "exitCode": 0,
+    "seconds": 1.3,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-178",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_without_local_repair_keeps_accepted_build_even_with_remote_base",
+    "exitCode": 0,
+    "seconds": 1.336,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-179",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_without_local_repair_keeps_accepted_build_even_with_remote_base",
+    "exitCode": 0,
+    "seconds": 1.385,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-180",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_without_local_repair_keeps_accepted_build_even_with_remote_base",
+    "exitCode": 0,
+    "seconds": 1.378,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-181",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_starts_drilling_only_after_arrival_and_does_not_flee_while_building",
+    "exitCode": 0,
+    "seconds": 1.402,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-182",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_starts_drilling_only_after_arrival_and_does_not_flee_while_building",
+    "exitCode": 0,
+    "seconds": 1.394,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-183",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_starts_drilling_only_after_arrival_and_does_not_flee_while_building",
+    "exitCode": 0,
+    "seconds": 1.378,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-184",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Teleport_sale_scales_loaded_value_and_yield_and_pays_once",
+    "exitCode": 0,
+    "seconds": 1.378,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-185",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Teleport_sale_scales_loaded_value_and_yield_and_pays_once",
+    "exitCode": 0,
+    "seconds": 1.357,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-186",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Teleport_sale_scales_loaded_value_and_yield_and_pays_once",
+    "exitCode": 0,
+    "seconds": 1.359,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-187",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff",
+    "exitCode": 0,
+    "seconds": 1.352,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-188",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff",
+    "exitCode": 0,
+    "seconds": 1.335,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-189",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff",
+    "exitCode": 0,
+    "seconds": 1.342,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-190",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Every_stock_teleport_refinery_can_unload",
+    "exitCode": 0,
+    "seconds": 1.504,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-191",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Every_stock_teleport_refinery_can_unload",
+    "exitCode": 0,
+    "seconds": 1.522,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-192",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Every_stock_teleport_refinery_can_unload",
+    "exitCode": 0,
+    "seconds": 1.522,
+    "counts": {
+      "total": "3",
+      "executed": "3",
+      "passed": "3",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 3
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-193",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Traveling_miner_stops_in_native_mining_envelope_and_accrues",
+    "exitCode": 0,
+    "seconds": 1.374,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-194",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Traveling_miner_stops_in_native_mining_envelope_and_accrues",
+    "exitCode": 0,
+    "seconds": 1.393,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-195",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Traveling_miner_stops_in_native_mining_envelope_and_accrues",
+    "exitCode": 0,
+    "seconds": 1.43,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-196",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_dock_keeps_paused_order_until_launch_and_recheck",
+    "exitCode": 0,
+    "seconds": 1.382,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-197",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_dock_keeps_paused_order_until_launch_and_recheck",
+    "exitCode": 0,
+    "seconds": 1.376,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-198",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_dock_keeps_paused_order_until_launch_and_recheck",
+    "exitCode": 0,
+    "seconds": 1.337,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-199",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Working_miner_holds_position_inside_native_envelope",
+    "exitCode": 0,
+    "seconds": 1.365,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-200",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Working_miner_holds_position_inside_native_envelope",
+    "exitCode": 0,
+    "seconds": 1.403,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-201",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Working_miner_holds_position_inside_native_envelope",
+    "exitCode": 0,
+    "seconds": 1.342,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-202",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_ship_search_requires_land_on_carrier_hull",
+    "exitCode": 0,
+    "seconds": 1.328,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-203",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_ship_search_requires_land_on_carrier_hull",
+    "exitCode": 0,
+    "seconds": 1.337,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-204",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_ship_search_requires_land_on_carrier_hull",
+    "exitCode": 0,
+    "seconds": 1.351,
+    "counts": {
+      "total": "2",
+      "executed": "2",
+      "passed": "2",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-205",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.New_drone_in_old_mission_starts_runaway_clock_at_creation",
+    "exitCode": 0,
+    "seconds": 1.322,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-206",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.New_drone_in_old_mission_starts_runaway_clock_at_creation",
+    "exitCode": 0,
+    "seconds": 1.359,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-207",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P652EconomyDroneAiTests.New_drone_in_old_mission_starts_runaway_clock_at_creation",
+    "exitCode": 0,
+    "seconds": 1.322,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-208",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P725DroneChatterSeamTests.Four_native_chatter_sound_ids_are_the_verified_ordinals_and_resolve",
+    "exitCode": 0,
+    "seconds": 1.315,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-209",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P725DroneChatterSeamTests.Four_native_chatter_sound_ids_are_the_verified_ordinals_and_resolve",
+    "exitCode": 0,
+    "seconds": 1.357,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-210",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P725DroneChatterSeamTests.Four_native_chatter_sound_ids_are_the_verified_ordinals_and_resolve",
+    "exitCode": 0,
+    "seconds": 1.301,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-211",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P725DroneChatterSeamTests.Crowded_miner_routes_droneTooCrowdedSound_1342_through_DroneChatEvent",
+    "exitCode": 0,
+    "seconds": 1.339,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-212",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P725DroneChatterSeamTests.Crowded_miner_routes_droneTooCrowdedSound_1342_through_DroneChatEvent",
+    "exitCode": 0,
+    "seconds": 1.389,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-213",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P725DroneChatterSeamTests.Crowded_miner_routes_droneTooCrowdedSound_1342_through_DroneChatEvent",
+    "exitCode": 0,
+    "seconds": 1.339,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-214",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P725DroneChatterSeamTests.RecordingIgcSite_records_DroneChatEvent",
+    "exitCode": 0,
+    "seconds": 1.345,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-215",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P725DroneChatterSeamTests.RecordingIgcSite_records_DroneChatEvent",
+    "exitCode": 0,
+    "seconds": 1.301,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-216",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P725DroneChatterSeamTests.RecordingIgcSite_records_DroneChatEvent",
+    "exitCode": 0,
+    "seconds": 1.298,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-217",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P725DroneChatterWireLiveTests.Crowded_miner_chatter_reaches_seated_teammate_with_correct_voice_over",
+    "exitCode": 0,
+    "seconds": 1.497,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-218",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P725DroneChatterWireLiveTests.Crowded_miner_chatter_reaches_seated_teammate_with_correct_voice_over",
+    "exitCode": 0,
+    "seconds": 1.482,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "focused-219",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.P725DroneChatterWireLiveTests.Crowded_miner_chatter_reaches_seated_teammate_with_correct_voice_over",
+    "exitCode": 0,
+    "seconds": 1.459,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "showcase-1",
+    "project": "ClientCore",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+    "exitCode": 0,
+    "seconds": 98.358,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "showcase-2",
+    "project": "ClientCore",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+    "exitCode": 0,
+    "seconds": 99.412,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "showcase-3",
+    "project": "ClientCore",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+    "exitCode": 0,
+    "seconds": 101.145,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "showcase-4",
+    "project": "ClientCore",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+    "exitCode": 0,
+    "seconds": 100.322,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "showcase-5",
+    "project": "ClientCore",
+    "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+    "exitCode": 0,
+    "seconds": 98.838,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "suite-Core",
+    "project": "Core",
+    "filter": "FullyQualifiedName!~Allegiance.Core.Tests.MeshyGuardTests&FullyQualifiedName!~Allegiance.Core.Tests.PrivatePathGuardTests",
+    "exitCode": 1,
+    "seconds": 902.008,
+    "counts": {
+      "total": "4804",
+      "executed": "4804",
+      "passed": "4803",
+      "failed": "1",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [
+      {
+        "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+        "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+        "message": "\n      \n        \n          System.TimeoutException : no OnPeerJoined for raw peer\n             at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.ConnectRawPeer(TcpTransport host, Site site, String name, Boolean tinyReceiveWindow) in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 119\n   at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn() in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 346\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+      }
+    ],
+    "outcomes": {
+      "Passed": 4803,
+      "Failed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "isolation-226",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "exitCode": 0,
+    "seconds": 1.508,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "isolation-227",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "exitCode": 0,
+    "seconds": 1.52,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "isolation-228",
+    "project": "Core",
+    "filter": "FullyQualifiedName=Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+    "exitCode": 0,
+    "seconds": 1.494,
+    "counts": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "suite-ClientCore",
+    "project": "ClientCore",
+    "filter": null,
+    "exitCode": 0,
+    "seconds": 2354.398,
+    "counts": {
+      "total": "1279",
+      "executed": "1279",
+      "passed": "1279",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 1279
+    },
+    "skippedCases": 0
+  },
+  {
+    "label": "suite-MonoGame",
+    "project": "MonoGame",
+    "filter": null,
+    "exitCode": 0,
+    "seconds": 967.89,
+    "counts": {
+      "total": "2430",
+      "executed": "2427",
+      "passed": "2427",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "outcomes": {
+      "Passed": 2427,
+      "NotExecuted": 3
+    },
+    "skippedCases": 3
+  }
+]

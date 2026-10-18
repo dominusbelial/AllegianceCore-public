@@ -1,0 +1,137 @@
+{
+  "build": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "focused": {
+    "methods": 73,
+    "isolated_invocations": 219,
+    "passed_cases": 318,
+    "failed_cases": 0,
+    "skipped_cases": 0
+  },
+  "showcase": {
+    "passed": 5,
+    "failed": 0,
+    "seconds": [
+      98.358,
+      99.412,
+      101.145,
+      100.322,
+      98.838
+    ]
+  },
+  "suites": [
+    {
+      "project": "Core",
+      "seconds": 902.008,
+      "exitCode": 1,
+      "counts": {
+        "total": "4804",
+        "executed": "4804",
+        "passed": "4803",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 4803,
+        "Failed": 1
+      },
+      "skippedCases": 0
+    },
+    {
+      "project": "ClientCore",
+      "seconds": 2354.398,
+      "exitCode": 0,
+      "counts": {
+        "total": "1279",
+        "executed": "1279",
+        "passed": "1279",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 1279
+      },
+      "skippedCases": 0
+    },
+    {
+      "project": "MonoGame",
+      "seconds": 967.89,
+      "exitCode": 0,
+      "counts": {
+        "total": "2430",
+        "executed": "2427",
+        "passed": "2427",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "outcomes": {
+        "Passed": 2427,
+        "NotExecuted": 3
+      },
+      "skippedCases": 3
+    }
+  ],
+  "suite_case_totals": {
+    "total": 8513,
+    "passed": 8509,
+    "failed": 1,
+    "skipped": 3
+  },
+  "qualified_load_flake_methods": 1,
+  "suite_skips": [
+    {
+      "project": "MonoGame",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+    },
+    {
+      "project": "MonoGame",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+      "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+    },
+    {
+      "project": "MonoGame",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+      "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+    }
+  ],
+  "excluded_git_invoking_guard_classes": [
+    "Allegiance.Core.Tests.MeshyGuardTests",
+    "Allegiance.Core.Tests.PrivatePathGuardTests"
+  ]
+}
