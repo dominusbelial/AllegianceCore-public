@@ -25,6 +25,10 @@ public sealed class P705TechModeLiveTests(ITestOutputHelper output)
     [InlineData(1, 2, 2)]
     [InlineData(4, 35, 3)]
     [InlineData(101, 1, 5)]
+    // P744 — machine/timing-sensitive live test: the Wait() wall-clock deadlines
+    // are scaled by the measured machine speed factor so a slower Docker runner
+    // no longer hits them; a sim-progression regression still does (see Wait()).
+    [Trait("Category", "Perf")]
     public void Research_upgrades_and_resets_through_two_complete_local_matches(int civA, int civB, int size)
     {
         Require.Artwork();
@@ -80,8 +84,17 @@ public sealed class P705TechModeLiveTests(ITestOutputHelper output)
         double nextSample = 0;
         void Wait(Func<bool> done, string reason, int seconds = 300)
         {
-            var deadline = watch.Elapsed.TotalSeconds + seconds;
-            while (watch.Elapsed.TotalSeconds < deadline)
+            // P744 — hardware-relative deadline: the wall-clock budget was tuned
+            // on the reference workstation; scale it by the machine speed factor
+            // measured in this same run so a slower Docker runner no longer trips
+            // it. SimulateRegressionFactor (env P744_SIMULATE_REGRESSION>1) inflates
+            // only the effective elapsed time — never the calibration — modelling a
+            // machine/regression N× slower than its scaled budget, so the deadline
+            // still fires on a real sim-progression slowdown.
+            double speed = PerfCalibration.CpuSpeedFactor;
+            double regr = PerfCalibration.SimulateRegressionFactor;
+            var deadline = watch.Elapsed.TotalSeconds + seconds * speed;
+            while (watch.Elapsed.TotalSeconds * regr < deadline)
             {
                 Assert.Null(tickerError);
                 lock (guard)

@@ -40,7 +40,17 @@ public sealed class P706DispatchProfilingTests(ITestOutputHelper output)
     private const double DispatchBudgetMs = 50;    // the P706 target in Release
 #endif
 
+    // P744 — the absolute budget above is now HARDWARE-RELATIVE: it is scaled by
+    // a machine speed factor measured against a fixed reference workload in this
+    // same run (PerfCalibration). On the reference workstation the factor is ≈1.0
+    // so this keeps its pre-P744 meaning; on a slower Docker runner the budget
+    // stretches with the machine, so it no longer false-fails on hardware, but a
+    // genuine dispatch regression (extra work per event) still trips it — the
+    // reference workload is untouched by a dispatch regression. See
+    // docs/reports/P744_PORTABLE_PERF_TESTS.md.
+
     [Trait("Requires", "Artwork")]
+    [Trait("Category", "Perf")] // P744: machine-speed-sensitive perf gate
     [SkippableTheory]
     [InlineData("matchStart", 165)]
     [InlineData("gameOver", 200)]
@@ -49,6 +59,10 @@ public sealed class P706DispatchProfilingTests(ITestOutputHelper output)
         Require.Artwork();
         try
         {
+            // Force the machine-speed calibration once, OUTSIDE the timed region.
+            _ = PerfCalibration.CpuSpeedFactor;
+            double budget = PerfCalibration.Scale(DispatchBudgetMs);
+            output.WriteLine($"P744 calibration: ref={PerfCalibration.RawReferenceMs:F3}ms speedFactor={PerfCalibration.CpuSpeedFactor:F3} baseBudget={DispatchBudgetMs}ms -> scaledBudget={budget:F2}ms");
             var warmup = Stopwatch.StartNew();
             int warmupWorlds = 0;
             do
@@ -63,9 +77,9 @@ public sealed class P706DispatchProfilingTests(ITestOutputHelper output)
                 samples[s] = Measure(scenario, count);
             Array.Sort(samples);
             double median = samples[samples.Length / 2];
-            output.WriteLine($"P706 [{scenario}] count={count} worst-dispatch median={median:F3}ms samples=[{string.Join(", ", samples.Select(v => $"{v:F3}"))}] budget={DispatchBudgetMs}ms");
-            Assert.True(median < DispatchBudgetMs,
-                $"P706 [{scenario}] worst-dispatch median={median:F3}ms >= budget={DispatchBudgetMs}ms (five fresh worlds)");
+            output.WriteLine($"P706 [{scenario}] count={count} worst-dispatch median={median:F3}ms samples=[{string.Join(", ", samples.Select(v => $"{v:F3}"))}] budget={budget:F2}ms");
+            Assert.True(median < budget,
+                $"P706 [{scenario}] worst-dispatch median={median:F3}ms >= scaledBudget={budget:F2}ms (five fresh worlds; speedFactor={PerfCalibration.CpuSpeedFactor:F3})");
         }
         finally { ParallelSectorSim.Reset(); }
     }
@@ -213,6 +227,11 @@ public sealed class P706DispatchProfilingTests(ITestOutputHelper output)
 
         output.WriteLine($"P706 [{scenario}] count={count} worst {bucket} = {worst:F3}ms "
             + $"(separate={worstSeparate:F3}ms event={worstEvent:F3}ms maxEvents={maxEvents} resolved={maxResolved} debounced={maxDebounced}) over {ticks} ticks");
+        // P744 — test-only regression demo: inflate ONLY the guarded measurement
+        // (never the calibration reference) when P744_SIMULATE_REGRESSION>1, to
+        // prove the scaled budget still catches a real dispatch slowdown.
+        if (PerfCalibration.SimulateRegressionFactor > 1.0)
+            worst *= PerfCalibration.SimulateRegressionFactor;
         return worst;
     }
 }

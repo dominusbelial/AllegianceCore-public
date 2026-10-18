@@ -211,6 +211,9 @@ public sealed class BroadcastSnapshotLoopbackTests
 
     [SkippableFact]
     [Trait("Requires", "Artwork")]
+    // P744 — machine-speed-sensitive measurement: the 256-peer sim/projection/
+    // publish timing barometers here are wall-clock; scaled by PerfCalibration.
+    [Trait("Category", "Perf")]
     public void Crowded_real_TCP_session_measures_sim_projection_and_publish_pool()
     {
         Require.Artwork();
@@ -219,6 +222,7 @@ public sealed class BroadcastSnapshotLoopbackTests
 
     [SkippableFact]
     [Trait("Requires", "Artwork")]
+    [Trait("Category", "Perf")] // P744: machine-speed-sensitive measurement
     public void Crowded_TCP_interest_tiers_reduce_bytes_and_report_ages()
     {
         Require.Artwork();
@@ -226,6 +230,7 @@ public sealed class BroadcastSnapshotLoopbackTests
     }
 
     [SkippableFact, Trait("Requires", "Artwork")]
+    [Trait("Category", "Perf")] // P744: machine-speed-sensitive measurement
     public void Crowded_TCP_pipeline_cost_three_configurations()
     {
         Require.Artwork();
@@ -234,6 +239,14 @@ public sealed class BroadcastSnapshotLoopbackTests
 
     private static void RunCrowded(bool phase2, bool phase3, bool phase4 = false)
     {
+        // P744 — hardware-relative timing: the wall-clock join/drain deadlines
+        // below were tuned on the reference workstation; scale them by the
+        // machine speed factor measured in this same run so a slower Docker
+        // runner no longer false-fails, while a transport pipeline regression
+        // still trips them (SimulateRegressionFactor shrinks only the deadline,
+        // modelling a pipeline N× slower than the scaled budget expects).
+        double speed = PerfCalibration.CpuSpeedFactor;
+        double regr = PerfCalibration.SimulateRegressionFactor;
         bool controlled = phase2 || phase3 || phase4;
         int count = int.TryParse(Environment.GetEnvironmentVariable("P668_PEERS"), out int requested) ? requested : 256;
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
@@ -272,7 +285,7 @@ public sealed class BroadcastSnapshotLoopbackTests
                 if (i % 16 == 15) server.TickSim();
             }
             var join = Stopwatch.StartNew();
-            while ((server.Ships.Count() != count || peers.Any(p => p.OwnId < 0)) && join.Elapsed.TotalSeconds < 30)
+            while ((server.Ships.Count() != count || peers.Any(p => p.OwnId < 0)) && join.Elapsed.TotalSeconds < 30 * speed)
                 server.Tick();
             Assert.Equal(count, server.Ships.Count());
             Assert.All(peers, p => Assert.True(p.OwnId >= 0, $"peer failed to seat: {p.Error}"));
@@ -316,7 +329,8 @@ public sealed class BroadcastSnapshotLoopbackTests
                 {
                     if (controlled) foreach (var peer in peers) peer.KeepAlive();
                     server.TestSendSnapshotBarrier(marker);
-                    Assert.True(SpinWait.SpinUntil(() => peers.All(p => p.LastMarker == marker), TimeSpan.FromSeconds(30)),
+                    Assert.True(SpinWait.SpinUntil(() => peers.All(p => p.LastMarker == marker),
+                        TimeSpan.FromSeconds(30 * speed / regr)),   // P744 hardware-relative drain budget
                         $"Transport barrier {marker}: {peers.Count(p => p.LastMarker == marker)}/{count} drained; "
                         + string.Join("; ", peers.Where(p => p.LastMarker != marker).Take(4)
                             .Select(p => $"last={p.LastMarker} frames={p.Frames} error={p.Error}")));
