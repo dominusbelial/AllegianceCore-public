@@ -203,6 +203,23 @@ public enum ClientSoundEventKind
     /// ship's own streamed <c>ShieldFraction</c> falling from online to ≈0.</summary>
     ShieldsOffline,
 
+    // ── P735 (parity wave 22: own-ship state notification one-shots) ───────
+
+    /// <summary><c>cloak engage</c> — the local ship's cloak became active
+    /// (native CloakActive state bit false→true, Igc/shipIGC.cpp:1608; wave
+    /// <c>vo_sal_cloakengage</c>, sounddef.mdl:807). A local one-shot on the
+    /// own ship's streamed <c>StateM</c> CloakActive bit, exactly once per
+    /// engagement.</summary>
+    CloakEngaged,
+
+    /// <summary><c>pickUpPartSound</c> — the local ship picked up a part
+    /// (native server-side shipIGC.h:1307; wave <c>hoover</c>, sounddef.mdl:278).
+    /// Native plays this at the acquiring ship via the server-side
+    /// <c>PlayNotificationSound</c> (not the client ACQUIRE_TREASURE handler,
+    /// appmsg.cpp:266-275, which is silent for <c>c_tcPart</c>); the port
+    /// reproduces the player-facing cue on the same <c>c_tcPart</c> pickup.</summary>
+    PickupPart,
+
     // ── P719 (parity wave 18: station/economy + weapons/ordnance loadout) ──
     // One-shot announce/feedback cues in the station/economy and loadout areas
     // (sim-rules-matrix sounds area). Wire/state-driven where the client
@@ -227,6 +244,93 @@ public enum ClientSoundEventKind
     /// sounddef.mdl:782). Detected on a ship whose ParentId becomes the local
     /// ship's id.</summary>
     Boarded,
+
+    // ── P736 (parity wave 23: presence / side-change salutations) ──────────
+    // Native fires the presence salutation VOs from the CLIENT's
+    // RemovePlayerFromSide / AddPlayerToSide (clintlib/clintlib.cpp) when the
+    // client processes the server's player-quit and player-join side events.
+    // The port's server already broadcasts the underlying wire for the reachable
+    // cases (JOIN_SIDE on every side join; QUIT_MISSION on a LinkDead disconnect;
+    // QUIT_SIDE on the quit-half of a same-mission side switch), so these are
+    // reproduced as client one-shots on those messages, gated exactly as native
+    // gates them (human player, mission started, connected, side relationship).
+
+    /// <summary><c>salQuitSound</c> — a same-side player quit the mission
+    /// (RemovePlayerFromSide, clintlib.cpp:3952-3991 for the boot/quit reasons;
+    /// wave <c>vo_sal_quit</c>, sounddef.mdl:828). Note native maps salQuitSound
+    /// to the <c>vo_sal_mia</c> wave (sounddef.mdl:827-828); the port uses the
+    /// dedicated <c>vo_sal_quit</c> wave when the quitting player's reason is a
+    /// plain quit rather than MIA.</summary>
+    SalQuit,
+
+    /// <summary><c>salChangeSidesSound</c> — a same-side player is switching
+    /// sides (QUIT_SIDE with QSR_SwitchingSides, clintlib.cpp:3975; wave
+    /// <c>vo_sal_traitor</c>, sounddef.mdl:829).</summary>
+    SalChangeSides,
+
+    /// <summary><c>salMIASound</c> — a same-side player went MIA (a LinkDead
+    /// disconnect, QUIT_MISSION default/LinkDead case, clintlib.cpp:3999; wave
+    /// <c>vo_sal_mia</c>, sounddef.mdl:826).</summary>
+    SalMia,
+
+    /// <summary><c>salEnemyLeavesSound</c> — a player on an enemy (non-allied)
+    /// side left the mission (RemovePlayerFromSide other-side branch,
+    /// clintlib.cpp:4006-4009; wave <c>vo_sal_enemyleaves</c>, sounddef.mdl:831).</summary>
+    SalEnemyLeaves,
+
+    /// <summary><c>salRecruitsArrivedSound</c> — a human player joined OUR side
+    /// (AddPlayerToSide, clintlib.cpp:4155; wave <c>vo_sal_recruitsarrived</c>,
+    /// sounddef.mdl:825).</summary>
+    SalRecruitsArrived,
+
+    /// <summary><c>salEnemyJoinersSound</c> — a human player joined an enemy
+    /// side (AddPlayerToSide, clintlib.cpp:4162; wave <c>vo_sal_enemyjoiners</c>,
+    /// sounddef.mdl:830).</summary>
+    SalEnemyJoiners,
+
+    // ── P737 (parity wave 24: own-ship reload & loadout feedback) ─────────
+    // Native fires the reload one-shots from the fire/expendable auto-reload
+    // regions when a fire empties a pool and a spare pack is drained from cargo
+    // (FireMissile clintlib.cpp:3216-3225; FireExpendable clintlib.cpp:3394-3417;
+    // SetAmmo/SetFuel shipIGC.h:605-650). This pure-renderer client observes a
+    // SUCCESSFUL reload as the own ship's FM_S_RELOAD(129) relay — the port's
+    // server broadcasts the applied cargo→pool transfers sector-wide on success
+    // (Server.Combat.BroadcastAutoReload; failures are never relayed). Each
+    // relay entry names the consumed cargo slot, which the client classifies by
+    // its part type (mirroring Ship.TryApplyReloadEntry) to pick the
+    // type-specific cue; every successful reload also plays the generic
+    // startReloadSound. All gated to the local ship (native plays these only
+    // for <c>pShip == m_ship</c>).
+
+    /// <summary><c>salReloadingAmmoSound</c> — the local ship's ammo pool was
+    /// auto-refilled from a spare ammo pack (shipIGC.h:616; wave
+    /// <c>vo_sal_reloadingammo</c>, sounddef.mdl:818).</summary>
+    SalReloadingAmmo,
+
+    /// <summary><c>salReloadingFuelSound</c> — the local ship's fuel pool was
+    /// auto-refilled from a spare fuel pack (shipIGC.h:646; wave
+    /// <c>vo_sal_reloadingfuel</c>, sounddef.mdl:814).</summary>
+    SalReloadingFuel,
+
+    /// <summary><c>salReloadingMissilesSound</c> — the local ship's missile
+    /// launcher was reloaded from a spare missile pack (clintlib.cpp:3221; wave
+    /// <c>vo_sal_reloadingmissiles</c>, sounddef.mdl:816).</summary>
+    SalReloadingMissiles,
+
+    /// <summary><c>salReloadingChaffSound</c> — the local ship's chaff launcher
+    /// was reloaded from a spare chaff pack (clintlib.cpp:3400; wave
+    /// <c>vo_sal_reloadingchaff</c>, sounddef.mdl:815).</summary>
+    SalReloadingChaff,
+
+    /// <summary><c>salReloadingDispenserSound</c> — the local ship's mine/probe
+    /// dispenser was reloaded from a spare pack (clintlib.cpp:3403 default; wave
+    /// <c>vo_sal_reloadingdispenser</c>, sounddef.mdl:817).</summary>
+    SalReloadingDispenser,
+
+    /// <summary><c>startReloadSound</c> — the generic "reloading..." cue played
+    /// on EVERY successful reload of any pool/launcher (clintlib.cpp:3219,3404;
+    /// shipIGC.h:617,647; wave <c>mount</c>, sounddef.mdl:289).</summary>
+    StartReload,
 }
 
 /// <summary>A single observed sound event.</summary>

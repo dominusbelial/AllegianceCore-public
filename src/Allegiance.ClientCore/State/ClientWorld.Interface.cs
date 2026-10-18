@@ -82,6 +82,7 @@ public sealed partial class ClientWorld
     private void Apply(QuitSide message)
     {
         if (!_ships.TryGetValue(message.ShipId, out var ship) || ship.SideId < 0) return;
+        ApplySideLeave(message.ShipId, message.Reason);
         short oldSide = ship.SideId;
         bool own = message.ShipId == (JoinedShipId ?? MyShipId);
         if (_leaderShipIdBySideId.GetValueOrDefault(oldSide, (short)-1) == message.ShipId)
@@ -169,7 +170,7 @@ public sealed partial class ClientWorld
         else
         {
             if (ship.SideId >= 0)
-                Apply(new QuitSide { ShipId = message.ShipId, Reason = (QuitSideReason)8 });
+                Apply(new QuitSide { ShipId = message.ShipId, Reason = message.Reason, Message = message.Message });
             _ships.Remove(message.ShipId);
             _mutedPilots.Remove(message.ShipId);
             _roster.Remove(message.ShipId);

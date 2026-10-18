@@ -1,0 +1,162 @@
+{
+  "focused": {
+    "methods": 223,
+    "invocations": 670,
+    "three_passes_after_last_failure": true,
+    "total": 961,
+    "passed": 960,
+    "failed": 1,
+    "notExecuted": 0,
+    "skipped": 0
+  },
+  "showcase": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "notExecuted": 0,
+    "skipped": 0
+  },
+  "suites": {
+    "suite-Core": {
+      "total": "4782",
+      "executed": "4782",
+      "passed": "4780",
+      "failed": "2",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0",
+      "outcome_skipped": 0
+    },
+    "suite-ClientCore": {
+      "total": "1267",
+      "executed": "1267",
+      "passed": "1266",
+      "failed": "1",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0",
+      "outcome_skipped": 0
+    },
+    "suite-ClientCore.MonoGame": {
+      "total": "2424",
+      "executed": "2421",
+      "passed": "2420",
+      "failed": "1",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0",
+      "outcome_skipped": 3
+    }
+  },
+  "failures": [
+    {
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "message": "\n      \n        \n          System.TimeoutException : no OnPeerJoined for raw peer\n             at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.ConnectRawPeer(TcpTransport host, Site site, String name, Boolean tinyReceiveWindow) in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 119\n   at Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn() in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/Transport/TcpTransportSendWorkerPoolTests.cs:line 346\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+      "name": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+      "message": "\n      \n        \n          peers must keep receiving per-tick updates while stdout is stalled\n             at Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout() in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/Transport/ConsoleVerbosityLiveTests.cs:line 281\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "name": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "message": "\n      \n        \n          Assert.Equal() Failure: Values differ\nExpected: 1053\nActual:   1060\n             at Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume() in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/ClientWarpApproachSlowHullLiveTests.cs:line 314\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.MiscKeyBindingLiveTests.Live_own_ship_is_real_and_center_ranking_selects_a_real_ship",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.MiscKeyBindingLiveTests.Live_own_ship_is_real_and_center_ranking_selects_a_real_ship",
+      "message": "\n      \n        \n          Assert.All() Failure: 4 out of 4 items in the collection did not pass.\n[0]: Item:  AutopilotTarget { Kind = Warp, Id = 2167, Name = Terra, CommandId = -1 }\n     Error: Assert.Equal() Failure: Values differ\n            Expected: Ship\n            Actual:   Warp\n[1]: Item:  AutopilotTarget { Kind = Warp, Id = 2168, Name = Bug Nebula, CommandId = -1 }\n     Error: Assert.Equal() Failure: Values differ\n            Expected: Ship\n            Actual:   Warp\n[2]: Item:  AutopilotTarget { Kind = Warp, Id = 2176, Name = Rigel, CommandId = -1 }\n     Error: Assert.Equal() Failure: Values differ\n            Expected: Ship\n            Actual:   Warp\n[3]: Item:  AutopilotTarget { Kind = Warp, Id = 2178, Name = Plato, CommandId = -1 }\n     Error: Assert.Equal() Failure: Values differ\n            Expected: Ship\n            Actual:   Warp\n             at Allegiance.ClientCore.MonoGame.Tests.MiscKeyBindingLiveTests.Live_own_ship_is_real_and_center_ranking_selects_a_real_ship() in /home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.MonoGame.Tests/MiscKeyBindingLiveTests.cs:line 149\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+    },
+    {
+      "method": "Allegiance.Core.Tests.LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it",
+      "name": "Allegiance.Core.Tests.LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it",
+      "message": "\n      \n        \n          Assert.Single() Failure: The collection was empty\n             at Allegiance.Core.Tests.LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it() in /home/domingo/allegiance-integ-b2/tests/Allegiance.Core.Tests/LiveTreasurePickupTests.cs:line 196\n   at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n        \n      \n    "
+    }
+  ],
+  "failure_qualification": {
+    "Allegiance.ClientCore.MonoGame.Tests.MiscKeyBindingLiveTests.Live_own_ship_is_real_and_center_ranking_selects_a_real_ship": {
+      "invocations": 3,
+      "all_passed": true,
+      "counts": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      }
+    },
+    "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume": {
+      "invocations": 3,
+      "all_passed": true,
+      "counts": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      }
+    },
+    "Allegiance.Core.Tests.LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it": {
+      "invocations": 3,
+      "all_passed": true,
+      "counts": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      }
+    },
+    "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout": {
+      "invocations": 3,
+      "all_passed": true,
+      "counts": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      }
+    },
+    "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn": {
+      "invocations": 3,
+      "all_passed": true,
+      "counts": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      }
+    }
+  }
+}

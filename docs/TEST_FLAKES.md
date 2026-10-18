@@ -1575,3 +1575,39 @@ See the [P738 appendix](reports/P722_INTERFACE_WAVE.md#p738-merge-onto-master),
 [invocation ledger](reports/P738_P722_assets/verification.json),
 [case outcomes](reports/P738_P722_assets/case-results.json), and
 [raw logs/TRX](reports/P738_P722_assets/validation-logs.tar.gz).
+
+## P738 master merge — focused live treasure receipt (2026-10-17)
+
+`Allegiance.Core.Tests.LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it`
+failed once in a fresh focused process at `LiveTreasurePickupTests.cs:196`
+(`Assert.Single`: a same-side peer's `MoneyChanges` collection was empty).
+The fixture waits for `DESTROY_TREASURE` on all peers, then immediately reads
+`MONEY_CHANGE`; those are separate receive paths. This is the same receipt
+flake already recorded above. The next **three fresh isolated invocations all
+passed** (1.374 s, 1.387 s, 1.420 s), with no source or fixture changes.
+Classified as a load/timing flake under the P738 lane rule. The first failure
+and all three recovery results remain in
+`docs/reports/P738_master_assets/verification.json` and the raw validation archive.
+
+## P738 master merge — full-suite isolation (2026-10-17)
+
+The Core, ClientCore and MonoGame assemblies ran once each after the clean
+Release build. Every method below failed in that measured pass and then
+passed in **three fresh isolated processes**, with no source or fixture
+changes between the failure and recovery. Classified as load/timing flakes
+under the brief's lane rule; the initial failures are retained, not replaced
+with the recovery results.
+
+| test | failing phase | observed symptom | post-failure isolation |
+|---|---|---|---|
+| `Allegiance.ClientCore.MonoGame.Tests.MiscKeyBindingLiveTests.Live_own_ship_is_real_and_center_ranking_selects_a_real_ship` | suite-ClientCore.MonoGame | Assert.All() Failure: 4 out of 4 items in the collection did not pass. | 3/3 passed |
+| `Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume` | suite-ClientCore | Assert.Equal() Failure: Values differ | 3/3 passed |
+| `Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout` | suite-Core | peers must keep receiving per-tick updates while stdout is stalled | 3/3 passed |
+| `Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | suite-Core | System.TimeoutException : no OnPeerJoined for raw peer | 3/3 passed |
+
+Exact commands, timing, failure messages and counters are in
+`docs/reports/P738_master_assets/verification.json`; raw logs/TRX are retained
+in `validation-logs.tar.gz`, with compact qualifications in
+`flake-qualification.json`. No full assembly was rerun to obtain a clean total.
+The two guards that launch git were excluded to honor the explicit no-git
+instruction; ordinary live/loopback and LiveTiming tests were included.

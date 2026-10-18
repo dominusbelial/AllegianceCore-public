@@ -1,0 +1,11 @@
+{
+  "indexed_paths": 16931,
+  "private_path_offenders": [],
+  "meshy_offenders": [
+    "src/Allegiance.ClientCore.MonoGame/Content/Models/MODELS_MANIFEST_P287.json",
+    "src/Allegiance.ClientCore.MonoGame/Content/Models/MODELS_MANIFEST_P287.md"
+  ],
+  "meshy_rule_would_pass": false,
+  "all_meshy_hits_are_unchanged_manifest_documents": true,
+  "read_only_index_enumeration": true
+}

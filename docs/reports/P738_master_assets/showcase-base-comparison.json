@@ -1,0 +1,28 @@
+{
+  "historical_base_evidence": "docs/reports/P738_P732_assets/verification.json",
+  "historical_base": {
+    "runs": 5,
+    "passed": 5,
+    "failed": 0,
+    "seconds": [
+      95.378,
+      98.271,
+      95.826,
+      100.134,
+      95.083
+    ]
+  },
+  "current_dedicated_gate": {
+    "runs": 5,
+    "passed": 5,
+    "failed": 0,
+    "seconds": [
+      94.341,
+      94.731,
+      96.783,
+      93.97,
+      94.355
+    ]
+  },
+  "comparison": "0/5 failures on both the historical integration base and this merge."
+}

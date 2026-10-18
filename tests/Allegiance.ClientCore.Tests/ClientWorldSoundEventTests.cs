@@ -133,12 +133,16 @@ public class ClientWorldSoundEventTests
     }
 
     [Fact]
-    public void AcquirePart_RecordsNoPickupSound()
+    public void AcquirePart_RecordsPickupPartSound()
     {
-        // c_tcPart has no pickup cue (it triggers a TREASURE_ACK instead, appmsg.cpp:267-276).
+        // P735 — SIM-0268: a c_tcPart pickup plays the pickUpPartSound cue
+        // (native plays it server-side at the ship, shipIGC.h:1307; the client
+        // ACQUIRE_TREASURE handler itself is silent, appmsg.cpp:267-276).
         var world = new ClientWorld();
-        world.Apply(new AcquireTreasure { TreasureCode = (byte)Allegiance.Core.TreasureCode.Part, TreasureId = 1 });
-        Assert.Empty(world.TakeSoundEvents());
+        world.Apply(new AcquireTreasure { TreasureCode = (byte)Allegiance.Core.TreasureCode.Part, TreasureId = 601, Amount = 1 });
+        var ev = Assert.Single(world.TakeSoundEvents());
+        Assert.Equal(ClientSoundEventKind.PickupPart, ev.Kind);
+        Assert.Equal(601, ev.Id);
     }
 
     // ── P710 — incoming-message notification cues (trekigc.cpp:4536-4560) ───
@@ -560,6 +564,97 @@ public class ClientWorldSoundEventTests
         Assert.Empty(w.TakeSoundEvents());
     }
 
+    // ── P735 (parity wave 22): own-ship state notification one-shots ────────
+
+    /// <summary>Arm <see cref="ClientWorld.UpdateOwnStatusAlarms"/> with the
+    /// local ship wearing the given cloak stateM bit (CloakActive = 0x800,
+    /// ShipControlState.CloakActive), then discard the arming pass.</summary>
+    private static ClientWorld CloakArmedWorld(short me, int stateM)
+    {
+        var w = new ClientWorld();
+        var pose = ServerShipUpdate.FromValues(
+            me, stateM: stateM, new ControlData(0f, 0f, 0f, 0f), time: 1u,
+            Vector3.Zero, Orientation.Identity, Vector3.Zero,
+            turnRates: new[] { 0f, 0f, 0f },
+            hullFrac: 1f, shieldFrac: 1f, ammoFrac: 1f, fuelFrac: 1f,
+            energyFrac: 1f, oreFrac: 0f, power: 1f);
+        w.Apply(new SetCluster { SectorId = 1, Ship = pose, Cookie = 0x1 });
+        w.UpdateOwnStatusAlarms();   // arm
+        w.TakeSoundEvents();         // discard arming-pass emissions
+        return w;
+    }
+
+    [Fact]
+    public void OwnCloakEngages_RecordsCloakEngaged()
+    {
+        // SIM-0248 — the local ship's CloakActive bit going false→true plays
+        // the cloak-engage cue (native shipIGC.cpp:1608; vo_sal_cloakengage).
+        var w = CloakArmedWorld(775, stateM: 0);
+
+        w.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromValues(
+                775, stateM: Allegiance.Core.Sim.ShipControlState.CloakActive,
+                new ControlData(0f, 0f, 0f, 0f), time: 2u,
+                Vector3.Zero, Orientation.Identity, Vector3.Zero,
+                turnRates: new[] { 0f, 0f, 0f },
+                hullFrac: 1f, shieldFrac: 1f, ammoFrac: 1f, fuelFrac: 1f,
+                energyFrac: 1f, oreFrac: 0f, power: 1f),
+            Cookie = 0x2,
+        });
+        w.UpdateOwnStatusAlarms();
+
+        var ev = Assert.Single(w.TakeSoundEvents());
+        Assert.Equal(ClientSoundEventKind.CloakEngaged, ev.Kind);
+        Assert.Equal((short)775, ev.Id);
+    }
+
+    [Fact]
+    public void OwnCloakAlreadyActive_DoesNotRefire()
+    {
+        // Arming already cloaked: staying cloaked must not re-fire the cue.
+        var w = CloakArmedWorld(775, stateM: Allegiance.Core.Sim.ShipControlState.CloakActive);
+
+        w.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromValues(
+                775, stateM: Allegiance.Core.Sim.ShipControlState.CloakActive,
+                new ControlData(0f, 0f, 0f, 0f), time: 3u,
+                Vector3.Zero, Orientation.Identity, Vector3.Zero,
+                turnRates: new[] { 0f, 0f, 0f },
+                hullFrac: 1f, shieldFrac: 1f, ammoFrac: 1f, fuelFrac: 1f,
+                energyFrac: 1f, oreFrac: 0f, power: 1f),
+            Cookie = 0x2,
+        });
+        w.UpdateOwnStatusAlarms();
+
+        Assert.Empty(w.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void OwnCloakUncloaks_NoEvent()
+    {
+        // Cloak turning back off is not a cue (native only sounds the engage).
+        var w = CloakArmedWorld(775, stateM: Allegiance.Core.Sim.ShipControlState.CloakActive);
+
+        w.Apply(new SetCluster
+        {
+            SectorId = 1,
+            Ship = ServerShipUpdate.FromValues(
+                775, stateM: 0, new ControlData(0f, 0f, 0f, 0f), time: 4u,
+                Vector3.Zero, Orientation.Identity, Vector3.Zero,
+                turnRates: new[] { 0f, 0f, 0f },
+                hullFrac: 1f, shieldFrac: 1f, ammoFrac: 1f, fuelFrac: 1f,
+                energyFrac: 1f, oreFrac: 0f, power: 1f),
+            Cookie = 0x2,
+        });
+        w.UpdateOwnStatusAlarms();
+
+        Assert.Empty(w.TakeSoundEvents());
+    }
+
     // ── P719 (parity wave 18): station/economy + loadout command one-shots ──
 
     [Fact]
@@ -642,5 +737,304 @@ public class ClientWorldSoundEventTests
         world.Apply(new PositionReqBroadcast { ShipId = 937, SideId = 2 });
 
         Assert.Equal(ClientSoundEventKind.PlayerWaiting, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    // ── P736 (parity wave 23): presence / side-change salutations ──────────
+    // Native voices these from the CLIENT's RemovePlayerFromSide /
+    // AddPlayerToSide (clintlib.cpp:3867-4009, 4140-4172) when it processes the
+    // server's player-quit/player-join side events. The port reproduces them on
+    // the JOIN_SIDE(125) / QUIT_MISSION(124) / QUIT_SIDE(126) broadcasts the
+    // server already sends. Failing-first: the SalQuit/SalChangeSides/SalMia/
+    // SalEnemyLeaves/SalRecruitsArrived/SalEnemyJoiners kinds did not exist
+    // before P736 (compile errors on the pre-change tree).
+
+    /// <summary>Seat the local player on a side and advance the mission to
+    /// STAGE_STARTED (native gates every presence salutation on
+    /// STAGE_STARTED, clintlib.cpp:3924, 4141).</summary>
+    private static ClientWorld StartedWorld(short mySide)
+    {
+        var w = new ClientWorld();
+        SetMySide(w, mySide);
+        w.Apply(new MissionStageMessage { Stage = MissionStageMessage.StageStarted });
+        return w;
+    }
+
+    /// <summary>Seed a known HUMAN player ship on a side (PlayerInfo with
+    /// PilotType=player — native's IsHuman() gate, clintlib.cpp:3924).</summary>
+    private static void SeedHumanShip(ClientWorld w, short shipId, short side)
+    {
+        w.Apply(new ExportShip { ShipId = shipId, SideId = side });
+        w.Apply(new PlayerInfo { ShipId = shipId, ISide = side, CharacterName = $"p{shipId}", PilotType = PlayerInfo.PilotTypePlayer });
+    }
+
+    [Fact]
+    public void HumanJoinsOurSide_RecordsSalRecruitsArrived()
+    {
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 511, side: 999);   // sitting in the team lobby pre-join
+
+        world.Apply(new JoinSide { ShipId = 511, SideId = 2 });   // joins OUR side
+
+        var ev = Assert.Single(world.TakeSoundEvents());
+        Assert.Equal(ClientSoundEventKind.SalRecruitsArrived, ev.Kind);
+        Assert.Equal((short)511, ev.Id);
+    }
+
+    [Fact]
+    public void HumanJoinsEnemySide_RecordsSalEnemyJoiners()
+    {
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 512, side: 999);
+
+        world.Apply(new JoinSide { ShipId = 512, SideId = 7 });   // enemy side
+
+        Assert.Equal(ClientSoundEventKind.SalEnemyJoiners, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void HumanJoinsAlliedDifferentSide_RecordsNothing()
+    {
+        // Native: an allied-but-different side join is TEXT ONLY (sal id 0,
+        // clintlib.cpp:4151) — no sound cue.
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 513, side: 999);
+        world.Apply(new ChangeAlliances { Allies = [0, 0, 1, 1, -1, -1] });   // sides 2 and 3 allied
+        SetMySide(world, 2);
+
+        world.Apply(new JoinSide { ShipId = 513, SideId = 3 });   // allied side
+
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void DroneJoinsSide_RecordsNothing()
+    {
+        // Native's IsHuman() gate (clintlib.cpp:4141): a non-human joiner
+        // (drone/constructor) voices no presence salutation.
+        var world = StartedWorld(mySide: 2);
+        world.Apply(new ExportShip { ShipId = 519, SideId = 998 });
+        world.Apply(new PlayerInfo { ShipId = 519, ISide = 997, CharacterName = "miner", PilotType = 4 });   // c_ptMiner
+
+        world.Apply(new JoinSide { ShipId = 519, SideId = 994 });
+
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void MissionNotStarted_JoinRecordsNothing()
+    {
+        var world = new ClientWorld();
+        SetMySide(world, 2);                                   // stage defaults to NotStarted
+        SeedHumanShip(world, 516, side: 995);
+
+        world.Apply(new JoinSide { ShipId = 516, SideId = 996 });
+
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void SameSideHumanGoesLinkDead_RecordsSalMia()
+    {
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 601, side: 2);   // a teammate
+
+        world.Apply(new QuitMission { ShipId = 601, Reason = QuitSideReason.LinkDead });
+
+        Assert.Equal(ClientSoundEventKind.SalMia, Assert.Single(world.TakeSoundEvents()).Kind);
+        Assert.False(world.Ships.ContainsKey(601)); // P718 cleanup survives the cue.
+        Assert.Equal(QuitSideReason.LinkDead, world.LastDeparture!.Value.Reason);
+        world.Apply(new QuitMission { ShipId = 601, Reason = QuitSideReason.LinkDead });
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void SameSideHumanSwitchesSides_RecordsSalChangeSides()
+    {
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 602, side: 2);
+
+        world.Apply(new QuitSide { ShipId = 602, Reason = QuitSideReason.SwitchingSides });
+
+        Assert.Equal(ClientSoundEventKind.SalChangeSides, Assert.Single(world.TakeSoundEvents()).Kind);
+        Assert.Equal((short)-2, world.Ships[602].SideId);
+        world.Apply(new QuitSide { ShipId = 602, Reason = QuitSideReason.SwitchingSides });
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void EnemySideHumanLeaves_RecordsSalEnemyLeaves()
+    {
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 703, side: 7);   // enemy
+
+        world.Apply(new QuitMission { ShipId = 703, Reason = QuitSideReason.LinkDead });
+
+        Assert.Equal(ClientSoundEventKind.SalEnemyLeaves, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void AlliedSideHumanLeaves_RecordsSalQuit()
+    {
+        // Native other-side branch (clintlib.cpp:4006-4009): an ALLIED (not our
+        // own) side leaver voices salQuitSound; only a non-allied one gets
+        // salEnemyLeavesSound.
+        var world = StartedWorld(mySide: 2);
+        SeedHumanShip(world, 704, side: 3);
+        world.Apply(new ChangeAlliances { Allies = [0, 0, 1, 1, -1, -1] });   // sides 2 and 3 allied
+        SetMySide(world, 2);
+
+        world.Apply(new QuitMission { ShipId = 704, Reason = QuitSideReason.LinkDead });
+
+        Assert.Equal(ClientSoundEventKind.SalQuit, Assert.Single(world.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void OwnShipQuitMission_RecordsNothing()
+    {
+        // Native: our OWN leave goes through OnQuitSide, not the presence
+        // salutation (clintlib.cpp:3940-3941).
+        var world = StartedWorld(mySide: 2);
+        SeatMe(world, 885, sector: 3, Vector3.Zero);
+
+        world.Apply(new QuitMission { ShipId = 885, Reason = QuitSideReason.LinkDead });
+
+        Assert.Empty(world.TakeSoundEvents());
+    }
+
+    // ── P737 (parity wave 24): own-ship reload one-shots ─────────────────
+    // Native plays a type-specific sal + the generic startReloadSound when a
+    // fire empties a pool and a spare pack auto-reloads (clintlib.cpp:3216-3417,
+    // shipIGC.h:605-650). The port observes the own-ship RELOAD(129) relay and
+    // classifies each consumed cargo slot's part type (Ship.TryApplyReloadEntry).
+
+    private static DataPartTypeIGC ReloadPart(short id, DataPartTypeIGC.Subtype t) => new(
+        Price: 0, TimeToBuild: 0, ModelName: "m", IconName: "i", Name: "p",
+        Description: "", GroupId: 0, TtbmRequired: [], TtbmEffects: [],
+        Mass: 1f, Signature: 0f, PartId: id, SuccessorPartId: -1, PartMask: 0,
+        InventoryLineMdl: "", Type: t);
+
+    /// <summary>Seed a world whose own ship carries the given cargo slots
+    /// (mount, part) and whose PartTypeResolver answers from the map.</summary>
+    private static ClientWorld ReloadWorld(short me,
+        IEnumerable<(sbyte mount, short partId, DataPartTypeIGC type)> cargo)
+    {
+        var w = WorldWithMeSeated(me);
+        var map = new Dictionary<short, DataPartTypeIGC>();
+        var parts = new List<ExpandedPartData>();
+        foreach (var (mount, partId, type) in cargo)
+        {
+            map[partId] = type;
+            parts.Add(new ExpandedPartData(PartId: partId, Amount: 1,
+                MountId: unchecked((byte)mount), FractionMounted: 0));
+        }
+        w.PartTypeResolver = pid => map.TryGetValue(pid, out var t) ? t : null;
+        w.Apply(new BuyLoadoutAck { HullId = 7813, FBoughtEverything = true, Parts = parts });
+        return w;
+    }
+
+    [Fact]
+    public void OwnAmmoReload_RecordsSalReloadingAmmoAndStartReload()
+    {
+        // Ammo pack (c_packAmmo = 0) at cargo slot 0 (mount -1): native
+        // shipIGC.h:617 plays salReloadingAmmoSound + startReloadSound.
+        var w = ReloadWorld(me: 911,
+            [(mount: -1, partId: 910, type: ReloadPart(910, new DataPartTypeIGC.Pack(PackType: 0, Amount: 100)))]);
+        w.Apply(new Reload { ShipID = 911, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+
+        var evs = w.TakeSoundEvents();
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.SalReloadingAmmo);
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.StartReload);
+        Assert.All(evs, e => Assert.Equal((short)911, e.Id));
+        Assert.Equal(2, evs.Count);
+        Assert.Empty(w.Ships[911].Cargo!); // P726 transfer runs after classification.
+        Assert.Equal(1, w.Ships[911].ReloadCount);
+        w.Apply(new Reload { ShipID = 911, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+        Assert.Empty(w.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void OwnFuelReload_RecordsSalReloadingFuel()
+    {
+        // Fuel pack (c_packFuel = 1): shipIGC.h:647 salReloadingFuelSound.
+        var w = ReloadWorld(me: 912,
+            [(mount: -1, partId: 920, type: ReloadPart(920, new DataPartTypeIGC.Pack(PackType: 1, Amount: 100)))]);
+        w.Apply(new Reload { ShipID = 912, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+
+        var evs = w.TakeSoundEvents();
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.SalReloadingFuel);
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.StartReload);
+    }
+
+    [Fact]
+    public void OwnMissileReload_RecordsSalReloadingMissiles()
+    {
+        // Missile pack (EquipmentType.Magazine): clintlib.cpp:3221.
+        var w = ReloadWorld(me: 913,
+            [(mount: -1, partId: 930, type: ReloadPart(930, new DataPartTypeIGC.MissileLauncher(5)))]);
+        w.Apply(new Reload { ShipID = 913, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+
+        var evs = w.TakeSoundEvents();
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.SalReloadingMissiles);
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.StartReload);
+    }
+
+    [Fact]
+    public void OwnChaffReload_RecordsSalReloadingChaff()
+    {
+        var w = ReloadWorld(me: 914,
+            [(mount: -1, partId: 931, type: ReloadPart(931, new DataPartTypeIGC.ChaffLauncher(6)))]);
+        w.Apply(new Reload { ShipID = 914, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+
+        var evs = w.TakeSoundEvents();
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.SalReloadingChaff);
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.StartReload);
+    }
+
+    [Fact]
+    public void OwnDispenserReload_RecordsSalReloadingDispenser()
+    {
+        // Mine pack (EquipmentType.Dispenser): clintlib.cpp:3403 default.
+        var w = ReloadWorld(me: 915,
+            [(mount: -1, partId: 932, type: ReloadPart(932, new DataPartTypeIGC.MineLauncher(7)))]);
+        w.Apply(new Reload { ShipID = 915, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+
+        var evs = w.TakeSoundEvents();
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.SalReloadingDispenser);
+        Assert.Contains(evs, e => e.Kind == ClientSoundEventKind.StartReload);
+    }
+
+    [Fact]
+    public void OtherShipReload_RecordsNothing()
+    {
+        // Native gates all reload one-shots to the local ship (pShip == m_ship).
+        var w = ReloadWorld(me: 916,
+            [(mount: -1, partId: 933, type: ReloadPart(933, new DataPartTypeIGC.Pack(PackType: 0, Amount: 100)))]);
+        w.Apply(new Reload { ShipID = 917, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+
+        Assert.Empty(w.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void NonReloadableCargoType_StillRecordsGenericStartReload()
+    {
+        // A weapon (not a pack/launcher) reloads nothing type-specific in
+        // native's Reload, but the generic startReloadSound is always played on
+        // a successful reload entry.
+        var w = ReloadWorld(me: 918,
+            [(mount: -1, partId: 934, type: ReloadPart(934, new DataPartTypeIGC.Weapon(0,0,0,0,1,1,0,0,0)))]);
+        w.Apply(new Reload { ShipID = 918, Entries = [new ReloadData((short)-1, (sbyte)-1)] });
+
+        Assert.Equal(ClientSoundEventKind.StartReload, Assert.Single(w.TakeSoundEvents()).Kind);
+    }
+
+    [Fact]
+    public void ReloadOfAbsentCargoSlot_RecordsNothing()
+    {
+        // No cargo item at the relayed slot: nothing was classified.
+        var w = ReloadWorld(me: 919,
+            [(mount: -1, partId: 935, type: ReloadPart(935, new DataPartTypeIGC.Pack(PackType: 0, Amount: 100)))]);
+        w.Apply(new Reload { ShipID = 919, Entries = [new ReloadData((short)-1, (sbyte)-5)] });
+
+        Assert.Empty(w.TakeSoundEvents());
     }
 }

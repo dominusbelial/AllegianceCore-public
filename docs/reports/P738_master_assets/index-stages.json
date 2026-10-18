@@ -1,0 +1,27 @@
+{
+  "docs/parity/sim-rules-matrix.csv": {
+    "1": "073cbc62408fedd7776c89da32e8c80543b6113e",
+    "2": "d5bb020003aa51e854fa8f90107810a7e3a9f1b2",
+    "3": "f070b4ccea637089778bd40e7aea47986ea5988e"
+  },
+  "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs": {
+    "1": "a0b59d5883bbdd1fb379619ab34c8f2c39fda235",
+    "2": "152c8767d7f688c3b6f370893cbeb78bc7195332",
+    "3": "89e559926954b7ea7c0931c7691bc923793d3981"
+  },
+  "src/Allegiance.ClientCore.MonoGame/Content/Content.mgcb": {
+    "1": "074bae7820c94a6bcc3700a6236bf484c343c1b0",
+    "2": "7a4e6c6d64663e1765cb52c0d4fb902919301919",
+    "3": "6c47f1867db93893ceebeb323aee7ba1aa080898"
+  },
+  "src/Allegiance.ClientCore/State/ClientWorld.cs": {
+    "1": "9e743db255719d40cf411a4313fede1aae386cb2",
+    "2": "73958513ac77fabbd4ae0b7d905eedc8bcaa6da1",
+    "3": "f8115f285ab1374c9f7809328244b40ca5170f9a"
+  },
+  "tests/Allegiance.Core.Tests/P652EconomyDroneAiTests.cs": {
+    "1": "5c6267fd47f7feb5284babc73d264995802ddcf5",
+    "2": "d6395b43fc5e4dcc08c540ebff53ed5e71db6693",
+    "3": "afce9fe7a15db3f85e3fcda268d42fa55b68ef07"
+  }
+}

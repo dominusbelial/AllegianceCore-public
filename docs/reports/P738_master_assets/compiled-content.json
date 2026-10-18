@@ -1,0 +1,14 @@
+{
+  "vo_sal_cloakengage.ogg": true,
+  "vo_sal_enemyjoiners.ogg": true,
+  "vo_sal_enemyleaves.ogg": true,
+  "vo_sal_mia.ogg": true,
+  "vo_sal_quit.ogg": true,
+  "vo_sal_recruitsarrived.ogg": true,
+  "vo_sal_reloadingammo.ogg": true,
+  "vo_sal_reloadingchaff.ogg": true,
+  "vo_sal_reloadingdispenser.ogg": true,
+  "vo_sal_reloadingfuel.ogg": true,
+  "vo_sal_reloadingmissiles.ogg": true,
+  "vo_sal_traitor.ogg": true
+}

@@ -1,0 +1,13 @@
+{
+  "merge_metadata_unchanged": true,
+  "no_git_commands_used": true,
+  "guards_excluded_because_they_invoke_git": [
+    "MeshyGuardTests",
+    "PrivatePathGuardTests"
+  ],
+  "source_fingerprints_match": true,
+  "conflict_markers_remaining": false,
+  "LF_parity_matrices": true,
+  "all_690_gate_invocations_archived": true,
+  "incoming_reports_appended": true
+}

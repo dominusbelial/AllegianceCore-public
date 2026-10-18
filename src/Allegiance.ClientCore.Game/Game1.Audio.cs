@@ -452,6 +452,12 @@ public sealed partial class Game1
                     snd.PlayPickupCash();
                     Console.WriteLine("[monogame] audio: cash pickup");
                     break;
+                case ClientSoundEventKind.PickupPart:
+                    // P735 — SIM-0268: part pickup (native pickUpPartSound,
+                    // shipIGC.h:1307; wave hoover, sounddef.mdl:278).
+                    snd.PlayPickupPart();
+                    Console.WriteLine("[monogame] audio: part pickup");
+                    break;
                 // ── P710 — incoming-message notification cues
                 // (trekigc.cpp:4536-4560) ───────────────────────────────────
                 case ClientSoundEventKind.ChatCommand:
@@ -535,6 +541,13 @@ public sealed partial class Game1
                     // salShieldsOfflineSound, shieldIGC.cpp:186; vo_sal_shieldsoffline).
                     snd.PlayShieldsOffline();
                     break;
+                case ClientSoundEventKind.CloakEngaged:
+                    // P735 — the own ship's cloak engaged (native
+                    // salCloakEngageSound, shipIGC.cpp:1608; vo_sal_cloakengage,
+                    // sounddef.mdl:807).
+                    snd.PlayCloakEngage();
+                    Console.WriteLine($"[monogame] audio: cloak engage (ship {ev.Id})");
+                    break;
                 // ── P719 — station/economy + loadout one-shots ─────────────
                 case ClientSoundEventKind.Docked:
                     snd.PlayDocked();
@@ -547,6 +560,56 @@ public sealed partial class Game1
                 case ClientSoundEventKind.Boarded:
                     snd.PlayBoarded();
                     Console.WriteLine($"[monogame] audio: player boarded your ship (ship {ev.Id})");
+                    break;
+                // ── P736 — presence / side-change salutations ───────────────
+                case ClientSoundEventKind.SalQuit:
+                    snd.PlaySalQuit();
+                    Console.WriteLine($"[monogame] audio: teammate quit (ship {ev.Id})");
+                    break;
+                case ClientSoundEventKind.SalChangeSides:
+                    snd.PlaySalChangeSides();
+                    Console.WriteLine($"[monogame] audio: teammate switching sides (ship {ev.Id})");
+                    break;
+                case ClientSoundEventKind.SalMia:
+                    snd.PlaySalMia();
+                    Console.WriteLine($"[monogame] audio: teammate MIA (ship {ev.Id})");
+                    break;
+                case ClientSoundEventKind.SalEnemyLeaves:
+                    snd.PlaySalEnemyLeaves();
+                    Console.WriteLine($"[monogame] audio: enemy leaves (ship {ev.Id})");
+                    break;
+                case ClientSoundEventKind.SalRecruitsArrived:
+                    snd.PlaySalRecruitsArrived();
+                    Console.WriteLine($"[monogame] audio: recruit joined your team (ship {ev.Id})");
+                    break;
+                case ClientSoundEventKind.SalEnemyJoiners:
+                    snd.PlaySalEnemyJoiners();
+                    Console.WriteLine($"[monogame] audio: enemy joined (ship {ev.Id})");
+                    break;
+                // ── P737 — own-ship reload / loadout feedback ───────────────
+                case ClientSoundEventKind.SalReloadingAmmo:
+                    snd.PlaySalReloadingAmmo();
+                    Console.WriteLine("[monogame] audio: reloading ammo");
+                    break;
+                case ClientSoundEventKind.SalReloadingFuel:
+                    snd.PlaySalReloadingFuel();
+                    Console.WriteLine("[monogame] audio: reloading fuel");
+                    break;
+                case ClientSoundEventKind.SalReloadingMissiles:
+                    snd.PlaySalReloadingMissiles();
+                    Console.WriteLine("[monogame] audio: reloading missiles");
+                    break;
+                case ClientSoundEventKind.SalReloadingChaff:
+                    snd.PlaySalReloadingChaff();
+                    Console.WriteLine("[monogame] audio: reloading chaff");
+                    break;
+                case ClientSoundEventKind.SalReloadingDispenser:
+                    snd.PlaySalReloadingDispenser();
+                    Console.WriteLine("[monogame] audio: reloading dispenser");
+                    break;
+                case ClientSoundEventKind.StartReload:
+                    snd.PlayStartReload();
+                    Console.WriteLine("[monogame] audio: reload started");
                     break;
             }
         }

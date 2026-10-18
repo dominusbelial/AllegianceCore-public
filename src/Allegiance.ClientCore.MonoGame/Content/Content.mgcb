@@ -2972,11 +2972,47 @@
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_cargofull.ogg
 
+#begin Sounds/vo_sal_cloakengage.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_cloakengage.ogg
+
 #begin Sounds/vo_sal_reloading.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_reloading.ogg
+
+#begin Sounds/vo_sal_reloadingammo.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingammo.ogg
+
+#begin Sounds/vo_sal_reloadingchaff.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingchaff.ogg
+
+#begin Sounds/vo_sal_reloadingdispenser.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingdispenser.ogg
+
+#begin Sounds/vo_sal_reloadingfuel.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingfuel.ogg
+
+#begin Sounds/vo_sal_reloadingmissiles.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_reloadingmissiles.ogg
 
 #begin Sounds/mount.ogg
 /importer:OggImporter
@@ -3482,12 +3518,6 @@
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_cloakdisengage.ogg
 
-#begin Sounds/vo_sal_cloakengage.ogg
-/importer:OggImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/vo_sal_cloakengage.ogg
-
 #begin Sounds/vo_sal_commencescan.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor
@@ -3547,6 +3577,29 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_dispenserempty.ogg
+#begin Sounds/vo_sal_recruitsarrived.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_recruitsarrived.ogg
+
+#begin Sounds/vo_sal_mia.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_mia.ogg
+
+#begin Sounds/vo_sal_quit.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_quit.ogg
+
+#begin Sounds/vo_sal_traitor.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/vo_sal_traitor.ogg
 
 #begin Sounds/vo_sal_enemyjoiners.ogg
 /importer:OggImporter
@@ -3577,12 +3630,6 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_ironsighted.ogg
-
-#begin Sounds/vo_sal_mia.ogg
-/importer:OggImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/vo_sal_mia.ogg
 
 #begin Sounds/vo_sal_minercritical.ogg
 /importer:OggImporter
@@ -3626,47 +3673,11 @@
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_noturrets.ogg
 
-#begin Sounds/vo_sal_recruitsarrived.ogg
-/importer:OggImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/vo_sal_recruitsarrived.ogg
-
 #begin Sounds/vo_sal_redalert.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_redalert.ogg
-
-#begin Sounds/vo_sal_reloadingammo.ogg
-/importer:OggImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/vo_sal_reloadingammo.ogg
-
-#begin Sounds/vo_sal_reloadingchaff.ogg
-/importer:OggImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/vo_sal_reloadingchaff.ogg
-
-#begin Sounds/vo_sal_reloadingdispenser.ogg
-/importer:OggImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/vo_sal_reloadingdispenser.ogg
-
-#begin Sounds/vo_sal_reloadingfuel.ogg
-/importer:OggImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/vo_sal_reloadingfuel.ogg
-
-#begin Sounds/vo_sal_reloadingmissiles.ogg
-/importer:OggImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/vo_sal_reloadingmissiles.ogg
 
 #begin Sounds/vo_sal_rixsighted.ogg
 /importer:OggImporter
@@ -3697,12 +3708,6 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/vo_sal_stationupgrade.ogg
-
-#begin Sounds/vo_sal_traitor.ogg
-/importer:OggImporter
-/processor:SoundEffectProcessor
-/processorParam:Quality=Best
-/build:Sounds/vo_sal_traitor.ogg
 
 #begin Sounds/vo_sal_watchfire.ogg
 /importer:OggImporter

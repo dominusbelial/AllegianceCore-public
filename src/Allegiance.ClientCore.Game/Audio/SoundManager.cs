@@ -294,6 +294,7 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _pickupPowerup = null!;       // PowerupShield — pickUpPowerupSound
     private SoundEffect _pickupDevelopment = null!;   // PowerupDevelopment — pickUpDevelopmentSound (+ flag reuses it, NYI flag cue)
     private SoundEffect _pickupCash = null!;          // hoover — pickUpCashSound
+    private SoundEffect _pickupPart = null!;          // P735 — hoover — pickUpPartSound (shipIGC.h:1307, sounddef.mdl:278)
     // P710 — incoming-message notification cues (trekigc.cpp:4536-4560). Real
     // waves from sounddef.mdl:297-301; newOfflineChatMsgSound reuses receivechat
     // at reduced gain (sounddef.mdl:299), so it shares _chatRegular's asset.
@@ -311,6 +312,7 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _noFuel = null!;          // vo_sal_nofuel — salNoFuelSound (:811)
     private SoundEffect _noRipcord = null!;       // vo_sal_noripcord — salNoRipcordSound (:348)
     private SoundEffect _shieldsOffline = null!;  // P717 — vo_sal_shieldsoffline — salShieldsOfflineSound (:791)
+    private SoundEffect _cloakEngage = null!;     // P735 — vo_sal_cloakengage — salCloakEngageSound (:807)
     // P714 — objective & status announce one-shots (appmsg.cpp:1238,2965,3149,3156,3169).
     // Waves from sounddef.mdl:771,773,776,779,780.
     private SoundEffect _madeCommander = null!;   // vo_sal_madecommander — commanderSound (:779)
@@ -328,6 +330,26 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _mount = null!;           // mount — mountSound (:286)
     private SoundEffect _unmount = null!;         // unmount — unmountSound (:288)
     private SoundEffect _cargoFull = null!;       // vo_sal_cargofull — salCargoFullSound (:810)
+    // P736 — presence / side-change salutation one-shots (parity wave 23).
+    // Waves from sounddef.mdl:825-831 (vo_sal_recruitsarrived / vo_sal_mia /
+    // vo_sal_quit / vo_sal_traitor / vo_sal_enemyjoiners / vo_sal_enemyleaves).
+    // Native maps salQuitSound to the vo_sal_mia wave (sounddef.mdl:827-828);
+    // this port uses the dedicated vo_sal_quit wave so the same-side "X has
+    // quit" cue is distinguishable from the MIA cue the player hears.
+    private SoundEffect _salQuit = null!;
+    private SoundEffect _salChangeSides = null!;
+    private SoundEffect _salMia = null!;
+    private SoundEffect _salEnemyLeaves = null!;
+    private SoundEffect _salRecruitsArrived = null!;
+    private SoundEffect _salEnemyJoiners = null!;
+    // P737 — own-ship reload one-shots: the five type-specific sal VOs
+    // (vo_sal_reloading{ammo,fuel,missiles,chaff,dispenser}; sounddef.mdl:814-818)
+    // plus the generic startReloadSound (SFX "mount", sounddef.mdl:289).
+    private SoundEffect _salReloadingAmmo = null!;
+    private SoundEffect _salReloadingFuel = null!;
+    private SoundEffect _salReloadingMissiles = null!;
+    private SoundEffect _salReloadingChaff = null!;
+    private SoundEffect _salReloadingDispenser = null!;
     private SoundEffect _drop = null!;            // drop — dropSound (:290)
     private SoundEffect _reloading = null!;       // vo_sal_reloading — salReloadingSound (:819)
     // P723 — in-flight command/targeting one-shots. Real waves from
@@ -769,6 +791,7 @@ public sealed class SoundManager : IDisposable
             _pickupPowerup = LoadSound("Sounds/powerupshield");
             _pickupDevelopment = LoadSound("Sounds/powerupdevelopment");
             _pickupCash = LoadSound("Sounds/hoover");
+            _pickupPart = LoadSound("Sounds/hoover"); // P735 — pickUpPartSound (shipIGC.h:1307)
             // P710 — incoming-message notification cues. Waves from
             // sounddef.mdl:297-301 (receivedobjective, receivedcomchat,
             // receivepersonalchat, receivechat).
@@ -786,6 +809,7 @@ public sealed class SoundManager : IDisposable
             _noFuel = LoadSound("Sounds/vo_sal_nofuel");
             _noRipcord = LoadSound("Sounds/vo_sal_noripcord");
             _shieldsOffline = LoadSound("Sounds/vo_sal_shieldsoffline"); // P717 — salShieldsOfflineSound (:791)
+            _cloakEngage = LoadSound("Sounds/vo_sal_cloakengage"); // P735 — salCloakEngageSound (:807)
             // P714 — objective & status announce one-shots. Waves from
             // sounddef.mdl:771,773,776,779,780.
             _madeCommander = LoadSound("Sounds/vo_sal_madecommander");
@@ -802,6 +826,26 @@ public sealed class SoundManager : IDisposable
             _mount = LoadSound("Sounds/mount");
             _unmount = LoadSound("Sounds/unmount");
             _cargoFull = LoadSound("Sounds/vo_sal_cargofull");
+            // P736 — presence / side-change salutation one-shots. Waves
+            // sounddef.mdl:825-831 (recruitsarrived / mia / quit / traitor /
+            // enemyjoiners / enemyleaves). salQuitSound is vo_sal_mia in native
+            // (sounddef.mdl:827-828); this port plays vo_sal_quit for the plain
+            // quit so the two cues are distinguishable.
+            _salRecruitsArrived = LoadSound("Sounds/vo_sal_recruitsarrived");
+            _salMia = LoadSound("Sounds/vo_sal_mia");
+            _salQuit = LoadSound("Sounds/vo_sal_quit");
+            _salChangeSides = LoadSound("Sounds/vo_sal_traitor");
+            _salEnemyJoiners = LoadSound("Sounds/vo_sal_enemyjoiners");
+            _salEnemyLeaves = LoadSound("Sounds/vo_sal_enemyleaves");
+            // P737 — own-ship reload type-specific VOs (vo_sal_reloading{ammo,
+            // fuel,missiles,chaff,dispenser}; sounddef.mdl:814-818). The generic
+            // startReloadSound reuses the already-loaded "mount" wave (_mount,
+            // sounddef.mdl:289).
+            _salReloadingAmmo = LoadSound("Sounds/vo_sal_reloadingammo");
+            _salReloadingFuel = LoadSound("Sounds/vo_sal_reloadingfuel");
+            _salReloadingMissiles = LoadSound("Sounds/vo_sal_reloadingmissiles");
+            _salReloadingChaff = LoadSound("Sounds/vo_sal_reloadingchaff");
+            _salReloadingDispenser = LoadSound("Sounds/vo_sal_reloadingdispenser");
             _drop = LoadSound("Sounds/drop");
             _reloading = LoadSound("Sounds/vo_sal_reloading");
             _newTarget = LoadSound("Sounds/newtargetneutral");
@@ -1077,6 +1121,11 @@ public sealed class SoundManager : IDisposable
     /// <c>pickUpCashSound</c>, appmsg.cpp:291). No-op when not loaded.</summary>
     public void PlayPickupCash() => PlayWarnOneShot(_pickupCash);
 
+    /// <summary>P735 — play the part-pickup cue (<c>hoover</c>, native
+    /// <c>pickUpPartSound</c>, shipIGC.h:1307, sounddef.mdl:278). No-op when
+    /// not loaded.</summary>
+    public void PlayPickupPart() => PlayWarnOneShot(_pickupPart);
+
     // ── P710 — incoming-message notification cues (trekigc.cpp:4536-4560) ────
     /// <summary>Play the objective/command cue (<c>receivedobjective</c>, native
     /// <c>newCommandMsgSound</c>, trekigc.cpp:4540). No-op when not loaded.</summary>
@@ -1140,6 +1189,11 @@ public sealed class SoundManager : IDisposable
     /// native <c>salShieldsOfflineSound</c>, shieldIGC.cpp:186). No-op when not
     /// loaded.</summary>
     public void PlayShieldsOffline() => PlayWarnOneShot(_shieldsOffline);
+
+    /// <summary>P735 — play the cloak-engage cue (<c>vo_sal_cloakengage</c>,
+    /// native <c>salCloakEngageSound</c>, shipIGC.cpp:1608). No-op when not
+    /// loaded.</summary>
+    public void PlayCloakEngage() => PlayWarnOneShot(_cloakEngage);
 
     /// <summary>P714 — play the "you became team leader" cue (<c>vo_sal_madecommander</c>,
     /// native <c>commanderSound</c>, appmsg.cpp:2965). No-op when not loaded.</summary>
@@ -1210,6 +1264,76 @@ public sealed class SoundManager : IDisposable
     /// <summary>P719 — play the cargo-full VO (<c>vo_sal_cargofull</c>, native
     /// <c>salCargoFullSound</c>, WinTrek.cpp:9114). No-op when not loaded.</summary>
     public void PlayCargoFull() => PlayWarnOneShot(_cargoFull);
+
+    // ── P736 — presence / side-change salutation one-shots (parity wave 23) ──
+    // Six client-side cues mirroring native's RemovePlayerFromSide /
+    // AddPlayerToSide presence salutations (clintlib.cpp:3867-4172). All are
+    // one-shots on the same ClientSoundEvent path, played through the voice-
+    // budgeted warn-one-shot lane (MutexSal grouping).
+
+    /// <summary>P736 — play the same-side quit salutation (<c>vo_sal_quit</c>;
+    /// native <c>salQuitSound</c>, clintlib.cpp:3952-3991).</summary>
+    public void PlaySalQuit() => PlayWarnOneShot(_salQuit);
+
+    /// <summary>P736 — play the side-change salutation (<c>vo_sal_traitor</c>;
+    /// native <c>salChangeSidesSound</c>, clintlib.cpp:3975, sounddef.mdl:829).</summary>
+    public void PlaySalChangeSides() => PlayWarnOneShot(_salChangeSides);
+
+    /// <summary>P736 — play the MIA salutation (<c>vo_sal_mia</c>; native
+    /// <c>salMIASound</c>, clintlib.cpp:3999, sounddef.mdl:826).</summary>
+    public void PlaySalMia() => PlayWarnOneShot(_salMia);
+
+    /// <summary>P736 — play the enemy-leaves salutation (<c>vo_sal_enemyleaves</c>;
+    /// native <c>salEnemyLeavesSound</c>, clintlib.cpp:4006-4009,
+    /// sounddef.mdl:831).</summary>
+    public void PlaySalEnemyLeaves() => PlayWarnOneShot(_salEnemyLeaves);
+
+    /// <summary>P736 — play the recruits-arrived salutation
+    /// (<c>vo_sal_recruitsarrived</c>; native <c>salRecruitsArrivedSound</c>,
+    /// clintlib.cpp:4155, sounddef.mdl:825).</summary>
+    public void PlaySalRecruitsArrived() => PlayWarnOneShot(_salRecruitsArrived);
+
+    /// <summary>P736 — play the enemy-joiners salutation
+    /// (<c>vo_sal_enemyjoiners</c>; native <c>salEnemyJoinersSound</c>,
+    /// clintlib.cpp:4162, sounddef.mdl:830).</summary>
+    public void PlaySalEnemyJoiners() => PlayWarnOneShot(_salEnemyJoiners);
+
+    // ── P737 — own-ship reload one-shots (SIM-0263..0266, 0443/0444/0449/
+    // 0450/0451). Native plays the type-specific sal + the generic
+    // startReloadSound (SFX "mount") on every successful reload; the port
+    // observes the own-ship RELOAD(129) relay (see ClientWorld). The five
+    // sal VOs are own-ship announces on the Warning path like every other
+    // sal; startReloadSound reuses the already-loaded "mount" wave as an
+    // action SFX.
+
+    /// <summary>P737 — reloading ammo (<c>vo_sal_reloadingammo</c>;
+    /// salReloadingAmmoSound, shipIGC.h:617, sounddef.mdl:818).</summary>
+    public void PlaySalReloadingAmmo() => PlayWarnOneShot(_salReloadingAmmo);
+
+    /// <summary>P737 — reloading fuel (<c>vo_sal_reloadingfuel</c>;
+    /// salReloadingFuelSound, shipIGC.h:647, sounddef.mdl:814).</summary>
+    public void PlaySalReloadingFuel() => PlayWarnOneShot(_salReloadingFuel);
+
+    /// <summary>P737 — reloading missiles (<c>vo_sal_reloadingmissiles</c>;
+    /// salReloadingMissilesSound, clintlib.cpp:3221, sounddef.mdl:816).</summary>
+    public void PlaySalReloadingMissiles() => PlayWarnOneShot(_salReloadingMissiles);
+
+    /// <summary>P737 — reloading chaff (<c>vo_sal_reloadingchaff</c>;
+    /// salReloadingChaffSound, clintlib.cpp:3400, sounddef.mdl:815).</summary>
+    public void PlaySalReloadingChaff() => PlayWarnOneShot(_salReloadingChaff);
+
+    /// <summary>P737 — reloading dispenser (<c>vo_sal_reloadingdispenser</c>;
+    /// salReloadingDispenserSound, clintlib.cpp:3403, sounddef.mdl:817).</summary>
+    public void PlaySalReloadingDispenser() => PlayWarnOneShot(_salReloadingDispenser);
+
+    /// <summary>P737 — the generic reload-start SFX (<c>mount</c>; native
+    /// startReloadSound, clintlib.cpp:3219,3404 / shipIGC.h:617,647,
+    /// sounddef.mdl:289), played on every successful reload of any
+    /// pool/launcher. Reuses the already-loaded <c>_mount</c> wave.</summary>
+    public void PlayStartReload()
+    {
+        if (IsLoaded) PlayOneShot(_mount, SoundCategory.WeaponFire, 1f);
+    }
 
     /// <summary>P719 — play the drop cue (<c>drop</c>, native <c>dropSound</c>,
     /// WinTrek.cpp:9719). No-op when not loaded.</summary>
@@ -2015,6 +2139,7 @@ public sealed class SoundManager : IDisposable
             _noFuel?.Dispose();           // P711
             _noRipcord?.Dispose();        // P711
             _shieldsOffline?.Dispose();   // P717
+            _cloakEngage?.Dispose();      // P735
             _ripcordLoop?.Dispose();      // P711
             _miningLoop?.Dispose();       // P711
             _newContactEnemy?.Dispose();       // P373
@@ -2027,6 +2152,18 @@ public sealed class SoundManager : IDisposable
             _mount?.Dispose();                 // P719
             _unmount?.Dispose();               // P719
             _cargoFull?.Dispose();             // P719
+            // P736 — presence / side-change salutations.
+            _salQuit?.Dispose();
+            _salChangeSides?.Dispose();
+            _salMia?.Dispose();
+            _salEnemyLeaves?.Dispose();
+            _salRecruitsArrived?.Dispose();
+            _salEnemyJoiners?.Dispose();
+            _salReloadingAmmo?.Dispose();        // P737
+            _salReloadingFuel?.Dispose();        // P737
+            _salReloadingMissiles?.Dispose();    // P737
+            _salReloadingChaff?.Dispose();       // P737
+            _salReloadingDispenser?.Dispose();   // P737
             _drop?.Dispose();                  // P719
             _reloading?.Dispose();             // P719
             foreach (var sfx in _voices.Values) sfx.Dispose();

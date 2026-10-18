@@ -1,0 +1,39 @@
+[
+  {
+    "label": "focused-071-1",
+    "command": [
+      "dotnet",
+      "test",
+      "/home/domingo/allegiance-integ-b2/tests/Allegiance.ClientCore.Tests/bin/Release/net10.0/Allegiance.ClientCore.Tests.dll",
+      "--nologo",
+      "--logger",
+      "trx;LogFileName=focused-071-1.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-integ-b2/docs/reports/P738_master_assets",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P718InterfaceLoopbackTests.OnPeerJoined"
+    ],
+    "exit_code": 0,
+    "seconds": 0.621,
+    "counters": {
+      "total": "0",
+      "executed": "0",
+      "passed": "0",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "failures": [],
+    "skips": []
+  }
+]

@@ -632,6 +632,12 @@ public sealed partial class ClientWorld
     /// first own-ship update is seen.</summary>
     private bool? _prevOwnShieldOnline;
 
+    /// <summary>P735 — SIM-0248: the local ship's own CloakActive stateM bit at
+    /// the last <see cref="UpdateOwnStatusAlarms"/> sample, for the cloak-engage
+    /// edge (a cloak that was off and then turned on). Null until the first
+    /// own-ship update is seen.</summary>
+    private bool? _prevOwnCloaked;
+
     /// <summary>The mutable per-frame driver for the four low-status alarm
     /// one-shots and the two no-ammo/no-fuel attempt cues (SIM-0361..0366).
     /// Game1 calls this each frame under the gate; it samples the local ship's
@@ -673,6 +679,17 @@ public sealed partial class ClientWorld
         if (_prevOwnShieldOnline is { } prevOnline && prevOnline && !shieldOnline)
             RecordSoundEvent(ClientSoundEventKind.ShieldsOffline, me);
         _prevOwnShieldOnline = shieldOnline;
+
+        // P735 — SIM-0248: the cloak-engage VO (salCloakEngageSound,
+        // shipIGC.cpp:1608) fires when the ship's CloakActive state bit goes
+        // false→true. Native plays it server-side on the cloak state change
+        // (PlayNotificationSound(salCloakEngageSound, this)); the port mirrors
+        // it as a client one-shot on the LOCAL ship's own streamed StateM bit,
+        // exactly once per engagement.
+        bool cloaked = (u.StateM & Allegiance.Core.Sim.ShipControlState.CloakActive) != 0;
+        if (_prevOwnCloaked is { } prevCloaked && !prevCloaked && cloaked)
+            RecordSoundEvent(ClientSoundEventKind.CloakEngaged, me);
+        _prevOwnCloaked = cloaked;
     }
 
     /// <summary>
@@ -2819,7 +2836,67 @@ public sealed partial class ClientWorld
     {
         if (!_ships.TryGetValue(reload.ShipID, out var ent)) return;
         ent.ReloadCount++;
+        // Classify the source cargo before applying the authoritative transfer.
+        RecordReloadFeedback(reload);
         ApplyReloadInventory(ent, reload);
+    }
+
+    /// <summary>
+    /// P737 — SIM-0263..0266, SIM-0443/0444/0449/0450/0451: the own-ship reload
+    /// one-shots. Native plays a type-specific <c>salReloading*Sound</c> plus the
+    /// generic <c>startReloadSound</c> when a fire empties a pool and a spare
+    /// pack auto-reloads from cargo (<c>FireMissile</c> clintlib.cpp:3216-3225;
+    /// <c>FireExpendable</c> clintlib.cpp:3394-3417; <c>SetAmmo</c>/<c>SetFuel</c>
+    /// shipIGC.h:605-650). This pure-renderer client observes a SUCCESSFUL reload
+    /// as the own ship's FM_S_RELOAD(129) relay (the server broadcasts the
+    /// applied cargo→pool transfers sector-wide on success; failures are never
+    /// relayed). Each relay entry names the consumed cargo slot (negative mount);
+    /// the slot's part type is classified exactly like the server's
+    /// <c>Ship.TryApplyReloadEntry</c> to pick the type-specific cue. Gated to the
+    /// local ship, native's <c>pShip == m_ship</c> (clintlib.cpp:3217,3397).
+    /// </summary>
+    private void RecordReloadFeedback(Reload reload)
+    {
+        if (MyShipId is not { } me || reload.ShipID != me) return;
+        if (!_ships.TryGetValue(me, out var own) || own.Cargo is not { } cargo) return;
+
+        foreach (var e in reload.Entries)
+        {
+            // e.Mount is a negative cargo-bay mount (-1..-5); a cargo entry
+            // carries the same signed mount as a high-bit byte (ExpandedPartData).
+            ExpandedPartData? found = null;
+            foreach (var c in cargo)
+                if ((sbyte)c.MountId == e.Mount) { found = c; break; }
+            if (found is not { } cp) continue;
+
+            if (PartTypeResolver(cp.PartId) is { } type)
+            {
+                switch (type.Type)
+                {
+                    case DataPartTypeIGC.Pack p when p.PackType == 0:   // c_packAmmo (igc.h:549)
+                        RecordSoundEvent(ClientSoundEventKind.SalReloadingAmmo, me);
+                        break;
+                    case DataPartTypeIGC.Pack p when p.PackType == 1:   // c_packFuel (igc.h:550)
+                        RecordSoundEvent(ClientSoundEventKind.SalReloadingFuel, me);
+                        break;
+                    case DataPartTypeIGC.MissileLauncher:
+                        RecordSoundEvent(ClientSoundEventKind.SalReloadingMissiles, me);
+                        break;
+                    case DataPartTypeIGC.ChaffLauncher:
+                        RecordSoundEvent(ClientSoundEventKind.SalReloadingChaff, me);
+                        break;
+                    case DataPartTypeIGC.MineLauncher:
+                    case DataPartTypeIGC.ProbeLauncher:
+                        RecordSoundEvent(ClientSoundEventKind.SalReloadingDispenser, me);
+                        break;
+                }
+            }
+
+            // The generic "reloading..." cue plays on EVERY successful reload of
+            // any pool/launcher (native startReloadSound, clintlib.cpp:3219,3404;
+            // shipIGC.h:617,647).
+            RecordSoundEvent(ClientSoundEventKind.StartReload, me);
+        }
     }
 
     /// <summary>P639 — <c>FM_S_RANK_INFO(13)</c>: the server's rank-name table
@@ -3726,10 +3803,12 @@ public sealed partial class ClientWorld
     /// <c>c_tcDevelopment</c> pickup plays <c>pickUpDevelopmentSound</c> (:286),
     /// a <c>c_tcCash</c> pickup plays <c>pickUpCashSound</c> (:291), and a
     /// <c>c_tcFlag</c> pickup reuses the development cue (:303 — the dedicated
-    /// flag cue is NYI in native). <c>c_tcPart</c> has no sound here (it
-    /// triggers a TREASURE_ACK instead). The message carries no ship id; it is
-    /// only ever addressed to the acquiring client, so the cue is recorded
-    /// unconditionally.
+    /// flag cue is NYI in native). A <c>c_tcPart</c> pickup plays
+    /// <c>pickUpPartSound</c> (P735 — SIM-0268; the player-facing cue native
+    /// plays server-side at the ship, shipIGC.h:1307, while the client handler
+    /// is silent and only sends a TREASURE_ACK). The message carries no ship
+    /// id; it is only ever addressed to the acquiring client, so the cue is
+    /// recorded unconditionally.
     private void Apply(AcquireTreasure m)
     {
         ClientSoundEventKind? kind = (Allegiance.Core.TreasureCode)m.TreasureCode switch
@@ -3738,6 +3817,12 @@ public sealed partial class ClientWorld
             Allegiance.Core.TreasureCode.Development => ClientSoundEventKind.PickupDevelopment,
             Allegiance.Core.TreasureCode.Cash => ClientSoundEventKind.PickupCash,
             Allegiance.Core.TreasureCode.Flag => ClientSoundEventKind.PickupDevelopment, // NYI flag cue → reuses development (appmsg.cpp:303)
+            // P735 — SIM-0268: a c_tcPart pickup. Native's client ACQUIRE_TREASURE
+            // handler is silent for parts (appmsg.cpp:266-275 — it only sends a
+            // TREASURE_ACK); the player-facing pickUpPartSound is played
+            // server-side at the ship (shipIGC.h:1307). The port reproduces that
+            // cue on the same local pickup.
+            Allegiance.Core.TreasureCode.Part => ClientSoundEventKind.PickupPart,
             _ => null,
         };
         if (kind is { } k)
@@ -4518,6 +4603,80 @@ public sealed partial class ClientWorld
         // (so it goes stale after the local player's own side switch too).
         if (join.ShipId == (JoinedShipId ?? MyShipId))
             MySideId = join.SideId;
+
+        // P736 — SIM-0464/0465: the presence salutation when a HUMAN player
+        // joins a side (native BaseClient::AddPlayerToSide,
+        // clintlib.cpp:4140-4172). Same gates as native: a human player, the
+        // mission started, connected (always true here), and not our own ship.
+        // A same-side joiner voices salRecruitsArrivedSound (:4155); an
+        // enemy-side (non-allied) joiner voices salEnemyJoinersSound (:4162),
+        // gated additionally on us holding a real side. An allied-but-different
+        // side join is text-only in native (sal id 0, :4151) — no sound, so
+        // none is recorded here.
+        if (join.ShipId != (MyShipId ?? JoinedShipId)
+            && _mission?.Stage == MissionStageMessage.StageStarted
+            && _ships.TryGetValue(join.ShipId, out var jp)
+            && jp.Player is { PilotType: PlayerInfo.PilotTypePlayer }
+            && MySideId is { } jMy)
+        {
+            if (join.SideId == jMy)
+                RecordSoundEvent(ClientSoundEventKind.SalRecruitsArrived, join.ShipId);
+            else if (!AreAllied(jMy, join.SideId) && jMy != Side.ArtifactSentinelFlag)
+                RecordSoundEvent(ClientSoundEventKind.SalEnemyJoiners, join.ShipId);
+        }
+    }
+
+    /// <summary>
+    /// P736 — SIM-0461/0462/0463/0468: the shared presence-salutation decision
+    /// for a player leaving a side (native <c>BaseClient::RemovePlayerFromSide</c>,
+    /// clintlib.cpp:3867-4009). Mirrors native's gates and branches:
+    /// <list type="bullet">
+    /// <item><b>Gates</b>: a human player, the mission started, connected
+    /// (always true here), and not our own ship (:3924-3926).</item>
+    /// <item><b>Same-side leaver</b> (the leaver's side == our side, :3928): the
+    /// reason picks the cue — LinkDead → <c>salMIASound</c> (:3999, SIM-0463),
+    /// SwitchingSides → <c>salChangeSidesSound</c> (:3975, SIM-0461), any other
+    /// same-side quit reason → <c>salQuitSound</c> (SIM-0462).</item>
+    /// <item><b>Other-side leaver</b> (:4004-4009): allied → <c>salQuitSound</c>,
+    /// enemy (non-allied) → <c>salEnemyLeavesSound</c> (SIM-0468 — the dynamic
+    /// leave voice).</item>
+    /// </list>
+    /// P722 also broadcasts authorized boot and ordinary quit reasons. The
+    /// cue is recorded before P718 cleanup changes the old side or removes
+    /// the player, so a subsequent departure cannot voice it again.
+    /// </summary>
+    private void ApplySideLeave(short shipId, QuitSideReason reason)
+    {
+        if (_mission?.Stage != MissionStageMessage.StageStarted) return;
+        if (shipId == (MyShipId ?? JoinedShipId)) return;              // our own leave — OnQuitSide, no VO
+        if (!_ships.TryGetValue(shipId, out var e)) return;            // unknown ship: nothing to classify
+        if (e.Player is not { PilotType: PlayerInfo.PilotTypePlayer }) return; // not human (:3924)
+        if (MySideId is not { } mySide) return;
+
+        short sideOld = e.SideId;   // the side the leaver was on before leaving
+
+        if (sideOld == mySide)
+        {
+            switch (reason)
+            {
+                case QuitSideReason.LinkDead:
+                    RecordSoundEvent(ClientSoundEventKind.SalMia, shipId);        // SIM-0463
+                    break;
+                case QuitSideReason.SwitchingSides:
+                    RecordSoundEvent(ClientSoundEventKind.SalChangeSides, shipId);// SIM-0461
+                    break;
+                default:
+                    RecordSoundEvent(ClientSoundEventKind.SalQuit, shipId);       // SIM-0462
+                    break;
+            }
+        }
+        else
+        {
+            // Other-side leaver: allied → salQuitSound, enemy → salEnemyLeavesSound
+            // (clintlib.cpp:4006-4009 — SIM-0468).
+            bool allied = AreAllied(mySide, sideOld);
+            RecordSoundEvent(allied ? ClientSoundEventKind.SalQuit : ClientSoundEventKind.SalEnemyLeaves, shipId);
+        }
     }
 
     /// <summary>

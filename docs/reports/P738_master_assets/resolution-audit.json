@@ -1,0 +1,33 @@
+{
+  "base": "33fc6df2d92cce775f29f9fa5a4a609d613b22c4",
+  "ours": "17f4544019f2b7ed1cb55c4b1b40c6e1eb30b8ce",
+  "theirs": "ba38608ec4050c6f0c61d64d5d17ae2b1ca3ee5f",
+  "conflicted_files": [
+    "docs/parity/sim-rules-matrix.csv",
+    "src/Allegiance.ClientCore.Game/Audio/SoundManager.cs",
+    "src/Allegiance.ClientCore.MonoGame/Content/Content.mgcb",
+    "src/Allegiance.ClientCore/State/ClientWorld.cs",
+    "tests/Allegiance.Core.Tests/P652EconomyDroneAiTests.cs"
+  ],
+  "sound_event_count": 51,
+  "content_asset_count": 622,
+  "audio_union_without_duplicate_dispatch": true,
+  "content_union_without_duplicate_builds": true,
+  "flake_union": true,
+  "existing_sound_reports_unchanged": [
+    "docs/reports/P710_PARITY_WAVE13.md",
+    "docs/reports/P711_PARITY_WAVE14.md",
+    "docs/reports/P714_PARITY_WAVE15.md",
+    "docs/reports/P716_PARITY_WAVE16.md",
+    "docs/reports/P717_PARITY_WAVE17.md",
+    "docs/reports/P719_PARITY_WAVE18.md",
+    "docs/reports/P721_PARITY_WAVE19.md",
+    "docs/reports/P723_PARITY_WAVE20.md",
+    "docs/reports/P725_PARITY_WAVE21.md"
+  ],
+  "LF_matrices": true,
+  "parity_decisions": {
+    "ours only": 53,
+    "incoming only": 31
+  }
+}
