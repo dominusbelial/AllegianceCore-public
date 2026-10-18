@@ -88,6 +88,7 @@ public sealed class P555HullEquipmentMaskTests
     /// reduction; we assert only &gt;20× to stay corpus-content-independent).</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
+    [Trait("Tier", "Live")]
     public void PreferredEquipmentMounting_CollapsesToNearZero_AtNativeOffset()
     {
         Require.Artwork();

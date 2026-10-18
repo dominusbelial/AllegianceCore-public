@@ -15,6 +15,7 @@ using Srv = Allegiance.Server.Server;
 namespace Allegiance.Core.Tests;
 
 [Collection("LiveNetwork")]
+[Trait("Tier", "Perf")]
 public sealed class BroadcastSnapshotLoopbackTests
 {
     // Async raw receivers avoid adding one client send thread per player to

@@ -109,6 +109,7 @@ public sealed class P705TechModeTests
     }
 
     [SkippableFact]
+    [Trait("Tier", "Live")]
     public void Every_pair_of_loaded_civilizations_boots_or_has_a_precise_no_plan_error()
     {
         Require.Artwork();

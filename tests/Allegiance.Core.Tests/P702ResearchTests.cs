@@ -87,6 +87,7 @@ public sealed class P702ResearchTests
     }
 
     [SkippableFact]
+    [Trait("Tier", "Live")]
     public void Every_authored_and_generated_civ_plan_validates_and_auto_falls_back_for_other_races()
     {
         Require.Artwork();

@@ -11,6 +11,7 @@ using Srv = Allegiance.Server.Server;
 namespace Allegiance.Core.Tests;
 
 [Collection("LiveNetwork")]
+[Trait("Tier", "Perf")]
 public sealed class P694MassEventTickTests(ITestOutputHelper output)
 {
 #if DEBUG

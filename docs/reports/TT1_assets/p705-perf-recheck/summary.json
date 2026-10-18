@@ -1,0 +1,61 @@
+{
+  "discovery": {
+    "Allegiance.Lobby.Tests": {
+      "fast": 0,
+      "live": 0,
+      "perf": 0
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "fast": 0,
+      "live": 0,
+      "perf": 0
+    },
+    "Allegiance.ClientCore.Tests": {
+      "fast": 0,
+      "live": 0,
+      "perf": 4
+    },
+    "Allegiance.Core.Tests": {
+      "fast": 0,
+      "live": 0,
+      "perf": 0
+    }
+  },
+  "tiers": {
+    "perf": {
+      "tier": "perf",
+      "seconds": 190.69045239617117,
+      "projects": {
+        "Allegiance.Lobby.Tests": {
+          "count": 0,
+          "outcomes": {}
+        },
+        "Allegiance.ClientCore.MonoGame.Tests": {
+          "count": 0,
+          "outcomes": {}
+        },
+        "Allegiance.ClientCore.Tests": {
+          "count": 4,
+          "outcomes": {
+            "Passed": 4
+          }
+        },
+        "Allegiance.Core.Tests": {
+          "count": 0,
+          "outcomes": {}
+        }
+      },
+      "calibration": {
+        "factor": 0.9769761273209548,
+        "referenceMs": 3.6832,
+        "nominalMs": 3.77,
+        "fastLimitSeconds": 10
+      },
+      "timingOffenders": [],
+      "errors": [],
+      "quarantineFlakes": []
+    }
+  },
+  "infrastructure": null,
+  "passed": true
+}

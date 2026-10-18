@@ -1,0 +1,22 @@
+{
+  "Allegiance.Lobby.Tests": {
+    "fast": 19,
+    "live": 0,
+    "perf": 0
+  },
+  "Allegiance.ClientCore.MonoGame.Tests": {
+    "fast": 2415,
+    "live": 9,
+    "perf": 9
+  },
+  "Allegiance.ClientCore.Tests": {
+    "fast": 1265,
+    "live": 37,
+    "perf": 5
+  },
+  "Allegiance.Core.Tests": {
+    "fast": 4793,
+    "live": 12,
+    "perf": 49
+  }
+}

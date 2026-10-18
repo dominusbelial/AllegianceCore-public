@@ -72,6 +72,7 @@ public class ServerTests
     /// </summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
+    [Trait("Tier", "Perf")]
     public void FiveSecondsOfWallTime_YieldsAboutAHundredTicks_WithinTolerance()
     {
         Require.Artwork();
@@ -187,6 +188,7 @@ public class ServerTests
     /// boot (here: cadence). Exercises ServerConfigLoader.ApplyCli.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
+    [Trait("Tier", "Perf")]
     public void CliOverride_ChangesCadence()
     {
         Require.Artwork();

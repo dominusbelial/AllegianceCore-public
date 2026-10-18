@@ -27,6 +27,7 @@ namespace Allegiance.Core.Tests;
 /// sustained slow dispatch still must.
 /// </summary>
 [Collection("LiveNetwork")]
+[Trait("Tier", "Perf")]
 public sealed class P706DispatchProfilingTests(ITestOutputHelper output)
 {
 #if DEBUG

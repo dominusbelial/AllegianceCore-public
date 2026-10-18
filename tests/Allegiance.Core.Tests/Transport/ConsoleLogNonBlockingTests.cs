@@ -61,8 +61,11 @@ public sealed class ConsoleLogNonBlockingTests
     /// less than (lines × 20 ms) and drop lines instead of blocking.
     /// </summary>
     [Fact]
+    [Trait("Tier", "Live")]
     public void Installed_plain_WriteLine_never_blocks_a_stalled_consumer_and_drops()
     {
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
         // Gate off so only the redirected plain-WriteLine traffic is in play.
         ConsoleLog.Verbose = false;
         long droppedBefore;
@@ -96,6 +99,10 @@ public sealed class ConsoleLogNonBlockingTests
         finally
         {
             ConsoleLog.Uninstall();
+            // PointSinkForTest changes the installed writer's passthrough;
+            // Uninstall therefore restores the stalling sink, not these originals.
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
             ConsoleLog.ResetForTest();
         }
     }

@@ -1,0 +1,10 @@
+<Project>
+  <!-- TT-1: discovery assigns Fast only when a test has no explicit Tier. -->
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)_shared/TierTestFramework.cs" Link="_shared/TierTestFramework.cs" />
+    <AssemblyAttribute Include="Xunit.TestFrameworkAttribute">
+      <_Parameter1>Allegiance.TestInfra.TierTestFramework</_Parameter1>
+      <_Parameter2>$(AssemblyName)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,99 @@
+{
+  "projects": {
+    "Allegiance.Lobby.Tests": {
+      "fast": 19,
+      "live": 0,
+      "perf": 0
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "fast": 2415,
+      "live": 9,
+      "perf": 9
+    },
+    "Allegiance.ClientCore.Tests": {
+      "fast": 1265,
+      "live": 37,
+      "perf": 5
+    },
+    "Allegiance.Core.Tests": {
+      "fast": 4793,
+      "live": 12,
+      "perf": 49
+    }
+  },
+  "tiers": {
+    "fast": {
+      "count": 8492,
+      "observedOriginalTierWallSeconds": 301.65510891680606,
+      "outcomes": {
+        "Passed": 8486,
+        "NotExecuted": 3,
+        "Failed": 3
+      },
+      "failed": [
+        {
+          "name": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock",
+          "method": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock",
+          "outcome": "Failed",
+          "seconds": 4.3599895
+        },
+        {
+          "name": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+          "method": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+          "outcome": "Failed",
+          "seconds": 0.0092931
+        },
+        {
+          "name": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+          "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+          "outcome": "Failed",
+          "seconds": 5.1481302
+        }
+      ]
+    },
+    "live": {
+      "count": 58,
+      "observedOriginalTierWallSeconds": 2785.4100819239393,
+      "outcomes": {
+        "Passed": 57,
+        "NotExecuted": 1
+      },
+      "failed": []
+    },
+    "perf": {
+      "count": 63,
+      "observedOriginalTierWallSeconds": 411.40032053692266,
+      "outcomes": {
+        "Passed": 63
+      },
+      "failed": []
+    }
+  },
+  "coveragePassed": true,
+  "timingLayout": "original full sweep before final P705 tier correction",
+  "perfRecheck": {
+    "count": 4,
+    "originalTier": "Live",
+    "finalTier": "Perf",
+    "seconds": 190.69045239617117
+  },
+  "rawTimingOffenders": [
+    {
+      "name": "Allegiance.Core.Tests.MeshyGuardTests.NoTrackedMeshyOutputRemainsAnywhere",
+      "method": "Allegiance.Core.Tests.MeshyGuardTests.NoTrackedMeshyOutputRemainsAnywhere",
+      "outcome": "Passed",
+      "seconds": 12.3924143
+    }
+  ],
+  "guardRepairs": {
+    "Allegiance.Core.Tests.MeshyGuardTests.NoTrackedMeshyOutputRemainsAnywhere": [
+      0.0486575,
+      0.0471679,
+      0.0481109
+    ]
+  },
+  "currentTimingOffenders": [],
+  "fastLimitSeconds": 10,
+  "runtimeTotal": 8613,
+  "baselineRuntimeTotal": 8605
+}

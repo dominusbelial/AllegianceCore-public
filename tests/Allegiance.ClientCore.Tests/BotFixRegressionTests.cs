@@ -471,6 +471,7 @@ public sealed partial class BotFixRegressionTests
     }
 
     [Fact]
+    [Trait("Tier", "Perf")]
     public void FreshSnapshotPublish_AllocationStaysBoundedAt390Ships()
     {
         bool saved = ClientWorld.DecisionSnapshotEnabled;

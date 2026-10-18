@@ -214,6 +214,7 @@ public sealed class P733ResearchTests(ITestOutputHelper output)
     }
 
     [SkippableFact]
+    [Trait("Tier", "Live")]
     public void Headless_10v10_scale_eight_completes_at_least_five_times_native_steps()
     {
         Require.Artwork();
@@ -229,6 +230,7 @@ public sealed class P733ResearchTests(ITestOutputHelper output)
 
     [SkippableTheory]
     [InlineData(1)] [InlineData(4)] [InlineData(8)] [InlineData(16)]
+    [Trait("Tier", "Live")]
     public void Headless_30_minute_rig_matchup_measurement(double scale)
     { Require.Artwork(); Assert.All(Measure(scale), steps => Assert.True(steps > 0)); }
 }

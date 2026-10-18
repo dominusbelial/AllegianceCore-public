@@ -166,6 +166,7 @@ public sealed class P699cStationCorpusTests(ITestOutputHelper output)
     }
 
     [SkippableFact, Trait("Requires", "Artwork")]
+    [Trait("Tier", "Live")]
     public void Every_dockable_station_slot_admits_all_ten_native_pods_and_civilization_fighters()
     {
         Require.Artwork();

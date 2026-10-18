@@ -32,6 +32,7 @@ namespace Allegiance.ClientCore.Tests;
 /// (snap to server pose + new cookie).
 /// </summary>
 [Collection("LiveNetwork")]
+[Trait("Tier", "Live")]
 public sealed class NativeOwnShipFlightLiveTests
 {
     private static readonly string ArtRoot =

@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 25, civB: 3, size: 10)",
+    "method": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches",
+    "outcome": "Passed",
+    "seconds": 36.3559353
+  },
+  {
+    "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Remote_constructor_death_reaches_team_state_without_remote_combat_effects(quiet: False)",
+    "method": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Remote_constructor_death_reaches_team_state_without_remote_combat_effects",
+    "outcome": "Passed",
+    "seconds": 2.646764
+  },
+  {
+    "name": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 101, civB: 1, size: 5)",
+    "method": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches",
+    "outcome": "Passed",
+    "seconds": 45.2945674
+  },
+  {
+    "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 1, civB: 2, generated: True)",
+    "method": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates",
+    "outcome": "Passed",
+    "seconds": 31.9344594
+  },
+  {
+    "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+    "method": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates",
+    "outcome": "Passed",
+    "seconds": 20.7001359
+  },
+  {
+    "name": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 1, civB: 2, size: 2)",
+    "method": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches",
+    "outcome": "Passed",
+    "seconds": 39.8444389
+  },
+  {
+    "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Remote_constructor_death_reaches_team_state_without_remote_combat_effects(quiet: True)",
+    "method": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Remote_constructor_death_reaches_team_state_without_remote_combat_effects",
+    "outcome": "Passed",
+    "seconds": 2.4621195
+  },
+  {
+    "name": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches(civA: 4, civB: 35, size: 3)",
+    "method": "Allegiance.ClientCore.Tests.P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches",
+    "outcome": "Passed",
+    "seconds": 66.5571694
+  }
+]

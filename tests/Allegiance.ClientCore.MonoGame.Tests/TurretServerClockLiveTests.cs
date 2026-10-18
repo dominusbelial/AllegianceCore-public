@@ -35,6 +35,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// <c>accepted &gt; 0</c> was false).</para>
 /// </summary>
 [Collection("LiveNetwork")]
+[Trait("Tier", "Live")]
 public sealed class TurretServerClockLiveTests
 {
     private static readonly string ArtRoot =

@@ -16,6 +16,7 @@ using Srv = Allegiance.Server.Server;
 namespace Allegiance.ClientCore.Tests;
 
 [Collection("LiveNetwork")]
+[Trait("Tier", "Live")]
 public sealed class P699PodHomeLiveTests(ITestOutputHelper output)
 {
     [SkippableTheory]

@@ -39,6 +39,7 @@ namespace Allegiance.ClientCore.Tests;
 /// is green.
 /// </summary>
 [Collection("LiveNetwork")]
+[Trait("Tier", "Live")]
 public sealed class NativeOwnShipDockLiveTests
 {
     private static readonly string ArtRoot =

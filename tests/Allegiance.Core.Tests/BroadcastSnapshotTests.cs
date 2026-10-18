@@ -141,6 +141,7 @@ public sealed class BroadcastSnapshotTests
     [InlineData(true, false, 2)]
     [InlineData(true, true, 3)]
     [Trait("Requires", "Artwork")]
+    [Trait("Tier", "Perf")]
     public void Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes(bool native, bool parallel, double floor)
     {
         Require.Artwork();

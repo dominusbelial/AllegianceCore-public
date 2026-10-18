@@ -15,6 +15,7 @@ using Xunit.Abstractions;
 namespace Allegiance.ClientCore.Tests;
 
 [Collection("LiveNetwork")]
+[Trait("Tier", "Perf")]
 public sealed class P705TechModeLiveTests(ITestOutputHelper output)
 {
     private const BindingFlags Fields = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
@@ -35,7 +36,7 @@ public sealed class P705TechModeLiveTests(ITestOutputHelper output)
         using var server = new Srv();
         server.Boot(new ServerConfig
         {
-            Port = 0, Showcase = new() { TechMode = "research", IncomeMultiplier = 500 },
+            Port = 0, Showcase = new() { TechMode = "research", IncomeMultiplier = 500, ResearchTimeScale = 16 },
             LiveSettings = new() { TimeDilation = "off", AutoNextMatch = new() { IntermissionSeconds = 2 } },
             Games = [new() { Name = "P705 two-match proof", Teams = 2, CivIds = [civA, civB], SideNames = ["Alpha", "Bravo"],
                 MaxTeamImbalance = 32767,

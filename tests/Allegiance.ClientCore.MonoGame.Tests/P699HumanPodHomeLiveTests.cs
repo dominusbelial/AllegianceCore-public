@@ -18,6 +18,7 @@ using Srv = Allegiance.Server.Server;
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
 [Collection("LiveNetwork")]
+[Trait("Tier", "Live")]
 public sealed class P699HumanPodHomeLiveTests(ITestOutputHelper output)
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;

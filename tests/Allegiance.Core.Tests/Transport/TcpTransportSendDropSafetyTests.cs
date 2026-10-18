@@ -162,6 +162,7 @@ public abstract class TcpTransportSendDropSafetyTestsBase
     /// accumulating an unbounded backlog. Send after the peer is already gone must
     /// also stay silent.</summary>
     [Fact]
+    [Trait("Tier", "Perf")]
     public void Stalled_non_reading_peer_does_not_block_and_is_disconnected()
     {
         using var shrink = ShortenOverflowTimer();

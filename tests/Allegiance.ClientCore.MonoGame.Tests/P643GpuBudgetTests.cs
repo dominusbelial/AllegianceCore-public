@@ -10,6 +10,8 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 public class P643GcCollection { }
 
 [Collection("P643 GC")]
+[Trait("Tier", "Perf")]
+[Trait("Requires", "Gpu")]
 public class P643GpuBudgetTests
 {
     [Fact]
