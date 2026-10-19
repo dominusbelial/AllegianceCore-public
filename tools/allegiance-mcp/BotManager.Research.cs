@@ -11,6 +11,7 @@ internal sealed partial class BotManager
     private readonly object _researchGate = new();
     private readonly Dictionary<short, ResearchCommander> _research = new();
     private readonly Dictionary<short, short> _researchRocks = new();
+    private readonly Dictionary<short, (string Epoch, ResearchTactics Policy)> _researchTactics = new();
     private Thread? _researchThread;
     // Set only by the owned Skirmish host; multiplayer drivers retain their policy.
     private readonly string? _humanCommanderName = Environment.GetEnvironmentVariable("ALLEGIANCE_SKIRMISH_COMMANDER");
@@ -70,6 +71,9 @@ internal sealed partial class BotManager
                         var peer = EnsureCommander(side);
                         ReadyResearchPeer(peer);
                         peer.SendPing();
+                        // Read pilots before taking the commander gate: the combat
+                        // loop also takes individual session gates under _gate.
+                        var tactical = ResearchTacticalSnapshot(side);
                         lock (peer.Gate)
                         {
                             var briefing = peer.World.ResearchBriefing;
@@ -104,6 +108,17 @@ internal sealed partial class BotManager
                                             commandId: action.Kind == "goto" ? OrderChange.CidGoto : OrderChange.CidBuild, otTarget: (short)IgcObjectType.Asteroid, oidTarget: action.Target); break;
                                         case "chat": peer.SendChat(action.Text, ChatTarget.Team); break;
                                     }
+                                if (!_researchTactics.TryGetValue(side, out var tactics) || tactics.Epoch != briefing.Epoch)
+                                    _researchTactics[side] = tactics = (briefing.Epoch, new ResearchTactics());
+                                var targets = ObserveTacticalTargets(peer.World, side).Concat(tactical.Targets)
+                                    .DistinctBy(t => (t.Type, t.Id)).ToArray();
+                                foreach (var order in tactics.Policy.Tick(peer.World.SimulationTimeSeconds,
+                                    peer.World.Mission?.Stage == MissionStageMessage.StageStarted, tactical.Pilots, targets))
+                                {
+                                    peer.SendChat("", ChatTarget.Individual, oidRecipient: order.Recipient,
+                                        commandId: order.Command, otTarget: (short)order.Type, oidTarget: order.Target);
+                                    Console.WriteLine($"[commander] side={side} sender={peer.World.MyShipId} recipient={order.Recipient} command={order.Command} target={order.Type}#{order.Target}");
+                                }
                             }
                         }
                     }
@@ -113,6 +128,7 @@ internal sealed partial class BotManager
                     {
                         foreach (var commander in _research.Values) commander.ReleaseReservations();
                         _research.Clear();
+                        _researchTactics.Clear();
                     }
                 if (Now() >= nextLog)
                 {
