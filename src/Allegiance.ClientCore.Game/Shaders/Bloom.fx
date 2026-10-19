@@ -1,24 +1,4 @@
-// P543 — BLOOM (bright-pass threshold + separable Gaussian) — STEP-0 SHADER
-// SOURCE (DOCUMENTATION ONLY). Cannot compile on this Linux box (mgfxc needs
-// Wine — see docs/reports/P543_VFX_SPIKE.md step 0). This is the production
-// replacement for the spike's shader-free (un-thresholded) ShaderFreeBloom.
-//
-// Pipeline (all via mgfxc-compiled .mgfxo, runtime `new Effect(gd, bytes)`):
-//   1) BrightPass: threshold the scene, keep only pixels above `Threshold`,
-//      write to a half-res RT.
-//   2) BlurH: 9-tap Gaussian along +X into a second RT.
-//   3) BlurV: 9-tap Gaussian along +Y (Direction=1) into the final bloom RT.
-//   4) Composite: additive scene + bloom (no shader needed, or a composite
-//      pass in the same technique).
-// The spike proved the geometry with ShaderFreeBloom (¼+⅛ downsample +
-// additive) at ~the same frame cost; the shader version adds a real threshold
-// and a cleaner Gaussian.
-//
-// Compile:
-//   DesktopGL: mgfxc Bloom.fx BloomGL.mgfxo /Profile:OpenGL
-//   Android:   mgfxc Bloom.fx BloomAndroid.mgfxo /Profile:OpenGL
-// Runtime load: new Effect(GraphicsDevice, File.ReadAllBytes("BloomGL.mgfxo"))
-
+// LOOK-1: thresholded bloom; hue-preserving shoulder on added highlights.
 #if OPENGL
 #define VS_SHADERMODEL vs_3_0
 #define PS_SHADERMODEL ps_3_0
@@ -33,6 +13,8 @@ float BloomScale = 1.0f;
 int Direction = 0;     // 0 = horizontal, 1 = vertical (Gaussian taps)
 
 texture SceneTexture;
+texture BloomTexture;
+sampler BloomSampler = sampler_state { Texture=<BloomTexture>; MinFilter=LINEAR; MagFilter=LINEAR; MipFilter=LINEAR; AddressU=Clamp; AddressV=Clamp; };
 sampler SceneSampler = sampler_state
 {
     Texture = <SceneTexture>;
@@ -59,9 +41,12 @@ static const float W[9] = { 0.09030, 0.07730, 0.05664, 0.03767, 0.02358, 0.01338
 float4 PS_BrightPass(in VS_OUT i) : COLOR0
 {
     float3 c = tex2D(SceneSampler, i.UV).rgb;
-    float lum = dot(c, float3(0.299, 0.587, 0.114));
-    // Soft knee: scale everything, kill sub-threshold.
-    float bright = max(lum - Threshold, 0.0);
+    float lum = max(c.r, max(c.g, c.b));
+    // Quadratic knee is continuous at the HDR threshold. Peak-channel
+    // extraction retains orange fire and blue shields instead of favouring white.
+    float knee=.15;
+    float soft=clamp(lum-Threshold+knee,0,2*knee);
+    float bright=max(lum-Threshold,soft*soft/(4*knee));
     c *= bright / max(lum, 1e-5);
     return float4(c * BloomScale, 1);
 }
@@ -75,7 +60,16 @@ float4 PS_Blur(in VS_OUT i) : COLOR0
         acc += tex2D(SceneSampler, i.UV + step * t) * W[t];
         acc += tex2D(SceneSampler, i.UV - step * t) * W[t];
     }
-    return acc;
+    return acc / .53070;
+}
+
+float4 PS_Composite(in VS_OUT i) : COLOR0
+{
+    float3 scene=tex2D(SceneSampler,i.UV).rgb;
+    float3 glow=tex2D(BloomSampler,i.UV).rgb;
+    // Reserve headroom per channel. A dark, saturated nebula gets a small
+    // coloured halo; an already bright core receives no extra white clipping.
+    return float4(scene + (1-scene)*(1-exp(-glow*.65)),1);
 }
 
 technique Bloom
@@ -85,6 +79,7 @@ technique Bloom
         VertexShader = compile VS_SHADERMODEL VS();
         PixelShader = compile PS_SHADERMODEL PS_BrightPass();
     }
+    pass Composite { VertexShader=compile VS_SHADERMODEL VS(); PixelShader=compile PS_SHADERMODEL PS_Composite(); }
     pass Blur
     {
         VertexShader = compile VS_SHADERMODEL VS();

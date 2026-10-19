@@ -52,7 +52,7 @@ public sealed class P729BenchmarkTests
         var recommendation = BenchmarkPolicy.Recommend(gpu, SkirmishSize.Large, 3840, 2160);
         Assert.True(recommendation.Fsr); Assert.Equal(2, recommendation.FsrPreset);
         Assert.False(recommendation.HdPbr); Assert.Equal(SkirmishSize.Large, recommendation.BattleSize);
-        Assert.Equal(11, recommendation.Reasons.Length);
+        Assert.Equal(12, recommendation.Reasons.Length);
         Assert.Contains(recommendation.Reasons, r => r.Setting == "Battle size" && r.Reason.Contains("provisional"));
         Assert.All(recommendation.Reasons, r => Assert.False(string.IsNullOrWhiteSpace(r.Reason)));
         var bots = gpu with { CpuMs = 3, GpuMs = 2, ServerTickMs = Distribution.Of([55, 70]) };

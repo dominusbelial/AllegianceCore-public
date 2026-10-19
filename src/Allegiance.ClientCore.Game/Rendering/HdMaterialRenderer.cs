@@ -35,6 +35,7 @@ public sealed class HdMaterialRenderer : IDisposable
         public double LastDetailSeconds { get; set; }
     }
     public bool Enabled { get; set; } = true;
+    public EffectLights? Flashes { get; set; }
     public long ResidentBytes { get; private set; }
     public int ResidentMaterials => _resident.Count;
     public long BudgetBytes => _budget;
@@ -79,6 +80,13 @@ public sealed class HdMaterialRenderer : IDisposable
         var maps = MapsFor(material, pixels);
         if (maps is null) return false;
         var e = _effect;
+        bool flashes = Flashes is { Detail: not Allegiance.ClientCore.State.EffectsDetail.Low };
+        e.CurrentTechnique = e.Techniques[flashes ? "EffectLitPbr" : "NativePbr"];
+        if (flashes)
+        {
+            e.Parameters["FlashPositions"].SetValue(Flashes!.Positions);
+            e.Parameters["FlashColors"].SetValue(Flashes!.Colors);
+        }
         e.Parameters["World"].SetValue(world);
         e.Parameters["WorldViewProj"].SetValue(world * view * projection);
         e.Parameters["NormalMatrix"].SetValue(Matrix.Transpose(Matrix.Invert(world)));

@@ -124,6 +124,8 @@ public class P547ShaderTests
         {
             ("Bloom", Path.Combine(shaderDir, "Bloom.fx"),
                 Path.Combine(outDir, "Bloom.ogl.mgfxo"), Path.Combine(outDir, "Bloom.fx.sha256")),
+            ("NativePbr", Path.Combine(shaderDir, "NativePbr.fx"),
+                Path.Combine(outDir, "NativePbr.ogl.mgfxo"), Path.Combine(outDir, "NativePbr.fx.sha256")),
             ("LinearDepth", Path.Combine(shaderDir, "LinearDepth.fx"),
                 Path.Combine(outDir, "LinearDepth.ogl.mgfxo"), Path.Combine(outDir, "LinearDepth.fx.sha256")),
             ("SoftParticle", Path.Combine(shaderDir, "SoftParticle.fx"),

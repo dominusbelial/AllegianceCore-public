@@ -9,6 +9,22 @@ namespace Allegiance.ClientCore.MonoGame;
 
 public sealed partial class Game1
 {
+    private readonly EffectLights _effectLights = new();
+    private bool _allowSoft = true;
+    private bool? _bloomOverride;
+    private readonly List<Allegiance.ClientCore.State.HullHitEntity> _lightImpacts = new();
+    private void ApplyEffectsDetail(Allegiance.ClientCore.State.EffectsDetail detail)
+    {
+        if (!Enum.IsDefined(detail)) detail = Allegiance.ClientCore.State.EffectsDetail.Medium;
+        _upscaling.Effects = detail;
+        _effectLights.Detail = _enhancedVfx ? detail : Allegiance.ClientCore.State.EffectsDetail.Low;
+        _effectLights.Clear();
+        _lightImpacts.Clear();
+        _softEnabled = _enhancedVfx && _allowSoft && detail != Allegiance.ClientCore.State.EffectsDetail.Low;
+        _bloomEnabled = _enhancedVfx && detail != Allegiance.ClientCore.State.EffectsDetail.Low &&
+            (_bloomOverride ?? detail == Allegiance.ClientCore.State.EffectsDetail.High);
+        if (_post?.Bloom is { } bloom) bloom.Polished = detail != Allegiance.ClientCore.State.EffectsDetail.Low;
+    }
     private readonly HudSettings _hudSettings = HudSettings.Load(HudSettings.DefaultPath,
         File.Exists(IntroPreferences.FilePath) || File.Exists(UpscalingSettings.DefaultPath) || File.Exists(KeyBindingStore.ResolvePath()));
     private HudRenderer ActiveHud => _hudSettings.Style == HudStyle.Modern ? _modernHudRenderer : _hudRenderer;
@@ -35,6 +51,7 @@ public sealed partial class Game1
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { Console.WriteLine($"[hud2] cannot save HUD preferences: {e.Message}"); }
         _nativeShipRenderer.HdTexturesEnabled = _upscaling.HdTextures;
         _hdMaterials.Enabled = _upscaling.HdTextures;
+        _hdMaterials.Flashes = _effectLights;
         _fsr = new(GraphicsDevice, _shaders!);
         _postWidth = GraphicsDevice.PresentationParameters.BackBufferWidth;
         _postHeight = GraphicsDevice.PresentationParameters.BackBufferHeight;
@@ -89,14 +106,15 @@ public sealed partial class Game1
         _flightGc.SetFlying(false);
         bool Press(Keys k) => ks.IsKeyDown(k) && !_graphicsPrevious.IsKeyDown(k);
         if (Press(Keys.Escape)) _graphicsSettingsVisible = false;
-        if (Press(Keys.Down)) _graphicsRow = (_graphicsRow + 1) % 9;
-        if (Press(Keys.Up)) _graphicsRow = (_graphicsRow + 8) % 9;
+        if (Press(Keys.Down)) _graphicsRow = (_graphicsRow + 1) % 10;
+        if (Press(Keys.Up)) _graphicsRow = (_graphicsRow + 9) % 10;
         int direction = Press(Keys.Right) ? 1 : Press(Keys.Left) ? -1 : 0;
         bool changed = direction != 0;
         if (changed)
         {
             switch (_graphicsRow)
             {
+                case 9: ApplyEffectsDetail((Allegiance.ClientCore.State.EffectsDetail)(((int)_upscaling.Effects + direction + 3) % 3)); break;
                 case 6: _hudSettings.Style = _hudSettings.Style == HudStyle.Classic ? HudStyle.Modern : HudStyle.Classic; break;
                 case 7: _hudSettings.Size = Math.Clamp(_hudSettings.Size + direction * .05f, .75f, 1.5f); break;
                 case 8: _hudSettings.ColorBlindSafe = !_hudSettings.ColorBlindSafe; break;
@@ -139,7 +157,7 @@ public sealed partial class Game1
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
         if (_graphicsSettingsVisible)
         {
-            _spriteBatch.Draw(_whitePixel, new Rectangle(32, 32, Math.Min(760, GraphicsDevice.Viewport.Width - 48), 540), new Color(5, 15, 22, 245));
+            _spriteBatch.Draw(_whitePixel, new Rectangle(32, 32, Math.Min(760, GraphicsDevice.Viewport.Width - 48), 590), new Color(5, 15, 22, 245));
             _spriteBatch.DrawString(_hudSmall, "Settings - Graphics / HUD (Ctrl+F6); arrows change, Esc closes", new Vector2(48, 44), Color.White);
             string[] rows = {
                 $"Upscaling: {_upscaling.Upscaling}",
@@ -150,14 +168,15 @@ public sealed partial class Game1
                 $"HD textures (add-on): {(_upscaling.HdTextures ? "On" : "Off")} ({_nativeShipRenderer.HdResidentBytes / 1048576.0:F1} MiB resident)",
                 $"HUD style: {_hudSettings.Style}",
                 $"HUD size: {_hudSettings.Size:P0}",
-                $"Colour-blind safe palette: {(_hudSettings.ColorBlindSafe ? "On" : "Off")}" };
+                $"Colour-blind safe palette: {(_hudSettings.ColorBlindSafe ? "On" : "Off")}",
+                $"Effects quality: {_upscaling.Effects}" };
             for (int i = 0; i < rows.Length; i++)
                 _spriteBatch.DrawString(_hudSmall, (_graphicsRow == i ? "> " : "  ") + rows[i], new Vector2(48, 78 + i * 46), _graphicsRow == i ? Color.Yellow : Color.White);
             _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, 300, 8), Color.Gray);
             _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, (int)(300 * _upscaling.Sharpness), 8), Color.Cyan);
             _spriteBatch.Draw(_whitePixel, new Rectangle(360, 430, 260, 8), Color.Gray);
             _spriteBatch.Draw(_whitePixel, new Rectangle(360, 430, (int)(260 * (_hudSettings.Size - .75f) / .75f), 8), Color.Cyan);
-            _spriteBatch.DrawString(_hudSmall, _fsr is { Ready: true } ? "FSR1 ready; HUD stays at native resolution" : "FSR1 unavailable: using native resolution", new Vector2(48, 510), Color.White);
+            _spriteBatch.DrawString(_hudSmall, _fsr is { Ready: true } ? "FSR1 ready; HUD stays at native resolution" : "FSR1 unavailable: using native resolution", new Vector2(48, 560), Color.White);
         }
         if (_frameTelemetry is not null)
         {

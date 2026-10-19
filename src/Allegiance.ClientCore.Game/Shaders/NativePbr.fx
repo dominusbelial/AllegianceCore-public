@@ -8,6 +8,7 @@
 float4x4 World, WorldViewProj, NormalMatrix;
 float3 CameraPosition, KeyDirection, KeyColor, AltDirection, AltColor, Ambient;
 float Opacity, CompressedMaps;
+float4 FlashPositions[4], FlashColors[4];
 texture BaseMap, NormalMap, MetalMap, RoughMap, EmissionMap;
 sampler BaseSampler = sampler_state { Texture=<BaseMap>; MinFilter=Linear; MagFilter=Linear; MipFilter=Linear; AddressU=Clamp; AddressV=Clamp; };
 sampler NormalSampler = sampler_state { Texture=<NormalMap>; MinFilter=Linear; MagFilter=Linear; MipFilter=Linear; AddressU=Clamp; AddressV=Clamp; };
@@ -35,24 +36,63 @@ float3 Light(float3 n,float3 v,float3 l,float3 color,float3 albedo,float metal,f
     float3 spec=distribution*geometry*fresnel/max(.0001,4*nv*nl);
     return ((1-fresnel)*(1-metal)*albedo/3.14159265+spec)*color*nl*3.14159265;
 }
-float4 PS(VOUT i):COLOR0 {
-    float3 n=normalize(i.Normal), t=normalize(i.Tangent.xyz-n*dot(n,i.Tangent.xyz));
+// Shared ambient/key/alt lighting. Returns lit albedo (without emission) and
+// the vectors/vals the flash loop needs. Called by both PS entry points so the
+// native reference path and the effect-lit path stay in lockstep.
+float3 AlbedoColor(VOUT i, out float3 n, out float3 v, out float3 albedo, out float metal, out float rough)
+{
+    n=normalize(i.Normal);
+    float3 t=normalize(i.Tangent.xyz-n*dot(n,i.Tangent.xyz));
     float3 b=cross(n,t)*i.Tangent.w;
     float3 map=tex2D(NormalSampler,i.UV).xyz*2-1;
     if (CompressedMaps > .5) map.z=sqrt(saturate(1-dot(map.xy,map.xy)));
     n=normalize(t*map.x+b*map.y+n*map.z);
-    float3 albedo=tex2D(BaseSampler,i.UV).rgb;
+    albedo=tex2D(BaseSampler,i.UV).rgb;
     if (CompressedMaps < .5) albedo=pow(max(albedo,0),2.2);
-    float metal=saturate(tex2D(MetalSampler,i.UV).r), rough=clamp(tex2D(RoughSampler,i.UV).r,.08,1);
-    float3 v=normalize(CameraPosition-i.WorldPosition);
+    metal=saturate(tex2D(MetalSampler,i.UV).r);
+    rough=clamp(tex2D(RoughSampler,i.UV).r,.08,1);
+    v=normalize(CameraPosition-i.WorldPosition);
     // Ambient is the existing sector/floor, with a small conductor response in
     // lieu of an environment cubemap. No added camera/head light.
     float3 color=albedo*Ambient*lerp(1,.25,metal);
     color+=Light(n,v,-KeyDirection,KeyColor,albedo,metal,rough);
     color+=Light(n,v,-AltDirection,AltColor,albedo,metal,rough);
+    return color;
+}
+
+float4 PS(VOUT i):COLOR0 {
+    float3 n,v,albedo; float metal,rough;
+    float3 color=AlbedoColor(i,n,v,albedo,metal,rough);
     float3 emission=tex2D(EmissionSampler,i.UV).rgb;
     if (CompressedMaps < .5) emission=pow(max(emission,0),2.2);
     color+=emission;
     return float4(pow(max(color,0),1/2.2)*Opacity,Opacity);
 }
+
+float4 PSFlash(VOUT i):COLOR0 {
+    float3 n,v,albedo; float metal,rough;
+    float3 color=AlbedoColor(i,n,v,albedo,metal,rough);
+    // Unrolled four-light budget (SM3/MojoShader: no dynamic loop bound or
+    // branch). Inactive slots carry range 0 / black colour, so their squared
+    // falloff contributes ~nothing. Squared finite-range falloff; normal-facing
+    // diffuse/specular uses the same GGX response as the sector lights.
+    for (int j=0; j<4; j++) {
+        float3 delta=FlashPositions[j].xyz-i.WorldPosition;
+        float distance2=dot(delta,delta);
+        float range=max(FlashPositions[j].w,1e-3);
+        float fade=saturate(1-distance2/(range*range));
+        color+=Light(n,v,delta/max(sqrt(distance2),.001),FlashColors[j].rgb*fade*fade,albedo,metal,rough);
+    }
+    float3 emission=tex2D(EmissionSampler,i.UV).rgb;
+    if (CompressedMaps < .5) emission=pow(max(emission,0),2.2);
+    color+=emission;
+    // Hue-preserving shoulder, identity below .8 linear: sector colours and
+    // dark hull detail survive while flash highlights roll off into white.
+    float peak=max(color.r,max(color.g,color.b));
+    float mapped=.8+(peak-.8)/(1+max(peak-.8,0)/.2);
+    color*=peak>.8 ? mapped/max(peak,.00001) : 1;
+    return float4(pow(max(color,0),1/2.2)*Opacity,Opacity);
+}
 technique NativePbr { pass Pass0 { VertexShader=compile VS_SHADERMODEL VS(); PixelShader=compile PS_SHADERMODEL PS(); } }
+
+technique EffectLitPbr { pass Pass0 { VertexShader=compile VS_SHADERMODEL VS(); PixelShader=compile PS_SHADERMODEL PSFlash(); } }

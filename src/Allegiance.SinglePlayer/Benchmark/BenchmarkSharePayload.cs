@@ -103,10 +103,10 @@ public sealed record ShareHardware(string? CpuModel, int? CpuCores, int CpuThrea
     private static extern bool GlobalMemoryStatusEx(ref MemoryStatus memory);
 }
 public sealed record ShareSettings(int BattleSize, int Difficulty, double ResearchSpeed, bool SpectatorDefault,
-    bool Fsr, int FsrPreset, bool Bloom, bool HdPbr, bool HdTextures, int FrameCap, bool Vsync, float EffectsDensity, float ViewDistance)
+    bool Fsr, int FsrPreset, bool Bloom, bool HdPbr, bool HdTextures, int FrameCap, bool Vsync, float EffectsDensity, float ViewDistance, int EffectsQuality = 1)
 {
     public static ShareSettings From(BenchmarkRecommendation s) => new((int)s.BattleSize, (int)s.Difficulty, s.ResearchSpeed,
-        s.SpectatorDefault, s.Fsr, s.FsrPreset, s.Bloom, s.HdPbr, s.HdTextures, s.FrameCap, s.Vsync, s.EffectsDensity, s.ViewDistance);
+        s.SpectatorDefault, s.Fsr, s.FsrPreset, s.Bloom, s.HdPbr, s.HdTextures, s.FrameCap, s.Vsync, s.EffectsDensity, s.ViewDistance, (int)s.EffectsQuality);
     public string[] ChangedFrom(ShareSettings suggested)
     {
         var actual = JsonSerializer.SerializeToElement(this, ShareJson.Default.ShareSettings);

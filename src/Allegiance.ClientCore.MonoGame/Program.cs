@@ -86,6 +86,8 @@ Allegiance.ClientCore.State.VolumetricTechnique fxVolumetricTech = Allegiance.Cl
 // bloom (default OFF; --bloom on enables). See LaunchOptions.
 bool softParticles = true;
 bool bloomEnabled = false;
+bool? bloomOverride = null;
+Allegiance.ClientCore.State.EffectsDetail? effectsDetail = null;
 // P566 — ship renderer: --ships native (default) | meshy. See LaunchOptions.ShipsNative.
 bool shipsNative = true;
 // P567 — asteroid renderer: --asteroids native (default) | imported. See LaunchOptions.AsteroidsNative.
@@ -252,6 +254,12 @@ for (int i = 0; i < args.Length; i++)
             Console.Error.WriteLine($"[monogame] --fx: expected 'native|enhanced|volumetric|displaced', got '{v}' - using the default");
         }
     }
+    else if (a == "--effects-quality" || a.StartsWith("--effects-quality=", StringComparison.Ordinal))
+    {
+        string? v = a == "--effects-quality" ? (i + 1 < args.Length ? args[++i] : null) : a.Substring("--effects-quality=".Length);
+        if (Enum.TryParse<Allegiance.ClientCore.State.EffectsDetail>(v, true, out var detail) && Enum.IsDefined(detail)) effectsDetail = detail;
+        else Console.Error.WriteLine($"[monogame] --effects-quality: expected Low|Medium|High, got '{v}'");
+    }
     else if (a == "--soft" || a.StartsWith("--soft=", StringComparison.Ordinal))
     {
         // P547 — soft-particle switch: --soft off|on (default on in Enhanced).
@@ -270,9 +278,9 @@ for (int i = 0; i < args.Length; i++)
         string? v = a == "--bloom" ? (i + 1 < args.Length ? args[++i] : null)
                                    : a.Substring("--bloom=".Length);
         if (string.Equals(v, "on", StringComparison.OrdinalIgnoreCase))
-            bloomEnabled = true;
+            bloomOverride = bloomEnabled = true;
         else if (string.Equals(v, "off", StringComparison.OrdinalIgnoreCase))
-            bloomEnabled = false;
+            bloomOverride = bloomEnabled = false;
         else
             Console.Error.WriteLine($"[monogame] --bloom: expected 'on' or 'off', got '{v}' - using the default (off)");
     }
@@ -569,6 +577,8 @@ var opts = new Game1.LaunchOptions
     // (default off; --bloom on).
     SoftParticles = softParticles,
     Bloom = bloomEnabled,
+    BloomOverride = bloomOverride,
+    EffectsDetail = effectsDetail,
     // P566 — ships renderer (default native; --ships native|meshy).
     ShipsNative = shipsNative,
     // P567 — asteroid renderer (default native; --asteroids native|imported).

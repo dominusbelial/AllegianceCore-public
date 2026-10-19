@@ -14,6 +14,7 @@ public sealed class UpscalingSettings
     /// <summary>0 = no sharpening, 1 = strongest RCAS lobe.</summary>
     public float Sharpness { get; set; } = 0.5f;
     public bool HdTextures { get; set; } = true;
+    public Allegiance.ClientCore.State.EffectsDetail Effects { get; set; } = Allegiance.ClientCore.State.EffectsDetail.Medium;
     public bool DynamicResolution { get; set; }
     public float TargetFrameMs { get; set; } = 16.667f;
     public static float Scale(FsrPreset preset) => preset switch
@@ -29,6 +30,7 @@ public sealed class UpscalingSettings
             Math.Max(1, (int)MathF.Round(Math.Max(1, height) * Math.Clamp(float.IsFinite(scale) ? scale : 1, 0.5f, 1), MidpointRounding.AwayFromZero)));
     public void Normalize()
     {
+        if (!Enum.IsDefined(Effects)) Effects = Allegiance.ClientCore.State.EffectsDetail.Medium;
         if (!Enum.IsDefined(Upscaling)) Upscaling = UpscalingMode.Off;
         if (!Enum.IsDefined(Preset)) Preset = FsrPreset.Quality;
         Sharpness = float.IsFinite(Sharpness) ? Math.Clamp(Sharpness, 0, 1) : 0.5f;

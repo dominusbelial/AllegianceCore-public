@@ -747,6 +747,7 @@ public sealed partial class Game1
             // scene target, soft-particle + bloom effects). Constructed before
             // the smoke field so its soft-particle renderer can be handed in.
             _post = new Rendering.VfxPostProcessor(GraphicsDevice, _shaders);
+            if (_post.Bloom is { } bloom) bloom.Polished = _upscaling.Effects != State.EffectsDetail.Low;
             if (_softEnabled && _post.SoftReady)
                 Console.WriteLine("[monogame] P547: soft particles ACTIVE (linear-depth shader + target ready)");
             else if (_softEnabled)
