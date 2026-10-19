@@ -3,7 +3,8 @@
 
 Keep all audio (34 MB) and references from every core/map, so rare voices and
 map-selected posters do not depend on which live session happened to be recorded.
-No source textures, videos, unused models, or alternate static cores are shipped.
+No source textures, videos, unused models, or alternate static cores are shipped, except static cores and maps
+named by runtime code (training: PCore014.igc + training_*.igc).
 """
 import argparse
 import json
@@ -49,7 +50,8 @@ def generate(art):
 
     # Runtime literals (including HUD/effects/audio) plus data-driven names from
     # ALL maps and cores, including models/textures/icons in every catalogue.
-    for directory in ('src/Allegiance.ClientCore.Game', 'src/Allegiance.Core/MapGen'):
+    # Allegiance.SinglePlayer names the training core (PCore014.igc) and maps (training_*.igc) and the skirmish map.
+    for directory in ('src/Allegiance.ClientCore.Game', 'src/Allegiance.Core/MapGen', 'src/Allegiance.SinglePlayer'):
         for p in sorted((REPO / directory).rglob('*.cs')):
             roots.update(references(p.read_bytes()))
     for name, p in sorted(files.items()):
@@ -60,7 +62,8 @@ def generate(art):
             # Native: ~/Development/Allegiance/src/Igc/missionigc.cpp:74-89
             # writes the map body length followed by its bytes; static core
             # version prefix: missionigc.cpp:2363-2365.
-            if name == 'PCore001.igc' or struct.unpack('<i', data[:4])[0] == len(data) - 4:
+            # A static core named by runtime code (training's PCore014.igc) needs its references too.
+            if name == 'PCore001.igc' or name in roots or struct.unpack('<i', data[:4])[0] == len(data) - 4:
                 roots.update(references(data))
         if p.suffix.lower() == '.ogg':
             roots.add(name)
