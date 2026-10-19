@@ -275,7 +275,7 @@ public sealed partial class Server
             foreach (var m in _missions)
                 foreach (var sector in m.Sectors)
                     foreach (var astId in sector.DrainBuildingEffectInterruptions())
-                        BroadcastBuildingEffectDestroyed(astId);
+                        BroadcastBuildingEffectDestroyed(astId, m);
         });
         // P294 — broadcast the building-effect creations this tick's
         // StartBuildingEffect registered (a Builder committed to a new

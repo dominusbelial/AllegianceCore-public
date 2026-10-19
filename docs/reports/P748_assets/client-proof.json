@@ -1,0 +1,525 @@
+[
+  {
+    "name": "hangar-hover-720p",
+    "ship": 8096,
+    "station": 1051,
+    "hover": "Launch",
+    "group": null,
+    "buckets": null
+  },
+  {
+    "name": "investment-starbase-720p",
+    "ship": 8096,
+    "station": 1051,
+    "hover": "Launch",
+    "group": 0,
+    "buckets": [
+      {
+        "id": 2,
+        "name": "Reinforcement",
+        "groupId": 0
+      },
+      {
+        "id": 298,
+        "name": ".Miner",
+        "groupId": 0
+      },
+      {
+        "id": 299,
+        "name": ".TowerAC",
+        "groupId": 0
+      },
+      {
+        "id": 300,
+        "name": ".Carrier",
+        "groupId": 0
+      },
+      {
+        "id": 301,
+        "name": ".TowerSC",
+        "groupId": 0
+      },
+      {
+        "id": 302,
+        "name": ".Caltrop",
+        "groupId": 0
+      },
+      {
+        "id": 303,
+        "name": "Shipyard (Dry)",
+        "groupId": 0
+      },
+      {
+        "id": 304,
+        "name": "Outpost",
+        "groupId": 0
+      },
+      {
+        "id": 305,
+        "name": "Shipyard",
+        "groupId": 0
+      },
+      {
+        "id": 306,
+        "name": "Supremacy (Adv)",
+        "groupId": 0
+      },
+      {
+        "id": 307,
+        "name": "Expansion (Adv)",
+        "groupId": 0
+      },
+      {
+        "id": 308,
+        "name": "Tactical (Adv)",
+        "groupId": 0
+      },
+      {
+        "id": 309,
+        "name": "Garrison (Str)",
+        "groupId": 0
+      },
+      {
+        "id": 310,
+        "name": "Supremacy",
+        "groupId": 0
+      },
+      {
+        "id": 311,
+        "name": "Expansion",
+        "groupId": 0
+      },
+      {
+        "id": 312,
+        "name": "Tactical",
+        "groupId": 0
+      },
+      {
+        "id": 313,
+        "name": "Refinery",
+        "groupId": 0
+      },
+      {
+        "id": 314,
+        "name": "Garrison",
+        "groupId": 0
+      },
+      {
+        "id": 315,
+        "name": "SpecMine (He)",
+        "groupId": 0
+      },
+      {
+        "id": 316,
+        "name": "Teleport",
+        "groupId": 0
+      }
+    ]
+  },
+  {
+    "name": "investment-garrison-720p",
+    "ship": 8096,
+    "station": 1051,
+    "hover": "Launch",
+    "group": 1,
+    "buckets": [
+      {
+        "id": 8,
+        "name": "Upgrade Garrison",
+        "groupId": 1
+      },
+      {
+        "id": 16,
+        "name": "Adv Scout",
+        "groupId": 1
+      },
+      {
+        "id": 17,
+        "name": "Adv Scout",
+        "groupId": 1
+      },
+      {
+        "id": 18,
+        "name": "SpecMine (He)",
+        "groupId": 1
+      },
+      {
+        "id": 35,
+        "name": "Hvy Bomber",
+        "groupId": 1
+      },
+      {
+        "id": 36,
+        "name": "Hvy Bomber",
+        "groupId": 1
+      },
+      {
+        "id": 37,
+        "name": "Bomber",
+        "groupId": 1
+      },
+      {
+        "id": 38,
+        "name": "Bomber",
+        "groupId": 1
+      },
+      {
+        "id": 39,
+        "name": "Gunship",
+        "groupId": 1
+      },
+      {
+        "id": 40,
+        "name": "Gunship",
+        "groupId": 1
+      },
+      {
+        "id": 50,
+        "name": "Omni Fighter",
+        "groupId": 1
+      },
+      {
+        "id": 52,
+        "name": "Retro Booster",
+        "groupId": 1
+      },
+      {
+        "id": 53,
+        "name": "[T] Hyper-Jump",
+        "groupId": 1
+      },
+      {
+        "id": 55,
+        "name": "Enh Constructor",
+        "groupId": 1
+      },
+      {
+        "id": 58,
+        "name": "Enh Constructor",
+        "groupId": 1
+      },
+      {
+        "id": 61,
+        "name": "Enh Miner",
+        "groupId": 1
+      },
+      {
+        "id": 62,
+        "name": "Enh Miner",
+        "groupId": 1
+      },
+      {
+        "id": 82,
+        "name": "ER Nanite 2",
+        "groupId": 1
+      },
+      {
+        "id": 85,
+        "name": "MRM Seeker 2",
+        "groupId": 1
+      },
+      {
+        "id": 86,
+        "name": "MRM Seeker 3",
+        "groupId": 1
+      },
+      {
+        "id": 92,
+        "name": "SRM Seismic",
+        "groupId": 1
+      },
+      {
+        "id": 102,
+        "name": "Med Shield 3",
+        "groupId": 1
+      },
+      {
+        "id": 103,
+        "name": "Med Shield 2",
+        "groupId": 1
+      },
+      {
+        "id": 108,
+        "name": "Lt Booster 2",
+        "groupId": 1
+      },
+      {
+        "id": 109,
+        "name": "Lt Booster 1",
+        "groupId": 1
+      },
+      {
+        "id": 112,
+        "name": "Hvy Sig Cloak 2",
+        "groupId": 1
+      },
+      {
+        "id": 113,
+        "name": "Hvy Sig Cloak 1",
+        "groupId": 1
+      },
+      {
+        "id": 117,
+        "name": "Teleport Probe 1",
+        "groupId": 1
+      },
+      {
+        "id": 122,
+        "name": "Counter 3",
+        "groupId": 1
+      },
+      {
+        "id": 123,
+        "name": "Counter 2",
+        "groupId": 1
+      },
+      {
+        "id": 162,
+        "name": "Upgrade Garrison",
+        "groupId": 1
+      },
+      {
+        "id": 163,
+        "name": "Upgrade Garrison",
+        "groupId": 1
+      },
+      {
+        "id": 164,
+        "name": "LRM Aleph Res 1",
+        "groupId": 1
+      },
+      {
+        "id": 178,
+        "name": "SpecMine (Ca)",
+        "groupId": 1
+      },
+      {
+        "id": 179,
+        "name": "SpecMine (Ur)",
+        "groupId": 1
+      },
+      {
+        "id": 180,
+        "name": "SpecMine (Si)",
+        "groupId": 1
+      },
+      {
+        "id": 194,
+        "name": "[T] SmallRip Drone",
+        "groupId": 1
+      },
+      {
+        "id": 211,
+        "name": "[T] Hvy Scout",
+        "groupId": 1
+      },
+      {
+        "id": 213,
+        "name": "Weedcore 03",
+        "groupId": 1
+      },
+      {
+        "id": 214,
+        "name": "Enh Carrier Drone",
+        "groupId": 1
+      },
+      {
+        "id": 217,
+        "name": "Enh Carrier Drone",
+        "groupId": 1
+      },
+      {
+        "id": 221,
+        "name": "Cash Box",
+        "groupId": 1
+      },
+      {
+        "id": 222,
+        "name": "Hvy Scout",
+        "groupId": 1
+      },
+      {
+        "id": 223,
+        "name": "Hvy Scout",
+        "groupId": 1
+      },
+      {
+        "id": 224,
+        "name": "LRM Aleph Res 2",
+        "groupId": 1
+      },
+      {
+        "id": 225,
+        "name": "LRM Aleph Res 3",
+        "groupId": 1
+      },
+      {
+        "id": 226,
+        "name": "MRM Quickfire 2",
+        "groupId": 1
+      },
+      {
+        "id": 227,
+        "name": "MRM Quickfire 3",
+        "groupId": 1
+      },
+      {
+        "id": 228,
+        "name": "VOID",
+        "groupId": 1
+      },
+      {
+        "id": 240,
+        "name": "[P\u002BR] PT Bomber",
+        "groupId": 1
+      },
+      {
+        "id": 241,
+        "name": "[R] Guardian",
+        "groupId": 1
+      },
+      {
+        "id": 242,
+        "name": "[P\u002BR] Kinetic Torpedo",
+        "groupId": 1
+      },
+      {
+        "id": 243,
+        "name": "[P\u002BR] LRR Thunder",
+        "groupId": 1
+      },
+      {
+        "id": 244,
+        "name": "[P\u002BR] MRR Lightning 2",
+        "groupId": 1
+      },
+      {
+        "id": 245,
+        "name": "[P\u002BR] Mustang",
+        "groupId": 1
+      },
+      {
+        "id": 246,
+        "name": "[R] Rescue Drone",
+        "groupId": 1
+      },
+      {
+        "id": 247,
+        "name": "[P\u002BR] Rocket Targeting",
+        "groupId": 1
+      },
+      {
+        "id": 248,
+        "name": "Upgrade Garrison",
+        "groupId": 1
+      },
+      {
+        "id": 268,
+        "name": "Med Aslt Shield 2",
+        "groupId": 1
+      },
+      {
+        "id": 269,
+        "name": "Med Aslt Shield 3",
+        "groupId": 1
+      },
+      {
+        "id": 270,
+        "name": "[T] PE Vulcan Cannon 1",
+        "groupId": 1
+      },
+      {
+        "id": 271,
+        "name": "[T] PE Vulcan Cannon 2",
+        "groupId": 1
+      },
+      {
+        "id": 272,
+        "name": "[T] EW Laser Cannon 1",
+        "groupId": 1
+      },
+      {
+        "id": 273,
+        "name": "[T] EW Laser Cannon 2",
+        "groupId": 1
+      },
+      {
+        "id": 274,
+        "name": "[T] Laser Blossom 1",
+        "groupId": 1
+      },
+      {
+        "id": 275,
+        "name": "[T] Laser Blossom 2",
+        "groupId": 1
+      },
+      {
+        "id": 276,
+        "name": "Observer",
+        "groupId": 1
+      },
+      {
+        "id": 277,
+        "name": "[T] Vanguard",
+        "groupId": 1
+      },
+      {
+        "id": 278,
+        "name": "Std Carrier Drone",
+        "groupId": 1
+      },
+      {
+        "id": 279,
+        "name": "[T] Recon Drone",
+        "groupId": 1
+      },
+      {
+        "id": 286,
+        "name": "Upgrade Garrison",
+        "groupId": 1
+      },
+      {
+        "id": 292,
+        "name": "EW Seismic Cannon",
+        "groupId": 1
+      },
+      {
+        "id": 296,
+        "name": "ER Nanite 3",
+        "groupId": 1
+      }
+    ]
+  },
+  {
+    "name": "hangar-command-720p",
+    "ship": 8096,
+    "station": 1051,
+    "hover": "Launch",
+    "group": null,
+    "buckets": null
+  },
+  {
+    "name": "hangar-help-720p",
+    "ship": 8096,
+    "station": 1051,
+    "hover": "None",
+    "group": null,
+    "buckets": null
+  },
+  {
+    "name": "hangar-team-720p",
+    "ship": 8096,
+    "station": 1051,
+    "hover": "Launch",
+    "group": null,
+    "buckets": null
+  },
+  {
+    "name": "hangar-quit-720p",
+    "ship": 8096,
+    "station": 1051,
+    "hover": "Launch",
+    "group": null,
+    "buckets": null
+  }
+]

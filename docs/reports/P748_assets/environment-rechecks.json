@@ -1,0 +1,196 @@
+{
+  "classification": "environment context, not load flake",
+  "physicalScratch": "/home/domingo/allegiance-codex-p748/.p748-scratch/path-fixtures",
+  "logicalPath": "/proc/<parent>/fd/<fd>",
+  "results": [
+    {
+      "method": "UsesExecutableDirectoryOutsideRepository",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002992"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029951"
+        }
+      ]
+    },
+    {
+      "method": "UsesExecutableDirectoryOutsideRepository",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003981"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0037438"
+        }
+      ]
+    },
+    {
+      "method": "UsesExecutableDirectoryOutsideRepository",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0045678"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0005411"
+        }
+      ]
+    },
+    {
+      "method": "MissingDirectoryHasNoDefault",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001272"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0037230"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003650"
+        }
+      ]
+    },
+    {
+      "method": "MissingDirectoryHasNoDefault",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0030570"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0000935"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002757"
+        }
+      ]
+    },
+    {
+      "method": "MissingDirectoryHasNoDefault",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002632"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0030051"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001132"
+        }
+      ]
+    },
+    {
+      "method": "LocalConfigWinsOverBundleWithBlankEnvironment",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Passed",
+          "duration": "00:00:00.0152674"
+        }
+      ]
+    },
+    {
+      "method": "LocalConfigWinsOverBundleWithBlankEnvironment",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Passed",
+          "duration": "00:00:00.0152167"
+        }
+      ]
+    },
+    {
+      "method": "LocalConfigWinsOverBundleWithBlankEnvironment",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Passed",
+          "duration": "00:00:00.0033838"
+        }
+      ]
+    },
+    {
+      "method": "NativeSourceNeverGuessesAnInstallSubdirectory",
+      "repeat": 1,
+      "exitCode": 0,
+      "cases": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029150"
+        }
+      ]
+    },
+    {
+      "method": "NativeSourceNeverGuessesAnInstallSubdirectory",
+      "repeat": 2,
+      "exitCode": 0,
+      "cases": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Passed",
+          "duration": "00:00:00.0036512"
+        }
+      ]
+    },
+    {
+      "method": "NativeSourceNeverGuessesAnInstallSubdirectory",
+      "repeat": 3,
+      "exitCode": 0,
+      "cases": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Passed",
+          "duration": "00:00:00.0030383"
+        }
+      ]
+    }
+  ]
+}

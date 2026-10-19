@@ -17,7 +17,8 @@ public sealed class Probe : Model, IProbeIgc
     private const short c_eabmShootOnlyTarget = 0x1000;
 
     private readonly Sector _sector;
-    private readonly double _timeExpire;
+    private double _timeExpire;
+    internal void SetExpiration(double now) => _timeExpire = now;
 
     // P491 armed-probe state: the fire clock, the ammo pool and the persisted
     // target (CprobeIGC::m_nextFire/m_ammo/m_target, probeigc.h:327-335).

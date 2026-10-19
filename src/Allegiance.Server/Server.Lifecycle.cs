@@ -775,6 +775,7 @@ public sealed partial class Server
         _host.ShipKilled = BroadcastKillShip;   // wire the site's KillShipEvent to a broadcast
         _host.ShipWarped = OnShipWarped;        // wire the site's HitWarpEvent transit to per-peer routing
         _host.Payday = OnPayday;                // wire the site's PaydayEvent to the per-side wire payout
+        _host.StationConstructed = OnStationConstructed;
         _host.StationBuilt = OnStationBuilt;
         _host.BucketCompletedHook = OnBucketCompleted;  // P119: wire the site's BucketCompleted to the completion recorder (detection only)
         _host.BucketChanged += OnBucketChanged;
@@ -807,6 +808,7 @@ public sealed partial class Server
                 RespawnCarriedFlag(owner, treasure.Data.TreasureId);
         };  // P586: wire the site's TreasureDestroyedEvent (expiry) to the whole-mission DESTROY_TREASURE
         _host.WarpBomb = BroadcastWarpBomb;                   // P101: wire the site's WarpBombEvent to the WHOLE-mission wire broadcast
+        _host.StaleAsteroidKilled = BroadcastStaleAsteroidDestroyed;
         _host.AsteroidKilled = BroadcastAsteroidDestroyed;     // P102: wire the site's KillAsteroidEvent to the WHOLE-mission wire broadcast
         _host.StationKilled = BroadcastStationDestroyed;       // P125: wire the site's KillStationEvent to VacateStation + WHOLE-mission STATION_DESTROYED(59)
         _host.StationDamaged = BroadcastStationDamaged;        // P451: wire the site's DamageStationEvent to the defending team's under-attack / critical alert

@@ -23,7 +23,7 @@ public static class InvestmentLayout
 
         rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Title, "TEAM INVESTMENT"));
         rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Hint,
-            "UP/DOWN NAV  SPACE INVEST  R PARTIAL  S SHOW-ALL  H HIDE-COMPLETED  B BACK"));
+            "UP/DOWN NAV  SPACE INVEST  R PARTIAL  S SHOW-ALL  H HIDE-COMPLETED  [/] TABS  B BACK"));
         rows.Add(ShopLayout.Row.Blank());
 
         if (!m.MissionInProgress || !m.HasSide)
@@ -41,8 +41,10 @@ public static class InvestmentLayout
 
         rows.Add(ShopLayout.Row.Blank());
 
-        if (m.Current is { Description.Length: > 0 } selected)
-            rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Info, AsciiSafe(selected.Description)));
+        if (m.SelectedGroup is not null)
+            rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Section, string.Join(" | ", m.Groups.Select(g =>
+                g == m.SelectedGroup ? $"[{InvestmentPaneModel.GroupNames[g]}]"
+                    : m.GroupEnabled(g) ? InvestmentPaneModel.GroupNames[g] : $"({InvestmentPaneModel.GroupNames[g]})"))));
         var items = m.Items;
         BucketItemType? lastGroup = null;
         for (int i = 0; i < items.Count; i++)
@@ -60,6 +62,29 @@ public static class InvestmentLayout
             rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Muted,
                 "(no fundable buckets - press S to SHOW-ALL, or H to unhide completed)"));
 
+        return rows;
+    }
+
+    // Native PartInfoPaneImpl selection: loadout.cpp:1376-1409,1453-1499.
+    public static IReadOnlyList<ShopLayout.Row> Detail(InvestmentPaneModel m)
+    {
+        if (m.Current is not { } b) return [];
+        var rows = new List<ShopLayout.Row>
+        {
+            ShopLayout.Row.Of(ShopLayout.Kind.Title, AsciiSafe(b.Name)),
+            ShopLayout.Row.Of(ShopLayout.Kind.Info, $"Cost: ${b.Price}   Time: {b.TimeToBuildSec} Sec."),
+            ShopLayout.Row.Of(ShopLayout.Kind.Info, $"Funded: {m.PercentBought(b)}%   Remaining: ${m.RemainingMoney(b)} / {m.RemainingTimeMs(b) / 1000}s"),
+            ShopLayout.Row.Of(ShopLayout.Kind.Info, m.Completed(b) ? "Complete" : m.CanInvest(b) ? "Ready to invest" : "Investment unavailable")
+        };
+        // Bound each description line so the detail pane remains usable at 720p.
+        string text = AsciiSafe(b.Description);
+        while (text.Length > 0)
+        {
+            int length = Math.Min(42, text.Length);
+            if (length < text.Length && text.LastIndexOf(' ', length - 1, length) is > 0 and var split) length = split;
+            rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Info, text[..length]));
+            text = text[length..].TrimStart();
+        }
         return rows;
     }
 

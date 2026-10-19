@@ -1,0 +1,33 @@
+{
+  "raw_fast_passed": false,
+  "raw_fast_counts": {
+    "Passed": 8826,
+    "Failed": 5,
+    "NotExecuted": 3
+  },
+  "timing_violations": 0,
+  "infrastructure_checks_passed": 9,
+  "environment_failure_methods": [
+    "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository"
+  ],
+  "environment_rechecks": {
+    "invocations": 12,
+    "case_executions": 21,
+    "passed": 21,
+    "failed": 0,
+    "exact_method_repetitions": 3
+  },
+  "classification": "Known repository-ancestor fixture context, matching SC2; not a load flake. Assertions and product sources unchanged.",
+  "physical_scratch": "/home/domingo/allegiance-codex-p747/.p747-scratch/temp",
+  "logical_TMPDIR": "/proc/<parent>/fd/3 (directory descriptor opened on the same physical scratch)",
+  "full_fast_runs": 1,
+  "skips": [
+    "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+    "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+    "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before"
+  ],
+  "qualification": "All implementation checks and corrected-context path checks pass; original fast runner FAIL is retained."
+}

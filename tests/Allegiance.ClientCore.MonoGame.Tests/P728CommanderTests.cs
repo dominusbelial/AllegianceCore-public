@@ -84,7 +84,7 @@ public class P728CommanderTests
         var a = new InvestmentBucket(1, BucketItemType.BitDevelopment, "a", 100, 1, -1, -1, 10, -1);
         var b = a with { Id = 2, DevelopmentId = 11 };
         var model = new InvestmentPaneModel([a, b], new Dictionary<short, ClientWorld.BucketFunding> { [2] = new(100, 1000) },
-            true, true, 1000, cursor: 99);
+            true, true, 1000, cursor: 99, hideCompleted: true);
         Assert.Equal(0, model.Cursor);
         Assert.Equal(a, model.Current);
         Assert.Single(InvestmentLayout.Build(model), r => r.Kind == ShopLayout.Kind.Item && r.Highlight);

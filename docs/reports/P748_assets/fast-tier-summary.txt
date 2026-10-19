@@ -1,0 +1,4 @@
+fast: 8814 tests, 275.4s, FAIL
+  ERROR: Allegiance.Core.Tests: main failed
+Fast infrastructure: PASS (9 checks, 0.059s)
+Overall: FAIL

@@ -1,0 +1,8 @@
+{
+  "tests/Allegiance.ClientCore.Tests/bin/Debug/net10.0/Allegiance.ClientCore.Tests.dll": "f269b658111ecd3077727aa34d798060058f68ac13154afd984686b189cfbaa7",
+  "tests/Allegiance.ClientCore.MonoGame.Tests/bin/Debug/net10.0/Allegiance.ClientCore.MonoGame.Tests.dll": "ad075ff156f4e27e45c098395f64c5bffe336b6e2e6c2cc557bff05b314300bd",
+  "tests/Allegiance.Lobby.Tests/bin/Debug/net10.0/Allegiance.Lobby.Tests.dll": "ad6de6a66d3d9aad34b5e29629ca644ddacfbed9edae1597265e492c3ce9f99a",
+  "tests/Allegiance.Core.Tests/bin/Debug/net10.0/Allegiance.Core.Tests.dll": "b627d3e30af916e908abc3b637a3b857aae7c2687d8fede5c39b5ca7697f0265",
+  "src/Allegiance.Core/bin/Debug/net10.0/Allegiance.Core.dll": "0e5980ac4200ce0000d5a624aa22fa3aa4a28a041d4a101cdec8255a1a7b6126",
+  "src/Allegiance.Server/bin/Debug/net10.0/Allegiance.Server.dll": "f2dd5dc0ef84030746fbca709bfee7ef8135569b3d36f018b6e72caa445c7758"
+}

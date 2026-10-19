@@ -582,7 +582,7 @@ public sealed partial class Mission
         foreach (var sector in sectors)
         {
             sector.Mission = mission;
-            foreach (var asteroid in sector.Mineable) asteroid.Mission = mission;
+            foreach (var asteroid in sector.Mineable) { asteroid.Mission = mission; asteroid.Sector = sector; }
         }
         // P259 — wire the sides back to the mission (the analogue of the Sector
         // back-link just above) and seed each side's cluster visibility range
@@ -889,6 +889,7 @@ public sealed partial class Mission
             throw new InvalidOperationException(
                 $"sector '{sector.Name}' is not part of this mission; an asteroid can only be placed in a sector the mission owns");
         asteroid.Mission = this;
+        asteroid.Sector = sector;
         sector.AttachAsteroid(asteroid);
     }
 

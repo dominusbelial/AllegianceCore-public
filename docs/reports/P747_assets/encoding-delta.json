@@ -1,0 +1,11 @@
+{
+  "native_rule": "_Utility/Utility.h:1341-1358: BytePercentage assignment clamps and rounds fraction * 240 + 0.5",
+  "production_change": "Sector.BuildStationRecord uses the existing CompactQuant.Percent for the source-rock hull fraction; a using alias avoids CollisionEvent namespace ambiguity. Station documentation no longer describes an incorrect plain byte cast.",
+  "test_changes": [
+    "Core completion callback asserts a 75% source rock becomes BpHull byte 180.",
+    "Direct BuildStation TCP test damages the source rock to 75% and asserts the received station export carries byte 180."
+  ],
+  "post_change_qualification": "37 affected methods / 61 cases repeated three individual exact-method invocations after the final whole-solution build.",
+  "pose_rule": "FedSrv/FedSrv.CPP:11390-11395; _Utility/Utility.h:515-574: Rotation is forward axis (0,0,1) plus angle zero, not quaternion identity.",
+  "pose_change": "BuildStationRecord exports [0,0,1,0]; both core callback and actual received TCP station data assert that array."
+}

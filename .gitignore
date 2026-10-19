@@ -44,3 +44,7 @@ TestResults/
 /tools/bench-collector/dist/
 /tools/bench-collector/.wrangler/
 /tools/bench-collector/.dev.vars
+
+# P748 sandbox fallback: scratch is removed; raw verification stays local.
+/.p748-scratch/
+/.p748-evidence/

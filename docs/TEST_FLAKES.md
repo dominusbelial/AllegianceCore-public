@@ -4,6 +4,43 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P747 environment observation (2026-10-19)
+
+The one fast-tier run had **8,826 pass / 5 fail / 3 existing private-asset skips**;
+all nine infrastructure checks passed and there were no timing violations. The
+five failures were the same temporary-install `PlayerBundlePathsTests` context
+issue recorded by SC2 below: workspace scratch made ancestor discovery read the
+real checkout's `local.env`. These are **environment-context failures, not load
+flakes**.
+
+`MissingDirectoryHasNoDefault`, `NativeSourceNeverGuessesAnInstallSubdirectory`,
+`LocalConfigWinsOverBundleWithBlankEnvironment`, and
+`UsesExecutableDirectoryOutsideRepository` each passed **3/3 exact-method isolated
+invocations**, **21/21 case executions**, with their assertions unchanged. A
+logical `/proc/<parent>/fd/3` alias points at the same NVMe workspace scratch,
+without a repository ancestor in the fixture's logical path. No test or product
+source changed to suppress these failures; the full fast tier was not repeated.
+The original runner FAIL remains recorded. See [P747](reports/P747_PARITY_WAVE_SIM14.md),
+[qualification](reports/P747_assets/qualification.json), and
+[isolated receipts](reports/P747_assets/path-rechecks.json).
+
+## P748 environment observation (2026-10-19)
+
+The single fast-tier sweep had **8,806 passed / 5 failed / 3 optional private-pack skips**,
+with no timing violations. All five failures were unchanged `PlayerBundlePathsTests`
+fixtures whose workspace-local temporary paths found the real checkout's `local.env`
+through ancestor discovery. This matches the SC2 environment observation below and is
+**not classified as a load flake**. The four affected methods (including all theory rows)
+passed **3/3 individual invocations each**, totaling **21 passing cases**, using a logical
+`/proc/<parent>/fd/<fd>` alias to the same workspace NVMe scratch directory. No assertion,
+deadline, resolver or quarantine changed. The original runner FAIL is preserved; no
+second fast sweep was run. All 64 selected UI test methods separately passed 3/3
+(348 case executions). See [P748](reports/P748_PARITY_WAVE_UI6.md),
+[original fast summary](reports/P748_assets/fast-tier-summary.json), and
+[environment rechecks](reports/P748_assets/environment-rechecks.json).
+Raw logs/TRX remain ignored in `/home/domingo/allegiance-codex-p748/.p748-evidence/`;
+the preferred home evidence directory is outside this lane's writable roots.
+
 ## SC2 environment observation (2026-10-19)
 
 The single fast-tier sweep had **8774 pass / 5 fail / 3 optional skips**, with no timing violations. The five failures were `PlayerBundlePathsTests` temporary-install cases: workspace scratch put their fixture paths beneath the real repository, so ancestor discovery read the checkout's `local.env`. These are environment-context failures, **not load flakes**. All nine path cases passed with a logical `/proc/<parent>/fd/3` alias to the same NVMe scratch directory; each affected method subsequently passed 3/3 isolated invocations with its assertions unchanged. The original runner FAIL is preserved and the sweep was not repeated. See [SC2](reports/SC2_NANITE_SUPPORT.md) and [validation](reports/SC2_assets/validation.json).

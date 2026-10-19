@@ -1,0 +1,19 @@
+{
+  "focused": {
+    "invocations": 261,
+    "methods": 87,
+    "case_executions": 417,
+    "failed": 0,
+    "skipped": 0,
+    "exact_method_repetitions": 3
+  },
+  "construction-focused": {
+    "invocations": 111,
+    "methods": 37,
+    "case_executions": 183,
+    "failed": 0,
+    "skipped": 0,
+    "exact_method_repetitions": 3
+  },
+  "qualification_note": "The 87-method serial cohort precedes final station-export field corrections. The 37 affected construction methods, including all 17 new methods, were repeated after the final source change; unaffected tests retain the earlier serial qualification."
+}

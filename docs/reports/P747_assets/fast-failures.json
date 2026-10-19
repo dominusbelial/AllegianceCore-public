@@ -1,0 +1,32 @@
+[
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "case": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+    "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Artwork\"\n           \u2191 (pos 0)",
+    "duration": "00:00:00.0004544"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "case": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Allegiance\"\n           \u2191 (pos 0)",
+    "duration": "00:00:00.0002434"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "case": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+    "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Allegiance\"\n           \u2191 (pos 0)",
+    "duration": "00:00:00.0012627"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "case": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "message": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \"/home/domingo/allegiance-codex-p747/.p747\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)",
+    "duration": "00:00:00.0211162"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+    "case": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+    "message": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \"/home/domingo/allegiance-codex-p747/.p747\"\u00b7\u00b7\u00b7\nActual:   \"/home/domingo/Development/Artwork\"\n                         \u2191 (pos 14)",
+    "duration": "00:00:00.0188416"
+  }
+]

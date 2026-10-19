@@ -1,0 +1,35 @@
+{
+  "reason": "Five pre-pose-correction runs passed but are superseded by the five final-source runs. They are not counted in the final gate.",
+  "runs": [
+    {
+      "repetition": 1,
+      "outcome": "Passed",
+      "receipt": "P700 local 15v15: 109.0s, samples=1089, reached=29/30, longest speed<1 with target=1.906s, shots=4031, hits=1410, kills=12",
+      "qualified_for_final_source": false
+    },
+    {
+      "repetition": 2,
+      "outcome": "Passed",
+      "receipt": "P700 local 15v15: 107.6s, samples=1075, reached=29/30, longest speed<1 with target=1.607s, shots=2598, hits=1196, kills=9",
+      "qualified_for_final_source": false
+    },
+    {
+      "repetition": 3,
+      "outcome": "Passed",
+      "receipt": "P700 local 15v15: 107.8s, samples=1077, reached=29/30, longest speed<1 with target=2.005s, shots=2924, hits=1217, kills=11",
+      "qualified_for_final_source": false
+    },
+    {
+      "repetition": 4,
+      "outcome": "Passed",
+      "receipt": "P700 local 15v15: 107.9s, samples=1078, reached=28/30, longest speed<1 with target=1.904s, shots=3069, hits=1520, kills=9",
+      "qualified_for_final_source": false
+    },
+    {
+      "repetition": 5,
+      "outcome": "Passed",
+      "receipt": "P700 local 15v15: 108.3s, samples=1082, reached=28/30, longest speed<1 with target=2.006s, shots=3120, hits=1448, kills=13",
+      "qualified_for_final_source": false
+    }
+  ]
+}

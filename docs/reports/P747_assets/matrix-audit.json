@@ -1,0 +1,131 @@
+{
+  "changed": [
+    {
+      "row": "SIM-0044",
+      "before": "partial",
+      "after": "partial",
+      "fields": [
+        "port_cite_or_reason",
+        "evidence",
+        "notes"
+      ],
+      "weight": "4"
+    },
+    {
+      "row": "SIM-0045",
+      "before": "partial",
+      "after": "implemented",
+      "fields": [
+        "port_status",
+        "port_cite_or_reason",
+        "evidence",
+        "notes"
+      ],
+      "weight": "4"
+    },
+    {
+      "row": "SIM-0048",
+      "before": "partial",
+      "after": "implemented",
+      "fields": [
+        "port_status",
+        "port_cite_or_reason",
+        "evidence",
+        "notes"
+      ],
+      "weight": "4"
+    },
+    {
+      "row": "SIM-0060",
+      "before": "missing",
+      "after": "implemented",
+      "fields": [
+        "port_status",
+        "port_cite_or_reason",
+        "evidence",
+        "notes"
+      ],
+      "weight": "4"
+    },
+    {
+      "row": "SIM-0168",
+      "before": "partial",
+      "after": "implemented",
+      "fields": [
+        "port_status",
+        "port_cite_or_reason",
+        "port_site_binding",
+        "evidence",
+        "notes"
+      ],
+      "weight": "3"
+    },
+    {
+      "row": "SIM-0169",
+      "before": "partial",
+      "after": "implemented",
+      "fields": [
+        "port_status",
+        "port_cite_or_reason",
+        "port_site_binding",
+        "evidence",
+        "notes"
+      ],
+      "weight": "3"
+    },
+    {
+      "row": "SIM-0185",
+      "before": "missing",
+      "after": "implemented",
+      "fields": [
+        "port_status",
+        "port_cite_or_reason",
+        "port_site_binding",
+        "evidence",
+        "notes"
+      ],
+      "weight": "3"
+    },
+    {
+      "row": "SIM-0186",
+      "before": "partial",
+      "after": "n/a",
+      "fields": [
+        "port_status",
+        "port_cite_or_reason",
+        "port_site_binding",
+        "evidence",
+        "notes"
+      ],
+      "weight": "3"
+    },
+    {
+      "row": "SIM-0190",
+      "before": "partial",
+      "after": "implemented",
+      "fields": [
+        "port_status",
+        "port_cite_or_reason",
+        "port_site_binding",
+        "evidence",
+        "notes"
+      ],
+      "weight": "3"
+    },
+    {
+      "row": "SIM-0229",
+      "before": "partial",
+      "after": "implemented",
+      "fields": [
+        "port_status",
+        "port_cite_or_reason",
+        "port_site_binding",
+        "evidence",
+        "notes"
+      ],
+      "weight": "3"
+    }
+  ],
+  "native_fields_and_weights_preserved": true,
+  "LF": true
+}

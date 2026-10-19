@@ -1,0 +1,562 @@
+[
+  {
+    "area": "screens",
+    "native_item": "Training screen",
+    "native_cite": "WinTrek/trainingscreen.cpp:175-230; WinTrek/WinTrek.cpp:7401-7421; training/trainingmission.cpp:651-788",
+    "port_status": "partial",
+    "port_cite_or_reason": "goal/condition/action framework ported in TR-1 (src/Allegiance.ClientCore/Training: TrainingMission base + ITrainingSite + Goal/GoalList + Condition/Action graph + control masks + Mission2 data) with unit tests; the standalone training-screen UI and the in-process host binding remain for TR-2 (after P727). docs/reports/TR1_TRAINING_FRAMEWORK.md",
+    "weight": "3"
+  },
+  {
+    "area": "screens",
+    "native_item": "Chat pane / History scrolling and channels",
+    "native_cite": "WinTrek/chatpane.cpp:255-270; WinTrek/chatpane.cpp:340-350",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/ChatScroll.cs; native channel filtering/history interaction needs end-to-end proof",
+    "weight": "2.500"
+  },
+  {
+    "area": "screens",
+    "native_item": "Chat pane / Compose and send focus flow",
+    "native_cite": "WinTrek/WinTrek.cpp:9441-9446; WinTrek/console.cpp:1282-1338",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:764; tests/Allegiance.ClientCore.MonoGame.Tests/ChatTargetLogicTests.cs; key-map and target logic tests do not exercise production compose/send handler",
+    "weight": "2.500"
+  },
+  {
+    "area": "commander",
+    "native_item": "Team chat / Compose recipient and team rendering",
+    "native_cite": "WinTrek/console.cpp:1282-1338; WinTrek/chatpane.cpp:311-350",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/ChatRenderer.cs; tests/Allegiance.ClientCore.MonoGame.Tests/ChatTargetLogicTests.cs; default Team send is covered but full compose-focus and native channel filtering are not",
+    "weight": "2.500"
+  },
+  {
+    "area": "lobby",
+    "native_item": "Connect to server (host/IP + character) / Connect progress failure retry and abort",
+    "native_cite": "WinTrek/introscreen.cpp:1667-1699; WinTrek/introscreen.cpp:1794-1797",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.ConnectScreen.cs; progress/failure return exists; full native retry/abort state machine not certified by layout/parser tests",
+    "weight": "2.500"
+  },
+  {
+    "area": "screens",
+    "native_item": "F-key help overlay(s) / Manual pages and navigation",
+    "native_cite": "WinTrek/WinTrek.cpp:9243-9256",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs; generated key reference exists; native hlpStart page/manual navigation not reproduced",
+    "weight": "2.000"
+  },
+  {
+    "area": "commander",
+    "native_item": "Drones: mine layers / Default least-targeted asteroid plan",
+    "native_cite": "Igc/shipIGC.h:2417-2434",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.Core/Sim/Ship.cs; default plan is present; full native least-targeted/cowardly any-cluster search has no discriminating proof here",
+    "weight": "2.000"
+  },
+  {
+    "area": "commander",
+    "native_item": "Team leadership / owner (promote, owner-only cmds) / Donation-preferred departure succession",
+    "native_cite": "FedSrv/fsmission.cpp:949-990; FedSrv/FedSrv.CPP:13981-14024",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.Server/Server.Lobby.cs:2378; tests/Allegiance.Core.Tests/LiveTeamLeadershipTests.cs:333; picks lowest ID instead of donation preference",
+    "weight": "2.000"
+  },
+  {
+    "area": "commander",
+    "native_item": "Sector threat / alerts / Map threat marker and alert presentation",
+    "native_cite": "WinTrek/sectormap.cpp:1056-1099; WinTrek/sectormap.cpp:1449-1451",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/StarmapRenderer.cs; warning data exists; native warning-icon/text and alert presentation requires full branch-specific proof",
+    "weight": "2.000"
+  },
+  {
+    "area": "lobby",
+    "native_item": "Server list / browse lobby / Directory filters details and player search",
+    "native_cite": "WinTrek/gamescreen.cpp:1308-1375",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.Session.cs; current text filter and server records do not implement every native game-filter/details/find-player flow",
+    "weight": "2.000"
+  },
+  {
+    "area": "lobby",
+    "native_item": "Mission briefing screen / Civilization-generated briefing and tips",
+    "native_cite": "WinTrek/teamscreen.cpp:732-793; WinTrek/teamscreen.cpp:820-826",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs; server briefing is rendered; native generated civ prose/tips not fully reproduced",
+    "weight": "2.000"
+  },
+  {
+    "area": "lobby",
+    "native_item": "Lobby chat / Lobby-directory relay feedback",
+    "native_cite": "clintlib/appmsg.cpp:2640-2665",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.Session.cs; tests/Allegiance.ClientCore.Tests/P678LobbyRelayLiveTests.cs; relay status covered; full native social/directory chat channel behavior is broader than this port",
+    "weight": "2.000"
+  },
+  {
+    "area": "screens",
+    "native_item": "Loadout panel (shop) / Native saved and default loadout controls",
+    "native_cite": "WinTrek/load.cpp:1639-1648",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/ShopModel.cs; custom part selection exists; native saved/default loadout controls require separate verification",
+    "weight": "1.668"
+  },
+  {
+    "area": "commander",
+    "native_item": "Wing / command orders to drones / General default-order target resolution",
+    "native_cite": "clintlib/clintlib.cpp:2200-2240",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/CommandOrderResolver.cs:29; direct selected-commandee cursor resolver only maps builder/asteroid; other default target/role pairs require separate parity proof",
+    "weight": "1.668"
+  },
+  {
+    "area": "commander",
+    "native_item": "Build / research queue / Client queue predecessor and grouping UI",
+    "native_cite": "WinTrek/loadout.cpp:777-785; WinTrek/loadout.cpp:1004-1011",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs; predecessor pruning and native group tabs incomplete",
+    "weight": "1.668"
+  },
+  {
+    "area": "commander",
+    "native_item": "Drones: miners / Native optimal travel controls",
+    "native_cite": "Igc/common.cpp:1830-2000",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.Core/Sim/Ship.cs:5190; ApplyNpcAutopilot documents simplified steering versus native GotoPlan; economic cycle tests do not certify identical trajectories",
+    "weight": "1.668"
+  },
+  {
+    "area": "screens",
+    "native_item": "Loadout panel (shop) / Hull and part purchase gates",
+    "native_cite": "WinTrek/load.cpp:1498-1554",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/ShopModel.cs; tests/Allegiance.ClientCore.MonoGame.Tests/ShopModelTests.cs; native loadout UI has richer hull/custom/default loadout flow; see WinTrek/hangarscreen.cpp:196-201",
+    "weight": "1.666"
+  },
+  {
+    "area": "screens",
+    "native_item": "Mission briefing screen / Civilization-generated briefing and tips",
+    "native_cite": "WinTrek/teamscreen.cpp:732-793; WinTrek/teamscreen.cpp:820-826",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs; server briefing is rendered; native generated civ prose/tips not fully reproduced",
+    "weight": "1.500"
+  },
+  {
+    "area": "lobby",
+    "native_item": "AFK / auto-seat handling / Timed automatic side assignment",
+    "native_cite": "WinTrek/teamscreen.cpp:2962-2982",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.Server/Server.Lobby.cs:3796; tests/Allegiance.Core.Tests/LiveSideSelectTests.cs:142; 30-second silent-peer seating is a port policy, not native POSITIONREQ waiting behavior",
+    "weight": "1.500"
+  },
+  {
+    "area": "screens",
+    "native_item": "Scoreboard / leaderboard screen / Column sort and profile navigation",
+    "native_cite": "WinTrek/leaderboardscreen.cpp:521-539; WinTrek/leaderboardscreen.cpp:633-670",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/ScoreboardLayout.cs; match scoreboard exists; native career controls absent",
+    "weight": "1.334"
+  },
+  {
+    "area": "screens",
+    "native_item": "Character-info screen / Leaderboard and games navigation",
+    "native_cite": "WinTrek/CharInfoScreen.cpp:804-826",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.Rendering.cs; match roster views exist; native profile-to-leaderboard flow absent",
+    "weight": "1.334"
+  },
+  {
+    "area": "screens",
+    "native_item": "Commander / sector map / Generic target-to-order interaction",
+    "native_cite": "clintlib/clintlib.cpp:2200-2240",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/CommandOrderResolver.cs; direct cursor mapping is builder/asteroid only; other native role/default-target combinations require separate proof",
+    "weight": "1.334"
+  },
+  {
+    "area": "screens",
+    "native_item": "Server list / lobby browser / Find-player and details popup",
+    "native_cite": "WinTrek/gamescreen.cpp:1308-1326; WinTrek/gamescreen.cpp:1355-1375",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.Session.cs; server browsing exists; full native directory player lookup/details flow missing",
+    "weight": "1.334"
+  },
+  {
+    "area": "lobby",
+    "native_item": "Kick / ban / mute (moderation) / Native moderator ban and defection boot",
+    "native_cite": "FedSrv/FedSrv.CPP:6749-6818",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.Server/Server.Moderation.cs:8; native Steam moderator identity/ban and defection-side boot infrastructure absent; retained zero credit rather than whole-row done",
+    "weight": "1.334"
+  },
+  {
+    "area": "lobby",
+    "native_item": "Team lobby / team pane / Native team configuration and roster controls",
+    "native_cite": "WinTrek/teamscreen.cpp:1554-1563; WinTrek/teamscreen.cpp:2773-2815",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.Panes.cs; force-ready covered by P713LobbyScreenLiveTests; full auto-accept/team configuration controls not covered by this display",
+    "weight": "1.334"
+  },
+  {
+    "area": "screens",
+    "native_item": "in-game key rebinding popup / OK versus Cancel persistence",
+    "native_cite": "WinTrek/trekinput.cpp:2447-2458",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/KeyBindingController.cs:99; mutations persist immediately; native Cancel dismisses without SaveMap, requiring explicit rollback/persistence verification",
+    "weight": "1.334"
+  },
+  {
+    "area": "screens",
+    "native_item": "Scoreboard / leaderboard screen / Career leaderboard query and search",
+    "native_cite": "WinTrek/leaderboardscreen.cpp:435-503",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/ScoreboardLayout.cs; live match roster is not native persistent leaderboard query",
+    "weight": "1.333"
+  },
+  {
+    "area": "screens",
+    "native_item": "Scoreboard / leaderboard screen / Find-me and page navigation",
+    "native_cite": "WinTrek/leaderboardscreen.cpp:512-519; WinTrek/leaderboardscreen.cpp:554-630",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/ScoreboardLayout.cs; no career rank pagination or FindMe",
+    "weight": "1.333"
+  },
+  {
+    "area": "screens",
+    "native_item": "Character-info screen / Career stats and civilization selection",
+    "native_cite": "WinTrek/CharInfoScreen.cpp:717-774",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/PilotInfoLayout.cs; tests/Allegiance.ClientCore.MonoGame.Tests/PilotInfoLayoutTests.cs; displays current-match identity/stats; career/civ query incomplete",
+    "weight": "1.333"
+  },
+  {
+    "area": "screens",
+    "native_item": "Character-info screen / Profile editing and apply",
+    "native_cite": "WinTrek/CharInfoScreen.cpp:837-880",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/PilotInfoLayout.cs; no native editable profile/apply flow",
+    "weight": "1.333"
+  },
+  {
+    "area": "screens",
+    "native_item": "Server list / lobby browser / Sort and game filters",
+    "native_cite": "WinTrek/gamescreen.cpp:858-900; WinTrek/gamescreen.cpp:1348-1353",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.Session.cs; native multi-criterion game filters/sort are broader than current server list",
+    "weight": "1.333"
+  },
+  {
+    "area": "screens",
+    "native_item": "Game-over screen / Player results table",
+    "native_cite": "WinTrek/gameoverscreen.cpp:965-1009",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/GameOverScreenRenderer.cs; tests/Allegiance.Core.Tests/P655GameOverDeliveryTests.cs; counters arrive; native rank/assist/time-played presentation not fully matched",
+    "weight": "1.000"
+  },
+  {
+    "area": "screens",
+    "native_item": "Game-over screen / Team totals table",
+    "native_cite": "WinTrek/gameoverscreen.cpp:877-919",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/GameOverScreenRenderer.cs; no native per-side results table",
+    "weight": "1.000"
+  },
+  {
+    "area": "screens",
+    "native_item": "Game-over screen / Column sorting and reversal",
+    "native_cite": "WinTrek/gameoverscreen.cpp:840-874; WinTrek/gameoverscreen.cpp:922-956",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/GameOverScreenRenderer.cs; fixed display order; no interactive sorting",
+    "weight": "1.000"
+  },
+  {
+    "area": "screens",
+    "native_item": "Splash / loading screen / Timeout to intro and connection progress",
+    "native_cite": "WinTrek/splashscreen.cpp:34-46",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.ConnectScreen.cs; UI progresses to intro/connect; no timeout-transition handler test",
+    "weight": "1.000"
+  },
+  {
+    "area": "screens",
+    "native_item": "Teleport pane / Back and failure recovery",
+    "native_cite": "WinTrek/teleportpane.cpp:276-294; WinTrek/teleportpane.cpp:363-368",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.Panes.cs; refusal and dismiss exist; native pane reopen/reselection after board failure lacks handler proof",
+    "weight": "1.000"
+  },
+  {
+    "area": "screens",
+    "native_item": "Investment screen / Predecessor and continued-buyability filtering",
+    "native_cite": "WinTrek/loadout.cpp:1004-1011",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs:137; tests/Allegiance.ClientCore.MonoGame.Tests/InvestmentPaneModelTests.cs; predecessor absent; CanBuy approximated as not complete",
+    "weight": "1.000"
+  },
+  {
+    "area": "screens",
+    "native_item": "Investment screen / Station buildspot and builder gate",
+    "native_cite": "WinTrek/loadout.cpp:213-240; WinTrek/loadout.cpp:1124-1131",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/InvestmentBuildGates.cs; tests/Allegiance.ClientCore.MonoGame.Tests/InvestmentBuildGatesTests.cs; native exact BaseData station type is approximated by hull plus compatible active rock",
+    "weight": "1.000"
+  },
+  {
+    "area": "screens",
+    "native_item": "Investment screen / Tabs and status detail selection",
+    "native_cite": "WinTrek/loadout.cpp:777-785; WinTrek/loadout.cpp:1360-1499",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/InvestmentLayout.cs; tests/Allegiance.ClientCore.MonoGame.Tests/InvestmentLayoutTests.cs; grouped rows exist; native group tabs/prerequisite detail are incomplete",
+    "weight": "1.000"
+  },
+  {
+    "area": "screens",
+    "native_item": "Sector info pane / Known helium sum",
+    "native_cite": "WinTrek/sectormap.cpp:350-369; Igc/asteroidigc.h:280-285",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.Rendering.cs:2734; src/Allegiance.ClientCore/State/ClientWorld.cs:4113; tests/Allegiance.ClientCore.MonoGame.Tests/SectorInfoPaneLayoutTests.cs; helper sums supplied MineHe3 ore correctly, but production samples static ast.Ore and ignores live ore fractions; native uses evolving side-known ore. Needs mining/visibility-aware data flow and regression.",
+    "weight": "1.000"
+  },
+  {
+    "area": "screens",
+    "native_item": "Sector info pane / Hover-selected sector and expand button",
+    "native_cite": "WinTrek/sectormap.cpp:180-240",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/SectorInfoPaneLayout.cs:188; keyboard cycle exists; native hover preference and collapse toggle absent",
+    "weight": "1.000"
+  },
+  {
+    "area": "commander",
+    "native_item": "Investments / buy-in / Predecessor and continued-buyability filtering",
+    "native_cite": "WinTrek/loadout.cpp:1004-1011",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs:137; tests/Allegiance.ClientCore.MonoGame.Tests/InvestmentPaneModelTests.cs; predecessor absent; CanBuy approximated as not complete",
+    "weight": "1.000"
+  },
+  {
+    "area": "commander",
+    "native_item": "Investments / buy-in / Station buildspot and builder gate",
+    "native_cite": "WinTrek/loadout.cpp:213-240; WinTrek/loadout.cpp:1124-1131",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/InvestmentBuildGates.cs; tests/Allegiance.ClientCore.MonoGame.Tests/InvestmentBuildGatesTests.cs; native exact BaseData station type is approximated by hull plus compatible active rock",
+    "weight": "1.000"
+  },
+  {
+    "area": "commander",
+    "native_item": "Investments / buy-in / Tabs and status detail selection",
+    "native_cite": "WinTrek/loadout.cpp:777-785; WinTrek/loadout.cpp:1360-1499",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/InvestmentLayout.cs; tests/Allegiance.ClientCore.MonoGame.Tests/InvestmentLayoutTests.cs; grouped rows exist; native group tabs/prerequisite detail are incomplete",
+    "weight": "1.000"
+  },
+  {
+    "area": "commander",
+    "native_item": "Drones: constructors / Drilling and building controls",
+    "native_cite": "Igc/shipIGC.cpp:875-895; Igc/shipIGC.cpp:2262-2300",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.Core/Sim/Ship.cs; src/Allegiance.Core/Model/Sector.cs; tests/Allegiance.Core.Tests/BuildingConstructionLiveTests.cs; IsBuilding lifecycle exists but native roll/throttle, drilling alignment and hull-hit feedback sequence are incomplete",
+    "weight": "1"
+  },
+  {
+    "area": "screens",
+    "native_item": "Team pane / screen / Selected-player donate and stop buttons",
+    "native_cite": "WinTrek/teampane.cpp:1141-1245",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.Server/PlayerWallet.cs; authoritative wallet support exists; native selected-player donation buttons are absent from this pane",
+    "weight": "0.800"
+  },
+  {
+    "area": "screens",
+    "native_item": "Team pane / screen / Take-me-to and accept controls",
+    "native_cite": "WinTrek/teampane.cpp:1248-1367",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.Targeting.cs; underlying target/accept commands exist; selected-roster destination flow unverified",
+    "weight": "0.800"
+  },
+  {
+    "area": "screens",
+    "native_item": "Team pane / screen / Sort headers and player selection",
+    "native_cite": "WinTrek/teampane.cpp:1387-1458",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs:85; fixed name order without native selectable sort headers",
+    "weight": "0.800"
+  },
+  {
+    "area": "screens",
+    "native_item": "Hangar / loadout screen / Button hover feedback",
+    "native_cite": "WinTrek/hangarscreen.cpp:243-300",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Rendering/DockedScreenRenderer.cs; native hover-number feedback absent",
+    "weight": "0.560"
+  },
+  {
+    "area": "screens",
+    "native_item": "Hangar / loadout screen / Disembark then launch boarded ship",
+    "native_cite": "WinTrek/hangarscreen.cpp:149-152",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.Panes.cs:286; ordinary shop launch sends BUY_LOADOUT without native DisembarkAndLaunch path",
+    "weight": "0.555"
+  },
+  {
+    "area": "screens",
+    "native_item": "Hangar / loadout screen / Command view button",
+    "native_cite": "WinTrek/hangarscreen.cpp:182-194",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.Commanding.cs; command view exists; exact docked RequestViewCluster-before-view transition lacks handler proof",
+    "weight": "0.555"
+  },
+  {
+    "area": "screens",
+    "native_item": "Hangar / loadout screen / Team and help buttons",
+    "native_cite": "WinTrek/hangarscreen.cpp:210-215; WinTrek/hangarscreen.cpp:225-231",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.Rendering.cs; tests/Allegiance.ClientCore.MonoGame.Tests/TeamPaneLayoutTests.cs; tests/Allegiance.ClientCore.MonoGame.Tests/HelpOverlayTests.cs; overlays exist but exact docked button paths untested",
+    "weight": "0.555"
+  },
+  {
+    "area": "screens",
+    "native_item": "Hangar / loadout screen / Quit-mission button",
+    "native_cite": "WinTrek/hangarscreen.cpp:233-240",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs; quit flow exists; no native hangar Exit handler test",
+    "weight": "0.555"
+  },
+  {
+    "area": "lobby",
+    "native_item": "Training missions (tutorial) / Free Flight launch",
+    "native_cite": "WinTrek/trainingscreen.cpp:195-210",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/TrainingScreenModels.cs; no native mission-10 selection/runtime flow",
+    "weight": "0.370"
+  },
+  {
+    "area": "lobby",
+    "native_item": "Training missions (tutorial) / Back to intro",
+    "native_cite": "WinTrek/trainingscreen.cpp:160-164",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs; Escape returns to chooser; no production handler test for exact native return-to-intro destination",
+    "weight": "0.363"
+  },
+  {
+    "area": "lobby",
+    "native_item": "Training missions (tutorial) / Basic Flight launch/runtime",
+    "native_cite": "WinTrek/trainingscreen.cpp:187-193; training/mission2.cpp:50-70",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.Training.cs; tests/Allegiance.ClientCore.Tests/TrainingMission2Tests.cs; tests/Allegiance.ClientCore.Tests/TR2TrainingTests.cs; mission graph and runtime binding present; full native lesson completion through real client not proven",
+    "weight": "0.363"
+  },
+  {
+    "area": "lobby",
+    "native_item": "Training missions (tutorial) / Pre/post-training slideshow flow",
+    "native_cite": "WinTrek/trainingscreen.cpp:166-204",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs; native TrainSlideshow/PostTrainSlideshow progression absent",
+    "weight": "0.363"
+  },
+  {
+    "area": "lobby",
+    "native_item": "Training missions (tutorial) / Introduction mission",
+    "native_cite": "WinTrek/trainingscreen.cpp:182-185",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/TrainingScreenModels.cs:52; Playable=false",
+    "weight": "0.363"
+  },
+  {
+    "area": "lobby",
+    "native_item": "Training missions (tutorial) / Nanite mission",
+    "native_cite": "WinTrek/trainingscreen.cpp:253-255",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/TrainingScreenModels.cs:58; Playable=false",
+    "weight": "0.363"
+  },
+  {
+    "area": "screens",
+    "native_item": "Training screen / Free Flight launch",
+    "native_cite": "WinTrek/trainingscreen.cpp:195-210",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/TrainingScreenModels.cs; no native mission-10 selection/runtime flow",
+    "weight": "0.280"
+  },
+  {
+    "area": "screens",
+    "native_item": "Training screen / Back to intro",
+    "native_cite": "WinTrek/trainingscreen.cpp:160-164",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs; Escape returns to chooser; no production handler test for exact native return-to-intro destination",
+    "weight": "0.272"
+  },
+  {
+    "area": "screens",
+    "native_item": "Training screen / Basic Flight launch/runtime",
+    "native_cite": "WinTrek/trainingscreen.cpp:187-193; training/mission2.cpp:50-70",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.Training.cs; tests/Allegiance.ClientCore.Tests/TrainingMission2Tests.cs; tests/Allegiance.ClientCore.Tests/TR2TrainingTests.cs; mission graph and runtime binding present; full native lesson completion through real client not proven",
+    "weight": "0.272"
+  },
+  {
+    "area": "screens",
+    "native_item": "Training screen / Pre/post-training slideshow flow",
+    "native_cite": "WinTrek/trainingscreen.cpp:166-204",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs; native TrainSlideshow/PostTrainSlideshow progression absent",
+    "weight": "0.272"
+  },
+  {
+    "area": "screens",
+    "native_item": "Training screen / Introduction mission",
+    "native_cite": "WinTrek/trainingscreen.cpp:182-185",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/TrainingScreenModels.cs:52; Playable=false",
+    "weight": "0.272"
+  },
+  {
+    "area": "screens",
+    "native_item": "Training screen / Nanite mission",
+    "native_cite": "WinTrek/trainingscreen.cpp:253-255",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/TrainingScreenModels.cs:58; Playable=false",
+    "weight": "0.272"
+  },
+  {
+    "area": "screens",
+    "native_item": "Intro screen / LAN popup and polling",
+    "native_cite": "WinTrek/introscreen.cpp:824-837; WinTrek/introscreen.cpp:1832-1839",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Discovery/DiscoveryEngine.cs; tests/Allegiance.ClientCore.MonoGame.Tests/DiscoveryTests.cs; async UDP discovery is present; native session filtering/max-player rules are not reproduced exactly",
+    "weight": "0.250"
+  },
+  {
+    "area": "screens",
+    "native_item": "Intro screen / Options menu",
+    "native_cite": "WinTrek/introscreen.cpp:1847-1851",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs:236; tests/Allegiance.ClientCore.MonoGame.Tests/IntroScreenModelTests.cs; opens keybinding settings; native full options menu is broader",
+    "weight": "0.250"
+  },
+  {
+    "area": "screens",
+    "native_item": "Intro screen / Credits popup",
+    "native_cite": "WinTrek/introscreen.cpp:1853-1863",
+    "port_status": "partial",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs:692; tests/Allegiance.ClientCore.MonoGame.Tests/IntroScreenModelTests.cs; static credits view; native credits pane content/scrolling not certified",
+    "weight": "0.250"
+  },
+  {
+    "area": "screens",
+    "native_item": "Intro screen / Help button",
+    "native_cite": "WinTrek/introscreen.cpp:1806-1810",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/IntroScreenModel.cs:35; native Help button absent from seven-item intro menu",
+    "weight": "0.250"
+  },
+  {
+    "area": "screens",
+    "native_item": "Intro screen / Replay-intro button",
+    "native_cite": "WinTrek/introscreen.cpp:1865-1876",
+    "port_status": "missing",
+    "port_cite_or_reason": "P743 split: src/Allegiance.ClientCore.Game/IntroScreenModel.cs:35; no replay-intro action; movie asset exclusion does not implement the button",
+    "weight": "0.250"
+  }
+]

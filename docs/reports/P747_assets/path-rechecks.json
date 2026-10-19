@@ -1,0 +1,278 @@
+[
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "repetition": 1,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+      "--logger",
+      "trx;LogFileName=1-1.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/path-rechecks"
+    ],
+    "exit": 0,
+    "counts": {
+      "Passed": 3
+    },
+    "errors": [],
+    "TMPDIR": "/proc/2/fd/3"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "repetition": 2,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+      "--logger",
+      "trx;LogFileName=1-2.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/path-rechecks"
+    ],
+    "exit": 0,
+    "counts": {
+      "Passed": 3
+    },
+    "errors": [],
+    "TMPDIR": "/proc/2/fd/3"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+    "repetition": 3,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault",
+      "--logger",
+      "trx;LogFileName=1-3.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/path-rechecks"
+    ],
+    "exit": 0,
+    "counts": {
+      "Passed": 3
+    },
+    "errors": [],
+    "TMPDIR": "/proc/2/fd/3"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "repetition": 1,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "--logger",
+      "trx;LogFileName=2-1.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/path-rechecks"
+    ],
+    "exit": 0,
+    "counts": {
+      "Passed": 1
+    },
+    "errors": [],
+    "TMPDIR": "/proc/2/fd/3"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "repetition": 2,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "--logger",
+      "trx;LogFileName=2-2.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/path-rechecks"
+    ],
+    "exit": 0,
+    "counts": {
+      "Passed": 1
+    },
+    "errors": [],
+    "TMPDIR": "/proc/2/fd/3"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+    "repetition": 3,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "--logger",
+      "trx;LogFileName=2-3.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/path-rechecks"
+    ],
+    "exit": 0,
+    "counts": {
+      "Passed": 1
+    },
+    "errors": [],
+    "TMPDIR": "/proc/2/fd/3"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "repetition": 1,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "--logger",
+      "trx;LogFileName=3-1.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/path-rechecks"
+    ],
+    "exit": 0,
+    "counts": {
+      "Passed": 1
+    },
+    "errors": [],
+    "TMPDIR": "/proc/2/fd/3"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "repetition": 2,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "--logger",
+      "trx;LogFileName=3-2.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/path-rechecks"
+    ],
+    "exit": 0,
+    "counts": {
+      "Passed": 1
+    },
+    "errors": [],
+    "TMPDIR": "/proc/2/fd/3"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+    "repetition": 3,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "--logger",
+      "trx;LogFileName=3-3.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/path-rechecks"
+    ],
+    "exit": 0,
+    "counts": {
+      "Passed": 1
+    },
+    "errors": [],
+    "TMPDIR": "/proc/2/fd/3"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+    "repetition": 1,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+      "--logger",
+      "trx;LogFileName=4-1.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/path-rechecks"
+    ],
+    "exit": 0,
+    "counts": {
+      "Passed": 2
+    },
+    "errors": [],
+    "TMPDIR": "/proc/2/fd/3"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+    "repetition": 2,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+      "--logger",
+      "trx;LogFileName=4-2.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/path-rechecks"
+    ],
+    "exit": 0,
+    "counts": {
+      "Passed": 2
+    },
+    "errors": [],
+    "TMPDIR": "/proc/2/fd/3"
+  },
+  {
+    "method": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+    "repetition": 3,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.Core.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+      "--logger",
+      "trx;LogFileName=4-3.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/path-rechecks"
+    ],
+    "exit": 0,
+    "counts": {
+      "Passed": 2
+    },
+    "errors": [],
+    "TMPDIR": "/proc/2/fd/3"
+  }
+]

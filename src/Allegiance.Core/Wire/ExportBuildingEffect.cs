@@ -45,7 +45,7 @@ namespace Allegiance.Core.Wire;
 /// c_dtShrink = 10</c>, <c>buildingeffectigc.h:19-22</c>) and
 /// <see cref="DataBuildingEffectExport.TimeStart"/>
 /// (<c>buildingeffectigc.h:160-225</c>), and self-expires at completion (see
-/// <see cref="Allegiance.Core.Sim.BuildingEffect.BuildDuration"/>).
+/// <see cref="Allegiance.Core.Sim.ConstructionPhase.Duration"/>).
 /// </remarks>
 public sealed class ExportBuildingEffect : IFedMessage
 {

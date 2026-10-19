@@ -32,7 +32,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// exactly <c>bucketigc.h:51</c>.</para>
 ///
 /// <para><b>Native <c>CanInvest</c> fidelity</b> (loadout.cpp:1095-1142): this
-/// implements mission-in-progress, has-a-side, can-buy (~not completed), the
+/// implements mission-in-progress, has-a-side, the side CanBuy gate, the
 /// drone-type cap (<c>CountDronesOfType ≥ nMaxDronesPerTeam</c>), the station-type
 /// build-spot / no-builder gate (fed in by the host, default open), money &gt; 0,
 /// and not-already-100%. The host supplies live CanBuy and predecessor gates (P728).</para>
@@ -47,7 +47,8 @@ public sealed record InvestmentBucket(
     short DroneTypeId,
     short DevelopmentId,
     short StationTypeId,
-    string Description = "");
+    string Description = "",
+    int GroupId = 0);
 
 /// <summary>P487 — the pure interaction model backing the investment pane. See
 /// <see cref="InvestmentBucket"/> / the class-level doc for the money-ownership
@@ -73,12 +74,42 @@ public sealed class InvestmentPaneModel
     /// <summary>Show-all toggle (native Show-All / Hide-Completed checkboxes).</summary>
     public bool ShowAll { get; private set; }
 
-    /// <summary>Hide-completed toggle; on by default like native
-    /// (<c>m_pButtonShowComplete</c> unchecked).</summary>
+    /// <summary>Native Show Complete starts checked (loadout.cpp:763), so
+    /// Hide Completed starts off.</summary>
     public bool HideCompleted { get; private set; }
 
     /// <summary>Cursor index into <see cref="Items"/> (the filtered item rows).</summary>
     public int Cursor { get; private set; }
+    public int? SelectedGroup { get; private set; }
+    public static readonly string[] GroupNames = ["STARBASE", "GARRISON", "SUPREMACY", "TACTICAL", "EXPANSION", "SHIPYARD"];
+    public IReadOnlyList<int> Groups { get; }
+
+    public void SelectGroup(int group)
+    {
+        if (!GroupEnabled(group)) return;
+        SelectedGroup = group;
+        Cursor = 0;
+    }
+
+    public void CycleGroup(int delta)
+    {
+        var enabled = Groups.Where(GroupEnabled).ToList();
+        if (enabled.Count == 0) return;
+        int index = enabled.IndexOf(SelectedGroup ?? enabled[0]);
+        if (index < 0) index = delta < 0 ? 0 : -1;
+        SelectGroup(enabled[(index + delta % enabled.Count + enabled.Count) % enabled.Count]);
+    }
+
+    // Native BuyableTechExistsInGroup ignores Hide Completed when enabling a tab
+    // (WinTrek/loadout.cpp:1042-1083), but retains predecessor/mission-path gates.
+    public bool GroupEnabled(int group) => _hasSide && Groups.Contains(group)
+        && _defs.Any(b => b.GroupId == group && (CanBuy(b) || ShowAll) && PredecessorSatisfied(b));
+
+    private bool PredecessorSatisfied(InvestmentBucket b) => ShowAll
+        || !_predecessors.TryGetValue(b.Id, out var predecessor)
+        || _defs.FirstOrDefault(d => d.Id == predecessor) is not { } prior || Completed(prior);
+
+    private void ClampCursor() => Cursor = Math.Clamp(Cursor, 0, Math.Max(0, Items.Count - 1));
 
     public int? MyMoney => _myMoney;
     public int MaxDronesPerTeam => _maxDronesPerTeam;
@@ -95,11 +126,13 @@ public sealed class InvestmentPaneModel
         int maxDronesPerTeam = 4,
         Func<short, bool>? stationCanBuild = null,
         bool showAll = false,
-        bool hideCompleted = true,
+        bool hideCompleted = false,
         int cursor = 0,
         Func<InvestmentBucket, bool>? canBuy = null,
         IReadOnlyDictionary<short, short>? predecessors = null,
-        IReadOnlyDictionary<short, int>? droneCountByTypeId = null)
+        IReadOnlyDictionary<short, int>? droneCountByTypeId = null,
+        int? selectedGroup = null,
+        IReadOnlyList<int>? groups = null)
     {
         _defs = defs ?? Array.Empty<InvestmentBucket>();
         _missionInProgress = missionInProgress;
@@ -111,6 +144,8 @@ public sealed class InvestmentPaneModel
         _canBuy = canBuy ?? (_ => true);
         _predecessors = predecessors ?? new Dictionary<short, short>();
         _droneCountByTypeId = droneCountByTypeId;
+        Groups = groups ?? _defs.Select(b => b.GroupId).Where(g => g is >= 0 and <= 5).Distinct().Order().ToArray();
+        SelectedGroup = selectedGroup;
         ShowAll = showAll;
         HideCompleted = hideCompleted;
         if (funding != null)
@@ -144,8 +179,8 @@ public sealed class InvestmentPaneModel
     public long RemainingTimeMs(InvestmentBucket b) => Math.Max(0, TimeToBuildMs(b) - TimeMsOf(b));
 
     /// <summary>Native side CanBuy, supplied from a live tech/station snapshot,
-    /// plus the completed-bucket cut (WinTrek/loadout.cpp:1004-1010).</summary>
-    public bool CanBuy(InvestmentBucket b) => !Completed(b) && _canBuy(b);
+    /// independent of completion (Igc/sideigc.h:224-281).</summary>
+    public bool CanBuy(InvestmentBucket b) => _canBuy(b);
 
     // ── display list ───────────────────────────────────────────────────────
 
@@ -164,9 +199,9 @@ public sealed class InvestmentPaneModel
             var result = new List<InvestmentBucket>(_defs.Count);
             foreach (var b in _defs)
             {
+                if (SelectedGroup is { } group && b.GroupId != group) continue;
                 bool displayed = (CanBuy(b) || ShowAll) && !(HideCompleted && Completed(b));
-                if (!ShowAll && _predecessors.TryGetValue(b.Id, out var predecessor)
-                    && _defs.FirstOrDefault(d => d.Id == predecessor) is { } prior && !Completed(prior)) displayed = false;
+                if (!PredecessorSatisfied(b)) displayed = false;
                 if (displayed) result.Add(b);
             }
             return result;
@@ -184,16 +219,15 @@ public sealed class InvestmentPaneModel
         Cursor = Math.Clamp(Cursor + delta, 0, n - 1);
     }
 
-    public void ToggleShowAll() => ShowAll = !ShowAll;
-    public void ToggleHideCompleted() => HideCompleted = !HideCompleted;
+    public void ToggleShowAll() { ShowAll = !ShowAll; ClampCursor(); }
+    public void ToggleHideCompleted() { HideCompleted = !HideCompleted; ClampCursor(); }
 
     // ── CanInvest / invest amounts ─────────────────────────────────────────
 
     /// <summary>
     /// P487 — the client's port of native <c>PurchasesPaneImpl::CanInvest</c>
     /// (loadout.cpp:1095-1142). Returns false when: the mission isn't in progress,
-    /// the player has no side, the bucket is already complete (≈ native
-    /// <c>CanBuy</c> fails), the drone-type cap is reached, no station build-spot
+    /// the player has no side, the side cannot buy the bucket, the drone-type cap is reached, no station build-spot
     /// is available (host-fed), the player has no money, or the bucket is 100%
     /// funded.
     /// </summary>

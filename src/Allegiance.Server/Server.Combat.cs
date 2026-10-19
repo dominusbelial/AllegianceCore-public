@@ -821,6 +821,15 @@ public sealed partial class Server
     /// <c>explodeF</c> is true from the only call site this task implements (combat
     /// death), transmitted verbatim.</para>
     /// </summary>
+    private void BroadcastStaleAsteroidDestroyed(short asteroidId, short sectorId, Side side)
+    {
+        var packet = FedPacket.Pack(new AsteroidDestroyed
+            { AsteroidId = asteroidId, ClusterId = sectorId, ExplodeF = false }.Encode());
+        foreach (var peer in _peerShips)
+            if (ReferenceEquals(peer.Value.Ship.Mission, side.Mission) && peer.Value.Ship.SideId == side.Id)
+                SendPeer(peer.Key, packet);
+    }
+
     private void BroadcastAsteroidDestroyed(Asteroid a, bool explodeF)
     {
         var msg = new AsteroidDestroyed

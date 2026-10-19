@@ -1,0 +1,122 @@
+[
+  {
+    "repetition": 1,
+    "exit": 0,
+    "outcome": "Passed",
+    "duration": "00:01:51.2703943",
+    "wall_seconds": 112.28762817382812,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "--logger",
+      "trx;LogFileName=parking-1.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/final-parking-final"
+    ],
+    "output": "P700 local 15v15: 108.5s, samples=1084, reached=29/30, longest speed<1 with target=2.005s, shots=3021, hits=1233, kills=10",
+    "errors": [],
+    "longest_stopped_with_target_seconds": 2.005,
+    "kills": 10
+  },
+  {
+    "repetition": 2,
+    "exit": 0,
+    "outcome": "Passed",
+    "duration": "00:01:51.5366836",
+    "wall_seconds": 112.60549855232239,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "--logger",
+      "trx;LogFileName=parking-2.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/final-parking-final"
+    ],
+    "output": "P700 local 15v15: 108.9s, samples=1088, reached=28/30, longest speed<1 with target=1.905s, shots=2523, hits=1064, kills=8",
+    "errors": [],
+    "longest_stopped_with_target_seconds": 1.905,
+    "kills": 8
+  },
+  {
+    "repetition": 3,
+    "exit": 0,
+    "outcome": "Passed",
+    "duration": "00:01:52.0979824",
+    "wall_seconds": 113.11491966247559,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "--logger",
+      "trx;LogFileName=parking-3.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/final-parking-final"
+    ],
+    "output": "P700 local 15v15: 109.4s, samples=1093, reached=29/30, longest speed<1 with target=2.006s, shots=2648, hits=1097, kills=7",
+    "errors": [],
+    "longest_stopped_with_target_seconds": 2.006,
+    "kills": 7
+  },
+  {
+    "repetition": 4,
+    "exit": 0,
+    "outcome": "Passed",
+    "duration": "00:01:51.9325778",
+    "wall_seconds": 112.95931196212769,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "--logger",
+      "trx;LogFileName=parking-4.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/final-parking-final"
+    ],
+    "output": "P700 local 15v15: 109.1s, samples=1090, reached=29/30, longest speed<1 with target=2.216s, shots=2422, hits=1157, kills=9",
+    "errors": [],
+    "longest_stopped_with_target_seconds": 2.216,
+    "kills": 9
+  },
+  {
+    "repetition": 5,
+    "exit": 0,
+    "outcome": "Passed",
+    "duration": "00:01:51.2117904",
+    "wall_seconds": 112.20017194747925,
+    "command": [
+      "dotnet",
+      "test",
+      "tests/Allegiance.ClientCore.Tests",
+      "--no-build",
+      "--nologo",
+      "--filter",
+      "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "--logger",
+      "trx;LogFileName=parking-5.trx",
+      "--results-directory",
+      "/home/domingo/allegiance-codex-p747/.p747-scratch/final-parking-final"
+    ],
+    "output": "P700 local 15v15: 108.5s, samples=1084, reached=28/30, longest speed<1 with target=2.005s, shots=2592, hits=1037, kills=7",
+    "errors": [],
+    "longest_stopped_with_target_seconds": 2.005,
+    "kills": 7
+  }
+]

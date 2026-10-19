@@ -1,0 +1,43 @@
+{
+  "entry": "a00e842fe424787e4bd0a2b7319fc386b41324b9",
+  "branch": "codex/p747",
+  "source": {
+    "src/Allegiance.ClientCore.Game/Game1.Rendering.cs": "143202955a5249c41e412461aace00d4d0dedf3f752e4a1417ded66884de4c92",
+    "src/Allegiance.ClientCore/State/BuildingEffectEntity.cs": "9483db8e595936e97d847964dfe26ec086db0300c17923e2921618c5aabfe128",
+    "src/Allegiance.ClientCore/State/ClientWorld.cs": "4a70c695b88a6f1ebc1f10176c71d72a750744e19844db72b00fa8f88d327a21",
+    "src/Allegiance.Core/Data/DataStationTypeIGC.cs": "257314a258512a569550d72041727ce40ab59dad4320dc782f75eb19965eb8aa",
+    "src/Allegiance.Core/Model/Mission.cs": "48af9992b2ec0b78f91daaa9d6902dd639c05827992e7101251513886cd4744f",
+    "src/Allegiance.Core/Model/Sector.cs": "e4acabe7d434efaace6a16a16e26a69c51cc9afbbe5277b3d021ee2c14e12031",
+    "src/Allegiance.Core/Sim/Asteroid.cs": "78e82df8985d3a35c4d44f821e88e2f0bd9eac1e4e5eefbc690130e27be58e56",
+    "src/Allegiance.Core/Sim/BuildingEffect.cs": "4cdc9c662f869106ce3103f0ce5836defd40f54e1b584fcc56dca6e21fe4b0e6",
+    "src/Allegiance.Core/Sim/Probe.cs": "836c9d158f4810c8c0ad551ab8f250603c3135c30dc3803b7fc54a0795e4891a",
+    "src/Allegiance.Core/Sim/Ship.cs": "c06ec3902101de43bc352b7b2899ab2bdae6520196c4a51028cbff15d15bc024",
+    "src/Allegiance.Core/Sim/Station.cs": "473e09d6c66735f6be40740866242852827e997a03c641df0d636f97355733cf",
+    "src/Allegiance.Core/Wire/ExportBuildingEffect.cs": "2701873d94737a05cec63153279069e9c28f8b5e910920f3428cf92c4b44e436",
+    "src/Allegiance.Server/Server.Broadcast.cs": "05151504f86a2beae735c712d4532f3844f131e27788e4583836abdbbf5a9b5f",
+    "src/Allegiance.Server/Server.Combat.cs": "f119d6cf3c649daf0d48b05bd7b14deb457424b0f51646de5d7209f9f2671b10",
+    "src/Allegiance.Server/Server.Docking.cs": "6fa45e1d3bb292e11b477676d80c9fe86d252c3450f1bbc616f1e4ae4360d624",
+    "src/Allegiance.Server/Server.Lifecycle.cs": "a2132dfa0bb0f4ba84a6c08b39ba2adbaeb1e3457fe64798bcbfe125ec850659",
+    "src/Allegiance.Server/Server.Research.cs": "2b721957c10cfbd45ba6f82bc8b94f73e21d38c9d766e62903e2402ca0a490f0",
+    "src/Allegiance.Server/ServerHost.cs": "b9fc3e0a6f695c92cc2b1d14873b1243e24a7342fb687d030859805aacc73582",
+    "tests/Allegiance.ClientCore.Tests/ClientWorldBuildingEffectTests.cs": "815f3c4ed3e950fbc532a79ef0c7fa04d1fefcc6e6b4be90df6877226786e739",
+    "tests/Allegiance.Core.Tests/LiveBuildingEffectStartWireTests.cs": "945b7dc9bec52c4789523edd0a3b9e5c389b65d3c8297c8d43dba1b4ef68dc90",
+    "src/Allegiance.Core/Sim/ConstructionPhase.cs": "bd090bb690ddac45a1aaa364f76e225117c5815c4ccbd2af56400cc5304cb6f3",
+    "tests/Allegiance.Core.Tests/P747ConstructionTests.cs": "0041457f9088d80e7dea20b3b94870e31fcea33910607c77dadec59c9e4c6e03",
+    "tests/Allegiance.ClientCore.Tests/P747ConstructionLiveTests.cs": "4bec2039623078b8430f4144d83a2d48c7ee1fce36297c32d09327760bc76249"
+  },
+  "native_root": "/home/domingo/Development/Allegiance/src",
+  "native": {
+    "Igc/asteroidigc.h": "4065a70c1c02cf77e85a25779f8a15c9a7ee997551287ef243a3f828c3fa6bf2",
+    "Igc/asteroidigc.cpp": "6cdb08e3493854a3b54bdc2cf0fd060f13519dfe668adbce2ab88bdde720d914",
+    "Igc/buildingeffectigc.h": "fb3cc45b0a5ec76d0651f8956356c55b09c936b83f45e0f468cde0710cccc190",
+    "Igc/clusterIGC.cpp": "a9d33695eaa609619979eeb4a8d300aa3c7a6f2143608e4f36a4501b9724adc8",
+    "Igc/clusterIGC.h": "43335fd65e0559c78fbd51b60c1b605168b6c96c7a959b6d68c6b6eecc9ae9a8",
+    "Igc/missionigc.cpp": "cfedbec93ef07586e4564f26026405930efac779c1d10e13dca9335ed9eaf471",
+    "Igc/shipIGC.cpp": "2f5d1cd1dde51bafdf6d1a71e5ff375bd44c1f633f8a167f202620dce7cb12d3",
+    "Igc/igc.h": "9e151addcbed45df98ff78fc9352aca8a796f69a5cfbb947425d52e9ab649a66",
+    "FedSrv/FedSrv.CPP": "7b8938f2fdfcfe09a299ac642b79ca54991a4222dce79e93b2ba5d356199a014",
+    "WinTrek/trekigc.cpp": "87271a00ed3838f50cccdbdeae248cacb8eb0d54ca0d1f431bfcf6e55338e6ea",
+    "_Utility/Utility.h": "063dfcb22e1c6fc0708a7ca53ec9a1a3c8a1d3c11e74b4051b9902c036c86cd3"
+  }
+}

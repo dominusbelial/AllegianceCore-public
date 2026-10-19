@@ -10,19 +10,9 @@ using Allegiance.TestInfra;
 
 namespace Allegiance.Core.Tests;
 
-/// <summary>
-/// P294 — live loopback proof of the building-effect <b>creation</b> wire over
-/// a real in-process server + real TCP bots, the port of native
-/// <c>FedSrvSiteBase::CreateBuildingEffect</c>'s broadcast half
-/// (<c>FedSrv.CPP:13733-13767</c>): when an in-progress building effect starts
-/// (reusing P163's <see cref="Sector.StartBuildingEffect"/> mechanic) the server
-/// broadcasts <c>EXPORT(26)/OT_buildingEffect</c> <b>whole-mission</b> — every
-/// peer on every side receives the fresh construction's target asteroid id,
-/// sector, radii and positions. The codec round-trips byte-exact in
-/// BuildingEffectWireCodecsWireTests; the client-side table/prune is covered by
-/// ClientWorldBuildingEffectTests. The DESTROYED(181) interruption half is
-/// covered by LiveBuildingEffectWireTests.
-/// </summary>
+/// <summary>Production loopback export to the owner and current-eye sides.
+/// Native FedSrv/FedSrv.CPP:13733-13767. The uninformed-side negative case is
+/// covered by P747ConstructionLiveTests.</summary>
 [Collection("LiveNetwork")]
 public class LiveBuildingEffectStartWireTests
 {
@@ -114,7 +104,7 @@ public class LiveBuildingEffectStartWireTests
     /// of native FedSrvSiteBase::CreateBuildingEffect (FedSrv.CPP:13733-13767).</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Starting_a_build_broadcasts_ExportBuildingEffect_whole_mission()
+    public void Starting_a_build_broadcasts_ExportBuildingEffect_to_owner_and_current_eyes()
     {
         Require.Artwork();
         using var server = new Srv();
@@ -133,7 +123,8 @@ public class LiveBuildingEffectStartWireTests
         var builder = PlaceStandaloneBuilder(server);
 
         // ── start the build (records the creation for the next tick's drain) ──
-        fly.StartBuildingEffect(builder, rock, stationType, mission.LastUpdate);
+        rock.SideVisibility.SetSideVisibility(1, true); // native current-eye audience
+        var effect = fly.StartBuildingEffect(builder, rock, stationType, mission.LastUpdate);
         foreach (var b in bots) b.ResetBuildingEffectExports();
 
         // Tick until every peer has seen the EXPORT(26)/OT_buildingEffect.
@@ -141,8 +132,7 @@ public class LiveBuildingEffectStartWireTests
             () => bots.All(b => b.BuildingEffectExports.Count >= 1), 3000);
         Assert.True(n < 3000, "EXPORT(26)/OT_buildingEffect did not reach both peers (whole-mission)");
 
-        // Whole-mission: both the same-side and the cross-side observer got the
-        // same frame, carrying the construction's real data.
+        // The owner and the explicitly current-eye side receive the same native export.
         foreach (var b in bots)
         {
             var exp = Assert.Single(b.BuildingEffectExports);
@@ -152,9 +142,9 @@ public class LiveBuildingEffectStartWireTests
             Assert.Equal(rock.Data.Radius, exp.Effect.RadiusAsteroid, 1);
             Assert.Equal(stationType.Radius, exp.Effect.RadiusStation, 1);
             Assert.Equal(new Vector3(rockPos.X, rockPos.Y, rockPos.Z), exp.Effect.PositionStop);
-            Assert.Equal(new Vector3(builder.Position.X, builder.Position.Y, builder.Position.Z), exp.Effect.PositionStart);
+            Assert.Equal(effect.PositionStart, exp.Effect.PositionStart);
         }
 
-        Console.WriteLine($"P294-LIVE-WIRE: builder {builder.Id} started build of '{stationType.Name}' at asteroid {rock.Data.AsteroidId} → EXPORT(26)/OT_buildingEffect({ExportBuildingEffect.OtBuildingEffect}) whole-mission to {bots.Length} peer(s) (incl. cross-side)");
+        Console.WriteLine($"P294-LIVE-WIRE: builder {builder.Id} started build of '{stationType.Name}' at asteroid {rock.Data.AsteroidId} → EXPORT(26)/OT_buildingEffect({ExportBuildingEffect.OtBuildingEffect}) to {bots.Length} informed peer(s)");
     }
 }

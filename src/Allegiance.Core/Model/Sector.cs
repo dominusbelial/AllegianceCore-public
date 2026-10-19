@@ -3,6 +3,7 @@ namespace Allegiance.Core.Model;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Profiling;
 using Allegiance.Core.Sim;
+using CompactQuant = Allegiance.Core.Wire.CompactQuant;
 
 /// <summary>
 /// A <b>sector</b> of a static <see cref="Mission"/>: one <see cref="DataClusterIGC"/>
@@ -225,6 +226,7 @@ public sealed class Sector : IClusterIgc
     // asteroid→station transformation. One BuildingEffect per simultaneous
     // construction; cleared as each completes or aborts.
     private readonly List<BuildingEffect> _buildingEffects = [];
+    private readonly List<BuildingEffect> _fadingBuildingEffects = [];
 
     // P164 — building-effect interruptions this tick's ResolveBuildingEffects
     // pass detected (an in-progress build whose Builder died mid-build): the
@@ -313,7 +315,7 @@ public sealed class Sector : IClusterIgc
     internal void AttachAsteroids(IEnumerable<DataAsteroidIGC> asteroids)
     {
         _asteroids.AddRange(asteroids);
-        foreach (var a in asteroids) _mineable.Add(new Asteroid(a));   // one runtime model per static rock
+        foreach (var a in asteroids) _mineable.Add(new Asteroid(a) { Sector = this, Mission = Mission });   // one runtime model per static rock
     }
     /// <summary>Register a runtime asteroid for the mining pass (assembly wraps
     /// static ones; <see cref="Mission.PlaceAsteroid"/> uses this for synthetic
@@ -405,7 +407,10 @@ public sealed class Sector : IClusterIgc
         // Native Terminate removes the rock from the cluster, including future join exports
         // (FedSrv.CPP:11459-11462). Keep the port's record and runtime lists in agreement.
         _asteroids.RemoveAll(a => a.AsteroidId == asteroid.Data.AsteroidId);
-        return _mineable.Remove(asteroid);
+        bool removed = _mineable.Remove(asteroid);
+        if (removed && asteroid.BuildingEffect is { } effect)
+            TerminateBuildingEffect(effect);
+        return removed;
     }
 
     /// <summary>
@@ -476,8 +481,14 @@ public sealed class Sector : IClusterIgc
 
         var side = builder.SideId
             ?? throw new InvalidOperationException("builder has no SideId; a built station must belong to a side");
-        var effect = new BuildingEffect(target, builder, stationType, side, now + BuildingEffect.BuildDuration / (builder.Mission?.ShowcaseResearchTimeScale ?? 1));
+        var effect = new BuildingEffect(target, builder, stationType, side, now + BuildingEffect.BuildDuration / (builder.Mission?.ShowcaseResearchTimeScale ?? 1), builder.Mission?.ShowcaseResearchTimeScale ?? 1);
         _buildingEffects.Add(effect);
+        target.BuildingEffect = effect;
+        effect.InformedSides.Add(side);
+        var seenSides = ConstructionSeenSides(builder, target);
+        foreach (var other in builder.Mission!.Sides)
+            if (target.GetCurrentEye(other.Id) || (other.Id < seenSides.Length && seenSides[other.Id]))
+                effect.InformedSides.Add(other.Id);
 
         // P294 — record the creation for the host to broadcast the
         // EXPORT(26)/OT_buildingEffect (drained via
@@ -726,6 +737,8 @@ public sealed class Sector : IClusterIgc
             }
             if (Cost > 0f) Cost *= (float)dt / fc[38];
         }
+
+        if (Mission?.Stage == MissionStage.Started) ResolveConsumedRockVisibility();
 
         // Snapshot: the models loop must survive a model that self-terminates
         // during its own Update (C++ capture-next, clusterIGC.cpp:243-250).
@@ -4096,7 +4109,11 @@ public sealed class Sector : IClusterIgc
         // Regenerate every mineable rock first (asteroidigc.h:47-56), so a
         // rock freshly drained at the previous tick has had a chance to regrow
         // before this tick's mining draws on it.
-        foreach (var ast in _mineable) ast.Regenerate(dt, He3Regeneration);
+        // A completion removes its rock and constructor from their live lists (native capture-next).
+        bool constructing = _buildingEffects.Count != 0;
+        IEnumerable<Asteroid> rocks = constructing ? _mineable.ToArray() : _mineable;
+        foreach (var ast in rocks)
+            if (!constructing || _mineable.Contains(ast)) ast.Update(now, dt, He3Regeneration);
 
         var previouslyMining = _models.OfType<Ship>().Where(s => s.MiningAsteroid is not null).ToHashSet();
         var contenders = new Dictionary<Asteroid, List<Ship>>();
@@ -4432,145 +4449,167 @@ public sealed class Sector : IClusterIgc
         }
     }
 
-    /// <summary>
-    /// P163 — the per-tick building-effect pass, run from <see cref="Update"/> in
-    /// the same per-sector-tick resolver shape as <see cref="ResolveMining"/> /
-    /// <see cref="ResolveWarpCollisions"/> (iterate a dedicated list, test a
-    /// condition, mutate state — no invented pattern). Each in-progress build is
-    /// checked every tick for the two terminal conditions of the native
-    /// lifecycle:
-    /// <list type="bullet">
-    /// <item><b>Interruption</b> — the Builder has died
-    /// (<see cref="Ship.Dead"/>, <c>m_fraction &lt;= 0</c>, Ship.cs:118): the
-    /// build aborts cleanly — the effect is dropped, the asteroid is untouched
-    /// and no station is created. The port of native
-    /// <c>BuilderTerminated()</c> + <c>KillBuildingEffectEvent</c>
-    /// (<c>buildingeffectigc.h:294-297</c>, triggered from
-    /// <c>CshipIGC::Terminate</c>'s Builder branch, <c>shipIGC.cpp:209-220</c>),
-    /// minus the <c>BUILDINGEFFECT_DESTROYED</c>(181) wire message — that is
-    /// explicitly Stage 2, out of scope here.</item>
-    /// <item><b>Completion</b> — <c>now &gt;= CompletionTime</c> (start + 40 s,
-    /// the native <c>m_timeComplete</c>, <c>buildingeffectigc.h:54</c>): the
-    /// terminal asteroid→station transformation (native <c>AsteroidUpdate</c>,
-    /// <c>buildingeffectigc.h:312-353</c>), performed by
-    /// <see cref="CompleteBuild"/>.</item>
-    /// </list>
-    /// Effects are walked by descending index so a completion that mutates
-    /// <c>_mineable</c>/<c>_models</c>/<c>_stations</c> cannot disturb this
-    /// pass's own iteration.
-    /// </summary>
+    /// <summary>Unlink an interrupted effect once, leaving its asteroid intact.
+    /// Native shipIGC.cpp:209-218; buildingeffectigc.h:112-133.</summary>
+    public void TerminateBuildingEffect(BuildingEffect effect)
+    {
+        if (effect.IsTerminated) return;
+        effect.Terminate();
+        _buildingEffects.Remove(effect);
+        _fadingBuildingEffects.Remove(effect);
+        _pendingBuildingEffectCreations.Remove(effect); // never resurrect an effect after its interruption drain
+        if (ReferenceEquals(effect.Target.BuildingEffect, effect)) effect.Target.BuildingEffect = null;
+        effect.Builder.IsBuilding = false;
+        _pendingBuildingEffectInterruptions.Add(effect.Target.Data.AsteroidId);
+    }
+
     private void ResolveBuildingEffects(double now)
     {
-        if (_buildingEffects.Count == 0) return;
-
-        for (int i = _buildingEffects.Count - 1; i >= 0; i--)
+        foreach (var effect in _fadingBuildingEffects.ToArray())
         {
-            var effect = _buildingEffects[i];
-
-            // Interruption: the Builder died mid-build. Abort cleanly — asteroid
-            // untouched, no station created. Record the target asteroid's id so
-            // the host broadcasts BUILDINGEFFECT_DESTROYED(181) whole-mission
-            // (the port of native KillBuildingEffectEvent, FedSrv.CPP:12484-12492 —
-            // drained via DrainBuildingEffectInterruptions).
+            effect.Update(now);
+            if (effect.IsTerminated) _fadingBuildingEffects.Remove(effect);
+        }
+        foreach (var effect in _buildingEffects.ToArray())
+        {
+            if (effect.IsTerminated) continue;
             if (effect.Builder.Dead || !_models.Contains(effect.Builder)
                 || effect.Builder.Sector != this || !_mineable.Contains(effect.Target))
             {
-                _pendingBuildingEffectInterruptions.Add(effect.Target.Data.AsteroidId);
-                _buildingEffects.RemoveAt(i);
-                effect.Builder.IsBuilding = false;   // P165 — builder no longer committed (died mid-build)
+                (Mission ?? effect.Builder.Mission)?.Site.KillBuildingEffectEvent(effect);
+                TerminateBuildingEffect(effect); // domain fallback for a mute site
                 continue;
             }
-
-            if (now >= effect.CompletionTime)
-            {
-                _buildingEffects.RemoveAt(i);
-                CompleteBuild(effect);
-            }
+            effect.Update(now);
+            effect.AsteroidUpdate(now);
         }
     }
 
-    /// <summary>
-    /// P163 — the terminal asteroid→station transformation, the port of the
-    /// native <c>CbuildingEffectIGC::AsteroidUpdate</c> completion branch
-    /// (<c>buildingeffectigc.h:312-353</c>). A one-way, self-sacrificing
-    /// transaction (the native shape confirmed in this arc's scoping): the
-    /// asteroid is destroyed and replaced by a real new station of the Builder's
-    /// carried type at the asteroid's position, and the Builder ship consumes
-    /// itself (removed from the sector).
-    /// <list type="number">
-    /// <item><b>Remove the asteroid</b> — <see cref="RemoveAsteroid"/>
-    /// (Sector.cs:252), the established removal contract the combat pass uses
-    /// when a rock is destroyed.</item>
-    /// <item><b>Construct + place the new station</b> — a <see cref="Station"/>
-    /// of <c>effect.StationType</c> at the asteroid's position, owned by
-    /// <c>effect.SideId</c>, registered via <see cref="Mission.PlaceStation"/>
-    /// (Mission.cs:433), the already-tested synthetic-injection entry. The
-    /// concrete construction inputs mirror native <c>BuildStation</c>
-    /// (<c>FedSrv.CPP:11386-11402</c>): name from the type, cluster = this
-    /// sector, position = the asteroid's position, fixed identity orientation,
-    /// side = the Builder's, id from <see cref="Mission.GenerateNewStationID"/>
-    /// (native <c>pmission-&gt;GenerateNewStationID()</c>, FedSrv.CPP:11397),
-    /// type = the supplied type.</item>
-    /// <item><b>Remove the Builder</b> — <see cref="Remove(Model)"/>
-    /// (Sector.cs:241, the <c>_models.Remove</c> death-contract path the combat
-    /// pass uses at Sector.cs:1314/1731), the established mechanism for taking a
-    /// ship out of the sector's live ship list — reused exactly, not a parallel
-    /// one. (Native additionally zeroes the Builder's parts/ammo/fuel before a
-    /// quiet KillShipEvent to prevent a treasure spawn,
-    /// <c>buildingeffectigc.h:328-340</c>; this port has no treasure-spawn-on-
-    /// death linkage for this path, so removal alone is the equivalent outcome —
-    /// the ship is gone from the sector, the observation the tests assert.)</item>
-    /// </list>
-    /// </summary>
-    private void CompleteBuild(BuildingEffect effect)
+    internal void CompleteConstruction(BuildingEffect effect, double now)
+    {
+        if (effect.ConstructionCompleted || !_buildingEffects.Contains(effect) || effect.Builder.Dead
+            || !_models.Contains(effect.Builder) || effect.Builder.Sector != this || !_mineable.Contains(effect.Target)) return;
+        _buildingEffects.Remove(effect);
+        effect.ConstructionCompleted = true;
+        effect.Target.BuildingEffect = null;
+        CompleteBuild(effect, now);
+        if (!effect.IsTerminated) _fadingBuildingEffects.Add(effect);
+    }
+
+    /// <summary>Consume the constructor and invoke the native BuildStation callback at shrink time
+    /// (Igc/buildingeffectigc.h:312-351). Domain-only sites keep the shared transformation adapter.</summary>
+    private void CompleteBuild(BuildingEffect effect, double now)
     {
         var asteroid = effect.Target;
         var builder = effect.Builder;
-        var mission = builder.Mission
-            ?? throw new InvalidOperationException("builder has no Mission; cannot place the constructed station");
+        var mission = builder.Mission!;
+        var side = mission.Sides.Single(s => s.Id == effect.SideId);
+        var seen = ConstructionSeenSides(builder, asteroid);
+        foreach (var id in effect.InformedSides) if (id < seen.Length) seen[id] = true;
+        // Native buildingeffectigc.h:328-345: consume before creating the station.
+        builder.ConsumeForConstruction();
+        Remove(builder);
+        mission.Site.BuildStation(asteroid, side, effect.StationType, now, seen);
+        // Existing domain-only missions can use NullIgcSite; production hosts execute the callback.
+        var station = asteroid.ConstructedStation ?? BuildStation(asteroid, side, effect.StationType, now, seen);
+        mission.Skills?.Record(builder.SideId, ShowcaseSkill.DroneBuild);
+        mission.Site.StationBuiltEvent(asteroid, builder, station);
+    }
 
-        // P488 — allow for an upgrade to the station being available: native
-        // FedSrvSiteBase::BuildStation resolves the successor first
-        // (pstationtype = pstationtype->GetSuccessorStationType(pside),
-        // FedSrv.CPP:11380), so a constructor ordered to build a station type
-        // the side has since out-teched builds the successor (stationtypeigc.h:
-        // 185-195 — advance while succ.RequiredTechs ⊆ (this.RequiredTechs |
-        // side.DevelopmentTechs)).
-        var stationType = effect.StationType;
-        var side = mission.Sides.FirstOrDefault(s => s.Id == effect.SideId);
-        if (side is not null)
+    // FedSrv/FedSrv.CPP:11373-11462: native BuildStation world transformation.
+    public Station BuildStation(Asteroid asteroid, Side side, DataStationTypeIGC requested, double now, bool[] seen)
+    {
+        if (asteroid.ConstructedStation is { } existing) return existing;
+        var mission = side.Mission!;
+        var stationType = SuccessorUpgrade.StationSuccessor(mission.Core, requested, side.DevelopmentTechs);
+        var data = BuildStationRecord(asteroid, side.Id, stationType, mission);
+        var station = new Station(data, stationType) { ConsumedAsteroid = asteroid };
+        station.SetConstructionFractions(asteroid.Fraction);
+        foreach (var probe in _models.OfType<Probe>())
         {
-            var upgraded = SuccessorUpgrade.StationSuccessor(mission.Core, stationType, side.DevelopmentTechs);
-            if (upgraded.StationTypeId != stationType.StationTypeId)
+            float distance2 = (probe.Position - station.Center).LengthSquared();
+            float radius = stationType.Radius + probe.ProbeType.Radius;
+            if (distance2 != 0 && distance2 < radius * radius) probe.SetExpiration(now + 1);
+        }
+        mission.PlaceStation(station, this);
+        // Resolve initial station knowledge from actual scanner geometry before deciding rock receipts.
+        foreach (var other in mission.Sides)
+        {
+            bool visible = other.Id == side.Id || AnyScannerSees(other.Id, station.StationId,
+                station.Center, station.Radius, station.Type.Signature / side.GlobalAttributes.Get(GlobalAttributeSet.Signature));
+            station.SideVisibility.SetSideVisibility(other.Id, visible);
+            bool informed = other.Id == side.Id || asteroid.GetCurrentEye(other.Id)
+                || (other.Id >= 0 && other.Id < seen.Length && seen[other.Id]) || station.SeenBySide(other.Id);
+            if (!informed) station.StaleRockSides.Add(other.Id);
+        }
+        asteroid.ConstructedStation = station;
+        RemoveAsteroid(asteroid);
+        return station;
+    }
+
+    // Igc/missionigc.cpp:3658-3681: an eye on the builder AND knowledge of the rock.
+    private bool[] ConstructionSeenSides(Ship builder, Asteroid rock)
+    {
+        var mission = builder.Mission!;
+        var result = new bool[Math.Max(6, mission.Sides.Max(s => s.Id) + 1)];
+        var obstacles = _mineable.Select(a => new VisibilityMath.SightBody(
+            new Vector3(a.Data.Position[0], a.Data.Position[1], a.Data.Position[2]), a.Radius)).ToArray();
+        var target = new VisibilityMath.SightBody(builder.Position, builder.HullType.Length * .5f);
+        float resistance = mission.Sides.First(s => s.Id == builder.SideId).GlobalAttributes.Get(GlobalAttributeSet.Signature);
+        void Scan(short id, short? sideId, Vector3 position, float radius, float range)
+        {
+            if (id == builder.Id || sideId is not { } side || side == builder.SideId || !rock.SeenBySide(side)) return;
+            if (VisibilityMath.InScannerRange(new(position, radius), range, Id,
+                target, builder.EffectiveSignature / resistance, Id, obstacles)) result[side] = true;
+        }
+        foreach (var ship in _models.OfType<Ship>())
+            if (ship.ParentShip is null && ship.StationId is null)
+                Scan(ship.Id, ship.SideId, ship.Position, ship.HullType.Length * .5f, ship.EffectiveScannerRange());
+        foreach (var probe in _models.OfType<Probe>())
+            Scan(probe.Id, probe.SideId, probe.Position, probe.ProbeType.Radius, probe.EffectiveScannerRange());
+        foreach (var station in _stationRuntimes)
+            Scan(station.StationId, station.SideId, station.Center, station.Radius, station.EffectiveScannerRange());
+        return result;
+    }
+
+    private bool AnyScannerSees(short side, short targetId, Vector3 position, float radius, float signature)
+    {
+        var obstacles = _mineable.Select(a => new VisibilityMath.SightBody(
+            new Vector3(a.Data.Position[0], a.Data.Position[1], a.Data.Position[2]), a.Radius)).ToArray();
+        var target = new VisibilityMath.SightBody(position, radius);
+        bool Sees(short id, short? owner, Vector3 center, float size, float range) => owner == side && id != targetId
+            && VisibilityMath.InScannerRange(new(center, size), range, Id, target, signature, Id, obstacles);
+        return _models.OfType<Ship>().Any(s => s.ParentShip is null && s.StationId is null
+                && Sees(s.Id, s.SideId, s.Position, s.HullType.Length * .5f, s.EffectiveScannerRange()))
+            || _models.OfType<Probe>().Any(p => Sees(p.Id, p.SideId, p.Position, p.ProbeType.Radius, p.EffectiveScannerRange()))
+            || _stationRuntimes.Any(s => Sees(s.StationId, s.SideId, s.Center, s.Radius, s.EffectiveScannerRange()));
+    }
+
+    // Igc/clusterIGC.cpp:141-155; clusterIGC.h:493-545: only flying ships reveal stale rock locations.
+    private void ResolveConsumedRockVisibility()
+    {
+        if (Mission is not { } mission) return;
+        foreach (var station in _stationRuntimes)
+        {
+            if (station.ConsumedAsteroid is not { } rock || rock.Data.Signature == 0 || rock.Radius == 0
+                || station.StaleRockSides.Count == 0) continue;
+            var target = new VisibilityMath.SightBody(station.Center, rock.Radius);
+            var obstacles = _mineable.Select(a => new VisibilityMath.SightBody(
+                new Vector3(a.Data.Position[0], a.Data.Position[1], a.Data.Position[2]), a.Radius)).ToArray();
+            float resistance = mission.Sides.Single(s => s.Id == station.SideId).GlobalAttributes.Get(GlobalAttributeSet.Signature);
+            foreach (var ship in _models.OfType<Ship>())
             {
-                Console.WriteLine($"[build] station type '{stationType.Name}' (type {stationType.StationTypeId}) -> successor '{upgraded.Name}' (type {upgraded.StationTypeId}) on side {effect.SideId} (native BuildStation GetSuccessorStationType, FedSrv.CPP:11380)");
-                stationType = upgraded;
+                if (ship.ParentShip is not null || ship.StationId is not null || ship.SideId is not { } side
+                    || side == station.SideId || station.SeenBySide(side) || !station.StaleRockSides.Contains(side)) continue;
+                // Native bSimpleEye applies ScanRange in addition to the hull's effective range.
+                float scan = mission.Sides.Single(s => s.Id == side).GlobalAttributes.Get(GlobalAttributeSet.ScanRange);
+                float range = ship.EffectiveScannerRange() * scan;
+                if (!VisibilityMath.InScannerRange(new(ship.Position, ship.HullType.Length * .5f), range, Id,
+                    target, rock.Data.Signature / resistance, Id, obstacles)) continue;
+                station.StaleRockSides.Remove(side);
+                mission.Site.KillAsteroidEvent(rock.Data.AsteroidId, Id, mission.Sides.Single(s => s.Id == side));
             }
         }
-        else
-        {
-            Console.WriteLine($"[build] station-type build on side {effect.SideId} has no Side record in mission — building the requested type '{stationType.Name}' un-upgraded (no successor consult)");
-        }
-
-        // 1. Destroy the rock.
-        RemoveAsteroid(asteroid);
-
-        // 2. Transform: build the new station at the asteroid's position.
-        var data = BuildStationRecord(asteroid, effect.SideId, stationType, mission);
-        var builtStation = new Station(data, stationType);
-        mission.PlaceStation(builtStation, this);
-
-        // 3. Consume the Builder (the established ship-removal mechanism).
-        //    P165 — clear the builder's committed flag first. Ordering is safe
-        //    either way (the ship is removed from the sector's live list, so no
-        //    further tick will re-decide on it regardless); clearing before
-        //    removal reads most faithfully — the build is done, so it is no
-        //    longer building — and keeps both terminal branches symmetric with
-        //    the interruption path's clear.
-        builder.IsBuilding = false;
-        Remove(builder);
-        mission.Skills?.Record(builder.SideId, ShowcaseSkill.DroneBuild);
-        mission.Site.StationBuiltEvent(asteroid, builder, builtStation);
     }
 
     /// <summary>
@@ -4586,12 +4625,12 @@ public sealed class Sector : IClusterIgc
             Position: pos,                                   // ds.position = pasteroid->GetPosition() (FedSrv.CPP:11389)
             Up: [0f, 1f, 0f],                                // ds.up.y = 1 (FedSrv.CPP:11392-11393)
             Forward: [0f, 0f, 1f],                           // ds.forward.z = 1 (FedSrv.CPP:11390-11391)
-            Rotation: [0f, 0f, 0f, 1f],                      // identity rotation (FedSrv.CPP:11394-11395)
+            Rotation: [0f, 0f, 1f, 0f],                      // native axis = forward, angle = 0 (FedSrv.CPP:11394-11395)
             ClusterId: Id,                                   // ds.clusterID = pcluster->GetObjectID() (FedSrv.CPP:11388)
             SideId: sideId,                                  // ds.sideID = pside->GetObjectID() (FedSrv.CPP:11396)
             StationId: mission.GenerateNewStationID(),       // ds.stationID = GenerateNewStationID() (FedSrv.CPP:11397)
             StationTypeId: stationType.StationTypeId,        // ds.stationTypeID = pstationtype->GetObjectID() (FedSrv.CPP:11399)
-            BpHull: 1,                                       // ds.bpHull = pasteroid->GetFraction() ≈ 1 (FedSrv.CPP:11401)
+            BpHull: CompactQuant.Percent(asteroid.Fraction),                                       // BytePercentage::operator=(float), _Utility/Utility.h:1341-1358 (FedSrv.CPP:11401)
             BpShield: 0,                                     // ds.bpShield = 0 (FedSrv.CPP:11402)
             Name: stationType.Name);                         // ds.name = pstationtype->GetName() (FedSrv.CPP:11387)
     }

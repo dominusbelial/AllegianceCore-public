@@ -424,6 +424,8 @@ public static class InputActionCatalog
         new("ShopUndock", "PANES / MENUS", "Docked shop: undock without buying", K(Keys.U), null),
         new("ToggleTeleportPane", "PANES / MENUS", "Docked: toggle the teleport pane", K(Keys.T), null),
         new("ToggleInvestmentPane", "PANES / MENUS", "Toggle team investment (flight, hangar or command)", K(Keys.I), null),
+        new("InvestPreviousTab", "TEAM FUNDING", "Investment: previous technology tab", K(Keys.OemOpenBrackets), null),
+        new("InvestNextTab", "TEAM FUNDING", "Investment: next technology tab", K(Keys.OemCloseBrackets), null),
         new("InvestNextPilot", "TEAM FUNDING", "Investment: next pilot to fund", K(Keys.Tab), null),
         new("InvestDonate", "TEAM FUNDING", "Investment: give selected pilot $100", K(Keys.D), null),
         new("InvestDonateLarge", "TEAM FUNDING", "Investment: give selected pilot $500", K(Keys.E), null),

@@ -72,7 +72,7 @@ public sealed class DockedScreenRenderer
     /// bottom-left, mirroring the flight HUD's money line.</summary>
     public void Draw(Viewport viewport, IReadOnlyList<ShopLayout.Row> rows,
         IReadOnlyList<ShopLayout.Row>? detailRows = null, int? money = null,
-        float backdropAlpha = 0.985f)
+        float backdropAlpha = 0.985f, float footerHeight = 0f, bool splitDetailPanels = false)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -105,14 +105,14 @@ public sealed class DockedScreenRenderer
             float y = 0f;
             for (int i = 0; i < rows.Count; i++)
             {
-                if (i >= itemStart && i <= itemEnd) { if (vis-- > 0) y += lineH; else break; }
+                if (i >= itemStart && i <= itemEnd) { if (vis-- > 0) y += lineH; }
                 else y += rows[i].Kind == ShopLayout.Kind.Blank ? LineGap : lineH;
             }
             return 2f * Padding + y - LineGap;
         }
 
         int vis = Math.Min(MaxVisibleItems, itemCount);
-        float maxHeight = h * 0.94f;
+        float maxHeight = (h - footerHeight) * 0.94f;
         while (vis > 0 && HeightFor(vis) > maxHeight) vis--;
         vis = Math.Max(1, vis);
 
@@ -131,11 +131,11 @@ public sealed class DockedScreenRenderer
         foreach (var r in rows)
             if (r.Kind != ShopLayout.Kind.Blank)
                 maxLine = MathF.Max(maxLine, _small.MeasureString(r.Text).X);
-        float panelW = MathF.Min(maxLine + 2f * Padding, w * 0.96f);
+        float panelW = MathF.Min(maxLine + 2f * Padding, w * (splitDetailPanels && detailRows is { Count: > 0 } ? 0.62f : 0.96f));
         float panelH = HeightFor(vis);
 
         float panelX = 26f;
-        float panelY = MathF.Max(12f, (h - panelH) / 2f);
+        float panelY = MathF.Max(12f, (h - footerHeight - panelH) / 2f);
 
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
@@ -158,12 +158,13 @@ public sealed class DockedScreenRenderer
                 var r = rows[i];
                 if (r.Kind == ShopLayout.Kind.Blank) { y += LineGap; continue; }
                 Color c = ColorFor(r);
-                Draw(r.Text, new Vector2(panelX + Padding, y), c);
+                Draw(r.Text, new Vector2(panelX + Padding, y), c,
+                    MathF.Min(1f, (panelW - 2f * Padding) / MathF.Max(1, _small.MeasureString(r.Text).X)));
                 y += lineH;
             }
 
             if (detailRows is { Count: > 0 })
-                DrawDetailPanel(w, h, panelX, panelY, panelW, panelH, detailRows);
+                DrawDetailPanel(w, h - footerHeight, panelX, panelY, panelW, panelH, detailRows, splitDetailPanels);
 
             // P442 — always-visible money readout, bottom-left (outside the
             // panel so it survives any scroll). Drawn only when the wallet is
@@ -172,7 +173,7 @@ public sealed class DockedScreenRenderer
             {
                 string val = HudFormat.FormatMoney(m);
                 var vsz = _small.MeasureString(val);
-                float mx = 26f, my = h - vsz.Y - 18f;
+                float mx = 26f, my = h - footerHeight - vsz.Y - 18f;
                 Draw("MONEY", new Vector2(mx, my - _small.MeasureString("MONEY").Y - 2f), MutedColor);
                 Draw(val, new Vector2(mx, my), InfoColor);
             }
@@ -187,7 +188,7 @@ public sealed class DockedScreenRenderer
     /// main shop panel, sharing the caller's SpriteBatch session.</summary>
     private void DrawDetailPanel(float w, float h,
         float panelX, float panelY, float panelW, float panelH,
-        IReadOnlyList<ShopLayout.Row> rows)
+        IReadOnlyList<ShopLayout.Row> rows, bool splitDetailPanels)
     {
         float lineH = _small.LineSpacing + LineGap;
 
@@ -200,7 +201,7 @@ public sealed class DockedScreenRenderer
             maxLine = MathF.Max(maxLine, _small.MeasureString(r.Text).X);
         }
         if (totalH <= 0f) return;
-        float dw = MathF.Min(maxLine + 2f * Padding, w * 0.94f);
+        float dw = MathF.Min(maxLine + 2f * Padding, splitDetailPanels ? MathF.Max(100f, w * 0.985f - panelX - panelW - 18f) : w * 0.94f);
         float dh = MathF.Min(totalH + 2f * Padding - LineGap, h * 0.94f);
 
         // To the right of the main panel, shifted left if it would run off-screen.
@@ -216,7 +217,8 @@ public sealed class DockedScreenRenderer
         foreach (var r in rows)
         {
             if (r.Kind == ShopLayout.Kind.Blank) { y += LineGap; continue; }
-            Draw(r.Text, new Vector2(dx + Padding, y), ColorFor(r));
+            Draw(r.Text, new Vector2(dx + Padding, y), ColorFor(r),
+                MathF.Min(1f, (dw - 2f * Padding) / MathF.Max(1, _small.MeasureString(r.Text).X)));
             y += lineH;
         }
     }
@@ -233,8 +235,8 @@ public sealed class DockedScreenRenderer
         _ => InfoColor,
     };
 
-    private void Draw(string text, Vector2 pos, Color color) =>
-        _sb.DrawString(_small, text, pos, color, 0f, Vector2.Zero, 1f,
+    private void Draw(string text, Vector2 pos, Color color, float scale = 1f) =>
+        _sb.DrawString(_small, text, pos, color, 0f, Vector2.Zero, scale,
             SpriteEffects.None, 0f);
 
     private void FillRect(float x, float y, float w, float h, Color color) =>

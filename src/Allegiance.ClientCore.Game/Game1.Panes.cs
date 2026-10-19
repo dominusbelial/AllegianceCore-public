@@ -115,6 +115,8 @@ public sealed partial class Game1
             }
 
             RefreshDockedOffers(world, mySe);
+            ContinueHangarLaunch(mySe);
+            if (UpdateHangarControls(ks, composing)) return true;
             if (HandleInvestmentScreen(ks, composing)) return true;
             if (_cameraMode == CameraMode.Command) return false;
 
@@ -209,23 +211,7 @@ public sealed partial class Game1
 
                 if (lKey && !_dockLWasDown)
                 {
-                    // P468 — block a launch the player can't afford CLIENT-side,
-                    // with a visible reason (the layout renders shop.BlockReason),
-                    // instead of sending a BUY_LOADOUT the server (P441) will
-                    // refuse because the cost exceeds the wallet.
-                    if (shop.TryLaunch())
-                    {
-                        _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
-                        _launchSent = true;
-                        // P445 — undock into flight resets the persistent
-                        // throttle to full (+1), native's on-line default.
-                        _throttle = FlightInput.DefaultThrottle;
-                        Console.WriteLine($"[monogame] LAUNCH -> BUY_LOADOUT(fLaunch) hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"[monogame] LAUNCH BLOCKED (unaffordable): {shop.BlockReason}");
-                    }
+                    LaunchFromHangar(mySe);
                 }
                 else if (uKey && !_dockUWasDown)
                 {
@@ -255,6 +241,7 @@ public sealed partial class Game1
         if (_dockedActive) // the server undocked us → leave the hangar
         {
             _dockedActive = false;
+            _hangarLaunch.Cancel();
             _shopModel = null;
             _teleportModel = null;
             _teleportActive = false;
@@ -288,6 +275,8 @@ public sealed partial class Game1
     // Native investment is an overlay in both flight and command view:
     // WinTrek/WinTrek.cpp:10029-10033, hangarscreen.cpp:201-206.
     private readonly Flight.InvestmentFundingInput _investmentFunding = new();
+    private int _investGroup;
+    private readonly Flight.InvestmentTabsInput _investmentTabs = new();
     private bool HandleInvestmentScreen(KeyboardState ks, bool composing)
     {
         _investDefs ??= BuildInvestDefs();
@@ -304,6 +293,8 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] investment pane {( _investActive ? "OPEN" : "CLOSED" )}");
         }
         _invIWasDown = iKey;
+        int tabDelta = _investmentTabs.Step(ks, KeyBindingStore.Instance.Map, _investActive && !composing,
+            nav.LeftShoulder, nav.RightShoulder);
         lock (_session.Gate)
         {
             var funding = _investmentFunding.Step(ks, Rendering.KeyBindingStore.Instance.Map, _session.World, _investActive && !composing);
@@ -319,6 +310,7 @@ public sealed partial class Game1
             var inv = BuildInvestmentModel();
             _investModelLive = inv;   // P501 — keep the live model for touch taps
             HandleInvestmentTouch(inv);
+            if (tabDelta != 0) inv.CycleGroup(tabDelta);
             // P499 — DPAD Up/Down = cursor, A = invest, B = back to hangar.
             bool up = ActionDown(ks, "MenuUp") || nav.Up;
             bool down = ActionDown(ks, "MenuDown") || nav.Down;
@@ -368,6 +360,8 @@ public sealed partial class Game1
 
             // Persist cursor/toggles (may have been clamped by a filter change).
             _investCursor = inv.Cursor;
+            _investGroup = inv.SelectedGroup ?? 0;
+            _investModel = inv;
             _investShowAll = inv.ShowAll;
             _investHideCompleted = inv.HideCompleted;
         }
@@ -471,10 +465,9 @@ public sealed partial class Game1
                 var launchRect = Rendering.DockedTouchZones.LaunchRect(w, h);
                 if (launchRect.Contains(tx, ty))
                 {
-                    if (shop.TryLaunch())
+                    if (mySe.ParentId >= 0 || shop.TryLaunch())
                     {
-                        _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
-                        _launchSent = true;
+                        LaunchFromHangar(mySe);
                         _throttle = FlightInput.DefaultThrottle;
                         Console.WriteLine($"[monogame] docked touch: LAUNCH -> BUY_LOADOUT(fLaunch) hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
                     }
@@ -583,7 +576,7 @@ public sealed partial class Game1
             };
             if (!Rendering.InvestmentTechGates.VisibleGroup(group, world.ResearchBriefing?.Settings ?? new())) continue;
             list.Add(new Rendering.InvestmentBucket(v.Id, v.ItemType, v.Name, v.Price,
-                v.TimeToBuildSec, v.HullIdDrone, v.DroneTypeId, v.DevelopmentId, v.StationTypeId, v.Description));
+                v.TimeToBuildSec, v.HullIdDrone, v.DroneTypeId, v.DevelopmentId, v.StationTypeId, v.Description, group));
         }
         Console.WriteLine($"[monogame] invest: side {mySide} -> {list.Count} buckets " +
             $"(ids {string.Join(",", list.Take(8).Select(b => b.Id))}{(list.Count > 8 ? "..." : "")})");
@@ -611,7 +604,7 @@ public sealed partial class Game1
         {
             if (mySide >= 0)
             {
-                funding = world.BucketFundingFor(mySide);
+                funding = world.BucketFundingFor(mySide).ToDictionary(p => p.Key, p => p.Value);
                 foreach (var station in world.Stations.Values.Where(s => s.SideId == mySide))
                     if (_shopCatalog?.StationTypes?.TryGetValue(station.StationTypeId, out var type) == true) stationTypes.Add(type);
                 foreach (var unit in world.ResearchProduction.Values.Where(p => p.SideId == mySide && world.IsResearchProductionAlive(p.ShipId)))
@@ -634,7 +627,7 @@ public sealed partial class Game1
             // P495 — the REAL native gates (loadout.cpp:1124-1131) from the
             // client's world: build-spot found + no existing builder.
             if (catalog?.StationTypes is not { } sts || !sts.TryGetValue(stId, out var st))
-                return true;
+                return false;
             // Exact native base-data identity, now available through P703 production sync.
             // WinTrek/loadout.cpp:227-240 also counts a builder still travelling.
             return Rendering.InvestmentBuildGates.BuildSpotFound(asteroids, st.AabmBuild) && !builders.Contains(stId);
@@ -649,7 +642,9 @@ public sealed partial class Game1
                 && Rendering.InvestmentTechGates.CanBuy(core, b, devs, stationTypes),
             predecessors: catalog?.Core is { } knownCore && _investDefs is { } defs
                 ? Rendering.InvestmentTechGates.Predecessors(knownCore.Developments, defs) : null,
-            droneCountByTypeId: droneTypes);
+            droneCountByTypeId: droneTypes,
+            selectedGroup: _investGroup,
+            groups: Enumerable.Range(0, 6).Where(g => InvestmentTechGates.VisibleGroup(g, world.ResearchBriefing?.Settings ?? new())).ToArray());
     }
 
     /// <summary>

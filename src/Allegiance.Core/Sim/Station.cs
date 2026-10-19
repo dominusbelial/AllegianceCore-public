@@ -69,16 +69,16 @@ namespace Allegiance.Core.Sim;
 /// — a station without shields takes <b>no damage at all</b>, not a
 /// hull-damage fallback. Faithfully reproduced (<see cref="ReceiveDamage"/>).</item>
 /// </list></para>
-/// <para>The concrete <see cref="Data"/> record's <c>BpHull</c>/<c>BpShield</c>
-/// bytes are <b>not</b> used to seed the fractions: native's <c>Export</c>
-/// writes them as a lossy <c>(byte)m_hullFraction</c> cast
-/// (<c>stationIGC.cpp:110-111</c>), so a full-health station serializes as
-/// <c>1</c> (≈ 1/240), not as a meaningful percentage. Fractions therefore
-/// start at <c>1.0f</c> (full), the same default the asteroid's
-/// <see cref="Asteroid.Fraction"/> uses (asteroidigc.h:27).</para>
+/// <para>Generic station fractions default to full health independently of the
+/// static record. Construction explicitly initializes runtime health from its
+/// source asteroid and exports the div-240 BytePercentage representation
+/// (FedSrv/FedSrv.CPP:11401-11402; _Utility/Utility.h:1341-1358).</para>
 /// </remarks>
 public sealed class Station : IStationIgc, ISideVisible
 {
+    // Native consumed-rock memory (Igc/clusterIGC.cpp:141-155).
+    public Asteroid? ConsumedAsteroid { get; internal set; }
+    public HashSet<short> StaleRockSides { get; } = [];
     private int _undockPosition;
     private double _lastLaunch = double.NegativeInfinity;
 
@@ -408,6 +408,7 @@ public sealed class Station : IStationIgc, ISideVisible
     /// on destruction, and regrown by <see cref="Regenerate"/> toward 1.0
     /// (<c>CstationIGC</c>'s <c>m_hullFraction</c>, stationIGC.cpp:149,187).</summary>
     public float ArmorFraction { get; private set; } = 1.0f;
+    internal void SetConstructionFractions(float hull) { ArmorFraction = hull; ShieldFraction = 0; }
 
     /// <summary>The station's current shield health fraction — the second live
     /// per-instance pool, absorbing hits before the armor and regrowing toward

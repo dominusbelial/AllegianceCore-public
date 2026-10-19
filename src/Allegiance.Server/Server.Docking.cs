@@ -1078,53 +1078,38 @@ public sealed partial class Server
     /// slot as the treasure drain. The native sends this only on the
     /// <b>interruption</b> path — a build reaching its completion deadline
     /// transforms in place (P163 <c>CompleteBuild</c>) and sends nothing.</summary>
-    private void BroadcastBuildingEffectDestroyed(short asteroidId)
+    private void BroadcastBuildingEffectDestroyed(short asteroidId, Mission mission)
     {
         var msg = new BuildingEffectDestroyed { AsteroidId = asteroidId };
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
         int n = 0;
-        foreach (var kv in _peerShips)   // whole-mission: every peer, regardless of side
+        foreach (var kv in _peerShips)
         {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
             SendPeer(kv.Key, packet);
             n++;
         }
         Console.WriteLine($"[build] interrupted building effect on asteroid {asteroidId} -> BUILDINGEFFECT_DESTROYED(181) whole-mission to {n} peer(s)");
     }
 
-    /// <summary>P294 — broadcast <c>EXPORT(26)/OT_buildingEffect</c> when a new
-    /// in-progress building effect starts (a Builder committed to constructing
-    /// a station at an asteroid) — the port of
-    /// <c>FedSrvSiteBase::CreateBuildingEffect</c>'s broadcast half
-    /// (<c>FedSrv.CPP:13733-13767</c>), which exports the fresh effect to every
-    /// side that can see the build. This port has no per-side SeenBySide
-    /// tracking for building effects (the DESTROYED sibling is whole-mission
-    /// too, <see cref="BroadcastBuildingEffectDestroyed"/>), so the creation is
-    /// broadcast to every peer regardless of side — a strict superset of
-    /// native's audience, harmless to the client (its draw loop filters to the
-    /// local player's own sector by <c>ClusterId</c>). The message carries the
-    /// full <see cref="DataBuildingEffectExport"/> so the client can render the
-    /// in-progress visual and reconstruct native's 4-phase animation from
-    /// <c>timeStart</c>. The visual colour is native's hardcoded building-effect
-    /// tint <c>Color(50/255, 28/255, 146/255)</c> (<c>buildingeffectigc.h:93</c>,
-    /// which ignores the side colour via the commented-out <c>//*pcolor</c>).
-    /// Called from the <see cref="DrainBuildingEffectCreations"/> drain in the
-    /// same tick slot as the interruption drain. Native sends <b>no</b>
-    /// periodic progress and nothing on completion (the client self-expires at
-    /// <see cref="BuildingEffect.BuildDuration"/>); this port mirrors that.</summary>
+    /// <summary>Export construction to the owning side and sides which observed its start.
+    /// Native FedSrv/FedSrv.CPP:13733-13767. Envelope geometry is captured at creation.</summary>
     private void BroadcastBuildingEffectCreated(BuildingEffect effect)
     {
         uint timeStart = (uint)TickIndex;
         var msg = ExportBuildingEffect.FromBuildingEffect(
-            effect, timeStart, effect.Builder.Position,
+            effect, timeStart, effect.PositionStart,
             50f / 255f, 28f / 255f, 146f / 255f, 1f);
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
         int n = 0;
-        foreach (var kv in _peerShips)   // whole-mission: every peer, regardless of side
+        foreach (var kv in _peerShips)
         {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, effect.Builder.Mission)
+                || kv.Value.Ship.SideId is not { } side || !effect.InformedSides.Contains(side)) continue;
             SendPeer(kv.Key, packet);
             n++;
         }
-        Console.WriteLine($"[build] building effect started on asteroid {effect.Target.Data.AsteroidId} (station {effect.StationType.Name}) -> EXPORT(26)/OT_buildingEffect({ExportBuildingEffect.OtBuildingEffect}) whole-mission to {n} peer(s)");
+        Console.WriteLine($"[build] building effect started on asteroid {effect.Target.Data.AsteroidId} (station {effect.StationType.Name}) -> EXPORT(26)/OT_buildingEffect({ExportBuildingEffect.OtBuildingEffect}) to {n} informed peer(s)");
     }
 
     /// <summary>

@@ -911,12 +911,8 @@ public sealed partial class Game1
                         foreach (var (_, be) in world.BuildingEffects)
                         {
                             if (be.ClusterId != myBeSector) continue;
-                            float p = be.ProgressFraction(buildNow);
-                            float radius = be.RadiusStation * (0.2f + 0.8f * p);
-                            float alpha = Rendering.BuildingEffectRenderer.MinAlpha
-                                          + (Rendering.BuildingEffectRenderer.MaxAlpha
-                                             - Rendering.BuildingEffectRenderer.MinAlpha) * p;
-                            _drawBuilds.Add((PoseConverter.ToXna(be.PositionStop), radius, alpha));
+                            var phase = be.Phase(buildNow);
+                            _drawBuilds.Add((PoseConverter.ToXna(phase.Position), phase.Radius, phase.InnerAlpha));
                         }
                     }
                 }
@@ -1777,6 +1773,78 @@ public sealed partial class Game1
             _pilotInfoRenderer.Draw(GraphicsDevice.Viewport, info);
         }
 
+        // P271 — mission-briefing popup (pre-launch): the dismissible briefing
+        // panel showing the real SET_BRIEFING_TEXT(9) body + the live "Mission
+        // starts in Ns" countdown. Drawn above the HUD/starmap/chat/scoreboard so
+        // the briefing is legible during the pre-launch "black screen" moment;
+        // below the help keymap and game-over result. Title and body are both the
+        // real starting-cluster name the server sends (P121 sends only that one
+        // location string with FGenerateCivBriefing=true, so there is no separate
+        // mission-title field to draw). Dismissed by Enter/Esc or auto-closed
+        // when the countdown expires (IsBriefingVisible).
+        if (_state == ClientState.Flying && IsBriefingVisible(out int? brRemaining))
+        {
+            string briefText = _session.World.BriefingText;
+            _briefingRenderer.Draw(GraphicsDevice.Viewport, briefText, briefText, brRemaining);
+        }
+
+        // P257 — H keybinding-reference overlay, drawn TOP-MOST over every
+        // other overlay (HUD, starmap, chat) so it is fully legible as the
+        // reference panel the player consults briefly; it covers in both the
+        // lobby and flying states. Because it is an independent flag, closing
+        // it reveals the previous overlays exactly as they were.
+
+
+        // P625 — the Controls (rebind) popup, drawn top-most (above even the
+        // help overlay, which it hides on open).
+        DrawKeyBindingOverlay();
+
+        // P577 — the in-game Credits/Licences screen, drawn top-most (F12).
+        if (_creditsVisible)
+            _creditsOverlayRenderer.Draw(GraphicsDevice.Viewport);
+
+        // P268/P273 — the docked/hangar screen, drawn top-most as the docked
+        // replacement view (a fullscreen dark panel covers the stationary ship's
+        // cockpit scene). Only present while the local ship is actually docked.
+        // Its P273 sub-view is the teleport pane (board a teammate's turret /
+        // teleport to a station); otherwise the P268 hangar loadout shows.
+        if (_investActive && _investDefs is not null)
+        {
+            // P487 — the investment pane sub-view (native PurchasesPaneImpl),
+            // drawn in the same docked-panel style as the teleport/hangar views.
+            // P495 — reuses the model RefreshInvestState built this frame (so the
+            // radar build-spot highlight and the list agree), with a fallback
+            // build in case DrawRadar's camera block didn't run.
+            var invModel = _investModel ?? BuildInvestmentModel();
+            var invRows = Rendering.InvestmentLayout.Build(invModel).ToList();
+            lock (_session.Gate)
+                invRows.Insert(2, Rendering.ShopLayout.Row.Of(Rendering.ShopLayout.Kind.Hint,
+                    _investmentFunding.Status(_session.World)));
+            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, invRows, Rendering.InvestmentLayout.Detail(invModel), money: _session.World.MyMoney,
+                backdropAlpha: Rendering.DockedScreenRenderer.InvestBackdropAlpha,
+                footerHeight: _dockedActive ? 84f : 0f, splitDetailPanels: true);
+        }
+        else if (_dockedActive && _cameraMode != CameraMode.Command && _teleportActive && _teleportModel is { } telPane)
+        {
+            var telRows = Rendering.TeleportLayout.Build(telPane);
+            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, telRows, money: _session.World.MyMoney, footerHeight: 84f);
+        }
+        else if (_dockedActive && _cameraMode != CameraMode.Command && !_hangarOnly && _shopModel is { } dockShop)
+        {
+            // P519 — render the effective hull's real in-game model orbiting
+            // behind the panes at native cmExternalOrbit rates; the translucent
+            // panes overlay it so the UI stays readable over the moving preview.
+            DrawDockedHullPreview(gameTime, dockShop);
+            var shopRows = Rendering.ShopLayout.Build(dockShop);
+            // P276 — right-side part-info / connector-compat panel for the
+            // currently-highlighted shop row (real stats + fits/no-fit).
+            var detailRows = Rendering.PartInfoLayout.Build(dockShop);
+            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, shopRows, detailRows, _session.World.MyMoney,
+                backdropAlpha: 0.62f, footerHeight: 84f);
+        }
+
+        DrawConsolePanes();
+        DrawHangarControls();
         // P639 — Ctrl+T Team Pane: the full-roster screen (every side's pilots
         // with rank name, ship status, kills/deaths, plus money / active-ballot
         // footer). Built from the same ScoreRoster + RankTable as the scoreboard
@@ -1813,77 +1881,8 @@ public sealed partial class Game1
             _teamPaneRenderer.Draw(GraphicsDevice.Viewport, lines, _consolePanes.Team == TeamConsoleSize.Mini);
         }
 
-        // P271 — mission-briefing popup (pre-launch): the dismissible briefing
-        // panel showing the real SET_BRIEFING_TEXT(9) body + the live "Mission
-        // starts in Ns" countdown. Drawn above the HUD/starmap/chat/scoreboard so
-        // the briefing is legible during the pre-launch "black screen" moment;
-        // below the help keymap and game-over result. Title and body are both the
-        // real starting-cluster name the server sends (P121 sends only that one
-        // location string with FGenerateCivBriefing=true, so there is no separate
-        // mission-title field to draw). Dismissed by Enter/Esc or auto-closed
-        // when the countdown expires (IsBriefingVisible).
-        if (_state == ClientState.Flying && IsBriefingVisible(out int? brRemaining))
-        {
-            string briefText = _session.World.BriefingText;
-            _briefingRenderer.Draw(GraphicsDevice.Viewport, briefText, briefText, brRemaining);
-        }
 
-        // P257 — H keybinding-reference overlay, drawn TOP-MOST over every
-        // other overlay (HUD, starmap, chat) so it is fully legible as the
-        // reference panel the player consults briefly; it covers in both the
-        // lobby and flying states. Because it is an independent flag, closing
-        // it reveals the previous overlays exactly as they were.
-        if (_helpVisible)
-            _helpOverlayRenderer.Draw(GraphicsDevice.Viewport);
-
-        // P625 — the Controls (rebind) popup, drawn top-most (above even the
-        // help overlay, which it hides on open).
-        DrawKeyBindingOverlay();
-
-        // P577 — the in-game Credits/Licences screen, drawn top-most (F12).
-        if (_creditsVisible)
-            _creditsOverlayRenderer.Draw(GraphicsDevice.Viewport);
-
-        // P268/P273 — the docked/hangar screen, drawn top-most as the docked
-        // replacement view (a fullscreen dark panel covers the stationary ship's
-        // cockpit scene). Only present while the local ship is actually docked.
-        // Its P273 sub-view is the teleport pane (board a teammate's turret /
-        // teleport to a station); otherwise the P268 hangar loadout shows.
-        if (_investActive && _investDefs is not null)
-        {
-            // P487 — the investment pane sub-view (native PurchasesPaneImpl),
-            // drawn in the same docked-panel style as the teleport/hangar views.
-            // P495 — reuses the model RefreshInvestState built this frame (so the
-            // radar build-spot highlight and the list agree), with a fallback
-            // build in case DrawRadar's camera block didn't run.
-            var invModel = _investModel ?? BuildInvestmentModel();
-            var invRows = Rendering.InvestmentLayout.Build(invModel).ToList();
-            lock (_session.Gate)
-                invRows.Insert(2, Rendering.ShopLayout.Row.Of(Rendering.ShopLayout.Kind.Hint,
-                    _investmentFunding.Status(_session.World)));
-            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, invRows, money: _session.World.MyMoney,
-                backdropAlpha: Rendering.DockedScreenRenderer.InvestBackdropAlpha);
-        }
-        else if (_dockedActive && _cameraMode != CameraMode.Command && _teleportActive && _teleportModel is { } telPane)
-        {
-            var telRows = Rendering.TeleportLayout.Build(telPane);
-            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, telRows, money: _session.World.MyMoney);
-        }
-        else if (_dockedActive && _cameraMode != CameraMode.Command && !_hangarOnly && _shopModel is { } dockShop)
-        {
-            // P519 — render the effective hull's real in-game model orbiting
-            // behind the panes at native cmExternalOrbit rates; the translucent
-            // panes overlay it so the UI stays readable over the moving preview.
-            DrawDockedHullPreview(gameTime, dockShop);
-            var shopRows = Rendering.ShopLayout.Build(dockShop);
-            // P276 — right-side part-info / connector-compat panel for the
-            // currently-highlighted shop row (real stats + fits/no-fit).
-            var detailRows = Rendering.PartInfoLayout.Build(dockShop);
-            _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, shopRows, detailRows, _session.World.MyMoney,
-                backdropAlpha: 0.62f);
-        }
-
-        DrawConsolePanes();
+        if (_helpVisible) _helpOverlayRenderer.Draw(GraphicsDevice.Viewport);
         if ((_dockedActive || _investActive) && !LocalSpectating && !SpectatorCameraActive && !_hideHud && !_hudHidden && !_directorActive)
         {
             string[] objectives;
@@ -1892,6 +1891,7 @@ public sealed partial class Game1
             _hudRenderer.DrawDockedObjectives(objectives, GraphicsDevice.Viewport);
         }
         DrawMainMenu();
+        DrawHangarQuitConfirmation();
 
         // P262 — game-over result screen, drawn above EVERYTHING (even the help
         // keymap) so it is unmissable: the "why did everything stop" answer.

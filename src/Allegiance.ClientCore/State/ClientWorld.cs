@@ -3071,7 +3071,7 @@ public sealed partial class ClientWorld
         _buildingEffects.Remove(destroyed.AsteroidId);
 
     /// <summary>Remove building effects whose build has completed by the given
-    /// local monotonic instant (elapsed ≥ <see cref="BuildingEffect.BuildDuration"/>
+    /// local monotonic instant (elapsed ≥ <see cref="ConstructionPhase.Duration"/>
     /// since receipt). <see cref="ClientWorld"/> is pure (no clock), so the
     /// caller supplies the time and typically calls this once per frame under
     /// the same gate lock guarding the other world reads, before gathering the
@@ -4074,6 +4074,10 @@ public sealed partial class ClientWorld
         RecordSoundEvent(ClientSoundEventKind.TeleportArrived, m.StationId);
     }
 
+    /// <summary>Monotonic observation of BOARD_NACK, used to end pending
+    /// docked disembark/launch sequences (native appmsg.cpp:1899-1911).</summary>
+    public long BoardFailureRevision { get; private set; }
+
     /// <summary>P638 — <c>FM_S_BOARD_NACK(178)</c>: the server refused our
     /// board/leave request (<c>FedSrv.CPP:6412-6416</c>), own connection only.
     /// Native surfaces it as a popup in the teleport pane's <c>OnBoardFailed</c>
@@ -4086,6 +4090,7 @@ public sealed partial class ClientWorld
     /// branch is used; the <c>noTurretsSound</c> has no ported asset.</summary>
     private void Apply(BoardNack m)
     {
+        BoardFailureRevision++;
         PostSystemLine("Teleportation failed.");
     }
 

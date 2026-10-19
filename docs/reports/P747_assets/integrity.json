@@ -1,0 +1,15 @@
+{
+  "entry_and_HEAD": "a00e842fe424787e4bd0a2b7319fc386b41324b9",
+  "HEAD_unchanged": true,
+  "source_fingerprints_match_final_build": true,
+  "debug_binaries_unchanged_since_final_build": true,
+  "interface_matrix_unchanged": true,
+  "changed_native_fields_and_weights": false,
+  "changed_simulation_rows": 10,
+  "LF_only_changed_text": true,
+  "asset_bytes_before_integrity_file": 518324,
+  "asset_limit_bytes": 2000000,
+  "new_or_affected_product_test_failures_remaining": 0,
+  "raw_fast_result": "FAIL: 5 known repository-context path cases; corrected-context isolated qualification 21/21 passed",
+  "scratch_cleanup": "removed workspace task scratch after extracting compact evidence"
+}

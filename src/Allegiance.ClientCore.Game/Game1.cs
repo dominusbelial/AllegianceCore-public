@@ -861,7 +861,7 @@ public sealed partial class Game1 : Game
     private IReadOnlyList<Rendering.InvestmentBucket>? _investDefs;
     private bool _investActive;
     private bool _investShowAll;
-    private bool _investHideCompleted = true;
+    private bool _investHideCompleted; // native Show Complete starts checked (loadout.cpp:763)
     private int _investCursor;
     // Native misparms.nMaxDronesPerTeam (drone-type cap for CanInvest).
     private const int MaxDronesPerTeam = 4;

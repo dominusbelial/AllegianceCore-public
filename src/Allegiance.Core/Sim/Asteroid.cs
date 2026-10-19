@@ -72,7 +72,39 @@ public sealed class Asteroid : IAsteroidIgc, ISideVisible
     public DataAsteroidIGC Data { get; }
 
     // Owning mission supplies the matrix even for NULL-launcher warp blasts.
-    internal Mission? Mission { get; set; }
+    public Mission? Mission { get; internal set; }
+    public Sector? Sector { get; internal set; }
+    public BuildingEffect? BuildingEffect { get; internal set; }
+    public Station? ConstructedStation { get; internal set; }
+    private readonly Dictionary<short, float> _oreSeenBySide = [];
+    private long? _inhibitStarted;
+    public TimeProvider OreClock { get; set; } = TimeProvider.System;
+    public bool InhibitOreUpdate { get; private set; }
+    public float GetOreSeenBySide(short sideId) => _oreSeenBySide.GetValueOrDefault(sideId);
+    public void SetInhibitUpdate(bool inhibit) => InhibitOreUpdate = inhibit;
+
+    // Igc/asteroidigc.h:58-82: the inhibit window uses wall time, not simulation time.
+    internal void UpdateOreKnowledge()
+    {
+        if (InhibitOreUpdate)
+        {
+            if (_inhibitStarted is not { } started) _inhibitStarted = OreClock.GetTimestamp();
+            else if (OreClock.GetElapsedTime(started).TotalSeconds > 3)
+            { _inhibitStarted = null; InhibitOreUpdate = false; }
+        }
+        if (!CanMineHe3 || InhibitOreUpdate || Mission is null) return;
+        foreach (var side in Mission.Sides)
+            if (GetCurrentEye(side.Id)) _oreSeenBySide[side.Id] = OreRemaining;
+    }
+
+    // Igc/asteroidigc.h:293-304: authoritative client updates bypass the eye/inhibit gate.
+    public void SetOreWithFraction(float fraction, bool clientUpdate)
+    {
+        OreRemaining = fraction * OreMax;
+        if (Mission is null) return;
+        foreach (var side in Mission.Sides)
+            if (clientUpdate || GetCurrentEye(side.Id)) _oreSeenBySide[side.Id] = OreRemaining;
+    }
 
     /// <summary>The asteroid's depletable ore pool, seeded from the record's
     /// <see cref="DataAsteroidIGC.Ore"/>. <see cref="MineOre"/> drains it;
@@ -188,6 +220,13 @@ public sealed class Asteroid : IAsteroidIgc, ISideVisible
     /// error never reports a fraction &gt; 1 (native's asymptotic approach makes
     /// overshoot impossible in exact arithmetic; the clamp is defensive).
     /// </summary>
+    internal void Update(double now, float dt, float regeneration)
+    {
+        Regenerate(dt, regeneration);
+        UpdateOreKnowledge();
+        BuildingEffect?.AsteroidUpdate(now); // Igc/asteroidigc.h:85-91
+    }
+
     public void Regenerate(float dt, float regenConst)
     {
         if (!CanMineHe3) return;               // asteroidigc.h:49

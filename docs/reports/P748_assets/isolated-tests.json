@@ -1,0 +1,3278 @@
+[
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Every_hangar_button_has_distinct_hit_geometry_and_native_hover_leave_values",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.929,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Every_hangar_button_has_distinct_hit_geometry_and_native_hover_leave_values(width: 1280, height: 720)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000183"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Every_hangar_button_has_distinct_hit_geometry_and_native_hover_leave_values(width: 1920, height: 1080)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0001649"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Every_hangar_button_has_distinct_hit_geometry_and_native_hover_leave_values(width: 2560, height: 1440)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0069430"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Every_hangar_button_has_distinct_hit_geometry_and_native_hover_leave_values",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.99,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Every_hangar_button_has_distinct_hit_geometry_and_native_hover_leave_values(width: 1280, height: 720)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000203"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Every_hangar_button_has_distinct_hit_geometry_and_native_hover_leave_values(width: 2560, height: 1440)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0085852"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Every_hangar_button_has_distinct_hit_geometry_and_native_hover_leave_values(width: 1920, height: 1080)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0001888"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Every_hangar_button_has_distinct_hit_geometry_and_native_hover_leave_values",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.985,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Every_hangar_button_has_distinct_hit_geometry_and_native_hover_leave_values(width: 1280, height: 720)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000196"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Every_hangar_button_has_distinct_hit_geometry_and_native_hover_leave_values(width: 2560, height: 1440)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0088232"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Every_hangar_button_has_distinct_hit_geometry_and_native_hover_leave_values(width: 1920, height: 1080)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002023"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Hangar_dispatcher_opens_team_help_and_loadout_banishes_other_panes_and_respects_development_gate",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.008,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Hangar_dispatcher_opens_team_help_and_loadout_banishes_other_panes_and_respects_development_gate",
+        "outcome": "Passed",
+        "duration": "00:00:00.0239697"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Hangar_dispatcher_opens_team_help_and_loadout_banishes_other_panes_and_respects_development_gate",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.996,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Hangar_dispatcher_opens_team_help_and_loadout_banishes_other_panes_and_respects_development_gate",
+        "outcome": "Passed",
+        "duration": "00:00:00.0246963"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Hangar_dispatcher_opens_team_help_and_loadout_banishes_other_panes_and_respects_development_gate",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.938,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Hangar_dispatcher_opens_team_help_and_loadout_banishes_other_panes_and_respects_development_gate",
+        "outcome": "Passed",
+        "duration": "00:00:00.0190977"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Quit_popup_owns_escape_and_enter_edges_and_does_not_confirm_a_key_held_before_opening",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.009,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Quit_popup_owns_escape_and_enter_edges_and_does_not_confirm_a_key_held_before_opening",
+        "outcome": "Passed",
+        "duration": "00:00:00.0298633"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Quit_popup_owns_escape_and_enter_edges_and_does_not_confirm_a_key_held_before_opening",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.016,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Quit_popup_owns_escape_and_enter_edges_and_does_not_confirm_a_key_held_before_opening",
+        "outcome": "Passed",
+        "duration": "00:00:00.0295467"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Quit_popup_owns_escape_and_enter_edges_and_does_not_confirm_a_key_held_before_opening",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.005,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Quit_popup_owns_escape_and_enter_edges_and_does_not_confirm_a_key_held_before_opening",
+        "outcome": "Passed",
+        "duration": "00:00:00.0307989"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Command_uses_docked_station_sector_and_quit_requires_confirmation_and_authoritative_departure",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.015,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Command_uses_docked_station_sector_and_quit_requires_confirmation_and_authoritative_departure",
+        "outcome": "Passed",
+        "duration": "00:00:00.0556396"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Command_uses_docked_station_sector_and_quit_requires_confirmation_and_authoritative_departure",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.055,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Command_uses_docked_station_sector_and_quit_requires_confirmation_and_authoritative_departure",
+        "outcome": "Passed",
+        "duration": "00:00:00.0518210"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Command_uses_docked_station_sector_and_quit_requires_confirmation_and_authoritative_departure",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.073,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Command_uses_docked_station_sector_and_quit_requires_confirmation_and_authoritative_departure",
+        "outcome": "Passed",
+        "duration": "00:00:00.0590746"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Boarded_launch_sends_only_leave_until_ack_then_one_buy_with_pending_loadout_and_cancels_on_undock",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.043,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Boarded_launch_sends_only_leave_until_ack_then_one_buy_with_pending_loadout_and_cancels_on_undock",
+        "outcome": "Passed",
+        "duration": "00:00:00.0600925"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Boarded_launch_sends_only_leave_until_ack_then_one_buy_with_pending_loadout_and_cancels_on_undock",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.207,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Boarded_launch_sends_only_leave_until_ack_then_one_buy_with_pending_loadout_and_cancels_on_undock",
+        "outcome": "Passed",
+        "duration": "00:00:00.0727856"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Boarded_launch_sends_only_leave_until_ack_then_one_buy_with_pending_loadout_and_cancels_on_undock",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.009,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Boarded_launch_sends_only_leave_until_ack_then_one_buy_with_pending_loadout_and_cancels_on_undock",
+        "outcome": "Passed",
+        "duration": "00:00:00.0557675"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Investment_tabs_preserve_filters_reset_selection_wrap_skip_disabled_groups_and_show_selected_details",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.249,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Investment_tabs_preserve_filters_reset_selection_wrap_skip_disabled_groups_and_show_selected_details",
+        "outcome": "Passed",
+        "duration": "00:00:00.0178895"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Investment_tabs_preserve_filters_reset_selection_wrap_skip_disabled_groups_and_show_selected_details",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.168,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Investment_tabs_preserve_filters_reset_selection_wrap_skip_disabled_groups_and_show_selected_details",
+        "outcome": "Passed",
+        "duration": "00:00:00.0174821"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Investment_tabs_preserve_filters_reset_selection_wrap_skip_disabled_groups_and_show_selected_details",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.027,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Investment_tabs_preserve_filters_reset_selection_wrap_skip_disabled_groups_and_show_selected_details",
+        "outcome": "Passed",
+        "duration": "00:00:00.0155033"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Investment_tab_input_obeys_rebinding_and_suppresses_held_keys_across_chat_and_closed_panes",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.979,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Investment_tab_input_obeys_rebinding_and_suppresses_held_keys_across_chat_and_closed_panes",
+        "outcome": "Passed",
+        "duration": "00:00:00.0112789"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Investment_tab_input_obeys_rebinding_and_suppresses_held_keys_across_chat_and_closed_panes",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.997,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Investment_tab_input_obeys_rebinding_and_suppresses_held_keys_across_chat_and_closed_panes",
+        "outcome": "Passed",
+        "duration": "00:00:00.0105119"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Investment_tab_input_obeys_rebinding_and_suppresses_held_keys_across_chat_and_closed_panes",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.058,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Investment_tab_input_obeys_rebinding_and_suppresses_held_keys_across_chat_and_closed_panes",
+        "outcome": "Passed",
+        "duration": "00:00:00.0119088"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Continued_buyability_is_independent_of_completion_while_hide_completed_and_predecessors_still_filter",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.141,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Continued_buyability_is_independent_of_completion_while_hide_completed_and_predecessors_still_filter",
+        "outcome": "Passed",
+        "duration": "00:00:00.0175439"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Continued_buyability_is_independent_of_completion_while_hide_completed_and_predecessors_still_filter",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.009,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Continued_buyability_is_independent_of_completion_while_hide_completed_and_predecessors_still_filter",
+        "outcome": "Passed",
+        "duration": "00:00:00.0108106"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Continued_buyability_is_independent_of_completion_while_hide_completed_and_predecessors_still_filter",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.985,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Continued_buyability_is_independent_of_completion_while_hide_completed_and_predecessors_still_filter",
+        "outcome": "Passed",
+        "duration": "00:00:00.0133899"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Production_catalog_retains_native_groups_and_predecessor_completion_unlocks_the_next_queue_row",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.075,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Production_catalog_retains_native_groups_and_predecessor_completion_unlocks_the_next_queue_row",
+        "outcome": "Passed",
+        "duration": "00:00:00.0799031"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Production_catalog_retains_native_groups_and_predecessor_completion_unlocks_the_next_queue_row",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.08,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Production_catalog_retains_native_groups_and_predecessor_completion_unlocks_the_next_queue_row",
+        "outcome": "Passed",
+        "duration": "00:00:00.0798280"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Production_catalog_retains_native_groups_and_predecessor_completion_unlocks_the_next_queue_row",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.17,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Production_catalog_retains_native_groups_and_predecessor_completion_unlocks_the_next_queue_row",
+        "outcome": "Passed",
+        "duration": "00:00:00.0966485"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Production_investment_snapshot_uses_wire_builder_identity_before_arrival_and_excludes_enemy_dead_and_other_types",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.323,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Production_investment_snapshot_uses_wire_builder_identity_before_arrival_and_excludes_enemy_dead_and_other_types",
+        "outcome": "Passed",
+        "duration": "00:00:00.0773862"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Production_investment_snapshot_uses_wire_builder_identity_before_arrival_and_excludes_enemy_dead_and_other_types",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 2.126,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Production_investment_snapshot_uses_wire_builder_identity_before_arrival_and_excludes_enemy_dead_and_other_types",
+        "outcome": "Passed",
+        "duration": "00:00:00.0708375"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Production_investment_snapshot_uses_wire_builder_identity_before_arrival_and_excludes_enemy_dead_and_other_types",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.401,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P748InterfaceTests.Production_investment_snapshot_uses_wire_builder_identity_before_arrival_and_excludes_enemy_dead_and_other_types",
+        "outcome": "Passed",
+        "duration": "00:00:00.0930716"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresMissionInProgress",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.629,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresMissionInProgress",
+        "outcome": "Passed",
+        "duration": "00:00:00.0077753"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresMissionInProgress",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.133,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresMissionInProgress",
+        "outcome": "Passed",
+        "duration": "00:00:00.0051528"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresMissionInProgress",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.108,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresMissionInProgress",
+        "outcome": "Passed",
+        "duration": "00:00:00.0064468"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresASide",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.491,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresASide",
+        "outcome": "Passed",
+        "duration": "00:00:00.0086710"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresASide",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.072,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresASide",
+        "outcome": "Passed",
+        "duration": "00:00:00.0049632"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresASide",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.035,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresASide",
+        "outcome": "Passed",
+        "duration": "00:00:00.0060440"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresPositiveMoney",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.002,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresPositiveMoney",
+        "outcome": "Passed",
+        "duration": "00:00:00.0065439"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresPositiveMoney",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.009,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresPositiveMoney",
+        "outcome": "Passed",
+        "duration": "00:00:00.0061723"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresPositiveMoney",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.987,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_RequiresPositiveMoney",
+        "outcome": "Passed",
+        "duration": "00:00:00.0049430"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_CompletedBucket_Refused",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.976,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_CompletedBucket_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0061332"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_CompletedBucket_Refused",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.014,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_CompletedBucket_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0077268"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_CompletedBucket_Refused",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.991,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_CompletedBucket_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0067717"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_DroneCapReached_Refused",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.012,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_DroneCapReached_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0067871"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_DroneCapReached_Refused",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.003,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_DroneCapReached_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0057282"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_DroneCapReached_Refused",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.992,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_DroneCapReached_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0069575"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_StationWithoutBuildSpot_Refused",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.953,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_StationWithoutBuildSpot_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0052052"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_StationWithoutBuildSpot_Refused",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.007,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_StationWithoutBuildSpot_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0063044"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_StationWithoutBuildSpot_Refused",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.952,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_StationWithoutBuildSpot_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0052240"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_NormalBucket_True",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.985,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_NormalBucket_True",
+        "outcome": "Passed",
+        "duration": "00:00:00.0066415"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_NormalBucket_True",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.951,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_NormalBucket_True",
+        "outcome": "Passed",
+        "duration": "00:00:00.0063745"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_NormalBucket_True",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.008,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.CanInvest_NormalBucket_True",
+        "outcome": "Passed",
+        "duration": "00:00:00.0060634"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.InvestAmount_IsMinOfRemainingAndWallet",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.991,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.InvestAmount_IsMinOfRemainingAndWallet",
+        "outcome": "Passed",
+        "duration": "00:00:00.0091904"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.InvestAmount_IsMinOfRemainingAndWallet",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.948,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.InvestAmount_IsMinOfRemainingAndWallet",
+        "outcome": "Passed",
+        "duration": "00:00:00.0090719"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.InvestAmount_IsMinOfRemainingAndWallet",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.963,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.InvestAmount_IsMinOfRemainingAndWallet",
+        "outcome": "Passed",
+        "duration": "00:00:00.0092189"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_IsTenPercentOfTotal_CappedByWallet_NeverCompletes",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.991,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_IsTenPercentOfTotal_CappedByWallet_NeverCompletes",
+        "outcome": "Passed",
+        "duration": "00:00:00.0081074"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_IsTenPercentOfTotal_CappedByWallet_NeverCompletes",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.963,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_IsTenPercentOfTotal_CappedByWallet_NeverCompletes",
+        "outcome": "Passed",
+        "duration": "00:00:00.0062750"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_IsTenPercentOfTotal_CappedByWallet_NeverCompletes",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.941,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_IsTenPercentOfTotal_CappedByWallet_NeverCompletes",
+        "outcome": "Passed",
+        "duration": "00:00:00.0080296"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_LeavesAtLeastOneCr_WhenNearCompletion",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.972,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_LeavesAtLeastOneCr_WhenNearCompletion",
+        "outcome": "Passed",
+        "duration": "00:00:00.0071736"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_LeavesAtLeastOneCr_WhenNearCompletion",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.937,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_LeavesAtLeastOneCr_WhenNearCompletion",
+        "outcome": "Passed",
+        "duration": "00:00:00.0073867"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_LeavesAtLeastOneCr_WhenNearCompletion",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.95,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_LeavesAtLeastOneCr_WhenNearCompletion",
+        "outcome": "Passed",
+        "duration": "00:00:00.0093095"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_WhenOneCrRemaining_ReturnsZero",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.005,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_WhenOneCrRemaining_ReturnsZero",
+        "outcome": "Passed",
+        "duration": "00:00:00.0095409"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_WhenOneCrRemaining_ReturnsZero",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.966,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_WhenOneCrRemaining_ReturnsZero",
+        "outcome": "Passed",
+        "duration": "00:00:00.0088855"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_WhenOneCrRemaining_ReturnsZero",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.931,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.PartialInvest_WhenOneCrRemaining_ReturnsZero",
+        "outcome": "Passed",
+        "duration": "00:00:00.0088594"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.HideCompleted_DefaultHidesCompletedBuckets_NonCompletedStillShows",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.999,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.HideCompleted_DefaultHidesCompletedBuckets_NonCompletedStillShows",
+        "outcome": "Passed",
+        "duration": "00:00:00.0111800"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.HideCompleted_DefaultHidesCompletedBuckets_NonCompletedStillShows",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.035,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.HideCompleted_DefaultHidesCompletedBuckets_NonCompletedStillShows",
+        "outcome": "Passed",
+        "duration": "00:00:00.0100210"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.HideCompleted_DefaultHidesCompletedBuckets_NonCompletedStillShows",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.035,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.HideCompleted_DefaultHidesCompletedBuckets_NonCompletedStillShows",
+        "outcome": "Passed",
+        "duration": "00:00:00.0098429"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.ShowAll_NeedsHideCompletedOff_ToShowCompletedBuckets",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.969,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.ShowAll_NeedsHideCompletedOff_ToShowCompletedBuckets",
+        "outcome": "Passed",
+        "duration": "00:00:00.0085634"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.ShowAll_NeedsHideCompletedOff_ToShowCompletedBuckets",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.951,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.ShowAll_NeedsHideCompletedOff_ToShowCompletedBuckets",
+        "outcome": "Passed",
+        "duration": "00:00:00.0092760"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.ShowAll_NeedsHideCompletedOff_ToShowCompletedBuckets",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.955,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.ShowAll_NeedsHideCompletedOff_ToShowCompletedBuckets",
+        "outcome": "Passed",
+        "duration": "00:00:00.0087440"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.Items_PreservesSynthesisOrder",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.015,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.Items_PreservesSynthesisOrder",
+        "outcome": "Passed",
+        "duration": "00:00:00.0092266"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.Items_PreservesSynthesisOrder",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.957,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.Items_PreservesSynthesisOrder",
+        "outcome": "Passed",
+        "duration": "00:00:00.0073394"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.Items_PreservesSynthesisOrder",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.994,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.Items_PreservesSynthesisOrder",
+        "outcome": "Passed",
+        "duration": "00:00:00.0090166"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryInvest_HandsBackAmount_ForCursorBucket",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.949,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryInvest_HandsBackAmount_ForCursorBucket",
+        "outcome": "Passed",
+        "duration": "00:00:00.0076827"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryInvest_HandsBackAmount_ForCursorBucket",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.978,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryInvest_HandsBackAmount_ForCursorBucket",
+        "outcome": "Passed",
+        "duration": "00:00:00.0094230"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryInvest_HandsBackAmount_ForCursorBucket",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.011,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryInvest_HandsBackAmount_ForCursorBucket",
+        "outcome": "Passed",
+        "duration": "00:00:00.0094901"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryInvest_Blocks_WhenNotInvestable",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.979,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryInvest_Blocks_WhenNotInvestable",
+        "outcome": "Passed",
+        "duration": "00:00:00.0051053"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryInvest_Blocks_WhenNotInvestable",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.965,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryInvest_Blocks_WhenNotInvestable",
+        "outcome": "Passed",
+        "duration": "00:00:00.0063429"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryInvest_Blocks_WhenNotInvestable",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.965,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryInvest_Blocks_WhenNotInvestable",
+        "outcome": "Passed",
+        "duration": "00:00:00.0064916"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryPartialInvest_HandsBackPartialAmount",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.963,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryPartialInvest_HandsBackPartialAmount",
+        "outcome": "Passed",
+        "duration": "00:00:00.0091916"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryPartialInvest_HandsBackPartialAmount",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.981,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryPartialInvest_HandsBackPartialAmount",
+        "outcome": "Passed",
+        "duration": "00:00:00.0091556"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryPartialInvest_HandsBackPartialAmount",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.989,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentPaneModelTests.TryPartialInvest_HandsBackPartialAmount",
+        "outcome": "Passed",
+        "duration": "00:00:00.0091617"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EmitsTitleHintMoneyAndGroupHeaders",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.974,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EmitsTitleHintMoneyAndGroupHeaders",
+        "outcome": "Passed",
+        "duration": "00:00:00.0109076"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EmitsTitleHintMoneyAndGroupHeaders",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.985,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EmitsTitleHintMoneyAndGroupHeaders",
+        "outcome": "Passed",
+        "duration": "00:00:00.0105779"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EmitsTitleHintMoneyAndGroupHeaders",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.955,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EmitsTitleHintMoneyAndGroupHeaders",
+        "outcome": "Passed",
+        "duration": "00:00:00.0084236"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_InsertsGroupHeaders_InSynthesisOrder",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.951,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_InsertsGroupHeaders_InSynthesisOrder",
+        "outcome": "Passed",
+        "duration": "00:00:00.0107496"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_InsertsGroupHeaders_InSynthesisOrder",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.988,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_InsertsGroupHeaders_InSynthesisOrder",
+        "outcome": "Passed",
+        "duration": "00:00:00.0143094"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_InsertsGroupHeaders_InSynthesisOrder",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.987,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_InsertsGroupHeaders_InSynthesisOrder",
+        "outcome": "Passed",
+        "duration": "00:00:00.0136658"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EscapesUnicodeNames_ToPrintableAscii",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.043,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EscapesUnicodeNames_ToPrintableAscii",
+        "outcome": "Passed",
+        "duration": "00:00:00.0130712"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EscapesUnicodeNames_ToPrintableAscii",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.982,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EscapesUnicodeNames_ToPrintableAscii",
+        "outcome": "Passed",
+        "duration": "00:00:00.0106050"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EscapesUnicodeNames_ToPrintableAscii",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.037,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EscapesUnicodeNames_ToPrintableAscii",
+        "outcome": "Passed",
+        "duration": "00:00:00.0131114"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EmptyList_ShowsHint",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.006,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EmptyList_ShowsHint",
+        "outcome": "Passed",
+        "duration": "00:00:00.0065692"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EmptyList_ShowsHint",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.21,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EmptyList_ShowsHint",
+        "outcome": "Passed",
+        "duration": "00:00:00.0050541"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EmptyList_ShowsHint",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.984,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_EmptyList_ShowsHint",
+        "outcome": "Passed",
+        "duration": "00:00:00.0065401"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_NonInvestableRow_IsGreyed_WhenVisibleViaShowAll",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.966,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_NonInvestableRow_IsGreyed_WhenVisibleViaShowAll",
+        "outcome": "Passed",
+        "duration": "00:00:00.0065938"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_NonInvestableRow_IsGreyed_WhenVisibleViaShowAll",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.968,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_NonInvestableRow_IsGreyed_WhenVisibleViaShowAll",
+        "outcome": "Passed",
+        "duration": "00:00:00.0080453"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_NonInvestableRow_IsGreyed_WhenVisibleViaShowAll",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.027,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentLayoutTests.Build_NonInvestableRow_IsGreyed_WhenVisibleViaShowAll",
+        "outcome": "Passed",
+        "duration": "00:00:00.0065846"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_True_WhenSomeRockHasTheCapability",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.97,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_True_WhenSomeRockHasTheCapability",
+        "outcome": "Passed",
+        "duration": "00:00:00.0032069"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_True_WhenSomeRockHasTheCapability",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.966,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_True_WhenSomeRockHasTheCapability",
+        "outcome": "Passed",
+        "duration": "00:00:00.0040959"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_True_WhenSomeRockHasTheCapability",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.972,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_True_WhenSomeRockHasTheCapability",
+        "outcome": "Passed",
+        "duration": "00:00:00.0040538"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_False_WhenNoRockMatches",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.968,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_False_WhenNoRockMatches",
+        "outcome": "Passed",
+        "duration": "00:00:00.0039540"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_False_WhenNoRockMatches",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.006,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_False_WhenNoRockMatches",
+        "outcome": "Passed",
+        "duration": "00:00:00.0041627"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_False_WhenNoRockMatches",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.985,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_False_WhenNoRockMatches",
+        "outcome": "Passed",
+        "duration": "00:00:00.0039607"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_IgnoresUnrelatedCapabilityBits",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.967,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_IgnoresUnrelatedCapabilityBits",
+        "outcome": "Passed",
+        "duration": "00:00:00.0030574"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_IgnoresUnrelatedCapabilityBits",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.979,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_IgnoresUnrelatedCapabilityBits",
+        "outcome": "Passed",
+        "duration": "00:00:00.0040977"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_IgnoresUnrelatedCapabilityBits",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.951,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuildSpotFound_IgnoresUnrelatedCapabilityBits",
+        "outcome": "Passed",
+        "duration": "00:00:00.0030657"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.ConstructionHullFor_ResolvesViaConstructionDroneTypeId",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.966,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.ConstructionHullFor_ResolvesViaConstructionDroneTypeId",
+        "outcome": "Passed",
+        "duration": "00:00:00.0047195"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.ConstructionHullFor_ResolvesViaConstructionDroneTypeId",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.999,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.ConstructionHullFor_ResolvesViaConstructionDroneTypeId",
+        "outcome": "Passed",
+        "duration": "00:00:00.0059902"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.ConstructionHullFor_ResolvesViaConstructionDroneTypeId",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.97,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.ConstructionHullFor_ResolvesViaConstructionDroneTypeId",
+        "outcome": "Passed",
+        "duration": "00:00:00.0062409"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.ConstructionHullFor_Null_WhenConstructionDroneUnknown",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.983,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.ConstructionHullFor_Null_WhenConstructionDroneUnknown",
+        "outcome": "Passed",
+        "duration": "00:00:00.0034478"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.ConstructionHullFor_Null_WhenConstructionDroneUnknown",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.004,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.ConstructionHullFor_Null_WhenConstructionDroneUnknown",
+        "outcome": "Passed",
+        "duration": "00:00:00.0046933"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.ConstructionHullFor_Null_WhenConstructionDroneUnknown",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.99,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.ConstructionHullFor_Null_WhenConstructionDroneUnknown",
+        "outcome": "Passed",
+        "duration": "00:00:00.0046459"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_NoConstructorOnSide_False",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.984,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_NoConstructorOnSide_False",
+        "outcome": "Passed",
+        "duration": "00:00:00.0051985"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_NoConstructorOnSide_False",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.005,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_NoConstructorOnSide_False",
+        "outcome": "Passed",
+        "duration": "00:00:00.0042265"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_NoConstructorOnSide_False",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.053,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_NoConstructorOnSide_False",
+        "outcome": "Passed",
+        "duration": "00:00:00.0052512"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ConstructorPresentButNothingBeingBuilt_False",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.001,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ConstructorPresentButNothingBeingBuilt_False",
+        "outcome": "Passed",
+        "duration": "00:00:00.0054967"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ConstructorPresentButNothingBeingBuilt_False",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.049,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ConstructorPresentButNothingBeingBuilt_False",
+        "outcome": "Passed",
+        "duration": "00:00:00.0052210"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ConstructorPresentButNothingBeingBuilt_False",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.035,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ConstructorPresentButNothingBeingBuilt_False",
+        "outcome": "Passed",
+        "duration": "00:00:00.0042303"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ConstructorPlusActiveBuildOnCompatibleRock_True",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.005,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ConstructorPlusActiveBuildOnCompatibleRock_True",
+        "outcome": "Passed",
+        "duration": "00:00:00.0049723"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ConstructorPlusActiveBuildOnCompatibleRock_True",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.019,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ConstructorPlusActiveBuildOnCompatibleRock_True",
+        "outcome": "Passed",
+        "duration": "00:00:00.0055420"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ConstructorPlusActiveBuildOnCompatibleRock_True",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.008,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ConstructorPlusActiveBuildOnCompatibleRock_True",
+        "outcome": "Passed",
+        "duration": "00:00:00.0055113"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ActiveBuildOnIncompatibleRock_False",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.023,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ActiveBuildOnIncompatibleRock_False",
+        "outcome": "Passed",
+        "duration": "00:00:00.0054805"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ActiveBuildOnIncompatibleRock_False",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.017,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ActiveBuildOnIncompatibleRock_False",
+        "outcome": "Passed",
+        "duration": "00:00:00.0061704"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ActiveBuildOnIncompatibleRock_False",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.028,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_ActiveBuildOnIncompatibleRock_False",
+        "outcome": "Passed",
+        "duration": "00:00:00.0045927"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_UnknownConstructionDrone_False",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.03,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_UnknownConstructionDrone_False",
+        "outcome": "Passed",
+        "duration": "00:00:00.0052142"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_UnknownConstructionDrone_False",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.027,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_UnknownConstructionDrone_False",
+        "outcome": "Passed",
+        "duration": "00:00:00.0051336"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_UnknownConstructionDrone_False",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.017,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.BuilderExists_UnknownConstructionDrone_False",
+        "outcome": "Passed",
+        "duration": "00:00:00.0043358"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_NoBuildSpot_Refused",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.007,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_NoBuildSpot_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0063806"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_NoBuildSpot_Refused",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.021,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_NoBuildSpot_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0057735"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_NoBuildSpot_Refused",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.976,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_NoBuildSpot_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0047988"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_BuilderExists_Refused",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.981,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_BuilderExists_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0055692"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_BuilderExists_Refused",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.991,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_BuilderExists_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0054268"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_BuilderExists_Refused",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.995,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_BuilderExists_Refused",
+        "outcome": "Passed",
+        "duration": "00:00:00.0056883"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_SpotAndNoBuilder_Allowed",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.974,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_SpotAndNoBuilder_Allowed",
+        "outcome": "Passed",
+        "duration": "00:00:00.0070703"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_SpotAndNoBuilder_Allowed",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.965,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_SpotAndNoBuilder_Allowed",
+        "outcome": "Passed",
+        "duration": "00:00:00.0065501"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_SpotAndNoBuilder_Allowed",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.993,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_SpotAndNoBuilder_Allowed",
+        "outcome": "Passed",
+        "duration": "00:00:00.0066082"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_FeedingTheModel_ReflectsInCanInvest",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.961,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_FeedingTheModel_ReflectsInCanInvest",
+        "outcome": "Passed",
+        "duration": "00:00:00.0090252"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_FeedingTheModel_ReflectsInCanInvest",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.957,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_FeedingTheModel_ReflectsInCanInvest",
+        "outcome": "Passed",
+        "duration": "00:00:00.0091641"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_FeedingTheModel_ReflectsInCanInvest",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.968,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.CanBuildStation_FeedingTheModel_ReflectsInCanInvest",
+        "outcome": "Passed",
+        "duration": "00:00:00.0112769"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.MatchingAsteroidIds_ReturnsExactlyTheCapableRocks",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.993,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.MatchingAsteroidIds_ReturnsExactlyTheCapableRocks",
+        "outcome": "Passed",
+        "duration": "00:00:00.0099674"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.MatchingAsteroidIds_ReturnsExactlyTheCapableRocks",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.965,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.MatchingAsteroidIds_ReturnsExactlyTheCapableRocks",
+        "outcome": "Passed",
+        "duration": "00:00:00.0096867"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.MatchingAsteroidIds_ReturnsExactlyTheCapableRocks",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.964,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.MatchingAsteroidIds_ReturnsExactlyTheCapableRocks",
+        "outcome": "Passed",
+        "duration": "00:00:00.0098900"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.MatchingAsteroidIds_Empty_WhenNoneMatch",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.934,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.MatchingAsteroidIds_Empty_WhenNoneMatch",
+        "outcome": "Passed",
+        "duration": "00:00:00.0038823"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.MatchingAsteroidIds_Empty_WhenNoneMatch",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.996,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.MatchingAsteroidIds_Empty_WhenNoneMatch",
+        "outcome": "Passed",
+        "duration": "00:00:00.0048345"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.MatchingAsteroidIds_Empty_WhenNoneMatch",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.941,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.InvestmentBuildGatesTests.MatchingAsteroidIds_Empty_WhenNoneMatch",
+        "outcome": "Passed",
+        "duration": "00:00:00.0038921"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Investment_buyability_matches_authoritative_side_for_every_civilization_and_tech_change",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.059,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Investment_buyability_matches_authoritative_side_for_every_civilization_and_tech_change",
+        "outcome": "Passed",
+        "duration": "00:00:00.0892465"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Investment_buyability_matches_authoritative_side_for_every_civilization_and_tech_change",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.05,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Investment_buyability_matches_authoritative_side_for_every_civilization_and_tech_change",
+        "outcome": "Passed",
+        "duration": "00:00:00.0822562"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Investment_buyability_matches_authoritative_side_for_every_civilization_and_tech_change",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.102,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Investment_buyability_matches_authoritative_side_for_every_civilization_and_tech_change",
+        "outcome": "Passed",
+        "duration": "00:00:00.0892182"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_predecessors_hide_later_attribute_levels_until_completion_and_show_all_preserves_gates",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.107,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_predecessors_hide_later_attribute_levels_until_completion_and_show_all_preserves_gates",
+        "outcome": "Passed",
+        "duration": "00:00:00.0156836"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_predecessors_hide_later_attribute_levels_until_completion_and_show_all_preserves_gates",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.207,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_predecessors_hide_later_attribute_levels_until_completion_and_show_all_preserves_gates",
+        "outcome": "Passed",
+        "duration": "00:00:00.0157527"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_predecessors_hide_later_attribute_levels_until_completion_and_show_all_preserves_gates",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.108,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_predecessors_hide_later_attribute_levels_until_completion_and_show_all_preserves_gates",
+        "outcome": "Passed",
+        "duration": "00:00:00.0141159"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.01,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 1, visible: True)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000016"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 0, visible: True)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000009"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 5, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000213"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 255, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000014"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: -1, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0001600"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 4, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000411"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 2, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000151"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 3, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0037718"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.022,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 5, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000198"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 0, visible: True)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000009"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 2, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000151"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: -1, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0001611"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 1, visible: True)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000009"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 4, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000360"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 3, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0037783"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 255, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000023"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.04,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: -1, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0001791"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 4, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000418"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 1, visible: True)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000008"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 0, visible: True)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000009"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 5, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000204"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 3, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0038376"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 255, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000025"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Native_tabs_hide_internal_buckets_and_disabled_paths_even_with_show_all(group: 2, visible: False)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000151"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Hiding_completed_rows_keeps_the_cursor_and_displayed_selection_consistent",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.981,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Hiding_completed_rows_keeps_the_cursor_and_displayed_selection_consistent",
+        "outcome": "Passed",
+        "duration": "00:00:00.0128375"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Hiding_completed_rows_keeps_the_cursor_and_displayed_selection_consistent",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.097,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Hiding_completed_rows_keeps_the_cursor_and_displayed_selection_consistent",
+        "outcome": "Passed",
+        "duration": "00:00:00.0112701"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Hiding_completed_rows_keeps_the_cursor_and_displayed_selection_consistent",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.014,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Hiding_completed_rows_keeps_the_cursor_and_displayed_selection_consistent",
+        "outcome": "Passed",
+        "duration": "00:00:00.0129785"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Drone_cap_uses_exact_drone_identity_when_two_types_share_a_hull",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.98,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Drone_cap_uses_exact_drone_identity_when_two_types_share_a_hull",
+        "outcome": "Passed",
+        "duration": "00:00:00.0052700"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Drone_cap_uses_exact_drone_identity_when_two_types_share_a_hull",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.002,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Drone_cap_uses_exact_drone_identity_when_two_types_share_a_hull",
+        "outcome": "Passed",
+        "duration": "00:00:00.0067585"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Drone_cap_uses_exact_drone_identity_when_two_types_share_a_hull",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.978,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Drone_cap_uses_exact_drone_identity_when_two_types_share_a_hull",
+        "outcome": "Passed",
+        "duration": "00:00:00.0067356"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Docked_shop_refreshes_unlocked_offers_and_wallet_without_discarding_pending_loadout",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.024,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Docked_shop_refreshes_unlocked_offers_and_wallet_without_discarding_pending_loadout",
+        "outcome": "Passed",
+        "duration": "00:00:00.0364176"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Docked_shop_refreshes_unlocked_offers_and_wallet_without_discarding_pending_loadout",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.037,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Docked_shop_refreshes_unlocked_offers_and_wallet_without_discarding_pending_loadout",
+        "outcome": "Passed",
+        "duration": "00:00:00.0457751"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Docked_shop_refreshes_unlocked_offers_and_wallet_without_discarding_pending_loadout",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.208,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Docked_shop_refreshes_unlocked_offers_and_wallet_without_discarding_pending_loadout",
+        "outcome": "Passed",
+        "duration": "00:00:00.0458806"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Funding_controls_gift_native_amounts_toggle_only_for_leader_and_obey_rebinding_and_suppression",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.037,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Funding_controls_gift_native_amounts_toggle_only_for_leader_and_obey_rebinding_and_suppression",
+        "outcome": "Passed",
+        "duration": "00:00:00.0310951"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Funding_controls_gift_native_amounts_toggle_only_for_leader_and_obey_rebinding_and_suppression",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.25,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Funding_controls_gift_native_amounts_toggle_only_for_leader_and_obey_rebinding_and_suppression",
+        "outcome": "Passed",
+        "duration": "00:00:00.0313759"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Funding_controls_gift_native_amounts_toggle_only_for_leader_and_obey_rebinding_and_suppression",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.053,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Funding_controls_gift_native_amounts_toggle_only_for_leader_and_obey_rebinding_and_suppression",
+        "outcome": "Passed",
+        "duration": "00:00:00.0321533"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Constructor_build_intention_waits_for_remote_arrival_and_cancels_on_new_order_or_side",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.443,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Constructor_build_intention_waits_for_remote_arrival_and_cancels_on_new_order_or_side",
+        "outcome": "Passed",
+        "duration": "00:00:00.0314364"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Constructor_build_intention_waits_for_remote_arrival_and_cancels_on_new_order_or_side",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.297,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Constructor_build_intention_waits_for_remote_arrival_and_cancels_on_new_order_or_side",
+        "outcome": "Passed",
+        "duration": "00:00:00.0285932"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Constructor_build_intention_waits_for_remote_arrival_and_cancels_on_new_order_or_side",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.991,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Constructor_build_intention_waits_for_remote_arrival_and_cancels_on_new_order_or_side",
+        "outcome": "Passed",
+        "duration": "00:00:00.0228465"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.958,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: False, kind: 0, command: 1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0043387"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: True, kind: 0, command: 3)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000036"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: True, kind: 1, command: 5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000017"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: False, kind: 1, command: 1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000011"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: False, kind: 3, command: 5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0001823"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.992,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: True, kind: 0, command: 3)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000040"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: False, kind: 1, command: 1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000013"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: False, kind: 3, command: 5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0001818"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: True, kind: 1, command: 5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000022"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: False, kind: 0, command: 1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0050700"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.998,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: False, kind: 0, command: 1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0051567"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: True, kind: 1, command: 5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000023"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: True, kind: 0, command: 3)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000043"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: False, kind: 1, command: 1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000013"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P728CommanderTests.Combat_pilots_receive_native_command_chat_defaults(friendly: False, kind: 3, command: 5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002105"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.ShopNoAutoLaunchTests.Game1_has_no_dock_fallback_auto_launch_symbols",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.961,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.ShopNoAutoLaunchTests.Game1_has_no_dock_fallback_auto_launch_symbols",
+        "outcome": "Passed",
+        "duration": "00:00:00.0015973"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.ShopNoAutoLaunchTests.Game1_has_no_dock_fallback_auto_launch_symbols",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.988,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.ShopNoAutoLaunchTests.Game1_has_no_dock_fallback_auto_launch_symbols",
+        "outcome": "Passed",
+        "duration": "00:00:00.0014480"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.ShopNoAutoLaunchTests.Game1_has_no_dock_fallback_auto_launch_symbols",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.971,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.ShopNoAutoLaunchTests.Game1_has_no_dock_fallback_auto_launch_symbols",
+        "outcome": "Passed",
+        "duration": "00:00:00.0015761"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.ShopNoAutoLaunchTests.Shop_model_is_inert_without_user_action",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 1.097,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.ShopNoAutoLaunchTests.Shop_model_is_inert_without_user_action",
+        "outcome": "Passed",
+        "duration": "00:00:00.1244114"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.ShopNoAutoLaunchTests.Shop_model_is_inert_without_user_action",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.085,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.ShopNoAutoLaunchTests.Shop_model_is_inert_without_user_action",
+        "outcome": "Passed",
+        "duration": "00:00:00.1224715"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.ShopNoAutoLaunchTests.Shop_model_is_inert_without_user_action",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 1.151,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.ShopNoAutoLaunchTests.Shop_model_is_inert_without_user_action",
+        "outcome": "Passed",
+        "duration": "00:00:00.1286841"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.985,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"Suicide\", category: \"WEAPONS\", oldKey: K, newKey: NumPad7)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000424"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"AcceptCommand\", category: \"QUEUED ORDERS (RECEIVED COMMAND)\", oldKey: Home, newKey: NumPad0)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002888"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"MenuSelect\", category: \"PANES / MENUS\", oldKey: Space, newKey: NumPad6)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000512"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"StartChat\", category: \"CHAT\", oldKey: Enter, newKey: F14)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000504"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ReadyToggle\", category: \"READY CHECK (PRE-FLIGHT)\", oldKey: Y, newKey: F13)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000515"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ShopLaunch\", category: \"PANES / MENUS\", oldKey: L, newKey: NumPad5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000512"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"DropChaff\", category: \"WEAPONS\", oldKey: C, newKey: NumPad4)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000431"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"FireWeapon\", category: \"WEAPONS\", oldKey: Space, newKey: NumPad3)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0116825"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"Scoreboard\", category: \"CAMERA / VIEW\", oldKey: B, newKey: F15)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000507"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ToggleMouse\", category: \"CAMERA / VIEW\", oldKey: M, newKey: NumPad1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000500"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"CycleView\", category: \"CAMERA / VIEW\", oldKey: V, newKey: NumPad2)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000473"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ToggleCloak\", category: \"WEAPONS\", oldKey: F, newKey: NumPad8)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000499"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"Target\", category: \"TARGETING / AUTOPILOT\", oldKey: T, newKey: NumPad9)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000472"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ScreenShot\", category: \"CAMERA / VIEW\", oldKey: PrintScreen, newKey: F16)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000581"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 1.003,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"MenuSelect\", category: \"PANES / MENUS\", oldKey: Space, newKey: NumPad6)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000500"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"StartChat\", category: \"CHAT\", oldKey: Enter, newKey: F14)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000501"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ToggleCloak\", category: \"WEAPONS\", oldKey: F, newKey: NumPad8)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000452"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"FireWeapon\", category: \"WEAPONS\", oldKey: Space, newKey: NumPad3)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0121292"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"Scoreboard\", category: \"CAMERA / VIEW\", oldKey: B, newKey: F15)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000507"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ShopLaunch\", category: \"PANES / MENUS\", oldKey: L, newKey: NumPad5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000511"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ToggleMouse\", category: \"CAMERA / VIEW\", oldKey: M, newKey: NumPad1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000507"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"AcceptCommand\", category: \"QUEUED ORDERS (RECEIVED COMMAND)\", oldKey: Home, newKey: NumPad0)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0003222"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"Suicide\", category: \"WEAPONS\", oldKey: K, newKey: NumPad7)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000424"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"Target\", category: \"TARGETING / AUTOPILOT\", oldKey: T, newKey: NumPad9)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000544"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"DropChaff\", category: \"WEAPONS\", oldKey: C, newKey: NumPad4)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000422"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"CycleView\", category: \"CAMERA / VIEW\", oldKey: V, newKey: NumPad2)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000479"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ScreenShot\", category: \"CAMERA / VIEW\", oldKey: PrintScreen, newKey: F16)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000595"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ReadyToggle\", category: \"READY CHECK (PRE-FLIGHT)\", oldKey: Y, newKey: F13)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000505"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.961,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"DropChaff\", category: \"WEAPONS\", oldKey: C, newKey: NumPad4)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000425"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ReadyToggle\", category: \"READY CHECK (PRE-FLIGHT)\", oldKey: Y, newKey: F13)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000565"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"Suicide\", category: \"WEAPONS\", oldKey: K, newKey: NumPad7)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000411"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ShopLaunch\", category: \"PANES / MENUS\", oldKey: L, newKey: NumPad5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000521"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"MenuSelect\", category: \"PANES / MENUS\", oldKey: Space, newKey: NumPad6)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000516"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"AcceptCommand\", category: \"QUEUED ORDERS (RECEIVED COMMAND)\", oldKey: Home, newKey: NumPad0)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002948"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ToggleCloak\", category: \"WEAPONS\", oldKey: F, newKey: NumPad8)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000443"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"CycleView\", category: \"CAMERA / VIEW\", oldKey: V, newKey: NumPad2)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000478"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ToggleMouse\", category: \"CAMERA / VIEW\", oldKey: M, newKey: NumPad1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000494"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"StartChat\", category: \"CHAT\", oldKey: Enter, newKey: F14)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000496"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"Target\", category: \"TARGETING / AUTOPILOT\", oldKey: T, newKey: NumPad9)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000466"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"FireWeapon\", category: \"WEAPONS\", oldKey: Space, newKey: NumPad3)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0115437"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"Scoreboard\", category: \"CAMERA / VIEW\", oldKey: B, newKey: F15)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000496"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_TriggersOnNewKey_NotOld(action: \"ScreenShot\", category: \"CAMERA / VIEW\", oldKey: PrintScreen, newKey: F16)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000590"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.987,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ToggleCloak\", category: \"WEAPONS\", oldKey: F, newKey: NumPad8)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000401"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ReadyToggle\", category: \"READY CHECK (PRE-FLIGHT)\", oldKey: Y, newKey: F13)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000416"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"AcceptCommand\", category: \"QUEUED ORDERS (RECEIVED COMMAND)\", oldKey: Home, newKey: NumPad0)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000454"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"Scoreboard\", category: \"CAMERA / VIEW\", oldKey: B, newKey: F15)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000407"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"FireWeapon\", category: \"WEAPONS\", oldKey: Space, newKey: NumPad3)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0108065"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ToggleMouse\", category: \"CAMERA / VIEW\", oldKey: M, newKey: NumPad1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000479"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"StartChat\", category: \"CHAT\", oldKey: Enter, newKey: F14)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000399"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ScreenShot\", category: \"CAMERA / VIEW\", oldKey: PrintScreen, newKey: F16)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002848"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"Target\", category: \"TARGETING / AUTOPILOT\", oldKey: T, newKey: NumPad9)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000406"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"Suicide\", category: \"WEAPONS\", oldKey: K, newKey: NumPad7)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000426"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ShopLaunch\", category: \"PANES / MENUS\", oldKey: L, newKey: NumPad5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000417"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"CycleView\", category: \"CAMERA / VIEW\", oldKey: V, newKey: NumPad2)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000402"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"DropChaff\", category: \"WEAPONS\", oldKey: C, newKey: NumPad4)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000413"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"MenuSelect\", category: \"PANES / MENUS\", oldKey: Space, newKey: NumPad6)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000397"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.963,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ToggleCloak\", category: \"WEAPONS\", oldKey: F, newKey: NumPad8)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000399"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ToggleMouse\", category: \"CAMERA / VIEW\", oldKey: M, newKey: NumPad1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000470"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"FireWeapon\", category: \"WEAPONS\", oldKey: Space, newKey: NumPad3)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0110141"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"AcceptCommand\", category: \"QUEUED ORDERS (RECEIVED COMMAND)\", oldKey: Home, newKey: NumPad0)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000410"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"Scoreboard\", category: \"CAMERA / VIEW\", oldKey: B, newKey: F15)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000409"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ReadyToggle\", category: \"READY CHECK (PRE-FLIGHT)\", oldKey: Y, newKey: F13)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000405"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ShopLaunch\", category: \"PANES / MENUS\", oldKey: L, newKey: NumPad5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000427"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"MenuSelect\", category: \"PANES / MENUS\", oldKey: Space, newKey: NumPad6)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000398"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"DropChaff\", category: \"WEAPONS\", oldKey: C, newKey: NumPad4)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000393"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"StartChat\", category: \"CHAT\", oldKey: Enter, newKey: F14)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000408"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"CycleView\", category: \"CAMERA / VIEW\", oldKey: V, newKey: NumPad2)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000405"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ScreenShot\", category: \"CAMERA / VIEW\", oldKey: PrintScreen, newKey: F16)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002904"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"Target\", category: \"TARGETING / AUTOPILOT\", oldKey: T, newKey: NumPad9)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000396"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"Suicide\", category: \"WEAPONS\", oldKey: K, newKey: NumPad7)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000417"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.973,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"AcceptCommand\", category: \"QUEUED ORDERS (RECEIVED COMMAND)\", oldKey: Home, newKey: NumPad0)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000405"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"Scoreboard\", category: \"CAMERA / VIEW\", oldKey: B, newKey: F15)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000402"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ToggleCloak\", category: \"WEAPONS\", oldKey: F, newKey: NumPad8)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000393"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"Suicide\", category: \"WEAPONS\", oldKey: K, newKey: NumPad7)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000421"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"MenuSelect\", category: \"PANES / MENUS\", oldKey: Space, newKey: NumPad6)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000394"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ScreenShot\", category: \"CAMERA / VIEW\", oldKey: PrintScreen, newKey: F16)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002503"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"CycleView\", category: \"CAMERA / VIEW\", oldKey: V, newKey: NumPad2)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000406"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ShopLaunch\", category: \"PANES / MENUS\", oldKey: L, newKey: NumPad5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000437"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ToggleMouse\", category: \"CAMERA / VIEW\", oldKey: M, newKey: NumPad1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000529"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"DropChaff\", category: \"WEAPONS\", oldKey: C, newKey: NumPad4)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000397"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"StartChat\", category: \"CHAT\", oldKey: Enter, newKey: F14)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000393"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"FireWeapon\", category: \"WEAPONS\", oldKey: Space, newKey: NumPad3)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0106482"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"ReadyToggle\", category: \"READY CHECK (PRE-FLIGHT)\", oldKey: Y, newKey: F13)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000413"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HeldNewKeyFiresOnce_NotRepeatPerFrame(action: \"Target\", category: \"TARGETING / AUTOPILOT\", oldKey: T, newKey: NumPad9)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0000392"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.961,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"AcceptCommand\", category: \"QUEUED ORDERS (RECEIVED COMMAND)\", oldKey: Home, newKey: NumPad0)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0001977"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ToggleMouse\", category: \"CAMERA / VIEW\", oldKey: M, newKey: NumPad1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002217"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"StartChat\", category: \"CHAT\", oldKey: Enter, newKey: F14)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002188"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"Scoreboard\", category: \"CAMERA / VIEW\", oldKey: B, newKey: F15)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0128532"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"Target\", category: \"TARGETING / AUTOPILOT\", oldKey: T, newKey: NumPad9)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002038"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"MenuSelect\", category: \"PANES / MENUS\", oldKey: Space, newKey: NumPad6)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002143"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ReadyToggle\", category: \"READY CHECK (PRE-FLIGHT)\", oldKey: Y, newKey: F13)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0001961"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ShopLaunch\", category: \"PANES / MENUS\", oldKey: L, newKey: NumPad5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0004398"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"FireWeapon\", category: \"WEAPONS\", oldKey: Space, newKey: NumPad3)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0001861"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"DropChaff\", category: \"WEAPONS\", oldKey: C, newKey: NumPad4)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002076"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ToggleCloak\", category: \"WEAPONS\", oldKey: F, newKey: NumPad8)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0001997"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"CycleView\", category: \"CAMERA / VIEW\", oldKey: V, newKey: NumPad2)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002056"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"Suicide\", category: \"WEAPONS\", oldKey: K, newKey: NumPad7)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002073"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ScreenShot\", category: \"CAMERA / VIEW\", oldKey: PrintScreen, newKey: F16)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002116"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.995,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"Suicide\", category: \"WEAPONS\", oldKey: K, newKey: NumPad7)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002295"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"StartChat\", category: \"CHAT\", oldKey: Enter, newKey: F14)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002503"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ReadyToggle\", category: \"READY CHECK (PRE-FLIGHT)\", oldKey: Y, newKey: F13)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002387"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ScreenShot\", category: \"CAMERA / VIEW\", oldKey: PrintScreen, newKey: F16)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002425"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"AcceptCommand\", category: \"QUEUED ORDERS (RECEIVED COMMAND)\", oldKey: Home, newKey: NumPad0)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002251"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"FireWeapon\", category: \"WEAPONS\", oldKey: Space, newKey: NumPad3)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002181"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ToggleMouse\", category: \"CAMERA / VIEW\", oldKey: M, newKey: NumPad1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002501"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"DropChaff\", category: \"WEAPONS\", oldKey: C, newKey: NumPad4)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002432"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"Target\", category: \"TARGETING / AUTOPILOT\", oldKey: T, newKey: NumPad9)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002340"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"CycleView\", category: \"CAMERA / VIEW\", oldKey: V, newKey: NumPad2)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002458"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ShopLaunch\", category: \"PANES / MENUS\", oldKey: L, newKey: NumPad5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0005082"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ToggleCloak\", category: \"WEAPONS\", oldKey: F, newKey: NumPad8)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002321"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"MenuSelect\", category: \"PANES / MENUS\", oldKey: Space, newKey: NumPad6)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002513"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"Scoreboard\", category: \"CAMERA / VIEW\", oldKey: B, newKey: F15)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0154982"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.983,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"Target\", category: \"TARGETING / AUTOPILOT\", oldKey: T, newKey: NumPad9)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002584"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ReadyToggle\", category: \"READY CHECK (PRE-FLIGHT)\", oldKey: Y, newKey: F13)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002492"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"AcceptCommand\", category: \"QUEUED ORDERS (RECEIVED COMMAND)\", oldKey: Home, newKey: NumPad0)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002619"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ToggleCloak\", category: \"WEAPONS\", oldKey: F, newKey: NumPad8)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002473"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"CycleView\", category: \"CAMERA / VIEW\", oldKey: V, newKey: NumPad2)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002535"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"DropChaff\", category: \"WEAPONS\", oldKey: C, newKey: NumPad4)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002522"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"StartChat\", category: \"CHAT\", oldKey: Enter, newKey: F14)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002687"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"FireWeapon\", category: \"WEAPONS\", oldKey: Space, newKey: NumPad3)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002384"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ShopLaunch\", category: \"PANES / MENUS\", oldKey: L, newKey: NumPad5)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0007280"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"Scoreboard\", category: \"CAMERA / VIEW\", oldKey: B, newKey: F15)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0188505"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ToggleMouse\", category: \"CAMERA / VIEW\", oldKey: M, newKey: NumPad1)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002661"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"ScreenShot\", category: \"CAMERA / VIEW\", oldKey: PrintScreen, newKey: F16)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002593"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"MenuSelect\", category: \"PANES / MENUS\", oldKey: Space, newKey: NumPad6)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002662"
+      },
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Rebind_HelpOverlayShowsNewKey(action: \"Suicide\", category: \"WEAPONS\", oldKey: K, newKey: NumPad7)",
+        "outcome": "Passed",
+        "duration": "00:00:00.0002456"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Sanity_OldKeyIsNoLongerBound_ByCatalogueDefault",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.992,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Sanity_OldKeyIsNoLongerBound_ByCatalogueDefault",
+        "outcome": "Passed",
+        "duration": "00:00:00.0027517"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Sanity_OldKeyIsNoLongerBound_ByCatalogueDefault",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.981,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Sanity_OldKeyIsNoLongerBound_ByCatalogueDefault",
+        "outcome": "Passed",
+        "duration": "00:00:00.0033820"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Sanity_OldKeyIsNoLongerBound_ByCatalogueDefault",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.973,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapBehaviorTests.Sanity_OldKeyIsNoLongerBound_ByCatalogueDefault",
+        "outcome": "Passed",
+        "duration": "00:00:00.0034029"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapGuardTests.NoRawKeyLiteralsOutsideAllowList_InGameInputFiles",
+    "repeat": 1,
+    "exitCode": 0,
+    "elapsed": 0.952,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapGuardTests.NoRawKeyLiteralsOutsideAllowList_InGameInputFiles",
+        "outcome": "Passed",
+        "duration": "00:00:00.0114233"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapGuardTests.NoRawKeyLiteralsOutsideAllowList_InGameInputFiles",
+    "repeat": 2,
+    "exitCode": 0,
+    "elapsed": 0.934,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapGuardTests.NoRawKeyLiteralsOutsideAllowList_InGameInputFiles",
+        "outcome": "Passed",
+        "duration": "00:00:00.0110607"
+      }
+    ]
+  },
+  {
+    "method": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapGuardTests.NoRawKeyLiteralsOutsideAllowList_InGameInputFiles",
+    "repeat": 3,
+    "exitCode": 0,
+    "elapsed": 0.971,
+    "cases": [
+      {
+        "testName": "Allegiance.ClientCore.MonoGame.Tests.P625bActionMapGuardTests.NoRawKeyLiteralsOutsideAllowList_InGameInputFiles",
+        "outcome": "Passed",
+        "duration": "00:00:00.0133136"
+      }
+    ]
+  }
+]

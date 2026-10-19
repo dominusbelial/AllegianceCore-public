@@ -59,7 +59,7 @@ public readonly record struct DataStationTypeIGC(
     short EnemyCapturedSound,
     short EnemyDestroyedSound,
     string TextureName,
-    string BuilderName)
+    string BuilderName) : Allegiance.Core.Sim.IStationTypeIgc
 {
     /// <summary>Exact payload size in bytes: <c>sizeof(DataStationTypeIGC)</c>.</summary>
     public const int Size = 524;

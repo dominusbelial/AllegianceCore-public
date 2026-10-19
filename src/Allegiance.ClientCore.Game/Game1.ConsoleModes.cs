@@ -27,7 +27,7 @@ public sealed partial class Game1
         return _consolePressEdges.Observe(action, ActionDown(keys, action));
     }
 
-    private void ApplyConsoleMode(string action)
+    private void ApplyConsoleMode(string action, bool updatePointer = true)
     {
         _consolePanes = ConsoleModeRules.Switch(_consolePanes with { Nav = _minimapExpanded,
             Team = _teamPaneVisible ? (_consolePanes.Team == TeamConsoleSize.Mini ? TeamConsoleSize.Mini : TeamConsoleSize.Expanded) : TeamConsoleSize.Hidden }, action);
@@ -54,7 +54,8 @@ public sealed partial class Game1
             }
             _cameraMode = CameraMode.Cockpit;
         }
-        IsMouseVisible = _mainMenuVisible || CommandCameraActive || _minimapExpanded || _dockedActive || !_mouseFlightEnabled;
+        if (updatePointer)
+            IsMouseVisible = _mainMenuVisible || CommandCameraActive || _minimapExpanded || _dockedActive || !_mouseFlightEnabled;
         Console.WriteLine($"[p642] console {action}: {_consolePanes}, hangar={_hangarOnly}");
     }
 

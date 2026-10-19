@@ -1,0 +1,224 @@
+[
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.BuildingConstructionLiveTests.Completed_build_keeps_the_base_station_type_when_the_successor_is_not_researched",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.BuildingConstructionLiveTests.Completed_build_replaces_asteroid_with_station_and_consumes_builder",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.BuildingConstructionLiveTests.Completed_build_upgrades_to_the_successor_station_type_when_the_side_has_outteched_it",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.BuildingConstructionLiveTests.Interrupted_build_aborts_without_touching_asteroid_or_creating_station",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.BuildingConstructionLiveTests.StartBuildingEffect_rejects_asteroid_of_wrong_type",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.DirectNpcBuildOrderLiveTests.Commander_directing_builder_drone_at_wrong_type_rock_is_refused",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.DirectNpcBuildOrderLiveTests.Commander_directing_builder_drone_with_no_station_type_is_refused",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.DirectNpcBuildOrderLiveTests.Commander_directing_non_builder_drone_to_build_is_refused_and_acknowledged",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.DirectNpcBuildOrderLiveTests.Commander_directs_builder_drone_to_build_creating_real_station",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.LiveBuildingEffectStartWireTests.Starting_a_build_broadcasts_ExportBuildingEffect_to_owner_and_current_eyes",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.LiveBuildingEffectWireTests.Interrupted_build_broadcasts_BuildingEffectDestroyed_whole_mission",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H18_Constructor_and_rock_are_used_once_and_gone_builder_aborts",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P653EconomyLoadoutIntegrityTests.H18_Docked_and_nonleader_orders_fail_and_commander_build_completes",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P733ResearchTimeTests.Only_research_mode_accelerates_native_bucket_timers",
+    "cases": 4,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P747ConstructionTests.Asteroid_kill_callback_removes_runtime_and_export_record_and_cancels_attached_construction",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P747ConstructionTests.Authoritative_ore_fraction_updates_bypass_inhibit_and_can_refresh_every_side",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P747ConstructionTests.Building_station_shortens_only_strictly_overlapping_nonconcentric_probe_lifetimes",
+    "cases": 4,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P747ConstructionTests.Completion_callback_consumes_builder_before_station_creation_and_preserves_rock_health",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P747ConstructionTests.Concrete_cluster_callback_observes_completed_sector_chunks_and_no_repeated_clock",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P747ConstructionTests.Concrete_host_CreateBuildingEffect_and_BuildStation_execute_the_native_contract",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P747ConstructionTests.Destroying_an_unseen_constructed_station_retires_its_rock_for_uninformed_sides",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P747ConstructionTests.Effect_transforms_at_thirty_and_expires_at_forty_without_an_interruption_receipt",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P747ConstructionTests.Explicit_or_builder_death_interruption_unlinks_the_effect_once_and_keeps_the_rock",
+    "cases": 2,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P747ConstructionTests.Late_attached_asteroid_records_have_the_owner_needed_by_native_construction_callbacks",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P747ConstructionTests.Ore_memory_updates_only_current_eyes_after_the_strict_wall_clock_inhibit_window",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P747ConstructionTests.Sector_advances_native_envelope_grow_opaque_and_shrink_phases",
+    "cases": 8,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.Core.Tests",
+    "method": "Allegiance.Core.Tests.P747ConstructionTests.Stale_rock_discovery_is_side_scoped_ship_only_and_emitted_once",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.ClientWorldBuildingEffectTests.BuildingEffectDestroyed_RemovesTheConstructionFromTheTable",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.ClientWorldBuildingEffectTests.ExportBuildingEffect_IsUpsertByKey_LastWriteWins",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.ClientWorldBuildingEffectTests.ExportBuildingEffect_UpsertsIntoTheBuildingEffectsTable",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.ClientWorldBuildingEffectTests.ProgressFraction_RampsZeroToOneAcrossBuildDuration",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.ClientWorldBuildingEffectTests.PruneExpiredBuildingEffects_RemovesOnlyCompletedBuilds",
+    "cases": 1,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.P718InterfaceMessageTests.Asteroid_termination_removes_health_and_preserves_conversion_effect_only",
+    "cases": 2,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.P747ConstructionClientTests.Received_export_uses_native_phase_state_and_survives_the_station_transformation",
+    "cases": 8,
+    "tier": "Fast"
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.P747ConstructionLiveTests.Completion_preserves_an_unobserved_rock_until_its_side_scoped_discovery_receipt_over_TCP",
+    "cases": 2,
+    "tier": "Live"
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.P747ConstructionLiveTests.Construction_callbacks_deliver_creation_only_to_informed_sides_and_interrupt_over_TCP",
+    "cases": 2,
+    "tier": "Live"
+  },
+  {
+    "project": "Allegiance.ClientCore.Tests",
+    "method": "Allegiance.ClientCore.Tests.P747ConstructionLiveTests.Direct_BuildStation_callback_places_and_exports_the_station_and_retires_the_owners_rock_over_TCP",
+    "cases": 1,
+    "tier": "Live"
+  }
+]

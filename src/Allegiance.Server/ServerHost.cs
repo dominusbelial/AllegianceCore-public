@@ -289,6 +289,42 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// </summary>
     public Action<IBucketIgc, double>? BucketCompletedHook;
     /// <summary>P703 native construction wire completion (FedSrv.CPP:11431-11462,12025).</summary>
+    // Native Igc/clusterIGC.cpp:357; FedSrv/FedSrv.CPP:13694-13697.
+    public Action<Sector>? ClusterUpdated;
+    public void ClusterUpdateEvent(IClusterIgc cluster)
+    {
+        if (cluster is Sector sector) ClusterUpdated?.Invoke(sector);
+    }
+
+    public void CreateBuildingEffect(double now, IAsteroidIgc asteroid, IShipIgc ship)
+    {
+        if (asteroid is not Asteroid rock || ship is not Ship builder
+            || builder.BuilderStationType is not { } type || builder.Sector is not { } sector
+            || rock.BuildingEffect is not null) return;
+        sector.StartBuildingEffect(builder, rock, type, now);
+    }
+
+    public Action<Asteroid, Station>? StationConstructed;
+    public void BuildStation(IAsteroidIgc asteroid, ISideIgc side, IStationTypeIgc type, double now, bool[] seen)
+    {
+        if (asteroid is not Asteroid rock || side is not Side owner || type is not DataStationTypeIGC stationType
+            || rock.Sector is not { } sector || rock.ConstructedStation is not null) return;
+        var station = sector.BuildStation(rock, owner, stationType, now, seen);
+        StationConstructed?.Invoke(rock, station);
+    }
+
+    public void KillBuildingEffectEvent(IBuildingEffectIgc buildingEffect)
+    {
+        if (buildingEffect is BuildingEffect effect) effect.Target.Sector?.TerminateBuildingEffect(effect);
+    }
+
+    // Native side-scoped stale-rock receipt, FedSrv/FedSrv.CPP:12434-12442.
+    public Action<short, short, Side>? StaleAsteroidKilled;
+    public void KillAsteroidEvent(short asteroidId, short sectorId, ISideIgc side)
+    {
+        if (side is Side owner) StaleAsteroidKilled?.Invoke(asteroidId, sectorId, owner);
+    }
+
     public Action<Asteroid, Ship, Station>? StationBuilt;
     public void StationBuiltEvent(IAsteroidIgc asteroid, IShipIgc builder, IStationIgc station)
     {
@@ -770,8 +806,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     public Action<Asteroid, bool>? AsteroidKilled;
 
     /// <summary>The world-mission site implementation of <c>KillAsteroidEvent</c>
-    /// (the <c>(IAsteroidIgc, bool)</c> overload — the only one this task
-    /// implements; the side-scoped overloads are future work). Raises the
+    /// (the <c>(IAsteroidIgc, bool)</c> overload). Raises the
     /// <see cref="AsteroidKilled"/> hook so the owning <see cref="Server"/> can
     /// broadcast a real <c>FM_S_ASTEROID_DESTROYED(86)</c>. Mirrors
     /// <see cref="WarpBombEvent"/>'s bridge shape (cast the marker interface to
@@ -780,6 +815,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     {
         if (pasteroid is not Asteroid a) return;
         AsteroidKilled?.Invoke(a, explodeF);
+        a.Sector?.RemoveAsteroid(a);
     }
 
     /// <summary>
@@ -812,6 +848,14 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     public void KillStationEvent(IStationIgc station, IModelIgc launcher, float amount)
     {
         if (station is not Station s) return;
+        // Native FedSrv/FedSrv.CPP:12382-12387: even an unseen destroyed station retires its source rock.
+        if (s.ConsumedAsteroid is { } rock && s.Mission is { } mission)
+            foreach (var sideId in s.StaleRockSides.ToArray())
+                if (!s.SeenBySide(sideId))
+                {
+                    KillAsteroidEvent(rock.Data.AsteroidId, rock.Data.ClusterId, mission.Sides.Single(side => side.Id == sideId));
+                    s.StaleRockSides.Remove(sideId);
+                }
         StationKilled?.Invoke(s, launcher as Model);
     }
 

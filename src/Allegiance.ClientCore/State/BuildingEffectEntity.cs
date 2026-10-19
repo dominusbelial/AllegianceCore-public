@@ -21,7 +21,7 @@ namespace Allegiance.ClientCore.State;
 /// Like a probe/mine (<see cref="ProbeEntity"/>/<see cref="MineEntity"/>), the
 /// building effect's placement is static — it sits over the target asteroid —
 /// but unlike them it is a <b>transient</b> object with a timed lifespan
-/// (<see cref="BuildingEffect.BuildDuration"/> seconds), so it carries a
+/// (<see cref="ConstructionPhase.Duration"/> seconds), so it carries a
 /// <see cref="ReceivedLocalMs"/> anchor exactly like <see cref="ProjectileEntity"/>
 /// and is pruned when it completes. <see cref="ProgressFraction"/> drives the
 /// "under construction" reveal (the renderer grows/scales it toward the
@@ -48,7 +48,7 @@ public sealed class BuildingEffectEntity
     public float RadiusStation;
 
     /// <summary>The envelope-start position (<c>positionStart</c>; native
-    /// places it behind the Builder). Not where the station forms — see
+    /// places it at the Builder's forward surface). Not where the station forms — see
     /// <see cref="PositionStop"/>.</summary>
     public Vector3 PositionStart;
 
@@ -63,12 +63,15 @@ public sealed class BuildingEffectEntity
 
     /// <summary>Construction progress in [0,1]: 0 = just started, 1 =
     /// complete. Computed purely from elapsed wall-clock since receipt and
-    /// <see cref="BuildingEffect.BuildDuration"/> (the sum of native's four
+    /// <see cref="ConstructionPhase.Duration"/> (the sum of native's four
     /// 10-second phase constants), clamped to [0,1].</summary>
+    public ConstructionPhase Phase(long nowLocalMs) => ConstructionPhase.At(
+        (nowLocalMs - ReceivedLocalMs) / 1000.0, PositionStart, PositionStop, RadiusAsteroid, RadiusStation);
+
     public float ProgressFraction(long nowLocalMs)
     {
         long elapsed = nowLocalMs - ReceivedLocalMs;
-        float p = (float)elapsed / (float)(BuildingEffect.BuildDuration * 1000.0);
+        float p = (float)elapsed / (float)(ConstructionPhase.Duration * 1000.0);
         return Math.Clamp(p, 0f, 1f);
     }
 }

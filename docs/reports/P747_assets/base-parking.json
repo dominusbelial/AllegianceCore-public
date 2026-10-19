@@ -1,0 +1,48 @@
+[
+  {
+    "file": "base-parking-1.trx",
+    "outcome": "Passed",
+    "duration": "00:01:51.5119998",
+    "output": "P700 local 15v15: 109.0s, samples=1088, reached=28/30, longest speed<1 with target=2.004s, shots=2801, hits=1238, kills=10",
+    "qualified": true,
+    "longest_stopped_with_target_seconds": 2.004,
+    "kills": 10
+  },
+  {
+    "file": "base-parking-2.trx",
+    "outcome": "Passed",
+    "duration": "00:01:50.2321920",
+    "output": "P700 local 15v15: 107.6s, samples=1075, reached=29/30, longest speed<1 with target=1.904s, shots=2899, hits=1457, kills=10",
+    "qualified": true,
+    "longest_stopped_with_target_seconds": 1.904,
+    "kills": 10
+  },
+  {
+    "file": "base-parking-3.trx",
+    "outcome": "Passed",
+    "duration": "00:01:50.4452082",
+    "output": "P700 local 15v15: 107.2s, samples=1071, reached=29/30, longest speed<1 with target=2.007s, shots=2878, hits=1283, kills=10",
+    "qualified": true,
+    "longest_stopped_with_target_seconds": 2.007,
+    "kills": 10
+  },
+  {
+    "file": "base-parking-4.trx",
+    "outcome": "Passed",
+    "duration": "00:01:50.4712654",
+    "output": "P700 local 15v15: 107.8s, samples=1076, reached=27/30, longest speed<1 with target=2.005s, shots=2450, hits=912, kills=7",
+    "qualified": true,
+    "longest_stopped_with_target_seconds": 2.005,
+    "kills": 7
+  },
+  {
+    "file": "base-parking-5.trx",
+    "outcome": "Passed",
+    "duration": "00:01:51.7923453",
+    "output": "P700 local 15v15: 108.7s, samples=1085, reached=28/30, longest speed<1 with target=1.917s, shots=1792, hits=731, kills=3",
+    "qualified": false,
+    "exclusion": "Debug rebuild began during the last seconds of this run; exclude from the uncontaminated base comparison.",
+    "longest_stopped_with_target_seconds": 1.917,
+    "kills": 3
+  }
+]

@@ -379,6 +379,14 @@ public sealed partial class Game1
         }
         _gameOverBackWasDown = back;
 
+        if (HandleHangarQuitInput(ks, _chatActive || _qcMenuOpen))
+        {
+            // The native quit popup owns Enter/Escape before the normal menu.
+            _escWasDown = ActionDown(ks, "MainMenu");
+            base.Update(gameTime);
+            return;
+        }
+
         // Escape: while composing chat it cancels the input line, closes the
         // briefing popup, backs out of quick-chat, or clears the lobby filter
         // — it never quits the game anymore. Domingo hit it by accident

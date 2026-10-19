@@ -1,0 +1,11 @@
+{
+  "command": [
+    "tools/run-tests.sh",
+    "--tier",
+    "fast",
+    "--no-build",
+    "--results-dir",
+    "/home/domingo/allegiance-codex-p747/.p747-scratch/fast"
+  ],
+  "exit": 1
+}

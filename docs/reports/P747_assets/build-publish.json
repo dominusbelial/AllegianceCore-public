@@ -1,0 +1,24 @@
+{
+  "solution_build": {
+    "command": "dotnet build AllegianceCore.slnx --nologo -m:1 -v:q -p:UseSharedCompilation=false",
+    "exit": 0,
+    "warnings": 0,
+    "errors": 0,
+    "output_sha256": "96307807e1651750254495fb92666487699423a247c74fa50b8e17043d16444d"
+  },
+  "aot_publish": {
+    "command": "dotnet publish src/Allegiance.Server/Allegiance.Server.csproj -c Release -r linux-x64 --self-contained -p:PublishAot=true -p:UseSharedCompilation=false -o <workspace-scratch>/aot",
+    "exit": 0,
+    "IL2026_or_IL3050": false,
+    "other_warning_lines": [],
+    "executable_bytes": 13930752,
+    "executable_sha256": "2604f225aa83372ebf730f833b933b8ee1854a97b76af3e70ec8ce50e3ed79d9",
+    "output_sha256": "a938967c11b14cde62b93681884bdf5f5a7db94025ca555fff7418b48ece0806"
+  },
+  "environment": {
+    "TMPDIR": "<workspace>/.p747-scratch/temp",
+    "NUGET_HTTP_CACHE_PATH": "<workspace>/.p747-scratch/nuget-http",
+    "local_env_loaded": true,
+    "raw_artifacts_retained": false
+  }
+}

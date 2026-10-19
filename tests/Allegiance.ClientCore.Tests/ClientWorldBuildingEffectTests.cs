@@ -82,10 +82,10 @@ public class ClientWorldBuildingEffectTests
         long r = be.ReceivedLocalMs;
 
         Assert.Equal(0f, be.ProgressFraction(r), 3);
-        Assert.Equal(0.5f, be.ProgressFraction(r + (long)(BuildingEffect.BuildDuration * 500)), 3);
-        Assert.Equal(1f, be.ProgressFraction(r + (long)(BuildingEffect.BuildDuration * 1000)), 3);
+        Assert.Equal(0.5f, be.ProgressFraction(r + (long)(ConstructionPhase.Duration * 500)), 3);
+        Assert.Equal(1f, be.ProgressFraction(r + (long)(ConstructionPhase.Duration * 1000)), 3);
         // Past completion clamps at 1 (and the caller prunes on >= 1).
-        Assert.Equal(1f, be.ProgressFraction(r + (long)(BuildingEffect.BuildDuration * 2000)), 3);
+        Assert.Equal(1f, be.ProgressFraction(r + (long)(ConstructionPhase.Duration * 2000)), 3);
     }
 
     [Fact]
@@ -97,8 +97,8 @@ public class ClientWorldBuildingEffectTests
 
         long r7 = world.BuildingEffects[7].ReceivedLocalMs;
         long r8 = world.BuildingEffects[8].ReceivedLocalMs;
-        long mid = Math.Min(r7, r8) + (long)(BuildingEffect.BuildDuration * 500);
-        long done = Math.Max(r7, r8) + (long)(BuildingEffect.BuildDuration * 1000) + 1;
+        long mid = Math.Min(r7, r8) + (long)(ConstructionPhase.Duration * 500);
+        long done = Math.Max(r7, r8) + (long)(ConstructionPhase.Duration * 1000) + 1;
 
         world.PruneExpiredBuildingEffects(mid);
         Assert.Equal(2, world.BuildingEffects.Count);   // neither finished at midpoint

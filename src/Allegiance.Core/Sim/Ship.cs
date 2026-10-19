@@ -7305,6 +7305,12 @@ public sealed partial class Ship : Model, IShipIgc
     /// explicitly repeated order has identical targets (shipIGC.h:725-764).</summary>
     public void ResetRunawayForNewOrder() => DronePlanChanged();
 
+    internal void ConsumeForConstruction()
+    {
+        ClearLoadout();
+        Ammo = 0; SetFuel(0); StateM = 0; IsBuilding = false; SetFraction(0);
+    }
+
     private void TryStartBuilderBuild(double now)
     {
         if (!IsNpc || PilotType != PilotTypeBuilder || IsRunningAway || IsBuilding || StationId is not null ||
@@ -7319,8 +7325,9 @@ public sealed partial class Ship : Model, IShipIgc
         // and pick again next decision cycle rather than crashing on the
         // occupied-rock guard inside StartBuildingEffect (Sector.cs).
         if (sector.BuildingEffects.Any(effect => ReferenceEquals(effect.Target, rock))) return;
+        Mission!.Site.CreateBuildingEffect(now, rock, this);
+        if (rock.BuildingEffect is null) sector.StartBuildingEffect(this, rock, type, now);
         BuilderAsteroidTarget = null;
-        sector.StartBuildingEffect(this, rock, type, now);
     }
 
     private (DataStationIGC? Station, Ship? Carrier) FindRetreatRepairDestination()
