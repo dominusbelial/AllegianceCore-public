@@ -1,0 +1,11 @@
+{
+  "baselineMcp": {
+    "sha256": "4a062f19fac9d0ce821001af0f0159d88a7823a2c6f7a0d2b5844d0c4c0cb27a",
+    "pathAtBuildTime": "/home/domingo/allegiance-codex-sc5/.verify-sc5-scratch/base-diagnostic/bin/Debug/net10.0/allegiance-mcp.dll"
+  },
+  "changedMcp": {
+    "sha256": "109c1e69e12a30f41c7232d83fb176148431d5b1281dd1540d8adbfc0aa8b5b6",
+    "pathAtBuildTime": "/home/domingo/allegiance-codex-sc5/tools/allegiance-mcp/bin/Debug/net10.0/allegiance-mcp.dll"
+  },
+  "baseRevision": "a00e842fe424787e4bd0a2b7319fc386b41324b9"
+}

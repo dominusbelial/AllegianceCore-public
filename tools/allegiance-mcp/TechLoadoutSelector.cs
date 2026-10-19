@@ -88,8 +88,14 @@ internal static class TechLoadoutSelector
                 energy -= Math.Max(0, w.EnergyPerShot); ammo -= Math.Max(0, (int)w.CAmmoPerShot);
             }
             if (parts.Count == 0) continue; // automatic steering needs a damaging fixed gun
-            foreach (var equipment in new[] { EquipmentType.Shield, EquipmentType.Afterburner,
-                         EquipmentType.Magazine, EquipmentType.Dispenser, EquipmentType.ChaffLauncher, EquipmentType.Cloak })
+            // Scouts reserve their optional-equipment budget for stealth first;
+            // dedicated mine layers retain their dispenser purchase policy.
+            var equipmentOrder = role == Showcase.HullRole.Scout && !preferMines
+                ? new[] { EquipmentType.Cloak, EquipmentType.Shield, EquipmentType.Afterburner,
+                    EquipmentType.Magazine, EquipmentType.Dispenser, EquipmentType.ChaffLauncher }
+                : new[] { EquipmentType.Shield, EquipmentType.Afterburner, EquipmentType.Magazine,
+                    EquipmentType.Dispenser, EquipmentType.ChaffLauncher, EquipmentType.Cloak };
+            foreach (var equipment in equipmentOrder)
             {
                 var support = legal.Where(p => p.EquipmentType == equipment && h.CanMountPart(p, 0))
                     .Select(p => (Part: p, Amount: Ship.ClampPartAmount(h, c.Core, p,
@@ -107,7 +113,11 @@ internal static class TechLoadoutSelector
                 spent += PartPrice(p, amount);
             }
         }
-        return options.OrderByDescending(o => HullScore(c.Core.HullTypes[o.HullId], role))
+        // A scanner/speed score alone permanently favored uncloaked scouts over
+        // legal stealth hulls. Prefer an actually purchased cloak, not a socket
+        // or an unresearched part. Native gates above still decide eligibility.
+        return options.OrderByDescending(o => role == Showcase.HullRole.Scout && !preferMines && HasCloak(c.Core, o.Parts))
+            .ThenByDescending(o => HullScore(c.Core.HullTypes[o.HullId], role))
             .ThenByDescending(o => o.Parts.Sum(p => WeaponScore(c.Core, Part(c.Core, p.PartId), role)))
             .ThenBy(o => o.HullId).FirstOrDefault();
     }
@@ -192,6 +202,9 @@ internal static class TechLoadoutSelector
 
     internal static DataPartTypeIGC Part(StaticCore core, short id) => core.PartTypes.TryGetValue(id, out var p) ? p
         : core.TryBuildExpendableLauncher(id, out p) ? p : throw new InvalidOperationException($"unknown part {id}");
+    private static bool HasCloak(StaticCore core, IReadOnlyList<ExpandedPartData> parts)
+        => parts.Any(p => p.MountId == 0 && p.Amount > 0
+            && Part(core, p.PartId).Type is DataPartTypeIGC.Cloak { MaxCloaking: > 0 });
     internal static long PartPrice(DataPartTypeIGC p, short amount) => p.Type is DataPartTypeIGC.Pack ? 0
         : p.EquipmentType is EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher
             ? (long)Math.Max(0, p.Price) * amount : Math.Max(0, p.Price);
@@ -220,8 +233,8 @@ internal static class TechLoadoutSelector
     {
         var h = c.Core.HullTypes[hullId];
         long price = Math.Max(0, h.Price) + parts.Sum(p => PartPrice(Part(c.Core, p.PartId), p.Amount));
-        string rule = strike is null ? $"hull role score={HullScore(h, role):F2}; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role"
-            : "station armor/shield volley, then DPS, then anti-ship aim gun; shared energy/ammo budget";
+        string rule = strike is null ? $"scouts prefer mounted cloak; hull role score={HullScore(h, role):F2}; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role"
+            : "bombers prefer mounted cloak; station armor/shield volley, then DPS, then anti-ship aim gun; shared energy/ammo budget";
         return new(h.HullId, h.Name, parts, price,
             $"role={role}; techBits={c.Techs.PopCount}; {rule}; stable ID ties; legal nonobsolete human hull {h.HullId} '{h.Name}'; cost={price}; "
             + string.Join(", ", parts.Select(p => $"{Part(c.Core, p.PartId).EquipmentType}@{p.MountId}={p.PartId} '{Part(c.Core, p.PartId).Name}' x{p.Amount}")), strike);
@@ -308,7 +321,7 @@ internal static class TechLoadoutSelector
             var parts = best.Parts.ToList();
             var dps = best.PerSecond;
             // Role-compatible support keeps the purchased bomber viable.
-            foreach (var equipment in new[] { EquipmentType.Shield, EquipmentType.Afterburner, EquipmentType.Dispenser, EquipmentType.ChaffLauncher, EquipmentType.Cloak })
+            foreach (var equipment in new[] { EquipmentType.Cloak, EquipmentType.Shield, EquipmentType.Afterburner, EquipmentType.Dispenser, EquipmentType.ChaffLauncher })
             {
                 long spent = hull.Price + parts.Sum(p => PartPrice(Part(core, p.PartId), p.Amount));
                 var fitting = context.Parts.Select(id => Part(core, id)).Where(p => p.GroupId != byte.MaxValue
@@ -333,7 +346,10 @@ internal static class TechLoadoutSelector
             options.Add(new(hull.HullId, hull.Name, target.StationTypeId, target.Name,
                 parts, ShowcaseFinale.Volley(core, parts, target), dps, (int)Math.Min(int.MaxValue, price), names));
         }
-        return options.OrderByDescending(o => o.Volley.Score(target)).ThenByDescending(o => o.PerSecond.Score(target))
+        // Preserve the strongest-strike fallback across other combat roles.
+        // For true bomber duty, stealth is useful on the station approach.
+        return options.OrderByDescending(o => !anyCombatHull && HasCloak(core, o.Parts))
+            .ThenByDescending(o => o.Volley.Score(target)).ThenByDescending(o => o.PerSecond.Score(target))
             .ThenBy(o => o.HullId).FirstOrDefault();
     }
 

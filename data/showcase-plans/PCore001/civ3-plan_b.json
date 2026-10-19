@@ -6,19 +6,10 @@
   "name": "plan_b",
   "steps": [
     {
-      "action": "develop",
-      "id": 263,
-      "name": "Upgrade Garrison",
-      "asteroidClass": null,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": []
-    },
-    {
       "action": "station",
-      "id": 45,
-      "name": "Garrison (Str)",
-      "asteroidClass": 8,
+      "id": 55,
+      "name": "Tactical",
+      "asteroidClass": 32,
       "waitSeconds": 0,
       "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
       "expectedUnlocks": []
@@ -38,6 +29,106 @@
           "role": "Magazine"
         }
       ]
+    },
+    {
+      "action": "develop",
+      "id": 271,
+      "name": "Upgrade Tactical Lab",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "station",
+      "id": 56,
+      "name": "Tactical (Adv)",
+      "asteroidClass": 32,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 26,
+      "name": "Stealth Fighter",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 131,
+          "name": "Stealth Fighter",
+          "role": "capabilities=0x2892; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 24,
+      "name": "Adv Stl Fighter",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 132,
+          "name": "Adv Stl Fighter",
+          "role": "capabilities=0x2892; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 37,
+      "name": "Bomber",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 124,
+          "name": "Bomber",
+          "role": "capabilities=0xA92; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 33,
+      "name": "Stealth Bomber",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 133,
+          "name": "Stealth Bomber",
+          "role": "capabilities=0xA92; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 263,
+      "name": "Upgrade Garrison",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "station",
+      "id": 45,
+      "name": "Garrison (Str)",
+      "asteroidClass": 8,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
     },
     {
       "action": "station",
@@ -224,49 +315,6 @@
       "expectedUnlocks": []
     },
     {
-      "action": "station",
-      "id": 55,
-      "name": "Tactical",
-      "asteroidClass": 32,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": []
-    },
-    {
-      "action": "develop",
-      "id": 271,
-      "name": "Upgrade Tactical Lab",
-      "asteroidClass": null,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": []
-    },
-    {
-      "action": "station",
-      "id": 56,
-      "name": "Tactical (Adv)",
-      "asteroidClass": 32,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": []
-    },
-    {
-      "action": "develop",
-      "id": 37,
-      "name": "Bomber",
-      "asteroidClass": null,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": [
-        {
-          "kind": "hull",
-          "id": 124,
-          "name": "Bomber",
-          "role": "capabilities=0xA92; group=0"
-        }
-      ]
-    },
-    {
       "action": "develop",
       "id": 35,
       "name": "Hvy Bomber",
@@ -414,38 +462,6 @@
     },
     {
       "action": "develop",
-      "id": 26,
-      "name": "Stealth Fighter",
-      "asteroidClass": null,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": [
-        {
-          "kind": "hull",
-          "id": 131,
-          "name": "Stealth Fighter",
-          "role": "capabilities=0x2892; group=0"
-        }
-      ]
-    },
-    {
-      "action": "develop",
-      "id": 24,
-      "name": "Adv Stl Fighter",
-      "asteroidClass": null,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": [
-        {
-          "kind": "hull",
-          "id": 132,
-          "name": "Adv Stl Fighter",
-          "role": "capabilities=0x2892; group=0"
-        }
-      ]
-    },
-    {
-      "action": "develop",
       "id": 31,
       "name": "Interceptor",
       "asteroidClass": null,
@@ -473,22 +489,6 @@
           "id": 135,
           "name": "Hvy Interceptor",
           "role": "capabilities=0xB2; group=0"
-        }
-      ]
-    },
-    {
-      "action": "develop",
-      "id": 33,
-      "name": "Stealth Bomber",
-      "asteroidClass": null,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": [
-        {
-          "kind": "hull",
-          "id": 133,
-          "name": "Stealth Bomber",
-          "role": "capabilities=0xA92; group=0"
         }
       ]
     },

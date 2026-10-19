@@ -150,7 +150,10 @@ public sealed class P703ResearchCommanderLiveTests(ITestOutputHelper output)
             var techCompleted = new HashSet<short>();
             // Native civ build-time attributes differ substantially; leave room for the
             // slowest first branch plus constructor travel under shared-machine load.
-            while (watch.Elapsed.TotalSeconds < 300 && finished.Count < 2)
+            // Station-first plans can finish their first branch before their
+            // first development. Wait for every asserted piece of evidence.
+            while (watch.Elapsed.TotalSeconds < 300
+                && (finished.Count < 2 || techCompleted.Count < 2 || paidWallet.Count < 2))
             {
                 lock (guard)
                 {

@@ -1,0 +1,948 @@
+[
+  {
+    "run": 1,
+    "wallSeconds": 94.4061341,
+    "simSeconds": 632.4999999999725,
+    "counts": [
+      {
+        "side": 0,
+        "civ": 25,
+        "cloak": 17
+      },
+      {
+        "side": 1,
+        "civ": 3,
+        "cloak": 5
+      }
+    ],
+    "testDuration": "00:01:38.0003907",
+    "research": [
+      {
+        "Side": 0,
+        "Plan": "plan_a",
+        "Step": 15,
+        "TotalSteps": 157,
+        "Action": "station",
+        "Name": "Teleport (Hvy)",
+        "Status": "constructor travelling/building",
+        "ProgressPercent": 9.235668789808917,
+        "StepProgressPercent": 50,
+        "Money": 1457741,
+        "EtaSeconds": null,
+        "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+        "CompletedTechs": [
+          "Upgrade Tactical Lab",
+          "Stealth Bomber",
+          "Bomber",
+          "Retro Booster",
+          "MRM Seeker 2",
+          "Med Shield 2",
+          "Lt Booster 1",
+          "Counter 2",
+          "Weedcore 03",
+          "MRM Quickfire 2"
+        ],
+        "Stations": [
+          "Garrison",
+          "Tactical",
+          "Tactical (Adv)"
+        ],
+        "Constructor": 8140,
+        "ReservedRock": 18,
+        "Cycles": 0
+      },
+      {
+        "Side": 1,
+        "Plan": "plan_a",
+        "Step": 17,
+        "TotalSteps": 181,
+        "Action": "station",
+        "Name": "Teleport",
+        "Status": "building bucket",
+        "ProgressPercent": 8.912034990791897,
+        "StepProgressPercent": 13.078333333333333,
+        "Money": 1783756,
+        "EtaSeconds": null,
+        "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+        "CompletedTechs": [
+          "Adv Stl Fighter",
+          "Stealth Fighter",
+          "Stealth Bomber",
+          "Bomber",
+          "Retro Booster",
+          "MRM Seeker 2",
+          "Med Shield 2",
+          "Lt Booster 1",
+          "Counter 2",
+          "Weedcore 03",
+          "Upgrade Tactical Lab"
+        ],
+        "Stations": [
+          "Garrison",
+          "Tactical",
+          "[P]alisade",
+          "Tactical (Adv)"
+        ],
+        "Constructor": null,
+        "ReservedRock": 75,
+        "Cycles": 0
+      }
+    ],
+    "witnesses": [
+      {
+        "sim": 423.350000000062,
+        "Id": 8124,
+        "SideId": 0,
+        "hull": 486,
+        "Name": "Adv Stl Fighter",
+        "Energy": 2874,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 103,
+            "Name": "MRM Quickfire 1",
+            "MountId": 0,
+            "Amount": 7
+          },
+          {
+            "PartId": 80,
+            "Name": "Counter 1",
+            "MountId": 0,
+            "Amount": 6
+          }
+        ]
+      },
+      {
+        "sim": 451.9500000000685,
+        "Id": 8128,
+        "SideId": 0,
+        "hull": 420,
+        "Name": "Stealth Bomber",
+        "Energy": 2874,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 157,
+            "Name": "SRM Anti-Base 1",
+            "MountId": 0,
+            "Amount": 2
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 80,
+            "Name": "Counter 1",
+            "MountId": 0,
+            "Amount": 8
+          }
+        ]
+      },
+      {
+        "sim": 460.55000000007044,
+        "Id": 8130,
+        "SideId": 0,
+        "hull": 420,
+        "Name": "Stealth Bomber",
+        "Energy": 2874,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 157,
+            "Name": "SRM Anti-Base 1",
+            "MountId": 0,
+            "Amount": 2
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 80,
+            "Name": "Counter 1",
+            "MountId": 0,
+            "Amount": 8
+          }
+        ]
+      },
+      {
+        "sim": 526.0500000000693,
+        "Id": 8129,
+        "SideId": 1,
+        "hull": 133,
+        "Name": "Stealth Bomber",
+        "Energy": 2394,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 157,
+            "Name": "SRM Anti-Base 1",
+            "MountId": 0,
+            "Amount": 2
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 80,
+            "Name": "Counter 1",
+            "MountId": 0,
+            "Amount": 8
+          }
+        ]
+      },
+      {
+        "sim": 570.5000000000289,
+        "Id": 8126,
+        "SideId": 0,
+        "hull": 486,
+        "Name": "Adv Stl Fighter",
+        "Energy": 2874,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 104,
+            "Name": "MRM Quickfire 2",
+            "MountId": 0,
+            "Amount": 7
+          },
+          {
+            "PartId": 85,
+            "Name": "Counter 2",
+            "MountId": 0,
+            "Amount": 6
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "run": 2,
+    "wallSeconds": 101.6123022,
+    "simSeconds": 686.6999999999232,
+    "counts": [
+      {
+        "side": 0,
+        "civ": 25,
+        "cloak": 15
+      },
+      {
+        "side": 1,
+        "civ": 3,
+        "cloak": 5
+      }
+    ],
+    "testDuration": "00:01:45.3192936",
+    "research": [
+      {
+        "Side": 0,
+        "Plan": "plan_a",
+        "Step": 20,
+        "TotalSteps": 157,
+        "Action": "develop",
+        "Name": "ER Nanite 2",
+        "Status": "building bucket",
+        "ProgressPercent": 12.434410828025477,
+        "StepProgressPercent": 52.20249999999999,
+        "Money": 1589795,
+        "EtaSeconds": 7.169625,
+        "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+        "CompletedTechs": [
+          "Upgrade Tactical Lab",
+          "Stealth Bomber",
+          "Bomber",
+          "Retro Booster",
+          "Enh Constructor",
+          "Enh Miner",
+          "MRM Seeker 2",
+          "Med Shield 2",
+          "Lt Booster 1",
+          "Counter 2",
+          "Weedcore 03",
+          "MRM Quickfire 2"
+        ],
+        "Stations": [
+          "Garrison",
+          "Tactical",
+          "Tactical (Adv)",
+          "Teleport (Hvy)"
+        ],
+        "Constructor": null,
+        "ReservedRock": null,
+        "Cycles": 0
+      },
+      {
+        "Side": 1,
+        "Plan": "plan_a",
+        "Step": 17,
+        "TotalSteps": 181,
+        "Action": "station",
+        "Name": "Teleport",
+        "Status": "constructor travelling/building",
+        "ProgressPercent": 9.116022099447514,
+        "StepProgressPercent": 50,
+        "Money": 1971253,
+        "EtaSeconds": null,
+        "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+        "CompletedTechs": [
+          "Adv Stl Fighter",
+          "Stealth Fighter",
+          "Stealth Bomber",
+          "Bomber",
+          "Retro Booster",
+          "MRM Seeker 2",
+          "Med Shield 2",
+          "Lt Booster 1",
+          "Counter 2",
+          "Weedcore 03",
+          "Upgrade Tactical Lab"
+        ],
+        "Stations": [
+          "Garrison",
+          "Tactical",
+          "[P]alisade",
+          "Tactical (Adv)"
+        ],
+        "Constructor": 8142,
+        "ReservedRock": 75,
+        "Cycles": 0
+      }
+    ],
+    "witnesses": [
+      {
+        "sim": 433.4500000000643,
+        "Id": 8128,
+        "SideId": 0,
+        "hull": 420,
+        "Name": "Stealth Bomber",
+        "Energy": 2874,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 157,
+            "Name": "SRM Anti-Base 1",
+            "MountId": 0,
+            "Amount": 2
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 80,
+            "Name": "Counter 1",
+            "MountId": 0,
+            "Amount": 8
+          }
+        ]
+      },
+      {
+        "sim": 453.10000000006875,
+        "Id": 8124,
+        "SideId": 0,
+        "hull": 486,
+        "Name": "Adv Stl Fighter",
+        "Energy": 2874,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 103,
+            "Name": "MRM Quickfire 1",
+            "MountId": 0,
+            "Amount": 7
+          },
+          {
+            "PartId": 80,
+            "Name": "Counter 1",
+            "MountId": 0,
+            "Amount": 6
+          }
+        ]
+      },
+      {
+        "sim": 598.2500000000036,
+        "Id": 8129,
+        "SideId": 1,
+        "hull": 133,
+        "Name": "Stealth Bomber",
+        "Energy": 2394,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 157,
+            "Name": "SRM Anti-Base 1",
+            "MountId": 0,
+            "Amount": 2
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 80,
+            "Name": "Counter 1",
+            "MountId": 0,
+            "Amount": 8
+          }
+        ]
+      },
+      {
+        "sim": 606.7999999999959,
+        "Id": 8130,
+        "SideId": 0,
+        "hull": 420,
+        "Name": "Stealth Bomber",
+        "Energy": 2874,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 157,
+            "Name": "SRM Anti-Base 1",
+            "MountId": 0,
+            "Amount": 2
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 85,
+            "Name": "Counter 2",
+            "MountId": 0,
+            "Amount": 8
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "run": 3,
+    "wallSeconds": 82.0823747,
+    "simSeconds": 553.0500000000447,
+    "counts": [
+      {
+        "side": 0,
+        "civ": 25,
+        "cloak": 5
+      },
+      {
+        "side": 1,
+        "civ": 3,
+        "cloak": 5
+      }
+    ],
+    "testDuration": "00:01:25.7525356",
+    "research": [
+      {
+        "Side": 0,
+        "Plan": "plan_a",
+        "Step": 15,
+        "TotalSteps": 157,
+        "Action": "station",
+        "Name": "Teleport (Hvy)",
+        "Status": "constructor travelling/building",
+        "ProgressPercent": 9.235668789808917,
+        "StepProgressPercent": 50,
+        "Money": 1148742,
+        "EtaSeconds": null,
+        "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+        "CompletedTechs": [
+          "Upgrade Tactical Lab",
+          "Stealth Bomber",
+          "Bomber",
+          "Retro Booster",
+          "MRM Seeker 2",
+          "Med Shield 2",
+          "Lt Booster 1",
+          "Counter 2",
+          "Weedcore 03",
+          "MRM Quickfire 2"
+        ],
+        "Stations": [
+          "Garrison",
+          "Tactical",
+          "Tactical (Adv)"
+        ],
+        "Constructor": 8140,
+        "ReservedRock": 18,
+        "Cycles": 0
+      },
+      {
+        "Side": 1,
+        "Plan": "plan_a",
+        "Step": 12,
+        "TotalSteps": 181,
+        "Action": "develop",
+        "Name": "Retro Booster",
+        "Status": "building bucket",
+        "ProgressPercent": 6.564157458563537,
+        "StepProgressPercent": 88.11250000000001,
+        "Money": 1419332,
+        "EtaSeconds": 1.783125,
+        "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+        "CompletedTechs": [
+          "Adv Stl Fighter",
+          "Stealth Fighter",
+          "Stealth Bomber",
+          "Bomber",
+          "Weedcore 03",
+          "Upgrade Tactical Lab"
+        ],
+        "Stations": [
+          "Garrison",
+          "Tactical",
+          "[P]alisade",
+          "Tactical (Adv)"
+        ],
+        "Constructor": null,
+        "ReservedRock": null,
+        "Cycles": 0
+      }
+    ],
+    "witnesses": [
+      {
+        "sim": 487.5500000000766,
+        "Id": 8125,
+        "SideId": 1,
+        "hull": 132,
+        "Name": "Adv Stl Fighter",
+        "Energy": 2394,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 155,
+            "Name": "LRM Hunter 1",
+            "MountId": 0,
+            "Amount": 3
+          },
+          {
+            "PartId": 80,
+            "Name": "Counter 1",
+            "MountId": 0,
+            "Amount": 6
+          }
+        ]
+      },
+      {
+        "sim": 489.15000000007694,
+        "Id": 8128,
+        "SideId": 0,
+        "hull": 420,
+        "Name": "Stealth Bomber",
+        "Energy": 2874,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 157,
+            "Name": "SRM Anti-Base 1",
+            "MountId": 0,
+            "Amount": 2
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 80,
+            "Name": "Counter 1",
+            "MountId": 0,
+            "Amount": 8
+          }
+        ]
+      },
+      {
+        "sim": 494.6500000000782,
+        "Id": 8130,
+        "SideId": 0,
+        "hull": 420,
+        "Name": "Stealth Bomber",
+        "Energy": 2874,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 157,
+            "Name": "SRM Anti-Base 1",
+            "MountId": 0,
+            "Amount": 2
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 80,
+            "Name": "Counter 1",
+            "MountId": 0,
+            "Amount": 8
+          }
+        ]
+      },
+      {
+        "sim": 531.4500000000644,
+        "Id": 8124,
+        "SideId": 0,
+        "hull": 486,
+        "Name": "Adv Stl Fighter",
+        "Energy": 2874,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 104,
+            "Name": "MRM Quickfire 2",
+            "MountId": 0,
+            "Amount": 7
+          },
+          {
+            "PartId": 85,
+            "Name": "Counter 2",
+            "MountId": 0,
+            "Amount": 6
+          }
+        ]
+      },
+      {
+        "sim": 531.7500000000641,
+        "Id": 8129,
+        "SideId": 1,
+        "hull": 133,
+        "Name": "Stealth Bomber",
+        "Energy": 2394,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 157,
+            "Name": "SRM Anti-Base 1",
+            "MountId": 0,
+            "Amount": 2
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 80,
+            "Name": "Counter 1",
+            "MountId": 0,
+            "Amount": 8
+          }
+        ]
+      }
+    ]
+  }
+]

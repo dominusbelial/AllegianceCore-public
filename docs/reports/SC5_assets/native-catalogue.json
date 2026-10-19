@@ -1,0 +1,3902 @@
+[
+  {
+    "civ": 25,
+    "Name": "Iron Coalition",
+    "Version": 990051329,
+    "starting": "1,2,3,4,6,21,31,34,37,45,59,73,87,88,93,98,102,107,108,110,126,127,144,145,146,147,154,163,165,166,168,170,182,187,208,209,355",
+    "cloaks": [
+      {
+        "PartId": 34,
+        "Name": "Sig Cloak 3",
+        "Price": 0,
+        "PartMask": 1,
+        "required": "220,224",
+        "cloak": {
+          "EnergyConsumption": 100,
+          "MaxCloaking": 0.775,
+          "OnRate": 0.25,
+          "OffRate": 0.25,
+          "EngageSound": 640,
+          "DisengageSound": 660,
+          "EquipmentType": 5
+        }
+      },
+      {
+        "PartId": 35,
+        "Name": "Hvy Cloak 2",
+        "Price": 0,
+        "PartMask": 2,
+        "required": "221",
+        "cloak": {
+          "EnergyConsumption": 180,
+          "MaxCloaking": 0.9,
+          "OnRate": 0.25,
+          "OffRate": 0.25,
+          "EngageSound": 640,
+          "DisengageSound": 660,
+          "EquipmentType": 5
+        }
+      },
+      {
+        "PartId": 38,
+        "Name": "Sig Cloak 1",
+        "Price": 0,
+        "PartMask": 1,
+        "required": "45",
+        "cloak": {
+          "EnergyConsumption": 120,
+          "MaxCloaking": 0.6,
+          "OnRate": 0.25,
+          "OffRate": 0.25,
+          "EngageSound": 640,
+          "DisengageSound": 660,
+          "EquipmentType": 5
+        }
+      },
+      {
+        "PartId": 39,
+        "Name": "Sig Cloak 2",
+        "Price": 0,
+        "PartMask": 1,
+        "required": "46,224",
+        "cloak": {
+          "EnergyConsumption": 110,
+          "MaxCloaking": 0.7,
+          "OnRate": 0.25,
+          "OffRate": 0.25,
+          "EngageSound": 640,
+          "DisengageSound": 660,
+          "EquipmentType": 5
+        }
+      },
+      {
+        "PartId": 41,
+        "Name": "Hvy Cloak 1",
+        "Price": 0,
+        "PartMask": 2,
+        "required": "47",
+        "cloak": {
+          "EnergyConsumption": 200,
+          "MaxCloaking": 0.9,
+          "OnRate": 0.25,
+          "OffRate": 0.25,
+          "EngageSound": 640,
+          "DisengageSound": 660,
+          "EquipmentType": 5
+        }
+      }
+    ],
+    "hulls": [
+      {
+        "HullId": 150,
+        "Name": "Stealth Bomber [NG]",
+        "Price": 200,
+        "HabmCapabilities": 2202,
+        "GroupId": 0,
+        "MaxEnergy": 2400,
+        "MaxWeapons": 2,
+        "MaxFixedWeapons": 2,
+        "mask": 1,
+        "required": "6,7,21,56,204",
+        "fits": [
+          34,
+          38,
+          39
+        ]
+      },
+      {
+        "HullId": 411,
+        "Name": "Stealth Fighter",
+        "Price": 0,
+        "HabmCapabilities": 10386,
+        "GroupId": 0,
+        "MaxEnergy": 2400,
+        "MaxWeapons": 2,
+        "MaxFixedWeapons": 2,
+        "mask": 3,
+        "required": "6,21,147,243",
+        "fits": [
+          34,
+          35,
+          38,
+          39,
+          41
+        ]
+      },
+      {
+        "HullId": 420,
+        "Name": "Stealth Bomber",
+        "Price": 200,
+        "HabmCapabilities": 2706,
+        "GroupId": 0,
+        "MaxEnergy": 2400,
+        "MaxWeapons": 2,
+        "MaxFixedWeapons": 2,
+        "mask": 3,
+        "required": "6,7,21,56",
+        "fits": [
+          34,
+          35,
+          38,
+          39,
+          41
+        ]
+      },
+      {
+        "HullId": 421,
+        "Name": "Frigate",
+        "Price": 3000,
+        "HabmCapabilities": 2594,
+        "GroupId": 4,
+        "MaxEnergy": 3000,
+        "MaxWeapons": 4,
+        "MaxFixedWeapons": 1,
+        "mask": 2,
+        "required": "6,11,21,142,240",
+        "fits": [
+          35,
+          41
+        ]
+      },
+      {
+        "HullId": 486,
+        "Name": "Adv Stl Fighter",
+        "Price": 0,
+        "HabmCapabilities": 10386,
+        "GroupId": 0,
+        "MaxEnergy": 2400,
+        "MaxWeapons": 2,
+        "MaxFixedWeapons": 2,
+        "mask": 3,
+        "required": "6,7,21,147,182",
+        "fits": [
+          34,
+          35,
+          38,
+          39,
+          41
+        ]
+      },
+      {
+        "HullId": 487,
+        "Name": "Assault Ship",
+        "Price": 4000,
+        "HabmCapabilities": 2402,
+        "GroupId": 0,
+        "MaxEnergy": 4000,
+        "MaxWeapons": 3,
+        "MaxFixedWeapons": 1,
+        "mask": 2,
+        "required": "6,11,21,142,240",
+        "fits": [
+          35,
+          41
+        ]
+      }
+    ],
+    "comparators": [
+      {
+        "HullId": 87,
+        "Name": "Hvy Scout",
+        "mask": 0,
+        "required": "6,21,186,216"
+      },
+      {
+        "HullId": 120,
+        "Name": "Hvy Scout",
+        "mask": 0,
+        "required": "6,10,186,216"
+      },
+      {
+        "HullId": 125,
+        "Name": "Hvy Bomber",
+        "mask": 0,
+        "required": "6,10,38"
+      },
+      {
+        "HullId": 158,
+        "Name": "Fighter/Bomber",
+        "mask": 0,
+        "required": "6,14,21,153"
+      }
+    ],
+    "nodes": [
+      {
+        "Kind": "develop",
+        "Id": 8,
+        "Name": "Upgrade Heavy Class",
+        "Price": 24000,
+        "Seconds": 180,
+        "required": "6,11,21,142,216",
+        "effects": "141,142,143,229",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 10,
+        "Name": "Upgrade Tactical Lab",
+        "Price": 30000,
+        "Seconds": 180,
+        "required": "6,21,243",
+        "effects": "152,178",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 24,
+        "Name": "Adv Stl Fighter",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "6,7,146,147,154,169",
+        "effects": "152,182",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 26,
+        "Name": "Stealth Fighter",
+        "Price": 7500,
+        "Seconds": 120,
+        "required": "6,146,154,169,243",
+        "effects": "147",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 33,
+        "Name": "Stealth Bomber",
+        "Price": 7500,
+        "Seconds": 120,
+        "required": "6,7,36,146,147,154",
+        "effects": "56",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 37,
+        "Name": "Bomber",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "6,17,146,154",
+        "effects": "36",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 117,
+        "Name": "Sig Cloak 3",
+        "Price": 5000,
+        "Seconds": 120,
+        "required": "6,7,46",
+        "effects": "220",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 118,
+        "Name": "Sig Cloak 2",
+        "Price": 5000,
+        "Seconds": 120,
+        "required": "6,45,243",
+        "effects": "46",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 120,
+        "Name": "Hvy Sig Cloak 2",
+        "Price": 5000,
+        "Seconds": 120,
+        "required": "6,18,47",
+        "effects": "221",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 121,
+        "Name": "Hvy Sig Cloak 1",
+        "Price": 5000,
+        "Seconds": 120,
+        "required": "6,17,45",
+        "effects": "47",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 175,
+        "Name": "Fighter/Bomber",
+        "Price": 5000,
+        "Seconds": 120,
+        "required": "6,14,36,67,144,146,154,166",
+        "effects": "153",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 195,
+        "Name": "SRM Nerve Gas",
+        "Price": 5000,
+        "Seconds": 120,
+        "required": "6,7,147,154",
+        "effects": "204",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 225,
+        "Name": "Upgrade Medium Class",
+        "Price": 18000,
+        "Seconds": 180,
+        "required": "6,11,21",
+        "effects": "142,143",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 228,
+        "Name": "Upgrade Medium Class",
+        "Price": 18750,
+        "Seconds": 120,
+        "required": "6,10,11,143,216",
+        "effects": "142,143",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 241,
+        "Name": "Upgrade Light Class",
+        "Price": 12500,
+        "Seconds": 120,
+        "required": "6,10,11,216",
+        "effects": "143",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 269,
+        "Name": "[R] Lt Sig Cloak",
+        "Price": 5000,
+        "Seconds": 120,
+        "required": "10,243,262",
+        "effects": "158",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 270,
+        "Name": "[R] Solar Inverter",
+        "Price": 5000,
+        "Seconds": 120,
+        "required": "10,243,262",
+        "effects": "276",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 271,
+        "Name": "Upgrade Tactical Lab",
+        "Price": 25000,
+        "Seconds": 120,
+        "required": "6,10,243,263",
+        "effects": "178",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 280,
+        "Name": "Upgrade Heavy Class",
+        "Price": 25000,
+        "Seconds": 120,
+        "required": "6,10,11,142,263",
+        "effects": "141,142,143,229",
+        "local": ""
+      },
+      {
+        "Kind": "drone",
+        "Id": 8,
+        "Name": ".TowerSC",
+        "Price": 1500,
+        "Seconds": 90,
+        "required": "19,99,357",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "drone",
+        "Id": 10,
+        "Name": "Constructor (Lrg)",
+        "Price": 1,
+        "Seconds": 1,
+        "required": "0",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "drone",
+        "Id": 24,
+        "Name": ".TowerSC",
+        "Price": 1500,
+        "Seconds": 90,
+        "required": "10,99,224,357",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "drone",
+        "Id": 26,
+        "Name": "Constructor (Lrg)",
+        "Price": 1,
+        "Seconds": 1,
+        "required": "0",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "drone",
+        "Id": 33,
+        "Name": ".Miner",
+        "Price": 3500,
+        "Seconds": 90,
+        "required": "9,99",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "drone",
+        "Id": 37,
+        "Name": ".Carrier",
+        "Price": 4000,
+        "Seconds": 120,
+        "required": "9,99",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "drone",
+        "Id": 225,
+        "Name": ".Carrier",
+        "Price": 3750,
+        "Seconds": 120,
+        "required": "20,99",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 1,
+        "Name": "Shipyard (Dry)",
+        "Price": 18750,
+        "Seconds": 120,
+        "required": "1,23,141,216,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 2,
+        "Name": "Outpost (Lt)",
+        "Price": 3750,
+        "Seconds": 90,
+        "required": "20,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 3,
+        "Name": "Shipyard",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,20,217,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 4,
+        "Name": "Outpost",
+        "Price": 6250,
+        "Seconds": 90,
+        "required": "23,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 5,
+        "Name": "Shipyard",
+        "Price": 18750,
+        "Seconds": 120,
+        "required": "1,23,216,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 6,
+        "Name": "Supremacy (Adv)",
+        "Price": 12500,
+        "Seconds": 120,
+        "required": "4,23,179,239",
+        "effects": "13,14,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 7,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,20,179,239",
+        "effects": "13,14,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 8,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,20,119,239",
+        "effects": "8,15,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 9,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,20,178,239",
+        "effects": "7,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 10,
+        "Name": "Garrison (Str)",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "20,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 11,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,20,239",
+        "effects": "13,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 12,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,20,239",
+        "effects": "8,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 13,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,20,239",
+        "effects": "216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 14,
+        "Name": "Refinery (Lt)",
+        "Price": 2250,
+        "Seconds": 90,
+        "required": "20,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 15,
+        "Name": "Garrison",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "20,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 16,
+        "Name": "Expansion (Adv)",
+        "Price": 12500,
+        "Seconds": 120,
+        "required": "2,23,119,239",
+        "effects": "8,15,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 17,
+        "Name": "Tactical (Adv)",
+        "Price": 12500,
+        "Seconds": 120,
+        "required": "3,23,178,239",
+        "effects": "7,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 18,
+        "Name": "Garrison (Str)",
+        "Price": 25000,
+        "Seconds": 120,
+        "required": "23,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 19,
+        "Name": "Supremacy",
+        "Price": 12500,
+        "Seconds": 120,
+        "required": "4,23,239",
+        "effects": "13,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 20,
+        "Name": "Expansion",
+        "Price": 12500,
+        "Seconds": 120,
+        "required": "2,23,239",
+        "effects": "8,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 21,
+        "Name": "SpecMine (Ur)",
+        "Price": 6000,
+        "Seconds": 90,
+        "required": "20,239,250",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 22,
+        "Name": "SpecMine (Ca)",
+        "Price": 6000,
+        "Seconds": 90,
+        "required": "20,239,248",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 23,
+        "Name": "SpecMine (Si)",
+        "Price": 8000,
+        "Seconds": 90,
+        "required": "20,239,249",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 24,
+        "Name": "Tactical",
+        "Price": 12500,
+        "Seconds": 120,
+        "required": "3,23,239",
+        "effects": "216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 25,
+        "Name": "Refinery",
+        "Price": 3750,
+        "Seconds": 90,
+        "required": "23,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 26,
+        "Name": "Garrison",
+        "Price": 25000,
+        "Seconds": 120,
+        "required": "23,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 27,
+        "Name": "SpecMine (He)",
+        "Price": 7000,
+        "Seconds": 90,
+        "required": "23,239,361",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 28,
+        "Name": "Teleport",
+        "Price": 3750,
+        "Seconds": 90,
+        "required": "23,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 29,
+        "Name": "Shipyard (Dry)",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,19,142,216,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 30,
+        "Name": "Outpost",
+        "Price": 5000,
+        "Seconds": 90,
+        "required": "19,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 31,
+        "Name": "Shipyard",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,19,216,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 32,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,19,179,239",
+        "effects": "13,14,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 33,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,19,119,239",
+        "effects": "8,15,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 34,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,19,178,239",
+        "effects": "7,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 35,
+        "Name": "Garrison (Str)",
+        "Price": 17500,
+        "Seconds": 120,
+        "required": "19,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 36,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,19,239",
+        "effects": "13,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 37,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,19,239",
+        "effects": "8,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 38,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,19,239",
+        "effects": "216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 39,
+        "Name": "Refinery",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "19,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 40,
+        "Name": "Garrison",
+        "Price": 17500,
+        "Seconds": 120,
+        "required": "19,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 41,
+        "Name": "Teleport",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "19,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 42,
+        "Name": "[P]alisade",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "6,10,239",
+        "effects": "263",
+        "local": "99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 43,
+        "Name": "[R]esearch",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "6,10,239",
+        "effects": "262",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 44,
+        "Name": "Garrison",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "10,255",
+        "effects": "17",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 45,
+        "Name": "Garrison (Str)",
+        "Price": 25000,
+        "Seconds": 120,
+        "required": "10,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 46,
+        "Name": "Outpost",
+        "Price": 5000,
+        "Seconds": 90,
+        "required": "10,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 47,
+        "Name": "Teleport (Lt)",
+        "Price": 2250,
+        "Seconds": 90,
+        "required": "20,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 48,
+        "Name": "Teleport",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "10,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 49,
+        "Name": "Shipyard",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,10,216,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 50,
+        "Name": "Shipyard (Dry)",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,10,141,216,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 51,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,10,239",
+        "effects": "13,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 52,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,10,179,239",
+        "effects": "13,14,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 53,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,10,239",
+        "effects": "8,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 54,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,10,119,239",
+        "effects": "8,15,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 55,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,10,239",
+        "effects": "216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 56,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,10,178,239",
+        "effects": "7,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 57,
+        "Name": "SpecMine",
+        "Price": 400,
+        "Seconds": 90,
+        "required": "20,392",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 60,
+        "Name": "Garrison",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "9,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 61,
+        "Name": "Garrison (Str)",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "9,183,255",
+        "effects": "17,18,293,295",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 62,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,9,239",
+        "effects": "13,175,216,225,295",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 63,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,9,179,239",
+        "effects": "13,14,174,175,216,217,225,292,295",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 64,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,9,239",
+        "effects": "8,175,216,226,295",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 65,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,9,119,239",
+        "effects": "8,15,174,175,216,217,226,290,295",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 66,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,9,239",
+        "effects": "216,224,243,295",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 67,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,9,178,239",
+        "effects": "7,216,217,224,243,291,295",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 68,
+        "Name": "Shipyard",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,9,239",
+        "effects": "11,227,295",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 69,
+        "Name": "Shipyard (Dry)",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,9,141,239",
+        "effects": "11,185,227,295",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 70,
+        "Name": "Outpost",
+        "Price": 5000,
+        "Seconds": 90,
+        "required": "9,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 71,
+        "Name": "Refinery",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "9,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 72,
+        "Name": "Teleport",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "9,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 73,
+        "Name": "[T]ransceiver",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "9,239,295",
+        "effects": "294",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 101,
+        "Name": "Shipyard (Dry)",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,21,141,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 102,
+        "Name": "Outpost (Hvy)",
+        "Price": 5000,
+        "Seconds": 120,
+        "required": "21,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 103,
+        "Name": "Shipyard",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,21,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 107,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "4,21,179,239",
+        "effects": "13,14,143,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 108,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "2,21,119,239",
+        "effects": "8,15,143,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 109,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "3,21,178,239",
+        "effects": "7,143,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 110,
+        "Name": "Garrison (Str)",
+        "Price": 20000,
+        "Seconds": 240,
+        "required": "21,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 111,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "4,21,239",
+        "effects": "13,143,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 112,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "2,21,239",
+        "effects": "8,143,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 113,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "3,21,239",
+        "effects": "143,216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 115,
+        "Name": "Garrison",
+        "Price": 20000,
+        "Seconds": 240,
+        "required": "21,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 147,
+        "Name": "Teleport (Hvy)",
+        "Price": 3000,
+        "Seconds": 120,
+        "required": "21,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 201,
+        "Name": "Shipyard (Dry)",
+        "Price": 20000,
+        "Seconds": 60,
+        "required": "1,188,216,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 202,
+        "Name": "Outpost",
+        "Price": 5000,
+        "Seconds": 60,
+        "required": "188,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 207,
+        "Name": "Supremacy (Adv)",
+        "Price": 15000,
+        "Seconds": 60,
+        "required": "4,188,239",
+        "effects": "13,14,174,175,216,217,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 208,
+        "Name": "Expansion (Adv)",
+        "Price": 15000,
+        "Seconds": 60,
+        "required": "2,188,239",
+        "effects": "8,15,174,175,216,217,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 209,
+        "Name": "Tactical (Adv)",
+        "Price": 15000,
+        "Seconds": 60,
+        "required": "3,188,239",
+        "effects": "7,216,217,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 210,
+        "Name": "Garrison (Str)",
+        "Price": 20000,
+        "Seconds": 60,
+        "required": "188,255",
+        "effects": "17,18",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 214,
+        "Name": "Refinery",
+        "Price": 3000,
+        "Seconds": 60,
+        "required": "188,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 247,
+        "Name": "Teleport",
+        "Price": 3000,
+        "Seconds": 60,
+        "required": "188,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 301,
+        "Name": "Shipyard (Dry)",
+        "Price": 12000,
+        "Seconds": 120,
+        "required": "1,97,141,216,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 302,
+        "Name": "Outpost",
+        "Price": 4000,
+        "Seconds": 90,
+        "required": "97,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 303,
+        "Name": "Shipyard",
+        "Price": 12000,
+        "Seconds": 120,
+        "required": "1,97,216,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 307,
+        "Name": "Supremacy (Adv)",
+        "Price": 8000,
+        "Seconds": 120,
+        "required": "4,97,179,239",
+        "effects": "13,14,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 308,
+        "Name": "Expansion (Adv)",
+        "Price": 8000,
+        "Seconds": 120,
+        "required": "2,97,119,239",
+        "effects": "8,15,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 309,
+        "Name": "Tactical (Adv)",
+        "Price": 8000,
+        "Seconds": 120,
+        "required": "3,97,178,239",
+        "effects": "7,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 310,
+        "Name": "Garrison (Str)",
+        "Price": 16000,
+        "Seconds": 120,
+        "required": "97,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 311,
+        "Name": "Supremacy",
+        "Price": 8000,
+        "Seconds": 120,
+        "required": "4,97,239",
+        "effects": "13,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 312,
+        "Name": "Expansion",
+        "Price": 8000,
+        "Seconds": 120,
+        "required": "2,97,239",
+        "effects": "8,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 313,
+        "Name": "Tactical",
+        "Price": 8000,
+        "Seconds": 120,
+        "required": "3,97,239",
+        "effects": "216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 314,
+        "Name": "Refinery",
+        "Price": 2400,
+        "Seconds": 90,
+        "required": "97,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 315,
+        "Name": "Garrison",
+        "Price": 16000,
+        "Seconds": 120,
+        "required": "97,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 347,
+        "Name": "Teleport",
+        "Price": 2400,
+        "Seconds": 90,
+        "required": "97,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 401,
+        "Name": "Shipyard (Dry)",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,22,141,216,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 402,
+        "Name": "Outpost",
+        "Price": 5000,
+        "Seconds": 90,
+        "required": "22,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 403,
+        "Name": "Shipyard",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,22,216,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 407,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,22,179,239",
+        "effects": "13,14,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 408,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,22,119,239",
+        "effects": "8,15,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 409,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,22,178,239",
+        "effects": "7,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 410,
+        "Name": "Garrison (Str)",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "22,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 411,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,22,239",
+        "effects": "13,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 412,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,22,239",
+        "effects": "8,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 413,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,22,239",
+        "effects": "216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 414,
+        "Name": "Refinery",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "22,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 415,
+        "Name": "Garrison",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "22,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 447,
+        "Name": "Teleport",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "22,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 500,
+        "Name": "Platform",
+        "Price": 1000,
+        "Seconds": 120,
+        "required": "0",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 701,
+        "Name": "Shipyard (Dry)",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "1,16,141,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 702,
+        "Name": "Outpost",
+        "Price": 5000,
+        "Seconds": 90,
+        "required": "16,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 703,
+        "Name": "Shipyard",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "1,16,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 707,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "4,16,179,239",
+        "effects": "13,14,143,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 708,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "2,16,119,239",
+        "effects": "8,15,143,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 709,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "3,16,178,239",
+        "effects": "7,143,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 710,
+        "Name": "Garrison (Str)",
+        "Price": 20000,
+        "Seconds": 300,
+        "required": "16,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 711,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "4,16,239",
+        "effects": "13,143,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 712,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "2,16,239",
+        "effects": "8,143,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 713,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "3,16,239",
+        "effects": "143,216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 715,
+        "Name": "Garrison",
+        "Price": 20000,
+        "Seconds": 300,
+        "required": "16,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 747,
+        "Name": "TeleRefinery",
+        "Price": 3800,
+        "Seconds": 90,
+        "required": "16,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 801,
+        "Name": "Shipyard (Dry)",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,27,141,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 802,
+        "Name": "Outpost",
+        "Price": 5000,
+        "Seconds": 90,
+        "required": "27,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 803,
+        "Name": "Shipyard",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,27,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 807,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "4,27,179,239",
+        "effects": "13,14,143,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 808,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "2,27,119,239",
+        "effects": "8,15,143,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 809,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "3,27,178,239",
+        "effects": "7,143,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 810,
+        "Name": "Garrison (Str)",
+        "Price": 20000,
+        "Seconds": 240,
+        "required": "27,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 811,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "4,27,239",
+        "effects": "13,143,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 812,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "2,27,239",
+        "effects": "8,143,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 813,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "3,27,239",
+        "effects": "143,216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 814,
+        "Name": "Refinery",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "27,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 815,
+        "Name": "Garrison",
+        "Price": 20000,
+        "Seconds": 240,
+        "required": "27,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 847,
+        "Name": "Teleport",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "27,255",
+        "effects": "",
+        "local": ""
+      }
+    ]
+  },
+  {
+    "civ": 3,
+    "Name": "Ga\u0027Taraan",
+    "Version": 990051329,
+    "starting": "1,2,3,4,6,10,31,34,37,45,59,73,93,98,102,107,108,110,126,127,145,146,154,165,168,169,170,187,208,209,229,355",
+    "cloaks": [
+      {
+        "PartId": 34,
+        "Name": "Sig Cloak 3",
+        "Price": 0,
+        "PartMask": 1,
+        "required": "220,224",
+        "cloak": {
+          "EnergyConsumption": 100,
+          "MaxCloaking": 0.775,
+          "OnRate": 0.25,
+          "OffRate": 0.25,
+          "EngageSound": 640,
+          "DisengageSound": 660,
+          "EquipmentType": 5
+        }
+      },
+      {
+        "PartId": 35,
+        "Name": "Hvy Cloak 2",
+        "Price": 0,
+        "PartMask": 2,
+        "required": "221",
+        "cloak": {
+          "EnergyConsumption": 180,
+          "MaxCloaking": 0.9,
+          "OnRate": 0.25,
+          "OffRate": 0.25,
+          "EngageSound": 640,
+          "DisengageSound": 660,
+          "EquipmentType": 5
+        }
+      },
+      {
+        "PartId": 38,
+        "Name": "Sig Cloak 1",
+        "Price": 0,
+        "PartMask": 1,
+        "required": "45",
+        "cloak": {
+          "EnergyConsumption": 120,
+          "MaxCloaking": 0.6,
+          "OnRate": 0.25,
+          "OffRate": 0.25,
+          "EngageSound": 640,
+          "DisengageSound": 660,
+          "EquipmentType": 5
+        }
+      },
+      {
+        "PartId": 39,
+        "Name": "Sig Cloak 2",
+        "Price": 0,
+        "PartMask": 1,
+        "required": "46,224",
+        "cloak": {
+          "EnergyConsumption": 110,
+          "MaxCloaking": 0.7,
+          "OnRate": 0.25,
+          "OffRate": 0.25,
+          "EngageSound": 640,
+          "DisengageSound": 660,
+          "EquipmentType": 5
+        }
+      },
+      {
+        "PartId": 41,
+        "Name": "Hvy Cloak 1",
+        "Price": 0,
+        "PartMask": 2,
+        "required": "47",
+        "cloak": {
+          "EnergyConsumption": 200,
+          "MaxCloaking": 0.9,
+          "OnRate": 0.25,
+          "OffRate": 0.25,
+          "EngageSound": 640,
+          "DisengageSound": 660,
+          "EquipmentType": 5
+        }
+      },
+      {
+        "PartId": 135,
+        "Name": "Lt Cloak",
+        "Price": 0,
+        "PartMask": 1,
+        "required": "10,158,262",
+        "cloak": {
+          "EnergyConsumption": 95,
+          "MaxCloaking": 0.5,
+          "OnRate": 0.25,
+          "OffRate": 0.25,
+          "EngageSound": 640,
+          "DisengageSound": 660,
+          "EquipmentType": 5
+        }
+      },
+      {
+        "PartId": 139,
+        "Name": "Solar Inverter",
+        "Price": 0,
+        "PartMask": 1,
+        "required": "10,243,262,276",
+        "cloak": {
+          "EnergyConsumption": -80,
+          "MaxCloaking": -5,
+          "OnRate": 0.25,
+          "OffRate": 0.25,
+          "EngageSound": 640,
+          "DisengageSound": 660,
+          "EquipmentType": 5
+        }
+      }
+    ],
+    "hulls": [
+      {
+        "HullId": 131,
+        "Name": "Stealth Fighter",
+        "Price": 0,
+        "HabmCapabilities": 10386,
+        "GroupId": 0,
+        "MaxEnergy": 2400,
+        "MaxWeapons": 2,
+        "MaxFixedWeapons": 2,
+        "mask": 3,
+        "required": "6,10,147,243",
+        "fits": [
+          34,
+          35,
+          38,
+          39,
+          41,
+          135,
+          139
+        ]
+      },
+      {
+        "HullId": 132,
+        "Name": "Adv Stl Fighter",
+        "Price": 0,
+        "HabmCapabilities": 10386,
+        "GroupId": 0,
+        "MaxEnergy": 2400,
+        "MaxWeapons": 2,
+        "MaxFixedWeapons": 2,
+        "mask": 3,
+        "required": "6,7,10,182",
+        "fits": [
+          34,
+          35,
+          38,
+          39,
+          41,
+          135,
+          139
+        ]
+      },
+      {
+        "HullId": 133,
+        "Name": "Stealth Bomber",
+        "Price": 250,
+        "HabmCapabilities": 2706,
+        "GroupId": 0,
+        "MaxEnergy": 2400,
+        "MaxWeapons": 2,
+        "MaxFixedWeapons": 2,
+        "mask": 3,
+        "required": "6,7,10,56",
+        "fits": [
+          34,
+          35,
+          38,
+          39,
+          41,
+          135,
+          139
+        ]
+      },
+      {
+        "HullId": 140,
+        "Name": "Assault Ship",
+        "Price": 4000,
+        "HabmCapabilities": 2402,
+        "GroupId": 0,
+        "MaxEnergy": 4000,
+        "MaxWeapons": 3,
+        "MaxFixedWeapons": 1,
+        "mask": 2,
+        "required": "6,10,11,142,240",
+        "fits": [
+          35,
+          41
+        ]
+      },
+      {
+        "HullId": 142,
+        "Name": "Cruiser",
+        "Price": 4000,
+        "HabmCapabilities": 2562,
+        "GroupId": 4,
+        "MaxEnergy": 3000,
+        "MaxWeapons": 5,
+        "MaxFixedWeapons": 1,
+        "mask": 2,
+        "required": "6,10,141,185,240",
+        "fits": [
+          35,
+          41
+        ]
+      },
+      {
+        "HullId": 144,
+        "Name": "Devastator",
+        "Price": 4000,
+        "HabmCapabilities": 2562,
+        "GroupId": 4,
+        "MaxEnergy": 2500,
+        "MaxWeapons": 5,
+        "MaxFixedWeapons": 1,
+        "mask": 2,
+        "required": "6,10,141,185,240",
+        "fits": [
+          35,
+          41
+        ]
+      },
+      {
+        "HullId": 146,
+        "Name": "Frigate",
+        "Price": 3000,
+        "HabmCapabilities": 2594,
+        "GroupId": 4,
+        "MaxEnergy": 3000,
+        "MaxWeapons": 4,
+        "MaxFixedWeapons": 1,
+        "mask": 2,
+        "required": "6,10,11,142,240",
+        "fits": [
+          35,
+          41
+        ]
+      },
+      {
+        "HullId": 155,
+        "Name": "Stealth Bomber [NG]",
+        "Price": 250,
+        "HabmCapabilities": 2202,
+        "GroupId": 0,
+        "MaxEnergy": 2400,
+        "MaxWeapons": 2,
+        "MaxFixedWeapons": 2,
+        "mask": 1,
+        "required": "6,7,10,56,204",
+        "fits": [
+          34,
+          38,
+          39,
+          135,
+          139
+        ]
+      }
+    ],
+    "comparators": [
+      {
+        "HullId": 87,
+        "Name": "Hvy Scout",
+        "mask": 0,
+        "required": "6,21,186,216"
+      },
+      {
+        "HullId": 120,
+        "Name": "Hvy Scout",
+        "mask": 0,
+        "required": "6,10,186,216"
+      },
+      {
+        "HullId": 125,
+        "Name": "Hvy Bomber",
+        "mask": 0,
+        "required": "6,10,38"
+      },
+      {
+        "HullId": 158,
+        "Name": "Fighter/Bomber",
+        "mask": 0,
+        "required": "6,14,21,153"
+      }
+    ],
+    "nodes": [
+      {
+        "Kind": "develop",
+        "Id": 8,
+        "Name": "Upgrade Heavy Class",
+        "Price": 19200,
+        "Seconds": 180,
+        "required": "6,11,21,142,216",
+        "effects": "141,142,143,229",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 10,
+        "Name": "Upgrade Tactical Lab",
+        "Price": 24000,
+        "Seconds": 180,
+        "required": "6,21,243",
+        "effects": "152,178",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 24,
+        "Name": "Adv Stl Fighter",
+        "Price": 8000,
+        "Seconds": 120,
+        "required": "6,7,146,147,154,169",
+        "effects": "152,182",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 26,
+        "Name": "Stealth Fighter",
+        "Price": 6000,
+        "Seconds": 120,
+        "required": "6,146,154,169,243",
+        "effects": "147",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 33,
+        "Name": "Stealth Bomber",
+        "Price": 6000,
+        "Seconds": 120,
+        "required": "6,7,36,146,147,154",
+        "effects": "56",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 37,
+        "Name": "Bomber",
+        "Price": 8000,
+        "Seconds": 120,
+        "required": "6,17,146,154",
+        "effects": "36",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 117,
+        "Name": "Sig Cloak 3",
+        "Price": 4000,
+        "Seconds": 120,
+        "required": "6,7,46",
+        "effects": "220",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 118,
+        "Name": "Sig Cloak 2",
+        "Price": 4000,
+        "Seconds": 120,
+        "required": "6,45,243",
+        "effects": "46",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 120,
+        "Name": "Hvy Sig Cloak 2",
+        "Price": 4000,
+        "Seconds": 120,
+        "required": "6,18,47",
+        "effects": "221",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 121,
+        "Name": "Hvy Sig Cloak 1",
+        "Price": 4000,
+        "Seconds": 120,
+        "required": "6,17,45",
+        "effects": "47",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 175,
+        "Name": "Fighter/Bomber",
+        "Price": 4000,
+        "Seconds": 120,
+        "required": "6,14,36,67,144,146,154,166",
+        "effects": "153",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 195,
+        "Name": "SRM Nerve Gas",
+        "Price": 4000,
+        "Seconds": 120,
+        "required": "6,7,147,154",
+        "effects": "204",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 225,
+        "Name": "Upgrade Medium Class",
+        "Price": 14400,
+        "Seconds": 180,
+        "required": "6,11,21",
+        "effects": "142,143",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 228,
+        "Name": "Upgrade Medium Class",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "6,10,11,143,216",
+        "effects": "142,143",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 241,
+        "Name": "Upgrade Light Class",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "6,10,11,216",
+        "effects": "143",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 269,
+        "Name": "[R] Lt Sig Cloak",
+        "Price": 4000,
+        "Seconds": 120,
+        "required": "10,243,262",
+        "effects": "158",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 270,
+        "Name": "[R] Solar Inverter",
+        "Price": 4000,
+        "Seconds": 120,
+        "required": "10,243,262",
+        "effects": "276",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 271,
+        "Name": "Upgrade Tactical Lab",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "6,10,243,263",
+        "effects": "178",
+        "local": ""
+      },
+      {
+        "Kind": "develop",
+        "Id": 280,
+        "Name": "Upgrade Heavy Class",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "6,10,11,142,263",
+        "effects": "141,142,143,229",
+        "local": ""
+      },
+      {
+        "Kind": "drone",
+        "Id": 8,
+        "Name": ".TowerSC",
+        "Price": 1500,
+        "Seconds": 90,
+        "required": "19,99,357",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "drone",
+        "Id": 10,
+        "Name": "Constructor (Lrg)",
+        "Price": 1,
+        "Seconds": 1,
+        "required": "0",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "drone",
+        "Id": 24,
+        "Name": ".TowerSC",
+        "Price": 1500,
+        "Seconds": 90,
+        "required": "10,99,224,357",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "drone",
+        "Id": 26,
+        "Name": "Constructor (Lrg)",
+        "Price": 1,
+        "Seconds": 1,
+        "required": "0",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "drone",
+        "Id": 33,
+        "Name": ".Miner",
+        "Price": 3500,
+        "Seconds": 90,
+        "required": "9,99",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "drone",
+        "Id": 37,
+        "Name": ".Carrier",
+        "Price": 4000,
+        "Seconds": 120,
+        "required": "9,99",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "drone",
+        "Id": 225,
+        "Name": ".Carrier",
+        "Price": 3750,
+        "Seconds": 120,
+        "required": "20,99",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 1,
+        "Name": "Shipyard (Dry)",
+        "Price": 18750,
+        "Seconds": 120,
+        "required": "1,23,141,216,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 2,
+        "Name": "Outpost (Lt)",
+        "Price": 3750,
+        "Seconds": 90,
+        "required": "20,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 3,
+        "Name": "Shipyard",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,20,217,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 4,
+        "Name": "Outpost",
+        "Price": 6250,
+        "Seconds": 90,
+        "required": "23,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 5,
+        "Name": "Shipyard",
+        "Price": 18750,
+        "Seconds": 120,
+        "required": "1,23,216,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 6,
+        "Name": "Supremacy (Adv)",
+        "Price": 12500,
+        "Seconds": 120,
+        "required": "4,23,179,239",
+        "effects": "13,14,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 7,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,20,179,239",
+        "effects": "13,14,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 8,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,20,119,239",
+        "effects": "8,15,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 9,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,20,178,239",
+        "effects": "7,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 10,
+        "Name": "Garrison (Str)",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "20,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 11,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,20,239",
+        "effects": "13,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 12,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,20,239",
+        "effects": "8,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 13,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,20,239",
+        "effects": "216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 14,
+        "Name": "Refinery (Lt)",
+        "Price": 2250,
+        "Seconds": 90,
+        "required": "20,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 15,
+        "Name": "Garrison",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "20,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 16,
+        "Name": "Expansion (Adv)",
+        "Price": 12500,
+        "Seconds": 120,
+        "required": "2,23,119,239",
+        "effects": "8,15,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 17,
+        "Name": "Tactical (Adv)",
+        "Price": 12500,
+        "Seconds": 120,
+        "required": "3,23,178,239",
+        "effects": "7,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 18,
+        "Name": "Garrison (Str)",
+        "Price": 25000,
+        "Seconds": 120,
+        "required": "23,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 19,
+        "Name": "Supremacy",
+        "Price": 12500,
+        "Seconds": 120,
+        "required": "4,23,239",
+        "effects": "13,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 20,
+        "Name": "Expansion",
+        "Price": 12500,
+        "Seconds": 120,
+        "required": "2,23,239",
+        "effects": "8,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 21,
+        "Name": "SpecMine (Ur)",
+        "Price": 6000,
+        "Seconds": 90,
+        "required": "20,239,250",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 22,
+        "Name": "SpecMine (Ca)",
+        "Price": 6000,
+        "Seconds": 90,
+        "required": "20,239,248",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 23,
+        "Name": "SpecMine (Si)",
+        "Price": 8000,
+        "Seconds": 90,
+        "required": "20,239,249",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 24,
+        "Name": "Tactical",
+        "Price": 12500,
+        "Seconds": 120,
+        "required": "3,23,239",
+        "effects": "216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 25,
+        "Name": "Refinery",
+        "Price": 3750,
+        "Seconds": 90,
+        "required": "23,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 26,
+        "Name": "Garrison",
+        "Price": 25000,
+        "Seconds": 120,
+        "required": "23,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 27,
+        "Name": "SpecMine (He)",
+        "Price": 7000,
+        "Seconds": 90,
+        "required": "23,239,361",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 28,
+        "Name": "Teleport",
+        "Price": 3750,
+        "Seconds": 90,
+        "required": "23,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 29,
+        "Name": "Shipyard (Dry)",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,19,142,216,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 30,
+        "Name": "Outpost",
+        "Price": 5000,
+        "Seconds": 90,
+        "required": "19,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 31,
+        "Name": "Shipyard",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,19,216,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 32,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,19,179,239",
+        "effects": "13,14,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 33,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,19,119,239",
+        "effects": "8,15,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 34,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,19,178,239",
+        "effects": "7,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 35,
+        "Name": "Garrison (Str)",
+        "Price": 17500,
+        "Seconds": 120,
+        "required": "19,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 36,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,19,239",
+        "effects": "13,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 37,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,19,239",
+        "effects": "8,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 38,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,19,239",
+        "effects": "216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 39,
+        "Name": "Refinery",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "19,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 40,
+        "Name": "Garrison",
+        "Price": 17500,
+        "Seconds": 120,
+        "required": "19,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 41,
+        "Name": "Teleport",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "19,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 42,
+        "Name": "[P]alisade",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "6,10,239",
+        "effects": "263",
+        "local": "99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 43,
+        "Name": "[R]esearch",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "6,10,239",
+        "effects": "262",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 44,
+        "Name": "Garrison",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "10,255",
+        "effects": "17",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 45,
+        "Name": "Garrison (Str)",
+        "Price": 25000,
+        "Seconds": 120,
+        "required": "10,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 46,
+        "Name": "Outpost",
+        "Price": 5000,
+        "Seconds": 90,
+        "required": "10,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 47,
+        "Name": "Teleport (Lt)",
+        "Price": 2250,
+        "Seconds": 90,
+        "required": "20,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 48,
+        "Name": "Teleport",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "10,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 49,
+        "Name": "Shipyard",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,10,216,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 50,
+        "Name": "Shipyard (Dry)",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,10,141,216,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 51,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,10,239",
+        "effects": "13,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 52,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,10,179,239",
+        "effects": "13,14,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 53,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,10,239",
+        "effects": "8,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 54,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,10,119,239",
+        "effects": "8,15,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 55,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,10,239",
+        "effects": "216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 56,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,10,178,239",
+        "effects": "7,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 57,
+        "Name": "SpecMine",
+        "Price": 400,
+        "Seconds": 90,
+        "required": "20,392",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 60,
+        "Name": "Garrison",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "9,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 61,
+        "Name": "Garrison (Str)",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "9,183,255",
+        "effects": "17,18,293,295",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 62,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,9,239",
+        "effects": "13,175,216,225,295",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 63,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,9,179,239",
+        "effects": "13,14,174,175,216,217,225,292,295",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 64,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,9,239",
+        "effects": "8,175,216,226,295",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 65,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,9,119,239",
+        "effects": "8,15,174,175,216,217,226,290,295",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 66,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,9,239",
+        "effects": "216,224,243,295",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 67,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,9,178,239",
+        "effects": "7,216,217,224,243,291,295",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 68,
+        "Name": "Shipyard",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,9,239",
+        "effects": "11,227,295",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 69,
+        "Name": "Shipyard (Dry)",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,9,141,239",
+        "effects": "11,185,227,295",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 70,
+        "Name": "Outpost",
+        "Price": 5000,
+        "Seconds": 90,
+        "required": "9,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 71,
+        "Name": "Refinery",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "9,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 72,
+        "Name": "Teleport",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "9,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 73,
+        "Name": "[T]ransceiver",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "9,239,295",
+        "effects": "294",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 101,
+        "Name": "Shipyard (Dry)",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,21,141,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 102,
+        "Name": "Outpost (Hvy)",
+        "Price": 5000,
+        "Seconds": 120,
+        "required": "21,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 103,
+        "Name": "Shipyard",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,21,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 107,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "4,21,179,239",
+        "effects": "13,14,143,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 108,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "2,21,119,239",
+        "effects": "8,15,143,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 109,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "3,21,178,239",
+        "effects": "7,143,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 110,
+        "Name": "Garrison (Str)",
+        "Price": 20000,
+        "Seconds": 240,
+        "required": "21,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 111,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "4,21,239",
+        "effects": "13,143,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 112,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "2,21,239",
+        "effects": "8,143,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 113,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "3,21,239",
+        "effects": "143,216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 115,
+        "Name": "Garrison",
+        "Price": 20000,
+        "Seconds": 240,
+        "required": "21,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 147,
+        "Name": "Teleport (Hvy)",
+        "Price": 3000,
+        "Seconds": 120,
+        "required": "21,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 201,
+        "Name": "Shipyard (Dry)",
+        "Price": 20000,
+        "Seconds": 60,
+        "required": "1,188,216,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 202,
+        "Name": "Outpost",
+        "Price": 5000,
+        "Seconds": 60,
+        "required": "188,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 207,
+        "Name": "Supremacy (Adv)",
+        "Price": 15000,
+        "Seconds": 60,
+        "required": "4,188,239",
+        "effects": "13,14,174,175,216,217,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 208,
+        "Name": "Expansion (Adv)",
+        "Price": 15000,
+        "Seconds": 60,
+        "required": "2,188,239",
+        "effects": "8,15,174,175,216,217,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 209,
+        "Name": "Tactical (Adv)",
+        "Price": 15000,
+        "Seconds": 60,
+        "required": "3,188,239",
+        "effects": "7,216,217,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 210,
+        "Name": "Garrison (Str)",
+        "Price": 20000,
+        "Seconds": 60,
+        "required": "188,255",
+        "effects": "17,18",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 214,
+        "Name": "Refinery",
+        "Price": 3000,
+        "Seconds": 60,
+        "required": "188,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 247,
+        "Name": "Teleport",
+        "Price": 3000,
+        "Seconds": 60,
+        "required": "188,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 301,
+        "Name": "Shipyard (Dry)",
+        "Price": 12000,
+        "Seconds": 120,
+        "required": "1,97,141,216,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 302,
+        "Name": "Outpost",
+        "Price": 4000,
+        "Seconds": 90,
+        "required": "97,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 303,
+        "Name": "Shipyard",
+        "Price": 12000,
+        "Seconds": 120,
+        "required": "1,97,216,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 307,
+        "Name": "Supremacy (Adv)",
+        "Price": 8000,
+        "Seconds": 120,
+        "required": "4,97,179,239",
+        "effects": "13,14,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 308,
+        "Name": "Expansion (Adv)",
+        "Price": 8000,
+        "Seconds": 120,
+        "required": "2,97,119,239",
+        "effects": "8,15,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 309,
+        "Name": "Tactical (Adv)",
+        "Price": 8000,
+        "Seconds": 120,
+        "required": "3,97,178,239",
+        "effects": "7,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 310,
+        "Name": "Garrison (Str)",
+        "Price": 16000,
+        "Seconds": 120,
+        "required": "97,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 311,
+        "Name": "Supremacy",
+        "Price": 8000,
+        "Seconds": 120,
+        "required": "4,97,239",
+        "effects": "13,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 312,
+        "Name": "Expansion",
+        "Price": 8000,
+        "Seconds": 120,
+        "required": "2,97,239",
+        "effects": "8,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 313,
+        "Name": "Tactical",
+        "Price": 8000,
+        "Seconds": 120,
+        "required": "3,97,239",
+        "effects": "216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 314,
+        "Name": "Refinery",
+        "Price": 2400,
+        "Seconds": 90,
+        "required": "97,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 315,
+        "Name": "Garrison",
+        "Price": 16000,
+        "Seconds": 120,
+        "required": "97,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 347,
+        "Name": "Teleport",
+        "Price": 2400,
+        "Seconds": 90,
+        "required": "97,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 401,
+        "Name": "Shipyard (Dry)",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,22,141,216,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 402,
+        "Name": "Outpost",
+        "Price": 5000,
+        "Seconds": 90,
+        "required": "22,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 403,
+        "Name": "Shipyard",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,22,216,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 407,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,22,179,239",
+        "effects": "13,14,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 408,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,22,119,239",
+        "effects": "8,15,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 409,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,22,178,239",
+        "effects": "7,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 410,
+        "Name": "Garrison (Str)",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "22,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 411,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "4,22,239",
+        "effects": "13,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 412,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "2,22,239",
+        "effects": "8,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 413,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 120,
+        "required": "3,22,239",
+        "effects": "216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 414,
+        "Name": "Refinery",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "22,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 415,
+        "Name": "Garrison",
+        "Price": 20000,
+        "Seconds": 120,
+        "required": "22,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 447,
+        "Name": "Teleport",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "22,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 500,
+        "Name": "Platform",
+        "Price": 1000,
+        "Seconds": 120,
+        "required": "0",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 701,
+        "Name": "Shipyard (Dry)",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "1,16,141,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 702,
+        "Name": "Outpost",
+        "Price": 5000,
+        "Seconds": 90,
+        "required": "16,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 703,
+        "Name": "Shipyard",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "1,16,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 707,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "4,16,179,239",
+        "effects": "13,14,143,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 708,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "2,16,119,239",
+        "effects": "8,15,143,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 709,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "3,16,178,239",
+        "effects": "7,143,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 710,
+        "Name": "Garrison (Str)",
+        "Price": 20000,
+        "Seconds": 300,
+        "required": "16,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 711,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "4,16,239",
+        "effects": "13,143,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 712,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "2,16,239",
+        "effects": "8,143,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 713,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 300,
+        "required": "3,16,239",
+        "effects": "143,216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 715,
+        "Name": "Garrison",
+        "Price": 20000,
+        "Seconds": 300,
+        "required": "16,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 747,
+        "Name": "TeleRefinery",
+        "Price": 3800,
+        "Seconds": 90,
+        "required": "16,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 801,
+        "Name": "Shipyard (Dry)",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,27,141,239",
+        "effects": "11,185,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 802,
+        "Name": "Outpost",
+        "Price": 5000,
+        "Seconds": 90,
+        "required": "27,255",
+        "effects": "12",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 803,
+        "Name": "Shipyard",
+        "Price": 15000,
+        "Seconds": 120,
+        "required": "1,27,239",
+        "effects": "11,227",
+        "local": "99,240,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 807,
+        "Name": "Supremacy (Adv)",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "4,27,179,239",
+        "effects": "13,14,143,174,175,216,217,225,292",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 808,
+        "Name": "Expansion (Adv)",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "2,27,119,239",
+        "effects": "8,15,143,174,175,216,217,226,290",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 809,
+        "Name": "Tactical (Adv)",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "3,27,178,239",
+        "effects": "7,143,216,217,224,243,291",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 810,
+        "Name": "Garrison (Str)",
+        "Price": 20000,
+        "Seconds": 240,
+        "required": "27,183,255",
+        "effects": "17,18,293",
+        "local": "92,99,239,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 811,
+        "Name": "Supremacy",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "4,27,239",
+        "effects": "13,143,175,216,225",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 812,
+        "Name": "Expansion",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "2,27,239",
+        "effects": "8,143,175,216,226",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 813,
+        "Name": "Tactical",
+        "Price": 10000,
+        "Seconds": 240,
+        "required": "3,27,239",
+        "effects": "143,216,224,243",
+        "local": "99,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 814,
+        "Name": "Refinery",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "27,255",
+        "effects": "",
+        "local": ""
+      },
+      {
+        "Kind": "station",
+        "Id": 815,
+        "Name": "Garrison",
+        "Price": 20000,
+        "Seconds": 240,
+        "required": "27,255",
+        "effects": "17",
+        "local": "99,239,241,255"
+      },
+      {
+        "Kind": "station",
+        "Id": 847,
+        "Name": "Teleport",
+        "Price": 3000,
+        "Seconds": 90,
+        "required": "27,255",
+        "effects": "",
+        "local": ""
+      }
+    ]
+  }
+]

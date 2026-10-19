@@ -45,8 +45,18 @@ rocks/funding. It rejects repeated/obsolete steps. It does not execute actions,
 predict combat losses, reserve rocks, or simulate income. P703 must fund real
 buckets, wait for real completion, choose available rocks and react to losses.
 
-`plan_a` favors cheapest currently available completions; `plan_b` favors the
-most expensive. Both supplied race plans have been generated and inspected for
+The civ-25 and civ-3 plans first complete the native tactical/stealth branch so
+scouts and bombers can purchase a mounted cloak during a showcase. Civ 25 uses
+Tactical → Upgrade Tactical Lab → Tactical (Adv) → Bomber → Stealth Bomber.
+Civ 3 uses Tactical → [P]alisade → Upgrade Tactical Lab → Tactical (Adv) →
+Stealth Fighter → Adv Stl Fighter → Bomber → Stealth Bomber. Sig Cloak 1 is
+already buyable for both civs; their starting combat hulls cannot mount it.
+These are ordinary funded station/development steps, with no technology grants.
+The prefixes are curated: `author` generates generic price order, so preserve
+the prefixes and recompute expected unlocks when regenerating these four files.
+
+After that prefix, `plan_a` retains its cheapest-first order and `plan_b` its
+most-expensive-first order. Both supplied race plans have been inspected for
 all four branches, advanced stations, garrison successors and non-builder drone
 types. All reachable attribute developments and tech prerequisites are included;
 obsolete equivalent alternatives are represented in the tree's closure.
