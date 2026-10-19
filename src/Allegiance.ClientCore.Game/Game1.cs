@@ -1367,7 +1367,9 @@ public sealed partial class Game1 : Game
         // P547 — soft particles (default ON in Enhanced; --soft off disables;
         // absent in Native). Bloom default OFF (--bloom on).
         _softEnabled = LaunchOptions.EffectiveSoftParticles(_enhancedVfx, opts.SoftParticles);
-        _bloomEnabled = opts.Bloom && _enhancedVfx;
+        _bloomOverride = opts.BloomOverride ?? (opts.Bloom ? true : null);
+        _allowSoft = opts.SoftParticles;
+        ApplyEffectsDetail(opts.EffectsDetail ?? _upscaling.Effects);
         // P576 — sky tier + aleph glimpse (client-only; --sky black|native|hd, --aleph-glimpse on|off).
         _skyTier = LaunchOptions.EffectiveSkyTier(opts.SkyTier);
         _alephGlimpse = opts.AlephGlimpse;

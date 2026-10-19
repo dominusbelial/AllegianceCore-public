@@ -1,3 +1,5 @@
+using Allegiance.ClientCore.State;
+
 namespace Allegiance.SinglePlayer.Benchmark;
 
 public static class BenchmarkPolicy
@@ -25,7 +27,9 @@ public static class BenchmarkPolicy
         var result = new BenchmarkRecommendation
         {
             BattleSize = chosen, Difficulty = bots ? SkirmishDifficulty.Easy : SkirmishDifficulty.Normal,
-            Fsr = gpu, FsrPreset = gpu && width >= 2560 ? 2 : 1, Bloom = false,
+            Fsr = gpu, FsrPreset = gpu && width >= 2560 ? 2 : 1,
+            EffectsQuality = gpu || client ? EffectsDetail.Low : r.GpuMs is < 8 && MeetsTarget(r) ? EffectsDetail.High : EffectsDetail.Medium,
+            Bloom = r.GpuMs is < 8 && MeetsTarget(r) && !gpu && !client,
             HdPbr = !gpu, HdTextures = !gpu, EffectsDensity = gpu || client ? .5f : 1,
             ViewDistance = client ? 4500 : 6000
         };
@@ -35,7 +39,8 @@ public static class BenchmarkPolicy
             new("Research speed", "1x", "Keep normal economy pacing; acceleration increases concurrent fleet activity"),
             new("Spectator default", "On", "Use the measured scripted spectator workload (SP-5 preference)"),
             new("Resolution / FSR", result.Fsr ? (result.FsrPreset == 2 ? "Balanced (59%)" : "Quality (67%)") : "Native (100%)", split),
-            new("Bloom", "Off", "Reserve GPU headroom for combat effects"),
+            new("Bloom", result.Bloom ? "On" : "Off", "Bloom requires measured GPU headroom and the frame target"),
+            new("Effects quality", result.EffectsQuality.ToString(), split),
             new("HD PBR", result.HdPbr ? "On" : "Off", split),
             new("Texture quality", result.HdTextures ? "HD" : "Native", gpu ? "Reduce HD residency and sampling cost" : "Retain HD textures within measured budget"),
             new("Frame cap / vsync", "60 / Off", "Target 60 FPS; avoid presentation wait hiding available headroom"),
@@ -48,13 +53,13 @@ public static class BenchmarkPolicy
         var lower = r with
         {
             BattleSize = (SkirmishSize)Math.Max(0, (int)r.BattleSize - 1), Fsr = true, FsrPreset = Math.Min(3, r.FsrPreset + 1),
-            Bloom = false, HdPbr = false, HdTextures = false, EffectsDensity = .25f, ViewDistance = 3500
+            EffectsQuality = EffectsDetail.Low, Bloom = false, HdPbr = false, HdTextures = false, EffectsDensity = .25f, ViewDistance = 3500
         };
         string preset = lower.FsrPreset switch { 0 => "Ultra Quality (77%)", 1 => "Quality (67%)", 2 => "Balanced (59%)", _ => "Performance (50%)" };
         string? ChangedValue(string setting) => setting switch
         {
             "Battle size" => lower.BattleSize.ToString(), "Resolution / FSR" => preset,
-            "Bloom" or "HD PBR" => "Off", "Texture quality" => "Native", "Effects density" => "0.25", "View distance" => "3500", _ => null
+            "Effects quality" => "Low", "Bloom" or "HD PBR" => "Off", "Texture quality" => "Native", "Effects density" => "0.25", "View distance" => "3500", _ => null
         };
         return lower with
         {

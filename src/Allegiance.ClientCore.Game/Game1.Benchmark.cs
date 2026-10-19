@@ -83,7 +83,7 @@ public sealed partial class Game1
         ResearchSpeed = _skirmishScreen.Options.ResearchSpeed, SpectatorDefault = _skirmishScreen.Options.SpectatorDefault,
         Fsr = _upscaling.Upscaling == UpscalingMode.FSR1, FsrPreset = (int)_upscaling.Preset,
         HdPbr = _nativeShipRenderer.HdPbrEnabled, HdTextures = _upscaling.HdTextures, Bloom = _bloomEnabled,
-        EffectsDensity = _benchmarkEffectsDensity, ViewDistance = _benchmarkViewDistance,
+        EffectsQuality = _upscaling.Effects, EffectsDensity = _benchmarkEffectsDensity, ViewDistance = _benchmarkViewDistance,
         Vsync = _graphics.SynchronizeWithVerticalRetrace, FrameCap = IsFixedTimeStep ? (int)Math.Round(1 / TargetElapsedTime.TotalSeconds) : 0
     };
     private void ApplyBenchmarkSettings(BenchmarkRecommendation s, bool preserveUpscaling = false)
@@ -98,7 +98,8 @@ public sealed partial class Game1
         }
         _nativeShipRenderer.HdTexturesEnabled = _upscaling.HdTextures;
         _nativeShipRenderer.HdPbrEnabled = s.HdPbr;
-        _bloomEnabled = s.Bloom;
+        ApplyEffectsDetail(s.EffectsQuality);
+        _bloomEnabled = s.Bloom && _enhancedVfx && _upscaling.Effects != State.EffectsDetail.Low;
         _benchmarkEffectsDensity = Math.Clamp(s.EffectsDensity, .1f, 1);
         _benchmarkViewDistance = Math.Clamp(s.ViewDistance, 2000, 6000);
         _graphics.SynchronizeWithVerticalRetrace = s.Vsync;

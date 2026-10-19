@@ -8,6 +8,8 @@
 float4x4 World, WorldViewProj, NormalMatrix;
 float3 CameraPosition, KeyDirection, KeyColor, AltDirection, AltColor, Ambient;
 float Opacity, CompressedMaps;
+int FlashCount;
+float4 FlashPositions[4], FlashColors[4];
 texture BaseMap, NormalMap, MetalMap, RoughMap, EmissionMap;
 sampler BaseSampler = sampler_state { Texture=<BaseMap>; MinFilter=Linear; MagFilter=Linear; MipFilter=Linear; AddressU=Clamp; AddressV=Clamp; };
 sampler NormalSampler = sampler_state { Texture=<NormalMap>; MinFilter=Linear; MagFilter=Linear; MipFilter=Linear; AddressU=Clamp; AddressV=Clamp; };
@@ -35,7 +37,7 @@ float3 Light(float3 n,float3 v,float3 l,float3 color,float3 albedo,float metal,f
     float3 spec=distribution*geometry*fresnel/max(.0001,4*nv*nl);
     return ((1-fresnel)*(1-metal)*albedo/3.14159265+spec)*color*nl*3.14159265;
 }
-float4 PS(VOUT i):COLOR0 {
+float4 PS(VOUT i, uniform bool flashes):COLOR0 {
     float3 n=normalize(i.Normal), t=normalize(i.Tangent.xyz-n*dot(n,i.Tangent.xyz));
     float3 b=cross(n,t)*i.Tangent.w;
     float3 map=tex2D(NormalSampler,i.UV).xyz*2-1;
@@ -52,7 +54,29 @@ float4 PS(VOUT i):COLOR0 {
     color+=Light(n,v,-AltDirection,AltColor,albedo,metal,rough);
     float3 emission=tex2D(EmissionSampler,i.UV).rgb;
     if (CompressedMaps < .5) emission=pow(max(emission,0),2.2);
+    if (flashes) {
+        // Fixed four-light budget, squared finite-range falloff. Normal-facing
+        // diffuse/specular uses the same GGX response as the sector lights.
+        for (int j=0; j<4; j++) {
+            if (j < FlashCount) {
+                float3 delta=FlashPositions[j].xyz-i.WorldPosition;
+                float distance2=dot(delta,delta);
+                float range=FlashPositions[j].w;
+                float fade=saturate(1-distance2/(range*range));
+                color+=Light(n,v,delta/max(sqrt(distance2),.001),FlashColors[j].rgb*fade*fade,albedo,metal,rough);
+            }
+        }
+    }
     color+=emission;
+    if (flashes) {
+        // Hue-preserving shoulder, identity below .8 linear: sector colours and
+        // dark hull detail survive while flash highlights roll off into white.
+        float peak=max(color.r,max(color.g,color.b));
+        float mapped=.8+(peak-.8)/(1+max(peak-.8,0)/.2);
+        color*=peak>.8 ? mapped/max(peak,.00001) : 1;
+    }
     return float4(pow(max(color,0),1/2.2)*Opacity,Opacity);
 }
-technique NativePbr { pass Pass0 { VertexShader=compile VS_SHADERMODEL VS(); PixelShader=compile PS_SHADERMODEL PS(); } }
+technique NativePbr { pass Pass0 { VertexShader=compile VS_SHADERMODEL VS(); PixelShader=compile PS_SHADERMODEL PS(false); } }
+
+technique EffectLitPbr { pass Pass0 { VertexShader=compile VS_SHADERMODEL VS(); PixelShader=compile PS_SHADERMODEL PS(true); } }

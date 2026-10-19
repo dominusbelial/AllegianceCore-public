@@ -30,6 +30,7 @@ public sealed class BloomPostProcessor : IDisposable
 
     /// <summary>Bloom intensity scale (multiplies the bright-pass before blur).</summary>
     public const float BloomScale = 1.0f;
+    public bool Polished { get; set; }
 
     private readonly GraphicsDevice _gd;
     private readonly Effect _effect;
@@ -38,7 +39,7 @@ public sealed class BloomPostProcessor : IDisposable
     /// <summary>The effect parameters this processor sets from code every pass
     /// (no reliance on GL parameter defaults). Exposed for the P547 unit test.</summary>
     public static readonly string[] RequiredParameters =
-        { "TexelSize", "Threshold", "BloomScale", "Direction", "SceneTexture" };
+        { "TexelSize", "Threshold", "BloomScale", "Direction", "SceneTexture", "BloomTexture" };
 
     private RenderTarget2D? _bright;
     private RenderTarget2D? _blurH;
@@ -46,6 +47,7 @@ public sealed class BloomPostProcessor : IDisposable
 
     private readonly EffectParameter _pTexel, _pThreshold, _pScale, _pDirection, _pTexture;
     private readonly SpriteBatch _batch;
+    private readonly EffectParameter _pBloom;
 
     public BloomPostProcessor(GraphicsDevice gd, Effect effect)
     {
@@ -58,13 +60,14 @@ public sealed class BloomPostProcessor : IDisposable
         _pScale = effect.Parameters["BloomScale"];
         _pDirection = effect.Parameters["Direction"];
         _pTexture = effect.Parameters["SceneTexture"];
+        _pBloom = effect.Parameters["BloomTexture"];
         SetSize(gd.PresentationParameters.BackBufferWidth, gd.PresentationParameters.BackBufferHeight);
     }
 
     public bool IsUsable =>
         _effect.Techniques["Bloom"] is not null
         && _pTexel is not null && _pThreshold is not null && _pScale is not null
-        && _pDirection is not null && _pTexture is not null
+        && _pDirection is not null && _pTexture is not null && _pBloom is not null
         && _bright is not null && _blurH is not null && _blurV is not null;
 
     public void SetSize(int width, int height)
@@ -108,6 +111,13 @@ public sealed class BloomPostProcessor : IDisposable
         // 4) Composite onto the CALLER'S target (restored below): opaque scene
         //    copy + additive bloom. HUD/UI draws afterward on the same target.
         _gd.SetRenderTarget(current.Length > 0 ? (RenderTarget2D)current[0].RenderTarget : null);
+        if (Polished)
+        {
+            _pBloom.SetValue(_blurV);
+            RunPass(scene, texelScene, "Composite", 0);
+            _gd.Textures[1] = null;
+            return true;
+        }
         _batch.Begin(SpriteSortMode.Deferred, BlendState.Opaque, SamplerState.LinearClamp);
         _batch.Draw(scene, new Rectangle(0, 0, _gd.Viewport.Width, _gd.Viewport.Height), Color.White);
         _batch.End();

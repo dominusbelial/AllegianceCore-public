@@ -515,6 +515,24 @@ public sealed partial class Game1
                 // exactly once) so the linear-depth pass and the color pass below
                 // share identical geometry. Depth-gather lists are reset here so
                 // each frame re-collects exactly its own geometry.
+                // Gather real visible-sector events before opaque hulls are lit.
+                // Low does no world scan, allocations or additional GPU work.
+                if (_effectLights.Detail != EffectsDetail.Low)
+                {
+                    _effectLights.Clear();
+                    long lightNow = ClientNowMilliseconds;
+                    _lightImpacts.RemoveAll(hit => lightNow - hit.ReceivedLocalMs >= 160);
+                    lock (_session.Gate)
+                    {
+                        short flashSector = TrySceneSector(world, me, out var visibleSector) ? visibleSector : (short)-1;
+                        foreach (var blast in world.Explosions) _effectLights.Explosion(blast, flashSector, lightNow, cameraEye);
+                        foreach (var hit in world.HullHits)
+                        {
+                            if (hit.ClusterId == flashSector && _lightImpacts.Count < 64) _lightImpacts.Add(hit);
+                        }
+                        foreach (var hit in _lightImpacts) _effectLights.Impact(hit, flashSector, lightNow, cameraEye);
+                    }
+                }
                 PrepareSceneGeometry(me, cameraEye, dtSec);
                 _gpuTimer?.Start(_frameTelemetry!.FrameId, post: false);
 

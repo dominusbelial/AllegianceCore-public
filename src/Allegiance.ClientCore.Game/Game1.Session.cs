@@ -140,6 +140,8 @@ public sealed partial class Game1
         /// <see cref="State.EffectsQualityResolver.Resolve"/> (shader availability +
         /// GPU probe can drop Volumetric to Enhanced). Never sent on the wire.</summary>
         public State.EffectsQuality? EffectsRequested = null;
+        public State.EffectsDetail? EffectsDetail = null;
+        public bool? BloomOverride = null;
 
         /// <summary>P573 — which volumetric renderer the Volumetric tier uses:
         /// <see cref="State.VolumetricTechnique.RaymarchA"/> (raymarched volume,
