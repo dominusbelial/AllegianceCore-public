@@ -39,6 +39,18 @@ public sealed class PlayerBundleAssetsTests : IDisposable
     }
 
     [Fact]
+    public void ListedFileOpensWhateverCaseTheDataUses()
+    {
+        // Native data comes from Windows: training_1.igc asks for "alephbmp" while the file is Alephbmp.mdl.
+        File.WriteAllText(Path.Combine(_root, "Alephbmp.mdl"), "aleph");
+        var source = new ManifestAssetSource(new DirectoryAssetSource(_root), ["Alephbmp.mdl"]);
+        Assert.True(source.Exists("alephbmp.mdl"));
+        using var stream = source.OpenRead("alephbmp.mdl");
+        Assert.Equal("aleph", new StreamReader(stream).ReadToEnd());
+        Assert.Empty(source.Violations);
+    }
+
+    [Fact]
     public void SkyLayerDoesNotRequireArtworkManifestMembership()
     {
         var art = new ManifestAssetSource(new DirectoryAssetSource(_root), []);
