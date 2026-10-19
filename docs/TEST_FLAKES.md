@@ -4,6 +4,47 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P745B observation (2026-10-18)
+
+The single unfiltered Core sweep observed the following timing failures. Every
+method subsequently passed **3/3 fresh exact-method invocations** on the same
+workstation; the suites were not repeated.
+
+| Method | Isolated evidence |
+| --- | --- |
+| `Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog` | Final 3/3 pass; earlier isolated failures also reproduce on untouched dispatch base (`906d032e`: 2 fail / 1 pass). |
+| `Transport.TcpTransportPriorityLanePoolTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses` | 3/3 pass in the subsequent isolated batch. |
+| `Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses` | 3/3 pass in the subsequent isolated batch. |
+| `Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_distinct_keys_remain_independent` | 3/3 pass. |
+| `Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded` | 3/3 pass in the subsequent isolated batch. |
+| `Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals` | 3/3 pass, both transport theory rows each time. |
+| `ShipUpdateBudgetLiveTests.Ship_dropped_one_tick_is_served_the_next_no_permanent_starvation` | 3/3 pass. |
+| `ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self` | 3/3 pass. |
+| `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_and_destroy_to_teammate_but_not_enemy` | 3/3 pass. |
+| `LiveTeamLobbyTests.Unready_broadcasts_team_ready_false` | 3/3 pass. |
+
+The single ClientCore sweep observed **1,458 pass / 3 fail / 1 opt-in skip**.
+All three failed methods then passed **3/3 fresh exact-method invocations**:
+
+| Method | Full-sweep symptom |
+| --- | --- |
+| `DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock` | One rejected native pose across death/respawn. |
+| `ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target` | Ship had reached sector 1052 instead of 1060 at the deadline. |
+| `ClientWarpApproachDodgeLiveTests.Client_bot_with_shared_dodge_transits_two_hops_through_real_alderan_field` | Ship had reached sector 1053 instead of 1060 at the deadline. |
+
+The default-gated P660 showcase rotation skip was exercised separately with
+`ALLEGIANCE_LIVE_P660_SHOWCASE=1` and passed 3/3. MonoGame completed with
+**2,471 pass / 0 fail / 3 unavailable private Meshy-pack skips**. No second full
+sweep was run.
+
+No transport code, test assertion, timeout, or quarantine changed. Earlier
+rechecks are preserved, including failed ones. The final isolated passes meet
+the brief's light-gate classification; they do not fix these scheduling/socket
+assumptions. See [P745B report](reports/P745B_FINALE_ENDING.md) and
+[verification ledger](reports/P745B_assets/verification.json). Raw logs/TRX are
+under `/tmp/allegiance-evidence/P745B/` (the lane cannot write outside its
+workspace and `/tmp`).
+
 ## R2 observation (2026-10-18)
 
 The R2 installer lane's single unfiltered Core sweep observed these failures.
@@ -2186,3 +2227,44 @@ The single unfiltered Core/ClientCore/MonoGame pass and standalone showcase gate
 - `Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds` — **3/3 isolated passes** after all broad suites.
 
 Evidence: [P740 report](reports/P740_INTERFACE_WAVE5.md), [invocation ledger](reports/P740_assets/verification.json); full failed/isolated TRX and logs: `/tmp/allegiance-evidence/P740/` (per-command paths in the ledger).
+
+## HUD1 validation observation (2026-10-18)
+
+The single unfiltered Core/ClientCore/MonoGame sweep included live/loopback tests.
+The following 13 failures each passed a final triplet of exact-method isolated
+invocations, meeting the HUD1 lane rule. Original full-sweep failures and every
+isolated result remain in the [HUD1 validation summary](reports/HUD1_assets/validation-summary.json).
+No product behavior, assertion, deadline or quarantine trait was changed for these cases.
+
+| Method | Initial isolated triplet | Final qualification |
+|---|---|---|
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity` | pass, pass, pass | 3/3 exact-method pass |
+| `LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission` | pass, pass, pass | 3/3 exact-method pass |
+| `BroadcastSnapshotLoopbackTests.Crowded_real_TCP_session_measures_sim_projection_and_publish_pool` | pass, pass, pass | 3/3 exact-method pass |
+| `Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout` | pass, pass, pass | 3/3 exact-method pass |
+| `LiveTeamLobbyTests.Unready_broadcasts_team_ready_false` | pass, pass, pass | 3/3 exact-method pass |
+| `ShipUpdateBudgetLiveTests.Heavy_updates_are_bounded_to_the_budget_not_proportional_to_ship_count` | pass, pass, pass | 3/3 exact-method pass |
+| `P493EnemySpottingLiveTests.Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer` | pass, pass, pass | 3/3 exact-method pass |
+| `LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector` | pass, pass, pass | 3/3 exact-method pass |
+| `LiveInSpaceEjectTests.Already_a_lifepod_is_truly_killed_not_re_ejected` | pass, pass, pass | 3/3 exact-method pass |
+| `Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded` | pass, pass, pass | 3/3 exact-method pass |
+| `Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog` | pass, pass, pass | 3/3 exact-method pass |
+| `Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent` | pass, fail, pass | 3/3 fresh quiet retries |
+| `P522UndockReseedLiveTests.Three_dock_undock_cycles_zero_rejects_and_zero_SHIP_RESETs_with_reseed` | pass, pass, pass | 3/3 exact-method pass |
+
+These observations establish intermittency, not an underlying cause or fix.
+
+The already-quarantined `ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume`
+is **not waived as a qualified load flake**: its first isolated triplet failed
+3/3, with subsequent unchanged triplets passing only 1/3 and 2/3. An untouched
+dispatch-base archive passed 3/3. Its helper drove `TickSim` in a tight loop
+while reading asynchronously delivered TCP poses. HUD1 adds a bounded pose
+receipt check before each steering sample. The legacy negative control and
+positive transit test each passed **3/3 alone after the test-only fix**.
+Both arrival laws, tick limits and outcome assertions remain unchanged; the
+receipt check adds an assertion. No simulation/transport production code or
+quarantine trait was changed. The original failed sweep was not rerun.
+
+Raw TRX/logs, untouched-base build and retry records: `/tmp/HUD1/raw/` (the
+permitted external evidence root for this sandbox). See the
+[HUD1 report](reports/HUD1_HUD_PARITY.md) for full gate counts and dispositions.

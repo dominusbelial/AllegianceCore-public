@@ -402,6 +402,9 @@ public sealed partial class Game1
         {
             switch (ev.Kind)
             {
+                case ClientSoundEventKind.LastEnemyBase:
+                    if (!LocalSpectating && !SpectatorCameraActive) snd.PlayVoice("vo_player_foundenemybase");
+                    break;
                 case ClientSoundEventKind.ChatVoiceOver:
                     if (ev.Voice is { } voice) snd.PlayVoice(voice);
                     break;

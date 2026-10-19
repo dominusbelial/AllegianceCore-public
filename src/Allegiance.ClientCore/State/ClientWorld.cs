@@ -1787,6 +1787,7 @@ public sealed partial class ClientWorld
         _globalAttributesBySideId.Clear();
         _bucketFundingBySideId.Clear();
         ResearchBriefing = null;
+        _lastBases = new();
         _completedDevelopments.Clear();
         _researchProduction.Clear();
         _retiredResearchProduction.Clear();
@@ -2136,6 +2137,9 @@ public sealed partial class ClientWorld
             case ResearchProduction production:
                 _researchProduction[production.ShipId] = production;
                 _retiredResearchProduction.Remove(production.ShipId);
+                break;
+            case LastBaseNotice lastBase:
+                Apply(lastBase);
                 break;
             case ResearchBriefing briefing:
                 ResearchBriefing = briefing;
@@ -3222,6 +3226,7 @@ public sealed partial class ClientWorld
     /// planner's disappearance pass.</summary>
     private void Apply(StationDestroyed destroyed)
     {
+        RemoveLastBase(destroyed.StationId);
         MarkSnapshotDirty();
         if (!_stations.TryGetValue(destroyed.StationId, out var st)) return;
         bool friendly = IsFriendlyStationSide(st.SideId);
@@ -3237,6 +3242,7 @@ public sealed partial class ClientWorld
     /// world table, mirroring native's <c>station-&gt;SetSide(psideNew)</c>.</summary>
     private void Apply(StationCapture capture)
     {
+        RemoveLastBase(capture.StationId);
         MarkSnapshotDirty();
         if (!_stations.TryGetValue(capture.StationId, out var st)) return;
         // Native appmsg.cpp:674-679: old friendly side takes precedence;
@@ -4387,6 +4393,7 @@ public sealed partial class ClientWorld
         _globalAttributesBySideId.Clear();
         _bucketFundingBySideId.Clear();
         ResearchBriefing = null;
+        _lastBases = new();
         _completedDevelopments.Clear();
         _researchProduction.Clear();
         _retiredResearchProduction.Clear();
@@ -4448,6 +4455,7 @@ public sealed partial class ClientWorld
     /// rotation moves it to NotStarted) → the team lobby.</summary>
     private void Apply(GameOver gameOver)
     {
+        _lastBases = new();
         _waitingForRestart = true;
         InGame = false;
         // P262 — retain the full snapshot (reason + winner + per-side records)
@@ -4507,6 +4515,11 @@ public sealed partial class ClientWorld
     private void Apply(SideInactive m)
     {
         _sideActiveBySideId[m.SideId] = m.BActive;
+        if (!m.BActive) _lastBases = new()
+        {
+            FinaleSecondsRemaining = _lastBases.FinaleSecondsRemaining,
+            Targets = _lastBases.Targets.Where(t => t.SideId != m.SideId).ToArray(),
+        };
         if (m.BChangeAet)
             AllowEmptyTeams = m.BAet;
     }

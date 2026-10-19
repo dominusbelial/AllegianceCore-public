@@ -896,16 +896,9 @@ public sealed partial class Game1
 
     /// <summary>Render the in-flight chat overlay (log panel + active composing
     /// line) on top of the HUD.</summary>
-    private void DrawChat()
+    private void DrawChat(Rendering.HudModel model)
     {
-        _chatRenderer.Draw(
-            BuildChatLines(),
-            _chatScrollOffset,
-            _chatActive ? _chatBuffer.ToString() : string.Empty,
-            _chatActive,
-            _nowSeconds,
-            GraphicsDevice.Viewport,
-            ChatTargetLogic.ComposeLabel(_chatTarget));
+        _chatRenderer.Draw(model, GraphicsDevice.Viewport);
     }
 
     /// <summary>Open the quick-chat menu at its root (<c>mainMenu</c>). No-op if

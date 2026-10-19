@@ -267,9 +267,9 @@ public sealed partial class Game1
         _commandGridRenderer.Draw(objects, view, projection, eye);
     }
 
-    private void DrawCommandHud()
+    private IReadOnlyList<string> BuildCommandHudLines()
     {
-        if (_hudHidden || _directorActive) return;
+        if (_hudHidden || _directorActive) return Array.Empty<string>();
         var lines = new List<string>();
         lock (_session.Gate)
         {
@@ -284,7 +284,13 @@ public sealed partial class Game1
             foreach (short id in world.HighlightedClusters.OrderBy(id => id))
                 if (world.Clusters.TryGetValue(id, out var sector)) lines.Add($"COMMANDER MARK: {sector.Name}");
         }
-        if (lines.Count == 0) return;
+        return lines;
+    }
+
+    private void DrawCommandHud(Rendering.HudModel model)
+    {
+        var lines = model.Context.CommandLines;
+        if (!model.Visible || lines.Count == 0) return;
         _spriteBatch.Begin();
         try
         {

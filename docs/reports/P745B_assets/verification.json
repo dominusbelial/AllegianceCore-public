@@ -1,0 +1,1670 @@
+{
+  "task": "P745B",
+  "finalSourceSha256": {
+    "src/Allegiance.ClientCore.Game/Game1.Audio.cs": "4b14da2fc7c0480bc6ef6362168129bacf93ddabf5800e4736082a6c71975f9c",
+    "src/Allegiance.ClientCore.Game/Game1.LastBase.cs": "579e4f6ddfcb523de06a4d906f244104b71768dab5d9d9064a6470b7133146b6",
+    "src/Allegiance.ClientCore.Game/Game1.Rendering.cs": "9807848e8818e7a828aed987ca004f0f1f2406648216491779984517be608c71",
+    "src/Allegiance.ClientCore.Game/Rendering/HudRenderer.cs": "1427fef607a2b951c1ee59d611b0171280cd3e9fc83d0a576674174d8510356c",
+    "src/Allegiance.ClientCore.Game/Rendering/LastBaseHudView.cs": "b009c9c659560e16b808f3dba12cabae982a155db0ec80d8c81b5f7e3c3df2d8",
+    "src/Allegiance.ClientCore/Session/ConnectionSession.cs": "a9afe681fdee9d4690f2fdcf5246cc2f8378f1f6236c70ccfa8c1463def323f3",
+    "src/Allegiance.ClientCore/State/ClientSoundEvent.cs": "449ea512681717d6eb74ddf62a5d48c795b31b97c9763fdb9a5a882d065dbc37",
+    "src/Allegiance.ClientCore/State/ClientWorld.LastBase.cs": "4126fce527ac4152f4cba6ae912167605ffe8a05ea92c68525eeac6984320d3f",
+    "src/Allegiance.ClientCore/State/ClientWorld.cs": "59b76b1be9d2bf98f790a23664d1c5f94371e726596543a4eccbb96211befcf4",
+    "src/Allegiance.Core/Model/Mission.Countdown.cs": "6c87f65d204f8d4dcd3b737edadb709f7c79b39c5ecf52be2230ee09480c83c8",
+    "src/Allegiance.Core/Model/Mission.LastBase.cs": "09b00f997177bb589b15bdb712e19f7693eb984772618115c47fc521e2d219c2",
+    "src/Allegiance.Core/Wire/FedMessageDumper.cs": "d3f01d3273c1b5ee6d8fffd886ddde52d8b621229e5137cda92d3941a70cf2a9",
+    "src/Allegiance.Core/Wire/LastBaseNotice.cs": "e31d45c513e5af60cdc39ae58562697cc0115dc4907fb2d116a262f4c5e5dc77",
+    "src/Allegiance.Server/Server.Broadcast.cs": "ad9929864d28cf1ad7b73bb9b26c77b5e42b2b3cf358bb58378806be14841219",
+    "src/Allegiance.Server/Server.LastBase.cs": "f86f733c878904f0f1a5311feb369d52eabbabe4c81a467362923842b1ab9c84",
+    "src/Allegiance.Server/Server.Showcase.cs": "405c1daf3c262e6d7e526f979671ad14107aa3501a2bd8ed3d5f4d6624142b8a",
+    "tests/Allegiance.ClientCore.Tests/P745BLiveTests.cs": "bdebe050d12f5f5fc304a0cce0cf86d7a42ba58504c7a1969cff3eb55683cbcf",
+    "tests/Allegiance.ClientCore.Tests/P745BObjectiveTests.cs": "48ef06713992e06811669028b00520de89de8ca59d67e50165c717a5fefae388",
+    "tests/Allegiance.ClientCore.Tests/P745BSkirmishTests.cs": "a24af20c750c9cb6205a544a39fdf03e0f1a889a0cbbf64f73ba59c01d9ccea4",
+    "tests/Allegiance.Core.Tests/P745BFinaleTests.cs": "01b89c44d6de59f1d6d004d98cbe5566a94cd24d038b219ec701f8201a6a3bf1"
+  },
+  "base": "906d032e6a5d136785926e5a4b7a8b0b6c7110ff",
+  "rawEvidence": "/tmp/allegiance-evidence/P745B",
+  "build": {
+    "success": true,
+    "warnings": 0,
+    "errors": 0,
+    "log": "build-final.log"
+  },
+  "aot": {
+    "success": true,
+    "il2026": false,
+    "il3050": false,
+    "log": "aot.log"
+  },
+  "newAndAffected": [
+    {
+      "file": "focused-P733ResearchTests-5-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P733ResearchTests-5-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P733ResearchTests-5-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P733ResearchTests-6-1.trx",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P733ResearchTests-6-2.trx",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P733ResearchTests-6-3.trx",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P739PeriodicTests-2-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P739PeriodicTests-2-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P739PeriodicTests-2-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P739PeriodicTests-3-1.trx",
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P739PeriodicTests-3-2.trx",
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P739PeriodicTests-3-3.trx",
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P739PeriodicTests-4-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P739PeriodicTests-4-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P739PeriodicTests-4-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BFinaleTests-0-1.trx",
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BFinaleTests-0-2.trx",
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BFinaleTests-0-3.trx",
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BFinaleTests-1-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BFinaleTests-1-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BFinaleTests-1-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BLiveTests-3-1.trx",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BLiveTests-3-2.trx",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BLiveTests-3-3.trx",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BLiveTests-4-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BLiveTests-4-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BLiveTests-4-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BObjectiveTests-0-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BObjectiveTests-0-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BObjectiveTests-0-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BObjectiveTests-1-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BObjectiveTests-1-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BObjectiveTests-1-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BObjectiveTests-2-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BObjectiveTests-2-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "focused-P745BObjectiveTests-2-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    }
+  ],
+  "finalHud": [
+    {
+      "file": "final-hud-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "final-hud-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "final-hud-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    }
+  ],
+  "finalObjectives": [
+    {
+      "file": "final-objectives-1.trx",
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "final-objectives-2.trx",
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "final-objectives-3.trx",
+      "total": 3,
+      "passed": 3,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    }
+  ],
+  "finalExactMethods": [
+    {
+      "file": "final-alone-Hud_objectives_use_authoritative_unseen_station_and_clear_on_kill_capture_over_reset-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "final-alone-Hud_objectives_use_authoritative_unseen_station_and_clear_on_kill_capture_over_reset-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "final-alone-Hud_objectives_use_authoritative_unseen_station_and_clear_on_kill_capture_over_reset-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "final-alone-Observers_never_receive_objective_or_cue_and_inactive_sides_clear-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "final-alone-Observers_never_receive_objective_or_cue_and_inactive_sides_clear-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "final-alone-Observers_never_receive_objective_or_cue_and_inactive_sides_clear-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    }
+  ],
+  "skirmish": [
+    {
+      "file": "skirmish-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "skirmish-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "skirmish-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    }
+  ],
+  "localShowcaseRotation": [
+    {
+      "file": "showcase-rotation-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "showcase-rotation-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "showcase-rotation-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    }
+  ],
+  "sweeps": [
+    {
+      "file": "sweep-Allegiance.ClientCore.MonoGame.Tests.trx",
+      "total": 2474,
+      "passed": 2471,
+      "failed": 0,
+      "notExecuted": 3,
+      "skipped": [
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        },
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        },
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        }
+      ],
+      "failures": []
+    },
+    {
+      "file": "sweep-Allegiance.ClientCore.Tests.trx",
+      "total": 1462,
+      "passed": 1458,
+      "failed": 3,
+      "notExecuted": 1,
+      "skipped": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+          "reason": "Set ALLEGIANCE_LIVE_P660_SHOWCASE=1 for the full 15v15 MCP proof"
+        }
+      ],
+      "failures": [
+        {
+          "test": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock",
+          "message": "server rejected 1 native poses across the death/respawn sequence"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 1060\nActual:   1052"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.ClientWarpApproachDodgeLiveTests.Client_bot_with_shared_dodge_transits_two_hops_through_real_alderan_field",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 1060\nActual:   1053"
+        }
+      ]
+    },
+    {
+      "file": "sweep-Allegiance.Core.Tests.trx",
+      "total": 4893,
+      "passed": 4883,
+      "failed": 10,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+          "message": "ordered lane must hold the world data, got 0"
+        },
+        {
+          "test": "Allegiance.Core.Tests.Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals(mode: ThreadPerPeer)",
+          "message": "System.Threading.ThreadStateException : Thread has not been started."
+        },
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 1\nActual:   0"
+        },
+        {
+          "test": "Allegiance.Core.Tests.MissileBroadcastTests.Directly_fired_missile_broadcasts_create_and_destroy_to_teammate_but_not_enemy",
+          "message": "missile spawn Vector3 { X = 128.25714, Y = -278.17947, Z = 39.501774 } must be near the shooter Vector3 { X = 128.25714, Y = -339.407, Z = 39.501774 }"
+        },
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 50\nActual:   49"
+        },
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 50\nActual:   35"
+        },
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_distinct_keys_remain_independent",
+          "message": "distinct coalesce keys must remain independent (found 0: )"
+        },
+        {
+          "test": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+          "message": "B must receive HEAVY_SHIPS_UPDATE"
+        },
+        {
+          "test": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Ship_dropped_one_tick_is_served_the_next_no_permanent_starvation",
+          "message": "the ship dropped at tick 0 (8103) must be served at tick 1 (deviation bump rose it to the front)"
+        },
+        {
+          "test": "Allegiance.Core.Tests.LiveTeamLobbyTests.Unready_broadcasts_team_ready_false",
+          "message": "Assert.Contains() Failure: Filter not matched in collection\nCollection: []"
+        }
+      ]
+    }
+  ],
+  "neverParks": {
+    "changed": [
+      {
+        "file": "never-parks-changed-1.trx",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": [],
+        "failures": []
+      },
+      {
+        "file": "never-parks-changed-2.trx",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": [],
+        "failures": []
+      },
+      {
+        "file": "never-parks-changed-3.trx",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": [],
+        "failures": []
+      },
+      {
+        "file": "never-parks-changed-4.trx",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": [],
+        "failures": []
+      },
+      {
+        "file": "never-parks-changed-5.trx",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": [],
+        "failures": []
+      }
+    ],
+    "base": [
+      {
+        "file": "never-parks-base-1.trx",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": [],
+        "failures": []
+      },
+      {
+        "file": "never-parks-base-2.trx",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": [],
+        "failures": []
+      },
+      {
+        "file": "never-parks-base-3.trx",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": [],
+        "failures": []
+      },
+      {
+        "file": "never-parks-base-4.trx",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": [],
+        "failures": []
+      },
+      {
+        "file": "never-parks-base-5.trx",
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": [],
+        "failures": []
+      }
+    ]
+  },
+  "sweepRechecks": [
+    {
+      "file": "recheck-budget-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-budget-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-budget-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-0-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-0-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-0-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-1-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-1-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-1-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-2-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-2-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-2-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-core-0-1.trx",
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+          "message": "ordered lane must hold the world data, got 0"
+        }
+      ]
+    },
+    {
+      "file": "recheck-core-0-2.trx",
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+          "message": "ordered lane must hold the world data, got 0"
+        }
+      ]
+    },
+    {
+      "file": "recheck-core-0-3.trx",
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+          "message": "ordered lane must hold the world data, got 0"
+        }
+      ]
+    },
+    {
+      "file": "recheck-core-1-1.trx",
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 50\nActual:   49"
+        }
+      ]
+    },
+    {
+      "file": "recheck-core-1-2.trx",
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 50\nActual:   49"
+        }
+      ]
+    },
+    {
+      "file": "recheck-core-1-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-core-2-1.trx",
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 50\nActual:   35"
+        }
+      ]
+    },
+    {
+      "file": "recheck-core-2-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-core-2-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-core-3-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-core-3-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-core-3-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-core-4-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-core-4-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-core-4-3.trx",
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 1\nActual:   0"
+        }
+      ]
+    },
+    {
+      "file": "recheck-core-5-1.trx",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-core-5-2.trx",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-core-5-3.trx",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "extra-core-0-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "extra-core-0-2.trx",
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+          "message": "ordered lane must hold the world data, got 0"
+        }
+      ]
+    },
+    {
+      "file": "extra-core-0-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "extra-core-1-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "extra-core-1-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "extra-core-1-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "extra-core-2-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "extra-core-2-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "extra-core-2-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "extra-core-3-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "extra-core-3-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "extra-core-3-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "extra-core-4-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "extra-core-4-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "extra-core-4-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "final-ordered-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "final-ordered-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "final-ordered-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "late-LiveTeamLobbyTests.Unready_broadcasts_team_ready_false-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "late-LiveTeamLobbyTests.Unready_broadcasts_team_ready_false-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "late-LiveTeamLobbyTests.Unready_broadcasts_team_ready_false-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "late-MissileBroadcastTests.Directly_fired_missile_broadcasts_create_and_destroy_to_teammate_but_not_enemy-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "late-MissileBroadcastTests.Directly_fired_missile_broadcasts_create_and_destroy_to_teammate_but_not_enemy-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "late-MissileBroadcastTests.Directly_fired_missile_broadcasts_create_and_destroy_to_teammate_but_not_enemy-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    }
+  ],
+  "clientSweepRechecks": [
+    {
+      "file": "recheck-client-0-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-0-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-0-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-1-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-1-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-1-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-2-1.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-2-2.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    },
+    {
+      "file": "recheck-client-2-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    }
+  ],
+  "baselineTransport": [
+    {
+      "file": "baseline-ordered-1.trx",
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+          "message": "ordered lane must hold the world data, got 0"
+        }
+      ]
+    },
+    {
+      "file": "baseline-ordered-2.trx",
+      "total": 1,
+      "passed": 0,
+      "failed": 1,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+          "message": "ordered lane must hold the world data, got 0"
+        }
+      ]
+    },
+    {
+      "file": "baseline-ordered-3.trx",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": [],
+      "failures": []
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "objective-1440p.png",
+      "width": 2560,
+      "height": 1440,
+      "bytes": 486578,
+      "sha256": "d71054eb4d0741969f149eae06ccc2f659a00bfa901210db288f680584f5fd4f"
+    },
+    {
+      "file": "objective-route-1440p.png",
+      "width": 2560,
+      "height": 1440,
+      "bytes": 437262,
+      "sha256": "29b1c3033429c0d27c36d9153b50fb8eb2af67d0b242eb507d12c5db5542d987"
+    },
+    {
+      "file": "spectator-1440p.png",
+      "width": 2560,
+      "height": 1440,
+      "bytes": 196767,
+      "sha256": "616bfc3e851dc4a40f6578599aa262e526f2c173929301714a035cb3299d6839"
+    }
+  ],
+  "assetBytes": 1120607,
+  "fullSweepFailureQualification": [
+    {
+      "test": "Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock",
+      "latestThree": [
+        {
+          "file": "recheck-client-0-1.trx",
+          "endTime": "2026-10-18T23:02:44.4103921-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "recheck-client-0-2.trx",
+          "endTime": "2026-10-18T23:02:49.8036877-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "recheck-client-0-3.trx",
+          "endTime": "2026-10-18T23:02:55.1493514-05:00",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "latestThree": [
+        {
+          "file": "recheck-client-1-1.trx",
+          "endTime": "2026-10-18T23:02:57.0998384-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "recheck-client-1-2.trx",
+          "endTime": "2026-10-18T23:02:59.1179663-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "recheck-client-1-3.trx",
+          "endTime": "2026-10-18T23:03:01.0719311-05:00",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachDodgeLiveTests.Client_bot_with_shared_dodge_transits_two_hops_through_real_alderan_field",
+      "latestThree": [
+        {
+          "file": "recheck-client-2-1.trx",
+          "endTime": "2026-10-18T23:03:03.4025654-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "recheck-client-2-2.trx",
+          "endTime": "2026-10-18T23:03:05.6549359-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "recheck-client-2-3.trx",
+          "endTime": "2026-10-18T23:03:07.8630820-05:00",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+      "latestThree": [
+        {
+          "file": "final-ordered-1.trx",
+          "endTime": "2026-10-18T22:14:05.7991467-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "final-ordered-2.trx",
+          "endTime": "2026-10-18T22:14:07.2712715-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "final-ordered-3.trx",
+          "endTime": "2026-10-18T22:14:08.7605902-05:00",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals(mode: ThreadPerPeer)",
+      "latestThree": [
+        {
+          "file": "recheck-core-5-1.trx",
+          "endTime": "2026-10-18T22:09:59.2505215-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "recheck-core-5-2.trx",
+          "endTime": "2026-10-18T22:10:01.1872903-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "recheck-core-5-3.trx",
+          "endTime": "2026-10-18T22:10:02.9501807-05:00",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded",
+      "latestThree": [
+        {
+          "file": "extra-core-3-1.trx",
+          "endTime": "2026-10-18T22:11:42.0162881-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "extra-core-3-2.trx",
+          "endTime": "2026-10-18T22:11:43.5188760-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "extra-core-3-3.trx",
+          "endTime": "2026-10-18T22:11:45.0236521-05:00",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.MissileBroadcastTests.Directly_fired_missile_broadcasts_create_and_destroy_to_teammate_but_not_enemy",
+      "latestThree": [
+        {
+          "file": "late-MissileBroadcastTests.Directly_fired_missile_broadcasts_create_and_destroy_to_teammate_but_not_enemy-1.trx",
+          "endTime": "2026-10-18T22:19:01.9341066-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "late-MissileBroadcastTests.Directly_fired_missile_broadcasts_create_and_destroy_to_teammate_but_not_enemy-2.trx",
+          "endTime": "2026-10-18T22:19:04.1022224-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "late-MissileBroadcastTests.Directly_fired_missile_broadcasts_create_and_destroy_to_teammate_but_not_enemy-3.trx",
+          "endTime": "2026-10-18T22:19:06.2474582-05:00",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+      "latestThree": [
+        {
+          "file": "extra-core-1-1.trx",
+          "endTime": "2026-10-18T22:11:32.4231778-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "extra-core-1-2.trx",
+          "endTime": "2026-10-18T22:11:34.1585388-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "extra-core-1-3.trx",
+          "endTime": "2026-10-18T22:11:35.9002199-05:00",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+      "latestThree": [
+        {
+          "file": "extra-core-2-1.trx",
+          "endTime": "2026-10-18T22:11:37.4816890-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "extra-core-2-2.trx",
+          "endTime": "2026-10-18T22:11:39.0090520-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "extra-core-2-3.trx",
+          "endTime": "2026-10-18T22:11:40.5307869-05:00",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_distinct_keys_remain_independent",
+      "latestThree": [
+        {
+          "file": "recheck-core-3-1.trx",
+          "endTime": "2026-10-18T22:09:27.9210049-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "recheck-core-3-2.trx",
+          "endTime": "2026-10-18T22:09:32.4397360-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "recheck-core-3-3.trx",
+          "endTime": "2026-10-18T22:09:36.8986621-05:00",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+      "latestThree": [
+        {
+          "file": "extra-core-4-1.trx",
+          "endTime": "2026-10-18T22:11:46.6290524-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "extra-core-4-2.trx",
+          "endTime": "2026-10-18T22:11:48.2021368-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "extra-core-4-3.trx",
+          "endTime": "2026-10-18T22:11:49.7539215-05:00",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Ship_dropped_one_tick_is_served_the_next_no_permanent_starvation",
+      "latestThree": [
+        {
+          "file": "recheck-budget-1.trx",
+          "endTime": "2026-10-18T22:14:01.3358190-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "recheck-budget-2.trx",
+          "endTime": "2026-10-18T22:14:02.8393784-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "recheck-budget-3.trx",
+          "endTime": "2026-10-18T22:14:04.2989742-05:00",
+          "outcome": "Passed"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveTeamLobbyTests.Unready_broadcasts_team_ready_false",
+      "latestThree": [
+        {
+          "file": "late-LiveTeamLobbyTests.Unready_broadcasts_team_ready_false-1.trx",
+          "endTime": "2026-10-18T22:19:07.7627904-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "late-LiveTeamLobbyTests.Unready_broadcasts_team_ready_false-2.trx",
+          "endTime": "2026-10-18T22:19:09.2394702-05:00",
+          "outcome": "Passed"
+        },
+        {
+          "file": "late-LiveTeamLobbyTests.Unready_broadcasts_team_ready_false-3.trx",
+          "endTime": "2026-10-18T22:19:10.7402502-05:00",
+          "outcome": "Passed"
+        }
+      ]
+    }
+  ]
+}

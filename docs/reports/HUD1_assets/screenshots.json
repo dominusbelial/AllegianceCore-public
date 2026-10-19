@@ -1,0 +1,82 @@
+[
+  {
+    "scene": "flight",
+    "resolution": "1920x1080",
+    "source_png": "/tmp/HUD1/raw/live-final/1920x1080-flight-combat/proof_t005.0_sFejfar_ccockpit.png",
+    "source_sha256": "319490405f3b89442f6a7d6245671ee800d6a5a217de64229925ce286a93dc99",
+    "file": "flight-1920x1080.jpg",
+    "bytes": 83486,
+    "encoding": "JPEG quality82 4:4:4; no crop or resize",
+    "note": "Real window backbuffer captured during HUD1; no crop or resize"
+  },
+  {
+    "scene": "docked",
+    "resolution": "1920x1080",
+    "source_png": "/tmp/HUD1/raw/live-final/1920x1080-docked/proof_t006.0_sFejfar_ccockpit.png",
+    "source_sha256": "b2f2be5bde5db63b26cefc258dbb2f3f0cc519d1466926e81b0eedff5c2720dd",
+    "file": "docked-1920x1080.jpg",
+    "bytes": 144692,
+    "encoding": "JPEG quality82 4:4:4; no crop or resize",
+    "note": "Real window backbuffer captured during HUD1; no crop or resize"
+  },
+  {
+    "scene": "lifepod",
+    "resolution": "1920x1080",
+    "source_png": "/tmp/HUD1/raw/live-review/1920x1080-pod-3/proof_t014.2_sFejfar_ccockpit.png",
+    "source_sha256": "948bdc58c48039d3ca0a9019b60c602aa872b292757efbd1efdf33fb71cf1567",
+    "file": "lifepod-1920x1080.jpg",
+    "bytes": 96141,
+    "encoding": "JPEG quality82 4:4:4; no crop or resize",
+    "note": "Real window backbuffer captured during HUD1; no crop or resize"
+  },
+  {
+    "scene": "flight",
+    "resolution": "2560x1440",
+    "source_png": "/tmp/HUD1/raw/live-final/2560x1440-flight-combat/proof_t007.4_sFejfar_ccockpit.png",
+    "source_sha256": "089c4a7b14a4a964e9583d3f0ad020d8440427758f69aef6dc8787178cc6ccee",
+    "file": "flight-2560x1440.jpg",
+    "bytes": 103366,
+    "encoding": "JPEG quality82 4:4:4; no crop or resize",
+    "note": "Real window backbuffer captured during HUD1; no crop or resize"
+  },
+  {
+    "scene": "docked",
+    "resolution": "2560x1440",
+    "source_png": "/tmp/HUD1/raw/live-final/2560x1440-docked/proof_t006.0_sFejfar_ccockpit.png",
+    "source_sha256": "694d401b9a9ad742bf115d7d663c501f45196f723d86cbb63303b27b0988ba8b",
+    "file": "docked-2560x1440.jpg",
+    "bytes": 214920,
+    "encoding": "JPEG quality82 4:4:4; no crop or resize",
+    "note": "Real window backbuffer captured during HUD1; no crop or resize"
+  },
+  {
+    "scene": "lifepod",
+    "resolution": "2560x1440",
+    "source_png": "/tmp/HUD1/raw/live-review/2560x1440-pod-3/proof_t013.6_sFejfar_ccockpit.png",
+    "source_sha256": "cc4dd12c25271c24b3d0d382782c41ea4dd0ff3f8bb7d3a9b66ad13f4e1cd156",
+    "file": "lifepod-2560x1440.jpg",
+    "bytes": 180736,
+    "encoding": "JPEG quality82 4:4:4; no crop or resize",
+    "note": "Real window backbuffer captured during HUD1; no crop or resize"
+  },
+  {
+    "scene": "combat",
+    "resolution": "1920x1080",
+    "source_png": "/tmp/HUD1/raw/live-review/1920x1080-combat/proof_t015.0_sFejfar_ccockpit.png",
+    "source_sha256": "5551b393d2e3b5fdb9d29650e6bd1af0966a8c9401b5eeff5223fd73657c38d6",
+    "file": "combat-1920x1080.jpg",
+    "bytes": 121752,
+    "encoding": "JPEG quality82 4:4:4; no crop or resize",
+    "note": "Real window backbuffer captured during HUD1; no crop or resize"
+  },
+  {
+    "scene": "combat",
+    "resolution": "2560x1440",
+    "source_png": "/tmp/HUD1/raw/live-review/2560x1440-combat/proof_t020.1_sFejfar_ccockpit.png",
+    "source_sha256": "db81c6e2c4707d38a41d1c6848d4a2d1112ef8162dffd8ff08f27f8a70c22cdf",
+    "file": "combat-2560x1440.jpg",
+    "bytes": 136699,
+    "encoding": "JPEG quality82 4:4:4; no crop or resize",
+    "note": "Real window backbuffer captured during HUD1; no crop or resize"
+  }
+]

@@ -41,6 +41,7 @@ public sealed class HUDPolishHarness : Game
     private const int Height = 720;
     private readonly string _outDir;
     private int _failures;
+    public int Failures => _failures;
 
     public HUDPolishHarness(string outDir)
     {
@@ -69,11 +70,51 @@ public sealed class HUDPolishHarness : Game
         ProveQ1ThrustColor();
         ProveQ2LeaderCommandClearance();
         ProveQ3P333DisabledGate(artwork);
+        ProveHud1DamageAndWarnings();
 
         Console.WriteLine(_failures == 0
             ? "[proof] ALL P409 PROOFS PASSED"
             : $"[proof] {_failures} P409 PROOF(S) FAILED");
         Exit();
+    }
+
+    // HUD-1: exercise the real native red variants and BOTH artwork/fallback
+    // warning paths. The background damage wash is too dim to pass the red
+    // pixel threshold, so this detects a missing gauge variant, not the wash.
+    private void ProveHud1DamageAndWarnings()
+    {
+        var frame = AllZeroFrame() with { HullFraction = 0.8f, ShieldFraction = 0.8f };
+        var flash = Capture(() => _hud!.Draw(HudModel.Create(frame with { Flashing = true }), GraphicsDevice.Viewport));
+        Require(At(flash, 2, Height / 2).R < 80, "HUD1 damage wash stays translucent (premultiplied alpha)");
+        foreach (var offset in new[] { (-65.5f, 35.5f), (65.5f, 35.5f) })
+        {
+            var anchor = Anchor(offset.Item1, offset.Item2);
+            int red = 0;
+            for (int y = (int)(anchor.Y - GaugeEdge / 2); y < anchor.Y + GaugeEdge / 2; y++)
+                for (int x = (int)(anchor.X - GaugeEdge / 2); x < anchor.X + GaugeEdge / 2; x++)
+                {
+                    var c = At(flash, x, y);
+                    if (c.R > 160 && c.G < 100 && c.B < 100) red++;
+                }
+            Require(red > 15 && red < GaugeEdge * GaugeEdge / 2,
+                $"HUD1 native damage gauge at {offset}: {red} red pixels");
+        }
+        foreach (bool withArt in new[] { true, false })
+        {
+            var renderer = withArt ? _hud! : new HudRenderer(_sb, _white, _small, _big);
+            var pixels = Capture(() => renderer.Draw(HudModel.Create(frame with
+            {
+                WarningMask = Allegiance.Core.Sim.ShipWarningMask.OutOfBounds
+            }), GraphicsDevice.Viewport));
+            int warningPixels = 0;
+            for (int y = (int)(Height * 0.19f); y < Height * 0.19f + _small.LineSpacing; y++)
+                for (int x = Width / 2 - 160; x < Width / 2 + 160; x++)
+                {
+                    var c = At(pixels, x, y);
+                    if (c.R > 160 && c.R > c.G * 1.4f) warningPixels++;
+                }
+            Require(warningPixels > 15, $"HUD1 boundary warning with artwork={withArt}: {warningPixels} pixels");
+        }
     }
 
     // ---------------------------------------------------------------- helpers

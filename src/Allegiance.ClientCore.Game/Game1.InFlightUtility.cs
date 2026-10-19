@@ -128,12 +128,12 @@ public sealed partial class Game1
     /// effort — no part-type metadata is available in flight, so entries render
     /// as "Part #id xN" (honest, never fabricated). Skipped when the hold is
     /// empty and nothing is selected.</summary>
-    private void DrawCargoHud()
+    private string? BuildCargoHudText()
     {
-        if (_directorActive || _state != ClientState.Flying) return;
+        if (_directorActive || _state != ClientState.Flying) return null;
         var cargo = OwnCargo();
         var mounts = CargoSelector.OccupiedMounts(cargo);
-        if (cargo.Count == 0 && _selectedCargoMount >= 0) return;
+        if (cargo.Count == 0 && _selectedCargoMount >= 0) return null;
 
         // Compact hold list: "@<mount>#<id>x<N>" per occupied slot.
         var sb = new System.Text.StringBuilder("CARGO:");
@@ -158,7 +158,12 @@ public sealed partial class Game1
         if (line.Any(ch => ch < 32 || ch > 126))
             line = new string(line.Select(ch => ch < 32 || ch > 126 ? '?' : ch).ToArray());
 
-        float w = GraphicsDevice.Viewport.Width;
+        return line;
+    }
+
+    private void DrawCargoHud(Rendering.HudModel model)
+    {
+        if (!model.Visible || model.Context.CargoLine is not { } line) return;
         float h = GraphicsDevice.Viewport.Height;
         var sz = _hudSmall.MeasureString(line);
         float x = 20f, y = h - 132f;

@@ -121,6 +121,16 @@ public sealed class RadarBracketRenderer
         }
     }
 
+    /// <summary>Classic radar skin for the shared HUD snapshot.</summary>
+    public void Draw(HudModel model, Viewport viewport)
+    {
+        if (!model.FlightVisible) return;
+        Draw(model.Context.Contacts.Select(c => new RadarContact((RadarContactType)c.Kind,
+            new(c.Position.X, c.Position.Y), c.OnScreen, c.Opacity,
+            c.SideColor is { } color ? new Color(color.R, color.G, color.B, color.A) : null,
+            c.Selected, c.BuildSpot)).ToArray(), viewport, model.Context.RadarPulse);
+    }
+
     /// <summary>Resolve the colour a contact should be drawn with. A contact
     /// that supplies a real <paramref name="sideColour"/> (P372 — every ship
     /// carries its real side colour; native colours every side-bearing blip by

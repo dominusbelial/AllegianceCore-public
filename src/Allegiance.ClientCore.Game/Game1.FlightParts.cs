@@ -162,10 +162,10 @@ public sealed partial class Game1
         _boosterToggled = false;
     }
 
-    private void DrawFlightPartsHud()
+    private string? BuildFlightPartsHudText()
     {
-        if (LocalSpectating) return;
-        if (_directorActive || _state != ClientState.Flying) return;
+        if (LocalSpectating) return null;
+        if (_directorActive || _state != ClientState.Flying) return null;
         var inventory = OwnInventory();
         string text = $"WEAPONS: {(_groupFire ? "GROUP" : $"SINGLE {_selectedMount + 1}")}  BOOST: {(_boosterToggled ? "ON" : "OFF")}";
         foreach (var p in inventory.Where(p => p.MountId < FixedMountCount()
@@ -173,6 +173,12 @@ public sealed partial class Game1
             text += $"  [{p.MountId + 1}:{ResolveFlightPart(p.PartId)?.Name ?? $"#{p.PartId}"}]";
         if (_inventorySelection is { } selected && inventory.Contains(selected))
             text += $"  PART: {ResolveFlightPart(selected.PartId)?.Name ?? $"#{selected.PartId}"} @{unchecked((sbyte)selected.MountId)} x{selected.Amount}";
+        return text;
+    }
+
+    private void DrawFlightPartsHud(Rendering.HudModel model)
+    {
+        if (!model.Visible || model.Context.FlightPartsLine is not { } text) return;
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try { _spriteBatch.DrawString(_hudSmall, text, new Vector2(20, GraphicsDevice.Viewport.Height - 158), Color.LightCyan); }
         finally { _spriteBatch.End(); }

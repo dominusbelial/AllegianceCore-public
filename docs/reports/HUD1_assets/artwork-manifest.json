@@ -1,0 +1,272 @@
+[
+  {
+    "file": "/home/domingo/Development/Artwork/HullGaugebmp.mdl",
+    "bytes": 32888,
+    "sha256": "71a888f8bb71033cbba1bec90b4c9d6b891340705fd77f5f7207685747d140da",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ShieldGaugebmp.mdl",
+    "bytes": 32888,
+    "sha256": "c81eddb269460769e27247060eb9de55a689d543ca04b685c5efeb6bd13067b6",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/EnergyGaugebmp.mdl",
+    "bytes": 32888,
+    "sha256": "b6d57f4bb038fb193e4104f1ec2b16df0d8ee8ba224a037c277a3ea5db95c6ae",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/FuelGaugebmp.mdl",
+    "bytes": 32888,
+    "sha256": "27d810eb075fb1ef853c0ca9e1988c84e749fe3131aacf87f53ef3e736b4f030",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/AmmoGaugebmp.mdl",
+    "bytes": 32888,
+    "sha256": "9a80fed351c49573057cf228bc629aad8723c553f93553a2ae8142af67246d07",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ThrustGaugebmp.mdl",
+    "bytes": 32888,
+    "sha256": "10aaaed48b1571972b53816713b4bf27f48daea7d10213c9746806be4ac128f2",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/TargetHullGaugebmp.mdl",
+    "bytes": 32892,
+    "sha256": "ac63bd52a4293832af072a1c7cf7fd52e0490bc92fa2fa653f33cff7eb9f2823",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/TargetShieldGaugebmp.mdl",
+    "bytes": 32896,
+    "sha256": "1d2ac83a4b3f8b685a578eb59f942ea192c5df6bf09ec0893d8876fe039a93e5",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/hullgaugeredbmp.mdl",
+    "bytes": 32888,
+    "sha256": "841be230fb2afa5d09f9c3d2125df5be00767b9cb9a3720654c81c2d97276673",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/shieldgaugeredbmp.mdl",
+    "bytes": 32892,
+    "sha256": "bc4dcc1a33ae0fb0b7ac10c4a735f71b2e393dcc21f76f957f4336843a0cecb3",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/dialog.mdl",
+    "bytes": 161914,
+    "sha256": "59baca5cdca157de73d1af2024d3311c0c971d4e91c3d8d17783cc4c0c7e9f34",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/cortui_huds.mdl",
+    "bytes": 400,
+    "sha256": "920dee3333652f4d10a911e4d60f8abdddb0fe7680c7b9233e025cdab3176c29",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/conejectpoddisplaybmp.mdl",
+    "bytes": 15264,
+    "sha256": "9207ed74219ab83be4e566f4613ba98e3ad901e265d824f4be6cf1ffcbff17ae",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/deathbannerbmp.mdl",
+    "bytes": 6920,
+    "sha256": "c3050e138107e6b1c8c15a9479ccbf30c090c095bcf58bb9ad0272970a2232ca",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/softgaugebmp.mdl",
+    "bytes": 536,
+    "sha256": "4acf9ab22d4cf9432185dc93b6e9ed4d1b33aadd21087af5a7f5d8ae27e2c422",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/TargetHudbmp.mdl",
+    "bytes": 131192,
+    "sha256": "a68664d79cc5cf735b898da83da46c2578d54c669e456b28e03a620a6e29438b",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/VeryCenterHudbmp.mdl",
+    "bytes": 5428,
+    "sha256": "c03d8563ea549635a925244859313a97ade2fc52cce69150d194bf5f24ec9869",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/conshipdisplaybmp.mdl",
+    "bytes": 15764,
+    "sha256": "89c43ad64ed853484dfe6de3fba92b776112a4cf9e085a3572f50b6144e000f2",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/contargetdisplaybmp.mdl",
+    "bytes": 24412,
+    "sha256": "0ebc2c4e4d4775bb858f5823b52097fd7f93969627c1e6a08938d754873843a2",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/concommdisplaybmp.mdl",
+    "bytes": 74124,
+    "sha256": "ee1bc172fdc7fb0caa6c8257a47ce7fbc011799381ccf1780aff0eed485fa12c",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/constationdisplay1bmp.mdl",
+    "bytes": 23060,
+    "sha256": "32aee6d598b59057f5e29d356b774698d3f90b68c4be43154d574925ae73bb29",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/hullgauge2bmp.mdl",
+    "bytes": 32888,
+    "sha256": "a8bb375fe0289ebbf75de31909f2dfd28b47e243df3958e6e84d167692d8fd1d",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/shieldgauge2bmp.mdl",
+    "bytes": 32888,
+    "sha256": "0ff4ac40c5ccbc390c6ce4ee6f272ec04fce544c1729acb819928714b41c570a",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/fuelgauge2bmp.mdl",
+    "bytes": 32888,
+    "sha256": "0382946c9686429628c5cb198a1a0ed7f00f7d3afa01b9faf12e8bc5935bc6b4",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/ammogauge2bmp.mdl",
+    "bytes": 32888,
+    "sha256": "3269fa3c5ce7c975d7b9cf0a3e34652e10d4ec89ad1f3512f05fef0d99030885",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/energygauge2bmp.mdl",
+    "bytes": 32888,
+    "sha256": "d31596a7b7ec409918fcb6537d214eee43b09b5c14846fc7dfe272d0a4891cae",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/thrustgauge2bmp.mdl",
+    "bytes": 32888,
+    "sha256": "e1843aaef97cb140d1949d9e0a2cbad8f2f7705b95276b3ff872f082c17207fa",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/plockbmp.mdl",
+    "bytes": 8308,
+    "sha256": "bb1515387018c95daeb6869fe40c2a506f051bcb799d28f19bd3a2e87e95ccef",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/lockedbmp.mdl",
+    "bytes": 8308,
+    "sha256": "c5cb5ce900b9443044ce754aa9087e5905b461cd84569e90e0510932434e483d",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/directionbmp.mdl",
+    "bytes": 2168,
+    "sha256": "19f30985b67848b9f11afb64240998e6acebea9b757ccec6f9149344f79e1b06",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/directioninbmp.mdl",
+    "bytes": 8312,
+    "sha256": "aaef5cc9150a122f5626caf85023ca9e64a791fcd48432f476cebee187826a30",
+    "kind": "binary MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/invdefault.mdl",
+    "bytes": 1821,
+    "sha256": "99ebbbd2b5738bb88f959b5958e403ca7e8142a59760adfe79bfcab3dec6d4e1",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/invsweapon.mdl",
+    "bytes": 2849,
+    "sha256": "06f19a67e72639908f4d868ec15bf9a18c059cc35b889a845326053bd7cdee09",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/invsmissile.mdl",
+    "bytes": 3512,
+    "sha256": "95661e3f2787e3919f7f8a337c3c3824ea21ecccf5446d41345e1df959ec180d",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/invsmine.mdl",
+    "bytes": 2990,
+    "sha256": "77a5c4d95268b11b37775eb99271eaeff9f06879cef6e9df583373af10097869",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/invshield.mdl",
+    "bytes": 2157,
+    "sha256": "e118f6e9ad12931845aaee4b5b50b100cdac9d7304e240347eac833647c892f3",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/invafterburn.mdl",
+    "bytes": 2380,
+    "sha256": "808891cd6ae66507be530aa24670e0036fd180311661c6bb4945bf977fe1a17d",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/invcloak.mdl",
+    "bytes": 2253,
+    "sha256": "3938fa35a24741ec9f41bc166279f85a8eb3322e6a4a99da52d04ff540d3878f",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/invchaff.mdl",
+    "bytes": 2990,
+    "sha256": "77a5c4d95268b11b37775eb99271eaeff9f06879cef6e9df583373af10097869",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/invturret.mdl",
+    "bytes": 424,
+    "sha256": "b88f05b5c242fa0eeae9c9a7ae97a9e40b8bd56db4128b0c5e83bff312fa8426",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/invobserver.mdl",
+    "bytes": 293,
+    "sha256": "b01db3dc31b7b379480c02d4602d808f4b0ddb5ab557c181a071bc2fd52b132b",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/invemptyweapon.mdl",
+    "bytes": 357,
+    "sha256": "a1ffb7cfeeba15af71ac4d7b6ffc152d86bf8bcc66d1255bf181f24d4f14559a",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/inventorytopbmp.mdl",
+    "bytes": 107,
+    "sha256": "c245919845f12dae7cf7cb2904fb9bba799fdd35eeb21d84687440e4e4a35a21",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/inventorylinebkgndbmp.mdl",
+    "bytes": 113,
+    "sha256": "dc361eb33c237865bf88ebba458ac2af2b0a3f0bec15876512c826f6c1b1825b",
+    "kind": "text MDL"
+  },
+  {
+    "file": "/home/domingo/Development/Artwork/inventorybottombmp.mdl",
+    "bytes": 110,
+    "sha256": "5390219237cf321ea17abfefe667dde24e606cb011fc59258e4fd9588f2d472b",
+    "kind": "text MDL"
+  }
+]

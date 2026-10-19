@@ -114,4 +114,7 @@ public readonly record struct HudFrame(
     // draws "TIME DILATION nn%" only while < 100 (i.e. the server is slowing the
     // game clock under load); 100 hides it entirely.
     float TimeDilationPercent = 100f,
-    Allegiance.Core.Sim.ShipWarningMask WarningMask = Allegiance.Core.Sim.ShipWarningMask.None);
+    Allegiance.Core.Sim.ShipWarningMask WarningMask = Allegiance.Core.Sim.ShipWarningMask.None,
+    // Native playerThrottle overrides the cruise setting while a movement or
+    // afterburner button is down (WinTrek.cpp:8461-8467).
+    int ControlState = 0);

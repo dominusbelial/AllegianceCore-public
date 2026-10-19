@@ -5,21 +5,6 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
-/// The six core flight gauges this port's HUD shows today. Ordered semantically
-/// (not by layout); each maps to a real original-game <c>*Gaugebmp.mdl</c>
-/// texture (see <see cref="GaugeTextureSource"/>).
-/// </summary>
-public enum GaugeKind
-{
-    Hull,
-    Shield,
-    Energy,
-    Fuel,
-    Ammo,
-    Thrust,
-}
-
-/// <summary>
 /// Resolves which real original-game <c>.mdl</c> gauge artwork backs each
 /// <see cref="GaugeKind"/>, and where that artwork lives. Mirrors the port's
 /// established runtime-asset convention (see
@@ -78,6 +63,7 @@ public static class GaugeTextureSource
 public sealed class GaugeTextures
 {
     private readonly Dictionary<GaugeKind, Texture2D> _byKind = [];
+    private readonly Dictionary<GaugeKind, Texture2D> _damage = [];
 
     /// <summary>True when every one of the six gauges decoded and loaded.</summary>
     public bool AllLoaded => _byKind.Count == 6;
@@ -86,6 +72,11 @@ public sealed class GaugeTextures
     /// decode (the renderer falls back to procedural bars for a missing kind).</summary>
     public Texture2D? For(GaugeKind kind) =>
         _byKind.TryGetValue(kind, out var tex) ? tex : null;
+
+    /// <summary>Native red damage artwork (dialog.mdl:2416-2506). Fall back
+    /// to the normal gauge when a reduced artwork pack lacks the variant.</summary>
+    public Texture2D? For(GaugeKind kind, bool damageFlash) =>
+        damageFlash && _damage.TryGetValue(kind, out var tex) ? tex : For(kind);
 
     /// <summary>Count of gauges successfully loaded (diagnostics).</summary>
     public int LoadedCount => _byKind.Count;
@@ -105,13 +96,21 @@ public sealed class GaugeTextures
         var result = new GaugeTextures();
         foreach (GaugeKind kind in Enum.GetValues<GaugeKind>())
         {
-            string rel = GaugeTextureSource.MdlStemFor(kind) + ".mdl";
+            Load(kind, GaugeTextureSource.MdlStemFor(kind), false);
+        }
+        Load(GaugeKind.Hull, "hullgaugeredbmp", true);
+        Load(GaugeKind.Shield, "shieldgaugeredbmp", true);
+        return result;
+
+        void Load(GaugeKind kind, string stem, bool damage)
+        {
+            string rel = stem + ".mdl";
             try
             {
                 if (!assets.Exists(rel))
                 {
                     Console.WriteLine($"[monogame] gauge '{kind}' missing ({rel}) — procedural fallback");
-                    continue;
+                    return;
                 }
                 var tex = MdlTextureDecoder.Decode(
                     AssetSources.ReadAllBytes(assets, rel),
@@ -127,13 +126,12 @@ public sealed class GaugeTextures
                     colors[i] = new Color(rgba[b], rgba[b + 1], rgba[b + 2], rgba[b + 3]);
                 }
                 surface.SetData(colors);
-                result._byKind[kind] = surface;
+                (damage ? result._damage : result._byKind)[kind] = surface;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[monogame] gauge '{kind}' failed to decode: {ex.Message} — procedural fallback");
             }
         }
-        return result;
     }
 }

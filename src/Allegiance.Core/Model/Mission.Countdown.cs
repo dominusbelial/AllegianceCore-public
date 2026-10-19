@@ -18,9 +18,11 @@ public sealed partial class Mission
     /// <summary>Native timeout precedence, including a draw on unresolved ties
     /// (FedSrv/fsmission.cpp:2348-2504). The next criterion compares all sides,
     /// rather than restricting the field to the previous criterion's tied leaders.</summary>
-    public (bool Expired, Side? Winner, string Criterion) EvaluateCountdown(double now)
+    /// deadlineReached reuses the ranking for the port finale without changing the match clock.
+    public (bool Expired, Side? Winner, string Criterion) EvaluateCountdown(double now, bool deadlineReached = false)
     {
-        if (!HasCountdownExpired(now)) return (false, null, "");
+        if (Stage != MissionStage.Started || (!deadlineReached && !HasCountdownExpired(now)))
+            return (false, null, "");
 
         Side? UniqueMaximum(Func<Side, long> score)
         {
@@ -60,4 +62,18 @@ public sealed partial class Mission
         }
         return (true, selected, "kills");
     }
+
+    /// <summary>Audit values for the same native countdown criteria (fsmission.cpp:2348-2490).</summary>
+    public string CountdownValues(string criterion) => string.Join(",", Sides.Select(side =>
+        $"{side.Id}:" + (criterion switch
+        {
+            "conquest" => Sectors.Sum(s => s.StationRuntimes.Count(st => st.SideId == side.Id &&
+                st.Type.HasCapability(DataStationTypeIGC.SabmFlag))).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            "territory" => side.TerritoryCount.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            "prosperity" => (side.Buckets.FirstOrDefault(b => b.Development?.DevelopmentId == TeamMoneyDevelopmentId)
+                ?.InvestedMilliseconds ?? 0).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            "artifacts" => side.Artifacts.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            "flags" => side.Flags.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            _ => $"kills={side.Kills}/deaths={side.Deaths}",
+        })));
 }

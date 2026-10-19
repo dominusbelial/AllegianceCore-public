@@ -1125,6 +1125,9 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     case AsteroidDestroyed.Fmid:
                         _world.Apply(AsteroidDestroyed.Decode(m));
                         break;
+                    case LastBaseNotice.Fmid:
+                        _world.Apply(LastBaseNotice.Decode(m));
+                        break;
                     case ResearchProduction.Fmid:
                         _world.Apply(ResearchProduction.Decode(m));
                         break;

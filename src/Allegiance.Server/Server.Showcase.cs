@@ -8,7 +8,7 @@ namespace Allegiance.Server;
 
 public sealed partial class Server
 {
-    private readonly Dictionary<Mission, (double Deadline, short Winner)> _researchFinales = new();
+    private readonly Dictionary<Mission, (double Deadline, short ArmedBy)> _researchFinales = new();
 
     // Explicit port orchestration. A request is scoped to its seated peer's current mission
     // and epoch; retries cannot postpone the deadline or arm the automatic next match.
@@ -20,7 +20,7 @@ public sealed partial class Server
             || request.Epoch.ToString("N") != mission.ResearchEpoch || _researchFinales.ContainsKey(mission)) return;
         double deadline = _simNow + _config.Showcase.FinaleTimeoutSeconds;
         _researchFinales[mission] = (deadline, request.Winner);
-        Console.WriteLine(FormattableString.Invariant($"[finale] research showcase epoch={mission.ResearchEpoch} winner={request.Winner}: bounded finale armed; deadline={deadline:0.###}; timeout={_config.Showcase.FinaleTimeoutSeconds}s; legal loadouts only, native station damage may be unavailable"));
+        Console.WriteLine(FormattableString.Invariant($"[finale] research showcase epoch={mission.ResearchEpoch} armedBy={request.Winner}: bounded finale armed; deadline={deadline:0.###}; timeout={_config.Showcase.FinaleTimeoutSeconds}s; legal loadouts only, native station damage may be unavailable"));
     }
 
     private void AdvanceResearchFinales(double now)
@@ -31,9 +31,13 @@ public sealed partial class Server
             { _researchFinales.Remove(mission); continue; }
             if (now < finale.Deadline) continue;
             _researchFinales.Remove(mission);
-            const string reason = "Research showcase finale deadline: best available legal loadouts did not end the match";
-            Console.WriteLine($"[finale] {reason}; epoch={mission.ResearchEpoch}; winner={finale.Winner}");
-            DeclareGameOver(mission, finale.Winner, reason);
+            var result = mission.EvaluateCountdown(now, deadlineReached: true);
+            string criterion = result.Winner is null ? "draw" : result.Criterion;
+            Console.WriteLine($"[finale] deadline winner side={result.Winner?.Id ?? GameOver.NA} by={criterion} values={mission.CountdownValues(result.Criterion)} epoch={mission.ResearchEpoch} armedBy={finale.ArmedBy}");
+            string reason = result.Winner is { } winner
+                ? $"The clock has stopped. The winner: {winner.Name} by {result.Criterion}"
+                : "The clock has stopped. The game is a draw.";
+            DeclareGameOver(mission, result.Winner?.Id ?? GameOver.NA, reason);
         }
     }
 

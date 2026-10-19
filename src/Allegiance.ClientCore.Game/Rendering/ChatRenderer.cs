@@ -111,6 +111,13 @@ public sealed class ChatRenderer
         }
     }
 
+    /// <summary>Classic chat presentation of the shared HUD frame.</summary>
+    public void Draw(HudModel model, Viewport viewport)
+    {
+        if (!model.Visible || model.Context.Chat is not { } chat) return;
+        Draw(chat.Lines, chat.Offset, chat.Input, chat.Composing, chat.NowSeconds, viewport, chat.Recipient);
+    }
+
     private bool CursorBlock(double now) => ((long)(now * 2.0)) % 2 == 0;
 
     private string TruncateToWidth(string s, float maxWidth)

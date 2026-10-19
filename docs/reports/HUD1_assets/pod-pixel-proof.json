@@ -1,0 +1,62 @@
+{
+  "before": [
+    {
+      "source": "/tmp/HUD1/raw/live-final/1920x1080-pod/proof_t013.0_sFejfar_ccockpit.png",
+      "width": 1920,
+      "height": 1080,
+      "white_title_pixels": 1565,
+      "native_yellow_pixels": 2223,
+      "passed": false
+    }
+  ],
+  "after": [
+    {
+      "source": "/tmp/HUD1/raw/live-review/1920x1080-pod-3/proof_postkill_sFejfar_ccockpit.png",
+      "width": 1920,
+      "height": 1080,
+      "white_title_pixels": 0,
+      "native_yellow_pixels": 2397,
+      "passed": true
+    },
+    {
+      "source": "/tmp/HUD1/raw/live-review/1920x1080-pod-2/proof_t010.5_sFejfar_ccockpit.png",
+      "width": 1920,
+      "height": 1080,
+      "white_title_pixels": 1,
+      "native_yellow_pixels": 2396,
+      "passed": true
+    },
+    {
+      "source": "/tmp/HUD1/raw/live-review/1920x1080-pod-3/proof_t014.2_sFejfar_ccockpit.png",
+      "width": 1920,
+      "height": 1080,
+      "white_title_pixels": 0,
+      "native_yellow_pixels": 2396,
+      "passed": true
+    },
+    {
+      "source": "/tmp/HUD1/raw/live-review/2560x1440-pod-1/proof_t013.2_sFejfar_ccockpit.png",
+      "width": 2560,
+      "height": 1440,
+      "white_title_pixels": 0,
+      "native_yellow_pixels": 4427,
+      "passed": true
+    },
+    {
+      "source": "/tmp/HUD1/raw/live-review/2560x1440-pod-2/proof_postkill_sFejfar_ccockpit.png",
+      "width": 2560,
+      "height": 1440,
+      "white_title_pixels": 0,
+      "native_yellow_pixels": 4427,
+      "passed": true
+    },
+    {
+      "source": "/tmp/HUD1/raw/live-review/2560x1440-pod-2/proof_t013.5_sFejfar_ccockpit.png",
+      "width": 2560,
+      "height": 1440,
+      "white_title_pixels": 0,
+      "native_yellow_pixels": 4427,
+      "passed": true
+    }
+  ]
+}

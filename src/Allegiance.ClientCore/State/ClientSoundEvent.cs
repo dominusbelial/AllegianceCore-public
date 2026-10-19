@@ -351,6 +351,9 @@ public enum ClientSoundEventKind
     /// (shieldIGC.cpp:185; wave <c>noshld</c> — fastShieldDeactivate,
     /// sounddef.mdl:1311).</summary>
     ShieldDeactivate,
+
+    /// <summary>Port last-base objective transition; native voFoundEnemyBase (Igc/sounds.h:199).</summary>
+    LastEnemyBase,
 }
 
 /// <summary>A single observed sound event.</summary>

@@ -5,4 +5,4 @@ using HudPolishProof;
 string outDir = args.Length > 0 ? args[0] : ".";
 using var game = new HUDPolishHarness(outDir);
 game.Run();
-return 0;
+return game.Failures == 0 ? 0 : 1;

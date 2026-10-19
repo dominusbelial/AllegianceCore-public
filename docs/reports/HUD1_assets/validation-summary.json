@@ -1,0 +1,1401 @@
+{
+  "base": "a8a9eb24",
+  "branch": "codex/hud1",
+  "raw_evidence": "/tmp/HUD1/raw",
+  "build": {
+    "configuration": "Release",
+    "warnings": 0,
+    "errors": 0,
+    "log": "/tmp/HUD1/raw/build-final.log"
+  },
+  "hud_model": {
+    "methods": 11,
+    "invocations": 33,
+    "failed_invocations": 0,
+    "test_cases_executed": 72
+  },
+  "parity_validator": {
+    "isolated_runs": [
+      {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      }
+    ]
+  },
+  "harnesses": {
+    "gauge": [
+      {
+        "run": 1,
+        "passed": true,
+        "log": "/tmp/HUD1/raw/gauge-final-1.log"
+      },
+      {
+        "run": 2,
+        "passed": true,
+        "log": "/tmp/HUD1/raw/gauge-final-2.log"
+      },
+      {
+        "run": 3,
+        "passed": true,
+        "log": "/tmp/HUD1/raw/gauge-final-3.log"
+      }
+    ],
+    "polish": [
+      {
+        "run": 1,
+        "passed": true,
+        "log": "/tmp/HUD1/raw/polish-final-1.log"
+      },
+      {
+        "run": 2,
+        "passed": true,
+        "log": "/tmp/HUD1/raw/polish-final-2.log"
+      },
+      {
+        "run": 3,
+        "passed": true,
+        "log": "/tmp/HUD1/raw/polish-final-3.log"
+      }
+    ]
+  },
+  "suites": [
+    {
+      "project": "Allegiance.Core.Tests",
+      "counters": {
+        "total": 4879,
+        "executed": 4879,
+        "passed": 4867,
+        "failed": 12,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "trx": "/tmp/HUD1/raw/Allegiance.Core.Tests.trx",
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 25\nActual:   26",
+          "isolated_runs": [
+            0,
+            0,
+            0
+          ],
+          "quiet_final_runs": [],
+          "disposition": "load flake (3/3 final exact-method pass)"
+        },
+        {
+          "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+          "message": "Assert.Single() Failure: The collection was empty",
+          "isolated_runs": [
+            0,
+            0,
+            0
+          ],
+          "quiet_final_runs": [],
+          "disposition": "load flake (3/3 final exact-method pass)"
+        },
+        {
+          "test": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_real_TCP_session_measures_sim_projection_and_publish_pool",
+          "message": "Transport barrier 668001: 83/256 drained; last=668002 frames=4360 error=System.IO.EndOfStreamException: Unable to read beyond the end of the stream.\n   at System.IO.Stream.ReadAtLeastAsyncCore(Memory`1 buffer, Int32 minimumBytes, Boolean throwOnEndOfStream, CancellationToken cancellationToken)\n   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource.GetResult(Int16 token)\n   at Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Peer.Read(NetworkStream stream) in /home/domingo/allegiance-codex-hud1/tests/Allegiance.Core.Tests/BroadcastSnapshotLoopbackTests.cs:line 78; last=668002 frames=4241 error=System.IO.",
+          "isolated_runs": [
+            0,
+            0,
+            0
+          ],
+          "quiet_final_runs": [],
+          "disposition": "load flake (3/3 final exact-method pass)"
+        },
+        {
+          "test": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+          "message": "peers must keep receiving per-tick updates while stdout is stalled",
+          "isolated_runs": [
+            0,
+            0,
+            0
+          ],
+          "quiet_final_runs": [],
+          "disposition": "load flake (3/3 final exact-method pass)"
+        },
+        {
+          "test": "Allegiance.Core.Tests.LiveTeamLobbyTests.Unready_broadcasts_team_ready_false",
+          "message": "Assert.Contains() Failure: Filter not matched in collection\nCollection: []",
+          "isolated_runs": [
+            0,
+            0,
+            0
+          ],
+          "quiet_final_runs": [],
+          "disposition": "load flake (3/3 final exact-method pass)"
+        },
+        {
+          "test": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Heavy_updates_are_bounded_to_the_budget_not_proportional_to_ship_count",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 4\nActual:   0",
+          "isolated_runs": [
+            0,
+            0,
+            0
+          ],
+          "quiet_final_runs": [],
+          "disposition": "load flake (3/3 final exact-method pass)"
+        },
+        {
+          "test": "Allegiance.Core.Tests.P493EnemySpottingLiveTests.Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer",
+          "message": "Assert.DoesNotContain() Failure: Filter matched in collection\n             \u2193 (pos 0)\nCollection: [ShipStatusMessage { Detected = True, HullId = 59, ParentId = -1, SectorId = 1052, ShipId = 8099, \u00b7\u00b7\u00b7 }, ShipStatusMessage { Detected = True, HullId = 107, ParentId = -1, SectorId = 1061, ShipId = 8097, \u00b7\u00b7\u00b7 }, ShipStatusMessage { Detected = True, HullId = 107, ParentId = -1, SectorId = 1061, ShipId = 8097, \u00b7\u00b7\u00b7 }]",
+          "isolated_runs": [
+            0,
+            0,
+            0
+          ],
+          "quiet_final_runs": [],
+          "disposition": "load flake (3/3 final exact-method pass)"
+        },
+        {
+          "test": "Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector",
+          "message": "Assert.Single() Failure: The collection was empty",
+          "isolated_runs": [
+            0,
+            0,
+            0
+          ],
+          "quiet_final_runs": [],
+          "disposition": "load flake (3/3 final exact-method pass)"
+        },
+        {
+          "test": "Allegiance.Core.Tests.LiveInSpaceEjectTests.Already_a_lifepod_is_truly_killed_not_re_ejected",
+          "message": "Assert.Contains() Failure: Filter not matched in collection\nCollection: []",
+          "isolated_runs": [
+            0,
+            0,
+            0
+          ],
+          "quiet_final_runs": [],
+          "disposition": "load flake (3/3 final exact-method pass)"
+        },
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 1\nActual:   0",
+          "isolated_runs": [
+            0,
+            0,
+            0
+          ],
+          "quiet_final_runs": [],
+          "disposition": "load flake (3/3 final exact-method pass)"
+        },
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+          "message": "ordered lane must hold the world data, got 0",
+          "isolated_runs": [
+            0,
+            0,
+            0
+          ],
+          "quiet_final_runs": [],
+          "disposition": "load flake (3/3 final exact-method pass)"
+        },
+        {
+          "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent",
+          "message": "distinct coalesce keys must remain independent (found 0: )",
+          "isolated_runs": [
+            0,
+            1,
+            0
+          ],
+          "quiet_final_runs": [
+            0,
+            0,
+            0
+          ],
+          "disposition": "load flake (3/3 final exact-method pass)"
+        }
+      ],
+      "skips": [],
+      "skipped_results": 0
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "counters": {
+        "total": 1381,
+        "executed": 1380,
+        "passed": 1378,
+        "failed": 2,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "trx": "/tmp/HUD1/raw/Allegiance.ClientCore.Tests.trx",
+      "failures": [
+        {
+          "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 1053\nActual:   1060",
+          "isolated_runs": [
+            1,
+            1,
+            1
+          ],
+          "quiet_final_runs": [
+            0,
+            0,
+            0
+          ],
+          "disposition": "fixed test receipt barrier (3/3 isolated pass)"
+        },
+        {
+          "test": "Allegiance.ClientCore.Tests.P522UndockReseedLiveTests.Three_dock_undock_cycles_zero_rejects_and_zero_SHIP_RESETs_with_reseed",
+          "message": "server REJECTED 1 native poses across the 3 undocks (first post-undock update off the launch pose \u2014 the P522 bug)",
+          "isolated_runs": [
+            0,
+            0,
+            0
+          ],
+          "quiet_final_runs": [],
+          "disposition": "load flake (3/3 final exact-method pass)"
+        }
+      ],
+      "skips": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+          "reason": "Set ALLEGIANCE_LIVE_P660_SHOWCASE=1 for the full 15v15 MCP proof"
+        }
+      ],
+      "skipped_results": 1
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "counters": {
+        "total": 2461,
+        "executed": 2458,
+        "passed": 2458,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "trx": "/tmp/HUD1/raw/Allegiance.ClientCore.MonoGame.Tests.trx",
+      "failures": [],
+      "skips": [
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        },
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        },
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+          "reason": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+        }
+      ],
+      "skipped_results": 3
+    }
+  ],
+  "isolated": [
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-AsteroidMinedLiveTests-No_broadcast_fires_once_miner_hits_capacity-1.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-AsteroidMinedLiveTests-No_broadcast_fires_once_miner_hits_capacity-2.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-AsteroidMinedLiveTests-No_broadcast_fires_once_miner_hits_capacity-3.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-LiveCountdownStartPingTests-Multi_mission_countdown_scopes_per_mission-1.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-LiveCountdownStartPingTests-Multi_mission_countdown_scopes_per_mission-2.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-LiveCountdownStartPingTests-Multi_mission_countdown_scopes_per_mission-3.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_real_TCP_session_measures_sim_projection_and_publish_pool",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-BroadcastSnapshotLoopbackTests-Crowded_real_TCP_session_measures_sim_projection_and_publish_pool-1.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_real_TCP_session_measures_sim_projection_and_publish_pool",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-BroadcastSnapshotLoopbackTests-Crowded_real_TCP_session_measures_sim_projection_and_publish_pool-2.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_real_TCP_session_measures_sim_projection_and_publish_pool",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-BroadcastSnapshotLoopbackTests-Crowded_real_TCP_session_measures_sim_projection_and_publish_pool-3.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-Transport-ConsoleVerbosityLiveTests-Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout-1.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-Transport-ConsoleVerbosityLiveTests-Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout-2.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.ConsoleVerbosityLiveTests.Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-Transport-ConsoleVerbosityLiveTests-Plain_WriteLine_on_the_sim_path_does_not_block_a_stalled_stdout-3.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveTeamLobbyTests.Unready_broadcasts_team_ready_false",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-LiveTeamLobbyTests-Unready_broadcasts_team_ready_false-1.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveTeamLobbyTests.Unready_broadcasts_team_ready_false",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-LiveTeamLobbyTests-Unready_broadcasts_team_ready_false-2.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveTeamLobbyTests.Unready_broadcasts_team_ready_false",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-LiveTeamLobbyTests-Unready_broadcasts_team_ready_false-3.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Heavy_updates_are_bounded_to_the_budget_not_proportional_to_ship_count",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-ShipUpdateBudgetLiveTests-Heavy_updates_are_bounded_to_the_budget_not_proportional_to_ship_count-1.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Heavy_updates_are_bounded_to_the_budget_not_proportional_to_ship_count",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-ShipUpdateBudgetLiveTests-Heavy_updates_are_bounded_to_the_budget_not_proportional_to_ship_count-2.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Heavy_updates_are_bounded_to_the_budget_not_proportional_to_ship_count",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-ShipUpdateBudgetLiveTests-Heavy_updates_are_bounded_to_the_budget_not_proportional_to_ship_count-3.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.P493EnemySpottingLiveTests.Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-P493EnemySpottingLiveTests-Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer-1.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.P493EnemySpottingLiveTests.Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-P493EnemySpottingLiveTests-Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer-2.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.P493EnemySpottingLiveTests.Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-P493EnemySpottingLiveTests-Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer-3.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-LiveRipcordTests-First_activation_broadcasts_to_everyone_flying_in_sector-1.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-LiveRipcordTests-First_activation_broadcasts_to_everyone_flying_in_sector-2.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-LiveRipcordTests-First_activation_broadcasts_to_everyone_flying_in_sector-3.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveInSpaceEjectTests.Already_a_lifepod_is_truly_killed_not_re_ejected",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-LiveInSpaceEjectTests-Already_a_lifepod_is_truly_killed_not_re_ejected-1.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveInSpaceEjectTests.Already_a_lifepod_is_truly_killed_not_re_ejected",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-LiveInSpaceEjectTests-Already_a_lifepod_is_truly_killed_not_re_ejected-2.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveInSpaceEjectTests.Already_a_lifepod_is_truly_killed_not_re_ejected",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-LiveInSpaceEjectTests-Already_a_lifepod_is_truly_killed_not_re_ejected-3.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-Transport-TcpTransportCoalesceAndReasonThreadPerPeerTests-Guaranteed_coalesced_frames_are_never_shed_but_still_bounded-1.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-Transport-TcpTransportCoalesceAndReasonThreadPerPeerTests-Guaranteed_coalesced_frames_are_never_shed_but_still_bounded-2.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-Transport-TcpTransportCoalesceAndReasonThreadPerPeerTests-Guaranteed_coalesced_frames_are_never_shed_but_still_bounded-3.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-Transport-TcpTransportPriorityLaneThreadPerPeerTests-Ordered_world_data_is_next_drained_even_after_a_stream_backlog-1.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-Transport-TcpTransportPriorityLaneThreadPerPeerTests-Ordered_world_data_is_next_drained_even_after_a_stream_backlog-2.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-Transport-TcpTransportPriorityLaneThreadPerPeerTests-Ordered_world_data_is_next_drained_even_after_a_stream_backlog-3.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-Transport-TcpTransportCoalesceAndReasonPoolTests-Coalesce_distinct_keys_remain_independent-1.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent",
+      "run": 2,
+      "exit": 1,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-Transport-TcpTransportCoalesceAndReasonPoolTests-Coalesce_distinct_keys_remain_independent-2.log"
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-Core-Tests-Transport-TcpTransportCoalesceAndReasonPoolTests-Coalesce_distinct_keys_remain_independent-3.log"
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 1,
+      "exit": 1,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-ClientCore-Tests-ClientWarpApproachSlowHullLiveTests-Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume-1.log"
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 2,
+      "exit": 1,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-ClientCore-Tests-ClientWarpApproachSlowHullLiveTests-Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume-2.log"
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 3,
+      "exit": 1,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-ClientCore-Tests-ClientWarpApproachSlowHullLiveTests-Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume-3.log"
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "test": "Allegiance.ClientCore.Tests.P522UndockReseedLiveTests.Three_dock_undock_cycles_zero_rejects_and_zero_SHIP_RESETs_with_reseed",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-ClientCore-Tests-P522UndockReseedLiveTests-Three_dock_undock_cycles_zero_rejects_and_zero_SHIP_RESETs_with_reseed-1.log"
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "test": "Allegiance.ClientCore.Tests.P522UndockReseedLiveTests.Three_dock_undock_cycles_zero_rejects_and_zero_SHIP_RESETs_with_reseed",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-ClientCore-Tests-P522UndockReseedLiveTests-Three_dock_undock_cycles_zero_rejects_and_zero_SHIP_RESETs_with_reseed-2.log"
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "test": "Allegiance.ClientCore.Tests.P522UndockReseedLiveTests.Three_dock_undock_cycles_zero_rejects_and_zero_SHIP_RESETs_with_reseed",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/isolated-Allegiance-ClientCore-Tests-P522UndockReseedLiveTests-Three_dock_undock_cycles_zero_rejects_and_zero_SHIP_RESETs_with_reseed-3.log"
+    }
+  ],
+  "pod_pixels": {
+    "before": [
+      {
+        "source": "/tmp/HUD1/raw/live-final/1920x1080-pod/proof_t013.0_sFejfar_ccockpit.png",
+        "width": 1920,
+        "height": 1080,
+        "white_title_pixels": 1565,
+        "native_yellow_pixels": 2223,
+        "passed": false
+      }
+    ],
+    "after": [
+      {
+        "source": "/tmp/HUD1/raw/live-review/1920x1080-pod-3/proof_postkill_sFejfar_ccockpit.png",
+        "width": 1920,
+        "height": 1080,
+        "white_title_pixels": 0,
+        "native_yellow_pixels": 2397,
+        "passed": true
+      },
+      {
+        "source": "/tmp/HUD1/raw/live-review/1920x1080-pod-2/proof_t010.5_sFejfar_ccockpit.png",
+        "width": 1920,
+        "height": 1080,
+        "white_title_pixels": 1,
+        "native_yellow_pixels": 2396,
+        "passed": true
+      },
+      {
+        "source": "/tmp/HUD1/raw/live-review/1920x1080-pod-3/proof_t014.2_sFejfar_ccockpit.png",
+        "width": 1920,
+        "height": 1080,
+        "white_title_pixels": 0,
+        "native_yellow_pixels": 2396,
+        "passed": true
+      },
+      {
+        "source": "/tmp/HUD1/raw/live-review/2560x1440-pod-1/proof_t013.2_sFejfar_ccockpit.png",
+        "width": 2560,
+        "height": 1440,
+        "white_title_pixels": 0,
+        "native_yellow_pixels": 4427,
+        "passed": true
+      },
+      {
+        "source": "/tmp/HUD1/raw/live-review/2560x1440-pod-2/proof_postkill_sFejfar_ccockpit.png",
+        "width": 2560,
+        "height": 1440,
+        "white_title_pixels": 0,
+        "native_yellow_pixels": 4427,
+        "passed": true
+      },
+      {
+        "source": "/tmp/HUD1/raw/live-review/2560x1440-pod-2/proof_t013.5_sFejfar_ccockpit.png",
+        "width": 2560,
+        "height": 1440,
+        "white_title_pixels": 0,
+        "native_yellow_pixels": 4427,
+        "passed": true
+      }
+    ]
+  },
+  "quiet_retries": [
+    {
+      "cohort": "quiet-coalesce",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent",
+      "run": 1,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/quiet-coalesce-1.log",
+      "trx": "/tmp/HUD1/raw/quiet-coalesce-1.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "quiet-coalesce",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent",
+      "run": 2,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/quiet-coalesce-2.log",
+      "trx": "/tmp/HUD1/raw/quiet-coalesce-2.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "quiet-coalesce",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent",
+      "run": 3,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/quiet-coalesce-3.log",
+      "trx": "/tmp/HUD1/raw/quiet-coalesce-3.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "base-legacy",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 1,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/base-legacy-1.log",
+      "trx": "/tmp/HUD1/raw/base-legacy-1.trx",
+      "cwd": "/tmp/HUD1/base"
+    },
+    {
+      "cohort": "base-legacy",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 2,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/base-legacy-2.log",
+      "trx": "/tmp/HUD1/raw/base-legacy-2.trx",
+      "cwd": "/tmp/HUD1/base"
+    },
+    {
+      "cohort": "base-legacy",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 3,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/base-legacy-3.log",
+      "trx": "/tmp/HUD1/raw/base-legacy-3.trx",
+      "cwd": "/tmp/HUD1/base"
+    },
+    {
+      "cohort": "parity-matrices",
+      "test": "Allegiance.Core.Tests.P674ParityScorecardTests.Both_repository_matrices_validate_and_print_scorecards",
+      "run": 1,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/parity-matrices-1.log",
+      "trx": "/tmp/HUD1/raw/parity-matrices-1.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "parity-matrices",
+      "test": "Allegiance.Core.Tests.P674ParityScorecardTests.Both_repository_matrices_validate_and_print_scorecards",
+      "run": 2,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/parity-matrices-2.log",
+      "trx": "/tmp/HUD1/raw/parity-matrices-2.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "parity-matrices",
+      "test": "Allegiance.Core.Tests.P674ParityScorecardTests.Both_repository_matrices_validate_and_print_scorecards",
+      "run": 3,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/parity-matrices-3.log",
+      "trx": "/tmp/HUD1/raw/parity-matrices-3.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    }
+  ],
+  "current_legacy_retries": [
+    {
+      "cohort": "fixed-legacy",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 1,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/fixed-legacy-1.log",
+      "trx": "/tmp/HUD1/raw/fixed-legacy-1.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "fixed-legacy",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 2,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/fixed-legacy-2.log",
+      "trx": "/tmp/HUD1/raw/fixed-legacy-2.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "fixed-legacy",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 3,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/fixed-legacy-3.log",
+      "trx": "/tmp/HUD1/raw/fixed-legacy-3.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    }
+  ],
+  "earlier_current_legacy_retries": [
+    {
+      "cohort": "quiet-current-legacy",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 1,
+      "exit": 1,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/quiet-current-legacy-1.log",
+      "trx": "/tmp/HUD1/raw/quiet-current-legacy-1.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "quiet-current-legacy",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 2,
+      "exit": 1,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/quiet-current-legacy-2.log",
+      "trx": "/tmp/HUD1/raw/quiet-current-legacy-2.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "quiet-current-legacy",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 3,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/quiet-current-legacy-3.log",
+      "trx": "/tmp/HUD1/raw/quiet-current-legacy-3.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    }
+  ],
+  "further_current_legacy_retries": [
+    {
+      "cohort": "quiet-current-legacy-final",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 1,
+      "exit": 1,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "0",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/quiet-current-legacy-final-1.log",
+      "trx": "/tmp/HUD1/raw/quiet-current-legacy-final-1.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "quiet-current-legacy-final",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 2,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/quiet-current-legacy-final-2.log",
+      "trx": "/tmp/HUD1/raw/quiet-current-legacy-final-2.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "quiet-current-legacy-final",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 3,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/quiet-current-legacy-final-3.log",
+      "trx": "/tmp/HUD1/raw/quiet-current-legacy-final-3.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    }
+  ],
+  "warp_fixture": [
+    {
+      "cohort": "fixed-legacy",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 1,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/fixed-legacy-1.log",
+      "trx": "/tmp/HUD1/raw/fixed-legacy-1.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "fixed-legacy",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 2,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/fixed-legacy-2.log",
+      "trx": "/tmp/HUD1/raw/fixed-legacy-2.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "fixed-legacy",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "run": 3,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/fixed-legacy-3.log",
+      "trx": "/tmp/HUD1/raw/fixed-legacy-3.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "fixed-warp-positive",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Slow_board_hull_26_transits_when_the_warp_approach_flies_through_the_aleph",
+      "run": 1,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/fixed-warp-positive-1.log",
+      "trx": "/tmp/HUD1/raw/fixed-warp-positive-1.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "fixed-warp-positive",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Slow_board_hull_26_transits_when_the_warp_approach_flies_through_the_aleph",
+      "run": 2,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/fixed-warp-positive-2.log",
+      "trx": "/tmp/HUD1/raw/fixed-warp-positive-2.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    },
+    {
+      "cohort": "fixed-warp-positive",
+      "test": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Slow_board_hull_26_transits_when_the_warp_approach_flies_through_the_aleph",
+      "run": 3,
+      "exit": 0,
+      "counters": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "log": "/tmp/HUD1/raw/fixed-warp-positive-3.log",
+      "trx": "/tmp/HUD1/raw/fixed-warp-positive-3.trx",
+      "cwd": "/home/domingo/allegiance-codex-hud1"
+    }
+  ],
+  "optin_showcase": [
+    {
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/HUD1/raw/local-optin-showcase-1.log"
+    }
+  ],
+  "evidence_check": {
+    "inventory_ids": 110,
+    "native_citations_checked": 215,
+    "screenshots": 8,
+    "asset_bytes": 1232377,
+    "isolated_trx_verified": 42,
+    "lf_csv": true
+  }
+}

@@ -1,0 +1,167 @@
+using Allegiance.ClientCore.MonoGame.Flight;
+using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.State;
+using Allegiance.Core.Sim;
+
+namespace Allegiance.ClientCore.MonoGame.Tests;
+
+public class HudModelTests
+{
+    private static HudFrame Frame => new(0.8f, 0.6f, 0.4f, 0.3f, 0.2f, 1f,
+        120f, -1f, false, false, true, 0, false, 0f, false, false,
+        0f, 0, 0f, Array.Empty<WeaponStatusRow>(), false, 0);
+
+    [Fact]
+    public void Damage_flash_changes_only_hull_and_shield_and_restores_between_pulses()
+    {
+        var normal = HudModel.Create(Frame);
+        var flash = HudModel.Create(Frame with { Flashing = true });
+        Assert.Equal(2, flash.Gauges.Count(g => g.DamageFlash));
+        foreach (var gauge in flash.Gauges)
+        {
+            var before = normal.Gauges.Single(g => g.Kind == gauge.Kind);
+            if (gauge.Kind is GaugeKind.Hull or GaugeKind.Shield)
+                Assert.Equal(new HudColor(1, 0, 0), gauge.Color);
+            else Assert.Equal(before, gauge);
+        }
+        Assert.Equal(normal.Gauges, HudModel.Create(Frame).Gauges);
+    }
+
+    [Fact]
+    public void Idle_throttle_is_healthy_and_does_not_inherit_resource_warning()
+    {
+        var model = HudModel.Create(Frame with { Throttle = -2, HullFraction = -1, ShieldFraction = 2 });
+        Assert.Equal(0, model.Gauges.Single(g => g.Kind == GaugeKind.Thrust).Fraction);
+        Assert.Equal(HudColor.TealAccent, model.Gauges.Single(g => g.Kind == GaugeKind.Thrust).Color);
+        Assert.Equal(0, model.Gauges.Single(g => g.Kind == GaugeKind.Hull).Fraction);
+        Assert.Equal(1, model.Gauges.Single(g => g.Kind == GaugeKind.Shield).Fraction);
+    }
+
+    [Theory]
+    [InlineData(false, 0, false, 0.25f)]
+    [InlineData(true, 0, false, 1f)]
+    [InlineData(false, ShipControlState.LeftButton, false, 1f)]
+    [InlineData(false, ShipControlState.BackwardButton, false, 1f)]
+    [InlineData(true, ShipControlState.ForwardButton, true, 0f)]
+    public void Thrust_matches_native_button_override_and_turret_gate(bool afterburner, int state, bool turret, float expected)
+    {
+        var model = HudModel.Create(Frame with { Throttle = -0.5f, AfterburnerActive = afterburner, ControlState = state }, new() { Turret = turret });
+        Assert.Equal(expected, model.Gauges.Single(g => g.Kind == GaugeKind.Thrust).Fraction);
+        Assert.Equal(expected, (model.Telemetry!.Value.Throttle + 1f) / 2f);
+    }
+
+    [Theory]
+    [InlineData(false, false, false, false, true)]
+    [InlineData(true, false, false, false, false)]
+    [InlineData(false, true, false, false, false)]
+    [InlineData(false, false, true, false, false)]
+    [InlineData(false, false, false, true, false)]
+    public void Instruments_obey_view_and_lifecycle(bool hidden, bool docked, bool dead, bool command, bool expected)
+    {
+        var model = HudModel.Create(Frame, new() { Hidden = hidden, Docked = docked, Dead = dead, CommandView = command });
+        Assert.Equal(expected, model.InstrumentsVisible);
+        Assert.All(model.Gauges, g => Assert.Equal(expected, g.Visible));
+    }
+
+    [Theory]
+    [InlineData(CameraMode.Cockpit, true, true)]
+    [InlineData(CameraMode.Chase, true, false)]
+    [InlineData(CameraMode.ExternalMissile, true, false)]
+    [InlineData(CameraMode.ExternalTurret, false, false)]
+    [InlineData(CameraMode.ExternalOrbit, false, false)]
+    [InlineData(CameraMode.Command, false, false)]
+    public void Indicators_follow_native_camera_gate(CameraMode camera, bool indicators, bool reticle)
+    {
+        var model = HudModel.Create(Frame with { MouseStick = new(.4f, .3f, .1f, false) }, new() { Camera = camera });
+        Assert.Equal(indicators, model.IndicatorsVisible);
+        Assert.Equal(reticle, model.ReticleVisible);
+        Assert.Equal(indicators, model.MouseStickVisible);
+        Assert.Equal(indicators, model.Elements.Single(e => e.Id == "Joystick turning indicator").Visible);
+    }
+
+    [Fact]
+    public void Pod_uses_oxygen_without_inventing_ammo_or_energy_and_rescue_hides_panel()
+    {
+        var pod = Frame with { IsAdriftLifepod = true, OxygenSecondsRemaining = 90 };
+        var model = HudModel.Create(pod);
+        Assert.True(model.PodVisible);
+        Assert.Equal("OXY", model.Gauges.Single(g => g.Kind == GaugeKind.Fuel).Label);
+        Assert.Equal(pod.FuelFraction, model.Gauges.Single(g => g.Kind == GaugeKind.Fuel).Fraction);
+        Assert.Equal(0, model.Gauges.Single(g => g.Kind == GaugeKind.Ammo).Fraction);
+        Assert.Equal(0, model.Gauges.Single(g => g.Kind == GaugeKind.Energy).Fraction);
+        Assert.False(HudModel.Create(pod, new() { Docked = true }).PodVisible);
+        Assert.True(HudModel.Create(pod, new() { Dead = true }).DeathVisible);
+        Assert.False(HudModel.Create(pod, new() { Dead = true }).PodVisible);
+    }
+
+    [Fact]
+    public void Boundary_warnings_are_independent_of_the_renderers_texture_availability()
+    {
+        var frame = Frame with { WarningMask = ShipWarningMask.OutOfBounds | ShipWarningMask.CrowdedSector };
+        Assert.Equal(new[] { "OUT OF BOUNDS", "SECTOR CROWDED" }, HudModel.Create(frame).Warnings);
+        Assert.Empty(HudModel.Create(Frame).Warnings);
+        Assert.Empty(HudModel.Create(frame, new() { Dead = true }).Warnings);
+    }
+
+    [Fact]
+    public void Snapshot_owns_mutable_lists_and_keeps_unknown_telemetry_unknown()
+    {
+        var notices = new List<HudNotice> { new("hit", true, 1) };
+        var contacts = new List<HudContact> { new(HudContactKind.Ship, new(12, 34), false, .8f, null, true, false) };
+        var commands = new List<string> { "COMMAND: TOP DOWN" };
+        var model = HudModel.Create(null, new() { Notices = notices, Contacts = contacts, CommandLines = commands });
+        notices.Clear(); contacts.Clear(); commands.Clear();
+        Assert.Single(model.Context.Notices);
+        Assert.Single(model.Context.Contacts);
+        Assert.Single(model.Context.CommandLines);
+        Assert.Null(model.Telemetry);
+        Assert.Empty(model.Gauges);
+        Assert.Equal("mps", model.SpeedUnit);
+    }
+
+    [Fact]
+    public void Native_landmarks_are_resolution_and_art_independent()
+    {
+        var model = HudModel.Create(Frame);
+        Assert.Equal(new HudPoint(-126.5f, 93.5f), model.Gauges.Single(g => g.Kind == GaugeKind.Thrust).NativeOffset);
+        Assert.Equal(new HudPoint(126.5f, -112.5f), model.Gauges.Single(g => g.Kind == GaugeKind.Energy).NativeOffset);
+        Assert.Equal(new HudPoint(-65.5f, 35.5f), model.Gauges.Single(g => g.Kind == GaugeKind.Hull).NativeOffset);
+    }
+
+    [Fact]
+    public void Native_inventory_keeps_unavailable_fields_unknown_and_target_bars_need_real_data()
+    {
+        var model = HudModel.Create(Frame, new()
+        {
+            Target = new(new(300, 400), false, "rock", null, null, null, .5f),
+            Lock = new(new(100, 200), MissileLockFeedback.LockState.None, 0)
+        });
+        var missing = model.Elements.Single(e => e.Id == "Signature percentage");
+        Assert.False(missing.Available);
+        Assert.False(missing.Visible);
+        Assert.Null(missing.Value);
+        Assert.False(model.Elements.Single(e => e.Id == "Missile lock flower").Visible);
+        Assert.False(model.Elements.Single(e => e.Id == "Equipment part identity and key").Available);
+        Assert.Equal(Frame.HullFraction, model.Elements.Single(e => e.Id == "Hull integrity").Value);
+        Assert.False(model.Elements.Single(e => e.Id == "Target hull").Available);
+        var ore = model.Elements.Single(e => e.Id == "Target ore");
+        Assert.True(ore.Visible);
+        Assert.Equal(.5f, ore.Value);
+        Assert.Equal(new HudPoint(300, 400), ore.ScreenPosition);
+        Assert.Equal(new HudPlacement(HudAnchor.Center, -39, -88), model.Elements.Single(e => e.Id == "Speed").Placement);
+        Assert.Equal(new HudPlacement(HudAnchor.Bottom, -85, 58), model.Elements.Single(e => e.Id == "Target hull").Placement);
+    }
+
+    [Fact]
+    public void Chat_is_a_snapshot_and_obeys_the_shared_HUD_visibility()
+    {
+        var lines = new List<string> { "incoming" };
+        var context = new HudContext { Chat = new(lines, 0, "hello", true, 1, "TEAM") };
+        var model = HudModel.Create(Frame, context);
+        lines.Clear();
+        Assert.Single(model.Context.Chat!.Lines);
+        Assert.True(model.Elements.Single(e => e.Id == "Chat composition and recipient").Visible);
+        var hidden = HudModel.Create(Frame, context with { Hidden = true });
+        Assert.False(hidden.Elements.Single(e => e.Id == "Chat composition and recipient").Visible);
+    }
+}

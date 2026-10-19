@@ -146,6 +146,7 @@ public sealed partial class Server
         // deadline has passed enters the start countdown without a ready-up
         // (native's unattended restart, fsmission.cpp:3539-3546).
         Step("researchFinales", () => AdvanceResearchFinales(now));
+        Step("lastBaseObjectives", () => AdvanceLastBaseObjectives(now));
         Step("autoRestarts", () => AdvanceAutoRestarts(now));
         // P660: refresh the absolute sim-clock sample during both timer phases.
         // This PING broadcast is a port adaptation; native SET_START_TIME stays unchanged.

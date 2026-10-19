@@ -198,6 +198,21 @@ public sealed class ClientWarpApproachSlowHullLiveTests
         for (int i = 0; i < maxTicks; i++)
         {
             server.TickSim();
+            // TickSim has no wall-clock cadence. Do not advance another 50 ms
+            // of simulation while the TCP client still steers from an older
+            // pose: that tests arbitrary network backlog, not the two arrival
+            // laws. Stationary poses need not be rebroadcast, so compare the
+            // decoded pose (with the server's dirty/compact tolerances).
+            if (serverShip is not null)
+                Assert.True(SpinWait.SpinUntil(() =>
+                {
+                    lock (cs.Gate)
+                        return cs.World.Ships.TryGetValue(shipId, out var own)
+                            && own.Latest is { } pose
+                            && own.SectorId == serverShip.Sector?.Id
+                            && (pose.Position - serverShip.Position).Length() < 0.002f
+                            && (pose.Orientation.GetForward() - serverShip.Orientation.GetForward()).Length() < 0.002f;
+                }, TimeSpan.FromSeconds(2)), "own TCP pose must catch up before the next steering sample");
             short cur = CsSector(cs);
             if (cur < 0) continue;
 

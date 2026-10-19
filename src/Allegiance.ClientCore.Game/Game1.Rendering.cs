@@ -328,6 +328,7 @@ public sealed partial class Game1
         _lockBracket = null;   // P230 — recomputed only when a lock target projects into view this frame
         _leadIndicator = null; // P266 — recomputed only when a lead point projects into view this frame
         _targetSelectionBracket = null; // P345 — recomputed only when a T-selected target projects into view this frame
+        _lastBaseHud = [];
         _targetBearingScreenDir = null; // P359 — recomputed whenever a T-selected target is resolvable this frame
 
         if (_state == ClientState.Lobby)
@@ -479,6 +480,7 @@ public sealed partial class Game1
                 // off-screen (it is exactly what you need then), so it lives apart
                 // from the bracket rather than piggy-backing its in-view gate.
                 _targetBearingScreenDir = ComputeTargetBearing(view, proj, cameraEye);
+                ComputeLastBaseHud(view, proj, cameraEye);
 
                 // P339 B1 — make the Flying 3D pass self-contained. The previous
                 // frame's last draw is a SpriteBatch HUD/overlay pass, and
@@ -1710,8 +1712,8 @@ public sealed partial class Game1
             }
 
             // 2D HUD overlay on top of the 3D scene (P211).
-            DrawHud();
-            DrawCommandHud();
+            var hudModel = DrawHud();
+            DrawCommandHud(hudModel);
 
             // P501 — semi-transparent touch sticks + buttons, above the HUD but
             // beneath the starmap/chat overlays. Skipped internally when no touch
@@ -1732,14 +1734,14 @@ public sealed partial class Game1
 
         // P214 — real chat overlay (log + composing line) on top of the HUD.
         if (!_directorActive)
-            DrawChat();
+            DrawChat(hudModel);
 
         // P626 — the in-flight cargo/inventory readout (selected part + hold
         // occupancy), a small line under the chat log so the pilot sees what the
         // NextCargo/NextPart/PrevPart/DropCargo keys are operating on.
         if (!_directorActive)
-            DrawCargoHud();
-            DrawFlightPartsHud();
+            DrawCargoHud(hudModel);
+            DrawFlightPartsHud(hudModel);
 
             // P217 — the quick-chat voice-macro menu, on top of the chat log
             // (itself above the HUD). Only drawn while a menu level is open.
@@ -1880,6 +1882,13 @@ public sealed partial class Game1
         }
 
         DrawConsolePanes();
+        if ((_dockedActive || _investActive) && !LocalSpectating && !SpectatorCameraActive && !_hideHud && !_hudHidden && !_directorActive)
+        {
+            string[] objectives;
+            lock (_session.Gate)
+                objectives = _session.World.LastBaseObjectives().Select(o => o.Text).ToArray();
+            _hudRenderer.DrawDockedObjectives(objectives, GraphicsDevice.Viewport);
+        }
         DrawMainMenu();
 
         // P262 — game-over result screen, drawn above EVERYTHING (even the help
@@ -2400,11 +2409,12 @@ public sealed partial class Game1
     /// the same per-tick wire payload already driving rendering — so every HUD
     /// value is real (no placeholders), with zero extra wire work.
     /// </summary>
-    private void DrawHud()
+    private HudModel DrawHud()
     {
-        if (LocalSpectating) return;
+        if (LocalSpectating) return HudModelAdapter.Create(null, _cameraMode, hidden: true);   // SP-5: no pilot HUD while spectating
         var world = _session.World;
         HudFrame? frame = null;
+        bool hudDocked = _dockedActive, hudDead = false;
         lock (_session.Gate)
         {
             // P366 — resolve the leader-only bot dock/launch command for THIS
@@ -2416,6 +2426,8 @@ public sealed partial class Game1
                 && world.Ships.TryGetValue(me, out var entity)
                 && entity.Latest is { } up)
             {
+                hudDocked = entity.StationId >= 0;
+                hudDead = entity.IsDead;
                 // P228 — feed the local ship's hull AND shield fractions into the
                 // damage-flash tracker and read whether the HUD should be flashing
                 // NOW. P463 added the shield fraction: a shield-absorbed hit (hull
@@ -2561,24 +2573,34 @@ public sealed partial class Game1
                     // speed). Hidden by the renderer at full speed; shown as
                     // "TIME DILATION nn%" when the server slows the game clock.
                     TimeDilationPercent: 100f * (float)_session.World.TimeScale,
-                    WarningMask: world.ShipWarnings.Mask);
+                    WarningMask: world.ShipWarnings.Mask,
+                    ControlState: up.StateM);
             }
         }
-        if (!_hideHud && !_directorActive && !_hudHidden)   // P572 --hide-hud; P580 the director always hides the HUD; P612 F1 HUD toggle
-            _hudRenderer.Draw(frame, _cameraMode, GraphicsDevice.Viewport, _lockBracket, _leadIndicator,
-                _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
-                leaderCommand: _leaderBotCommand, ripcordStatus: RipcordStatusLabel(),
-                commandeeLabel: CommandeeLabel(), turretView: IsTurretGunner(),
-                lodOverlay: Environment.GetEnvironmentVariable("ALLEGIANCE_LOD_OVERLAY") == "1"
-                    ? $"LOD full:{_lodFullCount} far:{_lodFarCount}"
-                    : null);
-
-        // P578 — the eject/death feedback overlays drawn straight onto the HUD:
-        // the critical/tip lines (native SetCriticalTipText/SetTipText), the
-        // eject-pod panel with the endurance gauge, and the death banner when a
-        // ghost. Skips the fight HUD only when it's hidden or the director is up.
-        if (!_hideHud && !_directorActive)
-            DrawEjectDeathOverlays();
+        var model = HudModelAdapter.Create(frame, _cameraMode, _lockBracket, _leadIndicator,
+            _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
+            leaderCommand: _leaderBotCommand, ripcord: RipcordStatusLabel(),
+            commandee: CommandeeLabel(), turret: IsTurretGunner(),
+            diagnostics: Environment.GetEnvironmentVariable("ALLEGIANCE_LOD_OVERLAY") == "1"
+                ? $"LOD full:{_lodFullCount} far:{_lodFarCount}" : null,
+            hidden: _hideHud || _directorActive || _hudHidden,
+            docked: hudDocked, dead: hudDead, commandView: CommandCameraActive,
+            notices: _tipLines.Select(t => new HudNotice(t.Text, t.Critical,
+                (float)Math.Clamp((t.ExpiresAt - _nowSeconds) / 0.8, 0.0, 1.0))).ToArray(),
+            contacts: _drawRadarContacts,
+            radarPulse: (MathF.Sin((float)_nowSeconds * 5f) + 1f) * 0.5f, radarMode: _radarMode,
+            chat: new HudChat(BuildChatLines(), _chatScrollOffset,
+                _chatActive ? _chatBuffer.ToString() : string.Empty, _chatActive, _nowSeconds,
+                ChatTargetLogic.ComposeLabel(_chatTarget)),
+            cargoLine: BuildCargoHudText(), flightPartsLine: BuildFlightPartsHudText(),
+            commandLines: BuildCommandHudLines(), inventoryVisible: _consolePanes.Inventory,
+            lastBaseObjectives: _lastBaseHud);
+        _radarRenderer.Draw(model, GraphicsDevice.Viewport);
+        if (model.FlightVisible && model.Context.Contacts.Count > 0)
+            _shipTagRenderer.Draw(_drawShipTags);
+        _hudRenderer.Draw(model, GraphicsDevice.Viewport);
+        DrawEjectDeathOverlays(model);
+        return model;
     }
 
     /// <summary>P425 — the HUD commandee readout label, or null when the pilot is
@@ -2845,7 +2867,6 @@ public sealed partial class Game1
             TargetKind.Warp => RadarBracketRenderer.RadarContactType.Warp,
             _ => (RadarBracketRenderer.RadarContactType?)null,
         };
-        float highlightPulse = (MathF.Sin((float)timeSeconds * 5f) + 1f) * 0.5f;
 
         _drawRadarContacts.Clear();
         _drawShipTags.Clear();   // P372 — per-ship in-world side tags
@@ -2987,13 +3008,6 @@ public sealed partial class Game1
             }
         }
 
-        if (_drawRadarContacts.Count > 0)
-        {
-            _radarRenderer.Draw(_drawRadarContacts, vp, highlightPulse);
-            // P372 — the per-ship in-world side-colour team tags, overlaid on the
-            // 3D scene after the brackets (own SpriteBatch pass).
-            _shipTagRenderer.Draw(_drawShipTags);
-        }
         // P436 — the on-screen "no <candidate> in sector" feedback for the U/Z
         // filtered-target keys (drawn even when there are no radar contacts).
         DrawTargetNoMatchFeedback();
@@ -3012,41 +3026,22 @@ public sealed partial class Game1
     /// (native <c>DeathBannerPane = SwitchPane(IsGhost, deathbannerbmp)</c>,
     /// dialog.mdl:5438-5439). Text-only ASCII, so it renders in the spritefont.
     /// </summary>
-    private void DrawEjectDeathOverlays()
+    private void DrawEjectDeathOverlays(HudModel model)
     {
         var vp = GraphicsDevice.Viewport;
 
-        // Own-ship pod/ghost state under the gate (same readings DrawHud's
-        // frame uses: the lifepod hull + NA-station gate, and the true-death
-        // flag for the ghost banner).
-        bool inPod = false, ghost = false;
-        int oxySec = 0;
-        lock (_session.Gate)
-        {
-            var world = _session.World;
-            if (RenderShipId(world) is { } me && world.Ships.TryGetValue(me, out var own) && own.Latest is { } up)
-            {
-                inPod = Rendering.LifepodHud.IsAdriftLifepod(_shopCatalog, own.HullId, own.StationId);
-                oxySec = inPod ? Rendering.LifepodHud.OxygenSeconds(up.FuelFraction, _shopCatalog) : 0;
-                // P578 — "ghost" = a true death (KILL_SHIP with bDeathCredit for
-                // me) while not docked — native's IsGhost predicate for the
-                // death banner. The frozen-dead own ship never docks, so the
-                // StationId < 0 guard is belt-and-suspenders.
-                ghost = own.IsDead && own.StationId < 0;
-            }
-        }
-
-        if (_tipLines.Count == 0 && !inPod && !ghost) return;
+        if (!model.Visible) return;
+        bool inPod = model.PodVisible, ghost = model.DeathVisible;
+        int oxySec = model.Telemetry?.OxygenSecondsRemaining ?? 0;
+        if (model.Context.Notices.Count == 0 && !inPod && !ghost) return;
 
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
         {
             // ── 1. Tip lines ────────────────────────────────────────────────
             int critIdx = 0, tipIdx = 0;
-            foreach (var (text, critical, expiresAt) in _tipLines)
+            foreach (var (text, critical, fade) in model.Context.Notices)
             {
-                double remaining = expiresAt - _nowSeconds;
-                float fade = (float)Math.Clamp(remaining / 0.8, 0.0, 1.0);   // dissolve over the last 0.8 s
                 var sz = _hudSmall.MeasureString(text);
                 if (critical)
                 {
@@ -3078,9 +3073,9 @@ public sealed partial class Game1
                     float h = panelH, w = h * aspect;
                     var dst = new Rectangle((int)(vp.Width / 2f - w / 2f), (int)py, (int)w, (int)h);
                     _spriteBatch.Draw(panelTex, dst, Color.White);
-                    _spriteBatch.DrawString(_hudBig, "YOU HAVE EJECTED.",
-                        new Vector2(vp.Width / 2f - _hudBig.MeasureString("YOU HAVE EJECTED.").X / 2f, py + panelH * 0.12f),
-                        new Color(0.88f, 0.96f, 0.95f));
+                    // The native panel already contains its eject/return-to-base
+                    // text. Keep the large title for the art-missing fallback;
+                    // drawing it here overprints both native instruction lines.
                     // Endurance gauge: "O : mm:ss" + a bar of the fraction left
                     // (native softgaugebmp of GetEndurance(Me)).
                     string od = $"O : {P578Countdown(oxySec)}";
