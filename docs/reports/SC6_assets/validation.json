@@ -1,0 +1,35 @@
+{
+  "task": "SC6_COMMANDER_ORDERS",
+  "base": "c4211708 (master at merge); merge-base a00e842f",
+  "branch": "master",
+  "merged": "codex/sc6 WIP commit 3c693444 (clean 3-way merge, no conflicts)",
+  "light_gate": {
+    "whole_build": { "warnings": 0, "errors": 0 },
+    "aot_publish": { "target": "Allegiance.Server linux-x64 self-contained", "il2026_il3050": 0, "ok": true }
+  },
+  "tests_3x_alone": {
+    "SC6CommanderOrdersTests": { "runs": 3, "per_run": "4/4 pass", "note": "ResearchTactics policy + DecideAcceptTranslate" },
+    "SC6CommanderExecutionTests": { "runs": 3, "per_run": "2/2 pass", "note": "repair-precedes-support + observed-target filtering" },
+    "SC6AcceptedOrderTelemetryTests(Live)": { "runs": 3, "per_run": "1/1 pass", "note": "queue/reject/requeue/accept/duplicate-accept counting" },
+    "SC6CommanderOrdersLiveTests(Live)": { "runs": 3, "per_run": "1/1 pass, durations 1m2s/1m1s/1m0s", "note": "15v15 research showcase proof" }
+  },
+  "failing_first": {
+    "Repair_acceptance_releases_hostile_focus_and_preserves_named_order": {
+      "base(c4211708)": "FAIL: Assert.Null() Expected null Actual 99 (repair accepted order still adopted hostile ship target)",
+      "post_merge": "PASS (repair clears the ordered combat target)"
+    }
+  },
+  "fast_tier_one_run": { "discovered": 8882, "pass": 8879, "fail": 0, "not_executed": 3, "seconds": 269.3, "note": "8852 headline + 30 quarantine; 3 NotExecuted are pre-existing MeshyPack pack-content skips (require packed build), no failures" },
+  "never_parks_P700_5x": [ "PASS 1m46s", "PASS 1m51s", "PASS 1m50s", "PASS 1m46s", "PASS 1m50s" ],
+  "live_proof_final_skill_samples": [
+    { "run": 1, "side0": "attack 42, repair 6, naniteShip 1", "side1": "attack 49, repair 6, naniteShip 7" },
+    { "run": 2, "side0": "attack 37, repair 6, naniteShip 1", "side1": "attack 51, repair 4, naniteShip 4" },
+    { "run": 3, "side0": "attack 41, repair 8, naniteShip 1", "side1": "attack 59, repair 4, naniteShip 3" }
+  ],
+  "live_proof_end_to_end_traces": {
+    "attack": { "command": 1, "side": 0, "recipient_ship": 8130, "target_type": "Station", "target": 1, "accepted": 1, "projectile_power": 3.2, "note": "positive-power weapon fired at enemy station after accept" },
+    "repair": { "command": 6, "side": 1, "recipient_ship": 8100, "target_type": "Ship", "target": 8177, "accepted": 6, "projectile_power": -22.5, "note": "negative-power nanite weapon fired at friendly damaged ship after accept" }
+  },
+  "scratch": "~/allegiance-scratch/SC6 (removed at end)",
+  "evidence_raw_logs": "~/allegiance-evidence/SC6/sc6-live-run{1,2,3}.log"
+}

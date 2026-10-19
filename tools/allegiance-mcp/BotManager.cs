@@ -2218,7 +2218,7 @@ bool isThreat =
             // target and must be accepted; an already-accepted one is the ongoing
             // engagement (persisted — see the no-pending case above).
             return isFresh
-                ? new OrderDecision(true, pq.TargetId)
+                ? new OrderDecision(true, pq.CommandId == OrderChange.CidRepair ? null : pq.TargetId)
                 : new OrderDecision(false, currentOrderedTarget);
         }
 

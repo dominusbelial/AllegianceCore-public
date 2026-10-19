@@ -110,6 +110,9 @@ internal sealed partial class BotManager
             return true;
         }
         bot.SupportRefitting = false;
+        // Accepted commander repair owns the named target and route before
+        // autonomous support selection (shipIGC.cpp:1936-1939).
+        if (bot.OrderedCommand?.CommandId == OrderChange.CidRepair && DriveCommanderOrder(bot, now)) return true;
         if (!TryCsPose(cs, bot.ShipId, out var pos, out _)) return true;
         short sector = CsSector(cs);
         RepairTarget? target;

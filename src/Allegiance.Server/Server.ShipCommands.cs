@@ -1307,6 +1307,9 @@ public sealed partial class Server
                     }
                     target.AcceptedShipCommandId = target.QueuedCommandId;
                     target.AcceptedShipTarget = target.QueuedShipTarget;   // SetTarget+SetAccepted move the target too (WinTrek.cpp:10668-10681)
+                    // SC-1 counts accepted commands. Player-protocol pilots
+                    // accept asynchronously; NPCs record in CommandToDrone.
+                    RecordCommanderOrder(target, target.AcceptedShipCommandId);
                     ClearQueuedCommand(target);
                     if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: ACCEPTED own queued order {target.AcceptedShipCommandId} -> accepted slot (accepted target {(target.AcceptedShipTarget is null ? "null" : $"#{target.AcceptedShipTarget.Id}")}), queued cleared (native AcceptQueuedCommand, WinTrek.cpp:10626-10712)");
                 }
@@ -1683,15 +1686,7 @@ public sealed partial class Server
             return;
         }
 
-        ShowcaseSkill? skill = cid switch
-        {
-            OrderChange.CidGoto => ShowcaseSkill.OrderGoto,
-            OrderChange.CidAttack => ShowcaseSkill.OrderAttack,
-            OrderChange.CidBuild => ShowcaseSkill.OrderBuild,
-            OrderChange.CidRepair => ShowcaseSkill.OrderRepair,
-            _ => null
-        };
-        if (skill is { } accepted) sender.Mission?.Skills?.Record(sender.SideId, accepted);
+        RecordCommanderOrder(sender, cid);
         drone.ResetRunawayForNewOrder(); // SetCommand resets even an identical order (shipIGC.h:725-764)
 
         // Reply "Affirmative." to the commander (FedSrv.CPP:3256-3257).
@@ -1700,6 +1695,19 @@ public sealed partial class Server
         // Native echoes the accepted command to the command wing and Charlie/
         // Delta/Echo wings (FedSrv.CPP:3563-3571). Named gap: this port has no
         // command-wing routing worth replicating here (see the P469 report).
+    }
+
+    private static void RecordCommanderOrder(Ship sideOwner, short cid)
+    {
+        ShowcaseSkill? skill = cid switch
+        {
+            OrderChange.CidGoto => ShowcaseSkill.OrderGoto,
+            OrderChange.CidAttack => ShowcaseSkill.OrderAttack,
+            OrderChange.CidBuild => ShowcaseSkill.OrderBuild,
+            OrderChange.CidRepair => ShowcaseSkill.OrderRepair,
+            _ => null
+        };
+        if (skill is { } accepted) sideOwner.Mission?.Skills?.Record(sideOwner.SideId, accepted);
     }
 
     /// <summary>

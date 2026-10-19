@@ -38,6 +38,7 @@ internal sealed partial class BotManager
         Vector3 point = default;
         short sector = -1;
         bool enemy = false;
+        RepairTarget? repair = null;
         lock (cs.Gate)
         {
             var world = cs.World;
@@ -49,10 +50,15 @@ internal sealed partial class BotManager
                     sector = ship.SectorId;
                     if (ship.Latest is { } pose) point = pose.Position;
                     enemy = ship.SideId != bot.Side && !world.AreAllied(bot.Side, ship.SideId);
+                    if (!enemy && ship.Latest is { HullFraction: > 0 and < 1 } shipPose && ship.StationId < 0 && ship.ParentId < 0)
+                        repair = new(ship.ShipId, false, sector, point, shipPose.Velocity, HullRadius(ship.HullId));
                     break;
                 case IgcObjectType.Station when world.Stations.TryGetValue(command.TargetId, out var station):
                     sector = station.ClusterId; point = Vec3(station.Position);
                     enemy = station.SideId != bot.Side && !world.AreAllied(bot.Side, station.SideId);
+                    if (!enemy && world.StationLive.TryGetValue(station.StationId, out var live) && live.HullFraction is > 0 and < 1)
+                        repair = new(station.StationId, true, sector, point, Vector3.Zero,
+                            Catalog.RepresentativeCore().StationTypes.TryGetValue(station.StationTypeId, out var type) ? type.Radius : 100);
                     break;
                 case IgcObjectType.Asteroid when world.Asteroids.TryGetValue(command.TargetId, out var rock):
                     sector = rock.ClusterId; point = Vec3(rock.Position);
@@ -60,6 +66,16 @@ internal sealed partial class BotManager
                 case IgcObjectType.Warp when world.Warps.TryGetValue(command.TargetId, out var warp):
                     sector = warp.ClusterId; point = Vec3(warp.Position);
                     break;
+            }
+        }
+        if (command.CommandId == OrderChange.CidRepair)
+        {
+            // Never steer a positive-power loadout into a friendly attack.
+            if (!HasNanite(bot)) return false;
+            if (sector >= 0 && repair is null)
+            {
+                bot.OrderedCommand = null; bot.OrderedTargetId = null; bot.TargetId = null;
+                return false; // completed, captured, docked or otherwise invalid
             }
         }
         // A temporary visibility gap preserves the accepted order.
@@ -73,7 +89,13 @@ internal sealed partial class BotManager
             bot.LastCluster = current;
             return true;
         }
-        if (command.CommandId == OrderChange.CidDefend && !enemy)
+        if (command.CommandId == OrderChange.CidRepair && repair is { } repairTarget)
+        {
+            bot.OrderedTargetId = null;
+            bot.TargetId = repairTarget.Id;
+            FlyRepairTarget(bot, cs, repairTarget);
+        }
+        else if (command.CommandId == OrderChange.CidDefend && !enemy)
         {
             short? threat;
             lock (cs.Gate)
