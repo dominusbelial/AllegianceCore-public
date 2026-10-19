@@ -27,7 +27,7 @@ public sealed partial class Game1
     {
         _trainingError = "";
         if (missionId is not (Tm2BasicFlight or Tm3BasicWeaponry or Tm4EnemyEngagement
-            or Tm5CommandView or Tm6PracticeArena))
+            or Tm5CommandView or Tm6PracticeArena or Tm8Nanite or Tm10FreeFlight))
         {
             _trainingError = "That mission isn't playable yet; it's coming soon.";
             Console.WriteLine($"[training] {_trainingError}");
@@ -36,7 +36,7 @@ public sealed partial class Game1
 
         // The embedded training host realises the mission's universe/creation actions (TR-2b). The
         // variant selects the native map/hull/start-sector (M2/M3: training_1/1010; M4: training_3/1030;
-        // M5: training_5/1050; M6: training_6/2080).
+        // M5: training_5/1050; M6+M10: training_6/2080; M8: training_nan/1051).
         var variant = missionId switch
         {
             Tm2BasicFlight => TrainingHost.BasicFlight,
@@ -44,6 +44,8 @@ public sealed partial class Game1
             Tm4EnemyEngagement => TrainingHost.EnemyEngagement,
             Tm5CommandView => TrainingHost.CommandView,
             Tm6PracticeArena => TrainingHost.PracticeArena,
+            Tm8Nanite => TrainingHost.Nanite,
+            Tm10FreeFlight => TrainingHost.FreeFlight,
             _ => TrainingHost.BasicFlight,
         };
         _embeddedHost = TrainingHost.Start(variant);
@@ -70,6 +72,8 @@ public sealed partial class Game1
             Tm4EnemyEngagement => new Mission4(site),
             Tm5CommandView => new Mission5(site),
             Tm6PracticeArena => new Mission6(site),
+            Tm8Nanite => new Mission8(site),
+            Tm10FreeFlight => new Mission10(site),
             _ => throw new InvalidOperationException(),
         };
         // Bind the active mission to the embedded host so Mission 6's kill goals read the real

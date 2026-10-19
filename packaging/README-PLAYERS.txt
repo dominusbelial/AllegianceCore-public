@@ -94,6 +94,30 @@ to setup. The in-game menu also offers Pause and End skirmish.
 For a headless local benchmark run: Allegiance --skirmish-smoke 60 Small
 (replace Allegiance with Allegiance.exe on Windows).
 
+Training (offline)
+------------------
+From the main menu choose Single Player, then Training on the chooser to
+open the mission list (the native single-player button is the training
+entry). Pick a mission with Up/Down and press Enter to start it. The native
+training set is playable offline against the embedded host:
+
+  1. Introduction   (slideshow/voice-over — not yet ported)
+  2. Basic Flight   (radar, throttle, booster, autopilot home)
+  3. Basic Weaponry (weapon mounts, ammo, energy, firing)
+  4. Enemy Engagement (engage and destroy hostile craft)
+  5. Command View   (command map, buying and giving orders)
+  6. Practice Arena (a safe arena to practise ships and loadouts)
+  8. Nanite         (mount the Nanite Repair System, repair the station,
+                     defend the miners, escort the bomber)
+
+Mission 7/Live was removed from the native set and does not appear. The
+"Free Flight" dev mission (native mission 10) has no training-screen button —
+natively it launches only through the bStartTraining debug flag — so it is
+started here the same way: run the client with ALLEGIANCE_TRAIN_MISSION=10.
+
+Each mission runs entirely on your machine; nothing is sent online. Training
+uses the same controls as normal flight (F1 shows a control overview).
+
 Benchmark and recommended settings
 ----------------------------------
 The first launch offers an optional benchmark; Escape skips it. Benchmark is

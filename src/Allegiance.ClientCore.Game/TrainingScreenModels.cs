@@ -33,8 +33,10 @@ public sealed class SinglePlayerChooserModel
 /// (and their descriptive art) as <c>missionNumberN</c> bitmaps switched on the selected
 /// mission (trainingscreen.mdl <c>missionInfoImage = SwitchImage(missionNumber, ...)</c>),
 /// with one button per mission (trainingscreen.cpp:50-58). The port renders the same
-/// list as text and marks every mission except Basic Flight (Mission 2) as disabled
-/// "coming soon" — TR-2 ships Mission 2 only; the others are shown, never hidden.
+/// list as text and marks only the slideshow-only Introduction mission as disabled
+/// "coming soon" — every playable native mission (2,3,4,5,6,8) is enabled across TR-2..TR-5.
+/// Free Flight (mission 10) is deliberately absent from the chooser: native has no button
+/// for it (it launches only via the bStartTraining debug flag, trainingscreen.cpp:105-108).
 /// </summary>
 public sealed class TrainingScreenModel
 {
@@ -55,7 +57,7 @@ public sealed class TrainingScreenModel
         new(Tm4EnemyEngagement, "Enemy Engagement", "Engage and destroy hostile craft in combat.", Playable: true),
         new(Tm5CommandView, "Command View", "The command map, buying and giving orders.", Playable: true),
         new(Tm6PracticeArena, "Practice Arena", "A safe arena to practise ships and loadouts.", Playable: true),
-        new(Tm8Nanite, "Nanite", "The nanite repair drone and survivability.", Playable: false),
+        new(Tm8Nanite, "Nanite", "The nanite repair drone and survivability.", Playable: true),
     };
 
     public int Index;

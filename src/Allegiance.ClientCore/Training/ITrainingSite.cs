@@ -86,6 +86,23 @@ public interface ITrainingSite
     /// <summary>Set an object's scan signature (<c>SetSignatureAction.cpp:46-49</c>).</summary>
     void SetSignature(ObjectType type, int id, float signature);
 
+    // ── M8 nanite / repair / station seams (native mission8.cpp) ──────────────────
+    /// <summary>TRUE when a ship has a part of the given <paramref name="partId"/> mounted (a part
+    /// with that part-type object id and a mount id &gt;= 0) — port of <c>GetShipHasMountedCondition</c>
+    /// (<c>getshiphasmountedcondition.cpp:36-45</c>). Mission 8 gates goal 1 on the player mounting
+    /// the Nanite Repair System (part 190).</summary>
+    bool HasPartMounted(TargetRef ship, int partId);
+    /// <summary>Mount a part onto a ship — the write behind <c>SetDroneNanAction</c>
+    /// (<c>setdronenanaction.cpp:36-52</c>, mounts Nanite 190 on a wingman) and the player's own
+    /// weapon mount that <c>GetShipHasMountedCondition</c> detects. <paramref name="mount"/> is the
+    /// native mount id (0 = front weapon slot).</summary>
+    void MountPart(TargetRef ship, int partId, int mount = 0);
+    /// <summary>Damage a station's armour (<c>IstationIGC::ReceiveDamage</c>,
+    /// <c>stationIGC.cpp:147-156</c>; a negative amount repairs) — the write behind Mission 8
+    /// goal 1's start action (<c>mission8.cpp:203</c>), which knocks the home station down so the
+    /// player can practise repairing it with the nanite gun.</summary>
+    void DamageStation(int stationId, float amount);
+
     // ── player events (keyboard / chat) ────────────────────────────────────────────
     /// <summary>Consume-and-return whether the given key has been pressed since the last query
     /// (<c>getkeycondition.cpp:49</c> resets <c>m_pressed</c> on every Evaluate).</summary>

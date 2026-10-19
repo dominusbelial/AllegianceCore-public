@@ -37,6 +37,7 @@ public sealed partial class Game1
     /// <summary>TR-2 — "don't ask me again" tick on the first-run training suggestion.</summary>
     private bool _trainingSuggestDontAsk;
     private bool _trainingSuggestHandled;
+    private bool _trainingDebugLaunched;
 
     /// <summary>Native's main-menu button slots and the port's labels. Citations:
     /// SinglePlayer←trainBigButtonPane (:1221)/OnButtonTraining(:1558);
@@ -129,6 +130,18 @@ public sealed partial class Game1
                 _introProofWaitExit = true;
                 Console.WriteLine("[intro] ALLEGIANCE_AUTOSHOT: intro proof queued");
             }
+        }
+
+        // TR-5 — native Free Flight (Mission 10) has no training-screen button; it is a dev/debug
+        // mission launched through the bStartTraining flag (trainingscreen.cpp:105-108, m_iMissionNext
+        // set to c_TM_10_Free_Flight). Match that: ALLEGIANCE_TRAIN_MISSION=&lt;id&gt; force-starts that
+        // mission once from the intro (keeps Free Flight off the chooser, as native does).
+        if (!_trainingDebugLaunched && Environment.GetEnvironmentVariable("ALLEGIANCE_TRAIN_MISSION") is { Length: > 0 } dbg
+            && int.TryParse(dbg, out int dbgMission))
+        {
+            _trainingDebugLaunched = true;
+            Console.WriteLine($"[intro] ALLEGIANCE_TRAIN_MISSION={dbgMission} -> starting training mission (native bStartTraining path)");
+            StartTrainingMission(dbgMission);
         }
 
         // Drive the (reused) lobby fetch so the Find Server list can merge the

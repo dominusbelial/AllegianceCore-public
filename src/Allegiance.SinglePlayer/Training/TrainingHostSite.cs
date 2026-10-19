@@ -39,8 +39,8 @@ public sealed class TrainingHostSite : ITrainingSite
         }
         if (r.Type == ObjectType.Buoy && _host.Waypoints.TryGetValue(r.Id, out var wp))
             return new HostObject(r, wp.Position, Vector3.Zero, Vector3.UnitX, wp.SectorId, 20f);
-        if (r.Type == ObjectType.Station && r.Id == _host.StartSectorId)
-            return new HostObject(r, _host.StationPosition, Vector3.Zero, Vector3.UnitX, _host.StartSectorId, 50f);
+        if (r.Type == ObjectType.Station && _host.Stations.TryGetValue(r.Id, out var st))
+            return new HostObject(r, st.Position, Vector3.Zero, Vector3.UnitX, st.SectorId, 50f);
         return null;
     }
 
@@ -88,6 +88,11 @@ public sealed class TrainingHostSite : ITrainingSite
     public void ShowPane(int paneMask) { }
     public void SetEyeball(bool shown) { }
     public void SetSignature(ObjectType type, int id, float signature) { }
+
+    // ── M8 nanite / repair / station seams (real host state) ─────────────────
+    public bool HasPartMounted(TargetRef ship, int partId) => _host.HasPartMounted(ship.Id, partId);
+    public void MountPart(TargetRef ship, int partId, int mount = 0) => _host.MountPart(ship.Id, partId);
+    public void DamageStation(int stationId, float amount) => _host.DamageStation(stationId, amount);
 
     // ── player events ─────────────────────────────────────────────────────────
     public bool ConsumeKey(int key)

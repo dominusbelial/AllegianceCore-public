@@ -61,6 +61,8 @@ public sealed class FakeTrainingSite : ITrainingSite
     public Dictionary<int, int> CommandIds { get; } = new();
     public List<string> ActionsLog { get; } = new();
     private readonly HashSet<int> _destroyedShips = new();
+    private readonly HashSet<(int ShipId, int PartId)> _mountedParts = new();
+    private readonly Dictionary<int, float> _stationFractions = new();
 
     /// <summary>Mark a ship destroyed (the "armour fraction reaches 0" outcome).</summary>
     public void DestroyShip(int id) => _destroyedShips.Add(id);
@@ -143,7 +145,11 @@ public sealed class FakeTrainingSite : ITrainingSite
     public int GetViewSector() => ViewSector;
     public int CommandAcknowledged { get; set; } = TrainingMissionIds.CmdDoNothing;
     public float GetFraction(TargetRef model)
-        => (_destroyedShips.Contains(model.Id) || Resolve(model) is null) ? 0f : 1f;
+    {
+        if (model.Type == ObjectType.Station)
+            return StationFraction(model.Id);
+        return (_destroyedShips.Contains(model.Id) || Resolve(model) is null) ? 0f : 1f;
+    }
     public int GetCommandAcknowledged() => CommandAcknowledged;
 
     // ── M3/M4 combat / equipment / UI actions (recorded for assertion) ────────
@@ -154,6 +160,15 @@ public sealed class FakeTrainingSite : ITrainingSite
     public void ShowPane(int paneMask) => ActionsLog.Add($"ShowPane(0x{paneMask:x})");
     public void SetEyeball(bool shown) => ActionsLog.Add($"SetEyeball({shown})");
     public void SetSignature(ObjectType type, int id, float signature) => ActionsLog.Add($"SetSignature({type},{id},{signature})");
+
+    // ── M8 nanite / repair / station seams (scriptable) ──────────────────────
+    public bool HasPartMounted(TargetRef ship, int partId) => _mountedParts.Contains((ship.Id, partId));
+    public void MountPart(TargetRef ship, int partId, int mount = 0) => _mountedParts.Add((ship.Id, partId));
+    public void DamageStation(int stationId, float amount)
+        => _stationFractions[stationId] = Math.Clamp(Fraction(stationId) - amount / 20000f, 0f, 1f);
+    public float StationFraction(int stationId) => Fraction(stationId);
+    public void RepairStation(int stationId) => _stationFractions[stationId] = 1f;
+    private float Fraction(int id) => _stationFractions.TryGetValue(id, out var f) ? f : 1f;
 
     public bool ConsumeKey(int key) => _pendingKeys.Remove(key);
 

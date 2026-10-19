@@ -124,6 +124,19 @@ public sealed class ClientTrainingSite : ITrainingSite
     public void SetEyeball(bool shown) => TrainingHostLog.Log($"SetEyeball({shown})");
     public void SetSignature(ObjectType type, int id, float signature) => TrainingHostLog.Log($"SetSignature({type},{id},{signature})");
 
+    // ── M8 nanite / repair / station seams (authoritative host) ───────────────
+    public bool HasPartMounted(TargetRef ship, int partId) => _f.Host is { } h && h.HasPartMounted(ship.Id, partId);
+    public void MountPart(TargetRef ship, int partId, int mount = 0)
+    {
+        if (_f.Host is { } h) h.MountPart(ship.Id, partId);
+        else TrainingHostLog.Log($"MountPart({ship.Id},{partId}) — no embedded training host");
+    }
+    public void DamageStation(int stationId, float amount)
+    {
+        if (_f.Host is { } h) h.DamageStation(stationId, amount);
+        else TrainingHostLog.Log($"DamageStation({stationId},{amount}) — no embedded training host");
+    }
+
     private static int ResolveId(TargetRef r) =>
         r.Type == ObjectType.Ship && r.Id == TargetRef.Na ? -1 : r.Id;
 

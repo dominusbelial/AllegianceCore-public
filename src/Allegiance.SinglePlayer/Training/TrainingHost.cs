@@ -40,6 +40,11 @@ public interface ITrainingHost
     int ViewSector { get; }
     float GetFraction(TargetRef model);
     int GetCommandAcknowledged();
+
+    // ── M8 nanite / repair / station seams (authoritative host state) ─────────
+    bool HasPartMounted(int shipId, int partId);
+    void MountPart(int shipId, int partId);
+    void DamageStation(int stationId, float amount);
 }
 
 /// <summary>
@@ -65,6 +70,10 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     /// <summary>A training waypoint (native <c>OT_buoy</c>, createwaypointaction.cpp:34-46).</summary>
     public readonly record struct Waypoint(Vector3 Position, int SectorId, int BuoyType, bool Visible);
 
+    /// <summary>A map station's position/sector/side record (native <c>IstationIGC</c>; the M8
+    /// home + enemy-outpost stations are the mission's repair/destroy subjects).</summary>
+    public readonly record struct HostStation(Vector3 Position, int SectorId, int SideId);
+
     private readonly Srv _server;
     private readonly object _simGate = new();
     private readonly CancellationTokenSource _stop = new();
@@ -80,6 +89,12 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     private readonly Dictionary<int, int> _droneStationTypes = new();  // constructor station type
     private readonly Dictionary<int, int> _droneTechLevels = new();    // negative tech-level loadout
 
+    // M8 nanite / repair / station state (native mission8.cpp / stationIGC.cpp:147-156).
+    private readonly Dictionary<int, HostStation> _stations = new();   // station id -> map record
+    private readonly Dictionary<int, float> _stationFractions = new(); // armour fraction (1 = full)
+    private readonly Dictionary<int, float> _shipFractions = new();    // ship armour fraction (1 = full)
+    private readonly HashSet<(int ShipId, int PartId)> _mountedParts = new(); // mounted part ids
+
     // M5/M6 command-view + escalation state (native trekClient view/console + TrainingMission::ShipKilled).
     private TargetRef? _pickedRef;                                     // console's picked object
     private int _viewSector;                                           // currently-viewed cluster (GetViewCluster)
@@ -94,8 +109,16 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     /// <summary>The player's start sector (native <c>Mission2::GetStartSectorID()</c> = 1010).</summary>
     public short StartSectorId { get; }
 
+    /// <summary>The station id of the player's home station — the station in the start sector owned
+    /// by the player's side (native <c>GetSide()-&gt;GetStations()-&gt;first()</c>; the player is side 0).
+    /// For the native training maps this is usually the start-sector station (e.g. training_6: 2080),
+    /// except Mission 8's <c>training_nan</c>, where the home station is 1052 (cluster 1051, side 0)
+    /// and the enemy outpost is 1051 (cluster 1052, side 1) — probed from the .igc this session.</summary>
+    public short HomeStationId { get; }
+
     public IReadOnlyDictionary<int, Waypoint> Waypoints => _waypoints;
     public IReadOnlyDictionary<int, Ship> Drones => _drones;
+    public IReadOnlyDictionary<int, HostStation> Stations => _stations;
 
     public ushort Port => _server.BoundPort;
 
@@ -109,6 +132,26 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         CommanderShipId = commander.Id;
         StartSectorId = startSector;
         _viewSector = startSector;
+
+        // Populate the map station records and pick the player's home station (native side's first
+        // station). Station/sector ids are distinct namespaces, so search by the station's cluster
+        // (sector) on the player's side, falling back to the station id equal to the start sector
+        // for the older training maps.
+        foreach (var st in mission.Map.Stations)
+            _stations[st.StationId] = new HostStation(
+                st.Position is { Length: 3 } p ? new Vector3(p[0], p[1], p[2]) : Vector3.Zero,
+                st.ClusterId, st.SideId);
+        // Pick the player's home station (native side's first station). Station/sector ids are
+        // distinct namespaces, so search by the station's cluster (sector) on the player's side,
+        // falling back to the station id equal to the start sector for the older training maps.
+        short homeId = startSector;
+        foreach (var st in mission.Map.Stations)
+            if (st.ClusterId == startSector && st.SideId == player.SideId) { homeId = (short)st.StationId; break; }
+        if (homeId == startSector)
+            foreach (var st in mission.Map.Stations)
+                if (st.StationId == startSector) { homeId = (short)st.StationId; break; }
+        HomeStationId = homeId;
+        _stationFractions[HomeStationId] = 1.0f;
     }
 
     /// <summary>The universe each native training mission boots: map, player hull, start sector and
@@ -121,6 +164,11 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     public static readonly TrainingVariant EnemyEngagement = new("training_3.igc", 486, 1030, "Enemy Engagement");
     public static readonly TrainingVariant CommandView = new("training_5.igc", 412, 1050, "Command View");
     public static readonly TrainingVariant PracticeArena = new("training_6.igc", 488, 2080, "Practice Arena");
+    // TR-5: Mission 8 "Nanite" (training_nan, Rix scout 685, sector 1051 — mission8.cpp:62-64,89)
+    // and Mission 10 "Free Flight" (a Mission-6 clone without the intro and with fewer constraints,
+    // mission10.cpp:1-7 — same training_6/488/2080 universe as Practice Arena).
+    public static readonly TrainingVariant Nanite = new("training_nan.igc", 685, 1051, "Nanite");
+    public static readonly TrainingVariant FreeFlight = new("training_6.igc", 488, 2080, "Free Flight");
 
     public static TrainingHost Start(string? artwork = null) => Start(BasicFlight, artwork);
 
@@ -285,10 +333,15 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         yield return CommanderShip;
     }
 
-    /// <summary>The home station's position (map station 1010, native <c>OT_station 1010</c>).</summary>
+    /// <summary>The home station's position (native <c>OT_station 1010</c> etc.; the home station is
+    /// the player's side's station in the start sector — see <see cref="HomeStationId"/>).</summary>
     public Vector3 StationPosition
-        => Mission.Map.Stations.First(s => s.StationId == StartSectorId).Position is { Length: 3 } p
-            ? new Vector3(p[0], p[1], p[2]) : Vector3.Zero;
+        => _stations.TryGetValue(HomeStationId, out var hs) ? hs.Position : Vector3.Zero;
+
+    /// <summary>A map station's position record, or <c>null</c> when the id is not a map station
+    /// (native <c>pMission-&gt;GetModel(OT_station, id)</c>, e.g. Mission 8's enemy outpost 1051).</summary>
+    public Vector3? TryGetStationPosition(int stationId)
+        => _stations.TryGetValue(stationId, out var hs) ? hs.Position : (Vector3?)null;
 
     // ── ITrainingHost handlers ──────────────────────────────────────────────────
     public void CreateWaypoint(int buoyId, Vector3 position, int sectorId, int buoyType, bool visible)
@@ -333,6 +386,7 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         var ori = Orientation.Identity;
         ori.Set(ToCore(forward), ToCore(up));
         ship.Position = ToCore(position);
+        ship.Velocity = Coll.Vector3.Zero;   // placing a drone sets its state; clears any residual sim velocity
         ship.SetOrientation(ori);
         var sector = Mission.Sectors.FirstOrDefault(s => s.Id == sectorId);
         if (sector is not null && ship.Sector != sector)
@@ -347,6 +401,9 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         if (ship is null) return;
         // Only an accepted or current order sets the command id a GetCommandCondition sees; a queued
         // order (c_cmdQueued) merely presents a prompt until the pilot accepts it (getcommandcondition.cpp:44-49).
+        // (A queued Goto still arms the autopilot pass here so a proof that accepts it can fly; the M8
+        // driver pins the bomber to the player's live position, so the player's own queued "meet me"
+        // flight does not break M8's within-radius gate.)
         if (command != TrainingMissionIds.CommandQueued)
             _commands[shipId] = commandId;
         if (commandId == TrainingMissionIds.CmdGoto)
@@ -437,10 +494,60 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     public void AcknowledgeCommand(int commandId) => _commandAcknowledged = commandId;
     public int GetCommandAcknowledged() => _commandAcknowledged;
 
-    /// <summary>Armour fraction (0 = destroyed/absent, 1 = pristine) behind <c>GetShipIsDamagedCondition</c>.</summary>
+    /// <summary>Armour fraction (0 = destroyed/absent, 1 = pristine) behind <c>GetShipIsDamagedCondition</c>.
+    /// Stations read the host's tracked armour fraction (<see cref="_stationFractions"/>), so Mission 8's
+    /// damaged-then-repaired home station and destroyed enemy outpost resolve against the real host.</summary>
     public float GetFraction(TargetRef model)
-        => model.Type == ObjectType.Ship ? (IsDestroyed(model.Id) ? 0f : 1f)
-                                         : (ResolveShip(model.Id) is { } ? 1f : 0f);
+    {
+        if (model.Type == ObjectType.Ship)
+            return IsDestroyed(model.Id) ? 0f : (_shipFractions.TryGetValue(model.Id, out var f) ? f : 1f);
+        if (model.Type == ObjectType.Station)
+            return GetStationFraction(model.Id);
+        return ResolveShip(model.Id) is { } ? 1f : 0f;
+    }
+
+    /// <summary>A ship's armour fraction (1 = full, 0 = destroyed; <c>IshipIGC::GetFraction</c>). By
+    /// default a live drone is 1; <see cref="DamageShip"/> lowers it so Mission 8's "bomber hull
+    /// damaged" gate (<c>GetShipIsDamagedCondition(bomber, 1.0)</c>, mission8.cpp:586) can fire
+    /// without destroying the bomber.</summary>
+    public float GetShipFraction(int shipId)
+        => IsDestroyed(shipId) ? 0f : (_shipFractions.TryGetValue(shipId, out var f) ? f : 1f);
+
+    /// <summary>Knock a ship's armour down by <paramref name="amount"/> (the damaged-but-alive outcome
+    /// the headless driver scripts for Mission 8's bomber; <c>Ship.ReceiveDamage</c>, shipIGC.cpp:1212,
+    /// is the real-client realisation).</summary>
+    public void DamageShip(int shipId, float amount)
+    {
+        float cur = IsDestroyed(shipId) ? 0f : (_shipFractions.TryGetValue(shipId, out var f) ? f : 1f);
+        _shipFractions[shipId] = Math.Clamp(cur - amount / 20000f, 0f, 1f);
+    }
+
+    /// <summary>A station's armour fraction (1 = pristine, 0 = destroyed; <c>IstationIGC</c> reads
+    /// behind <c>GetShipIsDamagedCondition(OT_station,…)</c>). Unknown station ids report 0.</summary>
+    public float GetStationFraction(int stationId)
+        => _stationFractions.TryGetValue(stationId, out var f) ? f
+            : (_stations.ContainsKey(stationId) ? 1f : 0f);
+
+    /// <summary>Knock a station's armour down by <paramref name="amount"/> — the write behind
+    /// <c>DamageStationAction</c> (Mission 8 goal 1's start action, mission8.cpp:203). Mission 8
+    /// damages 12500; scaled to a meaningful armour-fraction drop (~0.017 per 1000).</summary>
+    public void DamageStation(int stationId, float amount)
+    {
+        float cur = _stationFractions.TryGetValue(stationId, out var f) ? f : 1f;
+        _stationFractions[stationId] = Math.Clamp(cur - amount / 20000f, 0f, 1f);
+    }
+
+    /// <summary>Restore a station to full armour (the repaired outcome the nanite gun produces; the
+    /// headless proof scripts it, mirroring how <see cref=\"RecordKillCredit\"/> scripts a kill).</summary>
+    public void RepairStation(int stationId) => _stationFractions[stationId] = 1f;
+
+    /// <summary>TRUE when a ship has a part of the given type mounted — <c>GetShipHasMountedCondition</c>
+    /// (getshiphasmountedcondition.cpp:36-45). The driver scripts the player mounting Nanite 190;
+    /// <see cref=\"SetDroneNanAction\"/> mounts it on a nan wingman.</summary>
+    public bool HasPartMounted(int shipId, int partId) => _mountedParts.Contains((shipId, partId));
+
+    /// <summary>Mount a part on a ship — the write behind <c>MountPart</c> (setdronenanaction.cpp:36-52).</summary>
+    public void MountPart(int shipId, int partId) => _mountedParts.Add((shipId, partId));
 
     /// <summary>Bind the mission that receives the real kill-credit count (native ShipKilled hook).</summary>
     public void SetActiveMission(TrainingMission mission) => _activeMission = mission;
