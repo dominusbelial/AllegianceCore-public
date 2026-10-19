@@ -141,17 +141,28 @@ real credit ledger.
   stall `run-tests.sh`). Per the light gate I did **not** re-run the full suite hoping for clean; the
   fast-tier numbers above are measured, and the P700 bots/flight gate was covered separately (5/5).
 
-Raw logs: `~/allegiance-scratch/TR4/` (fast + full-suite logs; AOT publish). Evidence size kept ≤ 2 MB.
+Raw logs: `~/allegiance-scratch/TR4/` (fast + full-suite logs; AOT publish; real-window capture). Evidence
+size kept ≤ 2 MB.
+
+## Real-window proof (delivered)
+
+A genuine **real-client-window backbuffer** screenshot was captured on the live X display (`DISPLAY=:0`),
+1280×720, via `ALLEGIANCE_AUTOSHOT` → `GetBackBufferData` → `SaveAsPng` (the same F11 screenshot path the
+game uses), showing the Training screen with all seven native missions listed and **Command View** and
+**Practice Arena** selectable (no "coming soon" tag); only Introduction and Nanite remain locked. The
+capture was driven by a temporary `ALLEGIANCE_TRAINING_SCREEN=1` launch hook that forces the client
+straight to the mission chooser (reverted afterward; repo clean). Asset:
+`docs/reports/TR4_assets/TR4_training_screen_missions5_6.png`.
 
 ## Remaining (honest)
 
-As in TR-3, the **interactive real-window run** — navigating the MonoGame client (intro → Single
-Player → Training → the mission) on a real X display and pumping the mission through its interactive
-inputs (SPACEBAR, command-view picks/orders) while capturing 1280×720 backbuffer autoshots — is not
-delivered this session. The framework, both missions, the host and the headless proofs are all real
-and verified; the pixel-level interactive half needs client-side input automation (the real window on
-`DISPLAY=:0` is available, but no xdotool-style driving harness exists and several Codex agents are
-currently occupying the box). I have not fabricated any screenshots.
+The **running-mission render** in the real window — a Mission 5/6 mission actually started and rendering
+3D from the embedded host — is not delivered. The embedded training host boots the native map and logs
+"Mission 5 (Command View) started", but its minimal server does not send `LOGONACK` to seat the real
+client session, so the client cannot enter the airborne mission and stays on the chooser. Implementing
+real client-seating into the embedded training host (the standard logon/seating path adapted to start in
+flight) is the same "TR-4-sized client integration" TR-3's remaining section identified; the interactive
+mission render remains that engineering, and I have not fabricated a running-mission screenshot.
 
 ## Files changed
 
@@ -163,3 +174,4 @@ Modified: `TrainingMissionIds.cs`, `ITrainingSite.cs`, `CreationActions.cs` (Cli
 `TrainingHost.cs`, `TrainingHostSite.cs` (SinglePlayer); `ClientTrainingSite.cs`,
 `Game1.Training.cs`, `TrainingScreenModels.cs` (Game); `Server.cs`, `Server.Combat.cs` (Server);
 `FakeTrainingSite.cs`, `TR2TrainingTests.cs` (tests); `docs/parity/parity-matrix.csv`.
+Asset: `docs/reports/TR4_assets/TR4_training_screen_missions5_6.png` (real-window 1280×720 backbuffer).
