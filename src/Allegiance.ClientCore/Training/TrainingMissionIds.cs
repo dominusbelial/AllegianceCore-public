@@ -33,7 +33,10 @@ public static class TrainingMissionIds
     public const int CmdDoNothing = -3; // c_cidDoNothing
     public const int CmdNone = -1;      // c_cidNone
     public const int CmdAttack = 1;     // c_cidAttack
+    public const int CmdDefend = 3;     // c_cidDefend
     public const int CmdGoto = 5;       // c_cidGoto
+    public const int CmdRepair = 6;     // c_cidRepair
+    public const int CmdMine = 8;       // c_cidMine
     public const int CmdBuild = 9;      // c_cidBuild
 
     // Command enum (src/Igc/igc.h:883-887)
@@ -61,12 +64,18 @@ public static class TrainingMissionIds
     // Chat recipients (src/Igc/igc.h:2731)
     public const int ChatEveryone = 0;          // CHAT_EVERYONE
 
-    // Wingman-behaviour bits (src/Igc/igc.h:786-791): use missiles=0x10, run@60% hull=0x20,
-    // in-range aggressive=0x40. Native CreateDroneAction default = c_wbbmUseMissiles|c_wbbmRunAt60Hull
-    // (createdroneaction.cpp:42).
-    public const int WingmanUseMissiles = 0x10;
+    // Wingman-behaviour bits (src/Igc/igc.h:785-792). NOTE: the TR-3 report read UseMissiles=0x10
+    // (igc.h:786-791), but native is c_wbbmStrafe=0x01, c_wbbmUseMissiles=0x02, c_wbbmUseMines=0x04,
+    // c_wbbmRunAt30Hull=0x10, c_wbbmRunAt60Hull=0x20, c_wbbmInRangeAggressive=0x40,
+    // c_wbbmTempSectorAggressive=0x80. The values below are corrected to native truth. Native
+    // CreateDroneAction default = c_wbbmUseMissiles|c_wbbmRunAt60Hull (createdroneaction.cpp:42).
+    public const int WingmanStrafe = 0x01;
+    public const int WingmanUseMissiles = 0x02;
+    public const int WingmanUseMines = 0x04;
+    public const int WingmanRunAt30Hull = 0x10;
     public const int WingmanRunAt60Hull = 0x20;
     public const int WingmanInRangeAggressive = 0x40;
+    public const int WingmanTempSectorAggressive = 0x80;
 
     // Training HUD overlays — the native TrainingOverlay enum (WinTrek/indicator.h:17-42),
     // renumbered to the true enum order so M3/M4 overlays are native-accurate. The concrete
@@ -98,6 +107,7 @@ public static class TrainingMissionIds
 
     // Client overlay/pane masks shown by ShowPaneAction (native of*OverlayFlags, console.h:48-55).
     // ShowPaneAction::Execute turns these off and on the requested one (showpaneaction.cpp:30-38).
+    public const int PaneExpandedTeam = 0x001000;   // ofExpandedTeam (console.h:52) — the Team display
     public const int PaneInventory = 0x002000;      // ofInventory (console.h:53)
     public const int PaneSector = 0x008000;         // ofSectorPane (console.h:55)
 

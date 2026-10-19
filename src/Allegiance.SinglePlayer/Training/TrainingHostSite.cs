@@ -70,6 +70,12 @@ public sealed class TrainingHostSite : ITrainingSite
 
     public bool ShipSees(TargetRef ship, TargetRef target) => _host.InScannerRange(ship.Id, target);
 
+    // ── M5/M6 command-view / escalation state (real host state) ───────────────
+    public bool GetPicked(TargetRef model) => _host.IsPicked(model);
+    public int GetViewSector() => _host.ViewSector;
+    public float GetFraction(TargetRef model) => _host.GetFraction(model);
+    public int GetCommandAcknowledged() => _host.GetCommandAcknowledged();
+
     // ── M3/M4 combat / equipment / UI actions ──────────────────────────────────
     // The headless proof scripts the *outcomes* these actions produce on the real host (armour
     // fraction via DestroyDrone, command set via IssueCommand, etc.); the player's own weapon/shield/

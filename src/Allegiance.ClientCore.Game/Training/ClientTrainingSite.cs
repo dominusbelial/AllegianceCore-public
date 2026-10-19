@@ -109,6 +109,12 @@ public sealed class ClientTrainingSite : ITrainingSite
 
     public bool ShipSees(TargetRef ship, TargetRef target) => false; // server-side scanner judgement
 
+    // ── M5/M6 command-view / escalation state (authoritative host) ──────────
+    public bool GetPicked(TargetRef model) => _f.Host is { } h ? h.IsPicked(model) : false;
+    public int GetViewSector() => _f.Host is { } h ? h.ViewSector : (Resolve(PlayerShip.Ref)?.SectorId ?? -1);
+    public float GetFraction(TargetRef model) => _f.Host is { } h ? h.GetFraction(model) : (Resolve(model) is null ? 0f : 1f);
+    public int GetCommandAcknowledged() => _f.Host is { } h ? h.GetCommandAcknowledged() : TrainingMissionIds.CmdDoNothing;
+
     // ── M3/M4 combat / equipment / UI actions ─────────────────────────────────
     public void DealDamage(bool toHull) => TrainingHostLog.Log($"DealDamage(toHull:{toHull})");
     public void ToggleWeapon(int mount) => TrainingHostLog.Log($"ToggleWeapon(mount:{mount})");

@@ -166,12 +166,15 @@ public class TR2TrainingTests
         Assert.Equal(7, screen.Count);
         Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm1Introduction && !m.Playable);
         Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm2BasicFlight && m.Playable);
-        // TR-3 enables Missions 3 (Basic Weaponry) and 4 (Enemy Engagement); the rest stay coming-soon.
+        // TR-3 enables Missions 3 and 4; TR-4 enables Missions 5 (Command View) and 6 (Practice Arena);
+        // the rest stay coming-soon.
         Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm3BasicWeaponry && m.Playable);
         Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm4EnemyEngagement && m.Playable);
+        Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm5CommandView && m.Playable);
+        Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm6PracticeArena && m.Playable);
         Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm8Nanite && !m.Playable);
         Assert.All(TrainingScreenModel.Missions.Where(
-            m => m.MissionId is not (Tm2BasicFlight or Tm3BasicWeaponry or Tm4EnemyEngagement)),
+            m => m.MissionId is not (Tm2BasicFlight or Tm3BasicWeaponry or Tm4EnemyEngagement or Tm5CommandView or Tm6PracticeArena)),
             m => Assert.False(m.Playable));
 
         // The playable missions are startable; a coming-soon mission is not.
@@ -182,6 +185,10 @@ public class TR2TrainingTests
         screen.Index = Array.FindIndex(TrainingScreenModel.Missions, m => m.MissionId == Tm4EnemyEngagement);
         Assert.True(screen.CanStart);
         screen.Index = Array.FindIndex(TrainingScreenModel.Missions, m => m.MissionId == Tm5CommandView);
+        Assert.True(screen.CanStart);
+        screen.Index = Array.FindIndex(TrainingScreenModel.Missions, m => m.MissionId == Tm6PracticeArena);
+        Assert.True(screen.CanStart);
+        screen.Index = Array.FindIndex(TrainingScreenModel.Missions, m => m.MissionId == Tm8Nanite);
         Assert.False(screen.CanStart);
     }
 

@@ -1466,6 +1466,10 @@ public sealed partial class Server
             var killerSide = killMission.Sides.FirstOrDefault(s => s.Id == attackingShip.SideId);
             if (killerSide is not null)
                 killerSide.Kills++;
+            // Real kill-credit observability (training host M6 kill goals): raise AFTER the credit is
+            // granted so a subscriber sees exactly the kills the side's counter records — never an
+            // ejection (the !bLifepod guard above already excluded it).
+            KillCreditGranted?.Invoke(attackingShip.Id, victim.Id);
             if (killMission.KillsEnabled)
             {
                 var (kWinner, kChanged) = killMission.RecomputeFlagsAndKills();

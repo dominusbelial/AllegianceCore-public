@@ -134,6 +134,18 @@ public sealed class FakeTrainingSite : ITrainingSite
 
     public bool ShipSees(TargetRef ship, TargetRef target) => false;
 
+    // ── M5/M6 command-view / escalation state (scriptable) ─────────────────────
+    /// <summary>The model the player has picked (GetPickedCondition).</summary>
+    public TargetRef? PickedTarget { get; set; }
+    public bool GetPicked(TargetRef model)
+        => PickedTarget is { } p && p.Type == model.Type && p.Id == model.Id;
+    public int ViewSector { get; set; } = 0;
+    public int GetViewSector() => ViewSector;
+    public int CommandAcknowledged { get; set; } = TrainingMissionIds.CmdDoNothing;
+    public float GetFraction(TargetRef model)
+        => (_destroyedShips.Contains(model.Id) || Resolve(model) is null) ? 0f : 1f;
+    public int GetCommandAcknowledged() => CommandAcknowledged;
+
     // ── M3/M4 combat / equipment / UI actions (recorded for assertion) ────────
     public void DealDamage(bool toHull) => ActionsLog.Add($"DealDamage({toHull})");
     public void ToggleWeapon(int mount) => ActionsLog.Add($"ToggleWeapon({mount})");

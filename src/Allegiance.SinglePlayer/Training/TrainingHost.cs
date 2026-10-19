@@ -34,6 +34,12 @@ public interface ITrainingHost
         int? commandTargetShipId, int commandId);
     void IssueCommand(int shipId, int command, int? targetShipId, int? targetBuoyId, int? targetStationId, int commandId);
     void SetAutopilot(int shipId, bool on);
+
+    // ── M5/M6 command-view / kill-credit reads (authoritative host state) ─────
+    bool IsPicked(TargetRef model);
+    int ViewSector { get; }
+    float GetFraction(TargetRef model);
+    int GetCommandAcknowledged();
 }
 
 /// <summary>
@@ -74,6 +80,12 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     private readonly Dictionary<int, int> _droneStationTypes = new();  // constructor station type
     private readonly Dictionary<int, int> _droneTechLevels = new();    // negative tech-level loadout
 
+    // M5/M6 command-view + escalation state (native trekClient view/console + TrainingMission::ShipKilled).
+    private TargetRef? _pickedRef;                                     // console's picked object
+    private int _viewSector;                                           // currently-viewed cluster (GetViewCluster)
+    private int _commandAcknowledged = TrainingMissionIds.CmdDoNothing; // m_cCommandAcknowledged
+    private volatile TrainingMission? _activeMission;                  // receives real kill credit
+
     public Mission Mission { get; }
     public Ship PlayerShip { get; }
     public Ship CommanderShip { get; }
@@ -96,6 +108,7 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         PlayerShipId = player.Id;
         CommanderShipId = commander.Id;
         StartSectorId = startSector;
+        _viewSector = startSector;
     }
 
     /// <summary>The universe each native training mission boots: map, player hull, start sector and
@@ -106,6 +119,8 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     public static readonly TrainingVariant BasicFlight = new("training_1.igc", 412, 1010, "Basic Flight");
     public static readonly TrainingVariant BasicWeaponry = new("training_1.igc", 414, 1010, "Basic Weaponry");
     public static readonly TrainingVariant EnemyEngagement = new("training_3.igc", 486, 1030, "Enemy Engagement");
+    public static readonly TrainingVariant CommandView = new("training_5.igc", 412, 1050, "Command View");
+    public static readonly TrainingVariant PracticeArena = new("training_6.igc", 488, 2080, "Practice Arena");
 
     public static TrainingHost Start(string? artwork = null) => Start(BasicFlight, artwork);
 
@@ -143,6 +158,12 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         mission.PlaceShip(commander, sector);
 
         var host = new TrainingHost(server, mission, player, commander, variant.StartSector);
+        // Route the server's real kill-credit events into the active mission's kill counter (M6), so
+        // kill goals read the real credit (ejections excluded via the !bLifepod gate in BroadcastKillShip).
+        server.KillCreditGranted += (launcher, victim) =>
+        {
+            try { host.RecordKillCredit(launcher, victim); } catch { /* training-only observer */ }
+        };
         return host;
     }
 
@@ -399,6 +420,48 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     public TargetRef? GetCommandTarget(int shipId) => _commandTargets.TryGetValue(shipId, out var t) ? t : null;
 
     public int GetCommandId(int shipId) => _commands.TryGetValue(shipId, out var c) ? c : TrainingMissionIds.CmdNone;
+
+    // ── M5/M6 command-view + kill-credit state ──────────────────────────────────
+    /// <summary>Set which model the player has picked/selected in the command view (native
+    /// console picked object, <c>GetPickedCondition.cpp:37</c>).</summary>
+    public void SetPicked(TargetRef? picked) => _pickedRef = picked;
+    public bool IsPicked(TargetRef model)
+        => _pickedRef is { } p && p.Type == model.Type && p.Id == model.Id;
+
+    /// <summary>The sector the player is currently viewing (native <c>trekClient.GetViewCluster()</c>).</summary>
+    public int ViewSector => _viewSector;
+    public void SetViewSector(int sector) => _viewSector = sector;
+
+    /// <summary>Set the last command the player acknowledged (queued-order accept, native
+    /// <c>CommandAcknowledgedCondition::SetCommandAcknowledged</c>, commandacknowledgedcondition.cpp:43-46).</summary>
+    public void AcknowledgeCommand(int commandId) => _commandAcknowledged = commandId;
+    public int GetCommandAcknowledged() => _commandAcknowledged;
+
+    /// <summary>Armour fraction (0 = destroyed/absent, 1 = pristine) behind <c>GetShipIsDamagedCondition</c>.</summary>
+    public float GetFraction(TargetRef model)
+        => model.Type == ObjectType.Ship ? (IsDestroyed(model.Id) ? 0f : 1f)
+                                         : (ResolveShip(model.Id) is { } ? 1f : 0f);
+
+    /// <summary>Bind the mission that receives the real kill-credit count (native ShipKilled hook).</summary>
+    public void SetActiveMission(TrainingMission mission) => _activeMission = mission;
+
+    /// <summary>
+    /// Apply a <em>real kill-credit</em> outcome to the active mission's kill counter — native
+    /// <c>TrainingMission::ShipKilled</c> (<c>trainingmission.cpp:515-524</c>): the launcher must be on
+    /// the player's side and the victim a wingman (<c>c_ptWingman</c>). The server's real kill-credit
+    /// path (which already excludes ejections via the <c>!bLifepod</c> gate) routes here; the headless
+    /// proof scripts a kill outcome through this same single method (mirroring how
+    /// <see cref="DestroyDrone"/> scripts the destroyed outcome).
+    /// </summary>
+    public void RecordKillCredit(int launcherId, int victimId)
+    {
+        var launcher = ResolveShip(launcherId);
+        var victim = ResolveShip(victimId);
+        bool playerSide = launcher is not null && launcher.SideId == PlayerShip.SideId;
+        bool wingman = victim is not null && victim.PilotType == Ship.PilotTypeWingman; // c_ptWingman
+        _activeMission?.ShipKilled(playerSide && wingman);
+    }
+
 
     public int GetSectorId(int shipId) => ResolveShip(shipId) is { } s && s.Sector is { } sec ? sec.Id : -1;
 

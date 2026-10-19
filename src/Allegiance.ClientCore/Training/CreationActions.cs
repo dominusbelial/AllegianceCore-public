@@ -68,10 +68,10 @@ public sealed class CreateProbeAction : Action
 /// </summary>
 public sealed class CreateDroneAction : Action
 {
-    public const int DefaultWingmanBehaviour = 0x10 | 0x20; // c_wbbmUseMissiles | c_wbbmRunAt60Hull
+    public const int DefaultWingmanBehaviour = 0x02 | 0x20; // c_wbbmUseMissiles | c_wbbmRunAt60Hull (igc.h:786,790)
 
     private readonly ITrainingSite _site;
-    private readonly string _name;
+    private string _name;
     private readonly int _shipId;
     private int _hullId;
     private readonly int _sideId;
@@ -138,6 +138,10 @@ public sealed class CreateDroneAction : Action
     /// tech level driving the weapon/booster/missile upgrade block (<c>createdroneaction.cpp:91-198</c>);
     /// 1 (default) applies no upgrades.</summary>
     public void SetCreatedTechLevel(int techLevel) => _techLevel = techLevel;
+
+    /// <summary><c>SetCreatedName</c> (<c>createdroneaction.cpp:199-201</c>) — rename the drone
+    /// (Mission 6 uses it to relabel escalating enemies).</summary>
+    public void SetCreatedName(string name) => _name = name;
 }
 
 /// <summary>

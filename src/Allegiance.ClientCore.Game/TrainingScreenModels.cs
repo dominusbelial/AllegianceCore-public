@@ -53,8 +53,8 @@ public sealed class TrainingScreenModel
         new(Tm2BasicFlight, "Basic Flight", "Radar, turning, throttle, gauges, booster and autopilot home.", Playable: true),
         new(Tm3BasicWeaponry, "Basic Weaponry", "Weapon mounts, ammo, energy and firing techniques.", Playable: true),
         new(Tm4EnemyEngagement, "Enemy Engagement", "Engage and destroy hostile craft in combat.", Playable: true),
-        new(Tm5CommandView, "Command View", "The command map, buying and giving orders.", Playable: false),
-        new(Tm6PracticeArena, "Practice Arena", "A safe arena to practise ships and loadouts.", Playable: false),
+        new(Tm5CommandView, "Command View", "The command map, buying and giving orders.", Playable: true),
+        new(Tm6PracticeArena, "Practice Arena", "A safe arena to practise ships and loadouts.", Playable: true),
         new(Tm8Nanite, "Nanite", "The nanite repair drone and survivability.", Playable: false),
     };
 

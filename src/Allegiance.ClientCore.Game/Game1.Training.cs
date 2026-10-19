@@ -26,7 +26,8 @@ public sealed partial class Game1
     private void BeginTrainingMission(int missionId)
     {
         _trainingError = "";
-        if (missionId is not (Tm2BasicFlight or Tm3BasicWeaponry or Tm4EnemyEngagement))
+        if (missionId is not (Tm2BasicFlight or Tm3BasicWeaponry or Tm4EnemyEngagement
+            or Tm5CommandView or Tm6PracticeArena))
         {
             _trainingError = "That mission isn't playable yet; it's coming soon.";
             Console.WriteLine($"[training] {_trainingError}");
@@ -34,12 +35,15 @@ public sealed partial class Game1
         }
 
         // The embedded training host realises the mission's universe/creation actions (TR-2b). The
-        // variant selects the native map/hull/start-sector (M2/M3: training_1/1010; M4: training_3/1030).
+        // variant selects the native map/hull/start-sector (M2/M3: training_1/1010; M4: training_3/1030;
+        // M5: training_5/1050; M6: training_6/2080).
         var variant = missionId switch
         {
             Tm2BasicFlight => TrainingHost.BasicFlight,
             Tm3BasicWeaponry => TrainingHost.BasicWeaponry,
             Tm4EnemyEngagement => TrainingHost.EnemyEngagement,
+            Tm5CommandView => TrainingHost.CommandView,
+            Tm6PracticeArena => TrainingHost.PracticeArena,
             _ => TrainingHost.BasicFlight,
         };
         _embeddedHost = TrainingHost.Start(variant);
@@ -64,8 +68,13 @@ public sealed partial class Game1
             Tm2BasicFlight => (TrainingMission)new Mission2(site),
             Tm3BasicWeaponry => new Mission3(site),
             Tm4EnemyEngagement => new Mission4(site),
+            Tm5CommandView => new Mission5(site),
+            Tm6PracticeArena => new Mission6(site),
             _ => throw new InvalidOperationException(),
         };
+        // Bind the active mission to the embedded host so Mission 6's kill goals read the real
+        // kill-credit events the server raises (ShipKilled routing).
+        _embeddedHost.SetActiveMission(mission);
         var session = new TrainingSession(site, mission);
 
         TrainingController.BeginMission();

@@ -53,6 +53,21 @@ public interface ITrainingSite
     /// (<c>IshipIGC::InScannerRange</c>, <c>shipseesobjectcondition.cpp:47-50</c>).</summary>
     bool ShipSees(TargetRef ship, TargetRef target);
 
+    // ── command-view / escalation state (M5/M6 seams) ─────────────────────────
+    /// <summary>TRUE when <paramref name="model"/> is the object the player currently has picked in
+    /// the command view (<c>GetPickedCondition.cpp:37</c> — the console's picked object).</summary>
+    bool GetPicked(TargetRef model);
+    /// <summary>The sector id the player is currently viewing (<c>GetViewSectorCondition.cpp:34</c> —
+    /// <c>trekClient.GetViewCluster()</c>).</summary>
+    int GetViewSector();
+    /// <summary>The model's armour fraction (0 = destroyed/absent, 1 = pristine) — the
+    /// <c>IdamageIGC::GetFraction</c> read behind <c>GetShipIsDamagedCondition</c>
+    /// (<c>getshipisdamagedcondition.cpp:56</c>).</summary>
+    float GetFraction(TargetRef model);
+    /// <summary>The last command the player acknowledged (queued-order accept; the static
+    /// <c>m_cCommandAcknowledged</c> in <c>CommandAcknowledgedCondition.cpp:21</c>), <c>-3</c>=c_cidDoNothing.</summary>
+    int GetCommandAcknowledged();
+
     // ── combat / equipment / UI actions (native actions) ───────────────────────────
     /// <summary>Damage the <em>player's</em> ship's shield or hull (<c>DoDamageAction.cpp:26-50</c>).</summary>
     void DealDamage(bool toHull);

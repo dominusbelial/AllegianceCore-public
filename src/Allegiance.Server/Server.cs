@@ -577,6 +577,16 @@ public sealed partial class Server : IDisposable
     /// </summary>
     public event Action<string>? Notable;
 
+    /// <summary>
+    /// Raised on the sim thread whenever a real cross-side kill credit is granted (the launcher is a
+    /// real side-owned ship, the victim is not a lifepod — the <c>!bLifepod</c> gate that already
+    /// excludes ejections from kill credit — and the killer is on a different side; Server.Combat
+    /// <c>BroadcastKillShip</c>). Payload is (launcherId, victimId). Subscribed by the embedded
+    /// training host so a Mission 6 kill goal counts the <em>real</em> kill credit and never a
+    /// separate ad-hoc counter, and so an ejection (which never reaches this point) cannot inflate it.
+    /// </summary>
+    public event Action<int, int>? KillCreditGranted;
+
     /// <summary>The position-change threshold (world units) that marks a ship
     /// dirty and worth a SINGLE_SHIP_UPDATE broadcast after a tick.</summary>
     private const float DirtyEpsilon = 1e-3f;
