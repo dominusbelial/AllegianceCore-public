@@ -27,25 +27,7 @@ using Allegiance.TestInfra;
 /// </summary>
 public sealed class MapGenRadialFamilyTests
 {
-    private static readonly Lazy<StaticCore> GenCore = new(() =>
-    {
-        StaticCore? best = null;
-        int bestOk = 0;
-        foreach (var path in Corpus.Files)
-        {
-            IgcFile file;
-            try { file = IgcReader.ParseFile(path); }
-            catch { continue; }
-            if (file.Wrapper != IgcWrapper.VersionAndDataSize) continue;
-            var core = StaticCore.Load(file);
-            int ok = core.Civilizations.Values.Count(c =>
-                c.InitialStationTypeId != -1 && core.StationTypes.ContainsKey(c.InitialStationTypeId));
-            if (ok > bestOk) { bestOk = ok; best = core; }
-        }
-        if (best is null || bestOk < 2)
-            throw new InvalidOperationException("no static core with 2 usable civilizations found in corpus");
-        return best;
-    });
+    private static readonly Lazy<StaticCore> GenCore = new(MapGenTestCore.LoadRepresentative);
 
     private static int[] CivIds(int n) =>
         GenCore.Value.Civilizations.Values

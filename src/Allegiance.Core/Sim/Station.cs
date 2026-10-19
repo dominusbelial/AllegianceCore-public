@@ -135,6 +135,7 @@ public sealed class Station : IStationIgc, ISideVisible
         ship.Position = position + Center;
         ship.Velocity = forward * speed;
         for (int axis = 0; axis < 3; axis++) ship.SetTurnRate(axis, 0);
+        ship.Mission?.Skills?.Record(ship.SideId, ShowcaseSkill.Relaunch);
         ship.LastLaunchTime = now;
         _lastLaunch = now;
     }
@@ -481,6 +482,7 @@ public sealed class Station : IStationIgc, ISideVisible
         Vector3 position2,
         Model? launcher)
     {
+        float skillHullBefore = ArmorFraction, skillShieldBefore = ShieldFraction;
         // Invulnerability gates (stationIGC.cpp:126-133). bInvulnerableStations
         // (a mission param) is NOT decoded in this port → default = vulnerable
         // (stated plainly in the class remarks). What remains: a flag-pedestal
@@ -575,6 +577,18 @@ public sealed class Station : IStationIgc, ISideVisible
                 dr = DamageResult.NoDamage;                         // stationIGC.cpp:203-204 (no shield → NO damage at all, confirmed)
         }
 
+        if (launcher is Ship attacker)
+        {
+            if (amount < 0 && ArmorFraction > skillHullBefore)
+                Mission?.Skills?.Record(attacker.SideId, ShowcaseSkill.NaniteStation);
+            else if (amount > 0 && (ArmorFraction < skillHullBefore || ShieldFraction < skillShieldBefore))
+            {
+                Mission?.Skills?.Record(attacker.SideId, ShowcaseSkill.StationDamage);
+                if (dr == DamageResult.Killed) Mission?.Skills?.Record(attacker.SideId, ShowcaseSkill.StationKills);
+            }
+            if (ArmorFraction != skillHullBefore || ShieldFraction != skillShieldBefore)
+                Mission?.Skills?.Damage(attacker.SideId, true, type);
+        }
         return dr;
     }
 

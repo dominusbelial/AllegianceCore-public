@@ -1733,15 +1733,17 @@ public sealed partial class Game1
             DrawStarmap(gameTime);
 
         // P214 — real chat overlay (log + composing line) on top of the HUD.
-        if (!_directorActive)
+        if (!_directorActive && _hudSettings.Style == HudStyle.Classic)
             DrawChat(hudModel);
 
         // P626 — the in-flight cargo/inventory readout (selected part + hold
         // occupancy), a small line under the chat log so the pilot sees what the
         // NextCargo/NextPart/PrevPart/DropCargo keys are operating on.
-        if (!_directorActive)
+        if (!_directorActive && _hudSettings.Style == HudStyle.Classic)
+        {
             DrawCargoHud(hudModel);
             DrawFlightPartsHud(hudModel);
+        }
 
             // P217 — the quick-chat voice-macro menu, on top of the chat log
             // (itself above the HUD). Only drawn while a menu level is open.
@@ -2594,12 +2596,16 @@ public sealed partial class Game1
                 ChatTargetLogic.ComposeLabel(_chatTarget)),
             cargoLine: BuildCargoHudText(), flightPartsLine: BuildFlightPartsHudText(),
             commandLines: BuildCommandHudLines(), inventoryVisible: _consolePanes.Inventory,
-            lastBaseObjectives: _lastBaseHud);
-        _radarRenderer.Draw(model, GraphicsDevice.Viewport);
+            lastBaseObjectives: _lastBaseHud, hitConfirmation: _nowSeconds < _hudHitUntil,
+            podReturnInstruction: $"{KeyOf("TargetFriendlyBaseNearest").Label} / {KeyOf("ToggleAutopilot").Label} AUTOPILOT TO BASE");
+        if (_hudSettings.Style == HudStyle.Classic) _radarRenderer.Draw(model, GraphicsDevice.Viewport);
         if (model.FlightVisible && model.Context.Contacts.Count > 0)
-            _shipTagRenderer.Draw(_drawShipTags);
-        _hudRenderer.Draw(model, GraphicsDevice.Viewport);
-        DrawEjectDeathOverlays(model);
+            _shipTagRenderer.Draw(_hudSettings.Style == HudStyle.Modern && _hudSettings.ColorBlindSafe
+                ? _drawShipTags.Select(t => t with { Colour = HudPalette.Side(t.Colour) }).ToArray()
+                : _drawShipTags);
+        ActiveHud.Draw(model, GraphicsDevice.Viewport);
+        if (_hudSettings.Style == HudStyle.Classic) DrawEjectDeathOverlays(model);
+        DrawTargetNoMatchFeedback();
         return model;
     }
 
@@ -3008,9 +3014,6 @@ public sealed partial class Game1
             }
         }
 
-        // P436 — the on-screen "no <candidate> in sector" feedback for the U/Z
-        // filtered-target keys (drawn even when there are no radar contacts).
-        DrawTargetNoMatchFeedback();
     }
 
     /// <summary>
@@ -3047,14 +3050,14 @@ public sealed partial class Game1
                 {
                     float y = vp.Height * 0.205f + critIdx * _hudSmall.LineSpacing;
                     var col = new Color(1f, 0.20f, 0.15f) * fade;   // native red CriticalTipText0
-                    _spriteBatch.DrawString(_hudSmall, text, new Vector2((vp.Width - sz.X) / 2f, y), col);
+                    _hudRenderer.DrawMeasuredText(_hudSmall, text, new Vector2((vp.Width - sz.X) / 2f, y), col);
                     critIdx++;
                 }
                 else
                 {
                     float y = vp.Height * 0.30f + tipIdx * _hudSmall.LineSpacing;
                     var col = new Color(0.07f, 0.95f, 0.84f) * fade;   // side accent colour
-                    _spriteBatch.DrawString(_hudSmall, text, new Vector2((vp.Width - sz.X) / 2f, y), col);
+                    _hudRenderer.DrawMeasuredText(_hudSmall, text, new Vector2((vp.Width - sz.X) / 2f, y), col);
                     tipIdx++;
                 }
             }
@@ -3151,7 +3154,7 @@ public sealed partial class Game1
     /// </summary>
     private void DrawTargetNoMatchFeedback()
     {
-        if (_targetNoMatchNoun is not { } noun) return;
+        if (_targetNoMatchNoun is not { } noun || _hideHud || _directorActive || _hudHidden) return;
         double remaining = _targetNoMatchUntil - _nowSeconds;
         if (remaining <= 0d)
         {
@@ -3169,7 +3172,7 @@ public sealed partial class Game1
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
         {
-            _spriteBatch.DrawString(_hudSmall, text, pos, colour);
+            ActiveHud.DrawOverlayText(text, pos, colour);
         }
         finally
         {

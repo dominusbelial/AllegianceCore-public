@@ -1,0 +1,24 @@
+{
+  "name": "allegiance-bench-collector",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "pretest": "npm run build",
+    "test": "node --test test/*.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "build": "node build.mjs",
+    "dev": "npm run build && wrangler dev --local",
+    "migrate:local": "wrangler d1 migrations apply benchmark-stats --local"
+  },
+  "dependencies": {
+    "ajv": "8.17.1",
+    "ajv-formats": "3.0.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261019.1",
+    "esbuild": "^0.25.0",
+    "miniflare": "^4.0.0",
+    "typescript": "^5.9.0",
+    "wrangler": "^4.0.0"
+  }
+}

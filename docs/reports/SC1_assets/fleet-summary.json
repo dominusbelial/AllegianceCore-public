@@ -1,0 +1,84 @@
+{
+  "battleMode": "march",
+  "targetSector": 1,
+  "wingman": 6,
+  "sideA": {
+    "side": 0,
+    "requested": 15,
+    "spawned": 15,
+    "failed": 0,
+    "refilled": 0,
+    "fleet": [
+      {
+        "hull": "Scout",
+        "hullId": 410,
+        "count": 12,
+        "loadoutSource": "current side techs at dock",
+        "loadout": [
+          "PW Gat Gun 1",
+          "Sm Shield 1",
+          "SRM Dumbfire 1",
+          "EWS Probe 1",
+          "Counter 1"
+        ],
+        "carriesMines": false,
+        "carriesMissiles": true
+      },
+      {
+        "hull": "Lt Interceptor",
+        "hullId": 415,
+        "count": 3,
+        "loadoutSource": "current side techs at dock",
+        "loadout": [
+          "PW Mini-Gun 1",
+          "PW Mini-Gun 1",
+          "Afterburner 1",
+          "Counter 1"
+        ],
+        "carriesMines": false,
+        "carriesMissiles": false
+      }
+    ]
+  },
+  "sideB": {
+    "side": 1,
+    "requested": 15,
+    "spawned": 15,
+    "failed": 0,
+    "refilled": 0,
+    "fleet": [
+      {
+        "hull": "Fighter",
+        "hullId": 121,
+        "count": 12,
+        "loadoutSource": "current side techs at dock",
+        "loadout": [
+          "PW Gat Gun 1",
+          "PW Gat Gun 1",
+          "Sm Shield 1",
+          "Booster 1",
+          "SRM Dumbfire 1",
+          "Counter 1"
+        ],
+        "carriesMines": false,
+        "carriesMissiles": true
+      },
+      {
+        "hull": "Scout",
+        "hullId": 114,
+        "count": 3,
+        "loadoutSource": "current side techs at dock",
+        "loadout": [
+          "PW Gat Gun 1",
+          "Sm Shield 1",
+          "SRM Dumbfire 1",
+          "EWS Probe 1",
+          "Counter 1"
+        ],
+        "carriesMines": false,
+        "carriesMissiles": true
+      }
+    ]
+  },
+  "minefields": []
+}

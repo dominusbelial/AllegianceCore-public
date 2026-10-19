@@ -25,6 +25,9 @@ using Allegiance.Core.Sim;
 /// </remarks>
 public sealed partial class Mission
 {
+    /// <summary>Enabled by the authoritative server; absent in client simulations.</summary>
+    public SkillTelemetry? Skills { get; set; }
+
     /// <summary>P629 stress-test override. Native sector crowding is enabled by default.</summary>
     public bool CrowdingPenaltyEnabled { get; set; } = true;
 

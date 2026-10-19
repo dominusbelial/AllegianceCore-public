@@ -59,6 +59,7 @@ public sealed class P703EconomyTests
         return (mission, mission.Sides[0], site);
     }
 
+    [Trait("Tier", "Live")] // Expensive corpus/scenario or collision-work budget; docs/testing/TIERS.md.
     [SkippableFact]
     public void Lost_base_empties_funded_research_before_it_can_finish_and_rebuild_requires_new_money()
     {

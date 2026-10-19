@@ -183,6 +183,8 @@ public class LiveP548GameOverStageGateTests
         Assert.True(mission0.Sides.First(s => s.Id == side0).Active);
 
         // Exactly one GAME_OVER on the survivor, native reason/winner.
+        Assert.True(SpinWait.SpinUntil(() => a.GameOvers.Count >= 1, TimeSpan.FromSeconds(30)),
+            "survivor must decode the generated GAME_OVER");
         var go = Assert.Single(a.GameOvers);
         Assert.Equal(side0, go.SideWinner);
         Assert.Contains($"{side0Name} won by outlasting all other sides.", go.GameoverMessage);
@@ -234,6 +236,8 @@ public class LiveP548GameOverStageGateTests
             }
             int ended = PumpUntil(server, () => mission0.Stage == MissionStage.Over, 900);
             Assert.True(ended < 900, "side1 emptied by drops did not end the mission once");
+            Assert.True(SpinWait.SpinUntil(() => bots[0].GameOvers.Count >= 1, TimeSpan.FromSeconds(30)),
+                "survivor must decode the generated GAME_OVER");
             Assert.Single(bots[0].GameOvers);
 
             // Rotation rebuilt a fresh NotStarted mission (P439) and migrated
@@ -353,6 +357,8 @@ public class LiveP548GameOverStageGateTests
             DropAndRelease(server, gameBots[2], gameIds[2]);
             int ended = PumpUntil(server, () => mission0.Stage == MissionStage.Over, 900);
             Assert.True(ended < 900, "side1 emptied in the started game did not end the mission");
+            Assert.True(SpinWait.SpinUntil(() => survivor.GameOvers.Count >= 1, TimeSpan.FromSeconds(30)),
+                "survivor must decode the generated GAME_OVER");
             Assert.Single(survivor.GameOvers);
             Console.WriteLine($"[P548-LIVE] loopback: lobby 4 drops -> 0 game-overs (mission '{MissionStage.NotStarted}'); started 4 drops -> {survivor.GameOvers.Count} game-over(s).");
         }

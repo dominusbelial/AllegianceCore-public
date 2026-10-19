@@ -1,0 +1,38 @@
+{
+  "port": 18481,
+  "artPath": "/home/domingo/Development/Artwork",
+  "staticCore": "PCore001.igc",
+  "showcase": {
+    "techMode": "research",
+    "researchTimeScale": 16,
+    "incomeMultiplier": 5000,
+    "finaleTimeoutSeconds": 180
+  },
+  "liveSettings": {
+    "timeDilation": "off",
+    "autoNextMatch": {
+      "enabled": false
+    }
+  },
+  "games": [
+    {
+      "name": "SC1 local 15v15",
+      "teams": 2,
+      "civIds": [
+        25,
+        3
+      ],
+      "sideNames": [
+        "Alpha",
+        "Bravo"
+      ],
+      "maxTeamImbalance": 32767,
+      "gameLengthSeconds": 600,
+      "mapGen": {
+        "type": "SingleRing",
+        "playerSectorAsteroids": 20,
+        "playerSectorSpecialAsteroids": 8
+      }
+    }
+  ]
+}

@@ -247,7 +247,6 @@ public class LiveRelaunchTests
     /// backward-offset fallback branch: the lander is thrown straight back
     /// along the carrier's backward axis.</summary>
     [Trait("Requires", "Artwork")]
-    [Trait("Lane", "LiveTiming")]   // P647 quarantine: positional relaunch-fallback assert drifts during the wire round-trip
     [SkippableFact]
     public void Carrier_without_launch_slots_uses_backward_fallback()
     {
@@ -267,10 +266,11 @@ public class LiveRelaunchTests
         // faohshcar @ identity: backward = (0,0,1). Native: position -= backward·dist
         // (FedSrv.CPP:12974) → the lander is thrown to carrier.z − (radCarrier+radLander+25),
         // with velocity −backward·50 → (0,0,−50).
-        float dz = moved.Position.Z - carrier.Position.Z;
+        // RELAUNCH_SHIP captures the launch pose; the live ship moves while TCP delivers it.
+        float dz = r.Position.Z - carrier.Position.Z;
         float expectedDist = 0.5f * carrier.HullType.Length + 0.5f * lander.HullType.Length + 25f;
         Assert.InRange(dz, -expectedDist - 2f, -expectedDist + 2f);
-        Assert.InRange(moved.Velocity.Z, -52f, -48f);
+        Assert.InRange(r.Velocity.Z, -52f, -48f);
         Assert.False(carrier.InGarage(moved, 0f, carrier.Sector!.LandingBays!.Bay(carrier.HullType)!), "lander still InGarage after fallback relaunch");
 
         Console.WriteLine($"RELAUNCH-FALLBACK-LIVE: ship {lander.Id} landed on faohshcar (0 launch slots) -> backward fallback dz={dz:F1} (~{-expectedDist:F1}) vel z={moved.Velocity.Z:F1} RELAUNCH_SHIP(192) shipID={r.ShipId}/carrierID={r.CarrierId}");

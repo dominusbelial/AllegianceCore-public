@@ -4,6 +4,73 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P730 observation (2026-10-19)
+
+The single unfiltered Core sweep completed with **4,888 passed / 5 failed**.
+Each failed method then passed **3/3 fresh isolated invocations** on the same
+workstation. The full sweep was not repeated.
+
+| Method | Full-sweep symptom | Isolated result |
+| --- | --- | --- |
+| `GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer` | No matching result entry at the assertion. | 3/3 pass |
+| `LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels` | Lowest received countdown was 0.392 seconds. | 3/3 pass |
+| `LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback` | Position sample was -222.787; expected -182.315 to -178.315. | 3/3 pass |
+| `LiveRipcordTests.Cancel_while_active_aborts_sector_wide` | Expected one abort receipt; collection was empty. | 3/3 pass |
+| `LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried` | Expected one abort receipt; collection was empty. | 3/3 pass |
+
+These meet the task's light-gate load-flake rule. No assertion, timeout,
+transport setting or quarantine changed. See [P730 report](reports/P730_BOT_EFFICIENCY.md)
+and [validation ledger](reports/P730_assets/validation-summary.json).
+Raw TRX/logs are in `/tmp/allegiance-evidence/P730/`.
+
+## BS1 observation (2026-10-19)
+
+The single Core sweep completed with **4,879 pass / 14 fail / 0 skip**. Every failed case
+subsequently qualified with **3/3 fresh exact-case invocations**, with assertions/deadlines unchanged.
+The ship-update-budget case had an earlier isolated batch of **fail, fail, pass** before its final
+3/3 qualification; all earlier failures remain in the evidence. The two P694 theory rows were
+filtered separately, and each invocation executed exactly one case.
+
+| Method / theory row | Full-sweep observation |
+| --- | --- |
+| `AutoReloadOnEmptyTests.Auto_reload_relays_RELOAD129_sector_wide` | `SeatThree` found no same-side observer. |
+| `Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses` | Expected 50 ordered frames, observed 35. |
+| `ShipUpdateBudgetLiveTests.Ship_dropped_one_tick_is_served_the_next_no_permanent_starvation` | Tick-3 dropped ship not yet observed at tick 4. Final recheck 3/3; earlier 2 isolated failures retained. |
+| `ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self` | Peer B had not received `HEAVY_SHIPS_UPDATE`. |
+| `P694MassEventTickTests.Launch_point_mass_events(150, false, true, false, false)` | Median 334.727 ms versus unchanged 200 ms Debug budget. |
+| `P694MassEventTickTests.Launch_point_mass_events(195, false, true, false, false)` | Median 249.997 ms versus unchanged 200 ms Debug budget. |
+| `LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector` | Expected receipt collection empty. |
+| `LiveRipcordTests.Cancel_while_active_aborts_sector_wide` | Expected receipt collection empty. |
+| `LiveRipcordTests.Re_target_activates_to_requester_only` | Expected receipt collection empty. |
+| `LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried` | Expected receipt collection empty. |
+| `LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback` | Observed -219.866 outside expected -182.315 to -178.315 range. |
+| `LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission` | Expected receipt collection empty. |
+| `LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown` | Expected receipt collection empty. |
+| `CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate` | Observed packet 92 where packet 33 was expected. |
+
+These meet BS1's light-gate load-flake classification and match prior receipt/timing/performance
+observations. No Core/server, transport, simulation, assertion, timeout or quarantine changes were
+made. No second full sweep is run. See [the BS1 report](reports/BS1_BENCHMARK_STATS.md) and
+[small verification ledger](reports/BS1_assets/verification.json). Raw logs/TRX remain outside the
+repository at `/tmp/allegiance-evidence/BS1/` because the home evidence path is outside the sandbox.
+
+### ClientCore siege: not qualified
+
+The single ClientCore sweep had **1,478 pass / 1 fail / 1 default opt-in skip**. The failure was
+`P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station` (line 131): station destruction
+occurred, but the match ended on the clock with no side eliminated. Isolated attempts include
+passes, the same assertion failure, and test-host/process aborts. The final attempted isolated
+batch was **pass / assertion failure / host abort**. This does **not** meet the 3/3 light gate and
+is not reported as a qualified load flake. Several aborts explicitly report disk quota while
+writing scenario logs. Earlier aborted attempts remain in the evidence.
+
+A focused reproducer built from the dispatch fixture/configuration and unchanged execution-
+dependency sources passed once; a second run aborted on disk quota. It is not a full baseline
+sweep or a 3/3 qualification. No siege assertion, timeout, quarantine or simulation code changed.
+The full MonoGame sweep passed **2,498 cases**, with **0 failures** and **3 missing private Meshy-pack
+skips**. The default-gated P660 local showcase was enabled separately and passed 3/3; never-parks
+passed 5/5. All 17 new BS1 C# methods passed 3× alone. No full suite was repeated.
+
 ## P745B observation (2026-10-18)
 
 The single unfiltered Core sweep observed the following timing failures. Every
@@ -44,6 +111,33 @@ assumptions. See [P745B report](reports/P745B_FINALE_ENDING.md) and
 [verification ledger](reports/P745B_assets/verification.json). Raw logs/TRX are
 under `/tmp/allegiance-evidence/P745B/` (the lane cannot write outside its
 workspace and `/tmp`).
+
+## SC1 observation (2026-10-19)
+
+SC-1's single Core sweep returned 4,874 pass / 15 fail / 0 skip. ClientCore returned 1,453 pass / 3 fail / 1 opt-in rig skip; MonoGame returned 2,471 pass / 0 fail / 3 optional private-pack skips. The exact-case qualification below records every window; see the [SC1 report](reports/SC1_SHOWCASE_SKILLS.md), [validation ledger](reports/SC1_assets/validation.json), and [isolated-case ledger](reports/SC1_assets/isolated.json).
+
+| Case | Qualification |
+|---|---|
+| `GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer` | 3/3 fresh exact-case passes |
+| `LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission` | 3/3 fresh exact-case passes |
+| `LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown` | 3/3 fresh exact-case passes |
+| `LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback` | 3/3 fresh exact-case passes |
+| `LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector` | 3/3 fresh exact-case passes |
+| `LiveRipcordTests.Re_target_activates_to_requester_only` | 3/3 fresh exact-case passes |
+| `LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried` | 3/3 fresh exact-case passes; earlier window retained (2/3 pass), final recovery 3/3 pass |
+| `LiveTeamLobbyTests.Unready_broadcasts_team_ready_false` | 3/3 fresh exact-case passes |
+| `P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: True, stationDeath: True, coincident: False, nativeLaunch: False)` | changed 3/3 failures; unchanged base 3/3 failures; performance gate not clean |
+| `P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)` | changed 3/3 failures; unchanged base 2/3 failures; performance gate not clean |
+| `P706DispatchProfilingTests.Dispatch_budget(scenario: "matchStart", count: 165)` | 3/3 fresh exact-case passes |
+| `ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self` | 3/3 fresh exact-case passes |
+| `Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_distinct_keys_remain_independent` | 3/3 fresh exact-case passes |
+| `Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_healthy_consumer_still_receives_each_latest_snapshot` | 3/3 fresh exact-case passes |
+| `Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join` | 3/3 fresh exact-case passes |
+| `Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target` | 3/3 fresh exact-case passes |
+| `Allegiance.ClientCore.Tests.MissileTrackingLiveTests.FiredMissile_AppearsMovesAndDisappears_InClientWorld_OverTheWire` | 3/3 fresh exact-case passes |
+| `Allegiance.ClientCore.Tests.P693TeamLimitsLiveTests.Batched_bots_consume_native_balance_refusal_and_choose_an_eligible_side(behavior: "weave")` | 3/3 fresh exact-case passes |
+
+The P694 rows reproduce on the unchanged base and remain a performance limitation. Their budgets and native simulation were not changed. Raw TRX/logs live under `/tmp/allegiance-evidence/SC1/`; only authoritative `isolated-exact/` results were used for classification. Preliminary overlapping helper output is excluded. Both revisions passed the separate never-parks gate 5/5.
 
 ## R2 observation (2026-10-18)
 
@@ -122,6 +216,129 @@ exact-case retries are retained in the [validation ledger](reports/P743_assets/v
 and [report](reports/P743_CORRECTNESS_PASS.md). Raw logs/TRX are outside the
 repository at `/tmp/allegiance-evidence/P743/` (the requested home evidence path
 is not writable in this session).
+
+## Resolved — TT-1b (2026-10-18–19)
+
+The repairs below supersede earlier unresolved observations of these methods.
+Historical run results remain evidence of their original failures; isolated
+reruns alone were never evidence of a fix. Final contention proof and exact
+validation evidence are recorded in [TT1B_FAST_DETERMINISM.md](reports/TT1B_FAST_DETERMINISM.md).
+
+| Tests | Established cause / resolution |
+| --- | --- |
+| `LiveCombatWireTests.Moving_target_streams_its_falling_hull_over_the_wire` | Setup waited for the target assignment and immediately dereferenced the independent shooter assignment (`no shooter ship` in the failed gate). Await both assignments with a 30-second bound before issuing controls; preserve role resolution, tick limit and falling-hull assertion. |
+| `BallotVotingLiveTests.Multi_mission_ballot_scopes_per_mission_and_per_side`; draw-chain and shared setup callers | Proposer receipt did not imply the other voter's receipt. Mark the ordered publications and await every relevant reader with time fixed before checking positive/negative scope. The draw-chain sibling uses the same barrier. Shared setup retains its 40 ticks and then drains every intended reader before history reset; all eight live callers are requalified. Native audience, tally, leadership and game-over assertions remain. |
+| `StartingMoneyStationIncomeLiveTests` three wire checks | Proactive repair of the same 60 ms receipt assumption as the payday fixtures. Await ordered server markers with time fixed for initial grant, early-silence, periodic income and capture phases. Arm periodic clocks after seating/setup; keep seed, wallet, income and owner-transfer assertions, adding explicit exact counts at the marked boundaries. |
+| `PaydayTests.ZeroPlayerSide_does_not_crash_and_accrues_without_paying`; wire-cadence sibling | Pumping to absolute simulation time 0.5 and sleeping 60 ms did not establish seating. Wait for actual assignments with payday physics paused, then arm the clock and sample relative 50/65/125-second boundaries. Flush publications and inject ordered server markers to await each reader without advancing time. Keep early-silence, exact counts, income, side scope and zero-player treasury assertions. |
+| `ClientWalletLiveTests.BucketDonation_DecrementsDonorClientsMyMoney_ExactlyOnce_Live` | Server `Started` preceded decoding its initial payday, so the fixture sampled a zero baseline; its tight wait then advanced through later paydays. Await client Started and the initial wallet, pace donation dispatch at 20 Hz, then freeze physics after the authoritative debit while awaiting client receipt. Keep the exact once-only client delta and server-wallet debit assertions. |
+| `AsteroidMinedLiveTests.No_broadcast_fires_once_miner_hits_capacity`; whole-mission mining sibling | Sampling receive counts at full capacity included only part of the earlier report stream (14 of 26 in the failed gate). Pause mining through seating; fill to actual capacity and use each peer's ordered echo before sampling and after the original 150 idle ticks. The positive sibling generates the first threshold crossing, freezes physics and awaits all readers before comparing historical fractions. Native threshold, audience and zero-additional-report assertions remain. |
+| `RipcordRequestLiveTests.RipcordKey_Initiate_Countdown_Teleport_Deny_Cancel_EndToEnd` | Server cancellation preceded client decoding of `RIPCORD_ABORTED`. Await the client state under its gate with simulation fixed, retain aborted-sound and all earlier request/deny/transit assertions, and dispose the fixture server. |
+| `LiveTeamLobbyToggleTests.Sides_lock_from_owner_relays_and_non_owner_refused`; lobby-lock sibling | Server flag / first recipient receipt preceded the other recipient's relay. Await both before asserting or resetting; use the non-owner's ordered PING echo before checking refused-unlock silence. The lobby sibling has the same assumption and is repaired proactively. |
+| `LiveTreasurePickupTests` cash and autodonation checks; `LiveBucketTests.Small_donation_funds_bucket_and_broadcasts_sidewide_not_cross_side`; `LiveInSpaceEjectTests.Already_a_lifepod_is_truly_killed_not_re_ejected` | Proactive receipt audit: destruction does not imply cash receipt, one donation recipient does not synchronize its teammate, and kill receipt does not imply deletion/respawn receipt. Await all asserted messages with time fixed; drain the initial bucket catalog before reset. Cash pickup also resolves roles by assigned ship ID rather than concurrent connection order. Preserve wallet, payload, audience, exact-count, no-eject and station assertions. The cash receipt failure was already recorded in P738. |
+| `ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self`; `LiveRipcordTests` activation/abort waits; `LivePositionRequestTests.Non_leader_ack_refused` | One reader's receipt did not synchronize other recipients. Await all required recipients before asserting/resetting. Use a same-peer ordered PING barrier for the silent negative ACK. |
+| `ShipStatusServerTests.Teammate_ship_playerinfo_is_broadcast_once_after_export_before_status` | Concurrent join order could give the observer a separate lobby-roster PLAYERINFO as well as the teammate one-shot. Seat observer first; await each own join burst. |
+| `TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | Unsynchronized per-IP departure accounting raced concurrent departures/accept. Lock the accounting, await all resource release between waves, and test eight-slot reuse. |
+| `TcpTransportGreetTimeout*Tests.Silent_connection_does_not_block_a_second_client_join`; prior `P670SendStallTests.Departed_peer_bytes_remain_in_host_window_totals` shutdown observations | A tracked thread could be joined before its `Start`. Start under the same registration/snapshot lock. |
+| `TcpTransportPriorityLane*Tests` queue-retention/priority checks; `TcpTransportCoalesceAndReason*Tests` same-key/distinct-key/guaranteed queue checks | Fixed sleeps and a coalescing flood never established writer blockage. Pause the actual queue consumer, force the real capacity boundary where relevant, and inspect stable queues. Fixed priority checks leave quarantine. |
+| `MissileBroadcastTests.Directly_fired_missile_broadcasts_create_and_destroy_to_teammate_but_not_enemy`; `LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback` | Historical launch poses were compared with moving live state after delivery. Retain launch-time state / assert decoded launch poses. Carrier check leaves quarantine. |
+| `LiveLogoffTests.Logoff_echoes_releases_and_retires_the_ship` | Production queued the echo then immediately erased the sender queue. Retire logically, drain before EOF with a bounded timeout, keep physical admission accounting charged, and reject replay. |
+| `LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels` | Late pre-dock updates were classified by receive time; tight ticks could erase countdown samples through legitimate coalescing. Await sample ticks and classify the inactive sample by generated tick. |
+| `CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate` | The shared 900 km spawn is outside the universe damage boundary; an extra tick ejects the scout into a lifepod before its earlier export is decoded. Derive same-side positions inside the core's real boundary. |
+| `GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer` | Rotation replaced the client's ship assignment during the old-match assertion. Capture the old-match identity before elimination. |
+| `StationsUpdateLiveTests.Damaged_station_fraction_reflected_in_next_update` | An absent station produced a zero-filled default entry, incorrectly satisfying “shield != 240”. Await the requested station and actual damaged byte. |
+| `DiscoveryTests.Unicast_probe_finds_a_loopback_responder` | Short UI discovery deadline used as a loaded-host scheduling allowance. Use a generous test-only response bound. |
+| `P653DPodPurchaseLiveTests.Hangar_launch_after_ejection_or_pod_death_buys_real_hull` | Late pod-sync ACK satisfied “any ACK”. Select the ACK for the requested real hull. |
+| `StationsUpdateLiveTests.Visible_station_received_correct_fields_absent_from_unseeing_side` | An earlier join update lacked the fixture station. Await and select updates containing the intended IDs before checking their fields and scope. |
+| `LiveCountdownStartPingTests` owner-start / multi-mission checks; `LiveTeamLobbyTests.Unready_broadcasts_team_ready_false` | Server stage / first reader receipt did not imply other readers decoded the broadcast. Await each intended recipient while holding simulation time fixed for countdown announcements. Repaired quarantined checks return to the main Fast lane. |
+| `P657bStallTelemetryTests.DedicatedWatchdogHasHighestPriority_AndLoggerFlushesOnShutdown` | Production shutdown bounds each join to 500 ms. Await eventual event logging and both dedicated thread exits; retain priority and thread identity assertions. |
+| `MissileTrackingLiveTests.FiredMissile_AppearsMovesAndDisappears_InClientWorld_OverTheWire` | Pending coalesced positions could follow ordered destruction and resurrect a missile. Supersede pending missile positions before destruction; four deterministic queue-order regression cases cover both transports and publisher modes. |
+| `ShipUpdateBudgetLiveTests` bounded / fairness / locked-target checks | In-flight join frames preceded NPC creation, and coalesced snapshots did not represent consecutive ticks. Generate and decode each exact post-setup tick before asserting quota, next-tick fairness and target priority. |
+| `AutoReloadOnEmptyTests` | Concurrent joins made array order differ from role/side order. Join in role order and isolate server-global settings with LiveNetwork. |
+| `RadarTargetHighlightLiveTests.LiveOffScreenEnemy_IsTheFlaggedRadarTargetHighlight` | Identity can arrive before pose. Await real identity and both required poses before gathering candidates. |
+| `MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts` | Server stage changes precede client decode. Await generated Starting and Started frames without consuming countdown ticks. |
+| `P693TeamLimitsLiveTests.Batched_bots_consume_native_balance_refusal_and_choose_an_eligible_side` (`idle`) | MCP's plain-bot launch observer permanently preferred a late seat DOCKED over newer flying status. Track own launch signals in receive order; deterministic regressions also require a later redock to revoke confirmation. |
+| `MineCrossSideVisibilityLiveTests.Enemy_ship_spots_a_laid_mine_once_in_range_and_learns_its_destruction` | Concurrent join order assigned near/far geometry to different named roles. Anchor layer and scanner positions after resolving their assignments; preserve range, once-only export and destruction assertions. |
+| `MiscKeyBindingLiveTests.Live_own_ship_is_real_and_center_ranking_selects_a_real_ship`; related `FilteredTargetingLiveTests` | Own identity / NPC identity can precede NPC poses. Await all required identity and pose data before gathering/ranking; keep real ship and side assertions. |
+| `P493EnemySpottingLiveTests.Probe_spot_of_cross_side_ship_delivers_status_and_hidden_to_side0_peer` | Callback order could swap named observer and intruder roles. Seat the side-0 observer before connecting the intruder. |
+| `LoadoutChangeLiveTests` mount/remove and boarding/leaving | Teammate receipt did not synchronize owner receipt. Await both readers and reset recipient histories between phases; preserve owner/team payload and enemy-silence assertions. |
+| `CloakVisibilityGateLiveTests` | Late pre-cloak snapshots arrived after resetting history. Classify by generated tick and await non-vacuous post-transition samples; preserve detection and cloak-state assertions. |
+| `LiveP548GameOverStageGateTests` three positive GAME_OVER checks | Server Stage Over preceded survivor decode. Await the generated wire event with fixed simulation time, retaining exact-one and lobby/deactivation assertions. |
+| `LiveCombatWireTests` both two-party kill variants | Victim receipt did not synchronize shooter credit. Await both intended recipients; preserve dead-ship, death and shooter-credit assertions. |
+| `NpcShipFoundationLiveTests.Ownerless_npc_ship_appears_in_peer_heavy_updates_with_position`; `ShipsUpdateLiveTests.Ship_leaving_cluster_disappears_from_next_update` baseline | Old join snapshots satisfied “any HEAVY”. Await the actual ship ID; require the exact next generated post-removal frame for absence. |
+| `MapGenBrawlTests`, `MapGenGridFamilyTests`, `MapGenRadialFamilyTests` | Cold setup scanned all 98 cores to pick one. Load the representative PCore001 fixture directly, validate six usable civilizations, and retain all 20 Fast structural methods and theory cases. |
+| `NpcCrossClusterLiveTests.Cross_cluster_npc_paths_through_warp_and_continues_to_station_in_new_sector` | An unasserted 60,000-tick tail ran after both monotone approach claims were satisfied. Stop when both hold, retaining the upper bound and every assertion. Remains Fast. |
+| `MiningTests.Loopback_synthetic_rock_mines_and_ore_reaches_the_wire` | An older in-flight nonzero ore observation satisfied the wait while continued simulation increased server cargo. Generate one dirty pose, capture its ore fraction, and await that exact wire tick with simulation held fixed. Preserve the nonzero ore and fraction agreement assertions. |
+| `LiveShipDeathFinalizeTests.Oxygen_dead_lifepod_with_no_friendly_station_is_finalized_server_side` | Server-side `Dead` became true before the victim decoded its death/deletion events. Await both ship-specific wire events with simulation held fixed; retain killer credit, deletion reason, no-respawn and no-resurrection assertions. |
+| `LiveGainFlagTests` secure and hostile-station checks | A late held-flag join-sync either satisfied “any GAIN_FLAG” before the dock tick or polluted the hostile station's empty-history assertion. Decode that initial announcement before reset; the positive case then waits for server docking and the matching secure (`SideidFlag=-1`) announcement with time fixed. |
+| Four generated warp transit checks (SnowFlake, SingleRing, HiLo, Grid); new five-family asteroid-clearance regression | The initial receive/physics phase repair was insufficient: randomly generated asteroids could obstruct the warp pose. Production generation omitted native `common.cpp:2803–2841` existing-model clearance (minimum radii 550, distance squared ≥ twice summed radii squared, 1.02 sampling-radius expansion on rejection). Restored it faithfully; all five regression rows fail before the repair. Transit fixtures seat paused and enter a clear real warp volume with the complete generated field intact. P676 now checks native clearance instead of an invalid unexpanded-radius bound. |
+| `BotAcceptsAndEngagesOrderLiveTests.ScenarioBot_AutoAcceptsAndEngagesTheSpecificCommandedTarget`; new queued-accept regression | MCP wrote `CmdAccepted`, leaving the authoritative queued slot uncleared until native expiry. Both senders now use the existing `CmdQueued` accept path; idle/combat regression rows fail against the old sender. The fixture also paces at 20 Hz, serializes setup with ticks, awaits target visibility and both server/manager engagement, then stops physics for inspection. Acceptance must clear the queue before the unchanged 15-second expiry. |
+| `LivePlayerDeathRespawnTests` three live death checks; related oxygen/weapon-death checks | Owner respawn/deletion receipt did not synchronize another recipient's kill/deletion history. Await every asserted recipient; preserve post-death simulation in the no-respawn checks and use each peer's ordered PING echo before asserting ENTER_LIFEPOD silence. The oxygen and weapon-kill siblings had the same assumption and are repaired proactively. |
+| `ClientWarpApproachDodgeLiveTests.Client_bot_with_shared_dodge_transits_two_hops_through_real_alderan_field` | Its tight 60,000-tick loop raced pose feedback, and its obsolete 200/450 approach could park outside the transit sphere (116.8 units in the failed run). Await each generated pose and use existing MCP `WarpApproachParams` with real warp/hull radii. Keep the complete asteroid field, shared dodge law, two-hop goal, distance assertion and original tick bound. |
+| Core host abort in `TcpTransport.ReceiveLoopStart`; new `TcpTransportAcceptShutdownTests` | Shutdown can stop the listener after the running check but before `AcceptTcpClient`, which throws `InvalidOperationException` rather than the already-handled socket/disposal exceptions. Capture the listener per host generation and handle only intentional stop/replacement; preserve unexpected live-listener failures. A controlled race regression covers stop and restart in both transport modes. |
+
+Timing classification: `DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock`
+now explicitly belongs to **Live**: wall-time clock extrapolation and fixed-step
+simulation cannot preserve the native pose gate under arbitrary descheduling.
+Its real-clock and zero-rejection assertions are intact.
+`ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target`
+and both `ClientWarpApproachSlowHullLiveTests` now synchronize each generated
+pose before advancing simulation. All three remain in **Fast**; the repaired
+legacy comparison leaves quarantine. No new skip is introduced.
+
+`P656ShowcaseFinaleTests.P656b_AllRealStationTargetsSelectOnlyBombersWithAllTech`
+also explicitly belongs to **Live** under the existing expensive-corpus rule:
+it sweeps every real station through the complete hull/part selector and took
+26.176 s in a gate whose calibrated allowance was 19.499 s. Its full-corpus
+assertions remain intact; it passed three fresh isolated invocations after
+classification. No performance limit was inflated.
+
+The retained-run timing audit also classified full-core/map/model corpus
+validation and complete mining/research/match scenarios as **Live**, and dense
+collision-work/cache-budget checks as **Perf**, following
+[the existing tier definitions](testing/TIERS.md). Every moved method and all
+modified map-fixture methods passed three fresh exact-method invocations with
+all theory variants. Full coverage and assertions remain; only scheduling
+changes for the expensive scenarios. The exact method list, timing evidence
+and causes are in [the report](reports/TT1B_FAST_DETERMINISM.md).
+
+### TT-1b broad-sweep Perf observations
+
+The single unfiltered sweep overlapped the deliberate CPU contention. Nine
+`P694MassEventTickTests.Launch_point_mass_events` data cases exceeded their
+unchanged Debug 200 ms median-tick budget. Each exact failed data case then
+passed **3/3 fresh isolated invocations** after the CPU workers stopped (27
+passes). `P705TechModeLiveTests.Research_upgrades_and_resets_through_two_complete_local_matches`
+(`civA=1,civB=2,size=2`) failed the five-second ticker shutdown join; that exact
+case then passed **3/3** (43.86 / 45.58 / 42.75 s invocation wall times).
+These meet the brief's load-flake qualification rule; they remain **Perf**, with
+unchanged assertions, budgets and production code. They are not claimed as
+underlying fixes. Exact case filters, original failures and TRX are retained in
+the [TT-1b evidence](reports/TT1B_FAST_DETERMINISM.md).
+
+The same sweep's Fast mine failure was repaired above and requalified three
+times individually. MonoGame completed 2,431/0/3; the three skips require the
+existing private Meshy pack. ClientCore's opt-in P660 local 15v15 showcase was
+subsequently enabled and passed as a separate exact-method invocation, including
+30 migrated bots and two connected human peers. No second unfiltered sweep ran.
+
+### Original TT-1 evidence (before TT-1b repairs)
+
+The one full tier sweep observed these Fast failures. Each then passed all three
+fresh exact-method invocations, meeting TT-1's explicit load-flake qualification
+rule. No assertion, timeout, quarantine trait or production code was changed for
+these failures.
+
+| Case | Original symptom | Isolated result |
+| --- | --- | --- |
+| `Allegiance.ClientCore.Tests.DeadLatchRespawnLiveTests.Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock` | server rejected 1 native pose across death/respawn | 3/3 pass (4.472 / 4.465 / 4.468 s) |
+| `Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self` | B had not received HEAVY_SHIPS_UPDATE | 3/3 pass (0.178 / 0.174 / 0.183 s) |
+| `Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | TimeoutException: no OnPeerJoined for raw peer | 3/3 pass (0.218 / 0.217 / 0.216 s) |
+
+[Qualification ledger](reports/TT1_assets/qualification.json),
+[task report](reports/TT1_TEST_TIERS.md). Original and isolated TRX are archived
+under `docs/reports/TT1_assets/sweep/` and `docs/reports/TT1_assets/focused/`.
+The distinct hygiene-duration and deferred-theory accounting findings were fixed
+and verified separately; they are not classified as load flakes.
 
 ## HD-2 observation (2026-10-17)
 
@@ -2268,3 +2485,20 @@ quarantine trait was changed. The original failed sweep was not rerun.
 Raw TRX/logs, untouched-base build and retry records: `/tmp/HUD1/raw/` (the
 permitted external evidence root for this sandbox). See the
 [HUD1 report](reports/HUD1_HUD_PARITY.md) for full gate counts and dispositions.
+
+
+## HUD-2 validation environment (2026-10-19)
+
+HUD-2's single Core sweep lost TRX export to shared `/tmp` quota exhaustion.
+Visible P694/P689 profiling and InterestTier config failures explicitly reported
+`Disk quota exceeded`; those methods passed 3/3 isolated invocations after moving
+process temporary storage to an ignored workspace directory. The parity scorecard
+failure was corrected CSV quoting, and the MonoGame disposal guard needed the new
+renderer registered (its unload disposal call was already present); both passed
+3/3 after correction. These are not timing-flake classifications.
+
+The single ClientCore run recorded 1,063 passes before its host crashed, with no
+assertion failure in the exported results. Its cause remains undetermined. No
+second broad sweep was run. The five additional local P700 parking invocations
+passed 5/5. See [HUD-2](reports/HUD2_MODERN_HUD.md) and its validation ledger.
+

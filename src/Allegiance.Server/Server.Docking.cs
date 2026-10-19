@@ -730,6 +730,7 @@ public sealed partial class Server
         // Peer-resolution doubles as the native's "if IsPlayer" gate: only a
         // peer-owned ship has a connection to send to; a non-peer ship's send is
         // skipped (it may still be placed below).
+        rescuer.Mission?.Skills?.Record(rescuer.SideId, ShowcaseSkill.PodRescue);
         var rescueMsg = new PlayerRescued { ShipIdRescuer = rescuer.Id, ShipIdRescuee = rescuee.Id };
         byte[] packet = FedPacket.Pack(new[] { rescueMsg.Encode() });
         foreach (var kv in _peerShips)
@@ -831,6 +832,7 @@ public sealed partial class Server
             if (ReferenceEquals(kv.Value.Ship, rescuee))
                 _peerShips[kv.Key] = kv.Value with { Sector = destSector };
 
+        rescuee.Mission?.Skills?.Record(rescuee.SideId, ShowcaseSkill.PodRescue);
         var note = $"[rescue] lifepod ship {rescuee.Id} rescued by station {station.StationId} '{station.Data.Name}' (c_sabmRescue) -> docked; no PLAYER_RESCUED (native NULL-rescuer, FedSrv.CPP:13037); oxygen timer cancelled by dock";
         Console.WriteLine(note);
         Notify(note);

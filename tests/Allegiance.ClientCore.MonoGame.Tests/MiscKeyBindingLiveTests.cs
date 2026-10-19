@@ -123,9 +123,13 @@ public sealed class MiscKeyBindingLiveTests
                 lock (peer.Gate)
                     return peer.World.MyShipId is { } me
                         && peer.World.Ships.TryGetValue(me, out var ent)
-                        && !string.IsNullOrEmpty(ent.CharacterName);
+                        && !string.IsNullOrEmpty(ent.CharacterName) && ent.Latest is not null
+                        && peer.World.Ships.TryGetValue(enemyDrone.Id, out var enemy)
+                        && enemy.HasRealIdentity && enemy.Latest is not null
+                        && peer.World.Ships.TryGetValue(friendDrone.Id, out var friend)
+                        && friend.HasRealIdentity && friend.Latest is not null;
             }, 4000);
-        Assert.True(selfResolves < 4000, "own ship never resolvable in peer world");
+        Assert.True(selfResolves < 4000, "own ship and both drones must have decoded identities and poses");
 
         short me;
         List<Game1.CandidateObject> objs;

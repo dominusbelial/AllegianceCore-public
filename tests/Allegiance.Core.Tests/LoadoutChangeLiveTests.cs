@@ -149,6 +149,8 @@ public class LoadoutChangeLiveTests
                 obsBot.LoadoutChanges.Any(m =>
                     m.SidShip == subjectId
                     && m.HullId == subject.HullType.HullId
+                    && m.Parts.Any(p => p.PartId == weapon.PartId && p.MountId == mount))
+                && subBot.LoadoutChanges.Any(m => m.SidShip == subjectId
                     && m.Parts.Any(p => p.PartId == weapon.PartId && p.MountId == mount)),
                 6000);
             Assert.Contains(obsBot.LoadoutChanges, m => m.SidShip == subjectId && m.HullId == subject.HullType.HullId && m.Parts.Any(p => p.PartId == weapon.PartId && p.MountId == mount));
@@ -157,12 +159,15 @@ public class LoadoutChangeLiveTests
 
             // (2) REMOVE: the follow-up broadcast reflects the loadout WITHOUT that
             // part, still naming the same ship/hull.
+            subBot.ResetLoadoutChanges(); obsBot.ResetLoadoutChanges();
             bool removed = subject.TryRemovePart(EquipmentType.Weapon, mount, out _);
             Assert.True(removed, "TryRemovePart must succeed on the just-mounted part");
             PumpUntil(server, () =>
-                obsBot.LoadoutChanges.Any(m => m.SidShip == subjectId && !m.Parts.Any(p => p.PartId == weapon.PartId)),
+                obsBot.LoadoutChanges.Any(m => m.SidShip == subjectId && !m.Parts.Any(p => p.PartId == weapon.PartId))
+                && subBot.LoadoutChanges.Any(m => m.SidShip == subjectId && !m.Parts.Any(p => p.PartId == weapon.PartId)),
                 6000);
             Assert.Contains(obsBot.LoadoutChanges, m => m.SidShip == subjectId && !m.Parts.Any(p => p.PartId == weapon.PartId));
+            Assert.Contains(subBot.LoadoutChanges, m => m.SidShip == subjectId && !m.Parts.Any(p => p.PartId == weapon.PartId));
             Assert.Empty(enemyBot.LoadoutChanges);
         }
         finally
@@ -220,14 +225,19 @@ public class LoadoutChangeLiveTests
             Assert.Empty(enemyBot.LoadoutChanges);
 
             // (2) LEAVE: gunner disembarks → RemovePassenger on the PARENT.
+            subBot.ResetLoadoutChanges(); boarderBot.ResetLoadoutChanges();
             parent.RemoveChildShip(gunner);
             gunner.ParentShip = null;
             gunner.TurretId = null;
             PumpUntil(server, () =>
                 boarderBot.LoadoutChanges.Any(m =>
-                    m.SidShip == subjectId && !m.Passengers.Any(p => p.ShipId == boarderId)),
+                    m.SidShip == subjectId && !m.Passengers.Any(p => p.ShipId == boarderId))
+                && subBot.LoadoutChanges.Any(m => m.SidShip == subjectId
+                    && !m.Passengers.Any(p => p.ShipId == boarderId)),
                 6000);
             Assert.Contains(boarderBot.LoadoutChanges, m =>
+                m.SidShip == subjectId && !m.Passengers.Any(p => p.ShipId == boarderId));
+            Assert.Contains(subBot.LoadoutChanges, m =>
                 m.SidShip == subjectId && !m.Passengers.Any(p => p.ShipId == boarderId));
             Assert.Empty(enemyBot.LoadoutChanges);
         }

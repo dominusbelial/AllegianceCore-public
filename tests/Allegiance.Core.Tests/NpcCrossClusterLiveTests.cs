@@ -235,7 +235,7 @@ public sealed class NpcCrossClusterLiveTests
         // station over Phase 2 (it must close on and reach it), not a late-tick
         // distance after it docked at the station and re-departed.
         float minD = float.MaxValue;
-        for (int i = 0; i < 60000; i++)
+        for (int i = 0; i < 60000 && !(minD < d0 - 300f && minD < dTransit - 60f); i++)
         {
             server.TickSim();
             minD = MathF.Min(minD, Dist(npc, station));

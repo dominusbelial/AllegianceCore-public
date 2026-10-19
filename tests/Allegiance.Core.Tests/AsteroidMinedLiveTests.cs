@@ -147,7 +147,8 @@ public sealed class AsteroidMinedLiveTests
             return (ship, sector);
         };
         seat.Server.Boot(Config());
-        foreach (var __m in seat.Server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable mission; bypass ready-up
+        // Keep mining paused until all three roles have joined. Reader scheduling
+        // must not consume ore or generate a partial-audience pre-test history.
         var port = seat.Server.BoundPort;
 
         var bots = new[] { new FltBot(), new FltBot(), new FltBot() };
@@ -173,6 +174,7 @@ public sealed class AsteroidMinedLiveTests
             // civ's GA) completes fast; the mining behaviour under test is
             // timing-independent, so this keeps the live proof quick.
             seat.Miner.MiningRateOverridePerSecond = 100f;
+            foreach (var mission in seat.Server.Missions) mission.Stage = MissionStage.Started;
             return seat;
         }
         catch
@@ -181,6 +183,26 @@ public sealed class AsteroidMinedLiveTests
             seat.Server.Dispose();
             throw;
         }
+    }
+
+    private static void ReceiveBarrier(Seated seat, uint marker)
+    {
+        var peers = new[] { seat.MinerBot, seat.CrossSideBot, seat.TeammateBot };
+        var elapsed = System.Diagnostics.Stopwatch.StartNew();
+        long nextProbe = 0;
+        Assert.True(SpinWait.SpinUntil(() =>
+        {
+            // A second phase may begin within the normal reply throttle. Retry
+            // missing echoes at its real cadence; keep the production limit intact.
+            if (elapsed.ElapsedMilliseconds >= nextProbe)
+            {
+                foreach (var peer in peers)
+                    if (!peer.Pings.Any(ping => ping.TimeClient == marker)) peer.SendPing(marker);
+                nextProbe = elapsed.ElapsedMilliseconds + global::Allegiance.Server.ServerHost.MinPingReplyIntervalMs + 50;
+            }
+            seat.Server.TickSim();
+            return peers.All(p => p.Pings.Any(ping => ping.TimeClient == marker));
+        }, TimeSpan.FromSeconds(30)), "all mining recipients must decode the ordered phase barrier");
     }
 
     /// <summary>⭐ A ship parked on a real He3 rock mines it past the &gt;3.0
@@ -205,10 +227,13 @@ public sealed class AsteroidMinedLiveTests
         seat.CrossSideBot.ResetAsteroidMineds();
         seat.TeammateBot.ResetAsteroidMineds();
 
-        // Mine long enough that broadcasts have flowed to all three peers.
-        PumpUntil(seat.Server,
-            () => seat.MinerBot.AsteroidMineds.Count > 0 && seat.CrossSideBot.AsteroidMineds.Count > 0 && seat.TeammateBot.AsteroidMineds.Count > 0,
-            6000);
+        // Generate the first real threshold crossing, then freeze physics while
+        // every reader decodes that same historical ore state.
+        int mined = PumpUntil(seat.Server, () => rock.OreMax - rock.OreRemaining > 3f, 6000);
+        Assert.True(mined < 6000, "mining must cross the native reporting threshold");
+        Assert.True(SpinWait.SpinUntil(() => seat.MinerBot.AsteroidMineds.Count > 0
+            && seat.CrossSideBot.AsteroidMineds.Count > 0 && seat.TeammateBot.AsteroidMineds.Count > 0,
+            TimeSpan.FromSeconds(30)), "all three peers must decode the mining report");
         Assert.True(seat.MinerBot.AsteroidMineds.Count > 0, "the miner itself must receive ASTEROID_MINED");
         Assert.True(seat.CrossSideBot.AsteroidMineds.Count > 0, "cross-side enemy must receive ASTEROID_MINED (whole mission)");
         Assert.True(seat.TeammateBot.AsteroidMineds.Count > 0, "same-side teammate must receive ASTEROID_MINED (whole mission)");
@@ -265,12 +290,14 @@ public sealed class AsteroidMinedLiveTests
         // the retired flat 150.
         float cap = seat.Miner.EffectiveMineCapacity();
         PumpUntil(seat.Server,
-            () => seat.Miner.Ore >= cap - 0.5f
+            () => seat.Miner.Ore >= cap
                && seat.MinerBot.AsteroidMineds.Count > 0
                && seat.CrossSideBot.AsteroidMineds.Count > 0
                && seat.TeammateBot.AsteroidMineds.Count > 0,
             20000);
         Assert.True(seat.Miner.Ore >= cap - 0.5f, "miner should reach its ore capacity");
+        // Being full does not mean the earlier reports have left each TCP reader.
+        ReceiveBarrier(seat, 0x120a);
 
         int mCount = seat.MinerBot.AsteroidMineds.Count;
         int cCount = seat.CrossSideBot.AsteroidMineds.Count;
@@ -280,6 +307,7 @@ public sealed class AsteroidMinedLiveTests
         // Pump many more ticks — with the miner parked full, nothing mines, so no
         // MineAsteroidEvent (and therefore no ASTEROID_MINED) may be emitted.
         PumpUntil(seat.Server, () => false, 150);
+        ReceiveBarrier(seat, 0x120b);
         Assert.Equal(mCount, seat.MinerBot.AsteroidMineds.Count);
         Assert.Equal(cCount, seat.CrossSideBot.AsteroidMineds.Count);
         Assert.Equal(tCount, seat.TeammateBot.AsteroidMineds.Count);

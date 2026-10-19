@@ -680,7 +680,10 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// <see cref="IIgcSite.DroneChatEvent"/>: raise the <see cref="DroneChat"/>
     /// hook so the owning <see cref="Server"/> can broadcast the team chat.</summary>
     public void DroneChatEvent(Ship ship, short sideId, short soundId, string text)
-        => DroneChat?.Invoke(ship, sideId, soundId, text);
+    {
+        ship.Mission?.Skills?.Record(sideId, soundId >= 0 ? ShowcaseSkill.Voice : ShowcaseSkill.Chat);
+        DroneChat?.Invoke(ship, sideId, soundId, text);
+    }
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
@@ -1137,6 +1140,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // the docking peer — the wire trigger that makes the native client's
         // ship.GetStation() resolve (appmsg.cpp:1113). Mirrors how HitWarpEvent
         // raises ShipWarped for per-peer SET_CLUSTER routing (ServerHost.cs:279).
+        sh.Mission?.Skills?.Record(sh.SideId, ShowcaseSkill.Dock);
         ShipDocked?.Invoke(sh, ds.Station.SideId);
         return true;
     }
@@ -1265,6 +1269,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
                        $"to '{destSector.Name}' ({destSector.Id}) via warp {rw.Warp.WarpId}";
         Console.WriteLine(warpNote);
         ReportNotable(warpNote);                            // spectator event feed (same text)
+        sh.Mission?.Skills?.Record(sh.SideId, ShowcaseSkill.Warp);
         ShipWarped?.Invoke(sh, oldSector, destSector);
     }
 

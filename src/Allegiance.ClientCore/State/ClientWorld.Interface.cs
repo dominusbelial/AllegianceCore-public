@@ -130,6 +130,7 @@ public sealed partial class ClientWorld
     // (Igc/missionigc.cpp:3804-3831): clear sector contents, keep mission/player roster.
     private void ClearTeamWorld()
     {
+        DetachBotWorld();
         OwnMissilesFired = 0;
         InGame = false;
         SectorGeneration++;

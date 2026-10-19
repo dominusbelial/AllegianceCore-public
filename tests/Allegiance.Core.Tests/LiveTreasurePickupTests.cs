@@ -164,6 +164,11 @@ public class LiveTreasurePickupTests
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
 
         var bots = Seat(server, "PA", "PB", "PO");
+        Assert.All(bots, b => Assert.NotNull(b.ShipAssignment));
+        // Spawn roles follow server join order, which can differ from Connect order.
+        using var pickerBot = bots.Single(b => b.ShipAssignment!.Ship.ShipId == sp.Pickup.Id);
+        using var mateBot = bots.Single(b => b.ShipAssignment!.Ship.ShipId == sp.Bystander.Id);
+        using var outsiderBot = bots.Single(b => b.ShipAssignment!.Ship.ShipId == sp.Outsider.Id);
 
         short amount = CashAmount(server);
         sp.Amount = amount;
@@ -177,9 +182,14 @@ public class LiveTreasurePickupTests
         long sideBefore = side.Money;
         long walletBefore = server.Ships.First(s => s.Ship.Id == sp.Pickup.Id).Wallet.Money;
 
-        int n = PumpUntil(server,
-            () => bots[0].DestroyTreasures.Count >= 1 && bots[1].DestroyTreasures.Count >= 1 && bots[2].DestroyTreasures.Count >= 1, 3000);
-        Assert.True(n < 3000, "DESTROY_TREASURE(30) did not reach all three peers (whole-mission)");
+        int n = PumpUntil(server, () => !SectorHasTreasure(server, treasure.Id), 3000);
+        Assert.True(n < 3000, "cash treasure was not picked up");
+        // Removal and another message's receipt do not synchronize MONEY_CHANGE.
+        // Hold the pickup tick fixed until every asserted recipient decodes it.
+        Assert.True(SpinWait.SpinUntil(() => bots.All(b => b.DestroyTreasures.Any(d => d.TreasureId == treasure.Id))
+            && new[] { pickerBot, mateBot }.All(b => b.MoneyChanges.Any(m => m.SidTo == sp.Pickup.Id
+                && m.DMoney == amount)), TimeSpan.FromSeconds(30)),
+            "all peers must decode destruction and both same-side peers must decode cash credit");
 
         // Treasure actually removed from the sector (gone on the next tick).
         Assert.False(SectorHasTreasure(server, treasure.Id), "treasure should be gone after pickup");
@@ -191,7 +201,7 @@ public class LiveTreasurePickupTests
         Assert.Equal(sideBefore, side.Money);
 
         // MONEY_CHANGE(60): side-wide — both same-side peers, NA sidFrom, sidTo = pickup ship.
-        foreach (var sameSide in new[] { bots[0], bots[1] })
+        foreach (var sameSide in new[] { pickerBot, mateBot })
         {
             var mc = Assert.Single(sameSide.MoneyChanges);
             Assert.Equal(amount, mc.DMoney);
@@ -199,7 +209,7 @@ public class LiveTreasurePickupTests
             Assert.Equal((short)-1, mc.SidFrom);   // NA
         }
         // The cross-side peer gets DESTROY_TREASURE (whole-mission) but NO MONEY_CHANGE (side-wide).
-        Assert.Empty(bots[2].MoneyChanges);
+        Assert.Empty(outsiderBot.MoneyChanges);
 
         // DESTROY_TREASURE(30): whole-mission — all three peers got the same frame.
         foreach (var b in bots)
@@ -227,7 +237,7 @@ public class LiveTreasurePickupTests
         // Seat the three bots FIRST — the ShipSpawner only creates sp.Pickup /
         // sp.Bystander / sp.Outsider once a player connects, so we can only
         // resolve their LiveShips after seating.
-        var a = new FltBot(); var b = new FltBot(); var c = new FltBot();
+        using var a = new FltBot(); using var b = new FltBot(); using var c = new FltBot();
         a.Connect(server.BoundPort, "TAA"); a.SendLogonRequest(Request("TAA"));
         b.Connect(server.BoundPort, "TBB"); b.SendLogonRequest(Request("TBB"));
         c.Connect(server.BoundPort, "TCC"); c.SendLogonRequest(Request("TCC"));
@@ -251,9 +261,13 @@ public class LiveTreasurePickupTests
         long targetWalletBefore = targetLive.Wallet.Money;
         long pickerWalletBefore = pickerLive.Wallet.Money;
 
-        int n = PumpUntil(server,
-            () => a.DestroyTreasures.Count >= 1 && b.DestroyTreasures.Count >= 1 && c.DestroyTreasures.Count >= 1, 3000);
-        Assert.True(n < 3000, "DESTROY_TREASURE(30) did not reach all three peers");
+        var sameSideBots = new[] { a, b, c }.Where(bt => bt.ShipAssignment!.Ship.ShipId != sp.Outsider.Id).ToArray();
+        int n = PumpUntil(server, () => !SectorHasTreasure(server, treasure.Id), 3000);
+        Assert.True(n < 3000, "cash treasure was not picked up");
+        Assert.True(SpinWait.SpinUntil(() => new[] { a, b, c }.All(bt => bt.DestroyTreasures.Any(d => d.TreasureId == treasure.Id))
+            && sameSideBots.All(bt => bt.MoneyChanges.Any(m => m.SidTo == sp.Bystander.Id
+                && m.DMoney == amount)), TimeSpan.FromSeconds(30)),
+            "all peers must decode destruction and both same-side peers must decode autodonated cash");
         Assert.False(SectorHasTreasure(server, treasure.Id), "treasure gone after pickup");
 
         // The AUTODONATE TARGET's wallet rises by the amount; the PICKER's does NOT.

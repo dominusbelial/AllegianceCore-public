@@ -81,6 +81,27 @@ public sealed class P657SpawnReliabilityTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
+    public void Late_seat_dock_does_not_mask_newer_launch_and_later_redock_revokes_it(bool combat)
+    {
+        using var peer = new Peer(combat);
+        var own = peer.Observe();
+        // Observe is installed after SET_CLUSTER, before the rest of the join
+        // burst arrives. A dock history must not permanently override status.
+        Feed(peer.Wire, new DockedNotify { StationId = 23 });
+        Assert.False(own());
+        Feed(peer.Wire, new ShipStatusMessage
+        {
+            ShipId = 7, HullId = 15, SectorId = 2, StationId = -1,
+            State = ShipStatusMessage.StateFlying, StateTime = 1,
+        });
+        Assert.True(own());
+        Feed(peer.Wire, new DockedNotify { StationId = 23 });
+        Assert.False(own());
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
     public void StaleSeatAndPurchaseAck_WithoutOwnLaunch_TimeOutDisposeAndReportFailure(bool combat)
     {
         var peer = new Peer(combat);

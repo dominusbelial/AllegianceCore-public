@@ -24,6 +24,7 @@ public class RendererDisposalGuardTests
     private static readonly HashSet<string> DisposedOnUnload = new(StringComparer.Ordinal)
     {
         "_nativeAsteroidRenderer",
+        "_modernHudRenderer",        // HUD-2: owned distance-font raster caches
         "_nativeStationRenderer",
         "_nativeShipRenderer",        // P646 — was never disposed
         "_nativeTreasureRenderer",    // P646 — was never disposed

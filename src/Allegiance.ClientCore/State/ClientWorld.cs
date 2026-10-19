@@ -25,7 +25,7 @@ namespace Allegiance.ClientCore.State;
 /// </summary>
 public sealed partial class ClientWorld
 {
-    private readonly Dictionary<short, ShipEntity> _ships = new();
+    private BotShipTable _ships = new();
 
     // ── P636 — lock-free decision snapshot ──────────────────────────────────
     // Published by the RECEIVE thread (the sole world writer) via
@@ -120,6 +120,7 @@ public sealed partial class ClientWorld
     /// </summary>
     public DecisionSnapshot PublishDecisionSnapshot()
     {
+        if (_botWorld is not null) return PublishSharedDecision();
         if (!DecisionSnapshotEnabled) return _publishedDecision;   // OFF: zero publishes
 
         // Lazy: no rebuild unless the bot decision loop wants fresh snapshots
@@ -189,7 +190,11 @@ public sealed partial class ClientWorld
     /// receive-thread Apply paths that mutate Ships/Stations/Warps). Lets the lazy
     /// publisher skip a rebuild when nothing the decision reads has changed.
     /// </summary>
-    private void MarkSnapshotDirty() => _worldGen++;
+    private void MarkSnapshotDirty()
+    {
+        _worldGen++;
+        if (_botWorld is not null) _botWorld.Dirty = true;
+    }
 
     /// <summary>
     /// P636d — the receive thread stamps the wall-clock time (ms, monotonic) just
@@ -214,12 +219,12 @@ public sealed partial class ClientWorld
     {
         // Exact-size array: consumers iterate `.Ships` directly, so there must be
         // no phantom trailing entries. Published arrays are never refilled.
+        var entities = _ships.SnapshotEntities;
         var arr = target.Ships;
-        if (arr.Length != _ships.Count) arr = target.Ships = new DecisionShip[_ships.Count];
+        if (arr.Length != entities.Count) arr = target.Ships = new DecisionShip[entities.Count];
         int n = 0;
-        foreach (var kv in _ships)
+        foreach (var e in entities)
         {
-            var e = kv.Value;
             var s = new DecisionShip
             {
                 ShipId = e.ShipId,
@@ -227,7 +232,7 @@ public sealed partial class ClientWorld
                 SectorId = e.SectorId,
                 HullId = e.HullId,
                 StationId = e.StationId,
-                Flags = e.IsNotVisible ? (byte)0 : (byte)1,
+                Flags = e.IsNotVisible || (_botWorld is not null && e.StationId >= 0) ? (byte)0 : (byte)1,
             };
             if (e.Latest is { } lu)
             {
@@ -370,18 +375,18 @@ public sealed partial class ClientWorld
     private double _remoteCorrectionSum;
     private float _remoteCorrectionMax;
 
-    private readonly Dictionary<short, DataClusterIGC> _clusters = new();
-    private readonly Dictionary<short, DataStationIGC> _stations = new();
-    private readonly Dictionary<short, DataWarpIGC> _warps = new();
-    private readonly Dictionary<short, DataAsteroidIGC> _asteroids = new();
+    private Dictionary<short, DataClusterIGC> _clusters = new();
+    private Dictionary<short, DataStationIGC> _stations = new();
+    private Dictionary<short, DataWarpIGC> _warps = new();
+    private Dictionary<short, DataAsteroidIGC> _asteroids = new();
 
     /// <summary>P423 — live per-asteroid condition, refreshed by the periodic
     /// ASTEROIDS_UPDATE(179) sync (see <see cref="Apply(AsteroidsUpdate)"/>).</summary>
-    private readonly Dictionary<short, AsteroidLiveState> _asteroidLive = new();
+    private Dictionary<short, AsteroidLiveState> _asteroidLive = new();
 
     /// <summary>P423 — live per-station condition, refreshed by the periodic
     /// STATIONS_UPDATE(57) sync (see <see cref="Apply(StationsUpdate)"/>).</summary>
-    private readonly Dictionary<short, StationLiveState> _stationLive = new();
+    private Dictionary<short, StationLiveState> _stationLive = new();
 
     /// <summary>P424 — the local player's own pending queued order, or null when
     /// there is none (fresh / accepted / rejected / auto-rejected). Populated by
@@ -395,9 +400,9 @@ public sealed partial class ClientWorld
     // P585 — pending opt-in aleph transit signals (a ship crossing an aleph in
     // the viewer's sector), drained each frame by the renderer's pulse path.
     private readonly List<AlephTransitSignal> _alephTransits = new();
-    private readonly Dictionary<short, ProbeEntity> _probes = new();
-    private readonly Dictionary<short, MineEntity> _mines = new();
-    private readonly Dictionary<short, BuildingEffectEntity> _buildingEffects = new();
+    private Dictionary<short, ProbeEntity> _probes = new();
+    private Dictionary<short, MineEntity> _mines = new();
+    private Dictionary<short, BuildingEffectEntity> _buildingEffects = new();
     private readonly Dictionary<short, TreasureEntity> _treasures = new();
     private readonly List<ChaffEntity> _chaff = new();
 
@@ -992,7 +997,7 @@ public sealed partial class ClientWorld
 
     /// <summary>Ships keyed by ship id, snapshot-consistent (never mutated
     /// while exposed — callers should hold the caller's lock).</summary>
-    public IReadOnlyDictionary<short, ShipEntity> Ships => _ships;
+    public IReadOnlyDictionary<short, ShipEntity> Ships => _botWorld is null ? _ships.Shared : _ships;
 
     /// <summary>P448b — registered by the host client to resolve a REMOTE ship's
     /// already-effective hull stats (plus its afterburner max thrust) for the per-ship
@@ -1712,6 +1717,7 @@ public sealed partial class ClientWorld
     /// </summary>
     public void Reset()
     {
+        DetachBotWorld();
         OwnMissilesFired = 0;
         _waitingForRestart = false;
         SectorGeneration++;
@@ -2261,11 +2267,13 @@ public sealed partial class ClientWorld
         // even when re-entering the same sector (appmsg.cpp:1009-1023).
         SectorGeneration++;
         foreach (var ship in _ships.Values)
-            if (ship.ShipId != set.Ship.ShipId && ship.ShipId != MyShipId)
+            if (ship.ShipId != set.Ship.ShipId && ship.ShipId != MyShipId
+                && !OtherBotObserves(ship.SectorId))
                 RetireSectorPose(ship);
         ClearSectorEffects();
         ShipWarnings.Reset();
         _treasures.Clear();
+        _ships.OwnId = set.Ship.ShipId;
         MarkSnapshotDirty();
         // On first arrival this is the "here is your ship" assignment.
         MyShipId ??= set.Ship.ShipId;
@@ -2541,6 +2549,7 @@ public sealed partial class ClientWorld
     {
         MarkSnapshotDirty();
         var e = Upsert(update.OidTarget);
+        if (_botWorld is not null && e.Latest is { } previous && previous.Time > update.Ship.Time) return;
         e.Latest = update.Ship;
         e.LastUpdateTick = update.Ship.Time;
         // P448b — stamp the local arrival time and (re-)seed the dead-reckoner. A
@@ -2573,6 +2582,7 @@ public sealed partial class ClientWorld
     {
         MarkSnapshotDirty();
         var e = Upsert(status.ShipId);
+        if (_botWorld is not null && e.StateTime > status.StateTime) return;
         e.HullId = status.HullId;
         e.SectorId = status.SectorId;
         e.StationId = status.StationId;
@@ -2634,6 +2644,9 @@ public sealed partial class ClientWorld
         foreach (var entry in heavy.HeavyShipEntries)
         {
             var e = Upsert(entry.ShipId);
+            if (_botWorld is not null && e.Latest is { } previous
+                && (previous.Time > entry.Time(heavy.TimeReference)
+                    || (previous.Time == entry.Time(heavy.TimeReference) && e.PoseSectorId == ownSector && !e.IsNotVisible))) continue;
             // P585/P599 — remember whether this ship was out of view (IsGone)
             // OR had never been posed in our sector (no Latest yet) so a
             // (re/first-)sighting here can be attributed as an aleph ARRIVAL
@@ -2743,6 +2756,7 @@ public sealed partial class ClientWorld
             // read it).
             if (MyShipId is { } myId && _ships.TryGetValue(myId, out var own))
                 own.SideId = export.SideId;
+            ConfirmBotSide();
             return;
         }
 
@@ -3535,7 +3549,11 @@ public sealed partial class ClientWorld
                                             // heard of via PLAYERINFO
         e.Player = info;
         e.SideId = info.ISide;
-        if (info.ShipId == (MyShipId ?? JoinedShipId)) MySideId = info.ISide;
+        if (info.ShipId == (MyShipId ?? JoinedShipId))
+        {
+            MySideId = info.ISide;
+            ConfirmBotSide();
+        }
         if (string.IsNullOrEmpty(e.CharacterName) || e.CharacterName == "<error>") e.CharacterName = info.CharacterName;
     }
 
@@ -4183,6 +4201,9 @@ public sealed partial class ClientWorld
             _retiredResearchProduction.Add(m.ShipId);
         if (m.ShipId == MyShipId) ShipWarnings.Reset();
         if (!_ships.TryGetValue(m.ShipId, out var e)) return;
+        if (_botWorld is not null && m.Sdr == ShipDelete.SdrLeftSector
+            && MyShipId is { } viewer && _ships.TryGetValue(viewer, out var own)
+            && e.PoseSectorId != own.SectorId) return;
         MarkSnapshotDirty();
         RetireSectorPose(e);
         // P448b — a ship that left view (warped/docked/logged off) stops being
@@ -4241,6 +4262,7 @@ public sealed partial class ClientWorld
     // ── Mission info (persistent mission state, distinct from any ship) ────
     private void Apply(MissionDef def)
     {
+        AttachBotWorld(def.DwCookie);
         // Both MISSIONDEF(38) and MISSION_STAGE(37) can carry a Stage. The
         // server sends MISSIONDEF first (twice, in fact, at stage 0) and
         // MISSION_STAGE last (StageStarted) in the join burst, but rather than
@@ -4332,6 +4354,8 @@ public sealed partial class ClientWorld
 
     public void BeginNextMission()
     {
+        if (_botWorld is not null) _botWorlds!.Retire(_botWorld);
+        DetachBotWorld();
         OwnMissilesFired = 0;
         SectorGeneration++;
         MissionGeneration++;

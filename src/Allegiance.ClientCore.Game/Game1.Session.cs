@@ -39,6 +39,7 @@ public sealed partial class Game1
     {
         public Allegiance.SinglePlayer.Benchmark.BenchmarkCommand? Benchmark;
         public string PlayerName = "monogame";
+        public string? BenchmarkCollectorUrl;
 
         /// <summary>Non-null selects DIRECT connect (skip the lobby), connecting
         /// straight to <see cref="DirectPort"/> on loopback — the unchanged
@@ -731,6 +732,7 @@ public sealed partial class Game1
             // and transitions to Flying once the server seats us (SET_CLUSTER sets
             // World.MyShipId).
             _state = ClientState.SideSelect;
+            if (_benchmark is null) ObserveBenchmarkSharingSession();
             _sideSelectIndex = 0;
             _sideSelectFromGameOver = false;   // P481 — a fresh logon is never an eliminated-side lobby
         }

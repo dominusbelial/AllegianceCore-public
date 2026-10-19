@@ -545,6 +545,7 @@ RecordingAssetSource? recorder = assetManifestPath is not null
 var opts = new Game1.LaunchOptions
 {
     Benchmark = benchmark,
+    BenchmarkCollectorUrl = savedPlayer?.Benchmark?.CollectorUrl ?? PlayerConfig.ReadBenchmarkCollectorUrl(),
     PlayerName = playerName,
     LobbyUrl = lobbyUrl,
     Capture = capture,

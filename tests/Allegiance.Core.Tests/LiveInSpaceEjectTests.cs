@@ -385,6 +385,10 @@ public class LiveInSpaceEjectTests
             () => victim.Kills.Any(k => k.ShipId == victimId) && observer.Kills.Any(k => k.ShipId == victimId),
             20000);
         Assert.True(ticks < 20000, "second lethal hit did not truly kill the lifepod");
+        Assert.True(SpinWait.SpinUntil(() => victim.Deletes.Any(d => d.ShipId == victimId)
+            && observer.Deletes.Any(d => d.ShipId == victimId)
+            && victim.Pods.Any(p => p.ShipId == victimId), TimeSpan.FromSeconds(30)),
+            "both death recipients must decode deletion and the owner must decode respawn");
 
         // No second EJECT anywhere.
         Assert.DoesNotContain(victim.Ejects, e => e.ShipId == victimId);

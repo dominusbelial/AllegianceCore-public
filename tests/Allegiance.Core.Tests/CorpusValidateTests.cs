@@ -17,6 +17,7 @@ namespace Allegiance.Core.Tests;
 public class CorpusValidateTests
 {
     [Trait("Requires", "Artwork")]
+    [Trait("Tier", "Live")] // Expensive corpus/scenario or collision-work budget; docs/testing/TIERS.md.
     [SkippableFact]
     public void Aggregate_matches_the_recorded_baseline()
     {

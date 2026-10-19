@@ -765,7 +765,7 @@ internal sealed partial class BotManager : IDisposable
         Showcase.HullRole? techRole = null, Action<TechLoadoutSelector.Selection>? onSelected = null)
     {
         using var ownership = new PendingOwnership(DisposePeer);
-        var cs = ownership.Own(new ConnectionSession());
+        var cs = ownership.Own(new ConnectionSession(BotWorlds(side)));
         cs.World.CountOnlyProjectiles = true;
         cs.World.ReckonRemotes = false;   // P633 — headless bot harness: no render consumption of dead-reckoners
         _stallTelemetry.Connect(cs, name, _host, _port);
@@ -1157,7 +1157,7 @@ internal sealed partial class BotManager : IDisposable
             DisposePeer(existing);
             string name = $"research-cmd{side}-{Interlocked.Increment(ref _nameCounter)}-{Random.Shared.Next(1000, 9999)}";
             using var ownership = new PendingOwnership(DisposePeer);
-            var cs = ownership.Own(new ConnectionSession());
+            var cs = ownership.Own(new ConnectionSession(BotWorlds(side)));
             cs.World.CountOnlyProjectiles = true;
             cs.World.ReckonRemotes = false;   // P633 — headless harness: no render consumption
             _stallTelemetry.Connect(cs, name, _host, _port);
@@ -1727,6 +1727,8 @@ internal sealed partial class BotManager : IDisposable
                 UpdateFinales(now);
                 UpdateDefense(snap, now);
 
+                var decisionDue = DecisionDue(snap, now);
+
                 // P636d — LAZY publish: request a fresh decision snapshot from every
                 // seated bot's receive thread BEFORE this pass reads .Decision. The
                 // request is a single volatile write (no gate, no lock), so it costs
@@ -1743,7 +1745,7 @@ internal sealed partial class BotManager : IDisposable
                     {
                         var b = snap[i];
                     using var benchmarkCpu = new BotCpuScope(b);
-                        if (b.Cs?.World is { } w)
+                        if (decisionDue[i] && b.Cs?.World is { } w)
                         {
                             if (w.MyShipId is not null) w.RequestDecisionRefresh();
                             else w.CancelDecisionRefresh();   // not seated → zero publish
@@ -1769,6 +1771,7 @@ internal sealed partial class BotManager : IDisposable
                 System.Threading.Tasks.Parallel.For(0, snap.Length, DecisionParallelOptions, i =>
                 {
                     var b = snap[i];
+                    if (!decisionDue[i]) return;
                     if (!IsParticipating(b) || b.SpawnPending || b.ObjectivesPending || b.InScenario || b.Behavior != "combat" || b.Cs is not { } pcs) return;
                     if (pcs.World.MyShipId is null) return;                 // not seated yet
                     // P636 — Phase A now reads the lock-free DECISION SNAPSHOT
@@ -1864,6 +1867,13 @@ bool isThreat =
                         // the commanded ship-target; this may upgrade an idle/weave
                         // BotClass into a combat ConnectionSession and set Behavior.
                         using var frameScope = new DecisionFrameScope(bot.Cs, bot.DecisionFrame);
+                        if (!decisionDue[i])
+                        {
+                            SampleCadence(bot, now);
+                            ReReadyBot(bot);
+                            continue;
+                        }
+                        Interlocked.Increment(ref bot.AiDecisions);
                         if (bot.Behavior != "combat") HandleOrders(bot, now);
                         if (bot.Behavior == "combat")
                         {
@@ -2124,10 +2134,15 @@ bool isThreat =
         if (d.ShouldSendAccept && pending is { } pq)
         {
             short shipId = ShipIdOf(bot);
+            // This port owns the queued slot on the server: acknowledge that
+            // slot so it promotes AND clears the pending order. Writing only
+            // CmdAccepted leaves the queued command alive until auto-reject.
+            // Native AcceptQueuedCommand clears c_cmdQueued immediately after
+            // SetAccepted (WinTrek/WinTrek.cpp:10680-10697).
             if (bot.Bot is { } bb)
-                bb.SendOrderChange(shipId, pq.CommandId, OrderChange.CmdAccepted, pq.TargetType, pq.TargetId);
+                bb.SendOrderChange(shipId, pq.CommandId, OrderChange.CmdQueued, pq.TargetType, pq.TargetId);
             else if (bot.Cs is { } cc)
-                cc.SendOrderChange(shipId, pq.CommandId, OrderChange.CmdAccepted, pq.TargetType, pq.TargetId);
+                cc.SendOrderChange(shipId, pq.CommandId, OrderChange.CmdQueued, pq.TargetType, pq.TargetId);
             bot.AcceptedQueuedId = pq.CommandId;
             bot.AcceptedQueuedOrder = pq;
             if (pq.TargetId >= 0 && pq.TargetType is IgcObjectType.Ship or IgcObjectType.Station or IgcObjectType.Asteroid or IgcObjectType.Warp)
@@ -4943,6 +4958,7 @@ bool isThreat =
         /// <summary>P637 — the bot's showcase role (Fighter/Bomber/Scout/...),
         /// so a caller can see which role got which target/route.</summary>
         public required string Role { get; init; }
+        public long AiDecisions { get; init; }
         public string State { get; init; } = "active";
         public short? DefenseSector { get; init; }
         /// <summary>P637 — the sector this bot is ROUTING to (its own objective:
@@ -5088,7 +5104,7 @@ bool isThreat =
                             State = bot.DefenseSector is not null || bot.DefendingInPlace ? "defending" : "active",
                             DefenseSector = bot.DefenseSector ?? (bot.DefendingInPlace ? sector : null),
                             StagingSector = bot.StagingSector, StagePhase = bot.StagePhase,
-                            Velocity = [vel.X, vel.Y, vel.Z], Speed = speed, Idle = idle,
+                            Velocity = [vel.X, vel.Y, vel.Z], Speed = speed, Idle = idle, AiDecisions = Interlocked.Read(ref bot.AiDecisions),
                         });
                         continue;
                     }
@@ -5108,7 +5124,7 @@ bool isThreat =
                         State = bot.DefenseSector is not null || bot.DefendingInPlace ? "defending" : "active",
                         DefenseSector = bot.DefenseSector,
                         StagingSector = bot.StagingSector, StagePhase = bot.StagePhase,
-                        Velocity = [0, 0, 0], Speed = 0, Idle = idle2,
+                        Velocity = [0, 0, 0], Speed = 0, Idle = idle2, AiDecisions = Interlocked.Read(ref bot.AiDecisions),
                     });
                 }
                 catch { /* one bot's bad state never breaks list_active_bots */ }
@@ -5759,6 +5775,8 @@ bool isThreat =
         public BotClass? Bot;
         public ConnectionSession? Cs;
 
+        public long AiDecisions;
+        public double LastAiDecision = double.NegativeInfinity;
         public long DecisionCpuNanoseconds;
         public string Name;
         public short HullId;

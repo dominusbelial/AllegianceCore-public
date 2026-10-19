@@ -491,6 +491,7 @@ public sealed partial class Game1 : Game
     private SpriteFont _hudSmall = null!;
     private SpriteFont _hudBig = null!;
     private HudRenderer _hudRenderer = null!;
+    private ModernHudRenderer _modernHudRenderer = null!;
     private StarmapRenderer _starmapRenderer = null!;
     private RadarBracketRenderer _radarRenderer = null!;
     private Rendering.ShipSideTagRenderer _shipTagRenderer = null!;
@@ -1307,6 +1308,7 @@ public sealed partial class Game1 : Game
             IsFixedTimeStep = false;
         }
         _benchmark = opts.Benchmark;
+        InitializeBenchmarkSharing(opts.BenchmarkCollectorUrl);
         if (_benchmark is not null) _trailRandom = new RandomTrailSource(729);
         _session = new ConnectionSession();
         // P448b — register the remote-ship hull-stats resolver so the ClientWorld
@@ -1773,6 +1775,7 @@ public sealed partial class Game1 : Game
         _gpuTimer?.Dispose();
         _frameTelemetry?.Dispose();
         _flightGc.Dispose();
+        _modernHudRenderer?.Dispose();
         _fsr?.Dispose();
         _post?.Dispose();
         _hdMaterials?.Dispose();

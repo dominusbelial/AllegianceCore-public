@@ -314,6 +314,7 @@ public sealed class TcpTransport : ITransport
     internal static TransportMode DefaultMode { get; set; } = TransportMode.ThreadPerPeer;
     // Exactly-once guard so <c>OnPeerLeft</c> fires once even when both the peer's
     // read loop and the overflow/disconnect path (DropPeer) try to reap it.
+    private readonly ConcurrentDictionary<ConnectionId, byte> _closingPeers = new();
     private readonly ConcurrentDictionary<ConnectionId, byte> _peerEnded = new();
     // P606 — per-window disconnect counts by reason. Incremented on every peer
     // disconnect (reader thread / sender thread), drained by the server each
@@ -360,6 +361,9 @@ public sealed class TcpTransport : ITransport
     public ConnectionId LocalId { get; private set; } = ConnectionId.Me;
     public ushort BoundPort => _boundPort;
 
+    // Test seam: stop/restart the host after the running check but before accept.
+    internal Action? BeforeAcceptForTesting { get; set; }
+
     /// <summary>P661: optional host-only accounting. Set before Host; client
     /// transports retain the null fast path. No send policy depends on it.</summary>
     public EgressAccounting? Egress { get; init; }
@@ -370,16 +374,17 @@ public sealed class TcpTransport : ITransport
     {
         if (_running) throw new InvalidOperationException("transport already running");
         _isHost = true;
-        _listener = new TcpListener(bindAddress ?? IPAddress.Any, port);
-        _listener.Start();
-        _boundPort = (ushort)((IPEndPoint)_listener.LocalEndpoint).Port;
+        var listener = new TcpListener(bindAddress ?? IPAddress.Any, port);
+        _listener = listener;
+        listener.Start();
+        _boundPort = (ushort)((IPEndPoint)listener.LocalEndpoint).Port;
         _running = true;
         IsConnected = true;
         // P605 — pool mode spins up the fixed worker pool up-front; peer
         // senders then register with it instead of spawning per-peer threads.
         if (_mode == TransportMode.Pool)
             _pool = new SendWorkerPool(_poolWorkerCount);
-        Spawn(ReceiveLoopStart, "accept");
+        Spawn(() => ReceiveLoopStart(listener), "accept");
     }
 
     public void Join(string address, ushort port, string playerName)
@@ -454,7 +459,7 @@ public sealed class TcpTransport : ITransport
                 // (ServerMain.RunAsync's outer catch prints and exits 1). So drop
                 // silently; the peer's own "[conn] peer N left" line is logged once
                 // when the event drains, no per-packet spam.
-                if (!_peers.TryGetValue(target, out ps!))
+                if (IsPeerClosed(target) || !_peers.TryGetValue(target, out ps!))
                     return; // already gone — nothing to send
             }
             else
@@ -540,13 +545,13 @@ public sealed class TcpTransport : ITransport
     }
 
     // ---- host accept loop ----------------------------------------------
-    private void ReceiveLoopStart()
+    private void ReceiveLoopStart(TcpListener l)
     {
-        TcpListener l = _listener!;
         try
         {
-            while (_running)
+            while (_running && ReferenceEquals(l, _listener))
             {
+                BeforeAcceptForTesting?.Invoke();
                 TcpClient client = l.AcceptTcpClient();
                 ConfigureAcceptedSocket(client);
                 // P654 (H-15) — resource caps before we commit a thread to this
@@ -605,6 +610,11 @@ public sealed class TcpTransport : ITransport
         }
         catch (SocketException) { /* listener stopped */ }
         catch (ObjectDisposedException) { /* disposed */ }
+        // Stop can win after the loop check; AcceptTcpClient then reports
+        // "Not listening". A restarted host may already have _running=true,
+        // so this loop must also recognize its superseded listener. Keep
+        // unexpected InvalidOperationException on the live listener visible.
+        catch (InvalidOperationException) when (!_running || !ReferenceEquals(l, _listener)) { }
     }
 
     /// <summary>Configure a newly-accepted peer socket: disable Nagle (both ends
@@ -780,6 +790,25 @@ public sealed class TcpTransport : ITransport
         DropPeer(id, reason);
     }
 
+    /// <summary>True once a host peer has logically departed, including while
+    /// its final replies are draining. Queued inbound packets must not rearm it.</summary>
+    public bool IsPeerClosed(ConnectionId id) => _closingPeers.ContainsKey(id) || _peerEnded.ContainsKey(id);
+
+    /// <summary>Retire a peer immediately, then close its socket after queued
+    /// guaranteed replies reach the socket. Native LOGOFF forwards the reply
+    /// before deleting the player (FedSrv/FedSrv.CPP:5787-5800). The bounded
+    /// drain runs on the existing writer; it never blocks the simulation.</summary>
+    public void ClosePeerAfterFlush(ConnectionId id)
+    {
+        if (!_isHost) return;
+        PeerSender? sender;
+        lock (_gate)
+        {
+            if (!_peers.TryGetValue(id, out sender) || !_closingPeers.TryAdd(id, 0)) return;
+        }
+        sender.CloseAfterFlush();
+    }
+
     /// <summary>P654 (H-15) test seam: the number of live connections (greet +
     /// established) currently counted by the accept-path caps.</summary>
     internal int LiveConnectionCount()
@@ -801,15 +830,15 @@ public sealed class TcpTransport : ITransport
             // P654 (H-15) — release the established peer's per-IP accounting so
             // the per-IP tally stays accurate across the data session (this
             // peer's slot was held since accept, or since it became a peer).
-            if (_peerIpById.TryGetValue(id, out var ip))
+            lock (_gate)
             {
-                _peerIpById.Remove(id);
-                if (_activeByIp.TryGetValue(ip, out var cnt))
+                if (_peerIpById.Remove(id, out var ip) && _activeByIp.TryGetValue(ip, out var cnt))
                 {
                     if (cnt > 1) _activeByIp[ip] = cnt - 1;
                     else _activeByIp.Remove(ip);
                 }
             }
+            _closingPeers.TryRemove(id, out _);
             if (logLine)
                 Console.WriteLine($"[conn-drop] peer {id} left reason={reason}");
             _site.OnPeerLeft(id);
@@ -1006,7 +1035,7 @@ public sealed class TcpTransport : ITransport
                 long frameTimeoutMs = _isHost ? (long)DataFrameReadTimeout.TotalMilliseconds : 0;
                 (byte type, byte[] body) = ReadFrame(s, cap, idleDeadline, frameTimeoutMs);
                 if (type != (byte)FrameType.Data) { CloseQuiet(s); return; }
-                _site.OnReceive(from, body);
+                if (!_isHost || !IsPeerClosed(from)) _site.OnReceive(from, body);
             }
         }
         catch (EndOfStreamException) { _clientReadFailure = "server closed connection (EOF)"; }
@@ -1232,8 +1261,11 @@ public sealed class TcpTransport : ITransport
             }
         })
         { IsBackground = true, Name = name };
-        lock (_gate) _threads.Add(t);
-        t.Start();
+        lock (_gate)
+        {
+            _threads.Add(t);
+            t.Start();
+        }
     }
 
     /// <summary>M9 test seam (InternalsVisibleTo): number of thread references
@@ -1370,6 +1402,8 @@ public sealed class TcpTransport : ITransport
         // update/read it without tearing (DateTime is not volatile-able).
         private long _lastWriteProgressUtcTicks;
         private volatile bool _disconnected;
+        private bool _closeAfterDrain;
+        private Timer? _drainCloseTimer;
         private volatile DisconnectReason _reason;
         // P619c — true when this peer is a connected human client (set via
         // TcpTransport.SetPeerHuman by the server at logon). Grants the longer
@@ -1437,7 +1471,7 @@ public sealed class TcpTransport : ITransport
             bool fireDisconnect = false;
             lock (_sync)
             {
-                if (_disconnected) { if (pooled) _framePool.Return(frame); return; }
+                if (_disconnected || _closeAfterDrain) { if (pooled) _framePool.Return(frame); return; }
                 _enqueuedBytes += length;
                 if (Counters is { } counters) Interlocked.Add(ref counters.Enqueued, length);
                 Egress?.Record(frame.AsSpan(0, length), EgressHarness, coalesceKey != 0, EgressEvent.Offered);
@@ -1836,10 +1870,14 @@ public sealed class TcpTransport : ITransport
                     _inflight = null;
                     _inflightPooled = false;
                     _inflightOffset = 0;
-                    return DrainResult.Wrote;   // frame fully on the wire
                 }
-                return DrainResult.Wrote;       // partial progress — resume next turn
+                else return DrainResult.Wrote; // partial progress — resume next turn
+                if (!_closeAfterDrain || _orderedQueue.Count != 0 || _streamQueue.Count != 0)
+                    return DrainResult.Wrote;
             }
+            // Owner callbacks acquire the transport gate; keep them outside _sync.
+            FailAndClose(DisconnectReason.Shutdown);
+            return DrainResult.Dead;
         }
 
         /// <summary>P645 — stamp the disconnect reason and tear the peer down
@@ -1924,11 +1962,27 @@ public sealed class TcpTransport : ITransport
             }
         }
 
+        public void CloseAfterFlush()
+        {
+            bool drained;
+            lock (_sync)
+            {
+                if (_disconnected || _closeAfterDrain) return;
+                _closeAfterDrain = true;
+                drained = _inflight is null && _orderedQueue.Count == 0 && _streamQueue.Count == 0;
+                if (!drained)
+                    _drainCloseTimer = new Timer(_ => FailAndClose(DisconnectReason.Shutdown),
+                        null, TimeSpan.FromMilliseconds(SendTimeoutMs), Timeout.InfiniteTimeSpan);
+            }
+            if (drained) FailAndClose(DisconnectReason.Shutdown);
+        }
+
         /// <summary>Cancel the writer and close the underlying stream + socket
         /// (which wakes a blocked Write/Read on the peer). Idempotent.</summary>
         public void Close()
         {
             _cts.Cancel();
+            _drainCloseTimer?.Dispose();
             lock (_sync)
             {
                 _disconnected = true;

@@ -19,15 +19,15 @@ public static class HudModelAdapter
         RadarMode radarMode = RadarMode.Default, HudChat? chat = null,
         string? cargoLine = null, string? flightPartsLine = null,
         IReadOnlyList<string>? commandLines = null, bool inventoryVisible = false,
-        IReadOnlyList<LastBaseHudView>? lastBaseObjectives = null)
+        IReadOnlyList<LastBaseHudView>? lastBaseObjectives = null, bool hitConfirmation = false, string? podReturnInstruction = null)
         => HudModel.Create(frame, new HudContext
         {
-            Camera = mode, CameraLabel = cameraLabel, Hidden = hidden,
+            PodReturnInstruction = podReturnInstruction, HitConfirmation = hitConfirmation, Camera = mode, CameraLabel = cameraLabel, Hidden = hidden,
             Docked = docked, Dead = dead, CommandView = commandView, Turret = turret,
             Lock = lockBracket is { } lb ? new(Point(lb.Center), lb.State, lb.NowSeconds) : null,
             Lead = lead is { } li ? new(Point(li.LeadCenter), Point(li.TargetCenter), li.InRange, li.Green, li.NowSeconds) : null,
             Target = target is { } ts ? new(Point(ts.Center), ts.Engaged, ts.CharacterName,
-                ts.HullFraction, ts.ShieldFraction, ts.IsEnemy, ts.OreFraction) : null,
+                ts.HullFraction, ts.ShieldFraction, ts.IsEnemy, ts.OreFraction, ts.Distance, ts.ClosingSpeed, ts.SideColor) : null,
             TargetBearing = bearing is { } b ? Point(b) : null,
             LeaderCommand = leaderCommand, Ripcord = ripcord, Commandee = commandee,
             Diagnostics = diagnostics, Notices = notices ?? Array.Empty<HudNotice>(),

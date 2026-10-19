@@ -8,6 +8,7 @@ namespace Allegiance.Core.Tests;
 public sealed class P694CollisionGeometryTests
 {
     [Trait("Requires", "Artwork")]
+    [Trait("Tier", "Perf")] // Expensive corpus/scenario or collision-work budget; docs/testing/TIERS.md.
     [SkippableFact]
     public void Shared_geometry_matches_uncached_narrow_phase_in_both_paths_and_after_mutation()
     {

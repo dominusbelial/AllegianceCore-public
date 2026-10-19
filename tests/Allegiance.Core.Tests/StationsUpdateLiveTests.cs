@@ -268,15 +268,17 @@ public sealed class StationsUpdateLiveTests
         // Each side sees exactly one station (its own), so both sides' periodic
         // updates flow every tick; pump until each has at least one.
         PumpUntil(seat.Server,
-            () => seat.ABot.StationsUpdates.Count > 0 && seat.BBot.StationsUpdates.Count > 0,
+            () => seat.ABot.StationsUpdates.Any(u => HasEntry(u, seat.Sa.StationId))
+                && seat.BBot.StationsUpdates.Any(u => HasEntry(u, seat.Sb.StationId)),
             2000);
         Assert.True(seat.ABot.StationsUpdates.Count > 0, "side A must receive STATIONS_UPDATE");
         Assert.True(seat.BBot.StationsUpdates.Count > 0, "side B must receive STATIONS_UPDATE");
 
         // Latest batch on each side: A's has SA (correct id + full fractions) and
         // NOT SB; B's has SB and NOT SA — the per-side-batching proof.
-        var aUp = seat.ABot.StationsUpdates[^1];
-        var bUp = seat.BBot.StationsUpdates[^1];
+        // Reset does not cancel in-flight join updates about other stations.
+        var aUp = seat.ABot.StationsUpdates.First(u => HasEntry(u, seat.Sa.StationId));
+        var bUp = seat.BBot.StationsUpdates.First(u => HasEntry(u, seat.Sb.StationId));
         Assert.True(HasEntry(aUp, seat.Sa.StationId), $"A's update must contain SA {seat.Sa.StationId}; got {string.Join(",", aUp.Entries.Select(e => e.StationId))}");
         Assert.False(HasEntry(aUp, seat.Sb.StationId), $"A's update must NOT contain the unseeing-side station SB {seat.Sb.StationId}");
         Assert.True(HasEntry(bUp, seat.Sb.StationId), $"B's update must contain SB {seat.Sb.StationId}");
@@ -325,10 +327,13 @@ public sealed class StationsUpdateLiveTests
 
         // Pump until side A receives a message reflecting the changed shield byte.
         int got = PumpUntil(seat.Server,
-            () => seat.ABot.StationsUpdates.Count > 0 && EntryOf(seat.ABot.StationsUpdates[^1], bas.StationId).BpShieldFraction != 240,
+            () => seat.ABot.StationsUpdates.Any(u => HasEntry(u, bas.StationId)
+                && EntryOf(u, bas.StationId).BpShieldFraction == Percent(newShield)),
             3000);
         Assert.True(got < 3000, "side A's update must eventually reflect the lowered shield fraction");
-        var entry = EntryOf(seat.ABot.StationsUpdates[^1], bas.StationId);
+        var matching = seat.ABot.StationsUpdates.First(u => HasEntry(u, bas.StationId)
+            && EntryOf(u, bas.StationId).BpShieldFraction == Percent(newShield));
+        var entry = EntryOf(matching, bas.StationId);
         Assert.Equal(Percent(newShield), entry.BpShieldFraction);
         Assert.Equal(Percent(bas.ArmorFraction), entry.BpHullFraction);
         Assert.Equal((byte)240, entry.BpHullFraction);   // hull stayed full

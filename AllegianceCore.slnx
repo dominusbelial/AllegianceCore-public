@@ -17,6 +17,7 @@
     <Project Path="tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/hud2-proof/hud2-proof.csproj" />
     <Project Path="tools/hd-pack/catalog/catalog.csproj" />
     <Project Path="tools/test-tiers/test-tiers.csproj" />
     <Project Path="tools/benchmark/benchmark.csproj" />

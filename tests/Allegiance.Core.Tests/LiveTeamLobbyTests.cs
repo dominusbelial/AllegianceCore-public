@@ -271,7 +271,6 @@ public class LiveTeamLobbyTests
     /// their side — the aggregate flip true→false is reported, and the mission
     /// still has not started (the other side's player never readied).</summary>
     [Trait("Requires", "Artwork")]
-    [Trait("Lane", "LiveTiming")]   // P647 quarantine: live-wire team-ready receipt is load-sensitive (documented load-flake)
     [SkippableFact]
     public void Unready_broadcasts_team_ready_false()
     {
@@ -290,7 +289,8 @@ public class LiveTeamLobbyTests
         Assert.Equal(MissionStage.NotStarted, server.Missions[0].Stage);   // B never readied
 
         a.SendPlayerReady(false, aId);
-        int unf = PumpUntil(server, () => a.TeamReadys.Any(t => t.SideId == aSide && !t.FReady), 800);
+        int unf = PumpUntil(server, () => a.TeamReadys.Any(t => t.SideId == aSide && !t.FReady)
+            && b.TeamReadys.Any(t => t.SideId == aSide && !t.FReady), 800);
         Assert.True(unf < 800, "no TEAM_READY(false) for side A after un-ready");
         Assert.Contains(a.TeamReadys, t => t.SideId == aSide && !t.FReady);
         Assert.Contains(b.TeamReadys, t => t.SideId == aSide && !t.FReady);

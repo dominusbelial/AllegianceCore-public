@@ -37,23 +37,17 @@ internal static class SpawnLaunch
     // provide the same SET_CLUSTER / undock / own SHIP_STATUS confirmation.
     public static Func<bool> Observe(BotClass bot, short shipId)
     {
-        var assignment = bot.ShipAssignment;
-        var initialStatuses = bot.ShipStatuses;
-        var initialDocks = bot.DockedNotices;
-        int statuses = initialStatuses.Count, docks = initialDocks.Count, observations = bot.Observations.Count;
-        int initialStation = initialDocks.LastOrDefault()?.StationId
-            ?? initialStatuses.LastOrDefault(s => s.ShipId == shipId)?.StationId ?? -1;
+        var initial = bot.OwnLaunchState;
+        int observations = bot.Observations.Count;
         return () =>
         {
-            var current = bot.ShipAssignment;
-            if (current?.Ship.ShipId != shipId) return false;
-            var dock = bot.DockedNotices.Skip(docks).LastOrDefault();
-            if (dock is not null) return dock.StationId < 0;
-            var status = bot.ShipStatuses.Skip(statuses).LastOrDefault(s => s.ShipId == shipId);
-            if (status is not null)
-                return status.StationId < 0 && status.SectorId >= 0 && status.State == ShipStatusMessage.StateFlying;
-            return current.SectorId >= 0 && (!ReferenceEquals(assignment, current)
-                || (initialStation < 0 && bot.Observations.Skip(observations).Any(o => o.ShipId == shipId)));
+            var current = bot.OwnLaunchState;
+            if (current.ShipId != shipId) return false;
+            // A late seat DOCKED must not mask a later flying SHIP_STATUS.
+            // Apply signals in receive order, as native does for SET_CLUSTER /
+            // DOCKED (clintlib/appmsg.cpp:991-1115) and status (:2711-2736).
+            if (current.Revision != initial.Revision) return current.Flying;
+            return initial.Flying && bot.Observations.Skip(observations).Any(o => o.ShipId == shipId);
         };
     }
 

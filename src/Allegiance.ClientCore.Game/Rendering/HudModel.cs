@@ -16,7 +16,7 @@ public readonly record struct HudGauge(
 public readonly record struct HudLock(HudPoint Center, MissileLockFeedback.LockState State, double NowSeconds);
 public readonly record struct HudLead(HudPoint Center, HudPoint TargetCenter, bool InRange, float Green, double NowSeconds);
 public readonly record struct HudTarget(HudPoint Center, bool Engaged, string? Name,
-    float? HullFraction, float? ShieldFraction, bool? IsEnemy, float? OreFraction);
+    float? HullFraction, float? ShieldFraction, bool? IsEnemy, float? OreFraction, float? Distance = null, float? ClosingSpeed = null, HudColor? SideColor = null);
 public readonly record struct HudNotice(string Text, bool Critical, float Opacity);
 public enum HudContactKind { Ship, Station, Warp, Asteroid }
 public readonly record struct HudContact(HudContactKind Kind, HudPoint Position,
@@ -34,6 +34,8 @@ public sealed record HudContext
     public bool Dead { get; init; }
     public bool CommandView { get; init; }
     public bool Turret { get; init; }
+    public bool HitConfirmation { get; init; }
+    public string? PodReturnInstruction { get; init; }
     public string? CameraLabel { get; init; }
     public HudLock? Lock { get; init; }
     public HudLead? Lead { get; init; }

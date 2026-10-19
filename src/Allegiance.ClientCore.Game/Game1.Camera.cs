@@ -134,6 +134,8 @@ public sealed partial class Game1
         float? hull = null, shield = null;
         bool? isEnemy = null;
         float? ore = null;
+        HudColor? sideColor = null;
+        float? distance = null, closing = null;
         lock (_session.Gate)
         {
             if (_autoTarget is not { } t) return null;
@@ -152,6 +154,22 @@ public sealed partial class Game1
             shield = info.Shield;
             isEnemy = info.Enemy;
             ore = info.Ore;
+            var world = _session.World;
+            if (world.MyShipId is { } mine && world.Ships.TryGetValue(mine, out var own) && own.Latest is { } ownUpdate
+                && (target.Kind != TargetKind.Ship || world.Ships.TryGetValue(target.Id, out var rangedShip) && rangedShip.SectorId == own.SectorId)
+                && (target.Kind != TargetKind.Station || world.Stations.TryGetValue(target.Id, out var rangedStation) && rangedStation.ClusterId == own.SectorId)
+                && ResolveTargetPosition(target, out var targetPosition))
+            {
+                var delta = targetPosition - ownUpdate.Position;
+                distance = delta.Length();
+                var targetVelocity = target.Kind == TargetKind.Ship && world.Ships.TryGetValue(target.Id, out var other) && other.Latest is { } otherUpdate
+                    ? otherUpdate.Velocity : default;
+                if (distance > .001f) closing = ((ownUpdate.Velocity - targetVelocity) * delta) / distance.Value;
+            }
+            short? side = target.Kind == TargetKind.Ship && world.Ships.TryGetValue(target.Id, out var selectedShip) ? selectedShip.SideId
+                : target.Kind == TargetKind.Station && world.Stations.TryGetValue(target.Id, out var selectedStation) ? selectedStation.SideId : null;
+            if (side is { } sideId && world.TryGetSideColor(sideId, out float sr, out float sg, out float sb))
+                sideColor = new(sr, sg, sb);
         }
 
         // Resolve the target's live world position (false when it has died/vanished),
@@ -159,7 +177,7 @@ public sealed partial class Game1
         if (!ResolveTargetPosition(target, out var simPos)) return null;
         if (!ProjectToScreen(PoseConverter.ToXna(simPos), view, proj, cameraEye, out Vector2 screen)) return null;
 
-        return new TargetSelectionView(screen, engaged, charName, hull, shield, isEnemy, ore);
+        return new TargetSelectionView(screen, engaged, charName, hull, shield, isEnemy, ore, distance, closing, sideColor);
     }
 
     /// <summary>

@@ -126,6 +126,10 @@ public sealed class P493EnemySpottingLiveTests
         using var alphaBot = new FltBot();
         using var bravoBot = new FltBot();
         alphaBot.Connect(port, "p493_alpha"); alphaBot.SendLogonRequest(Request("p493_alpha", 99000000000000001ul));
+        // Spawn callbacks can arrive in either order. Seat the named side-0
+        // observer before connecting the side-1 intruder.
+        int alphaSeated = PumpUntil(server, () => alphaBot.ShipAssignment is not null, 4000);
+        Assert.True(alphaSeated < 4000, "side-0 observer must seat first");
         bravoBot.Connect(port, "p493_bravo"); bravoBot.SendLogonRequest(Request("p493_bravo", 99000000000000002ul));
         int seated = PumpUntil(server, () => alphaBot.ShipAssignment is not null && bravoBot.ShipAssignment is not null, 4000);
         Assert.True(seated < 4000, "both bots seated");

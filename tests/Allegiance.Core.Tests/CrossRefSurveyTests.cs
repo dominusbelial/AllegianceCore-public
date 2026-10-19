@@ -12,6 +12,7 @@ public class CrossRefSurveyTests
     private static readonly string OutPath = "/tmp/crossref_survey.txt";
 
     [Trait("Requires", "Artwork")]
+    [Trait("Tier", "Live")] // Expensive corpus/scenario or collision-work budget; docs/testing/TIERS.md.
     [SkippableFact]
     public void Survey_aggregates_and_writes_report()
     {

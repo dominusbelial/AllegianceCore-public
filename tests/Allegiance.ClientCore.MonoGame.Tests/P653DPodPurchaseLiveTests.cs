@@ -91,8 +91,10 @@ public sealed class P653DPodPurchaseLiveTests
         Assert.NotEmpty(shop.ChosenParts);
         session.ResetBuyLoadoutAcks();
         session.SendBuyLoadout(shop.EffectiveHullId, true, shop.ChosenParts);
-        Wait("purchase ack", () => session.BuyLoadoutAcks.Count > 0);
-        var ack = session.BuyLoadoutAcks.Last();
+        // Ejection also emits a pod-sync ACK with FLaunch=false. It can arrive
+        // after Reset; wait for the requested real hull, not an unrelated ACK.
+        Wait("purchase ack", () => session.BuyLoadoutAcks.Any(a => a.HullId == hull.HullId));
+        var ack = session.BuyLoadoutAcks.Last(a => a.HullId == hull.HullId);
         Assert.True(ack.FBoughtEverything, $"pod purchase refused: dead={ship.Dead} parent={ship.ParentShip?.Id}");
         Assert.True(ack.FLaunch);
         Assert.Equal(hull.HullId, ack.HullId);

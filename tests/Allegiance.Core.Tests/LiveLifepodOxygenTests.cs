@@ -224,6 +224,9 @@ public class LiveLifepodOxygenTests
         // timer → KillShipEvent → the established death path (destroy + respawn).
         int b = PumpUntil(server, () => victim.Pods.Any(p => p.ShipId == victimId), 4000);
         Assert.True(b < 4000, "oxygen expiry did not respawn the player");
+        Assert.True(SpinWait.SpinUntil(() => observer.Kills.Any(k => k.ShipId == victimId && k.BDeathCredit)
+            && observer.Deletes.Any(d => d.ShipId == victimId && d.Sdr == ShipDelete.SdrKilled),
+            TimeSpan.FromSeconds(30)), "observer must decode the oxygen death independently of the owner");
 
         // The pod was destroyed — KILL_SHIP + SHIP_DELETE reached the same-sector observer…
         // P578: the observer ALSO saw a bDeathCredit=false KILL_SHIP at the eject

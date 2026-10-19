@@ -263,6 +263,7 @@ public sealed partial class Game1
         _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, gauges, lockTextures);
 
         // P214 — in-flight chat overlay (same SpriteBatch/font plumbing as the HUD).
+        _modernHudRenderer = new ModernHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings, Content.Load<SpriteFont>("HUDModern"));
         _chatRenderer = new ChatRenderer(_spriteBatch, _whitePixel, _hudSmall);
 
         // P217 — the quick-chat voice-macro data, parsed once at runtime from

@@ -209,6 +209,8 @@ public class LiveBucketTests
         int seat = PumpUntil(server,
             () => a.ShipAssignment is not null && b.ShipAssignment is not null && c.ShipAssignment is not null, 6000);
         Assert.True(seat < 6000, "all three bots must seat");
+        Assert.True(SpinWait.SpinUntil(() => new[] { a, b, c }.All(bt => bt.EnterGames.Count > 0),
+            TimeSpan.FromSeconds(30)), "all peers must finish the initial bucket catalog before reset");
 
         FltBot funderBot = null!, mateBot = null!, outsiderBot = null!;
         foreach (var bot in new[] { a, b, c })
@@ -247,10 +249,13 @@ public class LiveBucketTests
         funderBot.ResetMoneyChanges(); mateBot.ResetMoneyChanges(); outsiderBot.ResetMoneyChanges();
         funderBot.SendDonate(bucket.Id, donate);
 
-        int seen = PumpUntil(server,
-            () => funderBot.BucketStatuses.Count >= 1 && mateBot.BucketStatuses.Count >= 1
-                && funderBot.MoneyChanges.Any(mc => mc.DMoney == -donate && mc.SidFrom == sp.Funder.Id), 3000);
-        Assert.True(seen < 3000, "BUCKET_STATUS(65) did not reach both same-side peers");
+        int seen = PumpUntil(server, () => bucket.InvestedMoney == donate, 3000);
+        Assert.True(seen < 3000, "donation was not applied to the bucket");
+        Assert.True(SpinWait.SpinUntil(() => new[] { funderBot, mateBot }.All(bt =>
+            bt.BucketStatuses.Any(s => s.IBucket == bucket.Id && s.MoneyTotal == donate && s.TimeTotal == 0)
+            && bt.MoneyChanges.Any(mc => mc.DMoney == -donate && mc.SidTo == sp.Funder.Id
+                && mc.SidFrom == sp.Funder.Id)), TimeSpan.FromSeconds(30)),
+            "both same-side peers must decode the donation status and debit");
 
         var fbs = Assert.Single(funderBot.BucketStatuses, s => s.TimeTotal == 0);
         var mbs = Assert.Single(mateBot.BucketStatuses, s => s.TimeTotal == 0);

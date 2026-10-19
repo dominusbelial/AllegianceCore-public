@@ -1,0 +1,323 @@
+{
+  "build": {
+    "command": "dotnet build AllegianceCore.slnx -c Release -m:1 -nodeReuse:false -p:UseSharedCompilation=false",
+    "warnings": 0,
+    "errors": 0,
+    "raw": "/tmp/HUD2/raw/build.log.gz"
+  },
+  "coreSweep": {
+    "status": "incomplete evidence: quota prevented TRX export",
+    "visibleFailingCases": 5,
+    "raw": "/tmp/HUD2/raw/sweep-Allegiance.Core.Tests.log"
+  },
+  "sweeps": {
+    "Allegiance.ClientCore.Tests": {
+      "outcome": "Failed",
+      "counters": {
+        "total": "1063",
+        "executed": "1063",
+        "passed": "1063",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "raw": "/tmp/HUD2/raw/sweep-Allegiance.ClientCore.Tests.trx.gz"
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "outcome": "Failed",
+      "counters": {
+        "total": "2503",
+        "executed": "2500",
+        "passed": "2499",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "raw": "/tmp/HUD2/raw/sweep-Allegiance.ClientCore.MonoGame.Tests.trx.gz"
+    }
+  },
+  "lastFocused": [
+    {
+      "method": "ModernHudTests.Preferences_migrate_existing_profiles_and_keep_explicit_style_on_restart",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "method": "ModernHudTests.Preferences_migrate_existing_profiles_and_keep_explicit_style_on_restart",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "method": "ModernHudTests.Preferences_migrate_existing_profiles_and_keep_explicit_style_on_restart",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "method": "ModernHudTests.Projected_labels_yield_to_reserved_instruments_and_notices_yield_to_labels",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "method": "ModernHudTests.Projected_labels_yield_to_reserved_instruments_and_notices_yield_to_labels",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "method": "ModernHudTests.Projected_labels_yield_to_reserved_instruments_and_notices_yield_to_labels",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "method": "ModernHudTests.Safe_palette_keeps_neutral_and_team_relationships_distinguishable",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "method": "ModernHudTests.Safe_palette_keeps_neutral_and_team_relationships_distinguishable",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "method": "ModernHudTests.Safe_palette_keeps_neutral_and_team_relationships_distinguishable",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "method": "ModernHudTests.Both_skins_render_Hud1_scenarios_without_overlapping_text_and_modern_draws_all_visible_elements",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "method": "ModernHudTests.Both_skins_render_Hud1_scenarios_without_overlapping_text_and_modern_draws_all_visible_elements",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "method": "ModernHudTests.Both_skins_render_Hud1_scenarios_without_overlapping_text_and_modern_draws_all_visible_elements",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "method": "ModernHudSettingsInputTests.Flight_settings_menu_opens_HUD_row_and_arrow_hot_switches_existing_renderers",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "method": "ModernHudSettingsInputTests.Flight_settings_menu_opens_HUD_row_and_arrow_hot_switches_existing_renderers",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "method": "ModernHudSettingsInputTests.Flight_settings_menu_opens_HUD_row_and_arrow_hot_switches_existing_renderers",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "method": "HudModelTests.Native_inventory_keeps_unavailable_fields_unknown_and_target_bars_need_real_data",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "method": "HudModelTests.Native_inventory_keeps_unavailable_fields_unknown_and_target_bars_need_real_data",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "method": "HudModelTests.Native_inventory_keeps_unavailable_fields_unknown_and_target_bars_need_real_data",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "method": "RendererDisposalGuardTests.Every_disposable_renderer_field_is_disposed_in_UnloadContent",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "method": "RendererDisposalGuardTests.Every_disposable_renderer_field_is_disposed_in_UnloadContent",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "method": "RendererDisposalGuardTests.Every_disposable_renderer_field_is_disposed_in_UnloadContent",
+      "run": 3,
+      "exit": 0
+    }
+  ],
+  "parking": [
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "name": "never-parks-1",
+      "exit": 0,
+      "seconds": 95.28
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "name": "never-parks-2",
+      "exit": 0,
+      "seconds": 99.14
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "name": "never-parks-3",
+      "exit": 0,
+      "seconds": 98.69
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "name": "never-parks-4",
+      "exit": 0,
+      "seconds": 95.23
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "name": "never-parks-5",
+      "exit": 0,
+      "seconds": 95.89
+    }
+  ],
+  "coreRecovery": [
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "Allegiance.Core.Tests.P674ParityScorecardTests.Both_repository_matrices_validate_and_print_scorecards",
+      "name": "core-recovery-0-1",
+      "exit": 0,
+      "seconds": 1.32
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "Allegiance.Core.Tests.P674ParityScorecardTests.Both_repository_matrices_validate_and_print_scorecards",
+      "name": "core-recovery-0-2",
+      "exit": 0,
+      "seconds": 1.27
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "Allegiance.Core.Tests.P674ParityScorecardTests.Both_repository_matrices_validate_and_print_scorecards",
+      "name": "core-recovery-0-3",
+      "exit": 0,
+      "seconds": 1.32
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events",
+      "name": "core-recovery-1-1",
+      "exit": 0,
+      "seconds": 189.91
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events",
+      "name": "core-recovery-1-2",
+      "exit": 0,
+      "seconds": 186.56
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events",
+      "name": "core-recovery-1-3",
+      "exit": 0,
+      "seconds": 188.57
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "Allegiance.Core.Tests.P689StationDeathTickTests.Crowded_station_death_keeps_expected_kill_order_and_stays_within_tick_budget",
+      "name": "core-recovery-2-1",
+      "exit": 0,
+      "seconds": 1.82
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "Allegiance.Core.Tests.P689StationDeathTickTests.Crowded_station_death_keeps_expected_kill_order_and_stays_within_tick_budget",
+      "name": "core-recovery-2-2",
+      "exit": 0,
+      "seconds": 1.82
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "Allegiance.Core.Tests.P689StationDeathTickTests.Crowded_station_death_keeps_expected_kill_order_and_stays_within_tick_budget",
+      "name": "core-recovery-2-3",
+      "exit": 0,
+      "seconds": 1.82
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "Allegiance.Core.Tests.InterestTierTests.Json_binds_defaults_and_bad_environment_is_rejected",
+      "name": "core-recovery-3-1",
+      "exit": 0,
+      "seconds": 1.27
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "Allegiance.Core.Tests.InterestTierTests.Json_binds_defaults_and_bad_environment_is_rejected",
+      "name": "core-recovery-3-2",
+      "exit": 0,
+      "seconds": 1.32
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "filter": "Allegiance.Core.Tests.InterestTierTests.Json_binds_defaults_and_bad_environment_is_rejected",
+      "name": "core-recovery-3-3",
+      "exit": 0,
+      "seconds": 1.27
+    }
+  ],
+  "rendererRecovery": [
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "Allegiance.ClientCore.MonoGame.Tests.RendererDisposalGuardTests.Every_disposable_renderer_field_is_disposed_in_UnloadContent",
+      "name": "isolated-Allegiance.ClientCore.MonoGame.Tests-0-1",
+      "exit": 0,
+      "seconds": 0.97
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "Allegiance.ClientCore.MonoGame.Tests.RendererDisposalGuardTests.Every_disposable_renderer_field_is_disposed_in_UnloadContent",
+      "name": "isolated-Allegiance.ClientCore.MonoGame.Tests-0-2",
+      "exit": 0,
+      "seconds": 0.97
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "filter": "Allegiance.ClientCore.MonoGame.Tests.RendererDisposalGuardTests.Every_disposable_renderer_field_is_disposed_in_UnloadContent",
+      "name": "isolated-Allegiance.ClientCore.MonoGame.Tests-0-3",
+      "exit": 0,
+      "seconds": 0.97
+    }
+  ],
+  "renderCombinations": 234,
+  "noArtworkFallback": "HUD2_RENDER_PASS 234 rendered scenarios; real font bounds, no overlap, all visible elements",
+  "rawRoot": "/tmp/HUD2/raw",
+  "pbr": {
+    "testMaterial": "HD-2 synthetic maps bound by native hash to quizsf2bmp and quizsf1bmp",
+    "residentMiB": 3.33,
+    "pack": "/tmp/HUD2/raw/synthetic-pbr-pack.tar.gz"
+  },
+  "aot": "not triggered: no src/Core or src/Server production changes",
+  "commits": false,
+  "pushes": false
+}

@@ -5,30 +5,11 @@ using Allegiance.ClientCore.State;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
-/// <summary>
-/// Renders the 2D HUD overlay on top of the 3D scene, via <see cref="SpriteBatch"/>
-/// with procedurally-drawn shapes (a 1x1 white <see cref="Texture2D"/> tinted and
-/// scaled for fills, and thin rotated rectangles for lines/arcs) plus two baked
-/// <c>.spritefont</c> bitmaps. Since P241 the six core flight gauges are REAL
-/// original-game textures (the <c>*Gaugebmp.mdl</c> segmented-arc gauges, decoded
-/// at runtime by <see cref="MdlTextureDecoder"/> and drawn by
-/// <see cref="GaugeTextures"/>) with the native bottom-up clipped reveal — not the
-/// procedural bars of the P211 "modern glass-panel" design, which remains only as
-/// a degraded fallback when the artwork is unavailable.
-/// </summary>
-/// <remarks>
-/// <para>Modern sci-fi glass-panel aesthetic: thin glowing accent lines, dark
-/// translucent panels, high-contrast monospace numerals. The accent colour is
-/// <see cref="HudColor.TealAccent"/> — the Bios Scout's teal/cyan-green energy
-/// conduits — so the overlay reads as part of this ship rather than an arbitrary
-/// palette. This is a first-pass visual design; the exact spacing/tints are easy
-/// to iterate on once seen live.</para>
-/// <para>Layout (viewport-sized): a center reticle (always, regardless of
-/// camera mode), a left status panel (hull/shield/energy/fuel/ammo/power bars),
-/// a bottom-center speed readout, a right-side throttle gauge, a top-center
-/// afterburner/power indicator, and a small camera-mode tag.</para>
-/// </remarks>
-public sealed class HudRenderer
+/// <summary>Classic skin and shared HUD widget composition. HUD-1 resolves the
+/// data and visibility; skins choose geometry and glyph rendering. Text is
+/// measured and placed through one per-frame collision layout. Modern overrides
+/// the native bitmap gauges and target indicators in <see cref="ModernHudRenderer"/>.</summary>
+public class HudRenderer
 {
     // ── Palette ───────────────────────────────────────────────────────────
     private static readonly Color Accent = From(HudColor.TealAccent);
@@ -62,10 +43,10 @@ public sealed class HudRenderer
     // Depleted (Warning red) — mirrors the MINING tag's amber family.
     private static readonly Color ReloadAmber = new(0.98f, 0.74f, 0.24f);
 
-    private readonly SpriteBatch _sb;
-    private readonly Texture2D _white;
-    private readonly SpriteFont _small;
-    private readonly SpriteFont _big;
+    protected readonly SpriteBatch _sb;
+    protected readonly Texture2D _white;
+    protected readonly SpriteFont _small;
+    protected readonly SpriteFont _big;
     private readonly GaugeTextures? _gauges;
     private readonly LockTextures? _lockTextures;
 
@@ -98,8 +79,11 @@ public sealed class HudRenderer
             targetSelection, targetBearing, leaderCommand, ripcordStatus, commandeeLabel, turretView, lodOverlay, lastBaseObjectives: lastBaseObjectives), viewport);
 
     /// <summary>Draw the classic skin from a resolved, graphics-independent model.</summary>
-    public void Draw(HudModel model, Viewport viewport)
+    public virtual void Draw(HudModel model, Viewport viewport)
     {
+        _viewportWidth = viewport.Width;
+        Layout.Reset(viewport.Width, viewport.Height);
+        PrepareLayout(model, viewport);
         if (!model.Visible) return;
         var frame = model.InstrumentsVisible ? model.Telemetry : null;
         var context = model.Context;
@@ -113,7 +97,7 @@ public sealed class HudRenderer
         float w = viewport.Width;
         float h = viewport.Height;
 
-        _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        BeginBatch();
         try
         {
             // P628 — LOD debug overlay: per-tier ship counts, drawn top-right
@@ -121,7 +105,7 @@ public sealed class HudRenderer
             if (lodOverlay is { Length: > 0 })
             {
                 var sz = _small.MeasureString(lodOverlay);
-                _sb.DrawString(_small, lodOverlay, new Vector2(w - sz.X - 12f, 12f), Color.White);
+                DrawText(_small, lodOverlay, new Vector2(w - sz.X - 12f, 12f), Color.White);
             }
             // P228 — damage flash: a full-viewport translucent-red wash while the
             // local player's ship is mid flash-window (hull took a hit). Drawn
@@ -130,7 +114,7 @@ public sealed class HudRenderer
             // until a frame exists (the tracker is fed only the local ship's hull).
             bool flashing = frame is { } flashFrame && flashFrame.Flashing;
             if (flashing)
-                FillRect(0f, 0f, w, h, FlashRed);
+            { FillRect(0f, 0f, w, h, FlashRed); ElementDrawn("Damage flash timer"); }
 
             // P221 — firing readout: the reticle turns the warning colour and
             // shows a FIRING tag while StateM carries AllWeapons (group fire).
@@ -139,21 +123,30 @@ public sealed class HudRenderer
             // until a frame exists.
             bool firing = frame is { } ff && ff.Firing;
             if (model.ReticleVisible)
-                DrawCrosshair(new Vector2(w / 2f, h / 2f), firing, turretView);
+                {
+                    DrawCrosshair(new Vector2(w / 2f, h / 2f), firing, turretView);
+                    ElementDrawn("Cockpit centre reticle");
+                }
 
             // P230 — missile-lock target box: drawn whenever Game1 has projected a
             // lock target into view, tinted/animated by the current lock state
             // (LockBracketStyle). Independently of a ship frame (a target box can
             // precede the status panel the same way the crosshair does).
             if (model.IndicatorsVisible && context.Lock is { } lb)
-                DrawLockBracket(new(new(lb.Center.X, lb.Center.Y), lb.State, lb.NowSeconds));
+                {
+                    DrawLockBracket(new(new(lb.Center.X, lb.Center.Y), lb.State, lb.NowSeconds));
+                    ElementDrawn("Missile lock flower");
+                }
 
             // P266 — predictive lead reticle: drawn at the projected lead point
             // whenever the server has granted a lead that is in view. Distinct from
             // the static round crosshair above, colored green→red by the
             // hit-probability (grey when the intercept is out of weapon range).
             if (model.IndicatorsVisible && context.Lead is { } li)
-                DrawLeadIndicator(new(new(li.Center.X, li.Center.Y), new(li.TargetCenter.X, li.TargetCenter.Y), li.InRange, li.Green, li.NowSeconds));
+                {
+                    DrawLeadIndicator(new(new(li.Center.X, li.Center.Y), new(li.TargetCenter.X, li.TargetCenter.Y), li.InRange, li.Green, li.NowSeconds));
+                    ElementDrawn("Ballistic lead marker", "Aim hit-probability predictor");
+                }
 
             // P345 — the player's OWN T/G autopilot-target selection box: a full
             // closed rectangle drawn at the selected target's projected centre,
@@ -162,7 +155,10 @@ public sealed class HudRenderer
             // most prominent of the target markers when several overlap. Distinct
             // shape (closed vs open corners) and colour from the lock box.
             if (model.FlightVisible && context.Target is { } ts)
-                DrawTargetSelectionBracket(new(new(ts.Center.X, ts.Center.Y), ts.Engaged, ts.Name, ts.HullFraction, ts.ShieldFraction, ts.IsEnemy, ts.OreFraction));
+                {
+                    DrawTargetSelectionBracket(new(new(ts.Center.X, ts.Center.Y), ts.Engaged, ts.Name, ts.HullFraction, ts.ShieldFraction, ts.IsEnemy, ts.OreFraction, ts.Distance, ts.ClosingSpeed, ts.SideColor));
+                    ElementDrawn("Target name", "Target hull", "Target shield", "Target ore", "Target range or sector", "Selected target bracket");
+                }
 
             // P359 — the target bearing arrow: a fixed-position compass chevron in
             // the bottom-right corner pointing toward the selected target's REAL
@@ -180,7 +176,7 @@ public sealed class HudRenderer
                     var size = _small.MeasureString(objective.Text);
                     var origin = new Vector2(w / 2f - size.X / 2f, 162f + i * 26f);
                     FillRect(origin.X - 8, origin.Y - 3, size.X + 16, size.Y + 6, Color.Black * 0.7f);
-                    _sb.DrawString(_small, objective.Text, origin, BonusGold);
+                    DrawText(_small, objective.Text, origin, BonusGold);
                     if (objective.Bracket is { } bracket) DrawTargetSelectionBracket(bracket);
                     if (objective.Bearing is { } bearing)
                         DrawTargetBearingArrow(bearing, viewport, 190 + i * 110, objective.BearingLabel, bottomInset: 330);
@@ -196,7 +192,7 @@ public sealed class HudRenderer
             // label that was false. The names mirror native's view modes
             // (Treki.h:108-126): cmExternalTurret and cmExternalMissile.
             string modeLabel = model.CameraLabel;
-            _sb.DrawString(_small, modeLabel, new Vector2(16f, h - 26f),
+            DrawText(_small, modeLabel, new Vector2(16f, h - 26f),
                 mode == CameraMode.Cockpit ? Accent : TextDim);
 
             // P366 — the leader-only bot dock/launch prompt: drawn whenever the
@@ -217,21 +213,28 @@ public sealed class HudRenderer
                 DrawCommandee(commandeeLabel, w, h);
 
             DrawWarnings(model.Warnings, w, h);
+            if (model.Warnings.Count > 0) ElementDrawn("Boundary and crowd warnings");
             if (frame is not { } f)
                 return;   // no ship yet — gauges/readouts have nothing to show
 
             // P241 — the real original-game segmented gauges when the artwork
             // loaded; otherwise fall back to the P211 procedural panel.
-            if (_gauges is { } g && g.AllLoaded)
+            if (UsesModernGauges || _gauges is { } g && g.AllLoaded)
                 DrawGauges(model, viewport);
             else
             {
                 DrawStatusPanel(f, w);
                 DrawThrottleGauge(f.Throttle, w, h);
             }
-            DrawSpeed(f.Speed, model.SpeedUnit, w, h);
+            {
+                DrawSpeed(f.Speed, model.SpeedUnit, w, model.PodVisible && !UsesModernGauges ? h - 130 : h);
+                ElementDrawn("Speed");
+            }
             DrawAfterburner(f.AfterburnerActive, f.Power, w);
-            DrawWeaponMode(f, w);
+            {
+                DrawWeaponMode(f, w);
+                ElementDrawn("Equipment selected and active state");
+            }
             // P255 — a simple, honest "MINING" tag while the local ship is
             // actively drilling a rock (kept modest: just the word, top-centre
             // under the weapon readout, in a warm amber to read as activity
@@ -243,7 +246,7 @@ public sealed class HudRenderer
             // translucent via CloakVisual; this tells the local pilot THEIR OWN
             // hull is cloaked, which otherwise has no on-screen cue in cockpit
             // view). Cool violet — distinct from the amber MINING activity tag.
-            if (f.Cloaked) DrawCloak(w);
+            if (f.Cloaked) { DrawCloak(w); ElementDrawn("Cloak active"); }
             // P618 — the TIME DILATION indicator: drawn at the very top-centre
             // whenever the server's live sim time scale is below full speed
             // (f.TimeDilationPercent < 100). Hidden entirely at full speed.
@@ -252,7 +255,7 @@ public sealed class HudRenderer
             // driven by the local ship's ripcord state while active. Bright
             // cyan so it reads as an active countdown/activity like the mining
             // tag, placed beside it (a ripcording ship cannot be mining).
-            if (ripcordStatus is { } rc) DrawRipcord(rc, w);
+            if (ripcordStatus is { } rc) { DrawRipcord(rc, w); ElementDrawn("Ripcord countdown"); }
 
             // P298 — the two new readouts native only hints at via training
             // overlays (KillBonusTrainingOverlay/RollTrainingOverlay,
@@ -260,13 +263,16 @@ public sealed class HudRenderer
             // live gauges: the ship's Kill Bonus (top-left, warm gold = reward)
             // and its current roll angle (top-right, teal). Drawn whenever a
             // frame exists — 0% KB / level 0° are honest readouts, not clutter.
-            DrawKillBonus(f, w);
+            {
+                DrawKillBonus(f, w);
+                ElementDrawn("Kill bonus");
+            }
             DrawRoll(f.RollDegrees, w, h);
             // P442 — the always-visible money readout (top-left, above the kill
             // bonus): the local player's wallet, "$"-formatted as native does.
             // Rendered only once the money is KNOWN (f.Money is null otherwise)
             // — "money unknown" shows nothing, never 0.
-            if (f.Money is { } money) DrawMoney(money, w);
+            if (f.Money is { } money) { DrawMoney(money, w); ElementDrawn("Money credits"); }
 
             // P362 — the weapon/systems status list: a small persistent panel
             // (right edge) naming each mounted weapon/missile system with its
@@ -274,14 +280,20 @@ public sealed class HudRenderer
             // from P361's auto-reload behaviour. Empty list (loadout not yet
             // known) draws nothing.
             if (f.WeaponSystems is { Count: > 0 } ws)
-                DrawWeaponStatusList(ws, viewport);
+                {
+                    DrawWeaponStatusList(ws, viewport);
+                    ElementDrawn("Equipment part identity and key", "Equipment quantity and empty warning");
+                }
 
             // P506 — virtual-joystick indicator: a small reticle + deadzone
             // circle + stick-position dot, drawn while mouse flight is on (the
             // frame carries a MouseStickView then). Shows the pilot when the
             // stick is centred inside the deadzone so the ship holds steady.
             if (model.MouseStickVisible && f.MouseStick is { } ms)
-                DrawMouseStick(ms, w, h);
+                {
+                    DrawMouseStick(ms, w, h);
+                    ElementDrawn("Joystick turning indicator");
+                }
 
             // P245 — warp-transit flash, drawn LAST so it blacks out the whole
             // frame (HUD and all) at the moment the local ship changes sector.
@@ -289,7 +301,7 @@ public sealed class HudRenderer
             // the translucent damage wash above. Opacity is 0 outside the brief
             // window, so this is a no-op for every frame that isn't flashing.
             float warpFlash = f.WarpFlash;
-            if (warpFlash > 0f)
+            if (warpFlash > 0f && !DeferWarpFlash)
                 FillRect(0f, 0f, w, h, WarpBlack * warpFlash);
         }
         finally
@@ -298,6 +310,54 @@ public sealed class HudRenderer
         }
     }
 
+    public HudTextLayout Layout { get; } = new();
+    protected virtual float TextScale => 1;
+    protected virtual void ElementDrawn(params string[] ids) { }
+    protected virtual bool UsesModernGauges => false;
+    protected virtual bool DeferWarpFlash => false;
+    protected virtual void BeginBatch() => _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+    protected virtual void RenderText(SpriteFont font, string text, Vector2 position, Color color, float scale)
+        => _sb.DrawString(font, text, position, color, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
+    protected virtual void PrepareLayout(HudModel model, Viewport viewport)
+    {
+        var (mx, my, mw, mh) = MinimapGeometry.CornerPanel(viewport.Width, viewport.Height);
+        Layout.Reserve(new((int)mx, (int)my, (int)mw, (int)mh));
+        float spread = Math.Clamp(viewport.Height / 680f, 1.15f, 2.1f);
+        foreach (var gauge in model.Gauges.Where(g => g.Visible))
+        {
+            var p = new Vector2(viewport.Width / 2f + gauge.NativeOffset.X * spread, viewport.Height / 2f + gauge.NativeOffset.Y * spread);
+            Layout.Reserve(new Rectangle((int)p.X - 55, (int)p.Y - 50, 110, 150));
+        }
+    }
+    public Rectangle DrawOverlayText(string text, Vector2 position, Color color) => DrawMeasuredText(_small, text, position, color);
+    protected void DrawText(SpriteFont font, string text, Vector2 position, Color color)
+        => DrawMeasuredText(font, text, position, color);
+    public Rectangle DrawMeasuredText(SpriteFont font, string text, Vector2 position, Color color, bool instrument = false, bool centerAtScale = true, float? maxWidth = null)
+    {
+        // Long dynamic names and chat are fitted by measured width, never by a
+        // character-count estimate. Retain the full value in the model.
+        text = new string(text.Select(c => c is >= ' ' and <= '~' or '\n' ? c : '?').ToArray());
+        var measured = font.MeasureString(text);
+        float scale = TextScale;
+        float limit = Math.Min(_viewportWidth - 16, maxWidth ?? float.MaxValue);
+        if (measured.X * scale > limit)
+        {
+            int lo = 0, hi = text.Length;
+            while (lo < hi)
+            {
+                int mid = (lo + hi + 1) / 2;
+                if (font.MeasureString(text[..mid] + "...").X * scale <= limit) lo = mid;
+                else hi = mid - 1;
+            }
+            text = text[..lo] + "..."; measured = font.MeasureString(text);
+        }
+        if (centerAtScale) position.X += measured.X * (1 - scale) / 2;
+        var bounds = Layout.Place(text, measured * scale, position, instrument);
+        FillRect(bounds.X - 3, bounds.Y - 1, bounds.Width + 6, bounds.Height + 2, Color.Black * .58f);
+        RenderText(font, text, new(bounds.X, bounds.Y), color, scale);
+        return bounds;
+    }
+    private int _viewportWidth = 1920;
     // ── Widgets ───────────────────────────────────────────────────────────
 
     private void DrawWarnings(IReadOnlyList<string> warnings, float w, float h)
@@ -305,7 +365,7 @@ public sealed class HudRenderer
         for (int i = 0; i < warnings.Count; i++)
         {
             var size = _small.MeasureString(warnings[i]);
-            _sb.DrawString(_small, warnings[i], new Vector2((w - size.X) / 2f, h * 0.19f + i * _small.LineSpacing), Warning);
+            DrawText(_small, warnings[i], new Vector2((w - size.X) / 2f, h * 0.19f + i * _small.LineSpacing), Warning);
         }
     }
 
@@ -316,7 +376,7 @@ public sealed class HudRenderer
     public void DrawDockedObjectives(IReadOnlyList<string> lines, Viewport viewport)
     {
         if (lines.Count == 0) return;
-        _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        BeginBatch();
         try
         {
             for (int i = 0; i < lines.Count; i++)
@@ -325,7 +385,7 @@ public sealed class HudRenderer
                 var origin = new Vector2(viewport.Width / 2f - size.X / 2f,
                     viewport.Height - 150f - (lines.Count - 1 - i) * 26f);
                 FillRect(origin.X - 8, origin.Y - 3, size.X + 16, size.Y + 6, Color.Black * 0.7f);
-                _sb.DrawString(_small, lines[i], origin, BonusGold);
+                DrawText(_small, lines[i], origin, BonusGold);
             }
         }
         finally { _sb.End(); }
@@ -365,7 +425,7 @@ public sealed class HudRenderer
             // Label.
             var label = rows[i].label;
             var sz = _small.MeasureString(label);
-            _sb.DrawString(_small, label, new Vector2(panelX, y + barH / 2f - sz.Y / 2f), TextDim);
+            DrawText(_small, label, new Vector2(panelX, y + barH / 2f - sz.Y / 2f), TextDim);
 
             DrawBar(rows[i].frac, panelX + labelW + 16f, y, barW, barH);
 
@@ -377,7 +437,7 @@ public sealed class HudRenderer
                 var t = FormatCountdown(f.OxygenSecondsRemaining);
                 var tsz = _small.MeasureString(t);
                 Color c = f.OxygenSecondsRemaining <= 30 ? Warning : Accent;
-                _sb.DrawString(_small, t, new Vector2(panelX + labelW + 16f + barW + 12f, y + barH / 2f - tsz.Y / 2f), c);
+                DrawText(_small, t, new Vector2(panelX + labelW + 16f + barW + 12f, y + barH / 2f - tsz.Y / 2f), c);
             }
         }
     }
@@ -422,7 +482,7 @@ public sealed class HudRenderer
     /// the six gauges clear each other on any window size; the arrangement is
     /// native, the spacing is this port's.
     /// </summary>
-    private void DrawGauges(HudModel model, Viewport viewport)
+    protected virtual void DrawGauges(HudModel model, Viewport viewport)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -466,7 +526,7 @@ public sealed class HudRenderer
             const float bw = 96f, bh = 12f;
             DrawBar(frac, anchor.X - bw / 2f, anchor.Y - bh / 2f, bw, bh);
             var lbl = _small.MeasureString(label);
-            _sb.DrawString(_small, label, new Vector2(anchor.X - lbl.X / 2f, anchor.Y + bh / 2f + 4f), TextDim);
+            DrawText(_small, label, new Vector2(anchor.X - lbl.X / 2f, anchor.Y + bh / 2f + 4f), TextDim);
             return;
         }
 
@@ -493,13 +553,13 @@ public sealed class HudRenderer
         var lsz = _small.MeasureString(label);
         var psz = _small.MeasureString(pct);
         float ty = anchor.Y + gh / 2f + 4f;
-        _sb.DrawString(_small, label, new Vector2(anchor.X - lsz.X / 2f, ty), TextDim);
+        DrawMeasuredText(_small, label, new Vector2(anchor.X - lsz.X / 2f, ty), TextDim, true);
         // P409 — the warning ramp (low = bad) is only meaningful for genuinely
         // depletable resources (hull/shield/energy/fuel/ammo). The Thrust gauge
         // is an AXIS position (idle throttle = 0%), not a consumable, so an
         // idle throttle must never read "0% WARNING" — always show its accent.
-        _sb.DrawString(_small, pct, new Vector2(anchor.X - psz.X / 2f, ty + lsz.Y + 1f),
-            valueColor is { } color ? From(color) : Accent);
+        DrawMeasuredText(_small, pct, new Vector2(anchor.X - psz.X / 2f, ty + lsz.Y + 1f),
+            valueColor is { } color ? From(color) : Accent, true);
     }
 
     /// <summary>Bottom-center speed readout: large accent numeral + unit label.</summary>
@@ -509,10 +569,10 @@ public sealed class HudRenderer
         var sz = _big.MeasureString(txt);
         float cx = w / 2f;
         float cy = h - 108f;
-        _sb.DrawString(_big, txt, new Vector2(cx - sz.X / 2f, cy), Accent);
+        DrawText(_big, txt, new Vector2(cx - sz.X / 2f, cy), Accent);
 
         var usz = _small.MeasureString(unit);
-        _sb.DrawString(_small, unit, new Vector2(cx - usz.X / 2f, cy + sz.Y + 2f), TextDim);
+        DrawText(_small, unit, new Vector2(cx - usz.X / 2f, cy + sz.Y + 2f), TextDim);
     }
 
     /// <summary>Right-side vertical throttle gauge: -1 (idle) at the bottom,
@@ -538,7 +598,7 @@ public sealed class HudRenderer
 
         string lbl = "THR";
         var sz = _small.MeasureString(lbl);
-        _sb.DrawString(_small, lbl, new Vector2(gx - sz.X / 2f, bottom + 14f), TextDim);
+        DrawText(_small, lbl, new Vector2(gx - sz.X / 2f, bottom + 14f), TextDim);
     }
 
     /// <summary>Top-center afterburner status + reactor power readout.</summary>
@@ -548,11 +608,11 @@ public sealed class HudRenderer
         var color = active ? Accent : TextDim;
         var sz = _small.MeasureString(ab);
         float cx = w / 2f;
-        _sb.DrawString(_small, ab, new Vector2(cx - sz.X / 2f, 20f), color);
+        DrawText(_small, ab, new Vector2(cx - sz.X / 2f, 20f), color);
 
         string pwr = "PWR " + HudFormat.FormatPercent(power) + "%";
         var psz = _small.MeasureString(pwr);
-        _sb.DrawString(_small, pwr, new Vector2(cx - psz.X / 2f, 20f + sz.Y + 2f), TextDim);
+        DrawText(_small, pwr, new Vector2(cx - psz.X / 2f, 20f + sz.Y + 2f), TextDim);
     }
 
     /// <summary>
@@ -571,7 +631,7 @@ public sealed class HudRenderer
         var color = f.GroupFire ? TextDim : Accent;
         var sz = _small.MeasureString(mode);
         float cx = w / 2f;
-        _sb.DrawString(_small, mode, new Vector2(cx - sz.X / 2f, 58f), color);
+        DrawText(_small, mode, new Vector2(cx - sz.X / 2f, 58f), color);
     }
 
     /// <summary>P255 — the "MINING" tag: the word centred just beneath the
@@ -583,7 +643,7 @@ public sealed class HudRenderer
         var color = new Color(0.98f, 0.74f, 0.24f);   // warm amber — activity, not alarm
         var sz = _small.MeasureString(tag);
         float cx = w / 2f;
-        _sb.DrawString(_small, tag, new Vector2(cx - sz.X / 2f, 82f), color);
+        DrawText(_small, tag, new Vector2(cx - sz.X / 2f, 82f), color);
     }
 
     /// <summary>P270 — a small "CLOAKED" tag just below the weapon readout
@@ -596,7 +656,7 @@ public sealed class HudRenderer
         var color = CloakViolet;   // cool violet — stealth, not alarm
         var sz = _small.MeasureString(tag);
         float cx = w / 2f;
-        _sb.DrawString(_small, tag, new Vector2(cx - sz.X / 2f, 102f), color);
+        DrawText(_small, tag, new Vector2(cx - sz.X / 2f, 102f), color);
     }
 
     /// <summary>P414 — the \"RIPCORDING TO &lt;sector&gt;\" countdown tag, drawn
@@ -610,7 +670,7 @@ public sealed class HudRenderer
         var color = new Color(0.25f, 0.95f, 0.95f);   // bright cyan — active countdown
         var sz = _small.MeasureString(label);
         float cx = w / 2f;
-        _sb.DrawString(_small, label, new Vector2(cx - sz.X / 2f, 122f), color);
+        DrawText(_small, label, new Vector2(cx - sz.X / 2f, 122f), color);
     }
 
     /// <summary>
@@ -629,7 +689,7 @@ public sealed class HudRenderer
         var color = new Color(0.98f, 0.66f, 0.20f);   // warm amber — performance/system condition
         var sz = _small.MeasureString(label);
         float cx = w / 2f;
-        _sb.DrawString(_small, label, new Vector2(cx - sz.X / 2f, 16f), color);
+        DrawText(_small, label, new Vector2(cx - sz.X / 2f, 16f), color);
     }
 
     /// <summary>
@@ -644,7 +704,7 @@ public sealed class HudRenderer
         float cx = w / 2f;
         // P409 — raised above the bottom-centre speed numeral (h - 108) so the
         // leader-command prompt never overprints the speed readout.
-        _sb.DrawString(_small, label, new Vector2(cx - sz.X / 2f, h - 140f), Accent);
+        DrawText(_small, label, new Vector2(cx - sz.X / 2f, h - 140f), Accent);
     }
 
     /// <summary>
@@ -659,7 +719,7 @@ public sealed class HudRenderer
         var sz = _small.MeasureString(label);
         float cx = w / 2f;
         var mint = new Color(0.55f, 0.95f, 0.65f);   // mint — distinct from the leader cyan accent
-        _sb.DrawString(_small, label, new Vector2(cx - sz.X / 2f, h - 164f), mint);
+        DrawText(_small, label, new Vector2(cx - sz.X / 2f, h - 164f), mint);
     }
 
     /// <summary>
@@ -677,8 +737,8 @@ public sealed class HudRenderer
         string val = HudFormat.FormatMoney(money);
         var vsz = _small.MeasureString(val);
         // Value in the teal accent; a dim "MONEY" caption above it.
-        _sb.DrawString(_small, "MONEY", new Vector2(x, y), TextDim);
-        _sb.DrawString(_small, val, new Vector2(x, y + vsz.Y + 2f), Accent);
+        DrawText(_small, "MONEY", new Vector2(x, y), TextDim);
+        DrawText(_small, val, new Vector2(x, y + vsz.Y + 2f), Accent);
     }
 
     /// <summary>
@@ -705,7 +765,7 @@ public sealed class HudRenderer
         // (native 100·(mult−1)), in gold; 0% renders dim.
         string pct = $"{f.KillBonusPercent:0}%";
         var psz = _small.MeasureString(pct);
-        _sb.DrawString(_small, pct, new Vector2(x, y), f.KillBonusPercent > 0f ? BonusGold : TextDim);
+        DrawText(_small, pct, new Vector2(x, y), f.KillBonusPercent > 0f ? BonusGold : TextDim);
 
         // 0..50% proportional bar (native's multiplier scaled to the 50 cap,
         // so it fills toward 100% as the bonus approaches +50%).
@@ -713,11 +773,11 @@ public sealed class HudRenderer
 
         // Raw streak tally under the bar ("N KILLS", singular for one).
         string streak = f.KillBonusStreak == 1 ? "1 KILL" : $"{f.KillBonusStreak} KILLS";
-        _sb.DrawString(_small, streak, new Vector2(x, y + psz.Y + 6f + barH + 5f), TextDim);
+        DrawText(_small, streak, new Vector2(x, y + psz.Y + 6f + barH + 5f), TextDim);
 
         // Small "KILL BONUS" caption above the numeral so the block reads.
         var csz = _small.MeasureString("KILL BONUS");
-        _sb.DrawString(_small, "KILL BONUS", new Vector2(x, y - csz.Y - 2f), TextDim);
+        DrawText(_small, "KILL BONUS", new Vector2(x, y - csz.Y - 2f), TextDim);
     }
 
     /// <summary>
@@ -743,7 +803,7 @@ public sealed class HudRenderer
         // bakes only 32..126, no degree glyph, so spell it out).
         string txt = $"{(int)MathF.Round(rollDegrees):+000;-000;+000}deg";
         var sz = _small.MeasureString(txt);
-        _sb.DrawString(_small, txt, new Vector2(cx - sz.X / 2f, top), Accent);
+        DrawText(_small, txt, new Vector2(cx - sz.X / 2f, top), Accent);
 
         // Horizontal dial track with a centre tick (0° = level).
         float barY = top + sz.Y + 8f;
@@ -761,7 +821,7 @@ public sealed class HudRenderer
         // Caption under the dial.
         string lbl = "ROLL";
         var lsz = _small.MeasureString(lbl);
-        _sb.DrawString(_small, lbl, new Vector2(cx - lsz.X / 2f, barY + barH + 5f), TextDim);
+        DrawText(_small, lbl, new Vector2(cx - lsz.X / 2f, barY + barH + 5f), TextDim);
     }
 
     /// <summary>
@@ -781,51 +841,25 @@ public sealed class HudRenderer
     /// </summary>
     private void DrawWeaponStatusList(IReadOnlyList<WeaponStatusRow> rows, Viewport viewport)
     {
-        const float panelW = 292f;
-        const float rowH = 30f;
-        const float top = 150f;                 // just below the top-right Roll gauge
-        float w = viewport.Width;
-        float right = w - 18f;
-        float x = right - panelW;
-        float panelH = 34f + rows.Count * rowH;
-
-        // Glass panel backing + accent spine down the left edge.
-        FillRect(x, top, panelW, panelH, PanelBg);
-        FillRect(x, top, 2f, panelH, Accent * 0.65f);
-
-        const string title = "SYSTEMS";
-        var tsz = _small.MeasureString(title);
-        _sb.DrawString(_small, title, new Vector2(x + 8f, top + 6f), TextDim);
-
-        float ty = top + 28f;
-        for (int i = 0; i < rows.Count; i++)
+        float scale = TextScale;
+        float line = _small.LineSpacing * scale + 5;
+        float panelW = Math.Min(viewport.Width * .34f, 380 * Math.Max(1, scale));
+        float x = viewport.Width - panelW - 18;
+        float y = Math.Max(150, line * 4);
+        FillRect(x, y, panelW, line * (1 + rows.Count * 3), PanelBg);
+        DrawMeasuredText(_small, "SYSTEMS", new(x + 8, y), TextDim, centerAtScale: false);
+        y += line;
+        foreach (var r in rows)
         {
-            var r = rows[i];
-            float y = ty + i * rowH;
-
-            string name = r.Name.Length > 17 ? r.Name[..16] + "~" : r.Name;
-            _sb.DrawString(_small, name, new Vector2(x + 8f, y), TextMain);
-
-            if (r.ConsumesAmmo)
-            {
-                var (tag, col) = StatusTag(r.Status);
-                var tagSz = _small.MeasureString(tag);
-                _sb.DrawString(_small, tag, new Vector2(right - tagSz.X - 6f, y), col);
-
-                string ammoTxt = $"{r.Ammo}/{r.CapacityAmmo}";
-                var asz = _small.MeasureString(ammoTxt);
-                _sb.DrawString(_small, ammoTxt, new Vector2(x + 8f + panelW - 86f, y), TextDim);
-
-                DrawBar(r.CapacityAmmo > 0 ? (float)r.Ammo / r.CapacityAmmo : 0f,
-                    x + 8f, y + asz.Y + 6f, panelW - 16f, 4f);
-            }
-            else
-            {
-                const string ok = "READY";
-                var tagSz = _small.MeasureString(ok);
-                _sb.DrawString(_small, ok, new Vector2(right - tagSz.X - 6f, y), TextDim);
-                _sb.DrawString(_small, "--", new Vector2(x + 8f + panelW - 86f, y), TextDim);
-            }
+            DrawMeasuredText(_small, r.Name, new(x + 8, y), TextMain, centerAtScale: false);
+            y += line;
+            var (tag, col) = StatusTag(r.Status);
+            string ammo = r.ConsumesAmmo ? $"{r.Ammo}/{r.CapacityAmmo}" : "--";
+            // One measured string keeps NOT READY and the magazine distinct.
+            DrawMeasuredText(_small, $"{ammo}  |  {tag}", new(x + 8, y), col, centerAtScale: false);
+            y += line;
+            DrawBar(r.CapacityAmmo > 0 ? (float)r.Ammo / r.CapacityAmmo : 0, x + 8, y, panelW - 16, 3);
+            y += line;
         }
     }
 
@@ -843,7 +877,7 @@ public sealed class HudRenderer
     /// chase view too. When <paramref name="firing"/> (group-fire engaged) the
     /// ring/ticks/dot render in the weapons-hot warning colour and a FIRING
     /// tag appears beneath the ring.</summary>
-    private void DrawCrosshair(Vector2 c, bool firing, bool turret)
+    protected virtual void DrawCrosshair(Vector2 c, bool firing, bool turret)
     {
         var accent = firing ? Warning : Accent;
         const int segments = 36;
@@ -887,7 +921,7 @@ public sealed class HudRenderer
             {
                 string lbl = "TURRET";
                 var sz = _small.MeasureString(lbl);
-                _sb.DrawString(_small, lbl, new Vector2(c.X - sz.X / 2f, c.Y + radius + 20f), Warning);
+                DrawText(_small, lbl, new Vector2(c.X - sz.X / 2f, c.Y + radius + 20f), Warning);
             }
             return;
         }
@@ -916,7 +950,7 @@ public sealed class HudRenderer
         {
             string lbl = "FIRING";
             var sz = _small.MeasureString(lbl);
-            _sb.DrawString(_small, lbl, new Vector2(c.X - sz.X / 2f, c.Y + radius + 18f), Warning);
+            DrawText(_small, lbl, new Vector2(c.X - sz.X / 2f, c.Y + radius + 18f), Warning);
         }
     }
 
@@ -938,7 +972,7 @@ public sealed class HudRenderer
     /// Must be called inside an active <see cref="SpriteBatch"/> session (i.e.
     /// from <see cref="Draw"/>).
     /// </summary>
-    private void DrawLockBracket(in LockBracketView v)
+    protected virtual void DrawLockBracket(in LockBracketView v)
     {
         // Native draws no lock indicator for lock == 0 (radarimage.cpp:330
         // `if (lock != 0.0f)`), so a no-lock state renders nothing.
@@ -969,7 +1003,7 @@ public sealed class HudRenderer
     /// Tinted per-state only in this fallback path; the real sprites (primary)
     /// carry their own colours.
     /// </summary>
-    private void DrawLockBracketProcedural(in LockBracketView v, float s)
+    protected virtual void DrawLockBracketProcedural(in LockBracketView v, float s)
     {
         const float arm = 13f;
         const float thickness = 2.5f;
@@ -1004,7 +1038,7 @@ public sealed class HudRenderer
     /// <see cref="Draw"/>). Drawn as four rotated thin rects reusing the same 1x1
     /// white pixel, so no new asset is needed.
     /// </summary>
-    private void DrawTargetSelectionBracket(in TargetSelectionView v)
+    protected virtual void DrawTargetSelectionBracket(in TargetSelectionView v)
     {
         float half = TargetSelectionStyle.HalfSize;
         float thickness = TargetSelectionStyle.ThicknessFor(v.Engaged);
@@ -1039,9 +1073,15 @@ public sealed class HudRenderer
         if (v.CharacterName is { } pilotName)
         {
             var nsz = _small.MeasureString(pilotName);
-            _sb.DrawString(_small, pilotName,
+            var nameBox = DrawMeasuredText(_small, pilotName,
                 new Vector2(c.X - nsz.X / 2f, y), TextMain);
-            y += nsz.Y + 3f;
+            y = nameBox.Bottom + 3f;
+        }
+        if (v.Distance is { } distance)
+        {
+            string range = $"{distance:0} m";
+            var rangeBox = DrawMeasuredText(_small, range, new(c.X - _small.MeasureString(range).X / 2, y), TextDim);
+            y = rangeBox.Bottom + 4;
         }
         if (v.HullFraction is { } hullFrac)
         {
@@ -1060,7 +1100,7 @@ public sealed class HudRenderer
             // the bar itself is the same DrawBar primitive for visual consistency.
             string lbl = "ORE " + HudFormat.FormatPercent(oreFrac) + "%";
             var lsz = _small.MeasureString(lbl);
-            _sb.DrawString(_small, lbl, new Vector2(c.X - lsz.X / 2f, y), TextMain);
+            DrawText(_small, lbl, new Vector2(c.X - lsz.X / 2f, y), TextMain);
             y += lsz.Y + 2f;
             DrawBar(oreFrac, barX, y, barW, barH);
         }
@@ -1105,7 +1145,7 @@ public sealed class HudRenderer
         // 32..126, same constraint as the other HUD labels).
         string lbl = label;
         var lsz = _small.MeasureString(lbl);
-        _sb.DrawString(_small, lbl,
+        DrawText(_small, lbl,
             new Vector2(anchor.X - lsz.X / 2f, anchor.Y + len + 6f), TextDim);
     }
 
@@ -1125,7 +1165,7 @@ public sealed class HudRenderer
     /// session (i.e. from <see cref="Draw"/>). Public so the offscreen
     /// verification harness can render the reticle to a RenderTarget2D directly.
     /// </summary>
-    public void DrawLeadIndicator(LeadIndicatorView v)
+    public virtual void DrawLeadIndicator(LeadIndicatorView v)
     {
         // Render colour: green→red ramp by hit-probability when in range, else the
         // native out-of-range grey (translucent so the scene stays readable).
@@ -1170,12 +1210,12 @@ public sealed class HudRenderer
     private static Color From(HudColor c) => new(c.R, c.G, c.B, c.A);
 
     /// <summary>Solid axis-aligned fill via a tinted, stretched 1x1 white pixel.</summary>
-    private void FillRect(float x, float y, float w, float h, Color color) =>
+    protected void FillRect(float x, float y, float w, float h, Color color) =>
         _sb.Draw(_white, new Rectangle((int)MathF.Round(x), (int)MathF.Round(y),
             (int)MathF.Round(w), (int)MathF.Round(h)), color);
 
     /// <summary>Thin rectangular outline (four 1px lines) around an axis-aligned box.</summary>
-    private void OutlineRect(float x, float y, float w, float h, Color color)
+    protected void OutlineRect(float x, float y, float w, float h, Color color)
     {
         FillRect(x, y, w, 1f, color);
         FillRect(x, y + h - 1f, w, 1f, color);
@@ -1185,7 +1225,7 @@ public sealed class HudRenderer
 
     /// <summary>An arbitrarily-oriented thin line (from a→b) drawn as a rotated,
     /// stretched 1x1 white pixel — SpriteBatch has no native line primitive.</summary>
-    private void DrawLine(Vector2 a, Vector2 b, float thickness, Color color)
+    protected void DrawLine(Vector2 a, Vector2 b, float thickness, Color color)
     {
         Vector2 d = b - a;
         float len = d.Length();
@@ -1252,7 +1292,7 @@ public sealed class HudRenderer
 
         // Caption: deadzone % + curve mode, so the settings are legible on screen.
         string mode = v.LinearControls ? "LIN" : "QUAD";
-        _sb.DrawString(_small, $"MOUSE DZ {(int)(v.Deadzone * 100f)}% {mode}",
+        DrawText(_small, $"MOUSE DZ {(int)(v.Deadzone * 100f)}% {mode}",
             new Vector2(cx - 58f, cy + R + 6f), TextDim);
     }
 }

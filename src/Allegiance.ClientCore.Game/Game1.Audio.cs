@@ -675,10 +675,10 @@ public sealed partial class Game1
     /// same [monogame] audio convention as P232/P236), used for the P463 live
     /// proof.
     /// </summary>
+    private double _hudHitUntil;
     private void UpdateHitSounds()
     {
         var world = _session.World;
-        if (_sound is not { } snd) return;
 
         List<HitSoundEntity> events;
         short? myShipId;
@@ -697,6 +697,9 @@ public sealed partial class Game1
             }
         }
         if (events.Count == 0) return;
+        if (events.Any(e => e.SourceId == myShipId && e.TargetId != myShipId && e.ClusterId == mySector))
+            _hudHitUntil = _nowSeconds + .16;
+        if (_sound is not { } snd) return;
 
         // Only hits in the local ship's own sector are audible (the same cluster
         // gate as the spark/explosion renderers). Without a local anchor there is

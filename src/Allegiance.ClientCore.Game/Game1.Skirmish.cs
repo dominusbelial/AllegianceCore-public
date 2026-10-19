@@ -72,7 +72,7 @@ public sealed partial class Game1
                 else if (_pilotBuf.Length > 0) _playerName = _pilotBuf.ToString();
                 var preferences = IntroPreferences.Load();
                 if (_benchmark is null) { preferences.Pilot = _playerName; preferences.Save(); }
-                if (_benchmark is null && _skirmish.Options.StartAsSpectator) { StopIntroScan(); EnterLocalSpectator(); return; }
+                if (_benchmark is null && _skirmish.Options.StartAsSpectator) { ObserveBenchmarkSharingSession(); StopIntroScan(); EnterLocalSpectator(); return; }
                 // Local ports are ephemeral; do not save them as a remembered multiplayer server.
                 _returnToIntroOnFailure = true;
                 StopIntroScan();
@@ -103,6 +103,10 @@ public sealed partial class Game1
                     _humanCommanderRetryAt = _nowSeconds + 1;
                     if (_session.World.IsTeamLeader) _humanCommanderSeat = (_session.World.MissionGeneration, me);
                 }
+        if (_skirmish is not null && !LocalSpectating && _benchmark is null)
+            lock (_session.Gate)
+                if (_session.World.MyShipId is { } pilot && _session.World.Ships.TryGetValue(pilot, out var ship))
+                    _skirmish.SetFocusSector(ship.SectorId);
         UpdateSeatChange();
         HandleSkirmishSeatKeys(keys);
         bool ctrl = keys.IsKeyDown(Keys.LeftControl) || keys.IsKeyDown(Keys.RightControl);

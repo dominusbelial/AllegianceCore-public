@@ -95,6 +95,8 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<ClusterInfo> _clusterInfos = new();
     private readonly List<Payday> _paydays = new();
     private readonly List<DockedNotify> _dockedNotices = new();
+    private long _ownLaunchRevision;
+    private bool _ownLaunchFlying;
     private readonly List<TeleportAck> _teleportAcks = new();
     private readonly List<PlayerReady> _playerReadyEchoes = new();
     private readonly List<TeamReady> _teamReadys = new();
@@ -414,6 +416,13 @@ public sealed class Bot : ITransportSite, IDisposable
     /// client's <c>ship.GetStation()</c> resolve). Mirrors <see cref="Kills"/>:
     /// locked, snapshot-on-read, cleared via <see cref="ResetDockedNotices"/>.</summary>
     public IReadOnlyList<DockedNotify> DockedNotices { get { lock (_gate) return _dockedNotices.ToArray(); } }
+
+    /// <summary>Latest own launch-state signal in receive order. Independent
+    /// DOCKED and SHIP_STATUS histories cannot establish which came last.</summary>
+    public (long Revision, short ShipId, bool Flying) OwnLaunchState
+    {
+        get { lock (_gate) return (_ownLaunchRevision, _myShipId, _ownLaunchFlying); }
+    }
 
     /// <summary>Clear the accumulated docked notifies (between joins/phases).</summary>
     public void ResetDockedNotices() { lock (_gate) _dockedNotices.Clear(); }
@@ -1859,6 +1868,8 @@ public sealed class Bot : ITransportSite, IDisposable
                         _setCluster = SetCluster.Decode(m);
                         _assignments.Add(_setCluster);
                         _myShipId = _setCluster.Ship.ShipId;
+                        _ownLaunchRevision++;
+                        _ownLaunchFlying = _setCluster.SectorId >= 0;
                         _poseCookie = _setCluster.Cookie;   // P590 — seed pose cookie
                         break;
                     case Eject.Fmid:
@@ -1922,7 +1933,14 @@ public sealed class Bot : ITransportSite, IDisposable
                         _treasureSpawns.Add(TreasureSpawn.Decode(m));
                         break;
                     case ShipStatusMessage.Fmid:
-                        _shipStatuses.Add(ShipStatusMessage.Decode(m));
+                        var status = ShipStatusMessage.Decode(m);
+                        _shipStatuses.Add(status);
+                        if (status.ShipId == _myShipId)
+                        {
+                            _ownLaunchRevision++;
+                            _ownLaunchFlying = status.StationId < 0 && status.SectorId >= 0
+                                && status.State == ShipStatusMessage.StateFlying;
+                        }
                         break;
                     case ClusterInfo.Fmid:
                         _clusterInfos.Add(ClusterInfo.Decode(m));
@@ -1931,7 +1949,10 @@ public sealed class Bot : ITransportSite, IDisposable
                         _paydays.Add(Payday.Decode(m));
                         break;
                     case DockedNotify.Fmid:
-                        _dockedNotices.Add(DockedNotify.Decode(m));
+                        var docked = DockedNotify.Decode(m);
+                        _dockedNotices.Add(docked);
+                        _ownLaunchRevision++;
+                        _ownLaunchFlying = docked.StationId < 0 && _setCluster is { SectorId: >= 0 };
                         break;
                     case TeleportAck.Fmid:
                         _teleportAcks.Add(TeleportAck.Decode(m));

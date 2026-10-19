@@ -4162,6 +4162,8 @@ public sealed class Sector : IClusterIgc
                 hitCap = true;
             }
             float actual = ast.MineOre(minedOre);                    // clamp to rock's pool (asteroidigc.h:221-233)
+            if (actual > 0 && !previouslyMining.Contains(ship))
+                ship.Mission?.Skills?.Record(ship.SideId, ShowcaseSkill.DroneMine);
             ship.Ore += actual;
 
             // ── cap-reached log ──────────────────────────────────────────
@@ -4269,6 +4271,7 @@ public sealed class Sector : IClusterIgc
         // both a potential scanner (for its side) and a potential target.
         var targets = new List<VisibilityParticipant>();
         var scannersBySide = new Dictionary<short, List<VisibilityParticipant>>();
+        var skills = MissionSides?.FirstOrDefault()?.Mission?.Skills;
 
         // P476 — the TARGET side's c_gaSignature resistance factor (the
         // `m /= pside->GetGlobalAttributeSet().GetAttribute(c_gaSignature)`
@@ -4423,6 +4426,7 @@ public sealed class Sector : IClusterIgc
                 // the seeing side — including ones who connect after visibility
                 // was established — so the Core only has to keep this flag
                 // correct (the visibility determination itself is untouched).
+                if (seen && !t.Body.GetCurrentEye(sideId)) skills?.Record(sideId, ShowcaseSkill.Scouting);
                 t.Body.SideVisibility.SetSideVisibility(sideId, seen);
             }
         }
@@ -4565,6 +4569,7 @@ public sealed class Sector : IClusterIgc
         //    the interruption path's clear.
         builder.IsBuilding = false;
         Remove(builder);
+        mission.Skills?.Record(builder.SideId, ShowcaseSkill.DroneBuild);
         mission.Site.StationBuiltEvent(asteroid, builder, builtStation);
     }
 

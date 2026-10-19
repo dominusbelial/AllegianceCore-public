@@ -121,8 +121,10 @@ public sealed class FilteredTargetingLiveTests
             () =>
             {
                 lock (peer.Gate)
-                    return peer.World.Ships.TryGetValue(enemyDrone.Id, out var e) && e.HasRealIdentity
-                        && peer.World.Ships.TryGetValue(friendDrone.Id, out var f) && f.HasRealIdentity;
+                    return peer.World.Ships.TryGetValue(enemyDrone.Id, out var e) && e.HasRealIdentity && e.Latest is not null
+                        && peer.World.Ships.TryGetValue(friendDrone.Id, out var f) && f.HasRealIdentity && f.Latest is not null
+                        && peer.World.MyShipId is { } ownId && peer.World.Ships.TryGetValue(ownId, out var own)
+                        && own.Latest is not null;
             },
             6000);
         Assert.True(identified < 6000,

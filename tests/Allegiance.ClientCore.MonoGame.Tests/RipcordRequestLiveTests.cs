@@ -150,7 +150,7 @@ public sealed class RipcordRequestLiveTests
     {
         Require.Artwork();
         var fx = Boot(out _);
-        var server = fx.Server;
+        using var server = fx.Server;
         ConnectionSession? pilot = null;
         try
         {
@@ -210,6 +210,12 @@ public sealed class RipcordRequestLiveTests
             pilot.SendRipcordRequest(RipcordRequest.NA);
             PumpUntil(server, () => !ship.IsRipcordActive, 4000);
             Assert.False(ship.IsRipcordActive, "NA cancels the server countdown");
+            // Server cancellation precedes decoding its guaranteed broadcast
+            // (FedSrv.CPP:13329–13338). Freeze simulation while the reader catches up.
+            Assert.True(SpinWait.SpinUntil(() =>
+            {
+                lock (pilot.Gate) return !pilot.World.RipcordActive;
+            }, TimeSpan.FromSeconds(30)), "pilot must decode RIPCORD_ABORTED");
             Assert.False(pilot.World.RipcordActive, "client ripcord state clears on RIPCORD_ABORTED");
 
             List<ClientSoundEvent> events;

@@ -28,6 +28,7 @@ public sealed class P694bCollisionWorkTests
 
     [Theory]
     [InlineData(4)]
+    [Trait("Tier", "Perf")] // Expensive corpus/scenario or collision-work budget; docs/testing/TIERS.md.
     [InlineData(257)]
     public void Repeated_geometry_keeps_all_identities_with_direct_and_sparse_result_caches(int groups)
     {

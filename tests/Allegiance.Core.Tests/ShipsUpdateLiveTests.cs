@@ -178,12 +178,13 @@ public sealed class ShipsUpdateLiveTests
         seat.BBot.ResetHeavyShipsUpdates();
 
         // Start fresh after seating; each peer should accrue one HEAVY per tick.
-        PumpUntil(seat.Server, () => seat.ABot.HeavyShipsUpdates.Count > 0, 1000);
+        PumpUntil(seat.Server, () => seat.ABot.HeavyShipsUpdates.Any(u => HasEntry(u, seat.B.Id))
+            && seat.BBot.HeavyShipsUpdates.Any(u => HasEntry(u, seat.A.Id)), 20000);
         Assert.True(seat.ABot.HeavyShipsUpdates.Count > 0, "A must receive HEAVY_SHIPS_UPDATE");
         Assert.True(seat.BBot.HeavyShipsUpdates.Count > 0, "B must receive HEAVY_SHIPS_UPDATE");
 
-        var aUp = seat.ABot.HeavyShipsUpdates[0];
-        var bUp = seat.BBot.HeavyShipsUpdates[0];
+        var aUp = seat.ABot.HeavyShipsUpdates.First(u => HasEntry(u, seat.B.Id));
+        var bUp = seat.BBot.HeavyShipsUpdates.First(u => HasEntry(u, seat.A.Id));
 
         // Cross-side, cluster-membership: each sees the other.
         Assert.True(HasEntry(aUp, seat.B.Id),
@@ -267,18 +268,19 @@ public sealed class ShipsUpdateLiveTests
         seat.ABot.ResetHeavyShipsUpdates();
 
         // Baseline: A sees B while both are in the cluster.
-        PumpUntil(seat.Server, () => seat.ABot.HeavyShipsUpdates.Count > 0, 1000);
-        Assert.True(seat.ABot.HeavyShipsUpdates.Count > 0, "A must see B before B leaves");
-        Assert.True(HasEntry(seat.ABot.HeavyShipsUpdates[0], seat.B.Id), "baseline: A sees B in the cluster");
+        PumpUntil(seat.Server, () => seat.ABot.HeavyShipsUpdates.Any(u => HasEntry(u, seat.B.Id)), 20000);
+        Assert.Contains(seat.ABot.HeavyShipsUpdates, u => HasEntry(u, seat.B.Id));
 
         // B leaves the cluster (the port's removal idiom, Server.cs:1066-1067).
         seat.Sector.Remove(seat.B);
         seat.B.Sector = null;
 
         seat.ABot.ResetHeavyShipsUpdates();
-        PumpUntil(seat.Server, () => seat.ABot.HeavyShipsUpdates.Count > 0, 1000);
-        Assert.True(seat.ABot.HeavyShipsUpdates.Count > 0, "A must keep receiving HEAVY_SHIPS_UPDATE");
-        var up = seat.ABot.HeavyShipsUpdates[0];
+        seat.Server.TickSim();
+        uint removalTick = (uint)seat.Server.LoopIterations;
+        Assert.True(SpinWait.SpinUntil(() => seat.ABot.HeavyShipsUpdates.Any(u => u.TimeReference == removalTick),
+            TimeSpan.FromSeconds(30)), "A must decode the next generated update after B leaves");
+        var up = Assert.Single(seat.ABot.HeavyShipsUpdates, u => u.TimeReference == removalTick);
         Assert.False(HasEntry(up, seat.B.Id),
             $"after B leaves the cluster A must NOT see B; got {string.Join(",", up.HeavyShipEntries.Select(e => e.ShipId))}");
         Assert.False(HasEntry(up, seat.A.Id), "A still never sees its own ship");

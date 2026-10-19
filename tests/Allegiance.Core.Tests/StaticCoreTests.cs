@@ -9,6 +9,7 @@ namespace Allegiance.Core.Tests;
 /// file (loading throws on one), and per-dictionary counts exactly reproduce the
 /// raw record histogram <see cref="IgcReader"/> reports for the same file.
 /// </summary>
+[Trait("Tier", "Live")] // Whole-corpus validation; docs/testing/TIERS.md.
 public class StaticCoreTests
 {
     private static IEnumerable<(string Path, IgcFile File, Model.StaticCore Core)> Loaded()

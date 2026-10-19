@@ -77,6 +77,7 @@ public sealed partial class Server
     /// <summary>Pump transport, advance sim by exactly one period, tick every mission.</summary>
     private void SimPass()
     {
+        PrintRequestedSkills();
         if (SinglePlayerPaused)
         {
             // Keep transport liveness running across an arbitrarily long pause.

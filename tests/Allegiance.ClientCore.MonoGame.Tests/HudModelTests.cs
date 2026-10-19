@@ -144,6 +144,10 @@ public class HudModelTests
         Assert.False(model.Elements.Single(e => e.Id == "Equipment part identity and key").Available);
         Assert.Equal(Frame.HullFraction, model.Elements.Single(e => e.Id == "Hull integrity").Value);
         Assert.False(model.Elements.Single(e => e.Id == "Target hull").Available);
+        Assert.False(model.Elements.Single(e => e.Id == "Target range or sector").Available);
+        var ranged = HudModel.Create(Frame, model.Context with { Target = model.Context.Target!.Value with { Distance = 1250 } });
+        Assert.Equal(1250, ranged.Elements.Single(e => e.Id == "Target range or sector").Value);
+        Assert.True(ranged.Elements.Single(e => e.Id == "Target range or sector").Visible);
         var ore = model.Elements.Single(e => e.Id == "Target ore");
         Assert.True(ore.Visible);
         Assert.Equal(.5f, ore.Value);

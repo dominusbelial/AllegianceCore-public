@@ -28,6 +28,7 @@ public sealed class P733ResearchTests(ITestOutputHelper output)
     private static void Set(object obj, string name, object value) => obj.GetType().GetField(name, Fields)!.SetValue(obj, value);
     private static T Get<T>(object obj, string name) => (T)obj.GetType().GetField(name, Fields)!.GetValue(obj)!;
 
+    [Trait("Tier", "Live")] // Expensive corpus/scenario or collision-work budget; docs/testing/TIERS.md.
     [SkippableFact]
     public void No_bomber_tech_finale_reaches_stage_over_and_automatic_next_match_twice()
     {

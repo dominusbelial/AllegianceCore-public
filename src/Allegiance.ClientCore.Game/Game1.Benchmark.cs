@@ -192,16 +192,19 @@ public sealed partial class Game1
     private bool UpdateBenchmark(ref GameTime gameTime)
     {
         var keys = Keyboard.GetState();
+        UpdateBenchmarkSharing();
+        if (UpdateBenchmarkSharingPanel(keys)) return true;
         bool enter = keys.IsKeyDown(Keys.Enter), esc = keys.IsKeyDown(Keys.Escape);
         try
         {
             if (_benchResult is not null)
             {
+                if (_benchmarkSharing?.Available == true && keys.IsKeyDown(Keys.S)) { _sharePanel = true; return true; }
                 if ((enter && !_benchEnter) || (!_benchMouseDown && Mouse.GetState().LeftButton == ButtonState.Pressed && _benchApplyButton.Contains(Mouse.GetState().Position)))
                 {
                     ApplyBenchmarkSettings(_benchResult.Recommendation);
                     _skirmishScreen.ApplyDefaults(_benchResult.Recommendation);
-                    new BenchmarkPreferences { OfferHandled = true, Applied = _benchResult.Recommendation }.Save();
+                    (BenchmarkPreferences.Load() with { OfferHandled = true, Applied = _benchResult.Recommendation }).Save();
                     _upscaling.Save(UpscalingSettings.DefaultPath);
                     _benchStatus = "Applied and saved. Escape returns to menu.";
                 }
@@ -275,6 +278,7 @@ public sealed partial class Game1
             if (!changed && Environment.TickCount64 < _benchNextView) return;
             _benchNextView = Environment.TickCount64 + 2000;
             _benchViewSector = sector; _benchCameraPhase = phase;
+            _skirmish?.SetFocusSector(sector);
             _session.SendViewClusterRequest(sector);
             world.TelemetrySectorOverride = sector;
             if (changed) _benchRecording?.WriteCamera(sector, phase);
@@ -342,6 +346,7 @@ public sealed partial class Game1
             TargetStatus = met ? "Verified uncapped: 60 FPS 1% low and server tick p95 < 50 ms (when present)" : "Target unmet after one step down; lowest tested settings shown"
         };
         result.Save(_benchmark.Output);
+        RecordBenchmarkSharing(result);
         if (_benchOriginal is { } original) ApplyBenchmarkSettings(original);
         _benchmarkApplied = _benchWasApplied; _upscaling.DynamicResolution = _benchOriginalDynamic;
         _ownShipPrediction = _benchOwnPrediction; _remoteShipDeadReckoning = _benchRemotePrediction;
@@ -376,6 +381,7 @@ public sealed partial class Game1
     }
     private void DisposeBenchmark()
     {
+        _benchmarkSharing?.Dispose();
         _session.Recording = null;
         _benchRecording?.Dispose(); _benchRecording = null;
     }
@@ -432,7 +438,7 @@ public sealed partial class Game1
     }
     private void DrawBenchmark()
     {
-        if (_benchmark is null && _benchResult is null && _benchStatus.Length == 0) return;
+        if (_benchmark is null && _benchResult is null && _benchStatus.Length == 0) { DrawBenchmarkSharingPanel(); return; }
         _spriteBatch.Begin();
         if (_benchResult is { } result)
         {
@@ -447,6 +453,10 @@ public sealed partial class Game1
                 $"Memory {result.Median.WorkingSetBytes / 1048576d:F0} MiB RSS / {result.Median.ManagedBytes / 1048576d:F0} MiB heap; GC {string.Join("/", result.Median.GcCollections)}, pause {result.Median.GcPauseMs:F2} ms\n{result.TargetStatus}\n" +
                 string.Join("\n", result.Recommendation.Reasons.Select(r => $"{r.Setting}: {r.Value} - {r.Reason}"));
             _spriteBatch.DrawString(_hudSmall, text, new Vector2(18, 30), Color.White);
+            if (_benchmarkSharing?.Available == true)
+                _spriteBatch.DrawString(_hudSmall, "Share these results to help improve the recommendations?\n" +
+                    _benchmarkSharing.Status + " - S: sharing settings / View what\'s sent",
+                    new Vector2(380, GraphicsDevice.Viewport.Height - 78), Color.Cyan);
             _benchApplyButton = new(18, GraphicsDevice.Viewport.Height - 68, 340, 42);
             _spriteBatch.Draw(_whitePixel, _benchApplyButton, new Color(25, 95, 110));
             _spriteBatch.DrawString(_hudSmall, "Apply recommended settings", new Vector2(26, _benchApplyButton.Y + 10), Color.White);
@@ -455,5 +465,6 @@ public sealed partial class Game1
         _spriteBatch.DrawString(_hudSmall, _benchmark is not null ? _benchStatus + " - Escape cancels" : _benchStatus,
             new Vector2(18, _benchResult is null ? 42 : GraphicsDevice.Viewport.Height - 22), Color.Cyan);
         _spriteBatch.End();
+        DrawBenchmarkSharingPanel();
     }
 }

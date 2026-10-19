@@ -161,6 +161,7 @@ public static class HudElements
                     case "Cloak active": Set(f is { } cloak ? (cloak.Cloaked ? 1 : 0) : null, instrument && f?.Cloaked == true); break;
                     case "Target name": Target(c.Target?.Name); break;
                     case "Target hull": Target(null, c.Target?.HullFraction); break;
+                    case "Target range or sector": Target(null, c.Target?.Distance); break;
                     case "Target shield": Target(null, c.Target?.ShieldFraction); break;
                     case "Target ore": Target(null, c.Target?.OreFraction); break;
                     case "Cockpit centre reticle": element = element with { Available = true, Visible = model.ReticleVisible }; break;

@@ -153,28 +153,18 @@ public class MapGenRingLiveProofTests
         using var server = new Srv();
 
         short? spawnSectorId = null;
+        GeneratedWarpEntry? entry = null;
         server.ShipSpawner = (core, mission, shipId) =>
         {
             var hull = core.HullTypes.Values.OrderBy(h => h.HullId).First();
-            var warp = mission.Warps.First(w => w.Destination is not null && w.Partner() is not null);
-            var sector = mission.Sectors.First(s => s.Warps.Contains(warp));
-            spawnSectorId = sector.Id;
-            var wpos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
-
-            float[] f = warp.Warp.Forward is { Length: 3 } v && (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) > 0f
-                ? v : [1f, 0f, 0f];
-            var dir = new Vector3(f[0], f[1], f[2]).Normalize();
-
-            float shipRadius = 0.5f * hull.Length;
-            float radius = warp.Warp.Radius + shipRadius;
-            var spawn = wpos + dir * (0.9f * radius);
-            var ship = new Ship(shipId, hull, spawn, -dir * 20f, Orientation.Identity);
-            mission.PlaceShip(ship, sector);
-            return (ship, sector);
+            entry = GeneratedWarpEntry.Find(mission, hull);
+            spawnSectorId = entry.Sector.Id;
+            var ship = new Ship(shipId, hull, entry.Holding, Vector3.Zero, Orientation.Identity);
+            mission.PlaceShip(ship, entry.Sector);
+            return (ship, entry.Sector);
         };
 
         server.Boot(Config());
-        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
 
         // The generated mission really is a 9-sector HiLo.
         Assert.Equal(9, server.Missions.Single().Sectors.Count);
@@ -184,16 +174,31 @@ public class MapGenRingLiveProofTests
         bot.Connect(server.BoundPort, "p398_warp");
         bot.SendLogonRequest(Request("p398_warp"));
 
-        PumpUntil(server, () => bot.Assignments.Count >= 1 && bot.ShipStatuses.Count >= 1, 8000);
+        PumpUntil(server, () => server.Ships.Count == 1, 8000);
+        var seated = Assert.Single(server.Ships);
+        Assert.True(SpinWait.SpinUntil(() => bot.Assignments.Count >= 1
+            && bot.ShipStatuses.Any(s => s.ShipId == seated.Ship.Id), TimeSpan.FromSeconds(30)),
+            "peer must decode its initial assignment and own status before transit");
         short initial = bot.Assignments[0].SectorId;
         Assert.InRange(initial, (short)0, (short)8);
         Assert.Equal(spawnSectorId!.Value, initial);          // spawned in a generated sector
 
-        PumpUntil(server,
-            () => bot.Assignments.Count >= 2 && bot.Assignments[^1].SectorId != initial,
-            8000);
-        Assert.True(bot.Assignments.Count >= 2,
-            $"never crossed: sectors=[{string.Join(",", bot.Assignments.Select(a => a.SectorId))}]");
+        // Settle the paused sector/model clocks while parked outside every warp,
+        // then enter a checked clear collision volume for exactly one transit tick.
+        server.Missions.Single().Stage = MissionStage.Started;
+        server.TickSim();
+        Assert.Equal(initial, seated.Ship.Sector?.Id);
+        Assert.Null(seated.Ship.StationId);
+        Assert.False(seated.Ship.Dead);
+        entry!.Enter(seated.Ship, server.SimNow);
+        server.TickSim();
+        short destination = entry.Warp.Destination!.Id;
+        Assert.True(seated.Ship.Sector?.Id == destination,
+            $"clear warp entry did not transit: warp={entry.Warp.Warp.WarpId}, entry={entry.Entry}, "
+            + $"position={seated.Ship.Position}, sector={seated.Ship.Sector?.Id}, expected={destination}");
+        Assert.True(SpinWait.SpinUntil(() => bot.Assignments.Count >= 2
+            && bot.Assignments[^1].SectorId == destination, TimeSpan.FromSeconds(30)),
+            "peer must decode the authoritative generated-warp transit");
         short next = bot.Assignments[^1].SectorId;
 
         var live = server.Ships.First(l => l.Ship.Id == bot.Assignments[0].Ship.ShipId);

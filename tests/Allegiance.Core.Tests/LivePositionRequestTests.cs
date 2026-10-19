@@ -407,7 +407,9 @@ public class LivePositionRequestTests
         Flush(server);
 
         b.SendPositionReq(side0);
-        int reqGot = PumpUntil(server, () => a.PositionReqs.Any(p => p.ShipId == bId), 800);
+        int reqGot = PumpUntil(server, () => a.PositionReqs.Any(p => p.ShipId == bId)
+            && b.PositionReqs.Any(p => p.ShipId == bId)
+            && c.PositionReqs.Any(p => p.ShipId == bId), 800);
         Assert.True(reqGot < 800, "pending request not broadcast");
 
         a.ResetLeadershipSignals();
@@ -415,7 +417,12 @@ public class LivePositionRequestTests
         b.ResetLeadershipSignals();
 
         c.SendPositionAck(bId, side0, accepted: true);   // C is NOT the leader
-        Flush(server);
+        // Same-peer ordered PING is a receive/dispatch barrier for the silent
+        // refusal; fixed tick counts don't establish that the ACK was handled.
+        const uint barrier = 0x184b;
+        c.SendPing(barrier);
+        Assert.True(PumpUntil(server, () => c.Pings.Any(p => p.TimeClient == barrier), 20000) < 20000,
+            "non-leader ACK dispatch barrier did not arrive");
 
         Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));   // still unseated
         Assert.Empty(c.JoinSides);

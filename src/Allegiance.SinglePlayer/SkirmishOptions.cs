@@ -82,10 +82,10 @@ public sealed record SkirmishOptions
 /// <summary>Reserve two logical CPUs for rendering and sim; bound compute workers even on large machines.</summary>
 public sealed record SkirmishBudget(int Workers, int CoresPerWorker)
 {
-    public static SkirmishBudget ForCores(int cores)
+    public static SkirmishBudget ForCores(int cores, int bots = 120)
     {
         int available = Math.Max(1, cores - 2);
-        int workers = Math.Clamp(available / 2, 1, 4);
+        int workers = Math.Min(Math.Clamp(available / 2, 1, 4), Math.Max(1, (bots + 63) / 64));
         return new(workers, Math.Max(1, available / workers));
     }
 }

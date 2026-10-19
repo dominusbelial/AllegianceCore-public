@@ -178,11 +178,11 @@ public sealed class CloakVisibilityGateLiveTests
         }
     }
 
-    private static bool BotSaw(FltBot b, short id) =>
-        b.HeavyShipsUpdates.SelectMany(u => u.HeavyShipEntries).Any(e => e.ShipId == id);
+    private static bool BotSaw(FltBot b, short id, uint afterTick = 0) =>
+        b.HeavyShipsUpdates.Where(u => u.TimeReference > afterTick).SelectMany(u => u.HeavyShipEntries).Any(e => e.ShipId == id);
 
-    private static bool BotSawCloaked(FltBot b, short id) =>
-        b.HeavyShipsUpdates.SelectMany(u => u.HeavyShipEntries)
+    private static bool BotSawCloaked(FltBot b, short id, uint afterTick = 0) =>
+        b.HeavyShipsUpdates.Where(u => u.TimeReference > afterTick).SelectMany(u => u.HeavyShipEntries)
             .Any(e => e.ShipId == id && (e.StateM & ShipControlState.CloakActive) != 0);
 
     [Trait("Requires", "Artwork")]
@@ -207,19 +207,24 @@ public sealed class CloakVisibilityGateLiveTests
         Assert.False(seat.Npc.SeenBySide(seat.EnemySide), "cloaked enemy must be undetectable to the enemy side");
         Assert.True(seat.Npc.SeenBySide(seat.MateSide), "own side always sees its cloaked ship");
 
-        // 2) Clear both bots' histories, pump a window of heavy updates.
+        // Classify snapshots by generation tick; pre-cloak frames can still be
+        // in flight when the simulation's visibility transition is complete.
+        uint cloakedTick = (uint)seat.Server.LoopIterations;
         seat.Enemy.ResetHeavyShipsUpdates();
         seat.Teammate.ResetHeavyShipsUpdates();
-        PumpUntil(seat.Server, () => seat.Teammate.HeavyShipsUpdates.Count >= 10, 6000);
+        PumpUntil(seat.Server, () => seat.Teammate.HeavyShipsUpdates.Count(u => u.TimeReference > cloakedTick) >= 10
+            && seat.Enemy.HeavyShipsUpdates.Count(u => u.TimeReference > cloakedTick) >= 10, 6000);
+        Assert.True(seat.Teammate.HeavyShipsUpdates.Count(u => u.TimeReference > cloakedTick) >= 10);
+        Assert.True(seat.Enemy.HeavyShipsUpdates.Count(u => u.TimeReference > cloakedTick) >= 10);
 
         // The enemy receives NO data about the cloaked ship at all…
-        Assert.False(BotSaw(seat.Enemy, seat.Npc.Id),
+        Assert.False(BotSaw(seat.Enemy, seat.Npc.Id, cloakedTick),
             "the enemy peer must receive ZERO heavy-update entries for an undetectable cloaked ship");
         // …while the teammate still receives it, carrying the CloakActive bit so
         // the client renders it transparent (P270).
-        Assert.True(BotSaw(seat.Teammate, seat.Npc.Id),
+        Assert.True(BotSaw(seat.Teammate, seat.Npc.Id, cloakedTick),
             "the cloaked ship must still reach its own-side teammate");
-        Assert.True(BotSawCloaked(seat.Teammate, seat.Npc.Id),
+        Assert.True(BotSawCloaked(seat.Teammate, seat.Npc.Id, cloakedTick),
             "the teammate's received entry must carry the CloakActive stateM bit (the renderer's transparency key)");
 
         Console.WriteLine($"P270-GATE: cloaked NPC {seat.Npc.Id} side {seat.MateSide} at " +
@@ -240,9 +245,11 @@ public sealed class CloakVisibilityGateLiveTests
         PumpUntil(seat.Server, () => seat.Npc.IsCloaked && seat.Npc.Cloaking < 0.05f && !seat.Npc.SeenBySide(seat.EnemySide), 3000);
         Assert.False(seat.Npc.SeenBySide(seat.EnemySide), "precondition: cloaked + beyond collapsed radius = undetectable");
 
+        uint cloakedTick = (uint)seat.Server.LoopIterations;
         seat.Enemy.ResetHeavyShipsUpdates();
-        PumpUntil(seat.Server, () => seat.Enemy.HeavyShipsUpdates.Count >= 6, 4000);
-        Assert.False(BotSaw(seat.Enemy, seat.Npc.Id), "still no data while beyond the collapsed radius");
+        PumpUntil(seat.Server, () => seat.Enemy.HeavyShipsUpdates.Count(u => u.TimeReference > cloakedTick) >= 6, 4000);
+        Assert.True(seat.Enemy.HeavyShipsUpdates.Count(u => u.TimeReference > cloakedTick) >= 6);
+        Assert.False(BotSaw(seat.Enemy, seat.Npc.Id, cloakedTick), "still no data while beyond the collapsed radius");
 
         // Close the enemy observer to within the collapsed detection radius (~332 u):
         // now the P269 sweep flips SeenBySide true again and the enemy must receive
@@ -252,11 +259,12 @@ public sealed class CloakVisibilityGateLiveTests
         Assert.True(seat.Npc.SeenBySide(seat.EnemySide),
             "an enemy within the collapsed radius must detect the cloaked ship");
 
+        uint detectedTick = (uint)seat.Server.LoopIterations;
         seat.Enemy.ResetHeavyShipsUpdates();
-        PumpUntil(seat.Server, () => BotSaw(seat.Enemy, seat.Npc.Id), 5000);
-        Assert.True(BotSaw(seat.Enemy, seat.Npc.Id),
+        PumpUntil(seat.Server, () => BotSawCloaked(seat.Enemy, seat.Npc.Id, detectedTick), 5000);
+        Assert.True(BotSaw(seat.Enemy, seat.Npc.Id, detectedTick),
             "a detectable cloaked ship must be sent to the enemy (it renders transparent) — the gate is the detection mechanic");
-        Assert.True(BotSawCloaked(seat.Enemy, seat.Npc.Id),
+        Assert.True(BotSawCloaked(seat.Enemy, seat.Npc.Id, detectedTick),
             "and the detectable enemy's entry carries the CloakActive bit (so it renders the cloak visually)");
 
         Console.WriteLine($"P270-DETECT: enemy {seat.EnemySide} within 100u of cloaked {seat.Npc.Id} — " +

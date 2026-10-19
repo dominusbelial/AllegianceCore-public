@@ -1,0 +1,13 @@
+import { build } from 'esbuild';
+import Ajv from 'ajv';
+import addFormats from 'ajv-formats';
+import standaloneCode from 'ajv/dist/standalone/index.js';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+const schema = JSON.parse(await readFile('../../docs/benchmark/result.schema.json', 'utf8'));
+const ajv = new Ajv({ strict: true, code: { source: true } });
+addFormats(ajv);
+ajv.addSchema(schema);
+const source = standaloneCode(ajv, { validateResult: schema.$id + '#/definitions/result', validateKept: schema.$id + '#/definitions/kept' });
+await mkdir('generated', { recursive: true });
+await writeFile('generated/validators.cjs', source);
+await build({ entryPoints: ['src/index.ts'], outfile: 'dist/worker.js', bundle: true, format: 'esm', platform: 'browser', target: 'es2022' });

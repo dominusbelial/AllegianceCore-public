@@ -1,0 +1,506 @@
+[
+  {
+    "scenario": "flight",
+    "resolution": "1920x1080",
+    "kind": "live loopback / HD-2 synthetic atlas material",
+    "asset": "flight-1920x1080.webp",
+    "bytes": 120392,
+    "webpQuality": 88,
+    "sourceResolution": [
+      1920,
+      1080
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "7e9705174745ab2cd47b3616570da6d091fca2d8e84466e244ae8bbd034b5441",
+        "decodedRgbaSha256": "dcc14d74a8708a9cb550a917b1105c749e027d11408c00198ca856c23d964acd",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/flight-1920x1080-Classic.lossless.webp",
+        "rawLosslessSha256": "0d73f2e5acb4158ef1701d06e574100829fa80b5ce9669782f967491aec8c303"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "d4ca53d033d650bd9298d01980a314ebae219f3a8b3ca62c17df49a76b2d8382",
+        "decodedRgbaSha256": "47cba7f67f1b719f495472c4e5d5ea8ad94a9ebaff5ebbd4296903e92ff275c9",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/flight-1920x1080-Modern.lossless.webp",
+        "rawLosslessSha256": "b105847b4a66b4dde2b2cd17f938d678b735dd66208097a5ea9553dc2db00f23"
+      }
+    ]
+  },
+  {
+    "scenario": "combat",
+    "resolution": "1920x1080",
+    "kind": "HUD-1 model / production renderers",
+    "asset": "combat-1920x1080.webp",
+    "bytes": 82694,
+    "webpQuality": 76,
+    "sourceResolution": [
+      1920,
+      1080
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "702ac9dfe9923315e3d37941b04a1ddeeeda6e1e81953e2fe1ef802eccfeccb2",
+        "decodedRgbaSha256": "a7b41ef5e7072435884ee4b86897fb861ce80f318cf3e3b0a736c8719f392ff0",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/combat-1920x1080-Classic.lossless.webp",
+        "rawLosslessSha256": "5187d0e0a72cad5ce302e479c52a702552f1617c0672ad8a70a4257a11acbcb9"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "7b338548488850713d79b4674da456ff98bb1c035c5dbf3bbaca9752ce7dfa42",
+        "decodedRgbaSha256": "f25e45d8a10a4b0cd16f75ad6d76783fc5f918e45e690ad7f300d3dac7e21556",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/combat-1920x1080-Modern.lossless.webp",
+        "rawLosslessSha256": "5308bc054fdf7b665147276dccf11ba7cde5f7c751da74091ab90e7053c7c604"
+      }
+    ]
+  },
+  {
+    "scenario": "critical",
+    "resolution": "1920x1080",
+    "kind": "HUD-1 model / production renderers",
+    "asset": "critical-1920x1080.webp",
+    "bytes": 82672,
+    "webpQuality": 80,
+    "sourceResolution": [
+      1920,
+      1080
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "f5c5e8c043f53812c4e188a1eba383d87ca1fcfde1aeba91ad46c58f41f649c9",
+        "decodedRgbaSha256": "8d1e3d50cc658b3ab959188a6798d6754a69eb652f8d3b09f3f153d337684255",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/critical-1920x1080-Classic.lossless.webp",
+        "rawLosslessSha256": "da1e6b2e46fb6ec13dd693f94dcf0e9acd9d6206e69d6dbc1432c0136adf9237"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "d2fe6d8f678a801038544047f816f706f4abd860cfcbee03344992426ac1f618",
+        "decodedRgbaSha256": "51d719bef0aeb9c41c95afb06f851472163281eb7c8f2c76895f73ce04e86e72",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/critical-1920x1080-Modern.lossless.webp",
+        "rawLosslessSha256": "08815d22a17559a68b9cedd37a2c6f3c8981bb05e042f6565b4ea9674369c030"
+      }
+    ]
+  },
+  {
+    "scenario": "docked",
+    "resolution": "1920x1080",
+    "kind": "live loopback",
+    "asset": "docked-1920x1080.webp",
+    "bytes": 88108,
+    "webpQuality": 40,
+    "sourceResolution": [
+      1920,
+      1080
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "f1c272e9057981423bde0cfc71bea541c3dd44c741f89a275c4be3594cdd3fab",
+        "decodedRgbaSha256": "6c0e5a4d88f257e23e0fe4676086f32d8a8144a7edb93fa6b53c6613a0630883",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/docked-1920x1080-Classic.lossless.webp",
+        "rawLosslessSha256": "fc68716efb4d64c73eb17f2d13dfb0e19680627c5206bb0ee4dcaa3635bfd2ac"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "ad247cf5bfca2e5150460990e7ed2436d69967a2b820d14dacf16f06716c4f24",
+        "decodedRgbaSha256": "5b2ee6a223728fe0a54d2dc89353b4e2bf8b0edff77cd51434a2b91c0ca0f7bf",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/docked-1920x1080-Modern.lossless.webp",
+        "rawLosslessSha256": "d2ed3e7d6a4cdcabb6e21f9fe4af6b8d510a03e11323f0ee95f378dd0cb45ac0"
+      }
+    ]
+  },
+  {
+    "scenario": "lifepod",
+    "resolution": "1920x1080",
+    "kind": "live loopback",
+    "asset": "lifepod-1920x1080.webp",
+    "bytes": 120668,
+    "webpQuality": 60,
+    "sourceResolution": [
+      1920,
+      1080
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "6c8889689587c2aea677fd30112604d6ba637ea38a468fb54ee100deb9376f98",
+        "decodedRgbaSha256": "37fae1b74d2b7ad84bed596e11beccebd51545e6f04b290bdcb3ed6a69a01fb1",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/lifepod-1920x1080-Classic.lossless.webp",
+        "rawLosslessSha256": "83bd3cb8a088494d8d1fd9abaf83404a43179102a816f83d255848d7da82120e"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "42d309ebf0a7dabe99a461e5ddc721566c48e0029e5d34196ad383ee87381fe4",
+        "decodedRgbaSha256": "4500107568055b1d48c8efc02d28deeed6fe748eaebdd7c68bac3798fd79ac9f",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/lifepod-1920x1080-Modern.lossless.webp",
+        "rawLosslessSha256": "3779cf1f919173b9608de64aa4e2899fa0e1f2194bb63cf6a44be3668a728465"
+      }
+    ]
+  },
+  {
+    "scenario": "radar-All",
+    "resolution": "1920x1080",
+    "kind": "HUD-1 model / production renderers",
+    "asset": "radar-All-1920x1080.webp",
+    "bytes": 82480,
+    "webpQuality": 76,
+    "sourceResolution": [
+      1920,
+      1080
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "702ac9dfe9923315e3d37941b04a1ddeeeda6e1e81953e2fe1ef802eccfeccb2",
+        "decodedRgbaSha256": "a7b41ef5e7072435884ee4b86897fb861ce80f318cf3e3b0a736c8719f392ff0",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-All-1920x1080-Classic.lossless.webp",
+        "rawLosslessSha256": "5187d0e0a72cad5ce302e479c52a702552f1617c0672ad8a70a4257a11acbcb9"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "8a2ee405e9d488ce005500d0e6cbae005d88ff934c921f2b8bb7d06a077bfe98",
+        "decodedRgbaSha256": "5d0e04da4ec60970aae32f5f8b0760f7f39f718117d6b2d978000304120ae375",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-All-1920x1080-Modern.lossless.webp",
+        "rawLosslessSha256": "06dafd5eb01592ccea45436edafe3e6a7936eea762a72194e578c532be254373"
+      }
+    ]
+  },
+  {
+    "scenario": "radar-Default",
+    "resolution": "1920x1080",
+    "kind": "HUD-1 model / production renderers",
+    "asset": "radar-Default-1920x1080.webp",
+    "bytes": 82694,
+    "webpQuality": 76,
+    "sourceResolution": [
+      1920,
+      1080
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "702ac9dfe9923315e3d37941b04a1ddeeeda6e1e81953e2fe1ef802eccfeccb2",
+        "decodedRgbaSha256": "a7b41ef5e7072435884ee4b86897fb861ce80f318cf3e3b0a736c8719f392ff0",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-Default-1920x1080-Classic.lossless.webp",
+        "rawLosslessSha256": "5187d0e0a72cad5ce302e479c52a702552f1617c0672ad8a70a4257a11acbcb9"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "7b338548488850713d79b4674da456ff98bb1c035c5dbf3bbaca9752ce7dfa42",
+        "decodedRgbaSha256": "f25e45d8a10a4b0cd16f75ad6d76783fc5f918e45e690ad7f300d3dac7e21556",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-Default-1920x1080-Modern.lossless.webp",
+        "rawLosslessSha256": "5308bc054fdf7b665147276dccf11ba7cde5f7c751da74091ab90e7053c7c604"
+      }
+    ]
+  },
+  {
+    "scenario": "radar-Target",
+    "resolution": "1920x1080",
+    "kind": "HUD-1 model / production renderers",
+    "asset": "radar-Target-1920x1080.webp",
+    "bytes": 89088,
+    "webpQuality": 80,
+    "sourceResolution": [
+      1920,
+      1080
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "702ac9dfe9923315e3d37941b04a1ddeeeda6e1e81953e2fe1ef802eccfeccb2",
+        "decodedRgbaSha256": "a7b41ef5e7072435884ee4b86897fb861ce80f318cf3e3b0a736c8719f392ff0",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-Target-1920x1080-Classic.lossless.webp",
+        "rawLosslessSha256": "5187d0e0a72cad5ce302e479c52a702552f1617c0672ad8a70a4257a11acbcb9"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "65dd813b4f450360bb9715dc3cbc473abb07ca608cc304f03a0a207e11b66865",
+        "decodedRgbaSha256": "3aff55be1366c9e35aa49d4aeec2ca7ac72d63ff63c62d18ca20808a3797d1a0",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-Target-1920x1080-Modern.lossless.webp",
+        "rawLosslessSha256": "869ec57c2ebf309304a1581e60caa61884379e8b5861069121bca6c58acee43f"
+      }
+    ]
+  },
+  {
+    "scenario": "radar-Minimal",
+    "resolution": "1920x1080",
+    "kind": "HUD-1 model / production renderers",
+    "asset": "radar-Minimal-1920x1080.webp",
+    "bytes": 89126,
+    "webpQuality": 80,
+    "sourceResolution": [
+      1920,
+      1080
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "702ac9dfe9923315e3d37941b04a1ddeeeda6e1e81953e2fe1ef802eccfeccb2",
+        "decodedRgbaSha256": "a7b41ef5e7072435884ee4b86897fb861ce80f318cf3e3b0a736c8719f392ff0",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-Minimal-1920x1080-Classic.lossless.webp",
+        "rawLosslessSha256": "5187d0e0a72cad5ce302e479c52a702552f1617c0672ad8a70a4257a11acbcb9"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "ba4d99499369e84c79262d03074ff0e8213c868ed0fd42db4e734544db72e895",
+        "decodedRgbaSha256": "e1655c01a5261eea0de1b18ddec53398b9b00e78e04f9d8acdbc82814cdc4d08",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-Minimal-1920x1080-Modern.lossless.webp",
+        "rawLosslessSha256": "815346ef44e12a255a775d84a3e2aa39294c2eb2c104fb5260e940aaebb3cd41"
+      }
+    ]
+  },
+  {
+    "scenario": "flight",
+    "resolution": "2560x1440",
+    "kind": "live loopback / HD-2 synthetic atlas material",
+    "asset": "flight-2560x1440.webp",
+    "bytes": 119488,
+    "webpQuality": 80,
+    "sourceResolution": [
+      2560,
+      1440
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "9ee0e82172d29e1a283a9bda738ea9a2f2256c75b1da0db49a30d09161482eb2",
+        "decodedRgbaSha256": "8a98fe917431b5a8b11a106bf54531bf754a2b2c4e03590c0bd4e7ead9d94d61",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/flight-2560x1440-Classic.lossless.webp",
+        "rawLosslessSha256": "3547b4f8f247c878c387f010f59dd838e9ef40ff047f6a8455f765805e5c1b9a"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "248374906d353544d216bfbc5a7de5d1fff8bff6f36fe4f207b906287298d2db",
+        "decodedRgbaSha256": "2e64405c1aa3fab42b2c4c3de394f4351e8be54d6c292097b1af86e314461711",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/flight-2560x1440-Modern.lossless.webp",
+        "rawLosslessSha256": "4ec8a70f97359f4111b3ff7255a90be3393a9cf7d87288701046a59369990492"
+      }
+    ]
+  },
+  {
+    "scenario": "combat",
+    "resolution": "2560x1440",
+    "kind": "HUD-1 model / production renderers",
+    "asset": "combat-2560x1440.webp",
+    "bytes": 89278,
+    "webpQuality": 56,
+    "sourceResolution": [
+      2560,
+      1440
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "a495c0d639826f56fb0b2a862a9484933e86308134f40e5d2dd017672d4482fa",
+        "decodedRgbaSha256": "31040e2f70569a7f81cfd16ef48eb51c7e5cdd5ff2530c211dcfa42c0e47723c",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/combat-2560x1440-Classic.lossless.webp",
+        "rawLosslessSha256": "fd4eb7ccfa4eea72a60ed138d3dbc936e717b08bb6a734135728357eb93f563a"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "d6c78058d72b20f88bd9adcf60fd7bed142445fbe961e61bd4ed7c1c9c13d43b",
+        "decodedRgbaSha256": "ce598197ccfac9d1942ca44efd03b83526de12da148004a0457fec43b62ad91f",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/combat-2560x1440-Modern.lossless.webp",
+        "rawLosslessSha256": "83a6625ecc69dcc084a1c4fae6e3956cf437e3347732c577c1770f5f12bfa396"
+      }
+    ]
+  },
+  {
+    "scenario": "critical",
+    "resolution": "2560x1440",
+    "kind": "HUD-1 model / production renderers",
+    "asset": "critical-2560x1440.webp",
+    "bytes": 86208,
+    "webpQuality": 68,
+    "sourceResolution": [
+      2560,
+      1440
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "5301540499459091d86b94dc3345384136b4c926dfa5299386bd6e26c64046ef",
+        "decodedRgbaSha256": "3fe3c6051508bbbf05fd9e904a30e98988e15a6a0980a737534bcd7b2b625c81",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/critical-2560x1440-Classic.lossless.webp",
+        "rawLosslessSha256": "ef7b548980a60029c4a1b7e14a00e0667c20712e4e0af886bdfe19dd9fc61408"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "ae741088d62809153289884599a6b5a45222e804a7dcae462d682595c087f207",
+        "decodedRgbaSha256": "a300c3d50a993b06fd6cd339488f815155c2bdbcefa7895793712ad24556e724",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/critical-2560x1440-Modern.lossless.webp",
+        "rawLosslessSha256": "feaa4611af84523097869087ef6f93bb71fe22cb953ee94747ed1a8720152bfc"
+      }
+    ]
+  },
+  {
+    "scenario": "docked",
+    "resolution": "2560x1440",
+    "kind": "live loopback",
+    "asset": "docked-2560x1440.webp",
+    "bytes": 83952,
+    "webpQuality": 8,
+    "sourceResolution": [
+      2560,
+      1440
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "9f2f0062d2e1896d59933ac3bb44d9e0a153fe6194c24240ee11bbddcc51d04c",
+        "decodedRgbaSha256": "e9a2a43ed9b96b4b0eef15fa0d5b28d3d3829d952d87ab224506739cb7c76c1d",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/docked-2560x1440-Classic.lossless.webp",
+        "rawLosslessSha256": "cb288a94781fe2bc7b87fee0e33dd6484fc6f4952322009c12386513535da58f"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "c35afe4f1668fb7e0857e634910c4b81cdc3e9d7a12f7c42f55f5cef31b55bde",
+        "decodedRgbaSha256": "ca2de961b52e66e64aa2ea7cd4e816b22dc3074e1654ebace4211ff75dfb70db",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/docked-2560x1440-Modern.lossless.webp",
+        "rawLosslessSha256": "3bf5b0c57e7378a08deab61b3daacde51188eb881a296e2a7aeca3a2d49f46e6"
+      }
+    ]
+  },
+  {
+    "scenario": "lifepod",
+    "resolution": "2560x1440",
+    "kind": "live loopback",
+    "asset": "lifepod-2560x1440.webp",
+    "bytes": 124264,
+    "webpQuality": 40,
+    "sourceResolution": [
+      2560,
+      1440
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "16553ac47b29a997a8b65f7b563419ecd733b5223789e0d343155105f2e47a6a",
+        "decodedRgbaSha256": "b5e8d717680c15e1676d2a34471ca5eb594eabdcc8fe0c3fd7f125905ca3f214",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/lifepod-2560x1440-Classic.lossless.webp",
+        "rawLosslessSha256": "a9a2f85e78dbfdb87163524350a52cb020a6a660c8d9a1aa76b87f75f6514670"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "cba437231a8475f044bb569193f64877cd72c70ec55eb5b93dba2cc0f2e0d821",
+        "decodedRgbaSha256": "d0b268b94547f097a8f78c470bdd51390ebb96a77a216c157d7b448c6e1b9097",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/lifepod-2560x1440-Modern.lossless.webp",
+        "rawLosslessSha256": "dd88d30d5827f22675856cc6c13f97aadb60c985b520fb544ffb4fd42b737157"
+      }
+    ]
+  },
+  {
+    "scenario": "radar-All",
+    "resolution": "2560x1440",
+    "kind": "HUD-1 model / production renderers",
+    "asset": "radar-All-2560x1440.webp",
+    "bytes": 89038,
+    "webpQuality": 56,
+    "sourceResolution": [
+      2560,
+      1440
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "a495c0d639826f56fb0b2a862a9484933e86308134f40e5d2dd017672d4482fa",
+        "decodedRgbaSha256": "31040e2f70569a7f81cfd16ef48eb51c7e5cdd5ff2530c211dcfa42c0e47723c",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-All-2560x1440-Classic.lossless.webp",
+        "rawLosslessSha256": "fd4eb7ccfa4eea72a60ed138d3dbc936e717b08bb6a734135728357eb93f563a"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "5458998c2fc9804b8f89875778c4ad4e5b269eaebf0702f123bb4ddc802d7a22",
+        "decodedRgbaSha256": "b2eddf37cccb90a41e2345f2319b918745e94eba04d616ca04585d8ba5b3d547",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-All-2560x1440-Modern.lossless.webp",
+        "rawLosslessSha256": "27ce17dcadd502766c330403258837834e20d24b1edc66aa702f676f5d54596a"
+      }
+    ]
+  },
+  {
+    "scenario": "radar-Default",
+    "resolution": "2560x1440",
+    "kind": "HUD-1 model / production renderers",
+    "asset": "radar-Default-2560x1440.webp",
+    "bytes": 89278,
+    "webpQuality": 56,
+    "sourceResolution": [
+      2560,
+      1440
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "a495c0d639826f56fb0b2a862a9484933e86308134f40e5d2dd017672d4482fa",
+        "decodedRgbaSha256": "31040e2f70569a7f81cfd16ef48eb51c7e5cdd5ff2530c211dcfa42c0e47723c",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-Default-2560x1440-Classic.lossless.webp",
+        "rawLosslessSha256": "fd4eb7ccfa4eea72a60ed138d3dbc936e717b08bb6a734135728357eb93f563a"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "d6c78058d72b20f88bd9adcf60fd7bed142445fbe961e61bd4ed7c1c9c13d43b",
+        "decodedRgbaSha256": "ce598197ccfac9d1942ca44efd03b83526de12da148004a0457fec43b62ad91f",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-Default-2560x1440-Modern.lossless.webp",
+        "rawLosslessSha256": "83a6625ecc69dcc084a1c4fae6e3956cf437e3347732c577c1770f5f12bfa396"
+      }
+    ]
+  },
+  {
+    "scenario": "radar-Target",
+    "resolution": "2560x1440",
+    "kind": "HUD-1 model / production renderers",
+    "asset": "radar-Target-2560x1440.webp",
+    "bytes": 87588,
+    "webpQuality": 56,
+    "sourceResolution": [
+      2560,
+      1440
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "a495c0d639826f56fb0b2a862a9484933e86308134f40e5d2dd017672d4482fa",
+        "decodedRgbaSha256": "31040e2f70569a7f81cfd16ef48eb51c7e5cdd5ff2530c211dcfa42c0e47723c",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-Target-2560x1440-Classic.lossless.webp",
+        "rawLosslessSha256": "fd4eb7ccfa4eea72a60ed138d3dbc936e717b08bb6a734135728357eb93f563a"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "58d716807410494e57b7bd8b78eafc6b4007c338c438ce214f2663225c4f7136",
+        "decodedRgbaSha256": "0704370a29641da5f59b423d16c45e76a0d41e0c881f7fec59d22c37e15acb08",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-Target-2560x1440-Modern.lossless.webp",
+        "rawLosslessSha256": "a1e9ed1cac2134837a8b035415c60a697f583c66a7bc62eab9c7cf0c22e6463b"
+      }
+    ]
+  },
+  {
+    "scenario": "radar-Minimal",
+    "resolution": "2560x1440",
+    "kind": "HUD-1 model / production renderers",
+    "asset": "radar-Minimal-2560x1440.webp",
+    "bytes": 87614,
+    "webpQuality": 56,
+    "sourceResolution": [
+      2560,
+      1440
+    ],
+    "provenance": [
+      {
+        "style": "Classic",
+        "originalPngSha256": "a495c0d639826f56fb0b2a862a9484933e86308134f40e5d2dd017672d4482fa",
+        "decodedRgbaSha256": "31040e2f70569a7f81cfd16ef48eb51c7e5cdd5ff2530c211dcfa42c0e47723c",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-Minimal-2560x1440-Classic.lossless.webp",
+        "rawLosslessSha256": "fd4eb7ccfa4eea72a60ed138d3dbc936e717b08bb6a734135728357eb93f563a"
+      },
+      {
+        "style": "Modern",
+        "originalPngSha256": "9b3ee790524f8dfaefa72486b2c9c0c06370a4ce22747ee255a641b0b9d4ad6f",
+        "decodedRgbaSha256": "518d789226b01a75061b608066b6f654f1b425b9e793e83131b39b5e96b9cd32",
+        "rawLosslessPath": "/tmp/HUD2/raw/final-visuals/radar-Minimal-2560x1440-Modern.lossless.webp",
+        "rawLosslessSha256": "c66c6188a47b3ecadb4ffa1f701a087ac6bab573af44acb1a4d8839f4c3755fb"
+      }
+    ]
+  }
+]

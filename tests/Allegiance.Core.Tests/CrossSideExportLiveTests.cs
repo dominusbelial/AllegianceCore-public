@@ -122,7 +122,15 @@ public sealed class CrossSideExportLiveTests
             // already-exported at join; a far spawn leaves the set empty so the
             // test's "bring them within range" step is a genuine fresh edge (the
             // reset-then-reobserve pattern of the P346 edge test).
-            var pos = new Vector3(placed * 900_000f, 0f, 0f);
+            // Same-side identity needs no out-of-range separation. The far
+            // cross-side spawn is outside the universe damage boundary
+            // (Igc/shipIGC.cpp:368-408), and even one post-seat tick can eject
+            // that scout into a lifepod before the initial export is decoded.
+            var fc = mission.Core.Constants.FloatConstants;
+            float safeRadius = fc[1] * MathF.Sqrt(fc[2]);
+            var pos = sameSide
+                ? new Vector3(safeRadius * (0.1f + placed * 0.1f), safeRadius * 0.2f, 0f)
+                : new Vector3(placed * 900_000f, 0f, 0f);
             var ship = new Ship(id, hull, pos, Vector3.Zero, Orientation.Identity);
             short side = sameSide
                 ? mission.Sides[0].Id

@@ -191,6 +191,7 @@ public sealed class LiveP388DebugNoGameOverTests
     /// removed (the last-player disconnect would declare a draw → Stage Over →
     /// sim frozen → no cycles → the cycle pump times out).</summary>
     [Trait("Requires", "Artwork")]
+    [Trait("Tier", "Live")] // Expensive corpus/scenario or collision-work budget; docs/testing/TIERS.md.
     [SkippableFact]
     public void Debug_mode_disconnect_does_not_end_mission_and_miners_keep_cycling()
     {

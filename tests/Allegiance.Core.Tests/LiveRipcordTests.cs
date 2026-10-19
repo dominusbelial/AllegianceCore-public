@@ -184,7 +184,7 @@ public class LiveRipcordTests
         ResetRipcord(req); ResetRipcord(byst);
 
         req.SendRipcordRequest(TargetA);
-        int seen = PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        int seen = PumpUntil(server, () => req.RipcordActivates.Count >= 1 && byst.RipcordActivates.Count >= 1, 4000);
         Assert.True(seen < 4000, "no RIPCORD_ACTIVATE reached the requester");
 
         var a = Assert.Single(req.RipcordActivates);
@@ -233,7 +233,7 @@ public class LiveRipcordTests
 
         // Establish a first activation first (broadcast both bots).
         req.SendRipcordRequest(TargetA);
-        PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        PumpUntil(server, () => req.RipcordActivates.Count >= 1 && byst.RipcordActivates.Count >= 1, 4000);
         Assert.Single(req.RipcordActivates);
         Assert.Single(byst.RipcordActivates);   // the first-activation broadcast reached the bystander
 
@@ -289,7 +289,6 @@ public class LiveRipcordTests
     /// broadcasts RIPCORD_ABORTED(187) sector-wide naming the correct ship,
     /// and clears the server-side countdown state.</summary>
     [Trait("Requires", "Artwork")]
-    [Trait("Lane", "LiveTiming")]   // P647 quarantine: live-wire ripcord abort receipt is load-sensitive (passes 10/10 isolated)
     [SkippableFact]
     public void Cancel_while_active_aborts_sector_wide()
     {
@@ -299,13 +298,13 @@ public class LiveRipcordTests
 
         // Arm a ripcord first.
         req.SendRipcordRequest(TargetA);
-        PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        PumpUntil(server, () => req.RipcordActivates.Count >= 1 && byst.RipcordActivates.Count >= 1, 4000);
         Assert.True(ServerShip(server, rid).IsRipcordActive);
 
         // Cancel it.
         ResetRipcord(req); ResetRipcord(byst);
         req.SendRipcordRequest(-1);   // NA
-        int seen = PumpUntil(server, () => req.RipcordAborteds.Count >= 1, 4000);
+        int seen = PumpUntil(server, () => req.RipcordAborteds.Count >= 1 && byst.RipcordAborteds.Count >= 1, 4000);
         Assert.True(seen < 4000, "no RIPCORD_ABORTED reached the requester");
 
         Assert.Equal(rid, Assert.Single(req.RipcordAborteds).ShipidRipcord);
@@ -408,7 +407,7 @@ public class LiveRipcordTests
         ResetRipcord(req); ResetRipcord(byst);
 
         req.SendRipcordRequest(TargetA);
-        PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        PumpUntil(server, () => req.RipcordActivates.Count >= 1 && byst.RipcordActivates.Count >= 1, 4000);
         Assert.True(ServerShip(server, rid).IsRipcordActive);
 
         float t0 = ServerShip(server, rid).RipcordTimeLeft;
@@ -449,7 +448,7 @@ public class LiveRipcordTests
         ResetRipcord(req); ResetRipcord(byst);
 
         req.SendRipcordRequest(TargetA);
-        PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        PumpUntil(server, () => req.RipcordActivates.Count >= 1 && byst.RipcordActivates.Count >= 1, 4000);
         var ship = ServerShip(server, rid);
         Assert.True(ship.IsRipcordActive);
         Assert.True(ship.RipcordTimeLeft > 0f, "countdown should still be ticking after activation");
@@ -607,7 +606,7 @@ public class LiveRipcordTests
         ResetRipcord(req); ResetRipcord(byst);
 
         req.SendRipcordRequest(TargetA);
-        PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        PumpUntil(server, () => req.RipcordActivates.Count >= 1 && byst.RipcordActivates.Count >= 1, 4000);
         var rs = ServerShip(server, rid);
         Assert.True(rs.IsRipcordActive);
 
@@ -770,7 +769,7 @@ public class LiveRipcordTests
         tgt.Energy = startEnergy;
 
         req.SendRipcordRequest(TargetA);
-        PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        PumpUntil(server, () => req.RipcordActivates.Count >= 1 && byst.RipcordActivates.Count >= 1, 4000);
         Assert.Equal((short)IgcObjectType.Ship, Assert.Single(req.RipcordActivates).OtRipcord);
         var rship = ServerShip(server, rid);
         Assert.True(rship.IsRipcordActive);
@@ -832,7 +831,7 @@ public class LiveRipcordTests
         tgt.Energy = MathF.Max(0f, cost - 800f);
 
         req.SendRipcordRequest(TargetA);
-        PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        PumpUntil(server, () => req.RipcordActivates.Count >= 1 && byst.RipcordActivates.Count >= 1, 4000);
         Assert.Equal((short)IgcObjectType.Ship, Assert.Single(req.RipcordActivates).OtRipcord);
         var rship = ServerShip(server, rid);
         Assert.True(rship.IsRipcordActive);
@@ -844,7 +843,7 @@ public class LiveRipcordTests
         // pump UNTIL the abort broadcast is observed rather than a fixed tick
         // count — async delivery to the bot is timing-sensitive under collection
         // load (the abort itself is deterministic on tick 1).
-        int seen = PumpUntil(server, () => req.RipcordAborteds.Count >= 1, 4000);
+        int seen = PumpUntil(server, () => req.RipcordAborteds.Count >= 1 && byst.RipcordAborteds.Count >= 1, 4000);
         Assert.True(seen < 4000, "no RIPCORD_ABORTED reached the ripper on zero-cross with insufficient target energy");
 
         // RIPCORD_ABORTED broadcast to everyone flying in the RIPPER's sector:
@@ -905,7 +904,7 @@ public class LiveRipcordTests
 
         // Phase 2 — engage ripcord, then mid-countdown DEMAND full yaw + forward.
         req.SendRipcordRequest(TargetA);
-        int act = PumpUntil(server, () => req.RipcordActivates.Count >= 1, 4000);
+        int act = PumpUntil(server, () => req.RipcordActivates.Count >= 1 && byst.RipcordActivates.Count >= 1, 4000);
         Assert.True(act < 4000, "no RIPCORD_ACTIVATE reached the requester");
         Assert.True(ServerShip(server, rid).IsRipcordActive);
 

@@ -1,6 +1,9 @@
+using System.Collections;
+using System.Reflection;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.Core.Transport;
 using Allegiance.Core.Wire;
 // 'Server' and 'Bot' are ALSO namespace names (Allegiance.Server, Allegiance.Bot)
 // reachable from this namespace, so the simple names are ambiguous with the
@@ -189,15 +192,38 @@ public class PaydayTests
         SteamAuthTicketLength = 0, SteamID = 44000000000000000ul, DrmHash = "paydaytest",
     };
 
-    /// <summary>Pump until the server's sim clock reaches <paramref name="target"/>
-    /// seconds (max cap), then settle so the clients' transport threads decode
-    /// anything sent on the final tick.</summary>
+    /// <summary>Pump to a fixed simulation time. Receipt is synchronized
+    /// separately, without consuming more of the payday clock.</summary>
     private static int PumpTo(Srv server, double targetSimNow, int max)
     {
         int n = 0;
         while (server.SimNow < targetSimNow && n < max) { server.TickSim(); n++; Thread.Sleep(1); }
-        Thread.Sleep(60);
+        Assert.True(server.SimNow >= targetSimNow, "simulation must reach the requested payday sample");
         return n;
+    }
+
+    private static void Seat(Srv server, params FltBot[] bots)
+    {
+        Assert.True(SpinWait.SpinUntil(() =>
+        {
+            server.TickSim();
+            return bots.All(b => b.ShipAssignment is not null);
+        }, TimeSpan.FromSeconds(30)), "all payday peers must finish seating before the clock starts");
+    }
+
+    private static readonly FieldInfo PeerShipsField = typeof(Srv)
+        .GetField("_peerShips", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+    private static void ReceiveThroughCurrentTick(Srv server, uint marker, params FltBot[] bots)
+    {
+        // Inject an ordered server marker AFTER the real payday publications.
+        // No request/reply throttle or additional simulation ticks are involved.
+        server.FlushBroadcastSnapshots();
+        var peers = (IDictionary)PeerShipsField.GetValue(server)!;
+        byte[] packet = FedPacket.Pack(new Ping { TimeClient = marker }.Encode());
+        foreach (ConnectionId peer in peers.Keys) server.Host.Send(peer, packet);
+        Assert.True(SpinWait.SpinUntil(() => bots.All(b => b.Pings.Any(p => p.TimeClient == marker)),
+            TimeSpan.FromSeconds(30)), "all payday peers must decode the ordered sample marker");
     }
 
     /// <summary>Authoritative side for a bot: map its assigned ship id through
@@ -231,7 +257,6 @@ public class PaydayTests
         Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
-        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var botA = new FltBot();
         using var botB = new FltBot();
 
@@ -241,12 +266,13 @@ public class PaydayTests
         botB.SendLogonRequest(Request("pd_b"));
 
         // Wait until both are seated (each side now has exactly one player).
-        int seat = PumpTo(server, 0.5, 4000);
-        Assert.True(seat >= 0 && botA.ShipAssignment is not null && botB.ShipAssignment is not null,
-            $"both bots must seat; ticks={seat}, A={botA.ShipAssignment is not null}, B={botB.ShipAssignment is not null}");
+        Seat(server, botA, botB);
         botA.ResetPaydays(); botB.ResetPaydays();
 
         var mission = server.Missions[0];
+        mission.Stage = MissionStage.Started; // manual stage: test periodic paydays without the initial start grant
+        server.TickSim();                    // seed the first deadline, after every peer is registered
+        double origin = server.SimNow;
         short sideA = SideOf(server, botA);
         short sideB = SideOf(server, botB);
         Assert.NotEqual(sideA, sideB);               // the two bots are on different sides
@@ -255,19 +281,22 @@ public class PaydayTests
         Assert.True(expA > 0 && expB > 0, "nonzero-income civs required for a meaningful delta");
 
         // Not early: 50s in, still zero paydays on both bots.
-        PumpTo(server, 50.0, 2000);
+        PumpTo(server, origin + 50.0, 2000);
+        ReceiveThroughCurrentTick(server, 0x51a, botA, botB);
         Assert.Empty(botA.Paydays);
         Assert.Empty(botB.Paydays);
 
         // First boundary: exactly one per bot, matching its side's formula.
-        PumpTo(server, 65.0, 800);
+        PumpTo(server, origin + 65.0, 800);
+        ReceiveThroughCurrentTick(server, 0x51b, botA, botB);
         Assert.Single(botA.Paydays);
         Assert.Single(botB.Paydays);
         Assert.Equal(expA, botA.Paydays[0].DMoney);
         Assert.Equal(expB, botB.Paydays[0].DMoney);
 
         // Second boundary: exactly one more each (not doubled).
-        PumpTo(server, 125.0, 1500);
+        PumpTo(server, origin + 125.0, 1500);
+        ReceiveThroughCurrentTick(server, 0x51c, botA, botB);
         Assert.Equal(2, botA.Paydays.Count);
         Assert.Equal(2, botB.Paydays.Count);
         Assert.Equal(expA, botA.Paydays[1].DMoney);
@@ -290,22 +319,24 @@ public class PaydayTests
         Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
-        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
         using var botA = new FltBot();
 
         botA.Connect(server.BoundPort, "pd_z");
         botA.SendLogonRequest(Request("pd_z"));
-        int seat = PumpTo(server, 0.5, 4000);
-        Assert.True(seat >= 0 && botA.ShipAssignment is not null, "bot must seat");
+        Seat(server, botA);
         botA.ResetPaydays();
 
         var mission = server.Missions[0];
+        mission.Stage = MissionStage.Started;
+        server.TickSim();
+        double origin = server.SimNow;
         short sideA = SideOf(server, botA);
         var loneSide = mission.Sides.Single(s => s.Id != sideA);   // the empty side
 
         // Pump past one full boundary. The server must run the whole crossing
         // without throwing (a divide-by-zero here would fail the test).
-        PumpTo(server, 65.0, 2000);
+        PumpTo(server, origin + 65.0, 2000);
+        ReceiveThroughCurrentTick(server, 0x51d, botA);
         Assert.Single(botA.Paydays);                              // its side pays normally
 
         // The empty side accrued (treasury grew) but was never paid out — it

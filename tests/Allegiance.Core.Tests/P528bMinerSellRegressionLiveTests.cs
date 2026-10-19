@@ -69,6 +69,7 @@ public sealed class P528bMinerSellRegressionLiveTests
     /// amounts → relaunch → began again. Fails (times out, no second sale) on the
     /// pre-P528b code where a full miner is trapped beside its rock.</summary>
     [Trait("Requires", "Artwork")]
+    [Trait("Tier", "Live")] // Expensive corpus/scenario or collision-work budget; docs/testing/TIERS.md.
     [SkippableFact]
     public void Each_initial_miner_completes_two_full_mine_sell_cycles_at_native_rates()
     {

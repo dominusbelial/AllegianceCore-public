@@ -474,13 +474,18 @@ public class MiningTests
         // so BroadcastShipStates emits one dirty fmid-78 carrying current ore.
         bot.ResetObservations();
         live().Position = apos + new Vector3(2f, 0f, 0f);
-        PumpUntil(server, () => bot.Observations.Any(o => o.OreFraction > 0f), 400);
-        FltBot.ShipObservation? obs = null;
-        foreach (var o in bot.Observations) if (o.OreFraction > 0f) obs = o;
-        Assert.True(obs is not null, "wire must carry a nonzero ore fraction");
+        server.TickSim();
+        uint sampleTick = (uint)server.LoopIterations;
         float expectedFraction = Math.Clamp(live().Ore / live().EffectiveMineCapacity(), 0f, 1f);
-        Assert.True(Math.Abs(obs!.Value.OreFraction - expectedFraction) < 0.02f,
-            $"wire ore fraction {obs.Value.OreFraction} should track server Ore/EffectiveMineCapacity {expectedFraction}");
+        // Keep simulation time fixed while this exact generated sample travels
+        // over TCP. An older in-flight observation must not satisfy the wait,
+        // and pumping more ticks would compare historical ore with newer cargo.
+        Assert.True(SpinWait.SpinUntil(() => bot.Observations.Any(o => o.Tick == sampleTick),
+            TimeSpan.FromSeconds(30)), "wire must carry the generated mining sample");
+        var obs = Assert.Single(bot.Observations, o => o.Tick == sampleTick);
+        Assert.True(obs.OreFraction > 0f, "wire must carry a nonzero ore fraction");
+        Assert.True(Math.Abs(obs.OreFraction - expectedFraction) < 0.02f,
+            $"wire ore fraction {obs.OreFraction} should track server Ore/EffectiveMineCapacity {expectedFraction}");
     }
 
     /// <summary>⭐ No-regression over the wire: on the zero-asteroid demo map with

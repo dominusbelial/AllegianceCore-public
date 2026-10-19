@@ -122,12 +122,12 @@ public sealed class RadarBracketRenderer
     }
 
     /// <summary>Classic radar skin for the shared HUD snapshot.</summary>
-    public void Draw(HudModel model, Viewport viewport)
+    public void Draw(HudModel model, Viewport viewport, bool colorBlindSafe = false)
     {
         if (!model.FlightVisible) return;
         Draw(model.Context.Contacts.Select(c => new RadarContact((RadarContactType)c.Kind,
             new(c.Position.X, c.Position.Y), c.OnScreen, c.Opacity,
-            c.SideColor is { } color ? new Color(color.R, color.G, color.B, color.A) : null,
+            c.SideColor is { } color ? (colorBlindSafe ? HudPalette.Side(new Color(color.R, color.G, color.B, color.A)) : new Color(color.R, color.G, color.B, color.A)) : null,
             c.Selected, c.BuildSpot)).ToArray(), viewport, model.Context.RadarPulse);
     }
 

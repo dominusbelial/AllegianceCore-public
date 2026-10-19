@@ -88,7 +88,7 @@ public class DiscoveryTests
     public void Unicast_probe_finds_a_loopback_responder()
     {
         using var responder = StartLoopbackResponder();
-        using var engine = new DiscoveryEngine();
+        using var engine = new DiscoveryEngine(probeTimeoutMs: 30_000); // scheduling allowance, not a latency budget
 
         var found = engine.ProbeTargetAsync(
             new DiscoveryTarget("127.0.0.1", responder.BoundPort, DiscoverySource.Lan));

@@ -39,4 +39,7 @@ public readonly record struct TargetSelectionView(
     float? HullFraction = null,
     float? ShieldFraction = null,
     bool? IsEnemy = null,
-    float? OreFraction = null);
+    float? OreFraction = null,
+    float? Distance = null,
+    float? ClosingSpeed = null,
+    HudColor? SideColor = null);

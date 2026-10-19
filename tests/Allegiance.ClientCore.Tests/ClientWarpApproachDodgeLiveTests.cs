@@ -6,6 +6,7 @@ using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.Session;
 using Allegiance.ClientCore.State;
+using Allegiance.Tools.McpSpawner;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
@@ -100,7 +101,7 @@ public sealed class ClientWarpApproachDodgeLiveTests
         return map.Count > 0;
     }
 
-    private static bool TryFindWarpTo(ConnectionSession cs, short cur, short next, IReadOnlyDictionary<short, short> warpDest, out Vector3 pos)
+    private static bool TryFindWarpTo(ConnectionSession cs, short cur, short next, IReadOnlyDictionary<short, short> warpDest, out Vector3 pos, out float radius)
     {
         lock (cs.Gate)
         {
@@ -110,11 +111,13 @@ public sealed class ClientWarpApproachDodgeLiveTests
                 if (warpDest.TryGetValue(w.WarpId, out var d) && d == next)
                 {
                     pos = Vec3(w.Position);
+                    radius = w.Radius;
                     return true;
                 }
             }
         }
         pos = Vector3.Zero;
+        radius = 0;
         return false;
     }
 
@@ -186,23 +189,29 @@ public sealed class ClientWarpApproachDodgeLiveTests
     /// prove it REACHED the aleph, versus P484's ~7000 u park), and the minimum
     /// hull fraction of the server ship (hull damage taken = 1 − min).</summary>
     private static (short finalSector, float minWarpDist, float minHullFrac, List<string> log) FlyToward(
-        Srv server, ConnectionSession cs, StaticCore core, short goal, float arrival, float brake, int maxTicks)
+        Srv server, ConnectionSession cs, StaticCore core, short goal, int maxTicks)
     {
         var shipId = cs.World.MyShipId!.Value;
         short mySide = cs.World.MySideId ?? -1;
         short hullId;
         lock (cs.Gate) hullId = cs.World.Ships.TryGetValue(shipId, out var me) ? me.HullId : (short)-1;
+        float shipRadius = 0.5f * core.HullTypes[hullId].Length;
 
         var log = new List<string>();
         short lastSector = -1;
         float minWarpDist = float.MaxValue;
         float minHullFrac = 1f;
         var serverShip = server.Missions.SelectMany(m => m.Sectors).SelectMany(s => s.Models).OfType<Ship>()
-            .FirstOrDefault(s => s.Id == shipId);
+            .Single(s => s.Id == shipId);
 
         for (int i = 0; i < maxTicks; i++)
         {
             server.TickSim();
+            var generatedPosition = serverShip.Position;
+            short generatedSector = serverShip.Sector!.Id;
+            Assert.True(SpinWait.SpinUntil(() => CsSector(cs) == generatedSector
+                && TryCsPose(cs, shipId, out var decoded, out _) && decoded == generatedPosition,
+                TimeSpan.FromSeconds(30)), $"no dodge-flight pose at step {i}, sector {generatedSector}");
             short cur = CsSector(cs);
             if (cur < 0) continue;
 
@@ -215,19 +224,21 @@ public sealed class ClientWarpApproachDodgeLiveTests
                     short next = cur;
                     for (int j = 1; j < path.Count; j++)
                         if (path[j - 1] == cur) { next = path[j]; break; }
-                    if (next != cur && TryBuildWarpDestMap(cs, out var wd) && TryFindWarpTo(cs, cur, next, wd, out var warpPos))
+                    if (next != cur && TryBuildWarpDestMap(cs, out var wd) && TryFindWarpTo(cs, cur, next, wd, out var warpPos, out var warpRadius))
                     {
+                        // Use the current MCP approach law. The old 200/450
+                        // fixture can stop outside the actual transit sphere.
+                        var (arrival, brake) = BotManager.WarpApproachParams(warpRadius, shipRadius);
                         CombatFlyToDodge(cs, shipId, hullId, mySide, core, warpPos, arrival, brake, 0);
                         // Evidence: how close does the REAL server ship get to the hop-warp it is targeting?
-                        if (serverShip is not null)
-                            minWarpDist = MathF.Min(minWarpDist, (serverShip.Position - warpPos).Length());
+                        minWarpDist = MathF.Min(minWarpDist, (serverShip.Position - warpPos).Length());
                     }
                     else
                         cs.CommandControls(ControlData.Neutral, 0);
                 }
             }
 
-            if (serverShip is not null && serverShip.EffectiveMaxHitPoints() > 0f)
+            if (serverShip.EffectiveMaxHitPoints() > 0f)
                 minHullFrac = MathF.Min(minHullFrac, serverShip.HitPoints / serverShip.EffectiveMaxHitPoints());
 
             if (cur != lastSector)
@@ -271,6 +282,16 @@ public sealed class ClientWarpApproachDodgeLiveTests
         bot.SendDocked();
         Assert.True(PumpUntil(server, () => server.Ships.Single(l => l.Ship.Id == bot.World.MyShipId).Ship.StationId is null, 4000) < 4000,
             "the flight fixture must launch from the debug hangar");
+        short expectedHull = server.Ships.Single(l => l.Ship.Id == bot.World.MyShipId).Ship.HullType.HullId;
+        // The local hull is supplied by own status; remote-EXPORT bookkeeping
+        // is not a prerequisite for the local ship's actual hull/pose feed.
+        Assert.True(SpinWait.SpinUntil(() =>
+        {
+            lock (bot.Gate)
+                return bot.World.MySideId is not null && bot.World.MyShipId is { } id
+                    && bot.World.Ships.TryGetValue(id, out var own)
+                    && own.HullId == expectedHull && own.Latest is not null && core.HullTypes.ContainsKey(own.HullId);
+        }, TimeSpan.FromSeconds(30)), "flight requires the real own hull, side and pose");
 
         // Sanity: Alderan genuinely has its mining-hub rock field present
         // (nothing stripped) — this is the very field P484 showed blocks a
@@ -282,7 +303,7 @@ public sealed class ClientWarpApproachDodgeLiveTests
         Console.WriteLine($"P489-ARENA: Alderan client-known rocks = {alderanRocks}");
 
         short goal = 1060;                                         // Plato — 2 hops from Omega via Alderan
-        var (finalSector, minWarpDist, minHullFrac, log) = FlyToward(server, bot, core, goal, arrival: 200f, brake: 450f, maxTicks: 60000);
+        var (finalSector, minWarpDist, minHullFrac, log) = FlyToward(server, bot, core, goal, maxTicks: 60000);
 
         Console.WriteLine("P489-DODGE:\n  " + string.Join("\n  ", log));
         Console.WriteLine($"P489-DODGE: final sector {finalSector} vs goal {goal}; minDist-to-hop-warp = {minWarpDist:F1} u; min hull fraction = {minHullFrac:F3} (damage {(1 - minHullFrac) * 100f:F1}%)");

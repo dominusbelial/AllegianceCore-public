@@ -1162,6 +1162,7 @@ public sealed partial class Server
             AllowTacticalPath = g.AllowTacticalPath, AllowSupremacyPath = g.AllowSupremacyPath,
             InitialMinersPerTeam = g.InitialMinersPerTeam,
         });
+        mission.Skills = new SkillTelemetry(++_skillMatchNumber, mission.Sides.Select(s => s.Id));
         foreach (var (side, selection) in researchPlans)
         {
             mission.ResearchPlans[side] = selection.Plan;
@@ -1988,6 +1989,11 @@ public sealed partial class Server
     {
         Boot(configPath, cliOverrides);
         using var cts = new CancellationTokenSource();
+        _ = Task.Run(() =>
+        {
+            while (!cts.IsCancellationRequested && Console.ReadLine() is { } line)
+                if (line.Trim().Equals("skills", StringComparison.OrdinalIgnoreCase)) RequestSkills();
+        });
 
         // On Linux use PosixSignalRegistration to intercept SIGINT (Ctrl-C) and
         // SIGTERM and cancel the loop, letting the loop break and teardown run.

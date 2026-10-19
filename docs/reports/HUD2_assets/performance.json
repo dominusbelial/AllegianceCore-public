@@ -1,0 +1,82 @@
+[
+  {
+    "phase": "battle",
+    "run": "2560x1440-perf-0-Classic",
+    "frames": 1164,
+    "fps": 58.88962280559127,
+    "median_ms": 16.66005,
+    "p99_ms": 21.2721,
+    "median_draw_ms": 5.7781,
+    "raw": "/tmp/HUD2/raw/battle/2560x1440-perf-0-Classic/frames.csv"
+  },
+  {
+    "phase": "battle",
+    "run": "2560x1440-perf-1-Modern",
+    "frames": 1157,
+    "fps": 58.941041408730634,
+    "median_ms": 16.6724,
+    "p99_ms": 23.1419,
+    "median_draw_ms": 5.0692,
+    "raw": "/tmp/HUD2/raw/battle/2560x1440-perf-1-Modern/frames.csv"
+  },
+  {
+    "phase": "battle",
+    "run": "2560x1440-perf-2-Modern",
+    "frames": 1167,
+    "fps": 59.03265629385163,
+    "median_ms": 16.6604,
+    "p99_ms": 20.5115,
+    "median_draw_ms": 5.0558,
+    "raw": "/tmp/HUD2/raw/battle/2560x1440-perf-2-Modern/frames.csv"
+  },
+  {
+    "phase": "battle",
+    "run": "2560x1440-perf-3-Classic",
+    "frames": 1161,
+    "fps": 58.88665810515861,
+    "median_ms": 16.6571,
+    "p99_ms": 20.6828,
+    "median_draw_ms": 5.6051,
+    "raw": "/tmp/HUD2/raw/battle/2560x1440-perf-3-Classic/frames.csv"
+  },
+  {
+    "phase": "uncapped",
+    "run": "2560x1440-perf-0-Classic",
+    "frames": 1584,
+    "fps": 82.28249949777287,
+    "median_ms": 11.34645,
+    "p99_ms": 20.3915,
+    "median_draw_ms": 5.62615,
+    "raw": "/tmp/HUD2/raw/uncapped/2560x1440-perf-0-Classic/frames.csv.gz"
+  },
+  {
+    "phase": "uncapped",
+    "run": "2560x1440-perf-1-Modern",
+    "frames": 1838,
+    "fps": 97.08849664009358,
+    "median_ms": 10.0898,
+    "p99_ms": 14.1048,
+    "median_draw_ms": 4.7135,
+    "raw": "/tmp/HUD2/raw/uncapped/2560x1440-perf-1-Modern/frames.csv.gz"
+  },
+  {
+    "phase": "uncapped",
+    "run": "2560x1440-perf-2-Modern",
+    "frames": 1743,
+    "fps": 89.85849081772788,
+    "median_ms": 10.8453,
+    "p99_ms": 15.3753,
+    "median_draw_ms": 5.3009,
+    "raw": "/tmp/HUD2/raw/uncapped/2560x1440-perf-2-Modern/frames.csv.gz"
+  },
+  {
+    "phase": "uncapped",
+    "run": "2560x1440-perf-3-Classic",
+    "frames": 1755,
+    "fps": 90.78701306210954,
+    "median_ms": 10.7963,
+    "p99_ms": 15.0746,
+    "median_draw_ms": 5.4098,
+    "raw": "/tmp/HUD2/raw/uncapped/2560x1440-perf-3-Classic/frames.csv.gz"
+  }
+]

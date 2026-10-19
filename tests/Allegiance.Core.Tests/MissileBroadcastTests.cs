@@ -154,6 +154,7 @@ public class MissileBroadcastTests
             // Fire TWO missiles directly at the current sim time. Distinct ids
             // (NextObjectId increments per call) and, since both share `now`, both
             // expire together — yielding two distinct destroys, proving no cache.
+            var launchPosition = shooter.Position; // immutable launch-time reference, before receive pumping moves the ship
             double now = mission.LastUpdate;
             shooter.FireMissile(mType, now);
             shooter.FireMissile(mType, now);
@@ -172,8 +173,8 @@ public class MissileBroadcastTests
                 Assert.Equal(mType.ExpendableTypeId, fm.MissileTypeId);
                 Assert.Equal(subjectId, fm.LauncherId);
                 Assert.Equal(shooter.Sector?.Id, fm.ClusterId);
-                Assert.True((e.VecPosition - shooter.Position).Length() < 50f,
-                    $"missile spawn {e.VecPosition} must be near the shooter {shooter.Position}");
+                Assert.True((e.VecPosition - launchPosition).Length() < 50f,
+                    $"missile spawn {e.VecPosition} must be near the launch-time shooter {launchPosition}");
                 float speed = e.VecVelocity.Length();
                 Assert.True(speed > 0f, "missile velocity must be nonzero");
                 float dot = e.VecVelocity.X * e.VecForward.X + e.VecVelocity.Y * e.VecForward.Y + e.VecVelocity.Z * e.VecForward.Z;

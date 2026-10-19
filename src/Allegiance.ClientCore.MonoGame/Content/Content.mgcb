@@ -12,6 +12,13 @@
 
 
 #---------------------------------- Content ---------------------------------#
+#begin HUDModern.spritefont
+/importer:FontDescriptionImporter
+/processor:FontDescriptionProcessor
+/processorParam:PremultiplyAlpha=True
+/processorParam:TextureFormat=Color
+/build:HUDModern.spritefont
+
 #begin HUD.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor

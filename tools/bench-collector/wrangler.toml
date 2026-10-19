@@ -1,0 +1,33 @@
+name = "allegiance-bench-collector"
+main = "dist/worker.js"
+compatibility_date = "2026-07-01"
+workers_dev = true
+
+[build]
+command = "npm run build"
+
+# Deliberately disable invocation logs: request URLs contain the anonymous install ID.
+[observability]
+enabled = false
+
+[[d1_databases]]
+binding = "DB"
+database_name = "benchmark-stats"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
+
+# Replace namespace numbers with unused positive integers in the target account.
+[[ratelimits]]
+name = "IP_LIMIT"
+namespace_id = "1001"
+simple = { limit = 60, period = 60 }
+
+[[ratelimits]]
+name = "INSTALL_LIMIT"
+namespace_id = "1002"
+simple = { limit = 10, period = 60 }
+
+[triggers]
+crons = ["17 3 * * *"]
+
+# ADMIN_TOKEN is set with `wrangler secret put ADMIN_TOKEN`; never put it here.

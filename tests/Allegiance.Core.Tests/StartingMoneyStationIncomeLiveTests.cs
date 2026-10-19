@@ -1,7 +1,10 @@
+using System.Collections;
+using System.Reflection;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.Core.Transport;
 using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
@@ -71,7 +74,7 @@ public class StartingMoneyStationIncomeLiveTests
     {
         int n = 0;
         while (server.SimNow < targetSimNow && n < max) { server.TickSim(); n++; Thread.Sleep(1); }
-        Thread.Sleep(60);
+        Assert.True(server.SimNow >= targetSimNow, "simulation must reach the requested income sample");
         return n;
     }
 
@@ -79,8 +82,22 @@ public class StartingMoneyStationIncomeLiveTests
     {
         int n = 0;
         while (!done() && n < max) { server.TickSim(); n++; Thread.Sleep(1); }
-        Thread.Sleep(60);
         return n;
+    }
+
+    private static readonly FieldInfo PeerShipsField = typeof(Srv)
+        .GetField("_peerShips", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+    private static void ReceiveThroughCurrentTick(Srv server, uint marker, params FltBot[] bots)
+    {
+        // Mark the ordered publications with time fixed, rather than advancing
+        // the economy while waiting for a reader or assuming a 60 ms drain.
+        server.FlushBroadcastSnapshots();
+        var peers = (IDictionary)PeerShipsField.GetValue(server)!;
+        byte[] packet = FedPacket.Pack(new Ping { TimeClient = marker }.Encode());
+        foreach (ConnectionId peer in peers.Keys) server.Host.Send(peer, packet);
+        Assert.True(SpinWait.SpinUntil(() => bots.All(b => b.Pings.Any(p => p.TimeClient == marker)),
+            TimeSpan.FromSeconds(30)), "all income peers must decode the ordered sample marker");
     }
 
     private static short SideOf(Srv server, FltBot bot)
@@ -161,9 +178,9 @@ public class StartingMoneyStationIncomeLiveTests
         Assert.True(expA > 0 && expB > 0, "nonzero starting seeds required");
 
         // Immediate payday: exactly one PAYDAY each, value = the side's starting seed.
-        int settled = PumpUntil(server, () => botA.Paydays.Count >= 1 && botB.Paydays.Count >= 1, 2000);
-        Assert.True(botA.Paydays.Count >= 1 && botB.Paydays.Count >= 1,
-            $"immediate payday must reach both bots; ticks={settled}");
+        ReceiveThroughCurrentTick(server, 0x443a, botA, botB);
+        Assert.Single(botA.Paydays);
+        Assert.Single(botB.Paydays);
         Assert.Equal(expA, botA.Paydays[0].DMoney);
         Assert.Equal(expB, botB.Paydays[0].DMoney);
 
@@ -174,11 +191,13 @@ public class StartingMoneyStationIncomeLiveTests
         // Not immediately again: 10s later, still exactly the one immediate payday each.
         botA.ResetPaydays(); botB.ResetPaydays();
         PumpTo(server, startedAt + 10, 1200);
+        ReceiveThroughCurrentTick(server, 0x443b, botA, botB);
         Assert.Empty(botA.Paydays);
         Assert.Empty(botB.Paydays);
 
         // The next payday is the periodic one ~60s after the real start.
         PumpTo(server, startedAt + 62, 2000);
+        ReceiveThroughCurrentTick(server, 0x443c, botA, botB);
         Assert.Single(botA.Paydays);
         Assert.Single(botB.Paydays);
         long periodicA = (long)(mission.IncomePerPayday * (1.0f + sa.Civilization.IncomeMoney));
@@ -206,7 +225,6 @@ public class StartingMoneyStationIncomeLiveTests
         using var server = new Srv();
         server.Boot(Config());
         var mission = server.Missions[0];
-        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;   // no start money path here
 
         using var bot = new FltBot();
         bot.Connect(server.BoundPort, "p443_si");
@@ -225,8 +243,12 @@ public class StartingMoneyStationIncomeLiveTests
         long baseIncome = (long)(mission.IncomePerPayday * (1.0f + side.Civilization.IncomeMoney));
         long expected = baseIncome + placedIncome;
 
+        mission.Stage = MissionStage.Started;  // no start-money path; arm periodic income only after setup
+        server.TickSim();
+        double origin = server.SimNow;
         bot.ResetPaydays();
-        PumpTo(server, 61.0, 2000);              // first periodic payday
+        PumpTo(server, origin + 61.0, 2000);     // first periodic payday
+        ReceiveThroughCurrentTick(server, 0x443d, bot);
         var pd = Assert.Single(bot.Paydays);
         Assert.Equal(expected, pd.DMoney);                                   // base + station income
         Assert.Equal(placedIncome, expected - baseIncome);                   // the station term is real
@@ -254,7 +276,6 @@ public class StartingMoneyStationIncomeLiveTests
         short sideB = mission.Sides[1].Id;
 
         var station = PlaceType(mission, SpecMineSiTypeId, sideA, 1);   // owned by A
-        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
 
         using var botA = new FltBot();
         using var botB = new FltBot();
@@ -270,8 +291,12 @@ public class StartingMoneyStationIncomeLiveTests
         long baseA = (long)(mission.IncomePerPayday * (1.0f + sideA0.Civilization.IncomeMoney));
         long baseB = (long)(mission.IncomePerPayday * (1.0f + sideB0.Civilization.IncomeMoney));
 
+        mission.Stage = MissionStage.Started;
+        server.TickSim();
+        double origin = server.SimNow;
         onA.ResetPaydays(); onB.ResetPaydays();
-        PumpTo(server, 61.0, 2000);              // first payday: mine still A's
+        PumpTo(server, origin + 61.0, 2000);     // first payday: mine still A's
+        ReceiveThroughCurrentTick(server, 0x443e, onA, onB);
         Assert.Equal(baseA + 2000, onA.Paydays.Single().DMoney);   // A earns the mine's income
         Assert.Equal(baseB, onB.Paydays.Single().DMoney);          // B does not
 
@@ -279,7 +304,10 @@ public class StartingMoneyStationIncomeLiveTests
         station.Capture(sideB);
         Assert.Equal(sideB, station.SideId);     // ownership really moved
 
-        PumpTo(server, 121.0, 2000);             // second payday: mine now B's
+        PumpTo(server, origin + 121.0, 2000);    // second payday: mine now B's
+        ReceiveThroughCurrentTick(server, 0x443f, onA, onB);
+        Assert.Equal(2, onA.Paydays.Count);
+        Assert.Equal(2, onB.Paydays.Count);
         Assert.Equal(baseA, onA.Paydays[1].DMoney);                // A lost the mine's income
         Assert.Equal(baseB + 2000, onB.Paydays[1].DMoney);         // B gained it
 

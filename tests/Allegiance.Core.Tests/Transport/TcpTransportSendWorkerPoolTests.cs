@@ -112,7 +112,7 @@ public class TcpTransportSendWorkerPoolTests
         ns.Write(greet);
         ns.Flush();
 
-        var deadline = DateTime.UtcNow.AddSeconds(5);
+        var deadline = DateTime.UtcNow.AddSeconds(30);
         while (true)
         {
             lock (site.Joined) { if (site.Joined.Count > before) return (site.Joined[before], raw); }
@@ -332,6 +332,8 @@ public class TcpTransportSendWorkerPoolTests
     [Fact]
     public void Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn()
     {
+        int savedPerIp = TcpTransport.MaxConnectionsPerIp;
+        TcpTransport.MaxConnectionsPerIp = 8; // every wave must release every IP slot before the next
         var site = new Site();
         var host = NewHost(site);
         try
@@ -358,7 +360,9 @@ public class TcpTransportSendWorkerPoolTests
                 // Abrupt drop of the whole wave.
                 foreach (var c in waveClients) { try { c.Dispose(); } catch { } }
                 var settle = DateTime.UtcNow.AddSeconds(10);
-                while (host.TrackedThreadCount() > baseline && DateTime.UtcNow < settle) Thread.Sleep(10);
+                while ((host.TrackedThreadCount() > baseline || host.LiveConnectionCount() != 0)
+                       && DateTime.UtcNow < settle) Thread.Sleep(10);
+                Assert.Equal(0, host.LiveConnectionCount());
                 Assert.True(host.TrackedThreadCount() <= baseline,
                     $"wave {wave}: tracked threads did not prune back to {baseline} (got {host.TrackedThreadCount()})");
                 Assert.Equal(PoolWorkers, host.PoolWorkerThreadCount());
@@ -373,6 +377,7 @@ public class TcpTransportSendWorkerPoolTests
         finally
         {
             host.Shutdown();
+            TcpTransport.MaxConnectionsPerIp = savedPerIp;
         }
     }
 

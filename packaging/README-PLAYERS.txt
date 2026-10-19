@@ -118,3 +118,19 @@ results), --benchmark-seconds 3 (short smoke), --benchmark-headless (no graphics
 FPS/GPU and graphics auto-tune are explicitly unavailable). To record a real
 skirmish's incoming transport stream, add --benchmark-record /path/to/battle.alr.
 Normal player bundles include the battle recording and all local host components.
+
+OPTIONAL ANONYMOUS BENCHMARK SHARING
+Sharing defaults to No. When a collector is configured, the benchmark asks
+"Share these results to help improve the recommendations?" Press S for sharing
+settings, Y for Yes, N for No, V for "View what's sent", or D for "Delete my shared
+data" (also resets the random install ID and turns sharing off). You can change
+this later through Options / Settings / Anonymous benchmark sharing.
+
+Shared fields are hardware summary, benchmark timings, settings used/suggested,
+game version/commit and a random ID created only on opt-in. After three play
+sessions or seven days, an optional follow-up identifies settings you changed.
+No pilot names, usernames, hostnames, file paths, serials or IPs are stored in the
+collector. Data is private: raw rows 24 months, anonymous aggregates indefinitely.
+Deletion removes raw results/follow-ups; anonymous aggregates remain. Results are
+always saved locally; uploads and deletion retry offline without blocking play.
+See docs/benchmark/PRIVACY.md in the source distribution for the full notice.

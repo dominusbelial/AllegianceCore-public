@@ -126,6 +126,7 @@ public static class SkirmishSmoke
                             lastCameraPhase = phase; nextViewRequest = watch.Elapsed.TotalSeconds + 2;
                         }
                     }
+                    host.SetFocusSector(benchmarkCamera ? pilot.World.TelemetrySectorOverride ?? ship.SectorId : ship.SectorId);
                     initial ??= pose.Position;
                     distance = Math.Max(distance, (pose.Position - initial.Value).Length());
                     // Steer toward the closest visible enemy; otherwise fly a broad patrol.

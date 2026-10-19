@@ -1,6 +1,9 @@
+using System.Collections;
+using System.Reflection;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
+using Allegiance.Core.Transport;
 using Allegiance.Core.Wire;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
@@ -71,9 +74,28 @@ public class BallotVotingLiveTests
         return n;
     }
 
-    /// <summary>Pump briefly so already-sent broadcasts settle before a test
-    /// resets accumulators (see LiveTeamLeadershipTests.Flush).</summary>
-    private static void Flush(Srv server) => PumpUntil(server, () => false, 40);
+    private static readonly FieldInfo PeerShipsField = typeof(Srv)
+        .GetField("_peerShips", BindingFlags.Instance | BindingFlags.NonPublic)!;
+    private static int _receiptMarker;
+
+    private static void ReceiveThroughCurrentTick(Srv server, params FltBot[] bots)
+    {
+        uint marker = 0x18700000u + unchecked((uint)Interlocked.Increment(ref _receiptMarker));
+        server.FlushBroadcastSnapshots();
+        var peers = (IDictionary)PeerShipsField.GetValue(server)!;
+        byte[] packet = FedPacket.Pack(new Ping { TimeClient = marker }.Encode());
+        foreach (ConnectionId peer in peers.Keys) server.Host.Send(peer, packet);
+        Assert.True(SpinWait.SpinUntil(() => bots.All(b => b.Pings.Any(p => p.TimeClient == marker)),
+            TimeSpan.FromSeconds(30)), "every ballot recipient must decode the ordered phase marker");
+    }
+
+    /// <summary>Retain the setup ticks, then await every reader before resetting
+    /// histories. A fixed number of ticks does not drain the TCP streams.</summary>
+    private static void Flush(Srv server, params FltBot[] bots)
+    {
+        PumpUntil(server, () => false, 40);
+        ReceiveThroughCurrentTick(server, bots);
+    }
 
     private static short Seat(Srv server, FltBot bot, string name)
     {
@@ -100,7 +122,7 @@ public class BallotVotingLiveTests
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));   // A leader+owner of side0
         short bId = Seat(server, b, nb);
         Assert.True(server.TryJoinSide(ShipOf(server, bId), side0));   // B onto occupied side0, not leader
-        Flush(server);
+        Flush(server, a, b);
         Assert.Equal(aId, SideOf(server, side0).LeaderShipId);
         return (aId, bId, side0);
     }
@@ -234,7 +256,7 @@ public class BallotVotingLiveTests
         var (aId, bId, side0) = SeatLeaderAndMate(server, a, b, "BM1", "BM2");
         server.Missions[0].Stage = MissionStage.Started;
 
-        Flush(server);
+        Flush(server, a, b);
         a.ResetBallotSignals();
         b.ResetBallotSignals();
 
@@ -265,7 +287,7 @@ public class BallotVotingLiveTests
         var (aId, bId, side0) = SeatLeaderAndMate(server, a, b, "BL1", "BL2");
         server.Missions[0].Stage = MissionStage.Started;
 
-        Flush(server);
+        Flush(server, a, b);
         a.ResetBallotSignals();
         b.ResetBallotSignals();
 
@@ -295,7 +317,7 @@ public class BallotVotingLiveTests
             var (aId, bId, side0) = SeatLeaderAndMate(server, a, b, "BP1", "BP2");
             server.Missions[0].Stage = MissionStage.Started;
 
-            Flush(server);
+            Flush(server, a, b);
             b.ResetBallotSignals();
             b.ResetLeadershipSignals();
 
@@ -324,7 +346,7 @@ public class BallotVotingLiveTests
             var (aId, bId, side0) = SeatLeaderAndMate(server, a, b, "BF1", "BF2");
             server.Missions[0].Stage = MissionStage.Started;
 
-            Flush(server);
+            Flush(server, a, b);
             b.ResetBallotSignals();
             b.ResetLeadershipSignals();
 
@@ -365,7 +387,7 @@ public class BallotVotingLiveTests
         var (aId, bId, side0) = SeatLeaderAndMate(server, a, b, "BR1", "BR2");
         server.Missions[0].Stage = MissionStage.Started;
 
-        Flush(server);
+        Flush(server, a, b);
         b.ResetBallotSignals();
         b.ResetChatReceived();
 
@@ -402,7 +424,7 @@ public class BallotVotingLiveTests
         short side1 = server.Missions[0].Sides[1].Id;
         Assert.True(server.TryJoinSide(ShipOf(server, cId), side1));
 
-        Flush(server);
+        Flush(server, a, b, c);
         b.ResetBallotSignals();
 
         b.SendChat("#mutiny");                       // side0 ballot; eligible = {A, B}
@@ -448,7 +470,7 @@ public class BallotVotingLiveTests
         var (aId, bId, side0) = SeatLeaderAndMate(server, a, b, "RS1", "RS2");
         server.Missions[0].Stage = MissionStage.Started;
 
-        Flush(server);
+        Flush(server, a, b);
         b.ResetBallotSignals();
         b.ResetLeadershipSignals();
 
@@ -500,7 +522,7 @@ public class BallotVotingLiveTests
         Assert.True(server.TryJoinSide(ShipOf(server, bId), side1));   // B on Bravo
         server.Missions[0].Stage = MissionStage.Started;
 
-        Flush(server);
+        Flush(server, a, b);
         a.ResetBallotSignals();
         b.ResetBallotSignals();
 
@@ -520,6 +542,7 @@ public class BallotVotingLiveTests
         // offer ballot (that was Bravo-only, side-scoped).
         int acceptSeen = PumpUntil(server, () => a.Ballots.Count >= 1, 800);
         Assert.True(acceptSeen < 800, "passing offer-draw did not create the accept-draw ballot for the other side");
+        ReceiveThroughCurrentTick(server, a, b);
         Assert.Equal(2, b.Ballots.Count);      // offer (side) + accept (mission-wide)
         Assert.Single(a.Ballots);             // A saw only the accept ballot
 
@@ -589,7 +612,7 @@ public class BallotVotingLiveTests
         server.Missions[0].Stage = MissionStage.Started;
         server.Missions[1].Stage = MissionStage.Started;
 
-        Flush(server);
+        Flush(server, a0, b0, a1, a0b);
         a0.ResetBallotSignals();
         b0.ResetBallotSignals();
         a1.ResetBallotSignals();
@@ -599,6 +622,7 @@ public class BallotVotingLiveTests
         a0b.SendChat("#mutiny");
         int seen = PumpUntil(server, () => a0b.Ballots.Count >= 1, 800);
         Assert.True(seen < 800, "mission A side0 mutiny did not create a ballot");
+        ReceiveThroughCurrentTick(server, a0, b0, a1, a0b);
 
         // Mission A side0's own peers heard it…
         Assert.Single(a0b.Ballots);

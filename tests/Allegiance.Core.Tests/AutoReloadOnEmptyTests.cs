@@ -24,6 +24,7 @@ namespace Allegiance.Core.Tests;
 /// pervasive "fuel is a documented no-op" in <c>Ship.cs</c>), so native
 /// <c>SetFuel</c>'s structurally-identical block has no live trigger.
 /// </summary>
+[Collection("LiveNetwork")]
 public class AutoReloadOnEmptyTests
 {
     private static readonly Lazy<StaticCore> RepresentativeCore = new(() =>
@@ -348,6 +349,10 @@ public class AutoReloadOnEmptyTests
             {
                 bots[i].Connect(server.BoundPort, names[i]);
                 bots[i].SendLogonRequest(Request(names[i]));
+                // This fixture assigns roles by bot index. Seat in that order
+                // so bots[0] is in the same-side pair, never the lone other side.
+                PumpUntil(server, () => bots[i].ShipAssignment is not null, 4000);
+                Assert.NotNull(bots[i].ShipAssignment);
             }
             PumpUntil(server, () => bots.All(b => b.ShipAssignment is not null), 4000);
             Assert.True(bots.All(b => b.ShipAssignment is not null), "all three bots must be assigned a ship");

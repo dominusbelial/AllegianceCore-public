@@ -152,6 +152,16 @@ public class ClientWalletLiveTests
         foreach (var s in sessions) s.SendPlayerReady(fReady: true, shipId: s.World.MyShipId!.Value);
         int n = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Started, 6000);
         Assert.True(n < 6000, $"mission never reached Started (stage={server.Missions[0].Stage})");
+        // Starting seeds money and emits an initial payday before its terminal
+        // stage announcement (native fsmission.cpp:1992–2001,2278). The server
+        // transition does not mean the clients have decoded those credits yet.
+        var balances = sessions.Select(s => (Session: s, Money: WalletOf(server, s.World.MyShipId!.Value))).ToArray();
+        Assert.True(SpinWait.SpinUntil(() => balances.All(b =>
+        {
+            lock (b.Session.Gate)
+                return b.Session.World.Mission?.Stage == MissionStageMessage.StageStarted
+                    && b.Session.World.MyMoney == b.Money;
+        }), TimeSpan.FromSeconds(30)), "clients must decode Started and the initial payday before sampling money");
     }
 
     private static int? MyMoney(ConnectionSession s)
@@ -301,9 +311,22 @@ public class ClientWalletLiveTests
 
         donor.SendBucketDonate(bucket.Id, donate);
 
-        int seen = PumpUntil(server,
-            () => { lock (donor.Gate) return donor.World.MyMoney is { } m && m == before - donate; }, 4000);
-        Assert.True(seen < 4000,
+        // Pace request processing at the configured 20 Hz so waiting for ingress
+        // cannot consume whole paydays in a tight simulation loop.
+        var dispatch = System.Diagnostics.Stopwatch.StartNew();
+        long nextTick = 0;
+        Assert.True(SpinWait.SpinUntil(() =>
+        {
+            if (dispatch.ElapsedMilliseconds >= nextTick)
+            {
+                server.TickSim();
+                nextTick = dispatch.ElapsedMilliseconds + 50;
+            }
+            return WalletOf(server, me) == 100_000 - donate;
+        }, TimeSpan.FromSeconds(30)), "server wallet must spend the donation exactly once");
+        // Freeze physics once the debit is authoritative; the independent client
+        // reader may still be decoding the resulting MONEY_CHANGE.
+        Assert.True(SpinWait.SpinUntil(() => MyMoney(donor) == before - donate, TimeSpan.FromSeconds(30)),
             $"donor client MyMoney never fell by exactly {donate} (before={before}, now={MyMoney(donor)})");
 
         // Exactly one decrement (no double count): the client landed on

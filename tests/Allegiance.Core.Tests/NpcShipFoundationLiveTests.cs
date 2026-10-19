@@ -159,10 +159,10 @@ public sealed class NpcShipFoundationLiveTests
         seat.Bot.ResetHeavyShipsUpdates();
 
         // Run enough ticks for at least one full broadcast cycle.
-        PumpUntil(seat.Server, () => seat.Bot.HeavyShipsUpdates.Count > 0, 1000);
-        Assert.True(seat.Bot.HeavyShipsUpdates.Count > 0, "peer must receive HEAVY_SHIPS_UPDATE after NPC spawn");
+        PumpUntil(seat.Server, () => seat.Bot.HeavyShipsUpdates.Any(u => HasEntry(u, npc.Id)), 20000);
+        Assert.Contains(seat.Bot.HeavyShipsUpdates, u => HasEntry(u, npc.Id));
 
-        var up = seat.Bot.HeavyShipsUpdates[0];
+        var up = seat.Bot.HeavyShipsUpdates.First(u => HasEntry(u, npc.Id));
 
         // The ownerless NPC appears in the real peer's heavy stream.
         Assert.True(HasEntry(up, npc.Id),

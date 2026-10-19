@@ -178,6 +178,9 @@ public class LiveTeamLobbyToggleTests
         int got = PumpUntil(server,
             () => server.Missions[0].LockLobby && a.LockLobbys.Any(x => x.FLock), 800);
         Assert.True(got < 800, "owner's LOCK_LOBBY(true) did not set Mission.LockLobby and relay");
+        Assert.True(SpinWait.SpinUntil(() => a.LockLobbys.Any(x => x.FLock)
+            && b.LockLobbys.Any(x => x.FLock), TimeSpan.FromSeconds(30)),
+            "both peers must decode the whole-mission lobby lock before reset");
 
         Assert.True(server.Missions[0].LockLobby);
         Assert.Contains(a.LockLobbys, x => x.FLock);
@@ -188,6 +191,9 @@ public class LiveTeamLobbyToggleTests
         a.SendLockLobby(false);
         int ugot = PumpUntil(server, () => !server.Missions[0].LockLobby, 800);
         Assert.True(ugot < 800, "owner's LOCK_LOBBY(false) did not clear Mission.LockLobby");
+        Assert.True(SpinWait.SpinUntil(() => a.LockLobbys.Any(x => !x.FLock)
+            && b.LockLobbys.Any(x => !x.FLock), TimeSpan.FromSeconds(30)),
+            "both peers must decode the whole-mission lobby unlock");
     }
 
     /// <summary>⭐ A non-owner — even another side's TEAM LEADER — is refused:
@@ -253,6 +259,9 @@ public class LiveTeamLobbyToggleTests
         a.SendLockSides(true);
         int got = PumpUntil(server, () => server.Missions[0].LockSides, 800);
         Assert.True(got < 800, "owner's LOCK_SIDES(true) did not set Mission.LockSides");
+        Assert.True(SpinWait.SpinUntil(() => a.LockSidess.Any(x => x.FLock)
+            && b.LockSidess.Any(x => x.FLock), TimeSpan.FromSeconds(30)),
+            "both peers must decode the whole-mission sides lock before reset");
         Assert.True(server.Missions[0].LockSides);
         Assert.Contains(b.LockSidess, x => x.FLock);   // whole-mission relay
 
@@ -262,6 +271,13 @@ public class LiveTeamLobbyToggleTests
         // B (non-owner) tries to unlock — refused, flag stays true.
         b.SendLockSides(false);
         Flush(server);
+        const uint marker = 0x186b;
+        b.SendPing(marker);
+        Assert.True(SpinWait.SpinUntil(() =>
+        {
+            server.TickSim();
+            return b.Pings.Any(p => p.TimeClient == marker);
+        }, TimeSpan.FromSeconds(30)), "ordered echo must follow the refused non-owner unlock");
         Assert.True(server.Missions[0].LockSides);     // unchanged
         Assert.Empty(b.LockSidess);                    // no relay
     }

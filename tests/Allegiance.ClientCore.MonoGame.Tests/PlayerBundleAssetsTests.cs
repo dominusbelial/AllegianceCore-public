@@ -63,6 +63,24 @@ public sealed class PlayerBundleAssetsTests : IDisposable
     }
 
     [Fact]
+    public void BenchmarkCollectorUsesNestedConfigAndEmptyDisablesSharing()
+    {
+        string path = Path.Combine(_root, "benchmark-player.json");
+        File.WriteAllText(path, """{"benchmark":{"collectorUrl":"https://collector.example"}}""");
+        Assert.Equal("https://collector.example", PlayerConfig.Load(path).Benchmark!.CollectorUrl);
+        File.WriteAllText(path, """{"benchmark":{"collectorUrl":""}}""");
+        Assert.Equal("", PlayerConfig.Load(path).Benchmark!.CollectorUrl);
+        File.WriteAllText(path, "{}");
+        Assert.Null(PlayerConfig.Load(path).Benchmark);
+        foreach (string invalid in new[] { "false", "[]", "123", "{\"collectorUrl\":123}" })
+        {
+            File.WriteAllText(path, "{\"pilot\":\"example\",\"benchmark\":" + invalid + "}");
+            Assert.Equal("", PlayerConfig.Load(path).Benchmark!.CollectorUrl);
+            Assert.Equal("example", PlayerConfig.Load(path).Pilot);
+        }
+    }
+
+    [Fact]
     public void MalformedPlayerConfigFailsClearly()
     {
         string path = Path.Combine(_root, "player.json"); File.WriteAllText(path, "{");

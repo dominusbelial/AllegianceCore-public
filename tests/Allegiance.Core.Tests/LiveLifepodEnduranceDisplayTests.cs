@@ -91,7 +91,7 @@ public class LiveLifepodEnduranceDisplayTests
         private SetCluster? _set;
         private readonly List<Eject> _ejects = new();
         private readonly List<EnterLifepod> _pods = new();
-        private readonly Dictionary<short, List<float>> _fuels = new();
+        private readonly Dictionary<short, List<ServerShipUpdate>> _fuels = new();
 
         public LogonAck? Ack { get { lock (_gate) return _ack; } }
         public SetCluster? ShipAssignment { get { lock (_gate) return _set; } }
@@ -99,11 +99,14 @@ public class LiveLifepodEnduranceDisplayTests
         public IReadOnlyList<EnterLifepod> Pods { get { lock (_gate) return _pods.ToArray(); } }
 
         /// <summary>Latest observed fuel fraction for a ship (null = none yet).</summary>
-        public float? LastFuel(short id) { lock (_gate) return _fuels.TryGetValue(id, out var l) && l.Count > 0 ? l[^1] : null; }
+        public float? LastFuel(short id) { lock (_gate) return _fuels.TryGetValue(id, out var l) && l.Count > 0 ? l[^1].FuelFraction : null; }
         /// <summary>How many fuel-bearing updates we've seen for a ship (0 = none).</summary>
         public int FuelCount(short id) { lock (_gate) return _fuels.TryGetValue(id, out var l) ? l.Count : 0; }
         /// <summary>All observed fuel fractions for a ship.</summary>
-        public IReadOnlyList<float> Fuels(short id) { lock (_gate) return _fuels.TryGetValue(id, out var l) ? l.ToArray() : Array.Empty<float>(); }
+        public IReadOnlyList<float> Fuels(short id) { lock (_gate) return _fuels.TryGetValue(id, out var l) ? l.Select(u => u.FuelFraction).ToArray() : Array.Empty<float>(); }
+
+        public IReadOnlyList<ServerShipUpdate> Updates(short id)
+        { lock (_gate) return _fuels.TryGetValue(id, out var l) ? l.ToArray() : []; }
 
         public WireClient() => _t = new TcpTransport(this);
 
@@ -132,7 +135,7 @@ public class LiveLifepodEnduranceDisplayTests
                         case EnterLifepod.Fmid: _pods.Add(EnterLifepod.Decode(m)); break;
                         case SingleShipUpdate.Fmid:
                             var su = SingleShipUpdate.Decode(m);
-                            (_fuels.TryGetValue(su.OidTarget, out var l) ? l : (_fuels[su.OidTarget] = new List<float>())).Add(su.Ship.FuelFraction);
+                            (_fuels.TryGetValue(su.OidTarget, out var l) ? l : (_fuels[su.OidTarget] = new List<ServerShipUpdate>())).Add(su.Ship);
                             break;
                     }
                 }
@@ -236,6 +239,11 @@ public class LiveLifepodEnduranceDisplayTests
         {
             if (ticks % 4 == 0) driverShip.Velocity = new Vector3(20f, 0f, 0f);   // nudge to keep channels dirty
             server.TickSim();
+            uint sampleTime = (uint)server.LoopIterations;
+            // Decode this simulation timestamp before advancing again. Otherwise
+            // latest-wins coalescing can erase the near-full/low samples entirely.
+            Assert.True(SpinWait.SpinUntil(() => driver.Updates(driverId).Any(u => u.Time >= sampleTime),
+                TimeSpan.FromSeconds(30)), $"no owner oxygen update at {sampleTime}");
         }
 
         // (1) the DRIVER saw a real countdown: its own-ship fuel fraction spans
@@ -270,16 +278,23 @@ public class LiveLifepodEnduranceDisplayTests
         // berthed (StationId non-null → GetEndurance reads 1.0 / inactive).
         short stationId = server.Missions[0].Sectors.SelectMany(s => s.Stations).First().StationId;
         driverShip.StationId = stationId;
-        int driverCountBefore = driver.FuelCount(driverId);
+        uint dockTime = (uint)server.LoopIterations + 1;
+        // Force a dirty own pose while berthed so the wire assertion has a
+        // post-dock sample even when the stationary pod would send no update.
+        driverShip.Position += new Vector3(2f, 0f, 0f);
         for (int i = 0; i < 30; i++)
         {
             if (i % 4 == 0) driverShip.Velocity = new Vector3(20f, 0f, 0f);
             server.TickSim();
-            // A berthed ship may stop broadcasting its own update; only assert
-            // on updates that actually arrived post-berth (the countdown stops).
-            if (driver.FuelCount(driverId) > driverCountBefore && driver.LastFuel(driverId) is { } dF)
-                Assert.True(dF >= 1.0f - 1e-3f, $"driver's countdown was not inactive while docked (got {dF:F3})");
         }
+        Assert.True(SpinWait.SpinUntil(() => driver.Updates(driverId).Any(u => u.Time >= dockTime),
+            TimeSpan.FromSeconds(30)), "no post-dock owner update");
+        Assert.Equal(1f, driverShip.LifepodEnduranceFraction(driverShip.Mission!.LastUpdate));
+        // A late pre-dock frame is still a valid depleted sample. Classify by
+        // its server timestamp, never by when the receive thread happened to run.
+        Assert.All(driver.Updates(driverId).Where(u => u.Time >= dockTime),
+            u => Assert.True(u.FuelFraction >= 1.0f - 1e-3f,
+                $"driver's countdown was not inactive while docked (got {u.FuelFraction:F3})"));
 
         Console.WriteLine($"[endurance] driver pod {driverId}: {driverFracs.Count} samples, max {driverFracs.Max():F3} -> min {driverFracs.Min():F3} declining; same-side watcher {(sameSideWatcher is null ? -1 : sameSideWatcher.FuelCount(driverId))} relays flat 1.0; docked -> inactive 1.0.");
     }

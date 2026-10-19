@@ -1,0 +1,180 @@
+{
+  "schema": 1,
+  "eventId": "11111111-1111-4111-8111-111111111111",
+  "installId": "22222222-2222-4222-8222-222222222222",
+  "timestamp": "2026-10-19T00:00:00+00:00",
+  "gameVersion": "1.0.0.0",
+  "commit": "unknown",
+  "hardware": {
+    "cpuModel": "Example CPU",
+    "cpuCores": 4,
+    "cpuThreads": 8,
+    "gpuModel": "Example GPU",
+    "gpuVramGb": 8,
+    "gpuDriver": "1.2",
+    "ramGb": 16,
+    "os": "Linux",
+    "osVersion": "6.8",
+    "width": 1920,
+    "height": 1080
+  },
+  "result": {
+    "mode": "skirmish",
+    "preset": "Small",
+    "durationSeconds": 150,
+    "bottleneck": "Within measured budget",
+    "runs": [
+      {
+        "repetition": 1,
+        "rendered": true,
+        "wallSeconds": 0,
+        "fpsAverage": 81.5,
+        "fpsOnePercentLow": 62,
+        "frameMs": {
+          "count": 3,
+          "mean": 12.333333333333334,
+          "p50": 12,
+          "p95": 15,
+          "p99": 15,
+          "worst": 15
+        },
+        "cpuMs": 4,
+        "gpuMs": 8,
+        "serverTickMs": {
+          "count": 3,
+          "mean": 6,
+          "p50": 6,
+          "p95": 8,
+          "p99": 8,
+          "worst": 8
+        },
+        "botCount": 9,
+        "botDecisionCpuMs": [
+          42.5
+        ],
+        "amortizedCpuMsPerBotSecond": null
+      },
+      {
+        "repetition": 2,
+        "rendered": true,
+        "wallSeconds": 0,
+        "fpsAverage": 81.5,
+        "fpsOnePercentLow": 62,
+        "frameMs": {
+          "count": 3,
+          "mean": 12.333333333333334,
+          "p50": 12,
+          "p95": 15,
+          "p99": 15,
+          "worst": 15
+        },
+        "cpuMs": 4,
+        "gpuMs": 8,
+        "serverTickMs": {
+          "count": 3,
+          "mean": 6,
+          "p50": 6,
+          "p95": 8,
+          "p99": 8,
+          "worst": 8
+        },
+        "botCount": 9,
+        "botDecisionCpuMs": [
+          42.5
+        ],
+        "amortizedCpuMsPerBotSecond": null
+      },
+      {
+        "repetition": 3,
+        "rendered": true,
+        "wallSeconds": 0,
+        "fpsAverage": 81.5,
+        "fpsOnePercentLow": 62,
+        "frameMs": {
+          "count": 3,
+          "mean": 12.333333333333334,
+          "p50": 12,
+          "p95": 15,
+          "p99": 15,
+          "worst": 15
+        },
+        "cpuMs": 4,
+        "gpuMs": 8,
+        "serverTickMs": {
+          "count": 3,
+          "mean": 6,
+          "p50": 6,
+          "p95": 8,
+          "p99": 8,
+          "worst": 8
+        },
+        "botCount": 9,
+        "botDecisionCpuMs": [
+          42.5
+        ],
+        "amortizedCpuMsPerBotSecond": null
+      }
+    ],
+    "median": {
+      "repetition": 1,
+      "rendered": true,
+      "wallSeconds": 0,
+      "fpsAverage": 81.5,
+      "fpsOnePercentLow": 62,
+      "frameMs": {
+        "count": 3,
+        "mean": 12.333333333333334,
+        "p50": 12,
+        "p95": 15,
+        "p99": 15,
+        "worst": 15
+      },
+      "cpuMs": 4,
+      "gpuMs": 8,
+      "serverTickMs": {
+        "count": 3,
+        "mean": 6,
+        "p50": 6,
+        "p95": 8,
+        "p99": 8,
+        "worst": 8
+      },
+      "botCount": 9,
+      "botDecisionCpuMs": [
+        42.5
+      ],
+      "amortizedCpuMsPerBotSecond": null
+    },
+    "settingsUsed": {
+      "battleSize": 0,
+      "difficulty": 1,
+      "researchSpeed": 1,
+      "spectatorDefault": true,
+      "fsr": false,
+      "fsrPreset": 1,
+      "bloom": false,
+      "hdPbr": true,
+      "hdTextures": true,
+      "frameCap": 60,
+      "vsync": false,
+      "effectsDensity": 1,
+      "viewDistance": 6000
+    },
+    "settingsSuggested": {
+      "battleSize": 0,
+      "difficulty": 1,
+      "researchSpeed": 1,
+      "spectatorDefault": true,
+      "fsr": false,
+      "fsrPreset": 1,
+      "bloom": false,
+      "hdPbr": true,
+      "hdTextures": true,
+      "frameCap": 60,
+      "vsync": false,
+      "effectsDensity": 1,
+      "viewDistance": 6000
+    },
+    "autoTune": []
+  }
+}

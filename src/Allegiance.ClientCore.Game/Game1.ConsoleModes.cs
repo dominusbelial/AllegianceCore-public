@@ -20,7 +20,7 @@ public sealed partial class Game1
     private readonly FlightCameraZoom _flightZoom = new();
     private static readonly string[] ConsoleActions = ["ConModeCombat", "ConModeGameState", "ConModeNav",
         "ConModeInventory", "TeamPane", "ConModeMiniTeam", "ViewExternal", "ToggleGrid"];
-    private static readonly string[] MainMenuItems = ["Resume", "Help / quick reference", "Controls", "Credits / licences", "Game state", "Quit"];
+    private static readonly string[] MainMenuItems = ["Resume", "Help / quick reference", "Controls", "Credits / licences", "Game state", "Quit", "Settings"];
 
     private bool ConsoleEdge(KeyboardState keys, string action)
     {
@@ -164,11 +164,12 @@ public sealed partial class Game1
                     case 3: _creditsVisible = true; break;
                     case 4: if (_state == ClientState.Flying) ApplyConsoleMode("ConModeGameState"); break;
                     case 5: Exit(); break;
-                    case 6: ToggleSkirmishPause(); break;
-                    case 7: StopSkirmish(); break;
-                    case 8: RequestSkirmishSeat(0); break;
-                    case 9: RequestSkirmishSeat(1); break;
-                    case 10: RequestSkirmishSeat(null); break;
+                    case 6: _graphicsSettingsVisible = true; _graphicsRow = 6; _graphicsPrevious = keys; break;
+                    case 7: ToggleSkirmishPause(); break;
+                    case 8: StopSkirmish(); break;
+                    case 9: RequestSkirmishSeat(0); break;
+                    case 10: RequestSkirmishSeat(1); break;
+                    case 11: RequestSkirmishSeat(null); break;
                 }
             }
         }

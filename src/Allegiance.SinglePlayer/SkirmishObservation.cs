@@ -68,6 +68,7 @@ public sealed partial class SkirmishHost
     // In-process only: dedicated servers gain no spectator privilege or remote endpoint.
     public SkirmishObservation Observe(short sectorId)
     {
+        SetFocusSector(sectorId);
         lock (_simGate)
         {
             var mission = _server.Missions[0];
@@ -135,4 +136,7 @@ internal sealed record SkirmishSeatCommand(long Id, string Command, short? Side)
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(SkirmishSeatCommand))]
+[JsonSerializable(typeof(SkirmishFocusCommand))]
 internal sealed partial class SkirmishProtocolContext : JsonSerializerContext;
+
+internal sealed record SkirmishFocusCommand(long Id, string Command, short? Sector);

@@ -313,6 +313,7 @@ public sealed partial class Game1
             float y = 60;
             foreach (var line in lines)
             {
+                if (_hudSettings.Style == HudStyle.Modern) continue;
                 var size = _hudSmall.MeasureString(line);
                 _spriteBatch.DrawString(_hudSmall, line, new Vector2((GraphicsDevice.Viewport.Width - size.X) / 2, y), Color.Cyan);
                 y += size.Y + 4;

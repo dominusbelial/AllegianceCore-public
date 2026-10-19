@@ -1,0 +1,220 @@
+[
+  {
+    "match": 1,
+    "side": 0,
+    "state": "final",
+    "counts": {
+      "flight": 28,
+      "warp": 73,
+      "autopilot": 13,
+      "targeting": 495,
+      "guns": 17556,
+      "missiles": 55,
+      "chaff": 0,
+      "booster": 18,
+      "cloak": 0,
+      "probes": 0,
+      "scouting": 166,
+      "mines": 0,
+      "ship-damage": 8900,
+      "station-damage": 3,
+      "station-kills": 1,
+      "nanite-ship": 0,
+      "nanite-station": 0,
+      "order-goto": 0,
+      "order-attack": 0,
+      "order-build": 134,
+      "order-repair": 0,
+      "drone-build": 7,
+      "drone-mine": 0,
+      "eject": 18,
+      "pod-rescue": 7,
+      "dock": 7,
+      "relaunch": 34,
+      "purchase": 32,
+      "research": 44,
+      "chat": 108,
+      "voice": 146,
+      "ship-kills": 40
+    },
+    "covered": 17,
+    "total": 32,
+    "gaps": [
+      {
+        "id": "flight",
+        "count": 28,
+        "minimum": 50
+      },
+      {
+        "id": "missiles",
+        "count": 55,
+        "minimum": 100
+      },
+      {
+        "id": "chaff",
+        "count": 0,
+        "minimum": 10
+      },
+      {
+        "id": "booster",
+        "count": 18,
+        "minimum": 20
+      },
+      {
+        "id": "cloak",
+        "count": 0,
+        "minimum": 5
+      },
+      {
+        "id": "probes",
+        "count": 0,
+        "minimum": 10
+      },
+      {
+        "id": "mines",
+        "count": 0,
+        "minimum": 5
+      },
+      {
+        "id": "station-damage",
+        "count": 3,
+        "minimum": 20
+      },
+      {
+        "id": "nanite-ship",
+        "count": 0,
+        "minimum": 10
+      },
+      {
+        "id": "nanite-station",
+        "count": 0,
+        "minimum": 10
+      },
+      {
+        "id": "order-goto",
+        "count": 0,
+        "minimum": 5
+      },
+      {
+        "id": "order-attack",
+        "count": 0,
+        "minimum": 5
+      },
+      {
+        "id": "order-repair",
+        "count": 0,
+        "minimum": 2
+      },
+      {
+        "id": "drone-mine",
+        "count": 0,
+        "minimum": 10
+      },
+      {
+        "id": "dock",
+        "count": 7,
+        "minimum": 20
+      }
+    ],
+    "missing": []
+  },
+  {
+    "match": 1,
+    "side": 1,
+    "state": "final",
+    "counts": {
+      "flight": 30,
+      "warp": 146,
+      "autopilot": 15,
+      "targeting": 423,
+      "guns": 11619,
+      "missiles": 118,
+      "chaff": 0,
+      "booster": 21,
+      "cloak": 0,
+      "probes": 0,
+      "scouting": 271,
+      "mines": 0,
+      "ship-damage": 4390,
+      "station-damage": 50,
+      "station-kills": 7,
+      "nanite-ship": 0,
+      "nanite-station": 0,
+      "order-goto": 0,
+      "order-attack": 0,
+      "order-build": 125,
+      "order-repair": 0,
+      "drone-build": 8,
+      "drone-mine": 0,
+      "eject": 37,
+      "pod-rescue": 10,
+      "dock": 36,
+      "relaunch": 65,
+      "purchase": 63,
+      "research": 66,
+      "chat": 161,
+      "voice": 137,
+      "ship-kills": 22
+    },
+    "covered": 21,
+    "total": 32,
+    "gaps": [
+      {
+        "id": "flight",
+        "count": 30,
+        "minimum": 50
+      },
+      {
+        "id": "chaff",
+        "count": 0,
+        "minimum": 10
+      },
+      {
+        "id": "cloak",
+        "count": 0,
+        "minimum": 5
+      },
+      {
+        "id": "probes",
+        "count": 0,
+        "minimum": 10
+      },
+      {
+        "id": "mines",
+        "count": 0,
+        "minimum": 5
+      },
+      {
+        "id": "nanite-ship",
+        "count": 0,
+        "minimum": 10
+      },
+      {
+        "id": "nanite-station",
+        "count": 0,
+        "minimum": 10
+      },
+      {
+        "id": "order-goto",
+        "count": 0,
+        "minimum": 5
+      },
+      {
+        "id": "order-attack",
+        "count": 0,
+        "minimum": 5
+      },
+      {
+        "id": "order-repair",
+        "count": 0,
+        "minimum": 2
+      },
+      {
+        "id": "drone-mine",
+        "count": 0,
+        "minimum": 10
+      }
+    ],
+    "missing": []
+  }
+]

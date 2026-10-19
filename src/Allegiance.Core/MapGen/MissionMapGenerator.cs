@@ -1265,7 +1265,7 @@ public sealed class MissionMapGenerator
 
         _asteroids.Add(new DataAsteroidIGC(
             Signature: signature,
-            Position: RandomAsteroidPosition(),
+            Position: RandomAsteroidPosition(clusterId, radius),
             Up: up,
             Forward: fwd,
             Rotation: [fwd[0], fwd[1], fwd[2], 0.2f / signature],
@@ -1335,14 +1335,45 @@ public sealed class MissionMapGenerator
         return len < 1e-6f ? [0f, 0f, 1f] : [v[0] / len, v[1] / len, v[2] / len];
     }
 
-    /// <summary>Native asteroid volume/lens rule (common.cpp:2814-2818,
-    /// 2882-2884). Existing generator does not perform model clearance retries.</summary>
-    private float[] RandomAsteroidPosition()
+    /// <summary>Native model-aware placement (common.cpp:2803-2841,2882-2884):
+    /// floor both radii at 550, reject squared distances below 2*(r1+r2)^2,
+    /// and expand the sampling radius by 1.02 after each rejection.</summary>
+    private float[] RandomAsteroidPosition(short clusterId, float asteroidRadius)
     {
-        // Igc/common.cpp:2814-2818,2882-2884: uniform volume in the
-        // loaded universe's 0.75-radius ellipsoid, with loaded lens on Z.
-        var dir = RandomDirection();
-        float dist = MajorRadius * 0.75f * MathF.Cbrt((float)Random.Shared.NextDouble());
-        return [dir[0] * dist, dir[1] * dist, dir[2] * dist * FloatConst(0)];
+        float radius = MajorRadius * .75f;
+        float lens = FloatConst(0);
+        if (!float.IsFinite(radius) || radius <= 0f || !float.IsFinite(lens))
+            throw new InvalidDataException("asteroid placement requires a finite positive universe radius and finite lens");
+        float rThing = Math.Max(550f, asteroidRadius);
+        // These are exactly the models already created in this cluster at the
+        // native CreateAsteroid call: warps, its station(s), and earlier rocks.
+        var models = _warps.Where(w => w.ClusterId == clusterId)
+            .Select(w => (Position: w.Position!, Radius: (float)w.Radius))
+            .Concat(_stations.Where(s => s.ClusterId == clusterId)
+                .Select(s => (Position: s.Position, Radius: _core.StationTypes[s.StationTypeId].Radius)))
+            .Concat(_asteroids.Where(a => a.ClusterId == clusterId)
+                .Select(a => (Position: a.Position, Radius: (float)a.Radius)))
+            .ToArray();
+        while (true)
+        {
+            var direction = RandomDirection();
+            float distance = radius * MathF.Cbrt((float)Random.Shared.NextDouble());
+            float[] position = [direction[0] * distance, direction[1] * distance, direction[2] * distance * lens];
+            bool clear = true;
+            foreach (var model in models)
+            {
+                float r = Math.Max(550f, model.Radius) + rThing;
+                float dx = model.Position[0] - position[0];
+                float dy = model.Position[1] - position[1];
+                float dz = model.Position[2] - position[2];
+                if (dx * dx + dy * dy + dz * dz < 2f * r * r)
+                {
+                    radius *= 1.02f;
+                    clear = false;
+                    break;
+                }
+            }
+            if (clear) return position;
+        }
     }
 }

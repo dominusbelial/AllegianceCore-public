@@ -122,7 +122,9 @@ public sealed class RadarTargetHighlightLiveTests
             () =>
             {
                 lock (peer.Gate)
-                    return peer.World.Ships.TryGetValue(enemy.Id, out var e) && e.HasRealIdentity;
+                    return peer.World.Ships.TryGetValue(enemy.Id, out var e) && e.HasRealIdentity && e.Latest is not null
+                        && peer.World.MyShipId is { } me && peer.World.Ships.TryGetValue(me, out var own)
+                        && own.Latest is not null;
             },
             6000);
         Assert.True(identified < 6000, "peer never received the enemy's real identity");

@@ -14,6 +14,7 @@ public sealed class P729BenchmarkTests
     {
         var command = BenchmarkCommand.Parse(["--benchmark", "skirmish:large", "--benchmark-seconds", "2", "--benchmark-headless"])!;
         Assert.Equal(SkirmishSize.Large, command.Size);
+        Assert.False(command.Options.StartAsSpectator);
         Assert.Equal(729, command.Options.CreateConfig().BenchmarkSeed);
         Assert.Equal(new[] { 25, 3 }, command.Options.CreateConfig().Games[0].CivIds);
         Assert.Equal("m2xspiderw.igc", command.Options.Map);

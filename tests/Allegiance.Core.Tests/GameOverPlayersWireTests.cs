@@ -213,6 +213,8 @@ public sealed class GameOverPlayersWireTests
         // assertions target the ORIGINAL mission object.
         var mission0 = server.Missions[0];
 
+        // Rotation replaces the survivor's ship assignment asynchronously; retain the old match identity.
+        short aceSide = server.Ships.First(s => s.Ship.Id == a.ShipAssignment!.Ship.ShipId).Ship.SideId!.Value;
         b.Dispose();                                    // empties Bee's side → Ace's side wins
         int seen = PumpUntil(server, () => mission0.Stage == MissionStage.Over
                                            && a.GameOvers.Count > 0 && a.GameOverPlayerBroadcasts.Count > 0, 900);
@@ -224,7 +226,6 @@ public sealed class GameOverPlayersWireTests
         var gop = Assert.Single(a.GameOverPlayerBroadcasts);
         var entry = Assert.Single(gop.Entries);         // only the still-connected peer
         Assert.Equal("Ace", entry.CharacterName);
-        short aceSide = server.Ships.First(s => s.Ship.Id == a.ShipAssignment!.Ship.ShipId).Ship.SideId!.Value;
         Assert.Equal(aceSide, entry.SideId);
         Assert.Equal((short)4, entry.Rank);
         Assert.True(entry.Score > 0, "P583 game-over roster must carry a computed non-zero score");

@@ -12,6 +12,36 @@ public class IntroPreferencesTests
         => Path.Combine(Path.GetTempPath(), "p731-" + Guid.NewGuid().ToString("N") + ".json");
 
     [Fact]
+    public void Ordinary_preference_saves_preserve_the_benchmark_collector_setting()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "bs1-prefs-" + Guid.NewGuid() + ".json");
+        try
+        {
+            File.WriteAllText(path, """{"pilot":"example","benchmark":{"collectorUrl":"https://collector.example"}}""");
+            var prefs = IntroPreferences.Load(path);
+            prefs.Pilot = "updated"; prefs.ShowStartupTrainingSuggestion = false;
+            prefs.Save(path);
+            Assert.Equal("https://collector.example", PlayerConfig.Load(path).Benchmark!.CollectorUrl);
+            Assert.Equal("updated", IntroPreferences.Load(path).Pilot);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void Invalid_optional_collector_preserves_other_player_preferences()
+    {
+        string path = TempPath();
+        try
+        {
+            File.WriteAllText(path, """{"pilot":"example","benchmark":{"collectorUrl":123}}""");
+            var prefs = IntroPreferences.Load(path);
+            Assert.Equal("example", prefs.Pilot);
+            Assert.Equal("", prefs.Benchmark!.CollectorUrl);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
     public void Round_trip_preserves_fields_and_recent_list()
     {
         var p = new IntroPreferences

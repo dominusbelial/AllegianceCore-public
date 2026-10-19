@@ -448,6 +448,9 @@ public class LiveSuicideShipDeleteTests
         // naming the same victim id. They share the sector; deletion also reaches
         // off-sector mission peers (native AnnounceExit, fsship.cpp:196-223).
         Assert.True(ticks < MaxTicks, $"no SHIP_DELETE within {MaxTicks} ticks");
+        Assert.True(SpinWait.SpinUntil(() => shooterClient.Kills.Any(k => k.ShipId == targetId)
+            && shooterClient.Deletes.Any(d => d.ShipId == targetId), TimeSpan.FromSeconds(30)),
+            "shooter must decode death credit and deletion independently of the victim");
         Assert.Contains(targetClient.Kills, k => k.ShipId == targetId && k.BDeathCredit);
         Assert.Contains(shooterClient.Kills, k => k.ShipId == targetId && k.IdCredit == shooterId);
         Assert.Contains(targetClient.Deletes, d => d.ShipId == targetId && d.Sdr == ShipDelete.SdrKilled);

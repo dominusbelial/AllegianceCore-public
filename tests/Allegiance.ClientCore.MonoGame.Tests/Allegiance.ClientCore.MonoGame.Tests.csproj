@@ -35,6 +35,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../../tools/hud2-proof/hud2-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../tools/hd2-proof/hd2-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../tools/fsr-proof/fsr-proof.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="../../src/Allegiance.ClientCore.Game/Allegiance.ClientCore.Game.csproj" />

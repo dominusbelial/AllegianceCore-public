@@ -1,0 +1,65 @@
+{
+  "observedLoadoutSelections": 46,
+  "selectedPartsByEquipment": {
+    "Afterburner": [
+      {
+        "id": 23,
+        "name": "Booster 1"
+      },
+      {
+        "id": 125,
+        "name": "Afterburner 1"
+      }
+    ],
+    "ChaffLauncher": [
+      {
+        "id": 80,
+        "name": "Counter 1"
+      },
+      {
+        "id": 85,
+        "name": "Counter 2"
+      }
+    ],
+    "Dispenser": [
+      {
+        "id": 19,
+        "name": "Rescue"
+      },
+      {
+        "id": 81,
+        "name": "EWS Probe 1"
+      }
+    ],
+    "Magazine": [
+      {
+        "id": 150,
+        "name": "SRM Dumbfire 1"
+      }
+    ],
+    "Shield": [
+      {
+        "id": 21,
+        "name": "Sm Shield 1"
+      }
+    ],
+    "Weapon": [
+      {
+        "id": 33,
+        "name": "PW Gat Gun 1"
+      },
+      {
+        "id": 120,
+        "name": "PW Mini-Gun 1"
+      }
+    ]
+  },
+  "decodedLauncherKinds": {
+    "19": "ProbeLauncher (Rescue)",
+    "81": "ProbeLauncher (EWS Probe 1)",
+    "80": "ChaffLauncher (Counter 1)",
+    "85": "ChaffLauncher (Counter 2)"
+  },
+  "mineLauncherSelected": false,
+  "cloakSelected": false
+}

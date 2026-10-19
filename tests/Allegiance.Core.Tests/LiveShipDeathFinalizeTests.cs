@@ -184,6 +184,11 @@ public class LiveShipDeathFinalizeTests
 
         // The wire death actually fired — KILL_SHIP with launcher NULL (died of
         // oxygen, no killer) + SHIP_DELETE — and no respawn (no ENTER_LIFEPOD).
+        // Server finalization precedes the independent TCP reader. Await both
+        // generated events without advancing simulation or assuming receipt.
+        Assert.True(SpinWait.SpinUntil(() => victim.Kills.Any(k => k.ShipId == victimId)
+            && victim.Deletes.Any(d => d.ShipId == victimId), TimeSpan.FromSeconds(30)),
+            "victim must decode both death and deletion after oxygen expiry");
         var kill = victim.Kills.FirstOrDefault(k => k.ShipId == victimId);
         Assert.NotNull(kill);
         Assert.Equal((short)-1, kill!.IdCredit);

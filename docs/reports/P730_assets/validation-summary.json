@@ -1,0 +1,2347 @@
+{
+  "base": "939b163a",
+  "rawEvidence": "/tmp/allegiance-evidence/P730",
+  "wholeSolutionBuild": {
+    "warnings": 0,
+    "errors": 0,
+    "log": "whole-build.log"
+  },
+  "aot": "Conditional server AOT gate not triggered: no Allegiance.Core or Allegiance.Server source changes.",
+  "focusedMethodCount": 63,
+  "focusedInvocationCount": 224,
+  "focusedPassedCases": 272,
+  "focusedAllPass": true,
+  "focused": [
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldMoneyTests.AutoDonate_NoTarget_ClearsRelationship",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-c064f0db923f-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-c064f0db923f-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-c064f0db923f-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldMoneyTests.AutoDonate_SetsRelationship_AndAppliesGiftBothWays",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-5649e258a8b2-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-5649e258a8b2-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-5649e258a8b2-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldMoneyTests.MoneyChange_BucketRefund_SidFromNa_CreditsDonorAlone",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-a24cd88e55d5-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-a24cd88e55d5-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-a24cd88e55d5-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldMoneyTests.MoneyChange_BucketSpend_DecrementsDonorsWalletExactlyOnce",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-e2ccf799adf4-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-e2ccf799adf4-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-e2ccf799adf4-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldMoneyTests.MoneyChange_DoesNotDoubleCountWhenDonorIsUs_AndRecipientDiffers",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-b70f8e360210-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-b70f8e360210-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-b70f8e360210-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldMoneyTests.MoneyChange_PlayerToPlayerDonation_TransfersBothWallets",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-ddf889c24d54-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-ddf889c24d54-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-ddf889c24d54-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldMoneyTests.MoneyChange_PurchaseBroadcast_SidFromNa_DebitsBuyer",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-fdf8df8576a3-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-fdf8df8576a3-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-fdf8df8576a3-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldMoneyTests.MyMoney_IsNull_UntilTheLocalShipsSetMoneyArrives",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-9fee0439ceba-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-9fee0439ceba-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-9fee0439ceba-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldMoneyTests.MyMoney_IsNull_WhenMyShipIsNotAssignedYet",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-17c1264fc446-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-17c1264fc446-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-17c1264fc446-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldMoneyTests.Payday_DonorClient_KeepsItsOwnFlat",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-c7b66e1b131c-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-c7b66e1b131c-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-c7b66e1b131c-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldMoneyTests.Payday_LeaderGrowsByDMoneyTimesDonorsPlusSelf_DonorsFlat_NonDonorGrowsOnce",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-eea7438b9941-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-eea7438b9941-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-eea7438b9941-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldMoneyTests.Payday_NonDonorClient_GrowsByExactlyItsShare",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-4acdbabf5cc9-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-4acdbabf5cc9-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-4acdbabf5cc9-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldMoneyTests.Reset_ClearsMoneyAndRelationships",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-c60609228d39-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-c60609228d39-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-c60609228d39-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldMoneyTests.SetMoney_SetsThatShipsWalletAbsolutely",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-e4cb98a2d466-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-e4cb98a2d466-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-e4cb98a2d466-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldShipResetTests.SetCluster_stamps_the_ship_cookie_on_the_own_ship",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-032e38f495b0-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-032e38f495b0-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-032e38f495b0-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldShipResetTests.ShipReset_adopts_new_cookie_updates_pose_and_flags_own_ship",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-60c75ee41de0-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-60c75ee41de0-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-60c75ee41de0-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ClientWorldShipResetTests.ShipReset_for_a_non_own_ship_updates_cookie_but_does_not_flag",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-f9506e34327b-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-f9506e34327b-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-f9506e34327b-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.DecisionSnapshotAllocationTests.HeavyUpdateDecodeApplyAndPublish_StaysUnderPerShipAllocationCeiling",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-5b4f7ed9a7c2-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-5b4f7ed9a7c2-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-5b4f7ed9a7c2-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.DecisionSnapshotTests.CapturedSnapshotIsImmutableAcrossLaterPublishes",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-a7b636ef94cf-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-a7b636ef94cf-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-a7b636ef94cf-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.DecisionSnapshotTests.ConcurrentPublish_NeverYieldsTornSnapshot",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-fd1502feae53-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-fd1502feae53-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-fd1502feae53-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.DecisionSnapshotTests.EmptyBeforeSeating",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-52868888ff41-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-52868888ff41-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-52868888ff41-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.DecisionSnapshotTests.PublishBumpsVersion_AndSwapsFreshShipsArray",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-744c787cbc62-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-744c787cbc62-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-744c787cbc62-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.DecisionSnapshotTests.PublishThrottlesWithinInterval",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-376048fcc576-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-376048fcc576-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-376048fcc576-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.DecisionSnapshotTests.PublishedSnapshotReflectsAppliedWorld_AndSetsMyCluster",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-805ece0f9d77-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-805ece0f9d77-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-805ece0f9d77-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.DecisionSnapshotTests.ResetClearsPublishedSnapshot",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-0301c13b1b3e-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-0301c13b1b3e-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-0301c13b1b3e-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P648RelaunchVisibilityTests.ClassifyPlaceability_DeadNeverPosedStaleLive",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-0291bd0f3a1f-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-0291bd0f3a1f-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-0291bd0f3a1f-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P648RelaunchVisibilityTests.LoadoutChange_OnLiveShip_DoesNotDisturbReviveState",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-33b21df5ceda-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-33b21df5ceda-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-33b21df5ceda-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P648RelaunchVisibilityTests.LoadoutChange_ReparentsBoardedChildren",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-027051a5bc4d-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-027051a5bc4d-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-027051a5bc4d-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P648RelaunchVisibilityTests.LoadoutChange_RevivesDeadShip_AdoptsNewHullAndParts",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-9a165d8808da-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-9a165d8808da-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-9a165d8808da-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P648RelaunchVisibilityTests.LoadoutChange_ToLifepodHull_DoesNotReviveDeadShip",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-bf9b76e71633-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-bf9b76e71633-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-bf9b76e71633-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P648RelaunchVisibilityTests.Projectile_FromLatchedDeadShooter_IncrementsFromLatchedDead",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-3e25b0901730-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-3e25b0901730-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-3e25b0901730-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P648RelaunchVisibilityTests.Projectile_FromNeverPosedShooter_IncrementsFromNeverPosed",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-b2692ed6ef5c-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-b2692ed6ef5c-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-b2692ed6ef5c-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "extra-9724c3d96bbe-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "extra-9724c3d96bbe-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "extra-9724c3d96bbe-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishLiveTests.Killing_game_owner_reaps_supervisor_and_all_workers",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "extra-96c921991a57-1",
+          "exit": 0,
+          "passed": 2,
+          "failed": 0
+        },
+        {
+          "label": "extra-96c921991a57-2",
+          "exit": 0,
+          "passed": 2,
+          "failed": 0
+        },
+        {
+          "label": "extra-96c921991a57-3",
+          "exit": 0,
+          "passed": 2,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishLiveTests.Local_start_battle_pause_resume_next_match_stop_leaves_no_processes",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "extra-cbfa835d1712-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "extra-cbfa835d1712-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "extra-cbfa835d1712-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishLiveTests.Research_skirmish_uses_both_commanders_and_selected_civ_plans",
+      "invocations": 12,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "extra-885612baa192-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "extra-885612baa192-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "extra-885612baa192-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-885612baa192-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-885612baa192-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-885612baa192-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "guard-live-885612baa192-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "guard-live-885612baa192-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "guard-live-885612baa192-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focus-rpc-final-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focus-rpc-final-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focus-rpc-final-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishLiveTests.Worker_death_is_reported_to_the_game",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "extra-36f972970123-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "extra-36f972970123-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "extra-36f972970123-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-1edaac8f7a28-1",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0
+        },
+        {
+          "label": "focused-1edaac8f7a28-2",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0
+        },
+        {
+          "label": "focused-1edaac8f7a28-3",
+          "exit": 0,
+          "passed": 6,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Driver_supports_single_worker_supervision_and_owner_tracking",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-961704d08cf1-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-961704d08cf1-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-961704d08cf1-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Pause_also_freezes_supervisor_defense_and_coordination_time",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-711b46a7e479-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-711b46a7e479-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-711b46a7e479-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P729BenchmarkTests.Command_validates_workloads_and_preserves_replay_paths",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "benchmark-options-final-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "benchmark-options-final-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "benchmark-options-final-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P729BenchmarkTests.Live_reconnect_after_replay_restores_wall_clock_and_ordinary_visibility",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-0fdaa394b84f-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-0fdaa394b84f-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-0fdaa394b84f-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P730BotEfficiencyTests.Auto_seating_on_another_side_cannot_read_or_pollute_the_requested_sides_world",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "side-guard-final-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "side-guard-final-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "side-guard-final-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P730BotEfficiencyTests.Auto_workers_use_core_and_fleet_budgets",
+      "invocations": 6,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-6c02d0e5b022-1",
+          "exit": 0,
+          "passed": 4,
+          "failed": 0
+        },
+        {
+          "label": "focused-6c02d0e5b022-2",
+          "exit": 0,
+          "passed": 4,
+          "failed": 0
+        },
+        {
+          "label": "focused-6c02d0e5b022-3",
+          "exit": 0,
+          "passed": 4,
+          "failed": 0
+        },
+        {
+          "label": "budget-final-1",
+          "exit": 0,
+          "passed": 4,
+          "failed": 0
+        },
+        {
+          "label": "budget-final-2",
+          "exit": 0,
+          "passed": 4,
+          "failed": 0
+        },
+        {
+          "label": "budget-final-3",
+          "exit": 0,
+          "passed": 4,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P730BotEfficiencyTests.Distant_lod_is_two_hz_near_humans_and_disabled_modes_keep_every_pass",
+      "invocations": 6,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-d307def701eb-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-d307def701eb-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-d307def701eb-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-d307def701eb-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-d307def701eb-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-d307def701eb-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P730BotEfficiencyTests.Identical_wire_is_decoded_once_and_repeated_states_still_apply",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-30207c1d4b88-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-30207c1d4b88-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-30207c1d4b88-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P730BotEfficiencyTests.Opposing_sides_and_missions_never_share_knowledge",
+      "invocations": 6,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-7651039047f6-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-7651039047f6-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-7651039047f6-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "mission-guard-final-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "mission-guard-final-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "mission-guard-final-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P730BotEfficiencyTests.Recorded_battle_produces_identical_target_and_steering_decisions_with_sharing",
+      "invocations": 9,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-6c0e8da4c029-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-6c0e8da4c029-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-6c0e8da4c029-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "guard-live-6c0e8da4c029-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "guard-live-6c0e8da4c029-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "guard-live-6c0e8da4c029-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "recording-final-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "recording-final-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "recording-final-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P730BotEfficiencyTests.Rotation_reconnect_and_late_join_cannot_clear_another_pilots_world",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-75cd80f4dbe3-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-75cd80f4dbe3-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-75cd80f4dbe3-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P730BotEfficiencyTests.Sector_change_preserves_side_knowledge_and_private_pose",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-c38252b147c8-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-c38252b147c8-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-c38252b147c8-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P730BotEfficiencyTests.Side_tables_share_remote_entities_but_keep_own_status_loadout_wallet_and_orders_private",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-25a87b6a337e-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-25a87b6a337e-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-25a87b6a337e-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P730BotEfficiencyTests.Snapshot_arrays_are_shared_immutable_and_keep_per_pilot_identity",
+      "invocations": 6,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-c4e6d8c2d41f-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-c4e6d8c2d41f-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-c4e6d8c2d41f-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-c4e6d8c2d41f-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-c4e6d8c2d41f-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-c4e6d8c2d41f-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P730ShowcaseLiveTests.Live_lod_reduces_distant_decisions_and_immediately_restores_near_focus_rate",
+      "invocations": 6,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-0c84a763a55b-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-0c84a763a55b-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-0c84a763a55b-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-0c84a763a55b-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-0c84a763a55b-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-0c84a763a55b-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch",
+      "invocations": 8,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-ce68bd021fd6-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-ce68bd021fd6-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-ce68bd021fd6-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-ce68bd021fd6-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-ce68bd021fd6-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "final-refresh-ce68bd021fd6-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "guard-live-ce68bd021fd6-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "guard-live-ce68bd021fd6-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ShipDeleteGoneTests.Dead_ship_returns_and_renders_via_respawn_export",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-d67f441463f1-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-d67f441463f1-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-d67f441463f1-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ShipDeleteGoneTests.Dead_ship_stays_hidden_on_cross_sector_single_ship_update",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-8660bb57726e-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-8660bb57726e-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-8660bb57726e-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ShipDeleteGoneTests.Delete_for_unknown_ship_creates_no_phantom",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-9c0e5aedd458-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-9c0e5aedd458-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-9c0e5aedd458-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ShipDeleteGoneTests.Docked_delete_marks_known_ship_gone_and_hidden",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-6d355624a414-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-6d355624a414-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-6d355624a414-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ShipDeleteGoneTests.Gone_ship_returns_and_clears_via_export",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-3c55561bc4d9-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-3c55561bc4d9-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-3c55561bc4d9-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ShipDeleteGoneTests.Gone_ship_stays_gone_on_cross_sector_single_ship_update",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-3e308fc29ec8-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-3e308fc29ec8-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-3e308fc29ec8-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ShipDeleteGoneTests.KillShip_sets_dead_and_gone",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-b18a3b4002b1-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-b18a3b4002b1-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-b18a3b4002b1-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ShipDeleteGoneTests.LeftSector_delete_marks_known_ship_gone_and_hidden",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-679ae937861c-1",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-679ae937861c-2",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        },
+        {
+          "label": "focused-679ae937861c-3",
+          "exit": 0,
+          "passed": 1,
+          "failed": 0
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.ShipDeleteGoneTests.ShipDelete_encodes_decodes_roundtrip",
+      "invocations": 3,
+      "allPass": true,
+      "runs": [
+        {
+          "label": "focused-a6b74f6ef232-1",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0
+        },
+        {
+          "label": "focused-a6b74f6ef232-2",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0
+        },
+        {
+          "label": "focused-a6b74f6ef232-3",
+          "exit": 0,
+          "passed": 5,
+          "failed": 0
+        }
+      ]
+    }
+  ],
+  "suiteIsolation": [
+    {
+      "label": "isolation-core-4bec2c1aa1c3-1",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 6.331355571746826,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "isolation-core-4bec2c1aa1c3-2",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 3.9859097003936768,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "isolation-core-4bec2c1aa1c3-3",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.GameOverPlayersWireTests.Win_by_elimination_broadcasts_game_over_players_to_surviving_peer",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 3.1753969192504883,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "isolation-core-cb002ecf5d75-1",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 3.744852304458618,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "isolation-core-cb002ecf5d75-2",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 6.392342805862427,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "isolation-core-cb002ecf5d75-3",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 4.215681314468384,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "isolation-core-360afaffffee-1",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 2.338836193084717,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "isolation-core-360afaffffee-2",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 5.939425706863403,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "isolation-core-360afaffffee-3",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 5.823872804641724,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "isolation-core-2a5c4a867820-1",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 6.006919860839844,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "isolation-core-2a5c4a867820-2",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 2.8210525512695312,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "isolation-core-2a5c4a867820-3",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 4.449361085891724,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "isolation-core-208b736dcbb4-1",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 7.482245206832886,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "isolation-core-208b736dcbb4-2",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 3.0404462814331055,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "isolation-core-208b736dcbb4-3",
+      "suite": "core",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried",
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 0,
+      "seconds": 3.1669209003448486,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    }
+  ],
+  "suites": [
+    {
+      "label": "suite-core",
+      "filter": null,
+      "project": "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+      "exit": 1,
+      "seconds": 1279.668,
+      "counts": {
+        "total": "4893",
+        "executed": "4893",
+        "passed": "4888",
+        "failed": "5",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    }
+  ],
+  "neverParks": [
+    {
+      "label": "final-never-parks-1",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "project": "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+      "exit": 0,
+      "seconds": 115.796,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "final-never-parks-2",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "project": "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+      "exit": 0,
+      "seconds": 113.498,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "final-never-parks-3",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "project": "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+      "exit": 0,
+      "seconds": 114.401,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "final-never-parks-4",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "project": "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+      "exit": 0,
+      "seconds": 115.645,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "label": "final-never-parks-5",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "project": "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+      "exit": 0,
+      "seconds": 112.13,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    }
+  ]
+}

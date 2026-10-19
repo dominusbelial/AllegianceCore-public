@@ -199,7 +199,9 @@ public sealed class P654DispatchHardeningTests
 
         // Graceful LOGOFF (H-14): the connection is closed afterwards.
         var lo = new Logoff();
-        Inject(server, conn, FedPacket.Pack(new[] { lo.Encode() }));
+        // Even a second LOGONREQ in the same already-decoded packet must not
+        // allocate a replacement ship while the final echo drains.
+        Inject(server, conn, FedPacket.Pack(new[] { lo.Encode(), Request("p654_pipelined").Encode() }));
         Pump(server, () => !(bool)(typeof(Srv).GetField("_peerShips", BindingFlags.NonPublic | BindingFlags.Instance)!
                           .GetValue(server) as System.Collections.IDictionary)!.Contains(conn), 1500);
 
@@ -217,6 +219,7 @@ public sealed class P654DispatchHardeningTests
         }
         Pump(server, () => bot.Assignments.Count >= 2, 1500);
         Assert.Single(bot.Assignments);   // no second ship churned
+        Assert.Empty(server.Ships); // also reject invisible/orphan replacement allocations
     }
 
     [Trait("Requires", "Artwork")]

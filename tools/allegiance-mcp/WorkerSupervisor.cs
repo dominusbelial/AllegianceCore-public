@@ -112,6 +112,11 @@ internal sealed class WorkerSupervisor : IDisposable
         var replies = await FanOut("__pause", JsonSerializer.SerializeToElement(paused), ct);
         if (replies.Any(r => r.IsError)) throw new IOException("Cannot pause: a bot worker was lost");
     }
+    internal async Task SetFocusSectorAsync(short? sector, CancellationToken ct)
+    {
+        var replies = await FanOut("__focus", JsonSerializer.SerializeToElement(sector, BotFocusJson.Default.NullableInt16), ct);
+        if (replies.Any(r => r.IsError)) throw new IOException("Cannot update bot focus: a worker was lost");
+    }
     internal bool Healthy => _workers.All(w => w.Alive);
     internal int[] ProcessIds => _workers.Select(w => w.Pid).ToArray();
     private object[] WorkerStatus() => _workers.Select(w => (object)new { worker = w.Index + 1, pid = w.Pid, status = w.Alive ? "running" : "lost", error = w.Failure }).ToArray();

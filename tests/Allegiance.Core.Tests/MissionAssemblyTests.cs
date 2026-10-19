@@ -11,6 +11,7 @@ namespace Allegiance.Core.Tests;
 /// resolve to a sector inside the same mission, and each sector's contents
 /// must sum exactly to the raw record counts carried by its <see cref="MissionMap"/>.
 /// </summary>
+[Trait("Tier", "Live")] // Whole-corpus validation; docs/testing/TIERS.md.
 public class MissionAssemblyTests
 {
     /// <summary>

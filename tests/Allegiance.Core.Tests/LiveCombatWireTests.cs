@@ -268,6 +268,8 @@ public class LiveCombatWireTests
             Thread.Sleep(2);
         }
 
+        Assert.True(SpinWait.SpinUntil(() => shooterClient.Kills.Any(k => k.ShipId == targetId && k.IdCredit == shooterId),
+            TimeSpan.FromSeconds(30)), "shooter must decode its kill credit independently of the victim");
         var targetKills = targetClient.Kills;
         var shooterKills = shooterClient.Kills;
         Assert.True(ticks < MaxTicks, $"no KILL_SHIP within {MaxTicks} ticks");
@@ -313,7 +315,12 @@ public class LiveCombatWireTests
         using var target = new CombatClient();
         shooter.Connect(port, "SHOOTER2"); target.Connect(port, "TARGET2");
         shooter.Logon(SampleRequest("SHOOTER2")); target.Logon(SampleRequest("TARGET2"));
-        PumpUntil(server, () => target.ShipAssignment is not null, 4000);
+        Assert.True(SpinWait.SpinUntil(() =>
+        {
+            if (shooter.ShipAssignment is not null && target.ShipAssignment is not null) return true;
+            server.TickSim();
+            return false;
+        }, TimeSpan.FromSeconds(30)), "both combat clients must decode their ship assignments before controls");
         var shSet = shooter.ShipAssignment ?? throw new InvalidOperationException("no shooter ship");
         var tgSet = target.ShipAssignment ?? throw new InvalidOperationException("no target ship");
 
@@ -399,6 +406,8 @@ public class LiveCombatWireTests
             Thread.Sleep(1);
         }
 
+        Assert.True(SpinWait.SpinUntil(() => shooter.Kills.Any(k => k.ShipId == targetId && k.IdCredit == shooterId),
+            TimeSpan.FromSeconds(30)), "shooter must decode its kill credit independently of the victim");
         var targetKills = targetBot.Kills;
         var shooterKills = shooter.Kills;
         Assert.True(ticks < MaxTicks, $"no KILL_SHIP observed by real Bot within {MaxTicks} ticks");

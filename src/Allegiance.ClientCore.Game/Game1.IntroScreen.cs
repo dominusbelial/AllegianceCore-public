@@ -23,7 +23,7 @@ public sealed partial class Game1
     /// models each as a view of the same screen). TR-2 splits Single Player into a
     /// Training | Skirmish chooser (native's big single-player button trains,
     /// introscreen.cpp:1221/:1558) plus a first-run training-suggestion dialog.</summary>
-    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSuggest, Credits, Benchmark, BenchmarkOffer }
+    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSuggest, Credits, Benchmark, BenchmarkOffer, Settings }
 
     private IntroView _introView = IntroView.Main;
     private int _introIndex;
@@ -188,6 +188,9 @@ public sealed partial class Game1
             case IntroView.TrainingSuggest: // TR-2 — the one-shot first-run suggestion dialog
                 UpdateTrainingSuggest(ks, enter, esc);
                 break;
+            case IntroView.Settings:
+                UpdatePrivacySettings();
+                break;
             case IntroView.Benchmark:
             case IntroView.BenchmarkOffer:
                 UpdateBenchmarkMenu(up, down, enter, esc);
@@ -238,7 +241,7 @@ public sealed partial class Game1
                 _introEditingDirect = true;
                 break;
             case IntroCommand.Options:        // the existing settings (Ctrl+F6 key-bindings popup).
-                ToggleKeyBindings();
+                _introView = IntroView.Settings;
                 break;
             case IntroCommand.Benchmark:
                 _introView = IntroView.Benchmark;
@@ -483,6 +486,7 @@ public sealed partial class Game1
 
             switch (_introView)
             {
+                case IntroView.Settings: DrawPrivacySettings(w, titleCol, dimCol); break;
                 case IntroView.Benchmark:
                 case IntroView.BenchmarkOffer: DrawBenchmarkMenu(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.Main: DrawIntroMain(w, h, titleCol, dimCol, textCol); break;

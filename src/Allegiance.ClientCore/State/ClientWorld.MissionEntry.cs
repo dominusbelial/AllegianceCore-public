@@ -21,6 +21,7 @@ public sealed partial class ClientWorld
     private void Apply(JoinedMission message)
     {
         if (_mission is null) return;
+        if (_botWorlds?.SideId is not null) DetachBotWorld();
         StaticCore? core;
         try { core = MissionCoreResolver(_mission.StaticCoreFile); }
         catch (Exception e) when (e is IOException or ArgumentException or InvalidOperationException)
@@ -34,6 +35,7 @@ public sealed partial class ClientWorld
         JoinError = null;
         JoinedMissionCookie = message.DwCookie;
         if (MyShipId is { } old && _ships.TryGetValue(old, out var oldShip)) oldShip.IsMine = false;
+        _ships.OwnId = message.ShipId;
         JoinedShipId = message.ShipId;
         MyShipId = null; // the joined player exists; a launch pose has not been assigned yet
         MySideId = null;

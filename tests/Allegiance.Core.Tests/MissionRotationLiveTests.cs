@@ -200,11 +200,19 @@ public class MissionRotationLiveTests
 
         int starting = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Starting, 800);
         Assert.True(starting < 800, "new mission did not reach Starting after ready-up");
+        // Server stage changes precede transport publication and client decode.
+        // Keep simulation time fixed while waiting for the generated stage frame.
+        Assert.True(SpinWait.SpinUntil(
+            () => c.MissionStages.Any(s => s.Stage == (int)MissionStage.Starting),
+            TimeSpan.FromSeconds(30)), "new joiner did not receive Starting");
         Assert.Contains(c.MissionStages, s => s.Stage == (int)MissionStage.Starting);
 
         int started = PumpUntil(server, () => server.Missions[0].Stage == MissionStage.Started, 2000);
         Assert.True(started < 2000, "new mission did not reach Started after the countdown elapsed");
         Assert.Equal(MissionStage.Started, server.Missions[0].Stage);
+        Assert.True(SpinWait.SpinUntil(
+            () => c.MissionStages.Any(s => s.Stage == (int)MissionStage.Started),
+            TimeSpan.FromSeconds(30)), "new joiner did not receive Started");
         Assert.Contains(c.MissionStages, s => s.Stage == (int)MissionStage.Started);
     }
 

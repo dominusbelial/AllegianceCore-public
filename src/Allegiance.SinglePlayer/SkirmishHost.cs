@@ -24,6 +24,8 @@ public sealed partial class SkirmishHost : IDisposable
     private int _disposed;
     private string? _failure;
     private int[] _workerIds = [];
+    private int _focusSector = -1;
+    public void SetFocusSector(short? sector) => Volatile.Write(ref _focusSector, sector ?? -1);
     private JsonElement _stats;
     private readonly object _statsGate = new();
     private readonly List<double> _benchmarkTicks = [];
@@ -49,7 +51,7 @@ public sealed partial class SkirmishHost : IDisposable
     {
         Options = options;
         PlayerSide = options.StartAsSpectator ? null : (short)0;
-        Budget = SkirmishBudget.ForCores(Environment.ProcessorCount);
+        Budget = SkirmishBudget.ForCores(Environment.ProcessorCount, options.TeamSize * 2);
         DirectoryPath = Path.Combine(Path.GetTempPath(), "allegiance-skirmish-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(DirectoryPath);
     }
@@ -83,8 +85,12 @@ public sealed partial class SkirmishHost : IDisposable
             // Inherited by all workers: bound the runtime's compute concurrency and GC heaps.
             start.Environment["DOTNET_PROCESSOR_COUNT"] = host.Budget.CoresPerWorker.ToString(CultureInfo.InvariantCulture);
             start.Environment["DOTNET_gcServer"] = "0";
-            start.Environment["ALLEGIANCE_BOT_COMPUTE_THREADS"] = host.Budget.CoresPerWorker.ToString(CultureInfo.InvariantCulture);
+            // The two sides have two live-world gates. More preparation threads
+            // contend for those gates; leave the runtime budget available to I/O.
+            start.Environment["ALLEGIANCE_BOT_COMPUTE_THREADS"] = Math.Min(2, host.Budget.CoresPerWorker).ToString(CultureInfo.InvariantCulture);
             start.Environment["ALLEGIANCE_ARTWORK_PATH"] = config.ArtPath;
+            start.Environment["ALLEGIANCE_BOT_LOD"] = Environment.GetEnvironmentVariable("ALLEGIANCE_BOT_LOD") ?? "on";
+            start.Environment["ALLEGIANCE_LOCAL_PILOT"] = WirePilotName(commanderPilotName);
             // Private child environment: never inherited from another local match.
             start.Environment["ALLEGIANCE_SKIRMISH_COMMANDER"] = options.Commander == SkirmishCommander.You ? WirePilotName(commanderPilotName) : "";
             if (options.Seed is not null) start.Environment["ALLEGIANCE_BENCHMARK_METRICS"] = "1";
@@ -177,6 +183,15 @@ public sealed partial class SkirmishHost : IDisposable
                         Interlocked.Exchange(ref _heartbeat, Environment.TickCount64);
                         lock (_statsGate) _stats = root.GetProperty("stats").Clone();
                         if (!root.GetProperty("healthy").GetBoolean()) Fail("A bot worker stopped. Exit and start a new skirmish.");
+                        await _writes.WaitAsync(_stop.Token);
+                        try
+                        {
+                            int focus = Volatile.Read(ref _focusSector);
+                            var command = new SkirmishFocusCommand(Interlocked.Increment(ref _request), "focus", focus < 0 ? null : (short)focus);
+                            await _driver!.StandardInput.WriteLineAsync(JsonSerializer.Serialize(command, SkirmishProtocolContext.Default.SkirmishFocusCommand));
+                            await _driver.StandardInput.FlushAsync(_stop.Token);
+                        }
+                        finally { _writes.Release(); }
                         break;
                     case "reply":
                         if (_pending.TryGetValue(root.GetProperty("id").GetInt64(), out var pending))

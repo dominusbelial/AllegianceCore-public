@@ -74,13 +74,16 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
     {
         private readonly Srv _server;
         private readonly Action<Srv>? _beforeTick;
+        private readonly int _tickDelayMs;
+        private readonly object _tickGate = new();
         private readonly CancellationTokenSource _cts = new();
         private readonly Thread _thread;
 
-        public ServerTicker(Srv server, Action<Srv>? beforeTick = null)
+        public ServerTicker(Srv server, Action<Srv>? beforeTick = null, int tickDelayMs = 5)
         {
             _server = server;
             _beforeTick = beforeTick;
+            _tickDelayMs = tickDelayMs;
             _thread = new Thread(Loop) { IsBackground = true, Name = "p431-server-ticker" };
             _thread.Start();
         }
@@ -89,17 +92,21 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
         {
             while (!_cts.IsCancellationRequested)
             {
-                try { _beforeTick?.Invoke(_server); _server.TickSim(); }
+                try { lock (_tickGate) { _beforeTick?.Invoke(_server); _server.TickSim(); } }
                 catch { }
-                Thread.Sleep(5);
+                Thread.Sleep(_tickDelayMs);
             }
         }
 
-        public void Dispose()
+        public void Stop()
         {
             _cts.Cancel();
-            _thread.Join(2000);
+            Assert.True(_thread.Join(TimeSpan.FromSeconds(30)), "server ticker must stop before inspecting final state");
         }
+
+        public void Dispose() => Stop();
+
+        public void Mutate(Action mutation) { lock (_tickGate) mutation(); }
     }
 
     private static bool Wait(Func<bool> done, int maxMs)
@@ -224,7 +231,7 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
     public void ScenarioBot_AutoAcceptsAndEngagesTheSpecificCommandedTarget()
     {
         Require.Artwork();
-        var server = new Srv();
+        using var server = new Srv();
         var config = Config();
         config.LiveSettings.TestHarness = new global::Allegiance.Server.TestHarnessConfig
             { Enabled = true, Money = 1_000_000, IgnoreTechGate = true };
@@ -238,7 +245,7 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
             // Keep the commanded target co-located with the obeyer so it can be engaged.
             if (anchor is { } a && anchoredTarget is { } t)
                 t.Position = a.Position + new Vector3(200f, 0f, 0f);
-        });
+        }, tickDelayMs: 50); // 20 Hz: the native 15-second order window must not expire at 10x wall time.
         using var mgr = new BotManager("127.0.0.1", server.BoundPort);
         Assert.True(mgr.ServerReady, "the BotManager probe must validate against the in-process server");
 
@@ -268,16 +275,31 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
 
         // Co-locate: move the commanded target into the obeyer's sector (it spawns in
         // a different home sector on this map), then anchor it beside the obeyer.
-        target.Sector?.Remove(target);
         var mission = obeyer.Mission ?? target.Mission!;
-        mission.PlaceShip(target, obeyer.Sector!);
-        target.Position = obeyer.Position + new Vector3(200f, 0f, 0f);
-        anchor = obeyer;
-        anchoredTarget = target;
+        ticker.Mutate(() =>
+        {
+            target.Sector?.Remove(target);
+            mission.PlaceShip(target, obeyer.Sector!);
+            target.Position = obeyer.Position + new Vector3(200f, 0f, 0f);
+            anchor = obeyer;
+            anchoredTarget = target;
+        });
+
+        // Placement is server state; the receiving bot must first decode the
+        // commanded target's independent identity/pose before adopting an order.
+        Assert.True(Wait(() => mgr.DiagnoseWorlds().Any(w => w.ShipId == obeyerId
+            && w.CrossSideShips.Any(s => s.ShipId == targetId && s.Sector == obeyer.Sector!.Id
+                && s.Visible && s.LastTick >= 0)), 30000),
+            "obeyer must see the co-located commanded target over the wire");
 
         // ── Issue a real order on the obeyer, naming the target ship ──
-        server.QueueCommandForPlayer(obeyer, AttackCmd, target);
-        Assert.Equal(AttackCmd, obeyer.QueuedCommandId);          // the order is real, pending
+        double queuedAt = 0;
+        ticker.Mutate(() =>
+        {
+            server.QueueCommandForPlayer(obeyer, AttackCmd, target);
+            Assert.Equal(AttackCmd, obeyer.QueuedCommandId); // the order is real, pending
+            queuedAt = mission.LastUpdate;
+        });
 
         // Drive the real sim + the real MCP loop until the bot has (a) auto-accepted
         // over the wire and (b) engaged the SPECIFIC named target (server wrote
@@ -285,8 +307,12 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
         bool engaged = Wait(() =>
             obeyer.AcceptedShipCommandId == AttackCmd
             && obeyer.CommandTarget?.Id == targetId
-            && obeyer.QueuedCommandId == OrderChange.CidNone, 25000);
+            && obeyer.QueuedCommandId == OrderChange.CidNone
+            && mgr.ActiveBots().Any(b => b.ShipId == obeyerId && b.OrderedTarget == targetId), 25000);
         Assert.True(engaged, $"bot {obeyerId} never reached accepted+engaged (accepted={obeyer.AcceptedShipCommandId}, cmdTarget={obeyer.CommandTarget?.Id}, queued={obeyer.QueuedCommandId}, orderedTargetVisible={(obeyer.CommandTarget is not null)})");
+        ticker.Stop(); // Preserve the observed engagement while checking its server and manager views.
+        Assert.True(mission.LastUpdate - queuedAt < Ship.QueuedCommandAutoRejectSeconds,
+            "acceptance must clear the queued slot before native auto-reject, not wait for expiry");
 
         // 1) The bot auto-accepted the real order over the wire (server promoted it).
         Assert.Equal(AttackCmd, obeyer.AcceptedShipCommandId);
@@ -302,6 +328,42 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
         var obView = mgr.ActiveBots().Single(b => b.ShipId == obeyerId);
         Assert.Equal(targetId, obView.OrderedTarget);
         Console.WriteLine($"P431-LIVE: list_active_bots shows bot {obeyerId} orderedTarget={obView.OrderedTarget} == the issued ship {targetId} (behavior={obView.Behavior}, live target={obView.Target})");
+    }
+
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
+    [InlineData("idle")]
+    [InlineData("combat")]
+    public void Mcp_accept_promotes_and_clears_the_queued_order_before_native_expiry(string behavior)
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        var config = Config();
+        config.LiveSettings.TestHarness = new global::Allegiance.Server.TestHarnessConfig
+            { Enabled = true, Money = 1_000_000, IgnoreTechGate = true };
+        server.Boot(config);
+        foreach (var mission in server.Missions) mission.Stage = MissionStage.Started;
+        using var ticker = new ServerTicker(server, tickDelayMs: 50);
+        using var manager = new BotManager("127.0.0.1", server.BoundPort);
+        Assert.True(manager.ServerReady);
+        var hull = EconomyLoadoutTestSetup.WeaponHull(server.Missions[0].Core);
+        var spawn = manager.SpawnBot(hull.HullId, hull.Name, 0, [], behavior);
+        var ship = server.Ships.Single(s => s.Ship.Id == spawn.ShipId).Ship;
+        double queuedAt = 0;
+        ticker.Mutate(() =>
+        {
+            // A targetless order exercises acceptance without upgrading an idle
+            // Bot to a ConnectionSession, covering both actual sender paths.
+            server.QueueCommandForPlayer(ship, AttackCmd);
+            Assert.Equal(AttackCmd, ship.QueuedCommandId);
+            queuedAt = ship.Mission!.LastUpdate;
+        });
+        Assert.True(Wait(() => ship.AcceptedShipCommandId == AttackCmd
+            && ship.QueuedCommandId == OrderChange.CidNone, 30000),
+            "MCP must promote and clear the queued command over TCP");
+        ticker.Stop();
+        Assert.True(ship.Mission!.LastUpdate - queuedAt < Ship.QueuedCommandAutoRejectSeconds,
+            "queued-slot clearance must be acceptance, not the 15-second auto-reject");
     }
 
     private static string ScenarioText(object result)

@@ -267,10 +267,13 @@ public sealed class DeadLatchRespawnLiveTests
 
     [Trait("Requires", "Artwork")]
     [SkippableFact]
+    // The real ping clock extrapolates wall time while TickSim advances a fixed 50 ms.
+    // CPU descheduling can violate the native ±1.5 s pose gate; requires real-time pacing.
+    [Trait("Tier", "Live")]
     public void Own_ship_sim_resumes_and_accepted_climbs_after_death_respawn_undock()
     {
         Require.Artwork();
-        var server = new Srv();
+        using var server = new Srv();
         Ship? captured = null;
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
         {
@@ -390,7 +393,7 @@ public sealed class DeadLatchRespawnLiveTests
     public void Remote_client_sees_victim_again_after_death_and_respawn()
     {
         Require.Artwork();
-        var server = new Srv();
+        using var server = new Srv();
         var ships = new List<Ship>();
         ShipSpawnerField.SetValue(server, (StaticCore core, Mission mission, short id) =>
         {

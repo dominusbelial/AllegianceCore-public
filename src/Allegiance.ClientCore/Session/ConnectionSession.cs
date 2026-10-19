@@ -35,8 +35,15 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         _world.NowSeconds = () => ReplayMilliseconds.GetValueOrDefault() / 1000.0;
         ((ITransportSite)this).OnReceive(ConnectionId.Server, packet);
     }
-    private readonly object _gate = new();
-    private readonly ClientWorld _world = new();
+    private readonly object _gate;
+    private readonly ClientWorld _world;
+
+    public ConnectionSession(SharedBotWorlds? botWorlds)
+    {
+        _gate = botWorlds?.Gate ?? new();
+        _world = botWorlds is null ? new() : new(botWorlds);
+        StartKeepAlive();
+    }
     private LogonAck? _ack;
     private DelPositionReq? _lastPositionRefusal;
     // P473 — every FM_S_BUY_LOADOUT_ACK(5) received, in arrival order: the raw
@@ -121,10 +128,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// reconnect and skips ticks while disconnected), so it covers every
     /// connection path.
     /// </summary>
-    public ConnectionSession()
-    {
-        StartKeepAlive();
-    }
+    public ConnectionSession() : this(null) { }
 
     /// <summary>
     /// P320 — true once the established TCP session to the server has been lost
@@ -987,19 +991,19 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         _world.Apply(SetCluster.Decode(m));
                         break;
                     case SingleShipUpdate.Fmid:
-                        _world.Apply(SingleShipUpdate.Decode(m));
+                        _world.Apply(_world.DecodeBotMessage(m, SingleShipUpdate.Decode));
                         break;
                     case HeavyShipsUpdate.Fmid:
                         // P347 — the periodic cross-side visibility sync; every
                         // cluster ship the viewer's side sees (now incl. other
                         // factions since P346) refreshes pose via this message.
-                        _world.Apply(HeavyShipsUpdate.Decode(m));
+                        _world.Apply(_world.DecodeBotMessage(m, HeavyShipsUpdate.Decode));
                         break;
                     case LightShipsUpdate.Fmid:
-                        _world.Apply(LightShipsUpdate.Decode(m));
+                        _world.Apply(_world.DecodeBotMessage(m, LightShipsUpdate.Decode));
                         break;
                     case ShipStatusMessage.Fmid:
-                        _world.Apply(ShipStatusMessage.Decode(m));
+                        _world.Apply(_world.DecodeBotMessage(m, ShipStatusMessage.Decode));
                         break;
                     case ExportShip.Fmid:
                         // FM_S_EXPORT(26) is the generic object-export message:
@@ -1013,32 +1017,32 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         {
                             int ot = BitConverter.ToInt32(m.AsSpan(8, 4));
                             if (ot == ExportShip.OtShip)
-                                _world.Apply(ExportShip.Decode(m));
+                                _world.Apply(_world.DecodeBotMessage(m, ExportShip.Decode));
                             else if (ot == ExportCluster.OtCluster)
-                                _world.Apply(ExportCluster.Decode(m));
+                                _world.Apply(_world.DecodeBotMessage(m, ExportCluster.Decode));
                             else if (ot == ExportStation.OtStation)
-                                _world.Apply(ExportStation.Decode(m));
+                                _world.Apply(_world.DecodeBotMessage(m, ExportStation.Decode));
                             else if (ot == ExportWarp.OtWarp)
-                                _world.Apply(ExportWarp.Decode(m));
+                                _world.Apply(_world.DecodeBotMessage(m, ExportWarp.Decode));
                             else if (ot == ExportAsteroid.OtAsteroid)
-                                _world.Apply(ExportAsteroid.Decode(m));
+                                _world.Apply(_world.DecodeBotMessage(m, ExportAsteroid.Decode));
                             else if (ot == ExportProbe.OtProbe)
-                                _world.Apply(ExportProbe.Decode(m));
+                                _world.Apply(_world.DecodeBotMessage(m, ExportProbe.Decode));
                             else if (ot == ExportMine.OtMine)
-                                _world.Apply(ExportMine.Decode(m));
+                                _world.Apply(_world.DecodeBotMessage(m, ExportMine.Decode));
                             else if (ot == ExportBuildingEffect.OtBuildingEffect)
-                                _world.Apply(ExportBuildingEffect.Decode(m));
+                                _world.Apply(_world.DecodeBotMessage(m, ExportBuildingEffect.Decode));
                         }
                         break;
                     case AsteroidsUpdate.Fmid:
                         // P423 — the periodic per-asteroid ore/health sync; the
                         // world stores the live ore + structural fractions.
-                        _world.Apply(AsteroidsUpdate.Decode(m));
+                        _world.Apply(_world.DecodeBotMessage(m, AsteroidsUpdate.Decode));
                         break;
                     case StationsUpdate.Fmid:
                         // P423 — the periodic per-station hull/shield sync; the
                         // world stores the live fractions (station health bar).
-                        _world.Apply(StationsUpdate.Decode(m));
+                        _world.Apply(_world.DecodeBotMessage(m, StationsUpdate.Decode));
                         break;
                     case QueuedCommandUpdate.Fmid:
                         // P424 — the owner-only "you have a pending queued order"
@@ -1051,7 +1055,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         _world.Apply(PlayerInfo.Decode(m));
                         break;
                     case ClusterInfo.Fmid:
-                        _world.Apply(ClusterInfo.Decode(m));
+                        _world.Apply(_world.DecodeBotMessage(m, ClusterInfo.Decode));
                         break;
                     case DockedNotify.Fmid:
                         _world.Apply(DockedNotify.Decode(m));
@@ -1573,8 +1577,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         // P636d — the publish is now LAZY (requested by the decision loop; no-op
         // when nothing is pending or the snapshot is off). Stamp the newest-applied
         // update here for the decode-lag metric before attempting the publish.
-        _world.MarkApplied();
-        _world.PublishDecisionSnapshot();
+        lock (_gate)
+        {
+            _world.MarkApplied();
+            _world.PublishDecisionSnapshot();
+        }
     }
 
     /// <summary>P671 — stop the keep-alive thread (on dispose). Sets the stop
@@ -1599,5 +1606,6 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     {
         StopKeepAlive();
         Shutdown();
+        lock (_gate) _world.ReleaseBotView();
     }
 }

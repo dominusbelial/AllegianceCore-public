@@ -1,0 +1,594 @@
+{
+  "recordedDecisionEquality": [
+    {
+      "trx": "guard-live-6c0e8da4c029-1.trx",
+      "outcome": "Passed",
+      "deliveries": 31450,
+      "combatChoices": 10305
+    },
+    {
+      "trx": "guard-live-6c0e8da4c029-2.trx",
+      "outcome": "Passed",
+      "deliveries": 31450,
+      "combatChoices": 10305
+    },
+    {
+      "trx": "guard-live-6c0e8da4c029-3.trx",
+      "outcome": "Passed",
+      "deliveries": 31450,
+      "combatChoices": 10305
+    }
+  ],
+  "liveLod": [
+    {
+      "trx": "final-refresh-0c84a763a55b-1.trx",
+      "outcome": "Passed",
+      "seconds": 2.1,
+      "distantDecisions": 4,
+      "nearDecisions": 42
+    },
+    {
+      "trx": "final-refresh-0c84a763a55b-2.trx",
+      "outcome": "Passed",
+      "seconds": 2.1,
+      "distantDecisions": 4,
+      "nearDecisions": 42
+    },
+    {
+      "trx": "final-refresh-0c84a763a55b-3.trx",
+      "outcome": "Passed",
+      "seconds": 2.1,
+      "distantDecisions": 4,
+      "nearDecisions": 42
+    }
+  ],
+  "twoMatch": [
+    {
+      "trx": "final-refresh-ce68bd021fd6-1.trx",
+      "outcome": "Passed",
+      "rounds": [
+        {
+          "match": 1,
+          "shots": 1987,
+          "hits": 730,
+          "kills": 7,
+          "pods": 6,
+          "oreDepletedAtLeast": 1.27,
+          "research": [
+            {
+              "side": 0,
+              "step": 15,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "Enh Constructor",
+                "Enh Miner",
+                "MRM Seeker 2",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Counter 2",
+                "Weedcore 03",
+                "MRM Quickfire 2"
+              ],
+              "stations": [
+                "Garrison",
+                "Teleport (Hvy)"
+              ]
+            },
+            {
+              "side": 1,
+              "step": 16,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "Enh Constructor",
+                "Enh Miner",
+                "ER Nanite 2",
+                "MRM Seeker 2",
+                "SRM Seismic",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Hvy Sig Cloak 1",
+                "Counter 2",
+                "Weedcore 03"
+              ],
+              "stations": [
+                "Garrison",
+                "Teleport"
+              ]
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "shots": 3466,
+          "hits": 953,
+          "kills": 9,
+          "pods": 9,
+          "oreDepletedAtLeast": 1.23,
+          "research": [
+            {
+              "side": 0,
+              "step": 10,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "MRM Seeker 2",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Counter 2",
+                "Weedcore 03",
+                "MRM Quickfire 2"
+              ],
+              "stations": [
+                "Garrison"
+              ]
+            },
+            {
+              "side": 1,
+              "step": 9,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "MRM Seeker 2",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Counter 2",
+                "Weedcore 03"
+              ],
+              "stations": [
+                "Garrison"
+              ]
+            }
+          ]
+        }
+      ],
+      "triggers": "Ordinary gunfire/mining/research; controlled lethal damage, native station rescue and forced game over; normal bot purchase/relaunch and migration."
+    },
+    {
+      "trx": "final-refresh-ce68bd021fd6-2.trx",
+      "outcome": "Passed",
+      "rounds": [
+        {
+          "match": 1,
+          "shots": 3038,
+          "hits": 1150,
+          "kills": 14,
+          "pods": 10,
+          "oreDepletedAtLeast": 1.15,
+          "research": [
+            {
+              "side": 0,
+              "step": 18,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "Enh Constructor",
+                "Enh Miner",
+                "ER Nanite 2",
+                "MRM Seeker 2",
+                "SRM Seismic",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Hvy Sig Cloak 1",
+                "Counter 2",
+                "Weedcore 03",
+                "MRM Quickfire 2"
+              ],
+              "stations": [
+                "Garrison",
+                "Teleport (Hvy)"
+              ]
+            },
+            {
+              "side": 1,
+              "step": 17,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "Enh Constructor",
+                "Enh Miner",
+                "ER Nanite 2",
+                "MRM Seeker 2",
+                "SRM Seismic",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Hvy Sig Cloak 1",
+                "Counter 2",
+                "Weedcore 03"
+              ],
+              "stations": [
+                "Garrison",
+                "Teleport"
+              ]
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "shots": 4202,
+          "hits": 1586,
+          "kills": 17,
+          "pods": 14,
+          "oreDepletedAtLeast": 1.23,
+          "research": [
+            {
+              "side": 0,
+              "step": 10,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "MRM Seeker 2",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Counter 2",
+                "Weedcore 03",
+                "MRM Quickfire 2"
+              ],
+              "stations": [
+                "Garrison"
+              ]
+            },
+            {
+              "side": 1,
+              "step": 9,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "MRM Seeker 2",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Counter 2",
+                "Weedcore 03"
+              ],
+              "stations": [
+                "Garrison"
+              ]
+            }
+          ]
+        }
+      ],
+      "triggers": "Ordinary gunfire/mining/research; controlled lethal damage, native station rescue and forced game over; normal bot purchase/relaunch and migration."
+    },
+    {
+      "trx": "final-refresh-ce68bd021fd6-3.trx",
+      "outcome": "Passed",
+      "rounds": [
+        {
+          "match": 1,
+          "shots": 3182,
+          "hits": 1169,
+          "kills": 13,
+          "pods": 10,
+          "oreDepletedAtLeast": 2.0,
+          "research": [
+            {
+              "side": 0,
+              "step": 18,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "Enh Constructor",
+                "Enh Miner",
+                "ER Nanite 2",
+                "MRM Seeker 2",
+                "SRM Seismic",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Hvy Sig Cloak 1",
+                "Counter 2",
+                "Weedcore 03",
+                "MRM Quickfire 2"
+              ],
+              "stations": [
+                "Garrison",
+                "Teleport (Hvy)"
+              ]
+            },
+            {
+              "side": 1,
+              "step": 17,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "Enh Constructor",
+                "Enh Miner",
+                "ER Nanite 2",
+                "MRM Seeker 2",
+                "SRM Seismic",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Hvy Sig Cloak 1",
+                "Counter 2",
+                "Weedcore 03"
+              ],
+              "stations": [
+                "Garrison",
+                "Teleport"
+              ]
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "shots": 4338,
+          "hits": 1575,
+          "kills": 17,
+          "pods": 14,
+          "oreDepletedAtLeast": 1.23,
+          "research": [
+            {
+              "side": 0,
+              "step": 10,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "MRM Seeker 2",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Counter 2",
+                "Weedcore 03",
+                "MRM Quickfire 2"
+              ],
+              "stations": [
+                "Garrison"
+              ]
+            },
+            {
+              "side": 1,
+              "step": 9,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "MRM Seeker 2",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Counter 2",
+                "Weedcore 03"
+              ],
+              "stations": [
+                "Garrison"
+              ]
+            }
+          ]
+        }
+      ],
+      "triggers": "Ordinary gunfire/mining/research; controlled lethal damage, native station rescue and forced game over; normal bot purchase/relaunch and migration."
+    },
+    {
+      "trx": "guard-live-ce68bd021fd6-1.trx",
+      "outcome": "Passed",
+      "rounds": [
+        {
+          "match": 1,
+          "shots": 3092,
+          "hits": 1089,
+          "kills": 12,
+          "pods": 9,
+          "oreDepletedAtLeast": 1.23,
+          "research": [
+            {
+              "side": 0,
+              "step": 17,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "Enh Constructor",
+                "Enh Miner",
+                "ER Nanite 2",
+                "MRM Seeker 2",
+                "SRM Seismic",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Counter 2",
+                "Weedcore 03",
+                "MRM Quickfire 2"
+              ],
+              "stations": [
+                "Garrison",
+                "Teleport (Hvy)"
+              ]
+            },
+            {
+              "side": 1,
+              "step": 17,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "Enh Constructor",
+                "Enh Miner",
+                "ER Nanite 2",
+                "MRM Seeker 2",
+                "SRM Seismic",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Hvy Sig Cloak 1",
+                "Counter 2",
+                "Weedcore 03"
+              ],
+              "stations": [
+                "Garrison",
+                "Teleport"
+              ]
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "shots": 4335,
+          "hits": 1580,
+          "kills": 16,
+          "pods": 14,
+          "oreDepletedAtLeast": 1.19,
+          "research": [
+            {
+              "side": 0,
+              "step": 10,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "MRM Seeker 2",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Counter 2",
+                "Weedcore 03",
+                "MRM Quickfire 2"
+              ],
+              "stations": [
+                "Garrison"
+              ]
+            },
+            {
+              "side": 1,
+              "step": 9,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "MRM Seeker 2",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Counter 2",
+                "Weedcore 03"
+              ],
+              "stations": [
+                "Garrison"
+              ]
+            }
+          ]
+        }
+      ],
+      "triggers": "Ordinary gunfire/mining/research; controlled lethal damage, native station rescue and forced game over; normal bot purchase/relaunch and migration."
+    },
+    {
+      "trx": "guard-live-ce68bd021fd6-2.trx",
+      "outcome": "Passed",
+      "rounds": [
+        {
+          "match": 1,
+          "shots": 3266,
+          "hits": 1349,
+          "kills": 12,
+          "pods": 9,
+          "oreDepletedAtLeast": 1.1,
+          "research": [
+            {
+              "side": 0,
+              "step": 17,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "Enh Constructor",
+                "Enh Miner",
+                "ER Nanite 2",
+                "MRM Seeker 2",
+                "SRM Seismic",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Counter 2",
+                "Weedcore 03",
+                "MRM Quickfire 2"
+              ],
+              "stations": [
+                "Garrison",
+                "Teleport (Hvy)"
+              ]
+            },
+            {
+              "side": 1,
+              "step": 17,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "Enh Constructor",
+                "Enh Miner",
+                "ER Nanite 2",
+                "MRM Seeker 2",
+                "SRM Seismic",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Hvy Sig Cloak 1",
+                "Counter 2",
+                "Weedcore 03"
+              ],
+              "stations": [
+                "Garrison",
+                "Teleport"
+              ]
+            }
+          ]
+        },
+        {
+          "match": 2,
+          "shots": 4526,
+          "hits": 1779,
+          "kills": 17,
+          "pods": 14,
+          "oreDepletedAtLeast": 1.23,
+          "research": [
+            {
+              "side": 0,
+              "step": 10,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "MRM Seeker 2",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Counter 2",
+                "Weedcore 03",
+                "MRM Quickfire 2"
+              ],
+              "stations": [
+                "Garrison"
+              ]
+            },
+            {
+              "side": 1,
+              "step": 9,
+              "plan": "plan_a",
+              "completedTechs": [
+                "Retro Booster",
+                "MRM Seeker 2",
+                "Med Shield 2",
+                "Lt Booster 1",
+                "Counter 2",
+                "Weedcore 03"
+              ],
+              "stations": [
+                "Garrison"
+              ]
+            }
+          ]
+        }
+      ],
+      "triggers": "Ordinary gunfire/mining/research; controlled lethal damage, native station rescue and forced game over; normal bot purchase/relaunch and migration."
+    }
+  ],
+  "neverParks": [
+    {
+      "trx": "final-never-parks-1.trx",
+      "outcome": "Passed",
+      "longestStoppedWithTargetSeconds": 1.914
+    },
+    {
+      "trx": "final-never-parks-2.trx",
+      "outcome": "Passed",
+      "longestStoppedWithTargetSeconds": 2.038
+    },
+    {
+      "trx": "final-never-parks-3.trx",
+      "outcome": "Passed",
+      "longestStoppedWithTargetSeconds": 0.709
+    },
+    {
+      "trx": "final-never-parks-4.trx",
+      "outcome": "Passed",
+      "longestStoppedWithTargetSeconds": 1.925
+    },
+    {
+      "trx": "final-never-parks-5.trx",
+      "outcome": "Passed",
+      "longestStoppedWithTargetSeconds": 2.007
+    }
+  ]
+}

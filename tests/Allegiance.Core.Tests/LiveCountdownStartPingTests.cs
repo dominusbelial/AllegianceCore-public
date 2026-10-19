@@ -205,8 +205,12 @@ public class LiveCountdownStartPingTests
         // Manual start by the owner → countdown begins: NotStarted → Starting,
         // SET_START_TIME broadcast whole-mission.
         a.SendStartGame();
-        int began = PumpUntil(server, () => m.Stage == MissionStage.Starting && a.SetStartTimes.Count >= 1, 400);
+        int began = PumpUntil(server, () => m.Stage == MissionStage.Starting, 400);
         Assert.True(began < 400, "START_GAME did not begin the countdown");
+        // Do not consume the countdown's simulation budget while waiting for
+        // independent TCP readers to decode its already-generated announcement.
+        Assert.True(SpinWait.SpinUntil(() => a.SetStartTimes.Count >= 1 && b.SetStartTimes.Count >= 1,
+            TimeSpan.FromSeconds(30)), "both peers must decode SET_START_TIME");
         Assert.Equal(MissionStage.Starting, m.Stage);
         Assert.Contains(a.SetStartTimes, s => s.TimeStart > 0);
         Assert.Single(b.SetStartTimes);          // whole-mission: both peers saw the announcement
@@ -376,7 +380,6 @@ public class LiveCountdownStartPingTests
     /// neither, and mission B's stage is untouched (the P180/P178 must-not-
     /// regress per-mission-scoping class).</summary>
     [Trait("Requires", "Artwork")]
-    [Trait("Lane", "LiveTiming")]   // P647 quarantine: live-wire countdown scope receipt is load-sensitive
     [SkippableFact]
     public void Multi_mission_countdown_scopes_per_mission()
     {
@@ -406,8 +409,10 @@ public class LiveCountdownStartPingTests
         SideOf(server, ma, ma.Sides[1].Id).Ready = true;
 
         a0.SendStartGame();
-        int began = PumpUntil(server, () => ma.Stage == MissionStage.Starting && a0.SetStartTimes.Count >= 1, 400);
+        int began = PumpUntil(server, () => ma.Stage == MissionStage.Starting, 400);
         Assert.True(began < 400, "mission A countdown did not begin");
+        Assert.True(SpinWait.SpinUntil(() => a0.SetStartTimes.Count >= 1 && a1.SetStartTimes.Count >= 1,
+            TimeSpan.FromSeconds(30)), "both mission A peers must decode SET_START_TIME");
         Assert.Equal(MissionStage.Starting, ma.Stage);
 
         // Mission A's peers heard SET_START_TIME; mission B's peer heard nothing.

@@ -13,6 +13,7 @@ public class P701StationBayVisualTests
     private static MdlFile Model(string stem) => MdlFile.Parse(Path.Combine(Art, stem + ".mdl"));
 
     [Trait("Requires", "Artwork")]
+    [Trait("Tier", "Live")] // Expensive corpus/scenario or collision-work budget; docs/testing/TIERS.md.
     [SkippableFact]
     public void Every_station_group_texture_and_light_matches_independent_binary_oracle()
     {

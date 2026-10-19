@@ -9,6 +9,9 @@ namespace Allegiance.ClientCore.MonoGame;
 
 public sealed partial class Game1
 {
+    private readonly HudSettings _hudSettings = HudSettings.Load(HudSettings.DefaultPath,
+        File.Exists(IntroPreferences.FilePath) || File.Exists(UpscalingSettings.DefaultPath) || File.Exists(KeyBindingStore.ResolvePath()));
+    private HudRenderer ActiveHud => _hudSettings.Style == HudStyle.Modern ? _modernHudRenderer : _hudRenderer;
     private readonly UpscalingSettings _upscaling = UpscalingSettings.Load(UpscalingSettings.DefaultPath);
     private readonly DynamicResolutionController _resolutionController = new();
     private readonly FlightGcLatency _flightGc = new(Environment.GetEnvironmentVariable("ALLEGIANCE_CLIENT_GC_LOWLATENCY") == "1");
@@ -28,6 +31,8 @@ public sealed partial class Game1
 
     private void InitializeGpuBudget()
     {
+        try { _hudSettings.Save(HudSettings.DefaultPath); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { Console.WriteLine($"[hud2] cannot save HUD preferences: {e.Message}"); }
         _nativeShipRenderer.HdTexturesEnabled = _upscaling.HdTextures;
         _hdMaterials.Enabled = _upscaling.HdTextures;
         _fsr = new(GraphicsDevice, _shaders!);
@@ -84,14 +89,17 @@ public sealed partial class Game1
         _flightGc.SetFlying(false);
         bool Press(Keys k) => ks.IsKeyDown(k) && !_graphicsPrevious.IsKeyDown(k);
         if (Press(Keys.Escape)) _graphicsSettingsVisible = false;
-        if (Press(Keys.Down)) _graphicsRow = (_graphicsRow + 1) % 6;
-        if (Press(Keys.Up)) _graphicsRow = (_graphicsRow + 5) % 6;
+        if (Press(Keys.Down)) _graphicsRow = (_graphicsRow + 1) % 9;
+        if (Press(Keys.Up)) _graphicsRow = (_graphicsRow + 8) % 9;
         int direction = Press(Keys.Right) ? 1 : Press(Keys.Left) ? -1 : 0;
         bool changed = direction != 0;
         if (changed)
         {
             switch (_graphicsRow)
             {
+                case 6: _hudSettings.Style = _hudSettings.Style == HudStyle.Classic ? HudStyle.Modern : HudStyle.Classic; break;
+                case 7: _hudSettings.Size = Math.Clamp(_hudSettings.Size + direction * .05f, .75f, 1.5f); break;
+                case 8: _hudSettings.ColorBlindSafe = !_hudSettings.ColorBlindSafe; break;
                 case 0: _upscaling.Upscaling = _upscaling.Upscaling == UpscalingMode.Off ? UpscalingMode.FSR1 : UpscalingMode.Off; break;
                 case 1: _upscaling.Preset = (FsrPreset)(((int)_upscaling.Preset + direction + 4) % 4); break;
                 case 2: _upscaling.Sharpness = Math.Clamp(_upscaling.Sharpness + direction * .05f, 0, 1); break;
@@ -109,11 +117,17 @@ public sealed partial class Game1
             changed |= sharpness != _upscaling.Sharpness;
             _upscaling.Sharpness = sharpness;
         }
+        var hudSlider = new Rectangle(360, 78 + 7 * 46 + 30, 260, 8);
+        if (mouse.LeftButton == ButtonState.Pressed && hudSlider.Contains(mouse.Position))
+        {
+            _graphicsRow = 7; changed = true;
+            _hudSettings.Size = .75f + .75f * Math.Clamp((mouse.X - hudSlider.X) / (float)hudSlider.Width, 0, 1);
+        }
         if (changed)
         {
             if (_upscaling.DynamicResolution) EnableFrameTelemetry();
             _resolutionController.Reset(UpscalingSettings.Scale(_upscaling.Preset));
-            try { _upscaling.Save(UpscalingSettings.DefaultPath); }
+            try { _hudSettings.Save(HudSettings.DefaultPath); _upscaling.Save(UpscalingSettings.DefaultPath); }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException) { Console.WriteLine($"[p643] cannot save graphics settings: {e.Message}"); }
         }
         _graphicsPrevious = ks;
@@ -125,20 +139,25 @@ public sealed partial class Game1
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
         if (_graphicsSettingsVisible)
         {
-            _spriteBatch.Draw(_whitePixel, new Rectangle(32, 32, Math.Min(760, GraphicsDevice.Viewport.Width - 48), 390), new Color(5, 15, 22, 245));
-            _spriteBatch.DrawString(_hudSmall, "Graphics (Ctrl+F6) - arrows change, Esc closes; saved automatically", new Vector2(48, 44), Color.White);
+            _spriteBatch.Draw(_whitePixel, new Rectangle(32, 32, Math.Min(760, GraphicsDevice.Viewport.Width - 48), 540), new Color(5, 15, 22, 245));
+            _spriteBatch.DrawString(_hudSmall, "Settings - Graphics / HUD (Ctrl+F6); arrows change, Esc closes", new Vector2(48, 44), Color.White);
             string[] rows = {
                 $"Upscaling: {_upscaling.Upscaling}",
                 $"Preset: {_upscaling.Preset} ({UpscalingSettings.Scale(_upscaling.Preset):P0})",
                 $"RCAS sharpness: {_upscaling.Sharpness:P0}",
                 $"Dynamic resolution: {(_upscaling.DynamicResolution ? "On" : "Off")}",
                 $"Target frame time: {_upscaling.TargetFrameMs:F1} ms",
-                $"HD textures (add-on): {(_upscaling.HdTextures ? "On" : "Off")} ({_nativeShipRenderer.HdResidentBytes / 1048576.0:F1} MiB resident)" };
+                $"HD textures (add-on): {(_upscaling.HdTextures ? "On" : "Off")} ({_nativeShipRenderer.HdResidentBytes / 1048576.0:F1} MiB resident)",
+                $"HUD style: {_hudSettings.Style}",
+                $"HUD size: {_hudSettings.Size:P0}",
+                $"Colour-blind safe palette: {(_hudSettings.ColorBlindSafe ? "On" : "Off")}" };
             for (int i = 0; i < rows.Length; i++)
                 _spriteBatch.DrawString(_hudSmall, (_graphicsRow == i ? "> " : "  ") + rows[i], new Vector2(48, 78 + i * 46), _graphicsRow == i ? Color.Yellow : Color.White);
             _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, 300, 8), Color.Gray);
             _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, (int)(300 * _upscaling.Sharpness), 8), Color.Cyan);
-            _spriteBatch.DrawString(_hudSmall, _fsr is { Ready: true } ? "FSR1 ready; HUD stays at native resolution" : "FSR1 unavailable: using native resolution", new Vector2(48, 376), Color.White);
+            _spriteBatch.Draw(_whitePixel, new Rectangle(360, 430, 260, 8), Color.Gray);
+            _spriteBatch.Draw(_whitePixel, new Rectangle(360, 430, (int)(260 * (_hudSettings.Size - .75f) / .75f), 8), Color.Cyan);
+            _spriteBatch.DrawString(_hudSmall, _fsr is { Ready: true } ? "FSR1 ready; HUD stays at native resolution" : "FSR1 unavailable: using native resolution", new Vector2(48, 510), Color.White);
         }
         if (_frameTelemetry is not null)
         {

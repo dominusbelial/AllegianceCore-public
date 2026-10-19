@@ -1,0 +1,1181 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://allegiance.example/benchmark/schema-1.json",
+  "title": "Anonymous benchmark event, schema 1",
+  "oneOf": [
+    {
+      "$ref": "#/definitions/result"
+    },
+    {
+      "$ref": "#/definitions/kept"
+    }
+  ],
+  "definitions": {
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "eventId",
+        "installId",
+        "timestamp",
+        "gameVersion",
+        "commit",
+        "hardware",
+        "result"
+      ],
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "eventId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "installId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "gameVersion": {
+          "type": "string",
+          "maxLength": 80,
+          "pattern": "^[a-zA-Z0-9.+_-]+$"
+        },
+        "commit": {
+          "type": "string",
+          "maxLength": 80,
+          "pattern": "^(unknown|[0-9a-fA-F]{7,64})$"
+        },
+        "hardware": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "cpuModel",
+            "cpuCores",
+            "cpuThreads",
+            "gpuModel",
+            "gpuVramGb",
+            "gpuDriver",
+            "ramGb",
+            "os",
+            "osVersion",
+            "width",
+            "height"
+          ],
+          "properties": {
+            "cpuModel": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200,
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]*$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "cpuCores": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 100000
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "cpuThreads": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000
+            },
+            "gpuModel": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200,
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]*$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "gpuVramGb": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000000000000000.0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "gpuDriver": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200,
+                  "pattern": "^[^\\u0000-\\u001f\\u007f]*$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ramGb": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000000000000000.0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "os": {
+              "enum": [
+                "Linux",
+                "Windows",
+                "macOS",
+                "Other"
+              ]
+            },
+            "osVersion": {
+              "type": "string",
+              "maxLength": 100,
+              "pattern": "^[^\\u0000-\\u001f\\u007f]*$"
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 32768
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 32768
+            }
+          }
+        },
+        "result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mode",
+            "preset",
+            "durationSeconds",
+            "bottleneck",
+            "runs",
+            "median",
+            "settingsUsed",
+            "settingsSuggested",
+            "autoTune"
+          ],
+          "properties": {
+            "mode": {
+              "enum": [
+                "skirmish",
+                "replay"
+              ]
+            },
+            "preset": {
+              "enum": [
+                "Small",
+                "Medium",
+                "Large",
+                "Epic"
+              ]
+            },
+            "durationSeconds": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000000000000.0
+            },
+            "bottleneck": {
+              "enum": [
+                "CPU-bound by bots",
+                "GPU-bound",
+                "CPU-bound by client",
+                "Frame-time spikes; CPU/GPU means within budget",
+                "GPU timing unavailable; CPU/presentation limit unresolved",
+                "Within measured budget",
+                "Headless: graphics unmeasured"
+              ]
+            },
+            "runs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "repetition",
+                  "rendered",
+                  "wallSeconds",
+                  "fpsAverage",
+                  "fpsOnePercentLow",
+                  "frameMs",
+                  "cpuMs",
+                  "gpuMs",
+                  "serverTickMs",
+                  "botCount",
+                  "botDecisionCpuMs",
+                  "amortizedCpuMsPerBotSecond"
+                ],
+                "properties": {
+                  "repetition": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 3
+                  },
+                  "rendered": {
+                    "type": "boolean"
+                  },
+                  "wallSeconds": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1000000000000000.0
+                  },
+                  "fpsAverage": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000000000.0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "fpsOnePercentLow": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000000000.0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "frameMs": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "count",
+                          "mean",
+                          "p50",
+                          "p95",
+                          "p99",
+                          "worst"
+                        ],
+                        "properties": {
+                          "count": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 100000000
+                          },
+                          "mean": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          },
+                          "p50": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          },
+                          "p95": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          },
+                          "p99": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          },
+                          "worst": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          }
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "cpuMs": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000000000.0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "gpuMs": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000000000.0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "serverTickMs": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "count",
+                          "mean",
+                          "p50",
+                          "p95",
+                          "p99",
+                          "worst"
+                        ],
+                        "properties": {
+                          "count": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 100000000
+                          },
+                          "mean": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          },
+                          "p50": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          },
+                          "p95": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          },
+                          "p99": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          },
+                          "worst": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          }
+                        }
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "botCount": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 1000
+                  },
+                  "botDecisionCpuMs": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000000000.0
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "maxItems": 1000
+                  },
+                  "amortizedCpuMsPerBotSecond": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000000000.0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "maxItems": 3,
+              "minItems": 3
+            },
+            "median": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "repetition",
+                "rendered",
+                "wallSeconds",
+                "fpsAverage",
+                "fpsOnePercentLow",
+                "frameMs",
+                "cpuMs",
+                "gpuMs",
+                "serverTickMs",
+                "botCount",
+                "botDecisionCpuMs",
+                "amortizedCpuMsPerBotSecond"
+              ],
+              "properties": {
+                "repetition": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 3
+                },
+                "rendered": {
+                  "type": "boolean"
+                },
+                "wallSeconds": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000000000000000.0
+                },
+                "fpsAverage": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000000000000000.0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "fpsOnePercentLow": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000000000000000.0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "frameMs": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "count",
+                        "mean",
+                        "p50",
+                        "p95",
+                        "p99",
+                        "worst"
+                      ],
+                      "properties": {
+                        "count": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000000
+                        },
+                        "mean": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000000000.0
+                        },
+                        "p50": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000000000.0
+                        },
+                        "p95": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000000000.0
+                        },
+                        "p99": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000000000.0
+                        },
+                        "worst": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000000000.0
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "cpuMs": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000000000000000.0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "gpuMs": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000000000000000.0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "serverTickMs": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "count",
+                        "mean",
+                        "p50",
+                        "p95",
+                        "p99",
+                        "worst"
+                      ],
+                      "properties": {
+                        "count": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000000
+                        },
+                        "mean": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000000000.0
+                        },
+                        "p50": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000000000.0
+                        },
+                        "p95": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000000000.0
+                        },
+                        "p99": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000000000.0
+                        },
+                        "worst": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1000000000000000.0
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "botCount": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1000
+                },
+                "botDecisionCpuMs": {
+                  "type": "array",
+                  "items": {
+                    "anyOf": [
+                      {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000000000.0
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "maxItems": 1000
+                },
+                "amortizedCpuMsPerBotSecond": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1000000000000000.0
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            "settingsUsed": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "battleSize",
+                    "difficulty",
+                    "researchSpeed",
+                    "spectatorDefault",
+                    "fsr",
+                    "fsrPreset",
+                    "bloom",
+                    "hdPbr",
+                    "hdTextures",
+                    "frameCap",
+                    "vsync",
+                    "effectsDensity",
+                    "viewDistance"
+                  ],
+                  "properties": {
+                    "battleSize": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 3
+                    },
+                    "difficulty": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 2
+                    },
+                    "researchSpeed": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "spectatorDefault": {
+                      "type": "boolean"
+                    },
+                    "fsr": {
+                      "type": "boolean"
+                    },
+                    "fsrPreset": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 3
+                    },
+                    "bloom": {
+                      "type": "boolean"
+                    },
+                    "hdPbr": {
+                      "type": "boolean"
+                    },
+                    "hdTextures": {
+                      "type": "boolean"
+                    },
+                    "frameCap": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 1000
+                    },
+                    "vsync": {
+                      "type": "boolean"
+                    },
+                    "effectsDensity": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "viewDistance": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100000
+                    }
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "settingsSuggested": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "battleSize",
+                "difficulty",
+                "researchSpeed",
+                "spectatorDefault",
+                "fsr",
+                "fsrPreset",
+                "bloom",
+                "hdPbr",
+                "hdTextures",
+                "frameCap",
+                "vsync",
+                "effectsDensity",
+                "viewDistance"
+              ],
+              "properties": {
+                "battleSize": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 3
+                },
+                "difficulty": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2
+                },
+                "researchSpeed": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100
+                },
+                "spectatorDefault": {
+                  "type": "boolean"
+                },
+                "fsr": {
+                  "type": "boolean"
+                },
+                "fsrPreset": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 3
+                },
+                "bloom": {
+                  "type": "boolean"
+                },
+                "hdPbr": {
+                  "type": "boolean"
+                },
+                "hdTextures": {
+                  "type": "boolean"
+                },
+                "frameCap": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1000
+                },
+                "vsync": {
+                  "type": "boolean"
+                },
+                "effectsDensity": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "viewDistance": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 100000
+                }
+              }
+            },
+            "autoTune": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "settings",
+                  "measurement",
+                  "targetMet"
+                ],
+                "properties": {
+                  "settings": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "battleSize",
+                      "difficulty",
+                      "researchSpeed",
+                      "spectatorDefault",
+                      "fsr",
+                      "fsrPreset",
+                      "bloom",
+                      "hdPbr",
+                      "hdTextures",
+                      "frameCap",
+                      "vsync",
+                      "effectsDensity",
+                      "viewDistance"
+                    ],
+                    "properties": {
+                      "battleSize": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3
+                      },
+                      "difficulty": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 2
+                      },
+                      "researchSpeed": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100
+                      },
+                      "spectatorDefault": {
+                        "type": "boolean"
+                      },
+                      "fsr": {
+                        "type": "boolean"
+                      },
+                      "fsrPreset": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3
+                      },
+                      "bloom": {
+                        "type": "boolean"
+                      },
+                      "hdPbr": {
+                        "type": "boolean"
+                      },
+                      "hdTextures": {
+                        "type": "boolean"
+                      },
+                      "frameCap": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1000
+                      },
+                      "vsync": {
+                        "type": "boolean"
+                      },
+                      "effectsDensity": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "viewDistance": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100000
+                      }
+                    }
+                  },
+                  "measurement": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "repetition",
+                      "rendered",
+                      "wallSeconds",
+                      "fpsAverage",
+                      "fpsOnePercentLow",
+                      "frameMs",
+                      "cpuMs",
+                      "gpuMs",
+                      "serverTickMs",
+                      "botCount",
+                      "botDecisionCpuMs",
+                      "amortizedCpuMsPerBotSecond"
+                    ],
+                    "properties": {
+                      "repetition": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3
+                      },
+                      "rendered": {
+                        "type": "boolean"
+                      },
+                      "wallSeconds": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000000000000000.0
+                      },
+                      "fpsAverage": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "fpsOnePercentLow": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "frameMs": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "count",
+                              "mean",
+                              "p50",
+                              "p95",
+                              "p99",
+                              "worst"
+                            ],
+                            "properties": {
+                              "count": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100000000
+                              },
+                              "mean": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000000000000.0
+                              },
+                              "p50": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000000000000.0
+                              },
+                              "p95": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000000000000.0
+                              },
+                              "p99": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000000000000.0
+                              },
+                              "worst": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000000000000.0
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "cpuMs": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "gpuMs": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "serverTickMs": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "count",
+                              "mean",
+                              "p50",
+                              "p95",
+                              "p99",
+                              "worst"
+                            ],
+                            "properties": {
+                              "count": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 100000000
+                              },
+                              "mean": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000000000000.0
+                              },
+                              "p50": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000000000000.0
+                              },
+                              "p95": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000000000000.0
+                              },
+                              "p99": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000000000000.0
+                              },
+                              "worst": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1000000000000000.0
+                              }
+                            }
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "botCount": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1000
+                      },
+                      "botDecisionCpuMs": {
+                        "type": "array",
+                        "items": {
+                          "anyOf": [
+                            {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1000000000000000.0
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "maxItems": 1000
+                      },
+                      "amortizedCpuMsPerBotSecond": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000000000000000.0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "targetMet": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "maxItems": 2
+            }
+          }
+        }
+      }
+    },
+    "kept": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "eventId",
+        "installId",
+        "timestamp",
+        "resultId",
+        "kept",
+        "changedSettings"
+      ],
+      "properties": {
+        "schema": {
+          "const": 1
+        },
+        "eventId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "installId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resultId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "kept": {
+          "type": "boolean"
+        },
+        "changedSettings": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "battleSize",
+              "difficulty",
+              "researchSpeed",
+              "spectatorDefault",
+              "fsr",
+              "fsrPreset",
+              "bloom",
+              "hdPbr",
+              "hdTextures",
+              "frameCap",
+              "vsync",
+              "effectsDensity",
+              "viewDistance"
+            ]
+          },
+          "uniqueItems": true,
+          "maxItems": 13
+        }
+      }
+    }
+  }
+}

@@ -1454,6 +1454,8 @@ public sealed partial class Ship : Model, IShipIgc
                 && (_commandTarget is null || value is null || _commandTarget.Id != value.Id
                     || EquipmentTarget.TypeOf(_commandTarget) != EquipmentTarget.TypeOf(value)))
                 MissileLock = 0f;
+            if (value is not null && !ReferenceEquals(_commandTarget, value))
+                Mission?.Skills?.Record(SideId, ShowcaseSkill.Targeting);
             _commandTarget = value;
         }
     }
@@ -3950,6 +3952,7 @@ public sealed partial class Ship : Model, IShipIgc
         // FM_CS_FIRE_MISSILE(70) about this fresh missile (a no-op default for a
         // headless host). Follows Weapon.cs:232-237's ProjectileCreatedEvent use
         // of Mission?.Site — the authoritative mission's site.
+        mission.Skills?.Record(SideId, ShowcaseSkill.Missiles);
         mission.Site.MissileCreatedEvent(missile);
         return missile;
     }
@@ -4128,6 +4131,7 @@ public sealed partial class Ship : Model, IShipIgc
         // FM_S_EXPORT(26)/OT_mine about this fresh mine (a no-op default for a
         // headless host). Follows FireMissile's use of Mission?.Site (Ship.cs:421)
         // — the authoritative mission's site.
+        mission.Skills?.Record(SideId, ShowcaseSkill.Mines);
         mission.Site.MineCreatedEvent(mine);
         return mine;
     }
@@ -4178,6 +4182,7 @@ public sealed partial class Ship : Model, IShipIgc
         // FM_S_EXPORT(26)/OT_probe about this fresh probe (a no-op default for a
         // headless host). Follows DeployMine's use of Mission?.Site
         // (Ship.cs:472) — the authoritative mission's site.
+        mission.Skills?.Record(SideId, ShowcaseSkill.Probes);
         mission.Site.ProbeCreatedEvent(probe);
         return probe;
     }
@@ -4347,6 +4352,7 @@ public sealed partial class Ship : Model, IShipIgc
         }
         var chaff = new Chaff(mission.NextObjectId(), sector, chaffType, position, velocity, now, this);
         sector.Add(chaff);
+        mission.Skills?.Record(SideId, ShowcaseSkill.Chaff);
 
         var r = rng ?? Random.Shared;
         var spoofed = new List<Missile>();
@@ -4476,9 +4482,19 @@ public sealed partial class Ship : Model, IShipIgc
         if (BlastDamage.Suppressed(Mission, SideId, launcher, amount))
             return DamageResult.NoDamage;
 
+        float skillHullBefore = _fraction, skillShieldBefore = _shieldFraction;
         float maxHP = EffectiveMaxHitPoints();   // GetHitPoints() (shipIGC.cpp:1232) — GA-scaled max armor
         float dtmArmor = DamageConstant(type);
 
+        bool skillDamageRecorded = false;
+        void RecordSkillDamage()
+        {
+            if (skillDamageRecorded || amount <= 0 || launcher is not Ship attacker
+                || (_fraction >= skillHullBefore && _shieldFraction >= skillShieldBefore)) return;
+            skillDamageRecorded = true;
+            Mission?.Skills?.Record(attacker.SideId, ShowcaseSkill.ShipDamage);
+            Mission?.Skills?.Damage(attacker.SideId, false, type);
+        }
         DamageResult dr;
         float leakage;
 
@@ -4506,6 +4522,11 @@ public sealed partial class Ship : Model, IShipIgc
             {
                 restored -= _fraction - 1.0f;   // drop the over-repair tail
                 _fraction = 1.0f;
+            }
+            if (_fraction > skillHullBefore && launcher is Ship repairer)
+            {
+                Mission?.Skills?.Record(repairer.SideId, ShowcaseSkill.NaniteShip);
+                Mission?.Skills?.Damage(repairer.SideId, false, type);
             }
             leakage = 0.0f;
             dr = DamageResult.NoDamage;
@@ -4588,6 +4609,8 @@ public sealed partial class Ship : Model, IShipIgc
                         if (top is Ship topShip && ReferenceEquals(topShip.Mission, Mission))
                             credit = top;
                     }
+                    RecordSkillDamage();
+                    if (credit is Ship creditedShip) Mission?.Skills?.Record(creditedShip.SideId, ShowcaseSkill.ShipKills);
                     using (Allegiance.Core.Profiling.TickProfiler.Enter("combat.killEject"))
                         Mission?.Site.KillShipEvent(now, this, credit, amount, position1, position2);
                     dr = DamageResult.Killed;
@@ -4595,6 +4618,7 @@ public sealed partial class Ship : Model, IShipIgc
             }
         }
 
+        RecordSkillDamage();
         return dr;
     }
 
@@ -5310,6 +5334,11 @@ public sealed partial class Ship : Model, IShipIgc
         if (StationId is not null) return;
         if (!IsNpc && GotoWaypoint is null) return;          // real player Controls are wire-only (P155) — UNLESS a player-issued goto is active (P403)
         if (Sector is not { } sector) return;
+        if (!_skillAutopilot && Velocity.LengthSquared() > 1 && Mission?.Skills is { } skills)
+        {
+            skills.Record(SideId, ShowcaseSkill.Autopilot);
+            _skillAutopilot = true;
+        }
         StateM &= ~ShipControlState.MoveButtonsMask; // recompute this frame's docking RCS
 
         // P652b: an arrived miner holds its stopped mining position before
@@ -7548,6 +7577,7 @@ public sealed partial class Ship : Model, IShipIgc
     private void ActivateCloak(DataPartTypeIGC.Cloak type)
     {
         if (_cloakEmitterActive) return;
+        Mission?.Skills?.Record(SideId, ShowcaseSkill.Cloak);
         _cloakEmitterActive = true;
         _cloakLevel = 0.0f;
         Cloaking = 1.0f;
@@ -7616,6 +7646,7 @@ public sealed partial class Ship : Model, IShipIgc
     {
         if (!_afterburnerActive)
         {
+            Mission?.Skills?.Record(SideId, ShowcaseSkill.Booster);
             _afterburnerActive = true;
             _afterburnerPower = 0.0f;
         }
@@ -7732,6 +7763,8 @@ public sealed partial class Ship : Model, IShipIgc
             mission.Site.KillShipEvent(now, this, null, damage, p, p * 2f);
     }
 
+    private bool _skillFlight, _skillAutopilot;
+
     protected override void OnUpdate(double now, double dt)
     {
         WarningMask = ShipWarningMask.None; // shipIGC.cpp:271-273
@@ -7746,6 +7779,12 @@ public sealed partial class Ship : Model, IShipIgc
             StateM = 0;
             Velocity = Vector3.Zero;
             return;
+        }
+
+        if (!_skillFlight && Velocity.LengthSquared() > 1 && Mission?.Skills is { } skills)
+        {
+            skills.Record(SideId, ShowcaseSkill.Flight);
+            _skillFlight = true;
         }
 
         // P279 — the drifting Lifepod's oxygen timer. Direct port of native

@@ -128,6 +128,7 @@ public sealed class P656ShowcaseFinaleTests(Xunit.Abstractions.ITestOutputHelper
         Assert.Null(ShowcaseFinale.EscortTarget(Vector3.Zero, Vector3.Zero, [approach with { Velocity = new(1, 0, 0) }], 1500, 2500));
     }
 
+    [Trait("Tier", "Live")] // Exhaustive station/hull/part corpus; schedule sequentially (docs/testing/TIERS.md).
     [SkippableFact]
     public void P656b_AllRealStationTargetsSelectOnlyBombersWithAllTech()
     {

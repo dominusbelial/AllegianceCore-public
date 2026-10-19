@@ -347,6 +347,7 @@ public sealed class Weapon
                             _ship,                    // m_launcher (projectileIGC.cpp:25)
                             lifespanOverride: shotLifespan);
                         sector.Add(projectile);
+                        _ship.Mission?.Skills?.Record(_ship.SideId, Allegiance.Core.Model.ShowcaseSkill.Guns);
 
                         // P88: raise the host seam so the server can broadcast the
                         // real FM_CS_PROJECTILE_INSTANCE(12) message about this

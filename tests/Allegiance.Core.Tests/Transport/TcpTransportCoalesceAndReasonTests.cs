@@ -102,8 +102,7 @@ public abstract class TcpTransportCoalesceAndReasonTestsBase
     }
 
     /// <summary>Count the peer's pending queue nodes whose CoalesceKey == key,
-    /// and the size of the coalesce map. (Reflected while the peer's writer is
-    /// blocked on a stalled socket, so the queue is quiescent.)</summary>
+    /// and the size of the coalesce map. Caller holds the sender queue lock.</summary>
     private static (int PendingForKey, int CoalesceMapSize, object Queue) PeekQueue(object ps)
     {
         // NOTE: casting LinkedList<T> to the non-generic IEnumerable yields the
@@ -174,13 +173,13 @@ public abstract class TcpTransportCoalesceAndReasonTestsBase
             host.Host(0);
             var (id, client) = ConnectRawPeer(host, site, "COALESCE", tinyReceiveWindow: true);
             var ps = PeerSenderFor(host, id);
+            using var paused = new PausedSendQueue(ps, TcpTransport.CapacityBytes);
 
             // Big immediate flood: many MB into a 1 KiB window => the writer
             // blocks early; coalescing must collapse the same-key frames to ONE.
             var frame = new byte[4096];
             for (int i = 0; i < 4000; i++)
                 host.Send(id, frame, guaranteed: false, coalesceKey: 42);
-            Thread.Sleep(80);
 
             var (pending, mapSize, _) = PeekQueue(ps);
             // At most one pending frame for key 42 (the newest snapshot), however
@@ -206,6 +205,7 @@ public abstract class TcpTransportCoalesceAndReasonTestsBase
             host.Host(0);
             var (id, client) = ConnectRawPeer(host, site, "KEYS", tinyReceiveWindow: true);
             var ps = PeerSenderFor(host, id);
+            using var paused = new PausedSendQueue(ps, TcpTransport.CapacityBytes);
 
             var frame = new byte[4096];
             for (int rep = 0; rep < 2000; rep++)
@@ -214,7 +214,6 @@ public abstract class TcpTransportCoalesceAndReasonTestsBase
                 host.Send(id, frame, guaranteed: false, coalesceKey: 2);
                 host.Send(id, frame, guaranteed: false, coalesceKey: 3);
             }
-            Thread.Sleep(80);
 
             var (pending, mapSize, q) = PeekQueue(ps);
             // Distinct keys are independent: they must NOT collapse into a single
@@ -227,9 +226,10 @@ public abstract class TcpTransportCoalesceAndReasonTestsBase
                 int ck = (int)item.GetType().GetField("CoalesceKey")!.GetValue(item)!;
                 if (ck != 0) distinct.Add(ck);
             }
-            Assert.True(distinct.Count >= 2,
+            Assert.True(distinct.Count == 3,
                 $"distinct coalesce keys must remain independent (found {distinct.Count}: {string.Join(",", distinct)})");
-            Assert.True(mapSize >= 2, $"expected >=2 coalesce-map entries, got {mapSize}");
+            Assert.Equal(3, mapSize);
+            Assert.Equal(3, pending);
 
             client.Dispose();
         }
@@ -325,13 +325,13 @@ public abstract class TcpTransportCoalesceAndReasonTestsBase
             var (id, client) = ConnectRawPeer(host, site, "GCOAL", tinyReceiveWindow: true);
             var ps = PeerSenderFor(host, id);
 
+            using var paused = new PausedSendQueue(ps, capacity: 16 * 1024);
             var frame = new byte[8192];
             for (int i = 0; i < 4000; i++)
             {
                 host.Send(id, frame, guaranteed: true, coalesceKey: 77);     // own-ship: guaranteed, never shed
-                host.Send(id, frame, guaranteed: false, coalesceKey: 78);    // teammate stream: shed first
+                host.Send(id, frame, guaranteed: false, coalesceKey: 78 + i % 4);    // teammate stream: shed first
             }
-            Thread.Sleep(80);
 
             var q = (IEnumerable)QField.GetValue(ps)!;
             int g77 = 0, g78 = 0;
@@ -340,13 +340,13 @@ public abstract class TcpTransportCoalesceAndReasonTestsBase
                 int ck = (int)item.GetType().GetField("CoalesceKey")!.GetValue(item)!;
                 bool guar = (bool)item.GetType().GetField("Guaranteed")!.GetValue(item)!;
                 if (ck == 77) { g77++; Assert.True(guar, "key-77 frames must be guaranteed"); }
-                if (ck == 78) g78++;
+                if (ck is >= 78 and <= 81) g78++;
             }
             // Guaranteed stream: coalesced (<=1 pending, bounded) and never shed
             // (present) even though 4000 guaranteed frames were enqueued past capacity.
             Assert.Equal(1, g77);
             // The non-guaranteed stream is the shed candidate and stays at <=1 too.
-            Assert.True(g78 <= 1, $"non-guaranteed key-78 backlog must stay <=1, got {g78}");
+            Assert.True(g78 <= 1, $"best-effort frames must be shed to fit the byte cap, got {g78}");
 
             client.Dispose();
         }

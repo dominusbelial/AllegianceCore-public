@@ -137,6 +137,7 @@ public class LivePlayerDeathRespawnTests
         private readonly List<KillShip> _kills = new();
         private readonly List<ShipDelete> _deletes = new();
         private readonly List<EnterLifepod> _pods = new();
+        private readonly List<uint> _pings = new();
 
         public LogonAck? Ack { get { lock (_gate) return _ack; } }
         public SetCluster? ShipAssignment { get { lock (_gate) return _set; } }
@@ -149,6 +150,9 @@ public class LivePlayerDeathRespawnTests
         public void Connect(ushort port, string name) => _t.Join("127.0.0.1", port, name);
         public void Logon(LogonRequest req) => _t.Send(ConnectionId.Server, FedPacket.Pack(new[] { req.Encode() }), guaranteed: true);
         public void SendSuicide() => _t.Send(ConnectionId.Server, FedPacket.Pack(new[] { new Suicide().Encode() }), guaranteed: true);
+        public void SendPing(uint marker) => _t.Send(ConnectionId.Server,
+            FedPacket.Pack(new Ping { TimeClient = marker }.Encode()), guaranteed: true);
+        public bool SawPing(uint marker) { lock (_gate) return _pings.Contains(marker); }
 
         void ITransportSite.OnPeerJoined(ConnectionId id, string name) { }
         void ITransportSite.OnPeerLeft(ConnectionId id) { }
@@ -171,12 +175,27 @@ public class LivePlayerDeathRespawnTests
                         case KillShip.Fmid: _kills.Add(KillShip.Decode(m)); break;
                         case ShipDelete.Fmid: _deletes.Add(ShipDelete.Decode(m)); break;
                         case EnterLifepod.Fmid: _pods.Add(EnterLifepod.Decode(m)); break;
+                        case Ping.Fmid: _pings.Add(Ping.Decode(m).TimeClient); break;
                     }
                 }
             }
         }
 
         public void Dispose() => _t.Shutdown();
+    }
+
+    private static void ReceiveBarrier(Srv server, params WireClient[] peers)
+    {
+        // Call after the death was processed. Each ordered echo follows every
+        // death/respawn message already generated for that recipient, so the
+        // negative ENTER_LIFEPOD assertions cannot outrun its receive thread.
+        const uint marker = 0x105b;
+        foreach (var peer in peers) peer.SendPing(marker);
+        Assert.True(SpinWait.SpinUntil(() =>
+        {
+            server.TickSim();
+            return peers.All(p => p.SawPing(marker));
+        }, TimeSpan.FromSeconds(30)), "death recipients must decode the ordered receive barrier");
     }
 
     // ── live proofs ────────────────────────────────────────────────────────
@@ -252,6 +271,10 @@ public class LivePlayerDeathRespawnTests
             () => victim.Pods.Any(p => p.ShipId == victimId),
             2000);
         Assert.True(ticks < 2000, "no ENTER_LIFEPOD within ticks");
+        Assert.True(SpinWait.SpinUntil(() => observer.Kills.Any(k => k.ShipId == victimId)
+            && observer.Deletes.Any(d => d.ShipId == victimId), TimeSpan.FromSeconds(30)),
+            "observer must decode both death events independently of the owner's respawn");
+        ReceiveBarrier(server, observer);
 
         var victimShip = server.Ships.First(s => s.Ship.Id == victimId).Ship;
         Assert.Equal(lifepodId, victimShip.HullType.HullId);                    // hull stays the side's Lifepod
@@ -320,7 +343,10 @@ public class LivePlayerDeathRespawnTests
 
         victim.SendSuicide();
         int ticks = PumpUntil(server, () => victim.Kills.Any(k => k.ShipId == victimId), 4000);
-        PumpUntil(server, () => false, 30);   // extra sim — a broadcast would land by now
+        PumpUntil(server, () => false, 30);   // retain the post-death simulation coverage
+        Assert.True(SpinWait.SpinUntil(() => victim.Deletes.Any(d => d.ShipId == victimId),
+            TimeSpan.FromSeconds(30)), "victim must decode deletion as well as the kill");
+        ReceiveBarrier(server, victim, observer);
 
         var victimShip = server.Ships.First(s => s.Ship.Id == victimId).Ship;
         Assert.True(ticks < 4000, "suicide did not kill the ship");
@@ -387,6 +413,10 @@ public class LivePlayerDeathRespawnTests
 
         // The peer saw the bot die via KILL_SHIP + SHIP_DELETE, but NO ENTER_LIFEPOD.
         int quiet = PumpUntil(server, () => false, 30);
+        Assert.True(SpinWait.SpinUntil(() => peer.Kills.Any(k => k.ShipId == botId)
+            && peer.Deletes.Any(d => d.ShipId == botId), TimeSpan.FromSeconds(30)),
+            "observer must decode the ownerless bot's kill and deletion");
+        ReceiveBarrier(server, peer);
         Assert.Empty(peer.Pods);
         Assert.Contains(peer.Kills, k => k.ShipId == botId && k.BDeathCredit);
         Assert.Contains(peer.Deletes, d => d.ShipId == botId && d.Sdr == ShipDelete.SdrKilled);

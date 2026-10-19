@@ -32,6 +32,7 @@ namespace Allegiance.ClientCore.Tests;
 /// directly refuting P429's "server warp-export/coordinate handling for the
 /// probe's side" hypothesis with evidence, not assertion.
 /// </summary>
+// Synchronize each generated pose so the full two-hop flight remains in Fast.
 [Collection("LiveNetwork")]
 public sealed class ClientWarpApproachLiveTests
 {
@@ -170,6 +171,14 @@ public sealed class ClientWarpApproachLiveTests
         for (int i = 0; i < maxTicks; i++)
         {
             server.TickSim();
+            Assert.NotNull(serverShip);
+            var generatedPosition = serverShip.Position;
+            short generatedSector = serverShip.Sector!.Id;
+            // Keep simulated flight time independent of receiver scheduling:
+            // decode this tick's authoritative pose before advancing again.
+            Assert.True(SpinWait.SpinUntil(() => CsSector(cs) == generatedSector
+                && TryCsPose(cs, shipId, out var decoded, out _) && decoded == generatedPosition,
+                TimeSpan.FromSeconds(30)), $"no flight pose at step {i}, sector {generatedSector}");
             short cur = CsSector(cs);
             if (cur < 0) continue;
 

@@ -300,20 +300,28 @@ public class LiveGainFlagTests
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass the ready-up lobby
 
         var bot = Seat(server, "SECURE").Single();
-        bot.ResetGainFlags();
 
         var sh = server.Ships.First().Ship;   // the single peer's ship
         Assert.Equal(enemySide, sh.Flag!.Value);   // starts carrying the enemy flag, still flying
         Assert.Null(sh.StationId);
+        // The held flag is announced near the end of the join burst, after
+        // SET_CLUSTER/status. Decode it before resetting the secure phase.
+        Assert.True(SpinWait.SpinUntil(() => bot.GainFlags.Any(g => g.ShipidRecipient == sh.Id
+            && g.SideidFlag == enemySide), TimeSpan.FromSeconds(30)),
+            "join-sync must announce the carried enemy flag");
+        bot.ResetGainFlags();
 
         // Drive it into the friendly station's landing bay → the dock pass trips,
         // the ship docks, and the secure leg fires.
         var dock = sh.Sector!.Stations.Single(st => st.SideId == ownSide);
         sh.Position = DockTestPlacement.Inside(sh.Mission!, dock, sh.HullType);
 
-        int n = PumpUntil(server, () => bot.GainFlags.Count >= 1, 4000);
-        Assert.True(n < 4000, "GAIN_FLAG(NA) secure announce never reached the docking peer");
+        int n = PumpUntil(server, () => sh.StationId is not null, 4000);
+        Assert.True(n < 4000, "flag carrier did not dock");
         Assert.True(sh.StationId is not null, "ship must have docked for the secure to fire");
+        Assert.True(SpinWait.SpinUntil(() => bot.GainFlags.Any(g => g.ShipidRecipient == sh.Id
+            && g.SideidFlag == -1), TimeSpan.FromSeconds(30)),
+            "GAIN_FLAG(NA) secure announce never reached the docking peer");
 
         Assert.Null(sh.Flag);                                   // cleared (SetFlag(NA))
         Assert.Equal((short)1, server.Missions[0].Sides.First(s => s.Id == ownSide).Flags);
@@ -367,9 +375,12 @@ public class LiveGainFlagTests
         server.Boot(Config());
         foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: bypass the ready-up lobby
         var bot = Seat(server, "HOST").Single();
-        bot.ResetGainFlags();
 
         var sh = server.Ships.First().Ship;
+        Assert.True(SpinWait.SpinUntil(() => bot.GainFlags.Any(g => g.ShipidRecipient == sh.Id
+            && g.SideidFlag == ownSide), TimeSpan.FromSeconds(30)),
+            "join-sync must announce the held flag before the hostile-dock phase");
+        bot.ResetGainFlags();
         // Ensure genuinely inside the hostile radius so geometry is not the blocker.
         Assert.True((sh.Position - StationPos(hostile)).Length() <= Sector.DockRadius, "test must be inside the hostile radius");
 

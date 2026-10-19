@@ -308,7 +308,7 @@ public sealed class P657bStallTelemetryTests
             logIsPoolThread = logThread.IsThreadPoolThread;
             logged.Set();
         });
-        Assert.True(sampled.Wait(TimeSpan.FromSeconds(2)), "Dedicated watchdog did not tick");
+        Assert.True(sampled.Wait(TimeSpan.FromSeconds(30)), "Dedicated watchdog did not tick");
         Assert.Equal("allegiance-mcp-stall-watchdog", sampleThread!.Name);
         Assert.Equal(ThreadPriority.Highest, sampleThread.Priority);
         Assert.False(sampleThread.IsThreadPoolThread);
@@ -317,7 +317,11 @@ public sealed class P657bStallTelemetryTests
         // Dispose closes remaining sessions and drains their loss log via a
         // separate dedicated thread; neither ThreadPool work nor TCP is needed.
         watchdog.Dispose();
-        Assert.True(logged.IsSet);
+        // Dispose bounds each join at 500 ms; on an oversubscribed host the
+        // dedicated logger may finish just after that bound. Await completion.
+        Assert.True(logged.Wait(TimeSpan.FromSeconds(30)), "shutdown loss log was not flushed");
+        Assert.True(sampleThread.Join(TimeSpan.FromSeconds(30)), "watchdog thread did not exit");
+        Assert.True(logThread!.Join(TimeSpan.FromSeconds(30)), "logger thread did not exit");
         Assert.Equal("allegiance-mcp-stall-log", logThread!.Name);
         Assert.False(logIsPoolThread);
         Assert.False(sampleThread.IsAlive);

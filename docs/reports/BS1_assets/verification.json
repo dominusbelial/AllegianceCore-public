@@ -1,0 +1,2376 @@
+{
+  "base": "c2d1d22a55ea3d809027cfd976cef48e95e04490",
+  "branch": "codex/bs1",
+  "state": "Implementation complete; full light gate remains unqualified for unchanged P745 siege test.",
+  "commits": 0,
+  "pushes": 0,
+  "deployments": 0,
+  "wholeSolutionBuild": {
+    "warnings": 0,
+    "errors": 0,
+    "finalSource": true
+  },
+  "networkNamespace": {
+    "status": "blocked",
+    "reason": "unshare: Operation not permitted"
+  },
+  "rawEvidence": "/tmp/allegiance-evidence/BS1/",
+  "isolated": {
+    "isolated-summary.json": [
+      {
+        "test": "BS1BenchmarkSharingTests.Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Default_No_and_disabled_endpoint_save_locally_without_network_or_ID",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Default_No_and_disabled_endpoint_save_locally_without_network_or_ID",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Default_No_and_disabled_endpoint_save_locally_without_network_or_ID",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Offline_backoff_is_durable_and_retries_only_when_due",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Offline_backoff_is_durable_and_retries_only_when_due",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Offline_backoff_is_durable_and_retries_only_when_due",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Opt_out_cancels_results_and_followups_and_is_remembered",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Opt_out_cancels_results_and_followups_and_is_remembered",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Opt_out_cancels_results_and_followups_and_is_remembered",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Delete_is_durable_offline_rotates_ID_and_precedes_new_uploads",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Delete_is_durable_offline_rotates_ID_and_precedes_new_uploads",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Delete_is_durable_offline_rotates_ID_and_precedes_new_uploads",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Deletion_waits_for_inflight_upload_and_leaves_no_later_old_upload",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Deletion_waits_for_inflight_upload_and_leaves_no_later_old_upload",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Deletion_waits_for_inflight_upload_and_leaves_no_later_old_upload",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Real_offline_transport_keeps_queue_with_short_timeout",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Real_offline_transport_keeps_queue_with_short_timeout",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Real_offline_transport_keeps_queue_with_short_timeout",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Corrupt_state_fails_closed_and_still_archives_new_results",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Corrupt_state_fails_closed_and_still_archives_new_results",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Corrupt_state_fails_closed_and_still_archives_new_results",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Command_validates_workloads_and_preserves_replay_paths",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Command_validates_workloads_and_preserves_replay_paths",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Command_validates_workloads_and_preserves_replay_paths",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Percentiles_and_median_select_an_actual_middle_run",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Percentiles_and_median_select_an_actual_middle_run",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Percentiles_and_median_select_an_actual_middle_run",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Recommendation_uses_gpu_cpu_split_and_steps_down_once",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Recommendation_uses_gpu_cpu_split_and_steps_down_once",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Recommendation_uses_gpu_cpu_split_and_steps_down_once",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Preferences_round_trip_all_recommended_settings_and_skip_offer",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Preferences_round_trip_all_recommended_settings_and_skip_offer",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Preferences_round_trip_all_recommended_settings_and_skip_offer",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Two_real_battle_replays_have_identical_frame_state_hashes_without_network",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Two_real_battle_replays_have_identical_frame_state_hashes_without_network",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Two_real_battle_replays_have_identical_frame_state_hashes_without_network",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Replay_camera_markers_restore_decoder_sector_and_route_phase",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Replay_camera_markers_restore_decoder_sector_and_route_phase",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Replay_camera_markers_restore_decoder_sector_and_route_phase",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Live_reconnect_after_replay_restores_wall_clock_and_ordinary_visibility",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Live_reconnect_after_replay_restores_wall_clock_and_ordinary_visibility",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Live_reconnect_after_replay_restores_wall_clock_and_ordinary_visibility",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Per_bot_cpu_clock_counts_thread_work_separately_from_elapsed_time",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Per_bot_cpu_clock_counts_thread_work_separately_from_elapsed_time",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Per_bot_cpu_clock_counts_thread_work_separately_from_elapsed_time",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Recording_hook_writes_raw_transport_and_reader_rejects_partial_packets",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Recording_hook_writes_raw_transport_and_reader_rejects_partial_packets",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkTests.Recording_hook_writes_raw_transport_and_reader_rejects_partial_packets",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "PlayerBundleAssetsTests.PlayerConfigRoundTripsSpacedPilotAndConfigurableServer",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "PlayerBundleAssetsTests.PlayerConfigRoundTripsSpacedPilotAndConfigurableServer",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "PlayerBundleAssetsTests.PlayerConfigRoundTripsSpacedPilotAndConfigurableServer",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "PlayerBundleAssetsTests.BenchmarkCollectorUsesNestedConfigAndEmptyDisablesSharing",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "PlayerBundleAssetsTests.BenchmarkCollectorUsesNestedConfigAndEmptyDisablesSharing",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "PlayerBundleAssetsTests.BenchmarkCollectorUsesNestedConfigAndEmptyDisablesSharing",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "PlayerBundleAssetsTests.MalformedPlayerConfigFailsClearly",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "PlayerBundleAssetsTests.MalformedPlayerConfigFailsClearly",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "PlayerBundleAssetsTests.MalformedPlayerConfigFailsClearly",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkProjectionTests.View_distance_preserves_camera_fov_aspect_near_plane_and_projection_kind",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkProjectionTests.View_distance_preserves_camera_fov_aspect_near_plane_and_projection_kind",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "P729BenchmarkProjectionTests.View_distance_preserves_camera_fov_aspect_near_plane_and_projection_kind",
+        "run": 3,
+        "exit": 0
+      }
+    ],
+    "extra-isolated-summary.json": [
+      {
+        "test": "Timeout_retains_payload_and_retries_without_waiting_forever",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "Timeout_retains_payload_and_retries_without_waiting_forever",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "Timeout_retains_payload_and_retries_without_waiting_forever",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "Collector_change_requires_consent_and_deletes_old_ID_before_new_upload",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "Collector_change_requires_consent_and_deletes_old_ID_before_new_upload",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "Collector_change_requires_consent_and_deletes_old_ID_before_new_upload",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+        "run": 3,
+        "exit": 0
+      }
+    ],
+    "final-client-isolated-summary.json": [
+      {
+        "test": "BS1BenchmarkSharingTests.Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Default_No_and_disabled_endpoint_save_locally_without_network_or_ID",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Default_No_and_disabled_endpoint_save_locally_without_network_or_ID",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Default_No_and_disabled_endpoint_save_locally_without_network_or_ID",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Offline_backoff_is_durable_and_retries_only_when_due",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Offline_backoff_is_durable_and_retries_only_when_due",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Offline_backoff_is_durable_and_retries_only_when_due",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Opt_out_cancels_results_and_followups_and_is_remembered",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Opt_out_cancels_results_and_followups_and_is_remembered",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Opt_out_cancels_results_and_followups_and_is_remembered",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Delete_is_durable_offline_rotates_ID_and_precedes_new_uploads",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Delete_is_durable_offline_rotates_ID_and_precedes_new_uploads",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Delete_is_durable_offline_rotates_ID_and_precedes_new_uploads",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Deletion_waits_for_inflight_upload_and_leaves_no_later_old_upload",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Deletion_waits_for_inflight_upload_and_leaves_no_later_old_upload",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Deletion_waits_for_inflight_upload_and_leaves_no_later_old_upload",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Real_offline_transport_keeps_queue_with_short_timeout",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Real_offline_transport_keeps_queue_with_short_timeout",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Real_offline_transport_keeps_queue_with_short_timeout",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Corrupt_state_fails_closed_and_still_archives_new_results",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Corrupt_state_fails_closed_and_still_archives_new_results",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Corrupt_state_fails_closed_and_still_archives_new_results",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Timeout_retains_payload_and_retries_without_waiting_forever",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Timeout_retains_payload_and_retries_without_waiting_forever",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Timeout_retains_payload_and_retries_without_waiting_forever",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Collector_change_requires_consent_and_deletes_old_ID_before_new_upload",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Collector_change_requires_consent_and_deletes_old_ID_before_new_upload",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "BS1BenchmarkSharingTests.Collector_change_requires_consent_and_deletes_old_ID_before_new_upload",
+        "run": 3,
+        "exit": 0
+      }
+    ],
+    "collector-isolated-summary.json": [
+      {
+        "test": "schema validates source-generated client JSON and nullable headless metrics",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "schema validates source-generated client JSON and nullable headless metrics",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "schema validates source-generated client JSON and nullable headless metrics",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "real D1 ingestion is idempotent and the exact P729 metrics survive export",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "real D1 ingestion is idempotent and the exact P729 metrics survive export",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "real D1 ingestion is idempotent and the exact P729 metrics survive export",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "validation rejects unknown fields, invalid types, UUID aliases, kept mismatch and malformed JSON",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "validation rejects unknown fields, invalid types, UUID aliases, kept mismatch and malformed JSON",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "validation rejects unknown fields, invalid types, UUID aliases, kept mismatch and malformed JSON",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "body size limit rejects declared and streamed bodies above 32 KB",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "body size limit rejects declared and streamed bodies above 32 KB",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "body size limit rejects declared and streamed bodies above 32 KB",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "per-install rate limiting applies across distinct IPs",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "per-install rate limiting applies across distinct IPs",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "per-install rate limiting applies across distinct IPs",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "per-IP rate limiting applies across distinct install IDs",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "per-IP rate limiting applies across distinct install IDs",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "per-IP rate limiting applies across distinct install IDs",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "kept links only to same install; delete removes raw data and followups, leaving other installs",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "kept links only to same install; delete removes raw data and followups, leaving other installs",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "kept links only to same install; delete removes raw data and followups, leaving other installs",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "admin requires a configured bearer secret for all views and formats; no public read route",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "admin requires a configured bearer secret for all views and formats; no public read route",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "admin requires a configured bearer secret for all views and formats; no public read route",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "aggregate median is weighted, retained privately, and raw retention is 24 months",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "aggregate median is weighted, retained privately, and raw retention is 24 months",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "aggregate median is weighted, retained privately, and raw retention is 24 months",
+        "run": 3,
+        "exit": 0
+      },
+      {
+        "test": "private export pagination returns each raw event once",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "test": "private export pagination returns each raw event once",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "test": "private export pagination returns each raw event once",
+        "run": 3,
+        "exit": 0
+      }
+    ]
+  },
+  "wranglerLoopback": [
+    {
+      "method": "GET",
+      "path": "/v1/admin/export",
+      "status": 401
+    },
+    {
+      "method": "POST",
+      "path": "/v1/results",
+      "status": 201
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/install/25b68630-a07e-428f-bafe-1480860079f6",
+      "status": 204
+    },
+    {
+      "method": "GET",
+      "path": "/v1/results",
+      "status": 404
+    }
+  ],
+  "failureRechecks": [
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.AutoReloadOnEmptyTests.Auto_reload_relays_RELOAD129_sector_wide",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.AutoReloadOnEmptyTests.Auto_reload_relays_RELOAD129_sector_wide",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.AutoReloadOnEmptyTests.Auto_reload_relays_RELOAD129_sector_wide",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Ship_dropped_one_tick_is_served_the_next_no_permanent_starvation",
+      "run": 1,
+      "exit": 1
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Ship_dropped_one_tick_is_served_the_next_no_permanent_starvation",
+      "run": 2,
+      "exit": 1
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Ship_dropped_one_tick_is_served_the_next_no_permanent_starvation",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+      "run": 3,
+      "exit": 0
+    }
+  ],
+  "preferencesIsolated": [
+    {
+      "test": "IntroPreferencesTests.Ordinary_preference_saves_preserve_the_benchmark_collector_setting",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Ordinary_preference_saves_preserve_the_benchmark_collector_setting",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Ordinary_preference_saves_preserve_the_benchmark_collector_setting",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Round_trip_preserves_fields_and_recent_list",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Round_trip_preserves_fields_and_recent_list",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Round_trip_preserves_fields_and_recent_list",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Missing_file_loads_defaults_without_throwing",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Missing_file_loads_defaults_without_throwing",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Missing_file_loads_defaults_without_throwing",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Corrupt_file_loads_defaults_without_throwing",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Corrupt_file_loads_defaults_without_throwing",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Corrupt_file_loads_defaults_without_throwing",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Remember_records_newest_first_deduped_and_capped",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Remember_records_newest_first_deduped_and_capped",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Remember_records_newest_first_deduped_and_capped",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.File_path_lives_outside_the_install",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.File_path_lives_outside_the_install",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.File_path_lives_outside_the_install",
+      "run": 3,
+      "exit": 0
+    }
+  ],
+  "showcase": [
+    {
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "run": 4,
+      "exit": 0
+    },
+    {
+      "run": 5,
+      "exit": 0
+    }
+  ],
+  "localShowcaseOptIn": [
+    {
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "run": 3,
+      "exit": 0
+    }
+  ],
+  "uiProof": {
+    "defaultNoVerified": true,
+    "persistedYesVerified": true,
+    "previewMatchesStoredResult": true,
+    "rawRowsAfterDelete": 0,
+    "installIdReset": true,
+    "deleteQueueDrained": true,
+    "scope": "synthetic .NET client to local Wrangler/D1, isolated Xvfb display :77",
+    "yesFromInspector": true,
+    "deleteFromInspector": true
+  },
+  "fullSweeps": {
+    "Allegiance.Core.Tests": {
+      "total": "4893",
+      "executed": "4893",
+      "passed": "4879",
+      "failed": "14",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "Allegiance.ClientCore.Tests": {
+      "total": "1480",
+      "executed": "1479",
+      "passed": "1478",
+      "failed": "1",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "total": "2501",
+      "executed": "2498",
+      "passed": "2498",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    }
+  },
+  "additionalFailureRechecks": [
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events&DisplayName~count: 150&DisplayName~parallel: False&DisplayName~stationDeath: True&DisplayName~coincident: False&DisplayName~nativeLaunch: False",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events&DisplayName~count: 150&DisplayName~parallel: False&DisplayName~stationDeath: True&DisplayName~coincident: False&DisplayName~nativeLaunch: False",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events&DisplayName~count: 150&DisplayName~parallel: False&DisplayName~stationDeath: True&DisplayName~coincident: False&DisplayName~nativeLaunch: False",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events&DisplayName~count: 195&DisplayName~parallel: False&DisplayName~stationDeath: True&DisplayName~coincident: False&DisplayName~nativeLaunch: False",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events&DisplayName~count: 195&DisplayName~parallel: False&DisplayName~stationDeath: True&DisplayName~coincident: False&DisplayName~nativeLaunch: False",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "project": "Allegiance.Core.Tests",
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events&DisplayName~count: 195&DisplayName~parallel: False&DisplayName~stationDeath: True&DisplayName~coincident: False&DisplayName~nativeLaunch: False",
+      "run": 3,
+      "exit": 0
+    }
+  ],
+  "finalBudgetRechecks": [
+    {
+      "test": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Ship_dropped_one_tick_is_served_the_next_no_permanent_starvation",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Ship_dropped_one_tick_is_served_the_next_no_permanent_starvation",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "Allegiance.Core.Tests.ShipUpdateBudgetLiveTests.Ship_dropped_one_tick_is_served_the_next_no_permanent_starvation",
+      "run": 3,
+      "exit": 0
+    }
+  ],
+  "finalConfigIsolated": [
+    {
+      "test": "IntroPreferencesTests.Ordinary_preference_saves_preserve_the_benchmark_collector_setting",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Ordinary_preference_saves_preserve_the_benchmark_collector_setting",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Ordinary_preference_saves_preserve_the_benchmark_collector_setting",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Invalid_optional_collector_preserves_other_player_preferences",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Invalid_optional_collector_preserves_other_player_preferences",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Invalid_optional_collector_preserves_other_player_preferences",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Round_trip_preserves_fields_and_recent_list",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Round_trip_preserves_fields_and_recent_list",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Round_trip_preserves_fields_and_recent_list",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Missing_file_loads_defaults_without_throwing",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Missing_file_loads_defaults_without_throwing",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Missing_file_loads_defaults_without_throwing",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Corrupt_file_loads_defaults_without_throwing",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Corrupt_file_loads_defaults_without_throwing",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Corrupt_file_loads_defaults_without_throwing",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Remember_records_newest_first_deduped_and_capped",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Remember_records_newest_first_deduped_and_capped",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Remember_records_newest_first_deduped_and_capped",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.File_path_lives_outside_the_install",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.File_path_lives_outside_the_install",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.File_path_lives_outside_the_install",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.PlayerConfigRoundTripsSpacedPilotAndConfigurableServer",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.PlayerConfigRoundTripsSpacedPilotAndConfigurableServer",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.PlayerConfigRoundTripsSpacedPilotAndConfigurableServer",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.BenchmarkCollectorUsesNestedConfigAndEmptyDisablesSharing",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.BenchmarkCollectorUsesNestedConfigAndEmptyDisablesSharing",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.BenchmarkCollectorUsesNestedConfigAndEmptyDisablesSharing",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.MalformedPlayerConfigFailsClearly",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.MalformedPlayerConfigFailsClearly",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.MalformedPlayerConfigFailsClearly",
+      "run": 3,
+      "exit": 0
+    }
+  ],
+  "initialSiegeRechecks": [
+    {
+      "test": "Allegiance.ClientCore.Tests.P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station",
+      "run": 1,
+      "exit": 0,
+      "rawScenarioLog": "/tmp/p745-siege-bs1-isolation-1.log"
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station",
+      "run": 2,
+      "exit": 1,
+      "rawScenarioLog": "/tmp/p745-siege-bs1-isolation-2.log"
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station",
+      "run": 3,
+      "exit": -6,
+      "rawScenarioLog": "/tmp/p745-siege-bs1-isolation-3.log"
+    }
+  ],
+  "secondSiegeRechecks": [
+    {
+      "test": "Allegiance.ClientCore.Tests.P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station",
+      "run": 1,
+      "exit": 1,
+      "rawScenarioLog": "/tmp/p745-siege-bs1-final-isolation-1.log"
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station",
+      "run": 2,
+      "exit": 1,
+      "rawScenarioLog": "/tmp/p745-siege-bs1-final-isolation-2.log"
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station",
+      "run": 3,
+      "exit": -6,
+      "rawScenarioLog": "/tmp/p745-siege-bs1-final-isolation-3.log"
+    }
+  ],
+  "rawScenarioArchives": [
+    {
+      "original": "/tmp/p745-siege-bs1-final-isolation-2.log",
+      "archive": "/tmp/allegiance-evidence/BS1/p745-siege-bs1-final-isolation-2.log.gz",
+      "rawBytes": 733184,
+      "archiveBytes": 67934
+    },
+    {
+      "original": "/tmp/p745-siege-bs1-final-isolation-1.log",
+      "archive": "/tmp/allegiance-evidence/BS1/p745-siege-bs1-final-isolation-1.log.gz",
+      "rawBytes": 12028529,
+      "archiveBytes": 1578295
+    },
+    {
+      "original": "/tmp/p745-siege-bs1-isolation-2.log",
+      "archive": "/tmp/allegiance-evidence/BS1/p745-siege-bs1-isolation-2.log.gz",
+      "rawBytes": 7471104,
+      "archiveBytes": 936341
+    },
+    {
+      "original": "/tmp/p745-siege-bs1-isolation-1.log",
+      "archive": "/tmp/allegiance-evidence/BS1/p745-siege-bs1-isolation-1.log.gz",
+      "rawBytes": 8290412,
+      "archiveBytes": 1024322
+    },
+    {
+      "original": "/tmp/p745-siege-bs1-dispatch-baseline-2.log",
+      "archive": "/tmp/allegiance-evidence/BS1/p745-siege-bs1-dispatch-baseline-2.log.gz",
+      "rawBytes": 2187264,
+      "archiveBytes": 216737,
+      "sha256": "0714798177c6825f82daf232b5c1f0c470bddbc803dcd6ed55a47c3ed461da7c"
+    },
+    {
+      "original": "/tmp/p745-siege-bs1-cleanspace-isolation-3.log",
+      "archive": "/tmp/allegiance-evidence/BS1/p745-siege-bs1-cleanspace-isolation-3.log.gz",
+      "rawBytes": 4149248,
+      "archiveBytes": 477416,
+      "sha256": "4b01c64cc310e6104146c5c7f8f0dc2c6a0ad414267a08224c753182c1806c55"
+    },
+    {
+      "original": "/tmp/p745-siege-bs1-cleanspace-isolation-2.log",
+      "archive": "/tmp/allegiance-evidence/BS1/p745-siege-bs1-cleanspace-isolation-2.log.gz",
+      "rawBytes": 11645214,
+      "archiveBytes": 1505837,
+      "sha256": "3bc9d2a4e1845c52d5ce34923d488fe0210863fd63a19c80c5470aa0de23e176"
+    },
+    {
+      "original": "/tmp/p745-siege-bs1-cleanspace-isolation-1.log",
+      "archive": "/tmp/allegiance-evidence/BS1/p745-siege-bs1-cleanspace-isolation-1.log.gz",
+      "rawBytes": 11053383,
+      "archiveBytes": 1436763,
+      "sha256": "5657e7a3add0715ad813390b20eca379e5a4965e638b43f33185fb9a48e1a994"
+    },
+    {
+      "original": "/tmp/p745-siege-bs1-dispatch-baseline.log",
+      "archive": "/tmp/allegiance-evidence/BS1/p745-siege-bs1-dispatch-baseline.log.gz",
+      "rawBytes": 10566505,
+      "archiveBytes": 1345207,
+      "sha256": "aae593292c007c6160fd0d13fd8eb6d55bdd18f67f74b23ca678e71036895053"
+    },
+    {
+      "original": "/tmp/allegiance-evidence/BS1/siege-from-sweep.log",
+      "archive": "/tmp/allegiance-evidence/BS1/siege-from-sweep.log.gz",
+      "rawBytes": 11637592,
+      "archiveBytes": 1479298,
+      "sha256": "4b8aaf645c2748a3a4d877734b95447e9e8fca6c908368ee32d31fbb38013c39"
+    }
+  ],
+  "siegeQualification": "UNQUALIFIED: full-sweep assertion failure; isolated passes, assertion failures, and quota-aborted attempts; no 3/3 passing qualification.",
+  "diskQuotaRecovery": "Removed only the task npm cache and incomplete temporary snapshot; stable raw scenario logs compressed outside the repository.",
+  "final-client-isolated-summary.json": [
+    {
+      "test": "BS1BenchmarkSharingTests.Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Default_No_and_disabled_endpoint_save_locally_without_network_or_ID",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Default_No_and_disabled_endpoint_save_locally_without_network_or_ID",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Default_No_and_disabled_endpoint_save_locally_without_network_or_ID",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Offline_backoff_is_durable_and_retries_only_when_due",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Offline_backoff_is_durable_and_retries_only_when_due",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Offline_backoff_is_durable_and_retries_only_when_due",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Opt_out_cancels_results_and_followups_and_is_remembered",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Opt_out_cancels_results_and_followups_and_is_remembered",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Opt_out_cancels_results_and_followups_and_is_remembered",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Delete_is_durable_offline_rotates_ID_and_precedes_new_uploads",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Delete_is_durable_offline_rotates_ID_and_precedes_new_uploads",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Delete_is_durable_offline_rotates_ID_and_precedes_new_uploads",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Deletion_waits_for_inflight_upload_and_leaves_no_later_old_upload",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Deletion_waits_for_inflight_upload_and_leaves_no_later_old_upload",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Deletion_waits_for_inflight_upload_and_leaves_no_later_old_upload",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Real_offline_transport_keeps_queue_with_short_timeout",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Real_offline_transport_keeps_queue_with_short_timeout",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Real_offline_transport_keeps_queue_with_short_timeout",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Corrupt_state_fails_closed_and_still_archives_new_results",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Corrupt_state_fails_closed_and_still_archives_new_results",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Corrupt_state_fails_closed_and_still_archives_new_results",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Timeout_retains_payload_and_retries_without_waiting_forever",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Timeout_retains_payload_and_retries_without_waiting_forever",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Timeout_retains_payload_and_retries_without_waiting_forever",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Collector_change_requires_consent_and_deletes_old_ID_before_new_upload",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Collector_change_requires_consent_and_deletes_old_ID_before_new_upload",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "BS1BenchmarkSharingTests.Collector_change_requires_consent_and_deletes_old_ID_before_new_upload",
+      "run": 3,
+      "exit": 0
+    }
+  ],
+  "final-config-isolated-summary.json": [
+    {
+      "test": "IntroPreferencesTests.Ordinary_preference_saves_preserve_the_benchmark_collector_setting",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Ordinary_preference_saves_preserve_the_benchmark_collector_setting",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Ordinary_preference_saves_preserve_the_benchmark_collector_setting",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Invalid_optional_collector_preserves_other_player_preferences",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Invalid_optional_collector_preserves_other_player_preferences",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Invalid_optional_collector_preserves_other_player_preferences",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Round_trip_preserves_fields_and_recent_list",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Round_trip_preserves_fields_and_recent_list",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Round_trip_preserves_fields_and_recent_list",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Missing_file_loads_defaults_without_throwing",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Missing_file_loads_defaults_without_throwing",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Missing_file_loads_defaults_without_throwing",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Corrupt_file_loads_defaults_without_throwing",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Corrupt_file_loads_defaults_without_throwing",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Corrupt_file_loads_defaults_without_throwing",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Remember_records_newest_first_deduped_and_capped",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Remember_records_newest_first_deduped_and_capped",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.Remember_records_newest_first_deduped_and_capped",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.File_path_lives_outside_the_install",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.File_path_lives_outside_the_install",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "IntroPreferencesTests.File_path_lives_outside_the_install",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.PlayerConfigRoundTripsSpacedPilotAndConfigurableServer",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.PlayerConfigRoundTripsSpacedPilotAndConfigurableServer",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.PlayerConfigRoundTripsSpacedPilotAndConfigurableServer",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.BenchmarkCollectorUsesNestedConfigAndEmptyDisablesSharing",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.BenchmarkCollectorUsesNestedConfigAndEmptyDisablesSharing",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.BenchmarkCollectorUsesNestedConfigAndEmptyDisablesSharing",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.MalformedPlayerConfigFailsClearly",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.MalformedPlayerConfigFailsClearly",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "PlayerBundleAssetsTests.MalformedPlayerConfigFailsClearly",
+      "run": 3,
+      "exit": 0
+    }
+  ],
+  "final-metadata-summary.json": [
+    {
+      "test": "Commit_metadata_only_accepts_hashes_and_never_shares_custom_build_paths",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "Commit_metadata_only_accepts_hashes_and_never_shares_custom_build_paths",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "Commit_metadata_only_accepts_hashes_and_never_shares_custom_build_paths",
+      "run": 3,
+      "exit": 0
+    },
+    {
+      "test": "Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+      "run": 3,
+      "exit": 0
+    }
+  ],
+  "final-offline-summary.json": [
+    {
+      "test": "Real_offline_transport_keeps_queue_with_short_timeout",
+      "run": 1,
+      "exit": 0
+    },
+    {
+      "test": "Real_offline_transport_keeps_queue_with_short_timeout",
+      "run": 2,
+      "exit": 0
+    },
+    {
+      "test": "Real_offline_transport_keeps_queue_with_short_timeout",
+      "run": 3,
+      "exit": 0
+    }
+  ],
+  "newCSharpTests": {
+    "methods": 17,
+    "isolatedRuns": 51,
+    "failedRuns": 0,
+    "qualification": {
+      "Schema_round_trip_preserves_P729_metrics_and_excludes_identity": [
+        {
+          "test": "Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "Schema_round_trip_preserves_P729_metrics_and_excludes_identity",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "Commit_metadata_only_accepts_hashes_and_never_shares_custom_build_paths": [
+        {
+          "test": "Commit_metadata_only_accepts_hashes_and_never_shares_custom_build_paths",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "Commit_metadata_only_accepts_hashes_and_never_shares_custom_build_paths",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "Commit_metadata_only_accepts_hashes_and_never_shares_custom_build_paths",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "Default_No_and_disabled_endpoint_save_locally_without_network_or_ID": [
+        {
+          "test": "BS1BenchmarkSharingTests.Default_No_and_disabled_endpoint_save_locally_without_network_or_ID",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Default_No_and_disabled_endpoint_save_locally_without_network_or_ID",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Default_No_and_disabled_endpoint_save_locally_without_network_or_ID",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "View_equals_exact_uploaded_JSON_and_opt_in_survives_restart": [
+        {
+          "test": "BS1BenchmarkSharingTests.View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.View_equals_exact_uploaded_JSON_and_opt_in_survives_restart",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "Offline_backoff_is_durable_and_retries_only_when_due": [
+        {
+          "test": "BS1BenchmarkSharingTests.Offline_backoff_is_durable_and_retries_only_when_due",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Offline_backoff_is_durable_and_retries_only_when_due",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Offline_backoff_is_durable_and_retries_only_when_due",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "Opt_out_cancels_results_and_followups_and_is_remembered": [
+        {
+          "test": "BS1BenchmarkSharingTests.Opt_out_cancels_results_and_followups_and_is_remembered",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Opt_out_cancels_results_and_followups_and_is_remembered",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Opt_out_cancels_results_and_followups_and_is_remembered",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "Delete_is_durable_offline_rotates_ID_and_precedes_new_uploads": [
+        {
+          "test": "BS1BenchmarkSharingTests.Delete_is_durable_offline_rotates_ID_and_precedes_new_uploads",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Delete_is_durable_offline_rotates_ID_and_precedes_new_uploads",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Delete_is_durable_offline_rotates_ID_and_precedes_new_uploads",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "Followup_after_three_sessions_or_seven_days_names_only_changed_settings": [
+        {
+          "test": "BS1BenchmarkSharingTests.Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Followup_after_three_sessions_or_seven_days_names_only_changed_settings",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "Deletion_waits_for_inflight_upload_and_leaves_no_later_old_upload": [
+        {
+          "test": "BS1BenchmarkSharingTests.Deletion_waits_for_inflight_upload_and_leaves_no_later_old_upload",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Deletion_waits_for_inflight_upload_and_leaves_no_later_old_upload",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Deletion_waits_for_inflight_upload_and_leaves_no_later_old_upload",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "Real_loopback_HTTP_transport_uploads_exact_preview": [
+        {
+          "test": "BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Real_loopback_HTTP_transport_uploads_exact_preview",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "Real_offline_transport_keeps_queue_with_short_timeout": [
+        {
+          "test": "Real_offline_transport_keeps_queue_with_short_timeout",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "Real_offline_transport_keeps_queue_with_short_timeout",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "Real_offline_transport_keeps_queue_with_short_timeout",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "Corrupt_state_fails_closed_and_still_archives_new_results": [
+        {
+          "test": "BS1BenchmarkSharingTests.Corrupt_state_fails_closed_and_still_archives_new_results",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Corrupt_state_fails_closed_and_still_archives_new_results",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Corrupt_state_fails_closed_and_still_archives_new_results",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "Timeout_retains_payload_and_retries_without_waiting_forever": [
+        {
+          "test": "BS1BenchmarkSharingTests.Timeout_retains_payload_and_retries_without_waiting_forever",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Timeout_retains_payload_and_retries_without_waiting_forever",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Timeout_retains_payload_and_retries_without_waiting_forever",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "Collector_change_requires_consent_and_deletes_old_ID_before_new_upload": [
+        {
+          "test": "BS1BenchmarkSharingTests.Collector_change_requires_consent_and_deletes_old_ID_before_new_upload",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Collector_change_requires_consent_and_deletes_old_ID_before_new_upload",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "BS1BenchmarkSharingTests.Collector_change_requires_consent_and_deletes_old_ID_before_new_upload",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "BenchmarkCollectorUsesNestedConfigAndEmptyDisablesSharing": [
+        {
+          "test": "PlayerBundleAssetsTests.BenchmarkCollectorUsesNestedConfigAndEmptyDisablesSharing",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "PlayerBundleAssetsTests.BenchmarkCollectorUsesNestedConfigAndEmptyDisablesSharing",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "PlayerBundleAssetsTests.BenchmarkCollectorUsesNestedConfigAndEmptyDisablesSharing",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "Ordinary_preference_saves_preserve_the_benchmark_collector_setting": [
+        {
+          "test": "IntroPreferencesTests.Ordinary_preference_saves_preserve_the_benchmark_collector_setting",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "IntroPreferencesTests.Ordinary_preference_saves_preserve_the_benchmark_collector_setting",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "IntroPreferencesTests.Ordinary_preference_saves_preserve_the_benchmark_collector_setting",
+          "run": 3,
+          "exit": 0
+        }
+      ],
+      "Invalid_optional_collector_preserves_other_player_preferences": [
+        {
+          "test": "IntroPreferencesTests.Invalid_optional_collector_preserves_other_player_preferences",
+          "run": 1,
+          "exit": 0
+        },
+        {
+          "test": "IntroPreferencesTests.Invalid_optional_collector_preserves_other_player_preferences",
+          "run": 2,
+          "exit": 0
+        },
+        {
+          "test": "IntroPreferencesTests.Invalid_optional_collector_preserves_other_player_preferences",
+          "run": 3,
+          "exit": 0
+        }
+      ]
+    }
+  },
+  "fullTrxArchives": [
+    {
+      "project": "Allegiance.Core.Tests",
+      "archive": "/tmp/allegiance-evidence/BS1/Allegiance.Core.Tests.full.trx.gz",
+      "rawBytes": 11238786,
+      "archiveBytes": 1619827,
+      "sha256": "81c7a549c47be3f4e97fc46eede69a935e48e7d6441e1ede124ebf5ccb5479aa",
+      "counters": {
+        "total": "4893",
+        "executed": "4893",
+        "passed": "4879",
+        "failed": "14",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "archive": "/tmp/allegiance-evidence/BS1/Allegiance.ClientCore.Tests.full.trx.gz",
+      "rawBytes": 40248721,
+      "archiveBytes": 2655098,
+      "sha256": "659b35ac2f030e9cbd974576dfd9d597bfd014d157b03ba7e42d6634c42f571d",
+      "counters": {
+        "total": "1480",
+        "executed": "1479",
+        "passed": "1478",
+        "failed": "1",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "archive": "/tmp/allegiance-evidence/BS1/Allegiance.ClientCore.MonoGame.Tests.full.trx.gz",
+      "rawBytes": 4728506,
+      "archiveBytes": 736306,
+      "sha256": "1830383feb3e128090c63eafbd5067d67d885e3dd2492da536129fda5bfdd622",
+      "counters": {
+        "total": "2501",
+        "executed": "2498",
+        "passed": "2498",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    }
+  ],
+  "siegeCleanSpaceRechecks": [
+    {
+      "test": "Allegiance.ClientCore.Tests.P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station",
+      "run": 1,
+      "exit": 0,
+      "rawScenarioLog": "/tmp/p745-siege-bs1-cleanspace-isolation-1.log"
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station",
+      "run": 2,
+      "exit": 1,
+      "rawScenarioLog": "/tmp/p745-siege-bs1-cleanspace-isolation-2.log"
+    },
+    {
+      "test": "Allegiance.ClientCore.Tests.P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station",
+      "run": 3,
+      "exit": 1,
+      "rawScenarioLog": "/tmp/p745-siege-bs1-cleanspace-isolation-3.log"
+    }
+  ],
+  "focusedBaseline": {
+    "provenance": "Dispatch c2d1d22a55ea3d809027cfd976cef48e95e04490. P745 fixture and P733 configuration copied from git HEAD. Runtime Core/Server/Bot/ClientCore/MCP sources have no changes against HEAD. Harness references those unchanged runtime assemblies; Game1/benchmark sharing are not involved. Only this exact test is executed, not a second suite.",
+    "firstRun": "1 passed",
+    "secondRun": "aborted by disk quota; empty TRX preserved; see siege-baseline-2.log"
+  },
+  "finalContract": {
+    "exit": 0,
+    "sourceGeneratedClientJsonValidated": true
+  },
+  "finalChangesAfterSweeps": "Commit metadata allowlist and its test, listener-independent offline fixture, and inspector choice handling were qualified with focused tests/manual UI; no full sweep repeated."
+}

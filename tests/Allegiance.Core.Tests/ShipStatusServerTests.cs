@@ -342,8 +342,8 @@ public class ShipStatusServerTests
                 _ = step;
                 ticks += StepTicks;
 
-                var exports = obsBot.Exports;
                 var statuses = obsBot.ShipStatuses;
+                var exports = obsBot.Exports;
                 bool subjectStatusPresent = statuses.Any(s => s.ShipId == subjectId);
                 int exportCountForSubject = exports.Count(e => e.ShipId == subjectId);
                 if (subjectStatusPresent)
@@ -426,6 +426,11 @@ public class ShipStatusServerTests
         {
             observer.Connect(server.BoundPort, obsName);
             observer.SendLogonRequest(Request(obsName));
+            // Seat the observer first. A late joiner also receives the lobby
+            // roster's PLAYERINFO, independently of the teammate one-shot.
+            PumpUntil(server, () => observer.ShipAssignment is not null
+                && observer.PlayerInfos.Any(i => i.ShipId == observer.ShipAssignment.Ship.ShipId), 4000);
+            Assert.NotNull(observer.ShipAssignment);
             subject.Connect(server.BoundPort, subjName);
             subject.SendLogonRequest(Request(subjName));
 
@@ -480,6 +485,8 @@ public class ShipStatusServerTests
             Assert.Equal(obsName, observer.PlayerInfos.Single(i => i.ShipId == obsId).CharacterName);
             Assert.Equal(0, observer.PlayerInfos.Single(i => i.ShipId == obsId).Money);
             Assert.Equal(obsSide, observer.PlayerInfos.Single(i => i.ShipId == obsId).ISide);
+            Assert.True(SpinWait.SpinUntil(() => subject.PlayerInfos.Any(i => i.ShipId == subjId),
+                TimeSpan.FromSeconds(30)), "subject must decode its own PLAYERINFO");
             Assert.Equal(1, subject.PlayerInfos.Count(i => i.ShipId == subjId));
             Assert.Equal(subjName, subject.PlayerInfos.Single(i => i.ShipId == subjId).CharacterName);
             Assert.Equal(subjSide, subject.PlayerInfos.Single(i => i.ShipId == subjId).ISide);

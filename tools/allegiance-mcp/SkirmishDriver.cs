@@ -85,6 +85,7 @@ internal static class SkirmishDriver
                 {
                     switch (root.GetProperty("command").GetString())
                     {
+                        case "focus": await supervisor.SetFocusSectorAsync(root.GetProperty("sector").ValueKind == JsonValueKind.Null ? null : root.GetProperty("sector").GetInt16(), ct); break;
                         case "pause": await supervisor.PauseAsync(root.GetProperty("paused").GetBoolean(), ct); break;
                         case "seat": await Exchange(root.GetProperty("side").ValueKind == JsonValueKind.Null ? null : root.GetProperty("side").GetInt16()); break;
                         default: throw new ArgumentException("Unknown command");

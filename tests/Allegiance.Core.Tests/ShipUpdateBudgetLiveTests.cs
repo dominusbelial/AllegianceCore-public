@@ -152,6 +152,22 @@ public sealed class ShipUpdateBudgetLiveTests
 
     private static int ServedCount(HeavyShipsUpdate u) => u.HeavyShipEntries.Length;
 
+    private static List<HeavyShipsUpdate> ReadTicks(Seated seat, int count)
+    {
+        var updates = new List<HeavyShipsUpdate>();
+        for (int i = 0; i < count; i++)
+        {
+            seat.Server.TickSim();
+            uint tick = (uint)seat.Server.LoopIterations;
+            // Exclude in-flight join frames generated before the NPCs/target
+            // existed, and decode each tick before coalescing can skip it.
+            Assert.True(SpinWait.SpinUntil(() => seat.Bot.HeavyShipsUpdates.Any(u => u.TimeReference == tick),
+                TimeSpan.FromSeconds(30)), $"no HEAVY update for budget tick {tick}");
+            updates.Add(Assert.Single(seat.Bot.HeavyShipsUpdates, u => u.TimeReference == tick));
+        }
+        return updates;
+    }
+
     /// <summary>⭐ Bounded: with 6 candidates in the cluster (peer + 5 NPCs),
     /// each peer's HEAVY update carries exactly 4 entries every tick — never the
     /// full 5 "other" ships. Proves the budget bites (cost no longer scales with
@@ -164,11 +180,8 @@ public sealed class ShipUpdateBudgetLiveTests
         using var seat = SeatBudget(5);
         seat.Bot.ResetHeavyShipsUpdates();
 
-        PumpUntil(seat.Server, () => seat.Bot.HeavyShipsUpdates.Count >= 8, 8000);
-        Assert.True(seat.Bot.HeavyShipsUpdates.Count >= 8,
-            "the peer must accrue HEAVY updates over several ticks");
-
-        var updates = seat.Bot.HeavyShipsUpdates.TakeLast(8).ToList();
+        var updates = ReadTicks(seat, 8);
+        Assert.Equal(8, updates.Count);
         foreach (var u in updates)
             Assert.Equal(4, ServedCount(u));   // 2 heavy + 2 light-folded, not the 5 other candidates
 
@@ -189,8 +202,7 @@ public sealed class ShipUpdateBudgetLiveTests
         using var seat = SeatBudget(5);
         seat.Bot.ResetHeavyShipsUpdates();
 
-        PumpUntil(seat.Server, () => seat.Bot.HeavyShipsUpdates.Count >= 6, 10000);
-        var updates = seat.Bot.HeavyShipsUpdates.TakeLast(6).ToList();
+        var updates = ReadTicks(seat, 6);
         Assert.Equal(6, updates.Count);
 
         short? prevDropped = null;
@@ -228,8 +240,7 @@ public sealed class ShipUpdateBudgetLiveTests
         seat.Peer.CommandTarget = target;   // lock the target that would otherwise rotate/starve
         seat.Bot.ResetHeavyShipsUpdates();
 
-        PumpUntil(seat.Server, () => seat.Bot.HeavyShipsUpdates.Count >= 10, 12000);
-        var updates = seat.Bot.HeavyShipsUpdates.TakeLast(10).ToList();
+        var updates = ReadTicks(seat, 10);
         Assert.Equal(10, updates.Count);
 
         foreach (var u in updates)

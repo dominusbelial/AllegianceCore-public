@@ -157,6 +157,10 @@ public class MineCrossSideVisibilityLiveTests
             }
             Assert.NotNull(seat.A); Assert.NotNull(seat.B);
             Assert.NotEqual(seat.A.SideId, seat.B.SideId);
+            // Concurrent joins need not follow bot-array order. Establish the
+            // named roles' geometry after resolving their real assignments.
+            seat.A.Position = seat.Base;
+            seat.B.Position = seat.Base + new Vector3(900_000f, 0f, 0f);
             seat.A.Velocity = Vector3.Zero;
             seat.B.Velocity = Vector3.Zero;
             return seat;

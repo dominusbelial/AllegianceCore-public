@@ -317,11 +317,18 @@ public sealed partial class Server
         // Creation and late tracking both record recipients. Cleanup must still
         // reach them after a cloak/warp/death, without revealing a new source or
         // playing an explosion to someone who never knew this missile.
+        // Ordered destruction outranks the best-effort position lane. Replace
+        // its pending batch BEFORE enqueueing destruction, or a stale 205 can
+        // follow 83 and rehydrate the terminated missile in a late-viewer client.
+        // Native termination is final (clintlib/appmsg.cpp:1790-1803); 205 is a
+        // port-only stream. Other live missiles receive their next normal batch.
+        byte[] clearedPositions = FedPacket.Pack(new MissileUpdate { Records = [] }.Encode());
         var targets = new List<ConnectionId>();
         if (_missileViewers.Remove(m, out var viewers))
             foreach (var peer in viewers)
                 if (PeerInSector(peer, m.OwnerSector))
                 {
+                    SendPeerCoalescing(peer, clearedPositions, CoalesceMissiles);
                     SendPeer(peer, packet);
                     targets.Add(peer);
                 }
@@ -2101,6 +2108,7 @@ public sealed partial class Server
         byte ejectCookie = 0;
         foreach (var kv in _peerShips)
             if (ReferenceEquals(kv.Value.Ship, victim)) { ejectCookie = NextCookie(EnsurePeerUpdate(kv.Key)); break; }
+        victim.Mission?.Skills?.Record(victim.SideId, ShowcaseSkill.Eject);
         var eject = Eject.ForSurvivor(victim.Id, position, v, f);
         eject.Cookie = ejectCookie;
         byte[] packet = FedPacket.Pack(new[] { eject.Encode() });

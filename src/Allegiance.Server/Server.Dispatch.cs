@@ -36,6 +36,9 @@ public sealed partial class Server
 
         foreach (var command in inbound.Messages)
         {
+            // A packet may have been queued before LOGOFF retired the peer.
+            // Native never reuses that player connection (FedSrv/FedSrv.CPP:5787-5800).
+            if (_host.Transport is TcpTransport transport && transport.IsPeerClosed(from)) return;
             var m = command.Bytes;
             if (command.BadHeader)
             {
@@ -437,6 +440,8 @@ public sealed partial class Server
                                                   $"target {chat.ChatTarget} -> {targets.Length} peer(s)");
                                 if (targets.Length > 0)
                                 {
+                                    senderLive.Ship.Mission?.Skills?.Record(senderLive.Ship.SideId,
+                                        chat.VoiceOver >= 0 ? Allegiance.Core.Model.ShowcaseSkill.Voice : Allegiance.Core.Model.ShowcaseSkill.Chat);
                                     // P654 (H-05/H-10) — re-encode the relay from the
                                     // decoded fields instead of forwarding the client's
                                     // raw bytes: cap the message length (native UI ~255)
@@ -1714,16 +1719,16 @@ public sealed partial class Server
                     _ = command.Read<Logoff>();
                     SendPeer(from, FedPacket.Pack(new[] { m }));   // guaranteed echo back
                     ReleasePeer(from);
-                    // P654 (H-14) — close the transport connection now. Native
+                    // P654 (H-14) — retire the transport connection now. Native
                     // LOGOFF deletes the player and the connection is NOT reused
                     // (FedSrv.CPP:5787-5802); leaving the socket open re-armed
                     // LOGONREQ, letting one connection churn unlimited ship ids
                     // (the P646 one-logon bypass). Closing the socket makes any
-                    // later frame on it impossible; the transport's OnPeerLeft
+                    // later frame on it ineligible; the transport's OnPeerLeft
                     // fires and ReleasePeer runs again as an idempotent no-op.
                     RemoveChatBudget(from);
-                    (_host.Transport as TcpTransport)?.ClosePeer(from, DisconnectReason.Shutdown);
-                    Console.WriteLine($"[logoff] peer {from} logged off (echoed, released, connection closed — H-14)");
+                    (_host.Transport as TcpTransport)?.ClosePeerAfterFlush(from);
+                    Console.WriteLine($"[logoff] peer {from} logged off (echo queued, released, close after drain — H-14)");
                 }
                 catch (Exception e)
                 {

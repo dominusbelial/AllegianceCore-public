@@ -400,7 +400,9 @@ public sealed partial class Server
     /// </summary>
     private void DeclareGameOver(Mission mission, short winnerId, string reason)
     {
+        if (mission.Stage == MissionStage.Over) return;
         mission.Stage = MissionStage.Over;
+        mission.Skills?.Write(Console.Out, final: true);
 
         // Native finalizes scores, queues GAME_OVER + GAME_OVER_PLAYERS and
         // flushes the mission group before resetting any player/world state

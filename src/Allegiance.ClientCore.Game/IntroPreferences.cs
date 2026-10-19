@@ -22,6 +22,8 @@ public sealed class IntroPreferences
     public int Port { get; set; } = 6073;
     public string Pilot { get; set; } = "pilot";
     public string Lobby { get; set; } = "http://127.0.0.1:5000";
+    // Share the nested collector setting with PlayerConfig; ordinary preference saves must retain it.
+    public BenchmarkCollectorConfig? Benchmark { get; set; }
     /// <summary>Recent server identities (<c>host</c> or <c>host:port</c>), newest
     /// first, capped to a small size.</summary>
     public List<string> Recent { get; set; } = new();

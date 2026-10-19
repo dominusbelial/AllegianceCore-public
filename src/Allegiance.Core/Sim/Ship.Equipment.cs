@@ -69,6 +69,7 @@ public sealed partial class Ship
             {
                 var mine = new Mine(mission.NextObjectId(), sector, t, DropPosition(t.Radius), LastUpdate + 3, this);
                 mine.InitClock(now); sector.Add(mine); model = mine;
+                mission.Skills?.Record(SideId, Allegiance.Core.Model.ShowcaseSkill.Mines);
                 mission.Site.MineCreatedEvent(mine); break;
             }
             case DataPartTypeIGC.ProbeLauncher p when mission.Core.ProbeTypes.TryGetValue(p.ExpendableTypeId, out var t):
@@ -90,6 +91,7 @@ public sealed partial class Ship
                 var probe = new Probe(mission.NextObjectId(), sector, t, position, LastUpdate, SideId, this, createdAt: now)
                     { Target = (t.EabmCapabilities & 0x1000) != 0 ? CommandTarget : null };
                 sector.Add(probe); model = probe;
+                mission.Skills?.Record(SideId, Allegiance.Core.Model.ShowcaseSkill.Probes);
                 mission.Site.ProbeCreatedEvent(probe); break;
             }
             default: return null;

@@ -742,6 +742,7 @@ public sealed partial class Server
         // DevelopmentCompleted flow (FedSrv.CPP:11259-11276).
         if (bucket.ItemType == BucketItemType.BitDevelopment && bucket.Development is { } dev)
         {
+            ownerMission!.Skills?.Record(owner.Id, ShowcaseSkill.Research);
             CompleteDevelopment(ownerMission!, owner, dev);
             return;
         }

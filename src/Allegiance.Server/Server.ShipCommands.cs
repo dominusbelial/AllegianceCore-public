@@ -1683,6 +1683,15 @@ public sealed partial class Server
             return;
         }
 
+        ShowcaseSkill? skill = cid switch
+        {
+            OrderChange.CidGoto => ShowcaseSkill.OrderGoto,
+            OrderChange.CidAttack => ShowcaseSkill.OrderAttack,
+            OrderChange.CidBuild => ShowcaseSkill.OrderBuild,
+            OrderChange.CidRepair => ShowcaseSkill.OrderRepair,
+            _ => null
+        };
+        if (skill is { } accepted) sender.Mission?.Skills?.Record(sender.SideId, accepted);
         drone.ResetRunawayForNewOrder(); // SetCommand resets even an identical order (shipIGC.h:725-764)
 
         // Reply "Affirmative." to the commander (FedSrv.CPP:3256-3257).
@@ -2080,6 +2089,7 @@ public sealed partial class Server
             ChatTarget = (int)ChatTarget.Individual,
             OidRecipient = sender.Id,
         };
+        drone.Mission?.Skills?.Record(drone.SideId, ShowcaseSkill.Voice);
         SendPeer(from, FedPacket.Pack(new[] { msg.Encode() }));
         ConsoleLog.Write($"[drone] ship {sender.Id}: NPC {drone.Id} replied \"Affirmative.\"");
     }
@@ -2177,7 +2187,8 @@ public sealed partial class Server
     {
         // This direct NPC build path is port-added (native FedSrv.CPP:7281-7322).
         if (live.Ship.Mission is not { } mission || !IsSideLeader(mission, live.Ship)) return;
-        StartBuildIfLegal(from, live.Ship.Id, target, req);
+        if (StartBuildIfLegal(from, live.Ship.Id, target, req))
+            live.Ship.Mission?.Skills?.Record(live.Ship.SideId, ShowcaseSkill.OrderBuild);
     }
 
     /// <summary>
@@ -2839,6 +2850,7 @@ public sealed partial class Server
             Parts = ackParts,
         };
         SendPeer(from, FedPacket.Pack(new[] { ack.Encode() }));
+        mission.Skills?.Record(ship.SideId, ShowcaseSkill.Purchase);
         var note = $"[loadout] ship {ship.Id} adopted loadout hull {ack.HullId} + {ack.Parts.Count} part(s)";
         Console.WriteLine($"[loadout] {from} ship {ship.Id} <- BUY_LOADOUT_ACK hull {ack.HullId} nParts {ack.Parts.Count} fbought {fboughtEverything} fLaunch {ack.FLaunch}{(skipped > 0 ? $" ({skipped} skipped)" : "")}");
         Notify(note);

@@ -104,7 +104,6 @@ public abstract class TcpTransportPriorityLaneTestsBase
     /// sender (no ordered lane exists).
     /// </summary>
     [Fact]
-    [Trait("Lane", "LiveTiming")]   // P647 quarantine: live-socket priority-lane ordering is load-sensitive (passes 10/10 isolated)
     public void Ordered_world_data_is_next_drained_even_after_a_stream_backlog()
     {
         var site = new Site();
@@ -114,14 +113,13 @@ public abstract class TcpTransportPriorityLaneTestsBase
             host.Host(0);
             var (id, client) = ConnectRawPeer(host, site, "LANES", tinyReceiveWindow: true);
             var ps = PeerSenderFor(host, id);
+            using var paused = new PausedSendQueue(ps, TcpTransport.CapacityBytes);
 
-            // 1) Back up the position stream first: flood a coalesce key to a
-            // tiny-window, never-reading peer so its writer blocks on the
-            // (full) socket and cannot pop anything new.
+            // 1) Back up the position stream under the queue lock, which
+            // pauses both real writer modes without assuming socket saturation.
             var stream = new byte[4096];
             for (int i = 0; i < 4000; i++)
                 host.Send(id, stream, guaranteed: false, coalesceKey: 42);
-            Thread.Sleep(80);
 
             // 2) The join/world burst arrives (ordered, guaranteed, key 0) —
             // enqueued AFTER the stream backlog, the exact P634 starvation
@@ -130,7 +128,6 @@ public abstract class TcpTransportPriorityLaneTestsBase
             var world = new byte[64];
             Array.Fill(world, (byte)0x77);
             host.Send(id, world, guaranteed: true, coalesceKey: 0);
-            Thread.Sleep(50);
 
             var (ordCnt, _) = LaneCounts(ps);
             Assert.True(ordCnt >= 1, $"ordered lane must hold the world data, got {ordCnt}");
@@ -159,27 +156,25 @@ public abstract class TcpTransportPriorityLaneTestsBase
             var (id, client) = ConnectRawPeer(host, site, "NOSHED", tinyReceiveWindow: true);
             var ps = PeerSenderFor(host, id);
 
-            // Block the writer FIRST with a stream flood, so it cannot drain
-            // anything while we count the ordered lane (otherwise the ordered
-            // frames it can squeeze into the OS buffer would legitimately leave
-            // by drain, not by shedding).
+            // Pause the real queue consumer. Flooding one coalescing key need
+            // not fill the socket at all: a fast producer replaces its own work.
+            using var paused = new PausedSendQueue(ps, capacity: 16 * 1024);
             var stream = new byte[8192];
-            for (int i = 0; i < 4000; i++)
-                host.Send(id, stream, guaranteed: false, coalesceKey: 77);
-            Thread.Sleep(80);
+            for (int key = 77; key < 81; key++)
+                host.Send(id, stream, guaranteed: false, coalesceKey: key);
 
             const int nOrdered = 50;
             for (int i = 0; i < nOrdered; i++)
             {
-                var w = new byte[64];
+                // Fifty frames exceed the 16 KiB soft cap even after every
+                // best-effort stream frame is shed; guaranteed data must remain.
+                var w = new byte[512];
                 w[0] = (byte)i;
                 host.Send(id, w, guaranteed: true, coalesceKey: 0);
             }
-            Thread.Sleep(50);
-
             var (ordCnt, strCnt) = LaneCounts(ps);
-            Assert.Equal(nOrdered, ordCnt);          // every ordered frame retained (writer is blocked on the stream lane)
-            Assert.True(strCnt <= 1, $"stream lane must collapse to <=1 per key, got {strCnt}");
+            Assert.Equal(nOrdered, ordCnt);          // every ordered frame retained while the consumer is paused
+            Assert.True(strCnt < 4, $"over-capacity stream frames must actually be shed, got {strCnt}");
 
             // The ordered lane still drains first.
             Assert.True(NextDrainedIsOrdered(ps));
