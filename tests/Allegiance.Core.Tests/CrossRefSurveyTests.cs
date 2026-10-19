@@ -5,11 +5,11 @@ namespace Allegiance.Core.Tests;
 
 /// <summary>
 /// Runs <see cref="Model.CrossRefValidator.Validate"/> across the whole corpus
-/// and (for the README) writes an aggregated survey to <c>/tmp/crossref_survey.txt</c>.
+/// and (for the README) writes an aggregated survey to <c>crossref_survey.txt</c> in the configured temporary directory.
 /// </summary>
 public class CrossRefSurveyTests
 {
-    private static readonly string OutPath = "/tmp/crossref_survey.txt";
+    private static readonly string OutPath = Path.Combine(Path.GetTempPath(), "crossref_survey.txt");
 
     [Trait("Requires", "Artwork")]
     [Trait("Tier", "Live")] // Expensive corpus/scenario or collision-work budget; docs/testing/TIERS.md.

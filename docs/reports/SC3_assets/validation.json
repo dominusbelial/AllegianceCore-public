@@ -1,0 +1,494 @@
+{
+  "authority": "qualified-live and qualified-parking are immutable final snapshots; isolated holds final focused tests; fast is the single initial sweep; temp-path-exact holds corrected-environment rechecks",
+  "gitHead": "64f041eed2cbf9a244bfe7ff693ab6f69e9f60e1",
+  "results": [
+    {
+      "path": ".verify-sc3-evidence/base/1/_domingo-MS-02-Ultra_2026-10-19_09_53_19_net10.0.trx",
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:41.0236275",
+      "parking": [
+        "P700 local 15v15: 98.3s, samples=982, reached=26/30, longest speed<1 with target=2.006s, shots=3798, hits=1599, kills=14"
+      ]
+    },
+    {
+      "path": ".verify-sc3-evidence/base/2/_domingo-MS-02-Ultra_2026-10-19_09_54_56_net10.0.trx",
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:36.1070204",
+      "parking": [
+        "P700 local 15v15: 93.5s, samples=934, reached=24/30, longest speed<1 with target=2.808s, shots=3505, hits=1648, kills=11"
+      ]
+    },
+    {
+      "path": ".verify-sc3-evidence/base/3/_domingo-MS-02-Ultra_2026-10-19_09_56_36_net10.0.trx",
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:39.9435230",
+      "parking": [
+        "P700 local 15v15: 97.2s, samples=971, reached=26/30, longest speed<1 with target=2.016s, shots=3532, hits=1444, kills=12"
+      ]
+    },
+    {
+      "path": ".verify-sc3-evidence/base/4/_domingo-MS-02-Ultra_2026-10-19_09_58_18_net10.0.trx",
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:41.3001750",
+      "parking": [
+        "P700 local 15v15: 98.6s, samples=985, reached=26/30, longest speed<1 with target=1.914s, shots=4212, hits=1656, kills=18"
+      ]
+    },
+    {
+      "path": ".verify-sc3-evidence/base/5/_domingo-MS-02-Ultra_2026-10-19_09_59_55_net10.0.trx",
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:35.8977143",
+      "parking": [
+        "P700 local 15v15: 93.3s, samples=932, reached=24/30, longest speed<1 with target=1.908s, shots=3796, hits=1591, kills=12"
+      ]
+    },
+    {
+      "path": ".verify-sc3-evidence/fast/fast/Allegiance.Core.Tests-main.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+      "outcome": "Failed",
+      "duration": "00:00:00.0003800",
+      "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Artwork\"\n           \u2191 (pos 0)"
+    },
+    {
+      "path": ".verify-sc3-evidence/fast/fast/Allegiance.Core.Tests-main.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "outcome": "Failed",
+      "duration": "00:00:00.0003553",
+      "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Allegiance\"\n           \u2191 (pos 0)"
+    },
+    {
+      "path": ".verify-sc3-evidence/fast/fast/Allegiance.Core.Tests-main.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+      "outcome": "Failed",
+      "duration": "00:00:00.0002474",
+      "error": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Allegiance\"\n           \u2191 (pos 0)"
+    },
+    {
+      "path": ".verify-sc3-evidence/fast/fast/Allegiance.Core.Tests-main.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+      "outcome": "Failed",
+      "duration": "00:00:00.0166688",
+      "error": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \"/home/domingo/allegiance-codex-sc3/.verif\"\u00b7\u00b7\u00b7\nActual:   \"/home/domingo/Development/Artwork\"\n                         \u2191 (pos 14)"
+    },
+    {
+      "path": ".verify-sc3-evidence/fast/fast/Allegiance.Core.Tests-main.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "outcome": "Failed",
+      "duration": "00:00:00.0024412",
+      "error": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \"/home/domingo/allegiance-codex-sc3/.verif\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/BotFixRegressionTests.NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths/1/results.trx",
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths",
+      "outcome": "Passed",
+      "duration": "00:00:00.0111967"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/BotFixRegressionTests.NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths/2/results.trx",
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths",
+      "outcome": "Passed",
+      "duration": "00:00:00.0113944"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/BotFixRegressionTests.NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths/3/results.trx",
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.NewLife_ClearsAllPodTravelAndTargetLatches_ForTwoDeaths",
+      "outcome": "Passed",
+      "duration": "00:00:00.0111865"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/BotFixRegressionTests.P707_CloseCombatStrafesAfterTwoSecondsDespiteObserverDrift/1/results.trx",
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P707_CloseCombatStrafesAfterTwoSecondsDespiteObserverDrift",
+      "outcome": "Passed",
+      "duration": "00:00:00.0598310"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/BotFixRegressionTests.P707_CloseCombatStrafesAfterTwoSecondsDespiteObserverDrift/2/results.trx",
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P707_CloseCombatStrafesAfterTwoSecondsDespiteObserverDrift",
+      "outcome": "Passed",
+      "duration": "00:00:00.0672142"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/BotFixRegressionTests.P707_CloseCombatStrafesAfterTwoSecondsDespiteObserverDrift/3/results.trx",
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P707_CloseCombatStrafesAfterTwoSecondsDespiteObserverDrift",
+      "outcome": "Passed",
+      "duration": "00:00:00.0684403"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/BotFixRegressionTests.P707_FirstMovingEchoDoesNotCancelTheEscapePulse/1/results.trx",
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P707_FirstMovingEchoDoesNotCancelTheEscapePulse",
+      "outcome": "Passed",
+      "duration": "00:00:00.0581676"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/BotFixRegressionTests.P707_FirstMovingEchoDoesNotCancelTheEscapePulse/2/results.trx",
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P707_FirstMovingEchoDoesNotCancelTheEscapePulse",
+      "outcome": "Passed",
+      "duration": "00:00:00.0630815"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/BotFixRegressionTests.P707_FirstMovingEchoDoesNotCancelTheEscapePulse/3/results.trx",
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.P707_FirstMovingEchoDoesNotCancelTheEscapePulse",
+      "outcome": "Passed",
+      "duration": "00:00:00.0664865"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/BotFixRegressionTests.PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice/1/results.trx",
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice",
+      "outcome": "Passed",
+      "duration": "00:00:00.0647174"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/BotFixRegressionTests.PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice/2/results.trx",
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice",
+      "outcome": "Passed",
+      "duration": "00:00:00.0640368"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/BotFixRegressionTests.PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice/3/results.trx",
+      "test": "Allegiance.ClientCore.Tests.BotFixRegressionTests.PodLife_AckUpdatesGrant_LaunchConfirmsNewLife_Twice",
+      "outcome": "Passed",
+      "duration": "00:00:00.0553655"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/SC3CloakPolicyTests.Native_mount_energy_flight_and_action_gates_preserve_movement/1/results.trx",
+      "test": "Allegiance.ClientCore.Tests.SC3CloakPolicyTests.Native_mount_energy_flight_and_action_gates_preserve_movement",
+      "outcome": "Passed",
+      "duration": "00:00:00.0477353"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/SC3CloakPolicyTests.Native_mount_energy_flight_and_action_gates_preserve_movement/2/results.trx",
+      "test": "Allegiance.ClientCore.Tests.SC3CloakPolicyTests.Native_mount_energy_flight_and_action_gates_preserve_movement",
+      "outcome": "Passed",
+      "duration": "00:00:00.0537546"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/SC3CloakPolicyTests.Native_mount_energy_flight_and_action_gates_preserve_movement/3/results.trx",
+      "test": "Allegiance.ClientCore.Tests.SC3CloakPolicyTests.Native_mount_energy_flight_and_action_gates_preserve_movement",
+      "outcome": "Passed",
+      "duration": "00:00:00.0525816"
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass/1/results.trx",
+      "test": "Allegiance.ClientCore.Tests.SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass",
+      "outcome": "Passed",
+      "duration": "00:00:01.3999871",
+      "parking": []
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass/2/results.trx",
+      "test": "Allegiance.ClientCore.Tests.SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass",
+      "outcome": "Passed",
+      "duration": "00:00:01.3811897",
+      "parking": []
+    },
+    {
+      "path": ".verify-sc3-evidence/isolated/SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass/3/results.trx",
+      "test": "Allegiance.ClientCore.Tests.SC3CloakPolicyTests.Research_loadouts_offer_real_legal_cloaks_without_unlock_bypass",
+      "outcome": "Passed",
+      "duration": "00:00:01.3839177",
+      "parking": []
+    },
+    {
+      "path": ".verify-sc3-evidence/qualified-live/1/results.trx",
+      "test": "Allegiance.ClientCore.Tests.SC3CloakLiveTests.Research_showcase_cloaks_on_both_sides_and_bomber_decloaks_to_strike",
+      "outcome": "Passed",
+      "duration": "00:02:04.8792956",
+      "parking": [],
+      "progress": [
+        "SC3 progress wall=0.0 sim=14.9 side0=0 side1=0 cloakedBombers=0 struck=0",
+        "SC3 progress wall=30.0 sim=203.5 side0=17 side1=22 cloakedBombers=0 struck=0",
+        "SC3 progress wall=60.0 sim=391.7 side0=27 side1=35 cloakedBombers=0 struck=0",
+        "SC3 progress wall=90.0 sim=580.2 side0=41 side1=44 cloakedBombers=0 struck=0",
+        "SC3 progress wall=120.0 sim=766.4 side0=78 side1=76 cloakedBombers=4 struck=0"
+      ],
+      "skills": [
+        "[skills] match 1 side 0 snapshot",
+        "[skills] match 1 side 0: flight 24 warp 100 autopilot 9 targeting 198 guns 16791 missiles 102 chaff 0 booster 93 cloak 78 probes 0 scouting 325 mines 37 ship-damage 8317 station-damage 0 station-kills 0 nanite-ship 0 nanite-station 0 order-goto 0 order-attack 0 order-build 52 order-repair 0 drone-build 4 drone-mine 7 eject 48 pod-rescue 1 dock 28 relaunch 60 purchase 54 research 28 chat 73 voice 63 ship-kills 74",
+        "[skills] match 1 side 0 coverage 20/32",
+        "[skills] match 1 side 0 damage-types: ship-0 2 ship-2 8266 ship-4 48 ship-8 1",
+        "[skills] match 1 side 1 snapshot",
+        "[skills] match 1 side 1: flight 24 warp 133 autopilot 9 targeting 172 guns 14031 missiles 79 chaff 0 booster 105 cloak 76 probes 0 scouting 548 mines 44 ship-damage 8168 station-damage 0 station-kills 0 nanite-ship 0 nanite-station 0 order-goto 0 order-attack 0 order-build 56 order-repair 0 drone-build 3 drone-mine 6 eject 54 pod-rescue 4 dock 29 relaunch 70 purchase 64 research 26 chat 67 voice 68 ship-kills 60",
+        "[skills] match 1 side 1 coverage 20/32",
+        "[skills] match 1 side 1 damage-types: ship-0 2 ship-2 8129 ship-4 35 ship-8 2"
+      ]
+    },
+    {
+      "path": ".verify-sc3-evidence/qualified-live/2/results.trx",
+      "test": "Allegiance.ClientCore.Tests.SC3CloakLiveTests.Research_showcase_cloaks_on_both_sides_and_bomber_decloaks_to_strike",
+      "outcome": "Passed",
+      "duration": "00:02:36.1559237",
+      "parking": [],
+      "progress": [
+        "SC3 progress wall=0.0 sim=14.9 side0=0 side1=0 cloakedBombers=0 struck=0",
+        "SC3 progress wall=30.0 sim=206.7 side0=14 side1=22 cloakedBombers=0 struck=0",
+        "SC3 progress wall=60.0 sim=390.4 side0=31 side1=39 cloakedBombers=0 struck=0",
+        "SC3 progress wall=90.0 sim=582.6 side0=51 side1=63 cloakedBombers=1 struck=0",
+        "SC3 progress wall=120.0 sim=763.7 side0=77 side1=89 cloakedBombers=2 struck=0",
+        "SC3 progress wall=150.0 sim=950.0 side0=116 side1=131 cloakedBombers=6 struck=0"
+      ],
+      "skills": [
+        "[skills] match 1 side 0 snapshot",
+        "[skills] match 1 side 0: flight 24 warp 170 autopilot 9 targeting 254 guns 21222 missiles 134 chaff 0 booster 132 cloak 118 probes 0 scouting 439 mines 58 ship-damage 12014 station-damage 0 station-kills 0 nanite-ship 0 nanite-station 0 order-goto 0 order-attack 0 order-build 51 order-repair 0 drone-build 4 drone-mine 8 eject 64 pod-rescue 7 dock 29 relaunch 88 purchase 80 research 47 chat 110 voice 61 ship-kills 89",
+        "[skills] match 1 side 0 coverage 21/32",
+        "[skills] match 1 side 0 damage-types: ship-0 1 ship-2 11953 ship-4 60",
+        "[skills] match 1 side 1 snapshot",
+        "[skills] match 1 side 1: flight 24 warp 161 autopilot 9 targeting 228 guns 20517 missiles 115 chaff 0 booster 117 cloak 132 probes 0 scouting 870 mines 53 ship-damage 11797 station-damage 0 station-kills 0 nanite-ship 0 nanite-station 0 order-goto 0 order-attack 0 order-build 57 order-repair 0 drone-build 4 drone-mine 7 eject 66 pod-rescue 15 dock 33 relaunch 85 purchase 78 research 43 chat 103 voice 62 ship-kills 98",
+        "[skills] match 1 side 1 coverage 21/32",
+        "[skills] match 1 side 1 damage-types: ship-0 1 ship-2 11735 ship-4 61"
+      ]
+    },
+    {
+      "path": ".verify-sc3-evidence/qualified-live/3/results.trx",
+      "test": "Allegiance.ClientCore.Tests.SC3CloakLiveTests.Research_showcase_cloaks_on_both_sides_and_bomber_decloaks_to_strike",
+      "outcome": "Passed",
+      "duration": "00:02:17.5385599",
+      "parking": [],
+      "progress": [
+        "SC3 progress wall=0.0 sim=15.0 side0=0 side1=0 cloakedBombers=0 struck=0",
+        "SC3 progress wall=30.0 sim=207.1 side0=14 side1=28 cloakedBombers=0 struck=0",
+        "SC3 progress wall=60.0 sim=392.9 side0=26 side1=52 cloakedBombers=0 struck=0",
+        "SC3 progress wall=90.0 sim=584.0 side0=52 side1=64 cloakedBombers=0 struck=0",
+        "SC3 progress wall=120.0 sim=772.6 side0=74 side1=81 cloakedBombers=1 struck=0"
+      ],
+      "skills": [
+        "[skills] match 1 side 0 snapshot",
+        "[skills] match 1 side 0: flight 24 warp 171 autopilot 9 targeting 234 guns 18538 missiles 113 chaff 0 booster 56 cloak 87 probes 0 scouting 559 mines 41 ship-damage 9483 station-damage 0 station-kills 0 nanite-ship 0 nanite-station 0 order-goto 0 order-attack 0 order-build 57 order-repair 0 drone-build 4 drone-mine 7 eject 59 pod-rescue 2 dock 31 relaunch 69 purchase 63 research 33 chat 83 voice 62 ship-kills 88",
+        "[skills] match 1 side 0 coverage 21/32",
+        "[skills] match 1 side 0 damage-types: ship-0 4 ship-2 9416 ship-4 63",
+        "[skills] match 1 side 1 snapshot",
+        "[skills] match 1 side 1: flight 20 warp 438 autopilot 5 targeting 190 guns 17493 missiles 106 chaff 0 booster 82 cloak 85 probes 0 scouting 1030 mines 51 ship-damage 9896 station-damage 0 station-kills 0 nanite-ship 0 nanite-station 0 order-goto 28 order-attack 0 order-build 51 order-repair 0 drone-build 1 drone-mine 5 eject 60 pod-rescue 3 dock 31 relaunch 76 purchase 70 research 21 chat 49 voice 86 ship-kills 77",
+        "[skills] match 1 side 1 coverage 21/32",
+        "[skills] match 1 side 1 damage-types: ship-0 4 ship-2 9842 ship-4 50"
+      ]
+    },
+    {
+      "path": ".verify-sc3-evidence/qualified-parking/1/results.trx",
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:36.1928743",
+      "parking": [
+        "P700 local 15v15: 93.5s, samples=935, reached=24/30, longest speed<1 with target=2.118s, shots=3477, hits=1829, kills=16"
+      ]
+    },
+    {
+      "path": ".verify-sc3-evidence/qualified-parking/2/results.trx",
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:40.7536505",
+      "parking": [
+        "P700 local 15v15: 98.1s, samples=980, reached=24/30, longest speed<1 with target=2.017s, shots=3220, hits=1011, kills=9"
+      ]
+    },
+    {
+      "path": ".verify-sc3-evidence/qualified-parking/3/results.trx",
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:38.8276139",
+      "parking": [
+        "P700 local 15v15: 96.2s, samples=961, reached=25/30, longest speed<1 with target=1.908s, shots=3763, hits=1695, kills=13"
+      ]
+    },
+    {
+      "path": ".verify-sc3-evidence/qualified-parking/4/results.trx",
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:36.9779810",
+      "parking": [
+        "P700 local 15v15: 94.4s, samples=943, reached=24/30, longest speed<1 with target=1.615s, shots=2577, hits=1329, kills=14"
+      ]
+    },
+    {
+      "path": ".verify-sc3-evidence/qualified-parking/5/results.trx",
+      "test": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:40.3010569",
+      "parking": [
+        "P700 local 15v15: 97.6s, samples=975, reached=26/30, longest speed<1 with target=2.016s, shots=3737, hits=1650, kills=15"
+      ]
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/LocalConfigWinsOverBundleWithBlankEnvironment-None/1/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "outcome": "Passed",
+      "duration": "00:00:00.0150372"
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/LocalConfigWinsOverBundleWithBlankEnvironment-None/2/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "outcome": "Passed",
+      "duration": "00:00:00.0150084"
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/LocalConfigWinsOverBundleWithBlankEnvironment-None/3/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "outcome": "Passed",
+      "duration": "00:00:00.0153206"
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/MissingDirectoryHasNoDefault-Artwork/1/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+      "outcome": "Passed",
+      "duration": "00:00:00.0032096"
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/MissingDirectoryHasNoDefault-Artwork/2/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+      "outcome": "Passed",
+      "duration": "00:00:00.0039953"
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/MissingDirectoryHasNoDefault-Artwork/3/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+      "outcome": "Passed",
+      "duration": "00:00:00.0038428"
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/MissingDirectoryHasNoDefault-NativeSource/1/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+      "outcome": "Passed",
+      "duration": "00:00:00.0038163"
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/MissingDirectoryHasNoDefault-NativeSource/2/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+      "outcome": "Passed",
+      "duration": "00:00:00.0038030"
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/MissingDirectoryHasNoDefault-NativeSource/3/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+      "outcome": "Passed",
+      "duration": "00:00:00.0036832"
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/NativeSourceNeverGuessesAnInstallSubdirectory-None/1/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "outcome": "Passed",
+      "duration": "00:00:00.0038076"
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/NativeSourceNeverGuessesAnInstallSubdirectory-None/2/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "outcome": "Passed",
+      "duration": "00:00:00.0039022"
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/NativeSourceNeverGuessesAnInstallSubdirectory-None/3/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "outcome": "Passed",
+      "duration": "00:00:00.0033471"
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/UsesExecutableDirectoryOutsideRepository-Artwork/1/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0038009"
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/UsesExecutableDirectoryOutsideRepository-Artwork/2/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0038928"
+    },
+    {
+      "path": ".verify-sc3-evidence/temp-path-exact/UsesExecutableDirectoryOutsideRepository-Artwork/3/results.trx",
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+      "outcome": "Passed",
+      "duration": "00:00:00.0039144"
+    }
+  ],
+  "fast": {
+    "discovery": {
+      "Allegiance.Lobby.Tests": {
+        "fast": 19,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "fast": 2486,
+        "live": 11,
+        "perf": 9
+      },
+      "Allegiance.ClientCore.Tests": {
+        "fast": 1438,
+        "live": 64,
+        "perf": 5
+      },
+      "Allegiance.Core.Tests": {
+        "fast": 4835,
+        "live": 27,
+        "perf": 52
+      }
+    },
+    "tiers": {
+      "fast": {
+        "tier": "fast",
+        "seconds": 270.1850200740155,
+        "projects": {
+          "Allegiance.Lobby.Tests": {
+            "count": 19,
+            "outcomes": {
+              "Passed": 19
+            }
+          },
+          "Allegiance.ClientCore.MonoGame.Tests": {
+            "count": 2486,
+            "outcomes": {
+              "Passed": 2483,
+              "NotExecuted": 3
+            }
+          },
+          "Allegiance.ClientCore.Tests": {
+            "count": 1438,
+            "outcomes": {
+              "Passed": 1438
+            }
+          },
+          "Allegiance.Core.Tests": {
+            "count": 4835,
+            "outcomes": {
+              "Passed": 4830,
+              "Failed": 5
+            }
+          }
+        },
+        "calibration": {
+          "factor": 1.0238196286472148,
+          "referenceMs": 3.8598,
+          "nominalMs": 3.77,
+          "fastLimitSeconds": 10.238196286472148
+        },
+        "timingOffenders": [],
+        "errors": [
+          "Allegiance.Core.Tests: main failed"
+        ],
+        "quarantineFlakes": [],
+        "infrastructure": {
+          "tier": "Fast",
+          "count": 9,
+          "seconds": 0.050223922124132514,
+          "exitCode": 0,
+          "timingGuardPassed": true
+        }
+      }
+    },
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.050223922124132514,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "passed": false
+  },
+  "build": [
+    "Build succeeded.",
+    "0 Warning(s)",
+    "0 Error(s)"
+  ]
+}

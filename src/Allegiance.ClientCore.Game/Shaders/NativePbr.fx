@@ -7,7 +7,7 @@
 #endif
 float4x4 World, WorldViewProj, NormalMatrix;
 float3 CameraPosition, KeyDirection, KeyColor, AltDirection, AltColor, Ambient;
-float Opacity;
+float Opacity, CompressedMaps;
 texture BaseMap, NormalMap, MetalMap, RoughMap, EmissionMap;
 sampler BaseSampler = sampler_state { Texture=<BaseMap>; MinFilter=Linear; MagFilter=Linear; MipFilter=Linear; AddressU=Clamp; AddressV=Clamp; };
 sampler NormalSampler = sampler_state { Texture=<NormalMap>; MinFilter=Linear; MagFilter=Linear; MipFilter=Linear; AddressU=Clamp; AddressV=Clamp; };
@@ -39,8 +39,10 @@ float4 PS(VOUT i):COLOR0 {
     float3 n=normalize(i.Normal), t=normalize(i.Tangent.xyz-n*dot(n,i.Tangent.xyz));
     float3 b=cross(n,t)*i.Tangent.w;
     float3 map=tex2D(NormalSampler,i.UV).xyz*2-1;
+    if (CompressedMaps > .5) map.z=sqrt(saturate(1-dot(map.xy,map.xy)));
     n=normalize(t*map.x+b*map.y+n*map.z);
-    float3 albedo=pow(max(tex2D(BaseSampler,i.UV).rgb,0),2.2);
+    float3 albedo=tex2D(BaseSampler,i.UV).rgb;
+    if (CompressedMaps < .5) albedo=pow(max(albedo,0),2.2);
     float metal=saturate(tex2D(MetalSampler,i.UV).r), rough=clamp(tex2D(RoughSampler,i.UV).r,.08,1);
     float3 v=normalize(CameraPosition-i.WorldPosition);
     // Ambient is the existing sector/floor, with a small conductor response in
@@ -48,7 +50,9 @@ float4 PS(VOUT i):COLOR0 {
     float3 color=albedo*Ambient*lerp(1,.25,metal);
     color+=Light(n,v,-KeyDirection,KeyColor,albedo,metal,rough);
     color+=Light(n,v,-AltDirection,AltColor,albedo,metal,rough);
-    color+=pow(max(tex2D(EmissionSampler,i.UV).rgb,0),2.2);
+    float3 emission=tex2D(EmissionSampler,i.UV).rgb;
+    if (CompressedMaps < .5) emission=pow(max(emission,0),2.2);
+    color+=emission;
     return float4(pow(max(color,0),1/2.2)*Opacity,Opacity);
 }
 technique NativePbr { pass Pass0 { VertexShader=compile VS_SHADERMODEL VS(); PixelShader=compile PS_SHADERMODEL PS(); } }

@@ -135,6 +135,7 @@ public sealed partial class BotFixRegressionTests
         for (int life = 0; life < 2; life++)
         {
             Set(bot, "IsPod", true); Set(bot, "PodDocked", true);
+            Set(bot, "CloakHeld", true);
             Set(bot, "PodStationId", (short)23); Set(bot, "PodDockStationId", (short)23);
             Set(bot, "PodStationSector", (short)2); Set(bot, "Arrived", true);
             Set(bot, "TargetId", (short?)99); Set(bot, "OrderedTargetId", (short?)99);
@@ -143,6 +144,7 @@ public sealed partial class BotFixRegressionTests
             Get<List<short>>(bot, "Path").Add(1);
             Call("ResetNewLife", null, bot, 10.0 + life, true);
             Assert.False(Get<bool>(bot, "IsPod")); Assert.False(Get<bool>(bot, "PodDocked"));
+            Assert.False(Get<bool>(bot, "CloakHeld"));
             Assert.Equal((short)-1, Get<short>(bot, "PodStationId"));
             Assert.Equal((short)-1, Get<short>(bot, "PodDockStationId"));
             Assert.Equal((short)-1, Get<short>(bot, "PodStationSector"));

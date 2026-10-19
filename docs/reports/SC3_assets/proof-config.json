@@ -1,0 +1,65 @@
+{
+  "test": "Allegiance.ClientCore.Tests.SC3CloakLiveTests.Research_showcase_cloaks_on_both_sides_and_bomber_decloaks_to_strike",
+  "server": {
+    "port": 0,
+    "staticCore": "PCore001.igc",
+    "showcase": {
+      "techMode": "research",
+      "incomeMultiplier": 10000,
+      "researchTimeScale": 64,
+      "finaleTimeoutSeconds": 900
+    },
+    "liveSettings": {
+      "timeDilation": "off",
+      "autoNextMatch": {
+        "enabled": false
+      },
+      "testUnlock": {
+        "enabled": false
+      },
+      "testHarness": {
+        "enabled": false,
+        "ignoreTechGate": false
+      }
+    },
+    "games": [
+      {
+        "name": "SC3 legal research 15v15",
+        "teams": 2,
+        "civIds": [
+          35,
+          35
+        ],
+        "sideNames": [
+          "Alpha",
+          "Bravo"
+        ],
+        "maxTeamImbalance": 32767,
+        "mapGen": {
+          "type": "SingleRing",
+          "playerSectorAsteroids": 20,
+          "playerSectorSpecialAsteroids": 8
+        }
+      }
+    ]
+  },
+  "mcpArgs": {
+    "preset": "showcase",
+    "size_scale": 1,
+    "target_sector": "1",
+    "staging": true,
+    "finale_after_minutes": 2,
+    "finale_side": "both",
+    "finale_bombers": 3,
+    "finale_min_relaunch_share": 0,
+    "finale_min_kills_last_5_minutes": 1
+  },
+  "tickerSleepMilliseconds": 5,
+  "observationSleepMilliseconds": 50,
+  "deadlineWallSeconds": 900,
+  "qualification": {
+    "minimumCloakActivationsPerSide": 5,
+    "bomberMustHaveCloakedInSameSortie": true,
+    "strikeRequiresActualGunfireAndEmitterOffAndEnemyStationTarget": true
+  }
+}

@@ -1,0 +1,82 @@
+[
+  {
+    "group": "base",
+    "run": 1,
+    "outcome": "Passed",
+    "duration": "00:01:41.0236275",
+    "longestStoppedSeconds": 2.006,
+    "summary": "P700 local 15v15: 98.3s, samples=982, reached=26/30, longest speed<1 with target=2.006s, shots=3798, hits=1599, kills=14"
+  },
+  {
+    "group": "base",
+    "run": 2,
+    "outcome": "Passed",
+    "duration": "00:01:36.1070204",
+    "longestStoppedSeconds": 2.808,
+    "summary": "P700 local 15v15: 93.5s, samples=934, reached=24/30, longest speed<1 with target=2.808s, shots=3505, hits=1648, kills=11"
+  },
+  {
+    "group": "base",
+    "run": 3,
+    "outcome": "Passed",
+    "duration": "00:01:39.9435230",
+    "longestStoppedSeconds": 2.016,
+    "summary": "P700 local 15v15: 97.2s, samples=971, reached=26/30, longest speed<1 with target=2.016s, shots=3532, hits=1444, kills=12"
+  },
+  {
+    "group": "base",
+    "run": 4,
+    "outcome": "Passed",
+    "duration": "00:01:41.3001750",
+    "longestStoppedSeconds": 1.914,
+    "summary": "P700 local 15v15: 98.6s, samples=985, reached=26/30, longest speed<1 with target=1.914s, shots=4212, hits=1656, kills=18"
+  },
+  {
+    "group": "base",
+    "run": 5,
+    "outcome": "Passed",
+    "duration": "00:01:35.8977143",
+    "longestStoppedSeconds": 1.908,
+    "summary": "P700 local 15v15: 93.3s, samples=932, reached=24/30, longest speed<1 with target=1.908s, shots=3796, hits=1591, kills=12"
+  },
+  {
+    "group": "qualified-parking",
+    "run": 1,
+    "outcome": "Passed",
+    "duration": "00:01:36.1928743",
+    "longestStoppedSeconds": 2.118,
+    "summary": "P700 local 15v15: 93.5s, samples=935, reached=24/30, longest speed<1 with target=2.118s, shots=3477, hits=1829, kills=16"
+  },
+  {
+    "group": "qualified-parking",
+    "run": 2,
+    "outcome": "Passed",
+    "duration": "00:01:40.7536505",
+    "longestStoppedSeconds": 2.017,
+    "summary": "P700 local 15v15: 98.1s, samples=980, reached=24/30, longest speed<1 with target=2.017s, shots=3220, hits=1011, kills=9"
+  },
+  {
+    "group": "qualified-parking",
+    "run": 3,
+    "outcome": "Passed",
+    "duration": "00:01:38.8276139",
+    "longestStoppedSeconds": 1.908,
+    "summary": "P700 local 15v15: 96.2s, samples=961, reached=25/30, longest speed<1 with target=1.908s, shots=3763, hits=1695, kills=13"
+  },
+  {
+    "group": "qualified-parking",
+    "run": 4,
+    "outcome": "Passed",
+    "duration": "00:01:36.9779810",
+    "longestStoppedSeconds": 1.615,
+    "summary": "P700 local 15v15: 94.4s, samples=943, reached=24/30, longest speed<1 with target=1.615s, shots=2577, hits=1329, kills=14"
+  },
+  {
+    "group": "qualified-parking",
+    "run": 5,
+    "outcome": "Passed",
+    "duration": "00:01:40.3010569",
+    "longestStoppedSeconds": 2.016,
+    "summary": "P700 local 15v15: 97.6s, samples=975, reached=26/30, longest speed<1 with target=2.016s, shots=3737, hits=1650, kills=15"
+  }
+]

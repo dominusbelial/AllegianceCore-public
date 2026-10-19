@@ -1,0 +1,138 @@
+{
+  "default": {
+    "materials": 138,
+    "zipBytes": 1557378699,
+    "bc3ZipBytes": 865666489,
+    "classes": {
+      "small": {
+        "materials": 89,
+        "residentBytes": 871026624,
+        "fileBytes": 1493278668,
+        "primaryFileBytes": 871092484
+      },
+      "capital": {
+        "materials": 49,
+        "residentBytes": 1918200256,
+        "fileBytes": 3288392940,
+        "primaryFileBytes": 1918236516
+      }
+    },
+    "maxResidentBytes": 39146944,
+    "zipSha256": "0b5e146c5cd0b8fdf1f1ab1562e39db9ee36e909ef98c569aa32aaafc0a26339"
+  },
+  "compact": {
+    "materials": 138,
+    "zipBytes": 405576712,
+    "bc3ZipBytes": 229846627,
+    "classes": {
+      "small": {
+        "materials": 89,
+        "residentBytes": 217763776,
+        "fileBytes": 373399500,
+        "primaryFileBytes": 217829636
+      },
+      "capital": {
+        "materials": 49,
+        "residentBytes": 479553984,
+        "fileBytes": 822142188,
+        "primaryFileBytes": 479590244
+      }
+    },
+    "maxResidentBytes": 9786816,
+    "zipSha256": "afb18ea274c95605903b14605c456e6de1b0df5f76eb7b3d8fd866f87a7a7fd6"
+  },
+  "reclassified": [
+    [
+      "cap04bmp",
+      "capital"
+    ],
+    [
+      "cap101bmp",
+      "capital"
+    ],
+    [
+      "cap103bmp",
+      "capital"
+    ],
+    [
+      "cap20bmp",
+      "capital"
+    ],
+    [
+      "cap21bmp",
+      "capital"
+    ],
+    [
+      "cap300bmp",
+      "capital"
+    ],
+    [
+      "cap303bmp",
+      "capital"
+    ],
+    [
+      "cap400bmp",
+      "capital"
+    ],
+    [
+      "cap404bmp",
+      "capital"
+    ],
+    [
+      "dcrusbmp",
+      "capital"
+    ],
+    [
+      "drgasbmp",
+      "capital"
+    ],
+    [
+      "faohshassbmp",
+      "capital"
+    ],
+    [
+      "faohshconbmp",
+      "capital"
+    ],
+    [
+      "faohshcrvbmp",
+      "capital"
+    ],
+    [
+      "tfconbmp",
+      "capital"
+    ],
+    [
+      "utl102bmp",
+      "capital"
+    ],
+    [
+      "utl105bmp",
+      "capital"
+    ],
+    [
+      "utl11bmp",
+      "capital"
+    ],
+    [
+      "utl14abmp",
+      "capital"
+    ],
+    [
+      "utl18bmp",
+      "capital"
+    ],
+    [
+      "utl201bmp",
+      "capital"
+    ],
+    [
+      "utl95bmp",
+      "capital"
+    ],
+    [
+      "utl402bmp",
+      "capital"
+    ]
+  ]
+}

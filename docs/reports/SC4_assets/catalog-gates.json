@@ -1,0 +1,204 @@
+{
+  "sides": [
+    {
+      "civ": 25,
+      "dock": 115,
+      "parts": [
+        {
+          "PartId": 13,
+          "Name": "Mine Pack 1",
+          "PartMask": 1024,
+          "Price": 0,
+          "requiredBits": "210,225,355",
+          "buyable": false
+        },
+        {
+          "PartId": 19,
+          "Name": "Rescue",
+          "PartMask": 1,
+          "Price": 250,
+          "requiredBits": "6,21",
+          "buyable": true
+        },
+        {
+          "PartId": 59,
+          "Name": "Prox Mine 1",
+          "PartMask": 2048,
+          "Price": 0,
+          "requiredBits": "355",
+          "buyable": true
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "PartMask": 1,
+          "Price": 0,
+          "requiredBits": "108",
+          "buyable": true
+        }
+      ],
+      "hulls": [
+        {
+          "HullId": 410,
+          "Name": "Scout",
+          "mask": 7169,
+          "capacity": 2,
+          "dispensers": [
+            13,
+            19,
+            59,
+            81
+          ]
+        },
+        {
+          "HullId": 415,
+          "Name": "Lt Interceptor",
+          "mask": 0,
+          "capacity": 0,
+          "dispensers": []
+        },
+        {
+          "HullId": 419,
+          "Name": "Lg Std Constructor",
+          "mask": 0,
+          "capacity": 0,
+          "dispensers": []
+        },
+        {
+          "HullId": 438,
+          "Name": "Miner",
+          "mask": 0,
+          "capacity": 0,
+          "dispensers": []
+        },
+        {
+          "HullId": 444,
+          "Name": "Lifepod",
+          "mask": 0,
+          "capacity": 0,
+          "dispensers": []
+        },
+        {
+          "HullId": 470,
+          "Name": "Sm Std Constructor",
+          "mask": 0,
+          "capacity": 0,
+          "dispensers": []
+        }
+      ]
+    },
+    {
+      "civ": 3,
+      "dock": 44,
+      "parts": [
+        {
+          "PartId": 13,
+          "Name": "Mine Pack 1",
+          "PartMask": 1024,
+          "Price": 0,
+          "requiredBits": "210,225,355",
+          "buyable": false
+        },
+        {
+          "PartId": 19,
+          "Name": "Rescue",
+          "PartMask": 1,
+          "Price": 250,
+          "requiredBits": "6,21",
+          "buyable": false
+        },
+        {
+          "PartId": 59,
+          "Name": "Prox Mine 1",
+          "PartMask": 2048,
+          "Price": 0,
+          "requiredBits": "355",
+          "buyable": true
+        },
+        {
+          "PartId": 81,
+          "Name": "EWS Probe 1",
+          "PartMask": 1,
+          "Price": 0,
+          "requiredBits": "108",
+          "buyable": true
+        }
+      ],
+      "hulls": [
+        {
+          "HullId": 107,
+          "Name": "Miner",
+          "mask": 0,
+          "capacity": 0,
+          "dispensers": []
+        },
+        {
+          "HullId": 110,
+          "Name": "Lg Std Constructor",
+          "mask": 0,
+          "capacity": 0,
+          "dispensers": []
+        },
+        {
+          "HullId": 97,
+          "Name": "Sm Std Constructor",
+          "mask": 0,
+          "capacity": 0,
+          "dispensers": []
+        },
+        {
+          "HullId": 113,
+          "Name": "Lifepod",
+          "mask": 0,
+          "capacity": 0,
+          "dispensers": []
+        },
+        {
+          "HullId": 114,
+          "Name": "Scout",
+          "mask": 7169,
+          "capacity": 2,
+          "dispensers": [
+            13,
+            19,
+            59,
+            81
+          ]
+        },
+        {
+          "HullId": 121,
+          "Name": "Fighter",
+          "mask": 1024,
+          "capacity": 1,
+          "dispensers": [
+            13
+          ]
+        }
+      ]
+    }
+  ],
+  "probe": {
+    "part": 81,
+    "ExpendableTypeId": 22,
+    "ScannerRange": 500,
+    "Lifespan": 3600,
+    "LoadTime": 2,
+    "LauncherExpendableSize": 2
+  },
+  "mine": {
+    "part": 59,
+    "ExpendableTypeId": 11,
+    "Radius": -107374180,
+    "MineRadius": 100,
+    "Lifespan": 15,
+    "LoadTime": 2,
+    "LauncherExpendableSize": 2
+  },
+  "chaff": {
+    "part": 80,
+    "ExpendableTypeId": 21,
+    "Lifespan": 2,
+    "LoadTime": 3,
+    "LauncherExpendableSize": 1
+  }
+}

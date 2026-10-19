@@ -1,0 +1,5709 @@
+{
+  "counterOrder": [
+    "chaff",
+    "probes",
+    "mines"
+  ],
+  "minimum": [
+    10,
+    10,
+    5
+  ],
+  "qualified": [
+    {
+      "wallSeconds": 47.8859465,
+      "simSeconds": 67.94999999999828,
+      "mode": "research",
+      "researchScale": 16,
+      "combatPeersPerSide": 60,
+      "counts": [
+        [
+          10,
+          12,
+          36
+        ],
+        [
+          24,
+          12,
+          10
+        ]
+      ],
+      "homeMines": [
+        0,
+        1
+      ],
+      "contestedProbes": [
+        0,
+        1
+      ],
+      "samples": [
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5464,
+          "launcher": 8107,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2573.725,
+          "position": [
+            426.32092,
+            3.4573977,
+            14.9613495
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5465,
+          "launcher": 8119,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2610.3428,
+          "position": [
+            389.66296,
+            1.4942789,
+            5.344738
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5466,
+          "launcher": 8125,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2577.2422,
+          "position": [
+            -423.9991,
+            -2.22747,
+            79.94835
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5467,
+          "launcher": 8131,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2609.2869,
+          "position": [
+            390.7152,
+            3.3181834,
+            -0.85507
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5468,
+          "launcher": 8137,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2598.9329,
+          "position": [
+            -401.17352,
+            15.090598,
+            18.055838
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5469,
+          "launcher": 8143,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2581.262,
+          "position": [
+            418.77332,
+            -3.712083,
+            13.000697
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5470,
+          "launcher": 8149,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2611.088,
+          "position": [
+            -389.00958,
+            5.687953,
+            21.825172
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5471,
+          "launcher": 8155,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2604.8665,
+          "position": [
+            395.1692,
+            -0.23377824,
+            13.632664
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 17.35000000000011,
+          "model": 5472,
+          "launcher": 8100,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2496.7227,
+          "position": [
+            -503.3104,
+            -10.212186,
+            7.754507
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 20.85000000000016,
+          "model": 5473,
+          "launcher": 8102,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2604.6262,
+          "position": [
+            425.47992,
+            -394.86377,
+            2.6496663
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 21.900000000000176,
+          "model": 5474,
+          "launcher": 8114,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2515.2893,
+          "position": [
+            508.32446,
+            -343.48303,
+            -15.899696
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 23.150000000000194,
+          "model": 5475,
+          "launcher": 8122,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2459.2773,
+          "position": [
+            568.1874,
+            -342.31665,
+            -130.96645
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 23.350000000000197,
+          "model": 5476,
+          "launcher": 8126,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2483.4404,
+          "position": [
+            559.0499,
+            -454.30963,
+            53.302837
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 23.700000000000202,
+          "model": 5477,
+          "launcher": 8106,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2380.2913,
+          "position": [
+            644.61725,
+            -339.31683,
+            -53.126976
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 24.600000000000215,
+          "model": 5478,
+          "launcher": 8154,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2312.077,
+          "position": [
+            723.95123,
+            -406.53156,
+            -5.7402062
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 25.350000000000225,
+          "model": 5479,
+          "launcher": 8146,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2256.0828,
+          "position": [
+            769.217,
+            -322.9217,
+            -96.11333
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 25.70000000000023,
+          "model": 5480,
+          "launcher": 8130,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2513.6902,
+          "position": [
+            549.4215,
+            -520.76605,
+            -205.19572
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 25.850000000000232,
+          "model": 5481,
+          "launcher": 8134,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2183.8572,
+          "position": [
+            847.99316,
+            -371.2129,
+            -17.30274
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 26.750000000000245,
+          "model": 5482,
+          "launcher": 8138,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2096.0452,
+          "position": [
+            929.7689,
+            -327.546,
+            16.205587
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 27.90000000000026,
+          "model": 5483,
+          "launcher": 8118,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2055.9995,
+          "position": [
+            983.1555,
+            -384.34705,
+            -108.39167
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 28.55000000000027,
+          "model": 5484,
+          "launcher": 8110,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 1996.7051,
+          "position": [
+            1047.7148,
+            -418.78668,
+            5.602312
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 29.95000000000029,
+          "model": 5485,
+          "launcher": 8156,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2605.974,
+          "position": [
+            424.13434,
+            393.4775,
+            34.54341
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 30.050000000000292,
+          "model": 5486,
+          "launcher": 8150,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 1909.8184,
+          "position": [
+            1134.2461,
+            -405.0171,
+            48.264374
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 30.5000000000003,
+          "model": 5487,
+          "launcher": 8142,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 1988.6926,
+          "position": [
+            1048.6976,
+            -334.27744,
+            -188.6157
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 30.6000000000003,
+          "model": 5488,
+          "launcher": 8132,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2539.2441,
+          "position": [
+            488.41946,
+            366.84186,
+            -71.76946
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 30.850000000000303,
+          "model": 5489,
+          "launcher": 8152,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2519.557,
+          "position": [
+            512.544,
+            387.56662,
+            102.574905
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 31.650000000000315,
+          "model": 5490,
+          "launcher": 8208,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 1843.9713,
+          "position": [
+            1190.8572,
+            -353.79214,
+            -45.426983
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 32.00000000000032,
+          "model": 5491,
+          "launcher": 8116,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2428.001,
+          "position": [
+            599.5145,
+            355.8216,
+            79.05248
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 32.3500000000003,
+          "model": 5492,
+          "launcher": 8136,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2403.6565,
+          "position": [
+            627.06726,
+            374.39847,
+            -81.12678
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 36.05000000000009,
+          "model": 5502,
+          "launcher": 8113,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2601.1965,
+          "position": [
+            437.4077,
+            -137.57542,
+            424.75668
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 37.40000000000001,
+          "model": 5506,
+          "launcher": 8199,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.000046,
+          "position": [
+            3078.0383,
+            50.724888,
+            -50.724888
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 37.65,
+          "model": 5508,
+          "launcher": 8203,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99997,
+          "position": [
+            3074.8235,
+            56.11765,
+            -49.882355
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 37.79999999999999,
+          "model": 5509,
+          "launcher": 8201,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99992,
+          "position": [
+            -3084.3586,
+            30.931267,
+            56.239162
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 38.49999999999995,
+          "model": 5511,
+          "launcher": 8193,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00003,
+          "position": [
+            -2954.0483,
+            81.59449,
+            49.666363
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 38.69999999999994,
+          "model": 5512,
+          "launcher": 8192,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.999985,
+          "position": [
+            3076.18,
+            49.51697,
+            -54.59564
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 38.89999999999993,
+          "model": 5513,
+          "launcher": 8188,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00006,
+          "position": [
+            2909.601,
+            40.922455,
+            -37.27466
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 39.099999999999916,
+          "model": 5514,
+          "launcher": 8189,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00001,
+          "position": [
+            -2950.7742,
+            57.237324,
+            74.40886
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 39.3499999999999,
+          "model": 5517,
+          "launcher": 8181,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.0001,
+          "position": [
+            -3078.7651,
+            55.13524,
+            44.63351
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 39.59999999999989,
+          "model": 5518,
+          "launcher": 8184,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00003,
+          "position": [
+            3094.9995,
+            33.249813,
+            -33.249813
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 39.74999999999988,
+          "model": 5519,
+          "launcher": 8196,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.999985,
+          "position": [
+            3083.439,
+            40.32885,
+            -51.45405
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 40.14999999999986,
+          "model": 5520,
+          "launcher": 8191,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00004,
+          "position": [
+            2954.442,
+            66.79215,
+            -68.55126
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 40.29999999999985,
+          "model": 5521,
+          "launcher": 8185,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99996,
+          "position": [
+            -2954.27,
+            75.86252,
+            58.22026
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 40.29999999999985,
+          "model": 5522,
+          "launcher": 8195,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99999,
+          "position": [
+            3087.4438,
+            39.349735,
+            -45.17932
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 40.549999999999834,
+          "model": 5523,
+          "launcher": 8197,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00003,
+          "position": [
+            -3081.835,
+            35.461525,
+            57.284443
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 40.64999999999983,
+          "model": 5524,
+          "launcher": 8187,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99994,
+          "position": [
+            3076.8892,
+            62.792877,
+            -37.16313
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 40.899999999999814,
+          "model": 5525,
+          "launcher": 8200,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.999985,
+          "position": [
+            2971.6882,
+            86.157394,
+            -54.8757
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 42.19999999999974,
+          "model": 5526,
+          "launcher": 8204,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.999985,
+          "position": [
+            3083.1035,
+            49.86212,
+            -42.93683
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 42.299999999999734,
+          "model": 5527,
+          "launcher": 8183,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00002,
+          "position": [
+            3082.5696,
+            59.174847,
+            -30.275503
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 46.09999999999952,
+          "model": 5528,
+          "launcher": 8198,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99992,
+          "position": [
+            3077.746,
+            57.013878,
+            -44.05618
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 46.19999999999951,
+          "model": 5529,
+          "launcher": 8194,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99995,
+          "position": [
+            3085.5872,
+            44.220062,
+            -44.220062
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 46.29999999999951,
+          "model": 5530,
+          "launcher": 8190,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00004,
+          "position": [
+            3093.1675,
+            34.161396,
+            -37.266975
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 46.29999999999951,
+          "model": 5531,
+          "launcher": 8202,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00002,
+          "position": [
+            3088.453,
+            42.752213,
+            -39.803783
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 46.4499999999995,
+          "model": 5532,
+          "launcher": 8186,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00005,
+          "position": [
+            2948.2686,
+            54.11915,
+            -75.0399
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 46.79999999999948,
+          "model": 5533,
+          "launcher": 8182,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.000046,
+          "position": [
+            2954.1104,
+            84.77518,
+            -44.08309
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 59.24999999999877,
+          "model": 5621,
+          "launcher": 8181,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2764.3564,
+          "position": [
+            -235.71246,
+            15.40676,
+            11.939153
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 59.899999999998734,
+          "model": 5629,
+          "launcher": 8189,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2809.8027,
+          "position": [
+            -190.27846,
+            18.661243,
+            -10.390794
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 60.19999999999872,
+          "model": 5640,
+          "launcher": 8201,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2946.8254,
+          "position": [
+            -53.211773,
+            13.426918,
+            -6.2434125
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 60.64999999999869,
+          "model": 5672,
+          "launcher": 8193,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2903.2524,
+          "position": [
+            -96.841034,
+            21.181099,
+            9.695991
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 60.69999999999869,
+          "model": 5679,
+          "launcher": 8122,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2770.4375,
+          "position": [
+            229.63147,
+            19.534048,
+            -0.3340269
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 61.49999999999864,
+          "model": 5742,
+          "launcher": 8197,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2758.244,
+          "position": [
+            -241.80434,
+            15.8684,
+            -3.8357747
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 62.349999999998595,
+          "model": 5779,
+          "launcher": 8114,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2817.56,
+          "position": [
+            182.48851,
+            12.068215,
+            11.318126
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 62.44999999999859,
+          "model": 5783,
+          "launcher": 8165,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2200.3176,
+          "position": [
+            -799.74066,
+            5.12442,
+            -15.179333
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 62.64999999999858,
+          "model": 5797,
+          "launcher": 8169,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2403.5796,
+          "position": [
+            -596.4754,
+            -3.8080091,
+            15.78814
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 62.64999999999858,
+          "model": 5798,
+          "launcher": 8173,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2196.73,
+          "position": [
+            -803.7717,
+            33.15875,
+            33.233086
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 63.049999999998555,
+          "model": 5839,
+          "launcher": 8181,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2865.0818,
+          "position": [
+            -134.98773,
+            15.733994,
+            12.31211
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 63.199999999998546,
+          "model": 5859,
+          "launcher": 8134,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2787.9297,
+          "position": [
+            212.21275,
+            28.059141,
+            -2.3786364
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 63.69999999999852,
+          "model": 5937,
+          "launcher": 8209,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2235.2788,
+          "position": [
+            -765.3924,
+            -30.9418,
+            45.1893
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 63.9999999999985,
+          "model": 5985,
+          "launcher": 8201,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2975.4226,
+          "position": [
+            -24.62057,
+            13.822472,
+            -8.042369
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 64.1499999999985,
+          "model": 6011,
+          "launcher": 8189,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2917.9321,
+          "position": [
+            -82.15704,
+            19.980513,
+            -10.993527
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 64.34999999999849,
+          "model": 6038,
+          "launcher": 8193,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2916.8555,
+          "position": [
+            -83.31539,
+            27.696749,
+            15.156481
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 64.44999999999848,
+          "model": 6056,
+          "launcher": 8177,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2151.9258,
+          "position": [
+            -848.2521,
+            -24.400454,
+            13.037184
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 64.49999999999848,
+          "model": 6069,
+          "launcher": 8208,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2688.2122,
+          "position": [
+            -311.8984,
+            -7.008768,
+            -23.368052
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 64.59999999999847,
+          "model": 6087,
+          "launcher": 8122,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2861.3535,
+          "position": [
+            138.72578,
+            21.26094,
+            1.6308581
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 64.99999999999845,
+          "model": 6151,
+          "launcher": 8196,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2745.737,
+          "position": [
+            -254.33348,
+            -8.026362,
+            17.991488
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 65.04999999999845,
+          "model": 6157,
+          "launcher": 8102,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2819.9207,
+          "position": [
+            180.10902,
+            12.389476,
+            -3.7281356
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 65.04999999999845,
+          "model": 6158,
+          "launcher": 8205,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2240.7017,
+          "position": [
+            -759.56366,
+            15.205718,
+            30.961317
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 65.34999999999843,
+          "model": 6202,
+          "launcher": 8197,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2864.933,
+          "position": [
+            -135.12468,
+            18.038511,
+            -2.4689927
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 65.49999999999842,
+          "model": 6227,
+          "launcher": 8185,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2889.6785,
+          "position": [
+            -110.37026,
+            16.264423,
+            4.2618136
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 65.9499999999984,
+          "model": 6299,
+          "launcher": 8165,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2182.15,
+          "position": [
+            -817.86615,
+            8.359069,
+            -0.27376774
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 66.14999999999839,
+          "model": 6328,
+          "launcher": 8169,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2360.7842,
+          "position": [
+            -639.2424,
+            -7.1665835,
+            8.582819
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 66.14999999999839,
+          "model": 6329,
+          "launcher": 8173,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2234.42,
+          "position": [
+            -766.1869,
+            36.729954,
+            36.921192
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 66.69999999999835,
+          "model": 6432,
+          "launcher": 8134,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2895.2866,
+          "position": [
+            105.10762,
+            45.985092,
+            -12.991669
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 66.84999999999835,
+          "model": 6463,
+          "launcher": 8154,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2491.9448,
+          "position": [
+            -508.25143,
+            29.074598,
+            11.483385
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 67.84999999999829,
+          "model": 6651,
+          "launcher": 8208,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2249.063,
+          "position": [
+            -750.9653,
+            -8.417185,
+            -7.4691467
+          ]
+        }
+      ],
+      "SimPassStageFailures": 0,
+      "enough": true,
+      "run": 1
+    },
+    {
+      "wallSeconds": 46.3581766,
+      "simSeconds": 66.89999999999834,
+      "mode": "research",
+      "researchScale": 16,
+      "combatPeersPerSide": 60,
+      "counts": [
+        [
+          10,
+          12,
+          36
+        ],
+        [
+          16,
+          12,
+          10
+        ]
+      ],
+      "homeMines": [
+        0,
+        1
+      ],
+      "contestedProbes": [
+        0,
+        1
+      ],
+      "samples": [
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.250000000000082,
+          "model": 5464,
+          "launcher": 8100,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2564.24,
+          "position": [
+            -435.78912,
+            -0.2897205,
+            12.216696
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.250000000000082,
+          "model": 5465,
+          "launcher": 8107,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2569.3691,
+          "position": [
+            430.64417,
+            -0.3555253,
+            8.258118
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.250000000000082,
+          "model": 5466,
+          "launcher": 8113,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2594.9304,
+          "position": [
+            -405.09747,
+            -8.713318,
+            8.28653
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.250000000000082,
+          "model": 5467,
+          "launcher": 8119,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2602.0835,
+          "position": [
+            397.94678,
+            10.324717,
+            7.193321
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.250000000000082,
+          "model": 5468,
+          "launcher": 8125,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2610.3313,
+          "position": [
+            -389.69547,
+            10.889448,
+            4.580784
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.250000000000082,
+          "model": 5469,
+          "launcher": 8131,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2578.2,
+          "position": [
+            421.82788,
+            4.8822117,
+            10.964816
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.250000000000082,
+          "model": 5470,
+          "launcher": 8137,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2607.9727,
+          "position": [
+            -392.08224,
+            1.7651908,
+            16.84017
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.250000000000082,
+          "model": 5471,
+          "launcher": 8143,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2601.0671,
+          "position": [
+            398.97156,
+            8.067663,
+            11.705425
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.250000000000082,
+          "model": 5472,
+          "launcher": 8149,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2565.2146,
+          "position": [
+            -434.83655,
+            4.0810785,
+            15.680242
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 20.550000000000157,
+          "model": 5473,
+          "launcher": 8102,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2607.9033,
+          "position": [
+            418.61627,
+            -370.7247,
+            -13.425366
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 21.700000000000173,
+          "model": 5474,
+          "launcher": 8110,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2517.6855,
+          "position": [
+            511.33627,
+            -381.14587,
+            4.621729
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 22.650000000000187,
+          "model": 5475,
+          "launcher": 8130,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2468.5938,
+          "position": [
+            569.2072,
+            -417.6058,
+            -103.96024
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 23.4500000000002,
+          "model": 5476,
+          "launcher": 8122,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2432.4385,
+          "position": [
+            590.03766,
+            -327.1905,
+            42.237686
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 23.950000000000205,
+          "model": 5477,
+          "launcher": 8118,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2350.4495,
+          "position": [
+            673.99524,
+            -335.7974,
+            -39.42594
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 24.800000000000217,
+          "model": 5478,
+          "launcher": 8138,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2364.1106,
+          "position": [
+            691.3737,
+            -507.76535,
+            -37.92392
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 25.150000000000222,
+          "model": 5479,
+          "launcher": 8114,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2261.0303,
+          "position": [
+            768.9199,
+            -356.45627,
+            -86.478935
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 25.150000000000222,
+          "model": 5480,
+          "launcher": 8146,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2296.2883,
+          "position": [
+            744.97144,
+            -419.63986,
+            -108.11224
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 26.100000000000236,
+          "model": 5481,
+          "launcher": 8154,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2170.0144,
+          "position": [
+            857.97015,
+            -339.81952,
+            -72.0654
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 26.900000000000247,
+          "model": 5482,
+          "launcher": 8126,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2076.5667,
+          "position": [
+            944.5215,
+            -289.5367,
+            -57.49823
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 28.250000000000266,
+          "model": 5483,
+          "launcher": 8106,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2034.3995,
+          "position": [
+            1001.6125,
+            -378.3096,
+            45.942833
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 28.60000000000027,
+          "model": 5484,
+          "launcher": 8150,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2105.204,
+          "position": [
+            949.2366,
+            -447.63907,
+            -160.85252
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 29.450000000000284,
+          "model": 5485,
+          "launcher": 8142,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2010.403,
+          "position": [
+            1022.01624,
+            -327.1226,
+            -149.30197
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 30.150000000000293,
+          "model": 5486,
+          "launcher": 8134,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 1949.2051,
+          "position": [
+            1094.3555,
+            -406.86966,
+            48.749825
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 30.5500000000003,
+          "model": 5487,
+          "launcher": 8156,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2608.0608,
+          "position": [
+            429.75598,
+            434.91165,
+            -81.717766
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 31.000000000000306,
+          "model": 5488,
+          "launcher": 8148,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2552.6033,
+          "position": [
+            476.03854,
+            345.06958,
+            -162.26341
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 31.100000000000307,
+          "model": 5489,
+          "launcher": 8128,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2587.9495,
+          "position": [
+            446.4265,
+            413.73605,
+            74.6151
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 31.700000000000315,
+          "model": 5490,
+          "launcher": 8120,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2496.781,
+          "position": [
+            540.91614,
+            424.40823,
+            -81.85181
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 32.05000000000032,
+          "model": 5491,
+          "launcher": 8108,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2463.0476,
+          "position": [
+            566.8086,
+            377.34033,
+            61.62649
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 32.20000000000031,
+          "model": 5492,
+          "launcher": 8208,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 1903.415,
+          "position": [
+            1145.121,
+            -417.49493,
+            -90.05987
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 35.70000000000011,
+          "model": 5500,
+          "launcher": 8155,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2607.4478,
+          "position": [
+            -430.51154,
+            -441.93616,
+            34.7131
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 36.05000000000009,
+          "model": 5503,
+          "launcher": 8183,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00009,
+          "position": [
+            3085.012,
+            48.173386,
+            -41.08906
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 37.05000000000003,
+          "model": 5507,
+          "launcher": 8201,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00004,
+          "position": [
+            -2943.1096,
+            52.605747,
+            72.33326
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 37.25000000000002,
+          "model": 5508,
+          "launcher": 8189,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.999954,
+          "position": [
+            -2903.8103,
+            42.89135,
+            11.993404
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 37.25000000000002,
+          "model": 5509,
+          "launcher": 8197,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99996,
+          "position": [
+            -2927.5361,
+            55.067867,
+            54.336727
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 37.350000000000016,
+          "model": 5510,
+          "launcher": 8191,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00007,
+          "position": [
+            3085.0728,
+            46.78997,
+            -42.536335
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 37.84999999999999,
+          "model": 5511,
+          "launcher": 8203,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.000015,
+          "position": [
+            3086.4846,
+            40.359478,
+            -46.12512
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 37.94999999999998,
+          "model": 5512,
+          "launcher": 8193,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00001,
+          "position": [
+            -2963.0396,
+            70.22701,
+            70.27131
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 38.34999999999996,
+          "model": 5514,
+          "launcher": 8181,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.999954,
+          "position": [
+            -2957.3389,
+            84.57226,
+            47.57633
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 38.34999999999996,
+          "model": 5515,
+          "launcher": 8199,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99994,
+          "position": [
+            3082.3684,
+            39.81144,
+            -53.539524
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 38.49999999999995,
+          "model": 5517,
+          "launcher": 8196,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00003,
+          "position": [
+            3094.9995,
+            33.249813,
+            -33.249813
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 38.69999999999994,
+          "model": 5518,
+          "launcher": 8188,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.000084,
+          "position": [
+            3080.8962,
+            40.448067,
+            -55.279022
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 39.24999999999991,
+          "model": 5519,
+          "launcher": 8195,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.999985,
+          "position": [
+            3080.1985,
+            53.465675,
+            -44.10918
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 39.449999999999896,
+          "model": 5520,
+          "launcher": 8192,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.999916,
+          "position": [
+            3077.997,
+            58.4979,
+            -41.598507
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 39.69999999999988,
+          "model": 5521,
+          "launcher": 8200,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00005,
+          "position": [
+            3080.352,
+            48.211185,
+            -49.55039
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 39.89999999999987,
+          "model": 5522,
+          "launcher": 8185,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.000015,
+          "position": [
+            -2958.6204,
+            79.94826,
+            55.963955
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 39.999999999999865,
+          "model": 5524,
+          "launcher": 8184,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00004,
+          "position": [
+            3091.4092,
+            44.181084,
+            -30.469711
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 41.84999999999976,
+          "model": 5526,
+          "launcher": 8204,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00003,
+          "position": [
+            3089.3562,
+            43.188816,
+            -37.231735
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 42.24999999999974,
+          "model": 5527,
+          "launcher": 8187,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.000015,
+          "position": [
+            3084.2625,
+            54.770584,
+            -33.704975
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 45.94999999999953,
+          "model": 5528,
+          "launcher": 8198,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00006,
+          "position": [
+            3081.7673,
+            47.697567,
+            -47.697567
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 46.09999999999952,
+          "model": 5529,
+          "launcher": 8202,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99992,
+          "position": [
+            3080.4482,
+            60.336258,
+            -33.52014
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 46.19999999999951,
+          "model": 5530,
+          "launcher": 8190,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99997,
+          "position": [
+            3075.881,
+            61.969616,
+            -40.46995
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 47.29999999999945,
+          "model": 5531,
+          "launcher": 8186,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99998,
+          "position": [
+            2965.0398,
+            67.140884,
+            -74.20162
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 48.599999999999376,
+          "model": 5532,
+          "launcher": 8194,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.999954,
+          "position": [
+            3069.3767,
+            57.813972,
+            -55.501415
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 48.84999999999936,
+          "model": 5533,
+          "launcher": 8182,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99996,
+          "position": [
+            2958.9458,
+            72.31204,
+            -65.73822
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 59.79999999999874,
+          "model": 5635,
+          "launcher": 8102,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2654.7017,
+          "position": [
+            345.41876,
+            23.30205,
+            -9.803389
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 59.94999999999873,
+          "model": 5639,
+          "launcher": 8193,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2812.386,
+          "position": [
+            -187.61662,
+            -0.41972393,
+            3.830613
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 60.14999999999872,
+          "model": 5645,
+          "launcher": 8200,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2948.861,
+          "position": [
+            -51.485043,
+            43.747295,
+            11.317109
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 60.89999999999868,
+          "model": 5681,
+          "launcher": 8169,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2329.201,
+          "position": [
+            -671.04,
+            27.122953,
+            19.65757
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 61.39999999999865,
+          "model": 5712,
+          "launcher": 8201,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2894.8225,
+          "position": [
+            105.184616,
+            -1.4167457,
+            -6.2638865
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 61.59999999999864,
+          "model": 5724,
+          "launcher": 8197,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2802.0493,
+          "position": [
+            -198.37634,
+            25.224922,
+            41.834927
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 62.149999999998606,
+          "model": 5757,
+          "launcher": 8185,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2858.1245,
+          "position": [
+            -141.89711,
+            10.378973,
+            4.0683208
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 62.499999999998586,
+          "model": 5775,
+          "launcher": 8189,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2848.5425,
+          "position": [
+            -151.51476,
+            -5.809398,
+            -17.074268
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 62.94999999999856,
+          "model": 5798,
+          "launcher": 8146,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2903.6995,
+          "position": [
+            -96.36493,
+            17.349112,
+            8.5917635
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 63.29999999999854,
+          "model": 5822,
+          "launcher": 8110,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2940.5645,
+          "position": [
+            59.593864,
+            28.80457,
+            10.036519
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 63.49999999999853,
+          "model": 5843,
+          "launcher": 8165,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2379.3179,
+          "position": [
+            -620.9558,
+            25.066015,
+            25.937769
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 63.59999999999852,
+          "model": 5853,
+          "launcher": 8102,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2661.2961,
+          "position": [
+            338.83453,
+            24.300024,
+            -10.245192
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 63.59999999999852,
+          "model": 5855,
+          "launcher": 8181,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2817.252,
+          "position": [
+            -182.82384,
+            17.750633,
+            10.532319
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 63.749999999998515,
+          "model": 5864,
+          "launcher": 8193,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2879.8826,
+          "position": [
+            -120.13567,
+            -10.142123,
+            1.4208133
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 63.899999999998506,
+          "model": 5877,
+          "launcher": 8200,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2607.4578,
+          "position": [
+            -392.82547,
+            35.398533,
+            14.954353
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 64.69999999999847,
+          "model": 5961,
+          "launcher": 8169,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2379.5984,
+          "position": [
+            -620.654,
+            33.404995,
+            9.207535
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 65.09999999999845,
+          "model": 6004,
+          "launcher": 8201,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2890.7454,
+          "position": [
+            109.26135,
+            -2.1493654,
+            -5.820969
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 65.34999999999843,
+          "model": 6035,
+          "launcher": 8197,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2835.2979,
+          "position": [
+            -165.28787,
+            27.280788,
+            50.754845
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 65.69999999999841,
+          "model": 6075,
+          "launcher": 8192,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2698.9338,
+          "position": [
+            -301.4959,
+            40.2173,
+            26.490181
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 65.7999999999984,
+          "model": 6087,
+          "launcher": 8185,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2876.1707,
+          "position": [
+            -123.84123,
+            8.183715,
+            1.2450205
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 66.04999999999839,
+          "model": 6129,
+          "launcher": 8213,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2558.3916,
+          "position": [
+            -442.0133,
+            42.58558,
+            -16.062609
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 66.09999999999839,
+          "model": 6138,
+          "launcher": 8189,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2859.692,
+          "position": [
+            -140.35223,
+            -8.559742,
+            -13.372375
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 66.34999999999837,
+          "model": 6176,
+          "launcher": 8196,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2329.3428,
+          "position": [
+            -671.6282,
+            45.499332,
+            49.5204
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 66.44999999999837,
+          "model": 6194,
+          "launcher": 8146,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2750.6584,
+          "position": [
+            -249.70886,
+            39.709145,
+            21.09687
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 66.59999999999836,
+          "model": 6221,
+          "launcher": 8209,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2796.5642,
+          "position": [
+            -204.0377,
+            38.445145,
+            43.43875
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 66.79999999999835,
+          "model": 6255,
+          "launcher": 8110,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2962.5403,
+          "position": [
+            37.55209,
+            22.5526,
+            6.194966
+          ]
+        }
+      ],
+      "SimPassStageFailures": 0,
+      "enough": true,
+      "run": 2
+    },
+    {
+      "wallSeconds": 48.9659439,
+      "simSeconds": 69.59999999999819,
+      "mode": "research",
+      "researchScale": 16,
+      "combatPeersPerSide": 60,
+      "counts": [
+        [
+          10,
+          12,
+          36
+        ],
+        [
+          26,
+          12,
+          10
+        ]
+      ],
+      "homeMines": [
+        0,
+        1
+      ],
+      "contestedProbes": [
+        0,
+        1
+      ],
+      "samples": [
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5464,
+          "launcher": 8100,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2560.9192,
+          "position": [
+            -439.12268,
+            4.282784,
+            13.949457
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5465,
+          "launcher": 8107,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2605.9072,
+          "position": [
+            394.09766,
+            -2.102924,
+            -4.591255
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5466,
+          "launcher": 8113,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2568.723,
+          "position": [
+            -431.29706,
+            3.2777731,
+            9.613457
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5467,
+          "launcher": 8119,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2609.381,
+          "position": [
+            390.8283,
+            1.2990223,
+            33.04333
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5468,
+          "launcher": 8125,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2606.9688,
+          "position": [
+            -393.04807,
+            1.5752797,
+            -9.2543125
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5469,
+          "launcher": 8131,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2590.853,
+          "position": [
+            409.19476,
+            5.9071817,
+            14.607552
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5470,
+          "launcher": 8149,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2576.0115,
+          "position": [
+            -424.02673,
+            -2.3244178,
+            13.863309
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 15.200000000000081,
+          "model": 5471,
+          "launcher": 8155,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2607.9124,
+          "position": [
+            392.1781,
+            -21.319664,
+            4.186633
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 20.350000000000154,
+          "model": 5472,
+          "launcher": 8126,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2605.5618,
+          "position": [
+            418.2329,
+            -349.85956,
+            -32.078346
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 21.200000000000166,
+          "model": 5473,
+          "launcher": 8143,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2443.11,
+          "position": [
+            557.6909,
+            -29.995155,
+            54.90205
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 21.950000000000177,
+          "model": 5474,
+          "launcher": 8134,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2576.4492,
+          "position": [
+            465.72244,
+            -464.18655,
+            7.603853
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 22.10000000000018,
+          "model": 5475,
+          "launcher": 8118,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2522.6658,
+          "position": [
+            503.59848,
+            -351.66766,
+            -90.2869
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 22.75000000000019,
+          "model": 5476,
+          "launcher": 8142,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2465.229,
+          "position": [
+            569.3328,
+            -411.35092,
+            1.2449255
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 23.5500000000002,
+          "model": 5477,
+          "launcher": 8106,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2378.266,
+          "position": [
+            653.5108,
+            -385.0254,
+            -43.515736
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 24.750000000000217,
+          "model": 5478,
+          "launcher": 8102,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2313.5605,
+          "position": [
+            711.39667,
+            -335.3917,
+            48.68103
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 25.450000000000227,
+          "model": 5479,
+          "launcher": 8154,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2347.5583,
+          "position": [
+            711.03973,
+            -515.76935,
+            -75.31799
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 25.60000000000023,
+          "model": 5480,
+          "launcher": 8130,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2241.3665,
+          "position": [
+            777.9085,
+            -291.23383,
+            -34.871845
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 26.35000000000024,
+          "model": 5481,
+          "launcher": 8122,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2287.7017,
+          "position": [
+            763.0044,
+            -469.81927,
+            93.270355
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 26.550000000000242,
+          "model": 5482,
+          "launcher": 8146,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2184.0022,
+          "position": [
+            852.29517,
+            -388.92776,
+            -77.23242
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 26.750000000000245,
+          "model": 5483,
+          "launcher": 8138,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2567.279,
+          "position": [
+            478.75595,
+            -405.6345,
+            -264.0271
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 28.950000000000276,
+          "model": 5484,
+          "launcher": 8150,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2118.167,
+          "position": [
+            938.4163,
+            -479.14874,
+            -83.18994
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 29.30000000000028,
+          "model": 5485,
+          "launcher": 8114,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2117.503,
+          "position": [
+            908.6667,
+            -305.1346,
+            -130.52435
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 29.700000000000287,
+          "model": 5486,
+          "launcher": 8110,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2157.9268,
+          "position": [
+            884.9696,
+            -417.0005,
+            96.982155
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 30.200000000000294,
+          "model": 5487,
+          "launcher": 8140,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2609.5269,
+          "position": [
+            419.17703,
+            369.2626,
+            -112.3766
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 30.200000000000294,
+          "model": 5488,
+          "launcher": 8156,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2608.448,
+          "position": [
+            426.1393,
+            421.26212,
+            42.190308
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 31.150000000000308,
+          "model": 5489,
+          "launcher": 8208,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2022.1763,
+          "position": [
+            1027.512,
+            -443.00998,
+            -47.22558
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 31.25000000000031,
+          "model": 5490,
+          "launcher": 8206,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2533.9111,
+          "position": [
+            495.4003,
+            382.3315,
+            -38.854656
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 31.90000000000032,
+          "model": 5491,
+          "launcher": 8212,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 1942.5015,
+          "position": [
+            1094.4281,
+            -363.04715,
+            -101.51069
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 0,
+          "sector": 0,
+          "sim": 31.95000000000032,
+          "model": 5492,
+          "launcher": 8144,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2452.378,
+          "position": [
+            579.2709,
+            379.25812,
+            -101.94096
+          ]
+        },
+        {
+          "kind": "mine",
+          "side": 1,
+          "sector": 2,
+          "sim": 35.65000000000011,
+          "model": 5502,
+          "launcher": 8137,
+          "lifetime": 15,
+          "home": true,
+          "alephDistance": 2611.454,
+          "position": [
+            418.02008,
+            239.46829,
+            -309.39886
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 36.150000000000084,
+          "model": 5504,
+          "launcher": 8183,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99995,
+          "position": [
+            3080.4805,
+            61.701748,
+            -30.850874
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 37.25000000000002,
+          "model": 5506,
+          "launcher": 8203,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99995,
+          "position": [
+            3081.666,
+            31.305328,
+            -59.888454
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 37.45000000000001,
+          "model": 5507,
+          "launcher": 8189,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.000015,
+          "position": [
+            -3083.6553,
+            47.40437,
+            44.61613
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 37.65,
+          "model": 5509,
+          "launcher": 8195,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.999916,
+          "position": [
+            3086.3489,
+            51.80939,
+            -33.100445
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 37.79999999999999,
+          "model": 5511,
+          "launcher": 8191,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00008,
+          "position": [
+            3079.7874,
+            35.904263,
+            -59.84044
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 38.54999999999995,
+          "model": 5512,
+          "launcher": 8197,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00002,
+          "position": [
+            -2953.3167,
+            84.76698,
+            43.257195
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 38.599999999999945,
+          "model": 5514,
+          "launcher": 8187,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00003,
+          "position": [
+            3079.888,
+            30.623695,
+            -62.578854
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 3,
+          "sim": 38.79999999999993,
+          "model": 5515,
+          "launcher": 8199,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00004,
+          "position": [
+            3088.4272,
+            32.423306,
+            -48.63496
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 38.949999999999925,
+          "model": 5516,
+          "launcher": 8185,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.999985,
+          "position": [
+            -2948.5981,
+            73.951294,
+            55.901833
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 38.99999999999992,
+          "model": 5517,
+          "launcher": 8188,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00004,
+          "position": [
+            3073.4194,
+            58.735504,
+            -48.94625
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 39.099999999999916,
+          "model": 5518,
+          "launcher": 8201,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00005,
+          "position": [
+            -2941.1282,
+            57.45977,
+            66.84657
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 39.14999999999991,
+          "model": 5519,
+          "launcher": 8181,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.999916,
+          "position": [
+            -2919.836,
+            58.295345,
+            37.567646
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 1,
+          "sector": 1,
+          "sim": 39.49999999999989,
+          "model": 5520,
+          "launcher": 8193,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00005,
+          "position": [
+            -2947.7168,
+            82.88608,
+            40.40214
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 40.39999999999984,
+          "model": 5522,
+          "launcher": 8192,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99999,
+          "position": [
+            2948.9404,
+            70.37332,
+            -60.63426
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 41.749999999999766,
+          "model": 5524,
+          "launcher": 8184,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.999916,
+          "position": [
+            3077.9912,
+            61.093197,
+            -37.695805
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 41.84999999999976,
+          "model": 5525,
+          "launcher": 8204,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00004,
+          "position": [
+            2957.6265,
+            64.55105,
+            -72.61993
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 42.8999999999997,
+          "model": 5526,
+          "launcher": 8200,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99995,
+          "position": [
+            2955.4546,
+            40.776993,
+            -87.11448
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 44.44999999999961,
+          "model": 5527,
+          "launcher": 8196,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99994,
+          "position": [
+            3087.4934,
+            40.83029,
+            -43.746742
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 46.19999999999951,
+          "model": 5528,
+          "launcher": 8202,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99989,
+          "position": [
+            3094.0186,
+            37.607468,
+            -31.339556
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 46.59999999999949,
+          "model": 5529,
+          "launcher": 8182,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106,
+          "position": [
+            2996.0247,
+            87.954384,
+            -59.027313
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 46.64999999999949,
+          "model": 5530,
+          "launcher": 8198,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00006,
+          "position": [
+            2914.2124,
+            29.920197,
+            -54.60114
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 46.849999999999476,
+          "model": 5531,
+          "launcher": 8194,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99996,
+          "position": [
+            3079.222,
+            35.64989,
+            -60.736847
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 47.44999999999944,
+          "model": 5532,
+          "launcher": 8186,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 105.99994,
+          "position": [
+            3091.6746,
+            33.614033,
+            -41.253586
+          ]
+        },
+        {
+          "kind": "probe",
+          "side": 0,
+          "sector": 1,
+          "sim": 50.69999999999926,
+          "model": 5533,
+          "launcher": 8190,
+          "lifetime": 3600,
+          "home": false,
+          "alephDistance": 106.00002,
+          "position": [
+            3095.437,
+            33.402943,
+            -31.812328
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 60.4499999999987,
+          "model": 5669,
+          "launcher": 8102,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2618.4753,
+          "position": [
+            381.57428,
+            15.934914,
+            2.2284071
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 61.19999999999866,
+          "model": 5705,
+          "launcher": 8142,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2869.5374,
+          "position": [
+            130.94409,
+            2.2816396,
+            52.512615
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 61.34999999999865,
+          "model": 5713,
+          "launcher": 8189,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2908.1724,
+          "position": [
+            91.91827,
+            22.927525,
+            0.4525356
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 61.649999999998634,
+          "model": 5737,
+          "launcher": 8118,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2753.2766,
+          "position": [
+            246.86122,
+            4.9013305,
+            27.12911
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 62.2499999999986,
+          "model": 5771,
+          "launcher": 8161,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2428.518,
+          "position": [
+            -571.65375,
+            10.135579,
+            27.056038
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 62.59999999999858,
+          "model": 5793,
+          "launcher": 8185,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2997.7207,
+          "position": [
+            2.352847,
+            20.985056,
+            -0.18413368
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 62.74999999999857,
+          "model": 5806,
+          "launcher": 8197,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2911.813,
+          "position": [
+            88.52693,
+            39.195988,
+            -21.058575
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 63.24999999999854,
+          "model": 5848,
+          "launcher": 8201,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2943.978,
+          "position": [
+            -56.089676,
+            -6.5394197,
+            18.835823
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 63.549999999998526,
+          "model": 5880,
+          "launcher": 8181,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2769.8545,
+          "position": [
+            -230.356,
+            32.676468,
+            -9.899192
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 63.549999999998526,
+          "model": 5881,
+          "launcher": 8188,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2837.5713,
+          "position": [
+            -162.84009,
+            43.174442,
+            21.691364
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 63.69999999999852,
+          "model": 5899,
+          "launcher": 8205,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2446.6772,
+          "position": [
+            -553.5694,
+            28.90986,
+            19.252937
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 63.69999999999852,
+          "model": 5900,
+          "launcher": 8209,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2448.9875,
+          "position": [
+            -551.0327,
+            8.451941,
+            -5.1929717
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 63.749999999998515,
+          "model": 5908,
+          "launcher": 8169,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2310.1792,
+          "position": [
+            -690.06213,
+            30.290384,
+            14.026419
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 64.29999999999849,
+          "model": 5959,
+          "launcher": 8102,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2660.6985,
+          "position": [
+            339.3366,
+            13.6934595,
+            -0.18940602
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 64.29999999999849,
+          "model": 5960,
+          "launcher": 8192,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2840.2554,
+          "position": [
+            -159.74913,
+            1.75486,
+            4.6682296
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 65.04999999999845,
+          "model": 6049,
+          "launcher": 8177,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2398.8633,
+          "position": [
+            -601.255,
+            -0.39590257,
+            23.809128
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 65.04999999999845,
+          "model": 6050,
+          "launcher": 8204,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2812.6973,
+          "position": [
+            -187.38705,
+            14.252987,
+            16.446373
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 65.09999999999845,
+          "model": 6055,
+          "launcher": 8189,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2887.4167,
+          "position": [
+            112.6795,
+            23.543667,
+            -0.6739981
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 65.09999999999845,
+          "model": 6056,
+          "launcher": 8217,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2321.8738,
+          "position": [
+            -678.52484,
+            30.484722,
+            30.367496
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 65.8999999999984,
+          "model": 6112,
+          "launcher": 8161,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2465.6714,
+          "position": [
+            -534.5539,
+            16.63005,
+            28.896759
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 66.04999999999839,
+          "model": 6125,
+          "launcher": 8165,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2298.8809,
+          "position": [
+            -701.40234,
+            23.190765,
+            27.646832
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 66.29999999999838,
+          "model": 6145,
+          "launcher": 8185,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2982.5723,
+          "position": [
+            17.515375,
+            21.091978,
+            8.810252
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 66.39999999999837,
+          "model": 6155,
+          "launcher": 8197,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2992.564,
+          "position": [
+            -7.582774,
+            4.860055,
+            29.218798
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 66.79999999999835,
+          "model": 6204,
+          "launcher": 8201,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2993.0188,
+          "position": [
+            7.5321574,
+            45.632256,
+            34.88607
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 66.84999999999835,
+          "model": 6210,
+          "launcher": 8130,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2834.3398,
+          "position": [
+            165.88191,
+            35.325027,
+            2.9295838
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 66.84999999999835,
+          "model": 6211,
+          "launcher": 8173,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2325.7988,
+          "position": [
+            -674.6237,
+            39.207275,
+            20.694374
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 67.09999999999833,
+          "model": 6251,
+          "launcher": 8181,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2914.7864,
+          "position": [
+            -85.363075,
+            29.519043,
+            0.2172041
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 1,
+          "sector": 1,
+          "sim": 67.19999999999833,
+          "model": 6267,
+          "launcher": 8205,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2601.7297,
+          "position": [
+            -398.7792,
+            48.88018,
+            16.079176
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 68.59999999999825,
+          "model": 6486,
+          "launcher": 8204,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2662.5232,
+          "position": [
+            -337.63165,
+            22.240004,
+            18.153294
+          ]
+        },
+        {
+          "kind": "chaff",
+          "side": 0,
+          "sector": 1,
+          "sim": 69.4499999999982,
+          "model": 6694,
+          "launcher": 8212,
+          "lifetime": 2,
+          "home": false,
+          "alephDistance": 2365.945,
+          "position": [
+            -634.4386,
+            -25.959978,
+            -33.765656
+          ]
+        }
+      ],
+      "SimPassStageFailures": 0,
+      "enough": true,
+      "run": 3
+    }
+  ],
+  "supplementary30PerSide": {
+    "wallSeconds": 198.3581762,
+    "simSeconds": 360.0500000000476,
+    "mode": "research",
+    "researchScale": 16,
+    "combatPeersPerSide": 30,
+    "counts": [
+      [
+        78,
+        10,
+        40
+      ],
+      [
+        47,
+        16,
+        14
+      ]
+    ],
+    "homeMines": [
+      0,
+      1
+    ],
+    "contestedProbes": [
+      0,
+      1
+    ],
+    "samples": [
+      {
+        "kind": "mine",
+        "side": 1,
+        "sector": 2,
+        "sim": 15.200000000000081,
+        "model": 5464,
+        "launcher": 8100,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2564.3928,
+        "position": [
+          -435.6546,
+          3.5750186,
+          15.166288
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 1,
+        "sector": 2,
+        "sim": 15.200000000000081,
+        "model": 5465,
+        "launcher": 8107,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2581.3591,
+        "position": [
+          418.6494,
+          -2.483819,
+          6.1900625
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 1,
+        "sector": 2,
+        "sim": 15.200000000000081,
+        "model": 5466,
+        "launcher": 8113,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2604.4194,
+        "position": [
+          -395.62567,
+          -3.5077498,
+          14.89289
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 1,
+        "sector": 2,
+        "sim": 15.200000000000081,
+        "model": 5467,
+        "launcher": 8119,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2610.188,
+        "position": [
+          389.86188,
+          2.221242,
+          15.953171
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 1,
+        "sector": 2,
+        "sim": 15.200000000000081,
+        "model": 5468,
+        "launcher": 8125,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2604.1204,
+        "position": [
+          -395.88483,
+          1.64817,
+          -4.974172
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 20.400000000000155,
+        "model": 5469,
+        "launcher": 8114,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2602.0686,
+        "position": [
+          422.21686,
+          -353.85934,
+          -24.05231
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 21.55000000000017,
+        "model": 5470,
+        "launcher": 8126,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2516.7842,
+        "position": [
+          511.19733,
+          -374.23767,
+          -3.1496613
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 22.80000000000019,
+        "model": 5471,
+        "launcher": 8102,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2453.54,
+        "position": [
+          585.0974,
+          -426.48755,
+          -78.82144
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 23.300000000000196,
+        "model": 5472,
+        "launcher": 8154,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2379.961,
+        "position": [
+          652.013,
+          -388.54596,
+          14.2563925
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 24.450000000000212,
+        "model": 5473,
+        "launcher": 8106,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2284.6196,
+        "position": [
+          739.43463,
+          -330.1804,
+          17.649075
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 25.550000000000228,
+        "model": 5474,
+        "launcher": 8110,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2216.4631,
+        "position": [
+          822.71185,
+          -414.09882,
+          -25.436754
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 26.150000000000237,
+        "model": 5475,
+        "launcher": 8118,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2154.2827,
+        "position": [
+          867.3745,
+          -295.28366,
+          -75.16285
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 27.300000000000253,
+        "model": 5476,
+        "launcher": 8122,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2070.2314,
+        "position": [
+          961.16595,
+          -356.13974,
+          -46.673992
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 29.30000000000028,
+        "model": 5477,
+        "launcher": 8158,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 1989.8694,
+        "position": [
+          1039.1097,
+          -314.95184,
+          -123.673355
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 30.250000000000295,
+        "model": 5478,
+        "launcher": 8108,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2605.889,
+        "position": [
+          428.71118,
+          421.60645,
+          -37.131096
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 30.850000000000303,
+        "model": 5479,
+        "launcher": 8112,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2545.127,
+        "position": [
+          485.12122,
+          367.64438,
+          -133.76353
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 30.850000000000303,
+        "model": 5480,
+        "launcher": 8124,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2585.9666,
+        "position": [
+          443.0834,
+          342.58954,
+          -178.98024
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 31.30000000000031,
+        "model": 5481,
+        "launcher": 8156,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2530.6262,
+        "position": [
+          507.17502,
+          433.38892,
+          45.45792
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 31.90000000000032,
+        "model": 5482,
+        "launcher": 8128,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2447.2185,
+        "position": [
+          586.69135,
+          384.30847,
+          -130.86748
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 32.65000000000028,
+        "model": 5483,
+        "launcher": 8160,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2381.869,
+        "position": [
+          657.57916,
+          429.3403,
+          -45.07109
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 33.55000000000023,
+        "model": 5484,
+        "launcher": 8116,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2320.804,
+        "position": [
+          708.22,
+          361.78687,
+          54.646156
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 35.00000000000015,
+        "model": 5485,
+        "launcher": 8120,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2299.5442,
+        "position": [
+          742.3005,
+          424.68237,
+          -101.69453
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 36.20000000000008,
+        "model": 5486,
+        "launcher": 8104,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2231.5942,
+        "position": [
+          791.60895,
+          305.349,
+          98.90975
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 0,
+        "sector": 1,
+        "sim": 38.64999999999994,
+        "model": 5487,
+        "launcher": 8150,
+        "lifetime": 3600,
+        "home": false,
+        "alephDistance": 105.99992,
+        "position": [
+          2904.3167,
+          39.55319,
+          -22.72058
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 0,
+        "sector": 1,
+        "sim": 38.79999999999993,
+        "model": 5488,
+        "launcher": 8142,
+        "lifetime": 3600,
+        "home": false,
+        "alephDistance": 106.00004,
+        "position": [
+          2963.0056,
+          37.66496,
+          -91.91721
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 0,
+        "sector": 1,
+        "sim": 42.8499999999997,
+        "model": 5489,
+        "launcher": 8146,
+        "lifetime": 3600,
+        "home": false,
+        "alephDistance": 106.00001,
+        "position": [
+          2905.38,
+          21.850908,
+          -42.492035
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 0,
+        "sector": 1,
+        "sim": 46.29999999999951,
+        "model": 5490,
+        "launcher": 8148,
+        "lifetime": 3600,
+        "home": false,
+        "alephDistance": 106.00009,
+        "position": [
+          3076.213,
+          50.808514,
+          -53.348938
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 0,
+        "sector": 1,
+        "sim": 46.699999999999484,
+        "model": 5491,
+        "launcher": 8144,
+        "lifetime": 3600,
+        "home": false,
+        "alephDistance": 106.000015,
+        "position": [
+          3086.4846,
+          46.12512,
+          -40.359478
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 0,
+        "sector": 1,
+        "sim": 46.79999999999948,
+        "model": 5492,
+        "launcher": 8152,
+        "lifetime": 3600,
+        "home": false,
+        "alephDistance": 105.999985,
+        "position": [
+          2960.7314,
+          48.93826,
+          -85.434326
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 1,
+        "sim": 48.949999999999356,
+        "model": 5493,
+        "launcher": 8145,
+        "lifetime": 3600,
+        "home": false,
+        "alephDistance": 106.00001,
+        "position": [
+          -2945.6401,
+          74.42691,
+          52.360317
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 1,
+        "sim": 51.34999999999922,
+        "model": 5494,
+        "launcher": 8141,
+        "lifetime": 3600,
+        "home": false,
+        "alephDistance": 105.99999,
+        "position": [
+          -2957.652,
+          67.8695,
+          69.54387
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 3,
+        "sim": 51.449999999999214,
+        "model": 5495,
+        "launcher": 8147,
+        "lifetime": 3600,
+        "home": false,
+        "alephDistance": 105.99999,
+        "position": [
+          3074.679,
+          47.296677,
+          -58.49852
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 3,
+        "sim": 52.34999999999916,
+        "model": 5496,
+        "launcher": 8151,
+        "lifetime": 3600,
+        "home": false,
+        "alephDistance": 105.99995,
+        "position": [
+          2952.7197,
+          78.9377,
+          -52.62513
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 3,
+        "sim": 54.249999999999055,
+        "model": 5497,
+        "launcher": 8143,
+        "lifetime": 3600,
+        "home": false,
+        "alephDistance": 106.00004,
+        "position": [
+          3088.4272,
+          48.63496,
+          -32.423306
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 1,
+        "sim": 55.249999999999,
+        "model": 5498,
+        "launcher": 8149,
+        "lifetime": 3600,
+        "home": false,
+        "alephDistance": 105.99995,
+        "position": [
+          -3079.444,
+          37.07367,
+          59.583122
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 69.14999999999822,
+        "model": 5832,
+        "launcher": 8158,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 1561.6188,
+        "position": [
+          -1438.6387,
+          -27.012388,
+          -8.623765
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 69.59999999999819,
+        "model": 5874,
+        "launcher": 8102,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 2448.398,
+        "position": [
+          -551.94385,
+          40.55044,
+          5.4159656
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 70.04999999999816,
+        "model": 5919,
+        "launcher": 8145,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 2189.9778,
+        "position": [
+          -810.515,
+          45.121265,
+          11.080968
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 74.04999999999794,
+        "model": 6206,
+        "launcher": 8141,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 2218.0317,
+        "position": [
+          -782.21936,
+          31.743006,
+          10.264447
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 74.84999999999789,
+        "model": 6264,
+        "launcher": 8100,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 1563.0328,
+        "position": [
+          -1445.258,
+          -100.96083,
+          125.12375
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 74.84999999999789,
+        "model": 6265,
+        "launcher": 8149,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 2018.3649,
+        "position": [
+          -981.7019,
+          10.58429,
+          -12.547397
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 76.4499999999978,
+        "model": 6342,
+        "launcher": 8113,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 1627.9951,
+        "position": [
+          -1378.647,
+          2.5133584,
+          -146.88823
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 78.2999999999977,
+        "model": 6534,
+        "launcher": 8156,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 1254.8339,
+        "position": [
+          -1745.3119,
+          -18.029469,
+          -6.391824
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 78.44999999999769,
+        "model": 6544,
+        "launcher": 8114,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 1827.8638,
+        "position": [
+          -1173.0134,
+          -38.86921,
+          -41.17032
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 78.44999999999769,
+        "model": 6545,
+        "launcher": 8125,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 1709.8219,
+        "position": [
+          -1300.231,
+          -183.43704,
+          25.038233
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 80.24999999999758,
+        "model": 6713,
+        "launcher": 8100,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 1578.9825,
+        "position": [
+          -1425.3417,
+          -89.091225,
+          75.4977
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 80.24999999999758,
+        "model": 6714,
+        "launcher": 8149,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 2009.2296,
+        "position": [
+          -992.56647,
+          56.38863,
+          -63.513313
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 81.04999999999754,
+        "model": 6813,
+        "launcher": 8110,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 2188.6204,
+        "position": [
+          -811.41327,
+          6.3485417,
+          -10.339052
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 81.89999999999749,
+        "model": 6918,
+        "launcher": 8113,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 1609.3666,
+        "position": [
+          -1396.3641,
+          -0.16603267,
+          -135.69376
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 81.89999999999749,
+        "model": 6919,
+        "launcher": 8126,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 1789.7897,
+        "position": [
+          -1211.4858,
+          -60.24138,
+          -30.583519
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 83.79999999999738,
+        "model": 7045,
+        "launcher": 8114,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 1824.1903,
+        "position": [
+          -1177.214,
+          -70.89014,
+          -9.819986
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 83.79999999999738,
+        "model": 7046,
+        "launcher": 8125,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 1724.7145,
+        "position": [
+          -1285.661,
+          -185.66092,
+          34.809658
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 85.64999999999728,
+        "model": 7245,
+        "launcher": 8149,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 1925.3351,
+        "position": [
+          -1075.4126,
+          10.391153,
+          -52.63565
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 2,
+        "sim": 90.74999999999699,
+        "model": 7696,
+        "launcher": 8160,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 657.88525,
+        "position": [
+          2343.008,
+          22.256538,
+          -26.063227
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 91.19999999999696,
+        "model": 7760,
+        "launcher": 8102,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2610.1077,
+        "position": [
+          425.57422,
+          427.0063,
+          -51.57438
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 2,
+        "sim": 92.2499999999969,
+        "model": 7899,
+        "launcher": 8109,
+        "lifetime": 2,
+        "home": true,
+        "alephDistance": 996.2268,
+        "position": [
+          2008.1501,
+          81.09119,
+          46.108482
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 2,
+        "sim": 95.24999999999673,
+        "model": 8503,
+        "launcher": 8149,
+        "lifetime": 3600,
+        "home": true,
+        "alephDistance": 2562.8225,
+        "position": [
+          437.1996,
+          0.017184705,
+          10.657882
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 2,
+        "sim": 96.09999999999668,
+        "model": 8650,
+        "launcher": 8160,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 764.42224,
+        "position": [
+          2239.073,
+          54.212006,
+          -48.91359
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 2,
+        "sim": 96.54999999999666,
+        "model": 8728,
+        "launcher": 8158,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 777.3384,
+        "position": [
+          2226.9495,
+          45.900818,
+          -67.38634
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 2,
+        "sim": 97.4999999999966,
+        "model": 8910,
+        "launcher": 8109,
+        "lifetime": 2,
+        "home": true,
+        "alephDistance": 995.9028,
+        "position": [
+          2008.3302,
+          81.6717,
+          41.749714
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 2,
+        "sim": 98.24999999999656,
+        "model": 9033,
+        "launcher": 8156,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 709.1566,
+        "position": [
+          2297.274,
+          61.17492,
+          -73.05355
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 2,
+        "sim": 99.44999999999649,
+        "model": 9196,
+        "launcher": 8129,
+        "lifetime": 2,
+        "home": true,
+        "alephDistance": 1010.11206,
+        "position": [
+          1996.829,
+          -15.991168,
+          -117.1263
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 0,
+        "sector": 0,
+        "sim": 101.0499999999964,
+        "model": 9491,
+        "launcher": 8160,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2960.423,
+        "position": [
+          53.309708,
+          -283.7988,
+          -24.07449
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 104.14999999999623,
+        "model": 10071,
+        "launcher": 8153,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 342.02307,
+        "position": [
+          -2659.6104,
+          18.953129,
+          27.485329
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 105.24999999999616,
+        "model": 10247,
+        "launcher": 8122,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 470.77814,
+        "position": [
+          -2542.2349,
+          62.082253,
+          90.713326
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 105.34999999999616,
+        "model": 10267,
+        "launcher": 8124,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 495.86853,
+        "position": [
+          -2510.234,
+          48.478317,
+          60.535706
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 2,
+        "sim": 106.3999999999961,
+        "model": 10486,
+        "launcher": 8156,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 745.24585,
+        "position": [
+          2271.0066,
+          116.087685,
+          -102.389725
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 113.4999999999957,
+        "model": 11169,
+        "launcher": 8112,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 706.77905,
+        "position": [
+          -2297.3762,
+          31.834396,
+          -69.591866
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 118.5499999999954,
+        "model": 11380,
+        "launcher": 8118,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 243.04399,
+        "position": [
+          -2791.2246,
+          109.408516,
+          59.270054
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 121.44999999999524,
+        "model": 11539,
+        "launcher": 8114,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 290.4458,
+        "position": [
+          -2721.1733,
+          71.08384,
+          39.515987
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 123.14999999999515,
+        "model": 11712,
+        "launcher": 8106,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 617.0092,
+        "position": [
+          -2384.3293,
+          18.435726,
+          -36.196278
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 123.8999999999951,
+        "model": 11811,
+        "launcher": 8118,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 270.78583,
+        "position": [
+          -2743.3994,
+          72.85431,
+          46.618797
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 0,
+        "sector": 1,
+        "sim": 124.69999999999506,
+        "model": 11902,
+        "launcher": 8112,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 566.8073,
+        "position": [
+          -2433.735,
+          23.924335,
+          6.5002174
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 127.09999999999492,
+        "model": 12204,
+        "launcher": 8117,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 357.8953,
+        "position": [
+          -2647.0818,
+          34.324722,
+          48.57535
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 130.74999999999548,
+        "model": 12600,
+        "launcher": 8133,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 407.148,
+        "position": [
+          -2597.5242,
+          39.495415,
+          47.146496
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 137.19999999999695,
+        "model": 13230,
+        "launcher": 8149,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 484.6688,
+        "position": [
+          -2521.35,
+          61.097076,
+          45.4445
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 1,
+        "sim": 142.6499999999982,
+        "model": 13763,
+        "launcher": 8149,
+        "lifetime": 2,
+        "home": false,
+        "alephDistance": 508.70096,
+        "position": [
+          -2495.9177,
+          57.77356,
+          36.604782
+        ]
+      },
+      {
+        "kind": "chaff",
+        "side": 1,
+        "sector": 2,
+        "sim": 145.24999999999878,
+        "model": 13910,
+        "launcher": 8109,
+        "lifetime": 2,
+        "home": true,
+        "alephDistance": 2996.62,
+        "position": [
+          33.10256,
+          -418.71677,
+          -43.895065
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 0,
+        "sector": 0,
+        "sim": 152.0000000000003,
+        "model": 14174,
+        "launcher": 8150,
+        "lifetime": 3600,
+        "home": true,
+        "alephDistance": 2824.8484,
+        "position": [
+          200.78363,
+          -378.4846,
+          -30.093397
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 1,
+        "sector": 2,
+        "sim": 168.00000000000395,
+        "model": 15013,
+        "launcher": 8113,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2609.763,
+        "position": [
+          -390.25443,
+          1.7112309,
+          9.35398
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 2,
+        "sim": 172.10000000000488,
+        "model": 15395,
+        "launcher": 8145,
+        "lifetime": 3600,
+        "home": true,
+        "alephDistance": 2505.7202,
+        "position": [
+          494.30676,
+          2.0926979,
+          11.40231
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 2,
+        "sim": 173.25000000000514,
+        "model": 15516,
+        "launcher": 8141,
+        "lifetime": 3600,
+        "home": true,
+        "alephDistance": 2560.8923,
+        "position": [
+          -439.17722,
+          -2.508966,
+          18.726757
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 1,
+        "sector": 2,
+        "sim": 174.4000000000054,
+        "model": 15620,
+        "launcher": 8125,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2662.0715,
+        "position": [
+          337.93542,
+          1.0008647,
+          6.081192
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 2,
+        "sim": 183.5500000000075,
+        "model": 16165,
+        "launcher": 8143,
+        "lifetime": 3600,
+        "home": true,
+        "alephDistance": 2502.962,
+        "position": [
+          -497.0818,
+          -4.672122,
+          14.02892
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 1,
+        "sector": 2,
+        "sim": 192.15000000000944,
+        "model": 16667,
+        "launcher": 8100,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2567.0916,
+        "position": [
+          432.94232,
+          -4.7102547,
+          12.300835
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 2,
+        "sim": 211.7000000000139,
+        "model": 17464,
+        "launcher": 8149,
+        "lifetime": 3600,
+        "home": true,
+        "alephDistance": 2442.1711,
+        "position": [
+          557.8933,
+          4.8526325,
+          17.075012
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 1,
+        "sector": 2,
+        "sim": 233.7500000000189,
+        "model": 19194,
+        "launcher": 8125,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2661.8877,
+        "position": [
+          338.12613,
+          -4.0310698,
+          7.633852
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 3,
+        "sim": 296.50000000003314,
+        "model": 24864,
+        "launcher": 8151,
+        "lifetime": 3600,
+        "home": false,
+        "alephDistance": 106.00003,
+        "position": [
+          3079.3452,
+          46.284687,
+          -52.896786
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 1,
+        "sector": 2,
+        "sim": 299.8500000000339,
+        "model": 25247,
+        "launcher": 8107,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2610.3865,
+        "position": [
+          389.63416,
+          0.2529869,
+          10.396339
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 1,
+        "sector": 2,
+        "sim": 312.35000000003674,
+        "model": 27001,
+        "launcher": 8125,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2611.9377,
+        "position": [
+          -388.08112,
+          -1.8054948,
+          9.734591
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 2,
+        "sim": 332.55000000004134,
+        "model": 29145,
+        "launcher": 8147,
+        "lifetime": 3600,
+        "home": true,
+        "alephDistance": 2442.6956,
+        "position": [
+          -557.3364,
+          -0.61660177,
+          12.497945
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 1,
+        "sector": 2,
+        "sim": 341.1500000000433,
+        "model": 30045,
+        "launcher": 8100,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2608.5525,
+        "position": [
+          -391.4834,
+          -4.338104,
+          12.937836
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 1,
+        "sector": 2,
+        "sim": 342.5000000000436,
+        "model": 30086,
+        "launcher": 8113,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2611.987,
+        "position": [
+          388.0426,
+          1.6313293,
+          12.336742
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 2,
+        "sim": 342.70000000004364,
+        "model": 30087,
+        "launcher": 8145,
+        "lifetime": 3600,
+        "home": true,
+        "alephDistance": 1648.7914,
+        "position": [
+          1351.4932,
+          -26.06777,
+          16.084757
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 0,
+        "sector": 0,
+        "sim": 344.40000000004403,
+        "model": 30156,
+        "launcher": 8144,
+        "lifetime": 3600,
+        "home": true,
+        "alephDistance": 2822.5278,
+        "position": [
+          -202.96768,
+          376.96805,
+          -34.19715
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 0,
+        "sector": 0,
+        "sim": 349.1000000000451,
+        "model": 30652,
+        "launcher": 8152,
+        "lifetime": 3600,
+        "home": true,
+        "alephDistance": 2823.2322,
+        "position": [
+          202.30519,
+          -377.76685,
+          -28.897888
+        ]
+      },
+      {
+        "kind": "mine",
+        "side": 1,
+        "sector": 2,
+        "sim": 349.1000000000451,
+        "model": 30651,
+        "launcher": 8119,
+        "lifetime": 15,
+        "home": true,
+        "alephDistance": 2514.0059,
+        "position": [
+          -486.05756,
+          -4.1329284,
+          17.37645
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 2,
+        "sim": 352.1500000000458,
+        "model": 30876,
+        "launcher": 8149,
+        "lifetime": 3600,
+        "home": true,
+        "alephDistance": 2379.5903,
+        "position": [
+          620.4864,
+          -8.951906,
+          16.882072
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 1,
+        "sector": 2,
+        "sim": 354.7500000000464,
+        "model": 31033,
+        "launcher": 8141,
+        "lifetime": 3600,
+        "home": true,
+        "alephDistance": 2379.0823,
+        "position": [
+          -620.9576,
+          6.284428,
+          12.25067
+        ]
+      },
+      {
+        "kind": "probe",
+        "side": 0,
+        "sector": 0,
+        "sim": 359.90000000004756,
+        "model": 31350,
+        "launcher": 8148,
+        "lifetime": 3600,
+        "home": true,
+        "alephDistance": 2823.1895,
+        "position": [
+          -202.3454,
+          376.8974,
+          -38.404682
+        ]
+      }
+    ],
+    "SimPassStageFailures": 0,
+    "enough": true
+  }
+}

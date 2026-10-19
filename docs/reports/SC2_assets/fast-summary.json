@@ -1,0 +1,50 @@
+{
+  "tier": "fast",
+  "seconds": 268.66760075697675,
+  "projects": {
+    "Allegiance.Lobby.Tests": {
+      "count": 19,
+      "outcomes": {
+        "Passed": 19
+      }
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "count": 2486,
+      "outcomes": {
+        "Passed": 2483,
+        "NotExecuted": 3
+      }
+    },
+    "Allegiance.ClientCore.Tests": {
+      "count": 1442,
+      "outcomes": {
+        "Passed": 1442
+      }
+    },
+    "Allegiance.Core.Tests": {
+      "count": 4835,
+      "outcomes": {
+        "Passed": 4830,
+        "Failed": 5
+      }
+    }
+  },
+  "calibration": {
+    "factor": 0.9797347480106101,
+    "referenceMs": 3.6936,
+    "nominalMs": 3.77,
+    "fastLimitSeconds": 10
+  },
+  "timingOffenders": [],
+  "errors": [
+    "Allegiance.Core.Tests: main failed"
+  ],
+  "quarantineFlakes": [],
+  "infrastructure": {
+    "tier": "Fast",
+    "count": 9,
+    "seconds": 0.048424049047753215,
+    "exitCode": 0,
+    "timingGuardPassed": true
+  }
+}

@@ -1275,7 +1275,7 @@ public sealed partial class Server
     /// Handle a simulated ship death (<see cref="ServerHost.KillShipEvent"/>, raised
     /// from <c>Ship.ReceiveDamage</c> on the sim thread) by broadcasting a real
     /// <c>FM_S_KILL_SHIP(105)</c> <see cref="KillShip"/> message to the peers that
-    /// can see the victim. This is the live half of the (unit-tested) combat slice:
+    /// belong to the victim's mission. This is the live half of the (unit-tested) combat slice:
     /// the projectiles and collision pass already kill the ship in simulation; this
     /// tells sector peers about combat effects and the whole mission about actual
     /// deletion (native AnnounceExit, fsship.cpp:196-223). Runs on the sim thread (the site raises it inside the mission
@@ -1295,9 +1295,16 @@ public sealed partial class Server
         if (victim.HullType.HasCapability(DataHullTypeIGC.HabmLifepod))
             _podTrips.End(victim, now, victim.LifepodTimeToDie is { } deadline && now > deadline
                 && launcher is null ? "oxygen" : "death");
-        short killerId = -1;                       // NA
-        IgcObjectType killerType = IgcObjectType.Ship;
-        if (launcher is Ship attacker) killerId = attacker.Id;
+        // Native keeps the credited model's identity even when no kill is awarded
+        // (FedSrv.CPP:11803-11809,11908-11912). Turrets are Ships too.
+        var (killerType, killerId, killerSideId) = launcher switch
+        {
+            Ship attacker => (IgcObjectType.Ship, attacker.Id, attacker.SideId),
+            Station killerStation => (IgcObjectType.Station, killerStation.StationId, (short?)killerStation.SideId),
+            Probe probe => (IgcObjectType.Probe, probe.Id, probe.SideId),
+            Mine mine => (IgcObjectType.Mine, mine.Id, mine.SideId),
+            _ => ((IgcObjectType)(-1), (short)-1, (short?)null),
+        };
 
         // ── P411: dead-ship loot drops (FedSrv.CPP:11686-11762) ──
         // Native KillShipEvent runs its treasure block INSIDE the `pshipParent ==
@@ -1334,6 +1341,12 @@ public sealed partial class Server
         //     FedSrv.CPP:11781-11785).
         bool bLifepod = victim.HullType.HasCapability(DataHullTypeIGC.HabmLifepod);
         bool bKilled = (owner is null) || bLifepod || amount < 0.0f;
+        // Preserve the port's missing-eject-data death fallback, deciding it
+        // before KILL_SHIP so its death flag and scoring stay consistent.
+        if (!bKilled && (victim.Sector is null || victim.Mission is not { } ejectMission
+            || ejectMission.Sides.FirstOrDefault(s => s.Id == victim.SideId) is not { } ejectSide
+            || !ejectMission.Core.HullTypes.ContainsKey(ejectSide.Civilization.Lifepod)))
+            bKilled = true;
 
         // ── P278: reset the dying ship's own Kill Bonus on a REAL death ──
         // Native FedSrv.CPP:11783-11787: `if (bKilled) pship->SetExperience(0.0f)`.
@@ -1346,276 +1359,238 @@ public sealed partial class Server
         if (bKilled)
             victim.ResetKillBonus();
 
-        // P583 — an ejection (a non-killed ship surviving as a lifepod) counts
-        // on the victim's score (native AddEjection, FedSrv.CPP:11919-11921, in
-        // the !bKilled branch — an ejection is NOT a death). Owned (player
-        // peer) victims only: an ownerless NPC has no score object.
-        if (!bKilled && owner is not null)
+        // P746 — award credit BEFORE changing the victim into a pod. Native's
+        // amount != 0 block includes KILL_SHIP, AddKill, rating, experience,
+        // partial kills and the kills win check (FedSrv.CPP:11790-11915), then
+        // branches to AddEjection or AddDeath (:11918-11921,12026-12032).
+        // Keep the port's single-killer class credit (no shared damage buckets
+        // here) and peer-only rating storage; neither depends on bKilled.
+        var killMission = victim.Mission;
+        var killerSide = killMission?.Sides.FirstOrDefault(s => s.Id == killerSideId);
+        bool killCredit = amount != 0 && !bLifepod && killerSide is not null
+            && killerSideId != victim.SideId;
+        Side? killsWinner = null;
+        bool killsChanged = false;
+        if (killCredit)
         {
-            _peerShips[owner.Value].PlayerScore.AddEjection();
-            Console.WriteLine($"[scoring] ship {victim.Id} ejection +1 (player peer)");
-        }
-
-        if (!bKilled && EjectSurvivor(victim, launcher, p1, p2))
-        {
-            // Genuinely different code path from P103/P105: the ship survives
-            // in space as a drifting Lifepod hull. No KILL_SHIP(105), no
-            // SHIP_DELETE(20), no respawn/ENTER_LIFEPOD(166) — and the ship is
-            // NOT removed from the sector (no SetCluster(NULL)).
-            return;
-        }
-
-        // ── P215: real kill/death + Elo combat-rating scoring ──
-        // The Stage-1 wiring that finally makes PlayerScore reflect real
-        // combat (the port of FedSrv.CPP's kill handling). It sits here —
-        // after the P107 eject gate (an ejection is NOT a death: native calls
-        // AddEjection, not AddDeath, in its !bKilled branch) and before the
-        // observer-targets gate — because native counts the victim's death
-        // regardless of who is watching (FedSrv.CPP:12026-12032).
-        //
-        // (1) Victim death — on EVERY real death of a player-owned ship
-        // (native `if (pfsShip->IsPlayer()) pfsPlayer->AddDeath()`,
-        // FedSrv.CPP:12026-12032; CFSPlayer::AddDeath → m_plrscore.AddDeath(),
-        // fsship.h:50-53). This port's IsPlayer() is exactly "has an owning
-        // peer in _peerShips", so an unowned/bot victim has no PlayerScore and
-        // gets no death (drones get none in native either).
-        if (owner is not null)
-        {
-            _peerShips[owner.Value].PlayerScore.AddDeath();
-            Console.WriteLine($"[scoring] victim ship {victim.Id} death +1 (player peer)");
-        }
-
-        // P303 — the SIDE-level death counter (native `pside->AddDeath()`,
-        // sideigc.h:466-473; the port's is under Side.Deaths). Unlike the
-        // per-player death above (which only a peer-owned victim earns), the
-        // side counter reflects the side itself regardless of ownership —
-        // native's per-side m_data.nDeaths counts every one of the side's
-        // ships dying (GetDeaths, sideigc.h:466-468). Increment it for the
-        // victim's side whenever the victim has a real side here.
-        if (victim.Mission is { } deathMission && victim.SideId is { } victimSideId)
-        {
-            var victimSide = deathMission.Sides.FirstOrDefault(s => s.Id == victimSideId);
-            if (victimSide is not null)
-                victimSide.Deaths++;
-        }
-
-        // (2) Killer kill-credit + combat-rating update — native awards this
-        // only when the launcher is a real side-owned SHIP, the victim was not
-        // a lifepod, and the killer is on a DIFFERENT side (FedSrv.CPP:
-        // 11811-11821: `pcredit && !bLifepod && (psideCredit != pside)` then
-        // `if (type == OT_ship) pfsshipCredit->AddKill() +
-        // AdjustCombatRating(...)`). A suicide/environmental/team kill
-        // therefore never grants kill credit or a rating swing — only the
-        // victim's death (above) is counted, matching native. The `attacker !=
-        // victim` guard is the self-kill case kept explicit (native covers it
-        // via the same-side gate). Only the player-owned side is scored: a bot
-        // attacker has no PlayerScore (no credit), and a bot victim has no
-        // rating storage, so the two-object rating update requires BOTH sides
-        // to be real peers (stated simplification of native, which carries a
-        // score object even on drones — a bot victim's folded-in 0.0 rating is
-        // skipped rather than fabricating a rating holder).
-        if (launcher is Ship attackingShip &&
-            attackingShip != victim &&
-            !bLifepod &&
-            attackingShip.SideId != victim.SideId &&
-            victim.Mission is { } killMission &&
-            killMission.Core.Constants.FloatConstants is { } fc &&
-            fc.Length > PlayerScore.CombatRatingDivideIndex)
-        {
-            // The same _peerShips reverse-lookup used above for the victim's
-            // `owner` — no second lookup mechanism.
-            ConnectionId? killerOwner = null;
-            foreach (var kv in _peerShips)
-                if (ReferenceEquals(kv.Value.Ship, attackingShip)) { killerOwner = kv.Key; break; }
-
-            if (killerOwner is not null)
+            if (launcher is Ship attackingShip)
             {
-                var killerScore = _peerShips[killerOwner.Value].PlayerScore;
-                killerScore.AddKill();
-                Console.WriteLine($"[scoring] killer ship {attackingShip.Id} kill +1 (player peer)");
+                ConnectionId? killerOwner = null;
+                foreach (var kv in _peerShips)
+                    if (ReferenceEquals(kv.Value.Ship, attackingShip)) { killerOwner = kv.Key; break; }
 
-                // P583 — the class-based kill credit on the killer's score.
-                // Native awards <c>KillShip(pship, fraction)</c> to every
-                // damage-track contributor proportional to its damage share
-                // (FedSrv.CPP:11848); this port has no damage bucket, so the
-                // single credited killer takes the whole credit (fraction 1.0)
-                // bucketed by the VICTIM's class (miner/builder/layer/carrier/
-                // player, igc.h:5675-5706).
-                killerScore.KillShip(ClassifyVictim(victim), 1.0f);
-                Console.WriteLine($"[scoring] killer ship {attackingShip.Id} class kill +1 (victim {ClassifyVictim(victim)})");
-
-                if (owner is not null)
+                if (killerOwner is not null)
                 {
-                    PlayerScore.AdjustCombatRating(
-                        fc[PlayerScore.CombatRatingAddIndex],
-                        fc[PlayerScore.CombatRatingDivideIndex],
-                        killerScore, _peerShips[owner.Value].PlayerScore);
-                    Console.WriteLine("[scoring] combat rating adjusted on both sides");
+                    var killerScore = _peerShips[killerOwner.Value].PlayerScore;
+                    killerScore.AddKill();
+                    Console.WriteLine($"[scoring] killer ship {attackingShip.Id} kill +1 (player peer)");
+                    if (owner is not null && killMission!.Core.Constants.FloatConstants is { } fc
+                        && fc.Length > PlayerScore.CombatRatingDivideIndex)
+                    {
+                        PlayerScore.AdjustCombatRating(
+                            fc[PlayerScore.CombatRatingAddIndex], fc[PlayerScore.CombatRatingDivideIndex],
+                            killerScore, _peerShips[owner.Value].PlayerScore);
+                        Console.WriteLine("[scoring] combat rating adjusted on both sides");
+                    }
+
+                    // Existing single-contributor approximation of native's
+                    // damage-share KillShip credit (FedSrv.CPP:11826-11861).
+                    killerScore.KillShip(ClassifyVictim(victim), 1.0f);
+                    Console.WriteLine($"[scoring] killer ship {attackingShip.Id} class kill +1 (victim {ClassifyVictim(victim)})");
                 }
+
+                // Experience is ship-owned; allied kills do not raise it
+                // (FedSrv.CPP:11823-11824), even though they earn AddKill.
+                if (!AlliedSides(killMission!, attackingShip.SideId, victim.SideId))
+                    attackingShip.AddKillBonus();
             }
 
-            // ── P303: the SIDE-level kill + the kills (deathmatch) win ──
-            // Native increments the credited side's kill counter here
-            // (`psideCredit->AddKill()`, FedSrv.CPP:11868) then tests
-            // CheckForVictoryByKills (`GetKills() >= nGoalTeamKills`,
-            // fsmission.cpp:3749-3760) and ends the game on reaching it
-            // (FedSrv.CPP:11871-11880). We bump the killer's side counter (the
-            // P215 per-player kill already happened above) and, gated on
-            // KillsEnabled so a non-deathmatch mission is unaffected, recompute
-            // the win and raise the seam the host consumes (GAME_STATE + P178).
-            var killerSide = killMission.Sides.FirstOrDefault(s => s.Id == attackingShip.SideId);
-            if (killerSide is not null)
-                killerSide.Kills++;
-            // Real kill-credit observability (training host M6 kill goals): raise AFTER the credit is
-            // granted so a subscriber sees exactly the kills the side's counter records — never an
-            // ejection (the !bLifepod guard above already excluded it).
-            KillCreditGranted?.Invoke(attackingShip.Id, victim.Id);
-            if (killMission.KillsEnabled)
+            // Ship AddKill cascades to its side in native (fsship.h:44-48,
+            // Igc/shipIGC.h:1778-1782). Non-ships call side AddKill directly
+            // (FedSrv.CPP:11867-11869). Increment exactly once for either path.
+            killerSide!.Kills++;
+            // Real kill-credit observability (training host M6 kill goals, TR-4): raised after the credit, so a
+            // subscriber sees exactly the kills the side counter records (never an ejected lifepod kill).
+            KillCreditGranted?.Invoke(launcher is Ship creditShip ? creditShip.Id : -1, victim.Id);
+            if (killMission!.KillsEnabled)
             {
-                var (kWinner, kChanged) = killMission.RecomputeFlagsAndKills();
-                if (kChanged || kWinner is not null)
-                    killMission.Site.FlagsKillsComputed(killMission, kChanged, kWinner);
+                (killsWinner, killsChanged) = killMission.RecomputeFlagsAndKills();
+            }
+        }
+
+        // Native sends one KILL_SHIP to GetGroupMission for every nonzero
+        // event, including ejections (FedSrv.CPP:11791-11798,11914-11915).
+        // Effects/EJECT remain sector-scoped; ship deletion is death-only.
+        if (amount != 0)
+        {
+            var msg = new KillShip
+            {
+                ShipId = victim.Id, TypeCredit = (short)killerType, IdCredit = killerId,
+                SideIdKiller = killerSideId ?? -1,
+                BKillCredit = killCredit, BDeathCredit = bKilled,
+            };
+            var killTargets = _peerShips
+                .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, victim.Mission))
+                .Select(kv => kv.Key).ToArray();
+            byte[] packet = FedPacket.Pack(msg.Encode());
+            foreach (var t in killTargets) SendPeer(t, packet);
+            Console.WriteLine($"[combat] ship {victim.Id} — KILL_SHIP(105) bKillCredit={killCredit} bDeathCredit={bKilled} -> {killTargets.Length} mission peer(s)");
+        }
+
+        // Native checks kills victory before eject/death (FedSrv.CPP:11872-11880),
+        // but processes game-over later (fsmission.cpp:2691-2695,2508-2511). The port's
+        // callback immediately rotates the mission and migrates peers. Publish
+        // only after this event's wire messages and victim score are complete.
+        try
+        {
+            if (!bKilled)
+            {
+                _peerShips[owner!.Value].PlayerScore.AddEjection();
+                Console.WriteLine($"[scoring] ship {victim.Id} ejection +1 (player peer)");
+                if (EjectSurvivor(victim, launcher, p1, p2))
+                    return;
             }
 
-            // ── P278: Kill Bonus credit on the killer SHIP ──
-            // Native FedSrv.CPP:11824: `if ((pside != psideCredit) &&
-            // !pside->AlliedSides(pside,psideCredit)) pcredit->AddExperience()`.
-            // Operates on the credit ship's own KB counter (per-ship scope),
-            // INDEPENDENT of peer-ness, so it sits outside the killerOwner block
-            // (a bot killer still bumps its KB, faithful to native which acts on
-            // the credit ship). Note this gate is STRICTER than AddKill's plain
-            // cross-side test: KB does NOT rise on an ALLIED cross-side kill
-            // ("#ALLY: kgjv dont up KB when FF is on - Imago 7/3/09"). The outer
-            // guard already ensures attacker != victim, !lifepod, cross-side.
-            if (!AlliedSides(killMission, attackingShip.SideId, victim.SideId))
-                attackingShip.AddKillBonus();
+            // True death (including the existing missing-eject-data fallback) only.
+            // Native AddDeath follows AnnounceExit (FedSrv.CPP:12025-12032).
+            if (owner is not null)
+            {
+                _peerShips[owner.Value].PlayerScore.AddDeath();
+                Console.WriteLine($"[scoring] victim ship {victim.Id} death +1 (player peer)");
+            }
+            if (victim.Mission is { } deathMission && victim.SideId is { } victimSideId)
+            {
+                var victimSide = deathMission.Sides.FirstOrDefault(s => s.Id == victimSideId);
+                if (victimSide is not null)
+                    victimSide.Deaths++;
+            }
+
+            // Peers whose ship is in the same sector as the victim can see the kill.
+            var targets = _peerShips
+                .Where(kv => kv.Value.Ship.Sector == victim.Sector)
+                .Select(kv => kv.Key)
+                .ToArray();
+
+            Console.WriteLine($"[combat] ship {victim.Id} killed by {(killerId < 0 ? "(none)" : $"ship {killerId}")} " +
+                              $"at sim-t {now:R} — death effects -> {targets.Length} sector peer(s)");
+            // Native AnnounceExit sends true deletion to the mission, even when nobody is
+            // in the victim's sector (fsship.cpp:196-223; FedSrv.CPP:12025). The sector-only
+            // kill/effect audience must not leave an off-sector constructor alive in team state.
+            var deleteTargets = _peerShips.Where(kv => ReferenceEquals(kv.Value.Ship.Mission, victim.Mission))
+                .Select(kv => kv.Key).ToArray();
+            int deleteReason = amount == 0 ? ShipDelete.SdrTerminate : ShipDelete.SdrKilled;
+            var deletePacket = FedPacket.Pack(new ShipDelete { ShipId = victim.Id, Sdr = deleteReason }.Encode());
+            if (targets.Length > 0)
+            {
+                // P263 — the ship's death blast VFX to the same same-sector audience.
+                // Native picks the category by the victim base hull's fighter capability
+                // on KILL_SHIP (appmsg.cpp:2853-2857: c_habmFighter ? c_etSmallShip :
+                // c_etBigShip) — the exact split the port reproduces here. Scale is the
+                // native 2 * GetRadius() = hull Length (shipRadius = 0.5*Length).
+                int shipType = victim.HullType.HasCapability(DataHullTypeIGC.HabmFighter)
+                    ? ExplosionType.SmallShip
+                    : ExplosionType.BigShip;
+                SendExplosionEvent(targets, shipType, victim.Sector!.Id, victim.Position, victim.Velocity, victim.HullType.Length);
+            }
+            foreach (var target in deleteTargets) SendPeer(target, deletePacket);
+            Console.WriteLine($"[combat] ship {victim.Id} — SHIP_DELETE(20) {(deleteReason == ShipDelete.SdrKilled ? "SDR_KILLED" : "SDR_TERMINATE")} -> {deleteTargets.Length} mission peer(s)");
+            // Finalization is simulation work, independent of whether anyone witnessed this sector.
+            // In particular, a quiet layer consumption must remove the live unit (FedSrv.CPP:13842-13860).
+
+            // P105 death-respawn, hooked at the exact seam P103 wired (ShipKilled →
+            // this method) and sharing the same trigger. The native function
+            // (FedSrv.CPP:12026-12074) turns a player's true death into a docked
+            // Lifepod at a friendly station plus a private ENTER_LIFEPOD(166) to
+            // that player only; bots just stay dead (native else:
+            // FedSrv.CPP:12080-12085). Three guards reproduce it faithfully:
+            //  (1) owner — only a peer-owned ship is a player (this port's player/
+            //      bot distinction IS peer ownership; a ship with no owning peer in
+            //      _peerShips is a bot/unowned ship and is NOT respawned);
+            //  (2) a friendly station anywhere (FindFriendlyStation — the simplified
+            //      stand-in for native's nearest-search + GetBase fallback);
+            //  (3) implicit — FindFriendlyStation returns null when SideId is null,
+            //      so a side-less ship is never respawned either.
+            // No friendly station ⇒ no respawn, exactly like native's
+            // `if (pstationDest)` guard (FedSrv.CPP:12055): the ship simply stays
+            // gone, whatever SHIP_DELETE already said. (`owner` was resolved above,
+            // before the P107 eject gate; only the guard remains here.)
+            if (owner is null)
+            {
+                Console.WriteLine($"[lifepod] ship {victim.Id} has no owning peer (bot/non-player) — no respawn, stays dead");
+                FinalizeDeadShip(victim);   // P323 M6 — really leave the sector & mark dead (native deletes the drone, FedSrv.CPP:12084)
+                return;
+            }
+
+            // P455 — an eliminated (inactive) side cannot respawn. Native's lifepod
+            // respawn needs a restart-capable friendly station (the FindTarget at
+            // FedSrv.CPP:12034-12038 carries c_sabmRestart); a deactivated side has
+            // none (DeactivateSide runs exactly when it lost its last restart
+            // station and sets Side.Active=false FIRST, fsmission.cpp:5325), so its
+            // force-killed players stay dead instead of respawning as lifepods. Gate
+            // on Side.Active so eliminated players see exactly what native shows.
+            if (victim.Mission is { } killMission2 && victim.SideId is { } victimSide2 &&
+                killMission2.Sides.FirstOrDefault(s => s.Id == victimSide2) is { Active: false })
+            {
+                Console.WriteLine($"[lifepod] ship {victim.Id} is on an inactive (eliminated) side — no respawn, stays dead");
+                FinalizeDeadShip(victim);
+                return;
+            }
+
+            DataStationIGC? station = FindFriendlyStation(victim);
+            if (station is null)
+            {
+                Console.WriteLine($"[lifepod] player ship {victim.Id} side {(victim.SideId?.ToString() ?? "(none)")} has no friendly station anywhere — no respawn (native FedSrv.CPP:12055 guard)");
+                FinalizeDeadShip(victim);   // P323 M6 — the ghost-ship fix: remove the dead ship server-side (it used to keep flying/mining/broadcasting)
+                return;
+            }
+            var dest = station.Value;                             // non-null capture past the guard
+            var mission = victim.Mission!;
+            // A valid station's ClusterId always names a sector of this mission
+            // (DataStationIGC decoding guarantees it) — the station's own cluster
+            // is where the Lifepod docks (native SetCluster(pcluster)).
+            var destSector = mission.Sectors.First(s => s.Id == dest.ClusterId);
+            var side = mission.Sides.FirstOrDefault(s => s.Id == victim.SideId!.Value);
+            if (side is null)
+            {
+                Console.WriteLine($"[lifepod] player ship {victim.Id} side {victim.SideId} not in mission sides — no respawn");
+                FinalizeDeadShip(victim);   // P323 M6 — same ghost-ship finalization as the no-station branch
+                return;
+            }
+            if (!mission.Core.HullTypes.TryGetValue(side.Civilization.Lifepod, out var lp))
+            {
+                Console.WriteLine($"[lifepod] player ship {victim.Id} side {victim.SideId}: lifepod hull {side.Civilization.Lifepod} not in core — no respawn");
+                FinalizeDeadShip(victim);   // P323 M6 — same ghost-ship finalization as the no-station branch
+                return;
+            }
+
+            MoveShipToSector(victim, destSector);   // P307: SetCluster — a REAL list move out of the old sector into the station's cluster (FedSrv.CPP:12045→12067), not just the back-ref
+            victim.ChangeHull(lp);           // SetBaseHullType(pht) — side's Lifepod hull (FedSrv.CPP:12052)
+            // P653d: native SetBaseHullType restores m_fraction to 1 even when
+            // assigning the same pod hull (shipIGC.cpp:1352-1359,1435). ChangeHull
+            // is a hull-only primitive in this port, so restore the restart here,
+            // just as EjectSurvivor does. Otherwise lethal damage leaves a docked
+            // pod Dead and every subsequent purchase/boarding/teleport is refused.
+            victim.SetFraction(1.0f);
+            victim.StationId = dest.StationId; // SetStation + ShipStatusDocked (FedSrv.CPP:12064-12065)
+            victim.LastDockTime = _simNow;     // P381: dock clock (lifepod respawn is a dock latch)
+
+            // Keep the owning peer's broadcast bookkeeping coherent: the status
+            // frames (BroadcastShipStates / MakeOwnShipStatus) derive Sector from
+            // the LiveShip snapshot, so point it at the station's cluster too —
+            // the next SHIP_STATUS(90) shows the Lifepod docked there.
+            var conn = owner.Value;                               // non-null capture past the guard
+            _peerShips[conn] = _peerShips[conn] with { Sector = destSector };
+
+            var enter = EnterLifepod.ForPlayer(victim.Id);
+            SendPeer(conn, FedPacket.Pack(new[] { enter.Encode() }));   // FM_S_ENTER_LIFEPOD(166) → own peer only
+            Console.WriteLine($"[lifepod] player ship {victim.Id} -> docked Lifepod (hull {lp.HullId}) at station {dest.StationId} '{dest.Name}' " +
+                              $"in sector '{destSector?.Name ?? "?"}' ; ENTER_LIFEPOD(166) -> own peer only");
         }
-
-        // Peers whose ship is in the same sector as the victim can see the kill.
-        var targets = _peerShips
-            .Where(kv => kv.Value.Ship.Sector == victim.Sector)
-            .Select(kv => kv.Key)
-            .ToArray();
-
-        Console.WriteLine($"[combat] ship {victim.Id} killed by {(killerId < 0 ? "(none)" : $"ship {killerId}")} " +
-                          $"at sim-t {now:R} — KILL_SHIP(105) -> {targets.Length} peer(s)");
-        // Native AnnounceExit sends true deletion to the mission, even when nobody is
-        // in the victim's sector (fsship.cpp:196-223; FedSrv.CPP:12025). The sector-only
-        // kill/effect audience must not leave an off-sector constructor alive in team state.
-        var deleteTargets = _peerShips.Where(kv => ReferenceEquals(kv.Value.Ship.Mission, victim.Mission))
-            .Select(kv => kv.Key).ToArray();
-        int deleteReason = amount == 0 ? ShipDelete.SdrTerminate : ShipDelete.SdrKilled;
-        var deletePacket = FedPacket.Pack(new ShipDelete { ShipId = victim.Id, Sdr = deleteReason }.Encode());
-        if (targets.Length > 0)
+        finally
         {
-            var msg = KillShip.FromVictim(victim.Id, killerType, killerId);
-            byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
-            foreach (var t in targets)
-                SendPeer(t, packet);
-
-            // P263 — the ship's death blast VFX to the same same-sector audience.
-            // Native picks the category by the victim base hull's fighter capability
-            // on KILL_SHIP (appmsg.cpp:2853-2857: c_habmFighter ? c_etSmallShip :
-            // c_etBigShip) — the exact split the port reproduces here. Scale is the
-            // native 2 * GetRadius() = hull Length (shipRadius = 0.5*Length).
-            int shipType = victim.HullType.HasCapability(DataHullTypeIGC.HabmFighter)
-                ? ExplosionType.SmallShip
-                : ExplosionType.BigShip;
-            SendExplosionEvent(targets, shipType, victim.Sector!.Id, victim.Position, victim.Velocity, victim.HullType.Length);
+            if (killsChanged || killsWinner is not null)
+                killMission!.Site.FlagsKillsComputed(killMission, killsChanged, killsWinner);
         }
-        foreach (var target in deleteTargets) SendPeer(target, deletePacket);
-        Console.WriteLine($"[combat] ship {victim.Id} — SHIP_DELETE(20) {(deleteReason == ShipDelete.SdrKilled ? "SDR_KILLED" : "SDR_TERMINATE")} -> {deleteTargets.Length} mission peer(s)");
-        // Finalization is simulation work, independent of whether anyone witnessed this sector.
-        // In particular, a quiet layer consumption must remove the live unit (FedSrv.CPP:13842-13860).
-
-        // P105 death-respawn, hooked at the exact seam P103 wired (ShipKilled →
-        // this method) and sharing the same trigger. The native function
-        // (FedSrv.CPP:12026-12074) turns a player's true death into a docked
-        // Lifepod at a friendly station plus a private ENTER_LIFEPOD(166) to
-        // that player only; bots just stay dead (native else:
-        // FedSrv.CPP:12080-12085). Three guards reproduce it faithfully:
-        //  (1) owner — only a peer-owned ship is a player (this port's player/
-        //      bot distinction IS peer ownership; a ship with no owning peer in
-        //      _peerShips is a bot/unowned ship and is NOT respawned);
-        //  (2) a friendly station anywhere (FindFriendlyStation — the simplified
-        //      stand-in for native's nearest-search + GetBase fallback);
-        //  (3) implicit — FindFriendlyStation returns null when SideId is null,
-        //      so a side-less ship is never respawned either.
-        // No friendly station ⇒ no respawn, exactly like native's
-        // `if (pstationDest)` guard (FedSrv.CPP:12055): the ship simply stays
-        // gone, whatever SHIP_DELETE already said. (`owner` was resolved above,
-        // before the P107 eject gate; only the guard remains here.)
-        if (owner is null)
-        {
-            Console.WriteLine($"[lifepod] ship {victim.Id} has no owning peer (bot/non-player) — no respawn, stays dead");
-            FinalizeDeadShip(victim);   // P323 M6 — really leave the sector & mark dead (native deletes the drone, FedSrv.CPP:12084)
-            return;
-        }
-
-        // P455 — an eliminated (inactive) side cannot respawn. Native's lifepod
-        // respawn needs a restart-capable friendly station (the FindTarget at
-        // FedSrv.CPP:12034-12038 carries c_sabmRestart); a deactivated side has
-        // none (DeactivateSide runs exactly when it lost its last restart
-        // station and sets Side.Active=false FIRST, fsmission.cpp:5325), so its
-        // force-killed players stay dead instead of respawning as lifepods. Gate
-        // on Side.Active so eliminated players see exactly what native shows.
-        if (victim.Mission is { } killMission2 && victim.SideId is { } victimSide2 &&
-            killMission2.Sides.FirstOrDefault(s => s.Id == victimSide2) is { Active: false })
-        {
-            Console.WriteLine($"[lifepod] ship {victim.Id} is on an inactive (eliminated) side — no respawn, stays dead");
-            FinalizeDeadShip(victim);
-            return;
-        }
-
-        DataStationIGC? station = FindFriendlyStation(victim);
-        if (station is null)
-        {
-            Console.WriteLine($"[lifepod] player ship {victim.Id} side {(victim.SideId?.ToString() ?? "(none)")} has no friendly station anywhere — no respawn (native FedSrv.CPP:12055 guard)");
-            FinalizeDeadShip(victim);   // P323 M6 — the ghost-ship fix: remove the dead ship server-side (it used to keep flying/mining/broadcasting)
-            return;
-        }
-        var dest = station.Value;                             // non-null capture past the guard
-        var mission = victim.Mission!;
-        // A valid station's ClusterId always names a sector of this mission
-        // (DataStationIGC decoding guarantees it) — the station's own cluster
-        // is where the Lifepod docks (native SetCluster(pcluster)).
-        var destSector = mission.Sectors.First(s => s.Id == dest.ClusterId);
-        var side = mission.Sides.FirstOrDefault(s => s.Id == victim.SideId!.Value);
-        if (side is null)
-        {
-            Console.WriteLine($"[lifepod] player ship {victim.Id} side {victim.SideId} not in mission sides — no respawn");
-            FinalizeDeadShip(victim);   // P323 M6 — same ghost-ship finalization as the no-station branch
-            return;
-        }
-        if (!mission.Core.HullTypes.TryGetValue(side.Civilization.Lifepod, out var lp))
-        {
-            Console.WriteLine($"[lifepod] player ship {victim.Id} side {victim.SideId}: lifepod hull {side.Civilization.Lifepod} not in core — no respawn");
-            FinalizeDeadShip(victim);   // P323 M6 — same ghost-ship finalization as the no-station branch
-            return;
-        }
-
-        MoveShipToSector(victim, destSector);   // P307: SetCluster — a REAL list move out of the old sector into the station's cluster (FedSrv.CPP:12045→12067), not just the back-ref
-        victim.ChangeHull(lp);           // SetBaseHullType(pht) — side's Lifepod hull (FedSrv.CPP:12052)
-        // P653d: native SetBaseHullType restores m_fraction to 1 even when
-        // assigning the same pod hull (shipIGC.cpp:1352-1359,1435). ChangeHull
-        // is a hull-only primitive in this port, so restore the restart here,
-        // just as EjectSurvivor does. Otherwise lethal damage leaves a docked
-        // pod Dead and every subsequent purchase/boarding/teleport is refused.
-        victim.SetFraction(1.0f);
-        victim.StationId = dest.StationId; // SetStation + ShipStatusDocked (FedSrv.CPP:12064-12065)
-        victim.LastDockTime = _simNow;     // P381: dock clock (lifepod respawn is a dock latch)
-
-        // Keep the owning peer's broadcast bookkeeping coherent: the status
-        // frames (BroadcastShipStates / MakeOwnShipStatus) derive Sector from
-        // the LiveShip snapshot, so point it at the station's cluster too —
-        // the next SHIP_STATUS(90) shows the Lifepod docked there.
-        var conn = owner.Value;                               // non-null capture past the guard
-        _peerShips[conn] = _peerShips[conn] with { Sector = destSector };
-
-        var enter = EnterLifepod.ForPlayer(victim.Id);
-        SendPeer(conn, FedPacket.Pack(new[] { enter.Encode() }));   // FM_S_ENTER_LIFEPOD(166) → own peer only
-        Console.WriteLine($"[lifepod] player ship {victim.Id} -> docked Lifepod (hull {lp.HullId}) at station {dest.StationId} '{dest.Name}' " +
-                          $"in sector '{destSector?.Name ?? "?"}' ; ENTER_LIFEPOD(166) -> own peer only");
     }
 
     /// <summary>
@@ -1967,7 +1942,7 @@ public sealed partial class Server
     /// broadcasts — this one is only to the ships in this one sector).</item>
     /// </list>
     /// The ship is deliberately <b>not</b> removed from the sector and gets no
-    /// <c>SHIP_DELETE</c>/<c>KILL_SHIP</c>/<c>ENTER_LIFEPOD</c> — this is the
+    /// <c>SHIP_DELETE</c>/<c>ENTER_LIFEPOD</c> — this is the
     /// mutually-exclusive sibling of P103/P105's true-death branch. Native also
     /// clears missiles targeting the ship (<c>FedSrv.CPP:11925-11932</c>); this
     /// port's <see cref="Missile"/> carries no target back-reference, so that
@@ -2070,35 +2045,6 @@ public sealed partial class Server
             .Where(kv => kv.Value.Ship.Sector == pcluster)
             .Select(kv => kv.Key)
             .ToArray();
-
-        // P578 — native sends KILL_SHIP(105) on an eject TOO, with
-        // bDeathCredit=false and the credited killer's identity, so every
-        // observer (including the ejecting pilot) can show the eject feedback
-        // and swing the "gloat camera" to the launcher (FedSrv.CPP:11793-11812
-        // constructs it before the eject branch; appmsg.cpp:2834 "You were
-        // forced to eject by %s"; clintlib.cpp:3063 EjectPlayer(pLauncher)).
-        // The port previously suppressed KILL_SHIP on eject, which is why the
-        // client had no way to learn the killer for the forced-eject feedback.
-        // bKillCredit mirrors native (!bLifepod && psideCredit != pside,
-        // FedSrv.CPP:11813-11821): a cross-side non-lifepod forced eject grants
-        // kill credit. The victim's hull was just swapped to the lifepod, so
-        // "bLifepod" here is false for a forced eject of a normal ship.
-        {
-            short killerId = -1, sideidKiller = -1;
-            if (launcher is Ship attackerShip) { killerId = attackerShip.Id; sideidKiller = attackerShip.SideId ?? -1; }
-            var ks = new KillShip
-            {
-                ShipId = victim.Id,
-                TypeCredit = (short)IgcObjectType.Ship,
-                IdCredit = killerId,
-                SideIdKiller = sideidKiller,
-                BKillCredit = killerId != -1 && sideidKiller != -1 && sideidKiller != victim.SideId,
-                BDeathCredit = false,   // an eject is NOT a death (FedSrv.CPP:11794-11795)
-            };
-            byte[] kp = FedPacket.Pack(new[] { ks.Encode() });
-            foreach (var t in targets) SendPeer(t, kp);
-            Console.WriteLine($"[eject] KILL_SHIP(105) bDeathCredit=false for ejecting ship {victim.Id}, killer ship {killerId} -> {targets.Length} peer(s)");
-        }
 
         // P540b — the EJECT message's cookie is consumed ONLY by the ejecting
         // player's own client (ClientWorld.Apply(Eject): `if (e.ShipId == MyShipId)

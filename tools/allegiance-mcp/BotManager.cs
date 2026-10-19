@@ -549,8 +549,18 @@ internal sealed partial class BotManager : IDisposable
             // AttachEnemyBot.Cs): it must read its own world's pose, cross-side ships
             // and warp geometry while it transits clusters the probe never sees.
             Showcase.HullRole? techRole = Enum.TryParse<Showcase.HullRole>(role, true, out var parsedRole) ? parsedRole : null;
+            bool defensiveMines = false;
+            if (techRole == Showcase.HullRole.Fighter)
+            {
+                lock (_gate)
+                {
+                    _fighterDispenserSlots.TryGetValue(chosenSide, out int slot);
+                    _fighterDispenserSlots[chosenSide] = slot + 1;
+                    defensiveMines = slot % 3 == 0;
+                }
+            }
             var cs = ownership.Own(SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide, out granted, out grantWarning,
-                techRole, selected => { hullId = selected.HullId; hullName = selected.HullName; finalParts = selected.Parts.ToList(); }));
+                techRole, selected => { hullId = selected.HullId; hullName = selected.HullName; finalParts = selected.Parts.ToList(); }, support: string.Equals(role, "support", StringComparison.OrdinalIgnoreCase), defensiveMines: defensiveMines));
             DiagnoseProbeLaunch(name, shipId, actualSide);
 
             bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed())
@@ -558,6 +568,7 @@ internal sealed partial class BotManager : IDisposable
                 Cs = cs,
                 Difficulty = _difficulty,
                 TechLoadouts = true,
+                DefensiveMineDuty = defensiveMines,
                 PurchasePacer = _loadoutPurchasePacer,
                 ShipId = shipId,
                 Launched = true,
@@ -762,7 +773,7 @@ internal sealed partial class BotManager : IDisposable
     /// combat spawn can never silently fly a refused default ship.
     /// </summary>
     private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide, out LoadoutGrant granted, out string? warning,
-        Showcase.HullRole? techRole = null, Action<TechLoadoutSelector.Selection>? onSelected = null)
+        Showcase.HullRole? techRole = null, Action<TechLoadoutSelector.Selection>? onSelected = null, bool support = false, bool defensiveMines = false)
     {
         using var ownership = new PendingOwnership(DisposePeer);
         var cs = ownership.Own(new ConnectionSession(BotWorlds(side)));
@@ -783,7 +794,7 @@ internal sealed partial class BotManager : IDisposable
         cs.SendPlayerReady(true, shipId);
         // P473 — reset the ack accumulator so the only ack considered is the one
         // answering THIS purchase (not the seat's join-burst default-hull ack).
-        if (techRole is { } requestedRole)
+        if (techRole is not null || support)
         {
             short ownId = shipId, ownSide = actualSide;
             TechLoadoutSelector.Selection? selected = null;
@@ -791,9 +802,9 @@ internal sealed partial class BotManager : IDisposable
             {
                 lock (cs.Gate)
                     if (CurrentLoadoutShop(cs, ownSide, ownId) is { } shop)
-                        selected = PickTechLoadout(shop, requestedRole);
+                        selected = PickTechLoadout(shop, techRole ?? Showcase.HullRole.Fighter, support: support, defensiveMines: defensiveMines);
                 return selected is not null;
-            }, 15000)) throw new InvalidOperationException($"spawn_bot: '{name}' has no observed legal affordable loadout for role {requestedRole}");
+            }, 15000)) throw new InvalidOperationException($"spawn_bot: '{name}' has no observed legal affordable loadout for role {techRole}");
             hullId = selected!.HullId; parts = selected.Parts;
             Console.WriteLine($"[loadout] {name} initial: {selected.Reason}");
             onSelected?.Invoke(selected);
@@ -2660,7 +2671,7 @@ bool isThreat =
         float distFactor = dist >= brake ? 1f : Math.Clamp((dist - arrival) / (brake - arrival), 0f, 1f);
         float align = Math.Clamp(-orient.TimesInverse(dir).Z, 0f, 1f);
         float throttle = Math.Clamp(2f * distFactor * align - 1f, -1f, 1f);
-        cs.CommandControls(new ControlData(yaw, pitch, 0f, throttle), stateM);
+        cs.CommandControls(new ControlData(yaw, pitch, 0f, throttle), CloakApproach(bot, cs, stateM));
     }
 
     /// <summary>P489/P524 — feed the SHARED native dodge law
@@ -2718,13 +2729,14 @@ bool isThreat =
         if (!TryCsPose(cs, bot.ShipId, out _, out _)) return;
         double yaw = Math.Sin(now * bot.WeaveFreq + bot.WeavePhase) * bot.WeaveAmp;
         double throttle = 0.5 + 0.2 * Math.Sin(now * bot.WeaveFreq * 0.7 + bot.WeavePhase * 1.3);
+        bot.CloakHeld = false; // This neutral loiter request ends the approach episode.
         cs.CommandControls(new ControlData((float)yaw, 0f, 0f, (float)throttle), 0);
     }
 
     /// <summary>[vz EngageEnemy] Pick the nearest DIFFERENT-side ship co-located in
     /// the bot's OWN cluster, point itself at it via a real cross-side
-    /// ORDER_CHANGE target acquisition, and hold AllWeapons with periodic
-    /// afterburner-boost / evasive-cloak beats — the full real loadout. Sets the
+    /// ORDER_CHANGE target acquisition, using native attack controls and the
+    /// role-based approach cloak policy. Sets the
     /// bot's <see cref="ActiveBot.TargetId"/> so <c>list_active_bots</c> can show
     /// the engagement. Loiters when no enemy is visible. P431: a commanded
     /// ship-target order (an accepted teammate order) TAKES PRECEDENCE over
@@ -2737,6 +2749,8 @@ bool isThreat =
         if (!IsParticipating(bot)) return;
         if (!TryCsPose(cs, bot.ShipId, out var myPos, out _)) return;
         short myCluster = CsSector(cs);
+
+        if (TryDriveSupport(bot, now)) return;
 
         // P431 — outside a temporary defence engagement, the commanded ship-target
         // wins over the coordinated choice. Defence preserves the order for resumption. While
@@ -3087,7 +3101,7 @@ bool isThreat =
                 // (Igc/shipIGC.cpp:2363,2470-2489; common.cpp:1785-1786).
                 var (dyaw, dpitch, dangle) = SteerTowardDirection(orient, aimDir);
                 cs.CommandControls(new ControlData(dyaw, dpitch, 0, AttackThrottle(dangle)),
-                    SiegeNavigation.DirectionButtons(dodgeGoal - myPos, orient));
+                    CloakApproach(bot, cs, SiegeNavigation.DirectionButtons(dodgeGoal - myPos, orient)));
             }
             else CombatFlyTo(bot, dodgeGoal, 15f, 200f, 0);
             return;   // dodge suppresses all weapons this tick
@@ -3160,7 +3174,7 @@ bool isThreat =
         bool reacted = now - bot.DifficultyTargetSince >= bot.Difficulty.ReactionSeconds;
         bool fire = reacted && !friendlyBlocked && AttackFireGate(angleToLead, t / bot.Difficulty.Aggression, lifespan);
 
-        int stateM = state | (fire ? ShipControlState.AllWeapons : 0);
+        int stateM = CloakApproach(bot, cs, state | (fire ? ShipControlState.AllWeapons : 0));
         bot.AttackAfterburnerHeld = (stateM & ShipControlState.AfterburnerButton) != 0;
 
         cs.CommandControls(new ControlData(yaw, pitch, 0f, throttle), stateM);
@@ -3168,8 +3182,7 @@ bool isThreat =
         // Missiles: native fires only while reasonably aimed at the target
         // (inside the `if (angleToLead < π/2)` block, shipIGC.cpp:2492/2573),
         // with the lock + evasion gate (shipIGC.cpp:2584-2596, P557).
-        MaybeFireMissile(bot, cs, now, aimOk: reacted && angleToLead < MathF.PI * 0.5f);
-        MaybeFireMine(bot, cs, now);
+        MaybeFireMissile(bot, cs, now, aimOk: (stateM & ShipControlState.CloakActive) == 0 && reacted && angleToLead < MathF.PI * 0.5f);
     }
 
     /// <summary>P558 — the native steer-toward law reduced to (yaw, pitch)
@@ -3689,7 +3702,7 @@ bool isThreat =
         // instead of converging on one point and grinding.
         aim = StaggeredAlephAim(bot, cs, pos, aim, warpPos);
 
-        cs.CommandControls(AutopilotSteering.Pursue(pos, orient, aim), 0);
+        cs.CommandControls(AutopilotSteering.Pursue(pos, orient, aim), CloakApproach(bot, cs, 0));
     }
 
     /// <summary>P610 — the entry-stagger + light-queue aim for a warp leg: spread
@@ -3952,45 +3965,6 @@ bool isThreat =
         cs.SendFireMissile();
         bot.LastFireAt = now;
         Console.WriteLine($"[p433] bot {bot.Name} (ship {bot.ShipId}) fired real missile launcher at lock 1.0 -> SendFireMissile (ready {bot.MissileReadyTime:F2}s)");
-    }
-
-    /// <summary>
-    /// P557 — fire the bot's real mounted MINE DISPENSER the native wingman way
-    /// (shipIGC.cpp:2651-2665): a UseMines wingman with a mounted mine-type
-    /// dispenser sets mineFireIGC whenever a DIFFERENT-side combat actor is
-    /// within <see cref="Showcase.WingmanMineRange"/> (2500 u) of it. Here the
-    /// bot's own world is scanned for the nearest different-side ship in its
-    /// cluster within that range, and on qualification it sends the real
-    /// <c>SendFireExpendable(ET_Dispenser)</c> — the wire request the server's
-    /// <c>HandleFireExpendable</c> resolves at mount 0 to the mounted mine
-    /// launcher, decrements its ammo, and deploys a NATIVE mine object
-    /// (<c>Ship.DeployMine</c> → P452 minefield attrition / P453 visibility).
-    /// Paced so a dispenser is not spammed every tick.
-    /// </summary>
-    private static void MaybeFireMine(ActiveBot bot, ConnectionSession cs, double now)
-    {
-        if (!Showcase.UsesMines(bot.WingmanBehaviour)) return;       // flag off
-        if (bot.MineDispenserPartId is null) return;                 // "needs mines already equipped"
-        if (now - bot.LastMineAt < 1.0) return;                      // pace (mine deploy burst)
-        if (!TryCsPose(cs, bot.ShipId, out var myPos, out _)) return;
-        short myCluster = CsSector(cs);
-        bool enemyNear = false;
-        lock (cs.Gate)
-        {
-            foreach (var kv in cs.World.Ships)
-            {
-                if (kv.Key == bot.ShipId || kv.Value.IsNotVisible) continue;
-                if (kv.Value.SideId == bot.Side) continue;           // different side only
-                if (kv.Value.SectorId != myCluster) continue;        // co-located
-                if (kv.Value.Latest is not { } lu) continue;
-                if (Showcase.EnemyWithinMineRange((lu.Position - myPos).Length()))
-                { enemyNear = true; break; }
-            }
-        }
-        if (!enemyNear) return;
-        cs.SendFireExpendable(EquipmentType.Dispenser);
-        bot.LastMineAt = now;
-        Console.WriteLine($"[p557] bot {bot.Name} (ship {bot.ShipId}) fired mine dispenser (part {bot.MineDispenserPartId}) — enemy within {Showcase.WingmanMineRange}u (native shipIGC.cpp:2651)");
     }
 
     // ── P558 — native wingman ATTACK steering: pure decision helpers ──────
@@ -4637,6 +4611,8 @@ bool isThreat =
             return;
         }
 
+        MaybeUseDispensers(bot, cs, now);
+
         if (TryDriveResearchFinaleRefit(bot, cs, now)) return;
         AdvanceResearchSiegeDuty(bot, cs);
 
@@ -4655,6 +4631,7 @@ bool isThreat =
             return;
         }
         bot.ExitClearFrom = null;
+        if (TryDriveSupport(bot, now)) return;
         if (DriveCommanderOrder(bot, now)) return;
         if (TryDriveFinaleEscort(bot, now)) return;
         if (defenseSector >= 0 && TryDriveDefense(bot, defenseSector, now)) return;
@@ -5757,7 +5734,7 @@ bool isThreat =
     /// The per-bot bookkeeping. Exactly one of <see cref="Bot"/> (idle/weave — a
     /// plain client) and <see cref="Cs"/> (combat — its own ClientWorld) is set.
     /// The combat fields mirror vizfight's <c>AttachEnemyBot</c> exactly (same
-    /// names/shapes: TargetId, LastTargetAt/BoostAt/CloakAt, Path/PathStart/
+    /// names/shapes: TargetId, LastTargetAt/BoostAt, Path/PathStart/
     /// PathGoal/LastCluster, WarpDest, Arrived/Launched).
     /// </summary>
     private sealed class ActiveBot
@@ -5828,7 +5805,7 @@ bool isThreat =
         public double LastAttackersPruneAt = double.NegativeInfinity;
         public double LastTargetAt = double.NegativeInfinity;
         public double LastBoostAt = double.NegativeInfinity;
-        public double LastCloakAt = double.NegativeInfinity;
+        public bool CloakHeld;
         public double LastNarrateAt = double.NegativeInfinity;
         // P539 — the bot's LEAD weapon part id (the first real weapon in its
         // loadout), used by the fire loop to read the real projectile
@@ -5899,6 +5876,10 @@ bool isThreat =
         /// (bombers → enemy home) and its route/staging group.</summary>
         public string Role = "fighter";
         public bool TechLoadouts;
+        public bool SupportRefitting;
+        public double SupportCheckAt;
+        public short? SupportTraceTarget;
+        public bool SupportTraceStation;
         public LoadoutPurchasePacer? PurchasePacer;
         public double PurchaseScheduledAt = double.NegativeInfinity;
         public bool LoadoutRefused;
@@ -5918,6 +5899,9 @@ bool isThreat =
         /// latched bit is the <c>StateM &amp; afterburnerButtonIGC</c> read.</summary>
         public bool AttackAfterburnerHeld;
         public double LastMineAt = double.NegativeInfinity;
+        public bool DefensiveMineDuty;
+        public double LastChaffAt = double.NegativeInfinity;
+        public double LastProbeAt = double.NegativeInfinity;
         public short? TargetSector;                // rendezvous sector, or null to engage in place
         public List<short> Path = new();
         public short PathStart = -1;

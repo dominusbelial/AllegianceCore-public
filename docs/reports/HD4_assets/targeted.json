@@ -1,0 +1,392 @@
+[
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Valid_entry_resolves_case_insensitively_and_hashes_only_on_first_use",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Valid_entry_resolves_case_insensitively_and_hashes_only_on_first_use",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Valid_entry_resolves_case_insensitively_and_hashes_only_on_first_use",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Missing_pack_or_unknown_model_falls_back_without_reading_artwork",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Missing_pack_or_unknown_model_falls_back_without_reading_artwork",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Missing_pack_or_unknown_model_falls_back_without_reading_artwork",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Stale_texture_sha_is_ignored_and_logged_once",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Stale_texture_sha_is_ignored_and_logged_once",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Stale_texture_sha_is_ignored_and_logged_once",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Changed_native_model_or_texture_override_falls_back",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Changed_native_model_or_texture_override_falls_back",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Changed_native_model_or_texture_override_falls_back",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Missing_maps_and_unreadable_native_asset_fall_back",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Missing_maps_and_unreadable_native_asset_fall_back",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Missing_maps_and_unreadable_native_asset_fall_back",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Rejected_review_and_corrupt_or_unsupported_manifest_fall_back",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Rejected_review_and_corrupt_or_unsupported_manifest_fall_back",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Rejected_review_and_corrupt_or_unsupported_manifest_fall_back",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Malformed_entry_does_not_hide_other_entries",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Malformed_entry_does_not_hide_other_entries",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Malformed_entry_does_not_hide_other_entries",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.External_path_kind_exposes_hd_environment_setting",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.External_path_kind_exposes_hd_environment_setting",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.External_path_kind_exposes_hd_environment_setting",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Schema2_multi_atlas_resolves_each_mesh_and_shares_material_across_model_kinds",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Schema2_multi_atlas_resolves_each_mesh_and_shares_material_across_model_kinds",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Schema2_multi_atlas_resolves_each_mesh_and_shares_material_across_model_kinds",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Schema2_hash_guard_and_missing_maps_only_disable_the_affected_atlas",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Schema2_hash_guard_and_missing_maps_only_disable_the_affected_atlas",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Schema2_hash_guard_and_missing_maps_only_disable_the_affected_atlas",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Schema3_resolves_dds_atlases_and_keeps_hash_and_complete_map_guards",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Schema3_resolves_dds_atlases_and_keeps_hash_and_complete_map_guards",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.Core.Tests.HdPackTests.Schema3_resolves_dds_atlases_and_keeps_hash_and_complete_map_guards",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdDdsTests.Budget_counts_small_blocks_and_selected_mip_tails_exactly",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdDdsTests.Budget_counts_small_blocks_and_selected_mip_tails_exactly",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdDdsTests.Budget_counts_small_blocks_and_selected_mip_tails_exactly",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdDdsTests.Dds_rejects_truncation_arrays_bad_mips_and_wrong_colour_space",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdDdsTests.Dds_rejects_truncation_arrays_bad_mips_and_wrong_colour_space",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdDdsTests.Dds_rejects_truncation_arrays_bad_mips_and_wrong_colour_space",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Texture_budget_includes_every_mip_and_rejects_invalid_dimensions",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Texture_budget_includes_every_mip_and_rejects_invalid_dimensions",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Texture_budget_includes_every_mip_and_rejects_invalid_dimensions",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.DesktopGl_shader_bytecode_matches_source",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.DesktopGl_shader_bytecode_matches_source",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.DesktopGl_shader_bytecode_matches_source",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Synthetic_material_renders_through_native_geometry_bloom_and_fsr_on_real_gl",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Synthetic_material_renders_through_native_geometry_bloom_and_fsr_on_real_gl",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdPbrTests.Synthetic_material_renders_through_native_geometry_bloom_and_fsr_on_real_gl",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Compressed_maps_upload_on_real_gl_with_mip_and_bc3_fallback",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Compressed_maps_upload_on_real_gl_with_mip_and_bc3_fallback",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Compressed_maps_upload_on_real_gl_with_mip_and_bc3_fallback",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Ship_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Ship_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Ship_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Station_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Station_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Station_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Missile_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Missile_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Missile_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Probe_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Probe_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Probe_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Projectile_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Projectile_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Projectile_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Asteroid_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Asteroid_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Asteroid_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Aleph_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Aleph_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Aleph_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Aleph_png_import_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Aleph_png_import_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Aleph_png_import_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Treasure_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Treasure_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "Allegiance.ClientCore.MonoGame.Tests.HdAtlasRendererTests.Treasure_uses_atlas_materials_and_preserves_native_fallback",
+    "attempt": 3,
+    "exitCode": 0
+  }
+]

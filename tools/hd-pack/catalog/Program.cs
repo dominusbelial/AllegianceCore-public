@@ -21,6 +21,11 @@ json.WriteStartArray("models");
 foreach (var row in rows)
 {
     json.WriteStartObject(); json.WriteString("kind", row.Item1); json.WriteString("model", row.Item2);
+    // Authoring policy: hull length >= 75 or native capital threat/carrier.
+    // Native fields/rules: src/Igc/igc.h:1780,5383-5394,736.
+    json.WriteBoolean("capital", row.Item1 == "ship" && core.HullTypes.Values.Any(h =>
+        h.ModelName == row.Item2 && (h.Length >= 75 ||
+            (h.HabmCapabilities & 0x80) == 0 && (h.HabmCapabilities & 0x609) != 0)));
     json.WriteStartArray("stems");
     var stems = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     if (!string.IsNullOrWhiteSpace(row.Item3)) stems.Add(row.Item3);

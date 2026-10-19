@@ -18,7 +18,7 @@ public sealed class P745FinaleSiegeLiveTests(ITestOutputHelper output)
     {
         string run = Environment.GetEnvironmentVariable("ALLEGIANCE_P745_RUN") ?? "test";
         Require.Artwork();
-        string path = $"/tmp/p745-siege-{run}.log";
+        string path = Path.Combine(Path.GetTempPath(), $"p745-siege-{run}-{Guid.NewGuid():N}.log");
         using var log = TextWriter.Synchronized(new StreamWriter(path) { AutoFlush = true });
         var saved = Console.Out;
         Console.SetOut(log);
@@ -125,15 +125,25 @@ public sealed class P745FinaleSiegeLiveTests(ITestOutputHelper output)
                 Assert.Equal(MissionStage.Over, mission.Stage);
                 // The server rebuilds the mission after GAME_OVER; that can
                 // retire a slow observer's world before it samples the wire text.
-                // Native station elimination is authoritative and cannot be
-                // satisfied by the research deadline (which leaves sides active).
+                // Station destruction remains mandatory. A timed match may end
+                // with active sides: native ranks kills/deaths at the deadline
+                // (FedSrv/fsmission.cpp:2468-2498), independently of elimination.
                 var eliminated = mission.Sides.Where(side => !side.Active).ToArray();
-                Assert.NotEmpty(eliminated);
                 foreach (var side in eliminated)
                     Assert.DoesNotContain(mission.Sectors.SelectMany(sector => sector.StationRuntimes),
                         station => station.SideId == side.Id && station.Type.HasCapability(Allegiance.Core.DataStationTypeIGC.SabmRestart));
-                if (!string.IsNullOrWhiteSpace(reason))
-                    Assert.DoesNotContain("deadline", reason, StringComparison.OrdinalIgnoreCase);
+                if (eliminated.Length == 0)
+                {
+                    var ranked = mission.Sides.OrderByDescending(side => side.Kills).ThenBy(side => side.Deaths).ToArray();
+                    var best = ranked[0];
+                    Assert.True(best.Kills > 0, "The live deadline must see earned ship kills");
+                    bool tied = ranked.Skip(1).Any(side => side.Kills == best.Kills && side.Deaths == best.Deaths);
+                    Assert.Equal(tied ? "The clock has stopped. The game is a draw."
+                        : $"The clock has stopped. The winner: {best.Name} by kills", reason);
+                    output.WriteLine($"P746 native deadline: {mission.CountdownValues("kills")}");
+                }
+                else if (!string.IsNullOrWhiteSpace(reason))
+                    Assert.DoesNotContain("The clock has stopped", reason, StringComparison.OrdinalIgnoreCase);
                 Assert.Equal(0, server.SimPassStageFailures);
             }
             finally { stop.Cancel(); Assert.True(ticker.Join(5000)); }

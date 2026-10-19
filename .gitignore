@@ -34,6 +34,10 @@ dist/
 # TT-1 runner outputs (TRX, discovery manifests and per-tier summaries).
 TestResults/
 
+# HD4 sandbox-only scratch and external evidence substitute; never ship textures.
+/.hd4-scratch/
+/.hd4-evidence/
+
 # BS-1 collector dependencies/build/local D1 state
 /tools/bench-collector/node_modules/
 /tools/bench-collector/generated/

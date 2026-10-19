@@ -12,6 +12,11 @@ using Microsoft.Xna.Framework.Graphics;
 string root = Path.GetFullPath(args[0]);
 bool test = args.Contains("--test");
 string? Option(string name) { int i = Array.IndexOf(args, name); return i >= 0 ? args[i + 1] : null; }
+if (Option("--compressed-test") is { } compressedPack)
+{
+    using var proof = new CompressedProof(root, compressedPack, Option("--art") ?? ExternalPaths.Require(ExternalResourceKind.Artwork));
+    proof.Run(); return;
+}
 if (Option("--atlas-test") is { } kind)
 {
     using var atlas = new AtlasProof(root, kind, Option("--art") ?? ExternalPaths.Require(ExternalResourceKind.Artwork));

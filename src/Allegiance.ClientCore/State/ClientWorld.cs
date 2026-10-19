@@ -2454,8 +2454,8 @@ public sealed partial class ClientWorld
         ent.LastUpdateTick++;
         ent.LatestArrivalTime = NowSeconds();
 
-        // The pod is alive and present — it stays in flight (server never
-        // sends KILL_SHIP / SHIP_DELETE for an eject).
+        // The pod is alive and present — it stays in flight. The server
+        // sends KILL_SHIP with bDeathCredit=false, then EJECT.
         ent.IsGone = false;
         ent.IsDead = false;
 
@@ -3986,7 +3986,7 @@ public sealed partial class ClientWorld
         _events.Record(m);
         // P578 — native sends KILL_SHIP(105) on BOTH a true death AND an
         // in-space eject, distinguishing them via bDeathCredit (= bKilled,
-        // FedSrv.CPP:11794-11795). An eject's ship survives as a drifting
+        // FedSrv.CPP:11797-11798). An eject's ship survives as a drifting
         // Lifepod (handled by the EJECT(77) Apply), so the death flags must be
         // set ONLY for a true death — otherwise the ejecting pod would be marked
         // dead/gone and vanish. (Previously the port suppressed KILL_SHIP on
@@ -4037,7 +4037,7 @@ public sealed partial class ClientWorld
     /// case, appmsg.cpp:2798), resolved from the world's ship table by
     /// <see cref="KillShip.IdCredit"/>.</summary>
     private string? KillerNameFor(KillShip m)
-        => m.IdCredit == -1 ? null : DisplayNameFor(m.IdCredit);
+        => m.TypeCredit != (short)IgcObjectType.Ship || m.IdCredit == -1 ? null : DisplayNameFor(m.IdCredit);
 
     /// <summary>P578 — <c>FM_S_PLAYER_RESCUED(16)</c>: a lifepod was picked up
     /// by another ship (appmsg.cpp:311-340). Previously ignored by the client;

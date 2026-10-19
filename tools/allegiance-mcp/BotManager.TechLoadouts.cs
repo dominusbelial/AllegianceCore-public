@@ -10,6 +10,7 @@ internal sealed partial class BotManager
     // Shared by one fleet manager. Natural deaths trigger purchases; tech notifications
     // never trigger a fleet-wide buy. The queue also bounds simultaneous dock bursts.
     private readonly LoadoutPurchasePacer _loadoutPurchasePacer = new();
+    private readonly Dictionary<short, int> _fighterDispenserSlots = new();
     internal sealed class LoadoutPurchasePacer
     {
         private readonly object _sync = new();
@@ -59,17 +60,31 @@ internal sealed partial class BotManager
     }
 
     internal static TechLoadoutSelector.Selection? PickTechLoadout(LoadoutShop shop, Showcase.HullRole role,
-        DataStationTypeIGC? target = null, bool allowRoleFallback = true)
+        DataStationTypeIGC? target = null, bool allowRoleFallback = true, bool support = false, bool defensiveMines = false)
     {
         var core = Catalog.RepresentativeCore();
-        var selected = TechLoadoutSelector.Select(core, shop.Civ, role, shop.Techs, shop.DockType, target ?? shop.Target, shop.Budget);
+        if (defensiveMines && allowRoleFallback && !support)
+        {
+            var layer = TechLoadoutSelector.Select(core, shop.Civ, Showcase.HullRole.Scout, shop.Techs,
+                shop.DockType, budget: shop.Budget, preferMines: true);
+            if (layer is not null && layer.Parts.Any(p => Showcase.IsMineLauncher(core, p.PartId)))
+                return layer with { Reason = $"requested role={role}; defensive mine duty (one in three fighter slots); {layer.Reason}" };
+        }
+        var selected = support ? TechLoadoutSelector.SelectSupport(core, shop.Civ, shop.Techs, shop.DockType, shop.Budget)
+            : TechLoadoutSelector.Select(core, shop.Civ, role, shop.Techs, shop.DockType, target ?? shop.Target, shop.Budget);
+        if (support && selected is null) selected = TechLoadoutSelector.Select(core, shop.Civ, role, shop.Techs, shop.DockType, budget: shop.Budget);
         if (selected is not null || !allowRoleFallback) return selected;
         // Some roles do not exist until a branch station completes. Keep the
         // requested role on the bot and fly a legal small combat ship meanwhile.
         foreach (var fallback in new[] { Showcase.HullRole.Fighter, Showcase.HullRole.Scout, Showcase.HullRole.Interceptor })
         {
             if (fallback == role) continue;
-            selected = TechLoadoutSelector.Select(core, shop.Civ, fallback, shop.Techs, shop.DockType, budget: shop.Budget);
+            // Dedicated scouts retain scanner probes. Combat roles temporarily
+            // flying scout hulls carry legal defensive mines when available.
+            // The starting interceptor has no dispenser socket; selecting mines
+            // only for non-scout hulls left the whole starting fleet without any.
+            selected = TechLoadoutSelector.Select(core, shop.Civ, fallback, shop.Techs, shop.DockType,
+                budget: shop.Budget, preferMines: role != Showcase.HullRole.Scout);
             if (selected is not null) return selected with { Reason = $"requested role={role} unavailable/over budget; temporary {fallback}; {selected.Reason}" };
         }
         return null;
@@ -108,7 +123,8 @@ internal sealed partial class BotManager
                 if (bot.FinaleBomberActive && bot.Finale is { } run && run.Plans.TryGetValue(bot.Side, out var plan))
                     target = Catalog.RepresentativeCore().StationTypes[plan.TargetTypeId];
                 if (!Enum.TryParse<Showcase.HullRole>(bot.Role, true, out var role)) role = Showcase.HullRole.Fighter;
-                selected = PickTechLoadout(shop, role, target, allowRoleFallback: !bot.FinaleBomberActive);
+                selected = PickTechLoadout(shop, role, target, allowRoleFallback: !bot.FinaleBomberActive, support: IsSupport(bot),
+                    defensiveMines: bot.DefensiveMineDuty);
                 if (selected is null && bot.FinaleBomberActive && target is { } station
                     && cs.World.ResearchBriefing?.TechMode == "research")
                 {

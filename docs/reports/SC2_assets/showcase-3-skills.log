@@ -1,0 +1,8 @@
+[skills] match 1 side 0 snapshot
+[skills] match 1 side 0: flight 54 warp 187 autopilot 9 targeting 1367 guns 37279 missiles 181 chaff 0 booster 1509 cloak 0 probes 0 scouting 648 mines 8 ship-damage 16064 station-damage 7 station-kills 0 nanite-ship 245 nanite-station 59 order-goto 0 order-attack 0 order-build 64 order-repair 0 drone-build 3 drone-mine 138 eject 107 pod-rescue 7 dock 58 relaunch 143 purchase 137 research 30 chat 75 voice 99 ship-kills 122
+[skills] match 1 side 0 coverage 24/32
+[skills] match 1 side 0 damage-types: ship-0 9 ship-2 11460 ship-4 91 ship-5 4503 ship-8 1 ship-10 245 station-8 7 station-10 59
+[skills] match 1 side 1 snapshot
+[skills] match 1 side 1: flight 55 warp 264 autopilot 10 targeting 902 guns 38688 missiles 301 chaff 0 booster 1126 cloak 0 probes 0 scouting 809 mines 0 ship-damage 18292 station-damage 6 station-kills 0 nanite-ship 135 nanite-station 20 order-goto 0 order-attack 0 order-build 83 order-repair 0 drone-build 4 drone-mine 46 eject 95 pod-rescue 25 dock 45 relaunch 139 purchase 133 research 18 chat 55 voice 106 ship-kills 130
+[skills] match 1 side 1 coverage 23/32
+[skills] match 1 side 1 damage-types: ship-0 9 ship-2 18134 ship-4 149 ship-10 135 station-8 6 station-10 20

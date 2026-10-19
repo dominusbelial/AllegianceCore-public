@@ -3,7 +3,7 @@ using System.Text.Json;
 
 namespace Allegiance.Core;
 
-/// <summary>Optional atlas (schema 2) or legacy model (schema 1) catalogue.
+/// <summary>Optional atlas (schemas 2/3) or legacy model (schema 1) catalogue.
 /// Metadata only at startup; native hashes and maps are checked on demand.</summary>
 public sealed class HdPack
 {
@@ -14,12 +14,12 @@ public sealed class HdPack
     private readonly Action<string> _log;
     private int _schema;
     private sealed record Entry(string Model, string Texture, string TextureHash, string ModelHash, bool Accepted);
-    public sealed record Material(string Model, string Directory)
+    public sealed record Material(string Model, string Directory, bool Compressed = false)
     {
         // Directory identifies the material in both schemas. Atlas materials are
         // shared across every model using that texture, including different kinds.
         public string Key => Directory;
-        public string MapPath(string name) => Path.Combine(Directory, name + ".png");
+        public string MapPath(string name) => Path.Combine(Directory, name + (Compressed ? ".dds" : ".png"));
     }
 
     public HdPack(string? root = null, Action<string>? log = null)
@@ -36,14 +36,14 @@ public sealed class HdPack
             using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(_root, "manifest.json")));
             var manifest = doc.RootElement;
             _schema = manifest.GetProperty("schema").GetInt32();
-            if (_schema is not (1 or 2)) throw new InvalidDataException("unsupported manifest schema");
-            foreach (var model in manifest.GetProperty(_schema == 2 ? "textures" : "models").EnumerateObject())
+            if (_schema is not (1 or 2 or 3)) throw new InvalidDataException("unsupported manifest schema");
+            foreach (var model in manifest.GetProperty(_schema >= 2 ? "textures" : "models").EnumerateObject())
             {
                 if (!SafeStem(model.Name)) continue;
                 try
                 {
                     var native = model.Value.GetProperty("native");
-                    string texture = _schema == 2 ? model.Name : native.GetProperty("Texture").GetString() ?? "";
+                    string texture = _schema >= 2 ? model.Name : native.GetProperty("Texture").GetString() ?? "";
                     if (!SafeStem(texture)) continue;
                     bool accepted = true;
                     // HD-1's job ledger records review rejection. Never activate a
@@ -54,7 +54,7 @@ public sealed class HdPack
                             job.TryGetProperty("metrics", out var metrics) && metrics.TryGetProperty("accepted", out var review) &&
                             review.ValueKind == JsonValueKind.True;
                     _entries[model.Name] = new(model.Name, texture, native.GetProperty("TextureSha256").GetString() ?? "",
-                        _schema == 2 ? "" : native.GetProperty("ModelSha256").GetString() ?? "", accepted);
+                        _schema >= 2 ? "" : native.GetProperty("ModelSha256").GetString() ?? "", accepted);
                 }
                 catch (Exception e) when (e is KeyNotFoundException or InvalidOperationException) { }
             }
@@ -72,8 +72,8 @@ public sealed class HdPack
     /// entry returns null. Reads use the platform's native asset source.</summary>
     public Material? Resolve(string model, string? texture, Func<string, Stream> openNative)
     {
-        if (texture is null || !_entries.TryGetValue(_schema == 2 ? texture : model, out var entry)) return null;
-        var key = (_schema == 2 ? "" : model.ToLowerInvariant(), texture.ToLowerInvariant());
+        if (texture is null || !_entries.TryGetValue(_schema >= 2 ? texture : model, out var entry)) return null;
+        var key = (_schema >= 2 ? "" : model.ToLowerInvariant(), texture.ToLowerInvariant());
         if (_resolved.TryGetValue(key, out var cached)) return cached;
         Material? material = null;
         try
@@ -83,10 +83,10 @@ public sealed class HdPack
                 throw new InvalidDataException("native texture override differs");
             Verify(texture, entry.TextureHash);
             if (_schema == 1) Verify(model, entry.ModelHash);
-            string directory = Path.Combine(_root, _schema == 2 ? "textures" : "models", entry.Model);
-            if (MapNames.Any(name => !File.Exists(Path.Combine(directory, name + ".png"))))
+            string directory = Path.Combine(_root, _schema >= 2 ? "textures" : "models", entry.Model);
+            if (MapNames.Any(name => !File.Exists(Path.Combine(directory, name + (_schema == 3 ? ".dds" : ".png")))))
                 throw new InvalidDataException("incomplete map set");
-            material = new(entry.Model, directory);
+            material = new(entry.Model, directory, _schema == 3);
         }
         catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException)
         {

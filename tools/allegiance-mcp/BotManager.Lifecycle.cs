@@ -54,6 +54,9 @@ internal sealed partial class BotManager
                 lock (finale.Sync) finale.StrikeStartedAt ??= now;
         }
         bot.IsPod = bot.PodDocked = bot.PodRestarted = false;
+        bot.SupportRefitting = false;
+        bot.SupportTraceTarget = null;
+        bot.SupportCheckAt = double.NegativeInfinity;
         bot.FinaleRefitting = bot.FinaleRefitLaunchPending = false;
         bot.FinaleRefitCheckAt = double.NegativeInfinity;
         bot.PodStationId = bot.PodDockStationId = bot.PodStationSector = -1;
@@ -91,7 +94,9 @@ internal sealed partial class BotManager
         bot.RecentStationAttackers.Clear();
         EndDefense(bot);
         bot.LastAttackersPruneAt = bot.LastTargetAt = bot.LastFireAt = bot.LastMineAt = double.NegativeInfinity;
-        bot.LastBoostAt = bot.LastCloakAt = double.NegativeInfinity;
+        bot.LastChaffAt = bot.LastProbeAt = double.NegativeInfinity;
+        bot.LastBoostAt = double.NegativeInfinity;
+        bot.CloakHeld = false;
         bot.AttackAfterburnerHeld = false;
         bot.HasPos = false;
         bot.LastMoveAt = now;

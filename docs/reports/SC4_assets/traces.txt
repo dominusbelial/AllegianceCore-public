@@ -1,0 +1,48 @@
+Run 1: qualified-showcase-1.trx
+[sc4] chaff bot=mcp-b024-8780 side=0 sector=1 part=80 tracked=true lock=0.000
+[sc4] chaff bot=mcp-b016-9061 side=0 sector=1 part=80 tracked=true lock=0.000
+[sc4] probe bot=mcp-b094-8880 side=0 sector=1 part=81 contested=true aleph=True lifespan=3600
+[sc4] probe bot=mcp-b090-4122 side=0 sector=1 part=81 contested=true aleph=True lifespan=3600
+[sc4] mine bot=mcp-b004-6476 side=0 sector=0 part=59 defendedAleph=True enemyWithin2500=False lifespan=15
+[sc4] mine bot=mcp-b016-9061 side=0 sector=0 part=59 defendedAleph=True enemyWithin2500=False lifespan=15
+[loadout] mcp-b002-7406 initial: requested role=Fighter; defensive mine duty (one in three fighter slots); role=Scout; techBits=33; hull role score=384000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 114 'Scout'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Magazine@0=150 'SRM Dumbfire 1' x2, Dispenser@0=59 'Prox Mine 1' x1, ChaffLauncher@0=80 'Counter 1' x4
+[loadout] mcp-b083-4266 initial: role=Scout; techBits=33; hull role score=384000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 114 'Scout'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Magazine@0=150 'SRM Dumbfire 1' x2, Dispenser@0=81 'EWS Probe 1' x1, ChaffLauncher@0=80 'Counter 1' x4
+[sc4] chaff bot=mcp-b083-4266 side=1 sector=1 part=80 tracked=true lock=0.000
+[sc4] chaff bot=mcp-b091-2643 side=1 sector=1 part=80 tracked=true lock=0.000
+[sc4] probe bot=mcp-b101-2442 side=1 sector=3 part=81 contested=true aleph=True lifespan=3600
+[sc4] probe bot=mcp-b105-2444 side=1 sector=3 part=81 contested=true aleph=True lifespan=3600
+[sc4] mine bot=mcp-b009-9268 side=1 sector=2 part=59 defendedAleph=True enemyWithin2500=False lifespan=15
+[sc4] mine bot=mcp-b021-7416 side=1 sector=2 part=59 defendedAleph=True enemyWithin2500=False lifespan=15
+
+Run 2: qualified-showcase-2.trx
+[sc4] chaff bot=mcp-b004-9908 side=0 sector=1 part=80 tracked=true lock=0.000
+[sc4] chaff bot=mcp-b102-7542 side=0 sector=1 part=80 tracked=true lock=0.000
+[sc4] probe bot=mcp-b098-5963 side=0 sector=1 part=81 contested=true aleph=True lifespan=3600
+[sc4] probe bot=mcp-b090-2259 side=0 sector=1 part=81 contested=true aleph=True lifespan=3600
+[sc4] mine bot=mcp-b004-9908 side=0 sector=0 part=59 defendedAleph=True enemyWithin2500=False lifespan=15
+[sc4] mine bot=mcp-b012-8850 side=0 sector=0 part=59 defendedAleph=True enemyWithin2500=False lifespan=15
+[loadout] mcp-b002-2274 initial: requested role=Fighter; defensive mine duty (one in three fighter slots); role=Scout; techBits=33; hull role score=384000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 114 'Scout'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Magazine@0=150 'SRM Dumbfire 1' x2, Dispenser@0=59 'Prox Mine 1' x1, ChaffLauncher@0=80 'Counter 1' x4
+[loadout] mcp-b083-4838 initial: role=Scout; techBits=33; hull role score=384000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 114 'Scout'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Magazine@0=150 'SRM Dumbfire 1' x2, Dispenser@0=81 'EWS Probe 1' x1, ChaffLauncher@0=80 'Counter 1' x4
+[sc4] chaff bot=mcp-b095-6992 side=1 sector=1 part=80 tracked=true lock=0.000
+[sc4] chaff bot=mcp-b071-6245 side=1 sector=1 part=80 tracked=true lock=0.000
+[sc4] probe bot=mcp-b085-3410 side=1 sector=3 part=81 contested=true aleph=True lifespan=3600
+[sc4] probe bot=mcp-b103-1141 side=1 sector=1 part=81 contested=true aleph=True lifespan=3600
+[sc4] mine bot=mcp-b002-2274 side=1 sector=2 part=59 defendedAleph=True enemyWithin2500=False lifespan=15
+[sc4] mine bot=mcp-b009-3207 side=1 sector=2 part=59 defendedAleph=True enemyWithin2500=False lifespan=15
+
+Run 3: qualified-showcase-3.trx
+[sc4] chaff bot=mcp-b004-1530 side=0 sector=1 part=80 tracked=true lock=0.000
+[sc4] chaff bot=mcp-b044-9178 side=0 sector=1 part=80 tracked=true lock=0.000
+[sc4] probe bot=mcp-b090-3569 side=0 sector=1 part=81 contested=true aleph=True lifespan=3600
+[sc4] probe bot=mcp-b094-9800 side=0 sector=1 part=81 contested=true aleph=True lifespan=3600
+[sc4] mine bot=mcp-b028-2952 side=0 sector=0 part=59 defendedAleph=True enemyWithin2500=False lifespan=15
+[sc4] mine bot=mcp-b036-5234 side=0 sector=0 part=59 defendedAleph=True enemyWithin2500=False lifespan=15
+[loadout] mcp-b002-3234 initial: requested role=Fighter; defensive mine duty (one in three fighter slots); role=Scout; techBits=33; hull role score=384000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 114 'Scout'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Magazine@0=150 'SRM Dumbfire 1' x2, Dispenser@0=59 'Prox Mine 1' x1, ChaffLauncher@0=80 'Counter 1' x4
+[loadout] mcp-b083-6239 initial: role=Scout; techBits=33; hull role score=384000.00; fixed guns by anti-ship DPS (interceptors favor reach), support by strength/thrust/role; stable ID ties; legal nonobsolete human hull 114 'Scout'; cost=0; Weapon@0=33 'PW Gat Gun 1' x1, Shield@0=21 'Sm Shield 1' x1, Magazine@0=150 'SRM Dumbfire 1' x2, Dispenser@0=81 'EWS Probe 1' x1, ChaffLauncher@0=80 'Counter 1' x4
+[sc4] chaff bot=mcp-b091-8135 side=1 sector=1 part=80 tracked=true lock=0.000
+[sc4] chaff bot=mcp-b063-4319 side=1 sector=1 part=80 tracked=true lock=0.000
+[sc4] probe bot=mcp-b085-1092 side=1 sector=3 part=81 contested=true aleph=True lifespan=3600
+[sc4] probe bot=mcp-b105-4455 side=1 sector=3 part=81 contested=true aleph=True lifespan=3600
+[sc4] mine bot=mcp-b002-3234 side=1 sector=2 part=59 defendedAleph=True enemyWithin2500=False lifespan=15
+[sc4] mine bot=mcp-b009-2243 side=1 sector=2 part=59 defendedAleph=True enemyWithin2500=False lifespan=15
+

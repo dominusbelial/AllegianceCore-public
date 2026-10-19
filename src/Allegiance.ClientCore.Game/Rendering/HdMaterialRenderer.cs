@@ -19,16 +19,20 @@ public sealed class HdMaterialRenderer : IDisposable
     private readonly Dictionary<string, Resident> _resident = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _failed = new(StringComparer.OrdinalIgnoreCase);
     private readonly long _budget;
+    private readonly bool _forceBc3;
     private long _clock;
     private readonly Func<double> _seconds;
     private readonly Dictionary<string, double> _deferredUntil = new(StringComparer.OrdinalIgnoreCase);
     public const double EvictionIdleSeconds = 2;
+    private HdCompressedUpload? _compressed;
+    private bool _compressedAttempted;
     private Effect? _effect;
     private bool _shaderAttempted;
-    private sealed record Resident(Texture2D[] Maps, long Bytes)
+    private sealed record Resident(Texture2D[] Maps, long Bytes, int Quality)
     {
         public long LastUse { get; set; }
         public double LastUseSeconds { get; set; }
+        public double LastDetailSeconds { get; set; }
     }
     public bool Enabled { get; set; } = true;
     public long ResidentBytes { get; private set; }
@@ -36,10 +40,10 @@ public sealed class HdMaterialRenderer : IDisposable
     public long BudgetBytes => _budget;
 
     public HdMaterialRenderer(GraphicsDevice gd, Func<string, Stream> openNative,
-        HdPack? pack = null, long budgetBytes = DefaultBudgetBytes, ShaderAssetCache? shaders = null, Func<double>? seconds = null)
+        HdPack? pack = null, long budgetBytes = DefaultBudgetBytes, ShaderAssetCache? shaders = null, Func<double>? seconds = null, bool forceBc3 = false)
     {
         _gd = gd; _openNative = openNative; _pack = pack ?? new HdPack();
-        _budget = budgetBytes;
+        _budget = budgetBytes; _forceBc3 = forceBc3;
         _seconds = seconds ?? (() => System.Diagnostics.Stopwatch.GetTimestamp() / (double)System.Diagnostics.Stopwatch.Frequency);
         _shaders = shaders ?? ShaderAssetCache.ForDevice(gd);
         _ownsShaders = shaders is null;
@@ -52,13 +56,13 @@ public sealed class HdMaterialRenderer : IDisposable
     {
         if (!Enabled) return null;
         var material = _pack.Resolve("", texture, _openNative);
-        return material is null ? null : MapsFor(material)?[0];
+        return material is null ? null : MapsFor(material, 256, unlit: true)?[0];
     }
 
     /// <summary>Returns false before changing render state when unavailable, so
     /// the caller executes its identical native BasicEffect fallback.</summary>
     public bool TryDraw(string model, string? texture, Func<VertexBuffer> vertices, IndexBuffer indices,
-        int triangles, Matrix world, Matrix view, Matrix projection, float opacity, SectorLighting? lighting, int startIndex = 0)
+        int triangles, Matrix world, Matrix view, Matrix projection, float opacity, SectorLighting? lighting, int startIndex = 0, float modelRadius = 1)
     {
         if (!Enabled) return false;
         var material = _pack.Resolve(model, texture, _openNative);
@@ -69,7 +73,10 @@ public sealed class HdMaterialRenderer : IDisposable
             _effect = _shaders.Load("Content/Shaders/NativePbr.ogl.mgfxo");
         }
         if (_effect is null) return false;
-        var maps = MapsFor(material);
+        var center = Vector3.Transform(Vector3.Zero, world * view);
+        float scale = Math.Max(world.Right.Length(), Math.Max(world.Up.Length(), world.Backward.Length()));
+        float pixels = 2 * modelRadius * scale * Math.Abs(projection.M22) * _gd.Viewport.Height / Math.Max(.001f, 2 * Math.Abs(center.Z));
+        var maps = MapsFor(material, pixels);
         if (maps is null) return false;
         var e = _effect;
         e.Parameters["World"].SetValue(world);
@@ -84,6 +91,7 @@ public sealed class HdMaterialRenderer : IDisposable
         e.Parameters["AltDirection"].SetValue(light.AltDirection);
         e.Parameters["AltColor"].SetValue(light.AltColor);
         e.Parameters["Ambient"].SetValue(Vector3.Max(light.Ambient, ShipRenderer.ShipAmbientFloor));
+        e.Parameters["CompressedMaps"].SetValue(material.Compressed ? 1f : 0f);
         e.Parameters["Opacity"].SetValue(Math.Clamp(opacity, 0, 1));
         string[] parameters = ["BaseMap", "NormalMap", "MetalMap", "RoughMap", "EmissionMap"];
         for (int i = 0; i < maps.Length; i++) e.Parameters[parameters[i]].SetValue(maps[i]);
@@ -97,25 +105,53 @@ public sealed class HdMaterialRenderer : IDisposable
         return true;
     }
 
-    private Texture2D[]? MapsFor(HdPack.Material material)
+    private Texture2D[]? MapsFor(HdPack.Material material, float projectedPixels, bool unlit = false)
     {
-        if (_resident.TryGetValue(material.Key, out var hit))
+        // BasicEffect's unlit path consumes encoded sRGB samples directly.
+        // Give it a separately budgeted UNORM color texture; PBR uses sRGB.
+        string key = material.Key + (unlit && material.Compressed ? "|unlit" : "");
+        string[] names = unlit && material.Compressed ? ["basecolor"] : HdPack.MapNames;
+        // Quantized requested resolution, shared by every user of an atlas.
+        int quality = Math.Clamp((int)Math.Ceiling(Math.Log2(Math.Max(64, projectedPixels * 2))), 6, 13);
+        if (_resident.TryGetValue(key, out var hit))
         {
-            hit.LastUse = ++_clock; hit.LastUseSeconds = _seconds(); return hit.Maps;
+            // Promote immediately on approach. Demote only after idle, so a far
+            // instance cannot replace the close instance's atlas every frame.
+            if (quality >= hit.Quality) hit.LastDetailSeconds = _seconds();
+            if (!material.Compressed || quality == hit.Quality || quality < hit.Quality && _seconds() - hit.LastDetailSeconds < EvictionIdleSeconds)
+            { hit.LastUse = ++_clock; hit.LastUseSeconds = _seconds(); return hit.Maps; }
+            foreach (var map in hit.Maps) map.Dispose();
+            ResidentBytes -= hit.Bytes; _resident.Remove(key);
         }
-        if (_failed.Contains(material.Key)) return null;
-        if (_deferredUntil.TryGetValue(material.Key, out double until) && _seconds() < until) return null;
+        if (_failed.Contains(key)) return null;
+        if (_deferredUntil.TryGetValue(key, out double until) && _seconds() < until) return null;
         var maps = new List<Texture2D>();
         long started = System.Diagnostics.Stopwatch.GetTimestamp();
         try
         {
             // Read only PNG headers before decoding. Include every mip in the
             // budget; do not temporarily allocate the whole pack's textures.
-            var sizes = HdPack.MapNames.Select(name => PngBytes(material.MapPath(name))).ToArray();
+            if (material.Compressed && !_compressedAttempted)
+            { _compressedAttempted = true; _compressed = HdCompressedUpload.TryCreate(); }
+            if (material.Compressed && _compressed is null) throw new InvalidDataException("compressed textures unsupported");
+            string MapPath(string name)
+            {
+                string fallback = Path.Combine(material.Directory, name + ".fallback.dds");
+                return material.Compressed && (name is "basecolor" or "emission") && (_forceBc3 || !_compressed!.Bptc) && File.Exists(fallback)
+                    ? fallback : material.MapPath(name);
+            }
+            var headers = material.Compressed ? names.Select(name => HdDds.Read(MapPath(name), name)).ToArray() : [];
+            if (material.Compressed && !_compressed!.Bptc && headers.Any(h => h.Bc == 7))
+                throw new InvalidDataException("BC7 unavailable; install the BC3 release zip");
+            // Map resolution ratios are fixed by the builder. Select each map's
+            // mip independently against the same screen footprint.
+            var first = headers.Select(h => HdDds.SelectFirstMip(h.Width, h.Height, MathF.Pow(2, quality) / 2)).ToArray();
+            var sizes = material.Compressed ? headers.Select((h, i) => h.BytesFrom(first[i])).ToArray() :
+                names.Select(name => PngBytes(MapPath(name))).ToArray();
             long bytes = sizes.Sum();
             // Reserve one extra map while PNG decoding uses a temporary GPU
             // surface. The mip-inclusive maximum conservatively bounds staging.
-            long peakBytes = bytes + sizes.Max();
+            long peakBytes = bytes + (material.Compressed ? headers.Select((h, i) => h.Bc == 4 ? sizes[i] : 0).DefaultIfEmpty().Max() : sizes.Max());
             if (peakBytes > _budget) throw new InvalidDataException("material exceeds texture memory budget");
             while (ResidentBytes + peakBytes > _budget && _resident.Count > 0)
             {
@@ -126,30 +162,36 @@ public sealed class HdMaterialRenderer : IDisposable
                 // for excess models until an idle resident becomes evictable.
                 if (_seconds() - oldest.Value.LastUseSeconds < EvictionIdleSeconds)
                 {
-                    _deferredUntil[material.Key] = _seconds() + .5;
+                    _deferredUntil[key] = _seconds() + .5;
                     return null;
                 }
                 foreach (var map in oldest.Value.Maps) map.Dispose();
                 ResidentBytes -= oldest.Value.Bytes; _resident.Remove(oldest.Key);
             }
-            foreach (string name in HdPack.MapNames)
+            foreach (string name in names)
             {
+                if (material.Compressed)
+                {
+                    int i = maps.Count;
+                    maps.Add(_compressed!.Load(_gd, MapPath(name), headers[i], first[i], colorSrgb: !unlit));
+                    continue;
+                }
                 using var stream = File.OpenRead(material.MapPath(name));
                 using var decoded = Texture2D.FromStream(_gd, stream);
                 var pixels = new Color[decoded.Width * decoded.Height]; decoded.GetData(pixels);
                 maps.Add(CreateMipmapped(_gd, pixels, decoded.Width, decoded.Height, name));
             }
-            var resident = new Resident(maps.ToArray(), bytes) { LastUse = ++_clock, LastUseSeconds = _seconds() };
-            _resident.Add(material.Key, resident); ResidentBytes += bytes;
-            _deferredUntil.Remove(material.Key);
-            Console.WriteLine($"[hd] '{material.Key}' resident: {bytes / 1048576.0:F2} MiB; total {ResidentBytes / 1048576.0:F2}/{_budget / 1048576.0:F0} MiB (all mips); first upload {System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds:F1} ms");
+            var resident = new Resident(maps.ToArray(), bytes, quality) { LastUse = ++_clock, LastUseSeconds = _seconds(), LastDetailSeconds = _seconds() };
+            _resident.Add(key, resident); ResidentBytes += bytes;
+            _deferredUntil.Remove(key);
+            Console.WriteLine($"[hd] '{key}' resident: {bytes / 1048576.0:F2} MiB; total {ResidentBytes / 1048576.0:F2}/{_budget / 1048576.0:F0} MiB (all mips); first upload {System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds:F1} ms");
             return resident.Maps;
         }
-        catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
+        catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException or InvalidOperationException or NotSupportedException or OverflowException)
         {
             foreach (var map in maps) map.Dispose();
-            _failed.Add(material.Key);
-            Console.WriteLine($"[hd] '{material.Key}' maps unavailable ({e.Message}); using native material");
+            _failed.Add(key);
+            Console.WriteLine($"[hd] '{key}' maps unavailable ({e.Message}); using native material");
             return null;
         }
     }

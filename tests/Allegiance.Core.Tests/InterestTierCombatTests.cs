@@ -130,7 +130,7 @@ public sealed class InterestTierCombatTests
             }
             finally { foreach (var bot in bots) bot.Dispose(); }
         }
-        File.WriteAllText("/tmp/p677-combat.json", JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
+        File.WriteAllText(Path.Combine(Path.GetTempPath(), "p677-combat.json"), JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
         Assert.True(completion[1] <= completion[0] + .5, $"combat completion degraded: {completion[0]} -> {completion[1]}");
     }
 }

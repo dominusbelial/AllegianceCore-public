@@ -1,0 +1,85 @@
+{
+  "interceptor": {
+    "off": {
+      "samples": 474,
+      "window": "5.0..12.5 seconds since telemetry start; includes capture stalls",
+      "fps": 66.4995153181423,
+      "medianFrameMs": 14.562650000000001,
+      "medianSceneGpuMs": 5.2997,
+      "actualHull": "481",
+      "residentUploadMiB": []
+    },
+    "on": {
+      "samples": 240,
+      "window": "5.0..12.5 seconds since telemetry start; includes capture stalls",
+      "fps": 33.47742808821776,
+      "medianFrameMs": 28.58285,
+      "medianSceneGpuMs": 16.6316,
+      "actualHull": "481",
+      "residentUploadMiB": [
+        "9.33",
+        "0.02",
+        "9.33"
+      ]
+    },
+    "fpsChangePercent": -49.65763595710825
+  },
+  "fighter": {
+    "off": {
+      "samples": 468,
+      "window": "5.0..12.5 seconds since telemetry start; includes capture stalls",
+      "fps": 65.65483494058847,
+      "medianFrameMs": 14.88995,
+      "medianSceneGpuMs": 4.7312,
+      "actualHull": "488",
+      "residentUploadMiB": []
+    },
+    "on": {
+      "samples": 286,
+      "window": "5.0..12.5 seconds since telemetry start; includes capture stalls",
+      "fps": 40.00946685538825,
+      "medianFrameMs": 23.632150000000003,
+      "medianSceneGpuMs": 14.9083,
+      "actualHull": "488",
+      "residentUploadMiB": [
+        "9.33",
+        "9.33"
+      ]
+    },
+    "fpsChangePercent": -39.06089796495095
+  },
+  "bomber": {
+    "off": {
+      "samples": 517,
+      "window": "5.0..12.5 seconds since telemetry start; includes capture stalls",
+      "fps": 72.74729044836941,
+      "medianFrameMs": 13.5588,
+      "medianSceneGpuMs": 4.20775,
+      "actualHull": "489",
+      "residentUploadMiB": []
+    },
+    "on": {
+      "samples": 295,
+      "window": "5.0..12.5 seconds since telemetry start; includes capture stalls",
+      "fps": 41.29257980599402,
+      "medianFrameMs": 22.6706,
+      "medianSceneGpuMs": 15.107099999999999,
+      "actualHull": "489",
+      "residentUploadMiB": [
+        "9.33",
+        "0.08",
+        "0.08",
+        "0.08",
+        "0.08",
+        "0.33",
+        "9.33",
+        "0.02",
+        "0.02",
+        "0.02",
+        "0.02",
+        "0.08"
+      ]
+    },
+    "fpsChangePercent": -43.238326057930074
+  }
+}

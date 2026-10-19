@@ -1,0 +1,29 @@
+[
+  {
+    "run": 1,
+    "duration": "00:02:04.8792956",
+    "outcome": "Passed",
+    "cloakCounts": {
+      "0": 78,
+      "1": 76
+    }
+  },
+  {
+    "run": 2,
+    "duration": "00:02:36.1559237",
+    "outcome": "Passed",
+    "cloakCounts": {
+      "0": 118,
+      "1": 132
+    }
+  },
+  {
+    "run": 3,
+    "duration": "00:02:17.5385599",
+    "outcome": "Passed",
+    "cloakCounts": {
+      "0": 87,
+      "1": 85
+    }
+  }
+]

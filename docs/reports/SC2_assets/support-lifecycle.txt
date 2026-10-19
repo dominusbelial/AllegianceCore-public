@@ -1,0 +1,7 @@
+Qualification match 1: mcp-b044-6396
+[loadout] mcp-b044-6396 initial: role=Support; negative-power lead gun; cheapest legal nonobsolete human hull; techBits=38; stable ID ties; hull=410 'Scout'; cost=0; Weapon@0=91 'ER Nanite 1' x1, Shield@0=21 'Sm Shield 1' x1
+[support] mcp-b044-6396 ship=8142 side=0 repair=ship target=8192 sector=0
+[p539] bot mcp-b044-6396 (ship 8142) is now a LIFEPOD (hull 444) — stopping combat, flying home to dock
+[loadout] mcp-b044-6396: dockType=115; role=Support; negative-power lead gun; cheapest legal nonobsolete human hull; techBits=74; stable ID ties; hull=410 'Scout'; cost=0; Weapon@0=190 'ER Nanite 2' x1, Shield@0=40 'Sm Shield 2' x1, Afterburner@0=188 'Retro Booster' x1
+[p539] bot mcp-b044-6396 (ship 8142) relaunched into hull 410 — re-routing to target sector 1 to rejoin the fight (P637: reinforcement skips staging, routes straight)
+[support] mcp-b044-6396 ship=8142 side=0 repair=station target=0 sector=0

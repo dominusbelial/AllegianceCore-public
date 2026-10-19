@@ -714,9 +714,15 @@ internal static class McpTools
             if (bRoutes.Count > 0) { bomberPlans[side] = bRoutes; bomberCounts[side] = new int[bRoutes.Count]; }
         }
 
+        var supportOrdinals = new Dictionary<short, int>();
+        var supportConfig = BotManager.SupportSettings.Read(Environment.GetEnvironmentVariable);
         for (int si = 0; si < slots.Count; si++)
         {
             var slot = slots[si];
+            int ordinal = supportOrdinals.GetValueOrDefault(slot.Side);
+            supportOrdinals[slot.Side] = ordinal + 1;
+            string pilotRole = BotManager.SupportSlot(ordinal, slots.Count(s => s.Side == slot.Side), supportConfig.Share)
+                ? "support" : slot.Role.ToString();
             var spot = arena && arenaSpots.Count > si ? arenaSpots[si] : default;
             // P637 — per-role target: a BOMBER's own objective is the ENEMY
             // HOME sector (its garrison), not the fighter rendezvous; every
@@ -748,7 +754,7 @@ internal static class McpTools
                 slot.LauncherId, slot.LauncherName, useStaging: staging, arena: arena,
                 arenaPosition: arena ? spot.Pos : null, arenaFacing: arena ? spot.Fwd : null,
                 wingmanBehaviour: slot.Wingman, routePath: routePath, routeIndex: routeIndex,
-                role: slot.Role.ToString(), reportFailure: false)));
+                role: pilotRole, reportFailure: false)));
         }
         // Native lobby rank balance applies during a started showcase. Take
         // turns between fleets so a side's whole batch does not fill first.

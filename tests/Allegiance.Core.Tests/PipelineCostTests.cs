@@ -196,7 +196,7 @@ public sealed class PipelineCostTests
         for (uint tick = 121; tick < 121 + ticks; tick++) Tick(tick);
         producer = (GC.GetAllocatedBytesForCurrentThread() - producer) / ticks;
         publisher = (server.TestPublisher.PublishAllocatedBytes - publisher) / ticks;
-        File.WriteAllText("/tmp/p679-allocation.json", JsonSerializer.Serialize(new { producer, publisher,
+        File.WriteAllText(Path.Combine(Path.GetTempPath(), "p679-allocation.json"), JsonSerializer.Serialize(new { producer, publisher,
             stages = stages.ToDictionary(p => p.Key, p => p.Value / ticks) }, new JsonSerializerOptions { WriteIndented = true }));
         Assert.InRange(producer, 0, 104_000);
         Assert.InRange(publisher, 0, 16_000);

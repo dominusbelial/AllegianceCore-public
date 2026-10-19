@@ -70,7 +70,7 @@ public sealed class HdPackTests : IDisposable
     {
         Manifest(accepted: false);
         Assert.Null(new HdPack(_root, _logs.Add).Resolve("hull", "hullbmp", _ => throw new Exception("must not read rejected maps")));
-        Manifest(schema: 3); Assert.Null(new HdPack(_root, _logs.Add).Resolve("hull", "hullbmp", Open));
+        Manifest(schema: 4); Assert.Null(new HdPack(_root, _logs.Add).Resolve("hull", "hullbmp", Open));
         Manifest();
         string path = Path.Combine(_root, "manifest.json");
         File.WriteAllText(path, File.ReadAllText(path).Replace("\"schema\":1", "\"schema\":100000000000000000000"));
@@ -135,6 +135,24 @@ public sealed class HdPackTests : IDisposable
         Assert.Null(pack.Resolve("ship", "atlas_a", _ => new MemoryStream([99])));
         Assert.Null(pack.Resolve("station", "atlas_a", _ => throw new Exception("negative result must cache")));
         Assert.Single(_logs, l => l.Contains("SHA256 mismatch"));
+    }
+    [Fact]
+    public void Schema3_resolves_dds_atlases_and_keeps_hash_and_complete_map_guards()
+    {
+        AtlasManifest();
+        string path = Path.Combine(_root, "manifest.json");
+        File.WriteAllText(path, File.ReadAllText(path).Replace("\"schema\":2", "\"schema\":3"));
+        foreach (string stem in new[] { "atlas_a", "atlas_b" })
+            foreach (string name in HdPack.MapNames)
+                File.Move(Path.Combine(_root, "textures", stem, name + ".png"), Path.Combine(_root, "textures", stem, name + ".dds"));
+        var pack = new HdPack(_root, _logs.Add);
+        var material = pack.Resolve("ship", "atlas_a", _ => new MemoryStream(NativeTexture));
+        Assert.NotNull(material); Assert.True(material.Compressed);
+        Assert.EndsWith("normal.dds", material.MapPath("normal"));
+        Assert.Same(material, pack.Resolve("station", "ATLAS_A", _ => throw new Exception("cached")));
+        Assert.Null(pack.Resolve("ship", "atlas_b", _ => new MemoryStream([99])));
+        File.Delete(material.MapPath("normal"));
+        Assert.Null(new HdPack(_root, _logs.Add).Resolve("ship", "atlas_a", _ => new MemoryStream(NativeTexture)));
     }
     public void Dispose() => Directory.Delete(_root, true);
 }

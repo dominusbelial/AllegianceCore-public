@@ -1,0 +1,867 @@
+{
+  "base": "bb0ba46e",
+  "build": {
+    "solution": "AllegianceCore.slnx",
+    "warnings": 0,
+    "errors": 0
+  },
+  "aotRequired": false,
+  "coreOrServerSourceChanged": false,
+  "focused": [
+    {
+      "invocation": "final-One_legally_purchased_support_pilot_restores_a_friendly_ship_then_own_station-1",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportLiveTests.One_legally_purchased_support_pilot_restores_a_friendly_ship_then_own_station",
+          "outcome": "Passed",
+          "duration": "00:00:14.2537191",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-One_legally_purchased_support_pilot_restores_a_friendly_ship_then_own_station-2",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportLiveTests.One_legally_purchased_support_pilot_restores_a_friendly_ship_then_own_station",
+          "outcome": "Passed",
+          "duration": "00:00:12.3718446",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-One_legally_purchased_support_pilot_restores_a_friendly_ship_then_own_station-3",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportLiveTests.One_legally_purchased_support_pilot_restores_a_friendly_ship_then_own_station",
+          "outcome": "Passed",
+          "duration": "00:00:12.2551664",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-SC2_Equipped_support_engages_friendlies_and_retains_role_through_finale_and_life_reset-1",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC2_Equipped_support_engages_friendlies_and_retains_role_through_finale_and_life_reset",
+          "outcome": "Passed",
+          "duration": "00:00:00.3656134",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-SC2_Equipped_support_engages_friendlies_and_retains_role_through_finale_and_life_reset-2",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC2_Equipped_support_engages_friendlies_and_retains_role_through_finale_and_life_reset",
+          "outcome": "Passed",
+          "duration": "00:00:00.3614750",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-SC2_Equipped_support_engages_friendlies_and_retains_role_through_finale_and_life_reset-3",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC2_Equipped_support_engages_friendlies_and_retains_role_through_finale_and_life_reset",
+          "outcome": "Passed",
+          "duration": "00:00:00.3662044",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-SC2_Locked_support_refits_at_a_legal_dock_and_waits_for_the_real_purchase_ack-1",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC2_Locked_support_refits_at_a_legal_dock_and_waits_for_the_real_purchase_ack",
+          "outcome": "Passed",
+          "duration": "00:00:00.1081661",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-SC2_Locked_support_refits_at_a_legal_dock_and_waits_for_the_real_purchase_ack-2",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC2_Locked_support_refits_at_a_legal_dock_and_waits_for_the_real_purchase_ack",
+          "outcome": "Passed",
+          "duration": "00:00:00.1085792",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-SC2_Locked_support_refits_at_a_legal_dock_and_waits_for_the_real_purchase_ack-3",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC2_Locked_support_refits_at_a_legal_dock_and_waits_for_the_real_purchase_ack",
+          "outcome": "Passed",
+          "duration": "00:00:00.1040152",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-SC2_Repair_targets_exclude_enemy_full_dead_pod_docked_and_other_sectors-1",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC2_Repair_targets_exclude_enemy_full_dead_pod_docked_and_other_sectors",
+          "outcome": "Passed",
+          "duration": "00:00:00.0509098",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-SC2_Repair_targets_exclude_enemy_full_dead_pod_docked_and_other_sectors-2",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC2_Repair_targets_exclude_enemy_full_dead_pod_docked_and_other_sectors",
+          "outcome": "Passed",
+          "duration": "00:00:00.0502434",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-SC2_Repair_targets_exclude_enemy_full_dead_pod_docked_and_other_sectors-3",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC2_Repair_targets_exclude_enemy_full_dead_pod_docked_and_other_sectors",
+          "outcome": "Passed",
+          "duration": "00:00:00.0491799",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-Support_selection_obeys_research_dock_budget_and_mounts-1",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:03.0869708",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:04.2979471",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-Support_selection_obeys_research_dock_budget_and_mounts-2",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:04.3837797",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:03.1512887",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-Support_selection_obeys_research_dock_budget_and_mounts-3",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:03.0724007",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:04.3326595",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-Support_share_is_bounded_configurable_and_distributed_per_side-1",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_share_is_bounded_configurable_and_distributed_per_side",
+          "outcome": "Passed",
+          "duration": "00:00:00.0048107",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-Support_share_is_bounded_configurable_and_distributed_per_side-2",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_share_is_bounded_configurable_and_distributed_per_side",
+          "outcome": "Passed",
+          "duration": "00:00:00.0060276",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "final-Support_share_is_bounded_configurable_and_distributed_per_side-3",
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportTests.Support_share_is_bounded_configurable_and_distributed_per_side",
+          "outcome": "Passed",
+          "duration": "00:00:00.0060108",
+          "message": ""
+        }
+      ]
+    }
+  ],
+  "pathIsolation": [
+    {
+      "invocation": "path-LocalConfigWinsOverBundleWithBlankEnvironment-1",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Passed",
+          "duration": "00:00:00.0152302",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "path-LocalConfigWinsOverBundleWithBlankEnvironment-2",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Passed",
+          "duration": "00:00:00.0151662",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "path-LocalConfigWinsOverBundleWithBlankEnvironment-3",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Passed",
+          "duration": "00:00:00.0151527",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "path-MissingDirectoryHasNoDefault-1",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0028346",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002408",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001010",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "path-MissingDirectoryHasNoDefault-2",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001250",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0037527",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003207",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "path-MissingDirectoryHasNoDefault-3",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001291",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003198",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0036483",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "path-NativeSourceNeverGuessesAnInstallSubdirectory-1",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Passed",
+          "duration": "00:00:00.0036179",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "path-NativeSourceNeverGuessesAnInstallSubdirectory-2",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Passed",
+          "duration": "00:00:00.0036582",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "path-NativeSourceNeverGuessesAnInstallSubdirectory-3",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Passed",
+          "duration": "00:00:00.0036066",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "path-UsesExecutableDirectoryOutsideRepository-1",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0036923",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003838",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "path-UsesExecutableDirectoryOutsideRepository-2",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002950",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029875",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "path-UsesExecutableDirectoryOutsideRepository-3",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003904",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0036795",
+          "message": ""
+        }
+      ]
+    },
+    {
+      "invocation": "path-isolation-check",
+      "results": [
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0036883",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002451",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: SkyPack, folder: \"sky\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003906",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.EnvironmentWinsEvenIfMissingAndTrimsWhitespace",
+          "outcome": "Passed",
+          "duration": "00:00:00.0148033",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.BlankAndCommentedKeysFallBackToBundle",
+          "outcome": "Passed",
+          "duration": "00:00:00.0004793",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: SkyPack)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002493",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Passed",
+          "duration": "00:00:00.0003299",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0002761",
+          "message": ""
+        },
+        {
+          "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0001195",
+          "message": ""
+        }
+      ]
+    }
+  ],
+  "preliminaryShowcases": [
+    {
+      "invocation": "showcase-dev",
+      "scale": 1,
+      "researchMultiplier": 16,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportLiveTests.Research_x16_showcase_support_repairs_ships_and_stations_on_both_sides",
+          "outcome": "Passed",
+          "duration": "00:07:55.0339994",
+          "message": ""
+        }
+      ],
+      "skills": "[skills] match 1 side 0 snapshot\n[skills] match 1 side 0: flight 25 warp 127 autopilot 10 targeting 305 guns 15327 missiles 47 chaff 0 booster 97 cloak 0 probes 0 scouting 566 mines 0 ship-damage 6067 station-damage 20 station-kills 2 nanite-ship 178 nanite-station 14 order-goto 0 order-attack 0 order-build 90 order-repair 0 drone-build 5 drone-mine 14 eject 24 pod-rescue 9 dock 28 relaunch 57 purchase 47 research 32 chat 82 voice 96 ship-kills 25\n[skills] match 1 side 0 coverage 23/32\n[skills] match 1 side 0 damage-types: ship-0 1 ship-2 3816 ship-4 14 ship-5 2236 ship-10 178 station-8 20 station-10 14\n[skills] match 1 side 1 snapshot\n[skills] match 1 side 1: flight 28 warp 105 autopilot 13 targeting 294 guns 14754 missiles 73 chaff 0 booster 276 cloak 0 probes 0 scouting 693 mines 0 ship-damage 5855 station-damage 23 station-kills 2 nanite-ship 61 nanite-station 226 order-goto 0 order-attack 0 order-build 109 order-repair 0 drone-build 6 drone-mine 15 eject 23 pod-rescue 2 dock 25 relaunch 47 purchase 40 research 20 chat 61 voice 147 ship-kills 24\n[skills] match 1 side 1 coverage 23/32\n[skills] match 1 side 1 damage-types: ship-0 1 ship-2 5412 ship-4 37 ship-10 61 ship-11 405 station-8 23 station-10 226\n[skills] match 1 side 0 final\n[skills] match 1 side 0: flight 25 warp 127 autopilot 10 targeting 305 guns 15327 missiles 47 chaff 0 booster 97 cloak 0 probes 0 scouting 566 mines 0 ship-damage 6067 station-damage 20 station-kills 2 nanite-ship 178 nanite-station 14 order-goto 0 order-attack 0 order-build 90 order-repair 0 drone-build 5 drone-mine 14 eject 24 pod-rescue 9 dock 28 relaunch 57 purchase 47 research 32 chat 82 voice 96 ship-kills 25\n[skills] match 1 side 0 coverage 23/32\n[skills] match 1 side 0 damage-types: ship-0 1 ship-2 3816 ship-4 14 ship-5 2236 ship-10 178 station-8 20 station-10 14\n[skills] match 1 side 1 final\n[skills] match 1 side 1: flight 28 warp 105 autopilot 13 targeting 294 guns 14754 missiles 73 chaff 0 booster 276 cloak 0 probes 0 scouting 693 mines 0 ship-damage 5855 station-damage 23 station-kills 2 nanite-ship 61 nanite-station 226 order-goto 0 order-attack 0 order-build 109 order-repair 0 drone-build 6 drone-mine 15 eject 23 pod-rescue 2 dock 25 relaunch 47 purchase 40 research 20 chat 61 voice 147 ship-kills 24\n[skills] match 1 side 1 coverage 23/32\n[skills] match 1 side 1 damage-types: ship-0 1 ship-2 5412 ship-4 37 ship-10 61 ship-11 405 station-8 23 station-10 226\n[skills] match 2 side 0 final\n[skills] match 2 side 0: flight 0 warp 0 autopilot 0 targeting 0 guns 0 missiles 0 chaff 0 booster 0 cloak 0 probes 0 scouting 0 mines 0 ship-damage 0 station-damage 0 station-kills 0 nanite-ship 0 nanite-station 0 order-goto 0 order-attack 0 order-build 0 order-repair 0 drone-build 0 drone-mine 0 eject 0 pod-rescue 0 dock 0 relaunch 0 purchase 0 research 0 chat 0 voice 0 ship-kills 0\n[skills] match 2 side 0 coverage 0/32\n[skills] match 2 side 0 damage-types:\n[skills] match 2 side 1 final\n[skills] match 2 side 1: flight 0 warp 0 autopilot 0 targeting 0 guns 0 missiles 0 chaff 0 booster 0 cloak 0 probes 0 scouting 0 mines 0 ship-damage 0 station-damage 0 station-kills 0 nanite-ship 0 nanite-station 0 order-goto 0 order-attack 0 order-build 0 order-repair 0 drone-build 0 drone-mine 0 eject 0 pod-rescue 0 dock 0 relaunch 0 purchase 0 research 0 chat 0 voice 0 ship-kills 0\n[skills] match 2 side 1 coverage 0/32\n[skills] match 2 side 1 damage-types:"
+    },
+    {
+      "invocation": "showcase-final-1",
+      "scale": 1,
+      "researchMultiplier": 16,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportLiveTests.Research_x16_showcase_support_repairs_ships_and_stations_on_both_sides",
+          "outcome": "Failed",
+          "duration": "00:10:24.0368967",
+          "message": "SC2 requires both real repair counters >= 10 on both sides"
+        }
+      ],
+      "skills": "[skills] match 1 side 0 snapshot\n[skills] match 1 side 0: flight 27 warp 350 autopilot 12 targeting 410 guns 17720 missiles 83 chaff 0 booster 381 cloak 0 probes 0 scouting 1257 mines 1 ship-damage 8875 station-damage 21 station-kills 3 nanite-ship 37 nanite-station 394 order-goto 0 order-attack 0 order-build 121 order-repair 0 drone-build 6 drone-mine 120 eject 40 pod-rescue 11 dock 30 relaunch 68 purchase 59 research 44 chat 107 voice 127 ship-kills 47\n[skills] match 1 side 0 coverage 23/32\n[skills] match 1 side 0 damage-types: ship-0 991 ship-2 5116 ship-4 43 ship-5 2725 ship-10 37 station-8 21 station-10 394\n[skills] match 1 side 1 snapshot\n[skills] match 1 side 1: flight 30 warp 670 autopilot 15 targeting 385 guns 18387 missiles 119 chaff 0 booster 525 cloak 0 probes 0 scouting 929 mines 1 ship-damage 8372 station-damage 35 station-kills 2 nanite-ship 206 nanite-station 8 order-goto 0 order-attack 0 order-build 133 order-repair 0 drone-build 8 drone-mine 38 eject 35 pod-rescue 5 dock 30 relaunch 61 purchase 52 research 36 chat 97 voice 169 ship-kills 44\n[skills] match 1 side 1 coverage 23/32\n[skills] match 1 side 1 damage-types: ship-0 995 ship-2 7078 ship-4 56 ship-10 206 ship-11 243 station-8 35 station-10 8"
+    },
+    {
+      "invocation": "showcase-final-2",
+      "scale": 1,
+      "researchMultiplier": 16,
+      "results": [
+        {
+          "name": "Allegiance.ClientCore.Tests.SC2NaniteSupportLiveTests.Research_x16_showcase_support_repairs_ships_and_stations_on_both_sides",
+          "outcome": "Passed",
+          "duration": "00:07:33.9217958"
+        }
+      ],
+      "skills": "[skills] match 1 side 0 snapshot\n[skills] match 1 side 0: flight 25 warp 104 autopilot 10 targeting 360 guns 13473 missiles 68 chaff 0 booster 12 cloak 0 probes 0 scouting 580 mines 0 ship-damage 5805 station-damage 21 station-kills 2 nanite-ship 298 nanite-station 14 order-goto 0 order-attack 0 order-build 85 order-repair 0 drone-build 4 drone-mine 12 eject 19 pod-rescue 7 dock 16 relaunch 47 purchase 39 research 33 chat 82 voice 99 ship-kills 36\n[skills] match 1 side 0 coverage 21/32\n[skills] match 1 side 0 damage-types: ship-0 1 ship-2 4824 ship-4 33 ship-5 947 ship-10 298 station-8 21 station-10 14\n[skills] match 1 side 1 snapshot\n[skills] match 1 side 1: flight 26 warp 109 autopilot 11 targeting 230 guns 13592 missiles 80 chaff 0 booster 431 cloak 0 probes 0 scouting 709 mines 0 ship-damage 6440 station-damage 20 station-kills 2 nanite-ship 238 nanite-station 38 order-goto 0 order-attack 0 order-build 102 order-repair 0 drone-build 6 drone-mine 45 eject 27 pod-rescue 10 dock 23 relaunch 56 purchase 48 research 18 chat 58 voice 115 ship-kills 20\n[skills] match 1 side 1 coverage 23/32\n[skills] match 1 side 1 damage-types: ship-0 1 ship-2 6396 ship-4 43 ship-10 238 station-8 20 station-10 38"
+    }
+  ],
+  "qualificationShowcases": [
+    {
+      "run": 1,
+      "outcome": "Passed",
+      "duration": "00:08:14.2496803",
+      "profile": {
+        "researchMultiplier": 16,
+        "pilotsPerSide": 45,
+        "supportPerSide": 5,
+        "perIpConnectionCap": 128
+      },
+      "observedFleet": {
+        "0": {
+          "combatPilots": 45,
+          "supportPilots": 5
+        },
+        "1": {
+          "combatPilots": 45,
+          "supportPilots": 5
+        }
+      },
+      "counts": {
+        "0": {
+          "flight": 54,
+          "warp": 164,
+          "autopilot": 9,
+          "targeting": 1163,
+          "guns": 38291,
+          "missiles": 184,
+          "chaff": 0,
+          "booster": 767,
+          "cloak": 0,
+          "probes": 0,
+          "scouting": 707,
+          "mines": 2,
+          "ship-damage": 15440,
+          "station-damage": 14,
+          "station-kills": 1,
+          "nanite-ship": 288,
+          "nanite-station": 370,
+          "order-goto": 0,
+          "order-attack": 0,
+          "order-build": 64,
+          "order-repair": 0,
+          "drone-build": 3,
+          "drone-mine": 120,
+          "eject": 101,
+          "pod-rescue": 8,
+          "dock": 66,
+          "relaunch": 150,
+          "purchase": 143,
+          "research": 30,
+          "chat": 75,
+          "voice": 87,
+          "ship-kills": 93
+        },
+        "1": {
+          "flight": 57,
+          "warp": 239,
+          "autopilot": 12,
+          "targeting": 888,
+          "guns": 36282,
+          "missiles": 264,
+          "chaff": 0,
+          "booster": 546,
+          "cloak": 0,
+          "probes": 0,
+          "scouting": 881,
+          "mines": 0,
+          "ship-damage": 16839,
+          "station-damage": 10,
+          "station-kills": 0,
+          "nanite-ship": 338,
+          "nanite-station": 30,
+          "order-goto": 0,
+          "order-attack": 0,
+          "order-build": 80,
+          "order-repair": 0,
+          "drone-build": 5,
+          "drone-mine": 119,
+          "eject": 80,
+          "pod-rescue": 6,
+          "dock": 56,
+          "relaunch": 122,
+          "purchase": 116,
+          "research": 20,
+          "chat": 60,
+          "voice": 89,
+          "ship-kills": 122
+        }
+      },
+      "skillsFile": "showcase-1-skills.log"
+    },
+    {
+      "run": 2,
+      "outcome": "Passed",
+      "duration": "00:11:44.2060914",
+      "profile": {
+        "researchMultiplier": 16,
+        "pilotsPerSide": 45,
+        "supportPerSide": 5,
+        "perIpConnectionCap": 128
+      },
+      "observedFleet": {
+        "0": {
+          "combatPilots": 45,
+          "supportPilots": 5
+        },
+        "1": {
+          "combatPilots": 45,
+          "supportPilots": 5
+        }
+      },
+      "counts": {
+        "0": {
+          "flight": 56,
+          "warp": 316,
+          "autopilot": 11,
+          "targeting": 1696,
+          "guns": 49265,
+          "missiles": 225,
+          "chaff": 0,
+          "booster": 1191,
+          "cloak": 0,
+          "probes": 0,
+          "scouting": 1452,
+          "mines": 21,
+          "ship-damage": 22306,
+          "station-damage": 11,
+          "station-kills": 0,
+          "nanite-ship": 385,
+          "nanite-station": 1068,
+          "order-goto": 0,
+          "order-attack": 0,
+          "order-build": 84,
+          "order-repair": 0,
+          "drone-build": 5,
+          "drone-mine": 187,
+          "eject": 123,
+          "pod-rescue": 16,
+          "dock": 79,
+          "relaunch": 175,
+          "purchase": 164,
+          "research": 57,
+          "chat": 135,
+          "voice": 99,
+          "ship-kills": 143
+        },
+        "1": {
+          "flight": 58,
+          "warp": 795,
+          "autopilot": 13,
+          "targeting": 1327,
+          "guns": 46559,
+          "missiles": 320,
+          "chaff": 0,
+          "booster": 1401,
+          "cloak": 0,
+          "probes": 0,
+          "scouting": 1044,
+          "mines": 1,
+          "ship-damage": 21296,
+          "station-damage": 16,
+          "station-kills": 0,
+          "nanite-ship": 233,
+          "nanite-station": 24,
+          "order-goto": 0,
+          "order-attack": 0,
+          "order-build": 97,
+          "order-repair": 0,
+          "drone-build": 6,
+          "drone-mine": 59,
+          "eject": 111,
+          "pod-rescue": 21,
+          "dock": 64,
+          "relaunch": 163,
+          "purchase": 155,
+          "research": 52,
+          "chat": 127,
+          "voice": 112,
+          "ship-kills": 139
+        }
+      },
+      "skillsFile": "showcase-2-skills.log"
+    },
+    {
+      "run": 3,
+      "outcome": "Passed",
+      "duration": "00:07:53.9278236",
+      "profile": {
+        "researchMultiplier": 16,
+        "pilotsPerSide": 45,
+        "supportPerSide": 5,
+        "perIpConnectionCap": 128
+      },
+      "observedFleet": {
+        "0": {
+          "combatPilots": 45,
+          "supportPilots": 5
+        },
+        "1": {
+          "combatPilots": 45,
+          "supportPilots": 5
+        }
+      },
+      "counts": {
+        "0": {
+          "flight": 54,
+          "warp": 187,
+          "autopilot": 9,
+          "targeting": 1367,
+          "guns": 37279,
+          "missiles": 181,
+          "chaff": 0,
+          "booster": 1509,
+          "cloak": 0,
+          "probes": 0,
+          "scouting": 648,
+          "mines": 8,
+          "ship-damage": 16064,
+          "station-damage": 7,
+          "station-kills": 0,
+          "nanite-ship": 245,
+          "nanite-station": 59,
+          "order-goto": 0,
+          "order-attack": 0,
+          "order-build": 64,
+          "order-repair": 0,
+          "drone-build": 3,
+          "drone-mine": 138,
+          "eject": 107,
+          "pod-rescue": 7,
+          "dock": 58,
+          "relaunch": 143,
+          "purchase": 137,
+          "research": 30,
+          "chat": 75,
+          "voice": 99,
+          "ship-kills": 122
+        },
+        "1": {
+          "flight": 55,
+          "warp": 264,
+          "autopilot": 10,
+          "targeting": 902,
+          "guns": 38688,
+          "missiles": 301,
+          "chaff": 0,
+          "booster": 1126,
+          "cloak": 0,
+          "probes": 0,
+          "scouting": 809,
+          "mines": 0,
+          "ship-damage": 18292,
+          "station-damage": 6,
+          "station-kills": 0,
+          "nanite-ship": 135,
+          "nanite-station": 20,
+          "order-goto": 0,
+          "order-attack": 0,
+          "order-build": 83,
+          "order-repair": 0,
+          "drone-build": 4,
+          "drone-mine": 46,
+          "eject": 95,
+          "pod-rescue": 25,
+          "dock": 45,
+          "relaunch": 139,
+          "purchase": 133,
+          "research": 18,
+          "chat": 55,
+          "voice": 106,
+          "ship-kills": 130
+        }
+      },
+      "skillsFile": "showcase-3-skills.log"
+    }
+  ],
+  "nativePartData": {
+    "path": "/home/domingo/Development/Artwork/PCore001.igc",
+    "sha256": "f73aa7bbce7414140f6691366f8829ea58829727660a8a86c114b29a83a55de8",
+    "part": 91,
+    "name": "ER Nanite 1",
+    "projectile": 58,
+    "power": -22.5,
+    "speed": 400,
+    "lifespanSeconds": 1,
+    "startingHulls": {
+      "civ25": {
+        "hull": 410,
+        "mount": 0
+      },
+      "civ3": {
+        "hull": 114,
+        "mount": 1
+      }
+    }
+  },
+  "fastFailures": [
+    {
+      "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Allegiance\"\n           \u2191 (pos 0)"
+    },
+    {
+      "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+      "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Artwork\"\n           \u2191 (pos 0)"
+    },
+    {
+      "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+      "message": "Assert.Equal() Failure: Strings differ\nExpected: \"\"\nActual:   \"/home/domingo/Development/Allegiance\"\n           \u2191 (pos 0)"
+    },
+    {
+      "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+      "message": "Assert.Equal() Failure: Strings differ\n                         \u2193 (pos 14)\nExpected: \"/home/domingo/allegiance-codex-sc2/.sc2-s\"\u00b7\u00b7\u00b7\nActual:   \"/home/domingo/Development/Artwork\"\n                         \u2191 (pos 14)"
+    },
+    {
+      "name": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "message": "Assert.Equal() Failure: Strings differ\n           \u2193 (pos 0)\nExpected: \"configured\"\nActual:   \"/home/domingo/allegiance-codex-sc2/.sc2-s\"\u00b7\u00b7\u00b7\n           \u2191 (pos 0)"
+    }
+  ],
+  "temporaryDirectoryContext": {
+    "sweep": "workspace/.sc2-scratch (beneath the repository)",
+    "isolatedPathTests": "/proc/<parent>/fd/3 alias to workspace/.sc2-scratch/path-fixtures",
+    "dataFilesystem": "NVMe; no task data in /tmp",
+    "classification": "environment context; not a load flake"
+  },
+  "setupAttempts": [
+    {
+      "description": "A queued pre-profile run loaded the earlier 15v15 binary; caught in observed fleet telemetry, not counted as qualification."
+    },
+    {
+      "description": "First 45v45 seating attempt hit the default loopback per-IP cap of 64; interrupted and fixture cap raised to 128. No production transport setting changed."
+    }
+  ],
+  "sourceSha256": {
+    "tools/allegiance-mcp/BotManager.Finale.cs": "641be2df2fae14a15613497c4f1aa5ef82934d74b1fffd94bf0decd358020eb2",
+    "tools/allegiance-mcp/BotManager.Lifecycle.cs": "b79ed1077618d84d6cb87ad98119ae86af265b01dd7c4d986cc4b9ba727d0f68",
+    "tools/allegiance-mcp/BotManager.TechLoadouts.cs": "fda536511d393c130638d7005c29291d72af19c0f00092f6a118b615a1a57d85",
+    "tools/allegiance-mcp/BotManager.cs": "73d6a809d30cef64f5a809e1218f4a28e161b62e4afe8e54a55cd7a58f10b77a",
+    "tools/allegiance-mcp/McpTools.cs": "559d3fe7152919c8b2e133a063f0536453dfd4c0c138f5a4b255215adf285f94",
+    "tools/allegiance-mcp/TechLoadoutSelector.cs": "2c350954780816d265e3ae121f584a0ead152e39842649efe8b8ef6da9a08892",
+    "tools/allegiance-mcp/BotManager.Support.cs": "7bfc417b0b96514457256363b1a5d46bb7de4eac8beae614195b80d0c7a55b5c",
+    "tests/Allegiance.ClientCore.Tests/SC2NaniteSupportTests.cs": "127b6fc0efe06e399f2c2ff254dc2f40710fa4068e520379aca967a6babbb142",
+    "tests/Allegiance.ClientCore.Tests/SC2NaniteSupportLiveTests.cs": "cb8f3cd7c683f920dc86b5ada73cceb61d3241ef03fed85d91ced4e68a3cd2d2"
+  },
+  "qualificationPassed": true,
+  "fastSweepPassed": false,
+  "pathContextIsolationPassed": true,
+  "rawEvidenceRetained": false
+}

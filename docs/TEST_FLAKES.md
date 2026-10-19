@@ -4,6 +4,10 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## SC2 environment observation (2026-10-19)
+
+The single fast-tier sweep had **8774 pass / 5 fail / 3 optional skips**, with no timing violations. The five failures were `PlayerBundlePathsTests` temporary-install cases: workspace scratch put their fixture paths beneath the real repository, so ancestor discovery read the checkout's `local.env`. These are environment-context failures, **not load flakes**. All nine path cases passed with a logical `/proc/<parent>/fd/3` alias to the same NVMe scratch directory; each affected method subsequently passed 3/3 isolated invocations with its assertions unchanged. The original runner FAIL is preserved and the sweep was not repeated. See [SC2](reports/SC2_NANITE_SUPPORT.md) and [validation](reports/SC2_assets/validation.json).
+
 ## P730 observation (2026-10-19)
 
 The single unfiltered Core sweep completed with **4,888 passed / 5 failed**.
@@ -70,6 +74,27 @@ sweep or a 3/3 qualification. No siege assertion, timeout, quarantine or simulat
 The full MonoGame sweep passed **2,498 cases**, with **0 failures** and **3 missing private Meshy-pack
 skips**. The default-gated P660 local showcase was enabled separately and passed 3/3; never-parks
 passed 5/5. All 17 new BS1 C# methods passed 3× alone. No full suite was repeated.
+
+## P746 observation (2026-10-19)
+
+The one unfiltered MonoGame sweep passed 2,495 cases with three unavailable
+private Meshy-pack skips. The subsequent Fast-tier run observed
+`MiscKeyBindingLiveTests.Live_own_ship_is_real_and_center_ranking_selects_a_real_ship`
+returning warp candidates before ship candidates were present. It then passed
+**3/3 fresh exact-method isolated invocations**, meeting P746's light-gate
+load-flake rule. No target-ranking assertion, timeout or quarantine changed.
+
+The unfiltered ClientCore sweep also observed
+`RetriedConnectLiveTests.RetriedConnect_StartsFromEmptyWorld_AndReseatsWithNewAssignment`
+enumerating dictionary keys while its receive thread modified the collection.
+It passed **3/3 fresh exact-method isolated invocations**. This is the same
+previously documented reconnect fixture race; no reconnect assertion, timeout,
+transport or quarantine changed.
+
+See the [P746 report](reports/P746_KILL_CREDIT_ON_EJECTION.md) and
+[verification ledger](reports/P746_assets/verification.json). The report
+separately records the path-fixture environment correction and inherited CSV
+repair; those are not load flakes.
 
 ## P745B observation (2026-10-18)
 

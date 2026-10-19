@@ -67,7 +67,9 @@ public sealed partial class Ship
             }
             case DataPartTypeIGC.MineLauncher p when mission.Core.MineTypes.TryGetValue(p.ExpendableTypeId, out var t):
             {
-                var mine = new Mine(mission.NextObjectId(), sector, t, DropPosition(t.Radius), LastUpdate + 3, this);
+                // CmineTypeIGC::GetRadius returns the derived DataMineTypeIGC
+                // radius (Igc/minetypeigc.h:104-106), not the unused base field.
+                var mine = new Mine(mission.NextObjectId(), sector, t, DropPosition(t.MineRadius), LastUpdate + 3, this);
                 mine.InitClock(now); sector.Add(mine); model = mine;
                 mission.Skills?.Record(SideId, Allegiance.Core.Model.ShowcaseSkill.Mines);
                 mission.Site.MineCreatedEvent(mine); break;

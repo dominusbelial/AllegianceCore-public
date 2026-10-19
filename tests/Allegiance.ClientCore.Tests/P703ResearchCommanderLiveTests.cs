@@ -68,7 +68,19 @@ public sealed class P703ResearchCommanderLiveTests(ITestOutputHelper output)
         lock (observer.Gate)
         {
             Assert.True(observer.World.Ships[builder.Id].IsDead);
-            Assert.DoesNotContain(observer.World.Events.Kills, k => k.ShipId == builder.Id);
+            // Native KILL_SHIP is mission-wide for nonzero damage, including
+            // off-sector constructors (FedSrv.CPP:11791-11798,11914-11915).
+            // It supplies the feed/death state; explosion effects stay local.
+            if (quiet)
+                Assert.DoesNotContain(observer.World.Events.Kills, k => k.ShipId == builder.Id);
+            else
+            {
+                var kill = Assert.Single(observer.World.Events.Kills, k => k.ShipId == builder.Id);
+                Assert.True(kill.BDeathCredit);
+                Assert.False(kill.BKillCredit);
+                Assert.Equal((short)-1, kill.IdCredit);
+            }
+            Assert.Empty(observer.World.Explosions);
             Assert.False(Assert.Single(BotManager.ResearchSnapshot(observer, side.Id).Units, u => u.Id == builder.Id).Alive);
         }
     }

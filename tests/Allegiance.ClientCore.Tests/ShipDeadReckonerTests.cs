@@ -188,7 +188,7 @@ public class ShipDeadReckonerTests
             maxPositionError = maxError, rmsPositionError = Math.Sqrt(sumSquared / samples),
             maxCorrection, maxRenderFrameStep = maxFrameStep };
         _output.WriteLine(System.Text.Json.JsonSerializer.Serialize(result));
-        File.WriteAllText($"/tmp/p677-prediction-{hz}-{manoeuvre}.json", System.Text.Json.JsonSerializer.Serialize(result));
+        File.WriteAllText(Path.Combine(Path.GetTempPath(), $"p677-prediction-{hz}-{manoeuvre}.json"), System.Text.Json.JsonSerializer.Serialize(result));
         Assert.True(maxError < (manoeuvre == "turn" ? 4 : 12), $"extrapolation error: {maxError} m");
         Assert.True(maxFrameStep < 14, $"render step: {maxFrameStep} m");
     }

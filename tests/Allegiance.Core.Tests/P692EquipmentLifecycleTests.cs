@@ -127,13 +127,34 @@ public sealed class P692EquipmentLifecycleTests
         ship.CommandTarget = ship;
         ((IIgcSite)host).FireExpendable(ship, part, 10.1);
         var deployed = Assert.Single(ship.Sector!.Models, m => m is Mine or Probe);
-        float radius = deployed is Mine mine ? mine.MineType.Radius : ((Probe)deployed).ProbeType.Radius;
+        float radius = deployed is Mine mine ? mine.MineType.MineRadius : ((Probe)deployed).ProbeType.Radius;
         float offset = radius + 10;
         var expected = ship.Position + (moving ? new Vector3(-offset, 0, 0) : ship.Orientation.GetBackward() * offset);
         Assert.Equal(expected, deployed.Position); Assert.Equal(2, ship.Parts.Single().Amount);
         if (deployed is Mine field) Assert.Equal(13, field.DeployTime);
         if (deployed is Probe probe) { Assert.Equal(10, probe.DeployTime); Assert.Same(ship, probe.Target); }
         Assert.Equal(10.1, deployed.LastUpdate);
+    }
+
+    [SkippableTheory, Trait("Requires", "Artwork")]
+    [InlineData(false)] [InlineData(true)]
+    public void Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime(bool moving)
+    {
+        Require.Artwork(); var (mission, ship, _) = World();
+        var type = mission.Core.MineTypes.Values.First(t => t.Radius < 0 && t.MineRadius > 0);
+        var launcher = new ResearchTree(mission.Core, mission.Core.Civilizations.Keys.First()).Parts
+            .First(p => p.Type is DataPartTypeIGC.MineLauncher m && m.ExpendableTypeId == type.ExpendableTypeId);
+        var part = ship.MountPart(launcher, 2, 0, 240)!;
+        ship.InitClock(10); ship.Position = new(100, 200, 300);
+        ship.Velocity = moving ? new(10, 0, 0) : Vector3.Zero;
+        var deployment = ship.FireDispenser(part, 10.1)!;
+        var mine = Assert.IsType<Mine>(deployment.Model);
+        float offset = type.MineRadius + ship.HullType.Length * .5f + 5;
+        var expected = ship.Position + (moving ? new Vector3(-offset, 0, 0) : ship.Orientation.GetBackward() * offset);
+        Assert.Equal(expected, mine.Position);
+        Assert.Equal(ship.LastUpdate + 3 + type.Lifespan, mine.TimeExpire, 5);
+        Assert.Equal(10.1 + type.LoadTime, part.TimeLoaded, 5);
+        Assert.Equal(1, ship.Parts.Single().Amount);
     }
 
     // Igc/probeigc.cpp:444-465: no acquisition means no reveal; scanner

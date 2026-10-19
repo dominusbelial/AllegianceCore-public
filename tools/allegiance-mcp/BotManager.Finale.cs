@@ -307,7 +307,7 @@ internal sealed partial class BotManager
                         peer.SendShowcaseFinale(epoch, researchPeer.Side);
             foreach (short side in sides)
             {
-                var bombers = bots.Where(b => b.Side == side && (IsFinaleBomber(b) || ResearchFinale(b)))
+                var bombers = bots.Where(b => b.Side == side && !IsSupport(b) && (IsFinaleBomber(b) || ResearchFinale(b)))
                     .OrderByDescending(b => ResearchFinale(b) && b.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase))
                     .ThenBy(b => b.ShipId).Take(run.Settings.Bombers).ToArray();
                 foreach (var bot in bombers) bot.FinaleBomberReserved = true;

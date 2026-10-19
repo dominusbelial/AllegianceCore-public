@@ -1,0 +1,175 @@
+[
+  {
+    "match": 1,
+    "side": 0,
+    "state": "snapshot",
+    "counts": {
+      "flight": 56,
+      "warp": 316,
+      "autopilot": 11,
+      "targeting": 1696,
+      "guns": 49265,
+      "missiles": 225,
+      "chaff": 0,
+      "booster": 1191,
+      "cloak": 0,
+      "probes": 0,
+      "scouting": 1452,
+      "mines": 21,
+      "ship-damage": 22306,
+      "station-damage": 11,
+      "station-kills": 0,
+      "nanite-ship": 385,
+      "nanite-station": 1068,
+      "order-goto": 0,
+      "order-attack": 0,
+      "order-build": 84,
+      "order-repair": 0,
+      "drone-build": 5,
+      "drone-mine": 187,
+      "eject": 123,
+      "pod-rescue": 16,
+      "dock": 79,
+      "relaunch": 175,
+      "purchase": 164,
+      "research": 57,
+      "chat": 135,
+      "voice": 99,
+      "ship-kills": 143
+    },
+    "covered": 24,
+    "total": 32,
+    "gaps": [
+      {
+        "id": "chaff",
+        "count": 0,
+        "minimum": 10
+      },
+      {
+        "id": "cloak",
+        "count": 0,
+        "minimum": 5
+      },
+      {
+        "id": "probes",
+        "count": 0,
+        "minimum": 10
+      },
+      {
+        "id": "station-damage",
+        "count": 11,
+        "minimum": 20
+      },
+      {
+        "id": "station-kills",
+        "count": 0,
+        "minimum": 1
+      },
+      {
+        "id": "order-goto",
+        "count": 0,
+        "minimum": 5
+      },
+      {
+        "id": "order-attack",
+        "count": 0,
+        "minimum": 5
+      },
+      {
+        "id": "order-repair",
+        "count": 0,
+        "minimum": 2
+      }
+    ],
+    "missing": []
+  },
+  {
+    "match": 1,
+    "side": 1,
+    "state": "snapshot",
+    "counts": {
+      "flight": 58,
+      "warp": 795,
+      "autopilot": 13,
+      "targeting": 1327,
+      "guns": 46559,
+      "missiles": 320,
+      "chaff": 0,
+      "booster": 1401,
+      "cloak": 0,
+      "probes": 0,
+      "scouting": 1044,
+      "mines": 1,
+      "ship-damage": 21296,
+      "station-damage": 16,
+      "station-kills": 0,
+      "nanite-ship": 233,
+      "nanite-station": 24,
+      "order-goto": 0,
+      "order-attack": 0,
+      "order-build": 97,
+      "order-repair": 0,
+      "drone-build": 6,
+      "drone-mine": 59,
+      "eject": 111,
+      "pod-rescue": 21,
+      "dock": 64,
+      "relaunch": 163,
+      "purchase": 155,
+      "research": 52,
+      "chat": 127,
+      "voice": 112,
+      "ship-kills": 139
+    },
+    "covered": 23,
+    "total": 32,
+    "gaps": [
+      {
+        "id": "chaff",
+        "count": 0,
+        "minimum": 10
+      },
+      {
+        "id": "cloak",
+        "count": 0,
+        "minimum": 5
+      },
+      {
+        "id": "probes",
+        "count": 0,
+        "minimum": 10
+      },
+      {
+        "id": "mines",
+        "count": 1,
+        "minimum": 5
+      },
+      {
+        "id": "station-damage",
+        "count": 16,
+        "minimum": 20
+      },
+      {
+        "id": "station-kills",
+        "count": 0,
+        "minimum": 1
+      },
+      {
+        "id": "order-goto",
+        "count": 0,
+        "minimum": 5
+      },
+      {
+        "id": "order-attack",
+        "count": 0,
+        "minimum": 5
+      },
+      {
+        "id": "order-repair",
+        "count": 0,
+        "minimum": 2
+      }
+    ],
+    "missing": []
+  }
+]

@@ -24,10 +24,12 @@ public sealed class NativeMaterialParts : IDisposable
     private readonly uint[] _indices;
     private readonly NativeStationPart[] _parts;
     private VertexBuffer? _pbr;
+    private readonly float _radius;
 
     public NativeMaterialParts(IReadOnlyList<MdlMesh> meshes, VertexPositionNormalTexture[] vertices, uint[] indices)
     {
         _vertices = vertices; _indices = indices;
+        _radius = vertices.Length == 0 ? 1 : vertices.Max(v => v.Position.Length());
         int offset = 0;
         _parts = meshes.Select(m =>
         {
@@ -46,7 +48,7 @@ public sealed class NativeMaterialParts : IDisposable
         {
             string? stem = part.TextureStem ?? inheritedStem;
             if (enabled && model is not null && hd.TryDraw(model, stem, Pbr, indices,
-                part.TriangleCount, world, view, projection, opacity, lighting, part.StartIndex)) continue;
+                part.TriangleCount, world, view, projection, opacity, lighting, part.StartIndex, _radius)) continue;
             var texture = part.TextureStem is { } own &&
                 !string.Equals(own, inheritedStem, StringComparison.OrdinalIgnoreCase)
                 ? textureFor(own) : inheritedTexture;

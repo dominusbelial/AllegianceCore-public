@@ -280,6 +280,6 @@ public sealed class BroadcastSnapshotTests
         Assert.StartsWith(golden, result.offHash);
         Assert.Equal(result.offHash, result.onHash);
         Assert.Equal(result.onHash, result.sharedHash);
-        File.WriteAllText($"/tmp/p669-identity-{native}-{parallel}-{floor}.json", JsonSerializer.Serialize(result));
+        File.WriteAllText(Path.Combine(Path.GetTempPath(), $"p669-identity-{native}-{parallel}-{floor}.json"), JsonSerializer.Serialize(result));
     }
 }

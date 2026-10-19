@@ -1,0 +1,152 @@
+[
+  {
+    "test": "test_bc_data_channels_and_linear_light_mips",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "test_bc_data_channels_and_linear_light_mips",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "test_bc_data_channels_and_linear_light_mips",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "test_bc_release_has_complete_dds_mips_fallback_and_reproducible_zip",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "test_bc_release_has_complete_dds_mips_fallback_and_reproducible_zip",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "test_bc_release_has_complete_dds_mips_fallback_and_reproducible_zip",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "test_class_policy_uses_largest_shared_atlas_class",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "test_class_policy_uses_largest_shared_atlas_class",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "test_class_policy_uses_largest_shared_atlas_class",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "test_cli_with_explicit_model_folder_mapping_and_source_hash",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "test_cli_with_explicit_model_folder_mapping_and_source_hash",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "test_cli_with_explicit_model_folder_mapping_and_source_hash",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "test_half_resolution_scalar_maps_supported",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "test_half_resolution_scalar_maps_supported",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "test_half_resolution_scalar_maps_supported",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "test_linear_maps_reject_srgb_tags_and_wrong_declared_spaces",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "test_linear_maps_reject_srgb_tags_and_wrong_declared_spaces",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "test_linear_maps_reject_srgb_tags_and_wrong_declared_spaces",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "test_missing_corrupt_or_wrong_sized_map_leaves_no_output",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "test_missing_corrupt_or_wrong_sized_map_leaves_no_output",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "test_missing_corrupt_or_wrong_sized_map_leaves_no_output",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "test_release_manifest_coverage_hashes_and_reproducible_zip",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "test_release_manifest_coverage_hashes_and_reproducible_zip",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "test_release_manifest_coverage_hashes_and_reproducible_zip",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "test_stale_artwork_hash_rejected",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "test_stale_artwork_hash_rejected",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "test_stale_artwork_hash_rejected",
+    "attempt": 3,
+    "exitCode": 0
+  },
+  {
+    "test": "test_unsafe_or_duplicate_mapping_and_overwrite_rejected",
+    "attempt": 1,
+    "exitCode": 0
+  },
+  {
+    "test": "test_unsafe_or_duplicate_mapping_and_overwrite_rejected",
+    "attempt": 2,
+    "exitCode": 0
+  },
+  {
+    "test": "test_unsafe_or_duplicate_mapping_and_overwrite_rejected",
+    "attempt": 3,
+    "exitCode": 0
+  }
+]

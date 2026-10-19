@@ -1,0 +1,86 @@
+{
+  "base": [
+    {
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:37.7199802",
+      "message": "",
+      "run": "base-1",
+      "longestStoppedWithTargetSeconds": 1.907
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:35.9720564",
+      "message": "",
+      "run": "base-2",
+      "longestStoppedWithTargetSeconds": 2.104
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:39.8678340",
+      "message": "",
+      "run": "base-3",
+      "longestStoppedWithTargetSeconds": 2.02
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:37.2697919",
+      "message": "",
+      "run": "base-4",
+      "longestStoppedWithTargetSeconds": 2.005
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:36.8585958",
+      "message": "",
+      "run": "base-5",
+      "longestStoppedWithTargetSeconds": 1.906
+    }
+  ],
+  "changed": [
+    {
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:50.1560966",
+      "message": "",
+      "run": "changed-1",
+      "longestStoppedWithTargetSeconds": 2.023
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:51.3252766",
+      "message": "",
+      "run": "changed-2",
+      "longestStoppedWithTargetSeconds": 2.026
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:02:03.7109771",
+      "message": "",
+      "run": "changed-3",
+      "longestStoppedWithTargetSeconds": 1.915
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:51.6678952",
+      "message": "",
+      "run": "changed-4",
+      "longestStoppedWithTargetSeconds": 1.905
+    },
+    {
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:01:51.1788891",
+      "message": "",
+      "run": "changed-5",
+      "longestStoppedWithTargetSeconds": 2.105
+    }
+  ]
+}

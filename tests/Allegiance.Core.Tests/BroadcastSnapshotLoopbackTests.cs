@@ -218,7 +218,7 @@ public sealed class BroadcastSnapshotLoopbackTests
             }
             Assert.Equal(0, server.TestPublisher!.CoalescedSnapshots);
             Assert.Equal(0, server.TestPublisher.EncodeFailures);
-            File.WriteAllText("/tmp/p669-tcp-identity.json", JsonSerializer.Serialize(new
+            File.WriteAllText(Path.Combine(Path.GetTempPath(), "p669-tcp-identity.json"), JsonSerializer.Serialize(new
             {
                 peers = clients.Count, subjects = subjects.Count, ticks = tape.Length,
                 packets = off.Sum(p => p.Length), bytes = off.Sum(p => p.Sum(b => (long)b.Length)),
@@ -358,7 +358,7 @@ public sealed class BroadcastSnapshotLoopbackTests
                 }
                 DrainTransport(snapshot ? 668001u : 668000u);
                 string prefix = phase4 ? "p679" : phase3 ? "p677" : phase2 ? "p669" : "p668";
-                string csv = $"/tmp/{prefix}-loopback-{count}-{(phase4 ? mode.ToString() : snapshot.ToString())}.csv";
+                string csv = Path.Combine(Path.GetTempPath(), $"{prefix}-loopback-{count}-{(phase4 ? mode.ToString() : snapshot.ToString())}.csv");
                 File.Delete(csv);
                 TickProfiler.Configure(true, 3600, csv);
                 TickProfiler.SetLabel($"{prefix} peers={count} snapshot={controlled || snapshot} encodeOnce={phase3 || (phase2 && snapshot)} tiers={phase3 && snapshot}");
@@ -444,7 +444,7 @@ public sealed class BroadcastSnapshotLoopbackTests
                 Assert.Equal(0, server.TestPublisher.EncodeFailures);
                 Assert.True(peers.Sum(p => p.Frames) > startFrames + count);
             }
-            File.WriteAllText($"/tmp/{(phase4 ? "p679" : phase3 ? "p677" : phase2 ? "p669" : "p668")}-loopback-{count}.json", JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(Path.Combine(Path.GetTempPath(), $"{(phase4 ? "p679" : phase3 ? "p677" : phase2 ? "p669" : "p668")}-loopback-{count}.json"), JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
         }
         finally { foreach (var peer in peers) peer.Dispose(); }
     }

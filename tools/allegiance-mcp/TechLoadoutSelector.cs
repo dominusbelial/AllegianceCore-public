@@ -17,11 +17,12 @@ internal static class TechLoadoutSelector
         HashSet<short> Hulls, HashSet<short> Parts, long Budget);
 
     internal static Selection? Select(StaticCore core, short civId, Showcase.HullRole role,
-        TechTreeBitMask techs, short dockTypeId, DataStationTypeIGC? target = null, long budget = long.MaxValue)
+        TechTreeBitMask techs, short dockTypeId, DataStationTypeIGC? target = null, long budget = long.MaxValue,
+        bool preferMines = false)
     {
         if (!core.StationTypes.TryGetValue(dockTypeId, out var dock)) return null;
         return Select(Create(core, civId, techs, dock.TtbmLocal, [dockTypeId], budget), role,
-            target ?? (role == Showcase.HullRole.Bomber ? dock : null));
+            target ?? (role == Showcase.HullRole.Bomber ? dock : null), preferMines);
     }
 
     // Kept for existing socket-free finale catalogue queries with a local mask.
@@ -57,7 +58,7 @@ internal static class TechLoadoutSelector
         return Showcase.HullRole.Fighter;
     }
 
-    private static Selection? Select(Context c, Showcase.HullRole role, DataStationTypeIGC? target)
+    private static Selection? Select(Context c, Showcase.HullRole role, DataStationTypeIGC? target, bool preferMines = false)
     {
         if (role == Showcase.HullRole.Bomber && target is { } station)
         {
@@ -94,8 +95,9 @@ internal static class TechLoadoutSelector
                     .Select(p => (Part: p, Amount: Ship.ClampPartAmount(h, c.Core, p,
                         equipment is EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher ? short.MaxValue : 1)))
                     .Where(p => p.Amount > 0 && spent + PartPrice(p.Part, p.Amount) <= c.Budget)
-                    .OrderByDescending(p => SupportScore(c.Core, p.Part, role)).ThenBy(p => p.Part.PartId)
-                    .FirstOrDefault(p => SupportScore(c.Core, p.Part, role) > 0);
+                    .OrderByDescending(p => preferMines && p.Part.Type is DataPartTypeIGC.MineLauncher)
+                    .ThenByDescending(p => SupportScore(c.Core, p.Part, role, preferMines)).ThenBy(p => p.Part.PartId)
+                    .FirstOrDefault(p => SupportScore(c.Core, p.Part, role, preferMines) > 0);
                 if (support.Part.Type is not null) Add(support.Part, 0, support.Amount);
             }
             options.Add(Describe(c, role, h.HullId, parts));
@@ -108,6 +110,49 @@ internal static class TechLoadoutSelector
         return options.OrderByDescending(o => HullScore(c.Core.HullTypes[o.HullId], role))
             .ThenByDescending(o => o.Parts.Sum(p => WeaponScore(c.Core, Part(c.Core, p.PartId), role)))
             .ThenBy(o => o.HullId).FirstOrDefault();
+    }
+
+    // Repair identity is projectile power < 0 (Igc/shipIGC.cpp:2608).
+    // Use the same per-dock research, successor, mount and wallet gates as combat.
+    internal static Selection? SelectSupport(StaticCore core, short civ, TechTreeBitMask techs,
+        short dockType, long budget)
+    {
+        if (!core.StationTypes.TryGetValue(dockType, out var dock)) return null;
+        var c = Create(core, civ, techs, dock.TtbmLocal, [dockType], budget);
+        var options = new List<Selection>();
+        foreach (var h in core.HullTypes.Values.Where(h => c.Hulls.Contains(h.HullId)
+            && h.MaxFixedWeapons > 0 && h.Hardpoints.Length > 0 && h.Hardpoints[0].Fixed
+            && Showcase.IsPlayerBuyable(core, h) && h.HasCapability(DataHullTypeIGC.HabmFighter)
+            && !SuccessorUpgrade.HullIsObsolete(core, h, c.Local, techs)))
+        {
+            var legal = c.Parts.Select(id => Part(core, id)).Where(p => p.GroupId != byte.MaxValue
+                && !SuccessorUpgrade.PartIsObsolete(core, p, c.Local, techs)).ToArray();
+            // Native AI uses mount zero; player hulls may expose the repair socket
+            // on another fixed mount (Ga'Taraan scout). Never mix positive-damage
+            // guns into AllWeapons on a friendly target (shipIGC.cpp:2608,2673-2676).
+            var gun = legal.Where(p => Enumerable.Range(0, h.Hardpoints.Length).Any(m => h.Hardpoints[m].Fixed && h.CanMountPart(p, m)) && p.Type is DataPartTypeIGC.Weapon w
+                    && w.EnergyPerShot <= h.MaxEnergy && w.CAmmoPerShot <= h.MaxAmmo
+                    && core.ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var r) && r.Power < 0
+                    && r.Speed > 0 && r.Lifespan > 0 && h.Price + PartPrice(p, 1) <= budget)
+                .OrderByDescending(p => -core.ProjectileTypes[((DataPartTypeIGC.Weapon)p.Type).ProjectileTypeId].Power
+                    / Math.Max(.01f, ((DataPartTypeIGC.Weapon)p.Type).DtimeBurst)).ThenBy(p => p.PartId).FirstOrDefault();
+            if (gun.Type is null) continue;
+            byte mount = (byte)Enumerable.Range(0, h.Hardpoints.Length).First(m => h.Hardpoints[m].Fixed && h.CanMountPart(gun, m));
+            var parts = new List<ExpandedPartData> { new(gun.PartId, 1, mount, ExpandedPartData.FullyMounted) };
+            long price = Math.Max(0, h.Price) + PartPrice(gun, 1);
+            foreach (var equipment in new[] { EquipmentType.Shield, EquipmentType.Afterburner })
+            {
+                var extra = legal.Where(p => p.EquipmentType == equipment && h.CanMountPart(p, 0)
+                        && price + PartPrice(p, 1) <= budget)
+                    .OrderByDescending(p => SupportScore(core, p, Showcase.HullRole.Fighter)).ThenBy(p => p.PartId).FirstOrDefault();
+                if (extra.Type is null) continue;
+                parts.Add(new(extra.PartId, 1, 0, ExpandedPartData.FullyMounted)); price += PartPrice(extra, 1);
+            }
+            var selected = Describe(c, Showcase.HullRole.Fighter, h.HullId, parts);
+            options.Add(selected with { Reason = $"role=Support; negative-power lead gun; cheapest legal nonobsolete human hull; techBits={techs.PopCount}; stable ID ties; hull={h.HullId} '{h.Name}'; cost={selected.Price}; "
+                + string.Join(", ", parts.Select(p => $"{Part(core, p.PartId).EquipmentType}@{p.MountId}={p.PartId} '{Part(core, p.PartId).Name}' x{p.Amount}")) });
+        }
+        return options.OrderBy(o => o.Price).ThenBy(o => o.HullId).FirstOrDefault();
     }
 
     private static double HullScore(DataHullTypeIGC h, Showcase.HullRole role) => role switch
@@ -132,14 +177,15 @@ internal static class TechLoadoutSelector
         return role == Showcase.HullRole.Interceptor ? dps * Math.Sqrt(Math.Max(1, r.Speed * r.Lifespan)) : dps;
     }
 
-    private static double SupportScore(StaticCore core, DataPartTypeIGC p, Showcase.HullRole role) => p.Type switch
+    private static double SupportScore(StaticCore core, DataPartTypeIGC p, Showcase.HullRole role, bool preferMines = false) => p.Type switch
     {
         DataPartTypeIGC.Shield s => s.MaxStrength,
         DataPartTypeIGC.Afterburner a => a.MaxThrust,
         DataPartTypeIGC.Cloak c => c.MaxCloaking,
         DataPartTypeIGC.MissileLauncher m when core.MissileTypes.TryGetValue(m.ExpendableTypeId, out var t) => t.Power / Math.Max(.01f, t.ReadyTime + t.LockTime),
-        DataPartTypeIGC.ProbeLauncher m when core.ProbeTypes.TryGetValue(m.ExpendableTypeId, out var t) => role == Showcase.HullRole.Scout ? t.ScannerRange : 0,
-        DataPartTypeIGC.MineLauncher m when core.MineTypes.TryGetValue(m.ExpendableTypeId, out var t) => role == Showcase.HullRole.Scout ? 0 : t.Power,
+        DataPartTypeIGC.ProbeLauncher m when core.ProbeTypes.TryGetValue(m.ExpendableTypeId, out var t) =>
+            role == Showcase.HullRole.Scout && (t.EabmCapabilities & 0x6000) == 0 ? t.ScannerRange : 0,
+        DataPartTypeIGC.MineLauncher m when core.MineTypes.TryGetValue(m.ExpendableTypeId, out var t) => role == Showcase.HullRole.Scout && !preferMines ? 0 : t.Power,
         DataPartTypeIGC.ChaffLauncher m when core.ChaffTypes.TryGetValue(m.ExpendableTypeId, out var t) => t.Lifespan,
         _ => 0,
     };

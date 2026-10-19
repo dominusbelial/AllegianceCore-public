@@ -1,0 +1,34 @@
+[
+  {
+    "archive": "allegiance-hd-ships-bc.bc3.zip",
+    "materials": 138,
+    "maps": 690,
+    "zipBytes": 865666489,
+    "sha256": "a6738b0cd1e02cd191ba6f6d87e53fdd05ccb5ef72d07a9d9d43b56c3f1cf4ae",
+    "passed": true
+  },
+  {
+    "archive": "allegiance-hd-ships-bc.zip",
+    "materials": 138,
+    "maps": 690,
+    "zipBytes": 1557378699,
+    "sha256": "0b5e146c5cd0b8fdf1f1ab1562e39db9ee36e909ef98c569aa32aaafc0a26339",
+    "passed": true
+  },
+  {
+    "archive": "allegiance-hd-ships-compact.bc3.zip",
+    "materials": 138,
+    "maps": 690,
+    "zipBytes": 229846627,
+    "sha256": "8c7d19356a45e90a3b0fc38051bdc389fda94df83d98e3556478afdd01deba0e",
+    "passed": true
+  },
+  {
+    "archive": "allegiance-hd-ships-compact.zip",
+    "materials": 138,
+    "maps": 690,
+    "zipBytes": 405576712,
+    "sha256": "afb18ea274c95605903b14605c456e6de1b0df5f76eb7b3d8fd866f87a7a7fd6",
+    "passed": true
+  }
+]

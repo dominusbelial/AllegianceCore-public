@@ -220,7 +220,7 @@ internal sealed partial class BotManager
                     controls = controls with { Throttle = -1 };
                 state = DockApproach.MovementButtons(step, position, pose.Orientation, pose.Velocity, turn);
             }
-            cs.CommandControls(controls, state);
+            cs.CommandControls(controls, CloakApproach(bot, cs, state));
             return true;
         }
     }

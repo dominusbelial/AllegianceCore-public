@@ -1,0 +1,11 @@
+final-One_legally_purchased_support_pilot_restores_a_friendly_ship_then_own_station-1
+[repair-trace] pilot=mcp-b002-4691 ship=8099 side=0 kind=ship target=8096 hull=0.500->0.89079 nativeRepairCredit=0.39079 effectiveHits=3
+[repair-trace] pilot=mcp-b002-4691 ship=8099 side=0 kind=station target=0 hull=0.500->0.51427 effectiveHits=3
+
+final-One_legally_purchased_support_pilot_restores_a_friendly_ship_then_own_station-2
+[repair-trace] pilot=mcp-b002-4284 ship=8099 side=0 kind=ship target=8096 hull=0.500->0.89079 nativeRepairCredit=0.39079 effectiveHits=3
+[repair-trace] pilot=mcp-b002-4284 ship=8099 side=0 kind=station target=0 hull=0.500->0.50601 effectiveHits=3
+
+final-One_legally_purchased_support_pilot_restores_a_friendly_ship_then_own_station-3
+[repair-trace] pilot=mcp-b002-2288 ship=8099 side=0 kind=ship target=8096 hull=0.500->0.89079 nativeRepairCredit=0.39079 effectiveHits=3
+[repair-trace] pilot=mcp-b002-2288 ship=8099 side=0 kind=station target=0 hull=0.500->0.50540 effectiveHits=3

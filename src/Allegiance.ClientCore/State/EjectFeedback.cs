@@ -1,3 +1,4 @@
+using Allegiance.Core;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.ClientCore.State;
@@ -44,8 +45,8 @@ public static class EjectFeedback
         }
 
         // The credited killer (IdCredit) is this receiver's own ship — native
-        // compares pmodelKiller == m_ship (appmsg.cpp:2838-2842).
-        if (m.IdCredit == myShipId)
+        // compares pmodelKiller == m_ship (appmsg.cpp:2824-2829).
+        if (m.TypeCredit == (short)IgcObjectType.Ship && m.IdCredit == myShipId)
         {
             string text = m.BDeathCredit
                 ? $"You killed {victimName}"
@@ -63,12 +64,13 @@ public static class EjectFeedback
     /// Whether this receiver's own ship warrants the "gloat camera" swing to the
     /// credited killer — native calls <c>EjectPlayer(launcher)</c> only when
     /// <c>pship == m_ship</c> (the victim IS me: appmsg.cpp:2900-2902 for death;
-    /// clintlib.cpp:3063 for eject) and a launcher id is present. True exactly
-    /// when the victim is me and a killer is credited (<see cref="KillShip.IdCredit"/>
-    /// != NA). Callers pass <paramref name="idCredit"/> straight through.
+    /// clintlib.cpp:3063 for eject) and a launcher id is present. The port emits
+    /// a request when the victim is me and a ship killer has an id other than NA
+    /// (<see cref="KillShip.IdCredit"/>). Its camera request addresses a ship id, so non-ship
+    /// launchers cannot be resolved through the ship-id namespace.
     /// </summary>
     public static bool WantsOverrideToKiller(KillShip m, short myShipId)
-        => m.ShipId == myShipId && m.IdCredit != -1;
+        => m.ShipId == myShipId && m.TypeCredit == (short)IgcObjectType.Ship && m.IdCredit != -1;
 
     /// <summary>
     /// Produce the tip line for an incoming <c>PlayerRescued</c> (id 16) from

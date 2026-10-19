@@ -99,6 +99,39 @@ public class P578EjectDeathFeedbackTests
 
     // ── Pure rescue routing (EjectFeedback.ForPlayerRescued) ─────────────
 
+    [Theory]
+    [InlineData(IgcObjectType.Station, false, "Victim ejected")]
+    [InlineData(IgcObjectType.Probe, false, "Victim ejected")]
+    [InlineData(IgcObjectType.Mine, false, "Victim ejected")]
+    [InlineData(IgcObjectType.Station, true, "Victim was killed")]
+    public void Non_ship_killer_id_matching_me_still_uses_observer_text(IgcObjectType type, bool death, string expected)
+    {
+        var w = WorldWithMe();
+        // Object ids can overlap across types. A station with my ship id is
+        // not my ship and must not claim "You forced/killed Victim".
+        var m = Msg(7777, death, idCredit: Me);
+        m.TypeCredit = (short)type;
+        w.Apply(m);
+        Assert.Equal(expected, Assert.Single(w.FeedbackLines).Text);
+        Assert.Equal(death, w.Ships[7777].IsDead);
+        Assert.Empty(w.TakeCameraOverrideRequests());
+    }
+
+    [Theory]
+    [InlineData(IgcObjectType.Station, false, "You ejected")]
+    [InlineData(IgcObjectType.Probe, false, "You ejected")]
+    [InlineData(IgcObjectType.Mine, true, "You were killed")]
+    public void ApplyKillShip_Non_ship_killer_does_not_borrow_a_ship_name(IgcObjectType type, bool death, string expected)
+    {
+        var w = WorldWithMe();
+        var m = Msg(Me, death, idCredit: Killer);
+        m.TypeCredit = (short)type; // same id as the known ship "Bandit"
+        w.Apply(m);
+        Assert.Equal(expected, Assert.Single(w.FeedbackLines).Text);
+        Assert.Equal(death, w.Ships[Me].IsDead);
+        Assert.Empty(w.TakeCameraOverrideRequests());
+    }
+
     [Fact]
     public void Rescue_IAmRescuer_NonCriticalWithRescueCue()
     {

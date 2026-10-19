@@ -1,0 +1,1838 @@
+{
+  "base": "d39525de",
+  "native": "052f5179",
+  "build": {
+    "warnings": 0,
+    "errors": 0,
+    "log": "build.log"
+  },
+  "aot": {
+    "success": true,
+    "il2026": false,
+    "il3050": false,
+    "log": "aot.log",
+    "binarySha256": "4bbacea1ef9f98389c5518aa38d3402b3784eb239af5c9caa36eb356c089cc8e"
+  },
+  "qualification": {
+    "caseIdentities": 23,
+    "strictIndividualInvocations": 69,
+    "showcaseRuns": 3,
+    "allPassed": true
+  },
+  "isolated": [
+    {
+      "method": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0639343"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0047980"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0732524"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0048286"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0052403"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0716007"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Chaff_uses_incoming_warning_actual_inventory_and_pacing",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Chaff_uses_incoming_warning_actual_inventory_and_pacing",
+          "outcome": "Passed",
+          "duration": "00:00:00.0519866"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Chaff_uses_incoming_warning_actual_inventory_and_pacing",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Chaff_uses_incoming_warning_actual_inventory_and_pacing",
+          "outcome": "Passed",
+          "duration": "00:00:00.0445795"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Chaff_uses_incoming_warning_actual_inventory_and_pacing",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Chaff_uses_incoming_warning_actual_inventory_and_pacing",
+          "outcome": "Passed",
+          "duration": "00:00:00.0443106"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Probe_scout_covers_contested_sector_and_replaces_destroyed_coverage",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Probe_scout_covers_contested_sector_and_replaces_destroyed_coverage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0530625"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Probe_scout_covers_contested_sector_and_replaces_destroyed_coverage",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Probe_scout_covers_contested_sector_and_replaces_destroyed_coverage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0549870"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Probe_scout_covers_contested_sector_and_replaces_destroyed_coverage",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Probe_scout_covers_contested_sector_and_replaces_destroyed_coverage",
+          "outcome": "Passed",
+          "duration": "00:00:00.0544361"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Mines_defend_owned_alephs_and_retain_strict_native_enemy_range",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Mines_defend_owned_alephs_and_retain_strict_native_enemy_range",
+          "outcome": "Passed",
+          "duration": "00:00:00.0563823"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Mines_defend_owned_alephs_and_retain_strict_native_enemy_range",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Mines_defend_owned_alephs_and_retain_strict_native_enemy_range",
+          "outcome": "Passed",
+          "duration": "00:00:00.0535231"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Mines_defend_owned_alephs_and_retain_strict_native_enemy_range",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.BotFixRegressionTests.SC4_Mines_defend_owned_alephs_and_retain_strict_native_enemy_range",
+          "outcome": "Passed",
+          "duration": "00:00:00.0528700"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 101)",
+          "outcome": "Passed",
+          "duration": "00:00:00.9946227"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:00.7020342"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 4)",
+          "outcome": "Passed",
+          "duration": "00:00:01.0477388"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 35)",
+          "outcome": "Passed",
+          "duration": "00:00:00.4594633"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.9579023"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.7765589"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2678233"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 4)",
+          "outcome": "Passed",
+          "duration": "00:00:01.1058275"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.9659802"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 101)",
+          "outcome": "Passed",
+          "duration": "00:00:01.0711571"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:00.7232348"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.7972045"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 35)",
+          "outcome": "Passed",
+          "duration": "00:00:00.4589505"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2641100"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:01.0261028"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:01.3734625"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 35)",
+          "outcome": "Passed",
+          "duration": "00:00:00.4881616"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:00.8307179"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 4)",
+          "outcome": "Passed",
+          "duration": "00:00:01.1321161"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 101)",
+          "outcome": "Passed",
+          "duration": "00:00:01.0606653"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:00.7484440"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection",
+          "outcome": "Passed",
+          "duration": "00:00:04.2495347"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection",
+          "outcome": "Passed",
+          "duration": "00:00:04.3008048"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Dock_local_masks_are_never_combined_and_finale_uses_the_same_bomber_selection",
+          "outcome": "Passed",
+          "duration": "00:00:04.2432244"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 60)",
+          "outcome": "Passed",
+          "duration": "00:01:19.0827584"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:02.1242902"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 60)",
+          "outcome": "Passed",
+          "duration": "00:01:19.3454620"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:02.1192585"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:02.1269250"
+        },
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 60)",
+          "outcome": "Passed",
+          "duration": "00:01:19.0192182"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout",
+          "outcome": "Passed",
+          "duration": "00:00:07.5342657"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout",
+          "outcome": "Passed",
+          "duration": "00:00:07.5382948"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Refused_upgrade_falls_back_to_previous_revalidated_legal_loadout",
+          "outcome": "Passed",
+          "duration": "00:00:07.5619467"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime(moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0089743"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime(moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0844618"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime(moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0094288"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime(moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0844622"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime(moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0790699"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime(moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0094500"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"mine\", moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0335567"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"probe\", moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0089997"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"probe\", moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0727157"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"mine\", moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0102900"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"mine\", moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0097639"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"probe\", moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0093515"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"mine\", moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0306396"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"probe\", moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0730230"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"mine\", moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0307702"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"probe\", moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0786596"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"mine\", moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0102143"
+        },
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"probe\", moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0089539"
+        }
+      ]
+    }
+  ],
+  "exact": [
+    {
+      "method": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks",
+      "parameters": [
+        "civ: 25"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0754172"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks",
+      "parameters": [
+        "civ: 25"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0751515"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks",
+      "parameters": [
+        "civ: 25"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0763335"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks",
+      "parameters": [
+        "civ: 3"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0673219"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks",
+      "parameters": [
+        "civ: 3"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0747520"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks",
+      "parameters": [
+        "civ: 3"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.SC4LoadoutTests.Starting_research_fleet_has_legal_probe_scouts_and_mine_carrying_fallbacks(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0758453"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 25"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:01.0258986"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 25"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:01.0402847"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 25"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 25)",
+          "outcome": "Passed",
+          "duration": "00:00:01.0574971"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 3"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:01.3041936"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 3"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:01.3067975"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 3"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 3)",
+          "outcome": "Passed",
+          "duration": "00:00:01.3037513"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 1"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:01.3000714"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 1"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2933476"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 1"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:01.3005460"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 2"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:01.1869143"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 2"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2081308"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 2"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 2)",
+          "outcome": "Passed",
+          "duration": "00:00:01.1911521"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 4"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 4)",
+          "outcome": "Passed",
+          "duration": "00:00:01.4756347"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 4"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 4)",
+          "outcome": "Passed",
+          "duration": "00:00:01.5127721"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 4"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 4)",
+          "outcome": "Passed",
+          "duration": "00:00:01.4957342"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 35"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 35)",
+          "outcome": "Passed",
+          "duration": "00:00:00.7677889"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 35"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 35)",
+          "outcome": "Passed",
+          "duration": "00:00:00.7755290"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 35"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 35)",
+          "outcome": "Passed",
+          "duration": "00:00:00.7755818"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 101"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 101)",
+          "outcome": "Passed",
+          "duration": "00:00:01.3005021"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 101"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 101)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2535535"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research",
+      "parameters": [
+        "civ: 101"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutTests.Roles_select_legal_deterministic_loadouts_at_start_middle_and_final_research(civ: 101)",
+          "outcome": "Passed",
+          "duration": "00:00:01.2568033"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime",
+      "parameters": [
+        "moving: True"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime(moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0799972"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime",
+      "parameters": [
+        "moving: True"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime(moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0818780"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime",
+      "parameters": [
+        "moving: True"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime(moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0842193"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "parameters": [
+        "kind: \"mine\"",
+        "moving: True"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"mine\", moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0564440"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "parameters": [
+        "kind: \"mine\"",
+        "moving: True"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"mine\", moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0564086"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "parameters": [
+        "kind: \"mine\"",
+        "moving: True"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"mine\", moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0589058"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "parameters": [
+        "kind: \"probe\"",
+        "moving: True"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"probe\", moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0586554"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "parameters": [
+        "kind: \"probe\"",
+        "moving: True"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"probe\", moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0515365"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "parameters": [
+        "kind: \"probe\"",
+        "moving: True"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"probe\", moving: True)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0589541"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime",
+      "parameters": [
+        "moving: False"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime(moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0808730"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime",
+      "parameters": [
+        "moving: False"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime(moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0798132"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime",
+      "parameters": [
+        "moving: False"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Real_mine_drop_uses_native_derived_radius_and_loaded_lifetime(moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0822416"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "parameters": [
+        "kind: \"mine\"",
+        "moving: False"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"mine\", moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0535834"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "parameters": [
+        "kind: \"mine\"",
+        "moving: False"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"mine\", moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0559357"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "parameters": [
+        "kind: \"mine\"",
+        "moving: False"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"mine\", moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0523131"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "parameters": [
+        "kind: \"probe\"",
+        "moving: False"
+      ],
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"probe\", moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0611220"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "parameters": [
+        "kind: \"probe\"",
+        "moving: False"
+      ],
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"probe\", moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0727335"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch",
+      "parameters": [
+        "kind: \"probe\"",
+        "moving: False"
+      ],
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.P692EquipmentLifecycleTests.Concrete_host_callback_deploys_behind_velocity_or_hull_and_preserves_epoch(kind: \"probe\", moving: False)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0572777"
+        }
+      ]
+    }
+  ],
+  "liveExact": [
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals",
+      "count": 1,
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:02.5709790"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals",
+      "count": 1,
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:02.5279124"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals",
+      "count": 1,
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:02.5429614"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals",
+      "count": 60,
+      "attempt": 1,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 60)",
+          "outcome": "Passed",
+          "duration": "00:01:18.5952346"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals",
+      "count": 60,
+      "attempt": 2,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 60)",
+          "outcome": "Passed",
+          "duration": "00:01:18.7298218"
+        }
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals",
+      "count": 60,
+      "attempt": 3,
+      "results": [
+        {
+          "testName": "Allegiance.ClientCore.Tests.P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 60)",
+          "outcome": "Passed",
+          "duration": "00:01:18.6513851"
+        }
+      ]
+    }
+  ],
+  "parking": {
+    "base-parking": [
+      {
+        "file": "base-parking-1.trx",
+        "outcome": "Passed",
+        "longestStoppedWithTargetSeconds": 2.006,
+        "duration": "00:01:35.6891126"
+      },
+      {
+        "file": "base-parking-2.trx",
+        "outcome": "Passed",
+        "longestStoppedWithTargetSeconds": 2.006,
+        "duration": "00:01:37.8571289"
+      },
+      {
+        "file": "base-parking-3.trx",
+        "outcome": "Passed",
+        "longestStoppedWithTargetSeconds": 2.005,
+        "duration": "00:01:38.9408308"
+      },
+      {
+        "file": "base-parking-4.trx",
+        "outcome": "Passed",
+        "longestStoppedWithTargetSeconds": 1.905,
+        "duration": "00:01:38.6628188"
+      },
+      {
+        "file": "base-parking-5.trx",
+        "outcome": "Passed",
+        "longestStoppedWithTargetSeconds": 1.905,
+        "duration": "00:01:41.7721958"
+      }
+    ],
+    "parking": [
+      {
+        "file": "parking-1.trx",
+        "outcome": "Passed",
+        "longestStoppedWithTargetSeconds": 2.005,
+        "duration": "00:01:36.0848207"
+      },
+      {
+        "file": "parking-2.trx",
+        "outcome": "Passed",
+        "longestStoppedWithTargetSeconds": 2.016,
+        "duration": "00:01:36.7107295"
+      },
+      {
+        "file": "parking-3.trx",
+        "outcome": "Passed",
+        "longestStoppedWithTargetSeconds": 2.606,
+        "duration": "00:01:36.1862788"
+      },
+      {
+        "file": "parking-4.trx",
+        "outcome": "Passed",
+        "longestStoppedWithTargetSeconds": 2.013,
+        "duration": "00:01:35.4466516"
+      },
+      {
+        "file": "parking-5.trx",
+        "outcome": "Passed",
+        "longestStoppedWithTargetSeconds": 2.005,
+        "duration": "00:01:38.1277595"
+      }
+    ]
+  },
+  "fast": {
+    "discovery": {
+      "Allegiance.Lobby.Tests": {
+        "fast": 19,
+        "live": 0,
+        "perf": 0
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "fast": 2486,
+        "live": 11,
+        "perf": 9
+      },
+      "Allegiance.ClientCore.Tests": {
+        "fast": 1441,
+        "live": 64,
+        "perf": 5
+      },
+      "Allegiance.Core.Tests": {
+        "fast": 4837,
+        "live": 27,
+        "perf": 52
+      }
+    },
+    "tiers": {
+      "fast": {
+        "tier": "fast",
+        "seconds": 307.988527324982,
+        "projects": {
+          "Allegiance.Lobby.Tests": {
+            "count": 19,
+            "outcomes": {
+              "Passed": 19
+            }
+          },
+          "Allegiance.ClientCore.MonoGame.Tests": {
+            "count": 2486,
+            "outcomes": {
+              "Passed": 2483,
+              "NotExecuted": 3
+            }
+          },
+          "Allegiance.ClientCore.Tests": {
+            "count": 1441,
+            "outcomes": {
+              "Passed": 1441
+            }
+          },
+          "Allegiance.Core.Tests": {
+            "count": 4837,
+            "outcomes": {
+              "Passed": 4832,
+              "Failed": 5
+            }
+          }
+        },
+        "calibration": {
+          "factor": 0.9849602122015915,
+          "referenceMs": 3.7133,
+          "nominalMs": 3.77,
+          "fastLimitSeconds": 10
+        },
+        "timingOffenders": [],
+        "errors": [
+          "Allegiance.Core.Tests: main failed"
+        ],
+        "quarantineFlakes": [],
+        "infrastructure": {
+          "tier": "Fast",
+          "count": 9,
+          "seconds": 0.06376679008826613,
+          "exitCode": 0,
+          "timingGuardPassed": true
+        }
+      }
+    },
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.06376679008826613,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    },
+    "passed": false
+  },
+  "pathFixtureQualification": [
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "mode": "base-workspace",
+      "attempt": 1,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0152512"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "mode": "base-workspace",
+      "attempt": 2,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0149901"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "mode": "base-workspace",
+      "attempt": 3,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Failed",
+          "duration": "00:00:00.0149184"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "mode": "changed-alias",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Passed",
+          "duration": "00:00:00.0049594"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "mode": "changed-alias",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Passed",
+          "duration": "00:00:00.0152754"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "mode": "changed-alias",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+          "outcome": "Passed",
+          "duration": "00:00:00.0158904"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+      "mode": "base-workspace",
+      "attempt": 1,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0040462"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+      "mode": "base-workspace",
+      "attempt": 2,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0040754"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+      "mode": "base-workspace",
+      "attempt": 3,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Failed",
+          "duration": "00:00:00.0043876"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+      "mode": "changed-alias",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0031362"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+      "mode": "changed-alias",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0038414"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+      "mode": "changed-alias",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+          "outcome": "Passed",
+          "duration": "00:00:00.0063976"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+      "mode": "base-workspace",
+      "attempt": 1,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0045423"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+      "mode": "base-workspace",
+      "attempt": 2,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0035108"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+      "mode": "base-workspace",
+      "attempt": 3,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0045835"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+      "mode": "changed-alias",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0040092"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+      "mode": "changed-alias",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0033277"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+      "mode": "changed-alias",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0039171"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "mode": "base-workspace",
+      "attempt": 1,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0036405"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "mode": "base-workspace",
+      "attempt": 2,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0043623"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "mode": "base-workspace",
+      "attempt": 3,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Failed",
+          "duration": "00:00:00.0041996"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "mode": "changed-alias",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Passed",
+          "duration": "00:00:00.0037756"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "mode": "changed-alias",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Passed",
+          "duration": "00:00:00.0029922"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "mode": "changed-alias",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+          "outcome": "Passed",
+          "duration": "00:00:00.0038529"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+      "mode": "base-workspace",
+      "attempt": 1,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0036522"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+      "mode": "base-workspace",
+      "attempt": 2,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0046983"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+      "mode": "base-workspace",
+      "attempt": 3,
+      "exitCode": 1,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Failed",
+          "duration": "00:00:00.0045303"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+      "mode": "changed-alias",
+      "attempt": 1,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0032442"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+      "mode": "changed-alias",
+      "attempt": 2,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0039075"
+        }
+      ]
+    },
+    {
+      "test": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+      "mode": "changed-alias",
+      "attempt": 3,
+      "exitCode": 0,
+      "results": [
+        {
+          "testName": "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+          "outcome": "Passed",
+          "duration": "00:00:00.0033800"
+        }
+      ]
+    }
+  ],
+  "sourceSha256": {
+    "src/Allegiance.Core/Sim/Ship.Equipment.cs": "fe1d6615f7cf986629b8eb7eb10ce707a6d058429b20feb0a640415433d5f493",
+    "tools/allegiance-mcp/BotManager.Dispensers.cs": "2be635aab62dc5a53788e876e7a6202992773805f0600b1f795befdf6527b025",
+    "tools/allegiance-mcp/BotManager.Lifecycle.cs": "b98e3b9307e3541f1742a7cd566b3592548d040ce13904cd7ea63a21793ad260",
+    "tools/allegiance-mcp/BotManager.TechLoadouts.cs": "93dfc0382fb07e752e265ed2947cd99dd9465370c33793a35b8f8cca2dbecae7",
+    "tools/allegiance-mcp/BotManager.cs": "7b8f286553a0cdcbd0c420f2e6198b66d4fffa5d207eeb69f3ab1a1e7035006e",
+    "tools/allegiance-mcp/TechLoadoutSelector.cs": "740099c3b2346404b098a6f19a749a1ad7e915cad1a7d72f592af9000fcf9dd0",
+    "tests/Allegiance.Core.Tests/P692EquipmentLifecycleTests.cs": "1962127d4b4db9c462a3ff1b8231140978bad340184281744692a1b5a1e4eabd",
+    "tests/Allegiance.ClientCore.Tests/SC4DispenserTests.cs": "133a20ed14c8a232c0a123d3b013eaa74962726ccead1dde997c895a8483d045",
+    "tests/Allegiance.ClientCore.Tests/SC4ShowcaseLiveTests.cs": "54b606f3a947c95a58edcefc5186bcb2ae1ac7f34b581f6288860f76d2bbc619"
+  },
+  "rawEvidence": "TestResults/SC4",
+  "scratch": ".verify-sc4 (removed after qualification)",
+  "scratchException": "Requested home scratch/evidence locations are read-only; all scratch and retained evidence use ignored workspace paths; /tmp unused."
+}
