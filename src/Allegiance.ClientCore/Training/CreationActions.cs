@@ -59,16 +59,16 @@ public sealed class CreateProbeAction : Action
 
 /// <summary>
 /// Creates (and places) a drone ship — port of <c>CreateDroneAction</c>
-/// (<c>CreateDroneAction.cpp:27-212</c>) for the <em>core</em> path: name, ship/hull/side/pilot ids,
-/// spawn sector/position/orientation and optional spawn command. The native tech-level weapon/booster/
-/// missile upgrade block (lines 91-193) and wingman-behaviour assignment (line 198) are deferred to
-/// TR-2 because they need the hull/part model of the embedded host; everything needed to populate a
-/// training arena is present. The native default wingman behaviour (use missiles, run at 60% hull,
-/// line 43) is retained as a constant for TR-2.
+/// (<c>CreateDroneAction.cpp:27-212</c>): name, ship/hull/side/pilot ids, spawn
+/// sector/position/orientation, optional spawn command, wingman behaviour, station/expendable type
+/// and the tech-level weapon/booster/missile upgrade block (lines 91-198). The tech-level and
+/// behaviour fields are carried to the site (TR-2 host applies them when seating the drone on the
+/// embedded server, which runs its own drone/wingman AI — <c>Ship.NpcUpdates.cs</c>, SIM-0111..0118).
+/// The native default wingman behaviour (use missiles, run at 60% hull, line 43) is <see cref="DefaultWingmanBehaviour"/>.
 /// </summary>
 public sealed class CreateDroneAction : Action
 {
-    public const int DefaultWingmanBehaviour = 0x01 | 0x10; // c_wbbmUseMissiles | c_wbbmRunAt60Hull
+    public const int DefaultWingmanBehaviour = 0x10 | 0x20; // c_wbbmUseMissiles | c_wbbmRunAt60Hull
 
     private readonly ITrainingSite _site;
     private readonly string _name;
@@ -76,6 +76,9 @@ public sealed class CreateDroneAction : Action
     private int _hullId;
     private readonly int _sideId;
     private readonly int _pilotType;
+    private int _techLevel = 1;                 // native ctor default (createdroneaction.cpp:33)
+    private int _stationTypeId = -1;            // NA
+    private int _wingmanBehaviour = DefaultWingmanBehaviour; // createdroneaction.cpp:42
 
     private int _sectorId = -1;              // NA
     private Vector3 _position;
@@ -96,7 +99,8 @@ public sealed class CreateDroneAction : Action
 
     public override void Execute()
     {
-        int id = _site.CreateDrone(_name, _shipId, _hullId, _sideId, _pilotType);
+        int id = _site.CreateDrone(_name, _shipId, _hullId, _sideId, _pilotType,
+            behaviour: _wingmanBehaviour, stationType: _stationTypeId, techLevel: _techLevel);
         _site.PlaceDrone(id, _sectorId, _position, _forward, _up, _commandTarget, _commandId);
     }
 
@@ -121,6 +125,19 @@ public sealed class CreateDroneAction : Action
     }
 
     public void SetCreatedHullType(int hullId) => _hullId = hullId;
+
+    /// <summary><c>SetCreatedBehaviour</c> (<c>createdroneaction.cpp:185-187</c>) — wingman
+    /// behaviour bitmask (<c>c_wbbm*</c>, igc.h:786-791), e.g. 0x50 = InRangeAggressive|UseMissiles.</summary>
+    public void SetCreatedBehaviour(int wingmanBehaviour) => _wingmanBehaviour = wingmanBehaviour;
+
+    /// <summary><c>SetStationType</c> (<c>createdroneaction.cpp:177-179</c>) — the station the
+    /// drone is a constructor for (<c>m_stationTypeID</c>).</summary>
+    public void SetStationType(int stationTypeId) => _stationTypeId = stationTypeId;
+
+    /// <summary><c>SetCreatedTechLevel</c> (<c>createdroneaction.cpp:189-191</c>) — the negative
+    /// tech level driving the weapon/booster/missile upgrade block (<c>createdroneaction.cpp:91-198</c>);
+    /// 1 (default) applies no upgrades.</summary>
+    public void SetCreatedTechLevel(int techLevel) => _techLevel = techLevel;
 }
 
 /// <summary>

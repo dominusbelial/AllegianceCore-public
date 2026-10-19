@@ -39,6 +39,38 @@ public interface ITrainingSite
     /// <summary><c>IshipIGC::GetCommandTarget(command)</c> (<c>gettargetcondition.cpp:52</c>).</summary>
     TargetRef? GetCommandTarget(TargetRef ship, int command);
 
+    // ── ship / combat state (M3/M4 seams, native <c>IdamageIGC</c>/<c>IshipIGC</c>) ─────
+    /// <summary>TRUE when a ship is destroyed: it is absent <em>or</em> its armor fraction is 0 —
+    /// the expansion of <c>GetShipIsDestroyedCondition</c>
+    /// (<c>getshipisdestroyedcondition.h:27-28</c> via <c>getshipisdamagedcondition.cpp:44-57</c>).</summary>
+    bool IsShipDestroyed(TargetRef ship);
+    /// <summary>TRUE when the ship's accepted-or-current command id equals <paramref name="commandId"/>
+    /// (<c>getcommandcondition.cpp:44-49</c>); TRUE when the ship is absent.</summary>
+    bool HasCommand(TargetRef ship, int commandId);
+    /// <summary>The model's current sector id (<c>getsectorcondition.cpp:44-49</c>), or <c>-1</c> when absent.</summary>
+    int GetSector(TargetRef model);
+    /// <summary>TRUE when <paramref name="ship"/> has <paramref name="target"/> in scanner range
+    /// (<c>IshipIGC::InScannerRange</c>, <c>shipseesobjectcondition.cpp:47-50</c>).</summary>
+    bool ShipSees(TargetRef ship, TargetRef target);
+
+    // ── combat / equipment / UI actions (native actions) ───────────────────────────
+    /// <summary>Damage the <em>player's</em> ship's shield or hull (<c>DoDamageAction.cpp:26-50</c>).</summary>
+    void DealDamage(bool toHull);
+    /// <summary>Toggle the player's selected weapon mount (<c>ToggleWeaponAction.cpp:29-47</c>).</summary>
+    void ToggleWeapon(int mount);
+    /// <summary>Swap a mounted part of an equipment type to a mount (<c>SwapWeaponAction.cpp:28-37</c>).</summary>
+    void SwapWeapon(int equipmentType, int mount);
+    /// <summary>Heal and re-arm the player's ship (shield/hull to 1, energy/ammo/fuel to max, fill
+    /// cargo with missiles+ammo) (<c>RepairRearmAction.cpp:37-74</c>).</summary>
+    void RepairAndRearm();
+    /// <summary>Show a client pane, turning off the sibling panes (<c>ShowPaneAction.cpp:30-38</c>).</summary>
+    void ShowPane(int paneMask);
+    /// <summary>Show/hide the enemy-detection eyeball on the player's ship status
+    /// (<c>ShowEyeballAction.cpp:28-35</c>).</summary>
+    void SetEyeball(bool shown);
+    /// <summary>Set an object's scan signature (<c>SetSignatureAction.cpp:46-49</c>).</summary>
+    void SetSignature(ObjectType type, int id, float signature);
+
     // ── player events (keyboard / chat) ────────────────────────────────────────────
     /// <summary>Consume-and-return whether the given key has been pressed since the last query
     /// (<c>getkeycondition.cpp:49</c> resets <c>m_pressed</c> on every Evaluate).</summary>
@@ -56,8 +88,12 @@ public interface ITrainingSite
     void CreateWaypoint(int buoyId, Vector3 position, int sectorId, int buoyType, bool visible);
     /// <summary><c>CreateProbeAction::Execute</c> — spawn a probe (<c>createprobeaction.cpp:38</c>).</summary>
     void CreateProbe(int probeId, int typeId, Vector3 position, int sideId, int sectorId);
-    /// <summary><c>TrainingMission::CreateDrone</c> (<c>trainingmission.cpp:588</c>); returns the new ship id.</summary>
-    int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType);
+    /// <summary><c>TrainingMission::CreateDrone</c> (<c>trainingmission.cpp:588</c>); returns the new ship id.
+    /// <paramref name="behaviour"/> (wingman <c>c_wbbm*</c> mask), <paramref name="stationType"/> (constructor
+    /// station type, <c>NA</c>=-1) and <paramref name="techLevel"/> (negative tech-level loadout) mirror the
+    /// native <c>CreateDroneAction</c> fields (<c>createdroneaction.cpp:91-198</c>).</summary>
+    int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType,
+        int behaviour = 0, int stationType = -1, int techLevel = 1);
     /// <summary>Place and configure a drone after creation: sector/cluster, position, orientation
     /// (forward/up), optional spawn command (<c>CreateDroneAction.cpp:60-211</c>).</summary>
     void PlaceDrone(int shipId, int sectorId, Vector3 position, Vector3 forward, Vector3 up, TargetRef? commandTarget, int commandId);

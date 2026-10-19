@@ -32,7 +32,9 @@ public static class TrainingMissionIds
     // Command ids (src/Igc/igc.h:898-912)
     public const int CmdDoNothing = -3; // c_cidDoNothing
     public const int CmdNone = -1;      // c_cidNone
+    public const int CmdAttack = 1;     // c_cidAttack
     public const int CmdGoto = 5;       // c_cidGoto
+    public const int CmdBuild = 9;      // c_cidBuild
 
     // Command enum (src/Igc/igc.h:883-887)
     public const int CommandQueued = 0;   // c_cmdQueued
@@ -44,17 +46,60 @@ public static class TrainingMissionIds
     public const int CameraExternalOrbit = 8;   // cmExternalOrbit
     public const int CameraExternalStation = 9; // cmExternalStation
 
-    // Ship-control state bit for the booster (src/Igc/igc.h:817)
-    public const int AfterburnerButton = 512; // afterburnerButtonIGC = 128 * coastButtonIGC
+    // Ship-control state bits (src/Igc/igc.h:805-831). Derived from selectedWeaponOneIGC=1:
+    // coastButtonIGC = 4, so afterburner = 128*4 = 512, cloak = 512*4 = 2048, miningMask =
+    // 2048*4 = 8192, oneWeapon = 2*8192 = 16384, weaponsMask = 3*16384 = 49152,
+    // allWeapons = 2*16384 = 32768.
+    public const int SelectedWeaponMask = 3;    // selectedWeaponMaskIGC (igc.h:807)
+    public const int AfterburnerButton = 512;   // afterburnerButtonIGC (igc.h:817)
+    public const int CloakActive = 2048;        // cloakActiveIGC (igc.h:820)
+    public const int OneWeapon = 16384;         // oneWeaponIGC (igc.h:825)
+    public const int AllWeapons = 32768;        // allWeaponsIGC (igc.h:826)
+    public const int WeaponsMask = 49152;       // weaponsMaskIGC (igc.h:827)
+    public const int MissileFire = 0x10000;     // missileFireIGC (igc.h:830)
 
-    // Training HUD overlays — symbolic ids; the concrete overlay assets are client-side (TR-2).
+    // Chat recipients (src/Igc/igc.h:2731)
+    public const int ChatEveryone = 0;          // CHAT_EVERYONE
+
+    // Wingman-behaviour bits (src/Igc/igc.h:786-791): use missiles=0x10, run@60% hull=0x20,
+    // in-range aggressive=0x40. Native CreateDroneAction default = c_wbbmUseMissiles|c_wbbmRunAt60Hull
+    // (createdroneaction.cpp:42).
+    public const int WingmanUseMissiles = 0x10;
+    public const int WingmanRunAt60Hull = 0x20;
+    public const int WingmanInRangeAggressive = 0x40;
+
+    // Training HUD overlays — the native TrainingOverlay enum (WinTrek/indicator.h:17-42),
+    // renumbered to the true enum order so M3/M4 overlays are native-accurate. The concrete
+    // overlay visuals are client-side (TR-2); the ids carry the native ordering.
     public const int OverlayNone = 0;              // NoTrainingOverlay
-    public const int OverlayRoll = 1;              // RollTrainingOverlay
-    public const int OverlayThrottle = 2;          // ThrottleTrainingOverlay
-    public const int OverlaySpeed = 3;             // SpeedTrainingOverlay
-    public const int OverlayMotion = 4;            // MotionIndicatorTrainingOverlay
+    public const int OverlaySpeed = 1;             // SpeedTrainingOverlay
+    public const int OverlayMotion = 2;            // MotionIndicatorTrainingOverlay
+    public const int OverlayReticule = 3;          // ReticuleTrainingOverlay
+    public const int OverlayThrottle = 4;          // ThrottleTrainingOverlay
     public const int OverlayFuel = 5;              // FuelTrainingOverlay
-    public const int OverlayBooster = 6;           // BoosterTrainingOverlay
+    public const int OverlayEnergy = 6;            // EnergyTrainingOverlay
+    public const int OverlayAmmo = 7;              // AmmoTrainingOverlay
+    public const int OverlayHull = 8;              // HullTrainingOverlay
+    public const int OverlayShield = 9;            // ShieldTrainingOverlay
+    public const int OverlayChat = 10;             // ChatTrainingOverlay
+    public const int OverlaySector = 11;           // SectorTrainingOverlay
+    public const int OverlayInventory = 12;        // InventoryTrainingOverlay
+    public const int OverlayTarget = 13;           // TargetTrainingOverlay
+    public const int OverlayCommand = 14;          // CommandTrainingOverlay
+    public const int OverlayEyeball = 15;          // EyeballTrainingOverlay
+    public const int OverlayKillBonus = 16;        // KillBonusTrainingOverlay
+    public const int OverlayRoll = 17;             // RollTrainingOverlay
+    public const int OverlayBooster = 18;          // BoosterTrainingOverlay
+    public const int OverlayTargetCenter = 19;     // TargetCenterTrainingOverlay
+    public const int OverlayFireGuns = 20;         // FireGunsTrainingOverlay
+    public const int OverlayTargetEnemy = 21;      // TargetEnemyTrainingOverlay
+    public const int OverlayMissile = 22;          // MissileTrainingOverlay
+    public const int OverlayCloak = 23;            // CloakTrainingOverlay
+
+    // Client overlay/pane masks shown by ShowPaneAction (native of*OverlayFlags, console.h:48-55).
+    // ShowPaneAction::Execute turns these off and on the requested one (showpaneaction.cpp:30-38).
+    public const int PaneInventory = 0x002000;      // ofInventory (console.h:53)
+    public const int PaneSector = 0x008000;         // ofSectorPane (console.h:55)
 
     // Mission 2 (Basic Flight) voice-over / commentary sound ids. Native uses symbolic tm_2_XXSound
     // ids bound in the trainingsounddef asset; exact values are catalog-specific, so the C# port uses

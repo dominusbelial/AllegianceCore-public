@@ -99,6 +99,25 @@ public sealed class ClientTrainingSite : ITrainingSite
     public ControlData GetInputControls() => TrainingControlState.InputControls;
     public TargetRef? GetCommandTarget(TargetRef ship, int command) => null;
 
+    // ── M3/M4 ship/combat state (replicated world + host) ─────────────────────
+    /// <summary>Absent from the replicated world ⇒ destroyed (<c>getshipisdamagedcondition.cpp:53-55</c>).</summary>
+    public bool IsShipDestroyed(TargetRef ship) => Resolve(ship) is null;
+
+    public bool HasCommand(TargetRef ship, int commandId) => false; // client exposes no accepted/current cmd
+
+    public int GetSector(TargetRef model) => Resolve(model)?.SectorId ?? -1;
+
+    public bool ShipSees(TargetRef ship, TargetRef target) => false; // server-side scanner judgement
+
+    // ── M3/M4 combat / equipment / UI actions ─────────────────────────────────
+    public void DealDamage(bool toHull) => TrainingHostLog.Log($"DealDamage(toHull:{toHull})");
+    public void ToggleWeapon(int mount) => TrainingHostLog.Log($"ToggleWeapon(mount:{mount})");
+    public void SwapWeapon(int equipmentType, int mount) => TrainingHostLog.Log($"SwapWeapon({equipmentType},{mount})");
+    public void RepairAndRearm() => TrainingHostLog.Log("RepairAndRearm()");
+    public void ShowPane(int paneMask) => TrainingHostLog.Log($"ShowPane(0x{paneMask:x})");
+    public void SetEyeball(bool shown) => TrainingHostLog.Log($"SetEyeball({shown})");
+    public void SetSignature(ObjectType type, int id, float signature) => TrainingHostLog.Log($"SetSignature({type},{id},{signature})");
+
     private static int ResolveId(TargetRef r) =>
         r.Type == ObjectType.Ship && r.Id == TargetRef.Na ? -1 : r.Id;
 
@@ -125,8 +144,9 @@ public sealed class ClientTrainingSite : ITrainingSite
         if (_f.Host is { } h) h.CreateProbe(probeId, typeId, position, sideId, sectorId);
         else TrainingHostLog.Log($"CreateProbe({probeId}) — no embedded training host");
     }
-    public int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType)
-        => _f.Host is { } h ? h.CreateDrone(name, shipId, hullId, sideId, pilotType)
+    public int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType,
+        int behaviour = 0, int stationType = -1, int techLevel = 1)
+        => _f.Host is { } h ? h.CreateDrone(name, shipId, hullId, sideId, pilotType, behaviour, stationType, techLevel)
             : -1; // no ship created without the training-host universe
     public void PlaceDrone(int shipId, int sectorId, Vector3 position, Vector3 forward, Vector3 up, TargetRef? commandTarget, int commandId)
     {

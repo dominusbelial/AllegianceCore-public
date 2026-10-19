@@ -17,6 +17,7 @@ public sealed class TrainingHostSite : ITrainingSite
 {
     private readonly TrainingHost _host;
     private readonly List<int> _keys = new();
+    private readonly List<int> _chats = new();
     private readonly List<string> _messages = new();
     private int _nextInstance = 1;
     private readonly Dictionary<int, int> _soundInstances = new();
@@ -58,8 +59,29 @@ public sealed class TrainingHostSite : ITrainingSite
     public ControlData GetShipControls(TargetRef ship) => _appliedControls;
     public ControlData GetInputControls() => _inputControls;
     public TargetRef? GetCommandTarget(TargetRef ship, int command)
-        => _host.ResolveShip(ship.Id) is { } s && s.GotoWaypoint is { } g
-            ? new TargetRef(ObjectType.Buoy, 0) : null;
+        => command == TrainingMissionIds.CommandCurrent ? _host.GetCommandTarget(ship.Id) : null;
+
+    // ── M3/M4 ship/combat state (real host mission) ─────────────────────────────
+    public bool IsShipDestroyed(TargetRef ship) => _host.IsDestroyed(ship.Id);
+
+    public bool HasCommand(TargetRef ship, int commandId) => _host.GetCommandId(ship.Id) == commandId;
+
+    public int GetSector(TargetRef model) => Resolve(model)?.SectorId ?? -1;
+
+    public bool ShipSees(TargetRef ship, TargetRef target) => _host.InScannerRange(ship.Id, target);
+
+    // ── M3/M4 combat / equipment / UI actions ──────────────────────────────────
+    // The headless proof scripts the *outcomes* these actions produce on the real host (armour
+    // fraction via DestroyDrone, command set via IssueCommand, etc.); the player's own weapon/shield/
+    // pane/eyeball cosmetics are client-side rendering and are no-ops on the host site (mirroring how
+    // SetDisplayMode/SetHudOverlay are no-ops here).
+    public void DealDamage(bool toHull) { }
+    public void ToggleWeapon(int mount) { }
+    public void SwapWeapon(int equipmentType, int mount) { }
+    public void RepairAndRearm() { }
+    public void ShowPane(int paneMask) { }
+    public void SetEyeball(bool shown) { }
+    public void SetSignature(ObjectType type, int id, float signature) { }
 
     // ── player events ─────────────────────────────────────────────────────────
     public bool ConsumeKey(int key)
@@ -70,16 +92,27 @@ public sealed class TrainingHostSite : ITrainingSite
         return true;
     }
     public void RecordKeyPress(int key) => _keys.Add(key);
-    public bool ConsumeChat(int recipient) => false;
-    public void RecordChat(int recipient) { }
+    public bool ConsumeChat(int recipient)
+    {
+        int i = _chats.IndexOf(recipient);
+        if (i < 0) return false;
+        _chats.RemoveAt(i);
+        return true;
+    }
+    public void RecordChat(int recipient) => _chats.Add(recipient);
+
+    /// <summary>Inject a chat-to-recipient event so the mission's <c>GetChatCondition</c> can consume it
+    /// (the headless driver's stand-in for the player typing a chat).</summary>
+    public void SendTrainingChat(int recipient) => _chats.Add(recipient);
 
     // ── world creation → host handlers ────────────────────────────────────────
     public void CreateWaypoint(int buoyId, Vector3 position, int sectorId, int buoyType, bool visible)
         => _host.CreateWaypoint(buoyId, position, sectorId, buoyType, visible);
     public void CreateProbe(int probeId, int typeId, Vector3 position, int sideId, int sectorId)
         => _host.CreateProbe(probeId, typeId, position, sideId, sectorId);
-    public int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType)
-        => _host.CreateDrone(name, shipId, hullId, sideId, pilotType);
+    public int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType,
+        int behaviour = 0, int stationType = -1, int techLevel = 1)
+        => _host.CreateDrone(name, shipId, hullId, sideId, pilotType, behaviour, stationType, techLevel);
     public void PlaceDrone(int shipId, int sectorId, Vector3 position, Vector3 forward, Vector3 up,
         TargetRef? commandTarget, int commandId)
         => _host.PlaceDrone(shipId, sectorId, position, forward, up,

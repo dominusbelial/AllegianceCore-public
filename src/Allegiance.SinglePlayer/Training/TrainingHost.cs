@@ -28,7 +28,8 @@ public interface ITrainingHost
 {
     void CreateWaypoint(int buoyId, Vector3 position, int sectorId, int buoyType, bool visible);
     void CreateProbe(int probeId, int typeId, Vector3 position, int sideId, int sectorId);
-    int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType);
+    int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType,
+        int behaviour = 0, int stationType = -1, int techLevel = 1);
     void PlaceDrone(int shipId, int sectorId, Vector3 position, Vector3 forward, Vector3 up,
         int? commandTargetShipId, int commandId);
     void IssueCommand(int shipId, int command, int? targetShipId, int? targetBuoyId, int? targetStationId, int commandId);
@@ -66,6 +67,12 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     private readonly Dictionary<int, Waypoint> _waypoints = new();
     private readonly Dictionary<short, bool> _autopilot = new();
     private readonly Dictionary<int, Ship> _drones = new();
+    private readonly HashSet<int> _destroyed = new();
+    private readonly Dictionary<int, TargetRef?> _commandTargets = new();
+    private readonly Dictionary<int, int> _commands = new();
+    private readonly Dictionary<int, int> _droneBehaviours = new();    // c_wbbm* mask
+    private readonly Dictionary<int, int> _droneStationTypes = new();  // constructor station type
+    private readonly Dictionary<int, int> _droneTechLevels = new();    // negative tech-level loadout
 
     public Mission Mission { get; }
     public Ship PlayerShip { get; }
@@ -91,17 +98,29 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         StartSectorId = startSector;
     }
 
-    public static TrainingHost Start(string? artwork = null)
+    /// <summary>The universe each native training mission boots: map, player hull, start sector and
+    /// the on-screen game name. Mission 2/3 share the <c>training_1</c> map (sectors around 1010),
+    /// Mission 4 uses <c>training_3</c> (sector 1030).</summary>
+    public readonly record struct TrainingVariant(string Map, short PlayerHull, short StartSector, string GameName);
+
+    public static readonly TrainingVariant BasicFlight = new("training_1.igc", 412, 1010, "Basic Flight");
+    public static readonly TrainingVariant BasicWeaponry = new("training_1.igc", 414, 1010, "Basic Weaponry");
+    public static readonly TrainingVariant EnemyEngagement = new("training_3.igc", 486, 1030, "Enemy Engagement");
+
+    public static TrainingHost Start(string? artwork = null) => Start(BasicFlight, artwork);
+
+    public static TrainingHost Start(TrainingVariant variant, string? artwork = null)
     {
         var server = new Srv();
         var artPath = artwork ?? Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork);
-        server.Boot(TrainingConfig(artPath));
+        server.Boot(TrainingConfig(variant, artPath));
         var mission = server.Missions[0];
         mission.Stage = MissionStage.Started;   // bypass the ready-up lobby (established P180 pattern)
 
         var core = mission.Core;
-        var sector = mission.Sectors.First(s => s.Id == 1010);
-        var hull = core.HullTypes[(short)412];  // interceptor (mission2.cpp:74 "an interceptor")
+        var sector = mission.Sectors.First(s => s.Id == variant.StartSector);
+        var hull = core.HullTypes.TryGetValue(variant.PlayerHull, out var ph) ? ph
+            : core.HullTypes.Values.OrderBy(x => x.HullId).First(); // mission2.cpp:74 etc.
 
         // Player interceptor: at the origin facing +X, up +Z — native SetupShipAndCamera
         // (trainingmission.cpp:128-134: SetOrientation(fwd(1,0,0), up(0,0,1)), pos(0,0,0)).
@@ -123,7 +142,7 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         };
         mission.PlaceShip(commander, sector);
 
-        var host = new TrainingHost(server, mission, player, commander, 1010);
+        var host = new TrainingHost(server, mission, player, commander, variant.StartSector);
         return host;
     }
 
@@ -138,7 +157,7 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         _ticker.Start();
     }
 
-    private static Cfg TrainingConfig(string artPath) => new()
+    private static Cfg TrainingConfig(TrainingVariant variant, string artPath) => new()
     {
         ArtPath = artPath,
         StaticCore = "PCore014.igc",
@@ -150,7 +169,7 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         [
             new Gm
             {
-                Name = "Basic Flight", Map = "training_1.igc", Teams = 1,
+                Name = variant.GameName, Map = variant.Map, Teams = 1,
                 CivIds = [25], SideNames = ["Iron League"],
                 MaxPlayersPerTeam = 8, MinimumPlayersPerTeam = 0,
             },
@@ -188,6 +207,24 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     {
         lock (_simGate) _server.Tick();
         AdvanceAutopilot();
+    }
+
+    /// <summary>
+    /// Lightweight deterministic driver step for the long-narrative missions (M3/M4): advance the real
+    /// mission clock by <paramref name="dt"/> via <see cref="Mission.Update"/> (measured ~0.14 ms) and
+    /// run the host autopilot pass — <em>without</em> the full server tick, whose networking/broadcast
+    /// overhead costs ~50 ms even headless. Sufficient for the headless mission logic: positions are
+    /// static, the player's turns are scripted by the driver, and the host autopilot pass flies any
+    /// Goto'd ship, so the elapsed-time / geometric / command gates all resolve against the real host.
+    /// </summary>
+    public void StepLight(float dt = 0.05f)
+    {
+        lock (_simGate)
+        {
+            double now = Mission.LastUpdate + dt;
+            if (now > Mission.LastUpdate) Mission.Update(now);
+            AdvanceAutopilot();
+        }
     }
 
     private const float CruiseSpeed = 100f;     // interceptor cruise, m/s (era-design nominal)
@@ -244,6 +281,10 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     }
 
     public int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType)
+        => CreateDrone(name, shipId, hullId, sideId, pilotType, 0, -1, 1);
+
+    public int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType,
+        int behaviour, int stationType, int techLevel)
     {
         int id = shipId == -1 ? NextId() : shipId;
         var hull = Mission.Core.HullTypes.TryGetValue((short)hullId, out var h) ? h
@@ -254,6 +295,9 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         };
         Mission.PlaceShip(ship, Mission.Sectors[0]);
         _drones[id] = ship;
+        _droneBehaviours[id] = behaviour;      // c_wbbm* mask (createdroneaction.cpp:91-198 host intake)
+        _droneStationTypes[id] = stationType;  // constructor station type (NA=-1)
+        _droneTechLevels[id] = techLevel;      // negative tech-level loadout
         return id;
     }
 
@@ -280,17 +324,31 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     {
         Ship? ship = ResolveShip(shipId);
         if (ship is null) return;
+        // Only an accepted or current order sets the command id a GetCommandCondition sees; a queued
+        // order (c_cmdQueued) merely presents a prompt until the pilot accepts it (getcommandcondition.cpp:44-49).
+        if (command != TrainingMissionIds.CommandQueued)
+            _commands[shipId] = commandId;
         if (commandId == TrainingMissionIds.CmdGoto)
         {
             if (targetBuoyId is { } bid && _waypoints.TryGetValue(bid, out var wp))
+            {
+                _commandTargets[shipId] = new TargetRef(ObjectType.Buoy, bid);
                 ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)wp.SectorId, ToCore(wp.Position)));
+            }
             else if (targetShipId is { } tsid && ResolveShip(tsid) is { } target)
+            {
+                _commandTargets[shipId] = new TargetRef(ObjectType.Ship, tsid);
                 ship.SetGoto(new GotoOrder(GotoKind.Waypoint, target.Sector!.Id, target.Position));
+            }
             else if (targetStationId is { } stid && stid == StartSectorId)
+            {
+                _commandTargets[shipId] = new TargetRef(ObjectType.Station, stid);
                 ship.SetGoto(new GotoOrder(GotoKind.Waypoint, (short)stid, ToCore(StationPosition)));
+            }
         }
         else
         {
+            _commandTargets[shipId] = null;
             ship.SetGoto(null);   // c_cidDoNothing / None clear the current target (setcommandaction.cpp:77-84)
         }
     }
@@ -304,6 +362,58 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     }
 
     public bool IsAutopilot(int shipId) => _autopilot.TryGetValue((short)shipId, out var b) && b;
+
+    // ── M3/M4 combat/sensor state (native IdamageIGC / IshipIGC seams) ────────────
+    /// <summary>The ship is "destroyed" when it is absent or marked destroyed (the headless driver
+    /// calls <see cref="DestroyDrone"/> to script the outcome the training script gates on).</summary>
+    public bool IsDestroyed(int shipId)
+    {
+        if (_destroyed.Contains(shipId)) return true;
+        if (shipId == PlayerShipId) return false;
+        return ResolveShip(shipId) is null;
+    }
+
+    /// <summary>Destroy a drone — remove it from the mission so <see cref="ResolveShip"/> and the
+    /// geometry reads treat it as gone (the "armour fraction reaches 0" outcome the
+    /// <c>GetShipIsDestroyedCondition</c> gating detects).</summary>
+    public void DestroyDrone(int shipId)
+    {
+        if (_drones.TryGetValue(shipId, out var ship))
+        {
+            _drones.Remove(shipId);
+            ship.Sector?.Remove(ship);
+            ship.Sector = null;
+        }
+        _destroyed.Add(shipId);
+    }
+
+    /// <summary>Record/replace a ship's current command-target and accepted/current command id (the
+    /// radar-target the driver picks / the order it accepts; read by the <c>CurrentTarget</c>
+    /// indirection and <c>GetCommandCondition</c>).</summary>
+    public void SetCommandTarget(int shipId, TargetRef? target, int commandId = TrainingMissionIds.CmdGoto)
+    {
+        _commandTargets[shipId] = target;
+        _commands[shipId] = commandId;
+    }
+
+    public TargetRef? GetCommandTarget(int shipId) => _commandTargets.TryGetValue(shipId, out var t) ? t : null;
+
+    public int GetCommandId(int shipId) => _commands.TryGetValue(shipId, out var c) ? c : TrainingMissionIds.CmdNone;
+
+    public int GetSectorId(int shipId) => ResolveShip(shipId) is { } s && s.Sector is { } sec ? sec.Id : -1;
+
+    /// <summary>Heuristic for <c>IshipIGC::InScannerRange</c> (<c>shipseesobjectcondition.cpp:47-50</c>):
+    /// same sector and within 1500 m. Drives the cosmetic enemy-detection eyeball; not a full
+    /// signature-vs-range calc (a TR-4 sim concern).</summary>
+    public bool InScannerRange(int shipId, TargetRef target)
+    {
+        if (ResolveShip(shipId) is not { } s || s.Sector is not { } sec) return false;
+        var t = new TrainingHostSite(this).Resolve(target);
+        if (t is null || t.SectorId != sec.Id) return false;
+        return (t.Position - ToNum(s.Position)).LengthSquared() <= 1500f * 1500f;
+    }
+
+    private static System.Numerics.Vector3 ToNum(Allegiance.Core.Collision.Vector3 v) => new(v.X, v.Y, v.Z);
 
     internal Ship? ResolveShip(int id)
     {

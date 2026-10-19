@@ -159,20 +159,29 @@ public class TR2TrainingTests
     }
 
     [Fact]
-    public void TrainingScreen_ListsNativeMissions_BasicFlightIsTheOnlyPlayable()
+    public void TrainingScreen_ListsNativeMissions_PlayableThroughEnemyEngagement()
     {
         var screen = new TrainingScreenModel();
         // The native training screen lists missions 1,2,3,4,5,6,8 (mission 7 removed) — trainingscreen.cpp:50-58.
         Assert.Equal(7, screen.Count);
         Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm1Introduction && !m.Playable);
         Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm2BasicFlight && m.Playable);
+        // TR-3 enables Missions 3 (Basic Weaponry) and 4 (Enemy Engagement); the rest stay coming-soon.
+        Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm3BasicWeaponry && m.Playable);
+        Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm4EnemyEngagement && m.Playable);
         Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm8Nanite && !m.Playable);
-        Assert.All(TrainingScreenModel.Missions.Where(m => m.MissionId != Tm2BasicFlight), m => Assert.False(m.Playable));
+        Assert.All(TrainingScreenModel.Missions.Where(
+            m => m.MissionId is not (Tm2BasicFlight or Tm3BasicWeaponry or Tm4EnemyEngagement)),
+            m => Assert.False(m.Playable));
 
-        // The playable mission is selected by default and startable.
+        // The playable missions are startable; a coming-soon mission is not.
         screen.Index = Array.FindIndex(TrainingScreenModel.Missions, m => m.MissionId == Tm2BasicFlight);
         Assert.True(screen.CanStart);
         screen.Index = Array.FindIndex(TrainingScreenModel.Missions, m => m.MissionId == Tm3BasicWeaponry);
+        Assert.True(screen.CanStart);
+        screen.Index = Array.FindIndex(TrainingScreenModel.Missions, m => m.MissionId == Tm4EnemyEngagement);
+        Assert.True(screen.CanStart);
+        screen.Index = Array.FindIndex(TrainingScreenModel.Missions, m => m.MissionId == Tm5CommandView);
         Assert.False(screen.CanStart);
     }
 

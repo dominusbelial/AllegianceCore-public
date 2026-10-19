@@ -131,6 +131,7 @@ public sealed class ObjectPointingAtCondition : Condition
     private readonly ITrainingSite _site;
     private readonly TargetRef _object;
     private readonly TargetRef _target;
+    private readonly PlayerCurrentTarget? _currentTarget;
     private Vector3 _vectorMask = new(Na, Na, Na);
     private float _minimumAngle = Na;
 
@@ -141,12 +142,26 @@ public sealed class ObjectPointingAtCondition : Condition
         _site = site;
         _object = obj;
         _target = target;
+        _currentTarget = null;
+    }
+
+    /// <summary>Overload for the native <c>ObjectPointingAtCondition(ship, CurrentTarget(PlayerShipTarget))</c>:
+    /// the target is resolved lazily to the player's current command target on each Evaluate.</summary>
+    public ObjectPointingAtCondition(ITrainingSite site, TargetRef obj, PlayerCurrentTarget target)
+    {
+        _site = site;
+        _object = obj;
+        _currentTarget = target;
+        _target = default;
     }
 
     public override bool Evaluate()
     {
         var o = _site.Resolve(_object);
-        var t = _site.Resolve(_target);
+        TargetRef? trg = _currentTarget?.Resolve() ?? _target;
+        if (trg is not { } tt)
+            return false;
+        var t = _site.Resolve(tt);
         if (o is null || t is null)
             return false;
 

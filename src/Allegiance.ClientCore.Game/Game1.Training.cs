@@ -1,34 +1,48 @@
 using Allegiance.ClientCore.Training;
+using Allegiance.SinglePlayer;
 using static Allegiance.ClientCore.Training.TrainingMissionIds;
 
 namespace Allegiance.ClientCore.MonoGame;
 
 /// <summary>
 /// TR-2 — the Game1 slice that drives a native training mission against the live client.
-/// <see cref="BeginTrainingMission"/> starts Mission 2 (Basic Flight) on the training site
-/// bound to the real session (see <see cref="ClientTrainingSite"/>); <see cref="UpdateTraining"/>
-/// pumps the mission each frame and tears it down on completion; the HUD overlay routed by
-/// <see cref="SetHudOverlayAction"/> is rendered by the flight HUD. Inert with no session.
+/// <see cref="BeginTrainingMission"/> starts the mission (Basic Flight / Basic Weaponry / Enemy
+/// Engagement in TR-3) on the training site bound to the real session (see
+/// <see cref="ClientTrainingSite"/>); <see cref="UpdateTraining"/> pumps the mission each frame and
+/// tears it down on completion; the HUD overlay routed by <see cref="SetHudOverlayAction"/> is rendered
+/// by the flight HUD. Inert with no session.
 /// </summary>
 public sealed partial class Game1
 {
     private TrainingSession? _trainingSession;
+    private TrainingHost? _embeddedHost;
     private string _trainingError = "";
     private double _trainingClock;
 
     /// <summary>Whether a training mission is currently running on this client.</summary>
     private bool TrainingActive => _trainingSession is { Finished: false };
 
-    /// <summary>Begin a native training mission (Basic Flight in TR-2) against the embedded host.</summary>
+    /// <summary>Begin a native training mission against the embedded host.</summary>
     private void BeginTrainingMission(int missionId)
     {
         _trainingError = "";
-        if (missionId != Tm2BasicFlight)
+        if (missionId is not (Tm2BasicFlight or Tm3BasicWeaponry or Tm4EnemyEngagement))
         {
-            _trainingError = "Only Basic Flight (Mission 2) is playable in TR-2; the rest are coming soon.";
+            _trainingError = "That mission isn't playable yet; it's coming soon.";
             Console.WriteLine($"[training] {_trainingError}");
             return;
         }
+
+        // The embedded training host realises the mission's universe/creation actions (TR-2b). The
+        // variant selects the native map/hull/start-sector (M2/M3: training_1/1010; M4: training_3/1030).
+        var variant = missionId switch
+        {
+            Tm2BasicFlight => TrainingHost.BasicFlight,
+            Tm3BasicWeaponry => TrainingHost.BasicWeaponry,
+            Tm4EnemyEngagement => TrainingHost.EnemyEngagement,
+            _ => TrainingHost.BasicFlight,
+        };
+        _embeddedHost = TrainingHost.Start(variant);
 
         var facilities = new ClientTrainingFacilities
         {
@@ -41,9 +55,17 @@ public sealed partial class Game1
                 var o = _ownSim.Orientation;
                 return (F: ToSys(o.GetForward()), U: ToSys(o.GetUp()), R: ToSys(o.GetRight()));
             },
+            Host = _embeddedHost,
         };
+
         var site = new ClientTrainingSite(facilities);
-        var mission = new Mission2(site);
+        var mission = missionId switch
+        {
+            Tm2BasicFlight => (TrainingMission)new Mission2(site),
+            Tm3BasicWeaponry => new Mission3(site),
+            Tm4EnemyEngagement => new Mission4(site),
+            _ => throw new InvalidOperationException(),
+        };
         var session = new TrainingSession(site, mission);
 
         TrainingController.BeginMission();
@@ -61,7 +83,7 @@ public sealed partial class Game1
         }
 
         _returnToIntroOnFailure = true;
-        Console.WriteLine($"[training] Mission {missionId} (Basic Flight) started on the embedded host");
+        Console.WriteLine($"[training] Mission {missionId} ({variant.GameName}) started on the embedded host");
     }
 
     /// <summary>Per-frame pump of the active training mission (native TrainingMission::Frame).</summary>
@@ -73,6 +95,8 @@ public sealed partial class Game1
         {
             Console.WriteLine("[training] mission complete");
             TrainingController.EndMission();
+            _embeddedHost?.Dispose();
+            _embeddedHost = null;
             _trainingSession = null;
             _trainingError = "";
             _introView = IntroView.SinglePlayer;   // back to the chooser

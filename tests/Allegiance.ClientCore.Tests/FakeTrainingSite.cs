@@ -54,10 +54,16 @@ public sealed class FakeTrainingSite : ITrainingSite
     public List<string> Messages { get; } = new();
     public List<int> PlayedSounds { get; } = new();
     public List<(int BuoyId, Vector3 Pos, int Sector, int Type, bool Visible)> Waypoints { get; } = new();
-    public List<(int Id, string Name, int Hull, int Side, int Pilot)> Drones { get; } = new();
+    public List<(int Id, string Name, int Hull, int Side, int Pilot, int Behaviour, int StationType, int TechLevel)> Drones { get; } = new();
     public List<(int ShipId, int Sector, Vector3 Pos)> PlacedDrones { get; } = new();
     public List<(int ShipId, int Command, TargetRef? Target, int CommandId)> IssuedCommands { get; } = new();
     public Dictionary<int, TargetRef?> CommandTargets { get; } = new();
+    public Dictionary<int, int> CommandIds { get; } = new();
+    public List<string> ActionsLog { get; } = new();
+    private readonly HashSet<int> _destroyedShips = new();
+
+    /// <summary>Mark a ship destroyed (the "armour fraction reaches 0" outcome).</summary>
+    public void DestroyShip(int id) => _destroyedShips.Add(id);
 
     public FakeTrainingSite()
     {
@@ -117,6 +123,26 @@ public sealed class FakeTrainingSite : ITrainingSite
     public TargetRef? GetCommandTarget(TargetRef ship, int command)
         => CommandTargets.TryGetValue(ship.Id, out var t) ? t : null;
 
+    // ── M3/M4 ship/combat state ────────────────────────────────────────────────
+    public bool IsShipDestroyed(TargetRef ship)
+        => _destroyedShips.Contains(ship.Id) || Resolve(ship) is null;
+
+    public bool HasCommand(TargetRef ship, int commandId)
+        => CommandIds.TryGetValue(ship.Id, out var c) && c == commandId;
+
+    public int GetSector(TargetRef model) => Resolve(model)?.SectorId ?? -1;
+
+    public bool ShipSees(TargetRef ship, TargetRef target) => false;
+
+    // ── M3/M4 combat / equipment / UI actions (recorded for assertion) ────────
+    public void DealDamage(bool toHull) => ActionsLog.Add($"DealDamage({toHull})");
+    public void ToggleWeapon(int mount) => ActionsLog.Add($"ToggleWeapon({mount})");
+    public void SwapWeapon(int equipmentType, int mount) => ActionsLog.Add($"SwapWeapon({equipmentType},{mount})");
+    public void RepairAndRearm() => ActionsLog.Add("RepairAndRearm");
+    public void ShowPane(int paneMask) => ActionsLog.Add($"ShowPane(0x{paneMask:x})");
+    public void SetEyeball(bool shown) => ActionsLog.Add($"SetEyeball({shown})");
+    public void SetSignature(ObjectType type, int id, float signature) => ActionsLog.Add($"SetSignature({type},{id},{signature})");
+
     public bool ConsumeKey(int key) => _pendingKeys.Remove(key);
 
     public void RecordKeyPress(int key) => _pendingKeys.Add(key);
@@ -134,10 +160,11 @@ public sealed class FakeTrainingSite : ITrainingSite
     public void CreateProbe(int probeId, int typeId, Vector3 position, int sideId, int sectorId)
         => AddObject(ObjectType.Probe, probeId, position, Vector3.UnitX);
 
-    public int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType)
+    public int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType,
+        int behaviour = 0, int stationType = -1, int techLevel = 1)
     {
         int id = shipId < 0 ? _nextObjectId++ : shipId;
-        Drones.Add((id, name, hullId, sideId, pilotType));
+        Drones.Add((id, name, hullId, sideId, pilotType, behaviour, stationType, techLevel));
         return id;
     }
 
@@ -152,6 +179,7 @@ public sealed class FakeTrainingSite : ITrainingSite
     public void IssueCommand(TargetRef ship, int command, TargetRef? target, int commandId)
     {
         IssuedCommands.Add((ship.Id, command, target, commandId));
+        CommandIds[ship.Id] = commandId;
         if (target is { } t)
             CommandTargets[ship.Id] = t;
     }
