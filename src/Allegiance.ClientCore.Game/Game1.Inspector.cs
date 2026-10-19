@@ -424,7 +424,7 @@ public sealed partial class Game1
                 var tex = texStem is null ? null : _nativeStationRenderer.TextureFor(texStem);
                 float nscale = Rendering.NativeStationResolver.ScaleForRadius(
                     s.Radius > 0f ? s.Radius : Rendering.StationRenderer.DefaultFallbackRadius, geo.MeshRadius);
-                _nativeStationRenderer.Draw(geo, tex, world, view, proj, nscale, _sectorLighting);
+                _nativeStationRenderer.Draw(geo, tex, world, view, proj, nscale, _sectorLighting, s.ModelName, texStem);
                 if (Rendering.NativeStationLights.IsVisible(slotWorld.Translation - cameraEye, s.Radius,
                         view, proj, GraphicsDevice.Viewport.Width))
                     Rendering.NativeStationLights.Append(_nativeStationRenderer.LightsFor(s.ModelName),
@@ -1330,7 +1330,7 @@ public sealed partial class Game1
                         if (geo is not null)
                         {
                             var tex = _projectileModelRenderer.TextureFor(bVis.ModelName);
-                            _projectileModelRenderer.Draw(geo, tex, bXna - cameraEye, bXnaDir, bSpin, view, proj);
+                            _projectileModelRenderer.Draw(geo, tex, bXna - cameraEye, bXnaDir, bSpin, view, proj, modelName: bVis.ModelName, lighting: _sectorLighting);
                             continue;
                         }
                         break;
@@ -1350,7 +1350,13 @@ public sealed partial class Game1
         {
             var mo = new Orientation(); mo.Set(-new SimVec(m.Fwd.X, m.Fwd.Y, m.Fwd.Z));
             var mWorld = PoseConverter.ToXnaRotation(mo) * Matrix.CreateTranslation(m.Pos - cameraEye);
-            _missileRenderer.Draw(mWorld, view, proj, _sectorLighting);
+            var model = MissileModelSource.ResolveModelName(m.Type, _shopCatalog?.MissileTypes);
+            var texture = MissileModelSource.ResolveTextureName(m.Type, _shopCatalog?.MissileTypes);
+            if (_nativeMissileRenderer.MeshFor(model) is not null)
+                _nativeMissileRenderer.Draw(mWorld, view, proj, model,
+                    _nativeMissileRenderer.TextureFor(model, texture), _sectorLighting);
+            else
+                _missileRenderer.Draw(mWorld, view, proj, _sectorLighting);
             _drawTrailMissiles.Add(new TrailMissile((short)m.Type,
                 new SimVec(m.Pos.X, m.Pos.Y, m.Pos.Z), new SimVec(m.Fwd.X, m.Fwd.Y, m.Fwd.Z), _trailNowSec));
         }

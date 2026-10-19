@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.MonoGame.Assets;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Linq;
@@ -244,7 +245,7 @@ public sealed partial class Game1
         var world = _session.World;
         lock (_session.Gate)
         {
-            if (world.MyShipId is not { } me) return false;
+            if (RenderShipId(world) is not { } me) return false;
             if (!world.Ships.TryGetValue(me, out var mine)) return false;
             if (mine.Latest is not { } up) return false;
             active = (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0;
@@ -278,6 +279,8 @@ public sealed partial class Game1
 
     protected override void Draw(GameTime gameTime)
     {
+        if (_benchReplay is { } replay)
+            gameTime = new(TimeSpan.FromSeconds(replay.Frame / 60d), TimeSpan.FromSeconds(1d / 60));
         _gpuTimer?.Poll(_receiveGpu!);
         _frameTelemetry?.BeginDraw();
         _scaledThisFrame = false;
@@ -291,9 +294,9 @@ public sealed partial class Game1
         if (captureArmed && !_capFlyMarked)
         {
             _capFlyMarked = true;
-            _capFlyWallMs = Environment.TickCount64;
+            _capFlyWallMs = ClientNowMilliseconds;
         }
-        bool capThis = captureArmed && Environment.TickCount64 - _capFlyWallMs >= CapSettleGraceMs;
+        bool capThis = captureArmed && ClientNowMilliseconds - _capFlyWallMs >= CapSettleGraceMs;
         if (capThis)
         {
             if (!_capStarted)
@@ -354,7 +357,7 @@ public sealed partial class Game1
         else // Flying
         {
             var world = _session.World;
-            if (world.MyShipId is { } me && _poses.TryGetValue(me, out var myPose)
+            if (TrySceneReference(world, out short me, out var myPose)
                 && _flightEffects.Generation == world.SectorGeneration)
             {
                 var myPos = PoseConverter.ToXna(myPose.Position);
@@ -373,8 +376,8 @@ public sealed partial class Game1
                 // of them on the frame of the transition — native's per-sector
                 // lighting. Falls back to a sane fixed white light when the
                 // cluster is unknown, so objects never render black.
-                _sectorLighting = world.Ships.TryGetValue(me, out var ownLite)
-                    && world.Clusters.TryGetValue(RenderSector(ownLite.SectorId), out var dcLite)
+                _sectorLighting = TrySceneSector(world, me, out short lightSector)
+                    && world.Clusters.TryGetValue(lightSector, out var dcLite)
                         ? Allegiance.Core.Rendering.SectorLighting.FromCluster(dcLite.LightDirection, dcLite.LightColor)
                         : Allegiance.Core.Rendering.SectorLighting.FromCluster(null, 0xFFFFFFFF);
 
@@ -396,7 +399,11 @@ public sealed partial class Game1
                 // ComputeFlightCamera, which handles every native external mode,
                 // the director b-roll camera and spectator follow (see
                 // Game1.Director.cs).
-                if (_captureSpec is { } cap && !cap.Chase)
+                if (_benchmark is not null && (_benchMeasuring || _benchSuggestion is not null))
+                {
+                    ComputeBenchmarkCamera(myPos, myRot, myPose.Orientation, aspect, chaseDt, out view, out proj, out cameraEye);
+                }
+                else if (_captureSpec is { } cap && !cap.Chase)
                 {
                     ComputeCaptureCamera(aspect, out view, out proj, out cameraEye);
                 }
@@ -413,6 +420,8 @@ public sealed partial class Game1
                     // every mode benefits; jiggle below perturbs the smoothed view.
                     ApplyCameraSmoothing(ref view, ref proj, ref cameraEye, aspect, chaseDt);
                 }
+                if ((_benchmark is not null || _benchmarkApplied) && _cameraMode != CameraMode.Command)
+                    proj = WithBenchmarkViewDistance(proj, _benchmarkViewDistance);
                 // P449b — native camera jiggle (WinTrek.cpp:374-399). Native sets
                 // bJiggle = InternalCamera(m_cm), and InternalCamera is true only for
                 // cmCockpit (Treki.h:145) — so native shakes the COCKPIT view, not the
@@ -605,6 +614,7 @@ public sealed partial class Game1
 
                     if (!ShipInDrawnSector(id, me)) continue;
                     var xnaPos = PoseConverter.ToXna(pose.Position);
+                    if (OutsideBenchmarkView(xnaPos, cameraEye)) continue;
                     var eyeRel = xnaPos - cameraEye;                     // P612b camera-relative
                     var worldMat = PoseConverter.ToXnaWorldRelative(xnaPos, pose.Orientation, cameraEye);
                     // P270 — alpha-blend cloaked ships (subtle shimmer over
@@ -740,6 +750,7 @@ public sealed partial class Game1
                 foreach (var (spin, rPos, rOri, rRadius, variant, type, modelStem, textureName) in _drawRooks)
                 {
                     var rXnaPos = PoseConverter.ToXna(rPos);
+                    if (OutsideBenchmarkView(rXnaPos, cameraEye, rRadius)) continue;
                     var rRot = PoseConverter.ToXnaRotation(rOri);
                     // P252 — apply the accumulated spin (already advanced for this
                     // frame in PrepareSceneGeometry) about the rock's own
@@ -761,7 +772,7 @@ public sealed partial class Game1
                         float nativeScale = Rendering.NativeAsteroidResolver.ScaleForRadius(rRadius, nativeGeo.MeshRadius);
                         string? texStem = _nativeAsteroidRenderer.TextureStemFor(modelStem, textureName);
                         var nativeTex = texStem is null ? null : _nativeAsteroidRenderer.TextureFor(texStem);
-                        _nativeAsteroidRenderer.Draw(nativeGeo, nativeTex, rWorldNoScale, view, proj, nativeScale, _sectorLighting);
+                        _nativeAsteroidRenderer.Draw(nativeGeo, nativeTex, rWorldNoScale, view, proj, nativeScale, _sectorLighting, modelStem, texStem);
                     }
                     else
                     {
@@ -792,9 +803,8 @@ public sealed partial class Game1
                 _drawWarps.Clear();
                 lock (_session.Gate)
                 {
-                    if (world.Ships.TryGetValue(me, out var ownW))
+                    if (TrySceneSector(world, me, out short myWarpSector))
                     {
-                        short myWarpSector = RenderSector(ownW.SectorId);
                         foreach (var (_, wp) in world.Warps)
                         {
                             if (wp.ClusterId != myWarpSector) continue;
@@ -843,6 +853,7 @@ public sealed partial class Game1
                 foreach (var (sPos, sOri, sSide, sRadius, sModel, sTex) in _drawStations)
                 {
                     var sXnaPos = PoseConverter.ToXna(sPos);
+                    if (OutsideBenchmarkView(sXnaPos, cameraEye, sRadius)) continue;
                     var sRot = PoseConverter.ToXnaRotation(sOri);
                     // P564 — draw each station from its ORIGINAL native .mdl station
                     // model + native texture at native scale/orientation (native
@@ -857,7 +868,7 @@ public sealed partial class Game1
                         var ntex = ntexStem is null ? null : _nativeStationRenderer.TextureFor(ntexStem);
                         float nscale = Rendering.NativeStationResolver.ScaleForRadius(sRadius, ngeo.MeshRadius);
                         var sWorldNS = sRot * Matrix.CreateTranslation(sXnaPos - cameraEye);
-                        _nativeStationRenderer.Draw(ngeo, ntex, sWorldNS, view, proj, nscale, _sectorLighting);
+                        _nativeStationRenderer.Draw(ngeo, ntex, sWorldNS, view, proj, nscale, _sectorLighting, sModel, ntexStem);
                         if (Rendering.NativeStationLights.IsVisible(sXnaPos - cameraEye, sRadius,
                                 view, proj, GraphicsDevice.Viewport.Width))
                             Rendering.NativeStationLights.Append(_nativeStationRenderer.LightsFor(sModel),
@@ -891,11 +902,10 @@ public sealed partial class Game1
                 _drawBuilds.Clear();
                 lock (_session.Gate)
                 {
-                    long buildNow = Environment.TickCount64;
+                    long buildNow = ClientNowMilliseconds;
                     world.PruneExpiredBuildingEffects(buildNow);
-                    if (world.Ships.TryGetValue(me, out var ownBe))
+                    if (TrySceneSector(world, me, out short myBeSector))
                     {
-                        short myBeSector = RenderSector(ownBe.SectorId);
                         foreach (var (_, be) in world.BuildingEffects)
                         {
                             if (be.ClusterId != myBeSector) continue;
@@ -937,7 +947,7 @@ public sealed partial class Game1
                 _drawBolts.Clear();
                 lock (_session.Gate)
                 {
-                    long projNow = Environment.TickCount64;
+                    long projNow = ClientNowMilliseconds;
                     world.PruneExpiredProjectiles(projNow);
                     if (world.Ships.TryGetValue(me, out var ownProj) && ownProj.Latest is { } meUp)
                     {
@@ -1050,7 +1060,7 @@ public sealed partial class Game1
                             if (geo is not null)
                             {
                                 var tex = _projectileModelRenderer.TextureFor(bVis.ModelName);
-                                _projectileModelRenderer.Draw(geo, tex, bXna - cameraEye, bXnaDir, bSpin, view, proj);
+                                _projectileModelRenderer.Draw(geo, tex, bXna - cameraEye, bXnaDir, bSpin, view, proj, modelName: bVis.ModelName, lighting: _sectorLighting);
                                 continue;
                             }
                             break; // missing mesh -> box
@@ -1139,11 +1149,10 @@ public sealed partial class Game1
                 _spoofRetargetRenderer.Begin();   // P638 — spoofed-missile retarget traces
                 lock (_session.Gate)
                 {
-                    long mNow = Environment.TickCount64;
+                    long mNow = ClientNowMilliseconds;
                     world.PruneExpiredMissiles(mNow);
-                    if (world.Ships.TryGetValue(me, out var ownMs))
+                    if (TrySceneSector(world, me, out short myMissileSector))
                     {
-                        short myMissileSector = RenderSector(ownMs.SectorId);
                         foreach (var (_, ms) in world.Missiles)
                         {
                             if (ms.ClusterId != myMissileSector) continue;
@@ -1228,23 +1237,25 @@ public sealed partial class Game1
                 _drawProbes.Clear();
                 lock (_session.Gate)
                 {
-                    if (world.Ships.TryGetValue(me, out var ownPb))
+                    if (TrySceneSector(world, me, out short myProbeSector))
                     {
-                        short myProbeSector = RenderSector(ownPb.SectorId);
                         foreach (var (_, pe) in world.Probes)
                         {
                             if (pe.ClusterId != myProbeSector) continue;
-                            _drawProbes.Add((PoseConverter.ToXna(pe.Position), pe.SideId));
+                            _drawProbes.Add((PoseConverter.ToXna(pe.Position), pe.SideId, pe.ProbetypeId));
                         }
                     }
                 }
-                foreach (var (pbPos, pbSide) in _drawProbes)
+                foreach (var (pbPos, pbSide, pbType) in _drawProbes)
                 {
                     var pbWorld = Matrix.CreateTranslation(pbPos - cameraEye);
                     var pbTint = (world.MySideId ?? -1) == pbSide
                         ? Rendering.StationRenderer.FriendlyColor
                         : Rendering.StationRenderer.EnemyColor;
-                    _probeRenderer.Draw(pbWorld, view, proj, pbTint, _sectorLighting);
+                    var renderer = ProbeRendererFor(pbType) ?? _probeRenderer;
+                    float scale = _shopCatalog?.ProbeTypes?.TryGetValue(pbType, out var type) == true && renderer.MeshRadius > 0
+                        ? type.Radius / renderer.MeshRadius : 1;
+                    renderer.Draw(Matrix.CreateScale(scale) * pbWorld, view, proj, pbTint, _sectorLighting);
                 }
 
                 // P291 — mines. Like probes/missiles, ClientWorld.Mines is keyed
@@ -1258,9 +1269,8 @@ public sealed partial class Game1
                 _drawMines.Clear();
                 lock (_session.Gate)
                 {
-                    if (world.Ships.TryGetValue(me, out var ownMine))
+                    if (TrySceneSector(world, me, out short myMineSector))
                     {
-                        short myMineSector = RenderSector(ownMine.SectorId);
                         var mineTypes = _shopCatalog?.MineTypes;
                         foreach (var (_, me2) in world.Mines)
                         {
@@ -1290,7 +1300,7 @@ public sealed partial class Game1
                 {
                     if (world.Ships.TryGetValue(me, out var ownChaff) && ownChaff.Latest is { } meChaffUp)
                     {
-                        long chaffNow = Environment.TickCount64;
+                        long chaffNow = ClientNowMilliseconds;
                         var chaffTypes = _shopCatalog?.ChaffTypes;
                         world.PruneExpiredChaff(chaffNow, chaffTypes);
                         var anchorChaff = meChaffUp.Position;
@@ -1324,9 +1334,8 @@ public sealed partial class Game1
                 _drawTreasureItems.Clear();
                 lock (_session.Gate)
                 {
-                    if (world.Ships.TryGetValue(me, out var ownTr))
+                    if (TrySceneSector(world, me, out short myTreasureSector))
                     {
-                        short myTreasureSector = RenderSector(ownTr.SectorId);
                         foreach (var (_, te) in world.Treasures)
                         {
                             if (te.ClusterId != myTreasureSector) continue;
@@ -1385,6 +1394,10 @@ public sealed partial class Game1
                 _drawTrailViews.AddRange(_trailParticles.Enumerate());
                 // P546 — pass the sector light + near-fade so the ENHANCED smoke
                 // path tints/clears it (native path ignores both).
+                ReduceBenchmarkEffects(_drawTrailViews);
+                ReduceBenchmarkEffects(_drawSparkViews);
+                ReduceBenchmarkEffects(_drawDebrisViews);
+                ReduceBenchmarkEffects(_drawEngineTrailViews);
                 _trailRenderer.Draw(_drawTrailViews, cameraEye, view, proj, _sectorLighting, vfxNear, vfxFar, vfxOccluder, _softContext);
 
                 // P296 — the warp-transit teleport spark spray (native
@@ -1531,11 +1544,10 @@ public sealed partial class Game1
                 _drawExplosions.Clear();
                 lock (_session.Gate)
                 {
-                    nowLocalMs = Environment.TickCount64;
+                    nowLocalMs = ClientNowMilliseconds;
                     world.PruneExpiredExplosions(nowLocalMs);
-                    if (world.MyShipId is { } meX && world.Ships.TryGetValue(meX, out var ownX))
+                    if (TrySceneSector(world, me, out ownSectorId))
                     {
-                        ownSectorId = RenderSector(ownX.SectorId);
                         foreach (var ex in world.Explosions)
                             if (ex.ClusterId == ownSectorId) _drawExplosions.Add(ex);
                     }
@@ -1554,11 +1566,11 @@ public sealed partial class Game1
                     if (_effectsQuality == EffectsQuality.Volumetric
                         && _volumetricTech == VolumetricTechnique.RaymarchA && _volumetricRenderer is { } vol)
                         vol.Draw(_drawExplosions, ownSectorId, cameraEye, view, proj,
-                            (float)_gameSeconds, _softContext ?? Rendering.SoftParticleContext.Off);
+                            (float)_gameSeconds, _softContext ?? Rendering.SoftParticleContext.Off, nowLocalMs);
                     else if (_effectsQuality == EffectsQuality.Volumetric
                         && _volumetricTech == VolumetricTechnique.DisplacedSphereB && _displacedRenderer is { } disp)
                         disp.Draw(_drawExplosions, ownSectorId, cameraEye, view, proj,
-                            (float)_gameSeconds, _softContext ?? Rendering.SoftParticleContext.Off);
+                            (float)_gameSeconds, _softContext ?? Rendering.SoftParticleContext.Off, nowLocalMs);
                     else if (_enhancedExplosionRenderer is { } enhExp)
                         enhExp.Draw(_drawExplosions, ownSectorId, nowLocalMs, cameraEye, view, proj,
                             _sectorLighting, vfxNear, vfxFar, vfxOccluder, _softContext);
@@ -1690,9 +1702,8 @@ public sealed partial class Game1
                 // centre rather than being hidden behind the funnel geometry.
                 // Drawn here, inside the camera block, so view/proj/cameraEye are
                 // live; default OFF (--aleph-glimpse on).
-                if (_alephGlimpse && world.MyShipId is { } gm
-                    && world.Ships.TryGetValue(gm, out var gs)
-                    && world.Clusters.TryGetValue(RenderSector(gs.SectorId), out var gdc))
+                if (_alephGlimpse && TrySceneSector(world, me, out short glimpseSector)
+                    && world.Clusters.TryGetValue(glimpseSector, out var gdc))
                 {
                     DrawAlephGlimpses(view, proj, cameraEye, world, gdc);
                 }
@@ -1834,7 +1845,7 @@ public sealed partial class Game1
         // cockpit scene). Only present while the local ship is actually docked.
         // Its P273 sub-view is the teleport pane (board a teammate's turret /
         // teleport to a station); otherwise the P268 hangar loadout shows.
-        if (_dockedActive && _cameraMode != CameraMode.Command && _investActive && _investDefs is not null)
+        if (_investActive && _investDefs is not null)
         {
             // P487 — the investment pane sub-view (native PurchasesPaneImpl),
             // drawn in the same docked-panel style as the teleport/hangar views.
@@ -1842,7 +1853,10 @@ public sealed partial class Game1
             // radar build-spot highlight and the list agree), with a fallback
             // build in case DrawRadar's camera block didn't run.
             var invModel = _investModel ?? BuildInvestmentModel();
-            var invRows = Rendering.InvestmentLayout.Build(invModel);
+            var invRows = Rendering.InvestmentLayout.Build(invModel).ToList();
+            lock (_session.Gate)
+                invRows.Insert(2, Rendering.ShopLayout.Row.Of(Rendering.ShopLayout.Kind.Hint,
+                    _investmentFunding.Status(_session.World)));
             _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, invRows, money: _session.World.MyMoney,
                 backdropAlpha: Rendering.DockedScreenRenderer.InvestBackdropAlpha);
         }
@@ -1934,6 +1948,8 @@ public sealed partial class Game1
         FlushScheduledAutoshot();
 
         DrawSkirmishStatus();
+        CaptureSkirmishProof();
+        DrawBenchmark();
         base.Draw(gameTime);
     }
 
@@ -1948,13 +1964,13 @@ public sealed partial class Game1
     {
         var world = _session.World;
         DataClusterIGC? sky = null;
-        if (world.MyShipId is { } m && world.Ships.TryGetValue(m, out var ownS)
-            && world.Clusters.TryGetValue(RenderSector(ownS.SectorId), out var dc))
+        if (TrySceneSector(world, RenderShipId(world) ?? -1, out short skySector)
+            && world.Clusters.TryGetValue(skySector, out var dc))
         {
             sky = dc;
-            if (RenderSector(ownS.SectorId) != _skySector)
+            if (skySector != _skySector)
             {
-                _skySector = RenderSector(ownS.SectorId);
+                _skySector = skySector;
                 _blackSky.SetCluster(dc);
                 _nativeSky.SetCluster(dc);
                 _hdSky.SetCluster(dc);
@@ -2177,9 +2193,8 @@ public sealed partial class Game1
         _drawRooks.Clear();
         lock (_session.Gate)
         {
-            if (world.Ships.TryGetValue(me, out var own))
+            if (TrySceneSector(world, me, out short mySector))
             {
-                short mySector = RenderSector(own.SectorId);
                 foreach (var (id, ast) in world.Asteroids)
                 {
                     if (ast.ClusterId != mySector) continue;
@@ -2222,9 +2237,8 @@ public sealed partial class Game1
         _drawStations.Clear();
         lock (_session.Gate)
         {
-            if (world.Ships.TryGetValue(me, out var ownSt))
+            if (TrySceneSector(world, me, out short myStSector))
             {
-                short myStSector = RenderSector(ownSt.SectorId);
                 _drawStations.AddRange(Rendering.StationSceneGather.ColourPass(world.Stations, myStSector, ResolveStationRadius, ResolveStationModel));
             }
         }
@@ -2388,6 +2402,7 @@ public sealed partial class Game1
     /// </summary>
     private void DrawHud()
     {
+        if (LocalSpectating) return;
         var world = _session.World;
         HudFrame? frame = null;
         lock (_session.Gate)
@@ -2397,7 +2412,7 @@ public sealed partial class Game1
             // same-side bot). Cleared every frame here so a stale selection /
             // lost-leadership edge never leaves a phantom prompt.
             _leaderBotCommand = ResolveLeaderBotCommand(world);
-            if (world.MyShipId is { } me
+            if (RenderShipId(world) is { } me
                 && world.Ships.TryGetValue(me, out var entity)
                 && entity.Latest is { } up)
             {
@@ -2601,7 +2616,7 @@ public sealed partial class Game1
             {
                 float dur = RipcordDurationSeconds(world);
                 float left = _ripcordCountdownSound.TimeLeft(world.RipcordActive,
-                    world.RipcordActiveSinceLocalMs, Environment.TickCount64, dur, world.TimeScale);
+                    world.RipcordActiveSinceLocalMs, ClientNowMilliseconds, dur, world.TimeScale);
                 if (dur > 0f && left <= 0f)
                 {
                     world.ClearRipcord();
@@ -2633,7 +2648,7 @@ public sealed partial class Game1
     private float RipcordDurationSeconds(ClientWorld world)
     {
         if (_shopCatalog is not { } catalog) return 0f;
-        if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var ent))
+        if (RenderShipId(world) is { } me && world.Ships.TryGetValue(me, out var ent))
         {
             float ripcordSpeed = 0f;
             foreach (var h in catalog.Hulls)
@@ -2719,7 +2734,7 @@ public sealed partial class Game1
                         if (o.Secondary is { } sec) RememberSideColor(sec);
                     }
                 }
-                if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own))
+                if (RenderShipId(world) is { } me && world.Ships.TryGetValue(me, out var own))
                     current = own.SectorId;
 
                 // P272 — the info pane for the selected cluster: gather that
@@ -2836,7 +2851,7 @@ public sealed partial class Game1
         _drawShipTags.Clear();   // P372 — per-ship in-world side tags
         lock (_session.Gate)
         {
-            if (world.MyShipId is not { } me) return;
+            if (RenderShipId(world) is not { } me) return;
             if (!world.Ships.TryGetValue(me, out var ownEnt)) return;
             short mySector = RenderSector(ownEnt.SectorId);
             // P624 — radar mode filter (All/Default/Target/Minimal) + my side for
@@ -3009,7 +3024,7 @@ public sealed partial class Game1
         lock (_session.Gate)
         {
             var world = _session.World;
-            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own) && own.Latest is { } up)
+            if (RenderShipId(world) is { } me && world.Ships.TryGetValue(me, out var own) && own.Latest is { } up)
             {
                 inPod = Rendering.LifepodHud.IsAdriftLifepod(_shopCatalog, own.HullId, own.StationId);
                 oxySec = inPod ? Rendering.LifepodHud.OxygenSeconds(up.FuelFraction, _shopCatalog) : 0;
@@ -3574,6 +3589,36 @@ public sealed partial class Game1
     /// <summary>P544 — the cached per-type native visual (model / directional /
     /// billboard / box) resolved from the loaded static core; an unknown type
     /// or missing core resolves to the box.</summary>
+    private ProbeRenderer? ProbeRendererFor(short typeId)
+    {
+        if (_probeTypes.TryGetValue(typeId, out var cached)) return cached;
+        ProbeRenderer? renderer = null;
+        if (_shopCatalog?.ProbeTypes?.TryGetValue(typeId, out var type) == true)
+        {
+            Texture2D? texture = null;
+            try
+            {
+                var mdl = MdlFile.Parse(AssetSources.ReadAllBytes(_assets, type.ModelName + ".mdl"));
+                string? stem = ProbeModelSource.ResolveTextureStemFor(mdl, type.TextureName, type.ModelName,
+                    name => _assets.Exists(name + ".mdl"));
+                if (stem is not null)
+                {
+                    var decoded = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, stem + ".mdl"));
+                    texture = new Texture2D(GraphicsDevice, decoded.Width, decoded.Height);
+                    texture.SetData(MdlTextureDecoder.ToPremultipliedRgba(decoded));
+                }
+                renderer = new ProbeRenderer(GraphicsDevice, mdl.Meshes, texture, _hdMaterials, _assets, type.ModelName, stem);
+            }
+            catch (Exception e) when (e is IOException or InvalidDataException or ArgumentException)
+            {
+                texture?.Dispose();
+                Console.WriteLine($"[hd] probe type {typeId} unavailable ({e.Message}); using canonical probe");
+            }
+        }
+        _probeTypes[typeId] = renderer;
+        return renderer;
+    }
+
     private ProjectileVisual ResolveProjectileVisual(short typeId)
     {
         if (_projectileVisuals.TryGetValue(typeId, out var v)) return v;

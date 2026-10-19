@@ -39,13 +39,16 @@ public static class SkirmishSmoke
     }
 
     /// <summary>Test-only pilot: seats on side zero, readies, and flies ordinary control packets.</summary>
-    public static async Task<Result> PlayAsync(SkirmishHost host, TimeSpan duration, CancellationToken ct = default)
+    public static async Task<Result> PlayAsync(SkirmishHost host, TimeSpan duration, CancellationToken ct = default, Allegiance.ClientCore.Replay.WireRecording? recording = null, Action? onBattleStarted = null, bool benchmarkCamera = false)
     {
-        using var pilot = new ConnectionSession();
-        pilot.Connect(host.Port, "skirmish-test-pilot");
+        // The smoke always flies a pilot, including sizes that now default to observing.
+        await host.SetPlayerSideAsync(0, ct);
+        using var pilot = new ConnectionSession { Recording = recording };
+        string pilotName = benchmarkCamera ? Benchmark.BenchmarkCommand.PilotName : "skirmish-test-pilot";
+        pilot.Connect(host.Port, pilotName);
         pilot.SendLogonRequest(new()
         {
-            CharacterName = "skirmish-test-pilot", FedsrvVer = LogonRequest.MsgVer,
+            CharacterName = pilotName, FedsrvVer = LogonRequest.MsgVer,
             ZoneTicket = [1, 2, 3, 4], CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
             Time = 1, DwCookie = 727, CrcFileList = -1, SteamAuthTicket = new byte[16], SteamID = 72701
         });
@@ -67,10 +70,35 @@ public static class SkirmishSmoke
             if (startup.Elapsed.TotalSeconds > 20) throw new TimeoutException("Pilot was not seated");
             await Task.Delay(50, ct);
         }
+        if (onBattleStarted is not null)
+        {
+            var battleWait = Stopwatch.StartNew();
+            long nextLaunchMs = 0;
+            while (true)
+            {
+                bool launched = false;
+                lock (pilot.Gate)
+                {
+                    if (pilot.World.MyShipId is { } id && pilot.World.Ships.TryGetValue(id, out var ship)
+                        && pilot.World.Mission?.Stage == MissionStageMessage.StageStarted)
+                    {
+                        launched = ship.StationId < 0 && ship.Latest is not null;
+                        if (!launched && battleWait.ElapsedMilliseconds >= nextLaunchMs)
+                        { pilot.SendBuyLoadout(ship.HullId, true, ship.Loadout); nextLaunchMs = battleWait.ElapsedMilliseconds + 1000; }
+                    }
+                }
+                if (launched) break;
+                if (battleWait.Elapsed.TotalSeconds > 90 || !host.BotsAlive) throw new TimeoutException("Benchmark battle did not launch");
+                await Task.Delay(50, ct);
+            }
+            onBattleStarted();
+        }
         var watch = Stopwatch.StartNew();
         Allegiance.Core.Collision.Vector3? initial = null;
         double distance = 0;
         double nextLaunch = 0;
+        byte lastCameraPhase = 255;
+        double nextViewRequest = 0;
         while (watch.Elapsed < duration)
         {
             if (!host.BotsAlive) throw new IOException(host.Failure ?? "Bots stopped");
@@ -84,6 +112,20 @@ public static class SkirmishSmoke
                         pilot.SendBuyLoadout(ship.HullId, true, ship.Loadout);
                         nextLaunch = watch.Elapsed.TotalSeconds + 2;
                     }
+                    if (benchmarkCamera)
+                    {
+                        byte phase = Allegiance.ClientCore.Replay.BenchmarkRoute.Phase(watch.Elapsed.TotalSeconds, duration.TotalSeconds);
+                        if (phase != lastCameraPhase || watch.Elapsed.TotalSeconds >= nextViewRequest)
+                        {
+                            short home = pilot.World.Stations.Values.Where(s => s.SideId == 0).OrderBy(s => s.StationId).First().ClusterId;
+                            short battle = pilot.World.Clusters.Values.First(s => s.Name == "Alderan").ClusterId;
+                            short sector = phase == 1 ? battle : home;
+                            pilot.SendViewClusterRequest(sector);
+                            pilot.World.TelemetrySectorOverride = sector;
+                            if (phase != lastCameraPhase) recording?.WriteCamera(sector, phase);
+                            lastCameraPhase = phase; nextViewRequest = watch.Elapsed.TotalSeconds + 2;
+                        }
+                    }
                     initial ??= pose.Position;
                     distance = Math.Max(distance, (pose.Position - initial.Value).Length());
                     // Steer toward the closest visible enemy; otherwise fly a broad patrol.
@@ -92,7 +134,8 @@ public static class SkirmishSmoke
                     var controls = enemy?.Latest is { } target
                         ? AutopilotSteering.Pursue(pose.Position, pose.Orientation, target.Position)
                         : new ControlData(.12f, .04f, 0, 1);
-                    pilot.CommandControls(controls, enemy is null ? 0 : ShipControlState.AllWeapons);
+                    pilot.CommandControls(benchmarkCamera ? new ControlData(0, 0, 0, 1) : controls,
+                        benchmarkCamera || enemy is null ? 0 : ShipControlState.AllWeapons);
                 }
                 if (watch.ElapsedMilliseconds % 2000 < 60) pilot.SendPing();
             }

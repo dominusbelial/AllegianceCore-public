@@ -41,4 +41,4 @@ public readonly record struct FeedbackLine(
 /// resolves <see cref="FocusShipId"/> to a live world position when it drains
 /// the request. One-shot: drained (cleared) by <c>Game1</c> exactly once.
 /// </summary>
-public readonly record struct CameraOverrideRequest(short FocusShipId, double AtSeconds);
+public readonly record struct CameraOverrideRequest(short FocusShipId, double AtSeconds, double DurationSeconds = 5);

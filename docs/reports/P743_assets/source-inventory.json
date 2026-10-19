@@ -1,0 +1,1172 @@
+[
+  {
+    "path": "/home/domingo/Development/Allegiance/src/FedSrv/FedSrv.CPP",
+    "bytes": 526760,
+    "sha256": "7b8938f2fdfcfe09a299ac642b79ca54991a4222dce79e93b2ba5d356199a014"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/FedSrv/fsmission.cpp",
+    "bytes": 210169,
+    "sha256": "93bb453f82cbcd33e36a706b90b7884815ac63b0a03ee8d9803ee2314c7cd7cb"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/asteroidigc.h",
+    "bytes": 10808,
+    "sha256": "4065a70c1c02cf77e85a25779f8a15c9a7ee997551287ef243a3f828c3fa6bf2"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/bucketigc.cpp",
+    "bytes": 3733,
+    "sha256": "536922b5fb61c411a591e0d9608315d6fa0f38d5fdc804268e7235bc5fdd71cc"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/bucketigc.h",
+    "bytes": 10024,
+    "sha256": "9a1d208575899b32b9313fe4772185939653c27040af8937be75f8a84f048ddb"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/buildingeffectigc.h",
+    "bytes": 13167,
+    "sha256": "fb3cc45b0a5ec76d0651f8956356c55b09c936b83f45e0f468cde0710cccc190"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/clusterIGC.cpp",
+    "bytes": 25819,
+    "sha256": "a9d33695eaa609619979eeb4a8d300aa3c7a6f2143608e4f36a4501b9724adc8"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/common.cpp",
+    "bytes": 115976,
+    "sha256": "853757a6c9f981d56f1d6c0c3544035c58e77bfdbf25b8bd1764adb10d69b955"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/igc.h",
+    "bytes": 241015,
+    "sha256": "9e151addcbed45df98ff78fc9352aca8a796f69a5cfbb947425d52e9ab649a66"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/probeigc.cpp",
+    "bytes": 20478,
+    "sha256": "36fb02a6e11a970cfc438f19b5eae19bb37dc8ac0b1c506abed3390a34ec23b3"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/shieldIGC.cpp",
+    "bytes": 5309,
+    "sha256": "690957c635c10163a19dd613f5db2de37ed380454aaf461c4ab07100bd2d27a3"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/shipIGC.cpp",
+    "bytes": 190845,
+    "sha256": "2f5d1cd1dde51bafdf6d1a71e5ff375bd44c1f633f8a167f202620dce7cb12d3"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/shipIGC.h",
+    "bytes": 103665,
+    "sha256": "78a7b0e7b445a95b6949fb6c299e61987ddf5981cdcc67e62bbdd9bfe44ba782"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/sideigc.cpp",
+    "bytes": 19665,
+    "sha256": "9150dd812515e35763d3fb17f8d1ddd61cfde3a1d8a8b5f17fe4925646dd4d04"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/sideigc.h",
+    "bytes": 21268,
+    "sha256": "b66d996ab79ad7fbc53c53c3528377e1dedcf1b1bc10c3284497f31c9e64628b"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/warpIGC.h",
+    "bytes": 5893,
+    "sha256": "8184ba7cf95ea4afef3ba08f52efa2a9e0fdbcd0a70c741fcf9a525e3b810ccc"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/weaponIGC.cpp",
+    "bytes": 11551,
+    "sha256": "ef864801c95c463d9ead97bcdc26ecf3537ea55ac3defd9cb39fb40a8e9bd3b1"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Igc/weaponIGC.h",
+    "bytes": 7657,
+    "sha256": "7f69d837fe7d0508d687f61c67d8b3bae7f1801822a2064bb52519ee3e90e453"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/Inc/Messages.h",
+    "bytes": 28573,
+    "sha256": "2ba4b9fb44b2f2b63215e7021f282cee7db60ede593424d669d68bead461de5b"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/CharInfoScreen.cpp",
+    "bytes": 33941,
+    "sha256": "a82ca6ea9c518dfc7487c10a34649aa090d4339dfb2fe32ef0bd01c81a26bd0c"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/WinTrek.cpp",
+    "bytes": 396431,
+    "sha256": "e1432f46067641fcd61daa5304b3932a7028b8adc3b2be5774dec389068080b7"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/chatpane.cpp",
+    "bytes": 10775,
+    "sha256": "b8716020e4c80e527b42ea34363666ebeb00eb261ce9f07e61430f3681aff1a8"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/cmdview.cpp",
+    "bytes": 11510,
+    "sha256": "2d0e2fb43dda997f5cbafc2ac9a737274e187bc81e762f0f679b9ecfca74afdd"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/console.cpp",
+    "bytes": 123053,
+    "sha256": "f512cdddfae0c3b0998be8c2930656e05724d31db8fc2a886e281c9f2d64118a"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/consoledata.cpp",
+    "bytes": 30304,
+    "sha256": "2bfa206a83f2f214162e68c6bf4ffc1520f08cee402e9b3eff2ffb7295e5929c"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/gameoverscreen.cpp",
+    "bytes": 34682,
+    "sha256": "efbb4bc6dc658b30af2aedf1fda1c803e520f2f697c478f62b25cdc4923213e1"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/gamescreen.cpp",
+    "bytes": 64633,
+    "sha256": "35a1e118e81058c53c6b04de8f8dcc0ebf412934d0dbb3d3250e8ba7d4c82760"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/hangarscreen.cpp",
+    "bytes": 10115,
+    "sha256": "f0ff7d69f3199f60af527cf9b388a2698358898e563007a5b8765ef904d709c0"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/introscreen.cpp",
+    "bytes": 72429,
+    "sha256": "d049f9affc66bd11909de8f4782516fd7ade05dc73e3e15e5beb80da136ac9cb"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/leaderboardscreen.cpp",
+    "bytes": 27677,
+    "sha256": "34b474a714017a26f25b597e3c60c7315ab68577fd565d15e5b7176b4f666088"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/load.cpp",
+    "bytes": 88273,
+    "sha256": "3c8999ab44f88cc13f818e55aacc16da8657413a60f1dcbb93b757707dcac132"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/loadout.cpp",
+    "bytes": 49490,
+    "sha256": "44c75292c582562adcf96153833a94dcd22aa023971a8b70761bfd1076baab12"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/sectormap.cpp",
+    "bytes": 61946,
+    "sha256": "955549a307b0256bd85b7eeae74486e355cceef220e3d046ce2112426d8a7ad5"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/selpane.cpp",
+    "bytes": 2556,
+    "sha256": "e09da15063687c102b9dd071e6a7996cb73e7ddb382d222a746dcf106943ad3a"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/splashscreen.cpp",
+    "bytes": 2599,
+    "sha256": "51ddbce6be3ca0b50ac739117cb0c6583f7f8c57159c488a84a1165d04a72f24"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/teampane.cpp",
+    "bytes": 73055,
+    "sha256": "8106587267ed861fa11611863add0c0d9bb87d620b98a52c90a285a37a0a51f9"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/teamscreen.cpp",
+    "bytes": 133537,
+    "sha256": "70a263a27367ff58af298ac1aa079d78518bc80d6ca5abebcd732f247caffde3"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/teleportpane.cpp",
+    "bytes": 16470,
+    "sha256": "58852f042d517e94c5d37ba2415558471422f7ba989007ca9d990d4c3c134d03"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/trainingscreen.cpp",
+    "bytes": 10849,
+    "sha256": "8fa3e583137a9ee892fc2d44839101764280ac4d4feaee99e3f3a47a046ae244"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/trekigc.cpp",
+    "bytes": 193129,
+    "sha256": "87271a00ed3838f50cccdbdeae248cacb8eb0d54ca0d1f431bfcf6e55338e6ea"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/WinTrek/trekinput.cpp",
+    "bytes": 119774,
+    "sha256": "9a5db3931bf30875e330761a0df77c742ec0824d3b3f412bc4c99c89deee9370"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/clintlib/appmsg.cpp",
+    "bytes": 136664,
+    "sha256": "f12f70605aa2cf1461298cfa8af6d232f65d7b4af9bbeb51935c1e8a63169c3e"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/clintlib/clintlib.cpp",
+    "bytes": 134795,
+    "sha256": "700e0cf5d48d28175aeceb88722d89eb5177d95b3456fd3b05a2012b862a9f0e"
+  },
+  {
+    "path": "/home/domingo/Development/Allegiance/src/training/mission2.cpp",
+    "bytes": 36840,
+    "sha256": "aa6b936dc29ea5d2629c5271e84f215b8f5b0db7e74ec700cd361e7a375f81ee"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore/Session/ConnectionSession.cs",
+    "bytes": 86417,
+    "sha256": "615bbfe7213888d1fb679af95892fc54d0c4116a48c283ed3e2a8bc3624d8b82"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore/State/ClientWorld.cs",
+    "bytes": 263320,
+    "sha256": "62337efa85111887f15beace4029f5241cdc0497eef52252e64ae493d23748fb"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore/State/GameOverBackPlanner.cs",
+    "bytes": 2739,
+    "sha256": "a2b021127abd8b4dc7c99945dd91a1161f2a3b11f359e91a5440f464f3e02ce9"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore/State/LobbyScreenState.cs",
+    "bytes": 1342,
+    "sha256": "4c581827fc42bef47bd03bf1ac08570b50c2bdf3c11e79001873971465027f85"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Audio/CollisionFeedback.cs",
+    "bytes": 4797,
+    "sha256": "1bbc17c94cc6f24e8a4ef541d54e7677bd7b8194259c6a9e4f6b484a3fe819d5"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Audio/ShipLoopBeds.cs",
+    "bytes": 3172,
+    "sha256": "7b83074092421f98738ae3fa8274cad2d95924b1f169356a0df4491920b25def"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Audio/SoundManager.cs",
+    "bytes": 117257,
+    "sha256": "957aaa97a86e48a7b5b66d199a89c43c3d8326a7e1a75e37bafcbacfcef5b7f7"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Audio/StationEventSoundMap.cs",
+    "bytes": 3494,
+    "sha256": "47cb3a36df19cc35f6c8272fb4d820079bd9cbe8f2e24bcfbe86367579681ba1"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/CommandOrderResolver.cs",
+    "bytes": 2909,
+    "sha256": "5b2b64bf06eff9af326380a0ef873131fb76a47b6786225ed7b78354a464777b"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Discovery/DiscoveryEngine.cs",
+    "bytes": 8084,
+    "sha256": "c6b8dc22070f04a036f15c86d1e0df2542b7abc62032da0c2e7bc28639e3141c"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Game1.Audio.cs",
+    "bytes": 40185,
+    "sha256": "4a43f3c21562a394d043d2befc9a462114e867f337e8479bc311861ef8a8031e"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Game1.Commanding.cs",
+    "bytes": 16389,
+    "sha256": "8c33a6ab621b78b6e479b750fefc96df02d5510b249b557e10b63a4e3cef8265"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Game1.ConnectScreen.cs",
+    "bytes": 15902,
+    "sha256": "c96f2d44ed55be676fef97195e0800e3dd137884786e9e933b1a5bc2ddd32b1a"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs",
+    "bytes": 8655,
+    "sha256": "fe3e681e9da90e2f3b77a52182c4d5d0c938814d4dd0e930e2e9149280725b22"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Game1.FlightInput.cs",
+    "bytes": 175032,
+    "sha256": "0cfdd6618dded93e284722e2ad50d79447db8c3e1ec1894e8e91683760d213a1"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Game1.FlightParts.cs",
+    "bytes": 8777,
+    "sha256": "f5ffaeb67b5b0ece4d8898ecffbc6a26b8c77cbdba1b2629cc7ac2991e6efa7d"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs",
+    "bytes": 32564,
+    "sha256": "f7508ca4d544e89df19320ee1f2114b73da75fdcab158269c80ab1379f2f0ae7"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Game1.Panes.cs",
+    "bytes": 62671,
+    "sha256": "23acf510684c65974d5274ce7d2de15c40de1e297019f8e4678c16bf6290cb0e"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Game1.Rendering.cs",
+    "bytes": 217149,
+    "sha256": "a242b953818d45083ab02af228a012d6727e549616e848f64d33b91ce221aba9"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Game1.Session.cs",
+    "bytes": 53440,
+    "sha256": "e868416e741ff0a70b224c8cfcd1a7dcef6fa752ddd07ec860e388ad2ae0239b"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Game1.TargetCommands.cs",
+    "bytes": 10592,
+    "sha256": "e68efa448d3333a2880de50c3291d2addeb748f18e5a117189b8fd473c81e99e"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Game1.Targeting.cs",
+    "bytes": 78749,
+    "sha256": "f85f4b4abe8e8d561cf65e0fef31aaf50767fd7c0ff392de072388a5843ca9ac"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Game1.Training.cs",
+    "bytes": 3740,
+    "sha256": "014456425a91f98766b4d7d0529311c6b4111bb14829ff118ac7f1aa33e86917"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Game1.cs",
+    "bytes": 108778,
+    "sha256": "59c130360581e34c275003313b3d59a04932536811298f8e6e8f84043e329abf"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/IntroScreenModel.cs",
+    "bytes": 4714,
+    "sha256": "0834ad8b159c605f2c0f4b24c984bedfeefc3be575fc17fa07486f667fb12630"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/QuickChat/QuickChatMdlParser.cs",
+    "bytes": 18268,
+    "sha256": "ae8dc593abd3f1e911bec48e94a5a5de233bf1df22041436b5d5c520893206cd"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/QuickChat/QuickChatOrderResolver.cs",
+    "bytes": 10482,
+    "sha256": "c14c22593badfefd92436654ccc76558f54442d30cff3930a46a38d0627dfcc1"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/ChatRenderer.cs",
+    "bytes": 5768,
+    "sha256": "d81846372457c2efeaba9f6c49ff52b6fb5dee828b67d96f594b4c9811d7b0fe"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/ChatScroll.cs",
+    "bytes": 2707,
+    "sha256": "043c394f78eea5a05bd472daa5c054185eb2dd10eacf16569e056afb2ebda8aa"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/CommandCamera.cs",
+    "bytes": 3998,
+    "sha256": "eb1371dbee45d01f6095a0be3881d94b1ea3e63c3d09f439b9df4cb6c71c9a9d"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/CommandGridRenderer.cs",
+    "bytes": 3065,
+    "sha256": "8eb3235a751f839215f541b71e667f1db56d89bcc8ae673daf86f6ecc1d74e4c"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/DockedScreenRenderer.cs",
+    "bytes": 11033,
+    "sha256": "f809ccd2cce746e03dd1ab5f58d55eeb9136840f12f118f5be305710ed1842f8"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/EquipmentSwapInput.cs",
+    "bytes": 7602,
+    "sha256": "867a305b509cabb1d467d9919bdd4a147c695528ba5a6e31b2f03bc8930b81bd"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/GameOverPanelInfo.cs",
+    "bytes": 3940,
+    "sha256": "734a579cc352460b2733100319f8507c7e44fff5da25bf993ed4e81cdd1d1479"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/GameOverScreenRenderer.cs",
+    "bytes": 13041,
+    "sha256": "03df9824f77e6113082f1c846e55e3237b3a609708440088f83591934700fbab"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/HelpOverlayLayout.cs",
+    "bytes": 4992,
+    "sha256": "23ea5b6094ee075fedffc3f54a4c7bab55e283cb7fb117a1bd5e25d810db3b43"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/HudRenderer.cs",
+    "bytes": 64020,
+    "sha256": "49b5237b02a4492317ea7de28114faa82cb39b18a08bcb59215e634778b5dc41"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs",
+    "bytes": 41714,
+    "sha256": "aaa55c98e099a2540239d01671f71328158b53feffad4f6a1d1701f2459c9a36"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/InvestmentBuildGates.cs",
+    "bytes": 7742,
+    "sha256": "0fbca67533bfe9134a453d513949832dcf08d96abc5ac13a26132f19fe9dcfb1"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/InvestmentLayout.cs",
+    "bytes": 4560,
+    "sha256": "26ec65f276b55bfdfbcc3e2ef45349a4a6584c5ea0c34fe4482715d272438ac1"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/InvestmentPaneModel.cs",
+    "bytes": 12216,
+    "sha256": "7d953a90ecac85d44f5209f29055b59c48ab9b3a70edba953ee2f4e51213cbca"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/KeyBindingController.cs",
+    "bytes": 8039,
+    "sha256": "26394dc8beece994d2de7f1beab74bea2c9f23c3071cf3d09aab6962c6fa5ca0"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/MissionBriefingRenderer.cs",
+    "bytes": 8158,
+    "sha256": "3bb9c9d7851171a608e27dc56a627fe8e795563c59d50391ce8b3910f04c5ee2"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/ModerationModel.cs",
+    "bytes": 2576,
+    "sha256": "1aa9fb0a4c0b7c62de27793283369f8211f2d5e31760b233cd08de5efbe5abcb"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/PilotInfoLayout.cs",
+    "bytes": 4365,
+    "sha256": "4800c9dbf4b306256e4fe5548b21a1988314181958bdb2d2d3dba5209fa7baa7"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/ReadyCheckLayout.cs",
+    "bytes": 5253,
+    "sha256": "ad7d8421d46d9035e0d4c77fd2bf164f3e22c5c7cb59c657da1f1419f22a4b6e"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/ReadyCheckRoster.cs",
+    "bytes": 4605,
+    "sha256": "303a00b7bef671c1a595d0ae9268d4f96a5fa5d3bd6a8385344e9ab64f49a1c3"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/ScoreboardLayout.cs",
+    "bytes": 8354,
+    "sha256": "3c23735c751f2a485196d01542577edbfd9641fd6420174d4231bd323737ee3d"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/SectorInfoPaneLayout.cs",
+    "bytes": 10407,
+    "sha256": "1f6760e88fe44aea6a6d8ce069fb903868fe4dee06d1f33dcdb4880310875b47"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/SectorMapQueries.cs",
+    "bytes": 8194,
+    "sha256": "e0d6e38762eca47fbef1f365ba1149e15e73bc0f03c4e23771c8278cf3e28b04"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/ShopModel.cs",
+    "bytes": 31386,
+    "sha256": "e9b29c3fdf98ff38f3134a4ce26e2f2f474c0d0255e3f15ba62cd4fe97babaa4"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/SideSelectLayout.cs",
+    "bytes": 4978,
+    "sha256": "b2ac72847077f9e0da3ab12abe446e9de0953a9b79afdaf9478b08c465d2ec43"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/StarmapRenderer.cs",
+    "bytes": 24453,
+    "sha256": "4b6ffa6efc231e75fccb89e714f3b120b3091edfbf35e88b6987a6272baa3de3"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/TeamPaneLayout.cs",
+    "bytes": 6451,
+    "sha256": "b6c216b248d682b83a8c0ce402efe5340d3ef305a9a747dcb2f0793387203c84"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/Rendering/TeleportPaneModel.cs",
+    "bytes": 8130,
+    "sha256": "061bc22333b01fa212eef8d10718ea398ebdf8867d9b4b868bed2807148093b3"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.ClientCore.Game/TrainingScreenModels.cs",
+    "bytes": 4014,
+    "sha256": "e830cdee9014a75ee466848e01ef5cd96d0e39274fb4b881fe3346d33388721f"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Data/DataHullTypeIGC.cs",
+    "bytes": 21296,
+    "sha256": "8367a9079a6db49a100195079118b6cef658f396dbb7d3c7c1a15a9c8be4fa11"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Data/DataMissileTypeIGC.cs",
+    "bytes": 6853,
+    "sha256": "43e9cbc4a680429f9cd6b37c8ac0ce5444251463d9cd355829fdc03773e3e16c"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/MapGen/MissionMapGenerator.cs",
+    "bytes": 62148,
+    "sha256": "9217971315a4df3bfd819fe93d12cc27d1ba7a99bf5d976cc530521d0f1365f0"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Model/Bucket.cs",
+    "bytes": 35866,
+    "sha256": "0d8a86cc0ae65d459c7a53bd411190a1fe70d3777e329c4397dc88201fe375a4"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Model/Mission.cs",
+    "bytes": 76415,
+    "sha256": "2bd2d2eef8622670e6ce763e9b7d302e12c3eeedd86150a33b015cb1327eb26b"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Model/PendingBallot.cs",
+    "bytes": 6838,
+    "sha256": "38fb0336ddb45acb330e646259413237c02fb54fbacbf0e2ca4add452647b931"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Model/Sector.cs",
+    "bytes": 276344,
+    "sha256": "a4a7abd2f46d3b0759493a1ef7f1f83235a1e20706ac8df188d528d8a898fd5f"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Model/Side.cs",
+    "bytes": 35050,
+    "sha256": "d9b853fecce36f895b128ac034ba6f1b42515db7a5ba18958e82aa2dd9dd0f2a"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Sim/ClusterWarnings.cs",
+    "bytes": 9883,
+    "sha256": "1de2a84711bfd9abe983c2bfbd8813cd9aa7b1fd028ad1ec9098b7d593d08ee1"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Sim/Probe.cs",
+    "bytes": 37258,
+    "sha256": "729eefe00ae094906393c333db496745549884a59cb0a27cf638249117cecf4f"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Sim/Ship.NpcUpdates.cs",
+    "bytes": 17651,
+    "sha256": "f57c5a58dbd87626f5bdc654ca061a90bf171f34364064cef52fc65b5e081115"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Sim/Ship.cs",
+    "bytes": 467159,
+    "sha256": "f4ecffa072cf3c36d7a6d9885e191fb51b2609d757c5d5cfffd0cba53032e950"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Sim/Weapon.cs",
+    "bytes": 22332,
+    "sha256": "1c8cac9a169d5e54d92f7a0f1a165e34e3a43af2aee5c911ec2b703e1b337c91"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Wire/BoardNack.cs",
+    "bytes": 2637,
+    "sha256": "e750c92a05c02ac21e44ba9cae520866acea58a9dc823a45f769018c005b8854"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Wire/MissionDef.cs",
+    "bytes": 13893,
+    "sha256": "53ac4e2796eb0ba0f97519e9e10ce4e2133d40e614b515d64377f910d630146c"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Wire/RipcordAborted.cs",
+    "bytes": 2488,
+    "sha256": "a8df9ee295e6e6dc97e3f8097c9620e83ee005347a507511caf91ae2f69d9b75"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Wire/SwapPart.cs",
+    "bytes": 5898,
+    "sha256": "565a111df6ba3fd1901d956bced15e82349539c17ae0aed69ca025172c00fb6a"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Core/Wire/TeamReady.cs",
+    "bytes": 2977,
+    "sha256": "34e21074007ff4b63e953aa343bcf9ea28705c67ccfd06ca06f4f3020e81ce48"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Server/PlayerScore.cs",
+    "bytes": 22835,
+    "sha256": "98538984459e5bac4c7ad46a6eafeef5dd888085ebfe806461ccdb4c7a4b3e45"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Server/PlayerWallet.cs",
+    "bytes": 4010,
+    "sha256": "028d0814386f196a348fdadddb94c9d514a49b33ca7f8b917f9da149fd4d92fe"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Server/Server.Dispatch.cs",
+    "bytes": 138226,
+    "sha256": "3cf5ca56abd57ac336f60c6d9c2aedabd1cebd0badef843580570ab02341925c"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Server/Server.Economy.cs",
+    "bytes": 68781,
+    "sha256": "c826501a572ad1c23b987aea103e87612113f82e46473f633e1a131d4d1af7a8"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Server/Server.Lifecycle.cs",
+    "bytes": 119851,
+    "sha256": "c0b451fe892fae849791c04103f4fc87b65b33a270305c7210016d800bd6bd44"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Server/Server.Lobby.cs",
+    "bytes": 218603,
+    "sha256": "a24c7a1b018a21b302bda963f1d36c074995eddf020d3ef43ec530044019e82a"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Server/Server.Moderation.cs",
+    "bytes": 1470,
+    "sha256": "e379dbcd98831a77b0020789c2a9beafa231aead403404248b53551107c01ca7"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Server/Server.ProbeNotifications.cs",
+    "bytes": 2638,
+    "sha256": "1a59be821a715deebd7c090d2c1b0dc5d94d25cf225c759a5f7ac547e06db665"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Server/Server.ShipCommands.cs",
+    "bytes": 174751,
+    "sha256": "ed54edd8465e33c8af0a1573e35e4f981c2d502fed8515b751c4cf30abb6caaa"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Server/ServerConfig.cs",
+    "bytes": 52458,
+    "sha256": "e5c7536cfc56c2af9a96283a0f098a5d393a35857e0dce41dbbb735c0f71af8f"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/src/Allegiance.Server/ServerHost.cs",
+    "bytes": 94509,
+    "sha256": "2d63c1568854e063dc80ea708bf39b878cf9360be2e8b20ba818c2a60e533124"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/ChatTargetComposeLiveTests.cs",
+    "bytes": 6837,
+    "sha256": "ba2134fd3d6e0d83220b26b55921cd005ba7052a29364399fe8308660646ef56"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/ChatTargetLogicTests.cs",
+    "bytes": 4093,
+    "sha256": "b632feac91a7f22cd7f119c09b34fe25db0311e13051a97effdb12a0dae9bd43"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/ClientWorldBriefingTests.cs",
+    "bytes": 1889,
+    "sha256": "2bdc21950b8da443307b6e5aff44b568724caec42f7ab14296bc9e782cb89372"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/CollisionFeedbackTests.cs",
+    "bytes": 4049,
+    "sha256": "77db40c0266da775f04b1afc4af031938c118f5305e39d7fff5ecb2887472bb7"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/CommandOrderResolverTests.cs",
+    "bytes": 3807,
+    "sha256": "a915f3d54f657f1be5ab4b06fbb9d988a67ff7e5b313553523a0b8b96a8c6767"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/DiscoveryTests.cs",
+    "bytes": 7624,
+    "sha256": "cf2ea5ec310662891309efa62ef8c1b63ddfc64423d706a6eaacb9c3ec9ae56e"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/GameOverPanelInfoTests.cs",
+    "bytes": 4785,
+    "sha256": "c86dd0cf94aebae85cb01edb445c34987699940a6472f2c0d7378c53afe18ee0"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/HelpOverlayTests.cs",
+    "bytes": 12037,
+    "sha256": "42389919806809498e7f5baf5f59595daa1997a34f4cbfc121f128ed954c2399"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/IntroPreferencesTests.cs",
+    "bytes": 3161,
+    "sha256": "5c4dd7ae6dfb7686d532d2482f84323e5c62d962f56dd719857db8d9fd5ab790"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/IntroScreenModelTests.cs",
+    "bytes": 3439,
+    "sha256": "77eaad33d308615c04d3a745c67c0a8b2ccbd52d60c36ad0205aff5e488a66f5"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/InvestmentBuildGatesTests.cs",
+    "bytes": 11491,
+    "sha256": "e9102a4a01d0b9877c811dcca95d9d58e1bafb13411c948e8b39ff43ea649dc9"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/InvestmentLayoutTests.cs",
+    "bytes": 4796,
+    "sha256": "2f9e7bc032aaaf39ffa82c0a9d7e9a4192413feb5b5c0559087373a5e9df6322"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/InvestmentPaneModelTests.cs",
+    "bytes": 9138,
+    "sha256": "ef955c1b8651acc36947981dd08090a82026cd8231e7e7c15b1751622566e9fe"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/LobbyChatLogicTests.cs",
+    "bytes": 4534,
+    "sha256": "382d0956115f54f6d7e6e124d4f1be5566784c3b7b4a3b43e67db3b2e045dcb2"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/LobbyFilterTests.cs",
+    "bytes": 3120,
+    "sha256": "ee35c6625334182ecdc95453afef1933ba12bbc16889c03b31cfc9df456c0e66"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/MiscKeyBindingLiveTests.cs",
+    "bytes": 7643,
+    "sha256": "d5730ba98b85c7c90d8cca3a2746c7bb8f9b09f751736deed82e2d7f95873206"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/MissionBriefingLayoutTests.cs",
+    "bytes": 2351,
+    "sha256": "169f020abf65296c2fa0bc44d2d96150ac3b4df6a40ec15262ce645606a7981b"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/MouseFlightControllerTests.cs",
+    "bytes": 13042,
+    "sha256": "aadc2c90128223b73b2491dacc914e6e2fb7648633a66b501d4be465b67729b1"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/P587MousePickAndBaseTargetingTests.cs",
+    "bytes": 14055,
+    "sha256": "625ebab52e123a84032748eb300c509b5bff72962f596d9a5b55e4bfe7f0e429"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/P625KeyMapTests.cs",
+    "bytes": 14714,
+    "sha256": "97164243e5d70baf6d6a3b50d76ec11c6325147464b25670f185be5b1cf2055c"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/P625bActionMapBehaviorTests.cs",
+    "bytes": 6397,
+    "sha256": "6d9d921fe614c1d94a12d0d67c057bd5ebcf007f9c2c91e272cf356c661090b7"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/P640CommandCameraTests.cs",
+    "bytes": 10840,
+    "sha256": "64239359c7d85943349867bff9142f39e95d1e94d5b770b4cffb104f0e70ee8f"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/P642TargetCommandTests.cs",
+    "bytes": 8255,
+    "sha256": "f8443f9250d605b5aa764a7be4bf3881e9593fb107d17587dda8f30e6e046fe0"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/P651WeaponReadinessTests.cs",
+    "bytes": 667,
+    "sha256": "53f6e617b4615ddc725572954276a90f31c442fb4934c1ea0984832967d6f5bc"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/P664StationEventSoundTests.cs",
+    "bytes": 8730,
+    "sha256": "dab2591b5cb35b604ee00c114ce0ddeb2bdbbfe3cf11aaa857da59838f758e5f"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/P713LobbyScreenLiveTests.cs",
+    "bytes": 6673,
+    "sha256": "39b879415a01f82471a24be37b6a2d07b7d363689ec2f12d811564557f79277d"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/P714AnnounceSoundTests.cs",
+    "bytes": 2231,
+    "sha256": "6c1b89509d194dc76dfa95d3207c66cab1180445ffb7f9cd7981ea30c1732024"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/P720EquipmentSwapTests.cs",
+    "bytes": 20911,
+    "sha256": "82787ecab358f1f22675b30ce2733005250240eb8169d0f9e0084ffbc072bad7"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/P721ShipLoopBedsTests.cs",
+    "bytes": 2442,
+    "sha256": "69b85fc5dc1eefb3880670105d0ee762600b75bac1bb483fb5ad30821c0a3e55"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/P722InterfaceModelTests.cs",
+    "bytes": 8195,
+    "sha256": "630ec3e75a93900c9c207ea0d9c1f6723a5726e1a36893938f371a44e9582fb9"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/P737SoundAssetTests.cs",
+    "bytes": 2310,
+    "sha256": "7c561719d0783e2c4826309085708fba0b7363418f852ae8f4e4027149563f02"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/PilotInfoLayoutTests.cs",
+    "bytes": 4424,
+    "sha256": "d847a2ba8c2e1be72d6a998c74dd0c9c7b6ee670749536e526a5d0c6b498d86e"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/QuickChatMdlParserTests.cs",
+    "bytes": 14725,
+    "sha256": "5fcbc9672fe5598493efa4a7df92e86086e3f0fadf4376409e1b27f3d8c77fe6"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/QuickChatOrderResolverTests.cs",
+    "bytes": 9612,
+    "sha256": "96418569e2bf2d363f85e306f3beb9a5a930bc4fb3f64d9cbd153b148f7f4178"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/ReadyCheckLayoutTests.cs",
+    "bytes": 4865,
+    "sha256": "f865b1134ec12af211d01484d6d5098dba9af27e96254d0d5038305432168f0a"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/ReadyCheckRosterTests.cs",
+    "bytes": 4732,
+    "sha256": "09c640b508f9f0e701bd50216c128b97137e8cc4775b76aa302ec3935a1b3daf"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/SectorInfoPaneLayoutTests.cs",
+    "bytes": 7071,
+    "sha256": "421ce91957ab746f0079991828d5e2b77731bf4d3e4aa4f69b925caff9ee8d4f"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/SectorMapQueriesTests.cs",
+    "bytes": 9405,
+    "sha256": "521650752d61386b197181dfb08bb4cfb21c5e46fd81385fe60412f64fdd48e8"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/ShopLauncherBuyLiveTests.cs",
+    "bytes": 11418,
+    "sha256": "8174b31706bbd8fcc91d450bc57867898bcc73140b201b293d85205a4af0249b"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/ShopModelTests.cs",
+    "bytes": 21193,
+    "sha256": "cc03bb5eb81561f182fb16ff7b2a464642bc4f9e3b48efb516619fa70ed503fe"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/ShopNoAutoLaunchTests.cs",
+    "bytes": 2803,
+    "sha256": "054b9976b512588cfc9109af2efb2877fcb85ef605980f50e10154bd9bcc3219"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/SideSelectLayoutTests.cs",
+    "bytes": 5410,
+    "sha256": "c21d42961a836e4f73e346e6eeefc49a9d9a09e78a0685fd2ae87ab752089444"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/TeamPaneLayoutTests.cs",
+    "bytes": 8884,
+    "sha256": "f2a0dcc6181818a5cc1a047083d19280b0e627e265ba1f2f2a386698c3dd5123"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.MonoGame.Tests/TeleportPaneModelTests.cs",
+    "bytes": 10017,
+    "sha256": "38058e2b2253e33729647c798073fd75307af732c19925ed7ce321741a78b5fe"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/ChatBuoyLiveTests.cs",
+    "bytes": 8829,
+    "sha256": "342cdd2854a170d48560d662ac9c40f1a27aa04e2e39657cf171e262be5fd02f"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/ClientWorldQueuedCommandTests.cs",
+    "bytes": 2462,
+    "sha256": "3db37395ab6f7de21061af9ccce7fe3a3972e26f848496f210bc0a3f11c264b5"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/ClientWorldSoundEventTests.cs",
+    "bytes": 53007,
+    "sha256": "c334f7d6e28a5bb12bdeec866b9d21fbb6983d45eb919d2864b1f1d0403133bc"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/GameOverBackLiveTests.cs",
+    "bytes": 11837,
+    "sha256": "ef29c2b77f6665e16b11437c189ac05ddaf8911b58d6aa0c66943a727dd9d8a4"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/P629PenaltyLiveTests.cs",
+    "bytes": 7617,
+    "sha256": "798887ed225217af31838fd7693a55cd09762fb0dcbe1248b4cb0581a394fcec"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/P629ShipWarningTests.cs",
+    "bytes": 3317,
+    "sha256": "c86a572733fdd6aaf0ad1691e647b3f21051ea495a4704907039dd35021749b2"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/P638FeedbackWireTests.cs",
+    "bytes": 9937,
+    "sha256": "857a113aa43b0ca214c1b7f6a3c3340c80f8a0e5cba53be232ed1efe5e80d457"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/P640CommandingReceiveTests.cs",
+    "bytes": 6971,
+    "sha256": "529bac8ea0b4197701bf3668e60e25ed46988a8e811e9867a8d6d1df85df312f"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/P642AllianceReceiveTests.cs",
+    "bytes": 2441,
+    "sha256": "145553a8fa61f5aa72d520c5ffb4ec11a66cbb214c7fa7d0c1aa1194fa90cd8d"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/P678LobbyRelayLiveTests.cs",
+    "bytes": 5681,
+    "sha256": "a18294c302050593095a6ab5ee6d8105fc85522b1442ebf46c8caebf6e35a846"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/P692EquipmentLiveTests.cs",
+    "bytes": 8499,
+    "sha256": "70b8f4d10c26c04c17128fd56ce3348be2c730499a6e65a4eb469678d0879f51"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/P713LobbyScreenStateTests.cs",
+    "bytes": 5469,
+    "sha256": "98bc353d4429ce0582f0dd8c73b49552b800b779437f070611575cbb2c532209"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/ShipStatusAlarmSoundTests.cs",
+    "bytes": 8185,
+    "sha256": "fe06b818febe5891973a84563734d5cb2772c911eb1faeaca3a9e6c885471ddb"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/TR2TrainingTests.cs",
+    "bytes": 9249,
+    "sha256": "6edb27bc7b1bfd2cbd2987b6b34a405701983479afd8d39f62a4f92efcd11b5d"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.ClientCore.Tests/TrainingMission2Tests.cs",
+    "bytes": 7361,
+    "sha256": "c0b87f384457dd8f91be91ed955c63e8c1ccc7df45949d23d669b64d757a0da2"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/AcceptRejectQueuedOrderLiveTests.cs",
+    "bytes": 15292,
+    "sha256": "018442b776c01d215ebc783f7e0e1d877e62cb6ff841c4b79aa54d9f8195c581"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/AsteroidCombatLiveTests.cs",
+    "bytes": 20900,
+    "sha256": "76240e0e39e62ccc1dbac86a773154995ad24bba19cb5b67981a2c9f2eda5a12"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/AsteroidCombatTests.cs",
+    "bytes": 13247,
+    "sha256": "eea0e3478be168ca68978330d416c842001935e954d98095750817e7844d12cf"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/BallotVotingLiveTests.cs",
+    "bytes": 30498,
+    "sha256": "e672235fc1737466ca4b93ee2f0661fe53232e518f276da0c4730a7abfc19b49"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/BucketCatalogDescribeTests.cs",
+    "bytes": 5582,
+    "sha256": "46e0fee7062ffc192159d51865a22beb648f72880c1250d54b9ebc33bb822c8a"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/BuildingConstructionLiveTests.cs",
+    "bytes": 20650,
+    "sha256": "50e258319b1ecc79069170bf283c378252214f568b59dbc7b19e63b59759622e"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/ClusterWarningsTests.cs",
+    "bytes": 8409,
+    "sha256": "13ee04a72d2b57fdc62fdd131d83db10a32052632c64e9d5b5e5f1f3f68240ce"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/CombatWeaponFiringTests.cs",
+    "bytes": 22846,
+    "sha256": "786f58dc538f38cbd8b3755d7f102836fa86fbb25a368875c0251c60cb2fbd9c"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/KillBonusTests.cs",
+    "bytes": 7211,
+    "sha256": "4cb36305b6106daeec0552f8b086da6c191f71ef1104c362390f3e1b94e8cc5f"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/KillBonusWireLiveTests.cs",
+    "bytes": 9079,
+    "sha256": "02d884a596433c770d5ffcf54e587b1fed1bb2d04b6830352d680a1b95c512e7"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/LiveAllianceTests.cs",
+    "bytes": 20079,
+    "sha256": "4267fcd5b5f29a50068b8317402db773bbba9be8ff6a1b4adf2d9cd399c6e97d"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/LiveBoardShipTests.cs",
+    "bytes": 38451,
+    "sha256": "6ba5e0de6ef71b6a7281f7fc1e08d60ada6201e4dc0a03cc5dd04e391a5e712e"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/LiveBucketTests.cs",
+    "bytes": 32108,
+    "sha256": "5b15372a146f20b803e6109eac73829713e8d5e49d8e6249ac66c9043c4a1bfc"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/LiveChatBuoyWireTests.cs",
+    "bytes": 7790,
+    "sha256": "da352544a210a6aabe898427fabfecfa8dcfd3267477547e10db95822ebeace8"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/LiveChatLeadersWingWireTests.cs",
+    "bytes": 12802,
+    "sha256": "609f01bc2127bfb6d99619b26f01056d6899e8d187451cdab08261135eb92a0b"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/LiveChatWireTests.cs",
+    "bytes": 6573,
+    "sha256": "21a41ee863596a4a1a28ec79a125a8aee353ea236b6d0823bf7d017b05f91903"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/LiveQuickChatToDroneCommandTests.cs",
+    "bytes": 14317,
+    "sha256": "6743e029dd13fd1edba9927e3b685ae00061ffb1b7813c0fb31f34d72c969647"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/LiveSideSelectTests.cs",
+    "bytes": 9065,
+    "sha256": "7f59eb64e2b255c93b0838c25aef02f766d73d109bd358b6adc78f918377885d"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/LiveTeamLeadershipTests.cs",
+    "bytes": 27535,
+    "sha256": "39d511827dfdeda1755c47792758748289acb82f47f3a57cab98b126073becc1"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/LiveTeamLobbyTests.cs",
+    "bytes": 19619,
+    "sha256": "133d9663c3069c1b984fee8aab9c6167a5d9b69483fb921cba3033ef75302f5c"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/MinerDecisionCycleLiveTests.cs",
+    "bytes": 22301,
+    "sha256": "b3bafe1257f36258f791dd7997efe361b768bef6a6e978960e84e9d654b72b98"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/NpcWingmanLeadLiveTests.cs",
+    "bytes": 17927,
+    "sha256": "3c17d28a340048c8dce2fe4a549a6adfe876f848f257df04947c854eeb9c25e4"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/P528bMinerSellRegressionLiveTests.cs",
+    "bytes": 6234,
+    "sha256": "63abc3515966570185d8bdd664339461111ee164171c564d791a4c90103da09c"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/P591LayerDroneLaysTests.cs",
+    "bytes": 12553,
+    "sha256": "0f7e21ecd432c202816e9f5d11cbc53d5e248ed6d3f3df3d8a1c69aacd9c2544"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/P629SectorPenaltyTests.cs",
+    "bytes": 7969,
+    "sha256": "61c0877bb672aeeb8bcad7098647760594c39f51105316b89d201f5f22c5ab83"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/P650SimRulesTests.cs",
+    "bytes": 9891,
+    "sha256": "dfc375556060032f8bf59a1c2a6836f677b0ed7968b89569c57fc992f2385092"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/P652EconomyDroneAiTests.cs",
+    "bytes": 34201,
+    "sha256": "7bf21c33b456c8f6cc5c19fd31c2b706f5900bd32f622dec02d1c543a42a5e33"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/P655GameOverDeliveryTests.cs",
+    "bytes": 6041,
+    "sha256": "9de7b261af11e9067253e6431e89589bc1d953684ccc5ad922ab304abdeb9a04"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/P676SimRulesTests.cs",
+    "bytes": 17402,
+    "sha256": "9631803a1852f6366b2b4c2ff7721e884288abbcaf61f7203355ad5591ddaee2"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/P691EconomyCallbackTests.cs",
+    "bytes": 12431,
+    "sha256": "d9037c18077d86aa8deb7b30310fc47d9422e582ff5a39400be7f812c446087c"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/P692EquipmentLifecycleTests.cs",
+    "bytes": 19028,
+    "sha256": "892be7af4dc313df950dd5d03dca1f92fa12a4599309faf4cece2ce42283777a"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/P702ResearchTests.cs",
+    "bytes": 9323,
+    "sha256": "585032b88f87da5f0dea765166bcd3b06c590be6d94aee6940b03bf0866a78f7"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/P708ShipUpdateTests.cs",
+    "bytes": 20796,
+    "sha256": "fa32ccec9252d58d427762ef85e7134c55b37be1cf490425fc353ced268cd7aa"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/P733ResearchTimeTests.cs",
+    "bytes": 4659,
+    "sha256": "c5077aa09a59b19690fa36222f91bde5e82f339508cd07ef754dae3ffde48e55"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/P739PeriodicTests.cs",
+    "bytes": 13486,
+    "sha256": "a70035c04c9e7c08ad3accb394e1d45cafe618e98bc2f2691dbc0eefc8c38d73"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/PlayerDonateTests.cs",
+    "bytes": 19806,
+    "sha256": "70015dba56d39f0c17379d5a97d63d149df838b1b6ec49632ae1f37b33e0c3ab"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/PlayerMoneyAutoDonateTests.cs",
+    "bytes": 22988,
+    "sha256": "aeff14318dc3f5716571a51e55d53ea05fcb864d89c54a23b13581c684f1707d"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/PlayerScoreCalculateScoreTests.cs",
+    "bytes": 9965,
+    "sha256": "c5c0505999a058b05fba0b41d8bdc48824d0cc6952a08ce6a043971c20978151"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/PlayerScoreCombatScoringTests.cs",
+    "bytes": 20220,
+    "sha256": "5db1ad4449919715289ae9fe4d0e576cda44b69305b71b1ad49214dd507effb4"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/RequestMoneyTests.cs",
+    "bytes": 18137,
+    "sha256": "ed090f1719165989036253f1f37cf5aa2914a62afb0fc7902d5f3bef6a398033"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/StartingMoneyStationIncomeLiveTests.cs",
+    "bytes": 14668,
+    "sha256": "325f7bc7c8f9be3ca6b445a2e7733a083019907063c67adb5bb030e9ad2a19a9"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/WarpBombTests.cs",
+    "bytes": 31403,
+    "sha256": "bbd7b5f6825a38604d94f1f1ba4f20d4123c8f1a2d879780d5bd819922421b30"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/Wire/BoardingWireTests.cs",
+    "bytes": 4572,
+    "sha256": "517dd7cac62b42f78cff97f0ea520b25fcb5187396645aa6d405564ae5e8bc8c"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/Wire/ChatBuoyWireTests.cs",
+    "bytes": 5485,
+    "sha256": "f6b2039292706016d503d348a37d4a3b1c5e6815fca866b7354edf3bf95f7c0a"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/Wire/P713LobbyWireTests.cs",
+    "bytes": 980,
+    "sha256": "bf1b6658f3dd7661767e737afc81633156a4ce3ee8f1e29dba04ff387f5ddf99"
+  },
+  {
+    "path": "/home/domingo/allegiance-codex-p743/tests/Allegiance.Core.Tests/Wire/RipcordWireTests.cs",
+    "bytes": 6787,
+    "sha256": "54d013615cbee166796cc581b0deaff8d5bd977e422738d3c27c0f73023f1ca6"
+  }
+]

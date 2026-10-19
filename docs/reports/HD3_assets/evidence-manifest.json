@@ -1,0 +1,37 @@
+{
+  "task": "HD3",
+  "files": [
+    {
+      "file": "available-real-atlases.json",
+      "bytes": 3981,
+      "sha256": "77d7fdbdd99c16c811325ffb8b5a113f90714e074051d835eac22f257d40851a"
+    },
+    {
+      "file": "focused-summary.json",
+      "bytes": 17756,
+      "sha256": "2ab51b6ac30afd0ebf32ac33e40d78ced6d34a793dcec8a3ac8314e28a4b88b0"
+    },
+    {
+      "file": "multi-atlas-native-fallback-1440.png",
+      "bytes": 263238,
+      "sha256": "a169f46862f7d4b7104a0979554468c72ac32372eedf1ff96e8b751c4bb98eb1"
+    },
+    {
+      "file": "real-pack-coverage.json",
+      "bytes": 51031,
+      "sha256": "6971404ef90b9dbe3f6963a022a9c9785ce3d23c593791dce00a0eaf28a875c6"
+    },
+    {
+      "file": "real-ship-1440-compare.png",
+      "bytes": 280909,
+      "sha256": "8d9dfd1c03c5c01025fafae23f92cbed413907e00849069c440216cd9da1ba30"
+    },
+    {
+      "file": "validation-summary.json",
+      "bytes": 12976,
+      "sha256": "4457328590b5cc67df9f918731d156809a9c06ee2c6c8b06176116aede6d8023"
+    }
+  ],
+  "totalListedBytes": 629891,
+  "limitBytes": 2000000
+}

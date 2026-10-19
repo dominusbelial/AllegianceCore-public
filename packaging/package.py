@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Build a self-contained Linux/Windows/macOS DesktopGL player bundle (Python 3.11+)."""
+"""Build self-contained player bundles and installers (Python 3.11+)."""
 import argparse
+import os
 import hashlib
 import json
 import plistlib
@@ -16,6 +17,102 @@ import zipfile
 REPO = Path(__file__).resolve().parents[1]
 PROJECT = REPO / 'src/Allegiance.ClientCore.MonoGame/Allegiance.ClientCore.MonoGame.csproj'
 LIMIT = 2 * 1024**3
+
+
+def app_dir(bundle, destination):
+    """Wrap the exact portable payload; keep its inventory byte-for-byte."""
+    payload = destination / 'usr/lib/AllegianceCore'
+    shutil.copytree(bundle, payload)
+    shutil.copyfile(REPO / 'packaging/AppRun', destination / 'AppRun')
+    (destination / 'AppRun').chmod(0o755)
+    shutil.copyfile(REPO / 'packaging/allegiance-appimage.desktop', destination / 'allegiance.desktop')
+    shutil.copyfile(REPO / 'packaging/allegiance.svg', destination / 'allegiance.svg')
+    (destination / '.DirIcon').symlink_to('allegiance.svg')
+
+
+def installer(bundle, artifact, args):
+    if args.rid == 'linux-x64':
+        appdir = bundle.parent / 'AllegianceCore.AppDir'
+        app_dir(bundle, appdir)
+        # Pin both build tool and runtime outside this script. Never fetch a
+        # runtime implicitly during packaging or require FUSE on build hosts.
+        env = dict(os.environ, ARCH='x86_64', APPIMAGE_EXTRACT_AND_RUN='1', VERSION=args.version)
+        run(args.appimagetool, '--runtime-file', args.appimage_runtime.resolve(),
+            appdir, artifact, env=env)
+        artifact.chmod(0o755)
+    elif args.rid == 'win-x64':
+        license_page = bundle.parent / 'installer-license.txt'
+        license_page.write_text('\n\n'.join(
+            f'===== {name} =====\n\n{(bundle / name).read_text(encoding="utf-8")}'
+            for name in ('LICENSE', 'NOTICE', 'CREDITS.md', 'README-PLAYERS.txt')), encoding='utf-8-sig')
+        run(args.iscc, f'/DBundleDir={bundle}', f'/DLicensePage={license_page}',
+            f'/DAppVersion={args.version}', f'/DOutputDir={artifact.parent}',
+            f'/DOutputName={artifact.stem}', REPO / 'packaging/windows.iss')
+
+
+def record_artifact(pending, output, args, unpacked, manifest_count, pins):
+    if pending.stat().st_size >= LIMIT:
+        raise ValueError('Artifact exceeds GitHub 2 GiB limit; split before publishing')
+    artifact = output / pending.name
+    pending.replace(artifact)
+    (output / (artifact.name + '.sha256')).write_text(f'{checksum(artifact)}  {artifact.name}\n')
+    (output / (artifact.name + '.json')).write_text(json.dumps({
+        'rid': args.rid, 'version': args.version, 'archiveBytes': artifact.stat().st_size,
+        'unpackedBytes': unpacked, 'artworkFiles': manifest_count, 'sources': pins}, indent=2) + '\n')
+    print(f'Created {artifact}: {artifact.stat().st_size:,} bytes; unpacked {unpacked:,} bytes')
+
+
+def emit_artifacts(bundle, staging, output, args, manifest_count, pins):
+    unpacked = sum(p.stat().st_size for p in bundle.rglob('*') if p.is_file())
+    if args.format in ('portable', 'all') or args.rid == 'osx-arm64':
+        archive = staging / (bundle.name + ('.tar.gz' if args.rid == 'linux-x64' else '.zip'))
+        archive_bundle(bundle, archive, args.rid)
+        record_artifact(archive, output, args, unpacked, manifest_count, pins)
+    if args.format in ('installer', 'all') and args.rid != 'osx-arm64':
+        suffix = '.AppImage' if args.rid == 'linux-x64' else '-setup.exe'
+        artifact = staging / (bundle.name + suffix)
+        installer(bundle, artifact, args)
+        record_artifact(artifact, output, args, unpacked, manifest_count, pins)
+
+
+def validate_args(args):
+    if not re.fullmatch(r'\d{1,5}\.\d{1,5}\.\d{1,5}(?:\.\d{1,5})?', args.version) or any(
+            int(part) > 65535 for part in args.version.split('.')):
+        raise ValueError('--version must have 3 or 4 numeric components, each <= 65535')
+    if args.from_portable and (args.rid == 'osx-arm64' or args.format != 'installer'):
+        raise ValueError('--from-portable requires --format installer and a Linux or Windows RID')
+    if args.rid == 'linux-x64' and args.format in ('installer', 'all'):
+        if not args.appimage_runtime or not args.appimage_runtime.is_file():
+            raise ValueError('--appimage-runtime must name a downloaded, pinned x86_64 runtime')
+
+
+def from_portable(args, output):
+    """Repackage a trusted local/CI portable artifact on the native installer host."""
+    # Reuse extraction/mode handling and verify both outer and payload checksums.
+    import smoke
+    archive = args.from_portable.resolve()
+    expected = archive.with_name(archive.name + '.sha256').read_text().split()[0]
+    if checksum(archive) != expected:
+        raise ValueError('Portable artifact checksum mismatch')
+    with tempfile.TemporaryDirectory(prefix='player-installer-', dir=output) as staging:
+        stage = Path(staging)
+        bundle = smoke.extract(archive, stage)
+        if bundle.name != f'Allegiance-{args.rid}':
+            raise ValueError('Portable artifact RID does not match --rid')
+        validate_content(bundle)
+        for line in (bundle / 'bundle-files.sha256').read_text().splitlines():
+            digest, name = line.split('  ', 1)
+            validate_inventory_path(name)
+            if checksum(bundle / name) != digest:
+                raise ValueError(f'Payload checksum mismatch: {name}')
+        emit_artifacts(bundle, stage, output, args, len(paths(bundle / 'artwork-manifest.txt')),
+                       json.loads((bundle / 'sources.json').read_text()))
+
+
+def validate_inventory_path(name):
+    p = PurePosixPath(name)
+    if p.is_absolute() or '..' in p.parts or '\\' in name or ':' in name:
+        raise ValueError(f'Unsafe inventory path: {name}')
 
 
 def mac_app(bundle):
@@ -132,8 +229,12 @@ def checksum(path):
 
 
 def build(args):
+    validate_args(args)
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
+    if args.from_portable:
+        from_portable(args, output)
+        return
     pins = json.loads((REPO / 'packaging/sources.json').read_text())
     art, art_files = source('artwork', args.artwork_path, output / 'sources', pins)
     sky, sky_files = source('sky', args.sky_path, output / 'sources', pins)
@@ -164,6 +265,8 @@ def build(args):
         for name in ('Allegiance.Server.dll', 'Allegiance.SinglePlayer.dll'):
             if not (bundle / name).is_file():
                 raise ValueError(f'Skirmish assembly missing: {name}')
+        if not (bundle / 'benchmarks/battle.alr').is_file():
+            raise ValueError('Bundled benchmark battle missing')
         # Rename only the apphost; its embedded managed entry point stays intact.
         original = bundle / ('Allegiance.ClientCore.MonoGame.exe' if args.rid == 'win-x64' else 'Allegiance.ClientCore.MonoGame')
         original.rename(bundle / ('Allegiance.exe' if args.rid == 'win-x64' else 'Allegiance'))
@@ -200,25 +303,20 @@ def build(args):
         (bundle / 'bundle-files.sha256').write_text(''.join(inventory))
         if args.rid == 'osx-arm64':
             mac_app(bundle)
-        unpacked = sum(p.stat().st_size for p in bundle.rglob('*') if p.is_file())
-        archive = output / (bundle.name + ('.tar.gz' if args.rid == 'linux-x64' else '.zip'))
-        pending_archive = Path(staging) / archive.name
-        archive_bundle(bundle, pending_archive, args.rid)
-        if pending_archive.stat().st_size >= LIMIT:
-            pending_archive.unlink()
-            raise ValueError('Archive exceeds GitHub 2 GiB limit; split before publishing')
-        pending_archive.replace(archive)
-        (output / (archive.name + '.sha256')).write_text(f'{checksum(archive)}  {archive.name}\n')
-        (output / (archive.name + '.json')).write_text(json.dumps({
-            'rid': args.rid, 'archiveBytes': archive.stat().st_size, 'unpackedBytes': unpacked,
-            'artworkFiles': len(manifest), 'sources': pins}, indent=2) + '\n')
-        print(f'Created {archive}: {archive.stat().st_size:,} bytes; unpacked {unpacked:,} bytes')
+        emit_artifacts(bundle, Path(staging), output, args, len(manifest), pins)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--rid', choices=['linux-x64', 'win-x64', 'osx-arm64'], required=True)
     parser.add_argument('--output', type=Path, default=REPO / 'dist')
+    parser.add_argument('--format', choices=['portable', 'installer', 'all'], default='portable',
+                        help='macOS always emits its existing .app ZIP')
+    parser.add_argument('--version', default='0.0.0', help='Numeric release version for installer upgrades')
+    parser.add_argument('--from-portable', type=Path, help='Trusted bundle + adjacent .sha256; installer only')
+    parser.add_argument('--iscc', default='iscc', help='Inno Setup compiler (or a Wine wrapper)')
+    parser.add_argument('--appimagetool', default='appimagetool')
+    parser.add_argument('--appimage-runtime', type=Path, help='Pinned type2-runtime runtime-x86_64')
     parser.add_argument('--artwork-path', type=Path)
     parser.add_argument('--sky-path', type=Path)
     parser.add_argument('--nuget-source', help='Offline NuGet source, e.g. ~/.nuget/packages')

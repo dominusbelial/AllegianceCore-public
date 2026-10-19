@@ -117,6 +117,7 @@ public sealed class P702ResearchTests
     }
 
     [SkippableFact]
+    [Trait("Tier", "Live")]   // ~12 s: steps a research plan through real server time
     public void Invalid_order_identity_rock_and_expected_unlock_fail_at_offending_step()
     {
         Require.Artwork();

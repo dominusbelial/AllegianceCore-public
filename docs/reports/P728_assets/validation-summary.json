@@ -1,0 +1,172 @@
+{
+  "build": {
+    "command": "dotnet build AllegianceCore.slnx --nologo -m:2",
+    "clean": true
+  },
+  "aot": {
+    "command": "dotnet publish src/Allegiance.Server/Allegiance.Server.csproj -c Release -r linux-x64 --self-contained -p:PublishAot=true -o /tmp/allegiance-evidence/P728/aot",
+    "artifactExists": true,
+    "forbiddenWarnings": false
+  },
+  "sweeps": [
+    {
+      "file": "full-core.trx",
+      "seconds": 1272.432,
+      "counts": {
+        "total": 4879,
+        "executed": 4879,
+        "passed": 4868,
+        "failed": 11,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failed": [
+        "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+        "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+        "Allegiance.Core.Tests.LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count",
+        "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+        "Allegiance.Core.Tests.LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy",
+        "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_distinct_keys_remain_independent",
+        "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+        "Allegiance.Core.Tests.ShipStatusServerTests.Teammate_ship_playerinfo_is_broadcast_once_after_export_before_status",
+        "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+        "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded",
+        "Allegiance.Core.Tests.BroadcastSnapshotLoopbackTests.Crowded_real_TCP_session_measures_sim_projection_and_publish_pool"
+      ],
+      "skipped": []
+    },
+    {
+      "file": "full-monogame.trx",
+      "seconds": 983.768,
+      "counts": {
+        "total": 2447,
+        "executed": 2444,
+        "passed": 2441,
+        "failed": 3,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failed": [
+        "Allegiance.ClientCore.MonoGame.Tests.HelpOverlayTests.NoDuplicateKeys_WithinAGroup",
+        "Allegiance.ClientCore.MonoGame.Tests.ChatTargetComposeLiveTests.ComposeDefault_Team_SendsToTeammate_NotEnemy",
+        "Allegiance.ClientCore.MonoGame.Tests.P626InFlightUtilityPackTests.Catalogue_P626Commands_NoDuplicateKeysWithinAGroup"
+      ],
+      "skipped": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set"
+      ]
+    },
+    {
+      "file": "full-clientcore.trx",
+      "seconds": 2247.93,
+      "counts": {
+        "total": 1388,
+        "executed": 1388,
+        "passed": 1388,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failed": [],
+      "skipped": []
+    }
+  ],
+  "ledgers": {
+    "focused": {
+      "invocations": 174,
+      "passed": 216,
+      "failedInvocations": 0
+    },
+    "final-focused": {
+      "invocations": 126,
+      "passed": 162,
+      "failedInvocations": 6
+    },
+    "corrections": {
+      "invocations": 9,
+      "passed": 18,
+      "failedInvocations": 0
+    },
+    "remaining-focused": {
+      "invocations": 27,
+      "passed": 48,
+      "failedInvocations": 0
+    },
+    "core-retries": {
+      "invocations": 33,
+      "passed": 24,
+      "failedInvocations": 9
+    },
+    "flake-confirm": {
+      "invocations": 32,
+      "passed": 22,
+      "failedInvocations": 10
+    },
+    "human-final": {
+      "invocations": 3,
+      "passed": 3,
+      "failedInvocations": 0
+    },
+    "baseline-never-parks": {
+      "invocations": 5,
+      "passed": 5,
+      "failedInvocations": 0
+    },
+    "final-flight-never-parks": {
+      "invocations": 5,
+      "passed": 5,
+      "failedInvocations": 0
+    },
+    "ui-final": {
+      "invocations": 14,
+      "passed": 35,
+      "failedInvocations": 0
+    },
+    "ui-confirm": {
+      "invocations": 93,
+      "passed": 126,
+      "failedInvocations": 0
+    },
+    "constructor-chat": {
+      "invocations": 6,
+      "passed": 3,
+      "failedInvocations": 3
+    },
+    "constructor-confirm": {
+      "invocations": 6,
+      "passed": 6,
+      "failedInvocations": 0
+    }
+  }
+}

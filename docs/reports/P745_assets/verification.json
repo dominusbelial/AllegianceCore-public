@@ -1,0 +1,1672 @@
+{
+  "core_full": {
+    "initial_passed": 173,
+    "initial_aborted": "TcpTransport.AcceptTcpClient Not listening",
+    "remaining_passed": 4653,
+    "remaining_failed": 25,
+    "inventory_fill_passed": 4,
+    "note": "Initial sweep aborted in unchanged transport; resumed only incomplete methods, then inventory-filled four missing theory rows. No second full sweep."
+  },
+  "monogame_full": {
+    "passed": 2430,
+    "failed": 1,
+    "skipped": 3
+  },
+  "core_failed_isolated": [
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 200, parallel: True, stationDeath: True, coincident: False, nativeLaunch: True)",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-1-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 200, parallel: True, stationDeath: True, coincident: False, nativeLaunch: True)",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-1-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 200, parallel: True, stationDeath: True, coincident: False, nativeLaunch: True)",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-1-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.MiningTests.Loopback_synthetic_rock_mines_and_ore_reaches_the_wire",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-2-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.MiningTests.Loopback_synthetic_rock_mines_and_ore_reaches_the_wire",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-2-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.MiningTests.Loopback_synthetic_rock_mines_and_ore_reaches_the_wire",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-2-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-3-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-3-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-3-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-4-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-4-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-4-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-5-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-5-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-5-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-6-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-6-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-6-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-7-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-7-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Re_target_activates_to_requester_only",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-7-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-8-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-8-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-8-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.MapGenLiveProofTests.GeneratedSingleRing_PeerFliesThroughWarp_ToRingNeighbour",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-9-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.MapGenLiveProofTests.GeneratedSingleRing_PeerFliesThroughWarp_ToRingNeighbour",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-9-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.MapGenLiveProofTests.GeneratedSingleRing_PeerFliesThroughWarp_ToRingNeighbour",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-9-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-10-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-10-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-10-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveTeamLobbyTests.Unready_broadcasts_team_ready_false",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-11-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveTeamLobbyTests.Unready_broadcasts_team_ready_false",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-11-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveTeamLobbyTests.Unready_broadcasts_team_ready_false",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-11-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_distinct_keys_remain_independent",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-12-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_distinct_keys_remain_independent",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-12-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_distinct_keys_remain_independent",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-12-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: True, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-13-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: True, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 2,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-13-2.log",
+      "median_ms": 330.731
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: True, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 3,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-13-3.log",
+      "median_ms": 438.793
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 1,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-14-1.log",
+      "median_ms": 418.763
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 2,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-14-2.log",
+      "median_ms": 436.072
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 3,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-14-3.log",
+      "median_ms": 303.403
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: True, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 1,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-15-1.log",
+      "median_ms": 305.559
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: True, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 2,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-15-2.log",
+      "median_ms": 390.436
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: True, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 3,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-15-3.log",
+      "median_ms": 289.789
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_healthy_consumer_still_receives_each_latest_snapshot",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-16-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_healthy_consumer_still_receives_each_latest_snapshot",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-16-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_healthy_consumer_still_receives_each_latest_snapshot",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-16-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveLogoffTests.Logoff_echoes_releases_and_retires_the_ship",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-17-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveLogoffTests.Logoff_echoes_releases_and_retires_the_ship",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-17-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveLogoffTests.Logoff_echoes_releases_and_retires_the_ship",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-17-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 1,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-18-1.log",
+      "median_ms": 631.486
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 2,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-18-2.log",
+      "median_ms": 629.471
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 3,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-18-3.log",
+      "median_ms": 459.248
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 200, parallel: False, stationDeath: False, coincident: False, nativeLaunch: True)",
+      "run": 1,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-19-1.log",
+      "median_ms": 380.959
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 200, parallel: False, stationDeath: False, coincident: False, nativeLaunch: True)",
+      "run": 2,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-19-2.log",
+      "median_ms": 248.403
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 200, parallel: False, stationDeath: False, coincident: False, nativeLaunch: True)",
+      "run": 3,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-19-3.log",
+      "median_ms": 298.171
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-20-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried",
+      "run": 2,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-20-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-20-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-21-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-21-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "run": 3,
+      "exit": 1,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-21-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Host_send_to_a_reaped_peer_id_does_not_throw",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-22-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Host_send_to_a_reaped_peer_id_does_not_throw",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-22-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Host_send_to_a_reaped_peer_id_does_not_throw",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-22-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-23-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-23-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-23-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-24-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-24-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-24-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "run": 1,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-25-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "run": 2,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-25-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown",
+      "run": 3,
+      "exit": 0,
+      "matched": true,
+      "log": "/tmp/p745-core-isolated-25-3.log"
+    }
+  ],
+  "base_performance": [
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: True, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 1,
+      "exit": 1,
+      "log": "/tmp/p745-base-perf-1-1.log",
+      "median_ms": 408.817
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: True, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 2,
+      "exit": 1,
+      "log": "/tmp/p745-base-perf-1-2.log",
+      "median_ms": 305.796
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: True, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 3,
+      "exit": 1,
+      "log": "/tmp/p745-base-perf-1-3.log",
+      "median_ms": 402.388
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 1,
+      "exit": 1,
+      "log": "/tmp/p745-base-perf-2-1.log",
+      "median_ms": 584.586
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 2,
+      "exit": 1,
+      "log": "/tmp/p745-base-perf-2-2.log",
+      "median_ms": 398.903
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 195, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 3,
+      "exit": 1,
+      "log": "/tmp/p745-base-perf-2-3.log",
+      "median_ms": 350.906
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: True, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-base-perf-3-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: True, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-base-perf-3-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: True, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-base-perf-3-3.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-base-perf-4-1.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-base-perf-4-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 150, parallel: False, stationDeath: True, coincident: False, nativeLaunch: False)",
+      "run": 3,
+      "exit": 1,
+      "log": "/tmp/p745-base-perf-4-3.log",
+      "median_ms": 361.93
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 200, parallel: False, stationDeath: False, coincident: False, nativeLaunch: True)",
+      "run": 1,
+      "exit": 1,
+      "log": "/tmp/p745-base-perf-5-1.log",
+      "median_ms": 290.364
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 200, parallel: False, stationDeath: False, coincident: False, nativeLaunch: True)",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-base-perf-5-2.log"
+    },
+    {
+      "test": "Allegiance.Core.Tests.P694MassEventTickTests.Launch_point_mass_events(count: 200, parallel: False, stationDeath: False, coincident: False, nativeLaunch: True)",
+      "run": 3,
+      "exit": 1,
+      "log": "/tmp/p745-base-perf-5-3.log",
+      "median_ms": 210.295
+    }
+  ],
+  "paired_performance": [
+    {
+      "lane": "base",
+      "run": 1,
+      "exit": 1,
+      "log": "/tmp/p745-paired-base-1.log",
+      "median_ms": 207.412
+    },
+    {
+      "lane": "current",
+      "run": 1,
+      "exit": 1,
+      "log": "/tmp/p745-paired-current-1.log",
+      "median_ms": 207.712
+    },
+    {
+      "lane": "base",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-paired-base-2.log"
+    },
+    {
+      "lane": "current",
+      "run": 2,
+      "exit": 1,
+      "log": "/tmp/p745-paired-current-2.log",
+      "median_ms": 231.095
+    },
+    {
+      "lane": "base",
+      "run": 3,
+      "exit": 1,
+      "log": "/tmp/p745-paired-base-3.log",
+      "median_ms": 222.879
+    },
+    {
+      "lane": "current",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-paired-current-3.log"
+    }
+  ],
+  "new_duty_navigation_isolated": [
+    {
+      "method": "P745_Own_missile_quantity_counts_confirmed_salvos_and_survives_sector_transit",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Own_missile_quantity_counts_confirmed_salvos_and_survives_sector_transit-1.log"
+    },
+    {
+      "method": "P745_Own_missile_quantity_counts_confirmed_salvos_and_survives_sector_transit",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Own_missile_quantity_counts_confirmed_salvos_and_survives_sector_transit-2.log"
+    },
+    {
+      "method": "P745_Own_missile_quantity_counts_confirmed_salvos_and_survives_sector_transit",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Own_missile_quantity_counts_confirmed_salvos_and_survives_sector_transit-3.log"
+    },
+    {
+      "method": "P745_Empty_station_missiles_trigger_a_real_refit_only_after_confirmed_launches",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Empty_station_missiles_trigger_a_real_refit_only_after_confirmed_launches-1.log"
+    },
+    {
+      "method": "P745_Empty_station_missiles_trigger_a_real_refit_only_after_confirmed_launches",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Empty_station_missiles_trigger_a_real_refit_only_after_confirmed_launches-2.log"
+    },
+    {
+      "method": "P745_Empty_station_missiles_trigger_a_real_refit_only_after_confirmed_launches",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Empty_station_missiles_trigger_a_real_refit_only_after_confirmed_launches-3.log"
+    },
+    {
+      "method": "P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster-1.log"
+    },
+    {
+      "method": "P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster-2.log"
+    },
+    {
+      "method": "P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Siege_dodge_ignores_retired_ship_poses_in_the_native_null_cluster-3.log"
+    },
+    {
+      "method": "P745_Siege_continues_to_an_observed_restart_base_after_clearing_the_original_sector",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Siege_continues_to_an_observed_restart_base_after_clearing_the_original_sector-1.log"
+    },
+    {
+      "method": "P745_Siege_continues_to_an_observed_restart_base_after_clearing_the_original_sector",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Siege_continues_to_an_observed_restart_base_after_clearing_the_original_sector-2.log"
+    },
+    {
+      "method": "P745_Siege_continues_to_an_observed_restart_base_after_clearing_the_original_sector",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Siege_continues_to_an_observed_restart_base_after_clearing_the_original_sector-3.log"
+    },
+    {
+      "method": "P745_Accepted_fallback_fighter_returns_for_newly_available_legal_bomber",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Accepted_fallback_fighter_returns_for_newly_available_legal_bomber-1.log"
+    },
+    {
+      "method": "P745_Accepted_fallback_fighter_returns_for_newly_available_legal_bomber",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Accepted_fallback_fighter_returns_for_newly_available_legal_bomber-2.log"
+    },
+    {
+      "method": "P745_Accepted_fallback_fighter_returns_for_newly_available_legal_bomber",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Accepted_fallback_fighter_returns_for_newly_available_legal_bomber-3.log"
+    },
+    {
+      "method": "P745_Refit_keeps_native_payday_instead_of_requiring_a_death_insurance_payment",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Refit_keeps_native_payday_instead_of_requiring_a_death_insurance_payment-1.log"
+    },
+    {
+      "method": "P745_Refit_keeps_native_payday_instead_of_requiring_a_death_insurance_payment",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Refit_keeps_native_payday_instead_of_requiring_a_death_insurance_payment-2.log"
+    },
+    {
+      "method": "P745_Refit_keeps_native_payday_instead_of_requiring_a_death_insurance_payment",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Refit_keeps_native_payday_instead_of_requiring_a_death_insurance_payment-3.log"
+    },
+    {
+      "method": "P745_Refit_launch_ack_resumes_flight_even_after_a_partial_grant_without_counting_a_pod_cycle",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Refit_launch_ack_resumes_flight_even_after_a_partial_grant_without_counting_a_pod_cycle-1.log"
+    },
+    {
+      "method": "P745_Refit_launch_ack_resumes_flight_even_after_a_partial_grant_without_counting_a_pod_cycle",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Refit_launch_ack_resumes_flight_even_after_a_partial_grant_without_counting_a_pod_cycle-2.log"
+    },
+    {
+      "method": "P745_Refit_launch_ack_resumes_flight_even_after_a_partial_grant_without_counting_a_pod_cycle",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Refit_launch_ack_resumes_flight_even_after_a_partial_grant_without_counting_a_pod_cycle-3.log"
+    },
+    {
+      "method": "P745_Research_reserves_an_accepted_flying_strike_without_waiting_for_a_death_or_new_purchase",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Research_reserves_an_accepted_flying_strike_without_waiting_for_a_death_or_new_purchase-1.log"
+    },
+    {
+      "method": "P745_Research_reserves_an_accepted_flying_strike_without_waiting_for_a_death_or_new_purchase",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Research_reserves_an_accepted_flying_strike_without_waiting_for_a_death_or_new_purchase-2.log"
+    },
+    {
+      "method": "P745_Research_reserves_an_accepted_flying_strike_without_waiting_for_a_death_or_new_purchase",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Research_reserves_an_accepted_flying_strike_without_waiting_for_a_death_or_new_purchase-3.log"
+    },
+    {
+      "method": "P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists-1.log"
+    },
+    {
+      "method": "P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists-2.log"
+    },
+    {
+      "method": "P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Research_refit_is_a_return_to_dock_duty_only_when_a_legal_strike_exists-3.log"
+    },
+    {
+      "method": "P745_Research_strike_routes_use_distinct_enemy_home_entries",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Research_strike_routes_use_distinct_enemy_home_entries-1.log"
+    },
+    {
+      "method": "P745_Research_strike_routes_use_distinct_enemy_home_entries",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Research_strike_routes_use_distinct_enemy_home_entries-2.log"
+    },
+    {
+      "method": "P745_Research_strike_routes_use_distinct_enemy_home_entries",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Research_strike_routes_use_distinct_enemy_home_entries-3.log"
+    },
+    {
+      "method": "P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it-1.log"
+    },
+    {
+      "method": "P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it-2.log"
+    },
+    {
+      "method": "P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Travelling_siege_keeps_station_duty_when_a_fighter_hits_it-3.log"
+    },
+    {
+      "method": "P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target-1.log"
+    },
+    {
+      "method": "P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target-2.log"
+    },
+    {
+      "method": "P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-P745_Station_siege_dodges_other_obstacles_but_skips_its_attack_target-3.log"
+    },
+    {
+      "method": "Native_bomber_weapons_reduce_station_pools_with_the_native_matrix_and_regen",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Native_bomber_weapons_reduce_station_pools_with_the_native_matrix_and_regen-1.log"
+    },
+    {
+      "method": "Native_bomber_weapons_reduce_station_pools_with_the_native_matrix_and_regen",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Native_bomber_weapons_reduce_station_pools_with_the_native_matrix_and_regen-2.log"
+    },
+    {
+      "method": "Native_bomber_weapons_reduce_station_pools_with_the_native_matrix_and_regen",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Native_bomber_weapons_reduce_station_pools_with_the_native_matrix_and_regen-3.log"
+    },
+    {
+      "method": "Native_heavy_strike_controls_make_progress_to_a_warp_without_obstacles",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Native_heavy_strike_controls_make_progress_to_a_warp_without_obstacles-1.log"
+    },
+    {
+      "method": "Native_heavy_strike_controls_make_progress_to_a_warp_without_obstacles",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Native_heavy_strike_controls_make_progress_to_a_warp_without_obstacles-2.log"
+    },
+    {
+      "method": "Native_heavy_strike_controls_make_progress_to_a_warp_without_obstacles",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Native_heavy_strike_controls_make_progress_to_a_warp_without_obstacles-3.log"
+    },
+    {
+      "method": "Heavy_strike_turn_brakes_angular_drift_before_crossing_the_route_bearing",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Heavy_strike_turn_brakes_angular_drift_before_crossing_the_route_bearing-1.log"
+    },
+    {
+      "method": "Heavy_strike_turn_brakes_angular_drift_before_crossing_the_route_bearing",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Heavy_strike_turn_brakes_angular_drift_before_crossing_the_route_bearing-2.log"
+    },
+    {
+      "method": "Heavy_strike_turn_brakes_angular_drift_before_crossing_the_route_bearing",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Heavy_strike_turn_brakes_angular_drift_before_crossing_the_route_bearing-3.log"
+    },
+    {
+      "method": "Tangent_course_clears_the_nearest_static_blocker_without_removing_forward_progress",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Tangent_course_clears_the_nearest_static_blocker_without_removing_forward_progress-1.log"
+    },
+    {
+      "method": "Tangent_course_clears_the_nearest_static_blocker_without_removing_forward_progress",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Tangent_course_clears_the_nearest_static_blocker_without_removing_forward_progress-2.log"
+    },
+    {
+      "method": "Tangent_course_clears_the_nearest_static_blocker_without_removing_forward_progress",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Tangent_course_clears_the_nearest_static_blocker_without_removing_forward_progress-3.log"
+    },
+    {
+      "method": "Dodge_applies_native_directional_thrusters_instead_of_turning_away",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Dodge_applies_native_directional_thrusters_instead_of_turning_away-1.log"
+    },
+    {
+      "method": "Dodge_applies_native_directional_thrusters_instead_of_turning_away",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Dodge_applies_native_directional_thrusters_instead_of_turning_away-2.log"
+    },
+    {
+      "method": "Dodge_applies_native_directional_thrusters_instead_of_turning_away",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-final-isolated-Dodge_applies_native_directional_thrusters_instead_of_turning_away-3.log"
+    }
+  ],
+  "carrier_isolated": [
+    {
+      "method": "P745_Unbounded_bay_planes_do_not_land_a_distant_strike_ship",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-P745_Unbounded_bay_planes_do_not_land_a_distant_strike_ship-1.log"
+    },
+    {
+      "method": "P745_Unbounded_bay_planes_do_not_land_a_distant_strike_ship",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-P745_Unbounded_bay_planes_do_not_land_a_distant_strike_ship-2.log"
+    },
+    {
+      "method": "P745_Unbounded_bay_planes_do_not_land_a_distant_strike_ship",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-P745_Unbounded_bay_planes_do_not_land_a_distant_strike_ship-3.log"
+    },
+    {
+      "method": "Lander_inside_real_carrier_bay_is_detected_with_no_state_change",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Lander_inside_real_carrier_bay_is_detected_with_no_state_change-1.log"
+    },
+    {
+      "method": "Lander_inside_real_carrier_bay_is_detected_with_no_state_change",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Lander_inside_real_carrier_bay_is_detected_with_no_state_change-2.log"
+    },
+    {
+      "method": "Lander_inside_real_carrier_bay_is_detected_with_no_state_change",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Lander_inside_real_carrier_bay_is_detected_with_no_state_change-3.log"
+    },
+    {
+      "method": "Opposite_side_pair_is_not_detected",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Opposite_side_pair_is_not_detected-1.log"
+    },
+    {
+      "method": "Opposite_side_pair_is_not_detected",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Opposite_side_pair_is_not_detected-2.log"
+    },
+    {
+      "method": "Opposite_side_pair_is_not_detected",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Opposite_side_pair_is_not_detected-3.log"
+    },
+    {
+      "method": "Lander_without_land_on_carrier_capability_is_not_detected",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Lander_without_land_on_carrier_capability_is_not_detected-1.log"
+    },
+    {
+      "method": "Lander_without_land_on_carrier_capability_is_not_detected",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Lander_without_land_on_carrier_capability_is_not_detected-2.log"
+    },
+    {
+      "method": "Lander_without_land_on_carrier_capability_is_not_detected",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Lander_without_land_on_carrier_capability_is_not_detected-3.log"
+    },
+    {
+      "method": "Lander_outside_every_bay_half_space_is_not_detected",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Lander_outside_every_bay_half_space_is_not_detected-1.log"
+    },
+    {
+      "method": "Lander_outside_every_bay_half_space_is_not_detected",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Lander_outside_every_bay_half_space_is_not_detected-2.log"
+    },
+    {
+      "method": "Lander_outside_every_bay_half_space_is_not_detected",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Lander_outside_every_bay_half_space_is_not_detected-3.log"
+    },
+    {
+      "method": "Stationary_lander_is_detected_every_consecutive_tick_no_latch",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Stationary_lander_is_detected_every_consecutive_tick_no_latch-1.log"
+    },
+    {
+      "method": "Stationary_lander_is_detected_every_consecutive_tick_no_latch",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Stationary_lander_is_detected_every_consecutive_tick_no_latch-2.log"
+    },
+    {
+      "method": "Stationary_lander_is_detected_every_consecutive_tick_no_latch",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Stationary_lander_is_detected_every_consecutive_tick_no_latch-3.log"
+    },
+    {
+      "method": "Production_artpath_loader_resolves_real_bay_and_detects",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Production_artpath_loader_resolves_real_bay_and_detects-1.log"
+    },
+    {
+      "method": "Production_artpath_loader_resolves_real_bay_and_detects",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Production_artpath_loader_resolves_real_bay_and_detects-2.log"
+    },
+    {
+      "method": "Production_artpath_loader_resolves_real_bay_and_detects",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Production_artpath_loader_resolves_real_bay_and_detects-3.log"
+    },
+    {
+      "method": "Depleted_lander_relaunches_off_carrier_with_slots_and_is_resupplied",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Depleted_lander_relaunches_off_carrier_with_slots_and_is_resupplied-1.log"
+    },
+    {
+      "method": "Depleted_lander_relaunches_off_carrier_with_slots_and_is_resupplied",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Depleted_lander_relaunches_off_carrier_with_slots_and_is_resupplied-2.log"
+    },
+    {
+      "method": "Depleted_lander_relaunches_off_carrier_with_slots_and_is_resupplied",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Depleted_lander_relaunches_off_carrier_with_slots_and_is_resupplied-3.log"
+    },
+    {
+      "method": "Consecutive_landings_round_robin_across_launch_slots",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Consecutive_landings_round_robin_across_launch_slots-1.log"
+    },
+    {
+      "method": "Consecutive_landings_round_robin_across_launch_slots",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Consecutive_landings_round_robin_across_launch_slots-2.log"
+    },
+    {
+      "method": "Consecutive_landings_round_robin_across_launch_slots",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Consecutive_landings_round_robin_across_launch_slots-3.log"
+    },
+    {
+      "method": "Carrier_without_launch_slots_uses_backward_fallback",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Carrier_without_launch_slots_uses_backward_fallback-1.log"
+    },
+    {
+      "method": "Carrier_without_launch_slots_uses_backward_fallback",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Carrier_without_launch_slots_uses_backward_fallback-2.log"
+    },
+    {
+      "method": "Carrier_without_launch_slots_uses_backward_fallback",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-Carrier_without_launch_slots_uses_backward_fallback-3.log"
+    },
+    {
+      "method": "After_relaunch_no_repeat_detection_or_launch",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-After_relaunch_no_repeat_detection_or_launch-1.log"
+    },
+    {
+      "method": "After_relaunch_no_repeat_detection_or_launch",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-After_relaunch_no_repeat_detection_or_launch-2.log"
+    },
+    {
+      "method": "After_relaunch_no_repeat_detection_or_launch",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-carrier-isolated-After_relaunch_no_repeat_detection_or_launch-3.log"
+    }
+  ],
+  "clientcore_full": {
+    "passed": 1342,
+    "failed": 1,
+    "skipped": 1,
+    "failed_test": "P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station",
+    "note": "Sweep started before carrier-contact and station-discovery corrections; final live proof qualified separately, no second sweep."
+  },
+  "core_inventory_fill": [
+    {
+      "method": "P689CollisionPairTests.Filtered_combat_events_equal_original_dispatch_including_times_shapes_and_ties",
+      "row": "count: 150",
+      "exit": 0,
+      "log": "/tmp/p745-core-inventory-fill-1.log"
+    },
+    {
+      "method": "P690EquipmentReadinessTests.Docked_boarded_and_cargo_equipment_do_not_advance_or_notify",
+      "row": "kind: Cloak",
+      "exit": 0,
+      "log": "/tmp/p745-core-inventory-fill-2.log"
+    },
+    {
+      "method": "P690EquipmentReadinessTests.Docked_boarded_and_cargo_equipment_do_not_advance_or_notify",
+      "row": "kind: Shield",
+      "exit": 0,
+      "log": "/tmp/p745-core-inventory-fill-3.log"
+    },
+    {
+      "method": "P712BucketMergeTests.Development_completion_adjusts_obsolete_research_and_termination_never_skips_a_survivor",
+      "row": "victim: 1",
+      "exit": 0,
+      "log": "/tmp/p745-core-inventory-fill-4.log"
+    }
+  ],
+  "discovery_isolated": [
+    {
+      "method": "P745_Newly_spotted_enemy_station_exports_identity_once_to_the_seeing_side",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-P745_Newly_spotted_enemy_station_exports_identity_once_to_the_seeing_side-1.log"
+    },
+    {
+      "method": "P745_Newly_spotted_enemy_station_exports_identity_once_to_the_seeing_side",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-P745_Newly_spotted_enemy_station_exports_identity_once_to_the_seeing_side-2.log"
+    },
+    {
+      "method": "P745_Newly_spotted_enemy_station_exports_identity_once_to_the_seeing_side",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-P745_Newly_spotted_enemy_station_exports_identity_once_to_the_seeing_side-3.log"
+    },
+    {
+      "method": "Visible_station_received_correct_fields_absent_from_unseeing_side",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Visible_station_received_correct_fields_absent_from_unseeing_side-1.log"
+    },
+    {
+      "method": "Visible_station_received_correct_fields_absent_from_unseeing_side",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Visible_station_received_correct_fields_absent_from_unseeing_side-2.log"
+    },
+    {
+      "method": "Visible_station_received_correct_fields_absent_from_unseeing_side",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Visible_station_received_correct_fields_absent_from_unseeing_side-3.log"
+    },
+    {
+      "method": "Damaged_station_fraction_reflected_in_next_update",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Damaged_station_fraction_reflected_in_next_update-1.log"
+    },
+    {
+      "method": "Damaged_station_fraction_reflected_in_next_update",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Damaged_station_fraction_reflected_in_next_update-2.log"
+    },
+    {
+      "method": "Damaged_station_fraction_reflected_in_next_update",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Damaged_station_fraction_reflected_in_next_update-3.log"
+    },
+    {
+      "method": "Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes-1.log"
+    },
+    {
+      "method": "Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes-2.log"
+    },
+    {
+      "method": "Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes-3.log"
+    },
+    {
+      "method": "Same_recorded_session_receives_identical_TCP_packets_in_each_lane",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Same_recorded_session_receives_identical_TCP_packets_in_each_lane-1.log"
+    },
+    {
+      "method": "Same_recorded_session_receives_identical_TCP_packets_in_each_lane",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Same_recorded_session_receives_identical_TCP_packets_in_each_lane-2.log"
+    },
+    {
+      "method": "Same_recorded_session_receives_identical_TCP_packets_in_each_lane",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Same_recorded_session_receives_identical_TCP_packets_in_each_lane-3.log"
+    },
+    {
+      "method": "Connection_scoped_caches_drain_to_zero_after_repeated_disconnects",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Connection_scoped_caches_drain_to_zero_after_repeated_disconnects-1.log"
+    },
+    {
+      "method": "Connection_scoped_caches_drain_to_zero_after_repeated_disconnects",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Connection_scoped_caches_drain_to_zero_after_repeated_disconnects-2.log"
+    },
+    {
+      "method": "Connection_scoped_caches_drain_to_zero_after_repeated_disconnects",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Connection_scoped_caches_drain_to_zero_after_repeated_disconnects-3.log"
+    },
+    {
+      "method": "Completed_build_upgrades_to_the_successor_station_type_when_the_side_has_outteched_it",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Completed_build_upgrades_to_the_successor_station_type_when_the_side_has_outteched_it-1.log"
+    },
+    {
+      "method": "Completed_build_upgrades_to_the_successor_station_type_when_the_side_has_outteched_it",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Completed_build_upgrades_to_the_successor_station_type_when_the_side_has_outteched_it-2.log"
+    },
+    {
+      "method": "Completed_build_upgrades_to_the_successor_station_type_when_the_side_has_outteched_it",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Completed_build_upgrades_to_the_successor_station_type_when_the_side_has_outteched_it-3.log"
+    },
+    {
+      "method": "Completed_build_keeps_the_base_station_type_when_the_successor_is_not_researched",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Completed_build_keeps_the_base_station_type_when_the_successor_is_not_researched-1.log"
+    },
+    {
+      "method": "Completed_build_keeps_the_base_station_type_when_the_successor_is_not_researched",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Completed_build_keeps_the_base_station_type_when_the_successor_is_not_researched-2.log"
+    },
+    {
+      "method": "Completed_build_keeps_the_base_station_type_when_the_successor_is_not_researched",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Completed_build_keeps_the_base_station_type_when_the_successor_is_not_researched-3.log"
+    },
+    {
+      "method": "Completed_build_replaces_asteroid_with_station_and_consumes_builder",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Completed_build_replaces_asteroid_with_station_and_consumes_builder-1.log"
+    },
+    {
+      "method": "Completed_build_replaces_asteroid_with_station_and_consumes_builder",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Completed_build_replaces_asteroid_with_station_and_consumes_builder-2.log"
+    },
+    {
+      "method": "Completed_build_replaces_asteroid_with_station_and_consumes_builder",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-discovery-isolated-Completed_build_replaces_asteroid_with_station_and_consumes_builder-3.log"
+    }
+  ],
+  "advance_isolated": [
+    {
+      "run": 1,
+      "exit": 0,
+      "cases": 2,
+      "log": "/tmp/p745-advance-isolated-1.log"
+    },
+    {
+      "run": 2,
+      "exit": 0,
+      "cases": 2,
+      "log": "/tmp/p745-advance-isolated-2.log"
+    },
+    {
+      "run": 3,
+      "exit": 0,
+      "cases": 2,
+      "log": "/tmp/p745-advance-isolated-3.log"
+    }
+  ],
+  "no_bomber_deadline_isolated": [
+    {
+      "run": 1,
+      "exit": 0,
+      "matches": 2,
+      "log": "/tmp/p745-stable-deadline-1.log"
+    },
+    {
+      "run": 2,
+      "exit": 0,
+      "matches": 2,
+      "log": "/tmp/p745-stable-deadline-2.log"
+    },
+    {
+      "run": 3,
+      "exit": 0,
+      "matches": 2,
+      "log": "/tmp/p745-stable-deadline-3.log"
+    }
+  ],
+  "resupply_affected_isolated": [
+    {
+      "method": "FireMissile_HydratesMissileEntity_WithTypeClusterAndSpawnPose",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-FireMissile_HydratesMissileEntity_WithTypeClusterAndSpawnPose-1.log"
+    },
+    {
+      "method": "FireMissile_HydratesMissileEntity_WithTypeClusterAndSpawnPose",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-FireMissile_HydratesMissileEntity_WithTypeClusterAndSpawnPose-2.log"
+    },
+    {
+      "method": "FireMissile_HydratesMissileEntity_WithTypeClusterAndSpawnPose",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-FireMissile_HydratesMissileEntity_WithTypeClusterAndSpawnPose-3.log"
+    },
+    {
+      "method": "FireMissile_ZeroForward_FallsBackToNegativeZ",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-FireMissile_ZeroForward_FallsBackToNegativeZ-1.log"
+    },
+    {
+      "method": "FireMissile_ZeroForward_FallsBackToNegativeZ",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-FireMissile_ZeroForward_FallsBackToNegativeZ-2.log"
+    },
+    {
+      "method": "FireMissile_ZeroForward_FallsBackToNegativeZ",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-FireMissile_ZeroForward_FallsBackToNegativeZ-3.log"
+    },
+    {
+      "method": "FireMissile_EmptySalvo_AddsNothing",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-FireMissile_EmptySalvo_AddsNothing-1.log"
+    },
+    {
+      "method": "FireMissile_EmptySalvo_AddsNothing",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-FireMissile_EmptySalvo_AddsNothing-2.log"
+    },
+    {
+      "method": "FireMissile_EmptySalvo_AddsNothing",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-FireMissile_EmptySalvo_AddsNothing-3.log"
+    },
+    {
+      "method": "P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped-1.log"
+    },
+    {
+      "method": "P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped-2.log"
+    },
+    {
+      "method": "P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-P656_ControllerReservesOnlyBombersAndBuysOnNextPodLaunch_EscortsAreFreshAndCapped-3.log"
+    },
+    {
+      "method": "P656_StatusIncludesGatesOutcomeAndNextMissionReset",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-P656_StatusIncludesGatesOutcomeAndNextMissionReset-1.log"
+    },
+    {
+      "method": "P656_StatusIncludesGatesOutcomeAndNextMissionReset",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-P656_StatusIncludesGatesOutcomeAndNextMissionReset-2.log"
+    },
+    {
+      "method": "P656_StatusIncludesGatesOutcomeAndNextMissionReset",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-P656_StatusIncludesGatesOutcomeAndNextMissionReset-3.log"
+    },
+    {
+      "method": "P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh-1.log"
+    },
+    {
+      "method": "P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh-2.log"
+    },
+    {
+      "method": "P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-P660_Finale_rearms_once_all_bot_generations_and_station_objectives_are_fresh-3.log"
+    },
+    {
+      "method": "No_bomber_tech_finale_reaches_stage_over_and_automatic_next_match_twice",
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-No_bomber_tech_finale_reaches_stage_over_and_automatic_next_match_twice-1.log"
+    },
+    {
+      "method": "No_bomber_tech_finale_reaches_stage_over_and_automatic_next_match_twice",
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-No_bomber_tech_finale_reaches_stage_over_and_automatic_next_match_twice-2.log"
+    },
+    {
+      "method": "No_bomber_tech_finale_reaches_stage_over_and_automatic_next_match_twice",
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-resupply-affected-No_bomber_tech_finale_reaches_stage_over_and_automatic_next_match_twice-3.log"
+    }
+  ],
+  "live_final": {
+    "runs": 5,
+    "passed": 5,
+    "native_eliminations": 5,
+    "deadline_outcomes": 0,
+    "details": "five-runs.json"
+  },
+  "never_parks": {
+    "base": {
+      "passed": 5,
+      "runs": 5
+    },
+    "final": {
+      "passed": 5,
+      "runs": 5,
+      "logs": [
+        "/tmp/p745-resupply-neverparks-1.log",
+        "/tmp/p745-resupply-neverparks-2.log",
+        "/tmp/p745-resupply-neverparks-3.log",
+        "/tmp/p745-resupply-neverparks-4.log",
+        "/tmp/p745-resupply-neverparks-5.log"
+      ]
+    }
+  },
+  "core_functional_requalifications": [
+    {
+      "method": "Driver_sees_countdown_others_do_not_and_dock_cancels",
+      "runs": [
+        {
+          "run": 1,
+          "exit": 0,
+          "log": "/tmp/p745-core-retry-Driver_sees_countdown_others_do_not_and_dock_cancels-1.log"
+        },
+        {
+          "run": 2,
+          "exit": 0,
+          "log": "/tmp/p745-core-retry-Driver_sees_countdown_others_do_not_and_dock_cancels-2.log"
+        },
+        {
+          "run": 3,
+          "exit": 0,
+          "log": "/tmp/p745-core-retry-Driver_sees_countdown_others_do_not_and_dock_cancels-3.log"
+        }
+      ]
+    },
+    {
+      "method": "Ship_anchor_insufficient_energy_aborts_consumed_not_retried",
+      "runs": [
+        {
+          "run": 1,
+          "exit": 0,
+          "log": "/tmp/p745-ripcord-last-1.log"
+        },
+        {
+          "run": 2,
+          "exit": 0,
+          "log": "/tmp/p745-ripcord-last-2.log"
+        },
+        {
+          "run": 3,
+          "exit": 0,
+          "log": "/tmp/p745-ripcord-last-3.log"
+        }
+      ]
+    }
+  ],
+  "base_commit": "93dec9c0",
+  "build": {
+    "whole_solution": {
+      "warnings": 0,
+      "errors": 0,
+      "log": "/tmp/p745-review-build.log"
+    },
+    "server_aot": {
+      "successful": true,
+      "runtime": "linux-x64",
+      "self_contained": true,
+      "IL2026": false,
+      "IL3050": false,
+      "log": "/tmp/p745-aot-stable.log",
+      "output": "/tmp/p745-aot-stable"
+    }
+  },
+  "station_telemetry_isolated": [
+    {
+      "run": 1,
+      "exit": 0,
+      "log": "/tmp/p745-telemetry-isolated-1.log"
+    },
+    {
+      "run": 2,
+      "exit": 0,
+      "log": "/tmp/p745-telemetry-isolated-2.log"
+    },
+    {
+      "run": 3,
+      "exit": 0,
+      "log": "/tmp/p745-telemetry-isolated-3.log"
+    }
+  ]
+}

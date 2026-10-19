@@ -20,6 +20,7 @@ public sealed partial class ClientWorld
 
     private void ResetInterfaceState()
     {
+        ResetFlightInterface();
         InGame = false;
         _sideCivilizations.Clear();
         _sideGameStates.Clear();
@@ -91,6 +92,7 @@ public sealed partial class ClientWorld
         _moneyByShipId[message.ShipId] = 0;
         _autoDonateTargetByShipId.Remove(message.ShipId);
         ship.SideId = -2;
+        ship.CarriedFlagSideId = -1;
         if (ship.Player is { } player) { player.ISide = -2; player.Money = 0; }
         ship.IsGone = true;
         ship.PoseSectorId = null;
@@ -128,6 +130,7 @@ public sealed partial class ClientWorld
     // (Igc/missionigc.cpp:3804-3831): clear sector contents, keep mission/player roster.
     private void ClearTeamWorld()
     {
+        OwnMissilesFired = 0;
         InGame = false;
         SectorGeneration++;
         foreach (var ship in _ships.Values)
@@ -172,6 +175,7 @@ public sealed partial class ClientWorld
             if (ship.SideId >= 0)
                 Apply(new QuitSide { ShipId = message.ShipId, Reason = message.Reason, Message = message.Message });
             _ships.Remove(message.ShipId);
+            _playerConnections.Remove(message.ShipId);
             _mutedPilots.Remove(message.ShipId);
             _roster.Remove(message.ShipId);
             _moneyByShipId.Remove(message.ShipId);

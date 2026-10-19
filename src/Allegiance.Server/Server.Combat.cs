@@ -1636,7 +1636,7 @@ public sealed partial class Server
         //     reused CreateDropTreasure path unchanged.
         foreach (var part in victim.Parts.ToArray())
         {
-            if (Random.Shared.Next(5) == 0)   // randomInt(0,4)==0 — uniform pick in [0,4], p=1/5
+            if (_rand.Next(5) == 0)   // randomInt(0,4)==0 — uniform pick in [0,4], p=1/5
             {
                 var treasure = victim.CreateDropTreasure(part.Type, part.Amount, now, time0, dv: 100.0f, lifespan: 60.0f);
                 SendSectorWide(sector, new TreasureSpawn { Data = treasure.Data }.Encode());
@@ -1659,7 +1659,7 @@ public sealed partial class Server
                     ammoPack = p;
                     break;
                 }
-            if (ammoPack is { } ap && Random.Shared.Next(5) == 0)
+            if (ammoPack is { } ap && _rand.Next(5) == 0)
             {
                 var treasure = victim.CreateDropTreasure(ap, ammo, now, time0, dv: 100.0f, lifespan: 30.0f);
                 SendSectorWide(sector, new TreasureSpawn { Data = treasure.Data }.Encode());
@@ -1685,7 +1685,7 @@ public sealed partial class Server
                     fuelPack = p;
                     break;
                 }
-            if (fuelPack is { } fp && Random.Shared.Next(5) == 0)
+            if (fuelPack is { } fp && _rand.Next(5) == 0)
             {
                 var treasure = victim.CreateDropTreasure(fp, (short)fuel, now, time0, dv: 100.0f, lifespan: 30.0f);
                 SendSectorWide(sector, new TreasureSpawn { Data = treasure.Data }.Encode());
@@ -1780,7 +1780,7 @@ public sealed partial class Server
             return;
         }
 
-        var (sec, st, stype) = candidates[Random.Shared.Next(candidates.Count)];
+        var (sec, st, stype) = candidates[_rand.Next(candidates.Count)];
         var sp = st.Position;
         // p0 = station position with z raised by radius + c_fFlagOffset (FedSrv.CPP:13932-13933; igc.h:27).
         var p0 = new Vector3(sp[0], sp[1], sp[2] + stype.Radius + 50.0f);

@@ -13,11 +13,16 @@ with the player; `bot-driver/` holds the self-contained bot runtime.
 local benchmark; its JSON reports wall/sim time, combat, and pilot travel.
 
 ```
-python3 packaging/package.py --rid linux-x64
-python3 packaging/package.py --rid win-x64
+python3 packaging/fetch-appimage-tools.py /tmp/allegiance-appimage-tools
+python3 packaging/package.py --rid linux-x64 --format all --version 1.2.3 \
+  --appimagetool /tmp/allegiance-appimage-tools/appimagetool \
+  --appimage-runtime /tmp/allegiance-appimage-tools/runtime-x86_64
+python3 packaging/package.py --rid win-x64 --format portable --version 1.2.3
 python3 packaging/package.py --rid osx-arm64
 python3 packaging/smoke.py dist/Allegiance-linux-x64.tar.gz
-# On Windows:
+# On Windows with Inno Setup on PATH:
+python packaging/package.py --rid win-x64 --format installer --version 1.2.3 \
+  --from-portable dist/Allegiance-win-x64.zip
 python packaging/smoke.py dist/Allegiance-win-x64.zip
 # On an Apple silicon Mac:
 python3 packaging/smoke.py dist/Allegiance-osx-arm64.zip
@@ -36,6 +41,61 @@ Content; `sources.json` records the external provenance. Packaging also checks
 that every fixed `Sounds/...` reference in the live SoundManager has a compiled
 XNB, so a missing cue cannot silently disable the rest of audio initialization.
 The optional music beds are excluded from this required-content gate.
+
+## Installer formats and release smoke
+
+`--format portable|installer|all` defaults to `portable` for existing callers.
+Linux installer means `Allegiance-linux-x64.AppImage`; Windows installer means
+`Allegiance-win-x64-setup.exe`. macOS retains its existing .app ZIP in all modes.
+`--format all` stages the payload once and wraps the same bytes, including the
+manifest/inventory, in each format. `--from-portable` with `--format installer`
+verifies the adjacent archive SHA256 and every inventory entry before repackaging
+on another host, without republishing .NET or downloading art. Use it only on
+trusted local/CI archives. Each artifact has its own SHA256, JSON byte counts and
+2 GiB limit. The AppImage build tool and type2 runtime use versioned URLs plus
+SHA256 pins in `appimage-tools.json`; the build never implicitly fetches a runtime.
+
+Windows requires Inno Setup (`iscc`, or `--iscc /path/to/ISCC.exe`). `windows.iss`
+uses one permanent AppId and the numeric `--version` (three or four components;
+release tags must be `v` followed by a numeric version greater than 0.0.0).
+Default non-admin mode resolves `{autopf}` to `%LOCALAPPDATA%\Programs`; selecting all users resolves
+to Program Files and requests elevation. Start-menu/optional desktop shortcuts
+launch `Allegiance.exe` without arguments. The license page contains LICENSE,
+NOTICE, CREDITS.md and README-PLAYERS.txt. Only installed files/shortcuts are
+uninstalled; no user-data deletion rules exist. `/CURRENTUSER` or `/ALLUSERS`
+select the mode silently. Upgrades in the same mode reuse the install path and
+uninstall registration. Switching modes requires uninstalling the old mode first.
+
+AppImage `AppRun` executes the bundled runtime in `usr/lib/AllegianceCore` with
+arguments intact and a writable per-user config directory as cwd (including
+relative screenshot output). No install directory writes are needed. It supports
+FUSE, `APPIMAGE_EXTRACT_AND_RUN=1`, and `--appimage-extract` followed by
+`squashfs-root/AppRun`. The SVG icon and .desktop file live at AppDir root.
+
+CI builds on Linux, compiles Inno Setup on `windows-latest` from its portable ZIP,
+then silently installs version 0.0.0, upgrades to the release version, verifies
+the single uninstall registration, every installed payload file and
+shortcut, runs `--check-assets`, uninstalls, and checks that player.json/keymap.json
+survive, in both per-user and all-users modes. Linux CI uses the two smoke
+Dockerfiles (stock Ubuntu 24.04 and Fedora 43, system libraries only) and runs:
+
+```sh
+docker build -f packaging/Dockerfile.smoke-ubuntu -t allegiance-smoke packaging
+docker run --rm --network none --read-only --user 1000:1000 \
+  --tmpfs /tmp:exec,mode=1777 \
+  -v "$PWD/dist:/artifacts:ro" -v "$PWD/packaging:/packaging:ro" \
+  allegiance-smoke sh /packaging/smoke-appimage.sh /artifacts/Allegiance-linux-x64.AppImage --intro
+```
+
+Repeat with `Dockerfile.smoke-fedora`, omitting `--intro`. The runtime check,
+explicit extraction, inventory verification and 60-second skirmish run with
+networking disabled; loopback remains available to the embedded server. Ubuntu
+also renders an intro frame through Xvfb/software GL with an unreachable lobby
+and exits automatically, proving network calls do not block the menu. Containers
+run as a regular user and extracted app files become read-only for the checks.
+All five downloads publish together only after every smoke gate; workflow_dispatch
+builds artifacts without tags/releases. Player install steps, unsigned Windows
+SmartScreen handling and optional Linux desktop integration are in README-PLAYERS.
 
 ## macOS layout and icon
 
@@ -110,19 +170,19 @@ art is the supported fallback. No sky layers are intentionally omitted.
 1. Review the working-tree diff/report and run the full socket/live suite.
    Verify the private-to-public publish filter includes `packaging/` and
    `.github/workflows/release.yml`, as well as the P498 input recording.
-2. Build all three archives; on Linux run the extracted client against a local
+2. Build all five downloads; on Linux run the extracted client against a local
    server using the live smoke below. Check native and HD sky, the shop, every
    inspector hull/station, effects, lobby/menus, F1/F6 and audio. Look for
    unlisted-artwork failures or unavailable sky messages. Confirm user config
    survives replacing the install folder.
-3. On the public repo run `workflow_dispatch`. It must upload three archives,
+3. On the public repo run `workflow_dispatch`. It must upload three portable archives and two installers,
    individual checksums, sizes/provenance and census artifacts without creating
    a GitHub Release. Inspect the native Windows and macOS smoke jobs.
 4. Only after review, Claude creates/pushes an annotated `v*` tag over SSH.
    This Codex lane never creates a tag, push or release. The workflow's publish
    job accepts only public-repo tag push events, uses job-scoped contents:write
    and GITHUB_TOKEN, and waits for tests and all platform smokes.
-5. Verify the GitHub Release contains all three archives, `SHA256SUMS.txt`, byte-count
+5. Verify the GitHub Release contains all five downloads, `SHA256SUMS.txt`, byte-count
    metadata and player notes. Download all three archives fresh, check SHA256SUMS and
    start on clean Linux/Windows/macOS machines without .NET, git or art checkouts.
 

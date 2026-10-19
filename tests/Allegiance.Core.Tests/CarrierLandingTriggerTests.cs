@@ -138,6 +138,18 @@ public class CarrierLandingTriggerTests
         int Parts, int Weapons, short? Station) Snapshot(Ship s) =>
         (s.Position, s.Velocity, s.Energy, s.Ammo, s.Fraction, s.Parts.Count, s.Weapons.Count, s.StationId);
 
+    [SkippableFact]
+    public void P745_Unbounded_bay_planes_do_not_land_a_distant_strike_ship()
+    {
+        Require.Artwork();
+        var (sector, carrier, lander) = Setup(new Vector3(0, -23, 3000), SideA, SideA);
+        Assert.True(carrier.InGarage(lander, 0, sector.LandingBays!.Bay(carrier.HullType)!));
+        sector.Update(510.008);
+        // Native InGarage is reached only from a real ship collision
+        // (Igc/shipIGC.cpp:1023-1055). Open bay planes extend beyond the hull.
+        Assert.Empty(sector.DrainCarrierLandings());
+    }
+
     /// <summary>⭐ Scenario 1 — a real lander genuinely inside a real carrier's
     /// bay fires the detection, and <b>no ship state changes</b> (the pass is
     /// detection-only; position/velocity/loadout/parts identical before/after).</summary>

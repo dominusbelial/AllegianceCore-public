@@ -20,6 +20,10 @@ public sealed class ShipEntity
 
     public short WingId { get; internal set; }
 
+    /// <summary>GAIN_FLAG carrier state; -1 clears it, -2 is an artifact.
+    /// Native clintlib/appmsg.cpp:3136.</summary>
+    public short CarriedFlagSideId { get; internal set; } = -1;
+
     /// <summary>True iff this is the local player's own ship (learned from the
     /// JOINED_MISSION identity or SET_CLUSTER assignment).</summary>
     public bool IsMine { get; internal set; }

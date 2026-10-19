@@ -2,6 +2,24 @@ using Allegiance.ClientCore.MonoGame;
 using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.ClientCore.MonoGame.LiveProof;
 
+Allegiance.SinglePlayer.Benchmark.BenchmarkCommand? benchmark;
+try { benchmark = Allegiance.SinglePlayer.Benchmark.BenchmarkCommand.Parse(args); }
+catch (Exception ex) { Console.Error.WriteLine(ex.Message); return 2; }
+if (benchmark is { Headless: true })
+    return await Allegiance.SinglePlayer.Benchmark.BenchmarkCommand.RunHeadlessAsync(benchmark);
+
+if (benchmark is not null)
+{
+    var remaining = new List<string>();
+    for (int i = 0; i < args.Length; i++)
+    {
+        if (args[i] is "--benchmark" or "--benchmark-seconds" or "--benchmark-output" or "--benchmark-record") { i++; continue; }
+        if (args[i] is "--benchmark-headless" or "--benchmark-exit") continue;
+        remaining.Add(args[i]);
+    }
+    args = remaining.ToArray();
+}
+
 // P727: exercise the full local host before loading SDL/GL.
 if (args.Length > 0 && args[0] is "--skirmish-smoke" or "--skirmish-owner-proof")
     return await Allegiance.SinglePlayer.SkirmishSmoke.RunAsync(args);
@@ -526,16 +544,17 @@ RecordingAssetSource? recorder = assetManifestPath is not null
 
 var opts = new Game1.LaunchOptions
 {
+    Benchmark = benchmark,
     PlayerName = playerName,
     LobbyUrl = lobbyUrl,
     Capture = capture,
     DebugMode = wantDebugMode,
     // P448b — RemoteShipDeadReckoning defaults ON in LaunchOptions; only the
     // explicit --noDeadReckon flag turns it off (see the flag parse above).
-    RemoteShipDeadReckoning = !noDeadReckon,
+    RemoteShipDeadReckoning = benchmark?.Mode != "replay" && !noDeadReckon,
     // P447b — OwnShipPrediction defaults ON in LaunchOptions; only the explicit
     // --noPrediction flag turns it off (see the flag parse above).
-    OwnShipPrediction = !noPrediction,
+    OwnShipPrediction = benchmark?.Mode != "replay" && !noPrediction,
     // P449a — ambient-dust density (default 1.0; --debris overrides, 0 = off).
     DebrisDensity = debrisDensity,
     // P449b — in-flight camera FOV (native default 50°; --flightFov overrides).
@@ -627,6 +646,7 @@ if (recorder is not null)
     };
 }
 game.Run();
+if (game.BenchmarkFailed) return 1;
 if (manifestGuard is { Violations.Count: > 0 })
 {
     Console.Error.WriteLine("Unlisted artwork opened: " + string.Join(", ", manifestGuard.Violations));

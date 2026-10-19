@@ -12,6 +12,12 @@ using Microsoft.Xna.Framework.Graphics;
 string root = Path.GetFullPath(args[0]);
 bool test = args.Contains("--test");
 string? Option(string name) { int i = Array.IndexOf(args, name); return i >= 0 ? args[i + 1] : null; }
+if (Option("--atlas-test") is { } kind)
+{
+    using var atlas = new AtlasProof(root, kind, Option("--art") ?? ExternalPaths.Require(ExternalResourceKind.Artwork));
+    atlas.Run();
+    return;
+}
 using var game = new HdProof(root, test, Option("--output"), Option("--pilot"), Option("--art"));
 game.Run();
 

@@ -17,21 +17,21 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 
 /// <summary>
 /// P425 — LIVE proof that the MonoGame client's PRODUCTION order sender
-/// (<see cref="ConnectionSession.SendOrderChange"/>, the exact method the
+/// (<see cref="ConnectionSession.SendChat"/>, the exact method the
 /// Insert key handler <c>Game1.TryIssueOrderToCommandee</c> calls) drives the
 /// real direct-drone Build over the real wire. A real in-process server hosts a
 /// commander client (a <see cref="ConnectionSession"/>) on side 0 and a real
 /// Builder DRONE (PilotType==6) on the same side; the client sends the exact
-/// ORDER_CHANGE the issue-order key resolves (<c>ShipID</c> = the drone,
+/// individual command chat the issue-order key resolves (recipient = the drone,
 /// <c>commandID=c_cidBuild</c>, <c>objectType=OT_asteroid</c>, <c>objectID</c> =
 /// the commanded rock — the <see cref="Game1.CommandOrderResolver"/> payload) and
 /// the full P422 arc plays out: construction registered on the commanded rock,
 /// then on completion the rock → station transformation fires and the DRONE is
 /// consumed — all driven by the client's own sender, not a test harness.
 ///
-/// A second leg proves the server's real refusal is SURFACED to the commanding
-/// client as a private "Negative." chat (the "don't leave the player guessing"
-/// requirement) when the order is illegal (wrong-type rock).
+/// A second leg verifies native's silent illegal-command-chat refusal, then
+/// preserves coverage of the older direct ORDER_CHANGE route's private
+/// "Negative." feedback when the order is illegal (wrong-type rock).
 ///
 /// The [Collection("LiveNetwork")] tag keeps this sequential against the other
 /// live suites.
@@ -184,9 +184,7 @@ public sealed class CommandedDroneBuildKeyLiveTests
             Assert.NotEqual(commander.Id, drone.Id);
             Assert.Empty(sector.BuildingEffects);
 
-            // The client's PRODUCTION sender — the exact method Game1's Insert
-            // key handler calls with the CommandOrderResolver's payload.
-            client.SendOrderChange(drone.Id, OrderChange.CidBuild, OrderChange.CmdAccepted, IgcObjectType.Asteroid, rock.Data.AsteroidId);
+            SendBuild(client, drone.Id, rock.Data.AsteroidId);
             int started = PumpUntil(srv, () => sector.BuildingEffects.Count > 0, 2000);
             Assert.True(started < 2000, "construction did not register");
             var effect = Assert.Single(sector.BuildingEffects);
@@ -209,10 +207,9 @@ public sealed class CommandedDroneBuildKeyLiveTests
         }
     }
 
-    /// <summary>⭐ LIVE: an illegal direct-drone Build (a wrong-type rock) is
-    /// refused by the server AND the refusal is SURFACED to the commanding
-    /// MonoGame client as a private "Negative." chat (world.Events.Chats) — the
-    /// "don't leave the player guessing why nothing happened" requirement.</summary>
+    /// <summary>Illegal command chat is silently refused (native
+    /// FedSrv.CPP:3286-3292); the existing port-added direct ORDER_CHANGE
+    /// path still surfaces its refusal as a private "Negative." chat.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Live_client_illegal_drone_build_refusal_reaches_client_chat()
@@ -224,6 +221,18 @@ public sealed class CommandedDroneBuildKeyLiveTests
         {
             var rp = RockPos(wrongRock);
             var drone = SpawnBuilderDrone(srv, mission, sector, side, builderDroneId, stationType, new SimVec(rp.X + 300f, rp.Y, rp.Z));
+
+            SendBuild(client, drone.Id, wrongRock.Data.AsteroidId);
+            // The echo on the same ordered connection fences command delivery;
+            // native comments out the illegal drone command's Negative reply.
+            const string Barrier = "P728 illegal command delivered";
+            client.SendChat(Barrier, ChatTarget.Individual, commander.Id);
+            int delivered = PumpUntil(srv, () => client.World.Events.Chats.Any(c => c.Message == Barrier), 2000);
+            Assert.True(delivered < 2000, "command delivery barrier did not return");
+            Assert.Empty(sector.BuildingEffects);
+            Assert.Contains(wrongRock, sector.Mineable);
+            Assert.DoesNotContain(client.World.Events.Chats, c => c.Message.StartsWith("Affirmative.", System.StringComparison.Ordinal)
+                || c.Message.StartsWith("Negative.", System.StringComparison.Ordinal));
 
             client.SendOrderChange(drone.Id, OrderChange.CidBuild, OrderChange.CmdAccepted, IgcObjectType.Asteroid, wrongRock.Data.AsteroidId);
             int got = PumpUntil(srv, () => sector.BuildingEffects.Count > 0
@@ -237,5 +246,15 @@ public sealed class CommandedDroneBuildKeyLiveTests
             var ack = Assert.Single(client.World.Events.Chats, c => c.Message.StartsWith("Negative.", System.StringComparison.Ordinal));
             Console.WriteLine($"P425-CLIENT-REJECT: illegal drone build refused → client received \"{ack.Message}\"");
         }
+    }
+
+    private static void SendBuild(ConnectionSession client, short droneId, short rockId)
+    {
+        var order = Game1.CommandOrderResolver.ResolveChat(DataHullTypeIGC.HabmBuilder,
+            Game1.TargetKind.Ship, Game1.TargetKind.Asteroid, rockId, friendly: false);
+        Assert.NotNull(order);
+        var payload = order.Value;
+        client.SendChat("", ChatTarget.Individual, droneId, commandId: payload.CommandId,
+            otTarget: (short)payload.ObjectType, oidTarget: payload.ObjectId);
     }
 }

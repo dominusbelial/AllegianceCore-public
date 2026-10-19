@@ -49,13 +49,17 @@ public sealed class NativeTreasureRenderer : IDisposable
     private readonly HashSet<string> _missingModelLogged = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _missingTextureLogged = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<short, SpinState> _spins = new();
+    private readonly HdMaterialRenderer _hd;
+    private readonly bool _ownsHd;
     private readonly BasicEffect _effect;
     private readonly BasicEffect _decalEffect;
     private readonly RasterizerState _cullCcw;
 
-    public NativeTreasureRenderer(GraphicsDevice gd, Assets.IAssetSource assets)
+    public NativeTreasureRenderer(GraphicsDevice gd, Assets.IAssetSource assets, HdMaterialRenderer? hd = null)
     {
         _gd = gd;
+        _hd = hd ?? new HdMaterialRenderer(gd, NativeMaterialParts.NativeReader(assets));
+        _ownsHd = hd is null;
         _assets = assets;
         // P586b — a case-insensitive index of every .mdl basename in the artwork
         // root, so a treasure model/texture stem resolves to its EXACT on-disk
@@ -228,10 +232,9 @@ public sealed class NativeTreasureRenderer : IDisposable
         _effect.TextureEnabled = tex is not null;
         _effect.Alpha = 1f;
 
-        _effect.CurrentTechnique.Passes[0].Apply();
-        gd.SetVertexBuffer(geo.Vertices);
-        gd.Indices = geo.Indices;
-        gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, geo.TriangleCount);
+        geo.Materials.Draw(gd, _hd, visual.ModelStem, texStem,
+            tex, TextureFor, _effect, geo.Vertices, geo.Indices, local, view, projection,
+            1, lighting);
 
         gd.BlendState = BlendState.Opaque;
         gd.DepthStencilState = DepthStencilState.Default;
@@ -275,7 +278,7 @@ public sealed class NativeTreasureRenderer : IDisposable
             verts[i] = new VertexPositionTexture(
                 Vector3.Transform(corners[i], inverseViewRot) + worldPos,
                 new Vector2(i is 1 or 2 ? 1f : 0f, i is 0 or 3 ? 1f : 0f));
-        _decalEffect.Texture = tex;
+        _decalEffect.Texture = _hd.EmissiveTexture(visual.TextureStem) ?? tex;
         _decalEffect.World = Matrix.Identity;
         _decalEffect.View = view;
         _decalEffect.Projection = projection;
@@ -306,6 +309,7 @@ public sealed class NativeTreasureRenderer : IDisposable
     {
         foreach (var g in _models.Values) g.Dispose();
         foreach (var t in _textures.Values) t.Dispose();
+        if (_ownsHd) _hd.Dispose();
         _effect.Dispose();
         _decalEffect.Dispose();
         _cullCcw.Dispose();

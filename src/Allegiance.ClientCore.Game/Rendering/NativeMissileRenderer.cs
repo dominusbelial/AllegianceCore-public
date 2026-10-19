@@ -61,12 +61,16 @@ public sealed class NativeMissileRenderer : IDisposable
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Matrix> _noseAlign = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _missingLogged = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HdMaterialRenderer _hd;
+    private readonly bool _ownsHd;
     private readonly BasicEffect _effect;
     private readonly RasterizerState _cullNone;
 
-    public NativeMissileRenderer(GraphicsDevice gd, Assets.IAssetSource assets)
+    public NativeMissileRenderer(GraphicsDevice gd, Assets.IAssetSource assets, HdMaterialRenderer? hd = null)
     {
         _gd = gd;
+        _hd = hd ?? new HdMaterialRenderer(gd, NativeMaterialParts.NativeReader(assets));
+        _ownsHd = hd is null;
         _assets = assets;
         _effect = new BasicEffect(gd) { TextureEnabled = true };
         _cullNone = new RasterizerState { CullMode = CullMode.None };
@@ -283,11 +287,9 @@ public sealed class NativeMissileRenderer : IDisposable
             _effect.EnableDefaultLighting();
             _effect.AmbientLightColor = new Vector3(0.4f, 0.42f, 0.45f);
         }
-        _effect.CurrentTechnique.Passes[0].Apply();
-
-        gd.SetVertexBuffer(geo.Vertices);
-        gd.Indices = geo.Indices;
-        gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, geo.TriangleCount);
+        geo.Materials.Draw(gd, _hd, modelName, TextureStemFor(modelName, null),
+            texture, stem => TextureFor(modelName, stem), _effect, geo.Vertices, geo.Indices, nose * world, view, projection,
+            1, lighting);
 
         gd.BlendState = BlendState.Opaque;
         gd.DepthStencilState = DepthStencilState.Default;
@@ -298,6 +300,7 @@ public sealed class NativeMissileRenderer : IDisposable
     {
         foreach (var g in _models.Values) g.Dispose();
         foreach (var t in _textures.Values) t.Dispose();
+        if (_ownsHd) _hd.Dispose();
         _effect.Dispose();
         _cullNone.Dispose();
     }

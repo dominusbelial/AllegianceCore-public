@@ -1,0 +1,3203 @@
+{
+  "coreSha256": "f73aa7bbce7414140f6691366f8829ea58829727660a8a86c114b29a83a55de8",
+  "hdStems": [
+    "cap04bmp",
+    "fig02bmp",
+    "fig05bmp",
+    "utl101bmp"
+  ],
+  "referencedStems": [
+    "acs01bmp",
+    "acs02bmp",
+    "acs05bmp",
+    "acs08bmp",
+    "acs40bmp",
+    "acs41bmp",
+    "acs63bmp",
+    "artifactbmp",
+    "beltersbaybmp",
+    "bgrnd03bmp",
+    "bgrnd51bmp",
+    "bgrnd53bmp",
+    "bgrnd55bmp",
+    "bgrnd57bmp",
+    "biosbaybmp",
+    "bom01abmp",
+    "bom03bmp",
+    "bom04bmp",
+    "bom05bmp",
+    "bom07bmp",
+    "bom20bmp",
+    "bom30bmp",
+    "bom400bmp",
+    "cannonbmp",
+    "cap01bmp",
+    "cap02bmp",
+    "cap03bmp",
+    "cap04bmp",
+    "cap05bmp",
+    "cap06abmp",
+    "cap07bmp",
+    "cap08bmp",
+    "cap09bmp",
+    "cap100bmp",
+    "cap101bmp",
+    "cap102bmp",
+    "cap103bmp",
+    "cap20bmp",
+    "cap21bmp",
+    "cap300bmp",
+    "cap301bmp",
+    "cap302bmp",
+    "cap303bmp",
+    "cap400bmp",
+    "cap401bmp",
+    "cap402bmp",
+    "cap403bmp",
+    "cap404bmp",
+    "cap405bmp",
+    "cap406bmp",
+    "cap407bmp",
+    "cap415bmp",
+    "cap500bmp",
+    "cap501bmp",
+    "cap502bmp",
+    "cap503bmp",
+    "cap504bmp",
+    "crus2bmp",
+    "cwbaybmp",
+    "dbay3bmp",
+    "dbsebmp",
+    "dcrusbmp",
+    "dgarrbmp",
+    "dgexpbmp",
+    "dgsupbmp",
+    "dminrbmp",
+    "dn_fadrshfigbmp",
+    "dn_fadrshintbmp",
+    "dn_fadrshstlbmp",
+    "dn_fadrtxtlmt01bmp",
+    "dn_fadrtxtlmt02bmp",
+    "dn_fadrtxtlmt03bmp",
+    "dn_fadrtxtlsc01bmp",
+    "dn_fadrtxtlsc02bmp",
+    "dn_fadrtxtlsc03bmp",
+    "dn_fadrtxtlsk01bmp",
+    "dn_fadrtxtlsk03bmp",
+    "dn_faphbsexpbmp",
+    "dn_faphbsgarbmp",
+    "dn_faphbsinsidebmp",
+    "dn_faphbsopbmp",
+    "dn_faphbssupbmp",
+    "dn_faphbstacbmp",
+    "dn_faphbstpbmp",
+    "dn_faphbstrnbmp",
+    "dn_faphsh000bmp",
+    "dn_faphsh001bmp",
+    "dn_faphsh002bmp",
+    "dn_faphsh003bmp",
+    "dn_faphsh004bmp",
+    "dn_fateprplfbmp",
+    "dn_fateshbmbbmp",
+    "dn_ptionbls",
+    "dn_ptlasbls1",
+    "dn_ptlasbls1bmp",
+    "dn_ptlasbls2",
+    "dn_ptlasblsbmp",
+    "dn_ptlascan1bmp",
+    "dn_ptlascan2bmp",
+    "dn_ptlngtom",
+    "dn_ptvulcan1",
+    "dn_ptvulcan2",
+    "dregabmp",
+    "dregbaybmp",
+    "dregcarbmp",
+    "dregcrrbaybmp",
+    "dreghpodbmp",
+    "dreginsidebmp",
+    "dregttbmp",
+    "drgasbmp",
+    "drgby2bmp",
+    "drgmfbmp",
+    "drgopabmp",
+    "drgopbmp",
+    "drgrockbmp",
+    "drgsybmp",
+    "drgtowbmp",
+    "dtacbmp",
+    "f03",
+    "f06",
+    "f07",
+    "f09",
+    "f16",
+    "f17",
+    "f18",
+    "f19",
+    "f20",
+    "f22",
+    "f23",
+    "f24",
+    "f26",
+    "f27",
+    "f28",
+    "f44",
+    "f49",
+    "f99",
+    "faohbsexpbmp",
+    "faohbsgarbmp",
+    "faohbsopbmp",
+    "faohbssupbmp",
+    "faohbssybmp",
+    "faohbstacbmp",
+    "faohbstpbmp",
+    "faohhammer1",
+    "faohhammer2",
+    "faohhammer3",
+    "faohomega1",
+    "faohomega2",
+    "faohshafigbmp",
+    "faohshassbmp",
+    "faohshbmbbmp",
+    "faohshcarbmp",
+    "faohshconbmp",
+    "faohshcrsbmp",
+    "faohshcrvbmp",
+    "faohshdevbmp",
+    "faohshfigbmp",
+    "faohshhintbmp",
+    "faohshintbmp",
+    "faohshmnrbmp",
+    "faohshpodbmp",
+    "faohshsctbbmp",
+    "faohshstlbmp",
+    "fig02bmp",
+    "fig02ops1bmp",
+    "fig03bmp",
+    "fig04bmp",
+    "fig05bmp",
+    "fig05ops1bmp",
+    "fig07bmp",
+    "fig07ops1bmp",
+    "fig12bmp",
+    "fig13bmp",
+    "fig15bmp",
+    "fig16bmp",
+    "fig17bmp",
+    "fig20bmp",
+    "fig21bmp",
+    "fig22bmp",
+    "fig23bmp",
+    "fig25bmp",
+    "fig30bmp",
+    "fig31bmp",
+    "fig32bmp",
+    "fig34bmp",
+    "fig400bmp",
+    "fig401bmp",
+    "fig402bmp",
+    "fig403bmp",
+    "fig404bmp",
+    "fig405bmp",
+    "fig406bmp",
+    "fx90",
+    "fx92",
+    "fx95",
+    "hembmp",
+    "hmbmp",
+    "ilpodbmp",
+    "mis01bmp",
+    "mis02bmp",
+    "mis03bmp",
+    "mis05bmp",
+    "mis06bmp",
+    "mis07bmp",
+    "mis08bmp",
+    "mis09bmp",
+    "mis10bmp",
+    "mis11bmp",
+    "mis12bmp",
+    "mis13bmp",
+    "mis14bmp",
+    "mis15bmp",
+    "mis400bmp",
+    "mis403bmp",
+    "mis404bmp",
+    "mis405bmp",
+    "mis406bmp",
+    "proxexplbmp",
+    "quizbbr1bmp",
+    "quizbbr2bmp",
+    "quizfig1bmp",
+    "quizfig2bmp",
+    "quizint1bmp",
+    "quizint2bmp",
+    "quizscout1bmp",
+    "quizscout2bmp",
+    "quizsf1bmp",
+    "quizsf2bmp",
+    "raincarr1bmp",
+    "raincarr2bmp",
+    "rainfigbmp",
+    "rainintbmp",
+    "rainop1bmp",
+    "rainop2bmp",
+    "rainscoutbmp",
+    "rainsfbmp",
+    "rescuedronebmp",
+    "rixbaybmp",
+    "sbbmp",
+    "ss01bmp",
+    "ss06bmp",
+    "ss08bmp",
+    "ss100bmp",
+    "ss101bmp",
+    "ss102bmp",
+    "ss103bmp",
+    "ss104bmp",
+    "ss105bmp",
+    "ss106bmp",
+    "ss107bmp",
+    "ss18abmp",
+    "ss18bmp",
+    "ss20bmp",
+    "ss21abmp",
+    "ss23bmp",
+    "ss24abmp",
+    "ss27bmp",
+    "ss27insidebmp",
+    "ss28bmp",
+    "ss300bmp",
+    "ss301bmp",
+    "ss302bmp",
+    "ss303bmp",
+    "ss304bmp",
+    "ss305bmp",
+    "ss306bmp",
+    "ss307bmp",
+    "ss400bmp",
+    "ss401bmp",
+    "ss402bmp",
+    "ss403bmp",
+    "ss404bmp",
+    "ss405bmp",
+    "ss406bmp",
+    "ss407bmp",
+    "ss408bmp",
+    "ss90bmp",
+    "ss92abmp",
+    "ss92bmp",
+    "ss93abmp",
+    "ss93bmp",
+    "ss94bmp",
+    "ss95bmp",
+    "ss96bmp",
+    "ss97bmp",
+    "ss98bmp",
+    "ss99bmp",
+    "tacrockbmp",
+    "tecdevbmp",
+    "tectpbmp",
+    "tf2",
+    "tf3",
+    "tf4",
+    "tf5",
+    "tf6",
+    "tf7",
+    "tf8",
+    "tfconbmp",
+    "tfdronbmp",
+    "tfexpbmp",
+    "tfflagshipbmp",
+    "tfgrrbmp",
+    "tfmnrbmp",
+    "tfpodbmp",
+    "tfrefbmp",
+    "tfscoutbmp",
+    "tfsupbmp",
+    "tfsybmp",
+    "tftcbmp",
+    "tftelbmp",
+    "tftransportbmp",
+    "utl01bbmp",
+    "utl01bmp",
+    "utl02bmp",
+    "utl04bmp",
+    "utl05bmp",
+    "utl07bmp",
+    "utl100bmp",
+    "utl101bmp",
+    "utl102bmp",
+    "utl103bmp",
+    "utl105bmp",
+    "utl11bmp",
+    "utl14abmp",
+    "utl17bmp",
+    "utl18bmp",
+    "utl19bmp",
+    "utl200bmp",
+    "utl201bmp",
+    "utl202bmp",
+    "utl203bmp",
+    "utl205bmp",
+    "utl20abmp",
+    "utl20bmp",
+    "utl27bmp",
+    "utl400bmp",
+    "utl401bmp",
+    "utl402bmp",
+    "utl403bmp",
+    "utl6bmp",
+    "utl74bmp",
+    "utl90bmp",
+    "utl91bmp",
+    "utl92bmp",
+    "utl93bmp",
+    "utl94bmp",
+    "utl95bmp",
+    "wc_gcbmbxbmp",
+    "wc_gchvybmp",
+    "wc_gchvyxbmp"
+  ],
+  "coveredStems": [
+    "cap04bmp",
+    "fig02bmp",
+    "fig05bmp",
+    "utl101bmp"
+  ],
+  "missingStems": [
+    "acs01bmp",
+    "acs02bmp",
+    "acs05bmp",
+    "acs08bmp",
+    "acs40bmp",
+    "acs41bmp",
+    "acs63bmp",
+    "artifactbmp",
+    "beltersbaybmp",
+    "bgrnd03bmp",
+    "bgrnd51bmp",
+    "bgrnd53bmp",
+    "bgrnd55bmp",
+    "bgrnd57bmp",
+    "biosbaybmp",
+    "bom01abmp",
+    "bom03bmp",
+    "bom04bmp",
+    "bom05bmp",
+    "bom07bmp",
+    "bom20bmp",
+    "bom30bmp",
+    "bom400bmp",
+    "cannonbmp",
+    "cap01bmp",
+    "cap02bmp",
+    "cap03bmp",
+    "cap05bmp",
+    "cap06abmp",
+    "cap07bmp",
+    "cap08bmp",
+    "cap09bmp",
+    "cap100bmp",
+    "cap101bmp",
+    "cap102bmp",
+    "cap103bmp",
+    "cap20bmp",
+    "cap21bmp",
+    "cap300bmp",
+    "cap301bmp",
+    "cap302bmp",
+    "cap303bmp",
+    "cap400bmp",
+    "cap401bmp",
+    "cap402bmp",
+    "cap403bmp",
+    "cap404bmp",
+    "cap405bmp",
+    "cap406bmp",
+    "cap407bmp",
+    "cap415bmp",
+    "cap500bmp",
+    "cap501bmp",
+    "cap502bmp",
+    "cap503bmp",
+    "cap504bmp",
+    "crus2bmp",
+    "cwbaybmp",
+    "dbay3bmp",
+    "dbsebmp",
+    "dcrusbmp",
+    "dgarrbmp",
+    "dgexpbmp",
+    "dgsupbmp",
+    "dminrbmp",
+    "dn_fadrshfigbmp",
+    "dn_fadrshintbmp",
+    "dn_fadrshstlbmp",
+    "dn_fadrtxtlmt01bmp",
+    "dn_fadrtxtlmt02bmp",
+    "dn_fadrtxtlmt03bmp",
+    "dn_fadrtxtlsc01bmp",
+    "dn_fadrtxtlsc02bmp",
+    "dn_fadrtxtlsc03bmp",
+    "dn_fadrtxtlsk01bmp",
+    "dn_fadrtxtlsk03bmp",
+    "dn_faphbsexpbmp",
+    "dn_faphbsgarbmp",
+    "dn_faphbsinsidebmp",
+    "dn_faphbsopbmp",
+    "dn_faphbssupbmp",
+    "dn_faphbstacbmp",
+    "dn_faphbstpbmp",
+    "dn_faphbstrnbmp",
+    "dn_faphsh000bmp",
+    "dn_faphsh001bmp",
+    "dn_faphsh002bmp",
+    "dn_faphsh003bmp",
+    "dn_faphsh004bmp",
+    "dn_fateprplfbmp",
+    "dn_fateshbmbbmp",
+    "dn_ptionbls",
+    "dn_ptlasbls1",
+    "dn_ptlasbls1bmp",
+    "dn_ptlasbls2",
+    "dn_ptlasblsbmp",
+    "dn_ptlascan1bmp",
+    "dn_ptlascan2bmp",
+    "dn_ptlngtom",
+    "dn_ptvulcan1",
+    "dn_ptvulcan2",
+    "dregabmp",
+    "dregbaybmp",
+    "dregcarbmp",
+    "dregcrrbaybmp",
+    "dreghpodbmp",
+    "dreginsidebmp",
+    "dregttbmp",
+    "drgasbmp",
+    "drgby2bmp",
+    "drgmfbmp",
+    "drgopabmp",
+    "drgopbmp",
+    "drgrockbmp",
+    "drgsybmp",
+    "drgtowbmp",
+    "dtacbmp",
+    "f03",
+    "f06",
+    "f07",
+    "f09",
+    "f16",
+    "f17",
+    "f18",
+    "f19",
+    "f20",
+    "f22",
+    "f23",
+    "f24",
+    "f26",
+    "f27",
+    "f28",
+    "f44",
+    "f49",
+    "f99",
+    "faohbsexpbmp",
+    "faohbsgarbmp",
+    "faohbsopbmp",
+    "faohbssupbmp",
+    "faohbssybmp",
+    "faohbstacbmp",
+    "faohbstpbmp",
+    "faohhammer1",
+    "faohhammer2",
+    "faohhammer3",
+    "faohomega1",
+    "faohomega2",
+    "faohshafigbmp",
+    "faohshassbmp",
+    "faohshbmbbmp",
+    "faohshcarbmp",
+    "faohshconbmp",
+    "faohshcrsbmp",
+    "faohshcrvbmp",
+    "faohshdevbmp",
+    "faohshfigbmp",
+    "faohshhintbmp",
+    "faohshintbmp",
+    "faohshmnrbmp",
+    "faohshpodbmp",
+    "faohshsctbbmp",
+    "faohshstlbmp",
+    "fig02ops1bmp",
+    "fig03bmp",
+    "fig04bmp",
+    "fig05ops1bmp",
+    "fig07bmp",
+    "fig07ops1bmp",
+    "fig12bmp",
+    "fig13bmp",
+    "fig15bmp",
+    "fig16bmp",
+    "fig17bmp",
+    "fig20bmp",
+    "fig21bmp",
+    "fig22bmp",
+    "fig23bmp",
+    "fig25bmp",
+    "fig30bmp",
+    "fig31bmp",
+    "fig32bmp",
+    "fig34bmp",
+    "fig400bmp",
+    "fig401bmp",
+    "fig402bmp",
+    "fig403bmp",
+    "fig404bmp",
+    "fig405bmp",
+    "fig406bmp",
+    "fx90",
+    "fx92",
+    "fx95",
+    "hembmp",
+    "hmbmp",
+    "ilpodbmp",
+    "mis01bmp",
+    "mis02bmp",
+    "mis03bmp",
+    "mis05bmp",
+    "mis06bmp",
+    "mis07bmp",
+    "mis08bmp",
+    "mis09bmp",
+    "mis10bmp",
+    "mis11bmp",
+    "mis12bmp",
+    "mis13bmp",
+    "mis14bmp",
+    "mis15bmp",
+    "mis400bmp",
+    "mis403bmp",
+    "mis404bmp",
+    "mis405bmp",
+    "mis406bmp",
+    "proxexplbmp",
+    "quizbbr1bmp",
+    "quizbbr2bmp",
+    "quizfig1bmp",
+    "quizfig2bmp",
+    "quizint1bmp",
+    "quizint2bmp",
+    "quizscout1bmp",
+    "quizscout2bmp",
+    "quizsf1bmp",
+    "quizsf2bmp",
+    "raincarr1bmp",
+    "raincarr2bmp",
+    "rainfigbmp",
+    "rainintbmp",
+    "rainop1bmp",
+    "rainop2bmp",
+    "rainscoutbmp",
+    "rainsfbmp",
+    "rescuedronebmp",
+    "rixbaybmp",
+    "sbbmp",
+    "ss01bmp",
+    "ss06bmp",
+    "ss08bmp",
+    "ss100bmp",
+    "ss101bmp",
+    "ss102bmp",
+    "ss103bmp",
+    "ss104bmp",
+    "ss105bmp",
+    "ss106bmp",
+    "ss107bmp",
+    "ss18abmp",
+    "ss18bmp",
+    "ss20bmp",
+    "ss21abmp",
+    "ss23bmp",
+    "ss24abmp",
+    "ss27bmp",
+    "ss27insidebmp",
+    "ss28bmp",
+    "ss300bmp",
+    "ss301bmp",
+    "ss302bmp",
+    "ss303bmp",
+    "ss304bmp",
+    "ss305bmp",
+    "ss306bmp",
+    "ss307bmp",
+    "ss400bmp",
+    "ss401bmp",
+    "ss402bmp",
+    "ss403bmp",
+    "ss404bmp",
+    "ss405bmp",
+    "ss406bmp",
+    "ss407bmp",
+    "ss408bmp",
+    "ss90bmp",
+    "ss92abmp",
+    "ss92bmp",
+    "ss93abmp",
+    "ss93bmp",
+    "ss94bmp",
+    "ss95bmp",
+    "ss96bmp",
+    "ss97bmp",
+    "ss98bmp",
+    "ss99bmp",
+    "tacrockbmp",
+    "tecdevbmp",
+    "tectpbmp",
+    "tf2",
+    "tf3",
+    "tf4",
+    "tf5",
+    "tf6",
+    "tf7",
+    "tf8",
+    "tfconbmp",
+    "tfdronbmp",
+    "tfexpbmp",
+    "tfflagshipbmp",
+    "tfgrrbmp",
+    "tfmnrbmp",
+    "tfpodbmp",
+    "tfrefbmp",
+    "tfscoutbmp",
+    "tfsupbmp",
+    "tfsybmp",
+    "tftcbmp",
+    "tftelbmp",
+    "tftransportbmp",
+    "utl01bbmp",
+    "utl01bmp",
+    "utl02bmp",
+    "utl04bmp",
+    "utl05bmp",
+    "utl07bmp",
+    "utl100bmp",
+    "utl102bmp",
+    "utl103bmp",
+    "utl105bmp",
+    "utl11bmp",
+    "utl14abmp",
+    "utl17bmp",
+    "utl18bmp",
+    "utl19bmp",
+    "utl200bmp",
+    "utl201bmp",
+    "utl202bmp",
+    "utl203bmp",
+    "utl205bmp",
+    "utl20abmp",
+    "utl20bmp",
+    "utl27bmp",
+    "utl400bmp",
+    "utl401bmp",
+    "utl402bmp",
+    "utl403bmp",
+    "utl6bmp",
+    "utl74bmp",
+    "utl90bmp",
+    "utl91bmp",
+    "utl92bmp",
+    "utl93bmp",
+    "utl94bmp",
+    "utl95bmp",
+    "wc_gcbmbxbmp",
+    "wc_gchvybmp",
+    "wc_gchvyxbmp"
+  ],
+  "unreferencedHdStems": [],
+  "models": [
+    {
+      "kind": "missile",
+      "model": "artifact",
+      "stems": [
+        "artifactbmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis01",
+      "stems": [
+        "mis01bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis02",
+      "stems": [
+        "mis02bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis03",
+      "stems": [
+        "mis03bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis05",
+      "stems": [
+        "mis05bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis06",
+      "stems": [
+        "mis06bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis07",
+      "stems": [
+        "mis07bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis08",
+      "stems": [
+        "mis08bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis09",
+      "stems": [
+        "mis09bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis10",
+      "stems": [
+        "mis10bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis11",
+      "stems": [
+        "mis11bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis12",
+      "stems": [
+        "mis12bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis13",
+      "stems": [
+        "mis13bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis14",
+      "stems": [
+        "mis14bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis15",
+      "stems": [
+        "mis15bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis400",
+      "stems": [
+        "mis400bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis403",
+      "stems": [
+        "mis403bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis404",
+      "stems": [
+        "mis404bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis405",
+      "stems": [
+        "mis405bmp"
+      ]
+    },
+    {
+      "kind": "missile",
+      "model": "mis406",
+      "stems": [
+        "mis406bmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "acs02",
+      "stems": [
+        "acs02bmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "acs40",
+      "stems": [
+        "acs40bmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "acs63",
+      "stems": [
+        "acs63bmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "dn_faphshtwr",
+      "stems": [
+        "dn_faphsh003bmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "dn_ptlasbls",
+      "stems": [
+        "dn_ptlasbls1bmp",
+        "dn_ptlasblsbmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "drgtow",
+      "stems": [
+        "drgtowbmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "heavyexp",
+      "stems": [
+        "proxexplbmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "proxexpl",
+      "stems": [
+        "proxexplbmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "tfdron",
+      "stems": [
+        "tfdronbmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "utl01b",
+      "stems": [
+        "utl01bbmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "utl02",
+      "stems": [
+        "utl02bmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "utl04",
+      "stems": [
+        "utl04bmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "utl105",
+      "stems": [
+        "utl105bmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "utl205",
+      "stems": [
+        "utl205bmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "utl23",
+      "stems": [
+        "utl01bmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "utl403",
+      "stems": [
+        "utl403bmp"
+      ]
+    },
+    {
+      "kind": "probe",
+      "model": "utl74",
+      "stems": [
+        "utl74bmp"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "fx95"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f26"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f27"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f18"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f06"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f16"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f22"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f23"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f24"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f28"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f19"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f20"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "fx90"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f03"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f17"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f07"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f09"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f44"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f99"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "tf5"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "tf8"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "tf3"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "tf7"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "tf6"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "tf2"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "tf4"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "fx92"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "dn_ptionbls"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "dn_ptlngtom"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "dn_ptvulcan1"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "dn_ptvulcan2"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "dn_ptlasbls1"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "dn_ptlasbls2"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "faohhammer1"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "faohhammer2"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "faohhammer3"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "faohomega1"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "faohomega2"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "",
+      "stems": [
+        "f49"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "bgrnd55",
+      "stems": [
+        "bgrnd55bmp"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "dn_fateprplf",
+      "stems": [
+        "dn_fateprplfbmp"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "dn_ptlascan1",
+      "stems": [
+        "dn_ptlascan1bmp"
+      ]
+    },
+    {
+      "kind": "projectile",
+      "model": "dn_ptlascan2",
+      "stems": [
+        "dn_ptlascan2bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "acs01",
+      "stems": [
+        "acs01bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "acs02",
+      "stems": [
+        "acs02bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "acs41",
+      "stems": [
+        "acs41bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "acs63",
+      "stems": [
+        "acs63bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "bom01b",
+      "stems": [
+        "bom01abmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "bom03",
+      "stems": [
+        "bom03bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "bom04",
+      "stems": [
+        "bom04bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "bom05b",
+      "stems": [
+        "bom05bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "bom07b",
+      "stems": [
+        "bom07bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "bom20",
+      "stems": [
+        "bom20bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "bom30",
+      "stems": [
+        "bom30bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "bom400",
+      "stems": [
+        "bom400bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap01",
+      "stems": [
+        "cap01bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap02a",
+      "stems": [
+        "cap02bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap03",
+      "stems": [
+        "cap03bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap04",
+      "stems": [
+        "cap04bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap06a",
+      "stems": [
+        "cap06abmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap07",
+      "stems": [
+        "cap07bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap08",
+      "stems": [
+        "cap08bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap09",
+      "stems": [
+        "cap09bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap100",
+      "stems": [
+        "cap100bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap101",
+      "stems": [
+        "cap101bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap102",
+      "stems": [
+        "cap102bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap103",
+      "stems": [
+        "cap103bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap20",
+      "stems": [
+        "cap20bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap21",
+      "stems": [
+        "cap21bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap300",
+      "stems": [
+        "cap300bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap301",
+      "stems": [
+        "cap301bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap302",
+      "stems": [
+        "cap302bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap303",
+      "stems": [
+        "cap303bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap400",
+      "stems": [
+        "cap400bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap401",
+      "stems": [
+        "cap401bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap403",
+      "stems": [
+        "cap403bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap404",
+      "stems": [
+        "cap404bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap405",
+      "stems": [
+        "cap405bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap406",
+      "stems": [
+        "cap406bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap415",
+      "stems": [
+        "cap415bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap500",
+      "stems": [
+        "cap500bmp",
+        "ss27insidebmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap501",
+      "stems": [
+        "beltersbaybmp",
+        "cap501bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap502",
+      "stems": [
+        "cap502bmp",
+        "cwbaybmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap503",
+      "stems": [
+        "cap503bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "cap504",
+      "stems": [
+        "cap504bmp",
+        "rixbaybmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "crus2",
+      "stems": [
+        "crus2bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dcrus",
+      "stems": [
+        "dcrusbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dminr",
+      "stems": [
+        "dminrbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_fadrshcon",
+      "stems": [
+        "dn_fadrshintbmp",
+        "dn_fadrtxtlmt02bmp",
+        "dn_fadrtxtlsc02bmp",
+        "dn_fadrtxtlsk01bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_fadrshfig",
+      "stems": [
+        "dn_fadrshfigbmp",
+        "dn_fadrtxtlmt01bmp",
+        "dn_fadrtxtlmt02bmp",
+        "dn_fadrtxtlsc01bmp",
+        "dn_fadrtxtlsk01bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_fadrshstl",
+      "stems": [
+        "dn_fadrshstlbmp",
+        "dn_fadrtxtlmt03bmp",
+        "dn_fadrtxtlsc03bmp",
+        "dn_fadrtxtlsk03bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_faphshbmb",
+      "stems": [
+        "dn_faphsh000bmp",
+        "dn_faphsh001bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_faphshbmbs",
+      "stems": [
+        "dn_faphsh000bmp",
+        "dn_faphsh001bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_faphshcar",
+      "stems": [
+        "dn_faphsh000bmp",
+        "dn_faphsh002bmp",
+        "dn_faphsh004bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_faphshcrs",
+      "stems": [
+        "dn_faphsh000bmp",
+        "dn_faphsh002bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_faphshdst",
+      "stems": [
+        "dn_faphsh000bmp",
+        "dn_faphsh002bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_faphshfig",
+      "stems": [
+        "dn_faphsh000bmp",
+        "dn_faphsh001bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_faphshfrg",
+      "stems": [
+        "dn_faphsh000bmp",
+        "dn_faphsh002bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_faphshint",
+      "stems": [
+        "dn_faphsh000bmp",
+        "dn_faphsh001bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_faphshmnr",
+      "stems": [
+        "dn_faphsh000bmp",
+        "dn_faphsh001bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_faphshpod",
+      "stems": [
+        "dn_faphsh000bmp",
+        "dn_faphsh002bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_faphshrpb",
+      "stems": [
+        "utl01bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_faphshsct",
+      "stems": [
+        "dn_faphsh000bmp",
+        "dn_faphsh001bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_faphshstl",
+      "stems": [
+        "dn_faphsh000bmp",
+        "dn_faphsh001bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_faphshvng",
+      "stems": [
+        "dn_faphsh000bmp",
+        "dn_faphsh002bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dn_fateshbmb",
+      "stems": [
+        "dn_fateshbmbbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dregcar",
+      "stems": [
+        "dregcarbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dreghpod",
+      "stems": [
+        "dreghpodbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "dregtt",
+      "stems": [
+        "dreginsidebmp",
+        "dregttbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "drgas",
+      "stems": [
+        "drgasbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "drgmf",
+      "stems": [
+        "drgmfbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "drgtow",
+      "stems": [
+        "drgtowbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshafig",
+      "stems": [
+        "faohshafigbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshass",
+      "stems": [
+        "faohshassbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshbmb",
+      "stems": [
+        "faohshbmbbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshcar",
+      "stems": [
+        "faohshcarbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshcon",
+      "stems": [
+        "faohshconbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshcrs",
+      "stems": [
+        "faohshcrsbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshcrv",
+      "stems": [
+        "faohshcrvbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshdev",
+      "stems": [
+        "faohshdevbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshfig",
+      "stems": [
+        "faohshfigbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshhint",
+      "stems": [
+        "faohshhintbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshint",
+      "stems": [
+        "faohshintbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshmnr",
+      "stems": [
+        "faohshmnrbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshpod",
+      "stems": [
+        "faohshpodbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshsctb",
+      "stems": [
+        "faohshsctbbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "faohshstl",
+      "stems": [
+        "faohshstlbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig02ops1",
+      "stems": [
+        "fig02ops1bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig03",
+      "stems": [
+        "fig03bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig04",
+      "stems": [
+        "fig04bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig05",
+      "stems": [
+        "fig05bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig05ops1",
+      "stems": [
+        "fig05ops1bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig07",
+      "stems": [
+        "fig07bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig12",
+      "stems": [
+        "fig12bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig13",
+      "stems": [
+        "fig13bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig15",
+      "stems": [
+        "fig15bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig17",
+      "stems": [
+        "fig17bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig21",
+      "stems": [
+        "fig21bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig22",
+      "stems": [
+        "fig22bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig23",
+      "stems": [
+        "fig23bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig25",
+      "stems": [
+        "fig25bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig30",
+      "stems": [
+        "fig30bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig31",
+      "stems": [
+        "fig31bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig32",
+      "stems": [
+        "fig32bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "fig34",
+      "stems": [
+        "fig34bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "quizbbrv2",
+      "stems": [
+        "quizbbr1bmp",
+        "quizbbr2bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "quizfigv2",
+      "stems": [
+        "quizfig1bmp",
+        "quizfig2bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "quizintv2",
+      "stems": [
+        "quizint1bmp",
+        "quizint2bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "quizscoutv2",
+      "stems": [
+        "quizscout1bmp",
+        "quizscout2bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "quizsfv2",
+      "stems": [
+        "quizsf1bmp",
+        "quizsf2bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "raincarr",
+      "stems": [
+        "raincarr1bmp",
+        "raincarr2bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "rainfigv2",
+      "stems": [
+        "rainfigbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "rainintv2",
+      "stems": [
+        "rainintbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "rainscoutv2",
+      "stems": [
+        "rainscoutbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "rainsfv2",
+      "stems": [
+        "rainsfbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "rescuedrone",
+      "stems": [
+        "rescuedronebmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "ss20",
+      "stems": [
+        "ss20bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "tecdev",
+      "stems": [
+        "tecdevbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "tfcon",
+      "stems": [
+        "tfconbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "tfdron",
+      "stems": [
+        "tfdronbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "tffig",
+      "stems": [
+        "tfscoutbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "tfflagship",
+      "stems": [
+        "tfflagshipbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "tfmnr",
+      "stems": [
+        "tfmnrbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "tfpod",
+      "stems": [
+        "tfpodbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "tfsb2",
+      "stems": [
+        "cannonbmp",
+        "sbbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "tftransport",
+      "stems": [
+        "tftransportbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl01b",
+      "stems": [
+        "utl01bbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl05",
+      "stems": [
+        "utl05bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl100",
+      "stems": [
+        "utl100bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl101",
+      "stems": [
+        "utl101bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl102",
+      "stems": [
+        "utl102bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl103",
+      "stems": [
+        "utl103bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl105",
+      "stems": [
+        "utl105bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl11",
+      "stems": [
+        "utl11bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl14a",
+      "stems": [
+        "utl14abmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl17a",
+      "stems": [
+        "utl17bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl18a",
+      "stems": [
+        "utl18bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl19",
+      "stems": [
+        "utl19bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl200",
+      "stems": [
+        "utl200bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl201",
+      "stems": [
+        "utl201bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl202",
+      "stems": [
+        "utl202bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl203",
+      "stems": [
+        "utl203bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl205",
+      "stems": [
+        "utl205bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl22",
+      "stems": [
+        "ilpodbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl25",
+      "stems": [
+        "utl01bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl27b",
+      "stems": [
+        "utl27bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl400",
+      "stems": [
+        "utl400bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl403",
+      "stems": [
+        "utl403bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl666",
+      "stems": [
+        "utl11bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl90",
+      "stems": [
+        "utl90bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl91",
+      "stems": [
+        "utl91bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl92a",
+      "stems": [
+        "utl92bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl93b",
+      "stems": [
+        "utl93bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl94",
+      "stems": [
+        "utl94bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl95",
+      "stems": [
+        "utl95bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "utl99",
+      "stems": [
+        "utl14abmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_beomni",
+      "stems": [
+        "fig30bmp",
+        "fig31bmp",
+        "fig32bmp",
+        "fig34bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_bifig",
+      "stems": [
+        "fig20bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gcbmbx",
+      "stems": [
+        "wc_gcbmbxbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gcfig",
+      "stems": [
+        "fig07bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gcfigx",
+      "stems": [
+        "fig07ops1bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gchttx",
+      "stems": [
+        "wc_gcbmbxbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gchvy",
+      "stems": [
+        "wc_gchvybmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gchvyx",
+      "stems": [
+        "wc_gchvyxbmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gcint",
+      "stems": [
+        "wc_gchvybmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gtadv",
+      "stems": [
+        "fig405bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gtcon",
+      "stems": [
+        "utl402bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gtfig",
+      "stems": [
+        "fig400bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gthvy",
+      "stems": [
+        "fig406bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gtint",
+      "stems": [
+        "fig401bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gtmnr",
+      "stems": [
+        "utl401bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gtpod",
+      "stems": [
+        "fig404bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gtpt",
+      "stems": [
+        "cap402bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gtsct",
+      "stems": [
+        "fig403bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gtsf",
+      "stems": [
+        "fig402bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_gtstang",
+      "stems": [
+        "cap407bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_icadv",
+      "stems": [
+        "fig02ops1bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_icbmb",
+      "stems": [
+        "bom07bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_icfig",
+      "stems": [
+        "fig02bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_ichvy",
+      "stems": [
+        "fig16bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_icint",
+      "stems": [
+        "fig16bmp"
+      ]
+    },
+    {
+      "kind": "ship",
+      "model": "wc_icsf",
+      "stems": [
+        "bom01abmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "acs05",
+      "stems": [
+        "acs05bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "acs08",
+      "stems": [
+        "acs08bmp",
+        "ss27insidebmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "biosplat",
+      "stems": [
+        "ss107bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "cap05",
+      "stems": [
+        "cap05bmp",
+        "rixbaybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "cc_faristexp",
+      "stems": [
+        "bgrnd51bmp",
+        "rixbaybmp",
+        "ss97bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "dbase",
+      "stems": [
+        "dbsebmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "dgarr",
+      "stems": [
+        "dgarrbmp",
+        "dregbaybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "dgexp",
+      "stems": [
+        "dbay3bmp",
+        "dgexpbmp",
+        "drgrockbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "dgsup",
+      "stems": [
+        "dgsupbmp",
+        "dregbaybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "dn_faphbsexp",
+      "stems": [
+        "dn_faphbsexpbmp",
+        "dn_faphbsinsidebmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "dn_faphbsgar",
+      "stems": [
+        "dn_faphbsgarbmp",
+        "dn_faphbsinsidebmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "dn_faphbsop",
+      "stems": [
+        "dn_faphbsinsidebmp",
+        "dn_faphbsopbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "dn_faphbssup",
+      "stems": [
+        "dn_faphbssupbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "dn_faphbstac",
+      "stems": [
+        "dn_faphbsinsidebmp",
+        "dn_faphbstacbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "dn_faphbstp",
+      "stems": [
+        "dn_faphbstpbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "dn_faphbstrn",
+      "stems": [
+        "dn_faphbstrnbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "drgop",
+      "stems": [
+        "dbay3bmp",
+        "drgopabmp",
+        "drgopbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "drgsy",
+      "stems": [
+        "dregabmp",
+        "dregcrrbaybmp",
+        "drgrockbmp",
+        "drgsybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "dtac",
+      "stems": [
+        "drgby2bmp",
+        "dtacbmp",
+        "tacrockbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "faohbsexp",
+      "stems": [
+        "faohbsexpbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "faohbsgar",
+      "stems": [
+        "faohbsgarbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "faohbsop",
+      "stems": [
+        "faohbsopbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "faohbssup",
+      "stems": [
+        "faohbssupbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "faohbssy",
+      "stems": [
+        "faohbssybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "faohbstac",
+      "stems": [
+        "faohbstacbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "faohbstp",
+      "stems": [
+        "faohbstpbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "helm",
+      "stems": [
+        "hembmp",
+        "hmbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "rainop",
+      "stems": [
+        "rainop1bmp",
+        "rainop2bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss01",
+      "stems": [
+        "rixbaybmp",
+        "ss01bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss06",
+      "stems": [
+        "ss06bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss08",
+      "stems": [
+        "ss08bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss100",
+      "stems": [
+        "biosbaybmp",
+        "ss100bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss101",
+      "stems": [
+        "biosbaybmp",
+        "ss101bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss102",
+      "stems": [
+        "biosbaybmp",
+        "ss102bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss103",
+      "stems": [
+        "biosbaybmp",
+        "ss103bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss104",
+      "stems": [
+        "biosbaybmp",
+        "ss104bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss105",
+      "stems": [
+        "biosbaybmp",
+        "ss105bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss106",
+      "stems": [
+        "ss106bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss107",
+      "stems": [
+        "ss107bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss18",
+      "stems": [
+        "cwbaybmp",
+        "ss18abmp",
+        "ss18bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss21a",
+      "stems": [
+        "ss21abmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss23",
+      "stems": [
+        "bgrnd57bmp",
+        "cwbaybmp",
+        "ss23bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss24a",
+      "stems": [
+        "bgrnd03bmp",
+        "cwbaybmp",
+        "ss24abmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss27",
+      "stems": [
+        "ss27bmp",
+        "ss27insidebmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss28",
+      "stems": [
+        "ss27insidebmp",
+        "ss28bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss300",
+      "stems": [
+        "beltersbaybmp",
+        "bgrnd03bmp",
+        "ss300bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss301",
+      "stems": [
+        "beltersbaybmp",
+        "bgrnd03bmp",
+        "ss301bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss302",
+      "stems": [
+        "beltersbaybmp",
+        "bgrnd03bmp",
+        "ss18abmp",
+        "ss302bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss303",
+      "stems": [
+        "beltersbaybmp",
+        "ss303bmp",
+        "ss93abmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss304",
+      "stems": [
+        "beltersbaybmp",
+        "ss304bmp",
+        "utl20abmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss305",
+      "stems": [
+        "beltersbaybmp",
+        "bgrnd53bmp",
+        "ss305bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss306",
+      "stems": [
+        "bgrnd03bmp",
+        "ss306bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss307",
+      "stems": [
+        "bgrnd03bmp",
+        "ss307bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss400",
+      "stems": [
+        "ss400bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss401",
+      "stems": [
+        "ss401bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss402",
+      "stems": [
+        "ss402bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss404",
+      "stems": [
+        "ss404bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss405",
+      "stems": [
+        "ss405bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss408",
+      "stems": [
+        "ss408bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss90",
+      "stems": [
+        "ss27insidebmp",
+        "ss90bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss92",
+      "stems": [
+        "ss92abmp",
+        "ss92bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss93",
+      "stems": [
+        "cwbaybmp",
+        "ss93abmp",
+        "ss93bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss94",
+      "stems": [
+        "ss94bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss95",
+      "stems": [
+        "ss95bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss96",
+      "stems": [
+        "rixbaybmp",
+        "ss96bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss98",
+      "stems": [
+        "rixbaybmp",
+        "ss98bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "ss99",
+      "stems": [
+        "rixbaybmp",
+        "ss99bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "tecsy",
+      "stems": [
+        "tfsybmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "tectp",
+      "stems": [
+        "drgrockbmp",
+        "tectpbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "tfexp",
+      "stems": [
+        "bgrnd51bmp",
+        "tfexpbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "tfgrr",
+      "stems": [
+        "bgrnd55bmp",
+        "tfgrrbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "tfref",
+      "stems": [
+        "tfrefbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "tfsup",
+      "stems": [
+        "bgrnd57bmp",
+        "tfsupbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "tftc",
+      "stems": [
+        "bgrnd57bmp",
+        "tftcbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "tftel",
+      "stems": [
+        "tftelbmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "utl06",
+      "stems": [
+        "utl6bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "utl07",
+      "stems": [
+        "utl07bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "utl20",
+      "stems": [
+        "cwbaybmp",
+        "utl20abmp",
+        "utl20bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "wc_gtpali",
+      "stems": [
+        "ss403bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "wc_gtsup",
+      "stems": [
+        "ss406bmp"
+      ]
+    },
+    {
+      "kind": "station",
+      "model": "wc_gttac",
+      "stems": [
+        "ss407bmp"
+      ]
+    }
+  ]
+}

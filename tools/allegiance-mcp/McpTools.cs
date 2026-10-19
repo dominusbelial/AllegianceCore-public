@@ -1039,6 +1039,7 @@ internal static class McpTools
         var cs = mgr.GetCombatSummary();
         return Ok(JsonSerializer.Serialize(new
         {
+            perBotCpu = mgr.BenchmarkBotCpu(),
             botCount = ps.Cadence.BotCount,
             interval = Stat(ps.Cadence.Interval),
             jump = Stat(ps.Cadence.Jump),
@@ -1063,6 +1064,7 @@ internal static class McpTools
             },
             finale = mgr.FinaleStatus(),
             research = mgr.ResearchStatus(),
+            commanderOrders = mgr.CommanderOrders(),
             decisionOverruns = mgr.DecisionOverruns,
             stall = StallWatchdog.JsonSnapshot(ps.Stall),
             removedBots = mgr.RemovedBots(),

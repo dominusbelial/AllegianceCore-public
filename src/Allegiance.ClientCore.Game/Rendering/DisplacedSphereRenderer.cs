@@ -70,7 +70,7 @@ public sealed class DisplacedSphereRenderer : IDisposable
         Matrix view,
         Matrix projection,
         float time,
-        SoftParticleContext soft)
+        SoftParticleContext soft, long? nowLocalMs = null)
     {
         if (!IsUsable) return;
 
@@ -86,7 +86,7 @@ public sealed class DisplacedSphereRenderer : IDisposable
             ExplosionPreset preset;
             try { preset = ExplosionPresets.For(e.Type); }
             catch (ArgumentOutOfRangeException) { continue; }
-            float elapsed = Math.Max(0f, (float)(Environment.TickCount64 - e.ReceivedLocalMs) / 1000f);
+            float elapsed = Math.Max(0f, (float)((nowLocalMs ?? Environment.TickCount64) - e.ReceivedLocalMs) / 1000f);
             var pos = new SimVec(e.Position.X, e.Position.Y, e.Position.Z);
             var vel = new SimVec(e.Velocity.X, e.Velocity.Y, e.Velocity.Z);
             all.AddRange(VolumetricExplosionSampler.SampleUnits(preset, elapsed, pos, vel));

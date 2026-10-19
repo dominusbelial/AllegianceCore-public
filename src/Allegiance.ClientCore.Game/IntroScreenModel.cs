@@ -21,6 +21,7 @@ public enum IntroCommand
     Options,
     Credits,
     Exit,
+    Benchmark,
 }
 
 /// <summary>
@@ -34,7 +35,7 @@ public sealed class IntroScreenModel
     public static readonly string[] MainLabels =
     {
         "Single Player", "Play Online", "Play LAN / Find Server",
-        "Direct Connect", "Options", "Credits", "Exit",
+        "Direct Connect", "Options", "Credits", "Exit", "Benchmark",
     };
 
     /// <summary>The currently highlighted main-menu index.</summary>
@@ -56,6 +57,7 @@ public sealed class IntroScreenModel
         4 => IntroCommand.Options,
         5 => IntroCommand.Credits,
         6 => IntroCommand.Exit,
+        7 => IntroCommand.Benchmark,
         _ => IntroCommand.None,
     };
 

@@ -43,6 +43,7 @@ public sealed partial class Server
                 continue;
             }
             ushort fmid = command.Fmid;
+            if (fmid == ViewClusterRequest.Fmid && _config.BenchmarkSeed is not null) Console.WriteLine($"[p729-view] peer={from} admin={IsSpectatorAdmin(from)} name={_peerNames.GetValueOrDefault(from)}");
             if (SinglePlayerPaused && fmid != Ping.Fmid) continue;
             _host.InboundTrace?.Message(from, fmid, m.Length);
 

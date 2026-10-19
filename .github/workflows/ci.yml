@@ -50,6 +50,15 @@ jobs:
           TEST_FILTER: "Requires!=Artwork&Requires!=NativeSource&Requires!=Gpu&Requires!=MeshyPack&Lane!=LiveTiming"
         run: tools/run-tests.sh --tier fast --no-build
 
+      - name: Headless replay benchmark (three deterministic runs, no server or artwork)
+        run: >-
+          dotnet tools/benchmark/bin/Debug/net10.0/benchmark.dll
+          --benchmark replay:data/benchmarks/battle.alr --benchmark-headless
+          --benchmark-output /tmp/benchmark-replay.json
+
+      - name: Benchmark comparison checks
+        run: python3 -m unittest discover -s packaging -p 'test_bench_compare.py'
+
       - name: Upload tier results
         if: always()
         uses: actions/upload-artifact@v4

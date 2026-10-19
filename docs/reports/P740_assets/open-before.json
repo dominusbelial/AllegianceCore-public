@@ -1,0 +1,210 @@
+[
+  {
+    "area": "commands",
+    "native_item": "TK_ViewTurret",
+    "native_cite": "WinTrek/WinTrek.cpp:9858",
+    "port_status": "partial",
+    "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:299; src/Allegiance.ClientCore.Game/Game1.FlightInput.cs:817; src/Allegiance.ClientCore.Game/Game1.Director.cs:482; tests/Allegiance.ClientCore.MonoGame.Tests/P675CommandActionTests.cs:57; P675: rebindable port gunner camera toggle; native handler and registration are disabled (WinTrek.cpp:9856-9864; trekinput.cpp:196); retain partial for this deliberate extension",
+    "weight": "4"
+  },
+  {
+    "area": "fedmsg",
+    "native_item": "156 GAIN_FLAG",
+    "native_cite": "Inc/Messages.h:861",
+    "port_status": "partial",
+    "port_cite_or_reason": "Wire/GainFlag.cs (server emits; no client handler found)",
+    "weight": "4"
+  },
+  {
+    "area": "fedmsg",
+    "native_item": "162 ACQUIRE_TREASURE",
+    "native_cite": "Inc/Messages.h:871",
+    "port_status": "partial",
+    "port_cite_or_reason": "Wire/AcquireTreasure.cs (server emits; no client handler found)",
+    "weight": "4"
+  },
+  {
+    "area": "fedmsg",
+    "native_item": "164 ADD_PART",
+    "native_cite": "Inc/Messages.h:881",
+    "port_status": "partial",
+    "port_cite_or_reason": "Wire/AddPart.cs (server emits; no client handler found)",
+    "weight": "4"
+  },
+  {
+    "area": "fedmsg",
+    "native_item": "182 REQUEST_MONEY",
+    "native_cite": "Inc/Messages.h:940",
+    "port_status": "partial",
+    "port_cite_or_reason": "Wire/RequestMoney.cs (server handled; client consumer not found)",
+    "weight": "4"
+  },
+  {
+    "area": "fedmsg",
+    "native_item": "188 WARP_BOMB",
+    "native_cite": "Inc/Messages.h:969",
+    "port_status": "partial",
+    "port_cite_or_reason": "Wire/WarpBomb.cs (server emits; no client handler found)",
+    "weight": "4"
+  },
+  {
+    "area": "fedmsg",
+    "native_item": "192 RELAUNCH_SHIP",
+    "native_cite": "Inc/Messages.h:988",
+    "port_status": "partial",
+    "port_cite_or_reason": "Wire/RelaunchShip.cs (server emits; no client handler found)",
+    "weight": "4"
+  },
+  {
+    "area": "fedmsg",
+    "native_item": "194 PINGDATA",
+    "native_cite": "Inc/Messages.h:1006",
+    "port_status": "partial",
+    "port_cite_or_reason": "Wire/PingData.cs (server emits; no client handler found)",
+    "weight": "4"
+  },
+  {
+    "area": "fedmsg",
+    "native_item": "31 NEW_SHIP_INSTANCE",
+    "native_cite": "Inc/Messages.h:262",
+    "port_status": "partial",
+    "port_cite_or_reason": "Wire/NewShipInstance.cs (codec only; neither side wired)",
+    "weight": "4"
+  },
+  {
+    "area": "fedmsg",
+    "native_item": "87 FIRE_EXPENDABLE",
+    "native_cite": "Inc/Messages.h:619",
+    "port_status": "partial",
+    "port_cite_or_reason": "Wire/FireExpendable.cs (server emits; no client handler found)",
+    "weight": "4"
+  },
+  {
+    "area": "fedmsg",
+    "native_item": "89 TREASURE_SETS",
+    "native_cite": "Inc/Messages.h:624",
+    "port_status": "partial",
+    "port_cite_or_reason": "Wire/TreasureSets.cs (server emits; no client handler found)",
+    "weight": "4"
+  },
+  {
+    "area": "lobby",
+    "native_item": "Training missions (tutorial)",
+    "native_cite": "WinTrek/trainingscreen.cpp:175-230; WinTrek/WinTrek.cpp:7401-7421; training/trainingmission.cpp:651-788",
+    "port_status": "partial",
+    "port_cite_or_reason": "goal/condition/action framework ported in TR-1 (src/Allegiance.ClientCore/Training: TrainingMission base + ITrainingSite + Goal/GoalList + Condition/Action graph + control masks + Mission2 data) with unit tests; local-host runtime binding and missions 3-10 remain for TR-2/TR-3 (after P727). PCore014 and tutorial artwork exist; docs/NATIVE_TRAINING_SCRIPT.md is the transcript. docs/reports/TR1_TRAINING_FRAMEWORK.md",
+    "weight": "4"
+  },
+  {
+    "area": "commands",
+    "native_item": "TK_ConModeInvest",
+    "native_cite": "WinTrek/WinTrek.cpp:10025",
+    "port_status": "partial",
+    "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Game1.Panes.cs:50; Investment pane action is docked-only; native can toggle investment while airborne",
+    "weight": "3"
+  },
+  {
+    "area": "commands",
+    "native_item": "TK_Throttle33",
+    "native_cite": "WinTrek/WinTrek.cpp:10945",
+    "port_status": "partial",
+    "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:237; Preset arithmetic exists but no action-map entry or live preset dispatch",
+    "weight": "3"
+  },
+  {
+    "area": "commands",
+    "native_item": "TK_Throttle66",
+    "native_cite": "WinTrek/WinTrek.cpp:10951",
+    "port_status": "partial",
+    "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Flight/FlightInput.cs:237; Preset arithmetic exists but no action-map entry or live preset dispatch",
+    "weight": "3"
+  },
+  {
+    "area": "screens",
+    "native_item": "Training screen",
+    "native_cite": "WinTrek/trainingscreen.cpp:175-230; WinTrek/WinTrek.cpp:7401-7421; training/trainingmission.cpp:651-788",
+    "port_status": "partial",
+    "port_cite_or_reason": "goal/condition/action framework ported in TR-1 (src/Allegiance.ClientCore/Training: TrainingMission base + ITrainingSite + Goal/GoalList + Condition/Action graph + control masks + Mission2 data) with unit tests; the standalone training-screen UI and the in-process host binding remain for TR-2 (after P727). docs/reports/TR1_TRAINING_FRAMEWORK.md",
+    "weight": "3"
+  },
+  {
+    "area": "commands",
+    "native_item": "TK_CommandFinishTM",
+    "native_cite": "Igc/igc.h:433",
+    "port_status": "missing",
+    "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no finish-TM key",
+    "weight": "2"
+  },
+  {
+    "area": "commands",
+    "native_item": "TK_LODDown",
+    "native_cite": "WinTrek/WinTrek.cpp:10421",
+    "port_status": "missing",
+    "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no LOD control",
+    "weight": "2"
+  },
+  {
+    "area": "commands",
+    "native_item": "TK_LODUp",
+    "native_cite": "WinTrek/WinTrek.cpp:10415",
+    "port_status": "missing",
+    "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no LOD control",
+    "weight": "2"
+  },
+  {
+    "area": "commands",
+    "native_item": "TK_PauseTM",
+    "native_cite": "Igc/igc.h:375",
+    "port_status": "missing",
+    "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; Training scripts are not an implemented pause command; no action/handler",
+    "weight": "2"
+  },
+  {
+    "area": "commands",
+    "native_item": "TK_RollModifier",
+    "native_cite": "Igc/igc.h:434",
+    "port_status": "missing",
+    "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no roll modifier key",
+    "weight": "2"
+  },
+  {
+    "area": "commands",
+    "native_item": "TK_SkipTMGoal",
+    "native_cite": "Igc/igc.h:424",
+    "port_status": "missing",
+    "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no skip-goal key",
+    "weight": "2"
+  },
+  {
+    "area": "commands",
+    "native_item": "TK_ToggleLODSlider",
+    "native_cite": "WinTrek/WinTrek.cpp:9448",
+    "port_status": "missing",
+    "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; LOD auto-managed; no slider",
+    "weight": "2"
+  },
+  {
+    "area": "commands",
+    "native_item": "TK_DecreaseTMClockSpeed",
+    "native_cite": "Igc/igc.h:426",
+    "port_status": "missing",
+    "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no TM clock keys",
+    "weight": "1"
+  },
+  {
+    "area": "commands",
+    "native_item": "TK_IncreaseTMClockSpeed",
+    "native_cite": "Igc/igc.h:425",
+    "port_status": "missing",
+    "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no TM clock keys",
+    "weight": "1"
+  },
+  {
+    "area": "commands",
+    "native_item": "TK_ResetTMClockSpeed",
+    "native_cite": "Igc/igc.h:427",
+    "port_status": "missing",
+    "port_cite_or_reason": "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs:425; no TM clock keys",
+    "weight": "1"
+  }
+]

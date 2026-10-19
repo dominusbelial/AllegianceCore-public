@@ -3,6 +3,7 @@ using Allegiance.Server;
 namespace Allegiance.SinglePlayer;
 
 public enum SkirmishSize { Small, Medium, Large, Epic }
+public enum SkirmishCommander { AI, You }
 public enum SkirmishDifficulty { Easy, Normal, Hard }
 
 /// <summary>Local orchestration choices; race identities come from PCore001 (P702).</summary>
@@ -13,12 +14,18 @@ public sealed record SkirmishOptions
         (1, "Dreghklar"), (2, "Technoflux"), (3, "Ga'Taraan"), (4, "Phoenix"), (5, "Omicron"),
         (18, "Gigacorp"), (25, "Iron Coalition"), (35, "Bios"), (101, "Belters"), (201, "Rixian")
     ];
+    public int? Seed { get; init; }
+    public double ResearchSpeed { get; init; } = 1;
+    public bool SpectatorDefault { get; init; }
     public int PlayerCiv { get; init; } = 25;
     public int EnemyCiv { get; init; } = 3;
     public SkirmishSize Size { get; init; }
     public SkirmishDifficulty Difficulty { get; init; } = SkirmishDifficulty.Normal;
+    public SkirmishCommander Commander { get; init; }
     public string TechMode { get; init; } = "research";
     public string Map { get; init; } = "m2xspiderw.igc";
+    private bool? _startAsSpectator;
+    public bool StartAsSpectator { get => _startAsSpectator ?? Size is SkirmishSize.Large or SkirmishSize.Epic; init => _startAsSpectator = value; }
     public int TeamSize => Size switch
     {
         SkirmishSize.Small => 5, SkirmishSize.Medium => 15, SkirmishSize.Large => 30,
@@ -39,15 +46,24 @@ public sealed record SkirmishOptions
         if (!Civilizations.Any(c => c.Id == PlayerCiv) || !Civilizations.Any(c => c.Id == EnemyCiv))
             throw new ArgumentException("Select a PCore001 civilization");
         if (TechMode is not ("research" or "unlocked")) throw new ArgumentException("Invalid tech mode");
+        if (!Enum.IsDefined(Commander)) throw new ArgumentException("Invalid commander");
         _ = Knobs;
         return new()
         {
+            BenchmarkSeed = Seed,
+            // All owned pilots, commanders and probes originate from loopback.
+            Transport = new()
+            {
+                MaxConnections = Math.Max(1024, TeamSize * 2 + 32),
+                MaxConnectionsPerIp = Math.Max(64, TeamSize * 2 + 32)
+            },
             ArtPath = artwork ?? Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork),
             Port = 0, BindAddress = "127.0.0.1", Discovery = new() { Enabled = false },
-            Showcase = new() { TechMode = TechMode },
+            Showcase = new() { TechMode = TechMode, ResearchTimeScale = ResearchSpeed },
             LiveSettings = new()
             {
                 TestUnlock = new() { Enabled = TechMode == "unlocked", Money = 1_000_000 },
+                AdminCheats = Seed is not null ? new() { Enabled = true, AllowNames = [Benchmark.BenchmarkCommand.PilotName] } : null,
                 TimeDilation = "auto", AutoNextMatch = new() { Enabled = true },
                 TestHarness = new() { Enabled = TechMode == "unlocked", Money = 1_000_000, IgnoreTechGate = TechMode == "unlocked" }
             },

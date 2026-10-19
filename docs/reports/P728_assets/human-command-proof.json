@@ -1,0 +1,62 @@
+[
+  {
+    "run": 1,
+    "research": {
+      "id": "22",
+      "name": "Patroller",
+      "price": "5000",
+      "seconds": "120",
+      "role": "Fighter",
+      "hull": "215",
+      "purchasePrice": "0"
+    },
+    "result": {
+      "development": 22,
+      "hull": 215,
+      "bots": 4,
+      "humanCommander": true,
+      "nextMatch": true,
+      "logs": "/tmp/allegiance-skirmish-4dd92f62b9704e3e9debee0babf403dd"
+    }
+  },
+  {
+    "run": 2,
+    "research": {
+      "id": "22",
+      "name": "Patroller",
+      "price": "5000",
+      "seconds": "120",
+      "role": "Fighter",
+      "hull": "215",
+      "purchasePrice": "0"
+    },
+    "result": {
+      "development": 22,
+      "hull": 215,
+      "bots": 4,
+      "humanCommander": true,
+      "nextMatch": true,
+      "logs": "/tmp/allegiance-skirmish-ec57be9fd0924467ae4ec462f2a129d5"
+    }
+  },
+  {
+    "run": 3,
+    "research": {
+      "id": "22",
+      "name": "Patroller",
+      "price": "5000",
+      "seconds": "120",
+      "role": "Fighter",
+      "hull": "215",
+      "purchasePrice": "0"
+    },
+    "result": {
+      "development": 22,
+      "hull": 215,
+      "bots": 4,
+      "humanCommander": true,
+      "nextMatch": true,
+      "logs": "/tmp/allegiance-skirmish-fb39b1992cfe4f88824718119db5eccb"
+    }
+  }
+]

@@ -23,7 +23,7 @@ public sealed partial class Game1
     /// models each as a view of the same screen). TR-2 splits Single Player into a
     /// Training | Skirmish chooser (native's big single-player button trains,
     /// introscreen.cpp:1221/:1558) plus a first-run training-suggestion dialog.</summary>
-    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSuggest, Credits }
+    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSuggest, Credits, Benchmark, BenchmarkOffer }
 
     private IntroView _introView = IntroView.Main;
     private int _introIndex;
@@ -188,6 +188,10 @@ public sealed partial class Game1
             case IntroView.TrainingSuggest: // TR-2 — the one-shot first-run suggestion dialog
                 UpdateTrainingSuggest(ks, enter, esc);
                 break;
+            case IntroView.Benchmark:
+            case IntroView.BenchmarkOffer:
+                UpdateBenchmarkMenu(up, down, enter, esc);
+                break;
             case IntroView.Credits:
                 if (esc && !_iEsc) { _introView = IntroView.Main; _introIndex = 0; }
                 break;
@@ -235,6 +239,9 @@ public sealed partial class Game1
                 break;
             case IntroCommand.Options:        // the existing settings (Ctrl+F6 key-bindings popup).
                 ToggleKeyBindings();
+                break;
+            case IntroCommand.Benchmark:
+                _introView = IntroView.Benchmark;
                 break;
             case IntroCommand.Credits:
                 _introView = IntroView.Credits;
@@ -466,7 +473,8 @@ public sealed partial class Game1
     {
         var vp = GraphicsDevice.Viewport;
         float w = vp.Width, h = vp.Height;
-        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        _spriteBatch.Begin(_introView is IntroView.Benchmark or IntroView.BenchmarkOffer ? SpriteSortMode.Immediate : SpriteSortMode.Deferred,
+            BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone);
         try
         {
             var titleCol = new Color(HudColor.TealAccent.R, HudColor.TealAccent.G, HudColor.TealAccent.B);
@@ -475,6 +483,8 @@ public sealed partial class Game1
 
             switch (_introView)
             {
+                case IntroView.Benchmark:
+                case IntroView.BenchmarkOffer: DrawBenchmarkMenu(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.Main: DrawIntroMain(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.FindServer: DrawIntroFindServer(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.DirectConnect: DrawIntroDirect(w, h, titleCol, dimCol, textCol); break;
@@ -615,7 +625,9 @@ public sealed partial class Game1
         }
         string message = _skirmishStart is not null ? "Starting local game... ESC cancels" : _skirmishError;
         if (message.Length == 0) message = _skirmishScreen.Options.Warning;
-        if (message.Length == 0) message = "You fly on side 0. AI commanders manage both teams.";
+        if (message.Length == 0) message = _skirmishScreen.Options.Commander == Allegiance.SinglePlayer.SkirmishCommander.You
+            ? "You command side 0. I: invest. F3: command view. Right-click: orders."
+            : "Watch the battle or fly for Alpha. AI commanders manage both teams.";
         _spriteBatch.DrawString(_hudSmall, message, new Vector2(24, layout.PilotY), Color.Orange);
         _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   LEFT/RIGHT change   ENTER choose   ESC back",
             new Vector2(24, layout.FooterY), dimCol);

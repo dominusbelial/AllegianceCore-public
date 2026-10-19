@@ -28,10 +28,26 @@ public sealed partial class Game1
         return core;
     }
 
+    private (long Generation, short? Side) _investmentContext = (-1, null);
     private void UpdateMissionCatalog()
     {
         Allegiance.Core.Model.StaticCore? core;
-        lock (_session.Gate) core = _session.World.MissionCore;
+        lock (_session.Gate)
+        {
+            core = _session.World.MissionCore;
+            var context = (_session.World.MissionGeneration, _session.World.MySideId);
+            if (_investmentContext != context)
+            {
+                _investmentContext = context;
+                _investDefs = null;
+                _investActive = false;
+                _investCursor = 0;
+                _dockedActive = false;
+                _shopModel = null;
+                _dockOfferTechs = null;
+                _dockOfferStationType = -1;
+            }
+        }
         if (core is null || ReferenceEquals(core, _missionCatalogCore)) return;
         _missionCatalogCore = core;
         _shopCatalog = ShopCatalog.FromCore(core);

@@ -229,7 +229,8 @@ public sealed partial class Game1
                 // (inspector rig). NOT in the V cycle; its own key (F9).
                 var obProj = Matrix.CreatePerspectiveFieldOfView(
                     MathHelper.ToRadians(_flightFovDeg), aspect, 10f, 80000f);
-                return (_orbitCam.View(), obProj, _orbitCam.Eye);
+                var ob = _orbitCam.Basis();
+                return (Matrix.CreateLookAt(Vector3.Zero, ob.Forward, ob.Up), obProj, ob.Eye);
             }
             default: // Chase
                 return ChaseFallback(myPos, myRot, aspect, dt);

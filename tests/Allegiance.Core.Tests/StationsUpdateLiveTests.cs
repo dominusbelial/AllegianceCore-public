@@ -227,6 +227,28 @@ public sealed class StationsUpdateLiveTests
     private static bool HasEntry(StationsUpdate up, short stationId)
         => up.Entries.Any(e => e.StationId == stationId);
 
+    [SkippableFact]
+    public void P745_Newly_spotted_enemy_station_exports_identity_once_to_the_seeing_side()
+    {
+        Require.Artwork();
+        using var seat = SeatTwoBases(1000, 9401, 9501);
+        var station = new Station(seat.Sb.Data with { StationId = 9601, Name = "new siege target" }, seat.Sb.Type);
+        seat.B.Mission!.PlaceStation(station, seat.Sector);
+        for (int tick = 0; tick < 30; tick++) { seat.Server.TickSim(); Thread.Sleep(1); }
+        Assert.DoesNotContain(seat.ABot.StationExports, e => e.Station.StationId == station.StationId);
+        seat.A.Position = station.Center + new Vector3(0,0,-100);
+        seat.A.Velocity = Vector3.Zero;
+        Assert.True(PumpUntil(seat.Server,
+            () => seat.ABot.StationsUpdates.Any(up => HasEntry(up, station.StationId)), 2000) < 2000);
+        Assert.True(station.SeenBySide(seat.A.SideId!.Value));
+        Assert.True(PumpUntil(seat.Server, () => seat.ABot.StationExports.Any(e => e.Station.StationId == station.StationId)
+            && seat.TeammateBot.StationExports.Any(e => e.Station.StationId == station.StationId), 2000) < 2000,
+            "Station health without EXPORT leaves the siege target unknown to clients");
+        for (int tick = 0; tick < 50; tick++) { seat.Server.TickSim(); Thread.Sleep(1); }
+        Assert.Single(seat.ABot.StationExports, e => e.Station.StationId == station.StationId);
+        Assert.Single(seat.TeammateBot.StationExports, e => e.Station.StationId == station.StationId);
+    }
+
     /// <summary>⭐ A station visible to a side is delivered in that side's
     /// <c>STATIONS_UPDATE</c> with the correct id and full div-240 fractions, and
     /// the SAME station is ABSENT from a different side's update (per-side

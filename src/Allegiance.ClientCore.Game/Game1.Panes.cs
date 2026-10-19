@@ -114,6 +114,8 @@ public sealed partial class Game1
                 Console.WriteLine($"[monogame] docked: hangar/loadout screen ({offerCat.Hulls.Count} hulls, {offerCat.Parts.Count} parts, {offerCat.Launchers?.Count ?? 0} launchers offered)");
             }
 
+            RefreshDockedOffers(world, mySe);
+            if (HandleInvestmentScreen(ks, composing)) return true;
             if (_cameraMode == CameraMode.Command) return false;
 
             // P273 — T toggles the docked sub-view between the hangar loadout
@@ -130,83 +132,11 @@ public sealed partial class Game1
             }
             _telTWasDown = tKey;
 
-            // P487 — I toggles the investment pane (native's Invest button /
-            // ofInvestment overlay). Opening it banishes the teleport pane the way
-            // native's OnButtonInvest turns off the other banishable panes
-            // (hangarscreen.cpp:201-206).
-            bool iKey = ActionDown(ks, "ToggleInvestmentPane");
-            if (!composing && !_launchSent && iKey && !_invIWasDown)
-            {
-                _investActive = !_investActive;
-                if (_investActive) _teleportActive = false;
-                Console.WriteLine($"[monogame] investment pane {( _investActive ? "OPEN" : "CLOSED" )}");
-            }
-            _invIWasDown = iKey;
-
             // P501 — touch: docked verb taps (launch/undock, pane toggles, and
             // row-tap to buy/select/invest on the active sub-view).
             HandleDockedTouch(mySe);
 
-            if (!composing && !_launchSent && _investActive && _investDefs is not null)
-            {
-                // P487 — rebuild the pane model each frame so funding, the wallet
-                // and drone counts stay live; cursor/toggles are persisted across
-                // the model instances (fields), so navigation state survives.
-                var inv = BuildInvestmentModel();
-                _investModelLive = inv;   // P501 — keep the live model for touch taps
-                // P499 — DPAD Up/Down = cursor, A = invest, B = back to hangar.
-                bool up = ActionDown(ks, "MenuUp") || nav.Up;
-                bool down = ActionDown(ks, "MenuDown") || nav.Down;
-                bool space = ActionDown(ks, "MenuSelect") || nav.Accept;
-                bool rKey = ActionDown(ks, "InvestPartial");
-                bool sKey = ActionDown(ks, "InvestShowAll");
-                bool hKey = ActionDown(ks, "InvestHideCompleted");
-                bool bKey = ActionDown(ks, "MenuBack") || nav.Back;
-
-                if (up && !_invUpWasDown) { inv.MoveCursor(-1); Console.WriteLine($"[monogame] invest cursor -> {inv.Cursor}"); }
-                if (down && !_invDownWasDown) { inv.MoveCursor(+1); Console.WriteLine($"[monogame] invest cursor -> {inv.Cursor}"); }
-                if (space && !_invSpaceWasDown)
-                {
-                    // native OnInvest: put in min(price - invested, wallet)
-                    // (loadout.cpp:807-826). The server debits the wallet via
-                    // MONEY_CHANGE — we do not locally subtract (P442, P487).
-                    if (inv.TryInvest(out var bid, out var amt))
-                    {
-                        _session.SendBucketDonate(bid, amt);
-                        Console.WriteLine($"[monogame] INVEST bucket {bid} -> BUCKET_DONATE ${amt} (server MONEY_CHANGE is the debit)");
-                    }
-                    else
-                    {
-                        Console.WriteLine("[monogame] INVEST blocked (not investable)");
-                    }
-                }
-                if (rKey && !_invRWasDown)
-                {
-                    // native OnPartial (right-click, loadout.cpp:883-914): 10% of
-                    // the total price, never enough to complete the bucket.
-                    if (inv.TryPartialInvest(out var pbid, out var pamt))
-                    {
-                        _session.SendBucketDonate(pbid, pamt);
-                        Console.WriteLine($"[monogame] PARTIAL INVEST bucket {pbid} -> BUCKET_DONATE ${pamt}");
-                    }
-                }
-                if (sKey && !_invSWasDown) { inv.ToggleShowAll(); Console.WriteLine($"[monogame] invest show-all -> {inv.ShowAll}"); }
-                if (hKey && !_invHWasDown) { inv.ToggleHideCompleted(); Console.WriteLine($"[monogame] invest hide-completed -> {inv.HideCompleted}"); }
-                if (bKey && !_invBWasDown)
-                {
-                    _investActive = false;
-                    Console.WriteLine("[monogame] investment -> back to hangar");
-                }
-
-                _invUpWasDown = up; _invDownWasDown = down; _invSpaceWasDown = space;
-                _invRWasDown = rKey; _invSWasDown = sKey; _invHWasDown = hKey; _invBWasDown = bKey;
-
-                // Persist cursor/toggles (may have been clamped by a filter change).
-                _investCursor = inv.Cursor;
-                _investShowAll = inv.ShowAll;
-                _investHideCompleted = inv.HideCompleted;
-            }
-            else if (!composing && !_launchSent && _teleportActive && _teleportModel is { } tel)
+            if (!composing && !_launchSent && _teleportActive && _teleportModel is { } tel)
             {
                 // P273 — the teleport pane's own keys (sub-view of the docked screen).
                 // P499 — DPAD Up/Down = cursor, A = select, B = back to hangar.
@@ -328,10 +258,136 @@ public sealed partial class Game1
             _shopModel = null;
             _teleportModel = null;
             _teleportActive = false;
-            _investActive = false;
             Console.WriteLine("[monogame] undocked: leaving hangar");
         }
-        return false;
+        return HandleInvestmentScreen(ks, composing);
+    }
+
+    private Allegiance.Core.Model.TechTreeBitMask? _dockOfferTechs;
+    private short _dockOfferStationType = -1;
+    private void RefreshDockedOffers(ClientWorld world, ShipEntity own)
+    {
+        if (_shopModel is null || _shopCatalog is not { } catalog) return;
+        _shopModel.RefreshMoney(world.MyMoney);
+        if (!world.Stations.TryGetValue(own.StationId, out var dock)
+            || catalog.StationTypes?.TryGetValue(dock.StationTypeId, out var type) != true) return;
+        var techs = world.DevelopmentTechsFor(world.MySideId ?? -1);
+        if (techs is { } known)
+        {
+            foreach (var owned in world.Stations.Values.Where(s => s.SideId == world.MySideId))
+                if (catalog.StationTypes.TryGetValue(owned.StationTypeId, out var ownedType))
+                    known = known.Or(Allegiance.Core.Model.TechTreeBitMask.FromBytes(ownedType.TtbmEffects));
+            techs = known;
+        }
+        if (_dockOfferTechs == techs && _dockOfferStationType == dock.StationTypeId) return;
+        _dockOfferTechs = techs;
+        _dockOfferStationType = dock.StationTypeId;
+        _shopModel.RefreshOffers(catalog.FilteredFor(type.TtbmLocal, techs), world.MyMoney);
+    }
+
+    // Native investment is an overlay in both flight and command view:
+    // WinTrek/WinTrek.cpp:10029-10033, hangarscreen.cpp:201-206.
+    private readonly Flight.InvestmentFundingInput _investmentFunding = new();
+    private bool HandleInvestmentScreen(KeyboardState ks, bool composing)
+    {
+        _investDefs ??= BuildInvestDefs();
+        var nav = GamePadNavNow();
+        // P487 — I toggles the investment pane (native's Invest button /
+        // ofInvestment overlay). Opening it banishes the teleport pane the way
+        // native's OnButtonInvest turns off the other banishable panes
+        // (hangarscreen.cpp:201-206).
+        bool iKey = ActionDown(ks, "ToggleInvestmentPane");
+        if (!composing && iKey && !_invIWasDown)
+        {
+            _investActive = !_investActive;
+            if (_investActive) _teleportActive = false;
+            Console.WriteLine($"[monogame] investment pane {( _investActive ? "OPEN" : "CLOSED" )}");
+        }
+        _invIWasDown = iKey;
+        lock (_session.Gate)
+        {
+            var funding = _investmentFunding.Step(ks, Rendering.KeyBindingStore.Instance.Map, _session.World, _investActive && !composing);
+            if (funding.Gift is { } gift) _session.SendPlayerDonation(gift);
+            if (funding.Auto is { } auto) _session.SendAutoDonate(auto.SidDonateTo, auto.Amount);
+        }
+
+        if (!composing && _investActive && _investDefs is not null)
+        {
+            // P487 — rebuild the pane model each frame so funding, the wallet
+            // and drone counts stay live; cursor/toggles are persisted across
+            // the model instances (fields), so navigation state survives.
+            var inv = BuildInvestmentModel();
+            _investModelLive = inv;   // P501 — keep the live model for touch taps
+            HandleInvestmentTouch(inv);
+            // P499 — DPAD Up/Down = cursor, A = invest, B = back to hangar.
+            bool up = ActionDown(ks, "MenuUp") || nav.Up;
+            bool down = ActionDown(ks, "MenuDown") || nav.Down;
+            bool space = ActionDown(ks, "MenuSelect") || nav.Accept;
+            bool rKey = ActionDown(ks, "InvestPartial");
+            bool sKey = ActionDown(ks, "InvestShowAll");
+            bool hKey = ActionDown(ks, "InvestHideCompleted");
+            bool bKey = ActionDown(ks, "MenuBack") || nav.Back;
+
+            if (up && !_invUpWasDown) { inv.MoveCursor(-1); Console.WriteLine($"[monogame] invest cursor -> {inv.Cursor}"); }
+            if (down && !_invDownWasDown) { inv.MoveCursor(+1); Console.WriteLine($"[monogame] invest cursor -> {inv.Cursor}"); }
+            if (space && !_invSpaceWasDown)
+            {
+                // native OnInvest: put in min(price - invested, wallet)
+                // (loadout.cpp:807-826). The server debits the wallet via
+                // MONEY_CHANGE — we do not locally subtract (P442, P487).
+                if (inv.TryInvest(out var bid, out var amt))
+                {
+                    _session.SendBucketDonate(bid, amt);
+                    Console.WriteLine($"[monogame] INVEST bucket {bid} -> BUCKET_DONATE ${amt} (server MONEY_CHANGE is the debit)");
+                }
+                else
+                {
+                    Console.WriteLine("[monogame] INVEST blocked (not investable)");
+                }
+            }
+            if (rKey && !_invRWasDown)
+            {
+                // native OnPartial (right-click, loadout.cpp:883-914): 10% of
+                // the total price, never enough to complete the bucket.
+                if (inv.TryPartialInvest(out var pbid, out var pamt))
+                {
+                    _session.SendBucketDonate(pbid, pamt);
+                    Console.WriteLine($"[monogame] PARTIAL INVEST bucket {pbid} -> BUCKET_DONATE ${pamt}");
+                }
+            }
+            if (sKey && !_invSWasDown) { inv.ToggleShowAll(); Console.WriteLine($"[monogame] invest show-all -> {inv.ShowAll}"); }
+            if (hKey && !_invHWasDown) { inv.ToggleHideCompleted(); Console.WriteLine($"[monogame] invest hide-completed -> {inv.HideCompleted}"); }
+            if (bKey && !_invBWasDown)
+            {
+                _investActive = false;
+                Console.WriteLine("[monogame] investment -> back to hangar");
+            }
+
+            _invUpWasDown = up; _invDownWasDown = down; _invSpaceWasDown = space;
+            _invRWasDown = rKey; _invSWasDown = sKey; _invHWasDown = hKey; _invBWasDown = bKey;
+
+            // Persist cursor/toggles (may have been clamped by a filter change).
+            _investCursor = inv.Cursor;
+            _investShowAll = inv.ShowAll;
+            _investHideCompleted = inv.HideCompleted;
+        }
+        return _investActive;
+    }
+
+    private void HandleInvestmentTouch(Rendering.InvestmentPaneModel model)
+    {
+        if (!TouchAvailable()) return;
+        var vp = GraphicsDevice.Viewport;
+        foreach (var (x, y) in TouchReleasedPointsNow())
+        {
+            if (Rendering.DockedTouchZones.InvestRect(vp.Width, vp.Height).Contains(x, y))
+            { _investActive = false; return; }
+            int index = Rendering.DockedTouchZones.RowIndex(vp.Width, vp.Height, model.Items.Count, x, y);
+            if (index < 0) continue;
+            model.MoveCursor(index - model.Cursor);
+            if (model.TryInvest(out var id, out var amount)) _session.SendBucketDonate(id, amount);
+            return;
+        }
     }
 
     /// <summary>
@@ -512,54 +568,63 @@ public sealed partial class Game1
         var world = _session.World;
         short mySide = world.MySideId ?? -1;
         if (world.InitialTechsFor(mySide) is not { } techs) return null;   // bucket seed unknown — retry later
-        var ga = world.GlobalAttributesFor(mySide);
+        var ga = world.ResearchBriefing is { } briefing && core.Civilizations.TryGetValue(briefing.Plan.CivId, out var civ)
+            ? Allegiance.Core.Model.GlobalAttributeSet.FromArray(civ.GasBaseAttributes) : world.GlobalAttributesFor(mySide);
         var views = Allegiance.Core.Model.BucketCatalog.Describe(core, techs, ga);
         var list = new List<Rendering.InvestmentBucket>(views.Count);
         foreach (var v in views)
+        {
+            int group = v.ItemType switch
+            {
+                Allegiance.Core.Model.BucketItemType.BitDevelopment when v.Development is { } d => d.GroupId,
+                Allegiance.Core.Model.BucketItemType.BitDroneType when v.DroneType is { } d => d.GroupId,
+                Allegiance.Core.Model.BucketItemType.BitStationType when v.StationType is { } st => st.GroupId,
+                _ => -1 // legacy synthetic ship bucket has no native counterpart (sideigc.cpp:257-310)
+            };
+            if (!Rendering.InvestmentTechGates.VisibleGroup(group, world.ResearchBriefing?.Settings ?? new())) continue;
             list.Add(new Rendering.InvestmentBucket(v.Id, v.ItemType, v.Name, v.Price,
-                v.TimeToBuildSec, v.HullIdDrone, v.DroneTypeId, v.DevelopmentId, v.StationTypeId));
+                v.TimeToBuildSec, v.HullIdDrone, v.DroneTypeId, v.DevelopmentId, v.StationTypeId, v.Description));
+        }
         Console.WriteLine($"[monogame] invest: side {mySide} -> {list.Count} buckets " +
             $"(ids {string.Join(",", list.Take(8).Select(b => b.Id))}{(list.Count > 8 ? "..." : "")})");
         return list;
     }
 
-    /// <summary>
-    /// P487/P495 — build the investment pane's pure model for THIS frame: the cached
-    /// bucket defs, the side's live <c>BUCKET_STATUS</c> funding, the wallet, and
-    /// live drone counts (this side's world ships by hull id, for the drone cap).
-    /// The station-type build-spot / no-builder sub-gate of native <c>CanInvest</c>
-    /// (loadout.cpp:1124-1131) is fed REAL values from the client's world by
-    /// <see cref="Rendering.InvestmentBuildGates"/> (P495): build-spot found over
-    /// the known asteroids' <c>AabmBuild</c> capability, and no existing builder
-    /// (constructor hull on the side + active construction on a compatible rock).
-    /// Without the static core the gate stays open (the pre-P495 default).
-    /// </summary>
+    /// <summary>Build one investment snapshot with exact P703 production
+    /// identities for drone caps and constructor base data. Native CanInvest:
+    /// WinTrek/loadout.cpp:1095-1142; FindBuilderForStationType:227-240.</summary>
     private Rendering.InvestmentPaneModel BuildInvestmentModel()
     {
         var world = _session.World;
         short mySide = world.MySideId ?? -1;
         IReadOnlyDictionary<short, ClientWorld.BucketFunding>? funding = null;
         var droneCounts = new Dictionary<short, int>();
+        var droneTypes = new Dictionary<short, int>();
+        var builders = new HashSet<short>();
+        var stationTypes = new List<DataStationTypeIGC>();
+        var techs = world.DevelopmentTechsFor(mySide);
         // P495 — snapshots the build gates read (taken under the lock so the
         // stationCanBuild lambda below — which the pane calls later, off this
         // lock — never touches live mutable world state).
         DataAsteroidIGC[] asteroids = Array.Empty<DataAsteroidIGC>();
-        var sideHulls = new List<short>();
-        var constructedIds = new List<short>();
         lock (_session.Gate)
         {
             if (mySide >= 0)
             {
                 funding = world.BucketFundingFor(mySide);
+                foreach (var station in world.Stations.Values.Where(s => s.SideId == mySide))
+                    if (_shopCatalog?.StationTypes?.TryGetValue(station.StationTypeId, out var type) == true) stationTypes.Add(type);
+                foreach (var unit in world.ResearchProduction.Values.Where(p => p.SideId == mySide && world.IsResearchProductionAlive(p.ShipId)))
+                {
+                    if (unit.StationTypeId >= 0) builders.Add(unit.StationTypeId);
+                    else droneTypes[unit.DroneTypeId] = droneTypes.GetValueOrDefault(unit.DroneTypeId) + 1;
+                }
                 foreach (var s in world.Ships.Values)
                     if (s.SideId == mySide && s.HullId > 0)
                         droneCounts[s.HullId] = droneCounts.TryGetValue(s.HullId, out var c) ? c + 1 : 1;
-                sideHulls.AddRange(world.Ships.Values
-                    .Where(s => s.SideId == mySide && s.HullId > 0)
-                    .Select(s => s.HullId));
+
             }
             asteroids = world.Asteroids.Values.ToArray();
-            constructedIds.AddRange(world.BuildingEffects.Keys);
         }
         bool inProgress = world.Mission?.Stage == (int)MissionStage.Started;
         bool hasSide = mySide >= 0;
@@ -570,15 +635,21 @@ public sealed partial class Game1
             // client's world: build-spot found + no existing builder.
             if (catalog?.StationTypes is not { } sts || !sts.TryGetValue(stId, out var st))
                 return true;
-            return Rendering.InvestmentBuildGates.CanBuildStation(
-                asteroids, constructedIds, sideHulls, st, catalog.DroneTypes);
+            // Exact native base-data identity, now available through P703 production sync.
+            // WinTrek/loadout.cpp:227-240 also counts a builder still travelling.
+            return Rendering.InvestmentBuildGates.BuildSpotFound(asteroids, st.AabmBuild) && !builders.Contains(stId);
         };
         return new Rendering.InvestmentPaneModel(
             _investDefs ?? Array.Empty<Rendering.InvestmentBucket>(),
             funding, inProgress, hasSide, world.MyMoney,
             droneCounts, MaxDronesPerTeam,
             stationCanBuild,
-            showAll: _investShowAll, hideCompleted: _investHideCompleted, cursor: _investCursor);
+            showAll: _investShowAll, hideCompleted: _investHideCompleted, cursor: _investCursor,
+            canBuy: b => catalog?.Core is { } core && techs is { } devs
+                && Rendering.InvestmentTechGates.CanBuy(core, b, devs, stationTypes),
+            predecessors: catalog?.Core is { } knownCore && _investDefs is { } defs
+                ? Rendering.InvestmentTechGates.Predecessors(knownCore.Developments, defs) : null,
+            droneCountByTypeId: droneTypes);
     }
 
     /// <summary>
@@ -593,7 +664,7 @@ public sealed partial class Game1
     {
         _investModel = null;
         _investAsteroidAabm = null;
-        if (!(_dockedActive && _investActive && _investDefs is not null)) return;
+        if (!(_investActive && _investDefs is not null)) return;
         var m = BuildInvestmentModel();
         _investModel = m;
         if (m.Current is { } cur && cur.ItemType == Allegiance.Core.Model.BucketItemType.BitStationType
@@ -902,11 +973,11 @@ public sealed partial class Game1
         // server's 30s auto-assign, so the video starts promptly.
         if (_skirmish is not null)
         {
-            if (_session.World.MySideId == 0) { _state = ClientState.ReadyCheck; return; }
+            if (_session.World.MySideId == _skirmish.PlayerSide) { _state = ClientState.ReadyCheck; return; }
             if (!_skirmishSideRequested && _session.World.SideRoster?.Sides.Length > 0)
             {
                 _skirmishSideRequested = true;
-                _session.SendPositionReq(0);
+                _session.SendPositionReq(_skirmish.PlayerSide ?? 0);
             }
             return;
         }

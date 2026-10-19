@@ -368,7 +368,30 @@ internal sealed partial class BotManager
             bot.TargetSector = plan.Sector;
             bot.Arena = false;
             bot.RoutePath = null; bot.RouteIndex = -1;
+            AssignResearchSiegeRoute(bot, run, plan);
         }
+    }
+
+    private static void AssignResearchSiegeRoute(ActiveBot bot, FinaleRun run, FinalePlan plan)
+    {
+        // Research finale duty policy: retain the showcase's existing entry-wing
+        // routing instead of funneling every relaunch down one shortest path.
+        // Purchases and native movement/warp rules are unchanged.
+        if (ResearchFinale(bot) && bot.Cs is { } cs)
+            lock (cs.Gate)
+                if (cs.World.Graph is { } graph && cs.World.Ships.TryGetValue(bot.ShipId, out var own))
+                {
+                    var routes = graph.FindDistinctEntryRoutes(own.SectorId, plan.Sector, 3);
+                    if (routes.Count > 0)
+                    {
+                        int route = Enumerable.Range(0, routes.Count)
+                            .OrderBy(i => run.Bots.Count(b => b != bot && b.Side == bot.Side
+                                && b.FinaleBomberActive && b.RoutePath is { } path && path.SequenceEqual(routes[i])))
+                            .ThenBy(i => i).First();
+                        bot.RouteIndex = route;
+                        bot.RoutePath = routes[route];
+                    }
+                }
     }
 
     private static void RestoreFinaleForNextMission(ActiveBot bot, double now, GameOver? over)
@@ -394,6 +417,8 @@ internal sealed partial class BotManager
             }
             bot.FinaleOriginal = null;
             bot.FinaleBomberReserved = bot.FinaleBomberActive = bot.FinaleEscort = false;
+            bot.FinaleRefitting = bot.FinaleRefitLaunchPending = bot.FinaleKeepsPayday = false;
+            bot.FinaleMissileLaunchBase = 0;
             bot.FinaleProtectedSince = null;
             bot.FinaleGrantVerified = false;
             bot.CompletedPodCycles = 0;

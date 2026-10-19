@@ -1,0 +1,91 @@
+import importlib.util
+import json
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+import zipfile
+from PIL import Image, PngImagePlugin
+
+spec = importlib.util.spec_from_file_location('build_pack', Path(__file__).with_name('build_pack.py'))
+builder = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(builder)
+
+
+class PackBuilderTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix='hd3-builder-')
+        self.root = Path(self.tmp.name)
+        self.source, self.art, self.output = [self.root / n for n in ('input', 'art', 'pack')]
+        self.art.mkdir(); (self.source / 'atlas').mkdir(parents=True)
+        (self.art / 'Atlas.mdl').write_bytes(b'native atlas')
+        self.catalog = {'models': [{'kind': 'ship', 'model': 'multi', 'stems': ['atlas', 'missing']}]}
+        for name in builder.MAP_SPACES:
+            Image.new('RGB', (4, 4), (128, 128, 255)).save(self.source / 'atlas' / (name + '.png'))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def build(self, **kw):
+        return builder.build(self.source, self.art, self.output, self.catalog, **kw)
+
+    def test_release_manifest_coverage_hashes_and_reproducible_zip(self):
+        coverage = self.build()
+        self.assertEqual(['missing'], coverage['missingStems'])
+        manifest = json.loads((self.output / 'manifest.json').read_text())
+        self.assertEqual(2, manifest['schema'])
+        self.assertEqual(builder.sha(self.art / 'Atlas.mdl'), manifest['textures']['atlas']['native']['TextureSha256'])
+        self.assertEqual('linear', manifest['textures']['atlas']['maps']['normal']['colorSpace'])
+        with zipfile.ZipFile(self.output.with_suffix('.zip')) as z:
+            self.assertEqual(7, len(z.namelist()))
+            self.assertEqual((self.output / 'manifest.json').read_bytes(), z.read('manifest.json'))
+        builder.build(self.source, self.art, self.root / 'pack2', self.catalog)
+        self.assertEqual(self.output.with_suffix('.zip').read_bytes(), (self.root / 'pack2.zip').read_bytes())
+
+    def test_cli_with_explicit_model_folder_mapping_and_source_hash(self):
+        (self.root / 'catalog.json').write_text(json.dumps(self.catalog))
+        (self.root / 'mapping.json').write_text(json.dumps({'atlas': 'ATLAS'}))
+        (self.root / 'hashes.json').write_text(json.dumps({'atlas': builder.sha(self.art / 'Atlas.mdl')}))
+        result = subprocess.run([sys.executable, str(Path(builder.__file__)), '--input', str(self.source),
+                                 '--artwork', str(self.art), '--output', str(self.output), '--catalog', str(self.root / 'catalog.json'),
+                                 '--mapping', str(self.root / 'mapping.json'), '--expected-hashes', str(self.root / 'hashes.json')], capture_output=True, text=True)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual(1, json.loads(result.stdout)['covered'])
+
+    def test_missing_corrupt_or_wrong_sized_map_leaves_no_output(self):
+        path = self.source / 'atlas/normal.png'
+        for contents in (None, b'corrupt'):
+            if contents is None: path.unlink()
+            else: path.write_bytes(contents)
+            with self.assertRaises((OSError, ValueError)): self.build()
+            self.assertFalse(self.output.exists())
+        Image.new('RGB', (2, 4)).save(path)
+        with self.assertRaisesRegex(ValueError, 'dimensions'): self.build()
+
+    def test_half_resolution_scalar_maps_supported(self):
+        for name in ('metallic', 'roughness'):
+            Image.new('L', (2, 2)).save(self.source / 'atlas' / (name + '.png'))
+        self.build()
+
+    def test_linear_maps_reject_srgb_tags_and_wrong_declared_spaces(self):
+        meta = PngImagePlugin.PngInfo(); meta.add(b'sRGB', b'\x00')
+        Image.new('RGB', (4, 4)).save(self.source / 'atlas/normal.png', pnginfo=meta)
+        with self.assertRaisesRegex(ValueError, 'nonlinear'): self.build()
+        Image.new('RGB', (4, 4)).save(self.source / 'atlas/normal.png')
+        (self.source / 'atlas/maps.json').write_text(json.dumps({'colorSpaces': {'normal': 'sRGB'}}))
+        with self.assertRaisesRegex(ValueError, 'colour spaces'): self.build()
+
+    def test_stale_artwork_hash_rejected(self):
+        with self.assertRaisesRegex(ValueError, 'SHA256'): self.build(expected_hashes={'atlas': '0' * 64})
+        (self.source / 'atlas/maps.json').write_text(json.dumps({'nativeSha256': '0' * 64}))
+        with self.assertRaisesRegex(ValueError, 'stale source'): self.build()
+
+    def test_unsafe_or_duplicate_mapping_and_overwrite_rejected(self):
+        with self.assertRaisesRegex(ValueError, 'unsafe'): self.build(mapping={'../escape': 'atlas'})
+        with self.assertRaisesRegex(ValueError, 'duplicate'): self.build(mapping={'atlas': 'atlas', 'other': 'Atlas'})
+        self.build()
+        with self.assertRaisesRegex(ValueError, 'already exists'): self.build()
+
+
+if __name__ == '__main__': unittest.main()

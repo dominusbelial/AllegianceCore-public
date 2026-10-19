@@ -44,14 +44,14 @@ public sealed partial class Game1
         velocity = default;
         lock (_session.Gate)
         {
-            if (_session.World.MyShipId is not { } me) return false;
+            if (RenderShipId(_session.World) is not { } me) return false;
             if (!_session.World.Ships.TryGetValue(me, out var mine) || mine.Latest is not { } up) return false;
             // P508 — the cameras (chase/cockpit/external), targeting and autopilot all
             // read the own pose through this single seam: the local SIMULATION pose (the
             // client flies its own ship; a control change moves the camera on the same
             // frame, no round trip). Raw server pose otherwise (the --noPrediction debug
             // toggle, or no hull resolved yet).
-            if (_ownShipPrediction && _ownSim.HaveHull)
+            if (!LocalSpectating && _ownShipPrediction && _ownSim.HaveHull)
             {
                 position = _ownSim.Position;
                 orientation = _ownSim.Orientation;

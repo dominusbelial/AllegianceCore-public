@@ -175,17 +175,17 @@ public sealed partial class Game1
     }
 
     /// <summary>Repoint the orbit rig at the given ship's live position.</summary>
-    private void CenterOrbitOnSubject(short id)
+    private void CenterOrbitOnSubject(short id, bool frame = true)
     {
         lock (_session.Gate)
         {
             if (_session.World.Ships.TryGetValue(id, out var ship) && ship.Latest is { } u)
             {
-                var pos = PoseConverter.ToXna(u.Position);
+                var pos = PoseConverter.ToXna(_poses.TryGetValue(id, out var rendered) ? rendered.Position : u.Position);
                 float len = HullLength(ship.HullId);
                 float radius = len > 0f ? len : 60f;
+                if (frame) _orbitCam.FrameRadius(radius, MathHelper.ToRadians(50f));
                 _orbitCam.Focus(pos);
-                _orbitCam.FrameRadius(radius, MathHelper.ToRadians(50f));
                 return;
             }
         }

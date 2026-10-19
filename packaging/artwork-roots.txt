@@ -1362,6 +1362,7 @@ tm_slide_8_post_02.ogg
 tm_slide_8_post_03.ogg
 tm_slide_8_post_04.ogg
 tm_slide_8_post_05.ogg
+trainingscreen.mdl
 turretcannon1.ogg
 turretcannon1pwrup.ogg
 turretcannon2.ogg

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Allegiance.Tools.McpSpawner;
 
@@ -30,6 +31,39 @@ internal static class SkirmishDriver
             if (result.Data.GetProperty(side).GetProperty("failed").GetInt32() != 0)
                 throw new IOException("Skirmish fleet incomplete: " + result.Data);
         await Send(new { type = "ready", pids = supervisor.ProcessIds, scenario = result.Data });
+        short? playerSide = counts[0] == counts[1] ? null : (short)0;
+        var vacantHulls = new Dictionary<short, string>();
+        async Task<WorkerReply> Call(string name, JsonObject data)
+        {
+            using var document = JsonDocument.Parse(data.ToJsonString());
+            var args = document.RootElement.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.Clone());
+            var reply = WorkerReply.FromTool(await supervisor.HandleAsync(name, args, ct));
+            if (reply.IsError) throw new IOException(reply.Data.ToString());
+            return reply;
+        }
+        async Task Exchange(short? side)
+        {
+            if (side == playerSide) return;
+            var inventory = (await Call("list_active_bots", new JsonObject())).Data.EnumerateArray()
+                .Where(b => b.TryGetProperty("status", out var status) && status.GetString() == "active").ToArray();
+            // Refill before taking a seat from either side; disconnect is graceful and the
+            // game waits for this reply before its ordinary POSITION_REQ connection.
+            if (playerSide is { } old)
+            {
+                string hull = vacantHulls.GetValueOrDefault(old) ?? inventory.Where(b => b.GetProperty("side").GetInt16() == old).OrderBy(b => string.Equals(b.GetProperty("role").GetString(), "fighter", StringComparison.OrdinalIgnoreCase) ? 0 : 1).First().GetProperty("hull").GetString()!;
+                await Call("spawn_bot", new JsonObject { ["hull"] = hull, ["side"] = old, ["behavior"] = "combat", ["target_sector"] = "Alderan" });
+                playerSide = null;
+            }
+            if (side is { } next)
+            {
+                var bot = inventory.Where(b => b.GetProperty("side").GetInt16() == next)
+                    .OrderBy(b => string.Equals(b.GetProperty("role").GetString(), "fighter", StringComparison.OrdinalIgnoreCase) ? 0 : 1).First();
+                vacantHulls[next] = bot.GetProperty("hull").GetString()!;
+                var removed = await Call("despawn_bot", new JsonObject { ["name"] = bot.GetProperty("name").GetString() });
+                if (removed.Data.GetProperty("stopped").GetInt32() != 1) throw new IOException("Pilot bot slot was not released");
+                playerSide = next;
+            }
+        }
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(ct);
         var health = Task.Run(async () =>
         {
@@ -49,8 +83,12 @@ internal static class SkirmishDriver
                 string? error = null;
                 try
                 {
-                    if (root.GetProperty("command").GetString() != "pause") throw new ArgumentException("Unknown command");
-                    await supervisor.PauseAsync(root.GetProperty("paused").GetBoolean(), ct);
+                    switch (root.GetProperty("command").GetString())
+                    {
+                        case "pause": await supervisor.PauseAsync(root.GetProperty("paused").GetBoolean(), ct); break;
+                        case "seat": await Exchange(root.GetProperty("side").ValueKind == JsonValueKind.Null ? null : root.GetProperty("side").GetInt16()); break;
+                        default: throw new ArgumentException("Unknown command");
+                    }
                 }
                 catch (Exception ex) { error = ex.Message; }
                 await Send(new { type = "reply", id = root.GetProperty("id").GetInt64(), error });

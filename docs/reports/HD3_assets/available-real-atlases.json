@@ -1,0 +1,141 @@
+{
+  "availableAtlasCount": 21,
+  "availableMapSets": [
+    {
+      "folder": "acs01",
+      "stem": "acs01bmp",
+      "nativeSha256": "a79b4037d847cc6561d5303f190ea1f8cb343d6cfd3864827d4f302e673c7dab"
+    },
+    {
+      "folder": "bom04",
+      "stem": "bom04bmp",
+      "nativeSha256": "f2415c0fc6b9b91de1f8dc519c954d34b66bb47a7b7021cfe02d273606eabde7"
+    },
+    {
+      "folder": "cap04",
+      "stem": "cap04bmp",
+      "nativeSha256": "2a5481782a628c2adc07724d0c4487d6b9485706d36d4fd260d556c88cb0e4b7"
+    },
+    {
+      "folder": "cap06a",
+      "stem": "cap06abmp",
+      "nativeSha256": "fd81a79c2069841b203cd7f5ebbb7629d0578c2b551d719dc0ab3457257f4ba0"
+    },
+    {
+      "folder": "drgas",
+      "stem": "drgasbmp",
+      "nativeSha256": "f2fb15d4b554a2138ece171cdd62b29d84017c3559abaa3ddd237d8b19d46018"
+    },
+    {
+      "folder": "faohshbmb",
+      "stem": "faohshbmbbmp",
+      "nativeSha256": "394e7f2da8def1ea4645ca2f5cc22c2a2ce67fdfa437e2c90cf0f816201ad2dc"
+    },
+    {
+      "folder": "faohshsctb",
+      "stem": "faohshsctbbmp",
+      "nativeSha256": "3bc003f4ea74077d2bf701f0919789c0065a60bb4221135fda3d58f8ce8ff81d"
+    },
+    {
+      "folder": "fig03",
+      "stem": "fig03bmp",
+      "nativeSha256": "eea38aac6a24d7a39934278c3d41eb06ddca2314305163b6487cb2fa49ba36cf"
+    },
+    {
+      "folder": "fig04",
+      "stem": "fig04bmp",
+      "nativeSha256": "5daa98efdac0e4b6f0d436f7914a07ae1fa07615bdc06481bf46be075ba7fb6d"
+    },
+    {
+      "folder": "fig05",
+      "stem": "fig05bmp",
+      "nativeSha256": "46144898ffaca2a30429284f64f7eedb906d3afcdaa45954552cac62e9411870"
+    },
+    {
+      "folder": "rainfigv2",
+      "stem": "rainfigbmp",
+      "nativeSha256": "62c8240798bbc9bbbc80c822d200bbd6aa544d5d28da748e507dd2b641131011"
+    },
+    {
+      "folder": "utl101",
+      "stem": "utl101bmp",
+      "nativeSha256": "4970c360dfc13beebd18574c089da3aeeba1c725179a7860c70e043af4d90c05"
+    },
+    {
+      "folder": "utl102",
+      "stem": "utl102bmp",
+      "nativeSha256": "c11be32d723e43ce0fa4fd28461fb69b457e2cf0c3c827861bacdf1a25984ef6"
+    },
+    {
+      "folder": "wc_gcfig",
+      "stem": "fig07bmp",
+      "nativeSha256": "3b94f12076590ac16d126ec0a946bdb0b4f38ebb258e830179cedcce996ed04f"
+    },
+    {
+      "folder": "wc_gtfig",
+      "stem": "fig400bmp",
+      "nativeSha256": "6e1fdca5e66b5ffea8303f9ae94218c8c694587eb05a278600e1a586dfe8a85d"
+    },
+    {
+      "folder": "wc_gtmnr",
+      "stem": "utl401bmp",
+      "nativeSha256": "32521b6e108f90b7f63d7b7f0d224da7c820c2ec6005a745dd4aa31e5ca41801"
+    },
+    {
+      "folder": "wc_gtpod",
+      "stem": "fig404bmp",
+      "nativeSha256": "09a2b9e0eedb2e4187938ed7c09072f86d59f87d7dc2bd8011f7f41dc703943f"
+    },
+    {
+      "folder": "wc_gtpt",
+      "stem": "cap402bmp",
+      "nativeSha256": "de167c6e54e136d740c83dc1d7bb7cd44b0e9711e533be14ed5f5284e8a77858"
+    },
+    {
+      "folder": "wc_gtsct",
+      "stem": "fig403bmp",
+      "nativeSha256": "7f723c310724aeeb25557faa506d8d8fbc7bc208c78b6986122cbb53db88b675"
+    },
+    {
+      "folder": "wc_icfig",
+      "stem": "fig02bmp",
+      "nativeSha256": "b3e6c695e2d93273b060dbafb1784b6ef1a48d89b94b8789ee9204e546cd69df"
+    },
+    {
+      "folder": "wc_icint",
+      "stem": "fig16bmp",
+      "nativeSha256": "03de079d08442341537a4d27a5ec05bf55dffaf6d1eb32231f39ce23fd29a578"
+    }
+  ],
+  "coreSha256": "f73aa7bbce7414140f6691366f8829ea58829727660a8a86c114b29a83a55de8",
+  "availableIntersections": {
+    "ship": [
+      "acs01bmp",
+      "bom04bmp",
+      "cap04bmp",
+      "cap06abmp",
+      "cap402bmp",
+      "drgasbmp",
+      "faohshbmbbmp",
+      "faohshsctbbmp",
+      "fig02bmp",
+      "fig03bmp",
+      "fig04bmp",
+      "fig05bmp",
+      "fig07bmp",
+      "fig16bmp",
+      "fig400bmp",
+      "fig403bmp",
+      "fig404bmp",
+      "rainfigbmp",
+      "utl101bmp",
+      "utl102bmp",
+      "utl401bmp"
+    ],
+    "station": [],
+    "missile": [],
+    "probe": [],
+    "projectile": []
+  },
+  "availableMultiAtlasHullStems": []
+}

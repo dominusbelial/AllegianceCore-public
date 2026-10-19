@@ -2308,6 +2308,7 @@ public sealed partial class Server
             // Only stations the side currently sees (P132's live SeenBySide).
             var visible = allStations.Where(st => st.SeenBySide(sideId)).ToArray();
             if (visible.Length == 0) continue;              // native: `if (nStations != 0)`
+            ExportDiscoveredStations(sideId, conns, visible);
             var msg = StationsUpdate.FromStations(visible);
             var packet = PackBroadcast(Message(msg));
             foreach (var t in conns) SendPeerCoalescing(t, packet, CoalesceStations);

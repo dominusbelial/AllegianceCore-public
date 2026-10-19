@@ -164,6 +164,7 @@ public sealed partial class Game1
 
     private void DrawFlightPartsHud()
     {
+        if (LocalSpectating) return;
         if (_directorActive || _state != ClientState.Flying) return;
         var inventory = OwnInventory();
         string text = $"WEAPONS: {(_groupFire ? "GROUP" : $"SINGLE {_selectedMount + 1}")}  BOOST: {(_boosterToggled ? "ON" : "OFF")}";

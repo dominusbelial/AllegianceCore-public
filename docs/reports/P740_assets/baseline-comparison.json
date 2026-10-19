@@ -1,0 +1,29 @@
+{
+  "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+  "head": "a8a9eb24e04744ab788b84ffcdc83e2b96afcc1a",
+  "current": {
+    "runs": 5,
+    "failed": 1
+  },
+  "fresh_isolation": {
+    "runs": 3,
+    "failed": 0
+  },
+  "base_head": {
+    "runs": 5,
+    "failed": 0
+  },
+  "baseline_source": "/tmp/allegiance-evidence/P740/base-head",
+  "source_archive_sha256": "b384489fb13a23bec2e4232ac460d5f8328f539cf6a4a7647c0d93f0cf03c037",
+  "test_binary_sha256": "a19a32d09046503e7862e4e36c0c0ae859b33d2739b64a5a5d533707c45be36e",
+  "baseline_build_command": [
+    "dotnet",
+    "build",
+    "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+    "-c",
+    "Release",
+    "--nologo"
+  ],
+  "baseline_build_log": "/tmp/allegiance-evidence/P740/base-build.log",
+  "interpretation": "Small-sample observed rates, not a causal claim. Classify the current cleanup failure under the brief only if all three fresh isolated invocations pass. No assertions or deadlines changed."
+}

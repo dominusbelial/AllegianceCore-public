@@ -1,0 +1,2644 @@
+{
+  "raw_evidence_path": "/tmp/allegiance-evidence/P743",
+  "requested_home_evidence_path_unwritable_in_this_session": true,
+  "whole_solution_build": {
+    "configuration": "Release",
+    "warnings": 0,
+    "errors": 0,
+    "logs": [
+      "/tmp/allegiance-evidence/P743/build.log",
+      "/tmp/allegiance-evidence/P743/build-final.log"
+    ],
+    "environment_override": "NUGET_HTTP_CACHE_PATH=/tmp/p743-nuget-http"
+  },
+  "focused_and_single_sweep_invocations": [
+    {
+      "label": "layout-00-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-00-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.EmptyCluster_YieldsZeroAsteroids_NoGroups_NoHelium"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-00-1.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-00-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-00-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.EmptyCluster_YieldsZeroAsteroids_NoGroups_NoHelium"
+      ],
+      "exit_code": 0,
+      "seconds": 1.02,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-00-2.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-00-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-00-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.EmptyCluster_YieldsZeroAsteroids_NoGroups_NoHelium"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-00-3.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-01-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-01-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.BuildableOnlyRocks_AreCounted_ButFormNoSpecialGroup"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-01-1.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-01-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-01-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.BuildableOnlyRocks_AreCounted_ButFormNoSpecialGroup"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-01-2.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-01-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-01-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.BuildableOnlyRocks_AreCounted_ButFormNoSpecialGroup"
+      ],
+      "exit_code": 0,
+      "seconds": 1.02,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-01-3.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-02-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-02-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.He3Rocks_FormGroup_SumHeliumOre_AndSetHasHelium"
+      ],
+      "exit_code": 0,
+      "seconds": 1.02,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-02-1.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-02-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-02-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.He3Rocks_FormGroup_SumHeliumOre_AndSetHasHelium"
+      ],
+      "exit_code": 0,
+      "seconds": 1.02,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-02-2.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-02-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-02-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.He3Rocks_FormGroup_SumHeliumOre_AndSetHasHelium"
+      ],
+      "exit_code": 0,
+      "seconds": 1.02,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-02-3.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-03-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-03-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.DistinctCapabilityMasks_FormSeparateGroups"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-03-1.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-03-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-03-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.DistinctCapabilityMasks_FormSeparateGroups"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-03-2.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-03-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-03-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.DistinctCapabilityMasks_FormSeparateGroups"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-03-3.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-04-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-04-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.Buildable_bit_distinguishes_special_groups_with_the_same_resource"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-04-1.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-04-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-04-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.Buildable_bit_distinguishes_special_groups_with_the_same_resource"
+      ],
+      "exit_code": 0,
+      "seconds": 1.02,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-04-2.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-04-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-04-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.Buildable_bit_distinguishes_special_groups_with_the_same_resource"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-04-3.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-05-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-05-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.LotsHe3_IsItsOwnGroup_NotCountedInTheHeliumLine"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-05-1.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-05-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-05-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.LotsHe3_IsItsOwnGroup_NotCountedInTheHeliumLine"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-05-2.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-05-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-05-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.LotsHe3_IsItsOwnGroup_NotCountedInTheHeliumLine"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-05-3.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-06-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-06-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.MultiBitMask_JoinsLabels"
+      ],
+      "exit_code": 0,
+      "seconds": 1.02,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-06-1.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-06-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-06-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.MultiBitMask_JoinsLabels"
+      ],
+      "exit_code": 0,
+      "seconds": 1.02,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-06-2.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-06-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-06-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.MultiBitMask_JoinsLabels"
+      ],
+      "exit_code": 0,
+      "seconds": 1.02,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-06-3.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-07-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-07-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.NextSelection_AdvancesFromCurrentAndWraps"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-07-1.trx",
+        "counts": {
+          "total": 2,
+          "executed": 2,
+          "passed": 2,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-07-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-07-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.NextSelection_AdvancesFromCurrentAndWraps"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-07-2.trx",
+        "counts": {
+          "total": 2,
+          "executed": 2,
+          "passed": 2,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-07-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-07-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.NextSelection_AdvancesFromCurrentAndWraps"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-07-3.trx",
+        "counts": {
+          "total": 2,
+          "executed": 2,
+          "passed": 2,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-08-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-08-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.NextSelection_FirstPressDefaultsToThePlayersSector"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-08-1.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-08-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-08-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.NextSelection_FirstPressDefaultsToThePlayersSector"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-08-2.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-08-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-08-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.NextSelection_FirstPressDefaultsToThePlayersSector"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-08-3.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-09-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-09-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.NextSelection_UnknownDefaultFallsBackToFirstCluster"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-09-1.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-09-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-09-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.NextSelection_UnknownDefaultFallsBackToFirstCluster"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-09-2.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-09-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-09-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.NextSelection_UnknownDefaultFallsBackToFirstCluster"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-09-3.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-10-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-10-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.NextSelection_EmptyOrderedList_ReturnsDefault"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-10-1.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-10-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-10-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.NextSelection_EmptyOrderedList_ReturnsDefault"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-10-2.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-10-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-10-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.NextSelection_EmptyOrderedList_ReturnsDefault"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-10-3.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-11-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-11-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.LineOrigins_StackVertically_FromTheOrigin"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-11-1.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-11-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-11-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.LineOrigins_StackVertically_FromTheOrigin"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-11-2.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "layout-11-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=layout-11-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.MonoGame.Tests.SectorInfoPaneLayoutTests.LineOrigins_StackVertically_FromTheOrigin"
+      ],
+      "exit_code": 0,
+      "seconds": 0.97,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/layout-11-3.trx",
+        "counts": {
+          "total": 1,
+          "executed": 1,
+          "passed": 1,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "sweep-Allegiance.Core.Tests",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.Core.Tests/Allegiance.Core.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=sweep-Allegiance.Core.Tests.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743"
+      ],
+      "exit_code": 0,
+      "seconds": 766.01,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/sweep-Allegiance.Core.Tests.trx",
+        "counts": {
+          "total": 4879,
+          "executed": 4879,
+          "passed": 4879,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 0
+        },
+        "nonpasses": []
+      }
+    },
+    {
+      "label": "sweep-Allegiance.ClientCore.Tests",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=sweep-Allegiance.ClientCore.Tests.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743"
+      ],
+      "exit_code": 1,
+      "seconds": 1667.48,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/sweep-Allegiance.ClientCore.Tests.trx",
+        "counts": {
+          "total": 1381,
+          "executed": 1380,
+          "passed": 1377,
+          "failed": 3,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 1
+        },
+        "nonpasses": [
+          {
+            "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+            "outcome": "Failed",
+            "message": "Assert.Equal() Failure: Values differ\nExpected: 2\nActual:   1"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+            "outcome": "Failed",
+            "message": "Assert.Equal() Failure: Values differ\nExpected: 1053\nActual:   1060"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+            "outcome": "Failed",
+            "message": "Assert.Equal() Failure: Values differ\nExpected: 1060\nActual:   1052"
+          },
+          {
+            "name": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+            "outcome": "NotExecuted",
+            "message": "Set ALLEGIANCE_LIVE_P660_SHOWCASE=1 for the full 15v15 MCP proof"
+          }
+        ]
+      }
+    },
+    {
+      "label": "sweep-Allegiance.ClientCore.MonoGame.Tests",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.MonoGame.Tests/Allegiance.ClientCore.MonoGame.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--logger",
+        "trx;LogFileName=sweep-Allegiance.ClientCore.MonoGame.Tests.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743"
+      ],
+      "exit_code": 0,
+      "seconds": 962.77,
+      "result": {
+        "path": "/tmp/allegiance-evidence/P743/sweep-Allegiance.ClientCore.MonoGame.Tests.trx",
+        "counts": {
+          "total": 2438,
+          "executed": 2435,
+          "passed": 2435,
+          "failed": 0,
+          "error": 0,
+          "timeout": 0,
+          "aborted": 0,
+          "inconclusive": 0,
+          "passedButRunAborted": 0,
+          "notRunnable": 0,
+          "notExecuted": 0,
+          "disconnected": 0,
+          "warning": 0,
+          "completed": 0,
+          "inProgress": 0,
+          "pending": 0,
+          "skipped": 3
+        },
+        "nonpasses": [
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+            "outcome": "NotExecuted",
+            "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+          },
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+            "outcome": "NotExecuted",
+            "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+          },
+          {
+            "name": "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+            "outcome": "NotExecuted",
+            "message": "The private Meshy asset pack is not configured. Set the ALLEGIANCE_MESHY_PACK_PATH environment variable \u2014 or add 'ALLEGIANCE_MESHY_PACK_PATH=<path>' to the gitignored local.env at the repo root \u2014 to enable the optional Meshy ships. Without it every hull renders native. See docs/P601_MESHY_PRIVATE_PACK.md."
+          }
+        ]
+      }
+    }
+  ],
+  "supplements": {
+    "local-showcase-opt-in": {
+      "path": "/tmp/allegiance-evidence/P743/local-showcase-opt-in.trx",
+      "counts": {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0,
+        "skipped": 0
+      },
+      "nonpasses": []
+    },
+    "lobby-supplement": {
+      "path": "/tmp/allegiance-evidence/P743/lobby-supplement.trx",
+      "counts": {
+        "total": 19,
+        "executed": 19,
+        "passed": 19,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0,
+        "skipped": 0
+      },
+      "nonpasses": []
+    },
+    "scorecard-final-1": {
+      "path": "/tmp/allegiance-evidence/P743/scorecard-final-1.trx",
+      "counts": {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0,
+        "skipped": 0
+      },
+      "nonpasses": []
+    },
+    "scorecard-final-2": {
+      "path": "/tmp/allegiance-evidence/P743/scorecard-final-2.trx",
+      "counts": {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0,
+        "skipped": 0
+      },
+      "nonpasses": []
+    },
+    "scorecard-final-3": {
+      "path": "/tmp/allegiance-evidence/P743/scorecard-final-3.trx",
+      "counts": {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0,
+        "skipped": 0
+      },
+      "nonpasses": []
+    }
+  },
+  "failure_qualification": [
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+      "method": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates&DisplayName~civA: 25, civB: 3, generated: False",
+      "source": "sweep-Allegiance.ClientCore.Tests.trx",
+      "isolated_3_of_3_exact_case_passed": true,
+      "classification": "load flake per brief"
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "method": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "source": "sweep-Allegiance.ClientCore.Tests.trx",
+      "isolated_3_of_3_exact_case_passed": true,
+      "classification": "load flake per brief"
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "method": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "source": "sweep-Allegiance.ClientCore.Tests.trx",
+      "isolated_3_of_3_exact_case_passed": true,
+      "classification": "load flake per brief"
+    }
+  ],
+  "isolated_invocations": [
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+      "method": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates&DisplayName~civA: 25, civB: 3, generated: False",
+      "source": "sweep-Allegiance.ClientCore.Tests.trx",
+      "label": "failed-00-isolated-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates&DisplayName~civA: 25, civB: 3, generated: False",
+        "--logger",
+        "trx;LogFileName=failed-00-isolated-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743"
+      ],
+      "exit_code": 0,
+      "seconds": 18.7,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "executionId": "2567d908-b3f4-423f-aa18-e84d00a52b04",
+          "testId": "7d64464e-000f-61a4-7b0b-17ec60118eb6",
+          "testName": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+          "computerName": "domingo-MS-02-Ultra",
+          "duration": "00:00:17.7869579",
+          "startTime": "2026-10-18T19:55:54.4250475-05:00",
+          "endTime": "2026-10-18T19:56:12.2165281-05:00",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "outcome": "Passed",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "relativeResultsDirectory": "2567d908-b3f4-423f-aa18-e84d00a52b04"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+      "method": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates&DisplayName~civA: 25, civB: 3, generated: False",
+      "source": "sweep-Allegiance.ClientCore.Tests.trx",
+      "label": "failed-00-isolated-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates&DisplayName~civA: 25, civB: 3, generated: False",
+        "--logger",
+        "trx;LogFileName=failed-00-isolated-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743"
+      ],
+      "exit_code": 0,
+      "seconds": 19.35,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "executionId": "b0a71758-1e8a-45b9-8b90-b6fa6fc15635",
+          "testId": "7d64464e-000f-61a4-7b0b-17ec60118eb6",
+          "testName": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+          "computerName": "domingo-MS-02-Ultra",
+          "duration": "00:00:18.4530479",
+          "startTime": "2026-10-18T19:56:13.1030295-05:00",
+          "endTime": "2026-10-18T19:56:31.5601579-05:00",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "outcome": "Passed",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "relativeResultsDirectory": "b0a71758-1e8a-45b9-8b90-b6fa6fc15635"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+      "method": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates&DisplayName~civA: 25, civB: 3, generated: False",
+      "source": "sweep-Allegiance.ClientCore.Tests.trx",
+      "label": "failed-00-isolated-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates&DisplayName~civA: 25, civB: 3, generated: False",
+        "--logger",
+        "trx;LogFileName=failed-00-isolated-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743"
+      ],
+      "exit_code": 0,
+      "seconds": 20.0,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "executionId": "e74462b4-3690-49d8-8935-4e5979367388",
+          "testId": "7d64464e-000f-61a4-7b0b-17ec60118eb6",
+          "testName": "Allegiance.ClientCore.Tests.P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)",
+          "computerName": "domingo-MS-02-Ultra",
+          "duration": "00:00:19.0842364",
+          "startTime": "2026-10-18T19:56:32.4776373-05:00",
+          "endTime": "2026-10-18T19:56:51.5659703-05:00",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "outcome": "Passed",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "relativeResultsDirectory": "e74462b4-3690-49d8-8935-4e5979367388"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "method": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "source": "sweep-Allegiance.ClientCore.Tests.trx",
+      "label": "failed-01-isolated-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+        "--logger",
+        "trx;LogFileName=failed-01-isolated-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743"
+      ],
+      "exit_code": 0,
+      "seconds": 3.82,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "executionId": "4cc38fd8-b773-4e2f-99a3-40bfb770a741",
+          "testId": "d4a88bc5-487f-9448-1e5c-3240ff9c1bf6",
+          "testName": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+          "computerName": "domingo-MS-02-Ultra",
+          "duration": "00:00:02.9120603",
+          "startTime": "2026-10-18T19:56:52.4613065-05:00",
+          "endTime": "2026-10-18T19:56:55.3758610-05:00",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "outcome": "Passed",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "relativeResultsDirectory": "4cc38fd8-b773-4e2f-99a3-40bfb770a741"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "method": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "source": "sweep-Allegiance.ClientCore.Tests.trx",
+      "label": "failed-01-isolated-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+        "--logger",
+        "trx;LogFileName=failed-01-isolated-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743"
+      ],
+      "exit_code": 0,
+      "seconds": 3.87,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "executionId": "99a5df74-41a4-4841-be37-ed29d5f4902e",
+          "testId": "d4a88bc5-487f-9448-1e5c-3240ff9c1bf6",
+          "testName": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+          "computerName": "domingo-MS-02-Ultra",
+          "duration": "00:00:02.9080176",
+          "startTime": "2026-10-18T19:56:56.3307828-05:00",
+          "endTime": "2026-10-18T19:56:59.2426980-05:00",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "outcome": "Passed",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "relativeResultsDirectory": "99a5df74-41a4-4841-be37-ed29d5f4902e"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "method": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+      "source": "sweep-Allegiance.ClientCore.Tests.trx",
+      "label": "failed-01-isolated-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+        "--logger",
+        "trx;LogFileName=failed-01-isolated-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743"
+      ],
+      "exit_code": 0,
+      "seconds": 3.77,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "executionId": "32a21a6b-4c7b-451a-be2e-f5e87c2c3140",
+          "testId": "d4a88bc5-487f-9448-1e5c-3240ff9c1bf6",
+          "testName": "Allegiance.ClientCore.Tests.ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume",
+          "computerName": "domingo-MS-02-Ultra",
+          "duration": "00:00:02.8761389",
+          "startTime": "2026-10-18T19:57:00.1633861-05:00",
+          "endTime": "2026-10-18T19:57:03.0419203-05:00",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "outcome": "Passed",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "relativeResultsDirectory": "32a21a6b-4c7b-451a-be2e-f5e87c2c3140"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "method": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "source": "sweep-Allegiance.ClientCore.Tests.trx",
+      "label": "failed-02-isolated-1",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+        "--logger",
+        "trx;LogFileName=failed-02-isolated-1.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743"
+      ],
+      "exit_code": 0,
+      "seconds": 1.92,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "executionId": "56e503e4-5d3c-4fe7-805c-10ede6f5d1f6",
+          "testId": "46cefe6b-e8bd-6e64-b32d-b712b239e1fd",
+          "testName": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+          "computerName": "domingo-MS-02-Ultra",
+          "duration": "00:00:00.9800468",
+          "startTime": "2026-10-18T19:57:03.9497770-05:00",
+          "endTime": "2026-10-18T19:57:04.9328794-05:00",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "outcome": "Passed",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "relativeResultsDirectory": "56e503e4-5d3c-4fe7-805c-10ede6f5d1f6"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "method": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "source": "sweep-Allegiance.ClientCore.Tests.trx",
+      "label": "failed-02-isolated-2",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+        "--logger",
+        "trx;LogFileName=failed-02-isolated-2.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743"
+      ],
+      "exit_code": 0,
+      "seconds": 1.97,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "executionId": "6dfb8c2f-6ca9-48b4-9c3f-84db8471201f",
+          "testId": "46cefe6b-e8bd-6e64-b32d-b712b239e1fd",
+          "testName": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+          "computerName": "domingo-MS-02-Ultra",
+          "duration": "00:00:00.9969656",
+          "startTime": "2026-10-18T19:57:05.8791718-05:00",
+          "endTime": "2026-10-18T19:57:06.8803661-05:00",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "outcome": "Passed",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "relativeResultsDirectory": "6dfb8c2f-6ca9-48b4-9c3f-84db8471201f"
+        }
+      ]
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "name": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "method": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+      "source": "sweep-Allegiance.ClientCore.Tests.trx",
+      "label": "failed-02-isolated-3",
+      "command": [
+        "dotnet",
+        "test",
+        "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--nologo",
+        "--filter",
+        "FullyQualifiedName=Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+        "--logger",
+        "trx;LogFileName=failed-02-isolated-3.trx",
+        "--results-directory",
+        "/tmp/allegiance-evidence/P743"
+      ],
+      "exit_code": 0,
+      "seconds": 1.92,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "results": [
+        {
+          "executionId": "17cd09f0-3095-408f-9f8f-6044946400b0",
+          "testId": "46cefe6b-e8bd-6e64-b32d-b712b239e1fd",
+          "testName": "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target",
+          "computerName": "domingo-MS-02-Ultra",
+          "duration": "00:00:00.9925593",
+          "startTime": "2026-10-18T19:57:07.8218540-05:00",
+          "endTime": "2026-10-18T19:57:08.8188375-05:00",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "outcome": "Passed",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "relativeResultsDirectory": "17cd09f0-3095-408f-9f8f-6044946400b0"
+        }
+      ]
+    }
+  ],
+  "artifact_checks": {
+    "sample_size": 40,
+    "areas": 12,
+    "classification": {
+      "partially correct": 10,
+      "correct": 28,
+      "untested": 2
+    },
+    "screen_parents_split": 23,
+    "total_parents_split": 53,
+    "children": 164,
+    "weights_conserved_by_parent_and_area_including_exclusions": true,
+    "native_and_port_paths_valid": true,
+    "source_inventory_files": 234,
+    "LF_only": true,
+    "small_assets_bytes": 317594,
+    "scorecards": {
+      "parity-matrix": {
+        "before": {
+          "commander": [
+            "19",
+            "19",
+            "81",
+            "81"
+          ],
+          "commands": [
+            "176",
+            "190",
+            "561",
+            "591"
+          ],
+          "fedmsg": [
+            "115",
+            "125",
+            "475",
+            "515"
+          ],
+          "lobby": [
+            "10",
+            "11",
+            "43",
+            "47"
+          ],
+          "parts": [
+            "40",
+            "40",
+            "153",
+            "153"
+          ],
+          "screens": [
+            "22",
+            "23",
+            "86",
+            "89"
+          ],
+          "TOTAL": [
+            "382",
+            "408",
+            "1399",
+            "1476"
+          ]
+        },
+        "after": {
+          "commander": [
+            "35",
+            "46",
+            "63.496",
+            "81.000"
+          ],
+          "commands": [
+            "175",
+            "190",
+            "556",
+            "591"
+          ],
+          "fedmsg": [
+            "114",
+            "125",
+            "471",
+            "515"
+          ],
+          "lobby": [
+            "16",
+            "33",
+            "30.695",
+            "47.000"
+          ],
+          "parts": [
+            "40",
+            "40",
+            "153",
+            "153"
+          ],
+          "screens": [
+            "35",
+            "85",
+            "42.173",
+            "89.000"
+          ],
+          "TOTAL": [
+            "415",
+            "519",
+            "1316.364",
+            "1476.000"
+          ]
+        }
+      },
+      "sim-rules-matrix": {
+        "before": {
+          "callbacks": [
+            "36",
+            "66",
+            "108",
+            "198"
+          ],
+          "constants": [
+            "38",
+            "39",
+            "133",
+            "135"
+          ],
+          "periodic": [
+            "7",
+            "15",
+            "24",
+            "47"
+          ],
+          "sounds": [
+            "173",
+            "212",
+            "468",
+            "550"
+          ],
+          "updates": [
+            "69",
+            "87",
+            "281",
+            "349"
+          ],
+          "warnings": [
+            "2",
+            "2",
+            "10",
+            "10"
+          ],
+          "TOTAL": [
+            "325",
+            "421",
+            "1024",
+            "1289"
+          ]
+        },
+        "after": {
+          "callbacks": [
+            "36",
+            "66",
+            "108",
+            "198"
+          ],
+          "constants": [
+            "38",
+            "39",
+            "133",
+            "135"
+          ],
+          "periodic": [
+            "7",
+            "15",
+            "24",
+            "47"
+          ],
+          "sounds": [
+            "170",
+            "212",
+            "459",
+            "550"
+          ],
+          "updates": [
+            "69",
+            "87",
+            "281",
+            "349"
+          ],
+          "warnings": [
+            "2",
+            "2",
+            "10",
+            "10"
+          ],
+          "TOTAL": [
+            "322",
+            "421",
+            "1015",
+            "1289"
+          ]
+        }
+      }
+    }
+  },
+  "aot_publish_required": false,
+  "five_showcase_runs_required": false,
+  "conditional_gate_reason": "No Core/Server/bot/flight/simulation code changed; only display grouping and its test changed."
+}

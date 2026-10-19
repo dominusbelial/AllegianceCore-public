@@ -118,8 +118,8 @@ public sealed partial class Game1
         {
             if (TryResolveKillerPos(over.FocusShipId, out var pos, out var radius))
             {
-                RequestOverrideCamera(pos, radius, OverrideCameraDurationSeconds);
-                Console.WriteLine($"[eject] camera override -> killer ship {over.FocusShipId} (5 s)");
+                RequestOverrideCamera(pos, radius, over.DurationSeconds);
+                Console.WriteLine($"[camera] override -> ship {over.FocusShipId} ({over.DurationSeconds} s)");
             }
             else
             {
@@ -135,12 +135,7 @@ public sealed partial class Game1
         UpdateOverrideCameraExpiry();
     }
 
-    /// <summary>P578 — native's eject override duration: <c>OverrideCamera(now,
-    /// pcredit, true)</c> sets <c>m_timeOverrideStop = now + 5.0f</c>
-    /// (WinTrek.cpp:6501 — the <c>bOverridePosition</c> branch EjectPlayer
-    /// uses). The swing lingers on the killer for five seconds, then returns
-    /// to the normal camera.</summary>
-    private const double OverrideCameraDurationSeconds = 5.0;
+
 
     /// <summary>P578 — resolve the credited killer's live world position and a
     /// framing radius (half its hull length when known, else a fighter-scale

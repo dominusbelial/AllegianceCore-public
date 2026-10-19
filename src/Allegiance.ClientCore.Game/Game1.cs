@@ -37,7 +37,7 @@ namespace Allegiance.ClientCore.MonoGame;
 public sealed partial class Game1 : Game
 {
     private readonly GraphicsDeviceManager _graphics;
-    private readonly ConnectionSession _session;
+    private ConnectionSession _session;
     private string _playerName;   // P500 — no longer readonly: the connect screen edits it in-game
     // P498 — the asset source (Artwork tree) all real-asset loaders read through;
     // defaulted to the desktop on-disk source in the constructor.
@@ -57,6 +57,7 @@ public sealed partial class Game1 : Game
     // native texture per missile type), closing the lit-solid "white shard"
     // defect for the 45/56 missile types that are not P287-imported content
     // assets. Created in Lifecycle; field declared with the other missile fields.
+    private HdMaterialRenderer _hdMaterials = null!;
     private Rendering.NativeMissileRenderer _nativeMissileRenderer = null!;
     // P337 — the real Meshy baseColor textures for the P287 ship/missile content
     // models, keyed by the same asset names HullModelResolver enumerates and
@@ -113,6 +114,7 @@ public sealed partial class Game1 : Game
     // MonoGame's DEFAULT back-face culling (the P290 empirical finding — see
     // ProbeRenderer), so no special flip is applied.
     private ProbeRenderer _probeRenderer = null!;
+    private readonly Dictionary<short, ProbeRenderer?> _probeTypes = new();
     private MineRenderer _mineRenderer = null!;
     private TreasureRenderer _treasureRenderer = null!;
     private NativeTreasureRenderer _nativeTreasureRenderer = null!;
@@ -125,7 +127,7 @@ public sealed partial class Game1 : Game
     // (feeds both the per-missile velocity estimate and particle aging).
     private readonly Rendering.FlightEffectPools _flightEffects = new();
     private MissileTrailParticles _trailParticles => _flightEffects.Missiles;
-    private readonly ITrailRandom _trailRandom = new RandomTrailSource();
+    private ITrailRandom _trailRandom = new RandomTrailSource();
     private MissileTrailRenderer _trailRenderer = null!;
     private double _trailNowSec;
 
@@ -160,7 +162,7 @@ public sealed partial class Game1 : Game
     // every flight camera mode, and drawn behind the ships over the starfield. The
     // density preference (native's user `Debris`, default 1.0, 0 = off) comes from
     // the --debris launch setting. Created in the ctor (needs opts + the RNG seam).
-    private readonly Rendering.DebrisGeo _debrisGeo;
+    private Rendering.DebrisGeo _debrisGeo;
     private Rendering.AmbientDustRenderer _debrisRenderer = null!;
     // Per-frame grain snapshot (reused list; native renders from the fixed points,
     // so we only re-derive brightness/size/colour each frame).
@@ -259,7 +261,7 @@ public sealed partial class Game1 : Game
     private readonly List<(SimVec Pos, SimVec Dir, float Len, float Spin, ProjectileVisual Visual)> _drawBolts = new();
     private readonly List<(short TypeId, SimVec Pos, Orientation Ori, XnaModel? Model)> _drawMissiles = new();
     private readonly List<TrailMissile> _drawTrailMissiles = new();
-    private readonly List<(Vector3 Pos, short SideId)> _drawProbes = new();
+    private readonly List<(Vector3 Pos, short SideId, short TypeId)> _drawProbes = new();
     private readonly List<(Vector3 Pos, float Radius, int Seed, float Strength)> _drawMines = new();
     private readonly List<(Vector3 Pos, float Radius, string Stem, float Roll)> _drawChaff = new();
 
@@ -563,7 +565,7 @@ public sealed partial class Game1 : Game
     // native CalculateShip via ShipDeadReckoner). Default ON; --noDeadReckon turns it
     // off so remote ships render on their raw last-known pose for a live A/B. Never
     // touches the wire; own-ship posing is always raw (P447).
-    private readonly bool _remoteShipDeadReckoning;
+    private bool _remoteShipDeadReckoning;
 
     // P448b — wall-clock (seconds) the re-seed correction statistics were last logged;
     // the pose gather polls ClientWorld.TakeRemoteCorrectionStats every interval so the
@@ -608,7 +610,7 @@ public sealed partial class Game1 : Game
     // visualization toggle only — the local simulation ALWAYS runs and always drives
     // the native SHIP_UPDATE (it is the authority); turning it off just shows the old
     // 20 Hz server-stepped view for an A/B.
-    private readonly bool _ownShipPrediction;
+    private bool _ownShipPrediction;
 
     // P508 — bookkeeping for the per-frame wiring in Game1.Prediction.cs:
     //  - _ownSimSeeded: the sim has been seeded from the server pose at first sight.
@@ -953,7 +955,7 @@ public sealed partial class Game1 : Game
     // below mutate it. Edge latches so each press steps exactly once, never
     // per-frame while held.
     private float _throttle = FlightInput.DefaultThrottle;
-    private bool _thUpWasDown, _thDownWasDown, _thZeroWasDown, _thFullWasDown;
+    private bool _thUpWasDown, _thDownWasDown, _thZeroWasDown, _thFullWasDown, _th33WasDown, _th66WasDown;
     // P504 — the raw wheel-delta diagnostic pacing (log the raw pre-normalisation
     // delta at ~4 Hz while scrolling, never per-frame).
     private long _lastWheelDiagMs;
@@ -1304,6 +1306,8 @@ public sealed partial class Game1 : Game
             _graphics.SynchronizeWithVerticalRetrace = false;
             IsFixedTimeStep = false;
         }
+        _benchmark = opts.Benchmark;
+        if (_benchmark is not null) _trailRandom = new RandomTrailSource(729);
         _session = new ConnectionSession();
         // P448b — register the remote-ship hull-stats resolver so the ClientWorld
         // dead-reckoner can (re-)seed each remote ship's ShipDeadReckoner from real
@@ -1571,6 +1575,7 @@ public sealed partial class Game1 : Game
             BeginConnect(_connectHost!, _connectPort);
         else if (_state == ClientState.Inspecting)
             InitializeInspector();
+        InitializeBenchmark();
         // else Lobby: _lastLobbyFetch stays NegativeInfinity so Update's very
         // first lobby tick fires an immediate fetch.
     }
@@ -1709,6 +1714,7 @@ public sealed partial class Game1 : Game
 
     protected override void UnloadContent()
     {
+        DisposeBenchmark();
         DisposeSkirmish();
         _sound?.Dispose();
         _music?.Dispose();   // P304 — release the two music beds
@@ -1731,6 +1737,7 @@ public sealed partial class Game1 : Game
         _missileRenderer?.Dispose();
         _nativeMissileRenderer?.Dispose();   // P593b
         _probeRenderer?.Dispose();
+        foreach (var renderer in _probeTypes.Values) renderer?.Dispose();
         _mineRenderer?.Dispose();
         _trailRenderer?.Dispose();
         _spoofRetargetRenderer?.Dispose();
@@ -1768,6 +1775,7 @@ public sealed partial class Game1 : Game
         _flightGc.Dispose();
         _fsr?.Dispose();
         _post?.Dispose();
+        _hdMaterials?.Dispose();
         _shaders?.Dispose();
         _nativeEffects?.Dispose();   // P545 — after the renderers that borrow it
         _session.Dispose();

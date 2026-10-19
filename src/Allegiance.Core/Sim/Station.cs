@@ -578,6 +578,32 @@ public sealed class Station : IStationIgc, ISideVisible
         return dr;
     }
 
+    private double _nextDamageTrace = double.NegativeInfinity;
+
+    /// <summary>Port telemetry for the resolved native damage path (Igc/stationIGC.cpp:159-200).
+    /// Emits at most once per station per five sim seconds, plus the lethal hit.
+    /// Called after damage, before regen (Igc/stationIGC.h:195-207); never changes health.</summary>
+    internal void TraceDamage(double now, Model? launcher, byte type, float shieldBefore, float hullBefore,
+        IOrdnance? ordnance = null)
+    {
+        if (ShieldFraction == shieldBefore && ArmorFraction == hullBefore) return;
+        if (!Dead && now < _nextDamageTrace) return;
+        _nextDamageTrace = now + 5;
+        var ship = launcher as Ship;
+        string weapon = $"damageType={type}";
+        if (ship is not null && ordnance is Projectile projectile)
+        {
+            var parts = ship.Parts.Where(p => p.Type.Type is DataPartTypeIGC.Weapon w
+                && w.ProjectileTypeId == projectile.ProjectileType.ProjectileTypeId);
+            weapon = $"projectile={projectile.ProjectileType.ProjectileTypeId} parts=[{string.Join(",", parts.Select(p => $"{p.Type.PartId}:{p.Type.Name}@{p.MountId}"))}] damageType={type}";
+        }
+        else if (ordnance is Missile missile)
+            weapon = $"missile={missile.MissileType.ExpendableTypeId}:{missile.MissileType.LauncherName} damageType={type}";
+        string line = FormattableString.Invariant($"[station-damage] t={now:0.###} side={SideId} station={StationId}:{Data.Name} attackerSide={ship?.SideId} ship={ship?.Id} hull={ship?.HullType.HullId}:{ship?.HullType.Name} weapon={weapon} shield={shieldBefore:0.0000}->{ShieldFraction:0.0000} hull={hullBefore:0.0000}->{ArmorFraction:0.0000} killed={Dead}");
+        Console.WriteLine(line);
+        Mission?.Site.ReportNotable(line);
+    }
+
     /// <summary>
     /// The sim-side of a hostile capture (the <b>state</b> half of the port of
     /// <c>CFSShip::CaptureStation</c>, <c>fsship.cpp:577-641</c>, driven by the

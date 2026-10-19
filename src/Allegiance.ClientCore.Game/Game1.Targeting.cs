@@ -1055,17 +1055,9 @@ public sealed partial class Game1
         Console.WriteLine($"[monogame] commandee: {picked.Name} (ship #{picked.Id})");
     }
 
-    /// <summary>
-    /// P425 — the ISSUE-ORDER key: with a commandee selected and a target
-    /// selected, resolve the real ORDER_CHANGE from the commandee's role + the
-    /// target's kind (<see cref="CommandOrderResolver"/>) and send it over the
-    /// wire (<c>ShipID</c> = commandee, <c>CommandId</c> = order,
-    /// <c>ObjectType</c>/<c>ObjectID</c> = the target rock). The server re-validates
-    /// with its real legality gate and refuses (surfaced to this client as a
-    /// private "Negative." chat) if the request is illegal — so an invalid pair
-    /// is never silently swallowed. Console feedback on what was sent, or why
-    /// nothing was sent (no commandee / no target / no applicable order).
-    /// </summary>
+    /// <summary>Issue the role/target's default command through native command
+    /// chat (WinTrek/console.cpp:1450-1504). The recipient acknowledges its own
+    /// queued slot; the server validates drone capabilities and target legality.</summary>
     private void TryIssueOrderToSingleCommandee()
     {
         var world = _session.World;
@@ -1094,15 +1086,30 @@ public sealed partial class Game1
             roleBits = ShipRoleBits(ent.HullId);
         }
 
-        var order = CommandOrderResolver.Resolve(roleBits, cmd.Kind, tgt.Kind, tgt.Id);
+        bool friendly;
+        lock (_session.Gate)
+        {
+            short? side = tgt.Kind == TargetKind.Ship && world.Ships.TryGetValue(tgt.Id, out var shipTarget) ? shipTarget.SideId
+                : tgt.Kind == TargetKind.Station && world.Stations.TryGetValue(tgt.Id, out var stationTarget) ? stationTarget.SideId : null;
+            friendly = side is { } other && world.MySideId is { } ownSide && (other == ownSide || world.AreAllied(ownSide, other));
+        }
+        var order = CommandOrderResolver.ResolveChat(roleBits, cmd.Kind, tgt.Kind, tgt.Id, friendly);
         if (order is not { } o)
         {
             Console.WriteLine($"[monogame] issue order: no applicable order for commandee {cmd.Name} (#{cmd.Id}) + target {tgt.Name} ({tgt.Kind}#{tgt.Id})");
             return;
         }
 
-        _session.SendOrderChange(cmd.Id, o.CommandId, Allegiance.Core.Wire.OrderChange.CmdAccepted, o.ObjectType, o.ObjectId);
-        Console.WriteLine($"[monogame] order: {OrderLabel(o.CommandId)} at {tgt.Name} (#{tgt.Id}) issued to {cmd.Name} (#{cmd.Id}) (ORDER_CHANGE shipID={cmd.Id} commandID={o.CommandId} {o.ObjectType}/{o.ObjectId})");
+        short command = o.CommandId;
+        lock (_session.Gate)
+        {
+            _commanderBuildOrders.Cancel(cmd.Id);
+            if (command == Allegiance.Core.Wire.OrderChange.CidBuild)
+                command = _commanderBuildOrders.Begin(world, cmd.Id, o.ObjectId);
+        }
+        _session.SendChat("", Allegiance.Core.Sim.ChatTarget.Individual, oidRecipient: cmd.Id,
+            commandId: command, otTarget: (short)o.ObjectType, oidTarget: o.ObjectId);
+        Console.WriteLine($"[monogame] order: {OrderLabel(command)} at {tgt.Name} (#{tgt.Id}) issued to {cmd.Name} (#{cmd.Id}) (CHAT recipient={cmd.Id} commandID={command} {o.ObjectType}/{o.ObjectId})");
         _sound?.PlayAutopilotEngage();
     }
 
@@ -1111,6 +1118,10 @@ public sealed partial class Game1
     private static string OrderLabel(short commandId) => commandId switch
     {
         Allegiance.Core.Wire.OrderChange.CidBuild => "BUILD",
+        Allegiance.Core.Wire.OrderChange.CidMine => "MINE",
+        Allegiance.Core.Wire.OrderChange.CidAttack => "ATTACK",
+        Allegiance.Core.Wire.OrderChange.CidDefend => "DEFEND",
+        Allegiance.Core.Wire.OrderChange.CidGoto => "GOTO",
         _ => $"commandID={commandId}",
     };
 

@@ -96,9 +96,9 @@ public sealed partial class Server : IDisposable
     private readonly PerPeerRateLimiter _duplicateLogonLog = new();
 
     // Source of randomness for the eject branch's random fallback heading
-    // (Vector::RandomDirection, vector.cpp:37-49). Shared, never seeded by the
-    // caller — non-deterministic directions are fine (the native is too).
-    private static readonly Random _rand = new();
+    // (Vector::RandomDirection, vector.cpp:37-49). Unseeded by default;
+    // local benchmarks can seed this server instance.
+    private Random _rand = new();
 
     // Ships assigned to peers on validated logon (step 3). This map is owned
     // exclusively by the simulation thread (written in ProcessDatagram, which
@@ -1031,7 +1031,7 @@ public sealed partial class Server : IDisposable
     /// <c>random(-0.5f, 0.5f)</c> positional wobble (FedSrv.CPP:12965-12967).
     /// Independent draw per axis, shared with the port's existing
     /// <see cref="_rand"/>-backed helpers.</summary>
-    private static Vector3 Jitter(float amplitude) =>
+    private Vector3 Jitter(float amplitude) =>
         new((float)(_rand.NextDouble() * 2.0 - 1.0) * amplitude,
             (float)(_rand.NextDouble() * 2.0 - 1.0) * amplitude,
             (float)(_rand.NextDouble() * 2.0 - 1.0) * amplitude);
@@ -1175,7 +1175,7 @@ public sealed partial class Server : IDisposable
     /// <c>(cos(yaw)·cosPitch, sin(yaw)·cosPitch, sinPitch)</c>. Used by the
     /// eject branch's fallback heading (no killer in the sector).
     /// </summary>
-    private static Vector3 RandomDirection()
+    private Vector3 RandomDirection()
     {
         float sinPitch = (float)(_rand.NextDouble() * 2.0 - 1.0);
         float cosPitch = MathF.Sqrt(1.0f - sinPitch * sinPitch);

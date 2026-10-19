@@ -109,6 +109,9 @@ public class P480RotationKeepsPlayersLiveTests
 
         Flush(server);
         var oldMission = server.Missions[0];
+        var leadersBefore = oldMission.Sides.ToDictionary(s => s.Id,
+            s => bots.Single(p => p.Bot.ShipAssignment!.Ship.ShipId == s.LeaderShipId).Bot);
+        var ownerBefore = oldMission.MissionOwnerSideId;
         server.Missions[0].Stage = MissionStage.Started;   // a draw needs a started game
 
         // Reset accumulators so we only measure post-rotation signals.
@@ -182,6 +185,12 @@ public class P480RotationKeepsPlayersLiveTests
             Assert.True(ReferenceEquals(ship.Mission, newMission), "bot's ship must belong to the NEW mission");
             Assert.Equal(side, ship.SideId);
         }
+
+        // P728: placement must not pre-join every replacement ship before
+        // the first-player election; both native leaders and owner survive.
+        foreach (var (side, leader) in leadersBefore)
+            Assert.Equal(leader.ShipAssignment!.Ship.ShipId, newMission.Sides.Single(s => s.Id == side).LeaderShipId);
+        Assert.Equal(ownerBefore, newMission.MissionOwnerSideId);
 
         // --- All four ready up and the new game starts WITHOUT reconnecting ---
         foreach (var (bot, _) in bots)

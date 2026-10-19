@@ -7,6 +7,19 @@ namespace Allegiance.ClientCore.MonoGame;
 public sealed partial class Game1
 {
     private readonly CommandCamera _commandCamera = new();
+    private readonly CommanderBuildOrders _commanderBuildOrders = new();
+    private void UpdateCommanderBuildOrders()
+    {
+        if (_skirmish?.Paused == true) return;
+        lock (_session.Gate)
+        {
+            if (_session.World.Mission?.Stage != (int)Allegiance.Core.Sim.MissionStage.Started) return;
+            foreach (var (ship, rock) in _commanderBuildOrders.Tick(_session.World))
+                _session.SendChat("", Allegiance.Core.Sim.ChatTarget.Individual, ship,
+                    commandId: Allegiance.Core.Wire.OrderChange.CidBuild,
+                    otTarget: (short)Allegiance.Core.IgcObjectType.Asteroid, oidTarget: rock);
+        }
+    }
     private readonly HashSet<string> _commandHeld = new();
     private bool _commandCentered;
     private long _commandViewVersion;
@@ -140,13 +153,14 @@ public sealed partial class Game1
     }
 
     // Only a server-confirmed docked sector preview changes the drawn cluster.
-    private short RenderSector(short ownSector) => _cameraMode == CameraMode.Command && _dockedActive
+    private short RenderSector(short ownSector) => _benchmark is not null && _benchViewSector is { } benchmarkSector ? benchmarkSector : LocalSpectating ? _skirmishCamera.SectorId : _cameraMode == CameraMode.Command && _dockedActive
         ? _session.World.ViewedClusterId ?? ownSector : ownSector;
     private bool ShipInDrawnSector(short id, short me)
     {
         lock (_session.Gate)
         {
             var world = _session.World;
+            if (LocalSpectating) return world.Ships.TryGetValue(id, out var viewed) && viewed.CanDrawInSector(_skirmishCamera.SectorId);
             if (!world.Ships.TryGetValue(me, out var own) || !world.Ships.TryGetValue(id, out var ship)) return false;
             if (_cameraMode == CameraMode.DroneCockpit && _commandee is { } target
                 && CommandCamera.FollowSubject(world, target.Id, RenderSector(own.SectorId))?.ShipId == id) return false;

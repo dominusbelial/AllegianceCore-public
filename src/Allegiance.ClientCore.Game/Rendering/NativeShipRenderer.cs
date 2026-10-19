@@ -57,16 +57,20 @@ public sealed class NativeShipRenderer : IDisposable
     private readonly HashSet<string> _missingTextureLogged = new(StringComparer.OrdinalIgnoreCase);
     private readonly BasicEffect _effect;
     private readonly HdMaterialRenderer _hd;
+    private readonly bool _ownsHd;
     public bool HdTexturesEnabled { get; set; } = true;
+    public bool HdPbrEnabled { get; set; } = true;
+    public void ResetHdResidency() => _hd.ResetResidency();
     public long HdResidentBytes => _hd.ResidentBytes;
     private readonly RasterizerState _cullCcw;
 
-    public NativeShipRenderer(GraphicsDevice gd, Assets.IAssetSource assets, HdPack? hdPack = null, ShaderAssetCache? shaders = null)
+    public NativeShipRenderer(GraphicsDevice gd, Assets.IAssetSource assets, HdPack? hdPack = null, ShaderAssetCache? shaders = null, HdMaterialRenderer? hd = null, Func<double>? seconds = null)
     {
         _gd = gd;
         _assets = assets;
         _effect = new BasicEffect(gd);
-        _hd = new HdMaterialRenderer(gd, assets.OpenRead, hdPack, shaders: shaders);
+        _hd = hd ?? new HdMaterialRenderer(gd, NativeMaterialParts.NativeReader(assets), hdPack, shaders: shaders, seconds: seconds);
+        _ownsHd = hd is null;
         _cullCcw = new RasterizerState { CullMode = CullMode.CullCounterClockwiseFace };
     }
 
@@ -287,14 +291,6 @@ public sealed class NativeShipRenderer : IDisposable
 
         var local = NoseFlip * Matrix.CreateScale(nativeScale) * world;
 
-        if ((hdOverride ?? HdTexturesEnabled) && modelStem is not null &&
-            _hd.TryDraw(modelStem, textureStem, () => geo.PbrVertices(_gd), geo.Indices,
-                geo.TriangleCount, local, view, projection, opacity, lighting))
-        {
-            if (translucent) gd.BlendState = BlendState.Opaque;
-            return;
-        }
-
         _effect.World = local;
         _effect.View = view;
         _effect.Projection = projection;
@@ -313,10 +309,9 @@ public sealed class NativeShipRenderer : IDisposable
         _effect.TextureEnabled = texture is not null;
         _effect.Alpha = translucent ? opacity : 1f;
 
-        _effect.CurrentTechnique.Passes[0].Apply();
-        gd.SetVertexBuffer(geo.Vertices);
-        gd.Indices = geo.Indices;
-        gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, geo.TriangleCount);
+        geo.Materials.Draw(gd, _hd, modelStem, textureStem,
+            texture, TextureFor, _effect, geo.Vertices, geo.Indices, local, view, projection,
+            opacity, lighting, HdPbrEnabled && (hdOverride ?? HdTexturesEnabled));
 
         if (translucent)
             gd.BlendState = BlendState.Opaque;
@@ -349,6 +344,7 @@ public sealed class NativeShipRenderer : IDisposable
     /// (<see cref="NativeShipResolver.CorrectWinding"/>).</summary>
     public sealed class NativeShipGeometry : IDisposable
     {
+        public NativeMaterialParts Materials { get; private init; } = null!;
         public required VertexBuffer Vertices { get; init; }
         public required IndexBuffer Indices { get; init; }
         public required int TriangleCount { get; init; }
@@ -378,6 +374,7 @@ public sealed class NativeShipRenderer : IDisposable
             return new NativeShipGeometry
             {
                 _source = meshes,
+                Materials = new(meshes, verts, indices),
                 Vertices = vbuf,
                 Indices = ibuf,
                 TriangleCount = indices.Length / 3,
@@ -417,6 +414,7 @@ public sealed class NativeShipRenderer : IDisposable
         public void Dispose()
         {
             _pbrVertices?.Dispose();
+            Materials.Dispose();
             Vertices.Dispose();
             Indices.Dispose();
         }
@@ -428,7 +426,7 @@ public sealed class NativeShipRenderer : IDisposable
         foreach (var list in _lodLevels.Values)
             foreach (var g in list) g?.Dispose();
         foreach (var t in _textures.Values) t.Dispose();
-        _hd.Dispose();
+        if (_ownsHd) _hd.Dispose();
         _effect.Dispose();
         _cullCcw.Dispose();
     }

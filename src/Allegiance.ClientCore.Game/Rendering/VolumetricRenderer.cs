@@ -152,7 +152,7 @@ public sealed class VolumetricRenderer : IDisposable
         Matrix view,
         Matrix projection,
         float time,
-        SoftParticleContext soft)
+        SoftParticleContext soft, long? nowLocalMs = null)
     {
         if (!IsUsable) return;
 
@@ -168,7 +168,7 @@ public sealed class VolumetricRenderer : IDisposable
             ExplosionPreset preset;
             try { preset = ExplosionPresets.For(e.Type); }
             catch (ArgumentOutOfRangeException) { continue; }
-            float elapsed = Math.Max(0f, _SecsSince(e.ReceivedLocalMs));
+            float elapsed = Math.Max(0f, (float)((nowLocalMs ?? Environment.TickCount64) - e.ReceivedLocalMs) / 1000f);
             var pos = new SimVec(e.Position.X, e.Position.Y, e.Position.Z);
             var vel = new SimVec(e.Velocity.X, e.Velocity.Y, e.Velocity.Z);
             all.AddRange(VolumetricExplosionSampler.SampleUnits(preset, elapsed, pos, vel));
@@ -377,9 +377,6 @@ public sealed class VolumetricRenderer : IDisposable
         t.SetData(new[] { Color.White });
         return t;
     }
-
-    private static float _SecsSince(long receivedLocalMs)
-        => (float)(Environment.TickCount64 - receivedLocalMs) / 1000f;
 
     /// <summary>
     /// P582b — pre-warm the volumetric shaders and render target AT LOAD so the

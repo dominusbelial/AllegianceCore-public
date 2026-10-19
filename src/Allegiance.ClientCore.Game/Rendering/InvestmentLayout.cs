@@ -21,7 +21,7 @@ public static class InvestmentLayout
     {
         var rows = new List<ShopLayout.Row>();
 
-        rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Title, "STATION DOCKED - TEAM INVESTMENT"));
+        rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Title, "TEAM INVESTMENT"));
         rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Hint,
             "UP/DOWN NAV  SPACE INVEST  R PARTIAL  S SHOW-ALL  H HIDE-COMPLETED  B BACK"));
         rows.Add(ShopLayout.Row.Blank());
@@ -32,7 +32,7 @@ public static class InvestmentLayout
 
         if (m.MyMoney is { } mon)
             rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Info,
-                $"money: ${mon}   (server MONEY_CHANGE is the authoritative debit)"));
+                $"money: ${mon}"));
         else
             rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Muted, "money: unknown"));
 
@@ -41,6 +41,8 @@ public static class InvestmentLayout
 
         rows.Add(ShopLayout.Row.Blank());
 
+        if (m.Current is { Description.Length: > 0 } selected)
+            rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Info, AsciiSafe(selected.Description)));
         var items = m.Items;
         BucketItemType? lastGroup = null;
         for (int i = 0; i < items.Count; i++)

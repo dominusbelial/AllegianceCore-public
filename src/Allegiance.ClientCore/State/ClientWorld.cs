@@ -128,7 +128,7 @@ public sealed partial class ClientWorld
         if (System.Threading.Volatile.Read(ref _decisionRefreshPending) == 0)
             return _publishedDecision;
 
-        long now = System.Environment.TickCount64;
+        long now = (long)(NowSeconds() * 1000);
         if (_lastPublishedWorldGen == _worldGen)
             return _publishedDecision;                              // world unchanged since last publish
         if (now - _lastDecisionSnapPublishTick < DecisionSnapPublishIntervalMs)
@@ -196,7 +196,7 @@ public sealed partial class ClientWorld
     /// after applying a batch of messages; a decision-time reader subtracts it from
     /// "now" to measure DECODE LAG — how stale the newest applied update is.
     /// </summary>
-    public void MarkApplied() => System.Threading.Volatile.Write(ref _lastAppliedTick64, System.Environment.TickCount64);
+    public void MarkApplied() => System.Threading.Volatile.Write(ref _lastAppliedTick64, (long)(NowSeconds() * 1000));
 
     /// <summary>P636d — the wall-clock stamp (ms) of the newest applied update.</summary>
     public long LastAppliedTick64 => System.Threading.Volatile.Read(ref _lastAppliedTick64);
@@ -332,7 +332,7 @@ public sealed partial class ClientWorld
                 _treasureLocalSeconds = NowSeconds();
             }
             // Integrate the previous rate before applying a new dilation rate.
-            long now = Environment.TickCount64;
+            long now = (long)(NowSeconds() * 1000);
             if (_countdownClockLocalMs is { } last)
                 _countdownClockServerMs += (now - last) * _timeScale;
             if (_countdownClockLocalMs is not null) _countdownClockLocalMs = now;
@@ -1146,7 +1146,7 @@ public sealed partial class ClientWorld
         // clintlib.cpp:2497-2507: strict expiration < now, oldest first.
         if (_countdownClockLocalMs is { } anchor)
         {
-            double now = _countdownClockServerMs + ((localMs ?? Environment.TickCount64) - anchor) * TimeScale;
+            double now = _countdownClockServerMs + ((localMs ?? (long)(NowSeconds() * 1000)) - anchor) * TimeScale;
             while (_pendingBallots.Count > 0 && _pendingBallots[0].TimeExpiration < now)
                 _pendingBallots.RemoveAt(0);
         }
@@ -1648,7 +1648,7 @@ public sealed partial class ClientWorld
     public int? CountdownRemainingSeconds(long? localMs = null)
     {
         if (_countdownTargetMs is not { } target || _countdownClockLocalMs is not { } anchor) return null;
-        double now = _countdownClockServerMs + ((localMs ?? Environment.TickCount64) - anchor) * TimeScale;
+        double now = _countdownClockServerMs + ((localMs ?? (long)(NowSeconds() * 1000)) - anchor) * TimeScale;
         return Math.Max(0, (int)Math.Ceiling((target - now) / 1000.0));
     }
 
@@ -1660,7 +1660,7 @@ public sealed partial class ClientWorld
     public int? MissionCountdownSoundSeconds(long? localMs = null)
     {
         if (_missionTimeStartMs is not { } start || _countdownClockLocalMs is not { } anchor) return null;
-        double now = _countdownClockServerMs + ((localMs ?? Environment.TickCount64) - anchor) * TimeScale;
+        double now = _countdownClockServerMs + ((localMs ?? (long)(NowSeconds() * 1000)) - anchor) * TimeScale;
         double untilStart = (start - now) / 1000.0;
         if (_mission?.Stage == MissionStageMessage.StageStarting)
             return Math.Max(0, (int)untilStart + 1);
@@ -1712,6 +1712,8 @@ public sealed partial class ClientWorld
     /// </summary>
     public void Reset()
     {
+        OwnMissilesFired = 0;
+        _waitingForRestart = false;
         SectorGeneration++;
         ShipWarnings.Reset();
         MissionGeneration++;
@@ -1798,6 +1800,7 @@ public sealed partial class ClientWorld
         _highlightedClusters.Clear();
         Array.Fill(_allianceGroups, (sbyte)-1);
         ViewedClusterId = null;
+        TelemetrySectorOverride = null;
         ViewedClusterPosition = null;
         ViewClusterVersion = 0;
         _clusterWarningBySectorId.Clear();   // P374 — drop per-sector threat state on disconnect
@@ -1975,8 +1978,12 @@ public sealed partial class ClientWorld
                 Apply(moneyChange);
                 break;
             case RequestMoney requestMoney:
-                GetMoneyRequest(requestMoney.ShipIdRequest, requestMoney.Amount, requestMoney.HidFor);
+                Apply(requestMoney);
                 break;
+            case AddPart addPart: Apply(addPart); break;
+            case FireExpendable fireExpendable: Apply(fireExpendable); break;
+            case RelaunchShip relaunchShip: Apply(relaunchShip); break;
+            case PingData pingData: Apply(pingData); break;
             case AutoDonateUpdate autoDonateUpdate:
                 // P442 — a player's auto-donate relationship (payday routing) +
                 // any one-time gift.
@@ -2012,7 +2019,7 @@ public sealed partial class ClientWorld
                 Apply(missionStage);
                 break;
             case Ping ping:
-                ObserveServerTime(ping.TimeServer, Environment.TickCount64);
+                ObserveServerTime(ping.TimeServer, (long)(NowSeconds() * 1000));
                 break;
             case SetStartTime setStartTime:
                 Apply(setStartTime);
@@ -2482,7 +2489,7 @@ public sealed partial class ClientWorld
         {
             RipcordActive = true;
             RipcordTargetSectorId = m.SidRipcord;
-            RipcordActiveSinceLocalMs = Environment.TickCount64;
+            RipcordActiveSinceLocalMs = (long)(NowSeconds() * 1000);
         }
     }
 
@@ -2591,6 +2598,8 @@ public sealed partial class ClientWorld
     /// message (which carries no <c>HullId</c>/<c>SideId</c>). The heavy record's
     /// absolute time/position are recovered from the message's per-recipient
     /// references (<c>CompactTime</c>/<c>CompactPosition</c> deltas).</summary>
+    /// <summary>Opt-in benchmark/spectator stream sector. Ordinary play derives it from the own ship.</summary>
+    public short? TelemetrySectorOverride { get; set; }
     private void Apply(HeavyShipsUpdate heavy)
     {
         MarkSnapshotDirty();
@@ -2616,6 +2625,7 @@ public sealed partial class ClientWorld
         short ownSector = 0;
         if (MyShipId is { } meOwn && _ships.TryGetValue(meOwn, out var ownEnt))
             ownSector = ownEnt.SectorId;
+        ownSector = TelemetrySectorOverride ?? ownSector;
 
         foreach (var entry in heavy.HeavyShipEntries)
         {
@@ -2632,6 +2642,9 @@ public sealed partial class ClientWorld
             bool hadPose = e.Latest is not null;
             e.SectorId = ownSector;   // P375 — every 176 entry is in our own cluster (see above)
             e.PoseSectorId = ownSector;
+            // The explicitly authorized local benchmark observer receives all ships
+            // in its requested sector; scanner-hidden status belongs to ordinary play.
+            if (TelemetrySectorOverride is not null) e.Unknown = false;
             // Native sends in-cluster telemetry even for undetected ships.
             // Only a spotted SHIP_STATUS may clear the scanner-hidden bit.
             e.StationId = -1;
@@ -3028,7 +3041,7 @@ public sealed partial class ClientWorld
             RadiusStation = d.RadiusStation,
             PositionStart = d.PositionStart,
             PositionStop = d.PositionStop,
-            ReceivedLocalMs = Environment.TickCount64,
+            ReceivedLocalMs = (long)(NowSeconds() * 1000),
         };
     }
 
@@ -3103,7 +3116,7 @@ public sealed partial class ClientWorld
             Etid = m.Etid,
             P0 = m.P0,
             V0 = m.V0,
-            ReceivedLocalMs = Environment.TickCount64,
+            ReceivedLocalMs = (long)(NowSeconds() * 1000),
         });
         // P638 — remember the newest decoy's spawn position so a following
         // MISSILE_SPOOFED(110) can retarget a missile onto it (native's
@@ -3148,7 +3161,7 @@ public sealed partial class ClientWorld
             Position = explosion.Position,
             ClusterId = explosion.ClusterId,
             Velocity = explosion.Velocity,
-            ReceivedLocalMs = Environment.TickCount64,
+            ReceivedLocalMs = (long)(NowSeconds() * 1000),
         });
         // P574 — the same event feeds the world-explosion SOUND stream (native
         // plays a tiered positional sound for every AddExplosion in the player's
@@ -3170,7 +3183,7 @@ public sealed partial class ClientWorld
             Normal = hit.Normal,
             AbsorbedByShield = hit.AbsorbedByShield,   // P463 — shield-hit discriminator
             SourceId = hit.SourceId,                   // P539b — the shooter, so a receiver can attribute the hit
-            ReceivedLocalMs = Environment.TickCount64,
+            ReceivedLocalMs = (long)(NowSeconds() * 1000),
         });
         // P463 — the same hit also feeds the hit-SOUND stream (my/other ×
         // shield/hull). Kept in its own buffer so the audio manager can drain it
@@ -3185,7 +3198,7 @@ public sealed partial class ClientWorld
     private void Apply(VictimDamaged v)
     {
         if (v.Damage <= 0f) return;
-        _victimDamages.Add((v.AttackerId, v.Damage, Environment.TickCount64));
+        _victimDamages.Add((v.AttackerId, v.Damage, (long)(NowSeconds() * 1000)));
         if (_victimDamages.Count > 128) _victimDamages.RemoveAt(0);
     }
 
@@ -3317,7 +3330,7 @@ public sealed partial class ClientWorld
             && MyShipId is { } me
             && _ships.TryGetValue(me, out var ownEnt)
             && ownEnt.Latest is { } up
-            && pred(m.ProjectileTypeId, m.Position, up.Position, Environment.TickCount64))
+            && pred(m.ProjectileTypeId, m.Position, up.Position, (long)(NowSeconds() * 1000)))
         {
             Diag.RecordDropped(rel);
             return;
@@ -3337,7 +3350,7 @@ public sealed partial class ClientWorld
             Forward = m.Forward,
             Velocity = m.Velocity,
             Lifespan = m.Lifespan,
-            ReceivedLocalMs = Environment.TickCount64,
+            ReceivedLocalMs = (long)(NowSeconds() * 1000),
         });
     }
 
@@ -3425,9 +3438,14 @@ public sealed partial class ClientWorld
     /// exactly one missile per fire) plus the message's type/cluster, stamped
     /// with the local receipt instant. Later per-tick MISSILE_UPDATE(205)
     /// records keep the same id current (upsert).</summary>
+    /// <summary>Confirmed own missile quantity, not fire requests. Native consumes
+    /// the salvo count (clintlib/clintlib.cpp:3114-3120,3206).</summary>
+    public long OwnMissilesFired { get; private set; }
+
     private void Apply(FireMissile m)
     {
         if (m.Entries.Count == 0) return;               // degenerate (legal) empty salvo
+        if (m.LauncherId == MyShipId) OwnMissilesFired += m.Entries.Count;
         foreach (var e in m.Entries)
         {
             _missiles[e.MissileId] = new MissileEntity
@@ -3440,7 +3458,7 @@ public sealed partial class ClientWorld
                 ClusterId = m.ClusterId,
                 Position = e.VecPosition,
                 Forward = e.VecForward.LengthSquared() > 1e-6f ? e.VecForward.Normalize() : new Vector3(0f, 0f, -1f),
-                LastUpdatedLocalMs = Environment.TickCount64,
+                LastUpdatedLocalMs = (long)(NowSeconds() * 1000),
             };
             _lastMissileFiredByShip[m.LauncherId] = e.MissileId;
         }
@@ -3459,7 +3477,7 @@ public sealed partial class ClientWorld
     /// and stamping the receipt instant so the stale pruner knows it is alive.</summary>
     private void Apply(MissileUpdate m)
     {
-        long now = Environment.TickCount64;
+        long now = (long)(NowSeconds() * 1000);
         foreach (var r in m.Records)
         {
             if (!_missiles.TryGetValue(r.MissileId, out var missile))
@@ -3765,23 +3783,38 @@ public sealed partial class ClientWorld
     /// visible sector).</summary>
     private void Apply(GainFlag m)
     {
-        if (m.SideidFlag == GainFlag.NA) return;   // secure / tech-recovery: no announce VO
-
+        if (_waitingForRestart) return; // appmsg.cpp:3115: waiting for restart
         if (!_ships.TryGetValue(m.ShipidRecipient, out var recipient))
             return;                                 // recipient side unknown → cannot classify
 
         short mySide = MySideId ?? Na;
+        if (m.BIsTreasureDocked)
+        {
+            if (recipient.SideId == mySide && ResolveInterfacePart(m.ParttypeidDocked) is { } part)
+                PostText(true, "{0} has secured {1}", recipient.CharacterName, part.Name);
+            return; // tech recovery never changes the carried flag or voices it
+        }
+        recipient.CarriedFlagSideId = m.SideidFlag;
+        if (m.SideidFlag == GainFlag.NA) return;
+        string SideName(short side) => SideRoster?.Sides.FirstOrDefault(s => s.SideId == side).Name ?? $"side {side}";
         if (recipient.SideId == mySide)
         {
             // A teammate picked up a flag (enemy or neutral-artifact).
             if (m.SideidFlag != Side.ArtifactSentinelFlag)
+            {
+                PostText(true, "{0} has stolen {1}'s flag.", recipient.CharacterName, SideName(m.SideidFlag));
                 RecordSoundEvent(ClientSoundEventKind.EnemyFlagStolen, m.ShipidRecipient);
+            }
             else
+            {
+                PostText(true, "{0} has found an artifact.", recipient.CharacterName);
                 RecordSoundEvent(ClientSoundEventKind.ArtifactFound, m.ShipidRecipient);
+            }
         }
         else if (m.SideidFlag > 0 && m.SideidFlag == mySide)
         {
             // An enemy is carrying OUR side's flag.
+            PostText(true, "{0} of {1} has stolen our flag.", recipient.CharacterName, SideName(recipient.SideId));
             RecordSoundEvent(ClientSoundEventKind.OurFlagStolen, m.ShipidRecipient);
         }
     }
@@ -4257,6 +4290,8 @@ public sealed partial class ClientWorld
             BeginNextMission();
         // Native gameoverscreen.cpp:638-645 advances the game-over screen on Starting
         // to the new mission. Keep scoreboard during NotStarted intermission.
+        if (stage.Stage is MissionStageMessage.StageStarting or MissionStageMessage.StageStarted)
+            _waitingForRestart = false;
         if (stage.Stage == MissionStageMessage.StageStarting)
         {
             CountdownVersion++;
@@ -4291,6 +4326,7 @@ public sealed partial class ClientWorld
 
     public void BeginNextMission()
     {
+        OwnMissilesFired = 0;
         SectorGeneration++;
         MissionGeneration++;
         ShipWarnings.Reset();
@@ -4364,6 +4400,7 @@ public sealed partial class ClientWorld
         _highlightedClusters.Clear();
         Array.Fill(_allianceGroups, (sbyte)-1);
         ViewedClusterId = null;
+        TelemetrySectorOverride = null;
         ViewedClusterPosition = null;
         ViewClusterVersion = 0;
         _clusterWarningBySectorId.Clear();
@@ -4380,7 +4417,7 @@ public sealed partial class ClientWorld
     {
         _countdownTargetMs = startTime.TimeStart;
         _missionTimeStartMs = startTime.TimeStart;
-        CountdownStartLocalMs = Environment.TickCount64;
+        CountdownStartLocalMs = (long)(NowSeconds() * 1000);
     }
 
     /// <summary>FM_S_SET_BRIEFING_TEXT(9) — the server's per-player mission
@@ -4411,6 +4448,7 @@ public sealed partial class ClientWorld
     /// rotation moves it to NotStarted) → the team lobby.</summary>
     private void Apply(GameOver gameOver)
     {
+        _waitingForRestart = true;
         InGame = false;
         // P262 — retain the full snapshot (reason + winner + per-side records)
         // for the on-screen result panel. The stage is NOT touched here; see

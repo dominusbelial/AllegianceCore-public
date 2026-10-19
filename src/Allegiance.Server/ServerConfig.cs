@@ -702,6 +702,8 @@ public sealed class ReceiveConfig
 /// </summary>
 public sealed class ServerConfig
 {
+    /// <summary>Optional local benchmark policy; normal games retain an unseeded RNG.</summary>
+    public int? BenchmarkSeed { get; set; }
     public ShowcaseConfig Showcase { get; set; } = new();
 
     /// <summary>Resolve mode dependencies before binding sockets or changing global runtime state.

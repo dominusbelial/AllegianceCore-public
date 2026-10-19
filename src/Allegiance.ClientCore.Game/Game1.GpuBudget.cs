@@ -29,6 +29,7 @@ public sealed partial class Game1
     private void InitializeGpuBudget()
     {
         _nativeShipRenderer.HdTexturesEnabled = _upscaling.HdTextures;
+        _hdMaterials.Enabled = _upscaling.HdTextures;
         _fsr = new(GraphicsDevice, _shaders!);
         _postWidth = GraphicsDevice.PresentationParameters.BackBufferWidth;
         _postHeight = GraphicsDevice.PresentationParameters.BackBufferHeight;
@@ -95,7 +96,7 @@ public sealed partial class Game1
                 case 1: _upscaling.Preset = (FsrPreset)(((int)_upscaling.Preset + direction + 4) % 4); break;
                 case 2: _upscaling.Sharpness = Math.Clamp(_upscaling.Sharpness + direction * .05f, 0, 1); break;
                 case 3: _upscaling.DynamicResolution = !_upscaling.DynamicResolution; break;
-                case 5: _upscaling.HdTextures = !_upscaling.HdTextures; _nativeShipRenderer.HdTexturesEnabled = _upscaling.HdTextures; break;
+                case 5: _upscaling.HdTextures = !_upscaling.HdTextures; _nativeShipRenderer.HdTexturesEnabled = _upscaling.HdTextures; _hdMaterials.Enabled = _upscaling.HdTextures; break;
                 case 4: _upscaling.TargetFrameMs = Math.Clamp(_upscaling.TargetFrameMs + direction, 8, 100); break;
             }
         }
@@ -149,7 +150,15 @@ public sealed partial class Game1
     }
     protected override void EndDraw()
     {
-        DrawGpuBudgetOverlay();
+        if (_benchResult is null) DrawGpuBudgetOverlay();
+        if (_benchExitAfterDraw && _benchResult is not null && Environment.GetEnvironmentVariable("ALLEGIANCE_BENCHMARK_SCREENSHOT") is { Length: > 0 } screenshot)
+        {
+            var parameters = GraphicsDevice.PresentationParameters;
+            var pixels = new Color[parameters.BackBufferWidth * parameters.BackBufferHeight];
+            GraphicsDevice.GetBackBufferData(pixels);
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(screenshot))!);
+            File.WriteAllBytes(screenshot, Capture.CapturePngSaver.Encode(pixels, parameters.BackBufferWidth, parameters.BackBufferHeight));
+        }
         if (_budgetDuration > 0 && Stopwatch.GetElapsedTime(_budgetStart).TotalSeconds >= _budgetDuration)
         {
             if (!string.IsNullOrWhiteSpace(_budgetCapture))
@@ -174,5 +183,6 @@ public sealed partial class Game1
         _frameTelemetry?.EndDraw(Stopwatch.GetElapsedTime(start).TotalMilliseconds, draws,
             pp.BackBufferWidth, pp.BackBufferHeight, _scaledThisFrame ? _postWidth : pp.BackBufferWidth,
             _scaledThisFrame ? _postHeight : pp.BackBufferHeight);
+        if (_benchExitAfterDraw && _benchResult is not null) Exit();
     }
 }

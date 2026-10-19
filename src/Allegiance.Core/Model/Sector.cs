@@ -1340,6 +1340,14 @@ public sealed class Sector : IClusterIgc
                 }
                 else continue;
 
+                // Native reaches InGarage only inside HandleCollision's OT_ship
+                // branch (Igc/shipIGC.cpp:1023-1055). Bay half-spaces can be open
+                // beyond the hull; testing every sector pair without the collision
+                // broadphase otherwise teleports distant strikes back to a carrier.
+                float contactRadius = (carrier.HullType.Length + lander.HullType.Length) * .5f;
+                if ((lander.Position - carrier.Position).LengthSquared() > contactRadius * contactRadius)
+                    continue;
+
                 // Real geometric test (the point of this slice): the lander's
                 // swept sphere against the carrier's reconstructed bay planes.
                 // tCollision=0 — instantaneous per-tick sweep, the same value
@@ -2103,6 +2111,7 @@ public sealed class Sector : IClusterIgc
                 // c_mtStatic; a static body). position2 is its fixed centre.
                 var spos = station.Center;
 
+                float shieldBefore = station.ShieldFraction, hullBefore = station.ArmorFraction;
                 DamageResult killed = station.ReceiveDamage(
                     ord.DamageType,
                     ord.Power * gaMul,
@@ -2110,6 +2119,7 @@ public sealed class Sector : IClusterIgc
                     position1,
                     spos,
                     ord.Launcher);
+                station.TraceDamage(now, ord.Launcher, ord.DamageType, shieldBefore, hullBefore, ord);
 
                 // Native missileigc.cpp:471-496: damage FIRST, then test the
                 // resulting shield fraction. Capture missiles suppress their
@@ -3489,7 +3499,11 @@ public sealed class Sector : IClusterIgc
                 || !ExplosionAmount(e, station.Center, station.Radius, out float amount)) continue;
             DamageResult stationResult;
             using (TickProfiler.Enter("blast.damage"))
+            {
+                float shieldBefore = station.ShieldFraction, hullBefore = station.ArmorFraction;
                 stationResult = station.ReceiveDamage(type, amount, e.Time, station.Center, e.Position, e.Launcher);
+                station.TraceDamage(e.Time, e.Launcher, type, shieldBefore, hullBefore);
+            }
             if (stationResult == DamageResult.Killed)
             {
                 RemoveStation(station);

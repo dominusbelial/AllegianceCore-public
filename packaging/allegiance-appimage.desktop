@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=AllegianceCore
+Comment=Allegiance space combat client
+Exec=AppRun
+Icon=allegiance
+Terminal=false
+Categories=Game;ActionGame;

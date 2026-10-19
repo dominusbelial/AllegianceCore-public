@@ -70,7 +70,7 @@ public sealed class HdPackTests : IDisposable
     {
         Manifest(accepted: false);
         Assert.Null(new HdPack(_root, _logs.Add).Resolve("hull", "hullbmp", _ => throw new Exception("must not read rejected maps")));
-        Manifest(schema: 2); Assert.Null(new HdPack(_root, _logs.Add).Resolve("hull", "hullbmp", Open));
+        Manifest(schema: 3); Assert.Null(new HdPack(_root, _logs.Add).Resolve("hull", "hullbmp", Open));
         Manifest();
         string path = Path.Combine(_root, "manifest.json");
         File.WriteAllText(path, File.ReadAllText(path).Replace("\"schema\":1", "\"schema\":100000000000000000000"));
@@ -89,5 +89,52 @@ public sealed class HdPackTests : IDisposable
     [Fact]
     public void External_path_kind_exposes_hd_environment_setting()
         => Assert.Equal("ALLEGIANCE_HD_PACK_PATH", ExternalPaths.EnvVar(ExternalResourceKind.HdPack));
+
+    private void AtlasManifest()
+    {
+        foreach (string stem in new[] { "atlas_a", "atlas_b" })
+        {
+            string dir = Path.Combine(_root, "textures", stem);
+            Directory.CreateDirectory(dir);
+            foreach (string name in HdPack.MapNames) File.WriteAllBytes(Path.Combine(dir, name + ".png"), [0]);
+        }
+        File.WriteAllText(Path.Combine(_root, "manifest.json"), JsonSerializer.Serialize(new
+        {
+            schema = 2, textures = new Dictionary<string, object>
+            {
+                ["atlas_a"] = new { native = new { TextureSha256 = Hash(NativeTexture) } },
+                ["atlas_b"] = new { native = new { TextureSha256 = Hash(NativeModel) } }
+            }
+        }));
+    }
+
+    [Fact]
+    public void Schema2_multi_atlas_resolves_each_mesh_and_shares_material_across_model_kinds()
+    {
+        AtlasManifest(); var pack = new HdPack(_root, _logs.Add); int reads = 0;
+        Stream Artwork(string name) { reads++; return new MemoryStream(name == "atlas_b.mdl" ? NativeModel : NativeTexture); }
+        var a = pack.Resolve("multi_atlas_ship", "ATLAS_A", Artwork);
+        var b = pack.Resolve("multi_atlas_ship", "atlas_b", Artwork);
+        Assert.NotNull(a); Assert.NotNull(b); Assert.NotEqual(a.Directory, b.Directory);
+        Assert.Equal(Path.Combine(_root, "textures", "atlas_a", "normal.png"), a.MapPath("normal"));
+        foreach (string kind in new[] { "station", "missile", "probe", "projectile", "asteroid", "aleph", "treasure" })
+            Assert.Same(a, pack.Resolve(kind, "atlas_a", Artwork));
+        Assert.Equal(2, reads); // No model geometry hash in an atlas material.
+    }
+
+    [Fact]
+    public void Schema2_hash_guard_and_missing_maps_only_disable_the_affected_atlas()
+    {
+        AtlasManifest();
+        File.Delete(Path.Combine(_root, "textures", "atlas_b", "normal.png"));
+        var pack = new HdPack(_root, _logs.Add);
+        Assert.NotNull(pack.Resolve("ship", "atlas_a", _ => new MemoryStream(NativeTexture)));
+        Assert.Null(pack.Resolve("ship", "atlas_b", _ => new MemoryStream(NativeModel)));
+        Assert.Null(pack.Resolve("ship", "absent", _ => throw new Exception("unexpected IO")));
+        pack = new HdPack(_root, _logs.Add);
+        Assert.Null(pack.Resolve("ship", "atlas_a", _ => new MemoryStream([99])));
+        Assert.Null(pack.Resolve("station", "atlas_a", _ => throw new Exception("negative result must cache")));
+        Assert.Single(_logs, l => l.Contains("SHA256 mismatch"));
+    }
     public void Dispose() => Directory.Delete(_root, true);
 }

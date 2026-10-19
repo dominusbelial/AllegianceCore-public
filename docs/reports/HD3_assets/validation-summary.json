@@ -1,0 +1,456 @@
+{
+  "task": "HD3",
+  "status": "Implementation validated; requested real-HD captures require external atlas inputs",
+  "build": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "serverAot": {
+    "passed": true,
+    "IL2026": false,
+    "IL3050": false
+  },
+  "focusedCsharp": {
+    "methods": 25,
+    "passedInvocations": 78
+  },
+  "builder": {
+    "methods": 7,
+    "passedInvocations": 21
+  },
+  "suites": [
+    {
+      "project": "Allegiance.Core.Tests",
+      "counts": {
+        "total": 4881,
+        "executed": 4881,
+        "passed": 4879,
+        "failed": 2,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "seconds": 943.85,
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join",
+          "method": "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join",
+          "message": "System.Threading.ThreadStateException : Thread has not been started.",
+          "isolatedPasses": 3
+        },
+        {
+          "name": "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+          "method": "Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+          "message": "Assert.Single() Failure: The collection was empty",
+          "isolatedPasses": 3
+        }
+      ],
+      "skips": [],
+      "skipped": 0
+    },
+    {
+      "project": "Allegiance.ClientCore.Tests",
+      "counts": {
+        "total": 1381,
+        "executed": 1380,
+        "passed": 1380,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "seconds": 1584.04,
+      "failures": [],
+      "skips": [
+        "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms"
+      ],
+      "skipped": 1
+    },
+    {
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "counts": {
+        "total": 2446,
+        "executed": 2443,
+        "passed": 2443,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "seconds": 968.71,
+      "failures": [],
+      "skips": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before"
+      ],
+      "skipped": 3
+    }
+  ],
+  "followUpRuns": [
+    {
+      "tag": "local-p542",
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName~P542RemoteProjectilesLiveTests",
+      "exitCode": 0,
+      "seconds": 9.88,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "tag": "local-p660",
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName~P660ShowcaseLiveTests",
+      "exitCode": 0,
+      "seconds": 23.31,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "tag": "showcase-1",
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "exitCode": 0,
+      "seconds": 101.51,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "tag": "showcase-2",
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "exitCode": 0,
+      "seconds": 95.95,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "tag": "showcase-3",
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "exitCode": 0,
+      "seconds": 99.85,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "tag": "showcase-4",
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "exitCode": 0,
+      "seconds": 100.5,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "tag": "showcase-5",
+      "project": "Allegiance.ClientCore.Tests",
+      "filter": "FullyQualifiedName=Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "exitCode": 0,
+      "seconds": 97.65,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "tag": "isolate-Allegiance.Core.Tests-663-1",
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join",
+      "exitCode": 0,
+      "seconds": 1.72,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "tag": "isolate-Allegiance.Core.Tests-663-2",
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join",
+      "exitCode": 0,
+      "seconds": 1.72,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "tag": "isolate-Allegiance.Core.Tests-663-3",
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join",
+      "exitCode": 0,
+      "seconds": 1.72,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "tag": "isolate-Allegiance.Core.Tests-3274-1",
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "exitCode": 0,
+      "seconds": 1.57,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "tag": "isolate-Allegiance.Core.Tests-3274-2",
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "exitCode": 0,
+      "seconds": 1.52,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "tag": "isolate-Allegiance.Core.Tests-3274-3",
+      "project": "Allegiance.Core.Tests",
+      "filter": "FullyQualifiedName=Allegiance.Core.Tests.LiveRipcordTests.Cancel_while_active_aborts_sector_wide",
+      "exitCode": 0,
+      "seconds": 1.52,
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    }
+  ],
+  "showcasePasses": 5,
+  "showcaseBaselineComparison": "Not triggered: all five designated runs passed",
+  "realPack": {
+    "atlasCount": 4,
+    "coreReferencedStems": 350,
+    "coveredStems": 4,
+    "packPath": "/tmp/hd3-evidence/real-pack",
+    "releaseZip": "/tmp/hd3-evidence/real-pack.zip"
+  },
+  "requestedRealHdCapturesComplete": false,
+  "rawEvidence": "/tmp/hd3-evidence",
+  "commitsOrPushes": false
+}

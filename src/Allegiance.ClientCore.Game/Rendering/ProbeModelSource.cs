@@ -20,11 +20,9 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <para><b>Census result (this session).</b> PCore001.igc has 53 probe types
 /// across <b>17 distinct <c>ModelName</c>s, and all 17 real <c>.mdl</c> files
 /// are present in the artwork tree and parse cleanly</b> (68–866 verts /
-/// 64–786 tris each). The MonoGame client's <see cref="ClientCore.State.ProbeEntity"/>
-/// carries no probe-type id (the rendering scope adds no state plumbing), so
-/// the renderer uses a <b>single real demo model</b> shared by every deployed
-/// probe — the same graceful single-fallback convention P288's missile census
-/// led to (most missile types fall back to one native <c>mis05.mdl</c> demo).
+/// 64–786 tris each). The original renderer used a single demo model. HD-3 now uses each entity's
+/// <c>ProbetypeId</c> to load its own model and per-mesh atlas materials on demand;
+/// this helper retains the canonical fallback for missing type/model data.
 /// <c>utl02</c> is the canonical base "Probe" (six real probe types, all
 /// radius 4, 280 tris of real geometry), a faithful representative of what a
 /// player deploys.</para>
@@ -33,7 +31,7 @@ public static class ProbeModelSource
 {
     /// <summary>The real <c>.mdl</c> stem for the canonical base Probe
     /// (PCore001 expendable types 72/73/850/861/862/1002, all Radius = 4).
-    /// This is the single native model shared by every deployed probe.</summary>
+    /// Used when a deployed probe's own type/model cannot be resolved.</summary>
     public const string DemoModelStem = "utl02";
 
     /// <summary>

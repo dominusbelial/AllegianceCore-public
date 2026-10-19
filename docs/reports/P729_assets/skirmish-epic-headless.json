@@ -1,0 +1,2264 @@
+{
+  "SchemaVersion": 1,
+  "Mode": "skirmish",
+  "Preset": "Epic",
+  "DurationSeconds": 3,
+  "ReplaySha256": null,
+  "Renderer": "Headless",
+  "Width": 0,
+  "Height": 0,
+  "TestedSettings": null,
+  "Seed": 729,
+  "Map": "m2xspiderw.igc",
+  "Civs": [
+    25,
+    3
+  ],
+  "Timestamp": "2026-10-18T21:39:14.4513375+00:00",
+  "Machine": "domingo-MS-02-Ultra",
+  "Os": "Ubuntu 26.04.1 LTS",
+  "LogicalCores": 24,
+  "Runs": [
+    {
+      "Repetition": 1,
+      "Rendered": false,
+      "WallSeconds": 3.0251095,
+      "FpsAverage": null,
+      "FpsOnePercentLow": null,
+      "FrameMs": null,
+      "CpuMs": null,
+      "GpuMs": null,
+      "ServerTickMs": {
+        "Count": 61,
+        "Mean": 19.511339344262293,
+        "P50": 19.1303,
+        "P95": 23.1204,
+        "P99": 30.7131,
+        "Worst": 30.7131
+      },
+      "BotCount": 119,
+      "PerBotCpu": [
+        {
+          "Name": "mcp-w1-b002-2971",
+          "DecisionCpuMs": 5.058047999999999
+        },
+        {
+          "Name": "mcp-w1-b004-4185",
+          "DecisionCpuMs": 3.2766299999999973
+        },
+        {
+          "Name": "mcp-w1-b005-7580",
+          "DecisionCpuMs": 2.875125999999998
+        },
+        {
+          "Name": "mcp-w1-b006-6042",
+          "DecisionCpuMs": 5.474785000000001
+        },
+        {
+          "Name": "mcp-w1-b007-3474",
+          "DecisionCpuMs": 3.0716029999999996
+        },
+        {
+          "Name": "mcp-w1-b008-8938",
+          "DecisionCpuMs": 3.255813
+        },
+        {
+          "Name": "mcp-w1-b009-5014",
+          "DecisionCpuMs": 3.226400999999999
+        },
+        {
+          "Name": "mcp-w1-b010-6816",
+          "DecisionCpuMs": 3.184102999999997
+        },
+        {
+          "Name": "mcp-w1-b011-2355",
+          "DecisionCpuMs": 2.898366000000003
+        },
+        {
+          "Name": "mcp-w1-b012-1147",
+          "DecisionCpuMs": 3.1449250000000006
+        },
+        {
+          "Name": "mcp-w1-b013-5658",
+          "DecisionCpuMs": 3.1250159999999987
+        },
+        {
+          "Name": "mcp-w1-b014-6556",
+          "DecisionCpuMs": 3.210326000000002
+        },
+        {
+          "Name": "mcp-w1-b015-2851",
+          "DecisionCpuMs": 3.258596999999998
+        },
+        {
+          "Name": "mcp-w1-b016-3707",
+          "DecisionCpuMs": 3.1527780000000014
+        },
+        {
+          "Name": "mcp-w1-b017-5283",
+          "DecisionCpuMs": 3.214645000000001
+        },
+        {
+          "Name": "mcp-w1-b018-4656",
+          "DecisionCpuMs": 3.356484000000002
+        },
+        {
+          "Name": "mcp-w1-b019-6371",
+          "DecisionCpuMs": 3.298248000000001
+        },
+        {
+          "Name": "mcp-w1-b020-2297",
+          "DecisionCpuMs": 3.3654139999999977
+        },
+        {
+          "Name": "mcp-w1-b021-2565",
+          "DecisionCpuMs": 3.276516000000001
+        },
+        {
+          "Name": "mcp-w1-b022-9994",
+          "DecisionCpuMs": 3.315805000000001
+        },
+        {
+          "Name": "mcp-w1-b023-4824",
+          "DecisionCpuMs": 3.3684030000000007
+        },
+        {
+          "Name": "mcp-w1-b024-5904",
+          "DecisionCpuMs": 3.370984
+        },
+        {
+          "Name": "mcp-w1-b025-8043",
+          "DecisionCpuMs": 3.3568320000000007
+        },
+        {
+          "Name": "mcp-w1-b026-4825",
+          "DecisionCpuMs": 3.3971829999999983
+        },
+        {
+          "Name": "mcp-w1-b027-9255",
+          "DecisionCpuMs": 3.365462000000001
+        },
+        {
+          "Name": "mcp-w1-b028-7204",
+          "DecisionCpuMs": 3.388546999999999
+        },
+        {
+          "Name": "mcp-w1-b029-4919",
+          "DecisionCpuMs": 3.323469000000003
+        },
+        {
+          "Name": "mcp-w1-b030-6224",
+          "DecisionCpuMs": 3.3583680000000022
+        },
+        {
+          "Name": "mcp-w1-b031-6089",
+          "DecisionCpuMs": 3.3695249999999994
+        },
+        {
+          "Name": "mcp-w1-b032-5510",
+          "DecisionCpuMs": 3.3016299999999994
+        },
+        {
+          "Name": "mcp-w2-b001-1270",
+          "DecisionCpuMs": 4.924481
+        },
+        {
+          "Name": "mcp-w2-b002-9053",
+          "DecisionCpuMs": 3.6157110000000046
+        },
+        {
+          "Name": "mcp-w2-b003-8969",
+          "DecisionCpuMs": 3.252832999999999
+        },
+        {
+          "Name": "mcp-w2-b004-2920",
+          "DecisionCpuMs": 3.0873500000000007
+        },
+        {
+          "Name": "mcp-w2-b005-9903",
+          "DecisionCpuMs": 3.245222000000002
+        },
+        {
+          "Name": "mcp-w2-b006-5276",
+          "DecisionCpuMs": 3.2406299999999995
+        },
+        {
+          "Name": "mcp-w2-b007-6287",
+          "DecisionCpuMs": 3.262998999999997
+        },
+        {
+          "Name": "mcp-w2-b008-2138",
+          "DecisionCpuMs": 3.137421
+        },
+        {
+          "Name": "mcp-w2-b009-7041",
+          "DecisionCpuMs": 3.241544000000001
+        },
+        {
+          "Name": "mcp-w2-b010-7257",
+          "DecisionCpuMs": 3.2900530000000003
+        },
+        {
+          "Name": "mcp-w2-b011-6176",
+          "DecisionCpuMs": 3.2893620000000006
+        },
+        {
+          "Name": "mcp-w2-b012-9295",
+          "DecisionCpuMs": 2.8401929999999993
+        },
+        {
+          "Name": "mcp-w2-b013-2679",
+          "DecisionCpuMs": 3.3099109999999996
+        },
+        {
+          "Name": "mcp-w2-b014-5271",
+          "DecisionCpuMs": 3.3628269999999993
+        },
+        {
+          "Name": "mcp-w2-b015-5979",
+          "DecisionCpuMs": 3.2952340000000007
+        },
+        {
+          "Name": "mcp-w2-b016-4782",
+          "DecisionCpuMs": 3.186989999999998
+        },
+        {
+          "Name": "mcp-w2-b017-1590",
+          "DecisionCpuMs": 3.4253870000000006
+        },
+        {
+          "Name": "mcp-w2-b018-3798",
+          "DecisionCpuMs": 3.161073000000002
+        },
+        {
+          "Name": "mcp-w2-b019-5196",
+          "DecisionCpuMs": 3.3914620000000006
+        },
+        {
+          "Name": "mcp-w2-b020-2634",
+          "DecisionCpuMs": 3.4801730000000006
+        },
+        {
+          "Name": "mcp-w2-b021-4947",
+          "DecisionCpuMs": 3.328084999999998
+        },
+        {
+          "Name": "mcp-w2-b022-1871",
+          "DecisionCpuMs": 2.8452350000000024
+        },
+        {
+          "Name": "mcp-w2-b023-3134",
+          "DecisionCpuMs": 3.387073000000001
+        },
+        {
+          "Name": "mcp-w2-b024-9333",
+          "DecisionCpuMs": 3.529035999999998
+        },
+        {
+          "Name": "mcp-w2-b025-7481",
+          "DecisionCpuMs": 3.4366090000000007
+        },
+        {
+          "Name": "mcp-w2-b026-5443",
+          "DecisionCpuMs": 3.563981000000002
+        },
+        {
+          "Name": "mcp-w2-b027-5399",
+          "DecisionCpuMs": 3.3153369999999995
+        },
+        {
+          "Name": "mcp-w2-b028-9852",
+          "DecisionCpuMs": 3.309622000000001
+        },
+        {
+          "Name": "mcp-w2-b029-4731",
+          "DecisionCpuMs": 3.1985579999999985
+        },
+        {
+          "Name": "mcp-w2-b030-2461",
+          "DecisionCpuMs": 3.096112999999999
+        },
+        {
+          "Name": "mcp-w3-b001-7200",
+          "DecisionCpuMs": 4.690966000000003
+        },
+        {
+          "Name": "mcp-w3-b002-9561",
+          "DecisionCpuMs": 3.527851000000002
+        },
+        {
+          "Name": "mcp-w3-b003-8374",
+          "DecisionCpuMs": 3.656870999999999
+        },
+        {
+          "Name": "mcp-w3-b004-5671",
+          "DecisionCpuMs": 3.393259999999998
+        },
+        {
+          "Name": "mcp-w3-b005-6862",
+          "DecisionCpuMs": 3.7883090000000017
+        },
+        {
+          "Name": "mcp-w3-b006-6040",
+          "DecisionCpuMs": 3.382137
+        },
+        {
+          "Name": "mcp-w3-b007-8627",
+          "DecisionCpuMs": 3.109071
+        },
+        {
+          "Name": "mcp-w3-b008-1074",
+          "DecisionCpuMs": 3.329671000000001
+        },
+        {
+          "Name": "mcp-w3-b009-2841",
+          "DecisionCpuMs": 3.278647000000003
+        },
+        {
+          "Name": "mcp-w3-b010-7414",
+          "DecisionCpuMs": 3.3579050000000024
+        },
+        {
+          "Name": "mcp-w3-b011-7660",
+          "DecisionCpuMs": 3.559404999999998
+        },
+        {
+          "Name": "mcp-w3-b012-6141",
+          "DecisionCpuMs": 3.392529999999997
+        },
+        {
+          "Name": "mcp-w3-b013-6650",
+          "DecisionCpuMs": 3.483468000000002
+        },
+        {
+          "Name": "mcp-w3-b014-8444",
+          "DecisionCpuMs": 3.448731000000002
+        },
+        {
+          "Name": "mcp-w3-b015-2119",
+          "DecisionCpuMs": 3.441771000000003
+        },
+        {
+          "Name": "mcp-w3-b016-2763",
+          "DecisionCpuMs": 3.443543000000002
+        },
+        {
+          "Name": "mcp-w3-b017-4854",
+          "DecisionCpuMs": 3.500876999999999
+        },
+        {
+          "Name": "mcp-w3-b018-6016",
+          "DecisionCpuMs": 3.4153560000000027
+        },
+        {
+          "Name": "mcp-w3-b019-3885",
+          "DecisionCpuMs": 3.5562299999999993
+        },
+        {
+          "Name": "mcp-w3-b020-2934",
+          "DecisionCpuMs": 5.874583000000001
+        },
+        {
+          "Name": "mcp-w3-b021-2170",
+          "DecisionCpuMs": 3.4330800000000004
+        },
+        {
+          "Name": "mcp-w3-b022-2341",
+          "DecisionCpuMs": 3.5665699999999987
+        },
+        {
+          "Name": "mcp-w3-b023-5920",
+          "DecisionCpuMs": 3.5136819999999993
+        },
+        {
+          "Name": "mcp-w3-b024-6407",
+          "DecisionCpuMs": 3.5829060000000013
+        },
+        {
+          "Name": "mcp-w3-b025-7552",
+          "DecisionCpuMs": 3.5329649999999972
+        },
+        {
+          "Name": "mcp-w3-b026-9964",
+          "DecisionCpuMs": 3.442830999999998
+        },
+        {
+          "Name": "mcp-w3-b027-7006",
+          "DecisionCpuMs": 3.4876240000000003
+        },
+        {
+          "Name": "mcp-w3-b028-1184",
+          "DecisionCpuMs": 3.431844999999999
+        },
+        {
+          "Name": "mcp-w3-b029-8469",
+          "DecisionCpuMs": 3.3780490000000007
+        },
+        {
+          "Name": "mcp-w3-b030-2094",
+          "DecisionCpuMs": 3.3628929999999997
+        },
+        {
+          "Name": "mcp-w4-b001-6368",
+          "DecisionCpuMs": 4.7369759999999985
+        },
+        {
+          "Name": "mcp-w4-b002-3561",
+          "DecisionCpuMs": 3.124476999999999
+        },
+        {
+          "Name": "mcp-w4-b003-9911",
+          "DecisionCpuMs": 3.048749000000001
+        },
+        {
+          "Name": "mcp-w4-b004-2282",
+          "DecisionCpuMs": 3.3782410000000027
+        },
+        {
+          "Name": "mcp-w4-b005-9168",
+          "DecisionCpuMs": 3.0636790000000005
+        },
+        {
+          "Name": "mcp-w4-b006-4106",
+          "DecisionCpuMs": 3.261852000000001
+        },
+        {
+          "Name": "mcp-w4-b007-6475",
+          "DecisionCpuMs": 3.1177610000000016
+        },
+        {
+          "Name": "mcp-w4-b008-5613",
+          "DecisionCpuMs": 3.205795000000002
+        },
+        {
+          "Name": "mcp-w4-b009-9965",
+          "DecisionCpuMs": 3.0438529999999986
+        },
+        {
+          "Name": "mcp-w4-b010-9213",
+          "DecisionCpuMs": 2.971262000000003
+        },
+        {
+          "Name": "mcp-w4-b011-8430",
+          "DecisionCpuMs": 3.0844179999999994
+        },
+        {
+          "Name": "mcp-w4-b012-4453",
+          "DecisionCpuMs": 3.14762
+        },
+        {
+          "Name": "mcp-w4-b013-5748",
+          "DecisionCpuMs": 3.200166000000003
+        },
+        {
+          "Name": "mcp-w4-b014-7469",
+          "DecisionCpuMs": 3.199873
+        },
+        {
+          "Name": "mcp-w4-b015-2811",
+          "DecisionCpuMs": 3.185067
+        },
+        {
+          "Name": "mcp-w4-b016-5482",
+          "DecisionCpuMs": 3.3205389999999966
+        },
+        {
+          "Name": "mcp-w4-b017-2711",
+          "DecisionCpuMs": 3.155118999999999
+        },
+        {
+          "Name": "mcp-w4-b018-2238",
+          "DecisionCpuMs": 15.507416
+        },
+        {
+          "Name": "mcp-w4-b019-8075",
+          "DecisionCpuMs": 3.1164819999999978
+        },
+        {
+          "Name": "mcp-w4-b020-7352",
+          "DecisionCpuMs": 5.502943999999999
+        },
+        {
+          "Name": "mcp-w4-b021-6662",
+          "DecisionCpuMs": 3.1643770000000018
+        },
+        {
+          "Name": "mcp-w4-b022-2728",
+          "DecisionCpuMs": 3.291836
+        },
+        {
+          "Name": "mcp-w4-b023-7583",
+          "DecisionCpuMs": 3.202224000000001
+        },
+        {
+          "Name": "mcp-w4-b024-9191",
+          "DecisionCpuMs": 4.676067
+        },
+        {
+          "Name": "mcp-w4-b025-4874",
+          "DecisionCpuMs": 3.1578990000000005
+        },
+        {
+          "Name": "mcp-w4-b026-3122",
+          "DecisionCpuMs": 3.3293769999999974
+        },
+        {
+          "Name": "mcp-w4-b027-9595",
+          "DecisionCpuMs": 3.1695540000000015
+        },
+        {
+          "Name": "mcp-w4-b028-6682",
+          "DecisionCpuMs": 3.271235000000001
+        },
+        {
+          "Name": "mcp-w4-b029-9904",
+          "DecisionCpuMs": 3.2183990000000016
+        }
+      ],
+      "WorkerCount": 4,
+      "Workers": [
+        {
+          "Pid": 1569,
+          "CpuMs": 70,
+          "WorkingSetBytes": 115068928
+        },
+        {
+          "Pid": 1585,
+          "CpuMs": 720,
+          "WorkingSetBytes": 151212032
+        },
+        {
+          "Pid": 1593,
+          "CpuMs": 680,
+          "WorkingSetBytes": 143417344
+        },
+        {
+          "Pid": 1594,
+          "CpuMs": 680,
+          "WorkingSetBytes": 142983168
+        },
+        {
+          "Pid": 1595,
+          "CpuMs": 680,
+          "WorkingSetBytes": 144281600
+        }
+      ],
+      "AmortizedCpuMsPerBotSecond": 7.861372490827859,
+      "BotCpuAttribution": "PerBotCpu measures each bot decision thread CPU; excludes shared receive/GC. Amortized CPU divides owned process CPU by bots and elapsed seconds, including process overhead.",
+      "WorkingSetBytes": 873357312,
+      "ManagedBytes": 46822704,
+      "AllocatedBytes": 148719512,
+      "GcCollections": [
+        8,
+        8,
+        0
+      ],
+      "GcPauseMs": 21.973,
+      "Shots": 0,
+      "Hits": 0,
+      "FrameCount": 0,
+      "FrameStateDigest": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Repetition": 2,
+      "Rendered": false,
+      "WallSeconds": 3.0110412,
+      "FpsAverage": null,
+      "FpsOnePercentLow": null,
+      "FrameMs": null,
+      "CpuMs": null,
+      "GpuMs": null,
+      "ServerTickMs": {
+        "Count": 61,
+        "Mean": 18.868127868852458,
+        "P50": 18.639,
+        "P95": 21.8006,
+        "P99": 23.2738,
+        "Worst": 23.2738
+      },
+      "BotCount": 119,
+      "PerBotCpu": [
+        {
+          "Name": "mcp-w1-b002-5469",
+          "DecisionCpuMs": 5.179211000000002
+        },
+        {
+          "Name": "mcp-w1-b004-9591",
+          "DecisionCpuMs": 3.2882350000000002
+        },
+        {
+          "Name": "mcp-w1-b005-4209",
+          "DecisionCpuMs": 3.1189610000000023
+        },
+        {
+          "Name": "mcp-w1-b006-6902",
+          "DecisionCpuMs": 3.1601890000000026
+        },
+        {
+          "Name": "mcp-w1-b007-8392",
+          "DecisionCpuMs": 2.758627000000004
+        },
+        {
+          "Name": "mcp-w1-b008-8003",
+          "DecisionCpuMs": 3.2094629999999995
+        },
+        {
+          "Name": "mcp-w1-b009-4399",
+          "DecisionCpuMs": 3.315542999999998
+        },
+        {
+          "Name": "mcp-w1-b010-4845",
+          "DecisionCpuMs": 3.2471030000000027
+        },
+        {
+          "Name": "mcp-w1-b011-3917",
+          "DecisionCpuMs": 3.1573729999999998
+        },
+        {
+          "Name": "mcp-w1-b012-3930",
+          "DecisionCpuMs": 3.169436000000001
+        },
+        {
+          "Name": "mcp-w1-b013-2382",
+          "DecisionCpuMs": 3.2989539999999984
+        },
+        {
+          "Name": "mcp-w1-b014-5433",
+          "DecisionCpuMs": 3.313378
+        },
+        {
+          "Name": "mcp-w1-b015-5596",
+          "DecisionCpuMs": 3.394327999999998
+        },
+        {
+          "Name": "mcp-w1-b016-4757",
+          "DecisionCpuMs": 3.3452669999999998
+        },
+        {
+          "Name": "mcp-w1-b017-8867",
+          "DecisionCpuMs": 3.4066909999999986
+        },
+        {
+          "Name": "mcp-w1-b018-4262",
+          "DecisionCpuMs": 3.4684489999999997
+        },
+        {
+          "Name": "mcp-w1-b019-3068",
+          "DecisionCpuMs": 3.4289580000000015
+        },
+        {
+          "Name": "mcp-w1-b020-4600",
+          "DecisionCpuMs": 3.3415679999999988
+        },
+        {
+          "Name": "mcp-w1-b021-6716",
+          "DecisionCpuMs": 3.4241770000000002
+        },
+        {
+          "Name": "mcp-w1-b022-1802",
+          "DecisionCpuMs": 3.3838250000000016
+        },
+        {
+          "Name": "mcp-w1-b023-9827",
+          "DecisionCpuMs": 3.4593489999999996
+        },
+        {
+          "Name": "mcp-w1-b024-7685",
+          "DecisionCpuMs": 6.060075999999999
+        },
+        {
+          "Name": "mcp-w1-b025-6922",
+          "DecisionCpuMs": 2.92689
+        },
+        {
+          "Name": "mcp-w1-b026-3335",
+          "DecisionCpuMs": 6.128388000000001
+        },
+        {
+          "Name": "mcp-w1-b027-3793",
+          "DecisionCpuMs": 3.4159900000000007
+        },
+        {
+          "Name": "mcp-w1-b028-9679",
+          "DecisionCpuMs": 3.3342349999999996
+        },
+        {
+          "Name": "mcp-w1-b029-5241",
+          "DecisionCpuMs": 3.4088259999999977
+        },
+        {
+          "Name": "mcp-w1-b030-3294",
+          "DecisionCpuMs": 3.200766
+        },
+        {
+          "Name": "mcp-w1-b031-8993",
+          "DecisionCpuMs": 3.2125949999999985
+        },
+        {
+          "Name": "mcp-w1-b032-8898",
+          "DecisionCpuMs": 3.1920040000000007
+        },
+        {
+          "Name": "mcp-w2-b001-6382",
+          "DecisionCpuMs": 5.06576900000001
+        },
+        {
+          "Name": "mcp-w2-b002-4172",
+          "DecisionCpuMs": 5.068595000000002
+        },
+        {
+          "Name": "mcp-w2-b003-3129",
+          "DecisionCpuMs": 3.374116000000001
+        },
+        {
+          "Name": "mcp-w2-b004-4369",
+          "DecisionCpuMs": 3.113081000000001
+        },
+        {
+          "Name": "mcp-w2-b005-1454",
+          "DecisionCpuMs": 3.2310879999999997
+        },
+        {
+          "Name": "mcp-w2-b006-8546",
+          "DecisionCpuMs": 3.289726999999999
+        },
+        {
+          "Name": "mcp-w2-b007-9974",
+          "DecisionCpuMs": 3.126963
+        },
+        {
+          "Name": "mcp-w2-b008-2452",
+          "DecisionCpuMs": 3.224114
+        },
+        {
+          "Name": "mcp-w2-b009-4163",
+          "DecisionCpuMs": 3.2128130000000006
+        },
+        {
+          "Name": "mcp-w2-b010-1523",
+          "DecisionCpuMs": 3.34638
+        },
+        {
+          "Name": "mcp-w2-b011-2613",
+          "DecisionCpuMs": 3.319279999999999
+        },
+        {
+          "Name": "mcp-w2-b012-9462",
+          "DecisionCpuMs": 5.728778999999999
+        },
+        {
+          "Name": "mcp-w2-b013-3638",
+          "DecisionCpuMs": 3.3464659999999995
+        },
+        {
+          "Name": "mcp-w2-b014-7112",
+          "DecisionCpuMs": 3.3633929999999985
+        },
+        {
+          "Name": "mcp-w2-b015-7203",
+          "DecisionCpuMs": 3.2887090000000008
+        },
+        {
+          "Name": "mcp-w2-b016-1181",
+          "DecisionCpuMs": 3.38392
+        },
+        {
+          "Name": "mcp-w2-b017-2588",
+          "DecisionCpuMs": 3.39367
+        },
+        {
+          "Name": "mcp-w2-b018-8163",
+          "DecisionCpuMs": 3.395989
+        },
+        {
+          "Name": "mcp-w2-b019-4252",
+          "DecisionCpuMs": 3.402836999999998
+        },
+        {
+          "Name": "mcp-w2-b020-2585",
+          "DecisionCpuMs": 3.417339000000002
+        },
+        {
+          "Name": "mcp-w2-b021-4479",
+          "DecisionCpuMs": 3.3622680000000003
+        },
+        {
+          "Name": "mcp-w2-b022-1117",
+          "DecisionCpuMs": 3.4475169999999977
+        },
+        {
+          "Name": "mcp-w2-b023-5913",
+          "DecisionCpuMs": 3.3645940000000003
+        },
+        {
+          "Name": "mcp-w2-b024-2165",
+          "DecisionCpuMs": 3.4786409999999997
+        },
+        {
+          "Name": "mcp-w2-b025-1353",
+          "DecisionCpuMs": 3.441676000000001
+        },
+        {
+          "Name": "mcp-w2-b026-5335",
+          "DecisionCpuMs": 3.479178000000001
+        },
+        {
+          "Name": "mcp-w2-b027-7736",
+          "DecisionCpuMs": 3.456120999999996
+        },
+        {
+          "Name": "mcp-w2-b028-5960",
+          "DecisionCpuMs": 3.3184819999999995
+        },
+        {
+          "Name": "mcp-w2-b029-4530",
+          "DecisionCpuMs": 3.3190919999999977
+        },
+        {
+          "Name": "mcp-w2-b030-9546",
+          "DecisionCpuMs": 3.3123640000000023
+        },
+        {
+          "Name": "mcp-w3-b001-1790",
+          "DecisionCpuMs": 5.035000999999994
+        },
+        {
+          "Name": "mcp-w3-b002-7255",
+          "DecisionCpuMs": 3.205318000000002
+        },
+        {
+          "Name": "mcp-w3-b003-1176",
+          "DecisionCpuMs": 3.2442680000000017
+        },
+        {
+          "Name": "mcp-w3-b004-3683",
+          "DecisionCpuMs": 3.2322360000000003
+        },
+        {
+          "Name": "mcp-w3-b005-6157",
+          "DecisionCpuMs": 3.1941710000000008
+        },
+        {
+          "Name": "mcp-w3-b006-4938",
+          "DecisionCpuMs": 3.189244000000002
+        },
+        {
+          "Name": "mcp-w3-b007-2490",
+          "DecisionCpuMs": 3.2095909999999996
+        },
+        {
+          "Name": "mcp-w3-b008-7230",
+          "DecisionCpuMs": 3.2446550000000016
+        },
+        {
+          "Name": "mcp-w3-b009-1957",
+          "DecisionCpuMs": 6.542361000000003
+        },
+        {
+          "Name": "mcp-w3-b010-1210",
+          "DecisionCpuMs": 3.2275990000000014
+        },
+        {
+          "Name": "mcp-w3-b011-6588",
+          "DecisionCpuMs": 3.4269479999999994
+        },
+        {
+          "Name": "mcp-w3-b012-6437",
+          "DecisionCpuMs": 3.271502999999999
+        },
+        {
+          "Name": "mcp-w3-b013-7221",
+          "DecisionCpuMs": 3.3513189999999966
+        },
+        {
+          "Name": "mcp-w3-b014-1132",
+          "DecisionCpuMs": 3.323585999999999
+        },
+        {
+          "Name": "mcp-w3-b015-5706",
+          "DecisionCpuMs": 3.299367
+        },
+        {
+          "Name": "mcp-w3-b016-4946",
+          "DecisionCpuMs": 3.3914930000000005
+        },
+        {
+          "Name": "mcp-w3-b017-4677",
+          "DecisionCpuMs": 3.4235469999999992
+        },
+        {
+          "Name": "mcp-w3-b018-5380",
+          "DecisionCpuMs": 3.482358999999999
+        },
+        {
+          "Name": "mcp-w3-b019-4282",
+          "DecisionCpuMs": 3.4723930000000003
+        },
+        {
+          "Name": "mcp-w3-b020-2972",
+          "DecisionCpuMs": 3.3649039999999992
+        },
+        {
+          "Name": "mcp-w3-b021-2087",
+          "DecisionCpuMs": 3.418696999999998
+        },
+        {
+          "Name": "mcp-w3-b022-8212",
+          "DecisionCpuMs": 3.4266509999999997
+        },
+        {
+          "Name": "mcp-w3-b023-2822",
+          "DecisionCpuMs": 3.399283999999998
+        },
+        {
+          "Name": "mcp-w3-b024-4870",
+          "DecisionCpuMs": 2.915731000000001
+        },
+        {
+          "Name": "mcp-w3-b025-4122",
+          "DecisionCpuMs": 3.4309860000000008
+        },
+        {
+          "Name": "mcp-w3-b026-5524",
+          "DecisionCpuMs": 3.5940939999999983
+        },
+        {
+          "Name": "mcp-w3-b027-3088",
+          "DecisionCpuMs": 3.392489000000001
+        },
+        {
+          "Name": "mcp-w3-b028-5475",
+          "DecisionCpuMs": 3.3480729999999994
+        },
+        {
+          "Name": "mcp-w3-b029-8475",
+          "DecisionCpuMs": 3.3469830000000016
+        },
+        {
+          "Name": "mcp-w3-b030-7266",
+          "DecisionCpuMs": 3.3215700000000012
+        },
+        {
+          "Name": "mcp-w4-b001-7383",
+          "DecisionCpuMs": 5.097373999999995
+        },
+        {
+          "Name": "mcp-w4-b002-6528",
+          "DecisionCpuMs": 3.060141999999999
+        },
+        {
+          "Name": "mcp-w4-b003-6303",
+          "DecisionCpuMs": 3.024450999999999
+        },
+        {
+          "Name": "mcp-w4-b004-3216",
+          "DecisionCpuMs": 3.258454999999998
+        },
+        {
+          "Name": "mcp-w4-b005-9382",
+          "DecisionCpuMs": 3.1931379999999976
+        },
+        {
+          "Name": "mcp-w4-b006-3055",
+          "DecisionCpuMs": 2.867675000000002
+        },
+        {
+          "Name": "mcp-w4-b007-9411",
+          "DecisionCpuMs": 3.289145999999999
+        },
+        {
+          "Name": "mcp-w4-b008-3366",
+          "DecisionCpuMs": 3.261541000000001
+        },
+        {
+          "Name": "mcp-w4-b009-4420",
+          "DecisionCpuMs": 3.219905999999998
+        },
+        {
+          "Name": "mcp-w4-b010-4726",
+          "DecisionCpuMs": 3.266085999999998
+        },
+        {
+          "Name": "mcp-w4-b011-2401",
+          "DecisionCpuMs": 3.2077799999999996
+        },
+        {
+          "Name": "mcp-w4-b012-6477",
+          "DecisionCpuMs": 3.252085000000001
+        },
+        {
+          "Name": "mcp-w4-b013-9363",
+          "DecisionCpuMs": 3.255536000000003
+        },
+        {
+          "Name": "mcp-w4-b014-9718",
+          "DecisionCpuMs": 3.4039220000000014
+        },
+        {
+          "Name": "mcp-w4-b015-5755",
+          "DecisionCpuMs": 3.332500000000003
+        },
+        {
+          "Name": "mcp-w4-b016-8391",
+          "DecisionCpuMs": 3.4775089999999977
+        },
+        {
+          "Name": "mcp-w4-b017-5586",
+          "DecisionCpuMs": 3.431139999999999
+        },
+        {
+          "Name": "mcp-w4-b018-5979",
+          "DecisionCpuMs": 3.3638270000000006
+        },
+        {
+          "Name": "mcp-w4-b019-8790",
+          "DecisionCpuMs": 3.3132240000000017
+        },
+        {
+          "Name": "mcp-w4-b020-5161",
+          "DecisionCpuMs": 3.316025
+        },
+        {
+          "Name": "mcp-w4-b021-9491",
+          "DecisionCpuMs": 3.331748000000001
+        },
+        {
+          "Name": "mcp-w4-b022-4821",
+          "DecisionCpuMs": 3.492311000000001
+        },
+        {
+          "Name": "mcp-w4-b023-4647",
+          "DecisionCpuMs": 3.527839
+        },
+        {
+          "Name": "mcp-w4-b024-4216",
+          "DecisionCpuMs": 3.4462189999999993
+        },
+        {
+          "Name": "mcp-w4-b025-1364",
+          "DecisionCpuMs": 3.4079310000000014
+        },
+        {
+          "Name": "mcp-w4-b026-9180",
+          "DecisionCpuMs": 3.41169
+        },
+        {
+          "Name": "mcp-w4-b027-3753",
+          "DecisionCpuMs": 3.1656770000000023
+        },
+        {
+          "Name": "mcp-w4-b028-2678",
+          "DecisionCpuMs": 3.251007999999999
+        },
+        {
+          "Name": "mcp-w4-b029-5736",
+          "DecisionCpuMs": 3.3318420000000017
+        }
+      ],
+      "WorkerCount": 4,
+      "Workers": [
+        {
+          "Pid": 2450,
+          "CpuMs": 70,
+          "WorkingSetBytes": 108957696
+        },
+        {
+          "Pid": 2465,
+          "CpuMs": 700,
+          "WorkingSetBytes": 146251776
+        },
+        {
+          "Pid": 2473,
+          "CpuMs": 660,
+          "WorkingSetBytes": 144842752
+        },
+        {
+          "Pid": 2474,
+          "CpuMs": 669.9998999999998,
+          "WorkingSetBytes": 142684160
+        },
+        {
+          "Pid": 2475,
+          "CpuMs": 660,
+          "WorkingSetBytes": 131055616
+        }
+      ],
+      "AmortizedCpuMsPerBotSecond": 7.702742981593288,
+      "BotCpuAttribution": "PerBotCpu measures each bot decision thread CPU; excludes shared receive/GC. Amortized CPU divides owned process CPU by bots and elapsed seconds, including process overhead.",
+      "WorkingSetBytes": 901427200,
+      "ManagedBytes": 56259904,
+      "AllocatedBytes": 146865832,
+      "GcCollections": [
+        8,
+        0,
+        0
+      ],
+      "GcPauseMs": 21.81,
+      "Shots": 0,
+      "Hits": 0,
+      "FrameCount": 0,
+      "FrameStateDigest": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Repetition": 3,
+      "Rendered": false,
+      "WallSeconds": 3.0170984,
+      "FpsAverage": null,
+      "FpsOnePercentLow": null,
+      "FrameMs": null,
+      "CpuMs": null,
+      "GpuMs": null,
+      "ServerTickMs": {
+        "Count": 61,
+        "Mean": 21.99498852459016,
+        "P50": 20.7143,
+        "P95": 32.653099999999995,
+        "P99": 48.0455,
+        "Worst": 48.0455
+      },
+      "BotCount": 119,
+      "PerBotCpu": [
+        {
+          "Name": "mcp-w1-b002-8370",
+          "DecisionCpuMs": 5.479324000000005
+        },
+        {
+          "Name": "mcp-w1-b004-3449",
+          "DecisionCpuMs": 3.5986709999999995
+        },
+        {
+          "Name": "mcp-w1-b005-5736",
+          "DecisionCpuMs": 3.476693000000001
+        },
+        {
+          "Name": "mcp-w1-b006-8202",
+          "DecisionCpuMs": 3.436463
+        },
+        {
+          "Name": "mcp-w1-b007-5216",
+          "DecisionCpuMs": 3.336245999999999
+        },
+        {
+          "Name": "mcp-w1-b008-8452",
+          "DecisionCpuMs": 3.3888740000000013
+        },
+        {
+          "Name": "mcp-w1-b009-3146",
+          "DecisionCpuMs": 3.585716999999999
+        },
+        {
+          "Name": "mcp-w1-b010-2871",
+          "DecisionCpuMs": 3.5333940000000013
+        },
+        {
+          "Name": "mcp-w1-b011-4680",
+          "DecisionCpuMs": 3.4420840000000013
+        },
+        {
+          "Name": "mcp-w1-b012-8130",
+          "DecisionCpuMs": 6.295935
+        },
+        {
+          "Name": "mcp-w1-b013-6723",
+          "DecisionCpuMs": 3.4071979999999975
+        },
+        {
+          "Name": "mcp-w1-b014-6940",
+          "DecisionCpuMs": 3.4772159999999985
+        },
+        {
+          "Name": "mcp-w1-b015-3458",
+          "DecisionCpuMs": 3.5640009999999975
+        },
+        {
+          "Name": "mcp-w1-b016-1978",
+          "DecisionCpuMs": 3.492808
+        },
+        {
+          "Name": "mcp-w1-b017-2333",
+          "DecisionCpuMs": 3.6771400000000014
+        },
+        {
+          "Name": "mcp-w1-b018-2500",
+          "DecisionCpuMs": 3.6527519999999996
+        },
+        {
+          "Name": "mcp-w1-b019-5973",
+          "DecisionCpuMs": 3.6607920000000007
+        },
+        {
+          "Name": "mcp-w1-b020-5035",
+          "DecisionCpuMs": 3.7708879999999994
+        },
+        {
+          "Name": "mcp-w1-b021-5908",
+          "DecisionCpuMs": 3.6348990000000008
+        },
+        {
+          "Name": "mcp-w1-b022-8480",
+          "DecisionCpuMs": 3.647470000000002
+        },
+        {
+          "Name": "mcp-w1-b023-3539",
+          "DecisionCpuMs": 3.7118019999999987
+        },
+        {
+          "Name": "mcp-w1-b024-6356",
+          "DecisionCpuMs": 3.711850000000002
+        },
+        {
+          "Name": "mcp-w1-b025-5712",
+          "DecisionCpuMs": 3.699982000000002
+        },
+        {
+          "Name": "mcp-w1-b026-2319",
+          "DecisionCpuMs": 3.606368
+        },
+        {
+          "Name": "mcp-w1-b027-9518",
+          "DecisionCpuMs": 3.637708
+        },
+        {
+          "Name": "mcp-w1-b028-9376",
+          "DecisionCpuMs": 3.746431000000001
+        },
+        {
+          "Name": "mcp-w1-b029-9509",
+          "DecisionCpuMs": 3.5595870000000005
+        },
+        {
+          "Name": "mcp-w1-b030-9853",
+          "DecisionCpuMs": 3.4596750000000007
+        },
+        {
+          "Name": "mcp-w1-b031-2748",
+          "DecisionCpuMs": 3.5593380000000003
+        },
+        {
+          "Name": "mcp-w1-b032-4690",
+          "DecisionCpuMs": 3.431277999999999
+        },
+        {
+          "Name": "mcp-w2-b001-6385",
+          "DecisionCpuMs": 5.293807000000001
+        },
+        {
+          "Name": "mcp-w2-b002-2794",
+          "DecisionCpuMs": 3.560428999999999
+        },
+        {
+          "Name": "mcp-w2-b003-8740",
+          "DecisionCpuMs": 3.3918709999999983
+        },
+        {
+          "Name": "mcp-w2-b004-7644",
+          "DecisionCpuMs": 3.4505110000000023
+        },
+        {
+          "Name": "mcp-w2-b005-1116",
+          "DecisionCpuMs": 3.3451079999999997
+        },
+        {
+          "Name": "mcp-w2-b006-5186",
+          "DecisionCpuMs": 3.449906999999996
+        },
+        {
+          "Name": "mcp-w2-b007-9412",
+          "DecisionCpuMs": 3.395613000000001
+        },
+        {
+          "Name": "mcp-w2-b008-4823",
+          "DecisionCpuMs": 3.4327679999999994
+        },
+        {
+          "Name": "mcp-w2-b009-9091",
+          "DecisionCpuMs": 3.088993000000002
+        },
+        {
+          "Name": "mcp-w2-b010-5975",
+          "DecisionCpuMs": 3.427057999999999
+        },
+        {
+          "Name": "mcp-w2-b011-4152",
+          "DecisionCpuMs": 3.4994220000000027
+        },
+        {
+          "Name": "mcp-w2-b012-8118",
+          "DecisionCpuMs": 3.4821139999999993
+        },
+        {
+          "Name": "mcp-w2-b013-8803",
+          "DecisionCpuMs": 3.6303649999999976
+        },
+        {
+          "Name": "mcp-w2-b014-1016",
+          "DecisionCpuMs": 3.518023999999997
+        },
+        {
+          "Name": "mcp-w2-b015-3028",
+          "DecisionCpuMs": 3.4841820000000006
+        },
+        {
+          "Name": "mcp-w2-b016-8925",
+          "DecisionCpuMs": 3.4352359999999997
+        },
+        {
+          "Name": "mcp-w2-b017-7986",
+          "DecisionCpuMs": 3.5712420000000016
+        },
+        {
+          "Name": "mcp-w2-b018-6441",
+          "DecisionCpuMs": 3.5165679999999995
+        },
+        {
+          "Name": "mcp-w2-b019-4702",
+          "DecisionCpuMs": 3.535802999999998
+        },
+        {
+          "Name": "mcp-w2-b020-4595",
+          "DecisionCpuMs": 3.6423179999999995
+        },
+        {
+          "Name": "mcp-w2-b021-1819",
+          "DecisionCpuMs": 3.4465039999999973
+        },
+        {
+          "Name": "mcp-w2-b022-5909",
+          "DecisionCpuMs": 3.4766779999999997
+        },
+        {
+          "Name": "mcp-w2-b023-4491",
+          "DecisionCpuMs": 3.6920230000000025
+        },
+        {
+          "Name": "mcp-w2-b024-8521",
+          "DecisionCpuMs": 3.657993000000001
+        },
+        {
+          "Name": "mcp-w2-b025-9533",
+          "DecisionCpuMs": 3.5483119999999992
+        },
+        {
+          "Name": "mcp-w2-b026-3462",
+          "DecisionCpuMs": 3.786062000000001
+        },
+        {
+          "Name": "mcp-w2-b027-7545",
+          "DecisionCpuMs": 3.723132999999997
+        },
+        {
+          "Name": "mcp-w2-b028-6820",
+          "DecisionCpuMs": 3.5115100000000012
+        },
+        {
+          "Name": "mcp-w2-b029-2868",
+          "DecisionCpuMs": 3.4025689999999997
+        },
+        {
+          "Name": "mcp-w2-b030-4734",
+          "DecisionCpuMs": 2.7420690000000008
+        },
+        {
+          "Name": "mcp-w3-b001-3397",
+          "DecisionCpuMs": 5.421723
+        },
+        {
+          "Name": "mcp-w3-b002-4339",
+          "DecisionCpuMs": 3.266187000000002
+        },
+        {
+          "Name": "mcp-w3-b003-6236",
+          "DecisionCpuMs": 3.2988500000000016
+        },
+        {
+          "Name": "mcp-w3-b004-2186",
+          "DecisionCpuMs": 3.1613930000000003
+        },
+        {
+          "Name": "mcp-w3-b005-6843",
+          "DecisionCpuMs": 3.3113680000000016
+        },
+        {
+          "Name": "mcp-w3-b006-5520",
+          "DecisionCpuMs": 3.044564000000001
+        },
+        {
+          "Name": "mcp-w3-b007-2451",
+          "DecisionCpuMs": 5.4001519999999985
+        },
+        {
+          "Name": "mcp-w3-b008-5871",
+          "DecisionCpuMs": 3.401992
+        },
+        {
+          "Name": "mcp-w3-b009-5654",
+          "DecisionCpuMs": 3.3409750000000003
+        },
+        {
+          "Name": "mcp-w3-b010-7989",
+          "DecisionCpuMs": 3.5894030000000043
+        },
+        {
+          "Name": "mcp-w3-b011-9106",
+          "DecisionCpuMs": 3.4843550000000008
+        },
+        {
+          "Name": "mcp-w3-b012-4345",
+          "DecisionCpuMs": 3.473616
+        },
+        {
+          "Name": "mcp-w3-b013-3487",
+          "DecisionCpuMs": 3.422725
+        },
+        {
+          "Name": "mcp-w3-b014-5235",
+          "DecisionCpuMs": 3.5971519999999977
+        },
+        {
+          "Name": "mcp-w3-b015-7471",
+          "DecisionCpuMs": 3.5362139999999975
+        },
+        {
+          "Name": "mcp-w3-b016-9638",
+          "DecisionCpuMs": 3.4071229999999986
+        },
+        {
+          "Name": "mcp-w3-b017-9587",
+          "DecisionCpuMs": 3.528018999999997
+        },
+        {
+          "Name": "mcp-w3-b018-4640",
+          "DecisionCpuMs": 3.6216320000000017
+        },
+        {
+          "Name": "mcp-w3-b019-4982",
+          "DecisionCpuMs": 3.583779
+        },
+        {
+          "Name": "mcp-w3-b020-5583",
+          "DecisionCpuMs": 3.640415000000001
+        },
+        {
+          "Name": "mcp-w3-b021-9199",
+          "DecisionCpuMs": 3.579968000000001
+        },
+        {
+          "Name": "mcp-w3-b022-6538",
+          "DecisionCpuMs": 3.6450320000000005
+        },
+        {
+          "Name": "mcp-w3-b023-6672",
+          "DecisionCpuMs": 3.6195840000000032
+        },
+        {
+          "Name": "mcp-w3-b024-5326",
+          "DecisionCpuMs": 3.658125000000002
+        },
+        {
+          "Name": "mcp-w3-b025-8484",
+          "DecisionCpuMs": 3.5836879999999987
+        },
+        {
+          "Name": "mcp-w3-b026-9567",
+          "DecisionCpuMs": 3.469428999999998
+        },
+        {
+          "Name": "mcp-w3-b027-3699",
+          "DecisionCpuMs": 3.4941899999999997
+        },
+        {
+          "Name": "mcp-w3-b028-2599",
+          "DecisionCpuMs": 3.4483379999999997
+        },
+        {
+          "Name": "mcp-w3-b029-4896",
+          "DecisionCpuMs": 3.412122
+        },
+        {
+          "Name": "mcp-w3-b030-9428",
+          "DecisionCpuMs": 3.5170470000000016
+        },
+        {
+          "Name": "mcp-w4-b001-2997",
+          "DecisionCpuMs": 5.167827999999993
+        },
+        {
+          "Name": "mcp-w4-b002-2024",
+          "DecisionCpuMs": 3.1888059999999996
+        },
+        {
+          "Name": "mcp-w4-b003-4423",
+          "DecisionCpuMs": 3.200223000000001
+        },
+        {
+          "Name": "mcp-w4-b004-7621",
+          "DecisionCpuMs": 2.992303999999997
+        },
+        {
+          "Name": "mcp-w4-b005-6805",
+          "DecisionCpuMs": 3.2699950000000015
+        },
+        {
+          "Name": "mcp-w4-b006-6389",
+          "DecisionCpuMs": 3.110723
+        },
+        {
+          "Name": "mcp-w4-b007-9566",
+          "DecisionCpuMs": 3.1443469999999962
+        },
+        {
+          "Name": "mcp-w4-b008-2469",
+          "DecisionCpuMs": 3.117630000000002
+        },
+        {
+          "Name": "mcp-w4-b009-3896",
+          "DecisionCpuMs": 3.274311000000001
+        },
+        {
+          "Name": "mcp-w4-b010-9164",
+          "DecisionCpuMs": 3.4784110000000013
+        },
+        {
+          "Name": "mcp-w4-b011-1617",
+          "DecisionCpuMs": 3.3834289999999996
+        },
+        {
+          "Name": "mcp-w4-b012-5262",
+          "DecisionCpuMs": 3.448391000000001
+        },
+        {
+          "Name": "mcp-w4-b013-1627",
+          "DecisionCpuMs": 3.549893000000001
+        },
+        {
+          "Name": "mcp-w4-b014-4616",
+          "DecisionCpuMs": 3.5499849999999995
+        },
+        {
+          "Name": "mcp-w4-b015-9049",
+          "DecisionCpuMs": 3.475923999999999
+        },
+        {
+          "Name": "mcp-w4-b016-2700",
+          "DecisionCpuMs": 3.5394330000000025
+        },
+        {
+          "Name": "mcp-w4-b017-3337",
+          "DecisionCpuMs": 3.5335909999999977
+        },
+        {
+          "Name": "mcp-w4-b018-5741",
+          "DecisionCpuMs": 3.6030189999999997
+        },
+        {
+          "Name": "mcp-w4-b019-7124",
+          "DecisionCpuMs": 3.5527750000000005
+        },
+        {
+          "Name": "mcp-w4-b020-4308",
+          "DecisionCpuMs": 3.611119000000002
+        },
+        {
+          "Name": "mcp-w4-b021-9706",
+          "DecisionCpuMs": 6.092454
+        },
+        {
+          "Name": "mcp-w4-b022-5329",
+          "DecisionCpuMs": 3.1880619999999986
+        },
+        {
+          "Name": "mcp-w4-b023-2765",
+          "DecisionCpuMs": 3.4463740000000023
+        },
+        {
+          "Name": "mcp-w4-b024-1474",
+          "DecisionCpuMs": 3.683924000000001
+        },
+        {
+          "Name": "mcp-w4-b025-9748",
+          "DecisionCpuMs": 3.462975
+        },
+        {
+          "Name": "mcp-w4-b026-2080",
+          "DecisionCpuMs": 3.579596000000002
+        },
+        {
+          "Name": "mcp-w4-b027-4427",
+          "DecisionCpuMs": 3.3718010000000014
+        },
+        {
+          "Name": "mcp-w4-b028-8435",
+          "DecisionCpuMs": 3.3999570000000006
+        },
+        {
+          "Name": "mcp-w4-b029-5000",
+          "DecisionCpuMs": 3.477711000000003
+        }
+      ],
+      "WorkerCount": 4,
+      "Workers": [
+        {
+          "Pid": 3327,
+          "CpuMs": 80,
+          "WorkingSetBytes": 108347392
+        },
+        {
+          "Pid": 3342,
+          "CpuMs": 760,
+          "WorkingSetBytes": 148393984
+        },
+        {
+          "Pid": 3350,
+          "CpuMs": 710,
+          "WorkingSetBytes": 143003648
+        },
+        {
+          "Pid": 3351,
+          "CpuMs": 720.0001000000002,
+          "WorkingSetBytes": 131833856
+        },
+        {
+          "Pid": 3352,
+          "CpuMs": 700,
+          "WorkingSetBytes": 142610432
+        }
+      ],
+      "AmortizedCpuMsPerBotSecond": 8.27218099138346,
+      "BotCpuAttribution": "PerBotCpu measures each bot decision thread CPU; excludes shared receive/GC. Amortized CPU divides owned process CPU by bots and elapsed seconds, including process overhead.",
+      "WorkingSetBytes": 907124736,
+      "ManagedBytes": 64997016,
+      "AllocatedBytes": 146271128,
+      "GcCollections": [
+        8,
+        1,
+        0
+      ],
+      "GcPauseMs": 17.677,
+      "Shots": 0,
+      "Hits": 0,
+      "FrameCount": 0,
+      "FrameStateDigest": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    }
+  ],
+  "Median": {
+    "Repetition": 1,
+    "Rendered": false,
+    "WallSeconds": 3.0251095,
+    "FpsAverage": null,
+    "FpsOnePercentLow": null,
+    "FrameMs": null,
+    "CpuMs": null,
+    "GpuMs": null,
+    "ServerTickMs": {
+      "Count": 61,
+      "Mean": 19.511339344262293,
+      "P50": 19.1303,
+      "P95": 23.1204,
+      "P99": 30.7131,
+      "Worst": 30.7131
+    },
+    "BotCount": 119,
+    "PerBotCpu": [
+      {
+        "Name": "mcp-w1-b002-2971",
+        "DecisionCpuMs": 5.058047999999999
+      },
+      {
+        "Name": "mcp-w1-b004-4185",
+        "DecisionCpuMs": 3.2766299999999973
+      },
+      {
+        "Name": "mcp-w1-b005-7580",
+        "DecisionCpuMs": 2.875125999999998
+      },
+      {
+        "Name": "mcp-w1-b006-6042",
+        "DecisionCpuMs": 5.474785000000001
+      },
+      {
+        "Name": "mcp-w1-b007-3474",
+        "DecisionCpuMs": 3.0716029999999996
+      },
+      {
+        "Name": "mcp-w1-b008-8938",
+        "DecisionCpuMs": 3.255813
+      },
+      {
+        "Name": "mcp-w1-b009-5014",
+        "DecisionCpuMs": 3.226400999999999
+      },
+      {
+        "Name": "mcp-w1-b010-6816",
+        "DecisionCpuMs": 3.184102999999997
+      },
+      {
+        "Name": "mcp-w1-b011-2355",
+        "DecisionCpuMs": 2.898366000000003
+      },
+      {
+        "Name": "mcp-w1-b012-1147",
+        "DecisionCpuMs": 3.1449250000000006
+      },
+      {
+        "Name": "mcp-w1-b013-5658",
+        "DecisionCpuMs": 3.1250159999999987
+      },
+      {
+        "Name": "mcp-w1-b014-6556",
+        "DecisionCpuMs": 3.210326000000002
+      },
+      {
+        "Name": "mcp-w1-b015-2851",
+        "DecisionCpuMs": 3.258596999999998
+      },
+      {
+        "Name": "mcp-w1-b016-3707",
+        "DecisionCpuMs": 3.1527780000000014
+      },
+      {
+        "Name": "mcp-w1-b017-5283",
+        "DecisionCpuMs": 3.214645000000001
+      },
+      {
+        "Name": "mcp-w1-b018-4656",
+        "DecisionCpuMs": 3.356484000000002
+      },
+      {
+        "Name": "mcp-w1-b019-6371",
+        "DecisionCpuMs": 3.298248000000001
+      },
+      {
+        "Name": "mcp-w1-b020-2297",
+        "DecisionCpuMs": 3.3654139999999977
+      },
+      {
+        "Name": "mcp-w1-b021-2565",
+        "DecisionCpuMs": 3.276516000000001
+      },
+      {
+        "Name": "mcp-w1-b022-9994",
+        "DecisionCpuMs": 3.315805000000001
+      },
+      {
+        "Name": "mcp-w1-b023-4824",
+        "DecisionCpuMs": 3.3684030000000007
+      },
+      {
+        "Name": "mcp-w1-b024-5904",
+        "DecisionCpuMs": 3.370984
+      },
+      {
+        "Name": "mcp-w1-b025-8043",
+        "DecisionCpuMs": 3.3568320000000007
+      },
+      {
+        "Name": "mcp-w1-b026-4825",
+        "DecisionCpuMs": 3.3971829999999983
+      },
+      {
+        "Name": "mcp-w1-b027-9255",
+        "DecisionCpuMs": 3.365462000000001
+      },
+      {
+        "Name": "mcp-w1-b028-7204",
+        "DecisionCpuMs": 3.388546999999999
+      },
+      {
+        "Name": "mcp-w1-b029-4919",
+        "DecisionCpuMs": 3.323469000000003
+      },
+      {
+        "Name": "mcp-w1-b030-6224",
+        "DecisionCpuMs": 3.3583680000000022
+      },
+      {
+        "Name": "mcp-w1-b031-6089",
+        "DecisionCpuMs": 3.3695249999999994
+      },
+      {
+        "Name": "mcp-w1-b032-5510",
+        "DecisionCpuMs": 3.3016299999999994
+      },
+      {
+        "Name": "mcp-w2-b001-1270",
+        "DecisionCpuMs": 4.924481
+      },
+      {
+        "Name": "mcp-w2-b002-9053",
+        "DecisionCpuMs": 3.6157110000000046
+      },
+      {
+        "Name": "mcp-w2-b003-8969",
+        "DecisionCpuMs": 3.252832999999999
+      },
+      {
+        "Name": "mcp-w2-b004-2920",
+        "DecisionCpuMs": 3.0873500000000007
+      },
+      {
+        "Name": "mcp-w2-b005-9903",
+        "DecisionCpuMs": 3.245222000000002
+      },
+      {
+        "Name": "mcp-w2-b006-5276",
+        "DecisionCpuMs": 3.2406299999999995
+      },
+      {
+        "Name": "mcp-w2-b007-6287",
+        "DecisionCpuMs": 3.262998999999997
+      },
+      {
+        "Name": "mcp-w2-b008-2138",
+        "DecisionCpuMs": 3.137421
+      },
+      {
+        "Name": "mcp-w2-b009-7041",
+        "DecisionCpuMs": 3.241544000000001
+      },
+      {
+        "Name": "mcp-w2-b010-7257",
+        "DecisionCpuMs": 3.2900530000000003
+      },
+      {
+        "Name": "mcp-w2-b011-6176",
+        "DecisionCpuMs": 3.2893620000000006
+      },
+      {
+        "Name": "mcp-w2-b012-9295",
+        "DecisionCpuMs": 2.8401929999999993
+      },
+      {
+        "Name": "mcp-w2-b013-2679",
+        "DecisionCpuMs": 3.3099109999999996
+      },
+      {
+        "Name": "mcp-w2-b014-5271",
+        "DecisionCpuMs": 3.3628269999999993
+      },
+      {
+        "Name": "mcp-w2-b015-5979",
+        "DecisionCpuMs": 3.2952340000000007
+      },
+      {
+        "Name": "mcp-w2-b016-4782",
+        "DecisionCpuMs": 3.186989999999998
+      },
+      {
+        "Name": "mcp-w2-b017-1590",
+        "DecisionCpuMs": 3.4253870000000006
+      },
+      {
+        "Name": "mcp-w2-b018-3798",
+        "DecisionCpuMs": 3.161073000000002
+      },
+      {
+        "Name": "mcp-w2-b019-5196",
+        "DecisionCpuMs": 3.3914620000000006
+      },
+      {
+        "Name": "mcp-w2-b020-2634",
+        "DecisionCpuMs": 3.4801730000000006
+      },
+      {
+        "Name": "mcp-w2-b021-4947",
+        "DecisionCpuMs": 3.328084999999998
+      },
+      {
+        "Name": "mcp-w2-b022-1871",
+        "DecisionCpuMs": 2.8452350000000024
+      },
+      {
+        "Name": "mcp-w2-b023-3134",
+        "DecisionCpuMs": 3.387073000000001
+      },
+      {
+        "Name": "mcp-w2-b024-9333",
+        "DecisionCpuMs": 3.529035999999998
+      },
+      {
+        "Name": "mcp-w2-b025-7481",
+        "DecisionCpuMs": 3.4366090000000007
+      },
+      {
+        "Name": "mcp-w2-b026-5443",
+        "DecisionCpuMs": 3.563981000000002
+      },
+      {
+        "Name": "mcp-w2-b027-5399",
+        "DecisionCpuMs": 3.3153369999999995
+      },
+      {
+        "Name": "mcp-w2-b028-9852",
+        "DecisionCpuMs": 3.309622000000001
+      },
+      {
+        "Name": "mcp-w2-b029-4731",
+        "DecisionCpuMs": 3.1985579999999985
+      },
+      {
+        "Name": "mcp-w2-b030-2461",
+        "DecisionCpuMs": 3.096112999999999
+      },
+      {
+        "Name": "mcp-w3-b001-7200",
+        "DecisionCpuMs": 4.690966000000003
+      },
+      {
+        "Name": "mcp-w3-b002-9561",
+        "DecisionCpuMs": 3.527851000000002
+      },
+      {
+        "Name": "mcp-w3-b003-8374",
+        "DecisionCpuMs": 3.656870999999999
+      },
+      {
+        "Name": "mcp-w3-b004-5671",
+        "DecisionCpuMs": 3.393259999999998
+      },
+      {
+        "Name": "mcp-w3-b005-6862",
+        "DecisionCpuMs": 3.7883090000000017
+      },
+      {
+        "Name": "mcp-w3-b006-6040",
+        "DecisionCpuMs": 3.382137
+      },
+      {
+        "Name": "mcp-w3-b007-8627",
+        "DecisionCpuMs": 3.109071
+      },
+      {
+        "Name": "mcp-w3-b008-1074",
+        "DecisionCpuMs": 3.329671000000001
+      },
+      {
+        "Name": "mcp-w3-b009-2841",
+        "DecisionCpuMs": 3.278647000000003
+      },
+      {
+        "Name": "mcp-w3-b010-7414",
+        "DecisionCpuMs": 3.3579050000000024
+      },
+      {
+        "Name": "mcp-w3-b011-7660",
+        "DecisionCpuMs": 3.559404999999998
+      },
+      {
+        "Name": "mcp-w3-b012-6141",
+        "DecisionCpuMs": 3.392529999999997
+      },
+      {
+        "Name": "mcp-w3-b013-6650",
+        "DecisionCpuMs": 3.483468000000002
+      },
+      {
+        "Name": "mcp-w3-b014-8444",
+        "DecisionCpuMs": 3.448731000000002
+      },
+      {
+        "Name": "mcp-w3-b015-2119",
+        "DecisionCpuMs": 3.441771000000003
+      },
+      {
+        "Name": "mcp-w3-b016-2763",
+        "DecisionCpuMs": 3.443543000000002
+      },
+      {
+        "Name": "mcp-w3-b017-4854",
+        "DecisionCpuMs": 3.500876999999999
+      },
+      {
+        "Name": "mcp-w3-b018-6016",
+        "DecisionCpuMs": 3.4153560000000027
+      },
+      {
+        "Name": "mcp-w3-b019-3885",
+        "DecisionCpuMs": 3.5562299999999993
+      },
+      {
+        "Name": "mcp-w3-b020-2934",
+        "DecisionCpuMs": 5.874583000000001
+      },
+      {
+        "Name": "mcp-w3-b021-2170",
+        "DecisionCpuMs": 3.4330800000000004
+      },
+      {
+        "Name": "mcp-w3-b022-2341",
+        "DecisionCpuMs": 3.5665699999999987
+      },
+      {
+        "Name": "mcp-w3-b023-5920",
+        "DecisionCpuMs": 3.5136819999999993
+      },
+      {
+        "Name": "mcp-w3-b024-6407",
+        "DecisionCpuMs": 3.5829060000000013
+      },
+      {
+        "Name": "mcp-w3-b025-7552",
+        "DecisionCpuMs": 3.5329649999999972
+      },
+      {
+        "Name": "mcp-w3-b026-9964",
+        "DecisionCpuMs": 3.442830999999998
+      },
+      {
+        "Name": "mcp-w3-b027-7006",
+        "DecisionCpuMs": 3.4876240000000003
+      },
+      {
+        "Name": "mcp-w3-b028-1184",
+        "DecisionCpuMs": 3.431844999999999
+      },
+      {
+        "Name": "mcp-w3-b029-8469",
+        "DecisionCpuMs": 3.3780490000000007
+      },
+      {
+        "Name": "mcp-w3-b030-2094",
+        "DecisionCpuMs": 3.3628929999999997
+      },
+      {
+        "Name": "mcp-w4-b001-6368",
+        "DecisionCpuMs": 4.7369759999999985
+      },
+      {
+        "Name": "mcp-w4-b002-3561",
+        "DecisionCpuMs": 3.124476999999999
+      },
+      {
+        "Name": "mcp-w4-b003-9911",
+        "DecisionCpuMs": 3.048749000000001
+      },
+      {
+        "Name": "mcp-w4-b004-2282",
+        "DecisionCpuMs": 3.3782410000000027
+      },
+      {
+        "Name": "mcp-w4-b005-9168",
+        "DecisionCpuMs": 3.0636790000000005
+      },
+      {
+        "Name": "mcp-w4-b006-4106",
+        "DecisionCpuMs": 3.261852000000001
+      },
+      {
+        "Name": "mcp-w4-b007-6475",
+        "DecisionCpuMs": 3.1177610000000016
+      },
+      {
+        "Name": "mcp-w4-b008-5613",
+        "DecisionCpuMs": 3.205795000000002
+      },
+      {
+        "Name": "mcp-w4-b009-9965",
+        "DecisionCpuMs": 3.0438529999999986
+      },
+      {
+        "Name": "mcp-w4-b010-9213",
+        "DecisionCpuMs": 2.971262000000003
+      },
+      {
+        "Name": "mcp-w4-b011-8430",
+        "DecisionCpuMs": 3.0844179999999994
+      },
+      {
+        "Name": "mcp-w4-b012-4453",
+        "DecisionCpuMs": 3.14762
+      },
+      {
+        "Name": "mcp-w4-b013-5748",
+        "DecisionCpuMs": 3.200166000000003
+      },
+      {
+        "Name": "mcp-w4-b014-7469",
+        "DecisionCpuMs": 3.199873
+      },
+      {
+        "Name": "mcp-w4-b015-2811",
+        "DecisionCpuMs": 3.185067
+      },
+      {
+        "Name": "mcp-w4-b016-5482",
+        "DecisionCpuMs": 3.3205389999999966
+      },
+      {
+        "Name": "mcp-w4-b017-2711",
+        "DecisionCpuMs": 3.155118999999999
+      },
+      {
+        "Name": "mcp-w4-b018-2238",
+        "DecisionCpuMs": 15.507416
+      },
+      {
+        "Name": "mcp-w4-b019-8075",
+        "DecisionCpuMs": 3.1164819999999978
+      },
+      {
+        "Name": "mcp-w4-b020-7352",
+        "DecisionCpuMs": 5.502943999999999
+      },
+      {
+        "Name": "mcp-w4-b021-6662",
+        "DecisionCpuMs": 3.1643770000000018
+      },
+      {
+        "Name": "mcp-w4-b022-2728",
+        "DecisionCpuMs": 3.291836
+      },
+      {
+        "Name": "mcp-w4-b023-7583",
+        "DecisionCpuMs": 3.202224000000001
+      },
+      {
+        "Name": "mcp-w4-b024-9191",
+        "DecisionCpuMs": 4.676067
+      },
+      {
+        "Name": "mcp-w4-b025-4874",
+        "DecisionCpuMs": 3.1578990000000005
+      },
+      {
+        "Name": "mcp-w4-b026-3122",
+        "DecisionCpuMs": 3.3293769999999974
+      },
+      {
+        "Name": "mcp-w4-b027-9595",
+        "DecisionCpuMs": 3.1695540000000015
+      },
+      {
+        "Name": "mcp-w4-b028-6682",
+        "DecisionCpuMs": 3.271235000000001
+      },
+      {
+        "Name": "mcp-w4-b029-9904",
+        "DecisionCpuMs": 3.2183990000000016
+      }
+    ],
+    "WorkerCount": 4,
+    "Workers": [
+      {
+        "Pid": 1569,
+        "CpuMs": 70,
+        "WorkingSetBytes": 115068928
+      },
+      {
+        "Pid": 1585,
+        "CpuMs": 720,
+        "WorkingSetBytes": 151212032
+      },
+      {
+        "Pid": 1593,
+        "CpuMs": 680,
+        "WorkingSetBytes": 143417344
+      },
+      {
+        "Pid": 1594,
+        "CpuMs": 680,
+        "WorkingSetBytes": 142983168
+      },
+      {
+        "Pid": 1595,
+        "CpuMs": 680,
+        "WorkingSetBytes": 144281600
+      }
+    ],
+    "AmortizedCpuMsPerBotSecond": 7.861372490827859,
+    "BotCpuAttribution": "PerBotCpu measures each bot decision thread CPU; excludes shared receive/GC. Amortized CPU divides owned process CPU by bots and elapsed seconds, including process overhead.",
+    "WorkingSetBytes": 873357312,
+    "ManagedBytes": 46822704,
+    "AllocatedBytes": 148719512,
+    "GcCollections": [
+      8,
+      8,
+      0
+    ],
+    "GcPauseMs": 21.973,
+    "Shots": 0,
+    "Hits": 0,
+    "FrameCount": 0,
+    "FrameStateDigest": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  "MedianRule": "Scalar timing/FPS metrics are medians of three runs; resource/identity snapshot comes from the middle run by frame p99, server p95, or processing wall time",
+  "Bottleneck": "Headless: graphics unmeasured",
+  "Recommendation": {
+    "BattleSize": 3,
+    "Difficulty": 1,
+    "ResearchSpeed": 1,
+    "SpectatorDefault": true,
+    "Fsr": false,
+    "FsrPreset": 1,
+    "Bloom": false,
+    "HdPbr": true,
+    "HdTextures": true,
+    "FrameCap": 60,
+    "Vsync": false,
+    "EffectsDensity": 1,
+    "ViewDistance": 6000,
+    "Reasons": [
+      {
+        "Setting": "Battle size",
+        "Value": "Epic",
+        "Reason": "Measured server and bot budget; retain tested size"
+      },
+      {
+        "Setting": "Bot difficulty",
+        "Value": "Normal",
+        "Reason": "Normal preserves the tested combat policy"
+      },
+      {
+        "Setting": "Research speed",
+        "Value": "1x",
+        "Reason": "Keep normal economy pacing; acceleration increases concurrent fleet activity"
+      },
+      {
+        "Setting": "Spectator default",
+        "Value": "On",
+        "Reason": "Use the measured scripted spectator workload (SP-5 preference)"
+      },
+      {
+        "Setting": "Resolution / FSR",
+        "Value": "Native (100%)",
+        "Reason": "Measured CPU unavailable ms / GPU unavailable ms at 1280x720"
+      },
+      {
+        "Setting": "Bloom",
+        "Value": "Off",
+        "Reason": "Reserve GPU headroom for combat effects"
+      },
+      {
+        "Setting": "HD PBR",
+        "Value": "On",
+        "Reason": "Measured CPU unavailable ms / GPU unavailable ms at 1280x720"
+      },
+      {
+        "Setting": "Texture quality",
+        "Value": "HD",
+        "Reason": "Retain HD textures within measured budget"
+      },
+      {
+        "Setting": "Frame cap / vsync",
+        "Value": "60 / Off",
+        "Reason": "Target 60 FPS; avoid presentation wait hiding available headroom"
+      },
+      {
+        "Setting": "Effects density",
+        "Value": "1.0",
+        "Reason": "Measured CPU unavailable ms / GPU unavailable ms at 1280x720"
+      },
+      {
+        "Setting": "View distance",
+        "Value": "6000",
+        "Reason": "Retain tested 6000-unit view"
+      }
+    ]
+  },
+  "AutoTune": [],
+  "TargetStatus": "Headless: graphics target unverified; run rendered benchmark for auto-tune",
+  "EvidenceProcessing": {
+    "originalApplicationOutput": "/tmp/allegiance-evidence/P729/original-skirmish-epic-headless.json",
+    "changes": "Scalar summaries re-aggregated from the retained original Runs using final MedianOf; label/metadata clarified. Measured runs and actual verified recommendation/auto-tune profile retained.",
+    "originalBottleneck": "Headless: graphics unmeasured"
+  }
+}

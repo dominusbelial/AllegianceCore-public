@@ -54,6 +54,8 @@ public class FedMsgDispatchCoverageTests
     /// </summary>
     private static readonly (ushort Fmid, string Type)[] ExpectedConsumedServerSent =
     {
+        (87, "FireExpendable"), (156, "GainFlag"), (164, "AddPart"),
+        (182, "RequestMoney"), (192, "RelaunchShip"), (194, "PingData"),
         (51, "ChangeTeamCiv"), (86, "AsteroidDestroyed"), (92, "ProbesUpdate"),
         (124, "QuitMission"), (126, "QuitSide"), (128, "EnterGame"), (155, "GameState"),
         (6, "ObjectSpotted"), (93, "OrderChange"), (95, "JoinedMission"), (106, "SetWingId"),
@@ -96,16 +98,10 @@ public class FedMsgDispatchCoverageTests
     private static readonly (ushort Fmid, string Name, string Why)[] KnownUnconsumedServerSent =
     {
         (3, "LOGOFF", "server echo of client LOGOFF; quit handled client-side, echo benign"),
-        (31, "NEW_SHIP_INSTANCE", "codec only; neither side wired (no sender, no handler)"),
-        (87, "FIRE_EXPENDABLE", "FE broadcast; expendable deploy effect via CREATE_CHAFF(109)+chaff entities"),
-        (89, "TREASURE_SETS", "treasure-sets broadcast; DROP_TREASURE sets not modelled"),
-        (156, "GAIN_FLAG", "flag gain broadcast; conquest flag mechanic not implemented"),
-        (162, "ACQUIRE_TREASURE", "treasure acquired notice; treasure pickup via DESTROY_TREASURE(30)"),
-        (164, "ADD_PART", "part-added broadcast; loadout state via BUY_LOADOUT_ACK(5)"),
-        (182, "REQUEST_MONEY", "request-money broadcast; donation feature partial (P197-P199)"),
+        (31, "NEW_SHIP_INSTANCE", "inactive native definition; active object creation uses EXPORT (P740 n/a)"),
+        (89, "TREASURE_SETS", "native WinTrek.cpp:11090-11094 explicitly NYI (P740 n/a); port legacy producer retained"),
+        (162, "ACQUIRE_TREASURE", "part pickup acknowledgment not wired; world sound consumer only"),
         (188, "WARP_BOMB", "warp-bomb explosion; no warp-bomb mechanic"),
-        (192, "RELAUNCH_SHIP", "server relaunch notice; launch handled via BUY_LOADOUT_ACK(5) fLaunch"),
-        (194, "PINGDATA", "bandwidth ping stats; connectivity via PING(35) echoes P508"),
     };
 
     // ── helpers ────────────────────────────────────────────────────────────
@@ -274,12 +270,12 @@ public class FedMsgDispatchCoverageTests
         // Registry entries must be unique; otherwise a duplicate can mask stale counts.
         Assert.Equal(ExpectedConsumedServerSent.Length, consumed.Count);
         Assert.Equal(KnownUnconsumedServerSent.Length, unconsumed.Count);
-        Assert.Equal(91, consumed.Count(f => supportedNativeServerSent.Contains(f)));
+        Assert.Equal(97, consumed.Count(f => supportedNativeServerSent.Contains(f)));
         Assert.Equal(17, consumed.Count(f => !supportedNativeServerSent.Contains(f)));
 
         // Sanity: the executable counts match the audited numbers.
-        Assert.Equal(108, ExpectedConsumedServerSent.Length);
-        Assert.Equal(11, KnownUnconsumedServerSent.Length);
+        Assert.Equal(114, ExpectedConsumedServerSent.Length);
+        Assert.Equal(5, KnownUnconsumedServerSent.Length);
         Assert.Equal(102, supportedNativeServerSent.Length);
     }
 }

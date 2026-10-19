@@ -67,12 +67,12 @@ public readonly record struct SlotDef(EquipmentType Type, byte Mount, bool IsTur
 /// </summary>
 public sealed class ShopModel
 {
-    private readonly ShopCatalog _cat;
+    private ShopCatalog _cat;
     private readonly List<ExpandedPartData> _chosenParts = new();
 
     /// <summary>P434/P435 — the real launcher/dispenser offers (missile + mine +
     /// chaff + probe), normalized to empty so a null Launchers is safe.</summary>
-    private readonly IReadOnlyList<LauncherOffer> _launchers;
+    private IReadOnlyList<LauncherOffer> _launchers;
 
     /// <summary>The ship's currently-mounted hull id (from SHIP_STATUS).</summary>
     public short CurrentHullId { get; }
@@ -156,7 +156,7 @@ public sealed class ShopModel
 
     /// <summary>P468 — the local player's wallet (P442), or null until the first
     /// SET_MONEY. When null the shop can't judge affordability.</summary>
-    public int? MyMoney { get; }
+    public int? MyMoney { get; private set; }
 
     public bool AffordabilityKnown => MyMoney is not null;
 
@@ -541,6 +541,19 @@ public sealed class ShopModel
     }
 
     public ShopCatalog Catalog => _cat;
+
+    // Native load.cpp:1554-1565,1603-1606 refreshes offers on tech changes while the
+    // player stays docked. Keep the pending loadout and navigation intact.
+    public void RefreshOffers(ShopCatalog catalog, int? money)
+    {
+        _cat = catalog;
+        _launchers = catalog.Launchers ?? Array.Empty<LauncherOffer>();
+        MyMoney = money;
+        HullCursor = _hullCursor;
+        SlotCursor = _slotCursor;
+    }
+
+    public void RefreshMoney(int? money) => MyMoney = money;
 
     private void NormalizeWeaponMounts()
     {

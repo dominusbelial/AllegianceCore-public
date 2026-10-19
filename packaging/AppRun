@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+app_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/AllegianceCore"
+mkdir -p -- "$config_dir"
+if [ ! -f "$config_dir/player.json" ]; then
+    printf '%s\n' '{"Server":"","Port":6073,"Pilot":"pilot","Lobby":"http://127.0.0.1:5000"}' > "$config_dir/player.json"
+fi
+# Relative output (for example F11 screenshots) must also stay off the image.
+# Asset lookup uses the executable's directory, independently of this cwd.
+cd -- "$config_dir"
+exec "$app_dir/usr/lib/AllegianceCore/Allegiance" "$@"

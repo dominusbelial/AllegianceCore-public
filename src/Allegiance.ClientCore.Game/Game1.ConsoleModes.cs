@@ -11,7 +11,12 @@ public sealed partial class Game1
     private bool _mainMenuVisible;
     private bool _menuConsumedFrame;
     private int _mainMenuCursor;
+    private bool _playerPingsVisible;
+    private long _playerPingsSeenRevision;
+    private int _playerPingsPage;
+    private const int PlayerPingsPageSize = 16;
     private readonly ActionPressEdges _consolePressEdges = new();
+    private readonly ActionPressEdges _playerPingsPressEdges = new();
     private readonly FlightCameraZoom _flightZoom = new();
     private static readonly string[] ConsoleActions = ["ConModeCombat", "ConModeGameState", "ConModeNav",
         "ConModeInventory", "TeamPane", "ConModeMiniTeam", "ViewExternal", "ToggleGrid"];
@@ -55,6 +60,7 @@ public sealed partial class Game1
 
     private void HandleConsoleKeys(KeyboardState keys, bool composing, float dt)
     {
+        HandlePlayerPingsKey(keys, composing);
         foreach (var action in ConsoleActions)
             if (ConsoleEdge(keys, action) && !composing && _state == ClientState.Flying)
             {
@@ -78,6 +84,49 @@ public sealed partial class Game1
         }
     }
 
+    private void HandlePlayerPingsKey(KeyboardState keys, bool composing)
+    {
+        bool Edge(string action) => _playerPingsPressEdges.Observe(action, ActionDown(keys, action));
+        // UpdateMainMenu observes its edges earlier in the same frame, even
+        // while closed. Report navigation therefore needs its own edge state.
+        bool previous = Edge("MenuUp"), next = Edge("MenuDown");
+        if (Edge("PlayerPings") && !composing && _state == ClientState.Flying)
+        {
+            if (_playerPingsVisible) _playerPingsVisible = false;
+            else _session.SendPlayerPingsRequest();
+        }
+        lock (_session.Gate)
+        {
+            long revision = _session.World.PlayerPingsRevision;
+            if (revision != _playerPingsSeenRevision)
+            {
+                _playerPingsSeenRevision = revision;
+                _playerPingsVisible = revision > 0;
+                _playerPingsPage = 0;
+            }
+            if (_playerPingsVisible && !composing)
+                _playerPingsPage = Math.Clamp(_playerPingsPage + (next ? 1 : previous ? -1 : 0), 0,
+                    Math.Max(0, (_session.World.PlayerPingLines.Count - 1) / PlayerPingsPageSize));
+        }
+    }
+
+    private IReadOnlyList<TeamPaneLayout.Line> PlayerPingPage()
+    {
+        var lines = new List<TeamPaneLayout.Line>();
+        lock (_session.Gate)
+        {
+            var report = _session.World.PlayerPingLines;
+            int pages = Math.Max(1, (report.Count + PlayerPingsPageSize - 1) / PlayerPingsPageSize);
+            _playerPingsPage = Math.Clamp(_playerPingsPage, 0, pages - 1);
+            lines.Add(new(TeamPaneLayout.LineKind.Title, $"CONNECTION INFO OF PLAYERS ({_playerPingsPage + 1}/{pages})"));
+            lines.AddRange(report.Skip(_playerPingsPage * PlayerPingsPageSize).Take(PlayerPingsPageSize)
+                .Select(line => new TeamPaneLayout.Line(TeamPaneLayout.LineKind.Pilot, line)));
+        }
+        lines.Add(new(TeamPaneLayout.LineKind.Hint,
+            $"{KeyOf("MenuUp").Label}/{KeyOf("MenuDown").Label} PAGE | {KeyOf("PlayerPings").Label} CLOSE | F6 BIND CONTROLS"));
+        return lines;
+    }
+
     private void ToggleCommandGrid()
     {
         _commandGridVisible = !_commandGridVisible;
@@ -94,7 +143,7 @@ public sealed partial class Game1
     }
 
     private string[] CurrentMainMenuItems => _skirmish is null ? MainMenuItems
-        : MainMenuItems.Concat(new[] { _skirmish.Paused ? "Resume skirmish" : "Pause skirmish", "End skirmish" }).ToArray();
+        : MainMenuItems.Concat(new[] { _skirmish.Paused ? "Resume skirmish" : "Pause skirmish", "End skirmish", "Join Alpha", "Join Bravo", "Return to spectator" }).ToArray();
 
     private void UpdateMainMenu(KeyboardState keys)
     {
@@ -117,6 +166,9 @@ public sealed partial class Game1
                     case 5: Exit(); break;
                     case 6: ToggleSkirmishPause(); break;
                     case 7: StopSkirmish(); break;
+                    case 8: RequestSkirmishSeat(0); break;
+                    case 9: RequestSkirmishSeat(1); break;
+                    case 10: RequestSkirmishSeat(null); break;
                 }
             }
         }
@@ -126,6 +178,11 @@ public sealed partial class Game1
     {
         if (_state != ClientState.Flying) return;
         var lines = new List<TeamPaneLayout.Line>();
+        if (_playerPingsVisible)
+        {
+            _teamPaneRenderer.Draw(GraphicsDevice.Viewport, PlayerPingPage());
+            return;
+        }
         if (_hangarOnly && _dockedActive && _cameraMode != CameraMode.Command)
         {
             lines.Add(new(TeamPaneLayout.LineKind.Title, "HANGAR"));

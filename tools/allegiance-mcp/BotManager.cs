@@ -1717,6 +1717,13 @@ internal sealed partial class BotManager : IDisposable
                 _tickEngagers.Clear();
                 foreach (var b in snap)
                     if (IsParticipating(b) && !b.SpawnPending && !b.InScenario && b.Cs is { } lifeCs) RefreshLife(b, lifeCs, now);
+                if (HumanCommands(0) && now >= _nextHumanDonation)
+                {
+                    _nextHumanDonation = now + 1;
+                    DonateToHumanCommander(Probe);
+                    foreach (var b in snap)
+                        if (b.Cs is { } donor) DonateToHumanCommander(donor);
+                }
                 UpdateFinales(now);
                 UpdateDefense(snap, now);
 
@@ -1735,6 +1742,7 @@ internal sealed partial class BotManager : IDisposable
                     for (int i = 0; i < snap.Length; i++)
                     {
                         var b = snap[i];
+                    using var benchmarkCpu = new BotCpuScope(b);
                         if (b.Cs?.World is { } w)
                         {
                             if (w.MyShipId is not null) w.RequestDecisionRefresh();
@@ -1840,6 +1848,7 @@ bool isThreat =
                 for (int i = 0; i < snap.Length; i++)
                 {
                     var bot = snap[i];
+                    using var benchmarkCpu = new BotCpuScope(bot);
                     try
                     {
                         // P474 — a bot owned by an active run_scenario preset is
@@ -1855,7 +1864,7 @@ bool isThreat =
                         // the commanded ship-target; this may upgrade an idle/weave
                         // BotClass into a combat ConnectionSession and set Behavior.
                         using var frameScope = new DecisionFrameScope(bot.Cs, bot.DecisionFrame);
-                        HandleOrders(bot, now);
+                        if (bot.Behavior != "combat") HandleOrders(bot, now);
                         if (bot.Behavior == "combat")
                         {
                             DriveCombat(bot, now, prep[i]);
@@ -2105,9 +2114,12 @@ bool isThreat =
         // auto-reject) it sends a CidNone update; reset the accepted bookmark so
         // a later, same-commandId order is seen as fresh (DecideAcceptTranslate).
         if (pending is null)
+        {
             bot.AcceptedQueuedId = OrderChange.CidNone;
+            bot.AcceptedQueuedOrder = null;
+        }
 
-        var d = DecideAcceptTranslate(pending, bot.AcceptedQueuedId, bot.OrderedTargetId);
+        var d = DecideAcceptTranslate(pending, bot.AcceptedQueuedId, bot.OrderedTargetId, bot.AcceptedQueuedOrder);
 
         if (d.ShouldSendAccept && pending is { } pq)
         {
@@ -2117,6 +2129,12 @@ bool isThreat =
             else if (bot.Cs is { } cc)
                 cc.SendOrderChange(shipId, pq.CommandId, OrderChange.CmdAccepted, pq.TargetType, pq.TargetId);
             bot.AcceptedQueuedId = pq.CommandId;
+            bot.AcceptedQueuedOrder = pq;
+            if (pq.TargetId >= 0 && pq.TargetType is IgcObjectType.Ship or IgcObjectType.Station or IgcObjectType.Asteroid or IgcObjectType.Warp)
+            {
+                bot.OrderedCommand = pq;
+                bot.OrderedWarpOrigin = null;
+            }
             Console.WriteLine($"[p431] bot {bot.Name} (ship {shipId}) AUTO-ACCEPTED queued order cmdID={pq.CommandId} target={pq.TargetType}#{pq.TargetId} — MCP bot obeys immediately (real ORDER_CHANGE CmdAccepted)");
         }
 
@@ -2154,7 +2172,8 @@ bool isThreat =
     public static OrderDecision DecideAcceptTranslate(
         QueuedCommandState? pending,
         short acceptedQueuedId,
-        short? currentOrderedTarget)
+        short? currentOrderedTarget,
+        QueuedCommandState? acceptedQueuedOrder = null)
     {
         if (pending is not { } pq)
             // No pending order — nothing to accept. Keep the current ordered target
@@ -2163,7 +2182,8 @@ bool isThreat =
             // gap must not be mistaken for a dead target and drop a live order.
             return new OrderDecision(false, currentOrderedTarget);
 
-        bool isFresh = pq.CommandId != OrderChange.CidNone && acceptedQueuedId != pq.CommandId;
+        bool isFresh = pq.CommandId != OrderChange.CidNone
+            && (acceptedQueuedId != pq.CommandId || acceptedQueuedOrder is { } accepted && accepted != pq);
 
         if (pq.TargetType == IgcObjectType.Ship && pq.TargetId >= 0)
         {
@@ -2175,6 +2195,9 @@ bool isThreat =
                 ? new OrderDecision(true, pq.TargetId)
                 : new OrderDecision(false, currentOrderedTarget);
         }
+
+        if (pq.TargetId >= 0 && pq.TargetType is IgcObjectType.Station or IgcObjectType.Asteroid or IgcObjectType.Warp)
+            return new OrderDecision(isFresh, isFresh ? null : currentOrderedTarget);
 
         // A non-ship / targetless pending order (OT_invalid): the queued-order
         // wire carries NO steerable position, so there is no goto/waypoint
@@ -2635,7 +2658,8 @@ bool isThreat =
     /// goal when an imminent collision is found (mirrors the server NPC
     /// autopilot), else <c>false</c> — in which case the caller flies its normal
     /// straight-line goal unchanged. No <see cref="Allegiance.ClientCore.Flight.ClientAutopilotDodge.SkipGoal"/>
-    /// is passed, preserving the P489 bot behaviour exactly.</summary>
+    /// is passed by the generic feed. Research siege duty filters retired poses
+    /// and skips its station attack target, as native cluster/attack Dodge does.</summary>
     private static bool TryDodgeGoal(ConnectionSession cs, ActiveBot bot, Vector3 myPos, out Vector3 goal)
     {
         goal = default;
@@ -2656,6 +2680,8 @@ bool isThreat =
             bool dodgeStations = !hull.HasCapability(DataHullTypeIGC.HabmBoard);
             lock (cs.Gate)
             {
+                if (ResearchSiegeDuty(bot))
+                    return TryResearchSiegeDodge(cs, bot, cur, myPos, myVel, hull, out goal);
                 return Allegiance.ClientCore.Flight.ClientAutopilotDodge.TryComputeDodgeGoal(
                     cs.World, bot.ShipId, bot.Side, myPos, myVel,
                     new Allegiance.ClientCore.Flight.ClientAutopilotDodge.MoverHull(hull.Length, hull.Thrust, hull.Mass),
@@ -3040,8 +3066,16 @@ bool isThreat =
         // at :2485-2490). CombatFlyTo's dodge branch clears AllWeapons.
         if (TryDodgeGoal(cs, bot, myPos, out var dodgeGoal))
         {
-            CombatFlyTo(bot, dodgeGoal, 15f, 200f, 0);
-            return;   // dodge owns steering+throttle and suppresses all weapons this tick
+            if (stationTarget && ResearchSiegeDuty(bot))
+            {
+                // Native attack keeps facing the lead while Dodge supplies RCS
+                // (Igc/shipIGC.cpp:2363,2470-2489; common.cpp:1785-1786).
+                var (dyaw, dpitch, dangle) = SteerTowardDirection(orient, aimDir);
+                cs.CommandControls(new ControlData(dyaw, dpitch, 0, AttackThrottle(dangle)),
+                    SiegeNavigation.DirectionButtons(dodgeGoal - myPos, orient));
+            }
+            else CombatFlyTo(bot, dodgeGoal, 15f, 200f, 0);
+            return;   // dodge suppresses all weapons this tick
         }
 
         // Turn to face the LEAD direction; angleToLead = the residual angle by
@@ -3616,6 +3650,7 @@ bool isThreat =
     private static void FlyWarpLeg(ActiveBot bot, Vector3 warpPos)
     {
         var cs = bot.Cs!;
+        if (TryDriveResearchSiegeTransit(bot, cs, warpPos)) return;
         if (!TryCsPose(cs, bot.ShipId, out var pos, out var orient)) return;
         if (TryDodgeGoal(cs, bot, pos, out var dodgeGoal))
         {
@@ -4568,6 +4603,10 @@ bool isThreat =
         if (DecisionSnapshotEnabled && SnapshotFor(cs).MissionGeneration != cs.World.MissionGeneration) return;
         if (cs.World.MyShipId is not { } my) return;     // not seated yet
         bot.ShipId = my;
+        // Clear the previous life's bookkeeping before accepting a new order.
+        // Otherwise an order arriving with the relaunch ACK could be accepted
+        // and immediately erased by RefreshLife in this same pass.
+        HandleOrders(bot, now);
 
         // P539 — tally this bot's REAL combat stats (hits/kills) from its own
         // wire/world events each tick.
@@ -4582,6 +4621,9 @@ bool isThreat =
             DrivePodHome(bot, cs, now);
             return;
         }
+
+        if (TryDriveResearchFinaleRefit(bot, cs, now)) return;
+        AdvanceResearchSiegeDuty(bot, cs);
 
         short defenseSector = CsSector(cs);
         if (!bot.Arena && defenseSector >= 0) RecordCombatSectorTransition(bot, cs, defenseSector, now);
@@ -4598,6 +4640,7 @@ bool isThreat =
             return;
         }
         bot.ExitClearFrom = null;
+        if (DriveCommanderOrder(bot, now)) return;
         if (TryDriveFinaleEscort(bot, now)) return;
         if (defenseSector >= 0 && TryDriveDefense(bot, defenseSector, now)) return;
         // Fight what hits us or a friendly ship while travelling, without
@@ -4637,7 +4680,10 @@ bool isThreat =
 
         if (bot.Arrived && cur == goal) { EngageCombat(bot, now, prep); return; }
 
+        // A research finale is a committed station duty: incidental fighter hits
+        // must not pin the strike wing in a transit sector. Escort duty handles threats.
         if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase)
+            && !(bot.FinaleBomberActive && ResearchFinale(bot))
             && HasVisibleAttacker(bot, cs, cur, now))
         {
             EngageCombat(bot, now, prep);
@@ -5713,6 +5759,7 @@ bool isThreat =
         public BotClass? Bot;
         public ConnectionSession? Cs;
 
+        public long DecisionCpuNanoseconds;
         public string Name;
         public short HullId;
         public string HullName;
@@ -5842,6 +5889,9 @@ bool isThreat =
         public FinaleRun? Finale;
         public FinaleOriginal? FinaleOriginal;
         public bool FinaleBomberReserved, FinaleBomberActive, FinaleEscort, FinaleResetObserved, FinaleGrantVerified;
+        public bool FinaleRefitting, FinaleRefitLaunchPending, FinaleKeepsPayday;
+        public double FinaleRefitCheckAt = double.NegativeInfinity;
+        public long FinaleMissileLaunchBase;
         public double? FinaleProtectedSince;
         /// <summary>P558 — whether the PREVIOUS attack tick held the
         /// afterburner button. Native's band-Engage afterburner rule fires
@@ -5896,6 +5946,9 @@ bool isThreat =
         // to engage (null = doing its own spawn-time behavior). Distinct from the
         // spawn-time `Behavior` and from `TargetId` (the current live engagement).
         public short? OrderedTargetId;
+        public QueuedCommandState? OrderedCommand;
+        public QueuedCommandState? AcceptedQueuedOrder;
+        public short? OrderedWarpOrigin;
         // P474 — true while this bot is owned by an active run_scenario preset's
         // controller thread; the generic Loop then leaves it alone entirely.
         public bool InScenario;

@@ -1,0 +1,785 @@
+{
+  "task": "SP5",
+  "base": "a8a9eb24e04744ab788b84ffcdc83e2b96afcc1a",
+  "branch": "codex/sp5",
+  "updatedUtc": "2026-10-18T22:04:33.951418+00:00",
+  "build": {
+    "command": "NUGET_HTTP_CACHE_PATH=/tmp/sp5-nuget-cache dotnet build AllegianceCore.slnx --nologo",
+    "passed": true,
+    "raw": "/tmp/allegiance-evidence/SP5/build.log"
+  },
+  "fullSweeps": {
+    "core": {
+      "status": "finished",
+      "counters": {
+        "total": 4879,
+        "executed": 4879,
+        "passed": 4878,
+        "failed": 1,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failures": [
+        {
+          "test": "Allegiance.Core.Tests.LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector",
+          "message": "Assert.Single() Failure: The collection was empty"
+        }
+      ],
+      "skips": []
+    },
+    "clientcore": {
+      "status": "finished",
+      "counters": {
+        "total": 1385,
+        "executed": 1384,
+        "passed": 1383,
+        "failed": 1,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failures": [
+        {
+          "test": "Allegiance.ClientCore.Tests.P658SupervisorTests.RealChildExitMarksKnownBotsLostAndSupervisorStillServes",
+          "message": "Assert.Contains() Failure: Sub-string not found\nString:    \"\"\nNot found: \"child-error\""
+        }
+      ],
+      "skips": [
+        "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms"
+      ]
+    },
+    "monogame": {
+      "status": "finished",
+      "counters": {
+        "total": 2437,
+        "executed": 2434,
+        "passed": 2432,
+        "failed": 2,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failures": [
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.HelpOverlayTests.Table_HasAllLogicalGroups",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 16\nActual:   17"
+        },
+        {
+          "test": "Allegiance.ClientCore.MonoGame.Tests.P625KeyMapTests.Help_GroupsMatchNativeCommandCategories",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 16\nActual:   17"
+        }
+      ],
+      "skips": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set"
+      ]
+    },
+    "lobby": {
+      "status": "finished",
+      "counters": {
+        "total": 19,
+        "executed": 19,
+        "passed": 19,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failures": [],
+      "skips": []
+    }
+  },
+  "focused": [
+    {
+      "test": "SP5SpectatorTests.Large_and_epic_default_to_spectating_and_every_size_can_override",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.13
+    },
+    {
+      "test": "SP5SpectatorTests.Large_and_epic_default_to_spectating_and_every_size_can_override",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.12
+    },
+    {
+      "test": "SP5SpectatorTests.Large_and_epic_default_to_spectating_and_every_size_can_override",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.11
+    },
+    {
+      "test": "SP5SpectatorTests.Camera_tracks_recent_damage_kills_then_cycles_ships_both_directions",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.12
+    },
+    {
+      "test": "SP5SpectatorTests.Camera_tracks_recent_damage_kills_then_cycles_ships_both_directions",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.17
+    },
+    {
+      "test": "SP5SpectatorTests.Camera_tracks_recent_damage_kills_then_cycles_ships_both_directions",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.16
+    },
+    {
+      "test": "SP5SpectatorTests.Station_camera_wraps_both_directions_and_survives_an_empty_next_match",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.13
+    },
+    {
+      "test": "SP5SpectatorTests.Station_camera_wraps_both_directions_and_survives_an_empty_next_match",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.15
+    },
+    {
+      "test": "SP5SpectatorTests.Station_camera_wraps_both_directions_and_survives_an_empty_next_match",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.17
+    },
+    {
+      "test": "SP5SpectatorTests.Observation_updates_without_an_own_ship_and_removes_departed_entities",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.13
+    },
+    {
+      "test": "SP5SpectatorTests.Observation_updates_without_an_own_ship_and_removes_departed_entities",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.18
+    },
+    {
+      "test": "SP5SpectatorTests.Observation_updates_without_an_own_ship_and_removes_departed_entities",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.16
+    },
+    {
+      "test": "P727SkirmishOptionsTests.Menu_cycles_every_race_size_tech_and_difficulty",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.21
+    },
+    {
+      "test": "P727SkirmishOptionsTests.Menu_cycles_every_race_size_tech_and_difficulty",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.22
+    },
+    {
+      "test": "P727SkirmishOptionsTests.Menu_cycles_every_race_size_tech_and_difficulty",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.2
+    },
+    {
+      "test": "P727SkirmishOptionsTests.Driver_supports_single_worker_supervision_and_owner_tracking",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.19
+    },
+    {
+      "test": "P727SkirmishOptionsTests.Driver_supports_single_worker_supervision_and_owner_tracking",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.2
+    },
+    {
+      "test": "P727SkirmishOptionsTests.Driver_supports_single_worker_supervision_and_owner_tracking",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.19
+    },
+    {
+      "test": "HelpOverlayTests.Table_HasAllLogicalGroups",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.31
+    },
+    {
+      "test": "HelpOverlayTests.Table_HasAllLogicalGroups",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.31
+    },
+    {
+      "test": "HelpOverlayTests.Table_HasAllLogicalGroups",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.34
+    },
+    {
+      "test": "P625KeyMapTests.Help_GroupsMatchNativeCommandCategories",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.33
+    },
+    {
+      "test": "P625KeyMapTests.Help_GroupsMatchNativeCommandCategories",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.31
+    },
+    {
+      "test": "P625KeyMapTests.Help_GroupsMatchNativeCommandCategories",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.31
+    },
+    {
+      "test": "P612OrbitCameraTests.Orbit_locked_subject_frames_it_in_view",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.28
+    },
+    {
+      "test": "P612OrbitCameraTests.Orbit_locked_subject_frames_it_in_view",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.29
+    },
+    {
+      "test": "P612OrbitCameraTests.Orbit_locked_subject_frames_it_in_view",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.26
+    },
+    {
+      "test": "P612OrbitCameraTests.Auto_orbit_keeps_distance_and_revolves",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.28
+    },
+    {
+      "test": "P612OrbitCameraTests.Auto_orbit_keeps_distance_and_revolves",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.25
+    },
+    {
+      "test": "P612OrbitCameraTests.Auto_orbit_keeps_distance_and_revolves",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.28
+    },
+    {
+      "test": "SP5SpectatorLiveTests.Shipless_updates_swap_both_sides_launch_unseat_and_keep_choice_across_next_match",
+      "run": 1,
+      "exit": 0,
+      "seconds": 56.24
+    },
+    {
+      "test": "SP5SpectatorLiveTests.Shipless_updates_swap_both_sides_launch_unseat_and_keep_choice_across_next_match",
+      "run": 2,
+      "exit": 0,
+      "seconds": 58.34
+    },
+    {
+      "test": "SP5SpectatorLiveTests.Shipless_updates_swap_both_sides_launch_unseat_and_keep_choice_across_next_match",
+      "run": 3,
+      "exit": 0,
+      "seconds": 71.56
+    },
+    {
+      "test": "P727SkirmishLiveTests.Local_start_battle_pause_resume_next_match_stop_leaves_no_processes",
+      "run": 1,
+      "exit": 0,
+      "seconds": 210.31
+    },
+    {
+      "test": "P727SkirmishLiveTests.Local_start_battle_pause_resume_next_match_stop_leaves_no_processes",
+      "run": 2,
+      "exit": 0,
+      "seconds": 205.94
+    },
+    {
+      "test": "P727SkirmishLiveTests.Local_start_battle_pause_resume_next_match_stop_leaves_no_processes",
+      "run": 3,
+      "exit": 0,
+      "seconds": 211.78
+    },
+    {
+      "test": "P727SkirmishLiveTests.Research_skirmish_uses_both_commanders_and_selected_civ_plans",
+      "run": 1,
+      "exit": 0,
+      "seconds": 9.06
+    },
+    {
+      "test": "P727SkirmishLiveTests.Research_skirmish_uses_both_commanders_and_selected_civ_plans",
+      "run": 2,
+      "exit": 0,
+      "seconds": 11.32
+    },
+    {
+      "test": "P727SkirmishLiveTests.Research_skirmish_uses_both_commanders_and_selected_civ_plans",
+      "run": 3,
+      "exit": 0,
+      "seconds": 9.05
+    }
+  ],
+  "finalFocused": [
+    {
+      "test": "Large_and_epic_default_to_spectating_and_every_size_can_override",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.15
+    },
+    {
+      "test": "Large_and_epic_default_to_spectating_and_every_size_can_override",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.18
+    },
+    {
+      "test": "Large_and_epic_default_to_spectating_and_every_size_can_override",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.21
+    },
+    {
+      "test": "Camera_tracks_recent_damage_kills_then_cycles_ships_both_directions",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.22
+    },
+    {
+      "test": "Camera_tracks_recent_damage_kills_then_cycles_ships_both_directions",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.24
+    },
+    {
+      "test": "Camera_tracks_recent_damage_kills_then_cycles_ships_both_directions",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.32
+    },
+    {
+      "test": "Station_camera_wraps_both_directions_and_survives_an_empty_next_match",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.23
+    },
+    {
+      "test": "Station_camera_wraps_both_directions_and_survives_an_empty_next_match",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.23
+    },
+    {
+      "test": "Station_camera_wraps_both_directions_and_survives_an_empty_next_match",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.22
+    },
+    {
+      "test": "Observation_updates_without_an_own_ship_and_removes_departed_entities",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.19
+    },
+    {
+      "test": "Observation_updates_without_an_own_ship_and_removes_departed_entities",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.18
+    },
+    {
+      "test": "Observation_updates_without_an_own_ship_and_removes_departed_entities",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.2
+    },
+    {
+      "test": "Shipless_updates_swap_both_sides_launch_unseat_and_keep_choice_across_next_match",
+      "run": 1,
+      "exit": 0,
+      "seconds": 71.75
+    },
+    {
+      "test": "Shipless_updates_swap_both_sides_launch_unseat_and_keep_choice_across_next_match",
+      "run": 2,
+      "exit": 0,
+      "seconds": 72.46
+    },
+    {
+      "test": "Shipless_updates_swap_both_sides_launch_unseat_and_keep_choice_across_next_match",
+      "run": 3,
+      "exit": 0,
+      "seconds": 71.67
+    }
+  ],
+  "neverParks": {
+    "dispatchBaseRecordedPasses": 5,
+    "dispatchBaseRecordedRuns": 5,
+    "baselineReport": "docs/reports/P727_SINGLE_PLAYER_HOST.md",
+    "runs": [
+      {
+        "run": 1,
+        "exit": 0,
+        "seconds": 101.98
+      },
+      {
+        "run": 2,
+        "exit": 0,
+        "seconds": 104.59
+      },
+      {
+        "run": 3,
+        "exit": 0,
+        "seconds": 99.39
+      },
+      {
+        "run": 4,
+        "exit": 0,
+        "seconds": 99.33
+      },
+      {
+        "run": 5,
+        "exit": 0,
+        "seconds": 98.82
+      }
+    ]
+  },
+  "supervisorFlakeRetries": [
+    {
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.21
+    },
+    {
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.21
+    },
+    {
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.23
+    }
+  ],
+  "ripcordFlakeRetries": [
+    {
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.79
+    },
+    {
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.76
+    },
+    {
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.59
+    }
+  ],
+  "finalOfflineLive": [
+    {
+      "run": 1,
+      "exit": 0,
+      "seconds": 71.89
+    },
+    {
+      "run": 2,
+      "exit": 0,
+      "seconds": 71.67
+    },
+    {
+      "run": 3,
+      "exit": 0,
+      "seconds": 71.97
+    }
+  ],
+  "epicSmoke": [
+    {
+      "run": 1,
+      "exit": 0,
+      "seconds": 20.69,
+      "result": {
+        "WallSeconds": 5.0259851,
+        "SimulationSeconds": 20.550000000000157,
+        "BotsAlive": true,
+        "Running": true,
+        "Bots": 119,
+        "Shots": 0,
+        "Hits": 0,
+        "PilotDistance": 8335.8857421875,
+        "Processes": [
+          21,
+          36,
+          44,
+          45
+        ],
+        "PilotShipId": 8221
+      }
+    },
+    {
+      "run": 2,
+      "exit": 0,
+      "seconds": 20.78,
+      "result": {
+        "WallSeconds": 5.0254839,
+        "SimulationSeconds": 20.600000000000158,
+        "BotsAlive": true,
+        "Running": true,
+        "Bots": 119,
+        "Shots": 0,
+        "Hits": 0,
+        "PilotDistance": 8303.5703125,
+        "Processes": [
+          872,
+          887,
+          895,
+          896
+        ],
+        "PilotShipId": 8221
+      }
+    },
+    {
+      "run": 3,
+      "exit": 0,
+      "seconds": 20.87,
+      "result": {
+        "WallSeconds": 5.0206998,
+        "SimulationSeconds": 20.70000000000016,
+        "BotsAlive": true,
+        "Running": true,
+        "Bots": 119,
+        "Shots": 0,
+        "Hits": 0,
+        "PilotDistance": 8322.248046875,
+        "Processes": [
+          1722,
+          1737,
+          1744,
+          1746
+        ],
+        "PilotShipId": 8221
+      }
+    }
+  ],
+  "affectedExtra": [
+    {
+      "test": "P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.17
+    },
+    {
+      "test": "P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.17
+    },
+    {
+      "test": "P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.16
+    },
+    {
+      "test": "P625bActionMapGuardTests.NoRawKeyLiteralsOutsideAllowList_InGameInputFiles",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.25
+    },
+    {
+      "test": "P625bActionMapGuardTests.NoRawKeyLiteralsOutsideAllowList_InGameInputFiles",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.27
+    },
+    {
+      "test": "P625bActionMapGuardTests.NoRawKeyLiteralsOutsideAllowList_InGameInputFiles",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.25
+    }
+  ],
+  "optInLocalRotation": [
+    {
+      "run": 1,
+      "exit": 0,
+      "seconds": 23.25
+    },
+    {
+      "run": 2,
+      "exit": 0,
+      "seconds": 23.21
+    },
+    {
+      "run": 3,
+      "exit": 0,
+      "seconds": 23.28
+    }
+  ],
+  "optionalAssetPack": [
+    {
+      "test": "Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.04
+    },
+    {
+      "test": "Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.05
+    },
+    {
+      "test": "Pack_catalogue_merge_yields_identical_resolution_to_before",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.06
+    },
+    {
+      "test": "Pack_built_content_directory_exists",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.03
+    },
+    {
+      "test": "Pack_built_content_directory_exists",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.01
+    },
+    {
+      "test": "Pack_built_content_directory_exists",
+      "run": 3,
+      "exit": 0,
+      "seconds": 0.99
+    },
+    {
+      "test": "Pack_catalogue_has_the_full_meshy_set",
+      "run": 1,
+      "exit": 0,
+      "seconds": 1.03
+    },
+    {
+      "test": "Pack_catalogue_has_the_full_meshy_set",
+      "run": 2,
+      "exit": 0,
+      "seconds": 1.01
+    },
+    {
+      "test": "Pack_catalogue_has_the_full_meshy_set",
+      "run": 3,
+      "exit": 0,
+      "seconds": 1.05
+    }
+  ],
+  "offline": {
+    "namespace": "unshare -rn and -Urn denied: Operation not permitted",
+    "alternative": "inherited LD_PRELOAD deny non-loopback IP connects, external DNS and non-loopback sendto; real-client strace and guarded live test",
+    "guardedDropin": {
+      "status": "finished",
+      "counters": {
+        "total": 1,
+        "executed": 1,
+        "passed": 1,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "failures": [],
+      "skips": []
+    },
+    "rawTrace": "/tmp/allegiance-evidence/SP5/final-metadata-connect.trace"
+  },
+  "screenshot": {
+    "path": "spectator-1280x720.png",
+    "width": 1280,
+    "height": 720,
+    "bytes": 129132,
+    "sha256": "9884ec90c6ebadced57207fcf7a1cb5fa93095a063abc112d68db39a65f3646b"
+  },
+  "rawEvidence": "/tmp/allegiance-evidence/SP5",
+  "sourceSha256": {
+    "src/Allegiance.ClientCore.Game/Game1.Camera.cs": "e7ddb47f1e19f7e4bfe77b0043d9d0c1ae917586d69505559e587a6ab7197552",
+    "src/Allegiance.ClientCore.Game/Game1.Commanding.cs": "998b38efbd2efb66e70141e0301985a386451d83b790351ba39ac8f47193ae58",
+    "src/Allegiance.ClientCore.Game/Game1.ConsoleModes.cs": "180041dfca236a3c099a95bfe2f58ec54bd4579e15c9b100e5f01fc1ac504e85",
+    "src/Allegiance.ClientCore.Game/Game1.Director.cs": "d6293a7c1ab3bc2a15f8f802d61ec35ebc327f9a2f789f45196b4c5b9af847e7",
+    "src/Allegiance.ClientCore.Game/Game1.FlightInput.cs": "778914fe5691890d78d8701d2885c3fa1fad5a5ff837c5a734a808f18ae5335f",
+    "src/Allegiance.ClientCore.Game/Game1.FlightParts.cs": "4f5c05020c271e50bb5b3b19d0182cd55ab755b0aa7e04783ceadaecdfad111b",
+    "src/Allegiance.ClientCore.Game/Game1.IntroScreen.cs": "6aaa7ea393e59f78100536608e760a4baa22465c18b9397c00cceb77299416c9",
+    "src/Allegiance.ClientCore.Game/Game1.Panes.cs": "404d3c9c48bb982752d867d4a2017e556f690bc1b6309a81c9d48fe67200b349",
+    "src/Allegiance.ClientCore.Game/Game1.Rendering.cs": "569d0144fb7995249b34a2910bd8865d29a0b4124afc8a9b34481e0e9597ee59",
+    "src/Allegiance.ClientCore.Game/Game1.Skirmish.cs": "73b5581e1ab39e49d9fb1e7993641bdb24ea35065ce966e4bfc0cf2c624c1626",
+    "src/Allegiance.ClientCore.Game/Game1.Spectator.cs": "789212c3b26607e635c51be0d14b1ff973e4a30a3152cbae37fe15bead81ead8",
+    "src/Allegiance.ClientCore.Game/Rendering/InputActionCatalog.cs": "650c94e4d0cee54cc41100a0eb4770d81124d9d66979730bb7b8e92175e4b4e8",
+    "src/Allegiance.SinglePlayer/SkirmishHost.cs": "620260ef95cac0c294d2242a16bf5279bccece3be0c2698d2a2565ec87a62390",
+    "src/Allegiance.SinglePlayer/SkirmishOptions.cs": "d7f497310ab3a01325281c5e226cd62b8d3e80afec976135c4b6954d34b39234",
+    "src/Allegiance.SinglePlayer/SkirmishScreenModel.cs": "244d4a2d791cff65e95edb67b06d5827f03018963a7fcfddf0ca62f49eeaffb4",
+    "src/Allegiance.SinglePlayer/SkirmishSmoke.cs": "e66b472fa74815d012128e9dc3829111d7f8f2ce15047f0e29b7f7a057feee31",
+    "tests/Allegiance.ClientCore.MonoGame.Tests/HelpOverlayTests.cs": "d3b26bb5151837ae7a2fdf275cd8f077e0f53b0b8ec562b20f1154d8ab01ee3f",
+    "tests/Allegiance.ClientCore.MonoGame.Tests/P625KeyMapTests.cs": "01bb1693eabe3ff640213b7d1ea3e4066b285ed27ac75f17e02746fdff147ee8",
+    "tools/allegiance-mcp/SkirmishDriver.cs": "8e55e45440c3a0a99a9b0a272488b010d508b4c56f1894d8cef0a58173d4741f",
+    "src/Allegiance.ClientCore.Game/Game1.SkirmishObserver.cs": "3588ca4579b80172cc7821ac24d18f0e7480128d3230e99d8b58bd565f05c59d",
+    "src/Allegiance.ClientCore/State/ClientWorld.LocalObserver.cs": "282a277172ff13332e9d545d9ddf016ea5992d8b2483a23d9daba8ba71848943",
+    "src/Allegiance.SinglePlayer/SkirmishCamera.cs": "7cadc2ba94cefa7c78d6f24f9f8458f94abd02bd8849db9f0cd1b3858f98bd66",
+    "src/Allegiance.SinglePlayer/SkirmishObservation.cs": "74eaf96c27cc5bc90dd9814a8ada18752ef55cf5b64770ccf7ef7875a3f15545",
+    "tests/Allegiance.ClientCore.Tests/SP5SpectatorTests.cs": "16dde78f27fc630710fb1a4b3da3301112389ad2ec92c112beccf2e12e8db846"
+  },
+  "validationStatus": "complete_with_documented_namespace_limit",
+  "committed": false,
+  "pushed": false
+}

@@ -46,12 +46,16 @@ public sealed class NativeStationRenderer : IDisposable
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _missingModelLogged = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _missingTextureLogged = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HdMaterialRenderer _hd;
+    private readonly bool _ownsHd;
     private readonly BasicEffect _effect;
     private readonly RasterizerState _cullCcw;
 
-    public NativeStationRenderer(GraphicsDevice gd, Assets.IAssetSource assets)
+    public NativeStationRenderer(GraphicsDevice gd, Assets.IAssetSource assets, HdMaterialRenderer? hd = null)
     {
         _gd = gd;
+        _hd = hd ?? new HdMaterialRenderer(gd, NativeMaterialParts.NativeReader(assets));
+        _ownsHd = hd is null;
         _assets = assets;
         _effect = new BasicEffect(gd);
         _cullCcw = new RasterizerState { CullMode = CullMode.CullCounterClockwiseFace };
@@ -151,7 +155,7 @@ public sealed class NativeStationRenderer : IDisposable
     /// not tint station meshes).
     /// </summary>
     public void Draw(NativeStationGeometry geo, Texture2D? texture, Matrix world,
-        Matrix view, Matrix projection, float nativeScale, SectorLighting? lighting)
+        Matrix view, Matrix projection, float nativeScale, SectorLighting? lighting, string? modelStem = null, string? textureStem = null)
     {
         var gd = _gd;
         // ThingGeo brackets the mesh with BlendModeSourceAlpha
@@ -175,19 +179,9 @@ public sealed class NativeStationRenderer : IDisposable
             _effect.AmbientLightColor = new Vector3(0.32f, 0.34f, 0.36f);
         }
         _effect.DiffuseColor = Color.White.ToVector3();
-        gd.SetVertexBuffer(geo.Vertices);
-        gd.Indices = geo.Indices;
-        // Native TextureGeo binds its own image inside each GroupGeo state scope
-        // (geometry.cpp:1439-1453, 1079-1082). The parent texture is inherited
-        // only by meshes without a TextureGeo; it is not a station-wide skin.
-        foreach (var part in geo.Parts)
-        {
-            var partTexture = part.TextureStem is { } stem ? TextureFor(stem) : texture;
-            _effect.Texture = partTexture;
-            _effect.TextureEnabled = partTexture is not null;
-            _effect.CurrentTechnique.Passes[0].Apply();
-            gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, part.StartIndex, part.TriangleCount);
-        }
+        geo.Materials.Draw(gd, _hd, modelStem, textureStem,
+            texture, TextureFor, _effect, geo.Vertices, geo.Indices, local, view, projection,
+            1, lighting);
     }
 
     /// <summary>P564 — depth-only pass for soft-particle intersections, using the
@@ -217,6 +211,7 @@ public sealed class NativeStationRenderer : IDisposable
     /// (<see cref="NativeStationResolver.RenderIndices"/>).</summary>
     public sealed class NativeStationGeometry : IDisposable
     {
+        public NativeMaterialParts Materials { get; private init; } = null!;
         public required VertexBuffer Vertices { get; init; }
         public required IndexBuffer Indices { get; init; }
         public required int TriangleCount { get; init; }
@@ -259,6 +254,7 @@ public sealed class NativeStationRenderer : IDisposable
             ibuf.SetData(indices);
             return new NativeStationGeometry
             {
+                Materials = new(meshes, verts, indices),
                 Vertices = vbuf,
                 Indices = ibuf,
                 TriangleCount = indices.Length / 3,
@@ -269,6 +265,7 @@ public sealed class NativeStationRenderer : IDisposable
 
         public void Dispose()
         {
+            Materials.Dispose();
             Vertices.Dispose();
             Indices.Dispose();
         }
@@ -278,6 +275,7 @@ public sealed class NativeStationRenderer : IDisposable
     {
         foreach (var g in _models.Values) g.Dispose();
         foreach (var t in _textures.Values) t.Dispose();
+        if (_ownsHd) _hd.Dispose();
         _effect.Dispose();
         _cullCcw.Dispose();
     }

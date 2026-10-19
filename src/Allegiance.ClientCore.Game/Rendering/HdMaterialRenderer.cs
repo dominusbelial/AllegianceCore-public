@@ -30,6 +30,7 @@ public sealed class HdMaterialRenderer : IDisposable
         public long LastUse { get; set; }
         public double LastUseSeconds { get; set; }
     }
+    public bool Enabled { get; set; } = true;
     public long ResidentBytes { get; private set; }
     public int ResidentMaterials => _resident.Count;
     public long BudgetBytes => _budget;
@@ -45,11 +46,21 @@ public sealed class HdMaterialRenderer : IDisposable
     }
     private readonly bool _ownsShaders;
 
+    /// <summary>Native unlit/additive geometry keeps its authored emissive pass,
+    /// animation and vertex colours while sharing validation, residency and toggle.</summary>
+    public Texture2D? EmissiveTexture(string texture)
+    {
+        if (!Enabled) return null;
+        var material = _pack.Resolve("", texture, _openNative);
+        return material is null ? null : MapsFor(material)?[0];
+    }
+
     /// <summary>Returns false before changing render state when unavailable, so
     /// the caller executes its identical native BasicEffect fallback.</summary>
     public bool TryDraw(string model, string? texture, Func<VertexBuffer> vertices, IndexBuffer indices,
-        int triangles, Matrix world, Matrix view, Matrix projection, float opacity, SectorLighting? lighting)
+        int triangles, Matrix world, Matrix view, Matrix projection, float opacity, SectorLighting? lighting, int startIndex = 0)
     {
+        if (!Enabled) return false;
         var material = _pack.Resolve(model, texture, _openNative);
         if (material is null) return false;
         if (!_shaderAttempted)
@@ -76,20 +87,24 @@ public sealed class HdMaterialRenderer : IDisposable
         e.Parameters["Opacity"].SetValue(Math.Clamp(opacity, 0, 1));
         string[] parameters = ["BaseMap", "NormalMap", "MetalMap", "RoughMap", "EmissionMap"];
         for (int i = 0; i < maps.Length; i++) e.Parameters[parameters[i]].SetValue(maps[i]);
+        var sampler = _gd.SamplerStates[0];
         e.CurrentTechnique.Passes[0].Apply();
+        // Station/asteroid UVs wrap; hull/missile callers clamp. All maps must
+        // follow the native material's addressing, including after shader Apply.
+        for (int i = 0; i < maps.Length; i++) _gd.SamplerStates[i] = sampler;
         _gd.SetVertexBuffer(vertices()); _gd.Indices = indices;
-        _gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, triangles);
+        _gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, startIndex, triangles);
         return true;
     }
 
     private Texture2D[]? MapsFor(HdPack.Material material)
     {
-        if (_resident.TryGetValue(material.Model, out var hit))
+        if (_resident.TryGetValue(material.Key, out var hit))
         {
             hit.LastUse = ++_clock; hit.LastUseSeconds = _seconds(); return hit.Maps;
         }
-        if (_failed.Contains(material.Model)) return null;
-        if (_deferredUntil.TryGetValue(material.Model, out double until) && _seconds() < until) return null;
+        if (_failed.Contains(material.Key)) return null;
+        if (_deferredUntil.TryGetValue(material.Key, out double until) && _seconds() < until) return null;
         var maps = new List<Texture2D>();
         long started = System.Diagnostics.Stopwatch.GetTimestamp();
         try
@@ -111,7 +126,7 @@ public sealed class HdMaterialRenderer : IDisposable
                 // for excess models until an idle resident becomes evictable.
                 if (_seconds() - oldest.Value.LastUseSeconds < EvictionIdleSeconds)
                 {
-                    _deferredUntil[material.Model] = _seconds() + .5;
+                    _deferredUntil[material.Key] = _seconds() + .5;
                     return null;
                 }
                 foreach (var map in oldest.Value.Maps) map.Dispose();
@@ -125,16 +140,16 @@ public sealed class HdMaterialRenderer : IDisposable
                 maps.Add(CreateMipmapped(_gd, pixels, decoded.Width, decoded.Height, name));
             }
             var resident = new Resident(maps.ToArray(), bytes) { LastUse = ++_clock, LastUseSeconds = _seconds() };
-            _resident.Add(material.Model, resident); ResidentBytes += bytes;
-            _deferredUntil.Remove(material.Model);
-            Console.WriteLine($"[hd] '{material.Model}' resident: {bytes / 1048576.0:F2} MiB; total {ResidentBytes / 1048576.0:F2}/{_budget / 1048576.0:F0} MiB (all mips); first upload {System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds:F1} ms");
+            _resident.Add(material.Key, resident); ResidentBytes += bytes;
+            _deferredUntil.Remove(material.Key);
+            Console.WriteLine($"[hd] '{material.Key}' resident: {bytes / 1048576.0:F2} MiB; total {ResidentBytes / 1048576.0:F2}/{_budget / 1048576.0:F0} MiB (all mips); first upload {System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds:F1} ms");
             return resident.Maps;
         }
         catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or ArgumentException or InvalidOperationException)
         {
             foreach (var map in maps) map.Dispose();
-            _failed.Add(material.Model);
-            Console.WriteLine($"[hd] '{material.Model}' maps unavailable ({e.Message}); using native material");
+            _failed.Add(material.Key);
+            Console.WriteLine($"[hd] '{material.Key}' maps unavailable ({e.Message}); using native material");
             return null;
         }
     }
@@ -202,10 +217,14 @@ public sealed class HdMaterialRenderer : IDisposable
         catch { texture.Dispose(); throw; }
     }
 
-    public void Dispose()
+    public void ResetResidency()
     {
         foreach (var resident in _resident.Values) foreach (var map in resident.Maps) map.Dispose();
-        _resident.Clear(); _deferredUntil.Clear(); ResidentBytes = 0;
+        _resident.Clear(); _deferredUntil.Clear(); ResidentBytes = 0; _clock = 0;
+    }
+    public void Dispose()
+    {
+        ResetResidency();
         if (_ownsShaders) _shaders.Dispose();
     }
 }

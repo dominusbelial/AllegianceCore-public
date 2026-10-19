@@ -32,7 +32,7 @@ public static class InputActionCatalog
         "QUEUED ORDERS (RECEIVED COMMAND)", "COMMANDED SHIP (DRONE)",
         "VOTE / COMMAND", "CAMERA / VIEW", "MUSIC", "CHAT", "LOBBY (SERVER BROWSER)",
         "READY CHECK (PRE-FLIGHT)",
-        "PANES / MENUS", "FREE-CAM / SPECTATOR", "SYSTEM",
+        "PANES / MENUS", "FREE-CAM / SPECTATOR", "LOCAL SKIRMISH", "SYSTEM",
     };
 
     // ---- convenient chord builders -----------------------------------------
@@ -82,6 +82,9 @@ public static class InputActionCatalog
         new("ThrottleUp", "CRUISE THROTTLE", "Cruise throttle up (persistent, 20% steps) [TK_ThrottleUp]", K(Keys.OemPlus), K(Keys.OemPlus)),
         new("ThrottleDown", "CRUISE THROTTLE", "Cruise throttle down (persistent, 20% steps) [TK_ThrottleDown]", K(Keys.OemMinus), K(Keys.OemMinus)),
         new("ThrottleZero", "CRUISE THROTTLE", "Throttle ZERO (stop) [TK_ThrottleZero]", K(Keys.Back), K(Keys.Back)),
+        new("Throttle33", "CRUISE THROTTLE", "Throttle 33% [TK_Throttle33]", U(), null),
+        new("Throttle66", "CRUISE THROTTLE", "Throttle 66% [TK_Throttle66]", U(), null),
+        new("PlayerPings", "PANES / MENUS", "Connection info of players (toggle)", U()),
         // P624 — ThrottleFull folds BOTH MonoGame "\\" keys in as native
         // alternates: OemBackslash (the catalogue default, VK 0xDC =
         // defaultinputmap.mdl line 43) plus OemPipe (the US-layout main
@@ -420,7 +423,13 @@ public static class InputActionCatalog
         new("ShopLaunch", "PANES / MENUS", "Docked shop: launch (BUY_LOADOUT)", K(Keys.L), null),
         new("ShopUndock", "PANES / MENUS", "Docked shop: undock without buying", K(Keys.U), null),
         new("ToggleTeleportPane", "PANES / MENUS", "Docked: toggle the teleport pane", K(Keys.T), null),
-        new("ToggleInvestmentPane", "PANES / MENUS", "Docked: toggle the investment pane", K(Keys.I), null),
+        new("ToggleInvestmentPane", "PANES / MENUS", "Toggle team investment (flight, hangar or command)", K(Keys.I), null),
+        new("InvestNextPilot", "TEAM FUNDING", "Investment: next pilot to fund", K(Keys.Tab), null),
+        new("InvestDonate", "TEAM FUNDING", "Investment: give selected pilot $100", K(Keys.D), null),
+        new("InvestDonateLarge", "TEAM FUNDING", "Investment: give selected pilot $500", K(Keys.E), null),
+        new("InvestAutoDonate", "TEAM FUNDING", "Investment: donate wallet and income to pilot", K(Keys.A), null),
+        new("InvestKeepIncome", "TEAM FUNDING", "Investment: keep own wallet and future income", K(Keys.C), null),
+        new("InvestToggleDonate", "TEAM FUNDING", "Investment: commander toggles pilot income", K(Keys.X), null),
         new("InvestPartial", "PANES / MENUS", "Investment: partial invest (10%)", K(Keys.R), null),
         new("InvestShowAll", "PANES / MENUS", "Investment: show all buckets", K(Keys.S), null),
         new("InvestHideCompleted", "PANES / MENUS", "Investment: hide completed buckets", K(Keys.H), null),
@@ -437,6 +446,11 @@ public static class InputActionCatalog
         new("FreeCamDown", "FREE-CAM / SPECTATOR", "Free-cam: move down", K(Keys.E), null),
         new("FreeCamSpeedUp", "FREE-CAM / SPECTATOR", "Free-cam: speed up (fast)", K(Keys.LeftShift), null),
         new("FreeCamSpeedSlow", "FREE-CAM / SPECTATOR", "Free-cam: speed down (slow)", K(Keys.LeftControl), null),
+        new("SkirmishJoinAlpha", "LOCAL SKIRMISH", "Join Alpha (replace one bot)", C(Keys.D1), null),
+        new("SkirmishJoinBravo", "LOCAL SKIRMISH", "Join Bravo (replace one bot)", C(Keys.D2), null),
+        new("SkirmishSpectate", "LOCAL SKIRMISH", "Return to spectator (refill bot)", C(Keys.D0), null),
+        new("SkirmishCamera", "LOCAL SKIRMISH", "Spectator: action / ship / station / free", K(Keys.V), null),
+        new("SkirmishPrevious", "LOCAL SKIRMISH", "Spectator: previous ship / station", K(Keys.PageDown), null),
         new("OrbitSubjectNext", "FREE-CAM / SPECTATOR", "Orbit camera: cycle locked subject", K(Keys.PageUp), null),
 
         // -- SYSTEM (game-flow / overlay keys that are not flight commands) --

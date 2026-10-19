@@ -1,5 +1,30 @@
 AllegianceCore — Download and play
 
+Windows setup (Allegiance-win-x64-setup.exe): run the installer. The default
+"Install for me only" needs no administrator and installs to
+%LOCALAPPDATA%\Programs\AllegianceCore. You can instead choose all users (UAC
+approval; Program Files). Start-menu and optional desktop shortcuts open the
+intro screen: choose Single Player to play offline, or Multiplayer.
+Run a newer setup to upgrade in place. Uninstall through Windows Installed apps;
+player.json and keymap.json in %APPDATA%\AllegianceCore are kept.
+The installer and portable EXE are unsigned. After verifying the checksum,
+SmartScreen may require "More info" -> "Run anyway" (unknown publisher).
+Code signing requires a certificate and is outside this release.
+
+Linux AppImage (Allegiance-linux-x64.AppImage): place it in a permanent folder,
+then chmod +x Allegiance-linux-x64.AppImage and double-click it, or run:
+  ./Allegiance-linux-x64.AppImage
+No .NET installation or root access is needed. Optional AppImageLauncher or
+Gear Lever can add it to your desktop menu. Replace the file to upgrade; delete
+it to uninstall. Preferences stay in ~/.config/AllegianceCore (or XDG_CONFIG_HOME).
+If FUSE mounting is unavailable, use:
+  ./Allegiance-linux-x64.AppImage --appimage-extract
+  ./squashfs-root/AppRun
+Or run with APPIMAGE_EXTRACT_AND_RUN=1. Do not put custom files inside the
+extracted application. Its payload can stay read-only; preferences are per-user.
+
+Portable downloads:
+
 Extract the WHOLE archive. No .NET SDK, git, local.env or art download is needed.
 Linux x64: run ./allegiance.sh (chmod +x allegiance.sh Allegiance if necessary).
 Windows x64: double-click play.bat or Allegiance.exe.
@@ -50,8 +75,8 @@ Troubleshooting:
   local.env found above your current directory can also override bundle paths.
 - Connection refused: check Server/Port/Lobby with the server operator.
 - A malformed player.json prevents startup; fix it or delete it and run the launcher.
-- Windows releases are unsigned: SmartScreen may show an unknown publisher.
-  Verify the download/checksum and use your normal trust process.
+- Windows SmartScreen: verify the download/checksum, then "More info" ->
+  "Run anyway" for this unsigned release.
 - The client uses native FreeAllegiance art. No optional sky layers are omitted.
 
 Licenses: LICENSE, NOTICE, CREDITS.md; artwork/LICENSE; sky/CREDITS.md,
@@ -68,3 +93,28 @@ Use Pause or Ctrl+P to pause/resume. Ctrl+F10 ends the skirmish and returns
 to setup. The in-game menu also offers Pause and End skirmish.
 For a headless local benchmark run: Allegiance --skirmish-smoke 60 Small
 (replace Allegiance with Allegiance.exe on Windows).
+
+Benchmark and recommended settings
+----------------------------------
+The first launch offers an optional benchmark; Escape skips it. Benchmark is
+also available from the main menu. Select a fixed skirmish size or the bundled
+recorded battle. Skirmish runs the local server and bots; replay uses the client
+alone. A skirmish run measures 150 seconds of battle, repeated three times.
+Results show the middle run, the measured bottleneck, and reasons for each
+suggested setting. A short check tries those settings and can reduce them once.
+Click Apply (or press Enter) to save them. Escape keeps your previous settings.
+If the target remains unmet, the results say so.
+
+Command line:
+  Allegiance --benchmark skirmish:small
+  Allegiance --benchmark skirmish:medium
+  Allegiance --benchmark skirmish:large
+  Allegiance --benchmark skirmish:epic
+  Allegiance --benchmark replay
+  Allegiance --benchmark replay:/path/to/battle.alr
+
+Optional: --benchmark-output /path/to/results.json, --benchmark-exit (close after
+results), --benchmark-seconds 3 (short smoke), --benchmark-headless (no graphics;
+FPS/GPU and graphics auto-tune are explicitly unavailable). To record a real
+skirmish's incoming transport stream, add --benchmark-record /path/to/battle.alr.
+Normal player bundles include the battle recording and all local host components.

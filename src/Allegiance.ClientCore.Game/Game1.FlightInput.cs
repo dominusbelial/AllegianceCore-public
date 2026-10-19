@@ -249,10 +249,17 @@ public sealed partial class Game1
 
     protected override void Update(GameTime gameTime)
     {
+        using var frameUpdate = new Diagnostics.ClientFrameTelemetry.UpdateScope(_frameTelemetry);
         UpdateSkirmish(Keyboard.GetState());
+        if (UpdateBenchmark(ref gameTime)) { base.Update(gameTime); return; }
+        if (LocalSpectating)
+        {
+            UpdateLocalSpectator(gameTime, Keyboard.GetState());
+            base.Update(gameTime);
+            return;
+        }
         // TR-2 — pump the active training mission every frame (native TrainingMission::Frame).
         UpdateTraining(gameTime.ElapsedGameTime.TotalSeconds);
-        using var frameUpdate = new Diagnostics.ClientFrameTelemetry.UpdateScope(_frameTelemetry);
         _sound?.UpdateAudioFrame((float)gameTime.ElapsedGameTime.TotalSeconds);
         UpdateSoundEvents();
         _flightGc.SetFlying(_state == ClientState.Flying && !_dockedActive
@@ -279,6 +286,7 @@ public sealed partial class Game1
         PumpServerClock();
         var world = _session.World;
         UpdateMissionCatalog();
+        UpdateCommanderBuildOrders();
         if (_nextMatchGeneration != world.MissionGeneration)
         {
             _nextMatchGeneration = world.MissionGeneration;
@@ -293,7 +301,7 @@ public sealed partial class Game1
         if (_state == ClientState.Flying && world.MissionGeneration > 0
             && world.Mission?.Stage is (int)MissionStage.NotStarted or (int)MissionStage.Starting)
             _state = ClientState.ReadyCheck;
-        var ks = Keyboard.GetState();
+        var ks = _benchmark is null ? Keyboard.GetState() : new KeyboardState();
         if (UpdateGraphicsSettings(ks))
         {
             // A modal settings panel must release the last movement/fire command.
@@ -464,7 +472,7 @@ public sealed partial class Game1
         HandleConsoleKeys(ks, _chatActive || _qcMenuOpen || _keyBindVisible || _mainMenuVisible,
             (float)gameTime.ElapsedGameTime.TotalSeconds);
 
-        HandleCommandKeys(ks, _chatActive || _qcMenuOpen || _keyBindVisible || _mainMenuVisible,
+        HandleCommandKeys(ks, _chatActive || _qcMenuOpen || _keyBindVisible || _mainMenuVisible || _investActive,
             (float)gameTime.ElapsedGameTime.TotalSeconds);
 
         // P265 — B scoreboard toggle (mnemonic: BoaRd / scoreBoaRd). B is an
@@ -610,6 +618,8 @@ public sealed partial class Game1
         _thDownWasDown              = ActionDown(ks, "ThrottleDown");
         _thZeroWasDown              = ActionDown(ks, "ThrottleZero");
         _thFullWasDown              = ThrottleFullDown(ks);
+        _th33WasDown                = ActionDown(ks, "Throttle33");
+        _th66WasDown                = ActionDown(ks, "Throttle66");
         _targetPressEdges.Prime(InputActionCatalog.Definitions
             .Where(a => a.Name.StartsWith("Target", StringComparison.Ordinal) || a.Name == "OccupyNextTurret")
             .Select(a => (a.Name, ActionDown(ks, a.Name))));
@@ -643,6 +653,58 @@ public sealed partial class Game1
         _prevPartWasDown            = ActionDown(ks, "PrevPart");
         _dropCargoWasDown           = ActionDown(ks, "DropCargo");
         _reloadWasDown              = ActionDown(ks, "Reload");
+    }
+
+    // WinTrek.cpp:10939-10962: zero > 33 > 66 > full. Presets share
+    // the port's rebindable, edge-triggered keyboard and composing guard.
+    private void ApplyThrottleKeys(KeyboardState ks, bool composing)
+    {
+        bool thUp = ActionDown(ks, "ThrottleUp");
+        bool thDown = ActionDown(ks, "ThrottleDown");
+        bool thZero = ActionDown(ks, "ThrottleZero");
+        bool thFull = ThrottleFullDown(ks);
+        bool th33 = ActionDown(ks, "Throttle33");
+        bool th66 = ActionDown(ks, "Throttle66");
+        if (!composing)
+        {
+            if (thUp && !_thUpWasDown)
+            {
+                _throttle = FlightInput.StepThrottleUp(_throttle);
+                Console.WriteLine($"[monogame] throttle UP -> {_throttle:F2} ({FlightInput.CruiseFraction(_throttle) * 100f:F0}%)");
+            }
+            if (thDown && !_thDownWasDown)
+            {
+                _throttle = FlightInput.StepThrottleDown(_throttle);
+                Console.WriteLine($"[monogame] throttle DOWN -> {_throttle:F2} ({FlightInput.CruiseFraction(_throttle) * 100f:F0}%)");
+            }
+            if (thZero && !_thZeroWasDown)
+            {
+                _throttle = FlightInput.PresetValue(FlightInput.ThrottlePreset.Zero);
+                Console.WriteLine("[monogame] throttle ZERO -> stop (-1)");
+            }
+            else if (th33 && !_th33WasDown)
+            {
+                _throttle = FlightInput.PresetValue(FlightInput.ThrottlePreset.ThirtyThree);
+                _joystickFlight.Reset(); // native joyThrottle=false; next sample keeps keyboard authority
+            }
+            else if (th66 && !_th66WasDown)
+            {
+                _throttle = FlightInput.PresetValue(FlightInput.ThrottlePreset.SixtySix);
+                _joystickFlight.Reset();
+            }
+            else if (thFull && !_thFullWasDown)
+            {
+                _throttle = FlightInput.PresetValue(FlightInput.ThrottlePreset.Full);
+                Console.WriteLine("[monogame] throttle FULL -> +1 (100%)");
+            }
+        }
+        _thUpWasDown = thUp;
+        _thDownWasDown = thDown;
+        _thZeroWasDown = thZero;
+        _thFullWasDown = thFull;
+        _th33WasDown = th33;
+        _th66WasDown = th66;
+
     }
 
     /// <summary>P624 — is the ThrottleFull action held? The action's alternate
@@ -845,7 +907,10 @@ public sealed partial class Game1
         // A modal UI consumes the keyboard: chat composition OR the quick-chat
         // menu both neutralise flight input / toggles / autopilot-steering, so
         // navigating or typing never also thrusts/turns the ship.
-        bool composing = _chatActive || _qcMenuOpen || _keyBindVisible || _mainMenuVisible || _menuConsumedFrame;
+        bool composing = _chatActive || _qcMenuOpen || _keyBindVisible || _mainMenuVisible || _menuConsumedFrame || _playerPingsVisible;
+        // Investment is modal in flight and command view; ordinary docked
+        // command acceptance below must still run when this overlay is closed.
+        if ((_investActive || ActionDown(ks, "ToggleInvestmentPane")) && HandleInvestmentScreen(ks, composing)) return;
         HandleRemainderTargetKeys(ks, composing);
         HandleCommandActionKeys(ks, composing);
         HandleP623TargetingKeys(ks, composing);
@@ -900,6 +965,7 @@ public sealed partial class Game1
         // flight control / weapon / toggles apply while docked.
         if (HandleDockedScreen(ks, composing))
             return;
+
 
         // P572 — --auto-goto / --auto-target / --auto-dock-after (only airborne;
         // the docked branch above consumed this frame instead).
@@ -1208,7 +1274,7 @@ public sealed partial class Game1
         bool missileCtrl = ActionDown(ks, "FireMissile");
         if (!composing && missileCtrl)
         {
-            long nowMs = Environment.TickCount64;
+            long nowMs = ClientNowMilliseconds;
             if (nowMs - _lastMissileSendMs >= 250 && _session.World.MissileLock.IsReady)
             {
                 _lastMissileSendMs = nowMs;
@@ -1220,7 +1286,7 @@ public sealed partial class Game1
         {
             // Re-arm the throttle promptly on release so a fresh hold starts
             // immediately; keep the edge cheap.
-            _lastMissileSendMs = Environment.TickCount64 - 250;
+            _lastMissileSendMs = ClientNowMilliseconds - 250;
         }
 
         // P225 — single-weapon selection. Edge-triggered like the M/V/K/C
@@ -1285,37 +1351,7 @@ public sealed partial class Game1
         // defaultinputmap.mdl binds neither. Latches are updated every frame
         // (outside the composing gate) exactly like the M/V toggles, so a key
         // released mid-composition can't misfire an edge.
-        bool thUp = ActionDown(ks, "ThrottleUp");
-        bool thDown = ActionDown(ks, "ThrottleDown");
-        bool thZero = ActionDown(ks, "ThrottleZero");
-        bool thFull = ThrottleFullDown(ks);
-        if (!composing)
-        {
-            if (thUp && !_thUpWasDown)
-            {
-                _throttle = FlightInput.StepThrottleUp(_throttle);
-                Console.WriteLine($"[monogame] throttle UP -> {_throttle:F2} ({FlightInput.CruiseFraction(_throttle) * 100f:F0}%)");
-            }
-            if (thDown && !_thDownWasDown)
-            {
-                _throttle = FlightInput.StepThrottleDown(_throttle);
-                Console.WriteLine($"[monogame] throttle DOWN -> {_throttle:F2} ({FlightInput.CruiseFraction(_throttle) * 100f:F0}%)");
-            }
-            if (thZero && !_thZeroWasDown)
-            {
-                _throttle = FlightInput.PresetValue(FlightInput.ThrottlePreset.Zero);
-                Console.WriteLine("[monogame] throttle ZERO -> stop (-1)");
-            }
-            if (thFull && !_thFullWasDown)
-            {
-                _throttle = FlightInput.PresetValue(FlightInput.ThrottlePreset.Full);
-                Console.WriteLine("[monogame] throttle FULL -> +1 (100%)");
-            }
-        }
-        _thUpWasDown = thUp;
-        _thDownWasDown = thDown;
-        _thZeroWasDown = thZero;
-        _thFullWasDown = thFull;
+        ApplyThrottleKeys(ks, composing);
 
         // P445 — mouse wheel steps the throttle the same way the = / - keys do
         // (native's mouseButtonCommandMap binds wheel-up→ThrottleUp and
@@ -1341,7 +1377,7 @@ public sealed partial class Game1
         if (_lastWheelValue is { } last)
         {
             int rawDelta = wheelValue - last;
-            long diagMs = Environment.TickCount64;
+            long diagMs = ClientNowMilliseconds;
             if (rawDelta != 0 && diagMs - _lastWheelDiagMs >= 250)
             {
                 _lastWheelDiagMs = diagMs;
@@ -1358,7 +1394,7 @@ public sealed partial class Game1
         }
         else if (!composing)
         {
-            long nowMs = Environment.TickCount64;
+            long nowMs = ClientNowMilliseconds;
             while (_wheelQueue >= FlightInput.WheelNotch && nowMs - _lastWheelStepMs >= WheelStepIntervalMs)
             {
                 _throttle = FlightInput.StepThrottleUp(_throttle);
@@ -1688,9 +1724,9 @@ public sealed partial class Game1
             if (!_autoShotDone && Environment.GetEnvironmentVariable("ALLEGIANCE_AUTOSHOT") is { Length: > 0 } autoShot)
             {
                 if (_autoShotStartMs <= 0)
-                    _autoShotStartMs = Environment.TickCount64;
+                    _autoShotStartMs = ClientNowMilliseconds;
                 int delayMs = int.TryParse(autoShot, out var ad) && ad > 0 ? ad : 8000;
-                if (Environment.TickCount64 - _autoShotStartMs >= delayMs)
+                if (ClientNowMilliseconds - _autoShotStartMs >= delayMs)
                 {
                     // P570 — dismiss the briefing popup first so the real-backbuffer
                     // proof frame isn't obscured by it (the briefing only auto-
@@ -1914,6 +1950,124 @@ public sealed partial class Game1
         // ServerShipUpdate — no smoothing/prediction (see PredictedPose's
         // remarks). Locked against the receive thread's concurrent upserts
         // into world.Ships — see ConnectionSession.Gate's doc comment.
+        GatherRenderPoses(gameTime, sentFireM);
+
+        // P508 — send the native SHIP_UPDATE at the 0.15 s cadence from the current
+        // local simulation pose + the adopted cookie + the server-converted time. Runs
+        // after the pose gather (the gate above just closed) so a just-applied
+        // SHIP_RESET / SET_CLUSTER seed + cookie are reflected; the server-clock feed
+        // also happened under the gate. No-op while frozen (docked/dead/ripcord/warp),
+        // unseeded, or no server clock yet.
+        MaybeSendOwnShipUpdate();
+
+        // P363 — drop ribbons for ships that weren't in this frame's pose gather
+        // (dead / left the visible set), matching native tearing a destroyed
+        // ship's trail site down at once.
+        _motionTrail.PruneUntouched();
+
+        // P232 — weapon-fire + projectile in-flight ambient sound, driven from
+        // the local ship's perspective this frame (see the method for details).
+        UpdateProjectileSounds();
+
+        // P236 — the three missile sound cues (launch one-shot, in-flight ambient
+        // loop, tiered explosion one-shot), driven from the live in-sector missile
+        // set this frame (see the method for details).
+        UpdateMissileSounds();
+
+        // P264 — the incoming-missile warning loop, driven from the server-streamed
+        // "an enemy missile is tracking YOU" state this frame (see the method).
+        UpdateMissileWarning();
+
+        // P260 — the two probe sound cues (deploy one-shot on the local ship's own
+        // drop, and the scanning ambient loop while an own-side probe is active in
+        // the current sector), driven from the live in-sector probe set this frame
+        // (see the method for details).
+        UpdateProbeSounds();
+
+        // P237 — the warp ambient loop (alephloop), driven from the live in-sector
+        // warps within audible range this frame (see the method for details).
+        UpdateWarpSounds();
+
+        // P267 — the station exterior ambient loop (shipout), driven from the
+        // live in-sector stations within audible range this frame (see the method).
+        UpdateStationSounds();
+
+        // P711 — the ship low-status alarm edge detection (SIM-0361..0366,
+        // trekigc.cpp:1264-1275) and the ripcord-active + mining loop gates
+        // (SIM-0368/0370, :1287/:1293). Records the one-shot events drained
+        // below and replays the two loop gates against the audio manager.
+        UpdateShipStatusAlarms();
+
+        // P623 — VICTIM_DAMAGED(217) attributions drained into the local ship's
+        // TK_TargetHostile damage window (who hurt me and by how much).
+        UpdateHostileTracking();
+
+        // P578 — eject/death/rescue feedback lines (tips + critical/non-critical
+        // message cues) and the eject "gloat camera" swing to the killer,
+        // drained from the world's KILL_SHIP/PLAYER_RESCUED queues each frame.
+        UpdateFeedback();
+
+        // P463 — the four projectile hit sounds (my/other × shield/hull), drained
+        // from the same PROJECTILE_HULL_HIT(213) wire stream the spark renderer
+        // consumes, at most one cue per target per frame.
+        UpdateHitSounds();
+
+        // P463c — collisions (COLLISION_EVENT(216)): the positional collision
+        // one-shot once per collision in the local sector, plus P449b's camera
+        // jiggle feed when the local ship is a party.
+        UpdateCollisionSounds();
+
+        // P574 — world explosions (EXPLOSION_EVENT(207)): the native tiered
+        // positional sound for every ship/station/asteroid/mine blast in the
+        // local sector (missile detonations excluded — already voiced above).
+        UpdateExplosionSounds();
+
+        // P282 — ready-up is NO LONGER automatic here. The old hack sent
+        // SendPlayerReady(true) unconditionally the instant the ship existed,
+        // which lied to the server's P180 auto-start gate. Today the player
+        // toggles ready on the pre-flight READY-CHECK screen (UpdateReadyCheck);
+        // once every occupied side is aggregate-ready the server starts the
+        // countdown and UpdateReadyCheck hands off to this Flying state. Launch
+        // (undock) is likewise not automatic — when docked the hangar/loadout
+        // screen (P268) takes over and the player launches via BUY_LOADOUT
+        // (fLaunch=true) or the fallback timer.
+
+        // trekigc.cpp:1016-1075: own-ship ripcord voice uses the same
+        // countdown waves, with the native -7 dB gain (sounddef.mdl:353-362).
+        // Mission countdown audio is handled once by UpdateMissionCountdownSound.
+        float ripcordLeft = _ripcordCountdownSound.TimeLeft(world.RipcordActive,
+            world.RipcordActiveSinceLocalMs, ClientNowMilliseconds,
+            RipcordDurationSeconds(world), world.TimeScale);
+        if (_ripcordCountdownSound.Update(world.RipcordActive, ripcordLeft) is { } ripcordSecond)
+            _sound?.PlayCountdownSecond(ripcordSecond, Audio.RipcordCountdownSound.Gain);
+
+        // Game-over: fire once on the real transition of world.Mission.Stage
+        // into Over — driven by the server's GAME_OVER(62) broadcast →
+        // ClientWorld.Apply(GameOver) — reusing the exact same world.Mission /
+        // stage read as the auto-undock above (no second notion of "ended").
+        if (world.Mission is { } gmi && gmi.Stage == (int)MissionStage.Over && !_gameOverCuePlayed)
+        {
+            _gameOverCuePlayed = true;
+            _sound?.PlayGameOver();
+            Console.WriteLine("[monogame] audio: game-over");
+        }
+
+        base.Update(gameTime);
+    }
+
+    /// <summary>P448b — resolve a REMOTE ship's render pose for this frame. When the
+    /// kill switch is on and the ship's P448a dead-reckoner is seeded, this is the
+    /// real flight model replayed from the last update to "now" (native CalculateShip),
+    /// so a turning/thrusting ship keeps moving between packets instead of stepping at
+    /// 20 Hz and lagging one packet behind. Returns a COPY of the pose: the reckoner's
+    /// orientation scratch mutates on every PoseAt call, and this pose is shared this
+    /// frame by the hull draw, camera/radar/targeting projections and every attached
+    /// effect, so each ship gets one stable orientation object. Falls back to the raw
+    /// last-known pose when the kill switch is off or the reckoner isn't seeded (a
+    /// ship with no pose was already excluded by the gather guard).</summary>
+    private void GatherRenderPoses(GameTime gameTime, int sentFireM = 0)
+    {
+        var world = _session.World;
         _poses.Clear();
         _damageEmitters.Clear();
         _engineTrailEmitters.Clear();
@@ -1931,7 +2085,7 @@ public sealed partial class Game1
         float updateDt = (float)gameTime.ElapsedGameTime.TotalSeconds;   // P358 — powers the afterburner ramp
         lock (_session.Gate)
         {
-            short? viewSector = world.MyShipId is { } viewId && world.Ships.TryGetValue(viewId, out var viewShip)
+            short? viewSector = LocalSpectating ? _skirmishCamera.SectorId : world.MyShipId is { } viewId && world.Ships.TryGetValue(viewId, out var viewShip)
                 ? RenderSector(viewShip.SectorId) : null;
             if (_flightEffects.BeginView(world.SectorGeneration, viewSector))
             {
@@ -2151,123 +2305,12 @@ public sealed partial class Game1
             }
         }
 
-        // P508 — send the native SHIP_UPDATE at the 0.15 s cadence from the current
-        // local simulation pose + the adopted cookie + the server-converted time. Runs
-        // after the pose gather (the gate above just closed) so a just-applied
-        // SHIP_RESET / SET_CLUSTER seed + cookie are reflected; the server-clock feed
-        // also happened under the gate. No-op while frozen (docked/dead/ripcord/warp),
-        // unseeded, or no server clock yet.
-        MaybeSendOwnShipUpdate();
-
-        // P363 — drop ribbons for ships that weren't in this frame's pose gather
-        // (dead / left the visible set), matching native tearing a destroyed
-        // ship's trail site down at once.
-        _motionTrail.PruneUntouched();
-
-        // P232 — weapon-fire + projectile in-flight ambient sound, driven from
-        // the local ship's perspective this frame (see the method for details).
-        UpdateProjectileSounds();
-
-        // P236 — the three missile sound cues (launch one-shot, in-flight ambient
-        // loop, tiered explosion one-shot), driven from the live in-sector missile
-        // set this frame (see the method for details).
-        UpdateMissileSounds();
-
-        // P264 — the incoming-missile warning loop, driven from the server-streamed
-        // "an enemy missile is tracking YOU" state this frame (see the method).
-        UpdateMissileWarning();
-
-        // P260 — the two probe sound cues (deploy one-shot on the local ship's own
-        // drop, and the scanning ambient loop while an own-side probe is active in
-        // the current sector), driven from the live in-sector probe set this frame
-        // (see the method for details).
-        UpdateProbeSounds();
-
-        // P237 — the warp ambient loop (alephloop), driven from the live in-sector
-        // warps within audible range this frame (see the method for details).
-        UpdateWarpSounds();
-
-        // P267 — the station exterior ambient loop (shipout), driven from the
-        // live in-sector stations within audible range this frame (see the method).
-        UpdateStationSounds();
-
-        // P711 — the ship low-status alarm edge detection (SIM-0361..0366,
-        // trekigc.cpp:1264-1275) and the ripcord-active + mining loop gates
-        // (SIM-0368/0370, :1287/:1293). Records the one-shot events drained
-        // below and replays the two loop gates against the audio manager.
-        UpdateShipStatusAlarms();
-
-        // P623 — VICTIM_DAMAGED(217) attributions drained into the local ship's
-        // TK_TargetHostile damage window (who hurt me and by how much).
-        UpdateHostileTracking();
-
-        // P578 — eject/death/rescue feedback lines (tips + critical/non-critical
-        // message cues) and the eject "gloat camera" swing to the killer,
-        // drained from the world's KILL_SHIP/PLAYER_RESCUED queues each frame.
-        UpdateFeedback();
-
-        // P463 — the four projectile hit sounds (my/other × shield/hull), drained
-        // from the same PROJECTILE_HULL_HIT(213) wire stream the spark renderer
-        // consumes, at most one cue per target per frame.
-        UpdateHitSounds();
-
-        // P463c — collisions (COLLISION_EVENT(216)): the positional collision
-        // one-shot once per collision in the local sector, plus P449b's camera
-        // jiggle feed when the local ship is a party.
-        UpdateCollisionSounds();
-
-        // P574 — world explosions (EXPLOSION_EVENT(207)): the native tiered
-        // positional sound for every ship/station/asteroid/mine blast in the
-        // local sector (missile detonations excluded — already voiced above).
-        UpdateExplosionSounds();
-
-        // P282 — ready-up is NO LONGER automatic here. The old hack sent
-        // SendPlayerReady(true) unconditionally the instant the ship existed,
-        // which lied to the server's P180 auto-start gate. Today the player
-        // toggles ready on the pre-flight READY-CHECK screen (UpdateReadyCheck);
-        // once every occupied side is aggregate-ready the server starts the
-        // countdown and UpdateReadyCheck hands off to this Flying state. Launch
-        // (undock) is likewise not automatic — when docked the hangar/loadout
-        // screen (P268) takes over and the player launches via BUY_LOADOUT
-        // (fLaunch=true) or the fallback timer.
-
-        // trekigc.cpp:1016-1075: own-ship ripcord voice uses the same
-        // countdown waves, with the native -7 dB gain (sounddef.mdl:353-362).
-        // Mission countdown audio is handled once by UpdateMissionCountdownSound.
-        float ripcordLeft = _ripcordCountdownSound.TimeLeft(world.RipcordActive,
-            world.RipcordActiveSinceLocalMs, Environment.TickCount64,
-            RipcordDurationSeconds(world), world.TimeScale);
-        if (_ripcordCountdownSound.Update(world.RipcordActive, ripcordLeft) is { } ripcordSecond)
-            _sound?.PlayCountdownSecond(ripcordSecond, Audio.RipcordCountdownSound.Gain);
-
-        // Game-over: fire once on the real transition of world.Mission.Stage
-        // into Over — driven by the server's GAME_OVER(62) broadcast →
-        // ClientWorld.Apply(GameOver) — reusing the exact same world.Mission /
-        // stage read as the auto-undock above (no second notion of "ended").
-        if (world.Mission is { } gmi && gmi.Stage == (int)MissionStage.Over && !_gameOverCuePlayed)
-        {
-            _gameOverCuePlayed = true;
-            _sound?.PlayGameOver();
-            Console.WriteLine("[monogame] audio: game-over");
-        }
-
-        base.Update(gameTime);
     }
 
-    /// <summary>P448b — resolve a REMOTE ship's render pose for this frame. When the
-    /// kill switch is on and the ship's P448a dead-reckoner is seeded, this is the
-    /// real flight model replayed from the last update to "now" (native CalculateShip),
-    /// so a turning/thrusting ship keeps moving between packets instead of stepping at
-    /// 20 Hz and lagging one packet behind. Returns a COPY of the pose: the reckoner's
-    /// orientation scratch mutates on every PoseAt call, and this pose is shared this
-    /// frame by the hull draw, camera/radar/targeting projections and every attached
-    /// effect, so each ship gets one stable orientation object. Falls back to the raw
-    /// last-known pose when the kill switch is off or the reckoner isn't seeded (a
-    /// ship with no pose was already excluded by the gather guard).</summary>
     private Flight.PredictedPose RemoteShipPose(ClientWorld world, short id, ServerShipUpdate up)
     {
         if (_remoteShipDeadReckoning &&
-            world.TryGetRenderPose(id, Environment.TickCount64 / 1000.0, out var pos, out var ori))
+            world.TryGetRenderPose(id, ClientNowMilliseconds / 1000.0, out var pos, out var ori))
         {
             return new Flight.PredictedPose(pos, ori.Copy());
         }
@@ -3019,7 +3062,7 @@ public sealed partial class Game1
         var ctx = new Flight.OwnShotContext(
             pose.Position, pose.Orientation, mineUp.Velocity,
             mineUp.EnergyFraction, mineUp.AmmoFraction,
-            _nowSeconds, Environment.TickCount64);
+            _nowSeconds, ClientNowMilliseconds);
 
         var rounds = _ownShotEcho.Update(specs, new Flight.OwnShotFireState(fireStateM), ctx);
 

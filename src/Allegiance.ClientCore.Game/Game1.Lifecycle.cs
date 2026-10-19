@@ -169,7 +169,8 @@ public sealed partial class Game1
             _shipRenderer = new ShipRenderer(GraphicsDevice);
             // P566 — the native ship renderer (parses .mdl meshes + native textures
             // at runtime from the artwork source, like ProjectileModelRenderer).
-            _nativeShipRenderer = new Rendering.NativeShipRenderer(GraphicsDevice, _assets);
+            _hdMaterials = new HdMaterialRenderer(GraphicsDevice, NativeMaterialParts.NativeReader(_assets), seconds: () => ClientNowMilliseconds / 1000d);
+            _nativeShipRenderer = new Rendering.NativeShipRenderer(GraphicsDevice, _assets, hd: _hdMaterials);
             // P628 — the far-tier sprite batcher (distant ships as lit, side-tinted
             // sprites/points, batched per hull type) + the env-configurable LOD
             // thresholds. Profile is parsed at construction (FromEnv) and kept.
@@ -486,7 +487,7 @@ public sealed partial class Game1
         // orientation and spin are folded in at draw time (native scale =
         // radius/meshRadius, native RY(π) flip). The imported/procedural variants
         // above remain as the fallback chain behind the --asteroids setting.
-        _nativeAsteroidRenderer = new Rendering.NativeAsteroidRenderer(GraphicsDevice, _assets);
+        _nativeAsteroidRenderer = new Rendering.NativeAsteroidRenderer(GraphicsDevice, _assets, _hdMaterials);
 
         // P564 — the native per-station-type renderer: parses each station's OWN
         // .mdl station model + native texture at runtime from the artwork source
@@ -495,7 +496,7 @@ public sealed partial class Game1
         // flip are folded in at draw time (native scale = radius/meshRadius).
         // The procedural StationRenderer above remains as the fallback behind it
         // when a station type's art is missing.
-        _nativeStationRenderer = new Rendering.NativeStationRenderer(GraphicsDevice, _assets);
+        _nativeStationRenderer = new Rendering.NativeStationRenderer(GraphicsDevice, _assets, _hdMaterials);
 
         // P227 — the shared procedural warp funnel mesh (the P218 pattern,
         // different shape). Generated once here (no content-pipeline asset)
@@ -504,7 +505,7 @@ public sealed partial class Game1
         // P562 — now a NATIVE-textured flowing vortex (alephbmp) with a
         // counter-rotating star core and transit swell; resolves the per-warp
         // funnel texture and the f02 star from the artwork tree via _assets.
-        _warpRenderer = new WarpRenderer(GraphicsDevice, _assets);
+        _warpRenderer = new WarpRenderer(GraphicsDevice, _assets, _hdMaterials);
 
         // P289 — the shared procedural station mesh (the P218/P227 pattern,
         // hub + equatorial ring silhouette). Generated once here (no
@@ -531,7 +532,7 @@ public sealed partial class Game1
         // for the laser-cannon / MassDriver rounds. Both fall back to the box
         // above when an asset is missing (never an invisible round).
         _projectileSpriteRenderer = new ProjectileSpriteRenderer(GraphicsDevice, _assets);
-        _projectileModelRenderer = new ProjectileModelRenderer(GraphicsDevice, _assets);
+        _projectileModelRenderer = new ProjectileModelRenderer(GraphicsDevice, _assets, _hdMaterials);
 
         // P593 — startup self-check: every distinct 3D-model projectile round must
         // resolve its mesh + native texture (0 lit-solid-white fallbacks — the
@@ -591,7 +592,7 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] probe texture unavailable ({ex.Message}) — lit-solid fallback");
         }
         _probeRenderer = new ProbeRenderer(
-            GraphicsDevice, probeMdl.Meshes, probeTex);
+            GraphicsDevice, probeMdl.Meshes, probeTex, _hdMaterials, _assets);
 
         // P291 — the shared REAL mine sprite + decal-field renderer (the P290
         // runtime-native-asset pattern, applied to the mine's real TEXTURE
@@ -610,7 +611,7 @@ public sealed partial class Game1
         // models, acs14, artifact, the biosflag decal) now takes over; the gem
         // remains the fallback when a resolved model is unavailable.
         _treasureRenderer = new TreasureRenderer(GraphicsDevice);
-        _nativeTreasureRenderer = new NativeTreasureRenderer(GraphicsDevice, _assets);
+        _nativeTreasureRenderer = new NativeTreasureRenderer(GraphicsDevice, _assets, _hdMaterials);
 
         // P292 — the shared REAL chaff sprites + billboard renderer (the P291
         // runtime-native-asset pattern, applied to the chaff's single-decal
@@ -696,7 +697,7 @@ public sealed partial class Game1
         // shard" defect — native loads each missile with its own model + texture,
         // missileigc.cpp:49-51). Startup audit resolves mesh + texture for every
         // distinct missile model in the core and reports lit-solid fallbacks.
-        _nativeMissileRenderer = new Rendering.NativeMissileRenderer(GraphicsDevice, _assets);
+        _nativeMissileRenderer = new Rendering.NativeMissileRenderer(GraphicsDevice, _assets, _hdMaterials);
         if (_shopCatalog is { MissileTypes: { } mts })
         {
             var missileModels = mts.Values

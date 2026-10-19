@@ -20,11 +20,9 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// is correct, unlike a flying missile whose nose must swing onto its heading).
 /// </summary>
 /// <remarks>
-/// <para><b>Solid, lit — no texture.</b> P233 did not decode probe textures and
-/// this task scopes texture-mapping out, so the mesh renders as a solid,
-/// lit surface (BasicEffect <c>EnableDefaultLighting</c> + a per-instance
-/// <see cref="DiffuseColor"/> side tint), using the mesh's real per-vertex
-/// normals. The .mdl texcoords are carried but unused (set to 0).</para>
+/// <para><b>Materials.</b> Each type's native mesh retains its texture scopes.
+/// Textured parts use white tint and optionally the shared atlas PBR service;
+/// missing textures retain the lit-solid, side-tinted fallback.</para>
 /// <para><b>Winding/culling — the P290 empirical finding.</b> Unlike the missile
 /// mesh (<c>mis05.mdl</c>, which P234 measured to need
 /// <see cref="CullMode.CullClockwiseFace"/> to avoid interior holes), the real
@@ -38,17 +36,18 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// file indices are kept intact. Different probe <c>.mdl</c>s may wind
 /// differently, but the shared single-model scope renders this real
 /// representative mesh correctly.</para>
-/// <para><b>Shared buffer:</b> all meshes from the parsed file are concatenated
-/// into one vertex/index buffer (offsets carried across), so a single
-/// <see cref="DrawIndexedPrimitives"/> per probe instance suffices. If a file
-/// has multiple chunks (e.g. utl02's antenna), they all compose one model.</para>
-/// <para><b>Side tint:</b> unlike the missile renderer (one fixed colour) a
-/// probe's owning side is on the wire (<see cref="ClientCore.State.ProbeEntity.SideId"/>),
-/// so each instance is tinted friendly/enemy via the caller — the same
-/// side-colour convention StationRenderer uses.</para>
+/// <para><b>Shared buffers.</b> Meshes are concatenated into one vertex/index
+/// buffer per probe type, with a draw range for each mesh's texture scope.</para>
 /// </remarks>
 public sealed class ProbeRenderer : IDisposable
 {
+    private readonly string _modelStem;
+    private readonly string? _textureStem;
+    public float MeshRadius { get; }
+    private readonly HdMaterialRenderer? _hd;
+    private readonly NativeMaterialParts _materials;
+    private readonly Assets.IAssetSource? _assets;
+    private readonly Dictionary<string, Texture2D> _partTextures = new(StringComparer.OrdinalIgnoreCase);
     private readonly VertexBuffer _vertices;
     private readonly IndexBuffer _indices;
     private readonly int _triangleCount;
@@ -66,7 +65,7 @@ public sealed class ProbeRenderer : IDisposable
     /// (<c>utl02bmp</c> for the canonical <c>utl02</c> demo, resolved via
     /// <see cref="ProbeModelSource.ResolveTextureStemFor"/>). Null keeps the
     /// legacy lit-solid side-tinted fallback (never an invisible probe).</param>
-    public ProbeRenderer(GraphicsDevice gd, IReadOnlyList<MdlMesh> meshes, Texture2D? texture = null)
+    public ProbeRenderer(GraphicsDevice gd, IReadOnlyList<MdlMesh> meshes, Texture2D? texture = null, HdMaterialRenderer? hd = null, Assets.IAssetSource? assets = null, string modelStem = ProbeModelSource.DemoModelStem, string? textureStem = ProbeModelSource.DemoTextureStem)
     {
         int vertexTotal = 0, indexTotal = 0;
         foreach (var m in meshes)
@@ -94,6 +93,9 @@ public sealed class ProbeRenderer : IDisposable
                 indices[iCursor++] = (uint)(m.Indices[i] + vertBase);
         }
 
+        _hd = hd; _assets = assets; _modelStem = modelStem; _textureStem = textureStem;
+        MeshRadius = NativeShipResolver.MergedRadius(meshes);
+        _materials = new(meshes, verts, indices);
         _vertices = new VertexBuffer(gd, typeof(VertexPositionNormalTexture), verts.Length, BufferUsage.WriteOnly);
         _vertices.SetData(verts);
         _indices = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits, indices.Length, BufferUsage.WriteOnly);
@@ -158,13 +160,35 @@ public sealed class ProbeRenderer : IDisposable
         gd.DepthStencilState = DepthStencilState.Default;
         gd.RasterizerState = _rasterizer;
         gd.SamplerStates[0] = SamplerState.LinearClamp;
-        gd.SetVertexBuffer(_vertices);
-        gd.Indices = _indices;
-        gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _triangleCount);
+        if (_hd is not null)
+            _materials.Draw(gd, _hd, _modelStem, _textureStem,
+                _texture, TextureFor, _effect, _vertices, _indices, world, view, projection, 1, lighting);
+        else
+        {
+            gd.SetVertexBuffer(_vertices); gd.Indices = _indices;
+            gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _triangleCount);
+        }
+    }
+
+    private Texture2D? TextureFor(string stem)
+    {
+        if (_partTextures.TryGetValue(stem, out var texture)) return texture;
+        if (stem.Equals(_textureStem, StringComparison.OrdinalIgnoreCase)) return _texture;
+        if (_assets is null) return null;
+        try
+        {
+            var decoded = MdlTextureDecoder.Decode(Assets.AssetSources.ReadAllBytes(_assets, stem + ".mdl"));
+            texture = new Texture2D(_effect.GraphicsDevice, decoded.Width, decoded.Height);
+            texture.SetData(MdlTextureDecoder.ToPremultipliedRgba(decoded));
+            _partTextures.Add(stem, texture); return texture;
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException or ArgumentException) { return null; }
     }
 
     public void Dispose()
     {
+        _materials.Dispose();
+        foreach (var t in _partTextures.Values) t.Dispose();
         _vertices.Dispose();
         _indices.Dispose();
         _effect.Dispose();

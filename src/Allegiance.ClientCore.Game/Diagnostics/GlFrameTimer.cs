@@ -14,6 +14,7 @@ public sealed class GlFrameTimer : IDisposable
     [UnmanagedFunctionPointer(CallingConvention.Winapi)] private delegate void Result(uint id, uint pname, out ulong value);
     [UnmanagedFunctionPointer(CallingConvention.Winapi)] private delegate void Delete(int count, ref uint id);
     [UnmanagedFunctionPointer(CallingConvention.Winapi)] private delegate IntPtr GetString(uint name);
+    public string Renderer { get; private set; } = "Unknown GL renderer";
     private const uint Elapsed = 0x88BF, Available = 0x8867, QueryResult = 0x8866;
     private readonly Begin _begin;
     private readonly End _end;
@@ -31,6 +32,7 @@ public sealed class GlFrameTimer : IDisposable
             if (ptr == IntPtr.Zero) throw new NotSupportedException(name);
             return Marshal.GetDelegateForFunctionPointer<T>(ptr);
         }
+        Renderer = Marshal.PtrToStringAnsi(Load<GetString>("glGetString")(0x1F01)) ?? "Unknown GL renderer";
         var version = Marshal.PtrToStringAnsi(Load<GetString>("glGetString")(0x1F02));
         // Core desktop timer queries require GL 3.3. Do not invoke unsupported entrypoints.
         if (version is null || version.StartsWith("OpenGL ES", StringComparison.Ordinal)

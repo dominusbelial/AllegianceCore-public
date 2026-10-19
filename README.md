@@ -37,13 +37,17 @@ architecture, and troubleshooting.
 
 ## Download and play
 
-Download the Linux x64 `.tar.gz` or Windows x64 `.zip` from
+Download the Windows x64 setup `.exe`, Linux x64 AppImage, or a portable bundle from
 [GitHub Releases](https://github.com/dominusbelial/AllegianceCore-public/releases).
-Extract the whole folder and run `allegiance.sh` (Linux) or `play.bat` (Windows).
-The bundles include .NET, native artwork and sky; no SDK, git or `local.env`
-is needed. See the included `README-PLAYERS.txt` to configure your operator's
-server address and pilot name. F1 shows help; F6 rebinds keys. Verify downloads
-against the release's `SHA256SUMS.txt`. Windows builds are unsigned.
+Windows setup installs per-user by default; Linux users can make the AppImage
+executable and run it. Portable `.tar.gz` (Linux) and `.zip` (Windows) downloads
+remain available: extract the whole folder and run `allegiance.sh` or `play.bat`.
+On macOS Apple silicon (macOS 14+), open the ZIP and drag the `.app` to Applications.
+Every format includes .NET, native artwork and sky; no SDK, git or `local.env`
+is needed. Start without arguments for the intro screen; Single Player → Skirmish
+works offline. See the included `README-PLAYERS.txt` for installation, unsigned
+SmartScreen/Gatekeeper steps and multiplayer configuration. F1 shows help; F6
+rebinds keys. Verify downloads against the release's `SHA256SUMS.txt`.
 
 Release bundles become available after the first reviewed release workflow run.
 For local packaging and the release checklist, see

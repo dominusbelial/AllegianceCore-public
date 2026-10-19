@@ -1,0 +1,730 @@
+{
+  "SchemaVersion": 1,
+  "Mode": "skirmish",
+  "Preset": "Small",
+  "DurationSeconds": 150,
+  "ReplaySha256": null,
+  "Renderer": "llvmpipe (LLVM 21.1.8, 256 bits)",
+  "Width": 1280,
+  "Height": 720,
+  "TestedSettings": {
+    "BattleSize": 0,
+    "Difficulty": 1,
+    "ResearchSpeed": 8,
+    "SpectatorDefault": false,
+    "Fsr": false,
+    "FsrPreset": 1,
+    "Bloom": false,
+    "HdPbr": true,
+    "HdTextures": true,
+    "FrameCap": 0,
+    "Vsync": false,
+    "EffectsDensity": 1,
+    "ViewDistance": 6000,
+    "Reasons": []
+  },
+  "Seed": 729,
+  "Map": "m2xspiderw.igc",
+  "Civs": [
+    25,
+    3
+  ],
+  "Timestamp": "2026-10-18T21:42:30.4630843+00:00",
+  "Machine": "domingo-MS-02-Ultra",
+  "Os": "Ubuntu 26.04.1 LTS",
+  "LogicalCores": 24,
+  "Runs": [
+    {
+      "Repetition": 1,
+      "Rendered": true,
+      "WallSeconds": 150.0094109,
+      "FpsAverage": 134.2067993111128,
+      "FpsOnePercentLow": 29.260213161522003,
+      "FrameMs": {
+        "Count": 20111,
+        "Mean": 7.451187310427099,
+        "P50": 7.4044,
+        "P95": 11.5845,
+        "P99": 22.4445,
+        "Worst": 594.446
+      },
+      "CpuMs": 4.782694465715252,
+      "GpuMs": 4.899787817811151,
+      "ServerTickMs": {
+        "Count": 3023,
+        "Mean": 1.906127687727423,
+        "P50": 1.5207,
+        "P95": 3.9459999999999997,
+        "P99": 7.0481,
+        "Worst": 18.662399999999998
+      },
+      "BotCount": 9,
+      "PerBotCpu": [
+        {
+          "Name": "mcp-w1-b002-7963",
+          "DecisionCpuMs": 223.81216400000002
+        },
+        {
+          "Name": "mcp-w1-b004-4325",
+          "DecisionCpuMs": 152.00347700000003
+        },
+        {
+          "Name": "mcp-w1-b005-9381",
+          "DecisionCpuMs": 95.21506
+        },
+        {
+          "Name": "mcp-w2-b001-7825",
+          "DecisionCpuMs": 299.69773699999996
+        },
+        {
+          "Name": "mcp-w2-b002-8398",
+          "DecisionCpuMs": 160.924892
+        },
+        {
+          "Name": "mcp-w3-b001-3873",
+          "DecisionCpuMs": 267.601951
+        },
+        {
+          "Name": "mcp-w3-b002-9834",
+          "DecisionCpuMs": 119.49808700000001
+        },
+        {
+          "Name": "mcp-w4-b001-7665",
+          "DecisionCpuMs": 236.21189
+        },
+        {
+          "Name": "mcp-w4-b002-8042",
+          "DecisionCpuMs": 170.90002800000002
+        }
+      ],
+      "WorkerCount": 4,
+      "Workers": [
+        {
+          "Pid": 145,
+          "CpuMs": 1730,
+          "WorkingSetBytes": 103628800
+        },
+        {
+          "Pid": 162,
+          "CpuMs": 5150,
+          "WorkingSetBytes": 128233472
+        },
+        {
+          "Pid": 170,
+          "CpuMs": 3900,
+          "WorkingSetBytes": 125370368
+        },
+        {
+          "Pid": 171,
+          "CpuMs": 3740,
+          "WorkingSetBytes": 114827264
+        },
+        {
+          "Pid": 172,
+          "CpuMs": 3820,
+          "WorkingSetBytes": 125247488
+        }
+      ],
+      "AmortizedCpuMsPerBotSecond": 13.584332913194434,
+      "BotCpuAttribution": "Worker CPU divided by active bots; includes receive/GC/decision work, not individually attributed",
+      "WorkingSetBytes": 1546776576,
+      "ManagedBytes": 118805960,
+      "AllocatedBytes": 9970512992,
+      "GcCollections": [
+        511,
+        27,
+        12
+      ],
+      "GcPauseMs": 486.461,
+      "Shots": 1101,
+      "Hits": 764,
+      "FrameCount": 0,
+      "FrameStateDigest": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Repetition": 2,
+      "Rendered": true,
+      "WallSeconds": 150.0088315,
+      "FpsAverage": 121.68182077352851,
+      "FpsOnePercentLow": 36.609574135828,
+      "FrameMs": {
+        "Count": 18243,
+        "Mean": 8.218154475689328,
+        "P50": 7.8355,
+        "P95": 12.2232,
+        "P99": 19.6385,
+        "Worst": 59.3718
+      },
+      "CpuMs": 5.011042186043961,
+      "GpuMs": 4.923073123773502,
+      "ServerTickMs": {
+        "Count": 3017,
+        "Mean": 2.1076845210473953,
+        "P50": 1.7219,
+        "P95": 4.1633,
+        "P99": 7.1859,
+        "Worst": 22.706400000000002
+      },
+      "BotCount": 9,
+      "PerBotCpu": [
+        {
+          "Name": "mcp-w1-b002-5291",
+          "DecisionCpuMs": 260.58662599999997
+        },
+        {
+          "Name": "mcp-w1-b003-9773",
+          "DecisionCpuMs": 213.898447
+        },
+        {
+          "Name": "mcp-w1-b005-4962",
+          "DecisionCpuMs": 105.52757700000001
+        },
+        {
+          "Name": "mcp-w2-b001-9646",
+          "DecisionCpuMs": 335.64100400000007
+        },
+        {
+          "Name": "mcp-w2-b002-4945",
+          "DecisionCpuMs": 162.177673
+        },
+        {
+          "Name": "mcp-w3-b001-3686",
+          "DecisionCpuMs": 266.271304
+        },
+        {
+          "Name": "mcp-w3-b002-3959",
+          "DecisionCpuMs": 147.50823200000002
+        },
+        {
+          "Name": "mcp-w4-b001-9888",
+          "DecisionCpuMs": 259.88129200000003
+        },
+        {
+          "Name": "mcp-w4-b002-1899",
+          "DecisionCpuMs": 182.93049000000002
+        }
+      ],
+      "WorkerCount": 4,
+      "Workers": [
+        {
+          "Pid": 469,
+          "CpuMs": 1760,
+          "WorkingSetBytes": 98246656
+        },
+        {
+          "Pid": 484,
+          "CpuMs": 5300.0001,
+          "WorkingSetBytes": 128512000
+        },
+        {
+          "Pid": 491,
+          "CpuMs": 4020,
+          "WorkingSetBytes": 113143808
+        },
+        {
+          "Pid": 493,
+          "CpuMs": 3840,
+          "WorkingSetBytes": 125321216
+        },
+        {
+          "Pid": 494,
+          "CpuMs": 3870,
+          "WorkingSetBytes": 122621952
+        }
+      ],
+      "AmortizedCpuMsPerBotSecond": 13.917699164858096,
+      "BotCpuAttribution": "Worker CPU divided by active bots; includes receive/GC/decision work, not individually attributed",
+      "WorkingSetBytes": 1530621952,
+      "ManagedBytes": 50784480,
+      "AllocatedBytes": 6964056712,
+      "GcCollections": [
+        373,
+        17,
+        1
+      ],
+      "GcPauseMs": 436.879,
+      "Shots": 1195,
+      "Hits": 976,
+      "FrameCount": 0,
+      "FrameStateDigest": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Repetition": 3,
+      "Rendered": true,
+      "WallSeconds": 150.0060511,
+      "FpsAverage": 151.41492215375953,
+      "FpsOnePercentLow": 35.637128751388694,
+      "FrameMs": {
+        "Count": 22700,
+        "Mean": 6.6043688810572805,
+        "P50": 6.1909,
+        "P95": 10.0057,
+        "P99": 20.0672,
+        "Worst": 69.4581
+      },
+      "CpuMs": 4.253569951541827,
+      "GpuMs": 4.293519913656395,
+      "ServerTickMs": {
+        "Count": 3017,
+        "Mean": 2.163272853828306,
+        "P50": 1.7087,
+        "P95": 4.3757,
+        "P99": 8.0529,
+        "Worst": 25.014000000000003
+      },
+      "BotCount": 9,
+      "PerBotCpu": [
+        {
+          "Name": "mcp-w1-b002-8121",
+          "DecisionCpuMs": 245.08992999999998
+        },
+        {
+          "Name": "mcp-w1-b004-8944",
+          "DecisionCpuMs": 157.780841
+        },
+        {
+          "Name": "mcp-w1-b005-6167",
+          "DecisionCpuMs": 119.77385699999999
+        },
+        {
+          "Name": "mcp-w2-b001-7599",
+          "DecisionCpuMs": 321.906512
+        },
+        {
+          "Name": "mcp-w2-b002-6708",
+          "DecisionCpuMs": 170.17571600000002
+        },
+        {
+          "Name": "mcp-w3-b001-9244",
+          "DecisionCpuMs": 271.39609099999996
+        },
+        {
+          "Name": "mcp-w3-b002-9506",
+          "DecisionCpuMs": 132.458812
+        },
+        {
+          "Name": "mcp-w4-b001-5520",
+          "DecisionCpuMs": 251.95155599999998
+        },
+        {
+          "Name": "mcp-w4-b002-3436",
+          "DecisionCpuMs": 195.888146
+        }
+      ],
+      "WorkerCount": 4,
+      "Workers": [
+        {
+          "Pid": 777,
+          "CpuMs": 1720,
+          "WorkingSetBytes": 100974592
+        },
+        {
+          "Pid": 792,
+          "CpuMs": 4970,
+          "WorkingSetBytes": 129314816
+        },
+        {
+          "Pid": 799,
+          "CpuMs": 3810,
+          "WorkingSetBytes": 125132800
+        },
+        {
+          "Pid": 801,
+          "CpuMs": 3610,
+          "WorkingSetBytes": 112824320
+        },
+        {
+          "Pid": 802,
+          "CpuMs": 3760,
+          "WorkingSetBytes": 124743680
+        }
+      ],
+      "AmortizedCpuMsPerBotSecond": 13.236503067678951,
+      "BotCpuAttribution": "Worker CPU divided by active bots; includes receive/GC/decision work, not individually attributed",
+      "WorkingSetBytes": 1510404096,
+      "ManagedBytes": 74605776,
+      "AllocatedBytes": 8387986416,
+      "GcCollections": [
+        448,
+        18,
+        6
+      ],
+      "GcPauseMs": 514.339,
+      "Shots": 1104,
+      "Hits": 870,
+      "FrameCount": 0,
+      "FrameStateDigest": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    }
+  ],
+  "Median": {
+    "Repetition": 3,
+    "Rendered": true,
+    "WallSeconds": 150.0060511,
+    "FpsAverage": 134.2067993111128,
+    "FpsOnePercentLow": 35.637128751388694,
+    "FrameMs": {
+      "Count": 20111,
+      "Mean": 7.451187310427099,
+      "P50": 7.4044,
+      "P95": 11.5845,
+      "P99": 20.0672,
+      "Worst": 69.4581
+    },
+    "CpuMs": 4.782694465715252,
+    "GpuMs": 4.899787817811151,
+    "ServerTickMs": {
+      "Count": 3017,
+      "Mean": 2.1076845210473953,
+      "P50": 1.7087,
+      "P95": 4.1633,
+      "P99": 7.1859,
+      "Worst": 22.706400000000002
+    },
+    "BotCount": 9,
+    "PerBotCpu": [
+      {
+        "Name": "mcp-w1-b002-8121",
+        "DecisionCpuMs": 245.08992999999998
+      },
+      {
+        "Name": "mcp-w1-b004-8944",
+        "DecisionCpuMs": 157.780841
+      },
+      {
+        "Name": "mcp-w1-b005-6167",
+        "DecisionCpuMs": 119.77385699999999
+      },
+      {
+        "Name": "mcp-w2-b001-7599",
+        "DecisionCpuMs": 321.906512
+      },
+      {
+        "Name": "mcp-w2-b002-6708",
+        "DecisionCpuMs": 170.17571600000002
+      },
+      {
+        "Name": "mcp-w3-b001-9244",
+        "DecisionCpuMs": 271.39609099999996
+      },
+      {
+        "Name": "mcp-w3-b002-9506",
+        "DecisionCpuMs": 132.458812
+      },
+      {
+        "Name": "mcp-w4-b001-5520",
+        "DecisionCpuMs": 251.95155599999998
+      },
+      {
+        "Name": "mcp-w4-b002-3436",
+        "DecisionCpuMs": 195.888146
+      }
+    ],
+    "WorkerCount": 4,
+    "Workers": [
+      {
+        "Pid": 777,
+        "CpuMs": 1720,
+        "WorkingSetBytes": 100974592
+      },
+      {
+        "Pid": 792,
+        "CpuMs": 4970,
+        "WorkingSetBytes": 129314816
+      },
+      {
+        "Pid": 799,
+        "CpuMs": 3810,
+        "WorkingSetBytes": 125132800
+      },
+      {
+        "Pid": 801,
+        "CpuMs": 3610,
+        "WorkingSetBytes": 112824320
+      },
+      {
+        "Pid": 802,
+        "CpuMs": 3760,
+        "WorkingSetBytes": 124743680
+      }
+    ],
+    "AmortizedCpuMsPerBotSecond": 13.584332913194434,
+    "BotCpuAttribution": "Worker CPU divided by active bots; includes receive/GC/decision work, not individually attributed",
+    "WorkingSetBytes": 1510404096,
+    "ManagedBytes": 74605776,
+    "AllocatedBytes": 8387986416,
+    "GcCollections": [
+      448,
+      18,
+      6
+    ],
+    "GcPauseMs": 514.339,
+    "Shots": 1104,
+    "Hits": 870,
+    "FrameCount": 20111,
+    "FrameStateDigest": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  "MedianRule": "Scalar timing/FPS metrics are medians of three runs; resource/identity snapshot comes from the middle run by frame p99, server p95, or processing wall time",
+  "Bottleneck": "Frame-time spikes; CPU/GPU means within budget",
+  "Recommendation": {
+    "BattleSize": 0,
+    "Difficulty": 1,
+    "ResearchSpeed": 1,
+    "SpectatorDefault": true,
+    "Fsr": false,
+    "FsrPreset": 1,
+    "Bloom": false,
+    "HdPbr": true,
+    "HdTextures": true,
+    "FrameCap": 60,
+    "Vsync": false,
+    "EffectsDensity": 1,
+    "ViewDistance": 6000,
+    "Reasons": [
+      {
+        "Setting": "Battle size",
+        "Value": "Small",
+        "Reason": "Measured server and bot budget; retain tested size"
+      },
+      {
+        "Setting": "Bot difficulty",
+        "Value": "Normal",
+        "Reason": "Normal preserves the tested combat policy"
+      },
+      {
+        "Setting": "Research speed",
+        "Value": "1x",
+        "Reason": "Keep normal economy pacing; acceleration increases concurrent fleet activity"
+      },
+      {
+        "Setting": "Spectator default",
+        "Value": "On",
+        "Reason": "Use the measured scripted spectator workload (SP-5 preference)"
+      },
+      {
+        "Setting": "Resolution / FSR",
+        "Value": "Native (100%)",
+        "Reason": "Measured CPU 4.25 ms / GPU 4.29 ms at 1280x720"
+      },
+      {
+        "Setting": "Bloom",
+        "Value": "Off",
+        "Reason": "Reserve GPU headroom for combat effects"
+      },
+      {
+        "Setting": "HD PBR",
+        "Value": "On",
+        "Reason": "Measured CPU 4.25 ms / GPU 4.29 ms at 1280x720"
+      },
+      {
+        "Setting": "Texture quality",
+        "Value": "HD",
+        "Reason": "Retain HD textures within measured budget"
+      },
+      {
+        "Setting": "Frame cap / vsync",
+        "Value": "60 / Off",
+        "Reason": "Target 60 FPS; avoid presentation wait hiding available headroom"
+      },
+      {
+        "Setting": "Effects density",
+        "Value": "1.0",
+        "Reason": "Measured CPU 4.25 ms / GPU 4.29 ms at 1280x720"
+      },
+      {
+        "Setting": "View distance",
+        "Value": "6000",
+        "Reason": "Retain tested 6000-unit view"
+      }
+    ]
+  },
+  "AutoTune": [
+    {
+      "Settings": {
+        "BattleSize": 0,
+        "Difficulty": 1,
+        "ResearchSpeed": 1,
+        "SpectatorDefault": true,
+        "Fsr": false,
+        "FsrPreset": 1,
+        "Bloom": false,
+        "HdPbr": true,
+        "HdTextures": true,
+        "FrameCap": 60,
+        "Vsync": false,
+        "EffectsDensity": 1,
+        "ViewDistance": 6000,
+        "Reasons": [
+          {
+            "Setting": "Battle size",
+            "Value": "Small",
+            "Reason": "Measured server and bot budget; retain tested size"
+          },
+          {
+            "Setting": "Bot difficulty",
+            "Value": "Normal",
+            "Reason": "Normal preserves the tested combat policy"
+          },
+          {
+            "Setting": "Research speed",
+            "Value": "1x",
+            "Reason": "Keep normal economy pacing; acceleration increases concurrent fleet activity"
+          },
+          {
+            "Setting": "Spectator default",
+            "Value": "On",
+            "Reason": "Use the measured scripted spectator workload (SP-5 preference)"
+          },
+          {
+            "Setting": "Resolution / FSR",
+            "Value": "Native (100%)",
+            "Reason": "Measured CPU 4.25 ms / GPU 4.29 ms at 1280x720"
+          },
+          {
+            "Setting": "Bloom",
+            "Value": "Off",
+            "Reason": "Reserve GPU headroom for combat effects"
+          },
+          {
+            "Setting": "HD PBR",
+            "Value": "On",
+            "Reason": "Measured CPU 4.25 ms / GPU 4.29 ms at 1280x720"
+          },
+          {
+            "Setting": "Texture quality",
+            "Value": "HD",
+            "Reason": "Retain HD textures within measured budget"
+          },
+          {
+            "Setting": "Frame cap / vsync",
+            "Value": "60 / Off",
+            "Reason": "Target 60 FPS; avoid presentation wait hiding available headroom"
+          },
+          {
+            "Setting": "Effects density",
+            "Value": "1.0",
+            "Reason": "Measured CPU 4.25 ms / GPU 4.29 ms at 1280x720"
+          },
+          {
+            "Setting": "View distance",
+            "Value": "6000",
+            "Reason": "Retain tested 6000-unit view"
+          }
+        ]
+      },
+      "Measurement": {
+        "Repetition": 4,
+        "Rendered": true,
+        "WallSeconds": 12.0038475,
+        "FpsAverage": 206.7395396436939,
+        "FpsOnePercentLow": 101.56272534229684,
+        "FrameMs": {
+          "Count": 2466,
+          "Mean": 4.837004095701548,
+          "P50": 4.6486,
+          "P95": 6.4613,
+          "P99": 8.5838,
+          "Worst": 13.1003
+        },
+        "CpuMs": 2.4959948094079425,
+        "GpuMs": 2.6151587680454105,
+        "ServerTickMs": {
+          "Count": 242,
+          "Mean": 1.721759504132231,
+          "P50": 1.4656,
+          "P95": 3.7173000000000003,
+          "P99": 4.0161,
+          "Worst": 4.1648
+        },
+        "BotCount": 9,
+        "PerBotCpu": [
+          {
+            "Name": "mcp-w1-b002-2644",
+            "DecisionCpuMs": 19.460516000000013
+          },
+          {
+            "Name": "mcp-w1-b004-6491",
+            "DecisionCpuMs": 23.29877900000001
+          },
+          {
+            "Name": "mcp-w1-b005-3184",
+            "DecisionCpuMs": 7.510731000000007
+          },
+          {
+            "Name": "mcp-w2-b001-3362",
+            "DecisionCpuMs": 31.934001999999992
+          },
+          {
+            "Name": "mcp-w2-b002-8691",
+            "DecisionCpuMs": 10.334658000000005
+          },
+          {
+            "Name": "mcp-w3-b001-8874",
+            "DecisionCpuMs": 18.88435899999999
+          },
+          {
+            "Name": "mcp-w3-b002-4974",
+            "DecisionCpuMs": 9.54361200000001
+          },
+          {
+            "Name": "mcp-w4-b001-2417",
+            "DecisionCpuMs": 30.487549
+          },
+          {
+            "Name": "mcp-w4-b002-4030",
+            "DecisionCpuMs": 10.877088999999998
+          }
+        ],
+        "WorkerCount": 4,
+        "Workers": [
+          {
+            "Pid": 1102,
+            "CpuMs": 150,
+            "WorkingSetBytes": 101605376
+          },
+          {
+            "Pid": 1117,
+            "CpuMs": 420,
+            "WorkingSetBytes": 125349888
+          },
+          {
+            "Pid": 1124,
+            "CpuMs": 319.9998999999998,
+            "WorkingSetBytes": 111906816
+          },
+          {
+            "Pid": 1126,
+            "CpuMs": 270,
+            "WorkingSetBytes": 120393728
+          },
+          {
+            "Pid": 1127,
+            "CpuMs": 330,
+            "WorkingSetBytes": 112570368
+          }
+        ],
+        "AmortizedCpuMsPerBotSecond": 13.791873350977212,
+        "BotCpuAttribution": "Worker CPU divided by active bots; includes receive/GC/decision work, not individually attributed",
+        "WorkingSetBytes": 1491841024,
+        "ManagedBytes": 54654864,
+        "AllocatedBytes": 530502768,
+        "GcCollections": [
+          28,
+          2,
+          0
+        ],
+        "GcPauseMs": 32.74,
+        "Shots": 0,
+        "Hits": 0,
+        "FrameCount": 0,
+        "FrameStateDigest": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+      },
+      "TargetMet": true
+    }
+  ],
+  "TargetStatus": "Verified: 60 FPS 1% low and server tick p95 < 50 ms (when present)",
+  "EvidenceProcessing": {
+    "originalApplicationOutput": "/tmp/allegiance-evidence/P729/original-skirmish-rendered.json",
+    "changes": "Scalar summaries re-aggregated from the retained original Runs using final MedianOf; label/metadata clarified. Measured runs and actual verified recommendation/auto-tune profile retained.",
+    "originalBottleneck": "Within measured budget"
+  }
+}

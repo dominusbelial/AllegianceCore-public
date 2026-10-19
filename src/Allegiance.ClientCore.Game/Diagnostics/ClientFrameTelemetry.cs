@@ -23,6 +23,7 @@ public sealed class FlightGcLatency : IDisposable
 /// Allocated bytes include all managed threads; timing includes present separately.</summary>
 public sealed class ClientFrameTelemetry : IDisposable
 {
+    public event Action<long, double, double, double?>? SampleCompleted;
     private struct Sample
     {
         public long Id;
@@ -100,7 +101,10 @@ public sealed class ClientFrameTelemetry : IDisposable
     }
     private void WriteCsv(Sample s)
     {
-        if (_csv is null || s.Id == 0) return;
+        if (s.Id == 0) return;
+        SampleCompleted?.Invoke(s.Id, s.Frame, s.Update + s.Draw + s.Post,
+            double.IsFinite(s.SceneGpu + s.PostGpu) ? s.SceneGpu + s.PostGpu : null);
+        if (_csv is null) return;
         _csv.WriteLine(string.Create(CultureInfo.InvariantCulture,
             $"{s.Id},{s.Frame:F4},{s.Update:F4},{s.Draw:F4},{s.Post:F4},{s.Present:F4},{s.SceneGpu:F4},{s.PostGpu:F4},{s.Pause:F4},{s.Allocated},{s.Draws},{s.W},{s.H},{s.Rw},{s.Rh}"));
     }

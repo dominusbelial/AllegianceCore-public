@@ -32,7 +32,7 @@ public class IntroScreenModelTests
     {
         var m = new IntroScreenModel { Index = 0 };
         m.MoveUp();
-        Assert.Equal(m.Count - 1, m.Index);   // wraps to Exit
+        Assert.Equal(m.Count - 1, m.Index);   // wraps to the final entry
         m.MoveDown();
         Assert.Equal(0, m.Index);
         m.MoveDown();
@@ -75,9 +75,11 @@ public class IntroScreenModelTests
     }
 
     [Fact]
-    public void Menu_has_seven_native_slots()
+    public void Menu_preserves_seven_slots_and_adds_benchmark()
     {
-        Assert.Equal(7, IntroScreenModel.MainLabels.Length);
+        Assert.Equal(8, IntroScreenModel.MainLabels.Length);
+        Assert.Equal("Benchmark", IntroScreenModel.MainLabels[7]);
+        Assert.Equal(IntroCommand.Benchmark, IntroScreenModel.Activate(7));
         Assert.Equal("Single Player", IntroScreenModel.MainLabels[0]);
         Assert.Equal("Exit", IntroScreenModel.MainLabels[6]);
     }

@@ -17,6 +17,14 @@ namespace Allegiance.ClientCore.Tests;
 public sealed class P727SkirmishOptionsTests
 {
     [Theory]
+    [InlineData("pilot  ", "pilot")]
+    [InlineData("pilotΩ", "pilot?")]
+    [InlineData("Gä", "Gä")]
+    [InlineData("1234567890123456789012345", "123456789012345678901234")]
+    public void Human_pilot_identity_matches_native_wire_name(string input, string wire) =>
+        Assert.Equal(wire, SkirmishHost.WirePilotName(input));
+
+    [Theory]
     [InlineData(SkirmishSize.Small, 5)]
     [InlineData(SkirmishSize.Medium, 15)]
     [InlineData(SkirmishSize.Large, 30)]
@@ -29,6 +37,8 @@ public sealed class P727SkirmishOptionsTests
             var config = options.CreateConfig();
             Assert.Equal(teamSize, options.TeamSize);
             Assert.Equal(0, config.Port);
+            Assert.True(config.Transport!.MaxConnectionsPerIp >= teamSize * 2 + 20);
+            Assert.True(config.Transport.MaxConnections >= config.Transport.MaxConnectionsPerIp);
             Assert.Equal("127.0.0.1", config.BindAddress);
             Assert.False(config.Discovery!.Enabled);
             Assert.Equal("auto", config.LiveSettings.TimeDilation);
@@ -71,6 +81,11 @@ public sealed class P727SkirmishOptionsTests
         Assert.True(menu.Options.CreateConfig().LiveSettings.TestHarness!.IgnoreTechGate);
         menu.Move(1); menu.Change(1);
         Assert.Equal(SkirmishDifficulty.Hard, menu.Options.Difficulty);
+        menu.Move(1); menu.Change(1);
+        Assert.Equal(SkirmishCommander.You, menu.Options.Commander);
+        Assert.Contains("Commander: You", menu.Rows);
+        menu.Change(-1);
+        Assert.Equal(SkirmishCommander.AI, menu.Options.Commander);
         Assert.Equal(SkirmishScreenModel.RowCount, menu.Rows.Length);
         Assert.Equal((1f, 0d, 1f), new SkirmishOptions().Knobs);
         Assert.True(new SkirmishOptions { Difficulty = SkirmishDifficulty.Easy }.Knobs.Reaction > 0);
@@ -144,6 +159,7 @@ public sealed class P727SkirmishOptionsTests
 }
 
 [Collection("LiveNetwork")]
+[Trait("Tier", "Live")]   // whole local matches (38-215 s); TT-1 tiering after the P727/SP-5 merge
 public sealed class P727SkirmishLiveTests(ITestOutputHelper output)
 {
     private static async Task Until(Func<bool> done, int seconds = 30)

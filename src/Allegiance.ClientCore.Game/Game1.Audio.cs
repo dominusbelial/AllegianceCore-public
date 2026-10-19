@@ -55,7 +55,7 @@ public sealed partial class Game1
         var world = _session.World;
         if (_sound is not { } snd) return;
 
-        long now = Environment.TickCount64;
+        long now = ClientNowMilliseconds;
         List<(ProjectileEntity Entity, float Distance)> inRange = new();
 
         lock (_session.Gate)

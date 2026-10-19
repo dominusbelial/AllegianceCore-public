@@ -1,0 +1,66 @@
+[finale] research showcase epoch=012fe4f9b19e43bc994aae7de91be69f winner=1: bounded finale armed; deadline=1110.55; timeout=900s; legal loadouts only, native station damage may be unavailable
+[station-export] side=0 station=9187:Teleport sector=2 -> 17 newly informed peer(s)
+[station-export] side=1 station=9190:Outpost (Hvy) sector=0 -> 16 newly informed peer(s)
+[station-export] side=1 station=9188:Teleport (Hvy) sector=0 -> 16 newly informed peer(s)
+[station-export] side=0 station=9191:[P]alisade sector=2 -> 17 newly informed peer(s)
+[station-export] side=1 station=9192:Supremacy sector=0 -> 16 newly informed peer(s)
+[station-damage] t=499.8 side=0 station=0:Garrison attackerSide=1 ship=8100 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=1.0000->0.6522 hull=1.0000->1.0000 killed=False
+[station-damage] t=507.15 side=0 station=0:Garrison attackerSide=1 ship=8100 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.7161->0.3683 hull=1.0000->1.0000 killed=False
+[station-damage] t=514.95 side=0 station=0:Garrison attackerSide=1 ship=8119 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.4361->0.0883 hull=1.0000->1.0000 killed=False
+[station-damage] t=522.35 side=0 station=0:Garrison attackerSide=1 ship=8119 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.8852->0.7113 killed=False
+[station-damage] t=530.95 side=0 station=0:Garrison attackerSide=1 ship=8119 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.5523->0.3784 killed=False
+[station-damage] t=539.55 side=0 station=0:Garrison attackerSide=1 ship=8119 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.3933->0.2194 killed=False
+[station-export] side=1 station=9194:Expansion sector=0 -> 16 newly informed peer(s)
+[station-damage] t=587.6 side=0 station=0:Garrison attackerSide=1 ship=8105 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.3030->0.1291 killed=False
+[station-damage] t=594.85 side=0 station=0:Garrison attackerSide=1 ship=8105 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.1417->0.0000 killed=True
+[station] station 0 destroyed (launcher 8105) => STATION_DESTROYED(59) -> 33 peer(s) [WHOLE MISSION]
+[station-damage] t=618.95 side=0 station=9188:Teleport (Hvy) attackerSide=1 ship=8109 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=1.0000->0.0000 hull=1.0000->0.9782 killed=False
+[station-damage] t=626.05 side=0 station=9188:Teleport (Hvy) attackerSide=1 ship=8109 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.4685->0.0000 killed=True
+[station] station 9188 destroyed (launcher 8109) => STATION_DESTROYED(59) -> 33 peer(s) [WHOLE MISSION]
+[station-damage] t=629.85 side=0 station=9190:Outpost (Hvy) attackerSide=1 ship=8111 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=1.0000->0.4782 hull=1.0000->1.0000 killed=False
+[station-damage] t=637.05 side=0 station=9190:Outpost (Hvy) attackerSide=1 ship=8111 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.9983->0.4765 killed=False
+[station-damage] t=637.65 side=0 station=9190:Outpost (Hvy) attackerSide=1 ship=8127 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.4796->0.0000 killed=True
+[station] station 9190 destroyed (launcher 8127) => STATION_DESTROYED(59) -> 33 peer(s) [WHOLE MISSION]
+[station-damage] t=666.1 side=0 station=9194:Expansion attackerSide=1 ship=8105 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=1.0000->0.4782 hull=1.0000->1.0000 killed=False
+[station-damage] t=672.1 side=1 station=9187:Teleport attackerSide=0 ship=8128 hull=404:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=1.0000->0.0000 hull=1.0000->0.6249 killed=False
+[station-damage] t=673.25 side=0 station=9194:Expansion attackerSide=1 ship=8105 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.4696->0.2087 killed=False
+[station-damage] t=673.45 side=0 station=9194:Expansion attackerSide=1 ship=8107 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.2090->0.0000 killed=True
+[station] station 9194 destroyed (launcher 8107) => STATION_DESTROYED(59) -> 33 peer(s) [WHOLE MISSION]
+[station-damage] t=679.1 side=1 station=9187:Teleport attackerSide=0 ship=8128 hull=404:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.6373->0.0000 killed=True
+[station] station 9187 destroyed (launcher 8128) => STATION_DESTROYED(59) -> 33 peer(s) [WHOLE MISSION]
+[station-export] side=1 station=9196:Garrison sector=0 -> 16 newly informed peer(s)
+[station-export] side=0 station=9193:[R]esearch sector=2 -> 17 newly informed peer(s)
+[station-export] side=0 station=9195:Supremacy sector=2 -> 17 newly informed peer(s)
+[station-damage] t=766 side=0 station=9192:Supremacy attackerSide=1 ship=8127 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=1.0000->0.4782 hull=1.0000->1.0000 killed=False
+[station-export] side=0 station=9197:Expansion sector=2 -> 17 newly informed peer(s)
+[station-damage] t=772.55 side=0 station=9196:Garrison attackerSide=1 ship=8109 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=1.0000->0.6522 hull=1.0000->1.0000 killed=False
+[station-damage] t=776.9 side=0 station=9192:Supremacy attackerSide=1 ship=8103 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0319->0.0000 hull=1.0000->0.7551 killed=False
+[station-damage] t=780.05 side=0 station=9196:Garrison attackerSide=1 ship=8109 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.7174->0.3696 hull=1.0000->1.0000 killed=False
+[station-damage] t=785.65 side=0 station=9192:Supremacy attackerSide=1 ship=8103 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.7705->0.5096 killed=False
+[station-damage] t=840.6 side=0 station=9196:Garrison attackerSide=1 ship=8113 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.8961->0.5482 hull=1.0000->1.0000 killed=False
+[station-damage] t=848.45 side=0 station=9196:Garrison attackerSide=1 ship=8113 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.6165->0.2687 hull=1.0000->1.0000 killed=False
+[station-damage] t=857.05 side=0 station=9196:Garrison attackerSide=1 ship=8113 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.3434->0.0000 hull=1.0000->0.9978 killed=False
+[station-damage] t=865.6 side=0 station=9196:Garrison attackerSide=1 ship=8113 hull=124:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0630->0.0000 hull=1.0000->0.8576 killed=False
+[station-damage] t=873.45 side=0 station=9196:Garrison attackerSide=1 ship=8115 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.8713->0.6539 killed=False
+[station-damage] t=881.25 side=0 station=9196:Garrison attackerSide=1 ship=8115 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.6674->0.4500 killed=False
+[station-damage] t=881.7 side=1 station=9197:Expansion attackerSide=0 ship=8130 hull=404:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=1.0000->0.3181 hull=1.0000->1.0000 killed=False
+[station-damage] t=889.1 side=1 station=9197:Expansion attackerSide=0 ship=8130 hull=404:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.3847->0.0000 hull=1.0000->0.8514 killed=False
+[station-damage] t=889.75 side=0 station=9196:Garrison attackerSide=1 ship=8115 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.4648->0.2474 killed=False
+[station-damage] t=897.6 side=1 station=9197:Expansion attackerSide=0 ship=8130 hull=404:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.8671->0.5262 killed=False
+[station-damage] t=898.15 side=0 station=9196:Garrison attackerSide=1 ship=8115 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.2620->0.0447 killed=False
+[station-damage] t=906.1 side=1 station=9197:Expansion attackerSide=0 ship=8130 hull=404:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.5418->0.2009 killed=False
+[station-damage] t=911.45 side=0 station=9192:Supremacy attackerSide=1 ship=8100 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.7311->0.4050 killed=False
+[station-export] side=0 station=9200:Tactical sector=2 -> 17 newly informed peer(s)
+[station-damage] t=918.65 side=0 station=9192:Supremacy attackerSide=1 ship=8100 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.4177->0.0916 killed=False
+[station-damage] t=927.2 side=0 station=9192:Supremacy attackerSide=1 ship=8100 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.1066->0.0000 killed=True
+[station] station 9192 destroyed (launcher 8100) => STATION_DESTROYED(59) -> 33 peer(s) [WHOLE MISSION]
+[station-export] side=1 station=9201:Outpost (Hvy) sector=0 -> 16 newly informed peer(s)
+[station-damage] t=949.55 side=0 station=9201:Outpost (Hvy) attackerSide=1 ship=8119 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=1.0000->0.2825 hull=1.0000->1.0000 killed=False
+[station-damage] t=957.5 side=0 station=9201:Outpost (Hvy) attackerSide=1 ship=8119 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.3862->0.0000 hull=1.0000->0.6688 killed=False
+[station-damage] t=965.8 side=0 station=9201:Outpost (Hvy) attackerSide=1 ship=8119 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.7121->0.0000 killed=True
+[station] station 9201 destroyed (launcher 8119) => STATION_DESTROYED(59) -> 33 peer(s) [WHOLE MISSION]
+[station-damage] t=1012.6 side=0 station=9196:Garrison attackerSide=1 ship=8117 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.2437->0.0046 killed=False
+[station-damage] t=1020.55 side=0 station=9196:Garrison attackerSide=1 ship=8117 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.0184->0.0000 killed=True
+[station] station 9196 destroyed (launcher 8117) => STATION_DESTROYED(59) -> 33 peer(s) [WHOLE MISSION]
+[sideinactive] side 0 deactivated (lost last restart station) => SIDE_INACTIVE(68) bActive=false -> 33 peer(s)
+[proof-result] run=siege-4 firstKill=308.3 wall=512.4 sim=1023.2 reason=Bravo won by outlasting all other sides.

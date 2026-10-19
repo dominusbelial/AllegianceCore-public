@@ -232,7 +232,7 @@ public sealed partial class Game1
             }
             foreach (var (serverMs, localMs) in _session.TakePingEchoes())
                 _ownServerClock.AddSample(serverMs, localMs);
-            _ownServerClock.SetTimeScale(_session.World.TimeScale, Environment.TickCount64);
+            _ownServerClock.SetTimeScale(_session.World.TimeScale, ClientNowMilliseconds);
         }
     }
 
@@ -271,7 +271,7 @@ public sealed partial class Game1
 
         if (!_shipSendCadence.Update(_nowSeconds)) return;
 
-        uint t = _ownServerClock.ServerTimeMs(Environment.TickCount64);
+        uint t = _ownServerClock.ServerTimeMs(ClientNowMilliseconds);
         var payload = ClientShipUpdate.FromPose(
             t,
             _ownSim.Position, _ownSim.Velocity, _ownSim.Orientation,

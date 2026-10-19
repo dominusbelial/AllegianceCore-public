@@ -12,6 +12,32 @@ internal sealed partial class BotManager
     private readonly Dictionary<short, ResearchCommander> _research = new();
     private readonly Dictionary<short, short> _researchRocks = new();
     private Thread? _researchThread;
+    // Set only by the owned Skirmish host; multiplayer drivers retain their policy.
+    private readonly string? _humanCommanderName = Environment.GetEnvironmentVariable("ALLEGIANCE_SKIRMISH_COMMANDER");
+    private readonly Dictionary<ConnectionSession, (long Generation, short Human)> _humanDonations = new();
+    private double _nextHumanDonation;
+    private bool HumanCommands(short side) => side == 0 && !string.IsNullOrEmpty(_humanCommanderName);
+
+    private void DonateToHumanCommander(ConnectionSession peer)
+    {
+        if (!HumanCommands(0)) return;
+        lock (peer.Gate)
+        {
+            var world = peer.World;
+            if (world.Mission?.Stage != MissionStageMessage.StageStarted
+                || world.MySideId != 0 || world.MyShipId is not { } me) return;
+            var human = world.Ships.Values.FirstOrDefault(s => s.SideId == 0 && s.CharacterName == _humanCommanderName);
+            if (human is null || human.ShipId == me) return;
+            // Wait for their native opt-out; otherwise SetAutoDonate resolves the
+            // chain back to the old commander (fsship.cpp:1313-1326).
+            if (world.AutoDonateTargetByShipId.ContainsKey(human.ShipId)) return;
+            var key = (world.MissionGeneration, human.ShipId);
+            if (_humanDonations.GetValueOrDefault(peer, (-1, (short)-1)) == key) return;
+            peer.SendAutoDonate(human.ShipId);
+            // Vote once per match. A later human stop-donation order must stick.
+            _humanDonations[peer] = key;
+        }
+    }
 
     /// <summary>P703 side-keyed live research telemetry; worker zero owns all commanders.</summary>
     internal ResearchCommander.Report[] ResearchStatus()
@@ -38,7 +64,7 @@ internal sealed partial class BotManager
                 if (probeBriefing is not null)
                 {
                     ReadyResearchPeer(Probe);
-                    foreach (var side in ValidSides().OrderBy(s => s == ProbeSide ? 1 : 0))
+                    foreach (var side in ValidSides().Where(s => !HumanCommands(s)).OrderBy(s => s == ProbeSide ? 1 : 0))
                     {
                         if (_loopCts.IsCancellationRequested) break;
                         var peer = EnsureCommander(side);

@@ -59,6 +59,10 @@ def smoke(archive):
                        cwd=root, env=env, check=True)
         subprocess.run([str(exe), '--skirmish-smoke', '60'],
                        cwd=root, env=env, check=True, timeout=300)
+        for mode in ('skirmish:small', 'replay'):
+            subprocess.run([str(exe), '--benchmark', mode, '--benchmark-headless',
+                            '--benchmark-seconds', '3', '--benchmark-output', str(root / (mode.replace(':', '-') + '.json'))],
+                           cwd=root, env=env, check=True, timeout=600)
 
 
 if __name__ == '__main__':

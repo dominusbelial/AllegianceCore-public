@@ -1,0 +1,448 @@
+{
+  "localVersion": "0.2.0",
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0
+  },
+  "packaging": {
+    "tests": 15,
+    "consecutivePasses": 3,
+    "individualRuns": [
+      {
+        "method": "test_appdir_retains_payload_and_launches_intro_with_writable_user_cwd",
+        "attempt": 1,
+        "exitCode": 0
+      },
+      {
+        "method": "test_appdir_retains_payload_and_launches_intro_with_writable_user_cwd",
+        "attempt": 2,
+        "exitCode": 0
+      },
+      {
+        "method": "test_appdir_retains_payload_and_launches_intro_with_writable_user_cwd",
+        "attempt": 3,
+        "exitCode": 0
+      },
+      {
+        "method": "test_installer_compilers_receive_same_bundle_and_explicit_runtime",
+        "attempt": 1,
+        "exitCode": 0
+      },
+      {
+        "method": "test_installer_compilers_receive_same_bundle_and_explicit_runtime",
+        "attempt": 2,
+        "exitCode": 0
+      },
+      {
+        "method": "test_installer_compilers_receive_same_bundle_and_explicit_runtime",
+        "attempt": 3,
+        "exitCode": 0
+      },
+      {
+        "method": "test_format_selection_and_macos_app_zip",
+        "attempt": 1,
+        "exitCode": 0
+      },
+      {
+        "method": "test_format_selection_and_macos_app_zip",
+        "attempt": 2,
+        "exitCode": 0
+      },
+      {
+        "method": "test_format_selection_and_macos_app_zip",
+        "attempt": 3,
+        "exitCode": 0
+      },
+      {
+        "method": "test_every_artifact_has_checksum_metadata_and_enforces_limit",
+        "attempt": 1,
+        "exitCode": 0
+      },
+      {
+        "method": "test_every_artifact_has_checksum_metadata_and_enforces_limit",
+        "attempt": 2,
+        "exitCode": 0
+      },
+      {
+        "method": "test_every_artifact_has_checksum_metadata_and_enforces_limit",
+        "attempt": 3,
+        "exitCode": 0
+      },
+      {
+        "method": "test_invalid_version_and_missing_runtime_fail_before_publish",
+        "attempt": 1,
+        "exitCode": 0
+      },
+      {
+        "method": "test_invalid_version_and_missing_runtime_fail_before_publish",
+        "attempt": 2,
+        "exitCode": 0
+      },
+      {
+        "method": "test_invalid_version_and_missing_runtime_fail_before_publish",
+        "attempt": 3,
+        "exitCode": 0
+      },
+      {
+        "method": "test_repackaging_rejects_changed_portable_archive_before_extraction",
+        "attempt": 1,
+        "exitCode": 0
+      },
+      {
+        "method": "test_repackaging_rejects_changed_portable_archive_before_extraction",
+        "attempt": 2,
+        "exitCode": 0
+      },
+      {
+        "method": "test_repackaging_rejects_changed_portable_archive_before_extraction",
+        "attempt": 3,
+        "exitCode": 0
+      },
+      {
+        "method": "test_repackaging_verifies_payload_before_calling_installer",
+        "attempt": 1,
+        "exitCode": 0
+      },
+      {
+        "method": "test_repackaging_verifies_payload_before_calling_installer",
+        "attempt": 2,
+        "exitCode": 0
+      },
+      {
+        "method": "test_repackaging_verifies_payload_before_calling_installer",
+        "attempt": 3,
+        "exitCode": 0
+      }
+    ]
+  },
+  "offline": {
+    "ubuntu": {
+      "passed": true,
+      "skirmish": {
+        "WallSeconds": 60.0430202,
+        "SimulationSeconds": 62.09999999999861,
+        "BotsAlive": true,
+        "Running": true,
+        "Bots": 9,
+        "Shots": 0,
+        "Hits": 0,
+        "PilotDistance": 2831.17578125,
+        "Processes": [
+          55,
+          71,
+          79,
+          80,
+          81
+        ],
+        "PilotShipId": 8111
+      },
+      "introScreenshot": true
+    },
+    "fedora": {
+      "passed": true,
+      "skirmish": {
+        "WallSeconds": 60.0288041,
+        "SimulationSeconds": 62.09999999999861,
+        "BotsAlive": true,
+        "Running": true,
+        "Bots": 9,
+        "Shots": 0,
+        "Hits": 0,
+        "PilotDistance": 2830.7529296875,
+        "Processes": [
+          56,
+          72,
+          80,
+          81,
+          82
+        ],
+        "PilotShipId": 8111
+      },
+      "introScreenshot": false
+    }
+  },
+  "artifacts": [
+    {
+      "rid": "linux-x64",
+      "version": "0.2.0",
+      "archiveBytes": 537184760,
+      "unpackedBytes": 1336244289,
+      "artworkFiles": 2795,
+      "sources": {
+        "artwork": {
+          "url": "https://github.com/FreeAllegiance/Artwork.git",
+          "commit": "4a60aa636405de66bca6bf48bff99c25a16a2ca3"
+        },
+        "sky": {
+          "url": "https://github.com/dominusbelial/AllegianceCore-sky.git",
+          "commit": "5272ded6066429e4ac7fdbb21cec192c09da92a2"
+        }
+      },
+      "name": "Allegiance-linux-x64.AppImage",
+      "sha256": "edc1e9e5c783df2cb8213eb679560af19abc97cf3ea8c57d8e7674693a07f443",
+      "path": "/home/domingo/allegiance-codex-r2/dist/Allegiance-linux-x64.AppImage"
+    },
+    {
+      "rid": "linux-x64",
+      "version": "0.2.0",
+      "archiveBytes": 593327570,
+      "unpackedBytes": 1336244289,
+      "artworkFiles": 2795,
+      "sources": {
+        "artwork": {
+          "url": "https://github.com/FreeAllegiance/Artwork.git",
+          "commit": "4a60aa636405de66bca6bf48bff99c25a16a2ca3"
+        },
+        "sky": {
+          "url": "https://github.com/dominusbelial/AllegianceCore-sky.git",
+          "commit": "5272ded6066429e4ac7fdbb21cec192c09da92a2"
+        }
+      },
+      "name": "Allegiance-linux-x64.tar.gz",
+      "sha256": "ffe7476bdd5e171f3c34f10a1164d0b4d04defdb9a2e42fc97503bcf6c3092c8",
+      "path": "/home/domingo/allegiance-codex-r2/dist/Allegiance-linux-x64.tar.gz"
+    },
+    {
+      "rid": "osx-arm64",
+      "version": "0.2.0",
+      "archiveBytes": 590929832,
+      "unpackedBytes": 1346744007,
+      "artworkFiles": 2795,
+      "sources": {
+        "artwork": {
+          "url": "https://github.com/FreeAllegiance/Artwork.git",
+          "commit": "4a60aa636405de66bca6bf48bff99c25a16a2ca3"
+        },
+        "sky": {
+          "url": "https://github.com/dominusbelial/AllegianceCore-sky.git",
+          "commit": "5272ded6066429e4ac7fdbb21cec192c09da92a2"
+        }
+      },
+      "name": "Allegiance-osx-arm64.zip",
+      "sha256": "d05a9ce7200154e97574b9524b52ae4d9e27e176696b04785369e0d6b05d8674",
+      "path": "/home/domingo/allegiance-codex-r2/dist/Allegiance-osx-arm64.zip"
+    },
+    {
+      "rid": "win-x64",
+      "version": "0.2.0",
+      "archiveBytes": 505235163,
+      "unpackedBytes": 1331042275,
+      "artworkFiles": 2795,
+      "sources": {
+        "artwork": {
+          "url": "https://github.com/FreeAllegiance/Artwork.git",
+          "commit": "4a60aa636405de66bca6bf48bff99c25a16a2ca3"
+        },
+        "sky": {
+          "url": "https://github.com/dominusbelial/AllegianceCore-sky.git",
+          "commit": "5272ded6066429e4ac7fdbb21cec192c09da92a2"
+        }
+      },
+      "name": "Allegiance-win-x64-setup.exe",
+      "sha256": "5797cfad498caa102e0bed2a1323bc15c84833ad1fcb3a28917f8cafad65b99c",
+      "path": "/home/domingo/allegiance-codex-r2/dist/Allegiance-win-x64-setup.exe"
+    },
+    {
+      "rid": "win-x64",
+      "version": "0.2.0",
+      "archiveBytes": 595566691,
+      "unpackedBytes": 1331042275,
+      "artworkFiles": 2795,
+      "sources": {
+        "artwork": {
+          "url": "https://github.com/FreeAllegiance/Artwork.git",
+          "commit": "4a60aa636405de66bca6bf48bff99c25a16a2ca3"
+        },
+        "sky": {
+          "url": "https://github.com/dominusbelial/AllegianceCore-sky.git",
+          "commit": "5272ded6066429e4ac7fdbb21cec192c09da92a2"
+        }
+      },
+      "name": "Allegiance-win-x64.zip",
+      "sha256": "910490d0c8630a14b6443c4b710d47a979a83cbee7127bc11a9032075f20979e",
+      "path": "/home/domingo/allegiance-codex-r2/dist/Allegiance-win-x64.zip"
+    }
+  ],
+  "isolated": [
+    {
+      "method": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events",
+      "run": 1,
+      "exitCode": 0,
+      "seconds": 1.499
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events",
+      "run": 2,
+      "exitCode": 0,
+      "seconds": 1.457
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events",
+      "run": 3,
+      "exitCode": 0,
+      "seconds": 1.455
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+      "run": 1,
+      "exitCode": 0,
+      "seconds": 1.574
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+      "run": 2,
+      "exitCode": 0,
+      "seconds": 1.472
+    },
+    {
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+      "run": 3,
+      "exitCode": 0,
+      "seconds": 1.546
+    },
+    {
+      "method": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+      "run": 1,
+      "exitCode": 0,
+      "seconds": 1.63
+    },
+    {
+      "method": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+      "run": 2,
+      "exitCode": 0,
+      "seconds": 1.633
+    },
+    {
+      "method": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+      "run": 3,
+      "exitCode": 0,
+      "seconds": 1.639
+    }
+  ],
+  "suite": {
+    "Core": {
+      "counters": {
+        "total": "4879",
+        "executed": "4879",
+        "passed": "4876",
+        "failed": "3",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "name": "Allegiance.Core.Tests.ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self",
+          "message": "B must receive HEAVY_SHIPS_UPDATE"
+        },
+        {
+          "name": "Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 0\nActual:   7720"
+        },
+        {
+          "name": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog",
+          "message": "ordered lane must hold the world data, got 0"
+        }
+      ],
+      "skips": []
+    },
+    "ClientCore": {
+      "counters": {
+        "total": "1381",
+        "executed": "1380",
+        "passed": "1380",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [],
+      "skips": [
+        "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms"
+      ]
+    },
+    "MonoGame": {
+      "counters": {
+        "total": "2437",
+        "executed": "2434",
+        "passed": "2434",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [],
+      "skips": [
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_merge_yields_identical_resolution_to_before",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_built_content_directory_exists",
+        "Allegiance.ClientCore.MonoGame.Tests.MeshyPackTests.Pack_catalogue_has_the_full_meshy_set"
+      ]
+    }
+  },
+  "windowsCompiler": "Inno Setup 6.7.3 via Wine 9.0 in a container; native Windows execution deferred to CI",
+  "showcaseOptIn": {
+    "counters": {
+      "total": "1",
+      "executed": "1",
+      "passed": "1",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "method": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+    "environment": {
+      "ALLEGIANCE_LIVE_P660_SHOWCASE": "1"
+    }
+  },
+  "payloadIdentity": {
+    "linuxPortableAppImageInventoryIdentical": true,
+    "allPlatformArtworkManifestsIdentical": true,
+    "allPlatformArtworkSkyHashesIdentical": true,
+    "artworkAndSkyEntries": 3087,
+    "inventorySha256": "4e1787514c32d4628fdb9cf23b8be3e0372f287f012c79e20962ab03e6c4cbf9"
+  },
+  "rawEvidencePath": "/tmp/allegiance-codex-r2-evidence",
+  "checks": {
+    "gitDiffCheck": true,
+    "actionlint": true,
+    "pythonSyntax": true,
+    "shellSyntax": true
+  }
+}

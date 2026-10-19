@@ -1,0 +1,6 @@
+FROM fedora:43
+# Stock distro dependencies only: no SDK or system .NET runtime.
+RUN dnf install -y libicu openssl-libs libstdc++ zlib-ng-compat \
+    mesa-libGL mesa-dri-drivers openal-soft alsa-lib libX11 libXrandr \
+    libXi libXcursor libXinerama libXext libXrender coreutils findutils \
+    && dnf clean all

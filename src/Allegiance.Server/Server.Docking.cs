@@ -1301,7 +1301,7 @@ public sealed partial class Server
     /// cluster. The energy cost is <b>not</b> applied here — it is the
     /// ship-branch's responsibility (<c>FedSrv.CPP:13452-13460</c>), so a probe
     /// anchor (which pays nothing) shares this same placement verbatim.</summary>
-    private static void PlaceRipcordNearTarget(Ship rip, Vector3 targetPos, float targetRadius, Sector targetSector)
+    private void PlaceRipcordNearTarget(Ship rip, Vector3 targetPos, float targetRadius, Sector targetSector)
     {
         float r = targetRadius + ShipRadius(rip) + 25.0f;
         Vector3 v = RandomDirection();

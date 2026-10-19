@@ -1,0 +1,195 @@
+{
+  "head": "a8a9eb24e04744ab788b84ffcdc83e2b96afcc1a",
+  "source_and_test_binaries_unchanged": true,
+  "simulation_byte_identical": true,
+  "lf": true,
+  "diff_check": true,
+  "changed_rows": [
+    {
+      "native_item": "TK_Throttle33",
+      "before": "partial",
+      "after": "done",
+      "weight": "3"
+    },
+    {
+      "native_item": "TK_Throttle66",
+      "before": "partial",
+      "after": "done",
+      "weight": "3"
+    },
+    {
+      "native_item": "31 NEW_SHIP_INSTANCE",
+      "before": "partial",
+      "after": "na",
+      "weight": "4"
+    },
+    {
+      "native_item": "87 FIRE_EXPENDABLE",
+      "before": "partial",
+      "after": "done",
+      "weight": "4"
+    },
+    {
+      "native_item": "89 TREASURE_SETS",
+      "before": "partial",
+      "after": "na",
+      "weight": "4"
+    },
+    {
+      "native_item": "156 GAIN_FLAG",
+      "before": "partial",
+      "after": "done",
+      "weight": "4"
+    },
+    {
+      "native_item": "164 ADD_PART",
+      "before": "partial",
+      "after": "done",
+      "weight": "4"
+    },
+    {
+      "native_item": "182 REQUEST_MONEY",
+      "before": "partial",
+      "after": "done",
+      "weight": "4"
+    },
+    {
+      "native_item": "192 RELAUNCH_SHIP",
+      "before": "partial",
+      "after": "done",
+      "weight": "4"
+    },
+    {
+      "native_item": "194 PINGDATA",
+      "before": "partial",
+      "after": "done",
+      "weight": "4"
+    }
+  ],
+  "focused_methods": 91,
+  "focused": {
+    "invocations": 273,
+    "passed": 384,
+    "failed": 0,
+    "skipped": 0
+  },
+  "showcases": {
+    "invocations": 5,
+    "passed": 4,
+    "failed": 1,
+    "skipped": 0
+  },
+  "showcase_isolation": {
+    "invocations": 3,
+    "passed": 3,
+    "failed": 0,
+    "skipped": 0
+  },
+  "baseline_comparison": {
+    "method": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+    "head": "a8a9eb24e04744ab788b84ffcdc83e2b96afcc1a",
+    "current": {
+      "runs": 5,
+      "failed": 1
+    },
+    "fresh_isolation": {
+      "runs": 3,
+      "failed": 0
+    },
+    "base_head": {
+      "runs": 5,
+      "failed": 0
+    },
+    "baseline_source": "/tmp/allegiance-evidence/P740/base-head",
+    "source_archive_sha256": "b384489fb13a23bec2e4232ac460d5f8328f539cf6a4a7647c0d93f0cf03c037",
+    "test_binary_sha256": "a19a32d09046503e7862e4e36c0c0ae859b33d2739b64a5a5d533707c45be36e",
+    "baseline_build_command": [
+      "dotnet",
+      "build",
+      "tests/Allegiance.ClientCore.Tests/Allegiance.ClientCore.Tests.csproj",
+      "-c",
+      "Release",
+      "--nologo"
+    ],
+    "baseline_build_log": "/tmp/allegiance-evidence/P740/base-build.log",
+    "interpretation": "Small-sample observed rates, not a causal claim. Classify the current cleanup failure under the brief only if all three fresh isolated invocations pass. No assertions or deadlines changed."
+  },
+  "suites": [
+    {
+      "project": "Core",
+      "invocations": 1,
+      "passed": 4877,
+      "failed": 2,
+      "skipped": 0
+    },
+    {
+      "project": "ClientCore",
+      "invocations": 1,
+      "passed": 1396,
+      "failed": 1,
+      "skipped": 0
+    },
+    {
+      "project": "ClientCore.MonoGame",
+      "invocations": 1,
+      "passed": 2437,
+      "failed": 2,
+      "skipped": 3
+    }
+  ],
+  "post_suite_isolation": {
+    "invocations": 15,
+    "passed": 12,
+    "failed": 3,
+    "skipped": 0
+  },
+  "load_flake_methods": [
+    [
+      "ClientCore",
+      "Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target"
+    ],
+    [
+      "ClientCore.MonoGame",
+      "Allegiance.ClientCore.MonoGame.Tests.ChatTargetComposeLiveTests.ComposeDefault_Team_SendsToTeammate_NotEnemy"
+    ],
+    [
+      "Core",
+      "Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies"
+    ],
+    [
+      "Core",
+      "Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join"
+    ]
+  ],
+  "fixed_product_methods": [
+    [
+      "ClientCore.MonoGame",
+      "Allegiance.ClientCore.MonoGame.Tests.P642ConsoleZoomTests.Every_TK_action_exposes_the_native_MDL_default_including_unbound_commands"
+    ]
+  ],
+  "metadata_cohort": {
+    "invocations": 147,
+    "passed": 435,
+    "failed": 0,
+    "skipped": 0
+  },
+  "native_inventory_scan": {
+    "NEW_SHIP_INSTANCE": {
+      "files_scanned": 152,
+      "matches": []
+    },
+    "TREASURE_SETS": {
+      "files_scanned": 152,
+      "matches": [
+        {
+          "file": "WinTrek/WinTrek.cpp",
+          "line": 11090,
+          "text": "case FM_S_TREASURE_SETS:"
+        }
+      ]
+    }
+  },
+  "raw_evidence": "/tmp/allegiance-evidence/P740",
+  "evidence_bytes": 951491,
+  "aot": "Not required: src/Allegiance.Core and src/Allegiance.Server unchanged"
+}

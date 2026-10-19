@@ -8,8 +8,8 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// info pane's content/selection logic. No graphics device (same discipline as
 /// <see cref="StarmapLayoutTests"/>). They pin the contract native's
 /// <c>SectorInfoPane</c> (<c>sectormap.cpp:139-538</c>) establishes:
-/// special-asteroid grouping keys on <c>(aabm &amp; ~c_aabmBuildable)</c>
-/// (sectormap.cpp:296), the helium figure sums only the <c>c_aabmMineHe3 (0x01)</c>
+/// special-asteroid eligibility excludes buildable-only rocks, then grouping
+/// keys on the full capability mask (sectormap.cpp:296-305). The helium figure sums only the <c>c_aabmMineHe3 (0x01)</c>
 /// rocks' ore (sectormap.cpp:360-366), and the cluster-selection cycle wraps.
 /// </summary>
 public class SectorInfoPaneLayoutTests
@@ -74,6 +74,22 @@ public class SectorInfoPaneLayoutTests
         Assert.Equal(2, d.Groups[0].Count);
         Assert.Equal("Gold", d.Groups[1].Label);
         Assert.Equal(1, d.Groups[1].Count);
+    }
+
+    [Fact]
+    public void Buildable_bit_distinguishes_special_groups_with_the_same_resource()
+    {
+        // Native filters with ~Buildable but uses the original aabm as the
+        // map key. Resource-only and resource|Buildable have separate icons.
+        var d = SectorInfoPaneLayout.Build("X",
+            [Rock(0x01, 100), Rock(0x09, 200), Rock(0x09, 300), Rock(0x08), Rock(0)]);
+
+        Assert.Equal(5, d.TotalAsteroids);
+        Assert.Equal(600f, d.HeliumOre);
+        Assert.Collection(d.Groups,
+            group => { Assert.Equal((short)0x09, group.Mask); Assert.Equal(2, group.Count); },
+            group => { Assert.Equal((short)0x01, group.Mask); Assert.Equal(1, group.Count); });
+        Assert.All(d.Groups, group => Assert.Equal("He3", group.Label));
     }
 
     [Fact]

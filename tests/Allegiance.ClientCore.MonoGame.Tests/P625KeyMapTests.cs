@@ -241,7 +241,9 @@ public class P625KeyMapTests
         // The established help groups (native command categories plus the
         // P625b additions for panes/menus, free-cam/spectator and system, and
         // the P626 additions for inventory/cargo and vote/command).
-        Assert.Equal(16, titles.Count);
+        Assert.Equal(18, titles.Count);                  // + LOCAL SKIRMISH (SP-5), TEAM FUNDING (P728)
+        Assert.Contains("LOCAL SKIRMISH", titles);
+        Assert.Contains("TEAM FUNDING", titles);
         Assert.Contains("MOVEMENT", titles);
         Assert.Contains("WEAPONS", titles);
         Assert.Contains("INVENTORY / CARGO", titles);   // P626

@@ -43,7 +43,22 @@ jobs:
           dotnet-version: '10.0.400'
       - run: sudo apt-get update && sudo apt-get install -y fonts-dejavu-core libfreetype6
       - run: dotnet tool restore
-      - run: python3 packaging/package.py --rid ${{ matrix.rid }}
+      - name: Fetch pinned AppImage tools
+        if: matrix.rid == 'linux-x64'
+        run: python3 packaging/fetch-appimage-tools.py "$RUNNER_TEMP/appimage-tools"
+      - name: Build player artifacts
+        env:
+          RELEASE_REF: ${{ github.ref_name }}
+        run: |
+          version=0.0.1
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then version="${RELEASE_REF#v}"; fi
+          if [[ '${{ matrix.rid }}' == linux-x64 ]]; then
+            python3 packaging/package.py --rid linux-x64 --format all --version "$version" \
+              --appimagetool "$RUNNER_TEMP/appimage-tools/appimagetool" \
+              --appimage-runtime "$RUNNER_TEMP/appimage-tools/runtime-x86_64"
+          else
+            python3 packaging/package.py --rid '${{ matrix.rid }}' --format portable --version "$version"
+          fi
       - name: Check full-source census against manifest
         if: matrix.rid == 'linux-x64'
         run: >-
@@ -60,6 +75,7 @@ jobs:
           path: |
             dist/Allegiance-*.tar.gz
             dist/Allegiance-*.zip
+            dist/Allegiance-*.AppImage
             dist/Allegiance-*.sha256
             dist/Allegiance-*.json
             dist/census-*.json
@@ -67,7 +83,7 @@ jobs:
 
   windows-smoke:
     needs: package
-    runs-on: windows-2022
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -76,6 +92,58 @@ jobs:
           path: dist
       - name: Windows extracted bundle smoke (native apphost)
         run: python packaging/smoke.py dist/Allegiance-win-x64.zip
+      - name: Build Inno Setup installer from the verified portable payload
+        env:
+          RELEASE_REF: ${{ github.ref_name }}
+        run: |
+          $version = '0.0.1'
+          if ($env:GITHUB_REF.StartsWith('refs/tags/')) { $version = $env:RELEASE_REF.TrimStart('v') }
+          $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
+          if (!$iscc) { $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          python packaging/package.py --rid win-x64 --format installer --version $version `
+            --from-portable dist/Allegiance-win-x64.zip --iscc $iscc
+          if ($LASTEXITCODE -ne 0) { throw 'Installer build failed' }
+          if ([version]$version -le [version]'0.0.0') { throw 'Release version must exceed 0.0.0 for upgrade smoke' }
+          python packaging/package.py --rid win-x64 --format installer --version 0.0.0 `
+            --from-portable dist/Allegiance-win-x64.zip --iscc $iscc --output "$env:RUNNER_TEMP/previous-installer"
+          if ($LASTEXITCODE -ne 0) { throw 'Previous installer build failed' }
+      - name: Silent per-user and all-users install, asset check and uninstall
+        run: >-
+          ./packaging/smoke-windows.ps1 -Installer dist/Allegiance-win-x64-setup.exe
+          -Portable dist/Allegiance-win-x64.zip
+          -PreviousInstaller "$env:RUNNER_TEMP/previous-installer/Allegiance-win-x64-setup.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: player-win-installer
+          path: |
+            dist/Allegiance-*-setup.exe
+            dist/Allegiance-*-setup.exe.sha256
+            dist/Allegiance-*-setup.exe.json
+          if-no-files-found: error
+
+  appimage-smoke:
+    needs: package
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro: [ubuntu, fedora]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: player-linux-x64
+          path: dist
+      - name: Build stock distribution smoke environment
+        run: docker build -f packaging/Dockerfile.smoke-${{ matrix.distro }} -t allegiance-smoke packaging
+      - name: AppImage runtime and extracted/offline smoke with no internet
+        run: |
+          chmod +x dist/Allegiance-linux-x64.AppImage
+          intro=''
+          if [[ '${{ matrix.distro }}' == ubuntu ]]; then intro=--intro; fi
+          docker run --rm --network none --read-only --user 1000:1000 \
+            --tmpfs /tmp:exec,mode=1777 \
+            -v "$PWD/dist:/artifacts:ro" -v "$PWD/packaging:/packaging:ro" \
+            allegiance-smoke sh /packaging/smoke-appimage.sh /artifacts/Allegiance-linux-x64.AppImage $intro
 
   macos-smoke:
     needs: package
@@ -98,7 +166,7 @@ jobs:
           env -u ALLEGIANCE_ARTWORK_PATH -u ALLEGIANCE_SKY_PACK_PATH "$app/Contents/MacOS/Allegiance" --check-assets
 
   publish:
-    needs: [package, windows-smoke, macos-smoke]
+    needs: [package, windows-smoke, macos-smoke, appimage-smoke]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'dominusbelial/AllegianceCore-public'
     runs-on: ubuntu-24.04
     permissions:
@@ -115,11 +183,12 @@ jobs:
         run: |
           cat Allegiance-*.sha256 > SHA256SUMS.txt
           sha256sum --check SHA256SUMS.txt
-      - name: Publish all three archives together after smoke gates
+      - name: Publish portable bundles and installers together after smoke gates
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: >-
           gh release create "$RELEASE_TAG" --verify-tag --title "AllegianceCore $RELEASE_TAG"
           --notes-file packaging/RELEASE-NOTES.md
-          dist/Allegiance-*.tar.gz dist/Allegiance-*.zip dist/SHA256SUMS.txt dist/Allegiance-*.json
+          dist/Allegiance-*.tar.gz dist/Allegiance-*.zip dist/Allegiance-*.AppImage dist/Allegiance-*-setup.exe
+          dist/SHA256SUMS.txt dist/Allegiance-*.json

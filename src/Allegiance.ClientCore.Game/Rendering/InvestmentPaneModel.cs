@@ -35,10 +35,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// implements mission-in-progress, has-a-side, can-buy (~not completed), the
 /// drone-type cap (<c>CountDronesOfType ≥ nMaxDronesPerTeam</c>), the station-type
 /// build-spot / no-builder gate (fed in by the host, default open), money &gt; 0,
-/// and not-already-100%. The native predecessor-chain pruning of the displayed
-/// list (only show a bucket whose prerequisite is complete, loadout.cpp:1009-1011)
-/// is intentionally omitted — this port has no per-bucket predecessor model — and
-/// is documented in P487.</para>
+/// and not-already-100%. The host supplies live CanBuy and predecessor gates (P728).</para>
 /// </summary>
 public sealed record InvestmentBucket(
     short Id,
@@ -49,7 +46,8 @@ public sealed record InvestmentBucket(
     short HullIdDrone,
     short DroneTypeId,
     short DevelopmentId,
-    short StationTypeId);
+    short StationTypeId,
+    string Description = "");
 
 /// <summary>P487 — the pure interaction model backing the investment pane. See
 /// <see cref="InvestmentBucket"/> / the class-level doc for the money-ownership
@@ -68,6 +66,9 @@ public sealed class InvestmentPaneModel
     private readonly int _maxDronesPerTeam;
     private readonly IReadOnlyDictionary<short, int> _droneCountByHullId;
     private readonly Func<short, bool> _stationCanBuild;
+    private readonly Func<InvestmentBucket, bool> _canBuy;
+    private readonly IReadOnlyDictionary<short, short> _predecessors;
+    private readonly IReadOnlyDictionary<short, int>? _droneCountByTypeId;
 
     /// <summary>Show-all toggle (native Show-All / Hide-Completed checkboxes).</summary>
     public bool ShowAll { get; private set; }
@@ -95,7 +96,10 @@ public sealed class InvestmentPaneModel
         Func<short, bool>? stationCanBuild = null,
         bool showAll = false,
         bool hideCompleted = true,
-        int cursor = 0)
+        int cursor = 0,
+        Func<InvestmentBucket, bool>? canBuy = null,
+        IReadOnlyDictionary<short, short>? predecessors = null,
+        IReadOnlyDictionary<short, int>? droneCountByTypeId = null)
     {
         _defs = defs ?? Array.Empty<InvestmentBucket>();
         _missionInProgress = missionInProgress;
@@ -104,6 +108,9 @@ public sealed class InvestmentPaneModel
         _droneCountByHullId = droneCountByHullId ?? EmptyDroneCounts;
         _maxDronesPerTeam = maxDronesPerTeam;
         _stationCanBuild = stationCanBuild ?? (_ => true);
+        _canBuy = canBuy ?? (_ => true);
+        _predecessors = predecessors ?? new Dictionary<short, short>();
+        _droneCountByTypeId = droneCountByTypeId;
         ShowAll = showAll;
         HideCompleted = hideCompleted;
         if (funding != null)
@@ -114,7 +121,7 @@ public sealed class InvestmentPaneModel
                 _timeMsById[id] = f.InvestedTimeMs;
             }
         }
-        Cursor = cursor;
+        Cursor = Math.Clamp(cursor, 0, Math.Max(0, Items.Count - 1));
     }
 
     // ── per-bucket funding ────────────────────────────────────────────────
@@ -136,11 +143,9 @@ public sealed class InvestmentPaneModel
     /// <summary>Build time still owed, in milliseconds.</summary>
     public long RemainingTimeMs(InvestmentBucket b) => Math.Max(0, TimeToBuildMs(b) - TimeMsOf(b));
 
-    /// <summary>Client approximation of native <c>pSide-&gt;CanBuy(pBucket)</c>:
-    /// the bucket is still fundable (not completed). Native's richer CanBuy
-    /// (which also consults the buyable's continued purchasability) reduces to
-    /// \"not complete\" for every bucket this port hosts; noted in P487.</summary>
-    public bool CanBuy(InvestmentBucket b) => !Completed(b);
+    /// <summary>Native side CanBuy, supplied from a live tech/station snapshot,
+    /// plus the completed-bucket cut (WinTrek/loadout.cpp:1004-1010).</summary>
+    public bool CanBuy(InvestmentBucket b) => !Completed(b) && _canBuy(b);
 
     // ── display list ───────────────────────────────────────────────────────
 
@@ -160,6 +165,8 @@ public sealed class InvestmentPaneModel
             foreach (var b in _defs)
             {
                 bool displayed = (CanBuy(b) || ShowAll) && !(HideCompleted && Completed(b));
+                if (!ShowAll && _predecessors.TryGetValue(b.Id, out var predecessor)
+                    && _defs.FirstOrDefault(d => d.Id == predecessor) is { } prior && !Completed(prior)) displayed = false;
                 if (displayed) result.Add(b);
             }
             return result;
@@ -198,7 +205,8 @@ public sealed class InvestmentPaneModel
         if (b.ItemType == BucketItemType.BitDroneType)
         {
             // CountDronesOfType >= nMaxDronesPerTeam -> refuse (loadout.cpp:1111-1120)
-            int count = _droneCountByHullId.TryGetValue(b.HullIdDrone, out var c) ? c : 0;
+            int count = _droneCountByTypeId is { } counts ? counts.GetValueOrDefault(b.DroneTypeId)
+                : _droneCountByHullId.TryGetValue(b.HullIdDrone, out var c) ? c : 0;
             if (count >= _maxDronesPerTeam) return false;
         }
         if (b.ItemType == BucketItemType.BitStationType)

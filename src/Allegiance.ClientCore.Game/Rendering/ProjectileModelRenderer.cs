@@ -50,12 +50,16 @@ public sealed class ProjectileModelRenderer : IDisposable
     // "Wep07bbmp.mdl") and a case-sensitive File.Exists on Linux would miss it →
     // lit-solid white. The index makes the texture probe case-insensitive.
     private readonly Dictionary<string, string> _diskStems = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HdMaterialRenderer _hd;
+    private readonly bool _ownsHd;
     private readonly BasicEffect _effect;
     private readonly RasterizerState _cullNone;
 
-    public ProjectileModelRenderer(GraphicsDevice gd, Assets.IAssetSource assets)
+    public ProjectileModelRenderer(GraphicsDevice gd, Assets.IAssetSource assets, HdMaterialRenderer? hd = null)
     {
         _gd = gd;
+        _hd = hd ?? new HdMaterialRenderer(gd, NativeMaterialParts.NativeReader(assets));
+        _ownsHd = hd is null;
         _assets = assets;
         _effect = new BasicEffect(gd) { TextureEnabled = true };
         _cullNone = new RasterizerState { CullMode = CullMode.None };
@@ -214,7 +218,7 @@ public sealed class ProjectileModelRenderer : IDisposable
     /// lit-solid. World = align(+Z→dir) · rollZ(spin) · translate (MonoGame
     /// row-vector: align, then roll about the now-aligned +Z = travel, then move).
     /// </summary>
-    public void Draw(Geometry geo, Texture2D? texture, XnaVec centre, XnaVec dir, float spin, Matrix view, Matrix projection, float scale = 1f)
+    public void Draw(Geometry geo, Texture2D? texture, XnaVec centre, XnaVec dir, float spin, Matrix view, Matrix projection, float scale = 1f, string? modelName = null, Allegiance.Core.Rendering.SectorLighting? lighting = null)
     {
         var travel = XnaVec.Normalize(dir);
         var world = Matrix.CreateScale(scale) * AlignZ(travel) * Matrix.CreateRotationZ(spin) * Matrix.CreateTranslation(centre);
@@ -229,13 +233,26 @@ public sealed class ProjectileModelRenderer : IDisposable
             _effect.EnableDefaultLighting();
             _effect.AmbientLightColor = new XnaVec(0.4f, 0.42f, 0.45f);
         }
-        _effect.CurrentTechnique.Passes[0].Apply();
-
         var gd = _gd;
         gd.RasterizerState = _cullNone;
-        gd.SetVertexBuffer(geo.Vertices);
-        gd.Indices = geo.Indices;
-        gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, geo.TriangleCount);
+        geo.Materials.Draw(gd, _hd, modelName, modelName is not null && _parsed.TryGetValue(modelName, out var mdl) ? ResolveTextureStemFor(mdl, modelName, _diskStems.ContainsKey) : null,
+            texture, TextureForStem, _effect, geo.Vertices, geo.Indices, world, view, projection,
+            1, lighting);
+    }
+
+    private Texture2D? TextureForStem(string stem)
+    {
+        if (_textures.TryGetValue(stem, out var texture)) return texture;
+        if (!_diskStems.TryGetValue(stem, out var exact)) return null;
+        try
+        {
+            var decoded = MdlTextureDecoder.Decode(AssetSources.ReadAllBytes(_assets, exact + ".mdl"));
+            texture = new Texture2D(_gd, decoded.Width, decoded.Height);
+            texture.SetData(MdlTextureDecoder.ToPremultipliedRgba(decoded));
+            _textures[stem] = texture;
+            return texture;
+        }
+        catch (Exception e) when (e is IOException or InvalidDataException or ArgumentException) { return null; }
     }
 
     private static Matrix AlignZ(XnaVec dir)
@@ -256,6 +273,7 @@ public sealed class ProjectileModelRenderer : IDisposable
     /// meshes (offsets carried across) + per-vertex normals/texcoords.</summary>
     public sealed class Geometry : IDisposable
     {
+        public NativeMaterialParts Materials { get; private init; } = null!;
         public required VertexBuffer Vertices { get; init; }
         public required IndexBuffer Indices { get; init; }
         public required int TriangleCount { get; init; }
@@ -285,11 +303,12 @@ public sealed class ProjectileModelRenderer : IDisposable
             vbuf.SetData(verts);
             var ibuf = new IndexBuffer(gd, IndexElementSize.ThirtyTwoBits, indices.Length, BufferUsage.WriteOnly);
             ibuf.SetData(indices);
-            return new Geometry { Vertices = vbuf, Indices = ibuf, TriangleCount = indices.Length / 3 };
+            return new Geometry { Materials = new(meshes, verts, indices), Vertices = vbuf, Indices = ibuf, TriangleCount = indices.Length / 3 };
         }
 
         public void Dispose()
         {
+            Materials.Dispose();
             Vertices.Dispose();
             Indices.Dispose();
         }
@@ -299,6 +318,7 @@ public sealed class ProjectileModelRenderer : IDisposable
     {
         foreach (var g in _models.Values) g.Dispose();
         foreach (var t in _textures.Values) t.Dispose();
+        if (_ownsHd) _hd.Dispose();
         _effect.Dispose();
         _cullNone.Dispose();
     }

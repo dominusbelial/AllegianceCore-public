@@ -37,6 +37,7 @@ public sealed partial class Game1
     /// Built by <c>Program.cs</c> from the CLI args.</summary>
     public sealed class LaunchOptions
     {
+        public Allegiance.SinglePlayer.Benchmark.BenchmarkCommand? Benchmark;
         public string PlayerName = "monogame";
 
         /// <summary>Non-null selects DIRECT connect (skip the lobby), connecting

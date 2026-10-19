@@ -38,6 +38,7 @@ public sealed partial class Server
         _lastStatusTick.Clear();
         _lastClusterInfoTick.Clear();
         _teammateExportSent.Clear();
+        _stationIdentitySent.Clear();
         _teammatePlayerInfoSent.Clear();
         _teammatePositionSent.Clear();
         _teammateLoadoutVersionSent.Clear();

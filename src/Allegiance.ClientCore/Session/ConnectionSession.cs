@@ -25,6 +25,16 @@ namespace Allegiance.ClientCore.Session;
 public sealed class ConnectionSession : ITransportSite, IDisposable
 {
     private TcpTransport? _transport;
+    /// <summary>Opt-in timestamped raw server stream; attach before Connect. Caller owns it.</summary>
+    public Allegiance.ClientCore.Replay.WireRecording? Recording { get; set; }
+    public long? ReplayMilliseconds { get; private set; }
+    public void ReplayPacket(ReadOnlySpan<byte> packet, long milliseconds)
+    {
+        if (Connected) throw new InvalidOperationException("Replay requires an offline session");
+        ReplayMilliseconds = milliseconds;
+        _world.NowSeconds = () => ReplayMilliseconds.GetValueOrDefault() / 1000.0;
+        ((ITransportSite)this).OnReceive(ConnectionId.Server, packet);
+    }
     private readonly object _gate = new();
     private readonly ClientWorld _world = new();
     private LogonAck? _ack;
@@ -210,6 +220,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
 
         lock (_gate)
         {
+            if (ReplayMilliseconds is not null)
+            {
+                ReplayMilliseconds = null;
+                _world.NowSeconds = () => Environment.TickCount64 / 1000.0;
+            }
             _ack = null;                 // a fresh session has no ack yet
             _lastPositionRefusal = null;
             _lost = false;               // a new session is not lost (was latched true by a dropped one)
@@ -440,6 +455,9 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     {
         new RequestMoney { Amount = amount, HidFor = hullId, ShipIdRequest = -1 }.Encode(),
     }));
+
+    /// <summary>WinTrek.cpp:6150-6155: guaranteed REQPINGDATA request.</summary>
+    public void SendPlayerPingsRequest() => Send(FedPacket.Pack(new ReqPingData().Encode()));
 
     /// <summary>Send a real <c>FM_CS_CHATBUOY(108)</c> — the message the native
     /// <c>BaseClient::SendChat</c> actually uses when the chat targets a buoy
@@ -905,6 +923,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
 
     void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
     {
+        Recording?.Write(data);
         if (_lost) return; // a rejected core cannot be followed by a partial join burst
         // P633 — count every inbound byte for the decode-throughput metric
         // (atomic; the read side diffs over a wall window).
@@ -952,7 +971,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         try
                         {
                             var ping = Ping.Decode(m);
-                            _pingEchoes.Add((ping.TimeServer, Environment.TickCount64));
+                            _pingEchoes.Add((ping.TimeServer, ReplayMilliseconds ?? Environment.TickCount64));
                             _world.Apply(ping);
                         }
                         catch { /* ignore a malformed echo */ }
@@ -1127,6 +1146,21 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         break;
                     case RequestMoney.Fmid:
                         _world.Apply(RequestMoney.Decode(m));
+                        break;
+                    case GainFlag.Fmid:
+                        _world.Apply(GainFlag.Decode(m));
+                        break;
+                    case AddPart.Fmid:
+                        _world.Apply(AddPart.Decode(m));
+                        break;
+                    case FireExpendable.Fmid:
+                        _world.Apply(FireExpendable.Decode(m));
+                        break;
+                    case RelaunchShip.Fmid:
+                        _world.Apply(RelaunchShip.Decode(m));
+                        break;
+                    case PingData.Fmid:
+                        _world.Apply(PingData.Decode(m));
                         break;
                     case AutoDonateUpdate.Fmid:
                         // P442 — a player's auto-donate relationship (payday

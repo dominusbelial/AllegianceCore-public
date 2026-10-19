@@ -1,0 +1,346 @@
+{
+  "seed": 743,
+  "selection_reproduced": true,
+  "completed_population": 707,
+  "recent_population": 144,
+  "sample_count": 40,
+  "recent_sample": 10,
+  "population_mean_weight": 3.427157001414427,
+  "sample_mean_weight": 4.025,
+  "area_population": {
+    "commander": 19,
+    "commands": 176,
+    "fedmsg": 115,
+    "lobby": 10,
+    "parts": 40,
+    "screens": 22,
+    "callbacks": 36,
+    "constants": 38,
+    "periodic": 7,
+    "sounds": 173,
+    "updates": 69,
+    "warnings": 2
+  },
+  "selected": [
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "commander",
+      "native_item": "Investments / buy-in",
+      "weight": "4",
+      "recent": false,
+      "priority": 0.006319878678732435
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "commander",
+      "native_item": "Wingman AI (attack/defend lead solving)",
+      "weight": "4",
+      "recent": false,
+      "priority": 0.012739422258202295
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "commander",
+      "native_item": "Drones: constructors",
+      "weight": "4",
+      "recent": false,
+      "priority": 0.025976548163105358
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "commander",
+      "native_item": "Team leadership / owner (promote, owner-only cmds)",
+      "weight": "4",
+      "recent": false,
+      "priority": 0.03606231373555226
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "commands",
+      "native_item": "TK_SwapMissile",
+      "weight": "2",
+      "recent": true,
+      "priority": 0.004274711266797714
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "commands",
+      "native_item": "TK_TargetArtifact",
+      "weight": "3",
+      "recent": false,
+      "priority": 0.004907804435208278
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "commands",
+      "native_item": "TK_TargetEnemyBase",
+      "weight": "4",
+      "recent": false,
+      "priority": 0.0072998190700932705
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "commands",
+      "native_item": "TK_TargetEnemy",
+      "weight": "5",
+      "recent": false,
+      "priority": 0.00826195223100344
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "commands",
+      "native_item": "TK_StartChat",
+      "weight": "5",
+      "recent": false,
+      "priority": 0.016240652868811704
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "fedmsg",
+      "native_item": "178 BOARD_NACK",
+      "weight": "4",
+      "recent": false,
+      "priority": 3.8892499322861344e-05
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "fedmsg",
+      "native_item": "38 MISSIONDEF",
+      "weight": "4",
+      "recent": true,
+      "priority": 0.0023200789642407542
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "fedmsg",
+      "native_item": "187 RIPCORD_ABORTED",
+      "weight": "4",
+      "recent": false,
+      "priority": 0.006053046972666429
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "fedmsg",
+      "native_item": "46 TEAM_READY",
+      "weight": "4",
+      "recent": false,
+      "priority": 0.007758877041539086
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "lobby",
+      "native_item": "Team lobby / team pane",
+      "weight": "4",
+      "recent": true,
+      "priority": 0.0026776646697325886
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "lobby",
+      "native_item": "Ready / force-ready check",
+      "weight": "5",
+      "recent": true,
+      "priority": 0.026085167806195082
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "parts",
+      "native_item": "c_eabmWarpBombDual",
+      "weight": "4",
+      "recent": false,
+      "priority": 0.0008370968865807587
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "parts",
+      "native_item": "Weapons (ET_Weapon=1)",
+      "weight": "5",
+      "recent": false,
+      "priority": 0.006970807662800414
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "parts",
+      "native_item": "c_habmFighter",
+      "weight": "4",
+      "recent": false,
+      "priority": 0.0077335166980115845
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "screens",
+      "native_item": "Side-select screen",
+      "weight": "4",
+      "recent": true,
+      "priority": 0.0019335580116577853
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "screens",
+      "native_item": "Hangar / loadout screen",
+      "weight": "5",
+      "recent": false,
+      "priority": 0.02886130138016687
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "screens",
+      "native_item": "Sector info pane",
+      "weight": "4",
+      "recent": false,
+      "priority": 0.04012170888301224
+    },
+    {
+      "matrix": "parity-matrix.csv",
+      "area": "screens",
+      "native_item": "Game-over screen",
+      "weight": "5",
+      "recent": false,
+      "priority": 0.0508940811917715
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "callbacks",
+      "native_item": "SideBuildingTechChange@4776",
+      "weight": "3",
+      "recent": false,
+      "priority": 0.0062809296895276236
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "callbacks",
+      "native_item": "KillAsteroidEvent@4838",
+      "weight": "3",
+      "recent": false,
+      "priority": 0.006777064467230036
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "callbacks",
+      "native_item": "DestroyTeleportProbe@4890",
+      "weight": "3",
+      "recent": false,
+      "priority": 0.016475141305889462
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "constants",
+      "native_item": "c_fcidBaseClusterCost",
+      "weight": "5",
+      "recent": false,
+      "priority": 0.008950095513196341
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "constants",
+      "native_item": "c_fcidLensMultiplier",
+      "weight": "5",
+      "recent": false,
+      "priority": 0.014676558226485392
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "constants",
+      "native_item": "c_fcidDownedShield",
+      "weight": "5",
+      "recent": false,
+      "priority": 0.0174355143303791
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "periodic",
+      "native_item": "payday_income_and_gates",
+      "weight": "5",
+      "recent": false,
+      "priority": 0.002440026193900563
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "periodic",
+      "native_item": "ballot_resolution_boundary",
+      "weight": "3",
+      "recent": true,
+      "priority": 0.0035781129574954987
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "sounds",
+      "native_item": "PlaySoundIf@WinTrek/trekigc.cpp:1341 GetManuveringThrusterExteriorSound",
+      "weight": "3",
+      "recent": true,
+      "priority": 0.001335984622984576
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "sounds",
+      "native_item": "PlayNotificationSound@Igc/shipIGC.h:616 salReloadingAmmoSound",
+      "weight": "2",
+      "recent": true,
+      "priority": 0.0014502843592091117
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "sounds",
+      "native_item": "PlaySoundEffect@clintlib/appmsg.cpp:677 GetEnemyCapturedSound",
+      "weight": "4",
+      "recent": false,
+      "priority": 0.006083580487105552
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "sounds",
+      "native_item": "PlaySoundEffect@Igc/shipIGC.cpp:1193 collisionSound",
+      "weight": "3",
+      "recent": true,
+      "priority": 0.006369142081511573
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "sounds",
+      "native_item": "PlaySoundEffect@WinTrek/WinTrek.cpp:8315 salAutopilotDisengageSound",
+      "weight": "3",
+      "recent": false,
+      "priority": 0.008389505736775939
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "updates",
+      "native_item": "wingman_missile_evasion_gate",
+      "weight": "4",
+      "recent": true,
+      "priority": 0.005170619081489531
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "updates",
+      "native_item": "wingman_nan_repair",
+      "weight": "5",
+      "recent": false,
+      "priority": 0.006620342249504201
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "updates",
+      "native_item": "same_side_miner_arbitration",
+      "weight": "5",
+      "recent": false,
+      "priority": 0.02540441592063556
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "updates",
+      "native_item": "npc_retreat_recheck",
+      "weight": "4",
+      "recent": false,
+      "priority": 0.031135665171917466
+    },
+    {
+      "matrix": "sim-rules-matrix.csv",
+      "area": "warnings",
+      "native_item": "c_wmCrowdedSector",
+      "weight": "5",
+      "recent": false,
+      "priority": 0.04243225916045172
+    }
+  ]
+}

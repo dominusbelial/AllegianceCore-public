@@ -1,0 +1,2769 @@
+{
+  "base": "a8a9eb24",
+  "rawEvidence": "/tmp/allegiance-evidence/P729",
+  "wholeSolutionBuild": {
+    "warnings": 0,
+    "errors": 0,
+    "rawLog": "build-solution.log"
+  },
+  "serverAot": {
+    "rid": "linux-x64",
+    "output": "/tmp/p729-server-aot",
+    "IL2026": false,
+    "IL3050": false,
+    "rawLog": "aot-publish.log"
+  },
+  "focused": [
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.All_rows_inside_viewport_and_above_pilot_and_footer",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-000-1.trx",
+        "focused-game-000-2.trx",
+        "focused-game-000-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.IntroLayoutTests.Rows_are_centred_and_uniform",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-001-1.trx",
+        "focused-game-001-2.trx",
+        "focused-game-001-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_parses_host_and_optional_port",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 5,
+          "passed": 5,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 5,
+          "passed": 5,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 5,
+          "passed": 5,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-002-1.trx",
+        "focused-game-002-2.trx",
+        "focused-game-002-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Direct_connect_rejects_invalid_input",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-003-1.trx",
+        "focused-game-003-2.trx",
+        "focused-game-003-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Each_main_menu_button_maps_to_its_native_command",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-004-1.trx",
+        "focused-game-004-2.trx",
+        "focused-game-004-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Menu_preserves_seven_slots_and_adds_benchmark",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-005-1.trx",
+        "focused-game-005-2.trx",
+        "focused-game-005-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Navigation_wraps_around_the_menu",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-006-1.trx",
+        "focused-game-006-2.trx",
+        "focused-game-006-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.IntroScreenModelTests.Remembered_endpoint_keeps_its_nondefault_port",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-007-1.trx",
+        "focused-game-007-2.trx",
+        "focused-game-007-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P573VolumetricModelTests.Centers_drift_with_the_wrecks_velocity_over_time",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-000-1.trx",
+        "final-effects-000-2.trx",
+        "final-effects-000-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P573VolumetricModelTests.Fx_values_parse_to_the_intended_tier_and_technique",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-001-1.trx",
+        "final-effects-001-2.trx",
+        "final-effects-001-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P573VolumetricModelTests.Lod_selection_by_on_screen_diameter",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-002-1.trx",
+        "final-effects-002-2.trx",
+        "final-effects-002-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P573VolumetricModelTests.Lod_steps_for_levels",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-003-1.trx",
+        "final-effects-003-2.trx",
+        "final-effects-003-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P573VolumetricModelTests.Mine_at_0_7s_yields_exactly_three_sub_volumes",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-004-1.trx",
+        "final-effects-004-2.trx",
+        "final-effects-004-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P573VolumetricModelTests.No_unit_renders_before_its_stagger_or_past_its_life",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-005-1.trx",
+        "final-effects-005-2.trx",
+        "final-effects-005-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P573VolumetricModelTests.Platform_default_desktop_is_volumetric_mobile_is_enhanced",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-006-1.trx",
+        "final-effects-006-2.trx",
+        "final-effects-006-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P573VolumetricModelTests.Sub_volume_offsets_match_the_sprite_paths_native_offsets",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-007-1.trx",
+        "final-effects-007-2.trx",
+        "final-effects-007-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P573VolumetricModelTests.Tint_for_mine_is_the_native_violet",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-008-1.trx",
+        "final-effects-008-2.trx",
+        "final-effects-008-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P573VolumetricModelTests.Volume_budget_keeps_the_nearest_units",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-009-1.trx",
+        "final-effects-009-2.trx",
+        "final-effects-009-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P573VolumetricModelTests.Volumetric_falls_back_to_enhanced_when_shader_unavailable_or_over_budget",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-010-1.trx",
+        "final-effects-010-2.trx",
+        "final-effects-010-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P582DisplacedErosionTests.Erosion_curve_is_monotonically_non_decreasing",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-011-1.trx",
+        "final-effects-011-2.trx",
+        "final-effects-011-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P582DisplacedErosionTests.Fighter_units_carry_the_real_film_life_and_matching_total_life",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-012-1.trx",
+        "final-effects-012-2.trx",
+        "final-effects-012-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P582DisplacedErosionTests.Film_fraction_is_clamped_to_0_1",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-013-1.trx",
+        "final-effects-013-2.trx",
+        "final-effects-013-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P582DisplacedErosionTests.Fireball_holds_at_least_90_percent_coverage_through_the_film_phase",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 5,
+          "passed": 5,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 5,
+          "passed": 5,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 5,
+          "passed": 5,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-014-1.trx",
+        "final-effects-014-2.trx",
+        "final-effects-014-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P582DisplacedErosionTests.Fireball_is_fully_eroded_by_end_of_life",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-015-1.trx",
+        "final-effects-015-2.trx",
+        "final-effects-015-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P582DisplacedErosionTests.Old_linear_erosion_failed_the_film_phase_gate_today_fix_passes_it",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-016-1.trx",
+        "final-effects-016-2.trx",
+        "final-effects-016-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P582bVolumetricTimingTests.Cool_is_monotonically_non_decreasing",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-017-1.trx",
+        "final-effects-017-2.trx",
+        "final-effects-017-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P582bVolumetricTimingTests.Cool_stays_hot_through_peak_then_reaches_smoke_by_film_end",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-018-1.trx",
+        "final-effects-018-2.trx",
+        "final-effects-018-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P582bVolumetricTimingTests.Fighter_peak_time_is_within_native_film_peak_window",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-019-1.trx",
+        "final-effects-019-2.trx",
+        "final-effects-019-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P582bVolumetricTimingTests.Fireball_is_visible_from_the_first_frame_not_a_slow_ramp",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-020-1.trx",
+        "final-effects-020-2.trx",
+        "final-effects-020-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P582bVolumetricTimingTests.Growth_is_monotonically_non_decreasing_over_the_film_and_tail",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-021-1.trx",
+        "final-effects-021-2.trx",
+        "final-effects-021-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P582bVolumetricTimingTests.Growth_reaches_full_by_the_film_peak",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-022-1.trx",
+        "final-effects-022-2.trx",
+        "final-effects-022-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P582bVolumetricTimingTests.Old_whole_life_curve_was_still_small_at_the_new_peak_this_fix_is_full",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-023-1.trx",
+        "final-effects-023-2.trx",
+        "final-effects-023-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P582bVolumetricTimingTests.Sampler_wiring_keeps_film_clock_shorter_than_full_life",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-effects-024-1.trx",
+        "final-effects-024-2.trx",
+        "final-effects-024-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Both_compiled_fsr_shaders_match_source_hashes",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-008-1.trx",
+        "focused-game-008-2.trx",
+        "focused-game-008-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Both_shaders_load_and_render_through_real_gl_to_native_backbuffer",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-009-1.trx",
+        "focused-game-009-2.trx",
+        "focused-game-009-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Corrupt_and_out_of_range_settings_fall_back_safely",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-010-1.trx",
+        "focused-game-010-2.trx",
+        "focused-game-010-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Dynamic_resolution_converges_on_gpu_budget",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-011-1.trx",
+        "focused-game-011-2.trx",
+        "focused-game-011-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Dynamic_resolution_has_hysteresis_dwell_and_ignores_missing_gpu",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-012-1.trx",
+        "focused-game-012-2.trx",
+        "focused-game-012-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Low_latency_is_opt_in_and_restores_on_menu_and_disposal",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-013-1.trx",
+        "focused-game-013-2.trx",
+        "focused-game-013-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Presets_use_fsr_ratios_and_native_rounding",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-014-1.trx",
+        "focused-game-014-2.trx",
+        "focused-game-014-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Settings_roundtrip_all_fields_and_default_off",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-015-1.trx",
+        "focused-game-015-2.trx",
+        "focused-game-015-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P643GpuBudgetTests.Telemetry_correlates_delayed_gpu_results_with_the_correct_frame",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-016-1.trx",
+        "focused-game-016-2.trx",
+        "focused-game-016-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P698FlightEffectsTests.Removed_source_stops_emitting_and_detached_particles_keep_moving_and_expire",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-017-1.trx",
+        "focused-game-017-2.trx",
+        "focused-game-017-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P698FlightEffectsTests.Sector_transition_clears_every_persistent_pool",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-game-018-1.trx",
+        "focused-game-018-2.trx",
+        "focused-game-018-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.MonoGame.Tests.P729BenchmarkProjectionTests.View_distance_preserves_camera_fov_aspect_near_plane_and_projection_kind",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "projection-final-1.trx",
+        "projection-final-2.trx",
+        "projection-final-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P660ShowcaseLiveTests.Showcase_bots_and_humans_rotate_without_rejoin_and_finale_rearms",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "optin-p660-1.trx",
+        "optin-p660-2.trx",
+        "optin-p660-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P680CountdownClockTests.Encoded_definition_and_start_update_drive_both_native_rounding_branches",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-000-1.trx",
+        "focused-client-000-2.trx",
+        "focused-client-000-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P680CountdownClockTests.Inactive_stages_and_untimed_games_are_silent",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-001-1.trx",
+        "focused-client-001-2.trx",
+        "focused-client-001-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P680CountdownClockTests.Late_join_uses_definition_epoch_and_corrects_server_samples_with_dilation",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-002-1.trx",
+        "focused-client-002-2.trx",
+        "focused-client-002-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P680CountdownClockTests.Reset_and_next_match_discard_old_epoch_and_new_definition_replaces_duration",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-003-1.trx",
+        "focused-client-003-2.trx",
+        "focused-client-003-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P695ServerClockTests.Latest_ping_reanchors_after_a_dilation_rate_change",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-004-1.trx",
+        "focused-client-004-2.trx",
+        "focused-client-004-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P695ServerClockTests.Reconnect_discards_the_old_epoch_but_duplicate_echoes_do_not_rewind_it",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-005-1.trx",
+        "focused-client-005-2.trx",
+        "focused-client-005-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P695ServerClockTests.Sparse_keepalives_extrapolate_at_the_advertised_rate",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 3,
+          "passed": 3,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-006-1.trx",
+        "focused-client-006-2.trx",
+        "focused-client-006-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishLiveTests.Killing_game_owner_reaps_supervisor_and_all_workers",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 2,
+          "passed": 2,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-007-1.trx",
+        "focused-client-007-2.trx",
+        "focused-client-007-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishLiveTests.Local_start_battle_pause_resume_next_match_stop_leaves_no_processes",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-008-1.trx",
+        "focused-client-008-2.trx",
+        "focused-client-008-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishLiveTests.Research_skirmish_uses_both_commanders_and_selected_civ_plans",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-009-1.trx",
+        "focused-client-009-2.trx",
+        "focused-client-009-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishLiveTests.Worker_death_is_reported_to_the_game",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-010-1.trx",
+        "focused-client-010-2.trx",
+        "focused-client-010-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Bot_compute_budget_is_bounded_and_reserves_two_cores_when_available",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 6,
+          "passed": 6,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 6,
+          "passed": 6,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 6,
+          "passed": 6,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-011-1.trx",
+        "focused-client-011-2.trx",
+        "focused-client-011-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Config_reserves_seats_disables_rank_balance_and_stays_local",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "local-cap-1.trx",
+        "local-cap-2.trx",
+        "local-cap-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Driver_supports_single_worker_supervision_and_owner_tracking",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-013-1.trx",
+        "focused-client-013-2.trx",
+        "focused-client-013-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Menu_cycles_every_race_size_tech_and_difficulty",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-014-1.trx",
+        "focused-client-014-2.trx",
+        "focused-client-014-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Pause_also_freezes_supervisor_defense_and_coordination_time",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-015-1.trx",
+        "focused-client-015-2.trx",
+        "focused-client-015-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Pause_capability_is_local_and_zero_freezes_the_pilot_clock",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-016-1.trx",
+        "focused-client-016-2.trx",
+        "focused-client-016-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P727SkirmishOptionsTests.Showcase_exact_counts_survive_worker_partitioning",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 4,
+          "passed": 4,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "focused-client-017-1.trx",
+        "focused-client-017-2.trx",
+        "focused-client-017-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P729BenchmarkTests.Command_validates_workloads_and_preserves_replay_paths",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-client-000-1.trx",
+        "final-client-000-2.trx",
+        "final-client-000-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P729BenchmarkTests.Live_reconnect_after_replay_restores_wall_clock_and_ordinary_visibility",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "live-clock-1.trx",
+        "live-clock-2.trx",
+        "live-clock-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P729BenchmarkTests.Per_bot_cpu_clock_counts_thread_work_separately_from_elapsed_time",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-client-001-1.trx",
+        "final-client-001-2.trx",
+        "final-client-001-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P729BenchmarkTests.Percentiles_and_median_select_an_actual_middle_run",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "median-final-1.trx",
+        "median-final-2.trx",
+        "median-final-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P729BenchmarkTests.Preferences_round_trip_all_recommended_settings_and_skip_offer",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-client-003-1.trx",
+        "final-client-003-2.trx",
+        "final-client-003-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P729BenchmarkTests.Recommendation_uses_gpu_cpu_split_and_steps_down_once",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "policy-provisional-1.trx",
+        "policy-provisional-2.trx",
+        "policy-provisional-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P729BenchmarkTests.Recording_hook_writes_raw_transport_and_reader_rejects_partial_packets",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-client-005-1.trx",
+        "final-client-005-2.trx",
+        "final-client-005-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P729BenchmarkTests.Replay_camera_markers_restore_decoder_sector_and_route_phase",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-client-006-1.trx",
+        "final-client-006-2.trx",
+        "final-client-006-3.trx"
+      ]
+    },
+    {
+      "method": "Allegiance.ClientCore.Tests.P729BenchmarkTests.Two_real_battle_replays_have_identical_frame_state_hashes_without_network",
+      "invocations": 3,
+      "passed": true,
+      "cases": [
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        },
+        {
+          "total": 1,
+          "passed": 1,
+          "failed": 0,
+          "notExecuted": 0,
+          "skipped": 0
+        }
+      ],
+      "rawTrx": [
+        "final-client-007-1.trx",
+        "final-client-007-2.trx",
+        "final-client-007-3.trx"
+      ]
+    }
+  ],
+  "focusedMethodCount": 73,
+  "focusedInvocationCount": 219,
+  "focusedAllPass": true,
+  "neverParks": [
+    {
+      "run": 1,
+      "counters": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      },
+      "longestStoppedWithTargetSeconds": 2.017
+    },
+    {
+      "run": 2,
+      "counters": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      },
+      "longestStoppedWithTargetSeconds": 2.015
+    },
+    {
+      "run": 3,
+      "counters": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      },
+      "longestStoppedWithTargetSeconds": 2.024
+    },
+    {
+      "run": 4,
+      "counters": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      },
+      "longestStoppedWithTargetSeconds": 1.909
+    },
+    {
+      "run": 5,
+      "counters": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "notExecuted": 0,
+        "skipped": 0
+      },
+      "longestStoppedWithTargetSeconds": 1.907
+    }
+  ],
+  "neverParksBaseReference": "P727_SINGLE_PLAYER_HOST.md: final 5/5; no new base run needed because P729 passed all five",
+  "suites": {
+    "core": {
+      "total": 4879,
+      "passed": 4875,
+      "failed": 4,
+      "notExecuted": 0,
+      "skipped": 0
+    },
+    "client": {
+      "total": 1389,
+      "passed": 1388,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": 1
+    },
+    "game": {
+      "total": 2439,
+      "passed": 2436,
+      "failed": 0,
+      "notExecuted": 0,
+      "skipped": 3
+    }
+  },
+  "suiteIsolation": [
+    {
+      "suite": "core",
+      "method": "Allegiance.Core.Tests.LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count",
+      "repetition": 1,
+      "code": 0,
+      "trx": "isolated-core-000-1.trx"
+    },
+    {
+      "suite": "core",
+      "method": "Allegiance.Core.Tests.LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count",
+      "repetition": 2,
+      "code": 0,
+      "trx": "isolated-core-000-2.trx"
+    },
+    {
+      "suite": "core",
+      "method": "Allegiance.Core.Tests.LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count",
+      "repetition": 3,
+      "code": 0,
+      "trx": "isolated-core-000-3.trx"
+    },
+    {
+      "suite": "core",
+      "method": "Allegiance.Core.Tests.LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it",
+      "repetition": 1,
+      "code": 0,
+      "trx": "isolated-core-001-1.trx"
+    },
+    {
+      "suite": "core",
+      "method": "Allegiance.Core.Tests.LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it",
+      "repetition": 2,
+      "code": 0,
+      "trx": "isolated-core-001-2.trx"
+    },
+    {
+      "suite": "core",
+      "method": "Allegiance.Core.Tests.LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it",
+      "repetition": 3,
+      "code": 0,
+      "trx": "isolated-core-001-3.trx"
+    },
+    {
+      "suite": "core",
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+      "repetition": 1,
+      "code": 0,
+      "trx": "isolated-core-002-1.trx"
+    },
+    {
+      "suite": "core",
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+      "repetition": 2,
+      "code": 0,
+      "trx": "isolated-core-002-2.trx"
+    },
+    {
+      "suite": "core",
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses",
+      "repetition": 3,
+      "code": 0,
+      "trx": "isolated-core-002-3.trx"
+    },
+    {
+      "suite": "core",
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "repetition": 1,
+      "code": 0,
+      "trx": "isolated-core-003-1.trx"
+    },
+    {
+      "suite": "core",
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "repetition": 2,
+      "code": 0,
+      "trx": "isolated-core-003-2.trx"
+    },
+    {
+      "suite": "core",
+      "method": "Allegiance.Core.Tests.Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn",
+      "repetition": 3,
+      "code": 0,
+      "trx": "isolated-core-003-3.trx"
+    }
+  ],
+  "packagingIsolated": [
+    {
+      "method": "test_bench_compare.CompareTests.test_incompatible_workload_is_rejected",
+      "repetition": 1,
+      "code": 0
+    },
+    {
+      "method": "test_bench_compare.CompareTests.test_incompatible_workload_is_rejected",
+      "repetition": 2,
+      "code": 0
+    },
+    {
+      "method": "test_bench_compare.CompareTests.test_incompatible_workload_is_rejected",
+      "repetition": 3,
+      "code": 0
+    },
+    {
+      "method": "test_bench_compare.CompareTests.test_missing_gpu_is_unavailable",
+      "repetition": 1,
+      "code": 0
+    },
+    {
+      "method": "test_bench_compare.CompareTests.test_missing_gpu_is_unavailable",
+      "repetition": 2,
+      "code": 0
+    },
+    {
+      "method": "test_bench_compare.CompareTests.test_missing_gpu_is_unavailable",
+      "repetition": 3,
+      "code": 0
+    },
+    {
+      "method": "test_bench_compare.CompareTests.test_regression_direction_and_threshold",
+      "repetition": 1,
+      "code": 0
+    },
+    {
+      "method": "test_bench_compare.CompareTests.test_regression_direction_and_threshold",
+      "repetition": 2,
+      "code": 0
+    },
+    {
+      "method": "test_bench_compare.CompareTests.test_regression_direction_and_threshold",
+      "repetition": 3,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_copy_never_includes_untracked_or_missing_assets",
+      "repetition": 1,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_copy_never_includes_untracked_or_missing_assets",
+      "repetition": 2,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_copy_never_includes_untracked_or_missing_assets",
+      "repetition": 3,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_local_override_must_match_pin",
+      "repetition": 1,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_local_override_must_match_pin",
+      "repetition": 2,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_local_override_must_match_pin",
+      "repetition": 3,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_mac_app_launcher_runs_from_resources_and_forwards_arguments",
+      "repetition": 1,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_mac_app_launcher_runs_from_resources_and_forwards_arguments",
+      "repetition": 2,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_mac_app_launcher_runs_from_resources_and_forwards_arguments",
+      "repetition": 3,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_mac_smoke_rejects_lost_executable_permission",
+      "repetition": 1,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_mac_smoke_rejects_lost_executable_permission",
+      "repetition": 2,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_mac_smoke_rejects_lost_executable_permission",
+      "repetition": 3,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_mac_zip_preserves_executable_bits_resources_and_icon",
+      "repetition": 1,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_mac_zip_preserves_executable_bits_resources_and_icon",
+      "repetition": 2,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_mac_zip_preserves_executable_bits_resources_and_icon",
+      "repetition": 3,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_manifest_rejects_unsafe_duplicate_and_empty_entries",
+      "repetition": 1,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_manifest_rejects_unsafe_duplicate_and_empty_entries",
+      "repetition": 2,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_manifest_rejects_unsafe_duplicate_and_empty_entries",
+      "repetition": 3,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_missing_runtime_sound_prevents_packaging",
+      "repetition": 1,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_missing_runtime_sound_prevents_packaging",
+      "repetition": 2,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_missing_runtime_sound_prevents_packaging",
+      "repetition": 3,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_smoke_detects_windows_and_linux_by_layout_not_archive_suffix",
+      "repetition": 1,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_smoke_detects_windows_and_linux_by_layout_not_archive_suffix",
+      "repetition": 2,
+      "code": 0
+    },
+    {
+      "method": "test_packaging.PackagingTests.test_smoke_detects_windows_and_linux_by_layout_not_archive_suffix",
+      "repetition": 3,
+      "code": 0
+    }
+  ],
+  "playerPublish": {
+    "output": "/tmp/p729-player",
+    "battleIncluded": true,
+    "replaySmokeLog": "player-replay.log"
+  }
+}

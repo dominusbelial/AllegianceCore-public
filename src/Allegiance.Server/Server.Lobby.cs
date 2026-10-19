@@ -631,6 +631,12 @@ public sealed partial class Server
             // migrated peer is an EXISTING player being re-seated, so a test
             // spawner must not hijack (or crash on) its re-placement.
             var newLive = AssignMigratedShip(fresh, newShipId, oldSide != -1 ? oldSide : null);
+            // Placement needs the original side to select its hangar, but these
+            // prepared peers have not joined yet. Otherwise CountPlayersOnSide
+            // sees every migrant in phase 2 and elects no leader at all.
+            // Native AddPlayerToSide elects the first joined player
+            // (fsmission.cpp:601-624); the ordering below preserves the old leader.
+            newLive.Ship.SideId = null;
 
             // Wallet reset (native fsmission.cpp:3493-3521: a fresh PlayerWallet
             // already starts at 0). Ready is PRESERVED, not cleared — native
@@ -724,6 +730,7 @@ public sealed partial class Server
         // connection's current P659/P661 byte/age accounting window.
         RetireViewerUpdateCadence(conn);
         _teammateExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
+        _stationIdentitySent.RemoveWhere(e => e.Recipient == conn);
         _teammatePlayerInfoSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         _crossSideExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         _crossSideMineExportSent.RemoveWhere(e => e.Recipient == conn);
@@ -3528,7 +3535,10 @@ private void CompleteStartCountdown(Mission mission, double now)
             foreach (var resolved in sector.Warps)
                 SendPeer(from, FedPacket.Pack(new[] { ExportWarp.FromWarp(resolved).Encode() }));
             foreach (var station in sector.Stations)
+            {
                 SendPeer(from, FedPacket.Pack(new[] { ExportStation.FromStation(station).Encode() }));
+                _stationIdentitySent.Add((from, _missions[0], station.StationId, station.StationTypeId));
+            }
             foreach (var asteroid in sector.Asteroids)
                 SendPeer(from, FedPacket.Pack(new[] { ExportAsteroid.FromAsteroid(asteroid).Encode() }));
         }

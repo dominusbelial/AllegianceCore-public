@@ -4,6 +4,84 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## R2 observation (2026-10-18)
+
+The R2 installer lane's single unfiltered Core sweep observed these failures.
+Each exact method passed **3/3 fresh individual invocations** on the same binaries:
+
+| Method | Full-run observation | Isolated result |
+| --- | --- | --- |
+| `Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events` | Expected 0 allocated bytes, observed 7,720 | 3/3 pass |
+| `Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog` | Ordered lane held 0 world-data frames at observation | 3/3 pass |
+| `ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self` | B had not received HEAVY_SHIPS_UPDATE | 3/3 pass |
+
+These meet R2's load-flake rule. No production C# code, test assertion, deadline,
+or quarantine was changed. See [R2 installer report](reports/R2_INSTALLERS.md)
+and the small [verification ledger](reports/R2_assets/verification.json).
+Raw fresh-process logs/TRX live outside the repository under
+`/tmp/allegiance-codex-r2-evidence/`.
+
+## P729 observation (2026-10-18)
+
+The single P729 Core sweep reported **4,875 pass / 4 fail / 0 skip**. Each failed
+method then passed **3/3 fresh exact-method invocations** on the same workstation:
+
+| Method | Full-sweep symptom |
+| --- | --- |
+| `Transport.TcpTransportSendWorkerPoolTests.Pool_worker_and_reader_counts_stay_fixed_across_join_leave_churn` | `TimeoutException: no OnPeerJoined for raw peer` |
+| `Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses` | Expected 50 ordered frames; observed 35 at the short observation point |
+| `LiveTreasurePickupTests.Rescue_ship_picking_cash_treasure_credits_side_broadcasts_moneychange_and_destroys_it` | Cash pickup assertion in the parallel full sweep |
+| `LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count` | Ship had not docked at the assertion point |
+
+This meets P729's explicit light-gate load-flake rule. No assertion, timeout,
+transport implementation, quarantine, or native simulation rule was changed to
+make these pass. The full sweeps are not repeated. The isolated passes establish
+classification for this run, not an underlying transport/docking fix. See the
+[P729 report](reports/P729_BENCHMARK.md) and its compact validation ledger; raw TRX
+files are under `/tmp/allegiance-evidence/P729/` because the requested home evidence
+directory is outside this lane's writable sandbox roots.
+
+## HD-3 observation (2026-10-18)
+
+The single HD-3 Core sweep reported **4,879 pass / 2 fail / 0 skip**.
+`Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join`
+failed in `TcpTransport.Shutdown` with `ThreadStateException: Thread has not been started`.
+`LiveRipcordTests.Cancel_while_active_aborts_sector_wide` observed an empty abort
+receipt collection at `Assert.Single`. Both symptoms match earlier entries below.
+Each exact method passed **3/3 fresh isolated invocations**, with one case per
+invocation and unchanged assertions/deadlines. They meet the HD-3 light-gate
+load-flake rule; these passes do not establish a fix to either underlying race.
+No transport, bot, simulation or test timing code changed. The single ClientCore
+and MonoGame sweeps reported no failures. See the
+[HD-3 report](reports/HD3_HD_BY_ATLAS.md) and
+[validation/isolation ledger](reports/HD3_assets/validation-summary.json).
+Raw TRXs/logs remain at `/tmp/hd3-evidence/` because this lane cannot write the
+preferred home-directory evidence path. No second full sweep was run.
+
+## P743 correctness pass observation (2026-10-18)
+
+The P743 lane ran one unfiltered sweep of Core, ClientCore and MonoGame.
+Core passed **4,879/4,879**. ClientCore recorded **1,377 pass / 3 fail / 1 skip**;
+MonoGame recorded **2,435 pass / 0 fail / 3 existing private Meshy-pack skips**.
+The skipped ClientCore P660 opt-in showcase passed a separate explicitly enabled
+local invocation. Lobby also passed 19/19 in one supplementary run.
+
+After all three sweeps, these exact cases each passed **3/3 separate isolated
+invocations**:
+
+- `P703ResearchCommanderLiveTests.Both_sides_complete_the_first_branch_using_native_wallets_and_tech_gates(civA: 25, civB: 3, generated: False)` — full sweep expected two completed sides, observed one.
+- `ClientWarpApproachSlowHullLiveTests.Legacy_200_450_arrival_parks_slow_board_hull_26_outside_the_transit_volume` — full sweep expected sector 1053, observed 1060.
+- `ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target` — full sweep expected sector 1060, observed 1052.
+
+This meets the brief's load-flake rule and repeats already-recorded failure
+classes. It does not establish a fix. No assertion, timing bound, quarantine,
+transport, bot or simulation behavior was changed. The only production change
+was the sector-info asteroid-grouping display rule. Full failures and all nine
+exact-case retries are retained in the [validation ledger](reports/P743_assets/validation.json)
+and [report](reports/P743_CORRECTNESS_PASS.md). Raw logs/TRX are outside the
+repository at `/tmp/allegiance-evidence/P743/` (the requested home evidence path
+is not writable in this session).
+
 ## HD-2 observation (2026-10-17)
 
 The single HD-2 Core run reported **4,781 pass / 2 fail / 0 skip**. One failure was
@@ -1984,3 +2062,127 @@ binaries and is not training/UI code. The runner also flagged the live
 as exceeding the calibrated 10 s Fast limit (207 s) — a concurrent `allegiance-codex-tt1b`
 suite was running on this shared box (the P731 hazard), so both live-network timings
 were load-degraded. No product code was changed for these dispositions.
+
+## P745 observation (2026-10-18)
+
+The one Core sweep was interrupted by the unchanged TcpTransport accept/stop
+race (`InvalidOperationException: Not listening` from `AcceptTcpClient`) after
+173 passing cases. Only the not-yet-completed methods were resumed: 4,653 passed
+and 25 failed. The last completed transport handshake method passed 3/3 alone;
+this does not establish which earlier background accept thread threw.
+
+These existing failing cases passed 3/3 alone (exact theory rows were filtered):
+
+- `P694MassEventTickTests.Launch_point_mass_events(count: 200, parallel: True, stationDeath: True, coincident: False, nativeLaunch: True)`
+- `MiningTests.Loopback_synthetic_rock_mines_and_ore_reaches_the_wire`
+- `CrossSideExportLiveTests.Same_side_teammate_still_gets_teamexport_no_cross_duplicate`
+- `LiveRipcordTests.Cancel_while_active_aborts_sector_wide`
+- `Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses`
+- `LiveRelaunchTests.Carrier_without_launch_slots_uses_backward_fallback`
+- `LiveRipcordTests.Re_target_activates_to_requester_only`
+- `Transport.TcpTransportPriorityLanePoolTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog`
+- `MapGenLiveProofTests.GeneratedSingleRing_PeerFliesThroughWarp_ToRingNeighbour`
+- `LiveCountdownStartPingTests.Multi_mission_countdown_scopes_per_mission`
+- `LiveTeamLobbyTests.Unready_broadcasts_team_ready_false`
+- `Transport.TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_distinct_keys_remain_independent`
+- `Transport.TcpTransportCoalesceAndReasonPoolTests.Coalesce_healthy_consumer_still_receives_each_latest_snapshot`
+- `LiveLogoffTests.Logoff_echoes_releases_and_retires_the_ship`
+- `Transport.TcpTransportSendDropSafetyThreadPerPeerTests.Host_send_to_a_reaped_peer_id_does_not_throw`
+- `LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector`
+- `Transport.TcpTransportPriorityLaneThreadPerPeerTests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog`
+- `LiveCountdownStartPingTests.StartGame_owner_all_ready_goes_through_real_countdown`
+- `LiveLifepodEnduranceDisplayTests.Driver_sees_countdown_others_do_not_and_dock_cancels`
+- `LiveRipcordTests.Ship_anchor_insufficient_energy_aborts_consumed_not_retried`
+
+The lifepod-display method needed a fresh three-run qualification after one
+receipt timeout in its first group; all three then passed. The insufficient-
+energy ripcord case likewise passed the final three isolated runs after earlier
+timing misses. The unchanged MonoGame
+`P653DPodPurchaseLiveTests.Hangar_launch_after_ejection_or_pod_death_buys_real_hull(killPod: False)`
+failed once in the sweep, then passed three isolated invocations (both theory
+rows, six passes).
+
+Five P694 absolute 200 ms performance rows also failed in the Core sweep. A
+clean archive of the unchanged base was built and the same exact rows run three
+times: the 195-ship station-death serial and parallel rows failed 3/3 on base
+(medians 305.796–584.586 ms); the 150-ship serial row failed 1/3 and the
+200-ship native-launch serial row failed 2/3 on base. The 150-ship parallel row
+initially passed on base, but a subsequent alternating base/current comparison
+failed 2/3 in both trees on the shared host. These are reproduced base/load
+performance failures, not a clean performance gate. No thresholds, fixtures or
+production performance rules were changed to make them pass. Detailed records
+are in [the P745 verification ledger](reports/P745_assets/verification.json).
+
+## P728 local validation (2026-10-18)
+
+The single unfiltered Core sweep returned **4868 passed / 11 failed / 0 skipped**.
+Ten failures were existing socket/timing cases. Each subsequently passed three
+consecutive exact-method invocations without changing its assertions or production
+transport code:
+
+- `ShipsUpdateLiveTests.Cross_side_ships_see_each_other_and_not_self`
+- `ShipStatusServerTests.Teammate_ship_playerinfo_is_broadcast_once_after_export_before_status`
+- `LoadoutChangeLiveTests.Mount_and_remove_part_broadcast_loadout_change_to_owner_and_teammate_but_not_enemy`
+- `LiveGainFlagTests.Flag_carrier_docking_at_own_side_station_secures_and_game_state_reflects_real_count`
+- `TcpTransportCoalesceAndReasonThreadPerPeerTests.Coalesce_distinct_keys_remain_independent`
+- `TcpTransportCoalesceAndReasonThreadPerPeerTests.Guaranteed_coalesced_frames_are_never_shed_but_still_bounded`
+- `TcpTransportPriorityLane{Pool,ThreadPerPeer}Tests.Ordered_world_data_is_next_drained_even_after_a_stream_backlog`
+- `TcpTransportPriorityLane{Pool,ThreadPerPeer}Tests.Ordered_join_frames_are_never_shed_when_the_stream_overflow_collapses`
+
+The priority-lane cases are already documented above, including the live-socket
+quarantine entries. Several needed additional fresh invocations before reaching
+three consecutive passes; the ledger retains every failure and retry.
+
+The eleventh failure, `BroadcastSnapshotLoopbackTests.Crowded_real_TCP_session_measures_sim_projection_and_publish_pool`,
+failed **3/3** standalone with EOF at transport barrier 668003. This was a fixture
+bug, not a load-flake disposition: its uncontrolled/native simulation path omitted
+keepalives and crossed the transport's existing 30-second inbound-frame timeout.
+The crowded benchmark peers now send periodic keepalives throughout joining,
+measurement and draining, serialize their writes, and distinguish heartbeat replies
+from the test's drain marker. Timeouts, the 256-peer workload and measurement
+assertions remain unchanged. All four affected broadcast loopback methods passed
+three times with the correction.
+
+MonoGame's single sweep returned **2441 passed / 3 failed / 3 skipped**.
+`ChatTargetComposeLiveTests.ComposeDefault_Team_SendsToTeammate_NotEnemy` passed
+three fresh standalone invocations. Its other two failures were P728 help-table
+regressions (duplicate Tab/E entries), corrected by putting pilot-funding shortcuts
+in their own group; both guards then passed **3/3**. The three optional private
+Meshy-pack cases also passed **3/3** with the installed pack explicitly configured.
+
+ClientCore's single sweep returned **1388 passed / 0 failed / 0 skipped**.
+The human commander loopback passed three standalone runs, and the final
+showcase never-parks check passed **5/5**, matching the saved pre-order execution
+baseline's **5/5**. No production transport thresholds were changed.
+
+See [P728's report](reports/P728_SINGLE_PLAYER_COMMANDER.md) and the compact
+[invocation ledger](reports/P728_assets/validation.json). Raw TRX and logs are at
+`/tmp/allegiance-evidence/P728/` because the Codex sandbox does not permit writing
+the requested home-directory archive. No second full sweep was run.
+
+## SP-5 (2026-10-18) — supervisor stderr receipt under concurrent load
+
+The one ClientCore sweep failed `P658SupervisorTests.RealChildExitMarksKnownBotsLostAndSupervisorStillServes`
+when the child had exited but its asynchronously copied stderr was still empty (`child-error` missing).
+The unchanged method passed **3/3 exact-method isolated retries** (1.21, 1.21, 1.23 seconds).
+Classified as a load flake under the SP-5 light gate; no supervisor stderr assertion or production lifecycle was weakened.
+Raw evidence: `/tmp/allegiance-evidence/SP5/supervisor-retry-{1,2,3}.trx` and `clientcore-sweep.log`.
+
+SP-5's single Core sweep also hit the already documented
+`LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector`
+receive race (`Assert.Single`, empty collection, 17 ms). The unchanged method passed
+**3/3 exact-method isolated retries** (1.79, 1.76, 1.59 seconds).
+Raw evidence: `/tmp/allegiance-evidence/SP5/ripcord-retry-{1,2,3}.trx` and `core-sweep.log`.
+
+
+## P740 observation (2026-10-18)
+
+The single unfiltered Core/ClientCore/MonoGame pass and standalone showcase gate recorded the failures below. Each method then passed three fresh exact-method isolated runs, with assertions, deadlines and quarantine settings unchanged, satisfying the P740 brief's load-flake rule. These passes do not establish a cause or fix.
+
+- `Allegiance.ClientCore.Tests.ClientWarpApproachLiveTests.Client_bot_steered_by_warp_approach_law_transits_two_hops_to_target` — **3/3 isolated passes** after all broad suites.
+- `Allegiance.ClientCore.MonoGame.Tests.ChatTargetComposeLiveTests.ComposeDefault_Team_SendsToTeammate_NotEnemy` — **3/3 isolated passes** after all broad suites.
+- `Allegiance.Core.Tests.Transport.TcpLoopbackProofTests.ClientHalf_RaisesOnSessionLost_AndClearsConnected_WhenServerDies` — **3/3 isolated passes** after all broad suites.
+- `Allegiance.Core.Tests.Transport.TcpTransportGreetTimeoutPoolTests.Silent_connection_does_not_block_a_second_client_join` — **3/3 isolated passes** after all broad suites.
+- `Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds` — **3/3 isolated passes** after all broad suites.
+
+Evidence: [P740 report](reports/P740_INTERFACE_WAVE5.md), [invocation ledger](reports/P740_assets/verification.json); full failed/isolated TRX and logs: `/tmp/allegiance-evidence/P740/` (per-command paths in the ledger).

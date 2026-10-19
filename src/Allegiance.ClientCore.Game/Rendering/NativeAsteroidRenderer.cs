@@ -46,12 +46,16 @@ public sealed class NativeAsteroidRenderer : IDisposable
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _missingModelLogged = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _missingTextureLogged = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HdMaterialRenderer _hd;
+    private readonly bool _ownsHd;
     private readonly BasicEffect _effect;
     private readonly RasterizerState _cullCcw;
 
-    public NativeAsteroidRenderer(GraphicsDevice gd, Assets.IAssetSource assets)
+    public NativeAsteroidRenderer(GraphicsDevice gd, Assets.IAssetSource assets, HdMaterialRenderer? hd = null)
     {
         _gd = gd;
+        _hd = hd ?? new HdMaterialRenderer(gd, NativeMaterialParts.NativeReader(assets));
+        _ownsHd = hd is null;
         _assets = assets;
         _effect = new BasicEffect(gd);
         _cullCcw = new RasterizerState { CullMode = CullMode.CullCounterClockwiseFace };
@@ -161,7 +165,7 @@ public sealed class NativeAsteroidRenderer : IDisposable
     /// then placed (translation never scaled).
     /// </summary>
     public void Draw(NativeShipRenderer.NativeShipGeometry geo, Texture2D? texture, Matrix world,
-        Matrix view, Matrix projection, float nativeScale, SectorLighting? lighting)
+        Matrix view, Matrix projection, float nativeScale, SectorLighting? lighting, string? modelStem = null, string? textureStem = null)
     {
         var gd = _gd;
         gd.BlendState = BlendState.Opaque;
@@ -184,10 +188,9 @@ public sealed class NativeAsteroidRenderer : IDisposable
         _effect.Texture = texture;
         _effect.TextureEnabled = texture is not null;
 
-        _effect.CurrentTechnique.Passes[0].Apply();
-        gd.SetVertexBuffer(geo.Vertices);
-        gd.Indices = geo.Indices;
-        gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, geo.TriangleCount);
+        geo.Materials.Draw(gd, _hd, modelStem, textureStem,
+            texture, TextureFor, _effect, geo.Vertices, geo.Indices, local, view, projection,
+            1, lighting);
     }
 
     /// <summary>P567 — depth-only pass for soft-particle intersections, using the same
@@ -215,6 +218,7 @@ public sealed class NativeAsteroidRenderer : IDisposable
     {
         foreach (var g in _models.Values) g.Dispose();
         foreach (var t in _textures.Values) t.Dispose();
+        if (_ownsHd) _hd.Dispose();
         _effect.Dispose();
         _cullCcw.Dispose();
     }

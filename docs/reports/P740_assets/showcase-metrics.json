@@ -1,0 +1,49 @@
+[
+  {
+    "label": "showcase-1",
+    "completed": false,
+    "failed": true,
+    "max_observed_idle": 5.02,
+    "notes": "No final combat summary. Failed run logged a 5.02s idle interval, followed by ticker.Join(5000) assertion failure; cleanup can mask an earlier assertion. See raw TRX."
+  },
+  {
+    "label": "showcase-2",
+    "seconds": 94.8,
+    "samples": 947,
+    "reached": 26,
+    "longest_pause": 2.005,
+    "shots": 4010,
+    "hits": 1632,
+    "kills": 15
+  },
+  {
+    "label": "showcase-3",
+    "seconds": 92.0,
+    "samples": 919,
+    "reached": 26,
+    "longest_pause": 1.604,
+    "shots": 3863,
+    "hits": 1657,
+    "kills": 14
+  },
+  {
+    "label": "showcase-4",
+    "seconds": 90.8,
+    "samples": 908,
+    "reached": 25,
+    "longest_pause": 1.904,
+    "shots": 3670,
+    "hits": 1545,
+    "kills": 15
+  },
+  {
+    "label": "showcase-5",
+    "seconds": 96.3,
+    "samples": 962,
+    "reached": 28,
+    "longest_pause": 2.004,
+    "shots": 3835,
+    "hits": 1661,
+    "kills": 14
+  }
+]

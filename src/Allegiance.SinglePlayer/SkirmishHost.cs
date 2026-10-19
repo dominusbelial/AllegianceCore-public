@@ -8,7 +8,7 @@ using Srv = Allegiance.Server.Server;
 namespace Allegiance.SinglePlayer;
 
 /// <summary>Owns the embedded sim and its external bot supervisor for one local game.</summary>
-public sealed class SkirmishHost : IDisposable
+public sealed partial class SkirmishHost : IDisposable
 {
     private readonly Srv _server = new() { AllowSinglePlayerPause = true };
     private readonly CancellationTokenSource _stop = new();
@@ -26,6 +26,10 @@ public sealed class SkirmishHost : IDisposable
     private int[] _workerIds = [];
     private JsonElement _stats;
     private readonly object _statsGate = new();
+    private readonly List<double> _benchmarkTicks = [];
+    private bool _measureTicks;
+    public void BeginMeasurement() { lock (_benchmarkTicks) { _benchmarkTicks.Clear(); _measureTicks = true; } }
+    public double[] TickSamples { get { lock (_benchmarkTicks) return _benchmarkTicks.ToArray(); } }
     public SkirmishOptions Options { get; }
     public SkirmishBudget Budget { get; }
     public ushort Port => _server.BoundPort;
@@ -44,19 +48,21 @@ public sealed class SkirmishHost : IDisposable
     private SkirmishHost(SkirmishOptions options)
     {
         Options = options;
+        PlayerSide = options.StartAsSpectator ? null : (short)0;
         Budget = SkirmishBudget.ForCores(Environment.ProcessorCount);
         DirectoryPath = Path.Combine(Path.GetTempPath(), "allegiance-skirmish-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(DirectoryPath);
     }
 
     public static async Task<SkirmishHost> StartAsync(SkirmishOptions options, string? driverPath = null,
-        string? artwork = null, CancellationToken cancellationToken = default)
+        string? artwork = null, CancellationToken cancellationToken = default, string commanderPilotName = "skirmish-test-pilot")
     {
         var host = new SkirmishHost(options);
         try
         {
             var config = options.CreateConfig(artwork);
-            await File.WriteAllTextAsync(Path.Combine(host.DirectoryPath, "server.json"), JsonSerializer.Serialize(config), cancellationToken);
+            await File.WriteAllTextAsync(Path.Combine(host.DirectoryPath, "server.json"), JsonSerializer.Serialize(config, Benchmark.BenchmarkJson.Default.ServerConfig), cancellationToken);
+            host._server.TickMeasured += ms => { lock (host._benchmarkTicks) if (host._measureTicks && host._benchmarkTicks.Count < 100000) host._benchmarkTicks.Add(ms); };
             host._server.Boot(config);
             host._ticker = new Thread(host.Tick) { IsBackground = true, Name = "skirmish-server", Priority = ThreadPriority.BelowNormal };
             host._ticker.Start();
@@ -73,12 +79,15 @@ public sealed class SkirmishHost : IDisposable
             }
             foreach (var arg in new[] { "127.0.0.1", host.Port.ToString(CultureInfo.InvariantCulture),
                 "--workers", host.Budget.Workers.ToString(CultureInfo.InvariantCulture), "--parent", Environment.ProcessId.ToString(CultureInfo.InvariantCulture),
-                "--skirmish", $"{options.TeamSize - 1}/{options.TeamSize}" }) start.ArgumentList.Add(arg);
+                "--skirmish", $"{options.TeamSize - (options.StartAsSpectator ? 0 : 1)}/{options.TeamSize}" }) start.ArgumentList.Add(arg);
             // Inherited by all workers: bound the runtime's compute concurrency and GC heaps.
             start.Environment["DOTNET_PROCESSOR_COUNT"] = host.Budget.CoresPerWorker.ToString(CultureInfo.InvariantCulture);
             start.Environment["DOTNET_gcServer"] = "0";
             start.Environment["ALLEGIANCE_BOT_COMPUTE_THREADS"] = host.Budget.CoresPerWorker.ToString(CultureInfo.InvariantCulture);
             start.Environment["ALLEGIANCE_ARTWORK_PATH"] = config.ArtPath;
+            // Private child environment: never inherited from another local match.
+            start.Environment["ALLEGIANCE_SKIRMISH_COMMANDER"] = options.Commander == SkirmishCommander.You ? WirePilotName(commanderPilotName) : "";
+            if (options.Seed is not null) start.Environment["ALLEGIANCE_BENCHMARK_METRICS"] = "1";
             var knobs = options.Knobs;
             start.Environment["ALLEGIANCE_BOT_ACCURACY"] = knobs.Accuracy.ToString(CultureInfo.InvariantCulture);
             start.Environment["ALLEGIANCE_BOT_REACTION"] = knobs.Reaction.ToString(CultureInfo.InvariantCulture);
@@ -95,6 +104,14 @@ public sealed class SkirmishHost : IDisposable
             return host;
         }
         catch { host.Dispose(); throw; }
+    }
+
+    // LOGON_REQUEST trims trailing spaces and encodes Latin-1; roster names
+    // are fixed at 24 characters (clintlib's native player-name representation).
+    internal static string WirePilotName(string name)
+    {
+        string wire = System.Text.Encoding.Latin1.GetString(System.Text.Encoding.Latin1.GetBytes(name)).TrimEnd(' ');
+        return wire[..Math.Min(24, wire.Length)];
     }
 
     public static string FindDriver()

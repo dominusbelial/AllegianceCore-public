@@ -39,8 +39,8 @@ public static class SectorInfoPaneLayout
     /// <c>DrawAsteroidIcons</c>/<c>GetHeliumInCluster</c> consume.</summary>
     public readonly record struct AsteroidSample(short Capabilities, float Ore);
 
-    /// <summary>One special-capability group: a distinct <c>(aabm &amp; ~buildable)</c>
-    /// mask (the unit native's icon grouping keys on, sectormap.cpp:302-304) with its
+    /// <summary>One special-capability group: a distinct full capability
+    /// mask (the unit native's icon grouping keys on, sectormap.cpp:302-305) with its
     /// rock count and a human label derived from the set capability bits.</summary>
     public readonly record struct CapabilityGroup(string Label, short Mask, int Count);
 
@@ -89,8 +89,8 @@ public static class SectorInfoPaneLayout
 
     /// <summary>
     /// Aggregate a selected cluster's asteroids into the info-pane content.
-    /// Mirrors native exactly: special groups are keyed by the full
-    /// <c>(aabm &amp; ~c_aabmBuildable)</c> mask (sectormap.cpp:296-305); the
+    /// Special groups are keyed by the full capability mask after excluding
+    /// buildable-only rocks (sectormap.cpp:296-305); the
     /// helium figure sums only the <c>c_aabmMineHe3</c> rocks' ore
     /// (sectormap.cpp:360-366). TotalAsteroids counts every rock in the cluster.
     /// </summary>
@@ -127,8 +127,8 @@ public static class SectorInfoPaneLayout
             short special = (short)(a.Capabilities & ~CapBuildable);
             if (special != 0)
             {
-                byMask.TryGetValue(special, out int cnt);
-                byMask[special] = cnt + 1;
+                byMask.TryGetValue(a.Capabilities, out int cnt);
+                byMask[a.Capabilities] = cnt + 1;
             }
 
             if ((a.Capabilities & CapMineHe3) != 0)

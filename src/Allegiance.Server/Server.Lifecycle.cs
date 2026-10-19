@@ -60,6 +60,7 @@ public sealed partial class Server
     public void Boot(ServerConfig config)
     {
         _config = config;
+        _rand = config.BenchmarkSeed is { } seed ? new Random(seed) : new Random();
         _config.ResolveShowcaseMode();
         // Plan rejection must precede profiler callbacks and publisher/transport startup.
         // A failed research boot has no host for those callbacks to inspect.
@@ -1270,6 +1271,9 @@ public sealed partial class Server
         }
     }
 
+    /// <summary>Simulation work milliseconds, excluding cadence sleep.</summary>
+    public event Action<double>? TickMeasured;
+
     /// <summary>
     /// One pass: pump transport events, advance the simulation clock by exactly
     /// one period and tick every mission, then sleep the real remainder to hold
@@ -1283,6 +1287,7 @@ public sealed partial class Server
         SimPass();
         sw.Stop();
         double cost = sw.Elapsed.TotalSeconds;
+        TickMeasured?.Invoke(cost * 1000);
         // P618 — feed the measured tick cost to the load-driven time-dilation
         // controller (rate-limited; applies the new sim time scale from the next
         // tick and rebroadcasts to clients on change). Wall delta is consumed
@@ -1767,6 +1772,7 @@ public sealed partial class Server
         // grow monotonically with connection churn.
         short departedShipId = live.Ship.Id;
         _teammateExportSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
+        _stationIdentitySent.RemoveWhere(e => e.Recipient == id);
         _teammatePlayerInfoSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
         // P349 — the cross-side export latch gets the exact same treatment: free
         // every entry where the departing peer was the recipient OR the departing

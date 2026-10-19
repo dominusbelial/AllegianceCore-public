@@ -76,10 +76,13 @@ public sealed class WarpRenderer : IDisposable
     private readonly DynamicVertexBuffer[] _lodBuffers;   // VertexPositionColorTexture, one per tier
     private readonly IndexBuffer[] _lodIndices;
     private readonly VertexPositionColorTexture[][] _scratch;
+    private readonly HdMaterialRenderer _hd;
+    private readonly bool _ownsHd;
     private readonly BasicEffect _effect;
     private readonly RasterizerState _cullNone;
     private readonly BlendState _additive;
     private readonly ParticleBillboardBatcher _batcher;
+    private readonly Dictionary<string, string?> _funnelStems = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Texture2D> _funnelTexture = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<short, float> _swellTrigger = new();
     private Texture2D? _starTexture;
@@ -94,9 +97,11 @@ public sealed class WarpRenderer : IDisposable
         Environment.GetEnvironmentVariable("ALLEGIANCE_DEBUG_WARP") is { Length: > 0 } s &&
         (s == "1" || string.Equals(s, "true", StringComparison.OrdinalIgnoreCase));
 
-    public WarpRenderer(GraphicsDevice gd, IAssetSource assets)
+    public WarpRenderer(GraphicsDevice gd, IAssetSource assets, HdMaterialRenderer? hd = null)
     {
         _gd = gd;
+        _hd = hd ?? new HdMaterialRenderer(gd, NativeMaterialParts.NativeReader(assets));
+        _ownsHd = hd is null;
         _assets = assets;
         _native = NativeEffectTextures.Load(gd, assets);
 
@@ -173,7 +178,9 @@ public sealed class WarpRenderer : IDisposable
         // --- Funnel: textured double-horn vortex ---------------------------------
         int tier = SelectLodTier(world, projection, worldRadius);
         UpdateFunnelVertices(tier, _time, funnelBoost);
-        _effect.Texture = FunnelTexture(textureName);
+        var nativeTexture = FunnelTexture(textureName);
+        string? stem = _funnelStems.GetValueOrDefault(textureName);
+        _effect.Texture = stem is null ? nativeTexture : _hd.EmissiveTexture(stem) ?? nativeTexture;
         _effect.World = world;
         _effect.View = view;
         _effect.Projection = projection;
@@ -339,11 +346,13 @@ public sealed class WarpRenderer : IDisposable
     private Texture2D FunnelTexture(string textureName)
     {
         if (_funnelTexture.TryGetValue(textureName, out var t)) return t;
+        _lastLoadedStem = null;
         Texture2D tex;
         if (IsAlephFamily(textureName))
             tex = LoadTextureFile(textureName) ?? LoadTextureFile("aleph") ?? _native.SoftFallback;
         else
             tex = LoadTextureFile("aleph") ?? LoadTextureFile(textureName) ?? _native.SoftFallback;
+        _funnelStems[textureName] = _lastLoadedStem;
         _funnelTexture[textureName] = tex;
         return tex;
     }
@@ -357,6 +366,7 @@ public sealed class WarpRenderer : IDisposable
     /// while the artwork file is capitalised (<c>Alephbmp.mdl</c>), so a failed
     /// exact lookup falls back to a case-insensitive match in the artwork root.
     /// </summary>
+    private string? _lastLoadedStem;
     private Texture2D? LoadTextureFile(string stem)
     {
         string rel = stem + "bmp.mdl";
@@ -369,11 +379,17 @@ public sealed class WarpRenderer : IDisposable
         var bytes = AssetSources.ReadAllBytes(_assets, rel);
         var res = NativeEffectTextures.Resolve(bytes);
         if (res.Kind == NativeEffectTextures.NativeTextureKind.Binary)
+        {
+            _lastLoadedStem = Path.GetFileNameWithoutExtension(rel);
             return UploadOpaque(res.Texture!);
+        }
         if (res.Kind == NativeEffectTextures.NativeTextureKind.Png && res.PngName is not null
             && _assets.Exists(res.PngName))
+        {
+            _lastLoadedStem = Path.GetFileNameWithoutExtension(rel);
             using (var s = _assets.OpenRead(res.PngName!))
                 return Texture2D.FromStream(_gd, s);
+        }
         return null;
     }
 
@@ -406,6 +422,7 @@ public sealed class WarpRenderer : IDisposable
         foreach (var b in _lodBuffers) b?.Dispose();
         foreach (var i in _lodIndices) i?.Dispose();
         foreach (var t in _funnelTexture.Values) t?.Dispose();
+        if (_ownsHd) _hd.Dispose();
         _effect.Dispose();
         _cullNone.Dispose();
         _additive.Dispose();

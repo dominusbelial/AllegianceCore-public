@@ -24,6 +24,8 @@ public sealed class BroadcastSnapshotLoopbackTests
     {
         private readonly TcpClient _client = new() { NoDelay = true };
         private readonly Task _reader;
+        private readonly object _writeGate = new();
+        private readonly Timer? _heartbeat;
         internal long Frames, Bytes;
         internal volatile int OwnId = -1;
         internal Exception? Error;
@@ -37,7 +39,7 @@ public sealed class BroadcastSnapshotLoopbackTests
         }
         private volatile bool _closing;
 
-        internal Peer(ushort port, int index)
+        internal Peer(ushort port, int index, bool keepAlive = false)
         {
             _client.Connect("127.0.0.1", port);
             var stream = _client.GetStream();
@@ -51,6 +53,14 @@ public sealed class BroadcastSnapshotLoopbackTests
                 SteamID = (ulong)(99000000000000668 + index), DrmHash = "P668",
             }.Encode()));
             _reader = Read(stream);
+            if (keepAlive)
+                _heartbeat = new Timer(_ =>
+                {
+                    if (_closing) return;
+                    try { KeepAlive(); }
+                    catch (Exception e) when (e is IOException or SocketException or ObjectDisposedException)
+                    { if (!_closing) Error = e; }
+                }, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
         }
 
         // Raw benchmark peers otherwise send nothing after joining. Keep the
@@ -58,13 +68,16 @@ public sealed class BroadcastSnapshotLoopbackTests
         internal void KeepAlive() => Write(_client.GetStream(), 2,
             FedPacket.Pack(new Ping { TimeClient = unchecked((uint)Environment.TickCount64) }.Encode()));
 
-        private static void Write(NetworkStream stream, byte kind, byte[] bytes)
+        private void Write(NetworkStream stream, byte kind, byte[] bytes)
         {
             byte[] header = new byte[5];
             header[0] = kind;
             BinaryPrimitives.WriteInt32LittleEndian(header.AsSpan(1), bytes.Length);
-            stream.Write(header);
-            stream.Write(bytes);
+            lock (_writeGate)
+            {
+                stream.Write(header);
+                stream.Write(bytes);
+            }
         }
 
         private async Task Read(NetworkStream stream)
@@ -86,7 +99,12 @@ public sealed class BroadcastSnapshotLoopbackTests
                     lock (_recordingGate) _recording?.Add(body.AsSpan(0, length).ToArray());
                     if (length == Ping.FixedSize + FedPacket.CrcWidth
                         && BinaryPrimitives.ReadUInt16LittleEndian(body.AsSpan(2)) == Ping.Fmid)
-                        LastMarker = Ping.Decode(body.AsSpan(0, length - FedPacket.CrcWidth)).TimeServer;
+                    {
+                        var ping = Ping.Decode(body.AsSpan(0, length - FedPacket.CrcWidth));
+                        // Heartbeat replies must not replace the ordered drain
+                        // marker; TestSendSnapshotBarrier leaves TimeClient zero.
+                        if (ping.TimeClient == 0) LastMarker = ping.TimeServer;
+                    }
                     // Walk headers without per-packet decode allocations once seated.
                     if (OwnId >= 0) continue;
                     foreach (var message in FedPacket.Unpack(body.AsSpan(0, length)))
@@ -102,7 +120,7 @@ public sealed class BroadcastSnapshotLoopbackTests
             catch (Exception e) { Error = e; }
         }
 
-        public void Dispose() { _closing = true; _client.Dispose(); _reader.GetAwaiter().GetResult(); }
+        public void Dispose() { _closing = true; _heartbeat?.Dispose(); _client.Dispose(); _reader.GetAwaiter().GetResult(); }
     }
 
     [SkippableFact]
@@ -282,7 +300,9 @@ public sealed class BroadcastSnapshotLoopbackTests
         {
             for (int i = 0; i < count; i++)
             {
-                peers.Add(new Peer(server.BoundPort, i));
+                // Both native and recorded-projection measurements may exceed
+                // the normal 30 s inbound-frame timeout on a shared machine.
+                peers.Add(new Peer(server.BoundPort, i, keepAlive: true));
                 if (i % 16 == 15) server.TickSim();
             }
             var join = Stopwatch.StartNew();

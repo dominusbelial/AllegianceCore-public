@@ -1,0 +1,150 @@
+{
+  "config": {
+    "core": "PCore001.igc",
+    "civ_ids": [
+      25,
+      3
+    ],
+    "tech_mode": "research",
+    "research_time_scale": 64,
+    "income_multiplier": 5000,
+    "map": "native generated SingleRing, 4 sectors; no optional generic/He3 population; normal research branch resources",
+    "roster": "normal showcase size_scale=1, 15 versus 15",
+    "finale_after_minutes": 2,
+    "finale_side": 1,
+    "reserved_strikes": 12,
+    "finale_timeout_sim_seconds": 900,
+    "conquest_or_territory_override": false,
+    "injected_damage_or_health_edits": false
+  },
+  "runs": [
+    {
+      "run": 1,
+      "outcome": "native station elimination",
+      "winner": 1,
+      "eliminated_side": 0,
+      "first_home_kill_wall_seconds": 308.3,
+      "observed_end_wall_seconds": 516.4,
+      "armed_sim_seconds": 210.75,
+      "last_restart_kill_sim_seconds": 1028.1,
+      "finale_to_elimination_sim_seconds": 817.35,
+      "defending_stations_killed": [
+        0,
+        9188,
+        9190,
+        9194,
+        9192,
+        9200,
+        9196
+      ],
+      "resupply_orders": 10,
+      "deadline_used": false,
+      "terminal_damage": "[station-damage] t=1028.1 side=0 station=9196:Garrison attackerSide=1 ship=8113 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.1337->0.0000 killed=True",
+      "native_elimination_event": "[sideinactive] side 0 deactivated (lost last restart station) => SIDE_INACTIVE(68) bActive=false -> 33 peer(s)",
+      "result": "[proof-result] run=siege-1 firstKill=308.3 wall=516.4 sim=1030.1 reason=Bravo won by outlasting all other sides."
+    },
+    {
+      "run": 2,
+      "outcome": "native station elimination",
+      "winner": 1,
+      "eliminated_side": 0,
+      "first_home_kill_wall_seconds": 288.3,
+      "observed_end_wall_seconds": 508.4,
+      "armed_sim_seconds": 210.15,
+      "last_restart_kill_sim_seconds": 1016.35,
+      "finale_to_elimination_sim_seconds": 806.2,
+      "defending_stations_killed": [
+        0,
+        9188,
+        9192,
+        9190,
+        9196,
+        9200,
+        9194
+      ],
+      "resupply_orders": 10,
+      "deadline_used": false,
+      "terminal_damage": "[station-damage] t=1016.35 side=0 station=9194:Expansion attackerSide=1 ship=8113 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.1405->0.0000 killed=True",
+      "native_elimination_event": "[sideinactive] side 0 deactivated (lost last restart station) => SIDE_INACTIVE(68) bActive=false -> 33 peer(s)",
+      "result": "[proof-result] run=siege-2 firstKill=288.3 wall=508.4 sim=1017.2 reason=Bravo won by outlasting all other sides."
+    },
+    {
+      "run": 3,
+      "outcome": "native station elimination",
+      "winner": 1,
+      "eliminated_side": 0,
+      "first_home_kill_wall_seconds": 312.3,
+      "observed_end_wall_seconds": 536.4,
+      "armed_sim_seconds": 208.85,
+      "last_restart_kill_sim_seconds": 1073.6,
+      "finale_to_elimination_sim_seconds": 864.75,
+      "defending_stations_killed": [
+        0,
+        9190,
+        9188,
+        9194,
+        9200,
+        9196,
+        9202,
+        9192
+      ],
+      "resupply_orders": 13,
+      "deadline_used": false,
+      "terminal_damage": "[station-damage] t=1073.6 side=0 station=9192:Supremacy attackerSide=1 ship=8103 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.2499->0.0000 killed=True",
+      "native_elimination_event": "[sideinactive] side 0 deactivated (lost last restart station) => SIDE_INACTIVE(68) bActive=false -> 33 peer(s)",
+      "result": "[proof-result] run=siege-3 firstKill=312.3 wall=536.4 sim=1073.6 reason=Bravo won by outlasting all other sides."
+    },
+    {
+      "run": 4,
+      "outcome": "native station elimination",
+      "winner": 1,
+      "eliminated_side": 0,
+      "first_home_kill_wall_seconds": 308.3,
+      "observed_end_wall_seconds": 512.4,
+      "armed_sim_seconds": 210.55,
+      "last_restart_kill_sim_seconds": 1020.55,
+      "finale_to_elimination_sim_seconds": 810.0,
+      "defending_stations_killed": [
+        0,
+        9188,
+        9190,
+        9194,
+        9192,
+        9201,
+        9196
+      ],
+      "resupply_orders": 11,
+      "deadline_used": false,
+      "terminal_damage": "[station-damage] t=1020.55 side=0 station=9196:Garrison attackerSide=1 ship=8117 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.0184->0.0000 killed=True",
+      "native_elimination_event": "[sideinactive] side 0 deactivated (lost last restart station) => SIDE_INACTIVE(68) bActive=false -> 33 peer(s)",
+      "result": "[proof-result] run=siege-4 firstKill=308.3 wall=512.4 sim=1023.2 reason=Bravo won by outlasting all other sides."
+    },
+    {
+      "run": 5,
+      "outcome": "native station elimination",
+      "winner": 1,
+      "eliminated_side": 0,
+      "first_home_kill_wall_seconds": 294.3,
+      "observed_end_wall_seconds": 530.4,
+      "armed_sim_seconds": 210.2,
+      "last_restart_kill_sim_seconds": 1059.1,
+      "finale_to_elimination_sim_seconds": 848.9,
+      "defending_stations_killed": [
+        0,
+        9190,
+        9188,
+        9194,
+        9196,
+        9200,
+        9192,
+        9201
+      ],
+      "resupply_orders": 10,
+      "deadline_used": false,
+      "terminal_damage": "[station-damage] t=1059.1 side=0 station=9201:Expansion attackerSide=1 ship=8109 hull=124:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.1490->0.0000 killed=True",
+      "native_elimination_event": "[sideinactive] side 0 deactivated (lost last restart station) => SIDE_INACTIVE(68) bActive=false -> 33 peer(s)",
+      "result": "[proof-result] run=siege-5 firstKill=294.3 wall=530.4 sim=1061.3 reason=Bravo won by outlasting all other sides."
+    }
+  ],
+  "native_eliminations": 5
+}

@@ -3,8 +3,10 @@ namespace Allegiance.SinglePlayer;
 public sealed class SkirmishScreenModel
 {
     public SkirmishOptions Options { get; private set; } = new();
+    public void ApplyDefaults(Benchmark.BenchmarkRecommendation settings) => Options = Options with
+    { Size = settings.BattleSize, Difficulty = settings.Difficulty, ResearchSpeed = settings.ResearchSpeed, SpectatorDefault = settings.SpectatorDefault };
     public int Selected { get; private set; }
-    public const int StartRow = 5, BackRow = 6, RowCount = 7;
+    public const int StartRow = 7, BackRow = 8, RowCount = 9;
     public void Move(int delta) => Selected = (Selected + delta + RowCount) % RowCount;
     public void Change(int delta)
     {
@@ -17,6 +19,8 @@ public sealed class SkirmishScreenModel
             2 => Options with { Size = (SkirmishSize)(((int)Options.Size + delta + 4) % 4) },
             3 => Options with { TechMode = Options.TechMode == "research" ? "unlocked" : "research" },
             4 => Options with { Difficulty = (SkirmishDifficulty)(((int)Options.Difficulty + delta + 3) % 3) },
+            5 => Options with { Commander = Options.Commander == SkirmishCommander.AI ? SkirmishCommander.You : SkirmishCommander.AI },
+            6 => Options with { StartAsSpectator = !Options.StartAsSpectator },
             _ => Options
         };
     }
@@ -27,6 +31,8 @@ public sealed class SkirmishScreenModel
         $"Size: {Options.Size} {Options.TeamSize}v{Options.TeamSize}",
         "Tech: " + Options.TechMode,
         "Bot difficulty: " + Options.Difficulty,
+        "Commander: " + Options.Commander,
+        "Start as spectator: " + (Options.StartAsSpectator ? "Yes" : "No"),
         "Start Skirmish", "Back"
     ];
 }

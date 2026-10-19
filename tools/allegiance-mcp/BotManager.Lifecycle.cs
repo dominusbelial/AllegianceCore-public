@@ -31,6 +31,9 @@ internal sealed partial class BotManager
     {
         bot.Inactive = true;
         bot.TargetId = bot.OrderedTargetId = null;
+        bot.OrderedCommand = null;
+        bot.AcceptedQueuedOrder = null;
+        bot.OrderedWarpOrigin = null;
         lock (_gate)
         {
             if (!_bots.Remove(bot)) return;
@@ -51,6 +54,8 @@ internal sealed partial class BotManager
                 lock (finale.Sync) finale.StrikeStartedAt ??= now;
         }
         bot.IsPod = bot.PodDocked = bot.PodRestarted = false;
+        bot.FinaleRefitting = bot.FinaleRefitLaunchPending = false;
+        bot.FinaleRefitCheckAt = double.NegativeInfinity;
         bot.PodStationId = bot.PodDockStationId = bot.PodStationSector = -1;
         bot.PodRouteSector = bot.PodRouteWarpId = -1;
         bot.PodRouteWarpCount = 0;
@@ -73,6 +78,9 @@ internal sealed partial class BotManager
         bot.ExitClearFrom = null;
         bot.ExitClearRadius = 0;
         bot.TargetId = bot.OrderedTargetId = null;
+        bot.OrderedCommand = null;
+        bot.AcceptedQueuedOrder = null;
+        bot.OrderedWarpOrigin = null;
         bot.AcceptedQueuedId = Allegiance.Core.Wire.OrderChange.CidNone;
         bot.CurrentQueued = null;
         bot.QcuConsumed = 0;
@@ -143,6 +151,7 @@ internal sealed partial class BotManager
             {
                 bot.GrantWarning = EvaluateGrant(bot.Name, bot.HullId, bot.Parts ?? [], grant);
                 bot.Granted = grant;
+                if (ack.FLaunch) lock (cs.Gate) bot.FinaleMissileLaunchBase = cs.World.OwnMissilesFired;
                 if (bot.FinaleBomberActive)
                 {
                     bot.FinaleGrantVerified = ack.FBoughtEverything && ack.HullId == bot.HullId
