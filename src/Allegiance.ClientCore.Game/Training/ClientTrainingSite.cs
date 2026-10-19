@@ -5,6 +5,7 @@ using Allegiance.ClientCore.State;
 using Allegiance.ClientCore.Training;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
+using Allegiance.SinglePlayer;
 
 namespace Allegiance.ClientCore.MonoGame;
 
@@ -33,6 +34,10 @@ public sealed class ClientTrainingFacilities
     public Func<TrainingTurnTo.TurnHull?>? OwnHullKinematics { get; init; }
     /// <summary>The player's live own-ship orientation (forward/up/right).</summary>
     public Func<(Vector3 F, Vector3 U, Vector3 R)?>? OwnOrientation { get; init; }
+    /// <summary>TR-2b — the in-process training-host API the creation/command/autopilot actions
+    /// call on the embedded server. When null (no host), those actions keep the explicit logged
+    /// no-op seams so the absence is auditable rather than silent.</summary>
+    public ITrainingHost? Host { get; init; }
 }
 
 /// <summary>
@@ -109,24 +114,44 @@ public sealed class ClientTrainingSite : ITrainingSite
     public bool ConsumeChat(int recipient) => false;
     public void RecordChat(int recipient) { }
 
-    // ── world creation (training-host universe — TR-2 host scope) ───────────
-    public void CreateWaypoint(int buoyId, Vector3 position, int sectorId, int buoyType, bool visible) =>
-        TrainingHostLog.Log($"CreateWaypoint({buoyId}) — host universe scope");
-    public void CreateProbe(int probeId, int typeId, Vector3 position, int sideId, int sectorId) =>
-        TrainingHostLog.Log($"CreateProbe({probeId}) — host universe scope");
-    public int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType)
+    // ── world creation (training-host universe — TR-2b host scope) ───────────
+    public void CreateWaypoint(int buoyId, Vector3 position, int sectorId, int buoyType, bool visible)
     {
-        TrainingHostLog.Log($"CreateDrone({shipId}) — host universe scope");
-        return -1; // no ship created without the training-host universe
+        if (_f.Host is { } h) h.CreateWaypoint(buoyId, position, sectorId, buoyType, visible);
+        else TrainingHostLog.Log($"CreateWaypoint({buoyId}) — no embedded training host");
     }
-    public void PlaceDrone(int shipId, int sectorId, Vector3 position, Vector3 forward, Vector3 up, TargetRef? commandTarget, int commandId) =>
-        TrainingHostLog.Log($"PlaceDrone({shipId}) — host universe scope");
-    public void IssueCommand(TargetRef ship, int command, TargetRef? target, int commandId) =>
-        TrainingHostLog.Log($"IssueCommand(ship {ship.Id}, cmd {command}) — host universe scope");
+    public void CreateProbe(int probeId, int typeId, Vector3 position, int sideId, int sectorId)
+    {
+        if (_f.Host is { } h) h.CreateProbe(probeId, typeId, position, sideId, sectorId);
+        else TrainingHostLog.Log($"CreateProbe({probeId}) — no embedded training host");
+    }
+    public int CreateDrone(string name, int shipId, int hullId, int sideId, int pilotType)
+        => _f.Host is { } h ? h.CreateDrone(name, shipId, hullId, sideId, pilotType)
+            : -1; // no ship created without the training-host universe
+    public void PlaceDrone(int shipId, int sectorId, Vector3 position, Vector3 forward, Vector3 up, TargetRef? commandTarget, int commandId)
+    {
+        if (_f.Host is { } h)
+            h.PlaceDrone(shipId, sectorId, position, forward, up,
+                commandTarget is { Type: ObjectType.Ship } ? commandTarget.Value.Id : null, commandId);
+        else TrainingHostLog.Log($"PlaceDrone({shipId}) — no embedded training host");
+    }
+    public void IssueCommand(TargetRef ship, int command, TargetRef? target, int commandId)
+    {
+        if (_f.Host is { } h)
+            h.IssueCommand(ship.Id, command,
+                target is { Type: ObjectType.Ship } ? target.Value.Id : null,
+                target is { Type: ObjectType.Buoy } ? target.Value.Id : null,
+                target is { Type: ObjectType.Station } ? target.Value.Id : null,
+                commandId);
+        else TrainingHostLog.Log($"IssueCommand(ship {ship.Id}, cmd {command}) — no embedded training host");
+    }
 
     // ── ship / camera / HUD configuration ───────────────────────────────────
-    public void SetAutopilot(TargetRef ship, bool on) =>
-        TrainingHostLog.Log($"SetAutopilot({ship.Id},{on}) — host universe scope");
+    public void SetAutopilot(TargetRef ship, bool on)
+    {
+        if (_f.Host is { } h) h.SetAutopilot(ship.Id, on);
+        else TrainingHostLog.Log($"SetAutopilot({ship.Id},{on}) — no embedded training host");
+    }
     public void SetDisplayMode(int cameraMode) => TrainingHostLog.Log($"SetDisplayMode({cameraMode})");
     public void SetHudOverlay(int overlay) => TrainingOverlay.Current = overlay;
 
