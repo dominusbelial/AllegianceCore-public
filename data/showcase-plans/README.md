@@ -45,8 +45,27 @@ rocks/funding. It rejects repeated/obsolete steps. It does not execute actions,
 predict combat losses, reserve rocks, or simulate income. P703 must fund real
 buckets, wait for real completion, choose available rocks and react to losses.
 
-`plan_a` favors cheapest currently available completions; `plan_b` favors the
-most expensive. Both supplied race plans have been generated and inspected for
+The civ-25 and civ-3 plans place the native tactical/stealth branch early so
+scouts and bombers can purchase a mounted cloak within a showcase match. Civ 25
+reaches the branch with Tactical → Upgrade Tactical Lab → Tactical (Adv) →
+Bomber → Stealth Bomber; civ 3 uses Tactical → [P]alisade → Upgrade Tactical
+Lab → Tactical (Adv) → Stealth Fighter → Adv Stl Fighter → Bomber → Stealth
+Bomber. Sig Cloak 1 is already buyable for both civs; their starting combat
+hulls cannot mount it. These are ordinary funded station/development steps, with
+no technology grants. The branch is placed just after the dev-dense opening
+(~15 steps): the opening must stay development-heavy because construction is
+not scaled by the research multiplier, and the scale-eight opening research
+metric (P733ResearchTests) requires it. Final positions (plan_a): civ 25 cloak
+scout at step 18 and cloak bomber at step 20; civ 3 cloak scout at step 19 and
+cloak bomber at step 23. This still reaches a mounted cloak in roughly 5-7
+minutes of sim at the rig's ×8 research scale — far inside a 45-minute match and
+far earlier than the stock price-order plans (which reached it at step ~144+).
+The branch insertion is curated: `author` generates generic price order, so
+preserve the branch and recompute expected unlocks when regenerating these four
+files.
+
+After that prefix, `plan_a` retains its cheapest-first order and `plan_b` its
+most-expensive-first order. Both supplied race plans have been inspected for
 all four branches, advanced stations, garrison successors and non-builder drone
 types. All reachable attribute developments and tech prerequisites are included;
 obsolete equivalent alternatives are represented in the tree's closure.

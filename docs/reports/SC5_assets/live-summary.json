@@ -1,0 +1,388 @@
+[
+  {
+    "run": 1,
+    "wallSeconds": 132.3,
+    "simSeconds": 1058.0,
+    "testDuration": "00:02:15",
+    "counts": [
+      {
+        "side": 0,
+        "civ": 25,
+        "cloak": 17
+      },
+      {
+        "side": 1,
+        "civ": 3,
+        "cloak": 5
+      }
+    ],
+    "note": "final K15 plans"
+  },
+  {
+    "run": 2,
+    "wallSeconds": 127.0,
+    "testDuration": "00:02:07",
+    "counts": [
+      {
+        "side": 0,
+        "civ": 25,
+        "cloak": 14
+      },
+      {
+        "side": 1,
+        "civ": 3,
+        "cloak": 5
+      }
+    ],
+    "note": "final K15 plans"
+  },
+  {
+    "run": 3,
+    "wallSeconds": 128.6230525,
+    "simSeconds": 1021.3999999996188,
+    "testDuration": "00:02:11",
+    "counts": [
+      {
+        "side": 0,
+        "civ": 25,
+        "cloak": 22
+      },
+      {
+        "side": 1,
+        "civ": 3,
+        "cloak": 5
+      }
+    ],
+    "research": [
+      {
+        "Side": 0,
+        "Plan": "plan_a",
+        "Step": 25,
+        "TotalSteps": 157,
+        "Action": "station",
+        "Name": "Supremacy",
+        "Status": "constructor travelling/building",
+        "ProgressPercent": 15.605095541401273,
+        "StepProgressPercent": 50,
+        "Money": 2330967,
+        "EtaSeconds": null,
+        "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+        "CompletedTechs": [
+          "Upgrade Tactical Lab",
+          "Stealth Bomber",
+          "Bomber",
+          "Retro Booster",
+          "Enh Constructor",
+          "Enh Miner",
+          "ER Nanite 2",
+          "MRM Seeker 2",
+          "SRM Seismic",
+          "Med Shield 2",
+          "Lt Booster 1",
+          "Hvy Sig Cloak 1",
+          "Counter 2",
+          "Weedcore 03",
+          "Enh Carrier Drone",
+          "MRM Quickfire 2"
+        ],
+        "Stations": [
+          "Garrison",
+          "Teleport (Hvy)",
+          "Tactical",
+          "Tactical (Adv)",
+          "Outpost (Hvy)"
+        ],
+        "Constructor": 8148,
+        "ReservedRock": 115,
+        "Cycles": 0
+      },
+      {
+        "Side": 1,
+        "Plan": "plan_a",
+        "Step": 27,
+        "TotalSteps": 181,
+        "Action": "develop",
+        "Name": "Upgrade Garrison",
+        "Status": "building bucket",
+        "ProgressPercent": 14.432610497237569,
+        "StepProgressPercent": 12.3025,
+        "Money": 2862351,
+        "EtaSeconds": 13.154625,
+        "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+        "CompletedTechs": [
+          "Adv Stl Fighter",
+          "Stealth Fighter",
+          "Stealth Bomber",
+          "Bomber",
+          "Retro Booster",
+          "Enh Constructor",
+          "Enh Miner",
+          "ER Nanite 2",
+          "MRM Seeker 2",
+          "SRM Seismic",
+          "Med Shield 2",
+          "Lt Booster 1",
+          "Hvy Sig Cloak 1",
+          "Counter 2",
+          "Weedcore 03",
+          "Enh Carrier Drone",
+          "Upgrade Tactical Lab"
+        ],
+        "Stations": [
+          "Garrison",
+          "Teleport",
+          "Tactical",
+          "[P]alisade",
+          "Tactical (Adv)",
+          "Outpost"
+        ],
+        "Constructor": null,
+        "ReservedRock": null,
+        "Cycles": 0
+      }
+    ],
+    "witnesses": [
+      {
+        "sim": 788.049999999831,
+        "Id": 8124,
+        "SideId": 0,
+        "hull": 486,
+        "Name": "Adv Stl Fighter",
+        "Energy": 2874,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 38,
+            "Name": "Sig Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 104,
+            "Name": "MRM Quickfire 2",
+            "MountId": 0,
+            "Amount": 7
+          },
+          {
+            "PartId": 85,
+            "Name": "Counter 2",
+            "MountId": 0,
+            "Amount": 6
+          }
+        ]
+      },
+      {
+        "sim": 869.2499999997572,
+        "Id": 8130,
+        "SideId": 0,
+        "hull": 420,
+        "Name": "Stealth Bomber",
+        "Energy": 2870,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 157,
+            "Name": "SRM Anti-Base 1",
+            "MountId": 0,
+            "Amount": 2
+          },
+          {
+            "PartId": 41,
+            "Name": "Hvy Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 85,
+            "Name": "Counter 2",
+            "MountId": 0,
+            "Amount": 8
+          }
+        ]
+      },
+      {
+        "sim": 896.6499999997322,
+        "Id": 8128,
+        "SideId": 0,
+        "hull": 420,
+        "Name": "Stealth Bomber",
+        "Energy": 2870,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 157,
+            "Name": "SRM Anti-Base 1",
+            "MountId": 0,
+            "Amount": 2
+          },
+          {
+            "PartId": 41,
+            "Name": "Hvy Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 85,
+            "Name": "Counter 2",
+            "MountId": 0,
+            "Amount": 8
+          }
+        ]
+      },
+      {
+        "sim": 938.5499999996941,
+        "Id": 8129,
+        "SideId": 1,
+        "hull": 133,
+        "Name": "Stealth Bomber",
+        "Energy": 2390,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 157,
+            "Name": "SRM Anti-Base 1",
+            "MountId": 0,
+            "Amount": 2
+          },
+          {
+            "PartId": 41,
+            "Name": "Hvy Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 85,
+            "Name": "Counter 2",
+            "MountId": 0,
+            "Amount": 8
+          }
+        ]
+      },
+      {
+        "sim": 1021.0499999996191,
+        "Id": 8123,
+        "SideId": 1,
+        "hull": 132,
+        "Name": "Adv Stl Fighter",
+        "Energy": 2390,
+        "StateM": 2048,
+        "Cloaking": 0.9875,
+        "parts": [
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 50,
+            "Name": "EW Utl Can 1",
+            "MountId": 1,
+            "Amount": 1
+          },
+          {
+            "PartId": 41,
+            "Name": "Hvy Cloak 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 21,
+            "Name": "Sm Shield 1",
+            "MountId": 0,
+            "Amount": 1
+          },
+          {
+            "PartId": 155,
+            "Name": "LRM Hunter 1",
+            "MountId": 0,
+            "Amount": 3
+          },
+          {
+            "PartId": 85,
+            "Name": "Counter 2",
+            "MountId": 0,
+            "Amount": 6
+          }
+        ]
+      }
+    ],
+    "note": "final K15 plans"
+  }
+]

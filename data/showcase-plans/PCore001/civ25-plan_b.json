@@ -93,38 +93,6 @@
     },
     {
       "action": "develop",
-      "id": 37,
-      "name": "Bomber",
-      "asteroidClass": null,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": [
-        {
-          "kind": "hull",
-          "id": 404,
-          "name": "Bomber",
-          "role": "capabilities=0xA92; group=0"
-        }
-      ]
-    },
-    {
-      "action": "develop",
-      "id": 35,
-      "name": "Hvy Bomber",
-      "asteroidClass": null,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": [
-        {
-          "kind": "hull",
-          "id": 489,
-          "name": "Hvy Bomber",
-          "role": "capabilities=0xA92; group=0"
-        }
-      ]
-    },
-    {
-      "action": "develop",
       "id": 39,
       "name": "Gunship",
       "asteroidClass": null,
@@ -260,6 +228,22 @@
       ]
     },
     {
+      "action": "develop",
+      "id": 15,
+      "name": "Adv Scout",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 485,
+          "name": "Adv Scout",
+          "role": "capabilities=0x2092; group=0"
+        }
+      ]
+    },
+    {
       "action": "station",
       "id": 113,
       "name": "Tactical",
@@ -302,17 +286,33 @@
     },
     {
       "action": "develop",
-      "id": 15,
-      "name": "Adv Scout",
+      "id": 37,
+      "name": "Bomber",
       "asteroidClass": null,
       "waitSeconds": 0,
       "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
       "expectedUnlocks": [
         {
           "kind": "hull",
-          "id": 485,
-          "name": "Adv Scout",
-          "role": "capabilities=0x2092; group=0"
+          "id": 404,
+          "name": "Bomber",
+          "role": "capabilities=0xA92; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 33,
+      "name": "Stealth Bomber",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 420,
+          "name": "Stealth Bomber",
+          "role": "capabilities=0xA92; group=0"
         }
       ]
     },
@@ -341,22 +341,6 @@
           "id": 106,
           "name": "SRM Dumb 1 QL",
           "role": "Magazine"
-        }
-      ]
-    },
-    {
-      "action": "develop",
-      "id": 33,
-      "name": "Stealth Bomber",
-      "asteroidClass": null,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": [
-        {
-          "kind": "hull",
-          "id": 420,
-          "name": "Stealth Bomber",
-          "role": "capabilities=0xA92; group=0"
         }
       ]
     },
@@ -2287,6 +2271,22 @@
       "waitSeconds": 0,
       "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
       "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 35,
+      "name": "Hvy Bomber",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 489,
+          "name": "Hvy Bomber",
+          "role": "capabilities=0xA92; group=0"
+        }
+      ]
     }
   ]
 }

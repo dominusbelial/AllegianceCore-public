@@ -1,0 +1,9 @@
+Final run 3 (K15 plans, civ25 vs civ3, research x8)
+[skills] match 1 side 0 snapshot
+[skills] match 1 side 0: flight 25 warp 40 autopilot 10 targeting 128 guns 6872 missiles 39 chaff 14 booster 16 cloak 22 probes 2 scouting 476 mines 20 ship-damage 2300 station-damage 0 station-kills 0 nanite-ship 90 nanite-station 0 order-goto 0 order-attack 341 order-build 59 order-repair 114 drone-build 4 drone-mine 16 eject 21 pod-rescue 3 dock 17 relaunch 43 purchase 33 research 16 chat 504 voice 77 ship-kills 28
+[skills] match 1 side 0 coverage 23/32
+[skills] match 1 side 0 damage-types: ship-1 113 ship-2 1279 ship-4 12 ship-5 895 ship-10 90 ship-14 1
+[skills] match 1 side 1 snapshot
+[skills] match 1 side 1: flight 25 warp 74 autopilot 10 targeting 95 guns 8705 missiles 52 chaff 8 booster 98 cloak 5 probes 3 scouting 460 mines 5 ship-damage 2402 station-damage 0 station-kills 0 nanite-ship 213 nanite-station 0 order-goto 0 order-attack 274 order-build 61 order-repair 116 drone-build 5 drone-mine 28 eject 22 pod-rescue 0 dock 15 relaunch 42 purchase 34 research 17 chat 445 voice 80 ship-kills 25
+[skills] match 1 side 1 coverage 22/32
+[skills] match 1 side 1 damage-types: ship-2 2387 ship-4 15 ship-10 213

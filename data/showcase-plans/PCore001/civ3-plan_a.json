@@ -210,6 +210,120 @@
       ]
     },
     {
+      "action": "station",
+      "id": 55,
+      "name": "Tactical",
+      "asteroidClass": 32,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 18,
+          "name": "SRM Seismic",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "station",
+      "id": 42,
+      "name": "[P]alisade",
+      "asteroidClass": 8,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "part",
+          "id": 147,
+          "name": "MRR Lightning 1",
+          "role": "Magazine"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 271,
+      "name": "Upgrade Tactical Lab",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "station",
+      "id": 56,
+      "name": "Tactical (Adv)",
+      "asteroidClass": 32,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": []
+    },
+    {
+      "action": "develop",
+      "id": 26,
+      "name": "Stealth Fighter",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 131,
+          "name": "Stealth Fighter",
+          "role": "capabilities=0x2892; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 24,
+      "name": "Adv Stl Fighter",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 132,
+          "name": "Adv Stl Fighter",
+          "role": "capabilities=0x2892; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 37,
+      "name": "Bomber",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 124,
+          "name": "Bomber",
+          "role": "capabilities=0xA92; group=0"
+        }
+      ]
+    },
+    {
+      "action": "develop",
+      "id": 33,
+      "name": "Stealth Bomber",
+      "asteroidClass": null,
+      "waitSeconds": 0,
+      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+      "expectedUnlocks": [
+        {
+          "kind": "hull",
+          "id": 133,
+          "name": "Stealth Bomber",
+          "role": "capabilities=0xA92; group=0"
+        }
+      ]
+    },
+    {
       "action": "drone",
       "id": 17,
       "name": ".Carrier",
@@ -245,44 +359,12 @@
     },
     {
       "action": "develop",
-      "id": 37,
-      "name": "Bomber",
-      "asteroidClass": null,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": [
-        {
-          "kind": "hull",
-          "id": 124,
-          "name": "Bomber",
-          "role": "capabilities=0xA92; group=0"
-        }
-      ]
-    },
-    {
-      "action": "develop",
       "id": 263,
       "name": "Upgrade Garrison",
       "asteroidClass": null,
       "waitSeconds": 0,
       "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
       "expectedUnlocks": []
-    },
-    {
-      "action": "station",
-      "id": 42,
-      "name": "[P]alisade",
-      "asteroidClass": 8,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": [
-        {
-          "kind": "part",
-          "id": 147,
-          "name": "MRR Lightning 1",
-          "role": "Magazine"
-        }
-      ]
     },
     {
       "action": "station",
@@ -850,22 +932,6 @@
       ]
     },
     {
-      "action": "station",
-      "id": 55,
-      "name": "Tactical",
-      "asteroidClass": 32,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": [
-        {
-          "kind": "part",
-          "id": 18,
-          "name": "SRM Seismic",
-          "role": "Magazine"
-        }
-      ]
-    },
-    {
       "action": "develop",
       "id": 137,
       "name": "GA: Ship Agility 1",
@@ -1062,22 +1128,6 @@
       "waitSeconds": 0,
       "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
       "expectedUnlocks": []
-    },
-    {
-      "action": "develop",
-      "id": 26,
-      "name": "Stealth Fighter",
-      "asteroidClass": null,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": [
-        {
-          "kind": "hull",
-          "id": 131,
-          "name": "Stealth Fighter",
-          "role": "capabilities=0x2892; group=0"
-        }
-      ]
     },
     {
       "action": "station",
@@ -1624,24 +1674,6 @@
     },
     {
       "action": "develop",
-      "id": 271,
-      "name": "Upgrade Tactical Lab",
-      "asteroidClass": null,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": []
-    },
-    {
-      "action": "station",
-      "id": 56,
-      "name": "Tactical (Adv)",
-      "asteroidClass": 32,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": []
-    },
-    {
-      "action": "develop",
       "id": 138,
       "name": "GA: Ship Agility 2",
       "asteroidClass": null,
@@ -1774,6 +1806,12 @@
       "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
       "expectedUnlocks": [
         {
+          "kind": "hull",
+          "id": 155,
+          "name": "Stealth Bomber [NG]",
+          "role": "capabilities=0x89A; group=0"
+        },
+        {
           "kind": "part",
           "id": 115,
           "name": "SRM Nerve Gas",
@@ -1810,44 +1848,6 @@
           "id": 128,
           "name": "EW Gauss Gun",
           "role": "Weapon"
-        }
-      ]
-    },
-    {
-      "action": "develop",
-      "id": 33,
-      "name": "Stealth Bomber",
-      "asteroidClass": null,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": [
-        {
-          "kind": "hull",
-          "id": 133,
-          "name": "Stealth Bomber",
-          "role": "capabilities=0xA92; group=0"
-        },
-        {
-          "kind": "hull",
-          "id": 155,
-          "name": "Stealth Bomber [NG]",
-          "role": "capabilities=0x89A; group=0"
-        }
-      ]
-    },
-    {
-      "action": "develop",
-      "id": 24,
-      "name": "Adv Stl Fighter",
-      "asteroidClass": null,
-      "waitSeconds": 0,
-      "requiredTechs": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-      "expectedUnlocks": [
-        {
-          "kind": "hull",
-          "id": 132,
-          "name": "Adv Stl Fighter",
-          "role": "capabilities=0x2892; group=0"
         }
       ]
     },
