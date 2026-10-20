@@ -23,6 +23,12 @@ if (Option("--atlas-test") is { } kind)
     atlas.Run();
     return;
 }
+if (args.Contains("--classic-test"))
+{
+    using var classic = new ClassicProof(root, Option("--art") ?? ExternalPaths.Require(ExternalResourceKind.Artwork));
+    classic.Run();
+    return;
+}
 using var game = new HdProof(root, test, Option("--output"), Option("--pilot"), Option("--art"));
 game.Run();
 
@@ -319,6 +325,185 @@ sealed class HdProof : Game
         _timer?.Dispose(); _renderer.Dispose();
         if (_pilot is null) { _geometry.Dispose(); _nativeTexture.Dispose(); }
         _fsr.Dispose(); _bloom.Dispose(); _shaders.Dispose(); Directory.Delete(_temporary, true);
+        base.UnloadContent();
+    }
+    private sealed class SyntheticSource : IAssetSource
+    {
+        public bool Exists(string path) => true;
+        public Stream OpenRead(string path) => new MemoryStream(path == "hullbmp.mdl" ? NativeTexture : NativeModel);
+        public IEnumerable<string> Enumerate(string directory) => [];
+    }
+}
+
+/// <summary>HD-5 — real-GL proof that the CLASSIC HD path samples the pack's
+/// basecolor through the SAME native BasicEffect lighting/blending as the native
+/// path (native texture and HD basecolor differ deliberately: native blue, HD
+/// green), falls back to native when a material is missing, and residents only the
+/// basecolor map (vs the full 5-map PBR set).</summary>
+sealed class ClassicProof : Game
+{
+    private readonly string _root, _temporary = Path.Combine(Path.GetTempPath(), "hd5-classic-" + Guid.NewGuid());
+    private readonly string _art;
+    private ShaderAssetCache _shaders = null!;
+    private NativeShipRenderer _renderer = null!;
+    private NativeShipRenderer.NativeShipGeometry _geometry = null!;
+    private Texture2D _nativeBlue = null!, _hdGreenReference = null!;
+    private const int TexSize = 32;
+    private readonly SectorLighting _light = SectorLighting.FromCluster([.4f, .5f, 1], 0xffddddcc);
+    private readonly Matrix _view = Matrix.CreateLookAt(new(0, 0, 4), Vector3.Zero, Vector3.Up);
+    private static readonly byte[] NativeModel = [9, 9, 9], NativeTexture = [8, 8, 8];
+
+    public ClassicProof(string root, string art)
+    {
+        _root = root; _art = art;
+        _ = new GraphicsDeviceManager(this) { PreferredBackBufferWidth = 64, PreferredBackBufferHeight = 64, GraphicsProfile = GraphicsProfile.HiDef, SynchronizeWithVerticalRetrace = false };
+        IsFixedTimeStep = false;
+    }
+    protected override void LoadContent()
+    {
+        Directory.CreateDirectory(_temporary);
+        _shaders = ShaderAssetCache.ForDevice(GraphicsDevice);
+        if (_shaders.LoadFrom("Content/Shaders/NativePbr.ogl.mgfxo", () => File.OpenRead(Path.Combine(_root, "src/Allegiance.ClientCore.MonoGame/Content/Shaders/NativePbr.ogl.mgfxo"))) is null)
+            throw new Exception("shader failed: NativePbr");
+        MakePack();
+        _renderer = new(GraphicsDevice, new SyntheticSource(), new HdPack(_temporary), _shaders);
+        _geometry = NativeShipRenderer.NativeShipGeometry.Build(GraphicsDevice, [Sphere()]);
+        _nativeBlue = Solid(TexSize, Color.Blue);
+        _hdGreenReference = Solid(TexSize, Color.Green);
+        Console.WriteLine($"HD5 adapter: {GraphicsAdapter.DefaultAdapter.Description}");
+    }
+    protected override void Draw(GameTime time)
+    {
+        try { Check(); }
+        catch (Exception ex) { Console.Error.WriteLine("HD5_CLASSIC_FAIL: " + ex.Message); Exit(); return; }
+        Console.WriteLine("HD5_CLASSIC_PASS: classic HD = HD basecolor + native lighting; fallback native; basecolor-only residency");
+        Exit();
+    }
+
+    private void Check()
+    {
+        // Mode selection per setting (pure).
+        AssertEq(HdMaterialRenderer.ModeFor(false, false), HdDrawMode.Off);
+        AssertEq(HdMaterialRenderer.ModeFor(false, true), HdDrawMode.Off);
+        AssertEq(HdMaterialRenderer.ModeFor(true, false), HdDrawMode.Classic);
+        AssertEq(HdMaterialRenderer.ModeFor(true, true), HdDrawMode.Pbr);
+
+        // Native: blue (hdOverride=false forces the native path).
+        var native = Render(_nativeBlue, hdOverride: false);
+        AssertDominant(native, "B", nameof(native));
+
+        // Classic: HD green basecolor under native lighting (force HD on, PBR off).
+        _renderer.HdPbrEnabled = false;
+        _renderer.ResetHdResidency();
+        var classic = Render(_nativeBlue, hdOverride: true);
+        AssertDominant(classic, "G", "classic");
+        if (CloseEnough(classic, native)) throw new Exception("classic mode did not change the texture (native==classic)");
+
+        // Reference: native lighting + the SAME HD basecolor as a native texture.
+        var reference = Render(_hdGreenReference, hdOverride: false);
+        AssertDominant(reference, "G", "reference(native-lighting+HD-basecolor)");
+        if (!CloseEnough(classic, reference)) throw new Exception("classic HD differs from native lighting + HD basecolor reference");
+
+        // Native lighting params are honoured in classic mode (a darker sector lamp changes the output).
+        var classicDark = Render(_nativeBlue, hdOverride: true, light: SectorLighting.FromCluster([0, 0, -1], 0xff222233));
+        if (Luma(classicDark) >= Luma(classic) - 1) throw new Exception("classic mode did not respond to native sector lighting");
+
+        // Classic residency: basecolor map only (much smaller than the 5-map PBR set).
+        long classicBytes = _renderer.HdResidentBytes;
+        long oneBaseColor = HdMaterialRenderer.MipBytes(TexSize, TexSize);
+        if (classicBytes != oneBaseColor) throw new Exception($"classic resident {classicBytes} != basecolor-only {oneBaseColor}");
+        Console.WriteLine($"[hd5] classic resident {classicBytes} B = basecolor only ({oneBaseColor})");
+
+        // PBR residents the full 5-map set and shades differently.
+        _renderer.HdPbrEnabled = true;
+        _renderer.ResetHdResidency();
+        var pbr = Render(_nativeBlue, hdOverride: true);
+        if (_renderer.HdResidentBytes != oneBaseColor * 5) throw new Exception($"PBR resident {_renderer.HdResidentBytes} != 5-map {oneBaseColor * 5}");
+        Console.WriteLine($"[hd5] PBR resident {_renderer.HdResidentBytes} B = 5-map ({oneBaseColor * 5})");
+        if (CloseEnough(pbr, classic)) throw new Exception("PBR shading equals classic shading");
+
+        // Fallback: a model with no HD material keeps the native blue texture.
+        _renderer.HdPbrEnabled = false;
+        var missing = Render(_nativeBlue, hdOverride: true, model: "nopack", textureStem: "nopackbmp");
+        AssertDominant(missing, "B", "fallback(native)");
+        Console.WriteLine($"[hd5] classic resident per material = {classicBytes} B; native fallback preserved");
+    }
+
+    private Color[] Render(Texture2D texture, bool? hdOverride, string model = "hull", string textureStem = "hullbmp", SectorLighting? light = null)
+    {
+        using var target = new RenderTarget2D(GraphicsDevice, 128, 128, false, SurfaceFormat.Color, DepthFormat.Depth24);
+        GraphicsDevice.SetRenderTarget(target); GraphicsDevice.Clear(Color.Black);
+        _renderer.Draw(_geometry, texture, Matrix.Identity, _view,
+            Matrix.CreatePerspectiveFieldOfView(.5f, 1, .1f, 100), 1, 1, light ?? _light, model, textureStem, hdOverride);
+        GraphicsDevice.SetRenderTarget(null); var pixels = new Color[128 * 128]; target.GetData(pixels); return pixels;
+    }
+
+    private static bool CloseEnough(Color[] a, Color[] b)
+    {
+        for (int i = 0; i < a.Length; i++)
+            if (Math.Abs(a[i].R - b[i].R) + Math.Abs(a[i].G - b[i].G) + Math.Abs(a[i].B - b[i].B) > 3) return false;
+        return true;
+    }
+    private static int Luma(Color[] px) { long s = 0; foreach (var c in px) s += c.R + c.G + c.B; return (int)(s / px.Length); }
+    private static void AssertDominant(Color[] px, string channel, string what)
+    {
+        double r = 0, g = 0, b = 0;
+        foreach (var c in px) { r += c.R; g += c.G; b += c.B; }
+        double n = px.Length;
+        if (channel == "G" && g / n <= b / n + 1 && g / n <= r / n + 1) throw new Exception($"{what} is not green-dominated (R{r / n:F1} G{g / n:F1} B{b / n:F1})");
+        if (channel == "B" && b / n <= r / n + 1 && b / n <= g / n + 1) throw new Exception($"{what} is not blue-dominated (R{r / n:F1} G{g / n:F1} B{b / n:F1})");
+    }
+    private static void AssertEq<T>(T a, T b) { if (!Equals(a, b)) throw new Exception($"expected {a} == {b}"); }
+
+    private Texture2D Solid(int size, Color color)
+    {
+        var px = new Color[size * size]; Array.Fill(px, color);
+        var t = new Texture2D(GraphicsDevice, size, size); t.SetData(px); return t;
+    }
+    private void MakePack()
+    {
+        // Schema 2 (texture-keyed atlas), matching the shipped schema-3 pack's
+        // resolution semantics (classic/basecolor is looked up by TEXTURE stem).
+        var textures = new Dictionary<string, object> { ["hullbmp"] = new { native = new { TextureSha256 = Hash(NativeTexture) } } };
+        string directory = Path.Combine(_temporary, "textures", "hullbmp"); Directory.CreateDirectory(directory);
+        foreach (string map in HdPack.MapNames)
+        {
+            var px = new Color[TexSize * TexSize];
+            for (int i = 0; i < px.Length; i++)
+                px[i] = map switch
+                {
+                    "basecolor" => Color.Green,                       // HD basecolor DIFFERS from native blue
+                    "normal" => new Color(128, 128, 255),             // flat +Z normal
+                    "metallic" => Color.Black, "roughness" => new Color(128, 0, 0), "emission" => Color.Black,
+                    _ => Color.Black,
+                };
+            using var tex = new Texture2D(GraphicsDevice, TexSize, TexSize); tex.SetData(px);
+            using var file = File.Create(Path.Combine(directory, map + ".png")); tex.SaveAsPng(file, TexSize, TexSize);
+        }
+        File.WriteAllText(Path.Combine(_temporary, "manifest.json"), JsonSerializer.Serialize(new { schema = 2, textures }));
+    }
+    private static string Hash(byte[] bytes) => Convert.ToHexString(SHA256.HashData(bytes));
+    private static MdlMesh Sphere()
+    {
+        const int rings = 24, segments = 48;
+        var positions = new List<float>(); var normals = new List<float>(); var uv = new List<float>(); var indices = new List<ushort>();
+        for (int r = 0; r <= rings; r++) for (int s = 0; s <= segments; s++)
+        {
+            float a = r * MathF.PI / rings, b = s * MathF.Tau / segments;
+            var n = new Vector3(MathF.Sin(a) * MathF.Cos(b), MathF.Cos(a), MathF.Sin(a) * MathF.Sin(b));
+            positions.AddRange([n.X, n.Y, n.Z]); normals.AddRange([n.X, n.Y, n.Z]); uv.AddRange([s / (float)segments, r / (float)rings]);
+        }
+        for (int r = 0; r < rings; r++) for (int s = 0; s < segments; s++)
+        {
+            int a = r * (segments + 1) + s, b = a + segments + 1;
+            indices.AddRange([(ushort)a, (ushort)(a + 1), (ushort)b, (ushort)(a + 1), (ushort)(b + 1), (ushort)b]);
+        }
+        return new MdlMesh { Positions = positions.ToArray(), Normals = normals.ToArray(), TexCoords = uv.ToArray(), Indices = indices.ToArray() };
+    }
+    protected override void UnloadContent()
+    {
+        _geometry.Dispose(); _nativeBlue.Dispose(); _hdGreenReference.Dispose(); _renderer.Dispose(); _shaders.Dispose();
+        try { Directory.Delete(_temporary, true); } catch { }
         base.UnloadContent();
     }
     private sealed class SyntheticSource : IAssetSource

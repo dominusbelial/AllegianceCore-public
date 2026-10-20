@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.SinglePlayer.Benchmark;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -55,6 +56,66 @@ public sealed class HdPbrTests
         }
         finally { Directory.Delete(Path.GetDirectoryName(path)!, true); }
     }
+    [Theory]
+    [InlineData(false, false, HdDrawMode.Off)]
+    [InlineData(false, true, HdDrawMode.Off)]
+    [InlineData(true, false, HdDrawMode.Classic)]
+    [InlineData(true, true, HdDrawMode.Pbr)]
+    public void Mode_selection_per_setting(bool hdTextures, bool hdPbr, HdDrawMode expected)
+        => Assert.Equal(expected, HdMaterialRenderer.ModeFor(hdTextures, hdPbr));
+
+    [Fact]
+    public void Hd_lighting_flag_defaults_off_and_roundtrips()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), "hd5-settings-" + Guid.NewGuid());
+        string path = Path.Combine(dir, "graphics.json");
+        try
+        {
+            // Brand new (no file) -> the new experimental default: PBR off.
+            Assert.False(UpscalingSettings.Load(path).HdPbr);
+            // Explicit on persists.
+            new UpscalingSettings { HdTextures = true, HdPbr = true }.Save(path);
+            Assert.True(UpscalingSettings.Load(path).HdPbr);
+            // Explicit off persists (no migration overrides it).
+            new UpscalingSettings { HdTextures = true, HdPbr = false }.Save(path);
+            Assert.False(UpscalingSettings.Load(path).HdPbr);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public void Legacy_saved_HdPbr_migrates_to_the_new_flag()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), "hd5-migrate-" + Guid.NewGuid());
+        string gfxPath = Path.Combine(dir, "graphics.json");
+        string benchPath = Path.Combine(dir, "benchmark.json");
+        string? savedEnv = Environment.GetEnvironmentVariable("ALLEGIANCE_BENCHMARK_CONFIG");
+        try
+        {
+            Environment.SetEnvironmentVariable("ALLEGIANCE_BENCHMARK_CONFIG", benchPath);
+            // No graphics.json HdPbr field, but the player applied an HdPbr=ON
+            // benchmark recommendation before HD-5 -> the new flag inherits ON.
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(gfxPath, "{\"HdTextures\": true}");
+            (new BenchmarkPreferences { OfferHandled = true, Applied = new BenchmarkRecommendation { HdPbr = true, HdTextures = true } }).Save(benchPath);
+            var loaded = UpscalingSettings.Load(gfxPath);
+            Assert.True(loaded.HdPbr, "legacy HdPbr=on benchmark should migrate to the new experimental flag");
+
+            // A file WITH an explicit HdPbr is authoritative (no migration).
+            new UpscalingSettings { HdPbr = false }.Save(gfxPath);
+            Assert.False(UpscalingSettings.Load(gfxPath).HdPbr);
+
+            // No applied benchmark prefs at all -> the new default (off).
+            File.Delete(benchPath);
+            File.WriteAllText(gfxPath, "{\"HdTextures\": true}");
+            Assert.False(UpscalingSettings.Load(gfxPath).HdPbr);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ALLEGIANCE_BENCHMARK_CONFIG", savedEnv);
+            Directory.Delete(dir, true);
+        }
+    }
     [Fact]
     public void DesktopGl_shader_bytecode_matches_source()
     {
@@ -77,6 +138,22 @@ public sealed class HdPbrTests
         catch (OperationCanceledException) { process.Kill(true); Assert.Fail("HD2 GL render test timed out"); }
         string output = await stdout + await stderr;
         Assert.True(process.ExitCode == 0, output); Assert.Contains("HD2_SELF_TEST_PASS", output);
+    }
+    [Fact]
+    public async Task Classic_hd_uses_basecolor_with_native_lighting_and_falls_back_on_real_gl()
+    {
+        var start = new ProcessStartInfo("dotnet") { RedirectStandardOutput = true, RedirectStandardError = true };
+        start.ArgumentList.Add(Path.Combine(Repo(), "tools/hd2-proof/bin/Debug/net10.0/hd2-proof.dll"));
+        start.ArgumentList.Add(Repo()); start.ArgumentList.Add("--classic-test");
+        start.Environment["SDL_VIDEODRIVER"] = "offscreen"; start.Environment["ALSOFT_DRIVERS"] = "null";
+        using var process = Process.Start(start)!;
+        var stdout = process.StandardOutput.ReadToEndAsync(); var stderr = process.StandardError.ReadToEndAsync();
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(90));
+        try { await process.WaitForExitAsync(timeout.Token); }
+        catch (OperationCanceledException) { process.Kill(true); Assert.Fail("HD5 classic GL render test timed out"); }
+        string output = await stdout + await stderr;
+        Assert.True(process.ExitCode == 0, output);
+        Assert.Contains("HD5_CLASSIC_PASS", output);
     }
     private static string Repo()
     {

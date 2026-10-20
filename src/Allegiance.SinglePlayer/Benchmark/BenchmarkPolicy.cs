@@ -38,7 +38,9 @@ public static class BenchmarkPolicy
             Fsr = gpu, FsrPreset = gpu && width >= 2560 ? 2 : 1,
             EffectsQuality = gpu || client ? EffectsDetail.Low : r.GpuMs is < 8 && MeetsTarget(r) ? EffectsDetail.High : EffectsDetail.Medium,
             Bloom = r.GpuMs is < 8 && MeetsTarget(r) && !gpu && !client,
-            HdPbr = !gpu, HdTextures = !gpu, EffectsDensity = gpu || client ? .5f : 1,
+            // HD-5: experimental PBR stays OFF in recommendations; the HD classic
+            // default (sharp basecolor + native lighting) is the baseline.
+            HdPbr = false, HdTextures = !gpu, EffectsDensity = gpu || client ? .5f : 1,
             ViewDistance = client ? 4500 : 6000
         };
         return result with { Reasons = [

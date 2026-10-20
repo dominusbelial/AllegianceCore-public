@@ -35,7 +35,7 @@ sealed class CompressedProof : Game
         using var target = new RenderTarget2D(GraphicsDevice, 256, 256, false, SurfaceFormat.Color, DepthFormat.Depth24);
         Color[] Render(HdMaterialRenderer renderer, float distance, bool enabled)
         {
-            renderer.Enabled = enabled;
+            renderer.Mode = enabled ? HdDrawMode.Pbr : HdDrawMode.Off;
             using var draw = new NativeShipRenderer(GraphicsDevice, assets, hd: renderer);
             GraphicsDevice.SetRenderTarget(target); GraphicsDevice.Clear(Color.Black);
             GraphicsDevice.BlendState = BlendState.Opaque; GraphicsDevice.DepthStencilState = DepthStencilState.Default;
@@ -53,7 +53,7 @@ sealed class CompressedProof : Game
         long nearBytes = hd.ResidentBytes;
         var fallback = Render(bc3, 5, true);
         if (fallback.SequenceEqual(off) || bc3.ResidentBytes != nearBytes) throw new Exception("BC3 fallback failed");
-        hd.Enabled = true;
+        hd.Mode = HdDrawMode.Pbr;
         var unlit = hd.EmissiveTexture("fig02bmp") ?? throw new Exception("compressed unlit map missing");
         GraphicsDevice.SetRenderTarget(target); GraphicsDevice.Clear(Color.Black);
         using (var batch = new SpriteBatch(GraphicsDevice))

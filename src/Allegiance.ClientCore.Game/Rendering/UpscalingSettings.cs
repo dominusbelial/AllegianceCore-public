@@ -14,6 +14,11 @@ public sealed class UpscalingSettings
     /// <summary>0 = no sharpening, 1 = strongest RCAS lobe.</summary>
     public float Sharpness { get; set; } = 0.5f;
     public bool HdTextures { get; set; } = true;
+    /// <summary>HD-5 — experimental HD lighting (PBR). Default OFF: with HD
+    /// textures on and PBR off the client uses the new HD classic default (sharp
+    /// pack basecolor with the native lighting); PBR is opt-in and tuned in HD-6.
+    /// Named <c>HdPbr</c> so P729's benchmark recommendations share the field.</summary>
+    public bool HdPbr { get; set; }
     public Allegiance.ClientCore.State.EffectsDetail Effects { get; set; } = Allegiance.ClientCore.State.EffectsDetail.Medium;
     public bool DynamicResolution { get; set; }
     public float TargetFrameMs { get; set; } = 16.667f;
@@ -41,8 +46,36 @@ public sealed class UpscalingSettings
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
     public static UpscalingSettings Load(string path)
     {
-        try { var s = JsonSerializer.Deserialize<UpscalingSettings>(File.ReadAllText(path), Json) ?? new(); s.Normalize(); return s; }
+        try
+        {
+            string raw = File.ReadAllText(path);
+            var s = JsonSerializer.Deserialize<UpscalingSettings>(raw, Json) ?? new();
+            // HD-5 — migrate a legacy saved HdPbr (the old benchmark-driven "HD PBR"
+            // toggle, formerly default-on) onto the new experimental flag. Only when
+            // this file predates the flag (no HdPbr field): a player who previously
+            // applied an HdPbr-on benchmark recommendation keeps PBR on; everyone
+            // else gets the new experimental default (off).
+            if (!ContainsJsonProperty(raw, "HdPbr"))
+                s.HdPbr = LegacyAppliedHdPbr();
+            s.Normalize();
+            return s;
+        }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException) { return new(); }
+    }
+
+    private static bool ContainsJsonProperty(string json, string name)
+    {
+        using var doc = JsonDocument.Parse(json);
+        return doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty(name, out _);
+    }
+
+    /// <summary>The HdPbr a player most recently applied through the benchmark
+    /// recommendations (the only place the old HD-PBR toggle was persisted before
+    /// HD-5). Absent prefs => the new default (off). Never throws on load noise.</summary>
+    private static bool LegacyAppliedHdPbr()
+    {
+        try { return Allegiance.SinglePlayer.Benchmark.BenchmarkPreferences.Load().Applied?.HdPbr ?? false; }
+        catch { return false; }
     }
     public void Save(string path)
     {

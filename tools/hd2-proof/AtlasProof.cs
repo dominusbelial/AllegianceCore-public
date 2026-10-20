@@ -88,7 +88,7 @@ sealed class AtlasProof : Game
     private Color[] Render(bool enabled, string pack, out int count)
     {
         var assets = _assets;
-        using var hd = new HdMaterialRenderer(GraphicsDevice, NativeMaterialParts.NativeReader(assets), new HdPack(pack), shaders: _shaders) { Enabled = enabled };
+        using var hd = new HdMaterialRenderer(GraphicsDevice, NativeMaterialParts.NativeReader(assets), new HdPack(pack), shaders: _shaders) { Mode = enabled ? HdDrawMode.Pbr : HdDrawMode.Off };
         using var target = new RenderTarget2D(GraphicsDevice, 192, 192, false, SurfaceFormat.Color, DepthFormat.Depth24);
         GraphicsDevice.SetRenderTarget(target); GraphicsDevice.Clear(Color.Black);
         GraphicsDevice.BlendState = BlendState.Opaque; GraphicsDevice.DepthStencilState = DepthStencilState.Default;

@@ -34,7 +34,17 @@ public sealed class HdMaterialRenderer : IDisposable
         public double LastUseSeconds { get; set; }
         public double LastDetailSeconds { get; set; }
     }
-    public bool Enabled { get; set; } = true;
+    /// <summary>HD-5 — how the pack participates for this renderer: Off (native),
+    /// Classic (HD basecolor + native lighting, the new default) or Pbr
+    /// (experimental). Single source of truth for every renderer that shares this
+    /// instance (ships, stations, missiles, probes, projectiles, asteroids,
+    /// treasure, warps).</summary>
+    public HdDrawMode Mode { get; set; } = HdDrawMode.Classic;
+    /// <summary>Derive the pack participation from the two player settings:
+    /// HD textures on/off and the experimental HD lighting (PBR) on/off. Pure and
+    /// testable (HD-5).</summary>
+    public static HdDrawMode ModeFor(bool hdTextures, bool hdPbr)
+        => hdTextures ? (hdPbr ? HdDrawMode.Pbr : HdDrawMode.Classic) : HdDrawMode.Off;
     public EffectLights? Flashes { get; set; }
     public long ResidentBytes { get; private set; }
     public int ResidentMaterials => _resident.Count;
@@ -52,20 +62,38 @@ public sealed class HdMaterialRenderer : IDisposable
     private readonly bool _ownsShaders;
 
     /// <summary>Native unlit/additive geometry keeps its authored emissive pass,
-    /// animation and vertex colours while sharing validation, residency and toggle.</summary>
+    /// animation and vertex colours while sharing validation, residency and toggle.
+    /// Returns the HD basecolor as a UNORM texture for BasicEffect, or null in
+    /// <see cref="HdDrawMode.Off"/> / when unavailable.</summary>
     public Texture2D? EmissiveTexture(string texture)
     {
-        if (!Enabled) return null;
+        if (Mode == HdDrawMode.Off) return null;
         var material = _pack.Resolve("", texture, _openNative);
         return material is null ? null : MapsFor(material, 256, unlit: true)?[0];
     }
 
+    /// <summary>HD-5 — the pack's <b>basecolor</b> (UNORM / sRGB-encoded) for the
+    /// native classic path: BasicEffect consumes the encoded samples directly, so
+    /// the classic HD material renders with the EXACT native lighting/blending but
+    /// a sharper texture. Returns null when the material is unavailable (caller
+    /// keeps the native texture). Screen footprint selects the basecolor mip,
+    /// mirroring the PBR resolution policy so an up-close hull gets its full
+    /// resolution. The caller has already selected Classic mode; this is called
+    /// only from that path.</summary>
+    public Texture2D? ClassicColor(string? texture, float projectedPixels)
+    {
+        if (texture is null) return null;
+        var material = _pack.Resolve("", texture, _openNative);
+        if (material is null) return null;
+        return MapsFor(material, projectedPixels, unlit: true)?[0];
+    }
+
     /// <summary>Returns false before changing render state when unavailable, so
-    /// the caller executes its identical native BasicEffect fallback.</summary>
+    /// the caller executes its identical native BasicEffect fallback. The caller
+    /// has already selected Pbr mode (this is only reached from that path).</summary>
     public bool TryDraw(string model, string? texture, Func<VertexBuffer> vertices, IndexBuffer indices,
         int triangles, Matrix world, Matrix view, Matrix projection, float opacity, SectorLighting? lighting, int startIndex = 0, float modelRadius = 1)
     {
-        if (!Enabled) return false;
         var material = _pack.Resolve(model, texture, _openNative);
         if (material is null) return false;
         if (!_shaderAttempted)
@@ -116,9 +144,11 @@ public sealed class HdMaterialRenderer : IDisposable
     private Texture2D[]? MapsFor(HdPack.Material material, float projectedPixels, bool unlit = false)
     {
         // BasicEffect's unlit path consumes encoded sRGB samples directly.
-        // Give it a separately budgeted UNORM color texture; PBR uses sRGB.
-        string key = material.Key + (unlit && material.Compressed ? "|unlit" : "");
-        string[] names = unlit && material.Compressed ? ["basecolor"] : HdPack.MapNames;
+        // Give it a separately budgeted UNORM color texture (basecolor only —
+        // HD-5: the classic path residents just the color map, not the 5-map
+        // PBR set); PBR uses sRGB and the full set.
+        string key = material.Key + (unlit ? "|unlit" : "");
+        string[] names = unlit ? ["basecolor"] : HdPack.MapNames;
         // Quantized requested resolution, shared by every user of an atlas.
         int quality = Math.Clamp((int)Math.Ceiling(Math.Log2(Math.Max(64, projectedPixels * 2))), 6, 13);
         if (_resident.TryGetValue(key, out var hit))

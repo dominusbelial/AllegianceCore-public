@@ -56,7 +56,7 @@ public sealed record BenchmarkRecommendation
     public int FsrPreset { get; init; } = 1;
     public Allegiance.ClientCore.State.EffectsDetail EffectsQuality { get; init; } = Allegiance.ClientCore.State.EffectsDetail.Medium;
     public bool Bloom { get; init; }
-    public bool HdPbr { get; init; } = true;
+    public bool HdPbr { get; init; }
     public bool HdTextures { get; init; } = true;
     public int FrameCap { get; init; } = 60;
     public bool Vsync { get; init; }

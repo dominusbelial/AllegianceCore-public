@@ -98,8 +98,10 @@ public sealed partial class Game1
             _upscaling.HdTextures = s.HdTextures;
             _upscaling.DynamicResolution = false;
         }
+        _upscaling.HdPbr = s.HdPbr;
         _nativeShipRenderer.HdTexturesEnabled = _upscaling.HdTextures;
         _nativeShipRenderer.HdPbrEnabled = s.HdPbr;
+        SyncHdMaterialMode();
         ApplyEffectsDetail(s.EffectsQuality);
         _bloomEnabled = s.Bloom && _enhancedVfx && _upscaling.Effects != State.EffectsDetail.Low;
         _benchmarkEffectsDensity = Math.Clamp(s.EffectsDensity, .1f, 1);

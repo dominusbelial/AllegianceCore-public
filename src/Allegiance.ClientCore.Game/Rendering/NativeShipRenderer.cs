@@ -309,9 +309,19 @@ public sealed class NativeShipRenderer : IDisposable
         _effect.TextureEnabled = texture is not null;
         _effect.Alpha = translucent ? opacity : 1f;
 
+        // HD-5 — the pack participation mode. Normally the ship follows the shared
+        // HdMaterialRenderer.Mode (the single global setting every renderer obeys).
+        // The inspector HD-compare override forces HD on (respecting the lighting
+        // choice) or forces native off, regardless of the texture gate.
+        var drawMode = hdOverride switch
+        {
+            false => HdDrawMode.Off,
+            true => HdPbrEnabled ? HdDrawMode.Pbr : HdDrawMode.Classic,
+            _ => _hd.Mode,
+        };
         geo.Materials.Draw(gd, _hd, modelStem, textureStem,
             texture, TextureFor, _effect, geo.Vertices, geo.Indices, local, view, projection,
-            opacity, lighting, HdPbrEnabled && (hdOverride ?? HdTexturesEnabled));
+            opacity, lighting, drawMode);
 
         if (translucent)
             gd.BlendState = BlendState.Opaque;
