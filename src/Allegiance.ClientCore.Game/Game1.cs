@@ -289,6 +289,9 @@ public sealed partial class Game1 : Game
     private readonly List<TrailParticleView> _drawEngineTrailViews = new();
     private readonly List<Rendering.ShipTrailStrip> _drawMotionTrailStrips = new();
     private readonly List<RadarBracketRenderer.RadarContact> _drawRadarContacts = new();
+    // HUD-4b — reused scratch buffer for the per-frame radar-contact snapshot,
+    // so the HUD adapter fills this instead of allocating a fresh HudContact[].
+    private HudContact[] _drawRadarContactsBuffer = Array.Empty<HudContact>();
     // P372 — the per-ship in-world side-colour "team tags" (hull-attached side
     // indicator for the 3D view), gathered in the same DrawRadar pass as the
     // brackets and rendered by ShipSideTagRenderer.

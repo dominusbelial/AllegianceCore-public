@@ -2597,6 +2597,9 @@ public sealed partial class Game1
                     ControlState: up.StateM);
             }
         }
+        // HUD-4b: keep the grown contact buffer so the HUD model doesn't allocate a new array every frame.
+        if (_drawRadarContactsBuffer.Length < _drawRadarContacts.Count)
+            _drawRadarContactsBuffer = new HudContact[Math.Max(_drawRadarContacts.Count, _drawRadarContactsBuffer.Length * 2)];
         var model = HudModelAdapter.Create(frame, _cameraMode, _lockBracket, _leadIndicator,
             _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
             leaderCommand: _leaderBotCommand, ripcord: RipcordStatusLabel(),
@@ -2608,7 +2611,7 @@ public sealed partial class Game1
             docked: hudDocked, dead: hudDead, commandView: CommandCameraActive,
             notices: _tipLines.Select(t => new HudNotice(t.Text, t.Critical,
                 (float)Math.Clamp((t.ExpiresAt - _nowSeconds) / 0.8, 0.0, 1.0))).ToArray(),
-            contacts: _drawRadarContacts,
+            contacts: _drawRadarContacts, contactsBuffer: _drawRadarContactsBuffer,
             radarPulse: (MathF.Sin((float)_nowSeconds * 5f) + 1f) * 0.5f, radarMode: _radarMode,
             chat: new HudChat(BuildChatLines(), _chatScrollOffset,
                 _chatActive ? _chatBuffer.ToString() : string.Empty, _chatActive, _nowSeconds,
@@ -2616,7 +2619,8 @@ public sealed partial class Game1
             cargoLine: BuildCargoHudText(), flightPartsLine: BuildFlightPartsHudText(),
             commandLines: BuildCommandHudLines(), inventoryVisible: _consolePanes.Inventory,
             lastBaseObjectives: _lastBaseHud, hitConfirmation: _nowSeconds < _hudHitUntil,
-            podReturnInstruction: $"{KeyOf("TargetFriendlyBaseNearest").Label} / {KeyOf("ToggleAutopilot").Label} AUTOPILOT TO BASE");
+            podReturnInstruction: $"{KeyOf("TargetFriendlyBaseNearest").Label} / {KeyOf("ToggleAutopilot").Label} AUTOPILOT TO BASE",
+            roundRadar: _hudSettings.RoundRadar);
         if (_hudSettings.Style == HudStyle.Classic) _radarRenderer.Draw(model, GraphicsDevice.Viewport);
         if (model.FlightVisible && model.Context.Contacts.Count > 0)
             _shipTagRenderer.Draw(_hudSettings.Style == HudStyle.Modern && _hudSettings.ColorBlindSafe
@@ -2858,22 +2862,31 @@ public sealed partial class Game1
     /// <summary>
     /// P250 — gather the nearby objects in the local player's CURRENT sector
     /// (ships, stations, warps) under the Gate lock, project each to screen via
-    /// <see cref="RadarProjection"/>, apply the distance fade, and draw them
-    /// through <see cref="RadarBracketRenderer"/>. Missiles/mines/asteroids are
-    /// named follow-ups, not contacts this stage (the brief's explicit scope
-    /// boundary). No new wire/data plumbing: this reuses the exact per-sector
-    /// filtering the draw loops already do (<c>ClusterId/SectorId == mySector</c>,
-    /// e.g. the P218 asteroid / P227 warp / P234 missile loops). Always-on, like
-    /// native's radar (part of the standard HUD, no toggle — the P211 cockpit
-    /// gauges occupy the corners/centre while these small icons sit at object
-    /// positions throughout the viewport, so they don't structurally collide).
+    /// <see cref="RadarProjection"/>, apply the native LOD filters and draw them
+    /// through <see cref="RadarBracketRenderer"/>. HUD-4 adds the own-ship marker,
+    /// missile/probe/mine/treasure/tech contacts, ordinary asteroids and the
+    /// native per-kind LOD presence rules. Native has no distance fade
+    /// (radarimage.cpp:689-700 is commented out), so contacts are full opacity.
+    /// No new wire/data plumbing: this reuses the exact per-sector filtering the
+    /// draw loops already do (<c>ClusterId/SectorId == mySector</c>).
     /// </summary>
+    private static bool IsExternalFlightCamera(CameraMode mode) =>
+        mode is CameraMode.Chase or CameraMode.External
+            or CameraMode.ExternalTurret or CameraMode.ExternalMissile
+            or CameraMode.ExternalFlyBy or CameraMode.ExternalFlyByTarget
+            or CameraMode.ExternalOrbit or CameraMode.ExternalTarget
+            or CameraMode.ExternalBase or CameraMode.ExternalStation
+            or CameraMode.ExternalOverride;
+
     private void DrawRadar(Matrix view, Matrix proj, Vector3 cameraEye, double timeSeconds)
     {
         var world = _session.World;
         var vp = GraphicsDevice.Viewport;
         float w = vp.Width, h = vp.Height;
         const float inset = 14f;
+        // Native has no distance-alpha fade (radarimage.cpp:689-700 is commented
+        // out), so every contact is full opacity; pinned by the parity test.
+        const float op = RadarBracketLayout.NativeContactOpacity;
 
         // P495 — resolve this frame's investment-pane model + the hovered
         // station-type bucket's build mask (native SetInvestAsteroid). Builds
@@ -2882,14 +2895,16 @@ public sealed partial class Game1
         RefreshInvestState();
 
         // P436 — the selected-target highlight. Resolve the player's current
-        // _autoTarget to its radar-contact type (Asteroid has no radar blip →
-        // null) and a frame-independent 0..1 pulse phase for the highlight.
+        // _autoTarget to its radar-contact type.
         var sel = _autoTarget;
         var selType = sel?.Kind switch
         {
             TargetKind.Ship => RadarBracketRenderer.RadarContactType.Ship,
             TargetKind.Station => RadarBracketRenderer.RadarContactType.Station,
+            TargetKind.Asteroid => RadarBracketRenderer.RadarContactType.Asteroid,
             TargetKind.Warp => RadarBracketRenderer.RadarContactType.Warp,
+            TargetKind.Probe => RadarBracketRenderer.RadarContactType.Probe,
+            TargetKind.Treasure => RadarBracketRenderer.RadarContactType.Treasure,
             _ => (RadarBracketRenderer.RadarContactType?)null,
         };
 
@@ -2904,10 +2919,23 @@ public sealed partial class Game1
             // the enemy/friendly test; snapshot under the gate with everything else.
             var radarMode = _radarMode;
             short mySide = world.MySideId ?? -1;
+            bool rangeZero = CommandCameraActive;   // native bRangeLabels = !CommandCamera
+            float ownRadius = HullLength(ownEnt.HullId) * 0.5f;
+
+            Color? SideColor(short side)
+                => world.TryGetSideColor(side, out float r, out float g, out float b) ? new Color(r, g, b) : null;
+            bool OwnOrAllied(short side) => side == mySide || world.AreAllied(mySide, side);
+            bool IsPedestalType(short typeId)
+                => _shopCatalog?.StationTypes is { } stationTypes
+                   && stationTypes.TryGetValue(typeId, out var stationType)
+                   && stationType.HasCapability(Allegiance.Core.DataStationTypeIGC.SabmPedestal);
+            // Native LOD predicates use the adjusted surface separation
+            // (radarimage.cpp:626-636); range labels would use centre distance.
+            float LodSeparation(float centre, float objectRadius) => MathF.Max(0f, centre - ownRadius - objectRadius);
+
             // P527 — the radar EYE uses the own-ship RENDER pose (P508 local
             // sim), not the raw 20 Hz ServerShipUpdate pose, so every contact's
-            // projection and distance-fade share the frame's own position (the
-            // same shared accessor the P523 anchors use). Falls back to the raw
+            // projection shares the frame's own position. Falls back to the raw
             // update only when the own ship wasn't rendered this frame.
             SimVec ownSimPos;
             if (!ResolveRadarContactAnchor(_poses, world.Ships, me, out ownSimPos))
@@ -2915,54 +2943,42 @@ public sealed partial class Game1
                 if (ownEnt.Latest is not { } ownUp) return;
                 ownSimPos = ownUp.Position;
             }
-            // Project with the eye that drew the scene, including commanding and drone views.
 
-            // P326 — the former local function Add(...) is inlined below (it
-            // captured per-frame state — ownPos/view/proj/w/h/inset and the
-            // contact buffer — so it could not be a cached delegate; inlining
-            // removes the per-frame closure allocation the review flagged).
+            // Own ship — native c_maskMe marker (radarimage.cpp:733-735). The
+            // marker only makes sense when the own hull is actually drawn:
+            // external/chase cameras, and only when the own ship projects in
+            // front (cockpit would otherwise edge-clamp it to bottom-centre).
+            if (IsExternalFlightCamera(_cameraMode))
+            {
+                var ownSite = RadarProjection.Project(
+                    PoseConverter.ToXna(ownSimPos), cameraEye, view, proj, w, h, inset);
+                if (ownSite.Placement == RadarBracketLayout.RadarPlacement.OnScreen)
+                    _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
+                        RadarBracketRenderer.RadarContactType.Ship,
+                        new NumericsVec2(ownSite.Point.X, ownSite.Point.Y),
+                        true, op, SideColor(mySide), false, false, true, false));
+            }
 
-            // Ships — other, living craft in my sector (skip self + corpses +
-            // out-of-view vessels; a departed ship's stale SectorId would
-            // otherwise still match mySector and show on the radar frozen).
+            // Ships — other, living craft in my sector (skip corpses + unknown +
+            // parented gunners; a departed ship's stale SectorId would otherwise
+            // still match mySector and show on the radar frozen).
             foreach (var (id, ship) in world.Ships)
             {
                 if (id == me || ship.IsNotVisible || ship.Unknown || ship.ParentId >= 0) continue;
                 if (ship.SectorId != mySector) continue;
                 if (ship.Latest is not { }) continue;                     // keep the Latest gate
-                // P527 — anchor to the pose the renderer drew THIS frame (P448b
-                // dead-reckoned for remotes), NOT the raw 20 Hz ServerShipUpdate
-                // pose, else the bracket + in-world side tag TRAIL a moving hull
-                // (live playtest 2026-10-04: the HUD icon sat visibly behind a
-                // steady miner). Fallback to raw only when not rendered.
                 if (!ResolveRadarContactAnchor(_poses, world.Ships, id, out var shipPos)) continue;
-                var site = RadarProjection.Project(
-                    PoseConverter.ToXna(shipPos), cameraEye, view, proj, w, h, inset);
-                float op = RadarBracketLayout.Opacity((ownSimPos - shipPos).Length(),
-                    RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
-                // P372 — resolve the contact's REAL side colour from the side
-                // roster (native pside->GetColor(), radarimage.cpp:682-685);
-                // null keeps the type-based teal fallback only while no roster
-                // colour is known yet (TryGetSideColor returns false).
-                Color? sideCol = null;
-                if (world.TryGetSideColor(ship.SideId, out float sr, out float sg, out float sb))
-                    sideCol = new Color(sr, sg, sb);
-                // P436 — is this ship the player's own selected target? Pure
-                // (RadarTargetSelection) so the flagging is unit-testable.
+                Color? sideCol = SideColor(ship.SideId);
                 bool isSel = RadarTargetSelection.IsSelected(
                     RadarBracketRenderer.RadarContactType.Ship, id, selType, sel?.Id);
-                // P624 — hide friendly ships in Target/Minimal modes (native LOD).
-                if (!RadarLod.ShowShip(radarMode, isEnemy: ship.SideId != mySide, isSel)) continue;
+                if (!RadarLod.ShowShip(radarMode, OwnOrAllied(ship.SideId), isSelf: false, isSel)) continue;
+                var site = RadarProjection.Project(
+                    PoseConverter.ToXna(shipPos), cameraEye, view, proj, w, h, inset);
                 _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
                     RadarBracketRenderer.RadarContactType.Ship,
                     new NumericsVec2(site.Point.X, site.Point.Y),
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
-                    sideCol, isSel));
-                // P372 — the in-world hull "team tag": drawn only for ON-SCREEN
-                // ships (an off-screen ship's edge-clamped bracket already
-                // carries its side colour), always in the contact's real side
-                // colour, so the 3D-view hull itself carries the side indicator
-                // without recolouring the real per-civ art.
+                    sideCol, isSel, false, false, false));
                 if (site.Placement == RadarBracketLayout.RadarPlacement.OnScreen
                     && sideCol is { } tagCol)
                     _drawShipTags.Add(new Rendering.ShipSideTagRenderer.ShipTag(
@@ -2974,62 +2990,175 @@ public sealed partial class Game1
             {
                 if (st.ClusterId != mySector) continue;
                 var sp = Vec(st.Position);
-                var site = RadarProjection.Project(
-                    PoseConverter.ToXna(sp), cameraEye, view, proj, w, h, inset);
-                float op = RadarBracketLayout.Opacity((ownSimPos - sp).Length(),
-                    RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
+                float centre = (ownSimPos - sp).Length();
+                float objectRadius = _shopCatalog?.StationTypes is { } stationTypes
+                    && stationTypes.TryGetValue(st.StationTypeId, out var stationType) ? stationType.Radius : 0f;
+                bool pedestal = IsPedestalType(st.StationTypeId);
                 bool isSel = RadarTargetSelection.IsSelected(
                     RadarBracketRenderer.RadarContactType.Station, sid, selType, sel?.Id);
-                if (!RadarLod.ShowTargetable(radarMode, isSel)) continue;
+                var site = RadarProjection.Project(
+                    PoseConverter.ToXna(sp), cameraEye, view, proj, w, h, inset);
+                bool onScreen = site.Placement == RadarBracketLayout.RadarPlacement.OnScreen;
+                if (!RadarLod.ShowStation(radarMode, pedestal, OwnOrAllied(st.SideId), onScreen,
+                    LodSeparation(centre, objectRadius), isSel)) continue;
                 _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
                     RadarBracketRenderer.RadarContactType.Station,
                     new NumericsVec2(site.Point.X, site.Point.Y),
-                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
-                    null, isSel));
+                    onScreen, op, SideColor(st.SideId), isSel, false, false, false));
             }
 
             // Warps in my sector.
             foreach (var (wid, wp) in world.Warps)
             {
                 if (wp.ClusterId != mySector) continue;
+                bool isSel = RadarTargetSelection.IsSelected(
+                    RadarBracketRenderer.RadarContactType.Warp, wid, selType, sel?.Id);
+                if (!RadarLod.ShowWarp(radarMode, isSel)) continue;
                 var wPos = Vec(wp.Position);
                 var site = RadarProjection.Project(
                     PoseConverter.ToXna(wPos), cameraEye, view, proj, w, h, inset);
-                float op = RadarBracketLayout.Opacity((ownSimPos - wPos).Length(),
-                    RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
-                bool isSel = RadarTargetSelection.IsSelected(
-                    RadarBracketRenderer.RadarContactType.Warp, wid, selType, sel?.Id);
-                if (!RadarLod.ShowTargetable(radarMode, isSel)) continue;
                 _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
                     RadarBracketRenderer.RadarContactType.Warp,
                     new NumericsVec2(site.Point.X, site.Point.Y),
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
-                    null, isSel));
+                    null, isSel, false, false, false));
             }
 
-            // P495 — asteroid build spots for the hovered station-type investment
-            // (native SetInvestAsteroid, loadout.cpp:1396-1409). Only the rocks in
-            // my sector whose capability matches the station type's AabmBuild are
-            // added, as asteroid contacts carrying the build-spot highlight; a
-            // non-matching rock gets no blip (asteroids otherwise have no radar
-            // blip, P436), so the hint shows exactly where the selected station
-            // type may be built.
-            if (_investAsteroidAabm is { } investAabm)
+            // Missiles — outside All only missiles aimed at the player's own side
+            // are shown (radarimage.cpp:819-832).
+            foreach (var (mid, ms) in world.Missiles)
             {
-                foreach (var (_, ast) in world.Asteroids)
+                if (ms.ClusterId != mySector) continue;
+                bool aimsAtOwnSide = ms.TargetType switch
                 {
-                    if (ast.ClusterId != mySector) continue;
-                    if (!RadarInvestAsteroidSelection.IsBuildSpot(investAabm, ast.AabmCapabilities)) continue;
-                    var aPos = PoseConverter.ToXna(Vec(ast.Position));
-                    var aSite = RadarProjection.Project(aPos, cameraEye, view, proj, w, h, inset);
-                    float aOp = RadarBracketLayout.Opacity((ownSimPos - Vec(ast.Position)).Length(),
-                        RadarBracketLayout.CloseRange, RadarBracketLayout.FarRange);
-                    _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
-                        RadarBracketRenderer.RadarContactType.Asteroid,
-                        new NumericsVec2(aSite.Point.X, aSite.Point.Y),
-                        aSite.Placement == RadarBracketLayout.RadarPlacement.OnScreen, aOp,
-                        null, false, IsInvestBuildSpot: true));
+                    IgcObjectType.Ship when world.Ships.TryGetValue(ms.TargetId, out var tgtShip) => tgtShip.SideId == mySide,
+                    IgcObjectType.Station when world.Stations.TryGetValue(ms.TargetId, out var tgtStation) => tgtStation.SideId == mySide,
+                    _ => false,
+                };
+                Color? sideCol = ms.LauncherId >= 0 && world.Ships.TryGetValue(ms.LauncherId, out var launchShip)
+                    ? SideColor(launchShip.SideId) : null;
+                if (!RadarLod.ShowMissile(radarMode, aimsAtOwnSide, isSelected: false)) continue;
+                var site = RadarProjection.Project(
+                    PoseConverter.ToXna(ms.Position), cameraEye, view, proj, w, h, inset);
+                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
+                    RadarBracketRenderer.RadarContactType.Missile,
+                    new NumericsVec2(site.Point.X, site.Point.Y),
+                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
+                    sideCol, false, false, false, false));
+            }
+
+            // Probes in my sector.
+            foreach (var (pid, pb) in world.Probes)
+            {
+                if (pb.ClusterId != mySector) continue;
+                float centre = (ownSimPos - pb.Position).Length();
+                float objectRadius = _shopCatalog?.ProbeTypes is { } probeTypes
+                    && probeTypes.TryGetValue(pb.ProbetypeId, out var probeType) ? probeType.Radius : 0f;
+                bool isSel = RadarTargetSelection.IsSelected(
+                    RadarBracketRenderer.RadarContactType.Probe, pid, selType, sel?.Id);
+                if (!RadarLod.ShowProbeOrMine(radarMode, OwnOrAllied(pb.SideId),
+                    LodSeparation(centre, objectRadius), isSel)) continue;
+                var site = RadarProjection.Project(
+                    PoseConverter.ToXna(pb.Position), cameraEye, view, proj, w, h, inset);
+                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
+                    RadarBracketRenderer.RadarContactType.Probe,
+                    new NumericsVec2(site.Point.X, site.Point.Y),
+                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
+                    SideColor(pb.SideId), isSel, false, false, false));
+            }
+
+            // Mines in my sector.
+            foreach (var (mineId, mine) in world.Mines)
+            {
+                if (mine.ClusterId != mySector) continue;
+                float centre = (ownSimPos - mine.Position).Length();
+                float objectRadius = Rendering.MineModelSource.ResolveRadius(mine.MinetypeId, _shopCatalog?.MineTypes);
+                if (!RadarLod.ShowProbeOrMine(radarMode, OwnOrAllied(mine.SideId),
+                    LodSeparation(centre, objectRadius), isSelected: false)) continue;
+                var site = RadarProjection.Project(
+                    PoseConverter.ToXna(mine.Position), cameraEye, view, proj, w, h, inset);
+                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
+                    RadarBracketRenderer.RadarContactType.Mine,
+                    new NumericsVec2(site.Point.X, site.Point.Y),
+                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
+                    SideColor(mine.SideId), false, false, false, false));
+            }
+
+            // HUD-4b — resolve the own loadout/hull once per frame so every
+            // treasure reuses the same pack-usefulness and launcher-mountability
+            // answers instead of rescanning the catalogue and passing constant
+            // trues (radarimage.cpp:480-508).
+            DataHullTypeIGC? ownHull = _hullById.TryGetValue(ownEnt.HullId, out var ownHullType) ? ownHullType : null;
+            bool ownHasAfterburner = false, ownHasAmmoWeapon = false;
+            if (ownEnt.Loadout is { Count: > 0 } ownLoadout)
+            {
+                foreach (var p in ownLoadout)
+                {
+                    if (ResolveFlightPart(p.PartId) is not { } mountedPart) continue;
+                    if (mountedPart.Type is DataPartTypeIGC.Afterburner) ownHasAfterburner = true;
+                    else if (mountedPart.Type is DataPartTypeIGC.Weapon { CAmmoPerShot: not 0 }) ownHasAmmoWeapon = true;
                 }
+            }
+
+            // Treasures in my sector — useful part vs tech vs not-useful
+            // (radarimage.cpp:437-511).
+            foreach (var (tid, te) in world.Treasures)
+            {
+                if (te.ClusterId != mySector) continue;
+                float centre = (ownSimPos - te.Position).Length();
+                var treasurePart = ResolveFlightPart(te.PayloadId);
+                EquipmentType? partEquipmentType = treasurePart?.EquipmentType;
+                bool packUseful = true;
+                bool launcherMountable = false;
+                if (treasurePart is { } tp)
+                {
+                    if (tp.EquipmentType == EquipmentType.Pack && tp.Type is DataPartTypeIGC.Pack pack)
+                        packUseful = pack.PackType == 1 ? ownHasAfterburner : ownHasAmmoWeapon;   // c_packFuel=1, c_packAmmo=0
+                    if (RadarTreasure.IsLauncherType(tp.EquipmentType) && ownHull is { } hull)
+                        launcherMountable = InFlightPartRules.CanMount(hull, tp, 0);
+                }
+                // The native tech-vs-part discrimination still needs the side's
+                // live development-tech mask; a default (unobserved) mask has no
+                // usable bits, so partEffectsSatisfied stays true (documented
+                // deferral). Pack usefulness + launcher mountability ARE live.
+                var use = RadarTreasure.Usefulness(te.Code, partEquipmentType,
+                    partEffectsSatisfied: true, packUseful, launcherMountable);
+                bool useful = use != RadarTreasureUse.NotUseful;
+                bool isTech = use == RadarTreasureUse.UsefulTech;
+                bool isSel = sel is { Kind: TargetKind.Treasure } treasureSel && treasureSel.Id == tid;
+                if (!RadarLod.ShowTreasure(radarMode, useful, LodSeparation(centre, 0f), isSel)) continue;
+                var site = RadarProjection.Project(
+                    PoseConverter.ToXna(te.Position), cameraEye, view, proj, w, h, inset);
+                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
+                    isTech ? RadarBracketRenderer.RadarContactType.Tech : RadarBracketRenderer.RadarContactType.Treasure,
+                    new NumericsVec2(site.Point.X, site.Point.Y),
+                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
+                    null, isSel, false, false, isTech));
+            }
+
+            // Asteroids — native ordinary-rock LOD (radarimage.cpp:903-930) plus
+            // the P495 build-spot highlight for a hovered station-type investment.
+            var investAabm = _investAsteroidAabm;
+            foreach (var (aid, ast) in world.Asteroids)
+            {
+                if (ast.ClusterId != mySector) continue;
+                var astPos = Vec(ast.Position);
+                float centre = (ownSimPos - astPos).Length();
+                float separation = LodSeparation(centre, ast.Radius);
+                bool isSel = RadarTargetSelection.IsSelected(
+                    RadarBracketRenderer.RadarContactType.Asteroid, aid, selType, sel?.Id);
+                bool namedSpecial = !string.IsNullOrEmpty(ast.Name) && ast.Name[0] != 'A';
+                bool buildSpot = investAabm is { } activeAabm && RadarInvestAsteroidSelection.IsBuildSpot(activeAabm, ast.AabmCapabilities);
+                // Project only asteroids the radar will actually draw (HUD-4b —
+                // avoid a per-frame matrix projection for every rock in sector).
+                if (!buildSpot && !RadarLod.ShowAsteroid(radarMode, namedSpecial, rangeZero, separation, isSel)) continue;
+                var aPos = PoseConverter.ToXna(astPos);
+                var aSite = RadarProjection.Project(aPos, cameraEye, view, proj, w, h, inset);
+                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
+                    RadarBracketRenderer.RadarContactType.Asteroid,
+                    new NumericsVec2(aSite.Point.X, aSite.Point.Y),
+                    aSite.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
+                    null, isSel, buildSpot, false, false));
             }
         }
 

@@ -1,0 +1,52 @@
+[
+  {
+    "name": "1920x1080-combat-Classic",
+    "source": "1920x1080-combat-Classic.png",
+    "width": 1920,
+    "height": 1080,
+    "webp": "docs/reports/HUD4_assets/1920x1080-combat-Classic.webp",
+    "webp_bytes": 40354,
+    "original_sha256": "e44375128965c9d0495370d8681db4b65c58e675a80e0bb248bd2508c773b493",
+    "raw_path": "/home/domingo/allegiance-evidence/HUD4b/raw/1920x1080-combat-Classic.png"
+  },
+  {
+    "name": "1920x1080-combat-Modern",
+    "source": "1920x1080-combat-Modern.png",
+    "width": 1920,
+    "height": 1080,
+    "webp": "docs/reports/HUD4_assets/1920x1080-combat-Modern.webp",
+    "webp_bytes": 45882,
+    "original_sha256": "2b8792fcaae5ddd0bdf944493c725bd8d40dbe1c4a7fabffabb3d31548a17072",
+    "raw_path": "/home/domingo/allegiance-evidence/HUD4b/raw/1920x1080-combat-Modern.png"
+  },
+  {
+    "name": "2560x1440-combat-Classic",
+    "source": "2560x1440-combat-Classic.png",
+    "width": 2560,
+    "height": 1440,
+    "webp": "docs/reports/HUD4_assets/2560x1440-combat-Classic.webp",
+    "webp_bytes": 47432,
+    "original_sha256": "04d03320354818c87b4768c01819d56000ab147dfdd63a4b6af4489440a43b42",
+    "raw_path": "/home/domingo/allegiance-evidence/HUD4b/raw/2560x1440-combat-Classic.png"
+  },
+  {
+    "name": "2560x1440-combat-Modern",
+    "source": "2560x1440-combat-Modern.png",
+    "width": 2560,
+    "height": 1440,
+    "webp": "docs/reports/HUD4_assets/2560x1440-combat-Modern.webp",
+    "webp_bytes": 63204,
+    "original_sha256": "45023db84ae5cdb2b27509479948e12ae25b728b0abde49b8ac7c08388b17559",
+    "raw_path": "/home/domingo/allegiance-evidence/HUD4b/raw/2560x1440-combat-Modern.png"
+  },
+  {
+    "name": "settings-panel",
+    "source": "settings-panel.png",
+    "width": 1920,
+    "height": 1080,
+    "webp": "docs/reports/HUD4_assets/settings-panel.webp",
+    "webp_bytes": 71504,
+    "original_sha256": "7426baf2b3164cb74623551c3eaa568c764cd6493cf3987650257792874188a3",
+    "raw_path": "/home/domingo/allegiance-evidence/HUD4b/raw/settings-panel.png"
+  }
+]

@@ -17,9 +17,9 @@ public enum AutoTargetKind
     Aleph,
 }
 
-/// <summary>P639 — which of the three screen overlays a real-window autoshot
-/// should have open (forced by <c>--auto-screen</c>). Mirrors the leaderboard
-/// (B), character sheet (P) and team pane (Ctrl+T) toggles.</summary>
+/// <summary>P639 — which screen overlay a real-window autoshot should have open
+/// (forced by <c>--auto-screen</c>). Mirrors the leaderboard (B), character
+/// sheet (P) and team pane (Ctrl+T) toggles.</summary>
 public enum AutoScreenKind
 {
     None = 0,
@@ -67,6 +67,12 @@ public sealed class AutoProofPlan
     /// <c>--hide-hud</c>/P577b <c>--auto-credits</c> philosophy of scripting the
     /// client to produce honest real-backbuffer proof frames.</summary>
     public AutoScreenKind AutoScreen = AutoScreenKind.None;
+
+    /// <summary>HUD-4b — keep the graphics/HUD settings panel open for the whole
+    /// run (<c>--auto-graphics-settings</c>), so the scheduled real-backbuffer
+    /// autoshot captures it (the panel draws in EndDraw, after the in-frame
+    /// overlay toggles that <c>--auto-screen</c> scripts).</summary>
+    public bool AutoGraphicsSettings;
 
     /// <summary>Sector (numeric id or case-insensitive name) to engage the P541
     /// starmap goto toward after launch (<c>--auto-goto</c>). Null = don't.</summary>
@@ -202,6 +208,10 @@ public sealed class AutoProofPlan
                 plan.AutoScreen = ParseScreen(a.Substring("--auto-screen=".Length));
             else if (a == "--auto-screen")
                 plan.AutoScreen = AutoScreenKind.None;
+            else if (a == "--auto-graphics-settings" || a == "--auto-graphics-settings=true")
+                plan.AutoGraphicsSettings = true;
+            else if (a == "--auto-graphics-settings=false")
+                plan.AutoGraphicsSettings = false;
             else if (a == "--auto-goto")
             {
                 if (i + 1 < args.Count && !args[i + 1].StartsWith('-'))
@@ -387,7 +397,7 @@ public sealed class AutoProofPlan
     /// inert and the client behaves exactly as a normal session). Pure.</summary>
     public bool AnyActive =>
         AutoSide.HasValue || AutoReady || AutoLaunchRequested ||
-        AutoCredits || AutoScreen != AutoScreenKind.None ||
+        AutoCredits || AutoScreen != AutoScreenKind.None || AutoGraphicsSettings ||
         GotoSector.Length > 0 || Target != AutoTargetKind.None || AutoTargetClass.Length > 0 ||
         HideHud || AutoParityCommands || AutoFlightParts || AutoHighlightSector.Length > 0 || AutoshotSeconds.Length > 0 ||
         AutoDockAfter.HasValue || DockSweepCount > 0 || ExitAfter.HasValue ||

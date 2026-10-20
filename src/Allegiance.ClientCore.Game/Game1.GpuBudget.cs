@@ -116,8 +116,8 @@ public sealed partial class Game1
         _flightGc.SetFlying(false);
         bool Press(Keys k) => ks.IsKeyDown(k) && !_graphicsPrevious.IsKeyDown(k);
         if (Press(Keys.Escape)) _graphicsSettingsVisible = false;
-        if (Press(Keys.Down)) _graphicsRow = (_graphicsRow + 1) % 11;
-        if (Press(Keys.Up)) _graphicsRow = (_graphicsRow + 10) % 11;
+        if (Press(Keys.Down)) _graphicsRow = (_graphicsRow + 1) % 12;
+        if (Press(Keys.Up)) _graphicsRow = (_graphicsRow + 11) % 12;
         int direction = Press(Keys.Right) ? 1 : Press(Keys.Left) ? -1 : 0;
         bool changed = direction != 0;
         if (changed)
@@ -128,6 +128,7 @@ public sealed partial class Game1
                 case 6: _hudSettings.Style = _hudSettings.Style == HudStyle.Classic ? HudStyle.Modern : HudStyle.Classic; break;
                 case 7: _hudSettings.Size = Math.Clamp(_hudSettings.Size + direction * .05f, .75f, 1.5f); break;
                 case 8: _hudSettings.ColorBlindSafe = !_hudSettings.ColorBlindSafe; break;
+                case 11: _hudSettings.RoundRadar = !_hudSettings.RoundRadar; break;
                 case 0: _upscaling.Upscaling = _upscaling.Upscaling == UpscalingMode.Off ? UpscalingMode.FSR1 : UpscalingMode.Off; break;
                 case 1: _upscaling.Preset = (FsrPreset)(((int)_upscaling.Preset + direction + 4) % 4); break;
                 case 2: _upscaling.Sharpness = Math.Clamp(_upscaling.Sharpness + direction * .05f, 0, 1); break;
@@ -168,7 +169,8 @@ public sealed partial class Game1
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
         if (_graphicsSettingsVisible)
         {
-            _spriteBatch.Draw(_whitePixel, new Rectangle(32, 32, Math.Min(760, GraphicsDevice.Viewport.Width - 48), 668), new Color(5, 15, 22, 245));
+            int panelHeight = Math.Min(700, GraphicsDevice.Viewport.Height - 32 - 8);
+            _spriteBatch.Draw(_whitePixel, new Rectangle(32, 32, Math.Min(760, GraphicsDevice.Viewport.Width - 48), panelHeight), new Color(5, 15, 22, 245));
             _spriteBatch.DrawString(_hudSmall, "Settings - Graphics / HUD (Ctrl+F6); arrows change, Esc closes", new Vector2(48, 44), Color.White);
             string[] rows = {
                 $"Upscaling: {_upscaling.Upscaling}",
@@ -181,14 +183,17 @@ public sealed partial class Game1
                 $"HUD size: {_hudSettings.Size:P0}",
                 $"Colour-blind safe palette: {(_hudSettings.ColorBlindSafe ? "On" : "Off")}",
                 $"Effects quality: {_upscaling.Effects}",
-                $"HD lighting (PBR, experimental): {(_upscaling.HdPbr ? "On" : "Off")}" };
+                $"HD lighting (PBR, experimental): {(_upscaling.HdPbr ? "On" : "Off")}",
+                $"Round radar border: {(_hudSettings.RoundRadar ? "On" : "Off")}" };
             for (int i = 0; i < rows.Length; i++)
                 _spriteBatch.DrawString(_hudSmall, (_graphicsRow == i ? "> " : "  ") + rows[i], new Vector2(48, 78 + i * 46), _graphicsRow == i ? Color.Yellow : Color.White);
             _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, 300, 8), Color.Gray);
             _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, (int)(300 * _upscaling.Sharpness), 8), Color.Cyan);
             _spriteBatch.Draw(_whitePixel, new Rectangle(360, 430, 260, 8), Color.Gray);
             _spriteBatch.Draw(_whitePixel, new Rectangle(360, 430, (int)(260 * (_hudSettings.Size - .75f) / .75f), 8), Color.Cyan);
-            _spriteBatch.DrawString(_hudSmall, _fsr is { Ready: true } ? "FSR1 ready; HUD stays at native resolution" : "FSR1 unavailable: using native resolution", new Vector2(48, 560), Color.White);
+            // HUD-4b — the footer sits below the LAST row (12 rows now, not 11),
+            // so it no longer overlaps the round-radar row.
+            _spriteBatch.DrawString(_hudSmall, _fsr is { Ready: true } ? "FSR1 ready; HUD stays at native resolution" : "FSR1 unavailable: using native resolution", new Vector2(48, 78 + rows.Length * 46 + 8), Color.White);
         }
         if (_frameTelemetry is not null)
         {

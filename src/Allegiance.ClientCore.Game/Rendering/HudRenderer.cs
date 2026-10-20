@@ -85,6 +85,7 @@ public class HudRenderer
     public virtual void Draw(HudModel model, Viewport viewport)
     {
         _viewportWidth = viewport.Width;
+        _viewportHeight = viewport.Height;
         Layout.Reset(viewport.Width, viewport.Height);
         PrepareLayout(model, viewport);
         if (!model.Visible) return;
@@ -384,7 +385,8 @@ public class HudRenderer
         RenderText(font, text, new(bounds.X, bounds.Y), color, scale);
         return bounds;
     }
-    private int _viewportWidth = 1920;
+    protected int _viewportWidth = 1920;
+    protected int _viewportHeight = 1080;
     // ── Widgets ───────────────────────────────────────────────────────────
 
     private void DrawWarnings(IReadOnlyList<string> warnings, float w, float h)
@@ -1005,7 +1007,11 @@ public class HudRenderer
         if (v.State == MissileLockFeedback.LockState.None)
             return;
 
-        float s = LockBracketStyle.HalfSizeFor(v.State, v.NowSeconds);
+        // HUD-4 — native continuous lock sizing (radarimage.cpp:325-332), with
+        // the native 1.05× radiusBracket clipped to the screen edge (308-319).
+        float toEdge = MathF.Min(MathF.Min(v.Center.X, v.Center.Y),
+            MathF.Min(_viewportWidth - v.Center.X, _viewportHeight - v.Center.Y));
+        float s = LockBracketStyle.HalfSizeForFraction(v.State, v.Fraction, v.ScreenRadius, toEdge);
 
         Texture2D? tex = _lockTextures?.For(v.State);
         if (tex is { } t)
@@ -1066,9 +1072,14 @@ public class HudRenderer
     /// </summary>
     protected virtual void DrawTargetSelectionBracket(in TargetSelectionView v)
     {
-        float half = TargetSelectionStyle.HalfSize;
+        // HUD-4 — native projected-radius bracket (radarimage.cpp:296-319): the
+        // closed box now scales to the object's projected radius and clamps to the
+        // viewport edge, and uses the actual side colour when known.
+        float half = v.ScreenRadius is { } radius and > 0f ? MathF.Max(radius * 1.05f, 8f) : TargetSelectionStyle.HalfSize;
+        float toEdge = MathF.Min(MathF.Min(v.Center.X, v.Center.Y), MathF.Min(_viewportWidth - v.Center.X, _viewportHeight - v.Center.Y));
+        if (half > toEdge + 10f) half = MathF.Max(toEdge + 10f, 8f);
         float thickness = TargetSelectionStyle.ThicknessFor(v.Engaged);
-        Color col = TargetSelectionStyle.ColorFor(v.Engaged, v.IsEnemy);
+        Color col = v.SideColor is { } side ? new(side.R, side.G, side.B, side.A) : TargetSelectionStyle.ColorFor(v.Engaged, v.IsEnemy);
 
         var c = v.Center;
         // Top / right / bottom / left — a full continuous border (no open corners).

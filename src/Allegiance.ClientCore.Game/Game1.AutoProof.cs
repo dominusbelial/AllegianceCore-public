@@ -33,6 +33,7 @@ public sealed partial class Game1
             return;
 
         double nowSec = Environment.TickCount64 / 1000.0;
+        bool airborne = false;
 
         lock (_session.Gate)
         {
@@ -45,9 +46,19 @@ public sealed partial class Game1
             else _auto.NoteUndocked();
             if (_state == ClientState.Flying)
                 _auto.NoteLaunch();
+            airborne = _state == ClientState.Flying && !docked;
         }
 
         _auto.Tick(nowSec);
+
+        // HUD-4b — --auto-graphics-settings: keep the settings panel open from
+        // the first AIRBORNE frame (drawn in EndDraw, so it must already be
+        // visible on the frame BEFORE the autoshot flush). Gated on the own
+        // ship's StationId == -1 so the modal panel does not swallow the docked
+        // hangar/undock dispatch that UpdateGraphicsSettings would otherwise
+        // skip (it early-returns the whole Update while visible).
+        if (_auto.Plan.AutoGraphicsSettings && airborne)
+            _graphicsSettingsVisible = true;
 
         // P612 — drive the spectator cameras (--camera freecam/orbit) once the
         // ship is airborne so the timed autoshots capture moving frames.

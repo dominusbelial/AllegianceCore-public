@@ -1,0 +1,26 @@
+{
+  "radar-All-1920x1080-Classic": {
+    "webp": "docs/reports/HUD4_assets/radar-All-1920x1080-Classic.webp",
+    "bytes": 50578,
+    "width": 1920,
+    "height": 1080
+  },
+  "radar-All-1920x1080-Modern": {
+    "webp": "docs/reports/HUD4_assets/radar-All-1920x1080-Modern.webp",
+    "bytes": 62538,
+    "width": 1920,
+    "height": 1080
+  },
+  "radar-Minimal-1920x1080-Classic": {
+    "webp": "docs/reports/HUD4_assets/radar-Minimal-1920x1080-Classic.webp",
+    "bytes": 48028,
+    "width": 1920,
+    "height": 1080
+  },
+  "radar-Minimal-1920x1080-Modern": {
+    "webp": "docs/reports/HUD4_assets/radar-Minimal-1920x1080-Modern.webp",
+    "bytes": 59654,
+    "width": 1920,
+    "height": 1080
+  }
+}

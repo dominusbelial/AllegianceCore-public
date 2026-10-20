@@ -45,4 +45,38 @@ public static class LockBracketStyle
         };
         return BaseHalfSize + pulse;
     }
+
+    /// <summary>
+    /// HUD-4 — native continuous lock sizing (radarimage.cpp:325-332): a partial
+    /// lock draws the partial surface at <c>radiusBracket + 40×(1−lock)</c> so the
+    /// flower visibly shrinks toward the projected target as the magazine lock
+    /// builds; a full lock draws the locked surface at the target radius. The base
+    /// radius is the projected object radius when known, else the established
+    /// fixed base. No sinusoidal pulse (native has none).
+    /// </summary>
+    /// <param name="distanceToEdge">The target centre's distance to the nearest
+    /// viewport edge, px (native <c>pts-&gt;GetDistanceToEdge()</c>). The base
+    /// radius is clipped to <c>distanceToEdge + BorderSide</c> exactly like
+    /// native's <c>radiusBracket</c> clamp (radarimage.cpp:308-319).</param>
+    public static float HalfSizeForFraction(
+        MissileLockFeedback.LockState state, float fraction, float? screenRadius, float distanceToEdge)
+    {
+        // Native radiusBracket = 1.05 × radiusObject, then clipped to the screen
+        // edge so the bracket is always entirely on screen (radarimage.cpp:308-319).
+        float baseRadius = screenRadius is { } radius and > 0f
+            ? MathF.Max(radius * 1.05f, 8f)
+            : BaseHalfSize;
+        if (baseRadius > distanceToEdge + BorderSide)
+            baseRadius = MathF.Max(distanceToEdge + BorderSide, 8f);
+        return state switch
+        {
+            MissileLockFeedback.LockState.None => 0f,
+            MissileLockFeedback.LockState.Partial => baseRadius + 40f * Math.Clamp(1f - fraction, 0f, 1f),
+            _ => baseRadius,
+        };
+    }
+
+    /// <summary>Native <c>c_flBorderSide</c> (radarimage.h:20) — the gutter
+    /// added when clipping the lock/selection bracket to the screen edge.</summary>
+    public const float BorderSide = 10f;
 }

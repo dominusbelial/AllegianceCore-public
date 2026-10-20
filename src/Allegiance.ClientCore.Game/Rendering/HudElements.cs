@@ -184,12 +184,16 @@ public static class HudElements
                         if (c.Lock is { } targetLock) element = element with { ScreenPosition = targetLock.Center };
                         break;
                     case "Radar viewport and round border":
+                        Set(c.RoundRadar ? 1 : 0, model.FlightVisible); break;
                     case "Radar LOD modes":
                         Set((float)c.RadarMode, model.FlightVisible); break;
                     case "Radar ship contacts": Contacts(HudContactKind.Ship); break;
                     case "Radar station contacts": Contacts(HudContactKind.Station); break;
                     case "Radar warp contacts": Contacts(HudContactKind.Warp); break;
                     case "Radar asteroid contacts": Contacts(HudContactKind.Asteroid); break;
+                    case "Radar missile contacts": Contacts(HudContactKind.Missile); break;
+                    case "Radar probe and mine contacts": Contacts(HudContactKind.Probe, HudContactKind.Mine); break;
+                    case "Radar treasure and tech contacts": Contacts(HudContactKind.Treasure, HudContactKind.Tech); break;
                     case "Tip text lines": Notices(false); break;
                     case "Critical tip text lines": Notices(true); break;
                     case "Chat history":
@@ -240,7 +244,7 @@ public static class HudElements
                 bool available = c.TargetPane is { Present: true } && (text is not null || value is not null);
                 element = element with { Available = available, Visible = model.TargetPaneVisible && available, Text = text, Value = value, Color = color };
             }
-            void Contacts(HudContactKind type) => Set(c.Contacts.Count(contact => contact.Kind == type), model.FlightVisible);
+            void Contacts(params HudContactKind[] types) => Set(c.Contacts.Count(contact => types.Contains(contact.Kind)), model.FlightVisible);
             void Notices(bool critical)
             {
                 var notices = c.Notices.Where(n => n.Critical == critical && n.Opacity > 0).ToArray();

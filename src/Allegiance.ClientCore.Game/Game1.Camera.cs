@@ -81,6 +81,7 @@ public sealed partial class Game1
         var world = _session.World;
         MissileLockState lockState;
         Vector3 xnaTarget;
+        float? lockWorldRadius = null;
         lock (_session.Gate)
         {
             lockState = world.MissileLock;
@@ -94,6 +95,16 @@ public sealed partial class Game1
                 xnaTarget = PoseConverter.ToXna(lockSimPos);
             else
                 xnaTarget = PoseConverter.ToXna(lockState.TargetPosition);
+            // HUD-4 — the lock target's real world radius for the native
+            // projected-radius lock flower (radarimage.cpp:296-332).
+            lockWorldRadius = lockState.TargetType switch
+            {
+                IgcObjectType.Ship when world.Ships.TryGetValue(lockState.TargetId, out var lockShip) && HullLength(lockShip.HullId) > 0f => HullLength(lockShip.HullId) * 0.5f,
+                IgcObjectType.Station when world.Stations.TryGetValue(lockState.TargetId, out var lockStation) && _shopCatalog?.StationTypes is { } lockStationTypes && lockStationTypes.TryGetValue(lockStation.StationTypeId, out var lockStationType) => lockStationType.Radius,
+                IgcObjectType.Asteroid when world.Asteroids.TryGetValue(lockState.TargetId, out var lockAsteroid) && lockAsteroid.Radius > 0 => lockAsteroid.Radius,
+                IgcObjectType.Warp when world.Warps.TryGetValue(lockState.TargetId, out var lockWarp) && lockWarp.Radius > 0 => lockWarp.Radius,
+                _ => null
+            };
         }
 
         var viewProj = view * proj;
@@ -106,7 +117,10 @@ public sealed partial class Game1
 
         var vp = GraphicsDevice.Viewport;
         var screen = new Vector2((sx * 0.5f + 0.5f) * vp.Width, (0.5f - sy * 0.5f) * vp.Height);
-        return new LockBracketView(screen, MissileLockFeedback.Classify(lockState.LockFraction), _nowSeconds);
+        float? lockScreenRadius = lockWorldRadius is { } lr
+            ? ProjectedRadius(xnaTarget, lr, proj, cameraEye)
+            : null;
+        return new LockBracketView(screen, MissileLockFeedback.Classify(lockState.LockFraction), _nowSeconds, lockState.LockFraction, lockScreenRadius);
     }
 
     /// <summary>
@@ -136,6 +150,7 @@ public sealed partial class Game1
         float? ore = null;
         HudColor? sideColor = null;
         float? distance = null, closing = null;
+        float? targetRadius = null;
         lock (_session.Gate)
         {
             if (_autoTarget is not { } t) return null;
@@ -170,14 +185,40 @@ public sealed partial class Game1
                 : target.Kind == TargetKind.Station && world.Stations.TryGetValue(target.Id, out var selectedStation) ? selectedStation.SideId : null;
             if (side is { } sideId && world.TryGetSideColor(sideId, out float sr, out float sg, out float sb))
                 sideColor = new(sr, sg, sb);
+            // HUD-4 — the target's real world radius, for native's
+            // projected-radius bracket (radarimage.cpp:296-311: radiusObject
+            // = pts->GetScreenRadius(), capped at sqrt2*80).
+            targetRadius = target.Kind switch
+            {
+                TargetKind.Ship when world.Ships.TryGetValue(target.Id, out var radiusShip) && HullLength(radiusShip.HullId) > 0f => HullLength(radiusShip.HullId) * 0.5f,
+                TargetKind.Station when world.Stations.TryGetValue(target.Id, out var radiusStation) && _shopCatalog?.StationTypes is { } stationTypes && stationTypes.TryGetValue(radiusStation.StationTypeId, out var stationType) => stationType.Radius,
+                TargetKind.Asteroid when world.Asteroids.TryGetValue(target.Id, out var radiusAsteroid) && radiusAsteroid.Radius > 0 => radiusAsteroid.Radius,
+                TargetKind.Warp when world.Warps.TryGetValue(target.Id, out var radiusWarp) && radiusWarp.Radius > 0 => radiusWarp.Radius,
+                _ => null
+            };
         }
 
         // Resolve the target's live world position (false when it has died/vanished),
         // then reject it when it does not project into this frame's view.
         if (!ResolveTargetPosition(target, out var simPos)) return null;
         if (!ProjectToScreen(PoseConverter.ToXna(simPos), view, proj, cameraEye, out Vector2 screen)) return null;
+        float? screenRadius = targetRadius is { } worldRadius
+            ? ProjectedRadius(PoseConverter.ToXna(simPos), worldRadius, proj, cameraEye)
+            : null;
 
-        return new TargetSelectionView(screen, engaged, charName, hull, shield, isEnemy, ore, distance, closing, sideColor);
+        return new TargetSelectionView(screen, engaged, charName, hull, shield, isEnemy, ore, distance, closing, sideColor, screenRadius);
+    }
+
+    /// <summary>HUD-4 — project a world-space radius to screen pixels at the
+    /// object's depth (vertical-FOV scale from the projection matrix), then cap
+    /// it at native's sqrt2×80 px (radarimage.cpp:302-306).</summary>
+    private float? ProjectedRadius(Vector3 worldCenter, float worldRadius, Matrix proj, Vector3 cameraEye)
+    {
+        float distance = (worldCenter - cameraEye).Length();
+        if (distance <= 0.001f || worldRadius <= 0f || MathF.Abs(proj.M22) < 1e-6f) return null;
+        float pxPerWorld = GraphicsDevice.Viewport.Height * 0.5f * proj.M22 / distance;
+        float radiusPx = worldRadius * MathF.Abs(pxPerWorld);
+        return MathF.Min(radiusPx, MathF.Sqrt(2f) * 80f);
     }
 
     /// <summary>

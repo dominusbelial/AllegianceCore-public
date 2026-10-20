@@ -42,4 +42,5 @@ public readonly record struct TargetSelectionView(
     float? OreFraction = null,
     float? Distance = null,
     float? ClosingSpeed = null,
-    HudColor? SideColor = null);
+    HudColor? SideColor = null,
+    float? ScreenRadius = null);

@@ -31,6 +31,7 @@ sealed class Proof : Game
         var settings = new HudSettings();
         using var modern = new ModernHudRenderer(batch, white, small, big, settings, Content.Load<SpriteFont>("HUDModern"));
         var classic = new HudRenderer(batch, white, small, big, gauges);
+        var radar = new RadarBracketRenderer(batch, white);   // HUD-4 — classic radar path (the real client draws this separately)
         var summaries = new List<object>();
         foreach (var (width, height) in new[] { (1920, 1080), (2560, 1440), (1280, 720) })
         foreach (float size in new[] { .75f, 1f, 1.5f })
@@ -44,6 +45,8 @@ sealed class Proof : Game
                 {
                     GraphicsDevice.SetRenderTarget(target); GraphicsDevice.Clear(scenario == "critical" ? new Color(225, 215, 205) : new Color(40, 53, 76));
                     renderer.Draw(model, GraphicsDevice.Viewport);
+                    if (model.FlightVisible && renderer == classic)
+                        radar.Draw(model, GraphicsDevice.Viewport);   // Classic radar + round border (production path)
                     // The ordinary client routes Classic notices and target-no-match
                     // feedback through this same production measured-text method.
                     if (model.Visible && renderer == classic)
@@ -94,11 +97,25 @@ sealed class Proof : Game
         bool target = scenario is "combat" or "critical" || scenario.StartsWith("radar-");
         var mode = scenario.StartsWith("radar-") ? Enum.Parse<RadarMode>(scenario[6..]) : RadarMode.Default;
         var contacts = new List<HudContact>();
-        for (int i = 0; i < 16; i++)
+        for (int i = 0; i < 18; i++)
         {
-            var kind = (HudContactKind)(i % 4);
-            if (!(kind == HudContactKind.Ship ? RadarLod.ShowShip(mode, i % 8 == 0, i == 0) : RadarLod.ShowTargetable(mode, i == 0))) continue;
-            contacts.Add(new(kind, new(w * .2f + i * 70, h * .48f), i % 3 != 0, .8f, new(.1f, .8f, .9f), i == 0, i == 3));
+            var kind = (HudContactKind)(i % 9);
+            bool isEnemy = i % 8 == 0, isSelf = i == 17, isSel = i == 0;
+            float separation = 500f + i * 40f;
+            bool shown = kind switch
+            {
+                HudContactKind.Ship => RadarLod.ShowShip(mode, !isEnemy, isSelf, isSel),
+                HudContactKind.Station => RadarLod.ShowStation(mode, pedestal: false, ownOrAllied: !isEnemy, onScreen: i % 2 == 0, separation, isSel),
+                HudContactKind.Warp => RadarLod.ShowWarp(mode, isSel),
+                HudContactKind.Asteroid => RadarLod.ShowAsteroid(mode, namedSpecial: i % 2 == 0, rangeZero: false, separation, isSel),
+                HudContactKind.Missile => RadarLod.ShowMissile(mode, aimsAtOwnSide: isEnemy, isSel),
+                HudContactKind.Probe or HudContactKind.Mine => RadarLod.ShowProbeOrMine(mode, ownOrAllied: !isEnemy, separation, isSel),
+                _ => RadarLod.ShowTreasure(mode, useful: true, separation, isSel),
+            };
+            if (!shown) continue;
+            contacts.Add(new(kind, new(w * .2f + i * 70, h * .48f), i % 3 != 0, .9f,
+                kind is HudContactKind.Treasure or HudContactKind.Tech ? null : new HudColor(.1f, .8f, .9f),
+                isSel, i == 3, isSelf, kind == HudContactKind.Tech));
         }
         return HudModel.Create(frame, new HudContext
         {
@@ -116,6 +133,7 @@ sealed class Proof : Game
             Contacts = contacts, InventoryVisible = true,
             CommandLines = scenario == "command" ? new[] { "COMMAND SHIP: Scout", "Hull 82% Shield 70%" } : Array.Empty<string>(),
             RadarMode = mode,
+            RoundRadar = scenario.StartsWith("radar-"),
             Ripcord = "RIPCORDING TO ALPHA"
         });
     }

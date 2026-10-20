@@ -18,13 +18,27 @@ public sealed partial class Game1
         ["ToggleWeapon1", "ToggleWeapon2", "ToggleWeapon3", "ToggleWeapon4", "ToggleBooster",
          "MountPart", "UnmountPart", "ReplacePart", "DropPart"];
 
+    private Rendering.ShopCatalog? _partCatalogCacheSource;
+    private Dictionary<short, DataPartTypeIGC>? _partById;
+
+    /// <summary>Resolve a part type id against the loaded shop catalogue. HUD-4b
+    /// caches the Parts + launcher Parts into <see cref="_partById"/> once per
+    /// catalogue (rebuilt only when <see cref="_shopCatalog"/> changes), so the
+    /// radar treasure loop and the loadout scans do not rescan the whole
+    /// catalogue per part per frame.</summary>
     private DataPartTypeIGC? ResolveFlightPart(short id)
     {
         if (_shopCatalog is not { } catalog) return null;
-        foreach (var part in catalog.Parts) if (part.PartId == id) return part;
-        if (catalog.Launchers is { } launchers)
-            foreach (var launcher in launchers) if (launcher.Part.PartId == id) return launcher.Part;
-        return null;
+        _partById ??= new Dictionary<short, DataPartTypeIGC>();
+        if (!ReferenceEquals(_partCatalogCacheSource, catalog))
+        {
+            _partById.Clear();
+            foreach (var part in catalog.Parts) _partById[part.PartId] = part;
+            if (catalog.Launchers is { } launchers)
+                foreach (var launcher in launchers) _partById[launcher.Part.PartId] = launcher.Part;
+            _partCatalogCacheSource = catalog;
+        }
+        return _partById.TryGetValue(id, out var partType) ? partType : null;
     }
 
     private List<ExpandedPartData> OwnInventory()

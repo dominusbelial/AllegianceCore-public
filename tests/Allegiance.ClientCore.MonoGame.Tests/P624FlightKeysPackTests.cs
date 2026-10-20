@@ -160,22 +160,48 @@ public class P624FlightKeysPackTests
     [InlineData(RadarMode.Minimal, false)]   // friendly ship hidden in Minimal
     public void RadarLod_ShowShip_FriendlyHiddenInTargetMinimal(RadarMode mode, bool expected)
     {
-        Assert.Equal(expected, RadarLod.ShowShip(mode, isEnemy: false, isSelected: false));
+        Assert.Equal(expected, RadarLod.ShowShip(mode, ownOrAllied: true, isSelf: false, isSelected: false));
     }
 
     [Fact]
     public void RadarLod_ShowShip_EnemyOrSelectedAlwaysShown()
     {
-        Assert.True(RadarLod.ShowShip(RadarMode.Target, isEnemy: true, isSelected: false));
-        Assert.True(RadarLod.ShowShip(RadarMode.Minimal, isEnemy: false, isSelected: true));
+        Assert.True(RadarLod.ShowShip(RadarMode.Target, ownOrAllied: false, isSelf: false, isSelected: false));
+        Assert.True(RadarLod.ShowShip(RadarMode.Minimal, ownOrAllied: true, isSelf: false, isSelected: true));
+        // HUD-4 — native Minimal keeps only self + important, NOT ordinary enemies.
+        Assert.False(RadarLod.ShowShip(RadarMode.Minimal, ownOrAllied: false, isSelf: false, isSelected: false));
+        Assert.True(RadarLod.ShowShip(RadarMode.Minimal, ownOrAllied: true, isSelf: true, isSelected: false));
     }
 
     [Fact]
-    public void RadarLod_ShowTargetable_KeepsSelectedInSparseModes()
+    public void RadarLod_ShowWarp_KeepsSelectedInSparseModes()
     {
-        Assert.True(RadarLod.ShowTargetable(RadarMode.All, isSelected: false));
-        Assert.False(RadarLod.ShowTargetable(RadarMode.Target, isSelected: false));
-        Assert.True(RadarLod.ShowTargetable(RadarMode.Minimal, isSelected: true));
+        Assert.True(RadarLod.ShowWarp(RadarMode.All, isSelected: false));
+        Assert.True(RadarLod.ShowWarp(RadarMode.Target, isSelected: false));
+        Assert.True(RadarLod.ShowWarp(RadarMode.Minimal, isSelected: true));
+        Assert.False(RadarLod.ShowWarp(RadarMode.Minimal, isSelected: false));
+    }
+
+    [Fact]
+    public void RadarLod_NewKindsFollowNativeLodPresence()
+    {
+        // Missiles: outside All only those aimed at the own side survive.
+        Assert.True(RadarLod.ShowMissile(RadarMode.All, aimsAtOwnSide: false, isSelected: false));
+        Assert.False(RadarLod.ShowMissile(RadarMode.Default, aimsAtOwnSide: false, isSelected: false));
+        Assert.True(RadarLod.ShowMissile(RadarMode.Target, aimsAtOwnSide: true, isSelected: false));
+        // Probes/mines: Target keeps only enemy within the 1000 m clip.
+        Assert.True(RadarLod.ShowProbeOrMine(RadarMode.Default, ownOrAllied: true, separation: 5000f, isSelected: false));
+        Assert.False(RadarLod.ShowProbeOrMine(RadarMode.Target, ownOrAllied: true, separation: 50f, isSelected: false));
+        Assert.False(RadarLod.ShowProbeOrMine(RadarMode.Target, ownOrAllied: false, separation: 5000f, isSelected: false));
+        Assert.True(RadarLod.ShowProbeOrMine(RadarMode.Target, ownOrAllied: false, separation: 50f, isSelected: false));
+        // Treasures: not-useful only in All; useful clips in Target.
+        Assert.False(RadarLod.ShowTreasure(RadarMode.Default, useful: false, separation: 50f, isSelected: false));
+        Assert.True(RadarLod.ShowTreasure(RadarMode.Default, useful: true, separation: 5000f, isSelected: false));
+        Assert.False(RadarLod.ShowTreasure(RadarMode.Target, useful: true, separation: 5000f, isSelected: false));
+        // Asteroids: generic rocks only within the clip; named special rocks in All/Default.
+        Assert.False(RadarLod.ShowAsteroid(RadarMode.Default, namedSpecial: false, rangeZero: false, separation: 5000f, isSelected: false));
+        Assert.True(RadarLod.ShowAsteroid(RadarMode.Default, namedSpecial: true, rangeZero: false, separation: 5000f, isSelected: false));
+        Assert.False(RadarLod.ShowAsteroid(RadarMode.Target, namedSpecial: true, rangeZero: false, separation: 5000f, isSelected: false));
     }
 
     // ── help-overlay header: generated from live Help + OpenKeyBindings ─────

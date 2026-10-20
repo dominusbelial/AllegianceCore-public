@@ -5,7 +5,7 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 
 /// <summary>
 /// Pure-logic tests for <see cref="RadarBracketLayout"/> — the P250 local-radar
-/// on-screen/edge-clamp/fade contract. No graphics device (same discipline as
+/// on-screen/edge-clamp contract. No graphics device (same discipline as
 /// <see cref="StarmapLayoutTests"/>). They pin the two behaviours that make the
 /// feature work: (1) an in-front object that projects inside the viewport is
 /// drawn at its EXACT projected pixel, and (2) any object that projects outside
@@ -97,32 +97,12 @@ public class RadarBracketLayoutTests
     }
 
     [Fact]
-    public void Opacity_FullInsideClose_ZeroAtFar_LinearBetween()
+    public void NativeContactOpacity_IsFullOpacity_NoDistanceFade()
     {
-        const float close = RadarBracketLayout.CloseRange;   // 250
-        const float far = RadarBracketLayout.FarRange;       // 2000
-
-        Assert.Equal(1f, RadarBracketLayout.Opacity(0f, close, far));
-        Assert.Equal(1f, RadarBracketLayout.Opacity(close, close, far));
-        Assert.Equal(0f, RadarBracketLayout.Opacity(far, close, far));
-        Assert.Equal(0f, RadarBracketLayout.Opacity(far + 999f, close, far));
-
-        float mid = RadarBracketLayout.Opacity((close + far) / 2f, close, far);
-        Assert.InRange(mid, 0.45f, 0.55f);
-    }
-
-    [Fact]
-    public void Opacity_MonotonicallyDecreasesWithDistance()
-    {
-        const float close = RadarBracketLayout.CloseRange;
-        const float far = RadarBracketLayout.FarRange;
-        float prev = 1f;
-        for (float d = close; d <= far; d += (far - close) / 100f)
-        {
-            float o = RadarBracketLayout.Opacity(d, close, far);
-            Assert.True(o <= prev + 1e-4f, $"opacity rose at d={d}");
-            prev = o;
-        }
+        // HUD-4 — native's distance fade block is commented out
+        // (radarimage.cpp:689-700), so every contact renders at full opacity.
+        // This pins the constant the live renderer uses.
+        Assert.Equal(1f, RadarBracketLayout.NativeContactOpacity);
     }
 
     private static void AssertEqual(float expected, float actual, float tol = 1e-3f)

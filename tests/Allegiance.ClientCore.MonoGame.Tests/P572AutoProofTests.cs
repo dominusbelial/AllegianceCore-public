@@ -144,6 +144,19 @@ public class P572AutoProofTests
         Assert.False(off.AutoCredits);
     }
 
+    [Fact]
+    public void Parse_AutoGraphicsSettingsFlag_ActivatesPlan()
+    {
+        var plan = AutoProofPlan.Parse(new[] { "--auto-graphics-settings" }, out var rest);
+        Assert.True(plan.AutoGraphicsSettings);
+        Assert.True(plan.AnyActive);
+        Assert.Empty(rest);
+
+        var off = AutoProofPlan.Parse(new[] { "--auto-graphics-settings=false" }, out _);
+        Assert.False(off.AutoGraphicsSettings);
+        Assert.False(off.AnyActive);
+    }
+
     [Theory]
     [InlineData("leaderboard", AutoScreenKind.Leaderboard)]
     [InlineData("b", AutoScreenKind.Leaderboard)]
@@ -154,7 +167,7 @@ public class P572AutoProofTests
     [InlineData("none", AutoScreenKind.None)]
     public void ParseScreen_MapsAliases(string token, AutoScreenKind expected)
     {
-        // P639 — the three screen overlays forced open for real-window proof.
+        // P639 — the screen overlays forced open for real-window proof.
         Assert.Equal(expected, AutoProofPlan.ParseScreen(token));
         Assert.Equal(AutoScreenKind.None, AutoProofPlan.ParseScreen("bogus"));
     }

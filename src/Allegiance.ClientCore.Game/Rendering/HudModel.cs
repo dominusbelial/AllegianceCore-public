@@ -13,10 +13,10 @@ public readonly record struct HudGauge(
     GaugeKind Kind, float Fraction, HudPoint NativeOffset, string Label,
     HudColor Color, bool DamageFlash, bool Visible);
 
-public readonly record struct HudLock(HudPoint Center, MissileLockFeedback.LockState State, double NowSeconds);
+public readonly record struct HudLock(HudPoint Center, MissileLockFeedback.LockState State, double NowSeconds, float Fraction = 1, float? ScreenRadius = null);
 public readonly record struct HudLead(HudPoint Center, HudPoint TargetCenter, bool InRange, float Green, double NowSeconds);
 public readonly record struct HudTarget(HudPoint Center, bool Engaged, string? Name,
-    float? HullFraction, float? ShieldFraction, bool? IsEnemy, float? OreFraction, float? Distance = null, float? ClosingSpeed = null, HudColor? SideColor = null);
+    float? HullFraction, float? ShieldFraction, bool? IsEnemy, float? OreFraction, float? Distance = null, float? ClosingSpeed = null, HudColor? SideColor = null, float? ScreenRadius = null);
 
 /// <summary>The native bottom target pane (WinTrek/consoledata.cpp:40-199,
 /// Artwork/dialog.mdl:4040-4242). Unlike <see cref="HudTarget"/> (the projected
@@ -38,9 +38,10 @@ public readonly record struct HudTargetPane(
     bool InRange,
     bool IsShip);
 public readonly record struct HudNotice(string Text, bool Critical, float Opacity);
-public enum HudContactKind { Ship, Station, Warp, Asteroid }
+public enum HudContactKind { Ship, Station, Warp, Asteroid, Missile, Probe, Mine, Treasure, Tech }
 public readonly record struct HudContact(HudContactKind Kind, HudPoint Position,
-    bool OnScreen, float Opacity, HudColor? SideColor, bool Selected, bool BuildSpot);
+    bool OnScreen, float Opacity, HudColor? SideColor, bool Selected, bool BuildSpot,
+    bool IsSelf = false, bool IsTech = false);
 public sealed record HudChat(IReadOnlyList<string> Lines, int Offset, string Input,
     bool Composing, double NowSeconds, string Recipient);
 
@@ -72,6 +73,9 @@ public sealed record HudContext
     public IReadOnlyList<HudContact> Contacts { get; init; } = Array.Empty<HudContact>();
     public float RadarPulse { get; init; }
     public RadarMode RadarMode { get; init; } = RadarMode.Default;
+    /// <summary>Native optional round radar border (WinTrek.cpp:3832;
+    /// radarimage.cpp:1130-1177). Defaults to square radar (WinTrek.cpp:2715).</summary>
+    public bool RoundRadar { get; init; }
     public HudChat? Chat { get; init; }
     public string? CargoLine { get; init; }
     public string? FlightPartsLine { get; init; }

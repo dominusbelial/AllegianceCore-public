@@ -71,7 +71,7 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         base.Draw(model, viewport);
         if (!model.Visible) { _animated.Clear(); return; }
         if (model.FlightVisible)
-            Mark("Radar viewport and round border", "Radar LOD modes", "Radar ship contacts", "Radar station contacts", "Radar warp contacts", "Radar asteroid contacts");
+            Mark("Radar viewport and round border", "Radar LOD modes", "Radar ship contacts", "Radar station contacts", "Radar warp contacts", "Radar asteroid contacts", "Radar missile contacts", "Radar probe and mine contacts", "Radar treasure and tech contacts");
         BeginBatch();
         try { DrawModelOverlays(model, viewport);
             if (model.InstrumentsVisible && model.Telemetry is { WarpFlash: > 0 } warp) FillRect(0, 0, viewport.Width, viewport.Height, Color.Black * warp.WarpFlash);
@@ -132,7 +132,9 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     }
     protected override void DrawLockBracket(in LockBracketView targetLock)
     {
-        float radius = LockBracketStyle.HalfSizeFor(targetLock.State, targetLock.NowSeconds);
+        float toEdge = MathF.Min(MathF.Min(targetLock.Center.X, targetLock.Center.Y),
+            MathF.Min(_viewportWidth - targetLock.Center.X, _viewportHeight - targetLock.Center.Y));
+        float radius = LockBracketStyle.HalfSizeForFraction(targetLock.State, targetLock.Fraction, targetLock.ScreenRadius, toEdge);
         var color = targetLock.State == Allegiance.ClientCore.State.MissileLockFeedback.LockState.Partial ? new Color(255, 190, 84) : Alert;
         for (int i = 0; i < 4; i++) Arc(targetLock.Center, radius, i * MathF.PI / 2 + .12f, .85f, color, 2 * _scale);
     }
@@ -205,7 +207,10 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
 
     protected override void DrawTargetSelectionBracket(in TargetSelectionView target)
     {
-        float half = TargetSelectionStyle.HalfSize;
+        // HUD-4 — native projected-radius bracket (radarimage.cpp:296-319).
+        float half = target.ScreenRadius is { } radius and > 0f ? MathF.Max(radius * 1.05f, 8f) : TargetSelectionStyle.HalfSize;
+        float toEdge = MathF.Min(MathF.Min(target.Center.X, target.Center.Y), MathF.Min(_viewportWidth - target.Center.X, _viewportHeight - target.Center.Y));
+        if (half > toEdge + 10f) half = MathF.Max(toEdge + 10f, 8f);
         Color color = target.SideColor is { } side ? new(side.R, side.G, side.B, side.A) : TargetSelectionStyle.ColorFor(target.Engaged, target.IsEnemy);
         if (_settings.ColorBlindSafe) color = target.SideColor is { } nativeSide
             ? HudPalette.Side(new(nativeSide.R, nativeSide.G, nativeSide.B)) : HudPalette.Relationship(target.IsEnemy);

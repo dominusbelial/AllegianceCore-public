@@ -15,8 +15,8 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 ///
 /// Scope (per brief): flat single detail level — no text labels, no LOD modes,
 /// no importance-tiered brightness (those are named follow-ups). Object type is
-/// told apart by a simple shape + colour. Distance-based alpha fade is applied
-/// per contact (see <see cref="RadarBracketLayout.Opacity"/>).
+/// told apart by a simple shape + colour. Native has no distance fade
+/// (radarimage.cpp:689-700 is commented out), so contacts draw at full opacity.
 ///
 /// P436 (this stage's follow-up): the player's OWN currently-selected target
 /// (<see cref="RadarContact.IsSelectedTarget"/>, set from <c>_autoTarget</c>
@@ -38,15 +38,24 @@ public sealed class RadarBracketRenderer
         Ship,
         Station,
         Warp,
-        /// <summary>P495 — an asteroid contact, added to the radar ONLY while a
-        /// station-type investment is hovered, so the matching build-spot rocks
-        /// light up (native <c>SetInvestAsteroid</c>, loadout.cpp:1396-1409).
-        /// Otherwise asteroids have no radar blip (P436).</summary>
+        /// <summary>P495 — an asteroid contact. Native shows ordinary rocks in
+        /// All/Default within the 1000 m LOD clip and named special rocks in
+        /// every mode; the port's build-spot highlight reuses this kind with
+        /// <see cref="RadarContact.IsInvestBuildSpot"/>.</summary>
         Asteroid,
+        Missile,
+        Probe,
+        Mine,
+        /// <summary>HUD-4 — a useful treasure part (radarimage.cpp:437-511).</summary>
+        Treasure,
+        /// <summary>HUD-4 — a treasure that resolves to the tech icon
+        /// (radarimage.cpp:506-511).</summary>
+        Tech,
     }
 
+
     /// <summary>One placed contact: type, resolved viewport pixel (on-screen
-    /// exact, or edge-clamped), whether it is on-screen, and fade opacity.
+    /// exact, or edge-clamped), whether it is on-screen, and full opacity.
     /// <paramref name="SideColour"/> is the contact's REAL per-side colour
     /// (P372 — resolved from the side roster via
     /// <c>ClientWorld.TryGetSideColor</c>, native <c>pside-&gt;GetColor()</c>,
@@ -64,7 +73,9 @@ public sealed class RadarBracketRenderer
         float Opacity,
         Color? SideColour = null,
         bool IsSelectedTarget = false,
-        bool IsInvestBuildSpot = false);
+        bool IsInvestBuildSpot = false,
+        bool IsSelf = false,
+        bool IsTech = false);
 
     private readonly SpriteBatch _sb;
     private readonly Texture2D _white;
@@ -76,6 +87,14 @@ public sealed class RadarBracketRenderer
     public static readonly Color ShipColour = new(0.28f, 0.85f, 0.85f);
     public static readonly Color StationColour = new(1.00f, 0.74f, 0.26f);
     public static readonly Color WarpColour = new(0.86f, 0.44f, 0.97f);
+    // HUD-4 — native per-kind fallback hues for the radar contact vocabulary.
+    // Side-bearing contacts (missile/probe/mine) normally carry their real side
+    // colour; these only apply while no roster colour is known yet.
+    public static readonly Color MissileColour = new(0.96f, 0.36f, 0.30f);
+    public static readonly Color ProbeColour = new(0.42f, 0.80f, 0.96f);
+    public static readonly Color MineColour = new(0.98f, 0.72f, 0.26f);
+    public static readonly Color TreasureColour = new(0.95f, 0.93f, 0.80f);
+    public static readonly Color TechColour = new(0.55f, 0.95f, 0.62f);
     // P436 — the player's OWN currently-selected target's highlight. Bright
     // white so no per-side blip colour (arbitrary rosters) or the teal/gold/
     // violet palette above can be mistaken for it; combined with the pulsing
@@ -125,10 +144,61 @@ public sealed class RadarBracketRenderer
     public void Draw(HudModel model, Viewport viewport, bool colorBlindSafe = false)
     {
         if (!model.FlightVisible) return;
-        Draw(model.Context.Contacts.Select(c => new RadarContact((RadarContactType)c.Kind,
-            new(c.Position.X, c.Position.Y), c.OnScreen, c.Opacity,
-            c.SideColor is { } color ? (colorBlindSafe ? HudPalette.Side(new Color(color.R, color.G, color.B, color.A)) : new Color(color.R, color.G, color.B, color.A)) : null,
-            c.Selected, c.BuildSpot)).ToArray(), viewport, model.Context.RadarPulse);
+        if (model.Context.RoundRadar)
+            DrawRoundBorder(viewport);
+        Draw(model.Context.Contacts, viewport, model.Context.RadarPulse, colorBlindSafe);
+    }
+
+    /// <summary>HUD-4b — draw every contact straight from the model's contact
+    /// list (mapping on the stack) instead of allocating a per-frame
+    /// <c>RadarContact[]</c> via LINQ <c>Select…ToArray</c>.</summary>
+    public void Draw(IReadOnlyList<HudContact> contacts, Viewport viewport, float highlightPulse, bool colorBlindSafe)
+    {
+        if (contacts.Count == 0)
+            return;
+        _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        try
+        {
+            foreach (var c in contacts)
+            {
+                Color? side = c.SideColor is { } color
+                    ? (colorBlindSafe
+                        ? HudPalette.Side(new Color(color.R, color.G, color.B, color.A))
+                        : new Color(color.R, color.G, color.B, color.A))
+                    : null;
+                DrawContact(new RadarContact((RadarContactType)c.Kind,
+                    new(c.Position.X, c.Position.Y), c.OnScreen, c.Opacity, side,
+                    c.Selected, c.BuildSpot, c.IsSelf, c.IsTech), highlightPulse);
+            }
+        }
+        finally
+        {
+            _sb.End();
+        }
+    }
+
+    /// <summary>HUD-4 — native optional round radar border (radarimage.cpp:1130-1177):
+    /// a 60-segment circle centred on the viewport, radius 0.48×(height−20),
+    /// colour (0.5,0.5,0.5,0.25). Drawn first, beneath the contact icons.</summary>
+    public void DrawRoundBorder(Viewport viewport)
+    {
+        float radius = (viewport.Height - 20f) * 0.48f;
+        if (radius <= 0f) return;
+        var center = new Vector2(viewport.Width * 0.5f, viewport.Height * 0.5f);
+        var color = new Color(0.5f, 0.5f, 0.5f, 0.25f);
+        _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        try
+        {
+            const int segments = 60;
+            for (int i = 0; i < segments; i++)
+            {
+                float a0 = i * MathHelper.TwoPi / segments;
+                float a1 = (i + 1) * MathHelper.TwoPi / segments;
+                DrawLine(center + new Vector2(MathF.Cos(a0), MathF.Sin(a0)) * radius,
+                         center + new Vector2(MathF.Cos(a1), MathF.Sin(a1)) * radius, 1f, color);
+            }
+        }
+        finally { _sb.End(); }
     }
 
     /// <summary>Resolve the colour a contact should be drawn with. A contact
@@ -146,6 +216,11 @@ public sealed class RadarBracketRenderer
             RadarContactType.Ship => ShipColour,
             RadarContactType.Station => StationColour,
             RadarContactType.Asteroid => RockColour,
+            RadarContactType.Missile => MissileColour,
+            RadarContactType.Probe => ProbeColour,
+            RadarContactType.Mine => MineColour,
+            RadarContactType.Treasure => TreasureColour,
+            RadarContactType.Tech => TechColour,
             _ => WarpColour,
         };
     }
@@ -181,7 +256,33 @@ public sealed class RadarBracketRenderer
                 // rocks, so the highlight below is the meaning-carrying part.
                 DrawHexagon(pt, 5f, colour, a);
                 break;
+            case RadarContactType.Missile:
+                // HUD-4 — a small rotated-square outline (a fast, armed dart).
+                DrawDiamond(pt, 6f, colour, a);
+                break;
+            case RadarContactType.Probe:
+                // HUD-4 — a hollow sensor ring + centre pip.
+                DrawRing(pt, 5f, 1.4f, colour, a);
+                DrawFilledDot(pt, 1.6f, colour, a);
+                break;
+            case RadarContactType.Mine:
+                // HUD-4 — a filled dot with four short cross ticks (a mine).
+                DrawFilledDot(pt, 2.6f, colour, a);
+                DrawMineCross(pt, 6f, colour, a);
+                break;
+            case RadarContactType.Treasure:
+                // HUD-4 — a hollow square crate outline.
+                DrawHollowSquare(pt, 6f, colour, a);
+                break;
+            case RadarContactType.Tech:
+                // HUD-4 — a triangle outline (research/tech).
+                DrawTriangle(pt, 7f, colour, a);
+                break;
         }
+        // HUD-4 — native c_maskMe own-ship marker (radarimage.cpp:733-735): a
+        // distinct hollow square around the own ship's square icon.
+        if (c.IsSelf)
+            DrawHollowSquare(pt, 11f, colour, a);
         // P436 — the player's own selected target: draw the bright highlight
         // AFTER the base icon so it dominates, whether the contact is on-screen
         // or edge-clamped off-screen (the edge case is the exact reported gap).
@@ -252,14 +353,48 @@ public sealed class RadarBracketRenderer
     /// round/square icon mimics.</summary>
     private void DrawDiamond(Vector2 c, float halfDiag, Color colour, float a)
     {
+        var col = WithAlpha(colour, a);
         var top = new Vector2(c.X, c.Y - halfDiag);
         var right = new Vector2(c.X + halfDiag, c.Y);
         var bottom = new Vector2(c.X, c.Y + halfDiag);
         var left = new Vector2(c.X - halfDiag, c.Y);
-        DrawLine(top, right, 2.2f, colour);
-        DrawLine(right, bottom, 2.2f, colour);
-        DrawLine(bottom, left, 2.2f, colour);
-        DrawLine(left, top, 2.2f, colour);
+        DrawLine(top, right, 2.2f, col);
+        DrawLine(right, bottom, 2.2f, col);
+        DrawLine(bottom, left, 2.2f, col);
+        DrawLine(left, top, 2.2f, col);
+    }
+
+    /// <summary>HUD-4 — a hollow axis-aligned square outline (treasure crate /
+    /// own-ship marker).</summary>
+    private void DrawHollowSquare(Vector2 c, float half, Color colour, float a)
+    {
+        var col = WithAlpha(colour, a);
+        DrawLine(c + new Vector2(-half, -half), c + new Vector2(half, -half), 2f, col);
+        DrawLine(c + new Vector2(half, -half), c + new Vector2(half, half), 2f, col);
+        DrawLine(c + new Vector2(half, half), c + new Vector2(-half, half), 2f, col);
+        DrawLine(c + new Vector2(-half, half), c + new Vector2(-half, -half), 2f, col);
+    }
+
+    /// <summary>HUD-4 — a triangle outline (tech icon).</summary>
+    private void DrawTriangle(Vector2 c, float radius, Color colour, float a)
+    {
+        var col = WithAlpha(colour, a);
+        var p0 = c + new Vector2(0f, -radius);
+        var p1 = c + new Vector2(radius, radius * 0.75f);
+        var p2 = c + new Vector2(-radius, radius * 0.75f);
+        DrawLine(p0, p1, 2f, col);
+        DrawLine(p1, p2, 2f, col);
+        DrawLine(p2, p0, 2f, col);
+    }
+
+    /// <summary>HUD-4 — four short cross ticks around a mine dot.</summary>
+    private void DrawMineCross(Vector2 c, float radius, Color colour, float a)
+    {
+        var col = WithAlpha(colour, a);
+        DrawLine(c + new Vector2(-radius, 0f), c + new Vector2(-radius * .35f, 0f), 2f, col);
+        DrawLine(c + new Vector2(radius * .35f, 0f), c + new Vector2(radius, 0f), 2f, col);
+        DrawLine(c + new Vector2(0f, -radius), c + new Vector2(0f, -radius * .35f), 2f, col);
+        DrawLine(c + new Vector2(0f, radius * .35f), c + new Vector2(0f, radius), 2f, col);
     }
 
     private Color WithAlpha(Color c, float a) =>

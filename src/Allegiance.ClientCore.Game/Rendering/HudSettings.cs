@@ -13,6 +13,9 @@ public sealed class HudSettings
     public HudStyle Style { get; set; } = HudStyle.Modern;
     public float Size { get; set; } = 1;
     public bool ColorBlindSafe { get; set; }
+    /// <summary>HUD-4 — native optional round radar border (WinTrek.cpp:2715
+    /// defaults false, i.e. square radar).</summary>
+    public bool RoundRadar { get; set; }
     public static string DefaultPath => Environment.GetEnvironmentVariable("ALLEGIANCE_HUD_SETTINGS")
         ?? Path.Combine(IntroPreferences.DirectoryPath, "hud.json");
     public void Normalize()
