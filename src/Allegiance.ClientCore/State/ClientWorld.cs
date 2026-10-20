@@ -2347,6 +2347,25 @@ public sealed partial class ClientWorld
         if (set.Ship.ShipId == MyShipId)
             ClearRipcord();
 
+        // SIM-0044: native trekigc.cpp:4057-4064 inhibits He3 ore updates for
+        // all asteroids in the newly entered cluster for a few seconds, so the
+        // client does not flash stale server ore values while the sector is
+        // still loading. Apply the same 3-second wall-clock inhibit here — but
+        // ONLY to asteroid live-state entries that already exist. Inventing a
+        // zeroed AsteroidLiveState(0,0,…) would make the selection pane show a
+        // bogus 0% hull/ore until the first ASTEROIDS_UPDATE arrives.
+        if (ownSectorChanged)
+        {
+            double inhibitUntil = NowSeconds() + 3.0;
+            foreach (var (id, def) in _asteroids)
+            {
+                if (def.ClusterId != set.SectorId) continue;
+                if (!def.HasCapability(Asteroid.CapMineHe3)) continue;
+                if (_asteroidLive.TryGetValue(id, out var existing))
+                    _asteroidLive[id] = existing with { InhibitOreExpiry = inhibitUntil };
+            }
+        }
+
         // P585 — the own ship ARRIVED in a new sector via a warp: if we emerged
         // beside an aleph (within its transit-attribution radius), signal it so
         // the opt-in transit pulse flares the arrival aleph.
@@ -2862,14 +2881,24 @@ public sealed partial class ClientWorld
     /// </summary>
     private void Apply(AsteroidsUpdate u)
     {
+        double now = NowSeconds();
         foreach (var e in u.Entries)
         {
             float oreFrac = 0f;
             if (_asteroids.TryGetValue(e.AsteroidId, out var def) && def.OreMax > 0f)
                 oreFrac = Math.Clamp(e.Ore / def.OreMax, 0f, 1f);
+            // SIM-0044: native inhibits He3 ore updates for ~3 wall-clock seconds
+            // after the own ship enters a cluster (trekigc.cpp:4057-4064). During
+            // the inhibit window keep the previously known ore fraction (or 0 if
+            // none) but still allow the structural health fraction to update.
+            _asteroidLive.TryGetValue(e.AsteroidId, out var prev);
+            float keptOreFrac = oreFrac;
+            if (prev.InhibitOreExpiry > now)
+                keptOreFrac = prev.OreFraction;
             _asteroidLive[e.AsteroidId] = new AsteroidLiveState(
-                OreFraction: oreFrac,
-                Fraction: e.BpFraction / 240.0f);
+                OreFraction: keptOreFrac,
+                Fraction: e.BpFraction / 240.0f,
+                InhibitOreExpiry: prev.InhibitOreExpiry);
         }
     }
 
@@ -4205,9 +4234,11 @@ public sealed partial class ClientWorld
     private void Apply(AsteroidMined m)
     {
         float oreFrac = Math.Clamp(m.BpOreFraction / 240.0f, 0f, 1f);
+        _asteroidLive.TryGetValue(m.AsteroidId, out var prev);
         _asteroidLive[m.AsteroidId] = new AsteroidLiveState(
             OreFraction: oreFrac,
-            Fraction: _asteroidLive.TryGetValue(m.AsteroidId, out var prev) ? prev.Fraction : 0f);
+            Fraction: prev.Fraction,
+            InhibitOreExpiry: prev.InhibitOreExpiry);
     }
 
     /// <summary>P370 — <c>FM_S_SHIP_DELETE(20)</c>: the server's explicit "this

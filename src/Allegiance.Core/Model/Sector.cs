@@ -685,6 +685,90 @@ public sealed class Sector : IClusterIgc
     }
 
     /// <summary>
+    /// SIM-0107 — port of the LIVE native <c>IsFriendlyCluster</c>
+    /// (<c>common.cpp:388-433</c>), not the commented-out station-only block at
+    /// <c>common.cpp:357-386</c>. A cluster is friendly for cowardly pathing when
+    /// it is the side's territory (<see cref="IsTerritory"/>) AND the weighted
+    /// count of ships seen in it is non-negative: enemy carriers −6, enemy
+    /// players/wingmen −2, other enemies −1; friendly carriers +2, friendly
+    /// players/wingmen +2, other friendlies +1.
+    /// </summary>
+    public bool IsFriendlyCluster(short sideId)
+    {
+        if (!IsTerritory(sideId)) return false;             // pside->IsTerritory(pcluster), common.cpp:388-391
+
+        int friendlyShipCount = 0;
+        foreach (var ship in GetShipUpdateCandidates())
+        {
+            if (!ship.SeenBySide(sideId)) continue;         // common.cpp:397
+            bool enemy = ship.SideId is not { } shipSide || !IsAlliedSide(sideId, shipSide);
+            int weight = ship.PilotType == Ship.PilotTypeCarrier ? (enemy ? 6 : 2)
+                : ship.PilotType >= Ship.PilotTypePlayer || ship.PilotType == Ship.PilotTypeWingman ? 2
+                : 1;
+            friendlyShipCount += enemy ? -weight : weight;
+        }
+        return friendlyShipCount >= 0;                      // common.cpp:424-431
+    }
+
+    /// <summary>
+    /// SIM-0107 — native <c>CsideIGC::IsTerritory</c> (<c>sideigc.h:603-606</c>)
+    /// computed on the fly from <c>UpdateTerritory</c> (<c>sideigc.cpp:421-493</c>):
+    /// a cluster is a side's territory when the side has a station here and no
+    /// enemy station is seen, or when it is an empty cluster fully surrounded
+    /// (within three hops) by territory.
+    /// </summary>
+    public bool IsTerritory(short sideId) => IsTerritory(sideId, new HashSet<Sector>(), 0);
+
+    private bool IsTerritory(short sideId, HashSet<Sector> linked, int depth)
+    {
+        if (!linked.Add(this)) return false;
+
+        bool hasOwnStation = false;
+        foreach (var station in _stationRuntimes)
+        {
+            if (station.SideId == sideId)
+            {
+                hasOwnStation = true;                       // sideigc.cpp:436-438
+            }
+            else if (station.SeenBySide(sideId) && !IsAlliedSide(sideId, station.SideId))
+            {
+                return false;                               // seen enemy station → not territory
+            }
+        }
+        if (hasOwnStation) return true;
+
+        // Empty clusters may still be territory when fully surrounded
+        // (sideigc.cpp:471-492).
+        return IsSurroundedByTerritory(sideId, linked, depth);
+    }
+
+    private bool IsSurroundedByTerritory(short sideId, HashSet<Sector> linked, int depth)
+    {
+        if (depth >= 3) return false;                       // sideigc.cpp:325 currentDepth < 3
+
+        foreach (var station in _stationRuntimes)
+            if (station.SeenBySide(sideId)) return false;   // sideigc.cpp:328-333 — not empty
+
+        int checkedWarpCount = 0;
+        foreach (var warp in Warps)
+        {
+            if (warp.Destination is not { } dest) continue;
+            checkedWarpCount++;                             // sideigc.cpp:335-343
+            if (linked.Contains(dest)) continue;
+            if (!dest.IsTerritory(sideId, linked, depth + 1)) return false;   // sideigc.cpp:345 currentDepth + 1
+        }
+        return checkedWarpCount > 1;                        // sideigc.cpp:340
+    }
+
+    private bool IsAlliedSide(short a, short b)
+    {
+        if (a == b) return true;
+        if (Mission is null) return false;
+        var sideA = Mission.Sides.FirstOrDefault(s => s.Id == a);
+        return sideA?.AllyGroup is { } group && Mission.Sides.Any(s => s.Id == b && s.AllyGroup == group);
+    }
+
+    /// <summary>
     /// Per-chunk sector tick (<c>CclusterIGC::Update</c>, <c>clusterIGC.cpp:97</c>).
     /// Calculates the native crowding cost before the models loop
     /// (<c>clusterIGC.cpp:162-198,241-253</c>), then resolves collisions.
@@ -3548,9 +3632,12 @@ public sealed class Sector : IClusterIgc
         foreach (var mine in models.OfType<Mine>())
         {
             if (!_models.Contains(mine)) continue;
-            // Retain the existing point-like mine convention: decoded type
-            // Radius is a junk sentinel in the stock corpus (SIM-0067).
-            if (ExplosionAmount(e, mine.Position, 0, out float amount)) mine.ReduceStrength(amount);
+            // SIM-0067: native subtracts the mine's collision radius
+            // (mineigc.cpp:106 sets SetRadius(dataMineType->radius)). The
+            // stock corpus's base model Radius is a junk sentinel, but
+            // MineType.MineRadius is the real decoded collision radius used
+            // by ResolveMineDetonations, so use it for falloff distance.
+            if (ExplosionAmount(e, mine.Position, mine.MineType.MineRadius, out float amount)) mine.ReduceStrength(amount);
         }
     }
 

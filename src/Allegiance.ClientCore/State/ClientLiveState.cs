@@ -32,7 +32,12 @@ public readonly record struct QueuedCommandState(short CommandId, IgcObjectType 
 /// a completely separate value from <see cref="Fraction"/> (structural health).</param>
 /// <param name="Fraction">The rock's current structural hit-points fraction
 /// 0..1 (live <c>Asteroid.Fraction</c>, decremented only by weapon damage).</param>
-public readonly record struct AsteroidLiveState(float OreFraction, float Fraction);
+/// <param name="InhibitOreExpiry">SIM-0044 — wall-clock seconds since the Unix
+/// epoch until which the client's locally-predicted ore for this rock should
+/// not be overwritten by server ASTEROIDS_UPDATE packets. Native inhibits He3
+/// ore updates for a few seconds after the own ship enters a cluster
+/// (trekigc.cpp:4057-4064; asteroidigc.h:58-82).</param>
+public readonly record struct AsteroidLiveState(float OreFraction, float Fraction, double InhibitOreExpiry = 0.0);
 
 /// <summary>
 /// P423 — the live per-station state a client learns from the periodic

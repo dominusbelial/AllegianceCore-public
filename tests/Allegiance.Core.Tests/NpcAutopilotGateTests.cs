@@ -140,6 +140,7 @@ public sealed class NpcAutopilotGateTests
 
         // PlanTarget names a station in some OTHER cluster (id != 1052).
         ship.PlanTarget = Target(core, clusterId: (short)(sector.Id + 987), side: 0, id: 4161, x: 100f, y: 0f, z: 0f);
+        ship.PlanCommandId = OrderChange.CidGoto;
 
         Tick(ship, 200, dt: 0.05);
 
@@ -163,6 +164,7 @@ public sealed class NpcAutopilotGateTests
         var ship = NewShip(mission, sector, side: 0, x: 880f, y: 895f, z: 922f, npc: true);
         var target = Target(core, sector.Id, side: 0, id: 4171, x: 590f, y: 902f, z: 928f);
         ship.PlanTarget = target;
+        ship.PlanCommandId = OrderChange.CidGoto;
 
         float d0 = Dist(ship, target);
         Assert.True(d0 > 200f, "initial separation should be substantial for a fair closing test");

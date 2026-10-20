@@ -2055,17 +2055,30 @@ public sealed partial class Ship : Model, IShipIgc
     /// own sector, else the first one found in a wider sector by hop-count, or
     /// <c>null</c> if the ship has no sector/side/mission or the whole reachable
     /// graph has no qualifying station.</returns>
-    public DataStationIGC? FindNearestFriendlyStationAnyCluster(short abilityBit)
+    public DataStationIGC? FindNearestFriendlyStationAnyCluster(short abilityBit, bool cowardly = false)
     {
         if (Sector is not { } start) return null;
+        short? sideId = SideId;
+
+        // Native FindTarget searches the ship's own cluster unconditionally
+        // (common.cpp:474-648) and applies the c_ttCowardly filter only to the
+        // DESTINATION clusters it expands into (common.cpp:693): an unfriendly
+        // start sector is still searched, and the search simply never expands
+        // into an unfriendly candidate cluster.
+        if (FindNearestFriendlyStationIn(start, abilityBit) is { } startFound) return startFound;
+
         var visited = new HashSet<Sector> { start };
         var frontier = new Queue<Sector>();
-        frontier.Enqueue(start);
+        foreach (var w in start.Warps)
+            if (w.Destination is { } dest && visited.Add(dest) &&
+                (!cowardly || sideId is not { } s || dest.IsFriendlyCluster(s)))
+                frontier.Enqueue(dest);
         while (frontier.TryDequeue(out var sector))
         {
             if (FindNearestFriendlyStationIn(sector, abilityBit) is { } found) return found;
             foreach (var w in sector.Warps)
-                if (w.Destination is { } dest && visited.Add(dest))
+                if (w.Destination is { } dest && visited.Add(dest) &&
+                    (!cowardly || sideId is not { } s || dest.IsFriendlyCluster(s)))
                     frontier.Enqueue(dest);
         }
         return null;
@@ -6679,13 +6692,37 @@ public sealed partial class Ship : Model, IShipIgc
         }
         else
         {
-            if (FindNearestFriendlyStationAnyCluster(DataStationTypeIGC.SabmUnload) is { } station)
+            // SIM-0107: native shipIGC.cpp:2224-2232 prefers a safe (cowardly)
+            // unload station first, then any friendly unload station.
+            if ((FindNearestFriendlyStationAnyCluster(DataStationTypeIGC.SabmUnload, cowardly: true)
+                 ?? FindNearestFriendlyStationAnyCluster(DataStationTypeIGC.SabmUnload)) is { } station)
             {
-                PlanTarget = station;
-                PlanCommandId = OrderChange.CidGoto;       // SetCommand(c_cmdPlan, ..., c_cidGoto) — same tag as take-cover (shipIGC.h:2240)
-                MiningAsteroidTarget = null;               // mutual exclusion: mining XOR selling (native single c_cmdPlan)
+                // SIM-0107: if the rock we just filled at still holds less than
+                // half a capacity of ore, native sets the sell as Accepted (so
+                // the miner does not return); otherwise it stays Plan and the
+                // existing Accepted mine order brings the ship back.
+                bool rockNearlyDepleted = _departingMineAsteroid is { } rock &&
+                    rock.OreRemaining < EffectiveMineCapacity() * 0.5f;
+                if (rockNearlyDepleted)
+                {
+                    // Depleted rock: make the sell the accepted order so the
+                    // miner does not return.
+                    AcceptedTarget = station;
+                    AcceptedCommandId = OrderChange.CidGoto;
+                    PlanTarget = null;
+                    PlanCommandId = OrderChange.CidNone;
+                    MiningAsteroidTarget = null;               // mutual exclusion: mining XOR selling (native single c_cmdPlan)
+                }
+                else
+                {
+                    // Plenty of ore left: plan the sell trip but keep the
+                    // accepted mine order (MiningAsteroidTarget) so the miner
+                    // comes back after unloading.
+                    PlanTarget = station;
+                    PlanCommandId = OrderChange.CidGoto;       // SetCommand(c_cmdPlan, ..., c_cidGoto) — same tag as take-cover (shipIGC.h:2240)
+                }
                 _npcStuckLogged = false;   // P318: leaving the stuck state — re-arm the stand-by guard
-                ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{EffectiveMineCapacity():0} ≥ cap → selling at station {station.StationId} '{station.Name}' (SabmUnload)");
+                ConsoleLog.Write($"[npc] ship {Id} (side {SideId}) full, ore {Ore:0}/{EffectiveMineCapacity():0} → selling at station {station.StationId} '{station.Name}' (SabmUnload)");
             }
             else
             {
@@ -7245,8 +7282,14 @@ public sealed partial class Ship : Model, IShipIgc
     private const short DroneComingHomeEmptySound = DroneChatterCue.DroneComingHomeEmptySound;
     private const short DroneTooCrowdedSound = DroneChatterCue.DroneTooCrowdedSound;
     private const short ConstructorRunningSound = DroneChatterCue.ConstructorRunningSound;
-    private double _lastMiningComplaint;
-    private float _miningComplaintInterval = 30f; // shipIGC.cpp:25
+    private const short DroneWhereToSound = DroneChatterCue.DroneWhereToSound;
+    private const short DroneWhereToLayMinefieldSound = DroneChatterCue.DroneWhereToLayMinefieldSound;
+    private const short DroneWhereToLayTowerSound = DroneChatterCue.DroneWhereToLayTowerSound;
+    // SIM-0110 — native has ONE shared complaint timer for every pilot-type
+    // complaint (m_timeLastComplaint / m_dtTimeBetweenComplaints,
+    // shipIGC.h:1723-1734,2600,2633; initial 30 s at shipIGC.cpp:25).
+    private double _lastComplaint;
+    private float _complaintInterval = 30f;
 
     /// <summary>
     /// Emit a drone/constructor chatter line to the side's team. Routes
@@ -7263,15 +7306,57 @@ public sealed partial class Ship : Model, IShipIgc
         if (SideId is { } side) Mission?.Site.DroneChatEvent(this, side, sound, message);
     }
 
+    /// <summary>Whether any plan/target slot is populated — the port's stand-in
+    /// for native <c>m_commandTargets[c_cmdPlan] != NULL</c> (shipIGC.cpp:2308,2351),
+    /// spread across this port's per-pilot-type target slots.</summary>
+    private bool HasActivePlan =>
+        PlanTarget is not null || MiningAsteroidTarget is not null || LayerAsteroidTarget is not null ||
+        AttackTarget is not null || DefendTarget is not null || BuilderAsteroidTarget is not null ||
+        GotoWaypoint is not null || LayerBuildOrder is not null || IsBuilding || HasRepairOrder ||
+        PickupTarget is not null;
+
     internal void ComplainMiningCrowded(double now)
     {
-        // shipIGC.h:1723-1734: bounded exponential backoff. Use the same
-        // random [1.5,2.5] multiplier; chat is a host seam, not a new transport.
-        if (now < _lastMiningComplaint + _miningComplaintInterval) return;
-        _lastMiningComplaint = now;
-        if (_miningComplaintInterval < 600f)
-            _miningComplaintInterval *= 1.5f + Random.Shared.NextSingle();
+        // shipIGC.h:1723-1734: one shared bounded exponential backoff for every
+        // complaint; chat is a host seam, not a new transport.
+        if (now < _lastComplaint + _complaintInterval) return;
+        _lastComplaint = now;
+        if (_complaintInterval < 600f)
+            _complaintInterval *= 1.5f + Random.Shared.NextSingle();
         SendDroneChat(DroneTooCrowdedSound, "Miner requesting unoccupied He3 asteriod.");
+    }
+
+    /// <summary>
+    /// SIM-0110 — idle NPC complaint with native backoff (shipIGC.cpp:2308-2350).
+    /// Emits a pilot-specific "requesting target" line the first time an NPC
+    /// has no plan and then at exponentially increasing intervals from 30 s
+    /// up to 600 s, exactly like <see cref="ComplainMiningCrowded"/>.
+    /// </summary>
+    internal void ComplainIdle(double now)
+    {
+        // shipIGC.h:1723-1734 + shipIGC.cpp:2308-2330: the SAME shared
+        // complaint timer as ComplainMiningCrowded; only the pilot-specific
+        // line is sent here (no extra crowded line).
+        if (now < _lastComplaint + _complaintInterval) return;
+        _lastComplaint = now;
+        if (_complaintInterval < 600f)
+            _complaintInterval *= 1.5f + Random.Shared.NextSingle();
+
+        switch (PilotType)
+        {
+            case PilotTypeMiner:
+                SendDroneChat(DroneWhereToSound, "Miner requesting He3 asteroid.");
+                break;
+            case PilotTypeBuilder when BuilderStationType is { } st:
+                SendDroneChat(st.ConstructorNeedRockSound, "Constructor requesting asteroid.");
+                break;
+            case PilotTypeLayer:
+                bool laysMine = LayerLaidExpendableTypeId >= 0 &&
+                                Mission?.Core.MineTypes.ContainsKey(LayerLaidExpendableTypeId) == true;
+                SendDroneChat(laysMine ? DroneWhereToLayMinefieldSound : DroneWhereToLayTowerSound,
+                    laysMine ? "Minefield requesting location." : "Tower requesting location.");
+                break;
+        }
     }
 
     private void TryTeleportUnload()
@@ -7318,6 +7403,112 @@ public sealed partial class Ship : Model, IShipIgc
     /// <summary>Refresh the native command damage/clock baseline even when an
     /// explicitly repeated order has identical targets (shipIGC.h:725-764).</summary>
     public void ResetRunawayForNewOrder() => DronePlanChanged();
+
+    /// <summary>
+    /// SIM-0101 — the port of native <c>CshipIGC::LegalCommand(CommandID, ImodelIGC*)</c>
+    /// (<c>shipIGC.h:1604-1721</c>), the same rules the server's commander-order
+    /// gate enforces (<c>Server.ShipCommands.cs:1725</c>). Returns
+    /// <see langword="true"/> when the command/target pair is legal for this
+    /// ship's pilot type. A <see langword="null"/> target (native
+    /// <c>pmodel == NULL</c>) or a ship mid-build is legal only for
+    /// <see cref="OrderChange.CidDoNothing"/>.
+    /// </summary>
+    public bool IsLegalCommand(short cid, object? target)
+    {
+        // shipIGC.h:1607-1617 — null target (pmodel == NULL) and the
+        // buildingMask gate both reduce to "only DoNothing is legal".
+        if (target is null || IsBuilding)
+            return cid == OrderChange.CidDoNothing;
+
+        // shipIGC.h:1608-1611 — the ship itself or a model from another mission
+        // is not a legal target either.
+        if (target is Ship self && (ReferenceEquals(self, this) || self.Mission != Mission))
+            return cid == OrderChange.CidDoNothing;
+
+        byte pt = PilotType;
+
+        // shipIGC.h:1621-1622 — bFriendly = same side or allied. Managed target
+        // types without a side (asteroid/warp/buoy) are never "friendly".
+        bool Friendly() => target switch
+        {
+            Ship s => IsFriendlySide(s.SideId),
+            DataStationIGC st => IsFriendlySide(st.SideId),
+            _ => false,
+        };
+
+        switch (cid)
+        {
+            case OrderChange.CidNone:
+                return false;                                      // shipIGC.h:1625-1629
+
+            case OrderChange.CidDefault:
+            case OrderChange.CidGoto:
+                // NPCs cannot goto an enemy station; players may (shipIGC.h:1631-1636).
+                if (pt >= PilotTypePlayer) return true;
+                return target is not DataStationIGC || Friendly();
+
+            case OrderChange.CidAttack:
+                // (Wingman||Player) && !warp && !treasure && !friendly (1638-1647).
+                // Attack on a station is legal; warp/treasure stand-ins are not.
+                if (!(pt == PilotTypeWingman || pt >= PilotTypePlayer)) return false;
+                if (target is GotoOrder or LayerBuildGoal) return false;
+                if (Friendly()) return false;
+                if (target is Ship es)
+                {
+                    if (es.PilotType == PilotTypeMiner) return true;   // shipIGC.h:1644
+                    if (es.Sector is not null) return true;            // GetCluster() != NULL → fightable
+                    return false;
+                }
+                return true;                                          // station/asteroid attack is legal
+
+            case OrderChange.CidCapture:
+                return pt >= PilotTypePlayer && target is DataStationIGC && !Friendly();  // 1649-1654
+
+            case OrderChange.CidDefend:
+                return pt == PilotTypeWingman || pt >= PilotTypePlayer;   // 1655-1659
+
+            case OrderChange.CidPickup:
+                // (Wingman||Player) && !parented && lifepod/rescue combo (1661-1678).
+                if (!(pt == PilotTypeWingman || pt >= PilotTypePlayer)) return false;
+                if (ParentShip is not null) return false;
+                if (target is Ship ps)
+                {
+                    bool targetPod = ps.HullType.HasCapability(DataHullTypeIGC.HabmLifepod);
+                    bool myRescue = HullType.HasCapability(DataHullTypeIGC.HabmRescue);
+                    bool targetRescue = ps.HullType.HasCapability(DataHullTypeIGC.HabmRescue);
+                    bool myPod = HullType.HasCapability(DataHullTypeIGC.HabmLifepod);
+                    return (targetPod && myRescue) || (targetRescue && myPod);
+                }
+                return false;                                          // this port has no treasure target
+
+            case OrderChange.CidRepair:
+                // (Wingman||Player) && (ship||station) && friendly (1680-1686).
+                if (!(pt == PilotTypeWingman || pt >= PilotTypePlayer)) return false;
+                if (target is not Ship && target is not DataStationIGC) return false;
+                return Friendly();
+
+            case OrderChange.CidJoin:
+                return target is Ship;                                 // 1688-1693
+
+            case OrderChange.CidBuild:
+                if (pt == PilotTypeLayer)
+                    return target is LayerBuildGoal;                    // native Buoy/Warp (1697-1698)
+                if (pt == PilotTypeBuilder)
+                {
+                    if (target is not Asteroid a) return false;        // 1701
+                    return BuilderStationType is { } bst && a.Data.HasCapability(bst.AabmBuild);  // 1702
+                }
+                return false;
+
+            case OrderChange.CidMine:
+                if (pt != PilotTypeMiner) return false;                 // 1711
+                if (target is not Asteroid m) return false;             // 1712
+                return m.CanMineHe3;                                    // 1713
+
+            default:
+                return false;
+        }
+    }
 
     internal void ConsumeForConstruction()
     {
@@ -7853,7 +8044,7 @@ public sealed partial class Ship : Model, IShipIgc
         {
             _droneClockInitialized = true;
             _timeRanAway = LastUpdate; // native initializes with creation time (shipIGC.cpp:189)
-            _lastMiningComplaint = LastUpdate;
+            _lastComplaint = LastUpdate; // m_timeLastComplaint = now, shipIGC.cpp:187
         }
         UpdateDamageRetreat(now);
         TryTeleportUnload();
@@ -7866,6 +8057,13 @@ public sealed partial class Ship : Model, IShipIgc
             UpdateWingmanTravel(now);
         _wingmanControlsBeforePlot = Controls;
         ApplyNpcAutopilot(now);
+
+        // SIM-0110 — native resets the shared complaint interval whenever the
+        // autopilot drone has a plan again (shipIGC.cpp:2351-2352), so a drone
+        // that was idle long enough to inflate its backoff restarts at 30 s
+        // the next time it runs out of work.
+        if (IsNpc && HasActivePlan)
+            _complaintInterval = 30f;
 
         // P162 — the Wingman's per-tick combat leg (validate AttackTarget, then
         // decide whether to hold the trigger). Must run BEFORE the weapon loop
@@ -8006,26 +8204,30 @@ public sealed partial class Ship : Model, IShipIgc
             ReceiveDamage(0, sector.Cost * maximum, now, Position, Vector3.Zero, null);
         }
 
-        // P151 — NPC self-preservation (the per-tick trigger at
-        // shipIGC.cpp:1934-1945): when the Plan slot holds no legal command,
-        // first promote a legal Accepted command into it (SetCommand(c_cmdPlan,
-        // ...), shipIGC.cpp:1939 — so a fresh "return to base" order is honored,
-        // not instantly overridden), else let a damaged NPC pick take-cover.
-        // Legality is the simplified "Target is not null" check (this port's
-        // command vocabulary is only Goto/DoNothing/None; native's full
-        // pilot-type-branching LegalCommand, shipIGC.h:1559-1617, is out of
-        // scope — see NPC_TAKE_COVER_P151.md). Real player ships (IsNpc false)
-        // never evaluate take-cover.
-        // P403 — an active GotoWaypoint also suppresses Accepted promotion (a
-        // commanded ship has exactly one objective; the goto is it).
-        if (!IsRunningAway && PlanTarget is null && GotoWaypoint is null)
+        // SIM-0101 — NPC plan legality: every tick revalidate the Plan slot
+        // and, if it is illegal, recover a legal Accepted order or fall through
+        // to the default-order/take-cover path (shipIGC.cpp:1934-1945). Native
+        // PreplotShipMove gates this whole block on m_bAutopilot
+        // (clusterIGC.cpp:192 → shipIGC.cpp:1706), so real player ships
+        // (IsNpc false) never evaluate it. P151/P403 — a running-away ship or
+        // an active GotoWaypoint suppress this revalidation.
+        if (IsNpc && !IsRunningAway && GotoWaypoint is null)
         {
-            if (AcceptedTarget is { } accepted)                    // LegalCommand(Accepted), shipIGC.cpp:1936
+            // If the current Plan slot is illegal, clear it so the recovery
+            // path below can promote a legal Accepted order or pick a default.
+            if (PlanTarget is { } plan && !IsLegalCommand(PlanCommandId, plan))
+            {
+                PlanTarget = null;
+                PlanCommandId = OrderChange.CidNone;
+            }
+
+            if (PlanTarget is null && AcceptedTarget is { } accepted &&
+                IsLegalCommand(AcceptedCommandId, accepted))       // LegalCommand(Accepted), shipIGC.cpp:1936
             {
                 PlanTarget = accepted;
                 PlanCommandId = AcceptedCommandId;                 // SetCommand(c_cmdPlan, target, cid), shipIGC.cpp:1939
             }
-            else if (IsNpc)
+            else if (PlanTarget is null)
             {
                 // P160 — the mining/selling/contention machinery is
                 // Miner-specific. Only a ship whose drone-type pilot type is
@@ -8160,6 +8362,12 @@ public sealed partial class Ship : Model, IShipIgc
                 // diverted into take-cover.
                 if (PilotType == PilotTypeMiner && MiningAsteroidTarget is null && LayerAsteroidTarget is null && AttackTarget is null && DefendTarget is null && !IsBuilding && BuilderAsteroidTarget is null && PlanTarget is null && GotoWaypoint is null && LayerBuildOrder is null)
                     TryTakeCover();                                // PickDefaultOrder take-cover, shipIGC.cpp:1943
+
+                // SIM-0110: native PlotShipMove complains once per backoff window
+                // when an autopilot drone has no plan (shipIGC.cpp:2308-2350). The
+                // gate is native's m_pilotType < c_ptCarrier (not c_ptPlayer).
+                if (!HasActivePlan && StationId is null && ParentShip is null && PilotType < PilotTypeCarrier)
+                    ComplainIdle(now);
             }
         }
 

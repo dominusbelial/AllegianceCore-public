@@ -16,8 +16,8 @@ namespace Allegiance.Core.Tests;
 /// P484 — the multi-hop, server-side drone flight the P458/P459 drones must
 /// make whenever a target is more than one warp away. The P474 live runs
 /// stalled in exactly this shape: on the debug arena (Omega(1053) ↔
-/// Alderan(1052) ↔ Plato(1060), sealed by P379) an attacker had to cross TWO
-/// alephs — Plato → Alderan → Omega — to reach the enemy garrison, and the
+/// Alderan(1052) ↔ Plato(1060), sealed by P379) a drone had to cross TWO
+/// alephs — Plato → Alderan → Omega — to reach a station, and the
 /// MCP combat bot parked at the SECOND aleph. This test asks whether the
 /// server-side NPC autopilot (<see cref="Ship.CrossClusterWarpGoal"/> +
 /// <see cref="Model.Sector.FindPathToward"/> + the pre-existing
@@ -28,11 +28,13 @@ namespace Allegiance.Core.Tests;
 /// the P379 sealed topology), run peerless (debug mode auto-starts at boot,
 /// P387) with the boot-time initial miners suppressed (P382 opt-out) so the
 /// arena is pristine. The drone starts in Plato (1060), side 1's home; the
-/// target station sits in Omega (1053), side 0's home — exactly two hops.
-/// The station is placed along the Alderan→Omega partner warp's forward axis
-/// so the drone burns out of the final exit warp toward it, the P157 lesson
-/// (a drone that must turn inside the exit warp's collision volume risks the
-/// 2 s warp-debounce "stall and re-transit" hazard).
+/// target station sits in Omega (1053) — exactly two hops. The station is
+/// side 1 (friendly) so the miner's <c>CidGoto</c> plan is legal under the
+/// native <c>LegalCommand</c> NPC gate (an NPC cannot goto an enemy station,
+/// shipIGC.h:1631-1636). The station is placed along the Alderan→Omega partner
+/// warp's forward axis so the drone burns out of the final exit warp toward it,
+/// the P157 lesson (a drone that must turn inside the exit warp's collision
+/// volume risks the 2 s warp-debounce "stall and re-transit" hazard).
 /// </summary>
 [Collection("LiveNetwork")]
 public sealed class MultiHopDroneLiveTests
@@ -113,8 +115,11 @@ public sealed class MultiHopDroneLiveTests
     /// warps away (Plato → Alderan → Omega) must cross BOTH alephs and arrive
     /// in the target's sector, closing on the station. Green only if the
     /// cross-cluster autopilot re-paths after the first transit and the second
-    /// transit fires — i.e. server-side drones handle multi-hop routes.</summary>
+    /// transit fires — i.e. server-side drones handle multi-hop routes.
+    /// Live tier (P753b): the passing path completes in a few seconds, but the
+    /// failure path runs both 60k-tick timeouts (~85 s on this workstation).</summary>
     [Trait("Requires", "Artwork")]
+    [Trait("Tier", "Live")]
     [SkippableFact]
     public void Server_drone_crosses_two_alephs_to_a_station_two_hops_away()
     {
@@ -143,7 +148,7 @@ public sealed class MultiHopDroneLiveTests
             ? v : [1f, 0f, 0f];
         var fwd = new Vector3(pf[0], pf[1], pf[2]).Normalize();
         var stationPos = bExit + fwd * WarpClearance(omegaEntry);
-        var station = Target(omega, 0, id: 9633, stationPos);
+        var station = Target(omega, 1, id: 9633, stationPos);
         mission.PlaceStation(new Station(station, LandType()), omega);
 
         // Sanity: Plato → Omega really is two hops (FindPathToward from Plato

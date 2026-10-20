@@ -2175,7 +2175,13 @@ public sealed partial class Server
                     if (ship.StationId is null) continue;                   // only docked drones
                     if (ship.ParentShip is not null) continue;              // boarded passengers ride the carrier, not a station dock
                     if (ship.StayDocked) continue;                          // commanded to stay (ORDER_CHANGE c_cidDoNothing)
-                    if (now - ship.LastDockTime < NpcAutoLaunchCooldownSeconds) continue;   // native ~10s minimum
+                    // SIM-0059: native clusterIGC.cpp:116-140 launches a docked
+                    // autopilot drone when OkToLaunch is true (10 s docked)
+                    // OR its accepted command is an explicit goto/build. A mine
+                    // order alone does not force an early launch.
+                    bool forcedLaunch = ship.AcceptedCommandId == OrderChange.CidGoto ||
+                                        ship.AcceptedCommandId == OrderChange.CidBuild;
+                    if (now - ship.LastDockTime < NpcAutoLaunchCooldownSeconds && !forcedLaunch) continue;
 
                     double elapsed = now - ship.LastDockTime;
                     short stationId = ship.StationId!.Value;
