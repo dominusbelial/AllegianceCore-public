@@ -395,12 +395,26 @@ public sealed partial class Game1
         // single stray Escape can no longer end the session. Edge-detected
         // so a single held Escape can never re-trigger across frames.
         bool esc = ActionDown(ks, "CancelChat") || ActionDown(ks, "MainMenu");
-        bool backBtn = GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed;
+        // Gamepad Back is edge-detected like Escape so one held press closes
+        // one pane instead of walking down the whole chain frame by frame.
+        bool backDown = GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed;
+        bool backBtn = backDown && !_padBackWasDown;
+        _padBackWasDown = backDown;
         if ((esc && !_escWasDown) || backBtn)
         {
+            // UX-1 — the docked-screen panes join the Escape chain. Investment
+            // closes like native PurchasesPaneImpl::OnButtonBack (loadout.cpp:916-920,
+            // TurnOffOverlayFlags(ofInvestment)); teleport like TeleportPane::OnButtonBack
+            // (teleportpane.cpp:363-366); the loadout/shop like LoadoutImpl::OnButtonBack
+            // (load.cpp:1533-1536, SetViewMode(vmHangar) — the port's _hangarOnly hangar).
+            bool investmentOpen = _investActive;
+            bool teleportOpen = _teleportActive;
+            bool loadoutOpen = _dockedActive && _cameraMode != CameraMode.Command && !_hangarOnly && _shopModel is not null;
             var cancel = MainMenuRules.Escape(IsBriefingVisible(out _), _chatActive, _qcMenuOpen,
                 _keyBindVisible, _helpVisible, _creditsVisible, ActionDown(ks, "MainMenu") || backBtn,
-                _cameraMode == CameraMode.ExternalOverride || _state == ClientState.Connecting || _session.World.GameOverResult is not null);
+                _cameraMode == CameraMode.ExternalOverride || _state == ClientState.Connecting || _session.World.GameOverResult is not null,
+                investment: investmentOpen, teleport: teleportOpen, loadout: loadoutOpen,
+                mainMenuOpen: _mainMenuVisible, playerPings: _playerPingsVisible);
             if (cancel == EscapeUiAction.None && _state == ClientState.Lobby && _filterActive) ClearFilter();
             switch (cancel)
             {
@@ -409,6 +423,20 @@ public sealed partial class Game1
                 case EscapeUiAction.QuickChat: BackQuickChat(); break;
                 case EscapeUiAction.Controls: _keyBindVisible = false; break;
                 case EscapeUiAction.Help: _helpVisible = false; break;
+                case EscapeUiAction.CloseMainMenu: if (_mainMenuVisible) ToggleMainMenu(); break;
+                case EscapeUiAction.PlayerPings: _playerPingsVisible = false; break;
+                case EscapeUiAction.Investment:
+                    _investActive = false;
+                    Console.WriteLine("[monogame] investment pane -> closed by Escape");
+                    break;
+                case EscapeUiAction.Teleport:
+                    _teleportActive = false;
+                    Console.WriteLine("[monogame] teleport pane -> closed by Escape");
+                    break;
+                case EscapeUiAction.Loadout:
+                    _hangarOnly = true;
+                    Console.WriteLine("[monogame] loadout -> hangar by Escape");
+                    break;
                 case EscapeUiAction.Credits: _creditsVisible = false; break;
                 case EscapeUiAction.ToggleMainMenu:
                     if (_state == ClientState.Lobby && _filterActive) { ClearFilter(); break; }

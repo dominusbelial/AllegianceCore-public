@@ -26,7 +26,7 @@ public static class TeleportLayout
         var rows = new List<ShopLayout.Row>();
 
         rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Title, "STATION DOCKED - TELEPORT"));
-        rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Hint, "UP/DOWN NAV   SPACE GO   B BACK"));
+        rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Hint, "UP/DOWN NAV   SPACE GO   ESC/B CLOSE"));
         rows.Add(ShopLayout.Row.Blank());
 
         rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Section, "BOARD A TEAMMATE'S SHIP (GUNNER)"));

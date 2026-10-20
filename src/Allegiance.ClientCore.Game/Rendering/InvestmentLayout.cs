@@ -23,7 +23,7 @@ public static class InvestmentLayout
 
         rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Title, "TEAM INVESTMENT"));
         rows.Add(ShopLayout.Row.Of(ShopLayout.Kind.Hint,
-            "UP/DOWN NAV  SPACE INVEST  R PARTIAL  S SHOW-ALL  H HIDE-COMPLETED  [/] TABS  B BACK"));
+            "UP/DOWN NAV  SPACE INVEST  R PARTIAL  S SHOW-ALL  H HIDE-COMPLETED  [/] TABS  ESC/B CLOSE"));
         rows.Add(ShopLayout.Row.Blank());
 
         if (!m.MissionInProgress || !m.HasSide)

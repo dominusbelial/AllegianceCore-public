@@ -75,7 +75,7 @@ public class TeleportLayoutTests
 
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Empty_list_shows_no_boardable_and_has_back_hint()
+    public void Empty_list_shows_no_boardable_and_has_close_hint()
     {
         Require.Artwork();
         var m = ModelWith([], []);
@@ -85,6 +85,6 @@ public class TeleportLayoutTests
         var joined = string.Join("\n", rows.Select(r => r.Text));
         Assert.Contains("no boardable ships", joined);
         Assert.Contains("no other friendly stations", joined);
-        Assert.Contains("BACK", joined);
+        Assert.Contains("ESC/B CLOSE", joined);
     }
 }

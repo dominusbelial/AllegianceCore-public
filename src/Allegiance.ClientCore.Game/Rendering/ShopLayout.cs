@@ -45,7 +45,7 @@ public static class ShopLayout
         var rows = new List<Row>();
 
         rows.Add(Row.Of(Kind.Title, "STATION DOCKED - LOADOUT"));
-        rows.Add(Row.Of(Kind.Hint, "TAB/Q/E VIEW   UP/DOWN NAV   ENTER SELECT   B BACK   L LAUNCH   U UNDOCK"));
+        rows.Add(Row.Of(Kind.Hint, "TAB/Q/E VIEW   UP/DOWN NAV   ENTER SELECT   B BACK   L LAUNCH   U UNDOCK   ESC HANGAR"));
 
         // ── Tab indicator ──────────────────────────────────────────────────
         rows.Add(Row.Blank());

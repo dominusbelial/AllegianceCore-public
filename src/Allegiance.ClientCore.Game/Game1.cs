@@ -1222,7 +1222,7 @@ public sealed partial class Game1 : Game
 
     // Rising-edge detectors so a held key neither re-fires nor (Escape) both
     // cancels chat and then quits the game across consecutive frames.
-    private bool _escWasDown, _enterWasDown, _backWasDown, _upWasDown, _downWasDown, _rWasDown;
+    private bool _escWasDown, _padBackWasDown, _enterWasDown, _backWasDown, _upWasDown, _downWasDown, _rWasDown;
     private bool _altF4WasDown;
 
     // P306 — headless video-capture state (see LaunchOptions.Capture).

@@ -48,3 +48,4 @@ TestResults/
 # P748 sandbox fallback: scratch is removed; raw verification stays local.
 /.p748-scratch/
 /.p748-evidence/
+.pi-sessions/
