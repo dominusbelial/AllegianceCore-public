@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
+using Allegiance.Core.Profiling;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
 using Allegiance.Core.Wire;
@@ -402,13 +403,26 @@ public sealed partial class Server
     {
         if (mission.Stage == MissionStage.Over) return;
         mission.Stage = MissionStage.Over;
+
+        // P765 — per-part timing of the game-over tick. Gated behind the same
+        // verbose/profiler switch as the other diagnostic lines so the disabled
+        // path stays a plain call (Stopwatch allocation avoided entirely). The
+        // one [gameover-timing] line per game over isolates WHERE the ~700 ms
+        // stall lands so the P765 fix can target the dominant part and the
+        // report can quote before/after numbers.
+        var sw = (ConsoleLog.Verbose || TickProfiler.Instance is not null) ? Stopwatch.StartNew() : null;
+        if (sw is not null) SwMark(sw, "declare-start", mission, winnerId, 0);
+
         mission.Skills?.Write(Console.Out, final: true);
+        if (sw is not null) SwMark(sw, "skills-report", mission, winnerId);
 
         // Native finalizes scores, queues GAME_OVER + GAME_OVER_PLAYERS and
         // flushes the mission group before resetting any player/world state
         // (FedSrv/fsmission.cpp:3225-3263,3427-3454). Freeze one result frame
         // and one audience before migration can replace their mission/ships.
         FinalizeMissionScores(mission, winnerId);
+        if (sw is not null) SwMark(sw, "finalize-scores", mission, winnerId);
+
         byte[] packet = EncodeGameOverResult(mission, winnerId, reason);
 
         // Whole-mission audience, scoped to THIS mission: every peer whose ship
@@ -418,12 +432,14 @@ public sealed partial class Server
             .Where(kv => ReferenceEquals(kv.Value.Ship.Mission, mission))
             .Select(kv => kv.Key)
             .ToArray();
+        if (sw is not null) SwMark(sw, "encode+audience", mission, winnerId);
 
         Console.WriteLine($"[gameover] mission #{_missions.IndexOf(mission)} -> Stage Over, " +
                           $"iSideWinner={(winnerId == GameOver.NA ? "NA(draw)" : winnerId.ToString())}, " +
                           $"{targets.Length} peer(s)");
         foreach (var t in targets)
             SendPeer(t, packet);
+        if (sw is not null) SwMark(sw, "send-gameover", mission, winnerId);
 
         // P439 — rotate the finished mission to a freshly-assembled NotStarted
         // one so the server is joinable again (the only way it ever leaves Over
@@ -434,6 +450,23 @@ public sealed partial class Server
         // on the shared path so every end state (draw, win-by-elimination,
         // conquest/prosperity/artifact) rotates identically.
         RotateMissionAfterGameOver(mission);
+        if (sw is not null)
+        {
+            Console.WriteLine(
+                $"[gameover-timing] mission #{_missions.IndexOf(mission)} winner={(winnerId == GameOver.NA ? "NA" : winnerId.ToString())} " +
+                $"peers={targets.Length} elapsedMs={sw.Elapsed.TotalMilliseconds:0.0}");
+        }
+    }
+
+    /// <summary>P765 — emit the cumulative elapsed ms up to one named game-over
+    /// sub-step, so the report can attribute the stall to its dominant part.</summary>
+    private void SwMark(Stopwatch sw, string part, Mission mission, short winnerId, int peers = -1)
+    {
+        if (sw is null) return;
+        Console.WriteLine(
+            $"[gameover-timing] mission #{_missions.IndexOf(mission)} part={part} " +
+            $"cumulativeMs={sw.Elapsed.TotalMilliseconds:0.0}" +
+            (peers >= 0 ? $" peers={peers}" : ""));
     }
 
     /// <summary>
@@ -504,8 +537,11 @@ public sealed partial class Server
         // Rebuild the world from the SAME config that made the original (native
         // regenerates on the next start; this port assembles now). _config.Games
         // and _missions are index-aligned (one mission per game).
+        var swR = (ConsoleLog.Verbose || TickProfiler.Instance is not null) ? Stopwatch.StartNew() : null;
         var fresh = AssembleGameMission(_config.Games[idx], _core, _landingBays, _weaponMuzzles, _stationLandingBays, _collisionHulls);
         _missions[idx] = fresh;
+        if (swR is not null)
+            Console.WriteLine(FormattableString.Invariant($"[gameover-timing] part=rotate-assemble cumulativeMs={swR.Elapsed.TotalMilliseconds:0.0}"));
 
         Console.WriteLine($"[gameover] P439: mission #{idx} finished -> rebuilt fresh STAGE_NOTSTARTED " +
                           $"({fresh.Sectors.Count} sectors, {fresh.Sides.Count} sides, {fresh.Warps.Count} warps, " +
@@ -531,18 +567,12 @@ public sealed partial class Server
         // joiner of a NotStarted mission receives (so their client re-learns the
         // new world's clusters/stations/exports and the NotStarted stage).
         MigrateConnectedPeersIntoRotatedMission(mission, fresh);
-        // P509 — re-announce the test-unlock mask to the just-migrated (now
-        // connected) peers of the fresh mission, so they receive SIDE_TECH_CHANGE
-        // through the real tech path. Idempotent (the mask was already OR-ed at
-        // AssembleGameMission; re-ORing is a no-op) — this call's only effect is
-        // the side-group broadcast to the peers migration just re-seated.
-        ApplyTestUnlock(fresh);
-
-        if (_autoRestartDeadline.TryGetValue(fresh, out var deadline))
-        {
-            BroadcastCountdownTime(fresh, deadline);
-            Console.WriteLine($"[intermission] mission #{idx} next match in {deadline - _simNow:0.###} sim seconds; connected players carried forward");
-        }
+        if (swR is not null)
+            Console.WriteLine(FormattableString.Invariant($"[gameover-timing] part=rotate-migrate cumulativeMs={swR.Elapsed.TotalMilliseconds:0.0}"));
+        // P509 re-announce (ApplyTestUnlock) and the P660 intermission countdown
+        // broadcast now run in FinishPendingRotation, once the (P765-batched)
+        // fresh-joiner join bursts have all drained — they must not fire before
+        // every migrated peer is re-synced.
     }
 
     /// <summary>
@@ -583,6 +613,12 @@ public sealed partial class Server
     /// must exist in the fresh mission or that side's peers are left unseated
     /// (logged, never guessed). Runs on the sim thread (same one that owns
     /// <c>_peerShips</c>), like the surrounding rotation.</summary>
+    // P765 — in-flight game-over migrations, drained a bounded batch per tick
+    // (one at a time, FIFO) so no single tick carries the whole superlinear
+    // migration cost. Empty in the normal case; a queue only if two missions
+    // end within a few ticks of each other. Drains via <see cref="DrainPendingRotation"/>.
+    private readonly List<PendingRotationTail> _pendingRotations = new();
+
     private void MigrateConnectedPeersIntoRotatedMission(Mission oldMission, Mission fresh)
     {
         // Side 1:1 verification (the new mission is assembled from the same
@@ -601,103 +637,209 @@ public sealed partial class Server
             return;
         }
 
-        var freshSideIds = fresh.Sides.Select(s => s.Id).ToHashSet();
-
-        // Which peers were their side's leader / which side owned the mission in
-        // the OLD world, so the re-seat can preserve both.
-        var oldLeaderConns = oldMission.Sides
-            .Where(s => s.LeaderShipId is { } lid && lid >= 0)
-            .Select(s => (Side: s.Id, Leader: _peerShips.Where(kv => kv.Value.Ship.Id == s.LeaderShipId)
-                                .Select(kv => kv.Key).FirstOrDefault()))
-            .Where(t => t.Leader != default)
-            .ToDictionary(t => t.Side, t => t.Leader);
-        short? oldOwnerSide = oldMission.MissionOwnerSideId;
-
-        // Phase 1 — for each migrant, mint a fresh ship in the new mission,
-        // register it (so later phases' whole-mission broadcasts reach it), and
-        // clear every per-peer latch keyed to the OLD mission.
-        var prepared = new List<(ConnectionId Conn, LiveShip NewLive, short NewShipId, short SideId, LogonRequest Req, bool IsOldLeader)>();
-        foreach (var (conn, live) in migrants)
+        // P765 — the whole migration is now a resumable state machine drained a
+        // bounded batch per tick (DrainPendingRotation / the gameOverMigration
+        // step), because EVERY phase is superlinear in peers (phase 1 mints and
+        // registers a fresh ship per peer and re-clears its join latches; phase 3
+        // fans each fresh-joiner burst out to whole-side / whole-mission
+        // audiences — the pre-P765 game-over tick carried ~114 ms of bursts at
+        // 64 peers, growing faster than linearly). Native never does any of this
+        // synchronously at game-over: Vacate()+Reset(true) keeps every player
+        // seated in place and normal broadcasts pick them up on the next tick
+        // (fsmission.cpp:2604-2622, 3804-3828). Phase ORDER is preserved (all
+        // prepared -> all reseated -> all bursts -> ready recompute) because
+        // leadership / CountPlayersOnSide / the P598 auto-start all depend on it;
+        // only the NUMBER of peers touched per tick is bounded.
+        _pendingRotations.Add(new PendingRotationTail
         {
-            short oldSide = live.Ship.SideId ?? -1;
-            // P660 policy: spectators/unseated peers also enter the next match.
-            // Preserve existing seats; auto-complete side selection for the rest.
-            if (!freshSideIds.Contains(oldSide) && (_config.LiveSettings?.AutoNextMatch?.Enabled ?? true))
-                oldSide = fresh.Sides.OrderBy(side => prepared.Count(p => p.SideId == side.Id)
-                    + migrants.Count(p => p.Live.Ship.SideId == side.Id)).ThenBy(side => side.Id).First().Id;
-            short newShipId = AllocateShipId();
-            LogonRequest req = _peerRequests.TryGetValue(conn, out var r) ? r
-                : new LogonRequest { CharacterName = _peerNames.TryGetValue(conn, out var nm) ? nm : $"Ship {live.Ship.Id}" };
+            Fresh = fresh,
+            Index = _missions.IndexOf(fresh),
+            Migrants = migrants,
+            FreshSideIds = fresh.Sides.Select(s => s.Id).ToHashSet(),
+            OldLeaderConns = oldMission.Sides
+                .Where(s => s.LeaderShipId is { } lid && lid >= 0)
+                .Select(s => (Side: s.Id, Leader: _peerShips.Where(kv => kv.Value.Ship.Id == s.LeaderShipId)
+                                    .Select(kv => kv.Key).FirstOrDefault()))
+                .Where(t => t.Leader != default)
+                .ToDictionary(t => t.Side, t => t.Leader),
+            OldOwnerSide = oldMission.MissionOwnerSideId,
+        });
+        DrainPendingRotation();
+    }
 
-            // A fresh, docked/lobby-state ship in the new mission (native
-            // Reset(true)). oldSide is threaded into placement so the ship lands
-            // in that side's home; reseating via TryJoinSide (phase 2) then
-            // re-establishes leadership/bookkeeping. Uses the DEFAULT spawn path
-            // (AssignMigratedShip), deliberately NOT the injected ShipSpawner:
-            // the spawner is a join-time placement policy for NEW joiners; a
-            // migrated peer is an EXISTING player being re-seated, so a test
-            // spawner must not hijack (or crash on) its re-placement.
-            var newLive = AssignMigratedShip(fresh, newShipId, oldSide != -1 ? oldSide : null);
-            // Placement needs the original side to select its hangar, but these
-            // prepared peers have not joined yet. Otherwise CountPlayersOnSide
-            // sees every migrant in phase 2 and elects no leader at all.
-            // Native AddPlayerToSide elects the first joined player
-            // (fsmission.cpp:601-624); the ordering below preserves the old leader.
-            newLive.Ship.SideId = null;
+    /// <summary>P765 — a single in-flight game-over migration: the migrated peers
+    /// of a just-rotated mission progressing through the four migration phases, a
+    /// bounded batch per tick, so no one tick carries the whole (superlinear)
+    /// migration cost. Phase ORDER is fixed (see <see cref="DrainPendingRotation"/>);
+    /// only the per-tick batch size is bounded.</summary>
+    private sealed class PendingRotationTail
+    {
+        public required Mission Fresh;
+        public required int Index;
+        public required (ConnectionId Conn, LiveShip Live)[] Migrants;
+        public required HashSet<short> FreshSideIds;
+        public required Dictionary<short, ConnectionId> OldLeaderConns;
+        public required short? OldOwnerSide;
+        // Phase 1 output (built incrementally across prep batches).
+        public List<(ConnectionId Conn, LiveShip NewLive, short NewShipId, short SideId, LogonRequest Req, bool IsOldLeader)> Prepared = new();
+        public int PrepCursor;
+        // Phase 2 reseat order (computed once every peer is prepared).
+        public List<(ConnectionId Conn, LiveShip NewLive, short NewShipId, short SideId, LogonRequest Req, bool IsOldLeader)>? Ordered;
+        public int ReseatCursor;
+        // Phase 3 burst cursor over Prepared.
+        public int BurstCursor;
+    }
 
-            // Wallet reset (native fsmission.cpp:3493-3521: a fresh PlayerWallet
-            // already starts at 0). Ready is PRESERVED, not cleared — native
-            // ProcessGameOver resets only the SIDE aggregate readiness
-            // (m_misdef.rgfReady[sideID] = false, fsmission.cpp:3501); the
-            // individual player ready flags ("not away-from-keyboard") survive
-            // unchanged (the "set everyone unready" block at fsmission.cpp:3468-
-            // 3481 is commented out by Imago precisely so a player's ready/AFK
-            // state is not reset at game-over). So a migrated peer that was
-            // ready before the game-over comes back ready in the fresh mission —
-            // the native-correct re-ready state (P598) — and the side aggregates
-            // are re-derived from those preserved flags by the Phase 4 recompute.
-            ClearPeerJoinLatches(conn, live.Ship.Id);
-            foreach (var pk in _pendingJoinRequests
-                         .Where(k => k.Value.ShipId == live.Ship.Id).Select(k => k.Key).ToList())
-                _pendingJoinRequests.Remove(pk);
+    /// <summary>P765 — how many migrated peers a single tick may carry through a
+    /// migration phase (prep / reseat / join burst). Chosen so the per-tick slice
+    /// plus the tick's normal work stays far under the ~50 ms budget at the sizes
+    /// tested. Bounded by COUNT, not wall time, so the budget is deterministic
+    /// and machine-independent.</summary>
+    private const int GameOverMigrationBatchPerTick = 8;
 
-            // Register the fresh ship NOW so later phases' broadcasts reach this
-            // peer (its old mission no longer matches any whole-mission sweep).
-            _peerShips[conn] = newLive;
+    /// <summary>
+    /// P765 — run the deferred game-over migration(s): advance the first pending
+    /// rotation through one batch of its current phase. Prep a batch of peers,
+    /// then reseat a batch, then send a batch of fresh-joiner join bursts; when
+    /// every phase is drained, run the trailing steps (P598 ready recompute,
+    /// ApplyTestUnlock, the intermission countdown) and pop the queue. Called
+    /// every tick from the SimPass pipeline so the work is spread across ticks
+    /// rather than held in the game-over tick.
+    /// </summary>
+    private void DrainPendingRotation()
+    {
+        var tail = _pendingRotations.Count == 0 ? null : _pendingRotations[0];
+        if (tail is null) return;
 
-            bool isOldLeader = oldLeaderConns.TryGetValue(oldSide, out var lc) && lc == conn;
-            prepared.Add((conn, newLive, newShipId, oldSide, req, isOldLeader));
-            Console.WriteLine($"[reseat] peer {conn} -> fresh mission: new ship {newShipId} (was {live.Ship.Id}) targeting side {oldSide}{(isOldLeader ? " (was leader)" : "")}");
+        // Phase 1 — mint/register a fresh ship for a batch of migrants this tick.
+        if (tail.PrepCursor < tail.Migrants.Length)
+        {
+            int slice = Math.Min(GameOverMigrationBatchPerTick, tail.Migrants.Length - tail.PrepCursor);
+            for (int i = 0; i < slice; i++)
+            {
+                var (conn, live) = tail.Migrants[tail.PrepCursor++];
+                // P765 — prep can now run a tick after migration setup, so a peer
+                // may have disconnected; skip a closed connection rather than
+                // registering a ghost ship for it (it will not be burst or reseated).
+                if (_host.Transport?.IsPeerClosed(conn) == true)
+                {
+                    Console.WriteLine($"[reseat] peer {conn} disconnected before migration prep — skipped");
+                    continue;
+                }
+                short oldSide = live.Ship.SideId ?? -1;
+                // P660 policy: spectators/unseated peers also enter the next match.
+                // Preserve existing seats; auto-complete side selection for the rest.
+                if (!tail.FreshSideIds.Contains(oldSide) && (_config.LiveSettings?.AutoNextMatch?.Enabled ?? true))
+                    oldSide = tail.Fresh.Sides.OrderBy(side => tail.Prepared.Count(p => p.SideId == side.Id)
+                        + tail.Migrants.Count(p => p.Live.Ship.SideId == side.Id)).ThenBy(side => side.Id).First().Id;
+                short newShipId = AllocateShipId();
+                LogonRequest req = _peerRequests.TryGetValue(conn, out var r) ? r
+                    : new LogonRequest { CharacterName = _peerNames.TryGetValue(conn, out var nm) ? nm : $"Ship {live.Ship.Id}" };
+
+                // A fresh, docked/lobby-state ship in the new mission (native
+                // Reset(true)). oldSide is threaded into placement so the ship lands
+                // in that side's home; reseating via TryJoinSide (phase 2) then
+                // re-establishes leadership/bookkeeping. Uses the DEFAULT spawn path
+                // (AssignMigratedShip), deliberately NOT the injected ShipSpawner:
+                // the spawner is a join-time placement policy for NEW joiners; a
+                // migrated peer is an EXISTING player being re-seated, so a test
+                // spawner must not hijack (or crash on) its re-placement.
+                var newLive = AssignMigratedShip(tail.Fresh, newShipId, oldSide != -1 ? oldSide : null);
+                // Placement needs the original side to select its hangar, but these
+                // prepared peers have not joined yet. Otherwise CountPlayersOnSide
+                // sees every migrant in phase 2 and elects no leader at all.
+                // Native AddPlayerToSide elects the first joined player
+                // (fsmission.cpp:601-624); the ordering below preserves the old leader.
+                newLive.Ship.SideId = null;
+
+                // Wallet reset (native fsmission.cpp:3493-3521: a fresh PlayerWallet
+                // already starts at 0). Ready is PRESERVED, not cleared — native
+                // ProcessGameOver resets only the SIDE aggregate readiness
+                // (m_misdef.rgfReady[sideID] = false, fsmission.cpp:3501); the
+                // individual player ready flags ("not away-from-keyboard") survive
+                // unchanged (the "set everyone unready" block at fsmission.cpp:3468-
+                // 3481 is commented out by Imago precisely so a player's ready/AFK
+                // state is not reset at game-over). So a migrated peer that was
+                // ready before the game-over comes back ready in the fresh mission —
+                // the native-correct re-ready state (P598) — and the side aggregates
+                // are re-derived from those preserved flags by the Phase 4 recompute.
+                ClearPeerJoinLatches(conn, live.Ship.Id);
+                foreach (var pk in _pendingJoinRequests
+                             .Where(k => k.Value.ShipId == live.Ship.Id).Select(k => k.Key).ToList())
+                    _pendingJoinRequests.Remove(pk);
+
+                // Register the fresh ship NOW so later phases' broadcasts reach this
+                // peer (its old mission no longer matches any whole-mission sweep).
+                _peerShips[conn] = newLive;
+
+                bool isOldLeader = tail.OldLeaderConns.TryGetValue(oldSide, out var lc) && lc == conn;
+                tail.Prepared.Add((conn, newLive, newShipId, oldSide, req, isOldLeader));
+                Console.WriteLine($"[reseat] peer {conn} -> fresh mission: new ship {newShipId} (was {live.Ship.Id}) targeting side {oldSide}{(isOldLeader ? " (was leader)" : "")}");
+            }
+            if (tail.PrepCursor < tail.Migrants.Length) return;   // more to prep — come back next tick
         }
 
-        // Phase 2 — re-seat every migrant onto its ORIGINAL side, preserving the
-        // old leader (first joiner of a side becomes its leader) and the old
-        // mission owner (owner-side peers re-seat first, so the owner side
-        // reclaims ownership). Peers of a side missing from the fresh mission
-        // (verified above) are left unseated.
-        var ordered = prepared
-            .Where(p => freshSideIds.Contains(p.SideId))
-            .OrderBy(p => p.SideId == oldOwnerSide ? 0 : 1)
+        // Phase 2 — re-seat a batch onto its ORIGINAL side, preserving the old
+        // leader (first joiner of a side becomes its leader) and the old mission
+        // owner (owner-side peers re-seat first, so the owner side reclaims
+        // ownership). Peers of a side missing from the fresh mission are left
+        // unseated.
+        tail.Ordered ??= tail.Prepared
+            .Where(p => tail.FreshSideIds.Contains(p.SideId))
+            .OrderBy(p => p.SideId == tail.OldOwnerSide ? 0 : 1)
             .ThenByDescending(p => p.IsOldLeader)
-            .ThenBy(p => p.SideId);
-        foreach (var p in ordered)
+            .ThenBy(p => p.SideId)
+            .ToList();
+        if (tail.ReseatCursor < tail.Ordered.Count)
         {
-            if (TryJoinSide(p.NewLive.Ship, p.SideId))
-                Console.WriteLine($"[reseat] peer {p.Conn} -> fresh mission side {p.SideId} (ship {p.NewShipId})");
-            else
-                Console.WriteLine($"[reseat] peer {p.Conn} -> could NOT re-seat on fresh side {p.SideId}");
+            int slice = Math.Min(GameOverMigrationBatchPerTick, tail.Ordered.Count - tail.ReseatCursor);
+            for (int i = 0; i < slice; i++)
+            {
+                var p = tail.Ordered[tail.ReseatCursor++];
+                if (TryJoinSide(p.NewLive.Ship, p.SideId))
+                    Console.WriteLine($"[reseat] peer {p.Conn} -> fresh mission side {p.SideId} (ship {p.NewShipId})");
+                else
+                    Console.WriteLine($"[reseat] peer {p.Conn} -> could NOT re-seat on fresh side {p.SideId}");
+            }
+            if (tail.ReseatCursor < tail.Ordered.Count) return;   // more to reseat — next tick
         }
 
-        // Phase 3 — re-send each migrated peer the join-burst a fresh joiner of a
-        // NotStarted mission receives (MISSION_STAGE NotStarted, the new world's
-        // clusters/stations/EXPORTs, its side/leader/ready info, launch). Reuses
-        // the exact existing join-burst path; nothing parallel is hand-built.
-        foreach (var p in prepared)
+        // Phase 3 — re-send a batch of migrated peers the join-burst a fresh
+        // joiner of a NotStarted mission receives (MISSION_STAGE NotStarted, the
+        // new world's clusters/stations/EXPORTs, its side/leader/ready info,
+        // launch). Reuses the exact existing join-burst path; nothing parallel is
+        // hand-built.
+        if (tail.BurstCursor < tail.Prepared.Count)
         {
-            CompleteJoinAndLaunch(p.Conn, p.Req, p.NewShipId, (byte)(p.Req.DwCookie & 0xFF), p.NewLive);
-            Console.WriteLine($"[reseat] peer {p.Conn} -> re-sent fresh-joiner join burst (ship {p.NewShipId}, stage {fresh.Stage})");
+            int slice = Math.Min(GameOverMigrationBatchPerTick, tail.Prepared.Count - tail.BurstCursor);
+            for (int i = 0; i < slice; i++)
+            {
+                var p = tail.Prepared[tail.BurstCursor++];
+                // P765 — the burst now runs on a later tick than the prep, so a
+                // peer may have disconnected in between (ReleasePeer already
+                // removed its ship). Skip a closed connection instead of letting
+                // CompleteJoinAndLaunch re-register a ghost ship for a dead conn.
+                if (_host.Transport?.IsPeerClosed(p.Conn) == true)
+                {
+                    Console.WriteLine($"[reseat] peer {p.Conn} disconnected before join burst — skipped (ship {p.NewShipId})");
+                    continue;
+                }
+                CompleteJoinAndLaunch(p.Conn, p.Req, p.NewShipId, (byte)(p.Req.DwCookie & 0xFF), p.NewLive);
+                Console.WriteLine($"[reseat] peer {p.Conn} -> re-sent fresh-joiner join burst (ship {p.NewShipId}, stage {tail.Fresh.Stage})");
+            }
+            if (tail.BurstCursor < tail.Prepared.Count) return;   // more bursts — next tick
         }
 
+        FinishPendingRotation(tail);
+    }
+
+    /// <summary>P765 — finish a fully-drained rotation tail: P598 side-ready
+    /// recompute, the P509 test-unlock re-announce, and the P660 intermission
+    /// countdown broadcast (all previously ran inline right after the synchronous
+    /// migration; they must run only after every migrated peer's fresh-joiner
+    /// burst is on the wire).</summary>
+    private void FinishPendingRotation(PendingRotationTail tail)
+    {
         // Phase 4 — P598: re-derive each occupied side's aggregate readiness
         // from the migrated peers' PRESERVED ready flags (native's
         // CheckForSideAllReady re-run, fsmission.cpp:5498-5529 — the equivalent
@@ -707,17 +849,27 @@ public sealed partial class Server
         // and RecomputeSideReady's flip fires TryAutoStart, so the rotated
         // mission auto-starts without anyone having to re-click ready — the
         // P598 bug (a rebuilt NotStarted mission that never auto-started until a
-        // server restart). Runs AFTER Phase 3 so every migrated peer's fresh-
+        // server restart). Runs AFTER the bursts so every migrated peer's fresh-
         // joiner join burst (MISSION_STAGE NotStarted etc.) is already on the
         // wire before the start countdown's STAGE_STARTING / SET_START_TIME.
         var recomputed = new HashSet<short>();
-        foreach (var p in prepared)
+        foreach (var p in tail.Prepared)
         {
             if (p.NewLive.Ship.SideId is not { } rsid) continue;   // unseated peer
             if (!recomputed.Add(rsid)) continue;                    // once per side
             RecomputeSideReady(p.NewLive.Ship);
         }
+        // P509 — re-announce the test-unlock mask to the now-migrated peers of
+        // the fresh mission (formerly inline in RotateMissionAfterGameOver).
+        ApplyTestUnlock(tail.Fresh);
+        if (_autoRestartDeadline.TryGetValue(tail.Fresh, out var deadline))
+        {
+            BroadcastCountdownTime(tail.Fresh, deadline);
+            Console.WriteLine($"[intermission] mission #{tail.Index} next match in {deadline - _simNow:0.###} sim seconds; connected players carried forward");
+        }
+        _pendingRotations.RemoveAt(0);
     }
+
 
     /// <summary>
     /// P480 — clear every per-peer one-shot/time-windowed latch keyed to a

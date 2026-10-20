@@ -1063,6 +1063,23 @@ public sealed partial class Server
         return missions;
     }
 
+    /// <summary>
+    /// P765 — memoized research-plan selection per game config. The selection
+    /// (<see cref="ResearchPlanCatalog.Select"/>) is a pure function of the
+    /// static core + the plan files on disk, but it re-reads and validates
+    /// EVERY plan file (disk + deserialization + full tree validation) on each
+    /// call — measured ≈ 0.5 s on a research showcase. <c>AssembleGameMission</c>
+    /// calls it once per game at boot AND once more at every game-over rotation,
+    /// so without this the game-over tick carried a ~0.5 s stall (P765: the
+    /// dominant part of the ~0.7 s tick on 221). Keyed by the <see cref="GameConfig"/>
+    /// reference (both call sites pass the same <c>_config.Games[i]</c> instance),
+    /// computed once and reused — the rotation then produces byte-identical
+    /// content to a fresh selection because the plan/selection is deterministic.
+    /// Callers receive a shallow copy, so the cached selections are never aliased
+    /// into mutable use.
+    /// </summary>
+    private readonly Dictionary<GameConfig, Dictionary<short, ResearchPlanCatalog.Selection>> _showcasePlanSelections = new();
+
     /// <summary>Resolve every side from its loaded civilization; research mode requires a real cycle.</summary>
     private Dictionary<short, ResearchPlanCatalog.Selection> SelectShowcasePlans(StaticCore core, GameConfig game)
     {
@@ -1074,6 +1091,10 @@ public sealed partial class Server
             throw new InvalidDataException($"game '{game.Name}': research requires one civ ID per side");
         if (research && game.ResearchPlans.Keys.Any(side => side < 0 || side >= game.Teams))
             throw new InvalidDataException($"game '{game.Name}': researchPlans contains an unknown side ID");
+        // P765 — reuse the boot-time selection on game-over rotations instead of
+        // re-reading/validating every plan file (≈0.5 s) on the tick.
+        if (_showcasePlanSelections.TryGetValue(game, out var cached))
+            return new Dictionary<short, ResearchPlanCatalog.Selection>(cached);
         var settings = new ResearchSettings
         {
             AllowDevelopments = game.AllowDevelopments, AllowShipyardPath = game.AllowShipyardPath,
@@ -1098,6 +1119,7 @@ public sealed partial class Server
                 throw new InvalidDataException($"game '{game.Name}' side {side} civ {civ}: no valid research plan: {ex.Message}", ex);
             }
         }
+        _showcasePlanSelections[game] = new Dictionary<short, ResearchPlanCatalog.Selection>(selected);
         return selected;
     }
 

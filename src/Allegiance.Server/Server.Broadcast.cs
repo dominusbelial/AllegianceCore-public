@@ -149,6 +149,13 @@ public sealed partial class Server
         Step("researchFinales", () => AdvanceResearchFinales(now));
         Step("lastBaseObjectives", () => AdvanceLastBaseObjectives(now));
         Step("autoRestarts", () => AdvanceAutoRestarts(now));
+        // P765 — drain the deferred game-over migration (fresh-joiner join bursts
+        // to migrated peers) a bounded slice per tick, so the game-over tick and
+        // every following tick stay under the per-tick budget instead of one tick
+        // carrying the whole superlinear join-burst cost (the second half of the
+        // P765 ~0.7 s stall; the first, the ~0.5 s plan-selection re-run, is gone
+        // via the SelectShowcasePlans cache). Cheap no-op when nothing pending.
+        Step("gameOverMigration", () => DrainPendingRotation());
         // P660: refresh the absolute sim-clock sample during both timer phases.
         // This PING broadcast is a port adaptation; native SET_START_TIME stays unchanged.
         if (TickIndex % Math.Max(1, _config.UpdatesPerSecond) == 0)
