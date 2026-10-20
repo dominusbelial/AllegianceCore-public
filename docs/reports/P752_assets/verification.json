@@ -1,0 +1,23 @@
+{
+  "task": "P752_PARITY_WAVE_UI7",
+  "build": { "command": "dotnet build AllegianceCore.slnx -c Release", "warnings": 0, "errors": 0 },
+  "aot_publish": {
+    "command": "dotnet publish src/Allegiance.Server/Allegiance.Server.csproj -c Release -r linux-x64 --self-contained -p:PublishAot=true",
+    "il2026": 0,
+    "il3050": 0,
+    "log": "~/allegiance-evidence/P752/aot-publish.log"
+  },
+  "fast_tier": { "command": "tools/run-tests.sh --tier fast", "tests": 8929, "result": "PASS", "summary": "~/allegiance-evidence/P752/fast-tier-summary.json" },
+  "tests_3x_alone": [
+    { "project": "Allegiance.ClientCore.MonoGame.Tests", "filter": "GameOverTablesLayoutTests|SectorInfoPaneLayoutTests|StarmapHoverTests|StarmapThreatPresentationTests|TeamPaneControlsTests", "runs": 3, "passed_each": 57 },
+    { "project": "Allegiance.Core.Tests", "filter": "GameOverPlayersWireTests.GameOverPlayers_round_trips_payload|GameOverPlayersWireTests.GameOverPlayers_layout_pins_stride_and_offsets|P752GameOverAssistDeliveryTests", "runs": 3, "passed_each": 3 }
+  ],
+  "screenshots": [
+    "sectorinfo-expanded-720p.png",
+    "sectorinfo-collapsed-720p.png",
+    "teampane-selection-720p.png",
+    "gameover-tables-720p.png"
+  ],
+  "client_proof": "client-proof.json",
+  "client_proof_log": "~/allegiance-evidence/P752/client-proof.log"
+}

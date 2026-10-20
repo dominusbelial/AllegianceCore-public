@@ -64,6 +64,17 @@ public sealed class DamageTrack
         get { Synchronize(); return _buckets.Count == 0 ? null : _buckets[0].Model; }
     }
 
+    /// <summary>P752 — the damage dealers AFTER the top bucket, in the track's
+    /// sorted (descending damage) order — native <c>GetDamageBuckets()</c>'s
+    /// <c>first()-&gt;next()</c> chain. The server's game-over assist credit
+    /// walks exactly these (native <c>FedSrvSiteBase::KillShipEvent</c>,
+    /// <c>FedSrv.CPP:11637-11670</c>: the first enemy, non-allied,
+    /// player-piloted ship after the credit bucket earns the assist).</summary>
+    public IReadOnlyList<Model> DealersAfterTop
+    {
+        get { Synchronize(); return _buckets.Count <= 1 ? [] : _buckets.Skip(1).Select(b => b.Model).ToArray(); }
+    }
+
     /// <summary>Advance slot retirement — the port of
     /// <c>DamageTrackSet::Update</c> + <c>DamageTrack::SwitchSlots</c>
     /// (<c>igc.h:5080-5095</c>, <c>common.cpp:2571-2581</c>): every 5 sim-seconds

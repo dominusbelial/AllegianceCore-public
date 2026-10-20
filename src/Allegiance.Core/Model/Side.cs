@@ -466,6 +466,34 @@ public sealed class Side : ISideIgc
     /// Starts 0.</summary>
     public short Deaths { get; set; }
 
+    /// <summary>P752 — how many of this side's ships have ejected, the port of
+    /// the native per-side ejection counter <c>m_data.nEjections</c>
+    /// (<c>sideigc.h:476-484</c>, <c>GetEjections</c>/<c>AddEjection</c>).
+    /// Incremented alongside the victim's <see cref="PlayerScore.Ejections"/>
+    /// in <c>BroadcastKillShip</c>; carried to the game-over side table via
+    /// <c>SideEndgameInfo.CEjections</c> (native <c>QueueGameoverMessage</c>,
+    /// <c>fsmission.cpp:3076</c>). Starts 0.</summary>
+    public short Ejections { get; set; }
+
+    /// <summary>P752 — how many stations this side has destroyed, the port of
+    /// the native per-side base-kill counter <c>m_data.nBaseKills</c>
+    /// (<c>sideigc.h:486-494</c>, <c>GetBaseKills</c>/<c>AddBaseKill</c>).
+    /// Native credits the LAUNCHER's side on station destruction
+    /// (<c>FedSrv.CPP:12269-12273</c>); this port increments it in
+    /// <c>BroadcastStationDestroyed</c>. Carried to the game-over side table
+    /// via <c>SideEndgameInfo.CBaseKills</c> (<c>fsmission.cpp:3077</c>).
+    /// Starts 0.</summary>
+    public short BaseKills { get; set; }
+
+    /// <summary>P752 — how many stations this side has captured, the port of
+    /// the native per-side base-capture counter <c>m_data.nBaseCaptures</c>
+    /// (<c>sideigc.h:495-503</c>, <c>GetBaseCaptures</c>/<c>AddBaseCapture</c>).
+    /// Native credits the CAPTURING ship's side (<c>fsship.cpp:617</c>); this
+    /// port increments it in <c>BroadcastStationCapture</c>. Carried to the
+    /// game-over side table via <c>SideEndgameInfo.CBaseCaptures</c>
+    /// (<c>fsmission.cpp:3078</c>). Starts 0.</summary>
+    public short BaseCaptures { get; set; }
+
     /// <summary>P201 — the carried-flag value that means "neutral artifact"
     /// rather than "captured enemy flag" — native <c>SIDE_TEAMLOBBY</c>
     /// (<c>igc.h:514</c>). Reached in this port (P302) when a neutral artifact

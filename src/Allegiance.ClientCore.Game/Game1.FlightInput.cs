@@ -379,6 +379,19 @@ public sealed partial class Game1
         }
         _gameOverBackWasDown = back;
 
+        // P752 — the game-over tables' column-header clicks (native
+        // OnButtonBarStats/OnButtonBarStatsSide, gameoverscreen.cpp:840-874,
+        // 922-956): clicking a data column sorts by it (descending), clicking
+        // the same column again reverses it, and the position column re-applies
+        // the current sort. The hit rects come from the renderer's last draw so
+        // a click always lands where the header was painted.
+        if (_state is ClientState.Flying or ClientState.ReadyCheck
+            && _session.World.GameOverResult is { }
+            && !_chatActive && !_qcMenuOpen)
+        {
+            HandleGameOverTableClick();
+        }
+
         if (HandleHangarQuitInput(ks, _chatActive || _qcMenuOpen))
         {
             // The native quit popup owns Enter/Escape before the normal menu.
@@ -947,6 +960,10 @@ public sealed partial class Game1
         // Investment is modal in flight and command view; ordinary docked
         // command acceptance below must still run when this overlay is closed.
         if ((_investActive || ActionDown(ks, "ToggleInvestmentPane")) && HandleInvestmentScreen(ks, composing)) return;
+        // P752 — the team pane's selected-player controls (donate/stop/take-me-to/
+        // accept). Runs after the (modal) investment pane so the two verb sets
+        // can never double-fire.
+        HandleTeamPaneControls(ks, composing);
         HandleRemainderTargetKeys(ks, composing);
         HandleCommandActionKeys(ks, composing);
         HandleP623TargetingKeys(ks, composing);
@@ -1507,8 +1524,23 @@ public sealed partial class Game1
         // P541 — left-click a sector on the star map (mini or expanded) to act on
         // it: ripcord target / teleport / docked view / own-sector no-op / goto.
         // Skipped while chat is composed so typing never trips a map click.
+        // P752 — the expanded map also tracks hover + the info pane's expand
+        // button first (native MouseMove + SectorInfoPane::Button).
         if (!composing)
-            HandleStarmapClick();
+        {
+            if (HandleStarmapHoverAndExpandClick())
+            {
+                // The click landed on the expand button; still refresh the
+                // button-edge latch so it is not reprocessed next frame.
+                var m = Mouse.GetState();
+                _mapLeftButtonWasDown = m.LeftButton == ButtonState.Pressed;
+                _mapRightButtonWasDown = m.RightButton == ButtonState.Pressed;
+            }
+            else
+            {
+                HandleStarmapClick();
+            }
+        }
 
         // While composing chat, keyboard flight input is fully neutral — typing a
         // word must never also thrust/pitch/yaw the ship.

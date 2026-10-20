@@ -896,6 +896,16 @@ public sealed partial class Server
             Console.WriteLine($"[scoring] launcher ship {launcherShip.Id} base kill +1 (player peer)");
         }
 
+        // P752 — the LAUNCHER's side base-kill counter (native
+        // psideLauncher->AddBaseKill(), FedSrv.CPP:12269-12273): ANY launcher
+        // that has a side credits it (ship/missile/mine/probe — native reads
+        // plauncher->GetSide() after the OT_ship-only score block), not only
+        // Ship launchers. Feeds the game-over side table's cBaseKills column
+        // (fsmission.cpp:3077).
+        if (launcher is { } anyLauncher && EquipmentTarget.SideOf(anyLauncher) is { } bkSideId
+            && station.Mission?.Sides.FirstOrDefault(s => s.Id == bkSideId) is { } bkSide)
+            bkSide.BaseKills++;
+
         // 1. Vacate every ship docked at the destroyed station (native
         //    VacateStation, fsmission.cpp:4783) — reuse PerformUndock, the real
         //    undock/eject path (StationId cleared + launch reposition + cooldown
@@ -1275,6 +1285,13 @@ public sealed partial class Server
             Console.WriteLine($"[scoring] ship {ship.Id} base capture +1 (player peer)");
         }
 
+        // P752 — the CAPTURING ship's side base-capture counter (native
+        // pside->AddBaseCapture(), fsship.cpp:617), feeding the game-over side
+        // table's cBaseCaptures column (fsmission.cpp:3078).
+        if (ship.SideId is { } bcSideId
+            && station.Mission?.Sides.FirstOrDefault(s => s.Id == bcSideId) is { } bcSide)
+            bcSide.BaseCaptures++;
+
         var msg = new StationCapture
         {
             StationId = station.StationId,
@@ -1563,6 +1580,33 @@ public sealed partial class Server
         var killerSide = killMission?.Sides.FirstOrDefault(s => s.Id == killerSideId);
         bool killCredit = amount != 0 && !bLifepod && killerSide is not null
             && killerSideId != victim.SideId;
+
+        // ── P752: the game-over assist credit ──
+        // Native FedSrvSiteBase::KillShipEvent walks the victim's damage track
+        // AFTER the top (kill-credit) bucket and credits the FIRST enemy,
+        // non-allied, player-piloted ship still in the mission with an assist
+        // (FedSrv.CPP:11637-11670: `pfsAssist->GetPlayerScoreObject()->AddAssist();
+        // break;`). Non-ship/allied/own-side/NPC buckets are skipped, and the
+        // walk stops at the first player hit — exactly one assist per kill.
+        if (killMission is { } assistMission && victim.DamageTrack is { } track)
+        {
+            foreach (var dealer in track.DealersAfterTop)
+            {
+                if (dealer is not Ship assistShip
+                    || !ReferenceEquals(assistShip.Mission, assistMission)
+                    || assistShip.SideId == victim.SideId
+                    || AlliedSides(assistMission, victim.SideId, assistShip.SideId))
+                    continue;
+                ConnectionId? assistOwner = null;
+                foreach (var kv in _peerShips)
+                    if (ReferenceEquals(kv.Value.Ship, assistShip)) { assistOwner = kv.Key; break; }
+                if (assistOwner is null)
+                    continue;   // native gates on pfsAssist->IsPlayer()
+                _peerShips[assistOwner.Value].PlayerScore.AddAssist();
+                Console.WriteLine($"[scoring] assist ship {assistShip.Id} (peer) +1 (second-highest enemy damage on victim {victim.Id})");
+                break;
+            }
+        }
         Side? killsWinner = null;
         bool killsChanged = false;
         if (killCredit)
@@ -1641,6 +1685,12 @@ public sealed partial class Server
             {
                 _peerShips[owner!.Value].PlayerScore.AddEjection();
                 Console.WriteLine($"[scoring] ship {victim.Id} ejection +1 (player peer)");
+                // P752 — the victim's SIDE ejection counter (native
+                // pside->AddEjection(), sideigc.h:479-483), feeding the game-over
+                // side table's cEjections column (fsmission.cpp:3076).
+                if (victim.Mission is { } ejMission && victim.SideId is { } ejSideId
+                    && ejMission.Sides.FirstOrDefault(s => s.Id == ejSideId) is { } ejSide)
+                    ejSide.Ejections++;
                 if (EjectSurvivor(victim, launcher, p1, p2))
                     return;
             }

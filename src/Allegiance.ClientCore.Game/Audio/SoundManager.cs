@@ -286,6 +286,7 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _otherHullHit = null!;                      // ef120 (reused)
     private SoundEffect _collision = null!;                         // P463c — colisionlarge (collisionSound, sounddef.mdl:308)
     private SoundEffect _rockHit = null!;                           // P463c — hitrock (rockHitSound, sounddef.mdl:266)
+    private SoundEffect _mouseover = null!;                         // P752c — mouseover (mouseoverSound, sounddef.mdl:322)
     // P710 — wealth / treasure announcement one-shots (clintlib/appmsg.cpp).
     // Native plays pickUpPowerupSound/pickUpDevelopmentSound/pickUpCashSound on
     // a treasure pickup (appmsg.cpp:282-303) and paydaySound on each payday
@@ -766,6 +767,7 @@ public sealed class SoundManager : IDisposable
             // rockHitSound=hitrock; sounddef.mdl:308,266). Single assets each.
             _collision = LoadSound("Sounds/colisionlarge");
             _rockHit = LoadSound("Sounds/hitrock");
+            _mouseover = LoadSound("Sounds/mouseover");   // P752c — UI hover cue (mouseoverSound, sounddef.mdl:322)
             // P260 — probe cues (single-real-default; see ProbeAmbientSoundCurve remarks).
             _probeDeploy = LoadSound("Sounds/lrgslideout");  // generic expendable deploy (deployProbeSound=dropobject stand-in)
             _mineDeploy = LoadSound("Sounds/dropmine");     // P717 — deployMineSound (sounddef.mdl:368)
@@ -1009,6 +1011,10 @@ public sealed class SoundManager : IDisposable
     {
         PlayWarnOneShot(_apEngage);
     }
+
+    /// <summary>P752c — native <c>mouseoverSound</c> (sectormap.cpp:1442): the
+    /// starmap hover cue when the pointer lands on a new cluster. One-shot.</summary>
+    public void PlayMouseOver() => PlayWarnOneShot(_mouseover);
 
     /// <summary>Play the autopilot-disengage voice chime (one-shot). No-op
     /// when audio is not loaded.</summary>

@@ -165,16 +165,54 @@ public class ClientWorldMoneyTests
     // ── AUTODONATE relationship + one-time gift ─────────────────────────
 
     [Fact]
-    public void AutoDonate_SetsRelationship_AndAppliesGiftBothWays()
+    public void AutoDonate_OwnGift_CreditsTarget_AndDoesNotDebitSelfTwice()
     {
         var world = WorldWithMyShip(MyId);
         world.Apply(new SetMoney { Money = 1000, ShipId = MyId });
         world.Apply(new SetMoney { Money = 0500, ShipId = Teammate });
 
+        // The local donor zeroed its own wallet at send time (ZeroOwnWallet /
+        // teampane.cpp:1241), so the relay must NOT debit it again
+        // (native pshipBy != m_ship, appmsg.cpp:1248-1263).
+        world.ZeroOwnWallet();
         world.Apply(new AutoDonateUpdate { SidDonateBy = MyId, SidDonateTo = Teammate, Amount = 300 });
         Assert.Equal(Teammate, world.AutoDonateTargetByShipId[MyId]);
-        Assert.Equal(700, world.MyMoney);                 // donor debited once
+        Assert.Equal(0, world.MyMoney);                   // stays zeroed — no double debit
         Assert.Equal(800, world.WalletByShipId[Teammate]); // target credited
+    }
+
+    [Fact]
+    public void AutoDonate_AnotherDonor_IsDebitedOnTheRelay()
+    {
+        var world = WorldWithMyShip(MyId);
+        world.Apply(new SetMoney { Money = 1000, ShipId = MyId });
+        world.Apply(new SetMoney { Money = 0500, ShipId = Teammate });
+
+        // A DIFFERENT donor (not us) has no local zeroing, so the relay debits
+        // it (native pshipBy != m_ship).
+        world.Apply(new AutoDonateUpdate { SidDonateBy = Teammate, SidDonateTo = MyId, Amount = 300 });
+        Assert.Equal(1300, world.MyMoney);                  // target (us) credited
+        Assert.Equal(200, world.WalletByShipId[Teammate]);  // other donor debited
+    }
+
+    [Fact]
+    public void AutoDonate_RefusedRequest_RefundsTheLocalShip()
+    {
+        var world = WorldWithMyShip(MyId);
+        world.Apply(new SetMoney { Money = 0, ShipId = MyId });
+
+        // appmsg.cpp:1265-1270: our request was denied — refund the amount.
+        world.Apply(new AutoDonateUpdate { SidDonateBy = MyId, SidDonateTo = -1 /* NA */, Amount = 250 });
+        Assert.Equal(250, world.MyMoney);
+    }
+
+    [Fact]
+    public void ZeroOwnWallet_SetsTheLocalWalletToZero()
+    {
+        var world = WorldWithMyShip(MyId);
+        world.Apply(new SetMoney { Money = 250, ShipId = MyId });
+        world.ZeroOwnWallet();
+        Assert.Equal(0, world.MyMoney);
     }
 
     [Fact]

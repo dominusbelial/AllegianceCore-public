@@ -275,8 +275,148 @@ public sealed partial class Game1
     // Native investment is an overlay in both flight and command view:
     // WinTrek/WinTrek.cpp:10029-10033, hangarscreen.cpp:201-206.
     private readonly Flight.InvestmentFundingInput _investmentFunding = new();
+
+    // P752 — the team pane's selected-player controls (native teampane.cpp:
+    // 1104-1367): the selection cursor over the pane's roster plus the
+    // donate/stop/take-me-to/accept verbs acting on it.
+    private readonly Flight.TeamPaneControls _teamPaneControls = new();
     private int _investGroup;
     private readonly Flight.InvestmentTabsInput _investmentTabs = new();
+    /// <summary>P752 — the team pane's selected-player controls, one input step
+    /// while the pane is the active in-flight overlay. Routes the funding verbs
+    /// (<c>InvestDonate</c> $100 / <c>InvestDonateLarge</c> $500 /
+    /// <c>InvestAutoDonate</c> wallet / <c>InvestToggleDonate</c> leader
+    /// stop-toggle) to the pane's SELECTED player — native teampane.cpp:1141-1245's
+    /// button row — plus Tab selection cycling and Y's take-me-to/accept
+    /// (teampane.cpp:1248-1354). The investment pane is modal and wins when both
+    /// are up (its handler early-returns the flight input).</summary>
+    private void HandleTeamPaneControls(Microsoft.Xna.Framework.Input.KeyboardState ks, bool composing)
+    {
+        bool active = _teamPaneVisible && !_investActive && !_dockedActive
+            && _state == ClientState.Flying && !composing;
+        bool ballot;
+        Flight.TeamPaneControls.Result r;
+        lock (_session.Gate)
+        {
+            ballot = _session.World.ActiveBallot is not null;
+            r = _teamPaneControls.Step(ks, Rendering.KeyBindingStore.Instance.Map, _session.World, active, ballot);
+        }
+        if (r.Gift is { } gift)
+        {
+            _session.SendPlayerDonation(gift);
+            // Native posts the cross-side gift feedback line (teampane.cpp:1152-1158,
+            // 1181-1188): "You now have $" is money MINUS the gift, never the old
+            // balance.
+            lock (_session.Gate)
+            {
+                var world = _session.World;
+                if (world.Ships.TryGetValue(gift.ShipID, out var to) && to.SideId != world.MySideId)
+                {
+                    world.PostSystemLine(Flight.TeamPaneControls.CrossSideGiftLine(
+                        to.CharacterName, world.MyMoney ?? 0, gift.MoneyGiven));
+                }
+            }
+        }
+        if (r.Auto is { } auto)
+        {
+            _session.SendAutoDonate(auto.SidDonateTo, auto.Amount);
+            // Native OnButtonAutoDonate zeroes the local wallet right after
+            // sending (teampane.cpp:1241, SetMoney(0)); the amount==-1 leader
+            // stop-toggle never touches money.
+            if (auto.Amount != -1)
+            {
+                lock (_session.Gate) _session.World.ZeroOwnWallet();
+            }
+        }
+        if (r.AcceptShipId is { } ship)
+        {
+            short mySide;
+            lock (_session.Gate) mySide = _session.World.MySideId ?? -1;
+            Console.WriteLine($"[monogame] team pane: accept join request ship {ship} into side {mySide} (POSITIONACK)");
+            _session.SendPositionAck(ship, mySide, accepted: true);
+        }
+        if (r.TakeMeToShipId is { } target)
+            TakeMeToSelected(target, r.TakeMeToSectorId);
+    }
+
+    /// <summary>P752 — native <c>OnButtonTakeMeTo</c> (teampane.cpp:1288-1330):
+    /// always close the team overlay and pick the selected player as the
+    /// current target (<c>PickShip</c>, teampane.cpp:1330), then — only when the
+    /// target's ship-status sector is known and the viewer is in the same
+    /// sector or docked — reposition the command view on them (or request the
+    /// sector through the view-cluster stream when docked).</summary>
+    private void TakeMeToSelected(short shipId, short? sectorId)
+    {
+        // Native TurnOffOverlayFlags(ofExpandedTeam | ofTeam) (teampane.cpp:1293)
+        // runs first, unconditionally — the team pane closes even when the
+        // camera jump is skipped.
+        _teamPaneVisible = false;
+        _consolePanes = _consolePanes with { Team = TeamConsoleSize.Hidden };
+
+        short? mySector = null;
+        bool docked = false;
+        string name = $"ship {shipId}";
+        Vector3? position = null;
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own))
+            {
+                mySector = own.SectorId;
+                docked = own.StationId != -1;
+            }
+            if (world.Ships.TryGetValue(shipId, out var sel))
+            {
+                name = sel.CharacterName;
+                // Native positions on the player only when they are visible to
+                // the side (SeenBySide gate, teampane.cpp:1318-1321).
+                position = sel.Latest is { } u ? PoseConverter.ToXna(u.Position) : null;
+            }
+        }
+
+        // The camera jump is gated exactly like native (teampane.cpp:1305-1328):
+        // only when the ship-status sector is known AND (same sector OR docked).
+        // PickShip below still runs regardless.
+        if (sectorId is { } targetSector && (mySector == targetSector || docked))
+        {
+            if (docked)
+            {
+                // Native requests the player's sector via the view-cluster stream.
+                _session.SendViewClusterRequest(targetSector);
+                Console.WriteLine($"[monogame] team pane: take-me-to {name} — docked, view sector {targetSector}");
+            }
+            else
+            {
+                // Native PositionCommandView(pos, 2.0f) on the visible player; when
+                // the side cannot see the target (native passes NULL and keeps the
+                // default command position) the port leaves the current focus
+                // rather than inventing a world-origin target.
+                if (position is { } visiblePos)
+                {
+                    _commandCamera.Center(visiblePos, 2.0f, explicitPosition: true);
+                    Console.WriteLine($"[monogame] team pane: take-me-to {name} — command view on their position");
+                }
+                else
+                {
+                    Console.WriteLine($"[monogame] team pane: take-me-to {name} — unseen target, command view keeps default position (teampane.cpp:1318-1321)");
+                }
+            }
+            _commandCentered = true;
+            _cameraMode = CameraMode.Command;
+            _directorActive = false;
+            _freeCamActive = _orbitCamActive = false;
+        }
+        else
+        {
+            Console.WriteLine($"[monogame] team pane: take-me-to {name} — different sector and not docked (or unknown sector), selection only (teampane.cpp:1305-1330)");
+        }
+
+        // PickShip: select the player as the current target (native
+        // GetConsoleData()->PickShip, teampane.cpp:1330) — always, even when
+        // the camera did not move.
+        CommitTargetForPlayer(new AutopilotTarget(TargetKind.Ship, shipId, name));
+    }
+
     private bool HandleInvestmentScreen(KeyboardState ks, bool composing)
     {
         _investDefs ??= BuildInvestDefs();
@@ -946,6 +1086,54 @@ public sealed partial class Game1
                 _sideSelectIndex = 0;
                 _state = ClientState.SideSelect;
                 break;
+        }
+    }
+
+    /// <summary>P752 — the game-over tables' current sort states (native
+    /// <c>m_nPlayerSort</c>/<c>m_bPlayerSortReverse</c> and the side twins,
+    /// gameoverscreen.cpp:70-77). Native's constructor ends with the player
+    /// table on Score REVERSED (descending, high scores on top — it calls
+    /// <c>OnButtonBarStats(5)</c> twice) and the side table on Kills fresh
+    /// (ascending, low kills on top — a single <c>OnButtonBarStatsSide(6)</c>);
+    /// the port defaults to those exact states.</summary>
+    private Rendering.GameOverTablesLayout.PlayerSort _gameOverPlayerSort =
+        new(Rendering.GameOverTablesLayout.PlayerColumn.Score, Reverse: true);
+    private Rendering.GameOverTablesLayout.SideSort _gameOverSideSort =
+        new(Rendering.GameOverTablesLayout.SideColumn.Kills, Reverse: false);
+    private bool _gameOverHeaderClickWasDown;
+
+    /// <summary>P752 — column-header clicks on the game-over tables (native
+    /// <c>OnButtonBarStats</c>/<c>OnButtonBarStatsSide</c>,
+    /// gameoverscreen.cpp:840-874,922-956). A fresh click on a data column sorts
+    /// by it ascending (low values on top); clicking the same column again
+    /// reverses it to descending; clicking the position column re-applies the
+    /// current sort. The hit rects come from
+    /// <see cref="Rendering.GameOverScreenRenderer"/>'s last draw.</summary>
+    private void HandleGameOverTableClick()
+    {
+        var mouse = Microsoft.Xna.Framework.Input.Mouse.GetState();
+        bool down = mouse.LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
+        bool edge = down && !_gameOverHeaderClickWasDown;
+        _gameOverHeaderClickWasDown = down;
+        if (!edge) return;
+
+        foreach (var (column, rect) in _gameOverScreenRenderer.LastSideHeaderRects)
+        {
+            if (rect.Contains(mouse.X, mouse.Y))
+            {
+                _gameOverSideSort = Rendering.GameOverTablesLayout.ClickSideColumn(_gameOverSideSort, column);
+                Console.WriteLine($"[monogame] game-over side table sort -> {column} (reverse={_gameOverSideSort.Reverse})");
+                return;
+            }
+        }
+        foreach (var (column, rect) in _gameOverScreenRenderer.LastPlayerHeaderRects)
+        {
+            if (rect.Contains(mouse.X, mouse.Y))
+            {
+                _gameOverPlayerSort = Rendering.GameOverTablesLayout.ClickPlayerColumn(_gameOverPlayerSort, column);
+                Console.WriteLine($"[monogame] game-over player table sort -> {column} (reverse={_gameOverPlayerSort.Reverse})");
+                return;
+            }
         }
     }
 

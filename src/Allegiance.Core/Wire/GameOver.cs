@@ -224,9 +224,10 @@ public sealed class GameOver : IFedMessage
     /// six <c>rgSides</c> slots in side-id order (real side data where a side
     /// with that id exists, otherwise the native "<c>&lt;bug&gt;</c>" placeholder
     /// with <c>civID = NA</c> and gray color — <c>fsmission.cpp:3066-3077</c>),
-    /// with all per-side stat counters zeroed (P178 simplification). The side
-    /// <em>color</em> is the neutral gray <c>Color(0.5,0.5,0.5)</c> for every
-    /// real side too, because this port has no per-side color to read.</summary>
+    /// carrying the live per-side endgame counters (P752: Kills/Deaths/
+    /// Ejections/BaseKills/BaseCaptures/Flags/Artifacts from the side model,
+    /// fsmission.cpp:3074-3080). Each side's colour is the port's stored side
+    /// colour (side.ColorR/G/B/A).</summary>
     public static GameOver ForMission(Allegiance.Core.Model.Mission mission, short winnerSideId, string reason)
     {
         var sides = new SideEndgameInfo[MaxSides];
@@ -239,8 +240,9 @@ public sealed class GameOver : IFedMessage
                     SideName: side.Name ?? $"side{side.Id}",
                     CivId: side.Civilization.CivilizationId,
                     R: side.ColorR, G: side.ColorG, B: side.ColorB, A: side.ColorA,
-                    CKills: 0, CDeaths: 0, CEjections: 0,
-                    CBaseKills: 0, CBaseCaptures: 0, CFlags: 0, CArtifacts: 0);
+                    CKills: side.Kills, CDeaths: side.Deaths, CEjections: side.Ejections,
+                    CBaseKills: side.BaseKills, CBaseCaptures: side.BaseCaptures,
+                    CFlags: side.Flags, CArtifacts: side.Artifacts);
         }
 
         return new GameOver

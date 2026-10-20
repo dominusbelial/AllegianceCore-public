@@ -147,6 +147,22 @@ public sealed class PlayerScore
     /// <c>c_fcidPointsRescues</c> (5 on PCore15).</summary>
     public int Rescues { get; set; }
 
+    /// <summary>P752 — the player's kill-<b>assist</b> count (native
+    /// <c>PlayerScoreObject::GetAssists()</c>/<c>AddAssist()</c>,
+    /// <c>m_cAssists</c>, <c>igc.h:5822-5830</c>). Credited to the first enemy,
+    /// non-allied, player-piloted ship on the victim's damage track AFTER the
+    /// top (kill-credit) bucket — native
+    /// <c>FedSrvSiteBase::KillShipEvent</c>'s assist walk
+    /// (<c>FedSrv.CPP:11637-11670</c>) — and carried to the game-over table
+    /// via <c>GameOverScoreObject::GetRecentAssists</c>
+    /// (<c>igc.h:6102-6105</c>, <c>gameoverscreen.cpp:160-164</c>).</summary>
+    public int Assists { get; set; }
+
+    /// <summary>P752 — increment <see cref="Assists"/> — the port of native
+    /// <c>PlayerScoreObject::AddAssist()</c> (<c>m_cAssists++</c>,
+    /// <c>igc.h:5826-5829</c>).</summary>
+    public void AddAssist() => Assists++;
+
     /// <summary>The player's tech-recovery count (native
     /// <c>GetTechsRecovered()</c>/<c>AddTechsRecovered()</c>,
     /// <c>m_cTechsRecovered</c>, <c>igc.h:5934</c>). Incremented when docking

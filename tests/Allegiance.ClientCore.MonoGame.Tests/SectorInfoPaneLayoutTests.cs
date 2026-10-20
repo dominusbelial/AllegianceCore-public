@@ -160,6 +160,114 @@ public class SectorInfoPaneLayoutTests
         Assert.Equal(1050, SectorInfoPaneLayout.NextSelection(null, [], 1050, +1));
     }
 
+    /// <summary>Build a client-world-shaped asteroid dictionary for the
+    /// mining/visibility data-flow tests (P752): one He3 rock (id 1, aabm 0x01,
+    /// OreMax 1000) and one gold rock (id 2, aabm 0x04, OreMax 500) in cluster
+    /// 7, plus a He3 rock in another cluster that must be ignored.</summary>
+    private static System.Collections.Generic.Dictionary<short, Allegiance.Core.DataAsteroidIGC> TestAsteroids() => new()
+    {
+        [1] = new Allegiance.Core.DataAsteroidIGC(
+            Signature: 0f, Position: new float[3], Up: new float[3], Forward: new float[3],
+            Rotation: new float[4], Ore: 1000f, OreMax: 1000f, AabmCapabilities: 0x01,
+            AsteroidId: 1, HitPoints: 1f, Radius: 1, ModelName: "", TextureName: "", IconName: "",
+            ClusterId: 7, Name: "", Fraction: 0),
+        [2] = new Allegiance.Core.DataAsteroidIGC(
+            Signature: 0f, Position: new float[3], Up: new float[3], Forward: new float[3],
+            Rotation: new float[4], Ore: 500f, OreMax: 500f, AabmCapabilities: 0x04,
+            AsteroidId: 2, HitPoints: 1f, Radius: 1, ModelName: "", TextureName: "", IconName: "",
+            ClusterId: 7, Name: "", Fraction: 0),
+        [3] = new Allegiance.Core.DataAsteroidIGC(
+            Signature: 0f, Position: new float[3], Up: new float[3], Forward: new float[3],
+            Rotation: new float[4], Ore: 400f, OreMax: 400f, AabmCapabilities: 0x01,
+            AsteroidId: 3, HitPoints: 1f, Radius: 1, ModelName: "", TextureName: "", IconName: "",
+            ClusterId: 9, Name: "", Fraction: 0),
+    };
+
+    /// <summary>⭐ P752 — the pane's helium figure is the SIDE-KNOWN ore: a live
+    /// ore fraction (ASTEROIDS_UPDATE/ASTEROID_MINED) scaled by OreMax, never
+    /// the static EXPORT value, and 0 for a rock the side has never been told
+    /// about (native GetOreSeenBySide, asteroidigc.h:280-285; the pane's feed is
+    /// DrawStarmap's Sample() call, Game1.Rendering.cs).</summary>
+    [Fact]
+    public void Sample_UsesLiveFractionTimesOreMax_AndZeroForUnseenRocks()
+    {
+        // Half-mined He3 rock: 0.5 x 1000 = 500 known ore.
+        Assert.Equal(500f, SectorInfoPaneLayout.Sample(0x01, 1000f, 0.5f).Ore);
+        // Never-seen rock: 0, NOT the static export ore.
+        Assert.Equal(0f, SectorInfoPaneLayout.Sample(0x01, 1000f, null).Ore);
+        // Fully drained rock.
+        Assert.Equal(0f, SectorInfoPaneLayout.Sample(0x01, 1000f, 0f).Ore);
+    }
+
+    /// <summary>⭐ P752 — the mining/visibility-aware data flow: drain one of two
+    /// known He3 rocks via the real wire feeds (ASTEROIDS_UPDATE then
+    /// ASTEROID_MINED) and the pane's helium sum falls with it — while an
+    /// unseen He3 rock contributes nothing even though the static EXPORT
+    /// carries ore.</summary>
+    [Fact]
+    public void HeliumSum_FollowsLiveMining_AndIgnoresUnseenStaticOre()
+    {
+        var asteroids = TestAsteroids();
+        var live = new System.Collections.Generic.Dictionary<short, Allegiance.ClientCore.State.AsteroidLiveState>();
+
+        float Sum() => SectorInfoPaneLayout.Build("C",
+            SectorInfoPaneLayout.SamplesForCluster(asteroids, live, 7), null).HeliumOre;
+
+        // Nothing seen yet: both He3 rocks contribute 0 (side-known ore only).
+        Assert.Equal(0f, Sum());
+
+        // The side's ASTEROIDS_UPDATE batch reports rock 1 at 100% and rock 2
+        // (gold) at 40% — only rock 1 counts toward helium.
+        live[1] = new Allegiance.ClientCore.State.AsteroidLiveState(1f, 1f);
+        live[2] = new Allegiance.ClientCore.State.AsteroidLiveState(0.4f, 0.4f);
+        Assert.Equal(1000f, Sum());
+
+        // ASTEROID_MINED: rock 1 drops to a quarter — the sum tracks it live.
+        live[1] = new Allegiance.ClientCore.State.AsteroidLiveState(0.25f, 0.25f);
+        Assert.Equal(250f, Sum());
+
+        // A He3 rock in ANOTHER cluster never leaks into this pane.
+        live[3] = new Allegiance.ClientCore.State.AsteroidLiveState(1f, 1f);
+        Assert.Equal(250f, Sum());
+    }
+
+    /// <summary>⭐ P752 — the collapsed (small) view hides the second column —
+    /// the helium figure and the special-asteroid groups — exactly as native's
+    /// <c>if (m_pimageBkgnd == m_pimageLargeBkgnd)</c> guard
+    /// (sectormap.cpp:495-515); the sector name and the asteroid total stay.
+    /// </summary>
+    [Fact]
+    public void CollapsedView_HidesHeliumAndGroups_KeepsNameAndTotal()
+    {
+        var samples = new[]
+        {
+            new SectorInfoPaneLayout.AsteroidSample(0x01, 500f),
+            new SectorInfoPaneLayout.AsteroidSample(0x09, 0f),
+        };
+        var expanded = SectorInfoPaneLayout.Build("Alpha", samples, 2, expanded: true, warningText: null);
+        var collapsed = SectorInfoPaneLayout.Build("Alpha", samples, 2, expanded: false, warningText: null);
+
+        Assert.Contains("He3 ore: 500", expanded.DisplayLines);
+        Assert.DoesNotContain("He3 ore: 500", collapsed.DisplayLines);
+        Assert.Contains("Asteroids: 2", collapsed.DisplayLines);
+        Assert.Equal("Alpha Sector", collapsed.DisplayLines[0]);
+        // The aggregation itself is unchanged — only the display set shrinks.
+        Assert.Equal(500f, collapsed.HeliumOre);
+        Assert.Equal(2, collapsed.Groups.Count);
+    }
+
+    /// <summary>⭐ P752 — the mouse-over cluster's warning text rides the pane
+    /// data (native draws it at the pane origin, sectormap.cpp:517-534).</summary>
+    [Fact]
+    public void WarningText_RidesThePaneData()
+    {
+        var pane = SectorInfoPaneLayout.Build("Alpha", Array.Empty<SectorInfoPaneLayout.AsteroidSample>(),
+            null, expanded: true, warningText: "Station at risk");
+        Assert.Equal("Station at risk", pane.WarningText);
+        Assert.Null(SectorInfoPaneLayout.Build("Alpha", Array.Empty<SectorInfoPaneLayout.AsteroidSample>(),
+            null, expanded: true, warningText: null).WarningText);
+    }
+
     [Fact]
     public void LineOrigins_StackVertically_FromTheOrigin()
     {

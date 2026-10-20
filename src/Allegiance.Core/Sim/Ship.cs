@@ -65,6 +65,12 @@ public sealed partial class Ship : Model, IShipIgc
     // decayed (slot-retired) each tick from OnUpdate.
     private DamageTrack? _damageTrack;
 
+    /// <summary>P752 — read access to this ship's damage track (null until the
+    /// first positive-damage hit). The server's game-over assist credit walks
+    /// <see cref="DamageTrack.DealersAfterTop"/> exactly as native's
+    /// <c>FedSrvSiteBase::KillShipEvent</c> does (<c>FedSrv.CPP:11637-11670</code>).</summary>
+    public DamageTrack? DamageTrack => _damageTrack;
+
     // Shield integrity fraction — the C++ CshieldIGC::m_fraction
     // (shieldIGC.h:160). 1.0 = fully charged, 0.0 = fully depleted, and ≤ 0.1
     // (the "down" threshold c_fcidDownedShield, missionigc.cpp:2690,2745) means

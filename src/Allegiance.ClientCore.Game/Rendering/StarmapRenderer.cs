@@ -125,9 +125,9 @@ public sealed class StarmapRenderer
                 && layout.TryGetName(sel, out var selName) && selName.Length > 0)
             {
                 short cw = warnings(sel);
-                if (cw > ClusterWarnings.NoThreat)
+                string wtxt = StarmapThreatPresentation.WarningText(cw);
+                if (wtxt.Length > 0)
                 {
-                    string wtxt = ClusterWarnings.GetWarningText(cw);
                     var wsz = _small.MeasureString(wtxt);
                     _sb.DrawString(_small, wtxt,
                         new Vector2(panelX + border, panelY + 10f + tsz.Y + 3f), ThreatRed);
@@ -383,16 +383,17 @@ public sealed class StarmapRenderer
     {
         var v = new Vector2(c.X, c.Y);
         float r = 9f * scale;
-        if (warning >= ClusterWarnings.StationThreatened)
-            DrawTriangle(v, r, ThreatRed);
-        else if (warning >= ClusterWarnings.CapitalInCluster)
-            DrawDiamond(v, r, ThreatCapital);
-        else if (warning >= ClusterWarnings.BomberInCluster)
-            DrawDisc(v, r, ThreatBomber);
-        else if (warning >= ClusterWarnings.MinerThreatened)
-            DrawSquare(v, r, ThreatMiner);
-        else if (warning >= ClusterWarnings.CombatInCluster)
-            DrawCross(v, r, ThreatCombat);
+        // P752 — the tier cascade lives in the pure, unit-tested
+        // StarmapThreatPresentation (native sectormap.cpp:1066-1082); the
+        // renderer only maps tier -> shape/colour.
+        switch (StarmapThreatPresentation.IconTier(warning))
+        {
+            case StarmapThreatPresentation.Tier.Station: DrawTriangle(v, r, ThreatRed); break;
+            case StarmapThreatPresentation.Tier.Capital: DrawDiamond(v, r, ThreatCapital); break;
+            case StarmapThreatPresentation.Tier.Bomber: DrawDisc(v, r, ThreatBomber); break;
+            case StarmapThreatPresentation.Tier.Miner: DrawSquare(v, r, ThreatMiner); break;
+            case StarmapThreatPresentation.Tier.Combat: DrawCross(v, r, ThreatCombat); break;
+        }
     }
 
     private void DrawTriangle(Vector2 c, float r, Color color)

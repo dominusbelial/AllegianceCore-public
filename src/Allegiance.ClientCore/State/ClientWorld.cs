@@ -921,6 +921,18 @@ public sealed partial class ClientWorld
 
     private const short Na = -1;
 
+    /// <summary>P752c — native <c>OnButtonAutoDonate</c> zeroes the local wallet
+    /// immediately after sending the whole-wallet auto-donate
+    /// (<c>teampane.cpp:1241</c>, <c>SetMoney(0)</c>). The server's
+    /// <c>AUTODONATE(116)</c> relay then skips debiting the local donor (native
+    /// <c>pshipBy != m_ship</c>, appmsg.cpp:1248-1263 — see
+    /// <see cref="Apply(AutoDonateUpdate)"/>), so the wallet is debited exactly
+    /// once. No-op until the own ship is assigned.</summary>
+    public void ZeroOwnWallet()
+    {
+        if (MyShipId is { } me) _moneyByShipId[me] = 0;
+    }
+
     /// <summary>P442 — credit a money delta to a ship's wallet (creating the
     /// entry on first contact). Money is an int on the wire (native 32-bit), so
     /// the deltas land in that same width.</summary>
@@ -3741,15 +3753,15 @@ public sealed partial class ClientWorld
 
     /// <summary>P442 — <c>FM_S_AUTODONATE(116)</c>: set
     /// <c>SidDonateBy</c>'s auto-donate relationship, then apply the one-time
-    /// gift (if any) exactly as native does (appmsg.cpp:1192-1278).
-    /// <para>The gift arm diverges from native in ONE way, the same
-    /// server-authoritative stance as <see cref="Apply(MoneyChange)"/>: native
-    /// skips debiting the donor when <c>pshipBy == m_ship</c> because the local
-    /// client already deducted its own gift at send time — this port's client
-    /// never applies gifts locally, and this <c>AUTODONATE</c> is the ONLY wire
-    /// carrier of the transfer (the server's <c>SetAutoDonate</c> moves the
-    /// wallets and sends no separate MONEY_CHANGE), so we always debit the
-    /// donor, once, whether or not the donor is the local ship.</para></summary>
+    /// gift (if any) exactly as native does (appmsg.cpp:1192-1278):
+    /// <list type="bullet">
+    /// <item>gift to a target: +amount to the target, and -amount to the donor
+    /// ONLY when the donor is not the local ship (<c>pshipBy != m_ship</c>,
+    /// appmsg.cpp:1248-1263) — the local client already zeroed its own wallet at
+    /// send time (<see cref="ZeroOwnWallet"/>, teampane.cpp:1241);</item>
+    /// <item>refused request (<c>SidDonateTo == NA</c>): refund +amount to the
+    /// local ship (appmsg.cpp:1265-1270).</item>
+    /// </list></summary>
     private void Apply(AutoDonateUpdate m)
     {
         // Relationship first (NA = absent = donates to no one). Remember the
@@ -3778,9 +3790,11 @@ public sealed partial class ClientWorld
             if (m.SidDonateTo != Na)
             {
                 // One-time gift to an existing target: +amount to the target,
-                // -amount to the donor (appmsg.cpp:1248-1263).
+                // and -amount to the donor only when it is not us (the local
+                // wallet was already zeroed at send time, teampane.cpp:1241).
                 AddMoney(m.SidDonateTo, m.Amount);
-                AddMoney(m.SidDonateBy, -m.Amount);
+                if (m.SidDonateBy != MyShipId)
+                    AddMoney(m.SidDonateBy, -m.Amount);
             }
             else if (m.SidDonateBy == MyShipId)
             {

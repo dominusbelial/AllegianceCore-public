@@ -38,7 +38,22 @@ namespace Allegiance.Core.Wire;
 /// The two pad regions (a real <c>short</c> aligner at 25 and a real
 /// <c>float</c> aligner at 30) and the resulting 36-byte stride are part of
 /// the record layout and are written/read explicitly so a regression names
-/// the exact drifted field.</summary>
+/// the exact drifted field.
+/// <para><b>P752 extension — <c>Assists</c> + <c>TimePlayed</c>.</b> Native's
+/// <c>GameOverScoreObject</c> (<c>Igc/igc.h:5970-6160</c>) also carries the
+/// recent assists (<c>GetRecentAssists</c>, credited to the second-highest
+/// enemy damage contributor on a kill, <c>FedSrv.CPP:11650-11670</c>) and the
+/// recent time played (<c>GetRecentTimePlayed</c>, displayed as
+/// <c>h:mm</c> by <c>gameoverscreen.cpp:168-184</c>), both of which the
+/// native game-over player table draws as columns. The port appends them in
+/// the same spirit as the earlier counters:</para>
+/// <code>
+///   offset 52: short assists
+///   offset 54: — pad (2) — align timePlayed float to 4
+///   offset 56: float timePlayed (seconds)
+///   = 60 bytes
+/// </code>
+/// </summary>
 public readonly record struct GameOverPlayerEntry(
     string CharacterName,
     short SideId,
@@ -51,10 +66,13 @@ public readonly record struct GameOverPlayerEntry(
     short BaseKills = 0,
     short BaseCaptures = 0,
     short Artifacts = 0,
-    short Flags = 0)
+    short Flags = 0,
+    short Assists = 0,
+    float TimePlayed = 0f)
 {
-    /// <summary>Wire width of one record = 52 bytes (see the layout note below).</summary>
-    public const int Size = 52;
+    /// <summary>Wire width of one record = 60 bytes (see the layout note
+    /// below — P752 added <c>Assists</c> and <c>TimePlayed</c>).</summary>
+    public const int Size = 60;
 
     private static readonly Encoding Latin1 = Encoding.Latin1;
 
@@ -90,6 +108,9 @@ public readonly record struct GameOverPlayerEntry(
         w.WriteI16(BaseCaptures);                    // @46
         w.WriteI16(Artifacts);                       // @48
         w.WriteI16(Flags);                           // @50
+        w.WriteI16(Assists);                         // @52 (P752)
+        w.WriteZeros(2);                             // pad @54 (align timePlayed float to 4)
+        w.WriteU32(BitConverter.SingleToUInt32Bits(TimePlayed)); // @56 (P752)
     }
 
     public static GameOverPlayerEntry Read(ReadOnlySpan<byte> b)
@@ -107,7 +128,9 @@ public readonly record struct GameOverPlayerEntry(
             BaseKills: BinaryPrimitives.ReadInt16LittleEndian(b[44..]),
             BaseCaptures: BinaryPrimitives.ReadInt16LittleEndian(b[46..]),
             Artifacts: BinaryPrimitives.ReadInt16LittleEndian(b[48..]),
-            Flags: BinaryPrimitives.ReadInt16LittleEndian(b[50..]));
+            Flags: BinaryPrimitives.ReadInt16LittleEndian(b[50..]),
+            Assists: BinaryPrimitives.ReadInt16LittleEndian(b[52..]),
+            TimePlayed: BinaryPrimitives.ReadSingleLittleEndian(b[56..]));
     }
 }
 

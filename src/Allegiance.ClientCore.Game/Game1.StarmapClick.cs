@@ -18,6 +18,107 @@ public sealed partial class Game1
     private bool _mapLeftButtonWasDown;
     private bool _mapRightButtonWasDown;
 
+    // P752 — native's starmap hover state (sectormap.cpp:1413-1461): the
+    // cluster under the pointer while the expanded map is up (null when the
+    // pointer is over no cluster or off the map), and the info pane's
+    // expand-button toggle (native m_pimageBkgnd starts LARGE, sectormap.cpp:166).
+    private short? _starmapHoverSector;
+    private bool _sectorInfoExpanded = true;
+    private Microsoft.Xna.Framework.Rectangle? _sectorInfoPaneBox;
+
+    /// <summary>
+    /// P752 — per-frame hover + expand-button handling for the EXPANDED
+    /// starmap, the port of native <c>SectorMapPane::MouseMove</c>
+    /// (sectormap.cpp:1413-1461) and the info pane's expand button
+    /// (<c>SectorInfoPane::Button</c>, sectormap.cpp:203-238). Hovering a
+    /// cluster selects it (the info pane follows the pointer) and marks it as
+    /// the mouse-over cluster whose warning text the pane draws; hovering empty
+    /// map space reverts the selection to the CHAT cluster (native
+    /// <c>GetChatCluster()</c>, sectormap.cpp:1446); the pointer leaving the map
+    /// entirely changes nothing. A left-button RELEASE inside the info pane's
+    /// expand button toggles the small/large view BEFORE the map's own click
+    /// routing runs (native <c>SectorInfoPane::Button</c> fires on
+    /// <c>button==0 &amp;&amp; !bDown</c>, sectormap.cpp:203-238, and
+    /// <c>HitTest</c> checks the button first, sectormap.cpp:186-201) — returns
+    /// true when the click was consumed.
+    /// </summary>
+    private bool HandleStarmapHoverAndExpandClick()
+    {
+        if (!_minimapExpanded)
+        {
+            _starmapHoverSector = null;
+            return false;
+        }
+
+        var mouse = Mouse.GetState();
+        var cursor = new NumericsVec2(mouse.X, mouse.Y);
+        var vp = GraphicsDevice.Viewport;
+        float panelW = MathF.Min(vp.Width * 0.80f, 1040f);
+        float panelH = MathF.Min(vp.Height * 0.66f, 640f);
+        float panelX = (vp.Width - panelW) / 2f;
+        float panelY = (vp.Height - panelH) / 2f;
+
+        // Native toggles on RELEASE (!bDown, sectormap.cpp:205), not on press.
+        bool releaseEdge = mouse.LeftButton == ButtonState.Released && _mapLeftButtonWasDown;
+
+        // The expand button is checked first (native HitTest order).
+        if (releaseEdge && _sectorInfoPaneBox is { } box)
+        {
+            var btn = Rendering.SectorInfoPaneRenderer.ExpandButtonRect(box.X, box.Y, box.Width, box.Height);
+            if (btn.Contains(mouse.X, mouse.Y))
+            {
+                _sectorInfoExpanded = !_sectorInfoExpanded;
+                Console.WriteLine($"[monogame] sector info pane {(_sectorInfoExpanded ? "EXPANDED" : "collapsed")} (native small/large toggle, sectormap.cpp:203-238)");
+                return true;   // consumed — the map must not also act on this click
+            }
+        }
+
+        // Hover: only while the pointer is inside the map panel.
+        bool inside = cursor.X >= panelX && cursor.X <= panelX + panelW
+            && cursor.Y >= panelY && cursor.Y <= panelY + panelH;
+        short? hit = null;
+        short? chatCluster = null;
+        if (inside)
+        {
+            StarmapLayout? layout = BuildExpandedStarmapLayout(panelX, panelY, panelW, panelH);
+            if (layout is not null)
+                hit = StarmapHitTest.HitTest(layout, cursor);
+            lock (_session.Gate)
+            {
+                // Native GetChatCluster() (clintlib.h:998-1009): the viewed
+                // cluster when set, else the ship's own cluster (status sector).
+                if (_session.World.MyShipId is { } me && _session.World.Ships.TryGetValue(me, out var own))
+                    chatCluster = _session.World.ViewedClusterId ?? own.SectorId;
+            }
+        }
+        var (selected, mouseOver) = Rendering.StarmapHover.Move(inside, hit, chatCluster, _selectedSectorId);
+        if (_selectedSectorId != selected)
+            Console.WriteLine($"[monogame] starmap hover: selected sector {selected ?? -1}");
+        // Native plays mouseoverSound when the hovered cluster differs from the
+        // current selection (sectormap.cpp:1440-1443).
+        if (mouseOver is { } hovered && hovered != _selectedSectorId)
+            _sound?.PlayMouseOver();
+        _selectedSectorId = selected;
+        _starmapHoverSector = mouseOver;
+        return false;
+    }
+
+    /// <summary>Build the expanded starmap layout with the same maths
+    /// <c>DrawStarmap</c>/<c>ExecuteStarmapClick</c> use, so hover hit-testing
+    /// always agrees with what is drawn.</summary>
+    private StarmapLayout? BuildExpandedStarmapLayout(float panelX, float panelY, float panelW, float panelH)
+    {
+        lock (_session.Gate)
+        {
+            if (_session.World.Graph is not { } g) return null;
+            var sites = new List<StarmapLayout.ClusterSite>();
+            foreach (var ce in g.Clusters)
+                if (_session.World.Clusters.TryGetValue(ce.Id, out var dc))
+                    sites.Add(new StarmapLayout.ClusterSite(ce.Id, dc.Name, dc.ScreenX, dc.ScreenY));
+            return sites.Count > 0 ? StarmapLayout.Fit(sites, panelX, panelY, panelW, panelH, 26f) : null;
+        }
+    }
+
     /// <summary>
     /// P541 — edge-triggered left-button handler: on a fresh left-button press,
     /// hit-test the cursor against the currently-shown starmap (mini or expanded)

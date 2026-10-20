@@ -60,6 +60,12 @@ public static class TeamPaneLayout
     /// by <paramref name="selfName"/>) is highlighted. <paramref name="ships"/>
     /// maps a character name to its <see cref="ShipBrief"/> for the status
     /// column (absent names fall back to "?" — a pilot with no ship entity yet).
+    /// <para>P752 — <paramref name="selectedName"/> additionally marks the team
+    /// pane's selected row (the selection cursor the pane's controls act on;
+    /// native's list selection, teampane.cpp:1104), and
+    /// <paramref name="joinRequests"/> appends the own side's pending join
+    /// requests for the leader (native's ConcatinatedList(members, requests),
+    /// teampane.cpp:987-995) so the accept control has a subject.</para>
     /// </summary>
     public static IReadOnlyList<Line> Build(
         IReadOnlyList<ScoreRosterEntry> entries,
@@ -70,7 +76,9 @@ public static class TeamPaneLayout
         string? activeBallot,
         bool isLeader,
         string? selfName,
-        string? controlsHint = null)
+        string? controlsHint = null,
+        string? selectedName = null,
+        IReadOnlyList<string>? joinRequests = null)
     {
         var lines = new List<Line>();
         lines.Add(new Line(LineKind.Title, "TEAM PANE"));
@@ -84,6 +92,7 @@ public static class TeamPaneLayout
             foreach (var e in g.OrderBy(e => e.CharacterName, StringComparer.Ordinal))
             {
                 bool self = selfName != null && string.Equals(e.CharacterName, selfName, StringComparison.Ordinal);
+                bool selected = selectedName != null && string.Equals(e.CharacterName, selectedName, StringComparison.Ordinal);
                 string rankName = RankNameLookup.Lookup(rankTable, e.Rank);
                 string status = StatusFor(ships, e.CharacterName);
                 bool hasShip = ships.TryGetValue(e.CharacterName, out var sb);
@@ -94,11 +103,24 @@ public static class TeamPaneLayout
                 string role = sb.IsLeader ? " [COMMANDER]" : "";
                 if (sb.Ready == false) role += " [AFK]";
                 role += $" WING:{(sb.WingId is { } wing ? WingNames.For(wing) : "?")}";
-                string text = $"    {ScoreboardLayout.AsciiSafe(e.CharacterName),-18}  " +
+                string cursor = selected ? ">   " : "    ";
+                string text = $"{cursor}{ScoreboardLayout.AsciiSafe(e.CharacterName),-18}  " +
                               $"{ScoreboardLayout.AsciiSafe(rankName),-14}  " +
                               $"{status,-10}{hull}  K:{e.Kills}  D:{e.Deaths}{role}{id}";
-                lines.Add(new Line(LineKind.Pilot, text, self));
+                lines.Add(new Line(LineKind.Pilot, text, self || selected));
             }
+        }
+
+        // P752 — the own side's pending join requests (leader view): native
+        // appends the request list to the members (teampane.cpp:987-995) and the
+        // accept control acts on the selected one.
+        if (isLeader && joinRequests is { Count: > 0 })
+        {
+            lines.Add(new Line(LineKind.Note, "  JOIN REQUESTS:"));
+            foreach (var name in joinRequests)
+                lines.Add(new Line(LineKind.Pilot,
+                    $"{(selectedName != null && string.Equals(name, selectedName, StringComparison.Ordinal) ? ">   " : "    ")}{ScoreboardLayout.AsciiSafe(name),-18}  [WAITING]",
+                    selectedName != null && string.Equals(name, selectedName, StringComparison.Ordinal)));
         }
 
         lines.Add(new Line(LineKind.Blank, ""));

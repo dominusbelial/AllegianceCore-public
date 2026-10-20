@@ -15,13 +15,14 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// from the live <c>FM_S_GAME_OVER(62)</c> snapshot — never a hardcoded
 /// placeholder. Lay out here, derive there.
 ///
-/// Conventions mirror <see cref="HelpOverlayRenderer"/> (the established
-/// overlay pattern): it begins/ends its own <see cref="SpriteBatch"/> session
-/// (so it renders over the 3D scene or into an offscreen capture), draws a
-/// translucent panel + border, and keeps every drawn string pure ASCII (the
-/// HUD spritefonts bake ASCII 32..126 only). Unlike the toggleable
-/// help/starmap panes it is modal (no dismiss button in scope) and stays up as
-/// long as the mission stage is Over.
+/// <para>P752 — the panel now carries native's two sortable result tables
+/// (<c>gameoverscreen.cpp:840-1009</c>): the per-SIDE totals table and the
+/// per-player results table, both built by the pure
+/// <see cref="GameOverTablesLayout"/> and both with clickable column headers
+/// (first click sorts ascending — low values on top — second click reverses). The header hit
+/// rectangles of the last draw are exposed via
+/// <see cref="LastSideHeaderRects"/>/<see cref="LastPlayerHeaderRects"/> so
+/// Game1's click routing hits exactly what was painted.</para>
 /// </summary>
 public sealed class GameOverScreenRenderer
 {
@@ -42,6 +43,17 @@ public sealed class GameOverScreenRenderer
     private static readonly Color WinnerColor = new(0.40f, 0.94f, 0.88f);
     private static readonly Color ReasonColor = new(0.94f, 0.97f, 0.96f);
     private static readonly Color SubColor = new(0.60f, 0.76f, 0.74f);
+    private static readonly Color PositionDim = new(0.66f, 0.70f, 0.69f);
+    private static readonly Color CommanderColor = new(1.00f, 0.93f, 0.55f);
+
+    /// <summary>The two tables plus their sort states, as built by
+    /// <see cref="GameOverTablesLayout"/> from the live wire snapshot.</summary>
+    public sealed record Tables(
+        IReadOnlyList<GameOverTablesLayout.SideRow> SideRows,
+        IReadOnlyList<GameOverTablesLayout.PlayerRow> PlayerRows,
+        GameOverTablesLayout.SideSort SideSort,
+        GameOverTablesLayout.PlayerSort PlayerSort,
+        IReadOnlyDictionary<short, Color> SideColors);
 
     public GameOverScreenRenderer(SpriteBatch spriteBatch, Texture2D whitePixel,
         SpriteFont small, SpriteFont big)
@@ -52,24 +64,29 @@ public sealed class GameOverScreenRenderer
         _big = big;
     }
 
-    /// <summary>Draw the game-over result panel for the current viewport, plus
-    /// (P583) the per-player scoreboard table from the endgame roster
-    /// (<c>GameOverPlayers</c>, 63) — name, side, score and every counter
-    /// (kills/deaths/ejections/rescues/baseKills/baseCaptures/artifacts/flags),
-    /// mirroring native <c>gameoverscreen.cpp</c>'s per-player columns.</summary>
-    public void Draw(Viewport viewport, GameOverPanelInfo info,
-        IReadOnlyList<Allegiance.Core.Wire.GameOverPlayerEntry> players, int? nextMatchSeconds = null)
+    /// <summary>Column-header hit rectangles recorded by the most recent
+    /// <see cref="Draw"/>, in column order — Game1's click routing reads these
+    /// so a click always lands where the header was painted (native's
+    /// button-bar, gameoverscreen.cpp:840-874,922-956).</summary>
+    public IReadOnlyList<(GameOverTablesLayout.SideColumn Column, Rectangle Rect)> LastSideHeaderRects { get; private set; } = [];
+    public IReadOnlyList<(GameOverTablesLayout.PlayerColumn Column, Rectangle Rect)> LastPlayerHeaderRects { get; private set; } = [];
+
+    /// <summary>Draw the game-over result panel for the current viewport: the
+    /// winner/reason header plus the P752 side-totals and player-results
+    /// tables from <paramref name="tables"/> (already sorted by
+    /// <see cref="GameOverTablesLayout"/>; the active sort column is
+    /// underlined with its direction arrow).</summary>
+    public void Draw(Viewport viewport, GameOverPanelInfo info, Tables tables, int? nextMatchSeconds = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
 
-        // Large, centred, unmissable panel — sized to also hold the scoreboard
-        // table when one arrives.
-        float panelW = System.MathF.Min(w * 0.9f, 1180f);
-        float panelH = System.MathF.Min(h * 0.82f, 640f);
+        // Large, centred, unmissable panel — sized to hold both tables.
+        float panelW = System.MathF.Min(w * 0.94f, 1240f);
+        float panelH = System.MathF.Min(h * 0.94f, 760f);
         float panelX = (w - panelW) / 2f;
         float panelY = (h - panelH) / 2f;
-        const float pad = 34f;
+        const float pad = 30f;
 
         Color titleColor = info.Outcome switch
         {
@@ -78,16 +95,10 @@ public sealed class GameOverScreenRenderer
             _                       => TitleDraw,
         };
 
-        // Title, scaled down uniformly if it would overflow the panel width.
         string title = info.Title;
         var tsz = _big.MeasureString(title);
         float titleScale = System.MathF.Min(1f, (panelW - 2f * pad) / tsz.X);
         float titleX = panelX + (panelW - tsz.X * titleScale) / 2f;
-
-        // Layout vertical stack: title, winner banner, reason, scoreboard table,
-        // footer, back button.
-        float cursorY = panelY + 26f;
-        float bigRow = _big.MeasureString("Mg").Y * titleScale;
 
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
@@ -96,68 +107,61 @@ public sealed class GameOverScreenRenderer
             OutlineRect(panelX, panelY, panelW, panelH, PanelBorder, 2f);
             FillRect(panelX, panelY, panelW, 4f, TopAccent);   // bright top edge
 
-            // Title.
+            float cursorY = panelY + 18f;
+            float bigRow = _big.MeasureString("Mg").Y * titleScale;
             DrawBig(title, new Vector2(titleX, cursorY), titleColor, titleScale);
-            cursorY += bigRow + 22f;
+            cursorY += bigRow + 12f;
 
             // Winner banner (empty on a draw — nothing to crown).
             if (info.WinnerLine.Length > 0)
             {
                 var wsz = _small.MeasureString(info.WinnerLine);
                 DrawSmall(info.WinnerLine,
-                    new Vector2(panelX + (panelW - wsz.X) / 2f, cursorY), WinnerColor, 1.35f);
-                cursorY += _small.MeasureString("Mg").Y * 1.35f + 18f;
+                    new Vector2(panelX + (panelW - wsz.X) / 2f, cursorY), WinnerColor, 1.2f);
+                cursorY += _small.MeasureString("Mg").Y * 1.2f + 8f;
             }
 
-            // A thin divider above the reason block.
-            FillRect(panelX + pad, cursorY - 10f, panelW - 2f * pad, 1f,
-                new Color(PanelBorder.R, PanelBorder.G, PanelBorder.B, 0.55f));
-
-            // Reason text, word-wrapped to the panel width, centred per line.
-            string reasonLabel = "REASON";
-            var lsz = _small.MeasureString(reasonLabel);
-            DrawSmall(reasonLabel, new Vector2(panelX + pad, cursorY + 4f), SubColor, 1f);
-            cursorY += lsz.Y + 8f;
-
-            float reasonWidth = panelW - 2f * pad;
-            var lines = WrapText(info.Reason, _small, reasonWidth);
-            foreach (var line in lines)
-            {
-                var lineSz = _small.MeasureString(line);
-                DrawSmall(line, new Vector2(panelX + (panelW - lineSz.X) / 2f, cursorY),
-                    ReasonColor, 1f);
-                cursorY += lineSz.Y + 5f;
-            }
+            // Reason text, single centred line (clipped to the panel width).
+            string reason = Clip(info.Reason, panelW - 2f * pad);
+            var rsz = _small.MeasureString(reason);
+            DrawSmall(reason, new Vector2(panelX + (panelW - rsz.X) / 2f, cursorY), ReasonColor, 1f);
+            cursorY += rsz.Y + 6f;
 
             if (nextMatchSeconds is { } seconds)
             {
                 string timer = GameOverPanelInfo.NextMatchTimer(seconds);
                 var size = _small.MeasureString(timer);
                 DrawSmall(timer, new Vector2(panelX + (panelW - size.X) / 2f, cursorY), WinnerColor, 1f);
-                cursorY += size.Y + 12f;
+                cursorY += size.Y + 6f;
             }
 
-            // P583 — per-player scoreboard table.
-            if (players is { Count: > 0 })
+            // ── P752: the side-totals table (native SidePainter) ──────────
+            float tableX = panelX + pad;
+            float tableW = panelW - 2f * pad;
+            if (tables.SideRows.Count > 0)
+            {
+                cursorY += 6f;
+                cursorY = DrawSideTable(tableX, cursorY, tableW, tables);
+            }
+
+            // ── P752: the player-results table (native PlayerPainter) ──────
+            if (tables.PlayerRows.Count > 0)
             {
                 cursorY += 12f;
-                FillRect(panelX + pad, cursorY - 6f, panelW - 2f * pad, 1f,
-                    new Color(PanelBorder.R, PanelBorder.G, PanelBorder.B, 0.55f));
-                DrawTable(panelX + pad, cursorY, panelW - 2f * pad, players);
+                cursorY = DrawPlayerTable(tableX, cursorY, tableW, tables);
             }
 
             // Footer + Back button at the bottom of the panel.
-            FillRect(panelX, panelY + panelH - 60f, panelW, 1f,
+            FillRect(panelX, panelY + panelH - 52f, panelW, 1f,
                 new Color(PanelBorder.R, PanelBorder.G, PanelBorder.B, 0.5f));
 
             // P481 — Back button (native m_pbuttonBack / OnButtonBack,
             // gameoverscreen.cpp:609-625): the only control on the game-over
-            // screen. The port is keyboard-driven (Wayland, no reliable mouse),
-            // so Backspace triggers it; the button is drawn to match native's
-            // on-screen affordance. ASCII labels only.
-            float btnW = 120f, btnH = 34f;
+            // screen. The port is keyboard-driven, so Backspace triggers it;
+            // the button is drawn to match native's on-screen affordance.
+            float btnW = 120f, btnH = 30f;
             float btnX = panelX + (panelW - btnW) / 2f;
-            float btnY = panelY + panelH - 52f;
+            float btnY = panelY + panelH - 46f;
             FillRect(btnX, btnY, btnW, btnH, new Color(PanelBorder.R, PanelBorder.G, PanelBorder.B, 0.22f));
             OutlineRect(btnX, btnY, btnW, btnH, PanelBorder, 1.5f);
             string backLabel = "BACK";
@@ -166,13 +170,8 @@ public sealed class GameOverScreenRenderer
                 SubColor, 1f);
             string backHint = "(BACKSPACE)";
             var hintSz = _small.MeasureString(backHint);
-            DrawSmall(backHint, new Vector2(panelX + (panelW - hintSz.X) / 2f, btnY + btnH + 6f),
+            DrawSmall(backHint, new Vector2(panelX + (panelW - hintSz.X) / 2f, btnY + btnH + 3f),
                 SubColor, 0.8f);
-
-            string foot = "-- MISSION CONCLUDED --";
-            var fsz = _small.MeasureString(foot);
-            DrawSmall(foot, new Vector2(panelX + (panelW - fsz.X) / 2f, panelY + panelH - 24f),
-                SubColor, 1f);
         }
         finally
         {
@@ -180,91 +179,177 @@ public sealed class GameOverScreenRenderer
         }
     }
 
-    /// <summary>Headers for the per-player scoreboard table columns. Column
-    /// order mirrors the counters native's game-over screen reports.</summary>
-    private static readonly string[] TableHeaders =
-        ["NAME", "SIDE", "SCORE", "K", "D", "EJ", "RS", "BK", "BC", "AR", "FL"];
+    private static readonly string[] SideHeaders =
+        ["#", "SIDE", "BK", "BC", "FL", "AR", "K", "D"];
+    private static readonly GameOverTablesLayout.SideColumn[] SideHeaderColumns =
+    [
+        GameOverTablesLayout.SideColumn.Position, GameOverTablesLayout.SideColumn.Name,
+        GameOverTablesLayout.SideColumn.BaseKills, GameOverTablesLayout.SideColumn.BaseCaptures,
+        GameOverTablesLayout.SideColumn.Flags, GameOverTablesLayout.SideColumn.Artifacts,
+        GameOverTablesLayout.SideColumn.Kills, GameOverTablesLayout.SideColumn.Deaths,
+    ];
 
-    /// <summary>Draw the per-player scoreboard: a header row plus one row per
-    /// player, sorted by side then score (descending), left-aligned columns
-    /// sized to their widest cell.</summary>
-    private void DrawTable(float x, float y, float maxWidth,
-        IReadOnlyList<Allegiance.Core.Wire.GameOverPlayerEntry> players)
+    private float DrawSideTable(float x, float y, float maxWidth, Tables tables)
     {
-        // Column index meanings (headers above): 0 name, 1 side, 2 score,
-        // 3 kills, 4 deaths, 5 ejections, 6 rescues, 7 baseKills, 8 baseCaptures,
-        // 9 artifacts, 10 flags.
-        var rows = players
-            .OrderBy(p => p.SideId)
-            .ThenByDescending(p => p.Score)
-            .Select(p => new[]
-            {
-                ScoreboardLayout.AsciiSafe(p.CharacterName),
-                $"S{p.SideId}",
-                ((int)p.Score).ToString(),
-                p.Kills.ToString(), p.Deaths.ToString(), p.Ejections.ToString(),
-                p.Rescues.ToString(), p.BaseKills.ToString(), p.BaseCaptures.ToString(),
-                p.Artifacts.ToString(), p.Flags.ToString(),
-            })
-            .ToArray();
-
-        // Column widths: at least the header, at least the widest cell.
-        var widths = new float[TableHeaders.Length];
-        for (int c = 0; c < TableHeaders.Length; c++)
-            widths[c] = _small.MeasureString(TableHeaders[c]).X;
-        foreach (var row in rows)
-            for (int c = 0; c < row.Length; c++)
-                widths[c] = System.MathF.Max(widths[c], _small.MeasureString(row[c]).X);
-
-        const float gap = 16f;
-        // Header.
-        float cx = x;
-        for (int c = 0; c < TableHeaders.Length; c++)
+        const float gap = 14f;
+        var widths = new float[SideHeaders.Length];
+        for (int c = 0; c < SideHeaders.Length; c++)
+            widths[c] = _small.MeasureString(SideHeaders[c]).X;
+        foreach (var r in tables.SideRows)
         {
-            DrawSmall(TableHeaders[c], new Vector2(cx, y), TopAccent, 1f);
+            Stretch(ref widths[0], r.Position.ToString(System.Globalization.CultureInfo.InvariantCulture), _small);
+            Stretch(ref widths[1], ScoreboardLayout.AsciiSafe(r.Name), _small);
+            Stretch(ref widths[2], r.BaseKills.ToString(System.Globalization.CultureInfo.InvariantCulture), _small);
+            Stretch(ref widths[3], r.BaseCaptures.ToString(System.Globalization.CultureInfo.InvariantCulture), _small);
+            Stretch(ref widths[4], r.Flags.ToString(System.Globalization.CultureInfo.InvariantCulture), _small);
+            Stretch(ref widths[5], r.Artifacts.ToString(System.Globalization.CultureInfo.InvariantCulture), _small);
+            Stretch(ref widths[6], r.Kills.ToString(System.Globalization.CultureInfo.InvariantCulture), _small);
+            Stretch(ref widths[7], r.Deaths.ToString(System.Globalization.CultureInfo.InvariantCulture), _small);
+        }
+
+        var headerRects = new List<(GameOverTablesLayout.SideColumn, Rectangle)>();
+        float rowH = _small.MeasureString("Mg").Y + 2f;
+        float cx = x;
+        for (int c = 0; c < SideHeaders.Length; c++)
+        {
+            bool active = SideHeaderColumns[c] == tables.SideSort.Column
+                && SideHeaderColumns[c] != GameOverTablesLayout.SideColumn.Position;
+            DrawSmall(SideHeaders[c], new Vector2(cx, y), active ? WinnerColor : TopAccent, 1f);
+            if (active)
+            {
+                // Underline + direction arrow marks the active sort column.
+                FillRect(cx, y + rowH - 3f, widths[c], 2f, WinnerColor);
+                DrawSmall(tables.SideSort.Reverse ? "v" : "^", new Vector2(cx + widths[c] + 2f, y), WinnerColor, 0.8f);
+            }
+            headerRects.Add((SideHeaderColumns[c],
+                new Rectangle((int)cx, (int)y, (int)(widths[c] + gap), (int)rowH)));
             cx += widths[c] + gap;
         }
-        float rowY = y + _small.MeasureString("Mg").Y + 8f;
-        foreach (var row in rows)
+        LastSideHeaderRects = headerRects;
+
+        float rowY = y + rowH + 2f;
+        foreach (var r in tables.SideRows)
         {
             cx = x;
-            for (int c = 0; c < row.Length; c++)
+            DrawSmall(r.Position.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                new Vector2(cx, rowY), r.Position > 1 ? PositionDim : ReasonColor, 1f);
+            cx += widths[0] + gap;
+            // Native paints the side's name in the side's own colour
+            // (gameoverscreen.cpp:277-287).
+            Color nameColor = tables.SideColors.TryGetValue(r.SideId, out var sideColor) ? sideColor : ReasonColor;
+            DrawSmall(ScoreboardLayout.AsciiSafe(r.Name), new Vector2(cx, rowY), nameColor, 1f);
+            cx += widths[1] + gap;
+            void Cell(int c, string value)
             {
-                Color col = c == 0 ? ReasonColor : c == 2 ? WinnerColor : SubColor;
-                DrawSmall(row[c], new Vector2(cx, rowY), col, 1f);
+                DrawSmall(value, new Vector2(cx, rowY), ReasonColor, 1f);
                 cx += widths[c] + gap;
             }
-            rowY += 20f;
+            Cell(2, r.BaseKills.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Cell(3, r.BaseCaptures.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Cell(4, r.Flags.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Cell(5, r.Artifacts.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Cell(6, r.Kills.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Cell(7, r.Deaths.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            rowY += rowH;
         }
+        return rowY + 4f;
     }
 
-    /// <summary>Word-wrap <paramref name="text"/> to at most
-    /// <paramref name="maxWidth"/> pixels at scale 1, splitting on spaces so a
-    /// long reason string never overflows the panel (helps: this port's reason
-    /// strings are short sentences, but the wrap is a defensive guarantee that
-    /// no future reason clips).</summary>
-    private static List<string> WrapText(string text, SpriteFont font, float maxWidth)
-    {
-        var result = new List<string>();
-        if (string.IsNullOrEmpty(text)) { result.Add(""); return result; }
+    private static readonly string[] PlayerHeaders =
+        ["#", "NAME", "RANK", "BK", "BC", "SCORE", "AST", "K", "D", "TIME"];
+    private static readonly GameOverTablesLayout.PlayerColumn[] PlayerHeaderColumns =
+    [
+        GameOverTablesLayout.PlayerColumn.Position, GameOverTablesLayout.PlayerColumn.Name,
+        GameOverTablesLayout.PlayerColumn.Rank, GameOverTablesLayout.PlayerColumn.BaseKills,
+        GameOverTablesLayout.PlayerColumn.BaseCaptures, GameOverTablesLayout.PlayerColumn.Score,
+        GameOverTablesLayout.PlayerColumn.Assists, GameOverTablesLayout.PlayerColumn.Kills,
+        GameOverTablesLayout.PlayerColumn.Deaths, GameOverTablesLayout.PlayerColumn.TimePlayed,
+    ];
 
-        var words = text.Split(' ');
-        string line = "";
-        foreach (var word in words)
+    private float DrawPlayerTable(float x, float y, float maxWidth, Tables tables)
+    {
+        const float gap = 14f;
+        var widths = new float[PlayerHeaders.Length];
+        for (int c = 0; c < PlayerHeaders.Length; c++)
+            widths[c] = _small.MeasureString(PlayerHeaders[c]).X;
+        foreach (var r in tables.PlayerRows)
         {
-            string candidate = line.Length == 0 ? word : line + " " + word;
-            if (font.MeasureString(candidate).X <= maxWidth || line.Length == 0)
-            {
-                line = candidate;
-            }
-            else
-            {
-                result.Add(line);
-                line = word;
-            }
+            Stretch(ref widths[0], r.Position.ToString(System.Globalization.CultureInfo.InvariantCulture), _small);
+            Stretch(ref widths[1], ScoreboardLayout.AsciiSafe(r.Name), _small);
+            Stretch(ref widths[2], ScoreboardLayout.AsciiSafe(r.RankName), _small);
+            Stretch(ref widths[3], r.BaseKills.ToString(System.Globalization.CultureInfo.InvariantCulture), _small);
+            Stretch(ref widths[4], r.BaseCaptures.ToString(System.Globalization.CultureInfo.InvariantCulture), _small);
+            Stretch(ref widths[5], r.Score.ToString(System.Globalization.CultureInfo.InvariantCulture), _small);
+            Stretch(ref widths[6], r.Assists.ToString(System.Globalization.CultureInfo.InvariantCulture), _small);
+            Stretch(ref widths[7], r.Kills.ToString(System.Globalization.CultureInfo.InvariantCulture), _small);
+            Stretch(ref widths[8], r.DeathsOrEjections.ToString(System.Globalization.CultureInfo.InvariantCulture), _small);
+            Stretch(ref widths[9], r.TimePlayed, _small);
         }
-        if (line.Length > 0) result.Add(line);
-        return result;
+
+        var headerRects = new List<(GameOverTablesLayout.PlayerColumn, Rectangle)>();
+        float rowH = _small.MeasureString("Mg").Y + 2f;
+        float cx = x;
+        for (int c = 0; c < PlayerHeaders.Length; c++)
+        {
+            bool active = PlayerHeaderColumns[c] == tables.PlayerSort.Column
+                && PlayerHeaderColumns[c] != GameOverTablesLayout.PlayerColumn.Position;
+            DrawSmall(PlayerHeaders[c], new Vector2(cx, y), active ? WinnerColor : TopAccent, 1f);
+            if (active)
+            {
+                FillRect(cx, y + rowH - 3f, widths[c], 2f, WinnerColor);
+                DrawSmall(tables.PlayerSort.Reverse ? "v" : "^", new Vector2(cx + widths[c] + 2f, y), WinnerColor, 0.8f);
+            }
+            headerRects.Add((PlayerHeaderColumns[c],
+                new Rectangle((int)cx, (int)y, (int)(widths[c] + gap), (int)rowH)));
+            cx += widths[c] + gap;
+        }
+        LastPlayerHeaderRects = headerRects;
+
+        float rowY = y + rowH + 2f;
+        foreach (var r in tables.PlayerRows)
+        {
+            cx = x;
+            DrawSmall(r.Position.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                new Vector2(cx, rowY), r.Position > 1 ? PositionDim : ReasonColor, 1f);
+            cx += widths[0] + gap;
+            // Native paints the name in the player's side colour, bold for the
+            // commander (gameoverscreen.cpp:117-133). The port has no bold
+            // variant of the HUD font, so the commander gets the gold accent.
+            Color nameColor = tables.SideColors.TryGetValue(r.SideId, out var sideColor) ? sideColor : ReasonColor;
+            if (r.Commander) nameColor = CommanderColor;
+            DrawSmall(ScoreboardLayout.AsciiSafe(r.Name), new Vector2(cx, rowY), nameColor, 1f);
+            cx += widths[1] + gap;
+            DrawSmall(ScoreboardLayout.AsciiSafe(r.RankName), new Vector2(cx, rowY), ReasonColor, 1f);
+            cx += widths[2] + gap;
+            void Cell(int c, string value)
+            {
+                DrawSmall(value, new Vector2(cx, rowY), ReasonColor, 1f);
+                cx += widths[c] + gap;
+            }
+            Cell(3, r.BaseKills.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Cell(4, r.BaseCaptures.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Cell(5, r.Score.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Cell(6, r.Assists.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Cell(7, r.Kills.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Cell(8, r.DeathsOrEjections.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            Cell(9, r.TimePlayed);
+            rowY += rowH;
+        }
+        return rowY + 4f;
+    }
+
+    private static void Stretch(ref float width, string text, SpriteFont font)
+    {
+        var sz = font.MeasureString(text);
+        if (sz.X > width) width = sz.X;
+    }
+
+    private string Clip(string text, float maxWidth)
+    {
+        string t = ScoreboardLayout.AsciiSafe(text);
+        while (t.Length > 1 && _small.MeasureString(t).X > maxWidth)
+            t = t[..^1];
+        return t.Length == 0 ? " " : t;
     }
 
     private void DrawSmall(string text, Vector2 pos, Color color, float scale) =>

@@ -36,8 +36,30 @@ public static class SectorInfoPaneLayout
 
     /// <summary>The only capability data the pane reads off one asteroid: its
     /// ability bitmask and current ore — exactly the fields native's
-    /// <c>DrawAsteroidIcons</c>/<c>GetHeliumInCluster</c> consume.</summary>
+    /// <c>DrawAsteroidIcons</c>/<c>GetHeliumInCluster</c> consume.
+    /// <para><b>P752 — <c>Ore</c> is the SIDE-KNOWN ore, not the static export
+    /// value.</b> Native's <c>GetHeliumInCluster</c> (sectormap.cpp:350-370)
+    /// sums <c>GetOreSeenBySide</c> (asteroidigc.h:280-285): the per-side
+    /// last-known figure that the rock's per-tick eye update and every
+    /// <c>ASTEROID_MINED(198)</c> refresh (SetOreWithFraction with
+    /// <c>clientUpdate=true</c>, appmsg.cpp:1733-1744), NOT the authoritative
+    /// <c>m_asteroidDef.ore</c> the EXPORT carries. A rock the side has never
+    /// seen therefore contributes nothing (native reads an uninitialized
+    /// stack float there — the port deliberately returns 0). Build samples via
+    /// <see cref="Samples"/> so that rule lives in exactly one place.</para></summary>
     public readonly record struct AsteroidSample(short Capabilities, float Ore);
+
+    /// <summary>
+    /// P752 — build the pane's asteroid samples the way native feeds its
+    /// helium sum: each rock's <b>side-known</b> ore, i.e. the live
+    /// <c>ASTEROIDS_UPDATE(179)</c>/<c>ASTEROID_MINED(198)</c> ore fraction
+    /// scaled back up by the rock's <c>OreMax</c>, or 0 when the side has never
+    /// been told the rock's ore (<paramref name="liveOreFraction"/> is null).
+    /// The static EXPORT <c>Ore</c> is deliberately NOT consulted — native's
+    /// pane never reads it for the helium figure.
+    /// </summary>
+    public static AsteroidSample Sample(short capabilities, float oreMax, float? liveOreFraction)
+        => new(capabilities, liveOreFraction is { } f ? f * oreMax : 0f);
 
     /// <summary>One special-capability group: a distinct full capability
     /// mask (the unit native's icon grouping keys on, sectormap.cpp:302-305) with its
@@ -71,10 +93,15 @@ public static class SectorInfoPaneLayout
         /// <summary>The count of the player's own probes in this sector
         /// (<see cref="SectorMapQueries.CountOwnProbes"/>).</summary>
         public int OwnProbeCount { get; }
+        /// <summary>P752 — native's mouse-over cluster warning text
+        /// (<c>GetClusterWarningText</c>, drawn at the pane origin while the
+        /// pointer is over a sector, sectormap.cpp:517-534). Null draws
+        /// nothing.</summary>
+        public string? WarningText { get; }
 
         public Data(string name, int totalAsteroids, bool hasHelium, float heliumOre,
             IReadOnlyList<CapabilityGroup> groups, IReadOnlyList<string> displayLines,
-            bool showsOwnProbes = false, int ownProbeCount = 0)
+            bool showsOwnProbes = false, int ownProbeCount = 0, string? warningText = null)
         {
             Name = name;
             TotalAsteroids = totalAsteroids;
@@ -84,6 +111,7 @@ public static class SectorInfoPaneLayout
             DisplayLines = displayLines;
             ShowsOwnProbes = showsOwnProbes;
             OwnProbeCount = ownProbeCount;
+            WarningText = warningText;
         }
     }
 
@@ -108,15 +136,32 @@ public static class SectorInfoPaneLayout
     /// keeping existing pane content byte-for-byte unchanged.
     /// </summary>
     public static Data Build(string clusterName, IReadOnlyList<AsteroidSample> asteroids, int? ownProbeCount)
+        => Build(clusterName, asteroids, ownProbeCount, expanded: true, warningText: null);
+
+    /// <summary>
+    /// P752 — the full pane build. <paramref name="expanded"/> is the pane's
+    /// expand-button state (native <c>m_pimageBkgnd</c> small/large toggle,
+    /// sectormap.cpp:196-238): the collapsed (small) view hides the second
+    /// column — the helium figure and the special-asteroid groups — exactly as
+    /// native's <c>if (m_pimageBkgnd == m_pimageLargeBkgnd)</c> guard does
+    /// (sectormap.cpp:495-515); only the sector name, the asteroid total and
+    /// the probe row remain. <paramref name="warningText"/> is the mouse-over
+    /// cluster warning (native draws it at the pane origin while the pointer
+    /// is over the sector, sectormap.cpp:517-534); null draws nothing.
+    /// </summary>
+    public static Data Build(string clusterName, IReadOnlyList<AsteroidSample> asteroids,
+        int? ownProbeCount, bool expanded, string? warningText)
     {
-        var inner = BuildCore(clusterName, asteroids);
+        var inner = BuildCore(clusterName, asteroids, expanded);
         return ownProbeCount is { } pc
             ? new Data(inner.Name, inner.TotalAsteroids, inner.HasHelium, inner.HeliumOre,
-                inner.Groups, inner.DisplayLines, showsOwnProbes: true, ownProbeCount: pc)
-            : inner;
+                inner.Groups, inner.DisplayLines, showsOwnProbes: true, ownProbeCount: pc,
+                warningText: warningText)
+            : new Data(inner.Name, inner.TotalAsteroids, inner.HasHelium, inner.HeliumOre,
+                inner.Groups, inner.DisplayLines, warningText: warningText);
     }
 
-    private static Data BuildCore(string clusterName, IReadOnlyList<AsteroidSample> asteroids)
+    private static Data BuildCore(string clusterName, IReadOnlyList<AsteroidSample> asteroids, bool expanded)
     {
         var byMask = new Dictionary<short, int>();
         bool hasHe3 = false;
@@ -151,11 +196,37 @@ public static class SectorInfoPaneLayout
             (string.IsNullOrEmpty(clusterName) ? "?" : clusterName) + " Sector",
             $"Asteroids: {asteroids.Count}",
         };
-        foreach (var g in groups)
-            lines.Add($"{g.Label}: {g.Count}");
-        lines.Add($"He3 ore: {(int)he3Ore}");
+        if (expanded)
+        {
+            foreach (var g in groups)
+                lines.Add($"{g.Label}: {g.Count}");
+            lines.Add($"He3 ore: {(int)he3Ore}");
+        }
 
         return new Data(clusterName ?? "", asteroids.Count, hasHe3, he3Ore, groups, lines);
+    }
+
+    /// <summary>
+    /// P752 — build a cluster's asteroid samples the way the production draw
+    /// path does: every EXPORT-known asteroid in <paramref name="clusterId"/>
+    /// with its <b>side-known</b> ore — the live ore fraction from
+    /// <paramref name="live"/> scaled by the rock's <c>OreMax</c>, 0 when the
+    /// side has never been told the rock's ore. This is exactly the loop
+    /// <c>DrawStarmap</c> runs (Game1.Rendering.cs), extracted so the
+    /// mining/visibility data flow is pinned by a unit test against the same
+    /// code the renderer uses.
+    /// </summary>
+    public static List<AsteroidSample> SamplesForCluster(
+        IReadOnlyDictionary<short, Allegiance.Core.DataAsteroidIGC> asteroids,
+        IReadOnlyDictionary<short, Allegiance.ClientCore.State.AsteroidLiveState> live,
+        short clusterId)
+    {
+        var samples = new List<AsteroidSample>();
+        foreach (var ast in asteroids)
+            if (ast.Value.ClusterId == clusterId)
+                samples.Add(Sample(ast.Value.AabmCapabilities, ast.Value.OreMax,
+                    live.TryGetValue(ast.Key, out var l) ? l.OreFraction : null));
+        return samples;
     }
 
     /// <summary>A human label for a special-capability mask from its set bits.</summary>

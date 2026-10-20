@@ -94,7 +94,7 @@ public sealed class GameOverPlayersWireTests
     {
         var entries = new[]
         {
-            new GameOverPlayerEntry("AlphaAce", 0, 3, 812.5f, 9, 4, 1, 2, 1, 0, 3, 1),
+            new GameOverPlayerEntry("AlphaAce", 0, 3, 812.5f, 9, 4, 1, 2, 1, 0, 3, 1, 2, 3661.5f),
             new GameOverPlayerEntry("BravoBomber", 1, 7, 991.25f, 2, 5, 0, 1, 0, 2, 0, 0),
             new GameOverPlayerEntry("long-name-0123456789abcdef", 1, 0, 0f, 0, 0, 0, 0, 0, 0, 0, 0),  // 26 chars > 24 → truncated to 24 + NUL
         };
@@ -114,6 +114,8 @@ public sealed class GameOverPlayersWireTests
         Assert.Equal((short)0, d.Entries[0].BaseCaptures);
         Assert.Equal((short)3, d.Entries[0].Artifacts);
         Assert.Equal((short)1, d.Entries[0].Flags);
+        Assert.Equal((short)2, d.Entries[0].Assists);        // P752: second-highest contributor credits
+        Assert.Equal(3661.5f, d.Entries[0].TimePlayed);      // P752: seconds played
         Assert.Equal("BravoBomber", d.Entries[1].CharacterName);
         Assert.Equal((short)1, d.Entries[1].SideId);
         Assert.Equal((short)7, d.Entries[1].Rank);
@@ -124,30 +126,32 @@ public sealed class GameOverPlayersWireTests
         Assert.Equal(0f, d.Entries[2].Score);
     }
 
-    /// <summary>Pins the resolved record stride (52 bytes) and the fixed
+    /// <summary>Pins the resolved record stride (60 bytes) and the fixed
     /// message region (8 bytes) with discrete offsets, so a layout regression
     /// names the exact drifted field. Record layout: char[25] @0, pad @25,
     /// short sideId @26, short rank @28, pad @30, float score @32, short kills
     /// @36, short deaths @38, short ejections @40, short rescues @42, short
     /// baseKills @44, short baseCaptures @46, short artifacts @48, short flags
-    /// @50 → 52.</summary>
+    /// @50, short assists @52, pad @54, float timePlayed @56 → 60
+    /// (P752 added assists + timePlayed, the native GameOverScoreObject fields
+    /// the game-over table draws).</summary>
     [Fact]
     public void GameOverPlayers_layout_pins_stride_and_offsets()
     {
-        Assert.Equal(52, GameOverPlayerEntry.Size);
+        Assert.Equal(60, GameOverPlayerEntry.Size);
         Assert.Equal(8, GameOverPlayers.FixedSize);
 
         var msg = new GameOverPlayers
         {
-            Entries = [new GameOverPlayerEntry("A", 905, 811, 777.25f, 1, 2, 3, 4, 5, 6, 7, 8)],
+            Entries = [new GameOverPlayerEntry("A", 905, 811, 777.25f, 1, 2, 3, 4, 5, 6, 7, 8, 11, 3661.5f)],
         };
         byte[] b = msg.Encode();
-        Assert.Equal(8 + 52, b.Length);
+        Assert.Equal(8 + 60, b.Length);
 
         Assert.Equal(b.Length, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(0, 2)));  // cbmsg
         Assert.Equal(63, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(2, 2)));        // fmid
         Assert.Equal(8, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(4, 2)));         // ib (blob at 8)
-        Assert.Equal(52, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(6, 2)));        // cb = 1 × 52
+        Assert.Equal(60, BinaryPrimitives.ReadUInt16LittleEndian(b.AsSpan(6, 2)));        // cb = 1 × 60
 
         Assert.Equal((byte)'A', b[8]);        // characterName[0]
         Assert.Equal(0, b[9]);                // name NUL
@@ -164,6 +168,9 @@ public sealed class GameOverPlayersWireTests
         Assert.Equal(6, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 46, 2)));      // baseCaptures @46
         Assert.Equal(7, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 48, 2)));      // artifacts @48
         Assert.Equal(8, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 50, 2)));      // flags @50
+        Assert.Equal(11, BinaryPrimitives.ReadInt16LittleEndian(b.AsSpan(8 + 52, 2)));     // assists @52 (P752)
+        Assert.Equal(0, b[8 + 54]); Assert.Equal(0, b[8 + 55]);                           // pad @54 aligning timePlayed float to 4
+        Assert.Equal(BitConverter.SingleToUInt32Bits(3661.5f), BinaryPrimitives.ReadUInt32LittleEndian(b.AsSpan(8 + 56, 4))); // timePlayed @56 (P752)
     }
 
     // ── live: win-by-elimination (P178) fires the broadcast alongside GAME_OVER ──

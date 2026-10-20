@@ -1765,11 +1765,19 @@ public sealed partial class Game1
                 _quickChatRenderer.Draw(qn, _qcMenuPath, GraphicsDevice.Viewport);
         }
 
+        // P752c — the game-over result panel replaces the in-flight UI, so every
+        // in-flight pane (scoreboard / pilot info / briefing / team pane) must be
+        // hidden while it is up — their translucent panels otherwise show
+        // through the game-over panel's edges. The game-over draw below uses the
+        // exact same condition.
+        bool gameOverUp = (_state is ClientState.Flying or ClientState.ReadyCheck)
+            && _session.World.GameOverResult is not null;
+
         // P265 — B scoreboard overlay: the real in-mission roster (name / side /
         // kills / deaths) from ClientWorld.ScoreRoster. Drawn as a compact panel
         // in the flying state (it is mission data); independent flag from the
         // starmap/help flags, so closing it restores the prior view.
-        if (_state == ClientState.Flying && _scoreboardVisible)
+        if (_state == ClientState.Flying && _scoreboardVisible && !gameOverUp)
         {
             var rows = Rendering.ScoreboardLayout.Build(
                 _session.World.ScoreRoster, _session.World.RankTable, _session.World.IsSideActive);
@@ -1783,7 +1791,7 @@ public sealed partial class Game1
         // ScoreRosterUpdate(209) snapshot as the scoreboard, with their rank NAME
         // resolved from the RANK_INFO(13) table. Independent flag from
         // the scoreboard, so both can be open at once; drawn only while flying.
-        if (_state == ClientState.Flying && _pilotInfoVisible)
+        if (_state == ClientState.Flying && _pilotInfoVisible && !gameOverUp)
         {
             var info = Rendering.PilotInfoLayout.Build(_session.World.ScoreRoster,
                 _session.World.Ships.TryGetValue(_session.World.MyShipId ?? -1, out var pe) ? pe.CharacterName : null,
@@ -1800,7 +1808,7 @@ public sealed partial class Game1
         // location string with FGenerateCivBriefing=true, so there is no separate
         // mission-title field to draw). Dismissed by Enter/Esc or auto-closed
         // when the countdown expires (IsBriefingVisible).
-        if (_state == ClientState.Flying && IsBriefingVisible(out int? brRemaining))
+        if (_state == ClientState.Flying && !gameOverUp && IsBriefingVisible(out int? brRemaining))
         {
             string briefText = _session.World.BriefingText;
             _briefingRenderer.Draw(GraphicsDevice.Viewport, briefText, briefText, brRemaining);
@@ -1868,7 +1876,7 @@ public sealed partial class Game1
         // footer). Built from the same ScoreRoster + RankTable as the scoreboard
         // plus the live ship entity table flattened to name→ShipBrief. Shown
         // while flying, independent of the scoreboard/pilot-info flags.
-        if (_state == ClientState.Flying && _teamPaneVisible)
+        if (_state == ClientState.Flying && _teamPaneVisible && !gameOverUp)
         {
             IReadOnlyList<Rendering.TeamPaneLayout.Line> lines;
             lock (_session.Gate)
@@ -1882,6 +1890,12 @@ public sealed partial class Game1
                         _session.World.TeamLeaderShipIdFor(ent.SideId) == ent.ShipId,
                         _session.World.Roster.ReadyByShipId.TryGetValue(ent.ShipId, out var ready) ? ready : null,
                         ent.SideId == _session.World.MySideId ? ent.WingId : null, ShipId: ent.ShipId);
+                // P752 — the pane's selection cursor and the leader's join
+                // requests feed the same roster the controls act on.
+                var rosterRows = Flight.TeamPaneControls.BuildRoster(_session.World);
+                int sel = _teamPaneControls.Selection;
+                string? selectedName = sel >= 0 && sel < rosterRows.Count ? rosterRows[sel].Name : null;
+                var joinRequests = rosterRows.Where(r => r.IsJoinRequest).Select(r => r.Name).ToArray();
                 lines = Rendering.TeamPaneLayout.Build(
                     _session.World.ScoreRoster, _session.World.RankTable, briefs,
                     _session.World.IsSideActive,
@@ -1889,7 +1903,9 @@ public sealed partial class Game1
                     activeBallotText,
                     _session.World.IsTeamLeader,
                     ships.TryGetValue(_session.World.MyShipId ?? -1, out var tpe) ? tpe.CharacterName : null,
-                    $"{KeyOf("TeamPane").Label} TOGGLE | {KeyOf("Scoreboard").Label} LEADERBOARD | {KeyOf("PilotInfo").Label} CHARACTER SHEET");
+                    $"{KeyOf("TeamPane").Label} TOGGLE | {KeyOf("TeamPaneNextPilot").Label} SELECT | D $100 / E $500 / A AUTO / X STOP | {KeyOf("TeamPaneAct").Label} GOTO/ACCEPT | {KeyOf("Scoreboard").Label} LEADERBOARD | {KeyOf("PilotInfo").Label} SHEET",
+                    selectedName,
+                    joinRequests);
                 lines = lines.Append(new TeamPaneLayout.Line(TeamPaneLayout.LineKind.Hint, ModerationModel.Hint))
                     .Append(new TeamPaneLayout.Line(TeamPaneLayout.LineKind.Note, _moderation.Notice ?? "Steam moderator bans unavailable."))
                     .ToArray();
@@ -1921,7 +1937,44 @@ public sealed partial class Game1
             && _session.World.GameOverResult is { } go)
         {
             var info = Rendering.GameOverPanelInfo.From(go, _session.World.MySideId);
-            _gameOverScreenRenderer.Draw(GraphicsDevice.Viewport, info, _session.World.GameOverPlayersList,
+            // P752 — the two native result tables (side totals + players),
+            // built from the live GAME_OVER(62) snapshot by the pure
+            // GameOverTablesLayout: rank names from the rank table, side
+            // civilizations and colours from the endgame side records, and the
+            // commander set from each side's current leader (the port's
+            // stand-in for native's endgame command-credit flag — the port has
+            // no commander-score path). All reads under the gate lock.
+            Rendering.GameOverScreenRenderer.Tables tables;
+            lock (_session.Gate)
+            {
+                var world = _session.World;
+                var sideColors = new Dictionary<short, Color>();
+                for (int i = 0; i < go.Sides.Length && i < go.NumSides; i++)
+                    sideColors[(short)i] = new Color(go.Sides[i].R, go.Sides[i].G, go.Sides[i].B, go.Sides[i].A);
+                var commanders = new HashSet<string>();
+                foreach (var sideKv in world.Ships.Values.GroupBy(s => s.SideId))
+                {
+                    short sid = sideKv.Key;
+                    short? leaderId = world.TeamLeaderShipIdFor(sid);
+                    if (leaderId is { } leader
+                        && world.Ships.TryGetValue(leader, out var leaderEnt)
+                        && !string.IsNullOrEmpty(leaderEnt.CharacterName))
+                        commanders.Add(leaderEnt.CharacterName!);
+                }
+
+                short CivOfSide(short sideId) =>
+                    sideId >= 0 && sideId < go.Sides.Length ? go.Sides[sideId].CivId : (short)-1;
+                tables = new Rendering.GameOverScreenRenderer.Tables(
+                    SideRows: Rendering.GameOverTablesLayout.BuildSides(go.Sides, go.NumSides, _gameOverSideSort),
+                    PlayerRows: Rendering.GameOverTablesLayout.BuildPlayers(
+                        world.GameOverPlayersList,
+                        rank => Allegiance.Core.Wire.RankNameLookup.Lookup(world.RankTable, rank),
+                        CivOfSide, commanders, go.EjectPods, _gameOverPlayerSort),
+                    SideSort: _gameOverSideSort,
+                    PlayerSort: _gameOverPlayerSort,
+                    SideColors: sideColors);
+            }
+            _gameOverScreenRenderer.Draw(GraphicsDevice.Viewport, info, tables,
                 _session.World.IsIntermission ? _session.World.CountdownRemainingSeconds() : null);
         }
 
@@ -2794,13 +2847,22 @@ public sealed partial class Game1
                 // AabmCapabilities + Ore + ClusterId) and build the pure pane
                 // content. Real data — nothing fabricated. Only gathered in the
                 // EXPANDED view (the compact mini-map draws no info pane).
-                if (_minimapExpanded && _selectedSectorId is { } sid)
+                //
+                // P752 — the pane follows the POINTER like native's
+                // SectorMapPane::MouseMove (sectormap.cpp:1413-1461): a hovered
+                // cluster is both the selection and the mouse-over cluster, and
+                // the pane draws the hovered cluster's warning text
+                // (sectormap.cpp:517-534). The helium figure is the SIDE-KNOWN
+                // ore (live ASTEROIDS_UPDATE/ASTEROID_MINED fraction x OreMax,
+                // native GetOreSeenBySide), never the static EXPORT value.
+                short? paneSector = _starmapHoverSector ?? _selectedSectorId;
+                if (_minimapExpanded && paneSector is { } sid)
                 {
                     string selName = world.Clusters.TryGetValue(sid, out var sdc) ? sdc.Name : "";
-                    var samples = new List<SectorInfoPaneLayout.AsteroidSample>();
-                    foreach (var ast in world.Asteroids.Values)
-                        if (ast.ClusterId == sid)
-                            samples.Add(new SectorInfoPaneLayout.AsteroidSample(ast.AabmCapabilities, ast.Ore));
+                    // P752 — the sample build (side-known ore) lives in the pure,
+                    // unit-tested SamplesForCluster so the draw path and the
+                    // regression test exercise the same code.
+                    var samples = SectorInfoPaneLayout.SamplesForCluster(world.Asteroids, world.AsteroidLive, sid);
 
                     // P460 — the own-probe count for the selected sector, with
                     // native's capability filter (probe type with no capabilities,
@@ -2816,7 +2878,16 @@ public sealed partial class Game1
                                 EabmCapabilities: ptypes.TryGetValue(p.ProbetypeId, out var pt) ? pt.EabmCapabilities : (short)-1));
                         probeCount = SectorMapQueries.CountOwnProbes(probeRows, sid, mySide);
                     }
-                    pane = SectorInfoPaneLayout.Build(selName, samples, probeCount);
+                    // P752 — the hovered cluster's warning text (native draws it
+                    // at the pane origin while the pointer is over the sector,
+                    // sectormap.cpp:517-534).
+                    string? warnText = _starmapHoverSector is { } hov
+                        && warningSnapshot.TryGetValue(hov, out var hw)
+                        ? StarmapThreatPresentation.WarningText(hw)
+                        : null;
+                    if (string.IsNullOrEmpty(warnText)) warnText = null;
+                    pane = SectorInfoPaneLayout.Build(selName, samples, probeCount,
+                        expanded: _sectorInfoExpanded, warningText: warnText);
                 }
             }
         }
@@ -2846,8 +2917,19 @@ public sealed partial class Game1
                 id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
                 flashOn, vp, panelW, panelH, owners, SideColor, knownEnemySectors, highlights);
             if (pane is { } p)
+            {
                 _sectorInfoPaneRenderer.Draw(p, vp, panelX, panelY, panelW, panelH,
-                    world.MySideId is { } mySide && sideColors.TryGetValue(mySide, out var mc) ? mc : (Color?)null);
+                    world.MySideId is { } mySide && sideColors.TryGetValue(mySide, out var mc) ? mc : (Color?)null,
+                    expanded: _sectorInfoExpanded);
+                // P752 — the renderer records its own drawn box; the expand
+                // button is hit-tested against that exact rect (native checks
+                // the button before the map, sectormap.cpp:186-201).
+                _sectorInfoPaneBox = _sectorInfoPaneRenderer.LastBox;
+            }
+            else
+            {
+                _sectorInfoPaneBox = null;
+            }
         }
         else
         {

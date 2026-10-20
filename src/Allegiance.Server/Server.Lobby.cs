@@ -875,7 +875,9 @@ public sealed partial class Server
                 BaseKills: (short)Math.Clamp((int)live.PlayerScore.BaseKills, short.MinValue, short.MaxValue),
                 BaseCaptures: (short)Math.Clamp((int)live.PlayerScore.BaseCaptures, short.MinValue, short.MaxValue),
                 Artifacts: (short)Math.Clamp(live.PlayerScore.Artifacts, short.MinValue, short.MaxValue),
-                Flags: (short)Math.Clamp(live.PlayerScore.Flags, short.MinValue, short.MaxValue)));
+                Flags: (short)Math.Clamp(live.PlayerScore.Flags, short.MinValue, short.MaxValue),
+                Assists: (short)Math.Clamp(live.PlayerScore.Assists, short.MinValue, short.MaxValue),
+                TimePlayed: live.PlayerScore.TimePlayed));
         }
         return entries.ToArray();
     }

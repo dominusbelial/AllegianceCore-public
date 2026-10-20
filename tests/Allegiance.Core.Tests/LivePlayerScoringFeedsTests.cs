@@ -185,6 +185,36 @@ public class LivePlayerScoringFeedsTests
         Assert.Equal(1f, ScoreOf(server, seat.a).BaseKills);
     }
 
+    /// <summary>⭐ The side-level base-kill counter credits ANY launcher with a
+    /// side (native <c>psideLauncher-&gt;AddBaseKill()</c>,
+    /// FedSrv.CPP:12269-12273) — not only <c>Ship</c> launchers. A probe (a
+    /// non-Ship model) destroying a station still increments its side's
+    /// <see cref="Side.BaseKills"/>.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Base_kill_side_counter_credits_a_non_ship_launcher_with_a_side()
+    {
+        Require.Artwork();
+        var seat = SeatTwo();
+        using var server = seat.server;
+        using var ab = seat.ab;
+        using var bb = seat.bb;
+        var mission = seat.a.Mission!;
+        var station = mission.Sectors.SelectMany(s => s.StationRuntimes).First();
+        var side = mission.Sides.Single(sd => sd.Id == seat.a.SideId);
+        Assert.Equal((short)0, side.BaseKills);
+
+        // A probe (non-Ship launcher) with the side's id destroys the station.
+        var probe = new Probe((short)890, mission.Sectors[0],
+            mission.Core.ProbeTypes.Values.First(), Vector3.Zero, 0.0, seat.a.SideId, seat.a);
+        BroadcastStationDestroyed!.Invoke(server, new object?[] { station, probe });
+
+        Assert.Equal((short)1, side.BaseKills);
+        // The player-score arm (KillBase(true)) is still OT_ship-only, so a
+        // probe launcher never touches the peer's player score.
+        Assert.Equal(0f, ScoreOf(server, seat.a).BaseKills);
+    }
+
     /// <summary>⭐ The base-capture event feeds the capturing pilot's
     /// <c>BaseCaptures</c> counter (native <c>CaptureBase(true)</c>,
     /// fsship.cpp:600): <c>BroadcastStationCapture</c> credits the capturing

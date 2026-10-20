@@ -364,6 +364,14 @@ public static class InputActionCatalog
         // so the port defaults it to the free Ctrl+T chord (rebindable via F6).
         // Deviation from native's default is documented in P639 report.
         new("TeamPane", "CAMERA / VIEW", "Expanded team roster [TK_ConModeTeam]", C(Keys.T), K(Keys.F6)),
+        // P752 — the team pane's selected-player controls (native teampane.cpp:
+        // 1104-1367): Tab cycles the roster selection (the same next-pilot
+        // idiom the investment pane uses on the same key, scoped to when the
+        // team pane is the active overlay) and Y is the pane's action key —
+        // take-me-to on a player row, accept on a pending join request (a
+        // pending ballot keeps Y for the vote). Both are rebindable.
+        new("TeamPaneNextPilot", "CAMERA / VIEW", "Team pane: select next pilot", K(Keys.PageDown), null),
+        new("TeamPaneAct", "CAMERA / VIEW", "Team pane: take me to selected pilot / accept join request", K(Keys.Y), null),
         new("Help", "CAMERA / VIEW", "Toggle this help (you are here)", K(Keys.F1), K(Keys.F1)),
         new("OpenGraphicsSettings", "CAMERA / VIEW", "Graphics / FSR1 settings [P643]", C(Keys.F6), null),
         new("OpenKeyBindings", "CAMERA / VIEW", "Open Controls (rebind keys) [P625]", K(Keys.F6), null),

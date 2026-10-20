@@ -1,0 +1,30 @@
+[
+  {
+    "name": "sectorinfo-expanded-720p",
+    "ship": 8096,
+    "side": 0,
+    "state": "Flying",
+    "winner": null
+  },
+  {
+    "name": "sectorinfo-collapsed-720p",
+    "ship": 8096,
+    "side": 0,
+    "state": "Flying",
+    "winner": null
+  },
+  {
+    "name": "teampane-selection-720p",
+    "ship": 8096,
+    "side": 0,
+    "state": "Flying",
+    "winner": null
+  },
+  {
+    "name": "gameover-tables-720p",
+    "ship": null,
+    "side": 0,
+    "state": "Flying",
+    "winner": 0
+  }
+]
