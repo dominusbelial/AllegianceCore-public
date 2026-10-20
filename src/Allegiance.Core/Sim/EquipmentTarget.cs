@@ -15,6 +15,28 @@ public sealed class EquipmentTarget : Model
 
     public IgcObjectType ObjectType { get; }
 
+    /// <summary>The sector this equipment target was resolved in — the cluster
+    /// that <see cref="IIgcSite.GetCluster"/> should return for a visible warp,
+    /// station or asteroid target.</summary>
+    public Sector OwnerSector => _sector;
+
+    /// <summary>Collision/visibility radius of the wrapped body. Zero for a
+    /// warp, which is handled as always-visible separately.</summary>
+    public float Radius => _body switch
+    {
+        Station st => st.Radius,
+        Asteroid a => a.Data.Radius,
+        _ => 0f,
+    };
+
+    /// <summary>Scanner signature of the wrapped body. Zero for a warp.</summary>
+    public float Signature => _body switch
+    {
+        Station st => st.Type.Signature,
+        Asteroid a => a.Data.Signature,
+        _ => 0f,
+    };
+
     public static Model? Resolve(Sector? sector, IgcObjectType type, short id)
     {
         if (sector is null) return null;

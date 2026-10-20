@@ -975,6 +975,11 @@ public sealed partial class Server
     /// </summary>
     private const byte DmgIdNoWarn = 0x20;                 // c_dmgidNoWarn (igc.h:559)
     private const short DroneWatchFireSound = 1324;        // Igc/sounds.h:377; igc.h:456-464 (1001 + ordinal)
+    // P751 — ship under-attack voice lines (sounds.h:391-394, NativeVoiceCatalog.Generated.cs:918-921).
+    private const short DroneUnderAttackSound = 1338;
+    private const short MinerUnderAttackSound = 1339;
+    private const short CarrierUnderAttackSound = 1340;
+    private const short MinerCriticalSound = 1341;
 
     private void BroadcastStationDamaged(Station station, Model? launcher, byte type, float amount)
     {
@@ -1052,7 +1057,187 @@ public sealed partial class Server
     }
 
     /// <summary>
-    /// Handle a captured station (<see cref="ServerHost.CaptureStationEvent"/>,
+    /// P751b — handle a damaging hit on a ship (<see cref="ServerHost.DamageShipEvent"/>,
+    /// raised from <c>Ship.ReceiveDamage</c> at shipIGC.cpp:398 and shipIGC.cpp:1312).
+    /// Port of <c>FedSrvSiteBase::DamageShipEvent</c> (FedSrv.CPP:12089-12178).
+    /// <para>Native gates (FedSrv.CPP:12091): real damage (<c>amount &gt;= 1.0f</c>),
+    /// a real launcher, and no <c>c_dmgidNoWarn</c> bit. The 10 s throttle is
+    /// per-ship (<c>ship-&gt;GetLastDamageReport()</c>), updated only after a
+    /// passing report.</para>
+    /// <para>For NPC ships the defending side receives a team "Under attack" chat
+    /// with a pilot-type-specific voice line; for same-side or allied launcher
+    /// attacks the launcher pilot receives a private "Watch your fire".</para>
+    /// <para>Runs on the sim thread (same one that owns <c>_peerShips</c>), scoped
+    /// to the ship's mission.</para>
+    /// </summary>
+    private void BroadcastShipDamaged(Ship ship, Model? launcher, double now, byte type, float amount)
+    {
+        // Native gates (FedSrv.CPP:12091): real damage, a real launcher, no no-warn bit.
+        if (amount < 1.0f) return;
+        if (launcher is null) return;
+        if ((type & DmgIdNoWarn) != 0) return;
+        if (ship.Mission is not { } mission) return;       // scoping bridge
+
+        // Non-ship launchers (probes, station turrets) must still trigger the
+        // alert: read the side from the launcher model (FedSrv.CPP:12095).
+        if (EquipmentTarget.SideOf(launcher) is not { } launcherSide) return;
+        if (ship.SideId is not { } pside) return;
+
+        // Per-ship 10 s throttle (FedSrv.CPP:12103,12158). The exact stamp
+        // behaviour differs for NPC and player victims; see below.
+        // P751b: native gates on pcfs->IsPlayer(); the brief instructs us to
+        // gate on the victim's pilot type (drones/miners/builders are NPCs).
+        bool victimIsPlayer = ship.PilotType >= Ship.PilotTypePlayer;
+
+        if (now - ship.LastDamageReport <= 10.0) return;
+
+        bool sameSide = pside == launcherSide;
+        bool allied = !sameSide &&
+            (mission.AlliedSidePairs.Contains((pside, launcherSide)) ||
+             mission.AlliedSidePairs.Contains((launcherSide, pside)));
+        var launcherShip = launcher as Ship;
+
+        if (!victimIsPlayer)
+        {
+            // NPC victim branch (FedSrv.CPP:12098-12171).
+            if (sameSide)
+            {
+                // Same-side: private "Watch your fire" to a player launcher only
+                // (FedSrv.CPP:12161-12171).
+                SendWatchYourFire(launcherShip, ship);
+            }
+            else
+            {
+                // Cross-side (enemy or allied): team "Under attack" on the
+                // defender's side (FedSrv.CPP:12120-12145).
+                SendNpcUnderAttackAlert(ship, launcher, launcherSide, allied, mission, pside);
+
+                // Allied player launcher: also whisper "Watch your fire"
+                // (FedSrv.CPP:12131-12145).
+                if (allied && launcherShip is not null)
+                    SendWatchYourFire(launcherShip, ship);
+            }
+
+            // Native stamps the NPC throttle regardless of whether a chat was sent
+            // (FedSrv.CPP:12172, just after the if/else block).
+            ship.LastDamageReport = now;
+        }
+        else
+        {
+            // Player victim branch (FedSrv.CPP:12174-12185): only an allied
+            // cross-side hit whispers "Watch your fire", and the throttle is
+            // stamped only when that whisper is sent.
+            if (!sameSide && allied && launcherShip is not null)
+            {
+                SendWatchYourFire(launcherShip, ship);
+                ship.LastDamageReport = now;
+            }
+        }
+    }
+
+    /// <summary>P751b — send the private <c>"Watch your fire"</c> drone line to
+    /// <paramref name="launcher"/> when it is a player ship. Native routes through
+    /// <c>SendChat(ship, CHAT_INDIVIDUAL, launcher-&gt;GetObjectID(),
+    /// droneWatchFireSound, "Watch your fire")</c> (FedSrv.CPP:12135-12138,
+    /// 12161-12168). The sender is the victim ship.</summary>
+    private void SendWatchYourFire(Ship? launcher, Ship victim)
+    {
+        if (launcher is null) return;
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship, launcher)) continue;
+            var msg = new ChatMessage
+            {
+                Message = "Watch your fire",
+                SidSender = victim.Id,
+                ChatTarget = (int)ChatTarget.Individual,
+                OidRecipient = launcher.Id,
+                VoiceOver = DroneWatchFireSound,
+            };
+            SendPeer(kv.Key, FedPacket.Pack(new[] { msg.Encode() }));
+            Console.WriteLine($"[shipdmg] 'Watch your fire' -> ship {launcher.Id} [sender={victim.Id}]");
+            break;
+        }
+    }
+
+    /// <summary>P751b — send the team <c>"Under attack by ... in ..."</c> alert
+    /// for an NPC ship. Mirrors <c>SendChatf(ship, CHAT_TEAM,
+    /// ship-&gt;GetSide()-&gt;GetObjectID(), underAttackSound,
+    /// "Under attack by %s%s in %s", strAllies, GetModelName(launcher),
+    /// ship-&gt;GetCluster()-&gt;GetName())</c> (FedSrv.CPP:12120-12130). The sender is
+    /// the victim ship; the "(Ally)" prefix is included for allied launchers.</summary>
+    private void SendNpcUnderAttackAlert(Ship ship, Model launcher, short launcherSide, bool allied, Mission mission, short pside)
+    {
+        short voice;
+        switch (ship.PilotType)
+        {
+            case Ship.PilotTypeCarrier:
+                voice = CarrierUnderAttackSound;
+                break;
+            case Ship.PilotTypeMiner:
+                voice = ship.Fraction < 0.5f ? MinerCriticalSound : MinerUnderAttackSound;
+                break;
+            case Ship.PilotTypeBuilder:
+                // Native reads the constructor station type's under-attack sound
+                // via GetBaseData()->GetConstructorUnderAttackSound() (FedSrv.CPP:12124).
+                voice = ship.BuilderStationType is { } bst
+                    ? bst.ConstructorUnderAttackSound
+                    : DroneUnderAttackSound;
+                break;
+            default:
+                voice = DroneUnderAttackSound;
+                break;
+        }
+
+        string launcherName = LauncherDisplayName(launcher);
+        string sectorName = ship.Sector?.Name ?? "?";
+        string allyPrefix = allied ? "(Ally) " : "";
+        string text = $"Under attack by {allyPrefix}{launcherName} in {sectorName}";
+
+        var msg = new ChatMessage
+        {
+            Message = text,
+            SidSender = ship.Id,
+            ChatTarget = (int)ChatTarget.Team,
+            VoiceOver = voice,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+            if (kv.Value.Ship.SideId != pside) continue;
+            SendPeer(kv.Key, packet);
+            n++;
+        }
+        Console.WriteLine($"[shipdmg] '{text}' (voice {voice}) -> side {pside} [{n} peer(s)] [under attack]");
+    }
+
+    /// <summary>P751b — produce a chat label for any launcher model. Ships use the
+    /// peer name like native <c>GetModelName</c>; non-ship launchers fall back to
+    /// a type+id label so probes and station turrets can still trigger the alert
+    /// (FedSrv.CPP:12095 allows any model launcher).</summary>
+    private string LauncherDisplayName(Model launcher)
+        => launcher switch
+        {
+            Ship s => PeerName(s) ?? $"Ship {s.Id}",
+            Probe p => $"Probe {p.Id}",
+            Mine m => $"Mine {m.Id}",
+            Missile mi => $"Missile {mi.Id}",
+            Treasure t => $"Treasure {t.Id}",
+            EquipmentTarget et => et.ObjectType switch
+            {
+                IgcObjectType.Station => $"Station {et.Id}",
+                IgcObjectType.Warp => $"Warp {et.Id}",
+                IgcObjectType.Asteroid => $"Asteroid {et.Id}",
+                _ => $"Model {et.Id}",
+            },
+            _ => $"Model {launcher.Id}",
+        };
+
+    /// <summary>
+    /// Handle a captured station (<see cref="ServerHost.CaptureStationEvent"/>,,
     /// raised from <c>Model.Sector.ResolveDockCollisions</c> on the sim thread
     /// when a hostile ship with a <c>c_habmBoard</c> hull docks an enemy base,
     /// P126) by broadcasting a real <c>FM_S_STATION_CAPTURE(58)</c>

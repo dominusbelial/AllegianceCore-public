@@ -1160,6 +1160,9 @@ public sealed partial class Server : IDisposable
         }
 
         // Tier 4: friendly ripcord-target ship (shipIGC.cpp:3898-3930).
+        // Route the capability check through the IIgcSite override
+        // (GetRipcordCluster, igc.h:4915-4921) so production callers exercise
+        // the site seam (common.cpp:811,824; shipIGC.cpp:3741,4262).
         short habm = ship.HullType.HasCapability(DataHullTypeIGC.HabmCanLtRipcord)
             ? (short)(DataHullTypeIGC.HabmIsRipcordTarget | DataHullTypeIGC.HabmIsLtRipcordTarget)
             : DataHullTypeIGC.HabmIsRipcordTarget;
@@ -1168,7 +1171,7 @@ public sealed partial class Server : IDisposable
             var s = peer.Ship;
             if (!ReferenceEquals(s, ship) && s.Sector is not null &&
                 s.Sector.Id == target.Id && Friendly(s.SideId) &&
-                s.HullType.HasCapability(habm))
+                _host.GetRipcordCluster(s, habm) is not null)
                 return new Ship.RipcordTarget((short)IgcObjectType.Ship, s.Id, target.Id);
         }
 

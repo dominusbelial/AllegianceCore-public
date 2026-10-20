@@ -812,6 +812,7 @@ public sealed partial class Server
         _host.AsteroidKilled = BroadcastAsteroidDestroyed;     // P102: wire the site's KillAsteroidEvent to the WHOLE-mission wire broadcast
         _host.StationKilled = BroadcastStationDestroyed;       // P125: wire the site's KillStationEvent to VacateStation + WHOLE-mission STATION_DESTROYED(59)
         _host.StationDamaged = BroadcastStationDamaged;        // P451: wire the site's DamageStationEvent to the defending team's under-attack / critical alert
+        _host.ShipDamaged = BroadcastShipDamaged;              // P751: wire the site's DamageShipEvent to NPC under-attack / friendly-fire chat warnings
         _host.StationCaptured = BroadcastStationCapture;       // P126: wire the site's CaptureStationEvent to the WHOLE-mission STATION_CAPTURE(58) broadcast
         _host.VictoryByStationsComputedHook = OnVictoryByStationsComputed;  // P191: wire the site's post-capture/kill recompute to GAME_STATE(155) + P178 GameOver
         _host.SideLostRestartStationHook = OnSideLostRestartStation;   // P455: wire the site's restart-station-loss seam to the station-elimination win (DeactivateSide)

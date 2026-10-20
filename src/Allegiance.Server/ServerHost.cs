@@ -891,6 +891,35 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         StationDamaged?.Invoke(s, launcher as Model, type, amount);
     }
 
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <c>DamageShipEvent</c> the world missions raise when a real damaging hit
+    /// reaches a ship's <see cref="Ship.ReceiveDamage"/>
+    /// (<c>Model.Sector.ResolveCombatCollisions</c>, P751 — the port of the native
+    /// <c>pigc-&gt;DamageShipEvent(...)</c> at <c>shipIGC.cpp:398</c> and
+    /// <c>shipIGC.cpp:1312</c>). Null by default, matching the IIgcSite no-op.
+    /// The delegate runs on the simulation thread (inside the sector tick that
+    /// took the hit), so it reaches the sim-thread-owned peer map without a lock.
+    /// The concrete <see cref="Ship"/>, the credited <see cref="Model"/> launcher,
+    /// the raw <c>DamageTypeID</c> <paramref name="type"/> and the raw
+    /// <paramref name="amount"/> supply everything the host's under-attack /
+    /// friendly-fire alert needs. The host sends at most one alert per ship per
+    /// 10 s.</summary>
+    public Action<Ship, Model?, double, byte, float>? ShipDamaged;
+
+    /// <summary>The world-mission site implementation of <c>DamageShipEvent</c>
+    /// (<c>shipIGC.cpp:398,1312</c> → <c>FedSrvSiteBase::DamageShipEvent</c>,
+    /// FedSrv.CPP:12089-12178). Raises the <see cref="ShipDamaged"/> hook so the
+    /// owning <see cref="Server"/> can send NPC under-attack warnings and the
+    /// same-side/allied "Watch your fire" line. Mirrors
+    /// <see cref="DamageStationEvent"/>'s bridge shape (cast the marker interface
+    /// to the concrete carrier; ignore a non-Ship arg rather than fabricate).</summary>
+    public void DamageShipEvent(double now, IShipIgc ship, IModelIgc? launcher, byte type, float amount, float leakage, Vector3 p1, Vector3 p2)
+    {
+        if (ship is not Ship sh) return;
+        ShipDamaged?.Invoke(sh, launcher as Model, now, type, amount);
+    }
+
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
@@ -1331,6 +1360,146 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     public Action<Ship, Sector?>? RequestRipcordReceived;
     void IIgcSite.RequestRipcord(IShipIgc ship, IClusterIgc pcluster)
         => RequestRipcordReceived?.Invoke((Ship)ship, (Sector)pcluster);
+
+    /// <summary>P751b — production override of <see cref="IIgcSite.GetCluster"/>
+    /// (igc.h:4909-4913). Native default returns <c>pship-&gt;CanSee(pmodel) ?
+    /// pmodel-&gt;GetCluster() : NULL</c>, where <c>CanSee</c> is
+    /// <c>shipIGC.h:380-388</c>: own side OR <c>SeenBySide</c> OR in scanner
+    /// range. The concrete host restores the native semantics; the observer's
+    /// sector is <b>not</b> required (docked observers still see own-side and
+    /// swept-visible models). Warps, treasures and missiles are covered.</summary>
+    public IClusterIgc? GetCluster(IShipIgc pship, IModelIgc pmodel)
+    {
+        if (pship is not Ship ship || pmodel is null) return null;
+        if (ship.SideId is not { } side) return null;
+        if (pmodel is not Model target) return null;
+
+        // Warp equipment targets are static map objects, known to everyone
+        // (EquipmentTarget.CanSee, common.cpp waypoint targets).
+        if (target is EquipmentTarget { ObjectType: IgcObjectType.Warp } et)
+            return et.OwnerSector;
+
+        // 1. Own side (shipIGC.h:382).
+        if (ModelSide(target) == side)
+            return ClusterOf(target);
+
+        // 2. Sector visibility sweep (shipIGC.h:383).
+        if (target is ISideVisible visible && visible.SeenBySide(side))
+            return ClusterOf(target);
+
+        // 3. In scanner range (shipIGC.h:384). Requires the observer to be flying
+        //    in the same cluster as the target.
+        if (ship.Sector is { } observerSector && ModelSector(target) == observerSector.Id)
+        {
+            var observerRadius = 0.5f * ship.HullType.Length;
+            var observerRange = ship.EffectiveScannerRange();
+            if (ModelSightGeometry(target) is { } sight)
+            {
+                var asteroids = new VisibilityMath.SightBody[observerSector.Mineable.Count];
+                for (int i = 0; i < asteroids.Length; i++)
+                {
+                    var a = observerSector.Mineable[i];
+                    var ap = a.Data.Position;
+                    var pos = new Vector3(ap[0], ap[1], ap[2]);
+                    asteroids[i] = new VisibilityMath.SightBody(pos, a.Data.Radius);
+                }
+
+                if (VisibilityMath.InScannerRange(
+                        new VisibilityMath.SightBody(ship.Position, observerRadius), observerRange, observerSector.Id,
+                        new VisibilityMath.SightBody(target.Position, sight.Radius), sight.Signature, observerSector.Id,
+                        asteroids))
+                    return ClusterOf(target);
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>P751b — the model's owning cluster, mirroring native
+    /// <c>ImodelIGC::GetCluster()</c>. No LINQ. Stations and asteroids reach
+    /// this helper only through <see cref="EquipmentTarget"/> wrappers.</summary>
+    private static Sector? ClusterOf(Model model)
+        => model switch
+        {
+            Ship s => s.Sector,
+            Probe p => p.OwnerSector,
+            Mine m => m.OwnerSector,
+            Missile mi => mi.OwnerSector,
+            Treasure t => t.OwnerSector,
+            EquipmentTarget et => et.OwnerSector,
+            _ => null,
+        };
+
+    /// <summary>P751b — the model's side for <c>CanSee</c> own-side comparison
+    /// (shipIGC.h:382). Matches native <c>ImodelIGC::GetSide()</c> for ships,
+    /// probes, mines, missiles and stations.</summary>
+    private static short? ModelSide(Model model)
+        => model switch
+        {
+            Ship s => s.SideId,
+            Probe p => p.SideId,
+            Mine m => m.SideId,
+            Missile mi => EquipmentTarget.SideOf(mi),
+            Treasure => null,
+            EquipmentTarget et => EquipmentTarget.SideOf(et),
+            _ => null,
+        };
+
+    /// <summary>P751b — the model's current cluster id for the same-cluster gate
+    /// in <c>InScannerRange</c> (shipIGC.h:384).</summary>
+    private static short ModelSector(Model model)
+        => model switch
+        {
+            Ship s => s.Sector?.Id ?? -1,
+            Probe p => p.OwnerSector.Id,
+            Mine m => m.OwnerSector.Id,
+            Missile mi => mi.OwnerSector.Id,
+            Treasure t => t.OwnerSector.Id,
+            EquipmentTarget et => et.OwnerSector.Id,
+            _ => -1,
+        };
+
+    private readonly record struct SightGeometry(float Radius, float Signature);
+
+    /// <summary>P751b — scanner-visible radius and signature for the
+    /// <c>InScannerRange</c> branch of <c>CanSee</c> (shipIGC.h:384-388).</summary>
+    private static SightGeometry? ModelSightGeometry(Model model)
+        => model switch
+        {
+            Ship s => new(0.5f * s.HullType.Length, s.HullType.Signature),
+            Probe p => new(p.ProbeType.Radius, p.ProbeType.Signature),
+            Mine m => new(m.MineType.Radius, m.MineType.Signature),
+            Missile mi => new(mi.MissileType.Radius, mi.MissileType.Signature),
+            Treasure => new(Treasure.PickupRadius, 1.5f),
+            EquipmentTarget et => EquipmentTargetGeometry(et),
+            _ => null,
+        };
+
+    private static SightGeometry? EquipmentTargetGeometry(EquipmentTarget et)
+    {
+        if (et.Radius <= 0f) return null;
+        return new SightGeometry(et.Radius, et.Signature);
+    }
+
+    /// <summary>P751b — production override of <see cref="IIgcSite.GetRipcordCluster"/>
+    /// (igc.h:4915-4921). Native default returns the ship's current cluster if
+    /// its base hull (<c>GetBaseHullType()</c>) has the requested capability,
+    /// otherwise NULL. The port's <see cref="Ship.HullType"/> is the base hull,
+    /// so the check is the same; the concrete host restores the native semantics
+    /// using <see cref="DataHullTypeIGC.HasCapability"/> and
+    /// <see cref="Ship.Sector"/>.</summary>
+    public IClusterIgc? GetRipcordCluster(IShipIgc pship, short habm = 0x0040 /* c_habmIsRipcordTarget */)
+    {
+        if (pship is not Ship ship) return null;
+        return ship.HullType.HasCapability(habm) ? ship.Sector : null;
+    }
+
+    /// <summary>P751 — production override of <see cref="IIgcSite.Reload"/>
+    /// (igc.h:4923). Native default always returns <c>false</c>; the concrete
+    /// host matches it. The port's auto-reload and manual RELOAD(129) wire path
+    /// use <see cref="AutoReloadTriggered"/> and <see cref="Server.HandleReload"/>
+    /// instead of this legacy seam, so the callback exists for parity only.</summary>
+    public bool Reload(IShipIgc pship, ILauncherIgc plauncher, EquipmentType type) => false;
 
     // ── ITransportSite ──────────────────────────────────────────────────────
     // Transport callbacks publish lifecycle events and reserved receives.

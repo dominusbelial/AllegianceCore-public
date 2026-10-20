@@ -1217,6 +1217,14 @@ public sealed partial class Ship : Model, IShipIgc
     public bool StayDocked { get; set; }
 
     /// <summary>
+    /// P751 — the server-side throttle stamp for ship under-attack / friendly-
+    /// fire chat warnings (<c>FedSrvSiteBase::DamageShipEvent</c>,
+    /// FedSrv.CPP:12089-12178). Native never reports more than once every
+    /// 10 seconds per ship; the stamp is updated only after a passing report.
+    /// </summary>
+    public double LastDamageReport { get; set; } = double.NegativeInfinity;
+
+    /// <summary>
     /// P145 — a pending part-treasure offer awaiting the client's
     /// <c>FM_C_TREASURE_ACK</c>(163) decision, or <c>null</c> when none is
     /// buffered. The port of the native <c>CFSPlayer</c> treasure-buffer

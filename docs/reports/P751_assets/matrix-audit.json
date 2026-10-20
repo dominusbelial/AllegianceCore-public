@@ -1,0 +1,24 @@
+{
+  "task": "P751",
+  "rows_changed": 9,
+  "bundle_weight": 26,
+  "implemented_credit": 12,
+  "removed_eligible_weight": 14,
+  "changed": [
+    {"row_id": "SIM-0199", "area": "callbacks", "before": "partial", "after": "implemented", "weight": 3},
+    {"row_id": "SIM-0231", "area": "callbacks", "before": "partial", "after": "implemented", "weight": 3},
+    {"row_id": "SIM-0232", "area": "callbacks", "before": "partial", "after": "implemented", "weight": 3},
+    {"row_id": "SIM-0233", "area": "callbacks", "before": "partial", "after": "implemented", "weight": 3},
+    {"row_id": "SIM-0147", "area": "periodic", "before": "partial", "after": "n/a", "weight": 2},
+    {"row_id": "SIM-0176", "area": "callbacks", "before": "partial", "after": "n/a", "weight": 3},
+    {"row_id": "SIM-0177", "area": "callbacks", "before": "partial", "after": "n/a", "weight": 3},
+    {"row_id": "SIM-0178", "area": "callbacks", "before": "partial", "after": "n/a", "weight": 3},
+    {"row_id": "SIM-0180", "area": "callbacks", "before": "partial", "after": "n/a", "weight": 3}
+  ],
+  "scorecard": {
+    "before": {"callbacks": "63.08% (123/195)", "periodic": "51.06% (24/47)", "total": "81.03% (1042/1286)"},
+    "after": {"callbacks": "73.77% (135/183)", "periodic": "53.33% (24/45)", "total": "82.86% (1054/1272)"}
+  },
+  "lf_line_endings": true,
+  "row_count": 473
+}
