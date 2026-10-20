@@ -762,8 +762,10 @@ public sealed partial class Server : IDisposable
     internal const int DeadReckonExtrapolationTicks = 30;
     /// <summary>P281 — a peer that has logged on but not yet chosen a side (the
     /// post-connect side-select hold). Held here (NOT in <c>_peerShips</c>) with
-    /// no Ship until it picks a side or the timeout seats it; its ship id is
-    /// reserved up-front so LogonAck carries a stable id.</summary>
+    /// no Ship until it picks a side (matching native's POSITIONREQ wait); only
+    /// the opt-in <see cref="ServerConfig.SideSelectAutoSeatSeconds"/> timeout
+    /// seats a silent peer. Its ship id is reserved up-front so LogonAck carries
+    /// a stable id.</summary>
     private readonly struct PendingSideSelect
     {
         public short ShipId { get; }
@@ -771,7 +773,8 @@ public sealed partial class Server : IDisposable
         public double ConnectSimTime { get; }
         /// <summary>P281 — the requested side once the peer chooses (null = not
         /// chosen yet); NA(-1) is never stored here (auto-assign is expressed by
-        /// a null RequestedSide at timeout).</summary>
+        /// a null RequestedSide when the opt-in auto-seat timer, or an immediate
+        /// NA request, seats it).</summary>
         public short? RequestedSide { get; }
         /// <summary>P281 — monotonically increasing logon-order index, so the
         /// side-select drain seats peers in the order they LOGGED ON (not the
@@ -787,11 +790,6 @@ public sealed partial class Server : IDisposable
         public PendingSideSelect WithRequestedSide(short? side) =>
             new(ShipId, Request, ConnectSimTime, JoinSeq, side);
     }
-
-    /// <summary>P281 — how long a logged-on peer may sit at the side-select
-    /// screen before the server auto-assigns it a side (rationale in
-    /// <see cref="AdvanceSideSelection"/>).</summary>
-    private const double SideSelectTimeoutSeconds = 30.0;
 
     /// <summary>P281 — peers awaiting a post-connect side choice (keyed by
     /// connection). Distinct from <see cref="_pendingJoinRequests"/> (P184),

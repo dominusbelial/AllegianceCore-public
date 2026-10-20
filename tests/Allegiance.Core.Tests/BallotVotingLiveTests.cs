@@ -39,6 +39,7 @@ public class BallotVotingLiveTests
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: keep the pre-flag 30 s auto-seat this suite relies on
         Games =
         [
             new Gm { Name = "Ballot Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
@@ -51,6 +52,7 @@ public class BallotVotingLiveTests
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: keep the pre-flag 30 s auto-seat this suite relies on
         Games =
         [
             new Gm { Name = "Ballot A", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

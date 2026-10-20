@@ -61,6 +61,7 @@ public sealed class DeadLatchRespawnLiveTests
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: some test clients never send POSITIONREQ
         Games =
         [
             new Gm { Name = "P521 Dead Latch", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

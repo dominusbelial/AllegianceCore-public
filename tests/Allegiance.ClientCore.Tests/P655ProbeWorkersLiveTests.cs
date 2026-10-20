@@ -66,6 +66,9 @@ public sealed class P655ProbeWorkersLiveTests
                     testHarness = new { enabled = true, secret, money = 1000000, ignoreTechGate = true, characterNamePrefix = "mcp-" },
                     adminCheats = new { enabled = true, secret, allowNames = new[] { "mcp-*" } },
                 },
+                // P763 — keep the pre-flag 30 s auto-seat for any silent probe;
+                // MCP's own seat deadline is 15 s, so the timer must not fire first.
+                sideSelectAutoSeatSeconds = 30,
                 games = new[] { new { name = "P655d workers", map = "XXV_simple.igc", teams = 2, civIds = new[] { 1, 3 }, sideNames = new[] { "Alpha", "Bravo" } } },
             }));
             server.Boot(ServerConfigLoader.Load(configPath, []));
@@ -90,7 +93,7 @@ public sealed class P655ProbeWorkersLiveTests
                     Volatile.Write(ref snapshot, names.Select(n => new Peer(n.Value,
                         ships[n.Key].Ship.SideId,
                         ready.GetValueOrDefault(n.Key))).ToArray());
-                    Thread.Sleep(50); // 20 UPS: keep the 30s auto-seat timeout beyond MCP's 15s deadline.
+                    Thread.Sleep(50); // 20 UPS; the opt-in P763 auto-seat (30 s here) must stay beyond MCP's 15 s deadline.
                 }
             }
             catch (Exception e) { tickFailure = e; }

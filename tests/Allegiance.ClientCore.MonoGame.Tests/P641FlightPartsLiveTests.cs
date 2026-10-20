@@ -44,6 +44,7 @@ public class P641FlightPartsLiveTests
             });
         server.Boot(new Allegiance.Server.ServerConfig { ArtPath = ExternalPaths.Resolve(ExternalResourceKind.Artwork),
             StaticCore = "PCore001.igc", Port = 0, UpdatesPerSecond = 20,
+            SideSelectAutoSeatSeconds = 30,   // P763: the observer tail never sends POSITIONREQ
             LiveSettings = new Allegiance.Server.LiveSettingsConfig { TestHarness = new Allegiance.Server.TestHarnessConfig { Enabled = true, Money = 1_000_000, IgnoreTechGate = true } },
             Games = [new Allegiance.Server.GameConfig { Name = "P641", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["A", "B"] }] });
         foreach (var mission in server.Missions) mission.Stage = MissionStage.Started;

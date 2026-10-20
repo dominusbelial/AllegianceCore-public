@@ -120,6 +120,26 @@ public sealed class ConfigDefaultsJsonTests
     }
 
     [Fact]
+    public void Side_select_auto_seat_defaults_off_and_round_trips_through_the_aot_context()
+    {
+        // P763 — absent = null = native (wait for POSITIONREQ); a configured
+        // value survives the source-generated, AOT-safe ServerJsonContext.
+        var absent = JsonSerializer.Deserialize("{}", ServerJsonContext.Default.ServerConfig)!;
+        Assert.Null(absent.SideSelectAutoSeatSeconds);
+
+        var zero = JsonSerializer.Deserialize("""{"sideSelectAutoSeatSeconds":0}""", ServerJsonContext.Default.ServerConfig)!;
+        Assert.Equal(0, zero.SideSelectAutoSeatSeconds);
+
+        var configured = JsonSerializer.Deserialize("""{"sideSelectAutoSeatSeconds":30}""", ServerJsonContext.Default.ServerConfig)!;
+        Assert.Equal(30, configured.SideSelectAutoSeatSeconds);
+
+        string json = JsonSerializer.Serialize(configured, ServerJsonContext.Default.ServerConfig);
+        Assert.Contains("\"sideSelectAutoSeatSeconds\":30", json);
+        var roundTripped = JsonSerializer.Deserialize(json, ServerJsonContext.Default.ServerConfig)!;
+        Assert.Equal(30, roundTripped.SideSelectAutoSeatSeconds);
+    }
+
+    [Fact]
     public void Explicit_false_zero_and_nullable_overrides_still_bind()
     {
         var c = JsonSerializer.Deserialize("""

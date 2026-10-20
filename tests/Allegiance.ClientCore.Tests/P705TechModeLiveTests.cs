@@ -37,6 +37,7 @@ public sealed class P705TechModeLiveTests(ITestOutputHelper output)
         server.Boot(new ServerConfig
         {
             Port = 0, Showcase = new() { TechMode = "research", IncomeMultiplier = 500, ResearchTimeScale = 16 },
+            SideSelectAutoSeatSeconds = 30,   // P763: ConnectionSession peers in this suite never send POSITIONREQ
             LiveSettings = new() { TimeDilation = "off", AutoNextMatch = new() { IntermissionSeconds = 2 } },
             Games = [new() { Name = "P705 two-match proof", Teams = 2, CivIds = [civA, civB], SideNames = ["Alpha", "Bravo"],
                 MaxTeamImbalance = 32767,

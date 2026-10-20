@@ -28,6 +28,7 @@ public sealed class P653DPodPurchaseLiveTests
         using var server = new Srv();
         server.Boot(new ServerConfig { ArtPath = ExternalPaths.Resolve(ExternalResourceKind.Artwork),
             StaticCore = "PCore001.igc", Port = 0, UpdatesPerSecond = 20,
+            SideSelectAutoSeatSeconds = 30,   // P763: these clients never send POSITIONREQ
             Games = [new GameConfig { Name = "P653D", Map = "XXV_simple.igc", Teams = 2,
                 CivIds = [25, 3], SideNames = ["A", "B"] }] });
         using var session = new ConnectionSession();

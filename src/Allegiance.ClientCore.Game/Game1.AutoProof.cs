@@ -137,7 +137,9 @@ public sealed partial class Game1
 
     /// <summary>--auto-side: request the side once the selectable roster is
     /// known (the server only accepts POSITIONREQ against a listed active side).
-    /// Fallback: none (the 30 s server auto-assign seats us).</summary>
+    /// No fallback: with the port's side-select auto-seat off (the default,
+    /// matching native), a client that never sends POSITIONREQ stays at side
+    /// select — pass --auto-side for unattended proofs.</summary>
     private void ApplyAutoProofSideSelect()
     {
         if (_autoPlan.AutoSide is not { } wantSide || _autoSideDone)

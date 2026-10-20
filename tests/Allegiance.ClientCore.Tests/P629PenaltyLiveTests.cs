@@ -19,6 +19,7 @@ public sealed class P629PenaltyLiveTests
     {
         ArtPath = ExternalPaths.Resolve(ExternalResourceKind.Artwork), StaticCore = "PCore001.igc", Port = 0,
         Sim = new() { CrowdingPenalty = mode }, UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: these clients never send POSITIONREQ
         LiveSettings = new() { TestHarness = new() { Enabled = true, Money = 1_000_000, IgnoreTechGate = true } },
         Games = [new() { Name = "P629 local", Map = "m2xspiderw.igc", Teams = 2, CivIds = [25, 3], SideNames = ["A", "B"] }]
     };

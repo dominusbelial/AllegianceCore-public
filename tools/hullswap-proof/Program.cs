@@ -147,6 +147,7 @@ sealed class ProofRunner : Game
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: proof observer sessions never send POSITIONREQ
         Games =
         [
             new Gm { Name = "P335 Hull Swap Proof", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

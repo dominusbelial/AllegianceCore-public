@@ -106,6 +106,7 @@ sealed class ProofRunner : Game
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: proof observer sessions never send POSITIONREQ
         Games =
         [
             new Gm { Name = "P529 Asteroid Lighting Proof", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

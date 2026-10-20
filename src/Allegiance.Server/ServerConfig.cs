@@ -787,6 +787,21 @@ public sealed class ServerConfig
     public bool? WarpReEntryGuard { get; set; }
 
     /// <summary>
+    /// P763 — how long (simulation seconds) a logged-on peer may sit at the
+    /// side-select screen before the server auto-assigns it a side (NA =
+    /// auto-pick). This is a <b>port adaptation</b>, not native behaviour:
+    /// native's team screen sends <c>C POSITIONREQ</c> when the player picks a
+    /// side (<c>WinTrek/teamscreen.cpp:2964-2981</c>, <c>Inc/Messages.h:320</c>)
+    /// and the server only seats that request (<c>FedSrv.CPP:6658-6691</c> →
+    /// <c>fsmission.cpp:4729-4774</c>) — there is no timer that seats a silent
+    /// client. <c>null</c> or any value &lt;= 0 (the default) means OFF: only
+    /// peers with a recorded <c>POSITIONREQ</c> choice are drained, matching
+    /// native. Set it to 30 to restore the pre-P763 port behaviour (e.g. a rig
+    /// with AFK bots); the auto-seat is then opt-in only.
+    /// </summary>
+    public double? SideSelectAutoSeatSeconds { get; set; }
+
+    /// <summary>
     /// P378 — the dedicated live/testing settings section (see
     /// <see cref="LiveSettingsConfig"/>). Absent section uses defaults:
     /// debug off, no lifepod override, automatic next match and dilation on.

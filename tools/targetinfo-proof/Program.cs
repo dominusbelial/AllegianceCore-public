@@ -138,6 +138,7 @@ sealed class ProofRunner : Game
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: the proof picks sides explicitly; keep the pre-flag fallback
         Games =
         [
             new Gm { Name = "P359 Target Info Proof", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
@@ -219,7 +220,8 @@ sealed class ProofRunner : Game
         friendB.SendLogonRequest(Request("Teammate_Bravo"));
 
         // Pick sides explicitly (0/1) so the spawner seats us immediately instead of
-        // waiting out the 30s auto-assign on the side-select screen.
+        // waiting out the opt-in 30 s auto-assign on the side-select screen (P763
+        // enables that flag above; it is off by default).
         me.SendPositionReq(0);
         target.SendPositionReq(1);
         friendA.SendPositionReq(0);

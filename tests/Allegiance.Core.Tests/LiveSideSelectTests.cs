@@ -12,11 +12,12 @@ namespace Allegiance.Core.Tests;
 /// <summary>
 /// P281 — the post-connect side-select flow: a joining peer is held in a
 /// pending side-select state (no ship spawned, launch deferred) until it picks
-/// a side via POSITIONREQ, or is auto-assigned by the side-select timeout. This
+/// a side via POSITIONREQ. Native has no timer; the port's auto-seat is an
+/// opt-in adaptation (<c>ServerConfig.SideSelectAutoSeatSeconds</c>, P763). This
 /// is the port of native's pre-game side choice (FM_C_POSITIONREQ, Messages.h:320),
 /// surfaced as a real screen between connecting and flying. Verifies the
 /// deferral, the explicit per-side choice, the roster broadcast the screen is
-/// rendered from, and the silent-peer auto-assign timeout.
+/// rendered from, and both the off (native) and on (30 s) auto-seat modes.
 /// [Collection("LiveNetwork")] keeps this suite sequential with the others.
 /// </summary>
 [Collection("LiveNetwork")]
@@ -24,12 +25,15 @@ public class LiveSideSelectTests
 {
     private static readonly string ArtRoot = TestArtRoot.Value;
 
-    private static Cfg Config() => new()
+    private static Cfg Config(double? autoSeatSeconds = 30) => new()
     {
         ArtPath = ArtRoot,
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        // P763 — the side-select auto-seat is now an opt-in port adaptation;
+        // these live tests keep the pre-P763 30 s behaviour on purpose.
+        SideSelectAutoSeatSeconds = autoSeatSeconds,
         Games =
         [
             new Gm { Name = "SideSel", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Bios", "IronCo"] },
@@ -148,7 +152,7 @@ public class LiveSideSelectTests
 
         ConnectPending(server, b, "SELTIME");
 
-        // Never picks a side. The 30 s side-select timeout (@ 20 upd = 600
+        // Never picks a side. The opt-in 30 s auto-seat (@ 20 upd = 600
         // ticks) auto-assigns it (arrival order) and launches it, so it never
         // blocks the P180 auto-start nor hangs forever.
         int got = PumpUntil(server, () => b.ShipAssignment is not null, 800);
@@ -157,6 +161,70 @@ public class LiveSideSelectTests
         short bId = b.ShipAssignment!.Ship.ShipId;
         var ship = server.Ships.First(s => s.Ship.Id == bId).Ship;
         Assert.NotNull(ship.SideId);   // auto-assigned to a real side
+    }
+
+    /// <summary>P763 — the auto-seat is opt-in: with the flag ON (30 s), a
+    /// silent peer is seated at the configured deadline, not before it.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Flag_on_auto_seats_a_silent_peer_at_the_configured_30_seconds()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.Boot(Config(30));
+        using var b = new FltBot();
+
+        ConnectPending(server, b, "SELON30");
+        double start = server.SimNow;
+
+        // 29 simulation seconds: still pending. This proves the timer is not
+        // "seat immediately" and pins the configured deadline.
+        int early = PumpUntil(server, () => b.ShipAssignment is not null || server.SimNow - start >= 29.0, 800);
+        Assert.True(early < 800, "server did not advance 29 simulation seconds");
+        Assert.Null(b.ShipAssignment);
+        Assert.Empty(server.Ships);
+
+        int got = PumpUntil(server, () => b.ShipAssignment is not null, 100);
+        Assert.True(got < 100, "silent peer was not auto-seated at the 30 s flag");
+        double elapsed = server.SimNow - start;
+        // ConnectSimTime is recorded a tick or two before ConnectPending
+        // returns; allow that slack while still pinning ~30 s (not 0/15/31+).
+        Assert.InRange(elapsed, 28.0, 31.0);
+
+        short bId = b.ShipAssignment!.Ship.ShipId;
+        Assert.NotNull(server.Ships.First(s => s.Ship.Id == bId).Ship.SideId);
+    }
+
+    /// <summary>P763 — native has no timeout: with the flag off (null/absent,
+    /// zero or negative), a silent peer stays pending past the old 31 s mark,
+    /// while a peer that does send POSITIONREQ is still seated.</summary>
+    [Trait("Requires", "Artwork")]
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0.0)]
+    [InlineData(-1.0)]
+    public void Flag_off_keeps_a_silent_peer_pending_past_31_seconds_and_an_explicit_positionreq_still_seats_it(double? autoSeatSeconds)
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.Boot(Config(autoSeatSeconds));
+        using var b = new FltBot();
+
+        ConnectPending(server, b, "SELOFF");
+        double start = server.SimNow;
+
+        int pumped = PumpUntil(server, () => server.SimNow - start >= 31.0, 800);
+        Assert.True(pumped < 800, "server did not advance 31 simulation seconds");
+        Assert.Null(b.ShipAssignment);
+        Assert.Empty(server.Ships);
+
+        // The native path is unaffected: a recorded POSITIONREQ choice seats it.
+        short side0 = server.Missions[0].Sides[0].Id;
+        b.SendPositionReq(side0);
+        Assert.True(PumpUntil(server, () => b.ShipAssignment is not null, 800) < 800,
+            "peer with an explicit POSITIONREQ was not seated with auto-seat off");
+        short bId = b.ShipAssignment!.Ship.ShipId;
+        Assert.Equal(side0, server.Ships.First(s => s.Ship.Id == bId).Ship.SideId);
     }
 
     [Trait("Requires", "Artwork")]

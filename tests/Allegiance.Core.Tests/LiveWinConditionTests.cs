@@ -42,6 +42,7 @@ public class LiveWinConditionTests
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: WireClient peers never send POSITIONREQ
         Games =
         [
             new Gm { Name = "Win Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
@@ -54,6 +55,7 @@ public class LiveWinConditionTests
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: WireClient peers never send POSITIONREQ
         Games =
         [
             new Gm { Name = "Win Test 3", Map = "XXV_simple.igc", Teams = 3, CivIds = [1, 3, 2], SideNames = ["Alpha", "Bravo", "Charlie"] },
@@ -66,6 +68,7 @@ public class LiveWinConditionTests
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: WireClient peers never send POSITIONREQ
         Games =
         [
             new Gm { Name = "Game A", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

@@ -1180,8 +1180,8 @@ public sealed partial class Game1
     private void UpdateSideSelect(KeyboardState ks)
     {
         // P306 — headless capture auto-seats on side 0 (where all the stress
-        // bots live) instead of waiting for a human to pick a side / the
-        // server's 30s auto-assign, so the video starts promptly.
+        // bots live) instead of waiting for a human to pick a side, so the video
+        // starts promptly. (The server's auto-seat is opt-in/off by default, P763.)
         if (_skirmish is not null)
         {
             if (_session.World.MySideId == _skirmish.PlayerSide) { _state = ClientState.ReadyCheck; return; }
@@ -1223,7 +1223,8 @@ public sealed partial class Game1
         }
 
         // P572 — --auto-side: request the side as soon as the roster is known
-        // (a one-shot; falls back to the server's 30 s auto-assign if unknown).
+        // (a one-shot). No server fallback: P763 makes auto-seat opt-in and off
+        // by default (native waits for POSITIONREQ).
         ApplyAutoProofSideSelect();
 
         // Picker over the ACTIVE (selectable) sides only (P481): an eliminated /

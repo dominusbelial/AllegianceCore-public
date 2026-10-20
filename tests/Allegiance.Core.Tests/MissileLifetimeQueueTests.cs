@@ -41,6 +41,7 @@ public sealed class MissileLifetimeQueueTests
         server.Boot(new Cfg
         {
             ArtPath = TestArtRoot.Value, StaticCore = "PCore001.igc", Port = 0, UpdatesPerSecond = 20,
+            SideSelectAutoSeatSeconds = 30,   // P763: this ConnectionSession peer never sends POSITIONREQ
             Transport = new() { Mode = mode, PoolWorkers = 2 },
             Broadcast = new() { ImmutableSnapshot = snapshot },
             Games = [new Gm { Name = "Missile lifetime queue", Map = "XXV_simple.igc", Teams = 2,

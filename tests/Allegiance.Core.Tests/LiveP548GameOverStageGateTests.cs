@@ -55,6 +55,7 @@ public class LiveP548GameOverStageGateTests
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: keep the pre-flag 30 s auto-seat this suite relies on
         Games =
         [
             new Gm { Name = "P548 Gate", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

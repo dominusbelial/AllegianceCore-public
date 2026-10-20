@@ -41,6 +41,7 @@ public sealed class P682MissionStateTests
         var config = new Allegiance.Server.ServerConfig
         {
             Port = 0, LiveSettings = template.LiveSettings, Games = template.Games,
+            SideSelectAutoSeatSeconds = 30,   // P763: ConnectionSession peers never send POSITIONREQ
             Broadcast = new() { ImmutableSnapshot = pipeline, EncodeOnce = pipeline, InterestTiers = pipeline },
         };
         server.Boot(config);

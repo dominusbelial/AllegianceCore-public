@@ -19,7 +19,7 @@ sends.
 
 | Flag | Meaning |
 |---|---|
-| `--auto-side <id>` | Pick this side on the side-select screen (falls back to the server's 30 s auto-assign if the roster is late). |
+| `--auto-side <id>` | Pick this side on the side-select screen. With P763 the server's 30 s auto-seat is opt-in and off by default (native waits for POSITIONREQ), so pass this for unattended proofs. |
 | `--auto-ready` | Send PLAYER_READY(true) automatically once seated. |
 | `--auto-launch [hull]` | In the hangar, select the hull (by id or name; empty = keep the current hull) and send BUY_LOADOUT(fLaunch=true). Applies the default/current loadout (P571 default loadout when landed, else the current parts). |
 | `--auto-goto <sector>` | After launch, engage the P541 starmap goto to a sector (name or id), routed through warps. |

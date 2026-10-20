@@ -19,6 +19,7 @@ public sealed class P733ResearchTests(ITestOutputHelper output)
     internal static ServerConfig Config(double scale = 1, string mode = "research") => new()
     {
         Port = 0, Showcase = new() { TechMode = mode, IncomeMultiplier = 5000, ResearchTimeScale = scale },
+        SideSelectAutoSeatSeconds = 30,   // P763: ConnectionSession peers in this suite never send POSITIONREQ
         LiveSettings = new() { TimeDilation = "off", AutoNextMatch = new() { IntermissionSeconds = 2 } },
         Games = [new() { Name = "P733", Teams = 2, CivIds = [25, 3], SideNames = ["Alpha", "Bravo"],
             MaxTeamImbalance = 32767, MapGen = new() { Type = "SingleRing", PlayerSectorAsteroids = 20, PlayerSectorSpecialAsteroids = 8 } }],

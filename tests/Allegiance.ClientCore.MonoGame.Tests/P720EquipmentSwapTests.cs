@@ -274,6 +274,7 @@ public class P720EquipmentSwapTests
         {
             ArtPath = ExternalPaths.Resolve(ExternalResourceKind.Artwork),
             StaticCore = "PCore001.igc", Port = 0, UpdatesPerSecond = 20,
+            SideSelectAutoSeatSeconds = 30,   // P763: these clients never send POSITIONREQ
             Games = [new() { Name = "P720", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["A", "B"] }]
         });
         server.Missions[0].Stage = MissionStage.Started;

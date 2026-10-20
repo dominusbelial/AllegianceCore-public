@@ -47,6 +47,7 @@ public sealed class P663TreasureLiveTests
         server.Boot(new()
         {
             ArtPath = ExternalPaths.Resolve(ExternalResourceKind.Artwork), StaticCore = "PCore001.igc", Port = 0, UpdatesPerSecond = 20,
+            SideSelectAutoSeatSeconds = 30,   // P763: these clients never send POSITIONREQ
             Games = [new() { Name = "P663", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"],
                 Treasure = new() { PlayerSectorTreasureRate = 0, NeutralSectorTreasureRate = 1f / 60 },
                 MapGen = new() { Type = "SingleRing", ArtifactsGame = true,

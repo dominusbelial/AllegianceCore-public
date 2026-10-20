@@ -21,6 +21,10 @@ public sealed class SP6GameSpeedTests
         var config = new SkirmishOptions { Speed = speed }.CreateConfig();
         Assert.Equal(income, config.Showcase.IncomeMultiplier);
         Assert.Equal(research, config.Showcase.ResearchTimeScale);
+        // P763 — Showcase keeps the pre-flag 30 s side-select auto-seat; Normal
+        // and Fast leave it off so the server waits for a POSITIONREQ (native).
+        Assert.Equal(speed == SkirmishSpeed.Showcase ? SkirmishOptions.ShowcaseSideSelectAutoSeatSeconds : null,
+            config.SideSelectAutoSeatSeconds);
         // Normal and Fast/Showcase all use the rig's bounded 300 s finale timeout.
         Assert.Equal(SkirmishOptions.RigFinaleTimeoutSeconds, config.Showcase.FinaleTimeoutSeconds);
     }

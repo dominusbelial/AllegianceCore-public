@@ -25,6 +25,7 @@ public sealed class P660NextMatchLiveTests(ITestOutputHelper output)
     internal static ServerConfig Config(bool enabled, string dilation = "off", double intermission = 2) => new()
     {
         Port = 0,
+        SideSelectAutoSeatSeconds = 30,   // P763: these ConnectionSession peers never send POSITIONREQ
         LiveSettings = new()
         {
             TimeDilation = dilation,

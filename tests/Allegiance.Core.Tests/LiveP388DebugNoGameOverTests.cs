@@ -54,6 +54,7 @@ public sealed class LiveP388DebugNoGameOverTests
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: WireClient peers never send POSITIONREQ
         LiveSettings = debugMode ? new Ls { DebugMode = true } : new Ls(),
         Games =
         [

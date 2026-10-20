@@ -37,6 +37,7 @@ public sealed class P656cFinaleLiveTests(Xunit.Abstractions.ITestOutputHelper ou
             Server.Boot(new()
             {
                 ArtPath = Catalog.ArtRoot, StaticCore = "PCore001.igc", Port = 0, UpdatesPerSecond = 20,
+                SideSelectAutoSeatSeconds = 30,   // P763: these clients never send POSITIONREQ
                 LiveSettings = new() { TestUnlock = new() { Enabled = true, AllTech = true, Money = 1_000_000 } },
                 Games = [new() { Name = "P656c clash43", Map = "XXV_simple.igc", Teams = 2,
                     CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] }],

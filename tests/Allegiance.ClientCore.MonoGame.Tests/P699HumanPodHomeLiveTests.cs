@@ -66,6 +66,7 @@ public sealed class P699HumanPodHomeLiveTests(ITestOutputHelper output)
         server.Boot(new ServerConfig
         {
             ArtPath = art, StaticCore = "PCore001.igc", Port = 0, UpdatesPerSecond = 20,
+            SideSelectAutoSeatSeconds = 30,   // P763: these clients never send POSITIONREQ
             Games = [new() { Name = "P699 human", Map = "XXV_simple.igc", Teams = 2, CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] }],
         });
         var mission = server.Missions[0]; mission.Stage = MissionStage.Started;

@@ -29,6 +29,7 @@ public class P675CommandLiveTests
         server.Boot(new Allegiance.Server.ServerConfig
         {
             ArtPath = ExternalPaths.Resolve(ExternalResourceKind.Artwork), StaticCore = "PCore001.igc", Port = 0,
+            SideSelectAutoSeatSeconds = 30,   // P763: this ConnectionSession peer never sends POSITIONREQ
             Games = [new Allegiance.Server.GameConfig { Name = "P675", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] }],
         });
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;

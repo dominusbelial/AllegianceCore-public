@@ -159,8 +159,9 @@ public sealed partial class Server
                     if (_autoRestartDeadline.ContainsKey(m) || _startCountdownDeadline.ContainsKey(m))
                         SendToMissionPeers(m, clock);
             });
-        // P281 — the side-select drain: seat ready/timed-out pending peers in
-        // logon order (deterministic), incl. the auto-assign timeout.
+        // P281/P763 — the side-select drain: seat ready pending peers in logon
+        // order (deterministic). A silent peer is auto-seated only when the
+        // opt-in SideSelectAutoSeatSeconds adaptation is enabled (default off).
         Step("sideSelection", () => AdvanceSideSelection(now));
         // P187 — resolve pending ballots this tick (the port of native
         // CFSMission::Update's ballot loop, fsmission.cpp:2585-2592): any

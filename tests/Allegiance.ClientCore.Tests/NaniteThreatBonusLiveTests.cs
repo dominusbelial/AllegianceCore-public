@@ -85,6 +85,7 @@ public class NaniteThreatBonusLiveTests
         StaticCore = "XC02.igc",
         Port = port,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: preserve the pre-flag 30 s auto-seat (these peers never send POSITIONREQ)
         Games =
         [
             new Gm { Name = "Nan Threat", Map = "XXV_simple.igc", Teams = 1, CivIds = [1], SideNames = ["Alpha"] },

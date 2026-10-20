@@ -20,6 +20,7 @@ public sealed class P697GhostBattleLiveTests
     {
         ArtPath = ExternalPaths.Resolve(ExternalResourceKind.Artwork), StaticCore = "PCore001.igc",
         Port = 0, UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: these clients never send POSITIONREQ
         Broadcast = new() { ShipUpdateModel = native ? "native" : "port", MinUpdateHz = floor,
             InterestTiers = tiers, ImmutableSnapshot = tiers, EncodeOnce = tiers, ParallelBuild = tiers },
         Games = [new() { Name = "P697", Map = "XXV_simple.igc", Teams = 2,

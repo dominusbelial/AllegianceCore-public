@@ -117,6 +117,7 @@ sealed class ProofRunner : Game
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: proof observer sessions never send POSITIONREQ
         Games =
         [
             new Gm { Name = "P421 Rock Texture Proof", Map = map, Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

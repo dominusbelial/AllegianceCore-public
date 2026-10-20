@@ -1,0 +1,7 @@
+[
+  {
+    "op": "add",
+    "path": "/sideSelectAutoSeatSeconds",
+    "value": 30
+  }
+]

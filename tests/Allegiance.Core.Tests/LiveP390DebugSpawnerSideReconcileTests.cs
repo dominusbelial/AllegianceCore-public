@@ -50,6 +50,7 @@ public class LiveP390DebugSpawnerSideReconcileTests
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: keep the pre-flag 30 s auto-seat this suite relies on
         LiveSettings = new Ls { DebugMode = true },
         Games =
         [

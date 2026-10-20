@@ -111,6 +111,7 @@ public sealed class P746KillCreditOnEjectionTests
             Server.Boot(new Allegiance.Server.ServerConfig
             {
                 ArtPath = TestArtRoot.Value, StaticCore = "PCore001.igc", Port = 0,
+                SideSelectAutoSeatSeconds = 30,   // P763: these WireClient peers never send POSITIONREQ
                 Games = [
                     new() { Name = "P746", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
                     new() { Name = "Other mission", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

@@ -2858,7 +2858,8 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// and complete its join+launch. Called from the side-select drain
     /// (<see cref="AdvanceSideSelection"/>) for a peer in
     /// <see cref="_pendingSideSelect"/> with a recorded POSITIONREQ choice (a
-    /// real side = explicit human choice) or on the auto-assign timeout (NA).
+    /// real side = explicit human choice), or, when the opt-in P763 auto-seat is
+    /// enabled, on its deadline (NA).
     /// Seats the ship
     /// (explicit → full <see cref="TryJoinSide"/> leader/owner election, native
     /// <c>AddPlayerToSide</c>; auto → direct seat matching the old round-robin
@@ -3819,18 +3820,28 @@ private void CompleteStartCountdown(Mission mission, double now)
             SendSideRoster(key);
     }
 
-/// <summary>P281 — the per-tick driver that auto-assigns a pending
-    /// side-select peer that never picked within <see cref="SideSelectTimeoutSeconds"/>,
-    /// so a silent/AFK client is eventually seated and launched instead of
-    /// hanging at the side-select screen (and never left pending forever).
-    /// Pending peers are side-less and not in _peerShips, so they never block
-    /// the P180 ready-up auto-start; this is purely to not strand the silent
-    /// player. 30 s is comfortably longer than the 15 s P188 briefing countdown
-    /// and ample for a 2-option pick, yet short enough that an abandoned join
-    /// recycles quickly.</summary>
+/// <summary>P281/P763 — the per-tick driver that seats pending side-select
+    /// peers. Native has no timer: the team screen sends <c>C POSITIONREQ</c>
+    /// (<c>WinTrek/teamscreen.cpp:2964-2981</c>) and the server seats only that
+    /// recorded request (<c>FedSrv.CPP:6658-6691</c> →
+    /// <c>fsmission.cpp:4729-4774</c>). The pre-P763 port auto-assigned a silent
+    /// peer after 30 s; that is now the opt-in
+    /// <see cref="ServerConfig.SideSelectAutoSeatSeconds"/> adaptation
+    /// (<c>null</c>/&lt;=0 = off, the default). With it off, a peer that never
+    /// chose stays pending — exactly like native's unanswered request — and
+    /// still never blocks the P180 ready-up auto-start because pending peers are
+    /// side-less and absent from _peerShips. When the option is set, a silent/AFK
+    /// client is eventually seated and launched instead of hanging at the
+    /// side-select screen. 30 s (the pre-P763 value) is comfortably longer than
+    /// the 15 s P188 briefing countdown and ample for a 2-option pick, yet short
+    /// enough that an abandoned join recycles quickly.</summary>
     private void AdvanceSideSelection(double now)
     {
         if (_pendingSideSelect.Count == 0) return;
+        // P763 — a finite positive value opts into the timed auto-seat; null,
+        // zero or negative keeps native's wait-for-POSITIONREQ behaviour.
+        double autoSeatSeconds = _config.SideSelectAutoSeatSeconds ?? 0;
+        bool autoSeat = autoSeatSeconds > 0 && double.IsFinite(autoSeatSeconds);
         // Seat every pending peer that is ready (has a recorded POSITIONREQ
         // choice) OR timed out, in ascending JoinSeq (logon) order. Draining in
         // logon order — not POSITIONREQ arrival order — keeps side assignment
@@ -3839,7 +3850,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         // pre-P281; racing client receive-threads otherwise shuffled sides.
         var ready = _pendingSideSelect
             .Where(kv => kv.Value.RequestedSide is not null
-                      || now - kv.Value.ConnectSimTime >= SideSelectTimeoutSeconds)
+                      || (autoSeat && now - kv.Value.ConnectSimTime >= autoSeatSeconds))
             .OrderBy(kv => kv.Value.JoinSeq)
             .Select(kv => (Key: kv.Key, Pending: kv.Value))
             .ToList();
@@ -3853,7 +3864,7 @@ private void CompleteStartCountdown(Mission mission, double now)
             else
             {
                 Console.WriteLine(pend.RequestedSide is null
-                    ? $"[sideselect] peer {key} '{pend.Request.CharacterName}' never chose a side within {SideSelectTimeoutSeconds}s — auto-assigning"
+                    ? $"[sideselect] peer {key} '{pend.Request.CharacterName}' never chose a side within {autoSeatSeconds}s — auto-assigning"
                     : $"[sideselect] draining peer {key} '{pend.Request.CharacterName}' -> auto-pick (NA)");
                 CompleteSideSelection(key, -1);   // NA = auto-pick (arrival order / spawner default)
             }

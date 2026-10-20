@@ -230,9 +230,10 @@ public sealed partial class Server
 
                 // P281 — the join/launch burst is deferred to
                 // CompleteJoinAndLaunch, called from CompleteSideSelection once
-                // this peer picks a side (or the timeout auto-seats it). Until
-                // then the peer is only in _pendingSideSelect, so a silent/AFK
-                // client never blocks the P180 ready-up auto-start.
+                // this peer picks a side (or, with the opt-in P763 auto-seat
+                // enabled, when its deadline fires). Until then the peer is only
+                // in _pendingSideSelect, so a silent/AFK client never blocks the
+                // P180 ready-up auto-start.
             }
             else if (fmid == ShipUpdate.Fmid)
             {
@@ -783,13 +784,16 @@ public sealed partial class Server
                     // choice on the pending record; the per-tick side-select drain
                     // (AdvanceSideSelection) seats it in LOGON order, so side
                     // assignment stays deterministic. NA(-1) here means "auto-pick"
-                    // (left as an unset RequestedSide → the drain's timeout path).
+                    // (recorded as -1 so the drain seats it immediately). A peer
+                    // that sends nothing stays pending unless the opt-in
+                    // ServerConfig.SideSelectAutoSeatSeconds timer is enabled
+                    // (P763; off by default, matching native).
                     if (_pendingSideSelect.ContainsKey(from))
                     {
                         // A real side = the chosen side. NA(-1) = auto-pick NOW
                         // (recorded as -1 so the drain seats it immediately,
                         // rather than leaving RequestedSide null which means
-                        // "no choice yet" → the 30 s timeout).
+                        // "no choice yet").
                         _pendingSideSelect[from] = _pendingSideSelect[from].WithRequestedSide(pr.SideId);
                         Console.WriteLine($"[posreq] {from}: POSITIONREQ side {pr.SideId} recorded for pending side-select peer");
                     }

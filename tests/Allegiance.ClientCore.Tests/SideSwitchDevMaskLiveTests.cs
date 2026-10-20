@@ -43,6 +43,7 @@ public sealed class SideSwitchDevMaskLiveTests
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: some test clients never send POSITIONREQ
         Games =
         [
             new Gm { Name = "P468 Side Switch Mask", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

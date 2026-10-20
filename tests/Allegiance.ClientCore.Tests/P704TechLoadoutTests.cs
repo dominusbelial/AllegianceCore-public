@@ -126,6 +126,7 @@ public sealed class P704TechLoadoutLiveTests(ITestOutputHelper output)
             Server.Boot(new()
             {
                 ArtPath = Catalog.ArtRoot, StaticCore = "PCore001.igc", Port = 0, UpdatesPerSecond = 20,
+                SideSelectAutoSeatSeconds = 30,   // P763: these clients never send POSITIONREQ
                 LiveSettings = new() { TimeDilation = "off", TestHarness = new() { Enabled = true, Money = 1_000_000, IgnoreTechGate = false } },
                 Games = [new() { Name = "P704", Map = "XXV_simple.igc", Teams = 2,
                     CivIds = [1, 4], SideNames = ["Alpha", "Bravo"] }],

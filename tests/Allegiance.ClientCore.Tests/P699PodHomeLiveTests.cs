@@ -31,6 +31,7 @@ public sealed class P699PodHomeLiveTests(ITestOutputHelper output)
         {
             ArtPath = ExternalPaths.Resolve(ExternalResourceKind.Artwork), StaticCore = "PCore001.igc",
             Port = 0, UpdatesPerSecond = 20,
+            SideSelectAutoSeatSeconds = 30,   // P763: these clients never send POSITIONREQ
             LiveSettings = new() { TestHarness = new() { Enabled = true, Money = 1_000_000, IgnoreTechGate = true } },
             // P693: native default 0x7ffe is rank balance (fsmission.cpp:4646-4671), which moves a second
             // joiner to the emptier side; this test pins its bots to sides, so balance is off (0x7fff, :4612).

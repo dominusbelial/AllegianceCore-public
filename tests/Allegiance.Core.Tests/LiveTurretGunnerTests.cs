@@ -50,6 +50,7 @@ public class LiveTurretGunnerBindingTests
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: WireClient peers never send POSITIONREQ
         Games =
         [
             new Gm { Name = "Turret Gunner", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },

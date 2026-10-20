@@ -156,6 +156,7 @@ public sealed class P682NextMatchCombatLiveTests(ITestOutputHelper output)
         var config = new Allegiance.Server.ServerConfig
         {
             Port = 0,
+            SideSelectAutoSeatSeconds = 30,   // P763: these ConnectionSession peers never send POSITIONREQ
             LiveSettings = new()
             {
                 AutoNextMatch = new() { Enabled = true, IntermissionSeconds = 2 },

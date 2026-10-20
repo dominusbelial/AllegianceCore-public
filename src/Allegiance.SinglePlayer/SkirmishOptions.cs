@@ -53,6 +53,11 @@ public sealed record SkirmishOptions
     public const double ShowcaseIncomeMultiplier = 5000;
     public const double ShowcaseResearchTimeScale = 8;
     public const double RigFinaleTimeoutSeconds = 300;
+    /// <summary>P763 — showcase (rig and single-player) keeps the pre-flag 30 s
+    /// side-select auto-seat, which is a port adaptation, not native; normal
+    /// matches leave <c>ServerConfig.SideSelectAutoSeatSeconds</c> null so they
+    /// wait for a POSITIONREQ exactly like native.</summary>
+    public const double ShowcaseSideSelectAutoSeatSeconds = 30;
     public const double FastIncomeMultiplier = 8;
     public const double FastResearchTimeScale = 4;
 
@@ -84,6 +89,7 @@ public sealed record SkirmishOptions
             },
             ArtPath = artwork ?? Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork),
             Port = 0, BindAddress = "127.0.0.1", Discovery = new() { Enabled = false },
+            SideSelectAutoSeatSeconds = Speed == SkirmishSpeed.Showcase ? ShowcaseSideSelectAutoSeatSeconds : null,
             Showcase = new() { TechMode = TechMode, ResearchTimeScale = SpeedProfile.Research, IncomeMultiplier = SpeedProfile.Income, FinaleTimeoutSeconds = SpeedProfile.FinaleSeconds },
             LiveSettings = new()
             {

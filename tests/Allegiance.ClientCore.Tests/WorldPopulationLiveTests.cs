@@ -48,6 +48,7 @@ public class WorldPopulationLiveTests
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: preserve the pre-flag 30 s auto-seat (these peers never send POSITIONREQ)
         Games =
         [
             // m2xspiderw.igc: a real map the sibling tests prove carries ~13

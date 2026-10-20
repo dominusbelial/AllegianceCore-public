@@ -40,6 +40,7 @@ public sealed class P554AdminCheatLiveTests
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: preserve the pre-flag 30 s auto-seat (these peers never send POSITIONREQ)
         LiveSettings = new Ls { DebugMode = true, AdminCheats = adminCheats },
         Games =
         [

@@ -116,9 +116,10 @@ public class LiveDuplicateLogonTests
         server.Boot(Config());
         using var bot = new FltBot();
 
-        // Hold the peer at the post-connect side-select screen (no POSITIONREQ;
-        // we pump far fewer ticks than the 30 s auto-seat timeout). The bot
-        // would normally auto-send POSITIONREQ(NA) on ack, so disable that.
+        // Hold the peer at the post-connect side-select screen (no POSITIONREQ).
+        // With P763's auto-seat off by default it stays pending, but this test
+        // pumps only a few ticks anyway. The bot would normally auto-send
+        // POSITIONREQ(NA) on ack, so disable that.
         bot.AutoSelectSideAfterLogon = false;
         bot.Connect(server.BoundPort, "PDUP2");
         bot.SendLogonRequest(Request("PDUP2"));

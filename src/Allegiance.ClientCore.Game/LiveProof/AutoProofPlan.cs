@@ -39,7 +39,8 @@ public enum AutoScreenKind
 public sealed class AutoProofPlan
 {
     /// <summary>Side id to auto-select on the side-select screen (<c>--auto-side</c>).
-    /// Null = the human (or the server's 30 s auto-assign) picks.</summary>
+    /// Null = the human picks; the server no longer auto-seats by default (P763),
+    /// so pass this for unattended proofs.</summary>
     public int? AutoSide;
 
     /// <summary>Send PLAYER_READY(true) automatically once seated (<c>--auto-ready</c>).</summary>

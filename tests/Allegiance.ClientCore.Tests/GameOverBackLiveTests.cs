@@ -59,6 +59,7 @@ public sealed class GameOverBackLiveTests
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: some test clients never send POSITIONREQ
         Games =
         [
             new Gm { Name = name, Map = "XXV_simple.igc", Teams = teams, CivIds = civs, SideNames = sideNames },

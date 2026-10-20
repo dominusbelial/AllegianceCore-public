@@ -1,0 +1,65 @@
+{
+  "task": "P763",
+  "build": {
+    "command": "dotnet build AllegianceCore.slnx -c Release",
+    "warnings": 0,
+    "errors": 0,
+    "log": "/home/domingo/allegiance-evidence/P763/logs/build-final2.log"
+  },
+  "aot": {
+    "command": "dotnet publish src/Allegiance.Server/Allegiance.Server.csproj -c Release -r linux-x64 --self-contained -p:PublishAot=true",
+    "exit": 0,
+    "il2026": 0,
+    "il3050": 0,
+    "log": "/home/domingo/allegiance-evidence/P763/logs/aot.log"
+  },
+  "fastTier": {
+    "command": "tools/run-tests.sh --tier fast",
+    "result": "PASS",
+    "tests": 9251,
+    "seconds": 271.3,
+    "outcomes": {
+      "Allegiance.Lobby.Tests": { "passed": 19, "failed": 0 },
+      "Allegiance.ClientCore.MonoGame.Tests": { "passed": 2767, "notExecuted": 3, "failed": 0 },
+      "Allegiance.ClientCore.Tests": { "passed": 1546, "failed": 0 },
+      "Allegiance.Core.Tests": { "passed": 4904, "failed": 0 }
+    },
+    "summary": "/home/domingo/allegiance-evidence/P763/fast-final/summary.json",
+    "log": "/home/domingo/allegiance-evidence/P763/logs/fast-final.log",
+    "note": "Final run used TMPDIR=/home/domingo/allegiance-evidence/P763/tmp (outside the worktree). PlayerBundlePathsTests deliberately reads a repo-root local.env; when TMPDIR was inside the worktree those 5 path tests failed as an environment artifact, not a product change."
+  },
+  "affectedTestsThreeTimesAlone": {
+    "LiveSideSelectTests": { "runs": 3, "passed": 8 },
+    "LiveP548GameOverStageGateTests": { "runs": 3, "passed": 5 },
+    "LiveTeamLeadershipTests": { "runs": 3, "passed": 12 },
+    "BallotVotingLiveTests": { "runs": 3, "passed": 11 },
+    "LiveP390DebugSpawnerSideReconcileTests": { "runs": 3, "passed": 3 },
+    "ConfigDefaultsJsonTests": { "runs": 3, "passed": 8 },
+    "SP6GameSpeedTests": { "runs": 3, "passed": 8 },
+    "logs": "/home/domingo/allegiance-evidence/P763/tests/"
+  },
+  "additionalLiveSuitesThreeTimesAlone": [
+    "LiveShieldRegenBroadcastTests",
+    "LiveCombatWireTests",
+    "SideSwitchDevMaskLiveTests",
+    "P682MissionStateTests",
+    "LeaderSameSideBotClientLiveTests",
+    "GameOverBackLiveTests",
+    "DeadLatchRespawnLiveTests",
+    "P641FlightPartsLiveTests"
+  ],
+  "parity": {
+    "before": { "lobbyWeighted": "69.96%", "lobbyUnweighted": "66.67%" },
+    "after": { "lobbyWeighted": "73.15%", "lobbyUnweighted": "69.70%" },
+    "validatedRows": 665,
+    "log": "/home/domingo/allegiance-evidence/P763/logs/parity-scorecard.txt"
+  },
+  "rigConfig": {
+    "host": "192.168.0.221",
+    "path": "~/allegiance-test/docker/compose.server.json",
+    "changed": "top-level sideSelectAutoSeatSeconds = 30",
+    "backup": "~/allegiance-test/docker/compose.server.json.bak-pre-p763-*",
+    "delta": "docs/reports/P763_assets/rig-side-select-delta.json",
+    "deployOrRestartRun": false
+  }
+}

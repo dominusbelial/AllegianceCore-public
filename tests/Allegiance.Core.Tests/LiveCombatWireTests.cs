@@ -104,6 +104,7 @@ public class LiveCombatWireTests
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: some test clients never send POSITIONREQ
         Games =
         [
             new Gm

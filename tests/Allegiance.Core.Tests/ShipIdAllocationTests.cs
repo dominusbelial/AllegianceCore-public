@@ -35,6 +35,7 @@ public class ShipIdAllocationLiveTests
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
+        SideSelectAutoSeatSeconds = 30,   // P763: these clients never send POSITIONREQ
         Games =
         [
             new Gm { Name = "IdAlloc", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Bios", "IronCo"] },
