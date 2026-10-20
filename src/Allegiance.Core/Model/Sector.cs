@@ -200,13 +200,14 @@ public sealed class Sector : IClusterIgc
     // ship carries c_habmCarrier (igc.h:736) and the other c_habmLandOnCarrier
     // (igc.h:730), either direction, and the lander sits genuinely InGarage
     // (inside the carrier's reconstructed bay half-spaces) at this instant.
-    // Same accumulate-per-tick / drain-after-Mission.Update split as the other
-    // pending lists. Detection-only by design: the native LandOnCarrierEvent is
-    // a single atomic function (detect + resupply + reposition + RELAUNCH_SHIP
-    // broadcast) with no persistent "docked at carrier" state, so a stationary
-    // lander legitimately re-fires each tick — there is deliberately no latch or
-    // cooldown to suppress it (the relaunch, P117, ends the condition by moving
-    // the ship out of the bay). No ship state is changed by the pass itself.
+    // P754b: for a MISSION-bound sector (every production sector) the landing is
+    // performed inside the site callback itself — ServerHost.LandOnCarrierEvent →
+    // Server.PerformRelaunch, native's atomic detect+resupply+reposition+
+    // RELAUNCH_SHIP body (FedSrv.CPP:12814-13031) — so nothing is queued here.
+    // This list therefore only feeds the mission-less detection fixtures (P116's
+    // bare-sector geometry tests): a stationary lander legitimately re-fires each
+    // tick (no native "docked at carrier" latch); the relaunch ends the condition
+    // by moving the ship out of the bay.
     private readonly List<(Ship Carrier, Ship Lander)> _pendingCarrierLandings = [];
 
     // P123 — treasure pickups this tick's proximity pass
@@ -384,13 +385,37 @@ public sealed class Sector : IClusterIgc
         _memberVersion++;                       // P324 (M3): invalidate the in-tick candidate cache
     }
 
-    /// <summary>Remove a model from this sector; returns whether it was present.</summary>
+    /// <summary>Remove a model from this sector; returns whether it was present.
+    /// This is the port's <c>SetCluster(NULL)</c> list edit and is used both for
+    /// destruction and for sector-to-sector MOVES (ripcord, docking, respawn,
+    /// capture), so it raises <b>no</b> site notification — a move is not a
+    /// termination (P754b: <c>CmodelIGC::Terminate</c> is the only native
+    /// <c>TerminateModelEvent</c> producer, <c>Igc/modelIGC.cpp:55-61</c>). Use
+    /// <see cref="Terminate"/> to destroy a model.</summary>
     public bool Remove(Model model)
     {
         if (!_models.Remove(model)) return false;
         if (model is Probe probe) probe.OnRemoved();
         _memberVersion++;                       // P324 (M3): invalidate the in-tick candidate cache
         return true;
+    }
+
+    /// <summary>
+    /// P754b — destroy a model: raise <see cref="IIgcSite.TerminateModelEvent"/>,
+    /// then evict it from the sector. The exact native order in
+    /// <c>CmodelIGC::Terminate</c> (<c>Igc/modelIGC.cpp:55-61</c>): the site is
+    /// notified <b>before</b> the model's cluster link is cleared, which is why
+    /// the notification happens here and not inside <see cref="Remove"/>
+    /// (a sector move also removes the model from the old cluster's list, and
+    /// native fires no event for a move — <c>SetCluster</c> only detaches).
+    /// Returns whether the model was still present (idempotent, so a death path
+    /// and the sector's own dead-model sweep cannot double-notify).
+    /// </summary>
+    public bool Terminate(Model model)
+    {
+        if (!_models.Contains(model)) return false;
+        Mission?.Site.TerminateModelEvent(model);
+        return Remove(model);
     }
 
     /// <summary>
@@ -942,8 +967,8 @@ public sealed class Sector : IClusterIgc
         // pair where one carries c_habmCarrier and the other c_habmLandOnCarrier,
         // either direction, is tested against the carrier's real reconstructed
         // landing-bay geometry (Ship.InGarage) rather than a sphere proximity
-        // shortcut. Detection-only (logged, drained) — the resupply/relaunch
-        // half of LandOnCarrierEvent is a separate later task. See
+        // shortcut. P754b: the landing is handled (and the relaunch performed)
+        // inside the site callback, as native does (FedSrv.CPP:12814-13031). See
         // ResolveCarrierLandings.
         { using (TickProfiler.Enter("sim.rescue")) ResolveCarrierLandings(); }
 
@@ -952,7 +977,7 @@ public sealed class Sector : IClusterIgc
         // the (ship, treasure) pair; the host credits the ship's side, broadcasts
         // MONEY_CHANGE side-wide and DESTROY_TREASURE whole-mission, and removes
         // the treasure. See ResolveTreasurePickups for the spec.
-        { using (TickProfiler.Enter("sim.economy")) ResolveTreasurePickups((float)dt); }
+        { using (TickProfiler.Enter("sim.economy")) ResolveTreasurePickups(timeUpdate, (float)dt); }
 
         // Cross-side visibility sweep — P132. Every ship/station/probe in the
         // sector has its SeenBySide state recomputed against every side's
@@ -976,13 +1001,17 @@ public sealed class Sector : IClusterIgc
     /// (<c>shipIGC.cpp:270-293</c>) as a sector pass. For every ship here with
     /// an active ripcord and no parent (<c>m_pshipParent == NULL</c>,
     /// <c>shipIGC.cpp:271</c> — the same not-boarded gate P111's request
-    /// handler uses, <c>ParentShip is null</c>), the anchor is revalidated via
-    /// <see cref="RipcordAnchorStillLegal"/>; a legal anchor ticks the countdown
-    /// down by <c>dt</c>, and <b>P113</b>: when the countdown reaches zero the
-    /// ripper is handed to the host's <c>UseRipcord</c> (recorded in
-    /// <see cref="DrainRipcordTeleports"/>, drained by Server.PerformRipcordTeleport)
-    /// — the actual relocation — rather than being clamped to zero and left
-    /// active. An illegal anchor has its ripcord state cleared (mirroring
+    /// handler uses, <c>ParentShip is null</c>), the anchor object is resolved by
+    /// identity (<see cref="ResolveRipcordAnchor"/>) and its legality is the
+    /// SITE's <see cref="IIgcSite.ContinueRipcord"/> answer (P754b:
+    /// <see cref="RipcordRules.AnchorStillLegal"/>, <c>FedSrv.CPP:13379-13437</c>).
+    /// A legal anchor ticks the countdown down by <c>dt</c>, and <b>P113</b>: when
+    /// the countdown reaches zero the ripper is handed to the host's
+    /// <c>UseRipcord</c>, which performs the relocation inline (P754b — native's
+    /// always-true consume, <c>shipIGC.cpp:285-289</c>); a site that answers false
+    /// defers it, recorded in <see cref="DrainRipcordTeleports"/>, drained by
+    /// Server.PerformRipcordTeleport. The countdown is never clamped to zero and
+    /// left active. An illegal anchor has its ripcord state cleared (mirroring
     /// P111's cancel path) and is recorded in
     /// <see cref="DrainRipcordAborts"/> so the host broadcasts
     /// <c>RIPCORD_ABORTED(187)</c> sector-wide. A boarded ship's ripcord is
@@ -998,8 +1027,14 @@ public sealed class Sector : IClusterIgc
 
             var anchor = ship.RipcordModel!.Value;
             var site = ship.Mission!.Site;
-            if ((!site.QueueRipcordUse || RipcordAnchorStillLegal(ship, anchor)) &&
-                ResolveRipcordAnchor(ship, anchor) is { } modelAnchor &&
+            // P754b — the anchor's legality IS the native ContinueRipcord
+            // callback (FedSrv.CPP:13379-13437): flag carrier, side/alliance
+            // mismatch, vanished/docked anchor and the LtRipcord hull rule all
+            // live in that site method now (RipcordRules.AnchorStillLegal, used
+            // by ServerHost.ContinueRipcord). Resolve the anchor object by
+            // identity first (ResolveRipcordAnchor), then let the site decide —
+            // no second, sector-side copy of the rule.
+            if (ResolveRipcordAnchor(ship, anchor) is { } modelAnchor &&
                 site.ContinueRipcord(ship, modelAnchor))
             {
                 ship.AdvanceRipcordCountdown(dt);
@@ -1099,7 +1134,7 @@ public sealed class Sector : IClusterIgc
     /// GetSide() == pModel-&gt;GetSide()</c>, <c>shipIGC.cpp:1023-1026</c>);
     /// this port has no alliance/AlliedSides concept, so the allied leg
     /// collapses unconditionally (the same simplification P112's
-    /// <c>RipcordAnchorStillLegal</c> cites for its own bAllowAlliedRip
+    /// ripcord rule (<see cref="RipcordRules.AnchorStillLegal"/>) cites for its bAllowAlliedRip
     /// drop). Opposing sides can never rescue each other.</para>
     /// <para><b>Proximity</b> — sum of the two ships' <c>0.5 × HullType.Length</c>
     /// sphere radii (the port's established ship-extent convention, the same
@@ -1177,9 +1212,18 @@ public sealed class Sector : IClusterIgc
                 float dz = a.Position.Z - b.Position.Z;
                 if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;
 
-                _pendingRescues.Add((rescuee, rescuer));
-                done.Add(a);
-                done.Add(b);
+                // The accept/refuse decision is the SITE's (native
+                // FedSrvSiteBase::RescueShipEvent, FedSrv.CPP:13033-13076: the
+                // rescue is only legal when a friendly restart station exists).
+                // P754b: the serial path is gated too — P754 gated only the
+                // parallel latch, so the callback was bypassed on the default
+                // (non-parallel) path.
+                if (Mission?.Site.RescueShipEvent(rescuee, rescuer) ?? true)
+                {
+                    _pendingRescues.Add((rescuee, rescuer));
+                    done.Add(a);
+                    done.Add(b);
+                }
             }
         }
     }
@@ -1248,9 +1292,12 @@ public sealed class Sector : IClusterIgc
             {
                 rescuee = b; rescuer = a;
             }
-            _pendingRescues.Add((rescuee, rescuer));
-            done.Add(a);
-            done.Add(b);
+            if (Mission?.Site.RescueShipEvent(rescuee, rescuer) ?? true)
+            {
+                _pendingRescues.Add((rescuee, rescuer));
+                done.Add(a);
+                done.Add(b);
+            }
         }
     }
 
@@ -1343,8 +1390,11 @@ public sealed class Sector : IClusterIgc
                 float threshold = shipR + station.Radius;
                 if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;
 
-                _pendingStationRescues.Add((s, station));
-                done.Add(s);
+                if (Mission?.Site.RescueShipEvent(s, null) ?? true)
+                {
+                    _pendingStationRescues.Add((s, station));
+                    done.Add(s);
+                }
             }
         }
     }
@@ -1359,9 +1409,12 @@ public sealed class Sector : IClusterIgc
     /// back to a sphere shortcut either. It runs the real geometric predicate
     /// <see cref="Ship.InGarage"/> (the carrier's reconstructed landing-bay
     /// half-spaces, served from the cached <see cref="LandingBays"/> geometry) —
-    /// the whole point of this slice. Detection-only: each true pair is recorded
-    /// (accumulated, drained, logged by the host) with <b>no</b> ship-state
-    /// change, no resupply, no repositioning and no broadcast.
+    /// the whole point of this slice. What happens to a detected pair is the
+    /// SITE's business: a mission-bound sector hands it to
+    /// <see cref="IIgcSite.LandOnCarrierEvent"/> — the production host performs
+    /// the native landing there (P754b: resupply, launch-slot repositioning,
+    /// <c>RELAUNCH_SHIP</c>, <c>FedSrv.CPP:12814-13031</c>) — while a mission-less
+    /// sector merely records the pair for the detection fixtures.
     /// </summary>
     /// <remarks>
     /// <para><b>Pair trigger</b> — for every distinct same-side pair of ships in
@@ -1451,8 +1504,22 @@ public sealed class Sector : IClusterIgc
                 // the port's other passes use for their point-in-space tests.
                 var bay = LandingBays.Bay(carrier.HullType);
                 if (bay is null) continue;
-                if (carrier.InGarage(lander, 0f, bay))
-                    _pendingCarrierLandings.Add((carrier, lander));
+                if (!carrier.InGarage(lander, 0f, bay)) continue;
+
+                // Native: `... && igcsite->LandOnCarrierEvent(...)` then
+                // `break` (shipIGC.cpp:1053-1057) — true means the site handled
+                // the landing (FedSrv restores the expendables, repositions the
+                // lander and broadcasts RELAUNCH_SHIP, FedSrv.CPP:12814-13031).
+                // The production host does exactly that from its site method
+                // (ServerHost.LandOnCarrierEvent, P754b), so the sector queues
+                // nothing for a mission-bound landing. A mission-less sector
+                // (the P116 detection fixtures) keeps the detection queue.
+                if (Mission?.Site is { } site)
+                {
+                    site.LandOnCarrierEvent(carrier, lander, 0f);
+                    continue;
+                }
+                _pendingCarrierLandings.Add((carrier, lander));
             }
         }
     }
@@ -1460,9 +1527,10 @@ public sealed class Sector : IClusterIgc
     /// <summary>P116 — return this tick's carrier-landing detections (found by
     /// <see cref="ResolveCarrierLandings"/>: friendly same-side carrier/lander
     /// pairs where the lander is geometrically InGarage) and clear the
-    /// accumulation. Called by the host right after <c>Mission.Update</c>. The
-    /// host logs each detection; the resupply/relaunch side-effect is out of
-    /// scope for this slice (a later task).</summary>
+    /// accumulation. P754b: production no longer drains this — the landing (and
+    /// its resupply/relaunch/RELAUNCH_SHIP, FedSrv.CPP:12814-13031) is performed
+    /// inside the site callback, so only a mission-less sector accumulates here;
+    /// the mission-less detection fixtures drain it directly.</summary>
     public IReadOnlyList<(Ship Carrier, Ship Lander)> DrainCarrierLandings()
     {
         var taken = _pendingCarrierLandings.ToArray();
@@ -1525,7 +1593,7 @@ public sealed class Sector : IClusterIgc
     /// use. A dead or docked ship is excluded (a docked ship is not in the
     /// flight sim), mirroring the rescue pass's latches.</para>
     /// </remarks>
-    private void ResolveTreasurePickups(float dt)
+    private void ResolveTreasurePickups(double timeUpdate, float dt)
     {
         if (_models.Count < 2) return;                 // nothing to pair
         var treasures = new List<Treasure>();
@@ -1551,23 +1619,13 @@ public sealed class Sector : IClusterIgc
                 // P145 — the shared cash/part gate: a rescue-capable ship
                 // overlaps EITHER a c_tcCash treasure (credit the side) or a
                 // c_tcPart treasure (buffer an offer + ACQUIRE_TREASURE).
-                // P201 adds c_tcFlag: a ship can pick up an enemy side's flag
-                // and carry it home (set Ship.Flag + GAIN_FLAG broadcast) —
-                // with the native refusal gates (HitTreasureEvent,
-                // FedSrv.CPP:13562-13568): a ship that already carries a flag
-                // (GetFlag() != NA) can't pick up another, and a ship can't
-                // pick up its own side's flag (oid == ship.GetSide()->
-                // GetObjectID()). A refused pickup is simply not queued, so
-                // the treasure stays (native returns false → no destroy).
+                // P201 adds c_tcFlag, P412 c_tcPowerup. The flag-specific
+                // refusal rules (already carrying a flag; own side's flag) are
+                // NOT decided here: they are the native site rule inside
+                // HitTreasureEvent (FedSrv.CPP:13562-13568), enforced by
+                // ServerHost.HitTreasureEvent below (P754b); a refused pickup
+                // returns false, is not queued, and the treasure stays.
                 if (tr.Code is not (TreasureCode.Cash or TreasureCode.Part or TreasureCode.Flag or TreasureCode.Powerup)) continue;
-                if (tr.Code == TreasureCode.Flag)
-                {
-                    // The flag's side is carried in the treasure's TreasureId
-                    // (native: oid = treasure->GetTreasureID() IS the original
-                    // side whose flag this is, shipIGC.h:1349).
-                    if (ship.Flag is not null) continue;                                  // already carrying a flag (native GetFlag()!=NA gate)
-                    if (ship.SideId == tr.Data.TreasureId) continue;                      // own side's flag (native oid==GetSide()->GetObjectID() gate)
-                }
 
                 float threshold = Treasure.PickupRadius + shipR;
                 // Native uses the average trajectory velocity for the collision sweep
@@ -1580,8 +1638,15 @@ public sealed class Sector : IClusterIgc
                 float fraction = length2 == 0 ? 0 : Math.Clamp(-(start * travel) / length2, 0, 1);
                 if ((start + travel * fraction).LengthSquared() > threshold * threshold) continue;
 
-                _pendingTreasurePickups.Add((ship, tr));
-                done.Add(tr);
+                // The accept/refuse decision is the SITE's (native
+                // FedSrvSiteBase::HitTreasureEvent, FedSrv.CPP:13558-13650): a
+                // refused pickup returns false, nothing is queued and the treasure
+                // stays (P754b moved the native flag gates into that callback).
+                if (Mission?.Site.HitTreasureEvent(timeUpdate, ship, tr) ?? true)
+                {
+                    _pendingTreasurePickups.Add((ship, tr));
+                    done.Add(tr);
+                }
             }
         }
     }
@@ -1637,10 +1702,12 @@ public sealed class Sector : IClusterIgc
         return taken;
     }
 
-    /// <summary>Native ContinueRipcord, FedSrv/FedSrv.CPP:13379-13437.
+    /// <summary>Native ContinueRipcord's anchor resolution, FedSrv/FedSrv.CPP:13379-13437.
     /// The anchor is resolved by identity every tick: a flying carrier may warp
-    /// during the countdown, while a flag, lost alliance, docking, destruction,
-    /// or loss of the required hull capability invalidates it.</summary>
+    /// during the countdown. The <b>legality</b> decision itself is the site's
+    /// <see cref="IIgcSite.ContinueRipcord"/> (P754b moved it out of the sector;
+    /// see <see cref="RipcordRules.AnchorStillLegal"/>), so this helper only
+    /// looks the anchor object up and refreshes its cluster id.</summary>
     private static IModelIgc? ResolveRipcordAnchor(Ship ship, Ship.RipcordTarget anchor)
     {
         foreach (var cluster in ship.Mission!.Sectors)
@@ -1661,49 +1728,6 @@ public sealed class Sector : IClusterIgc
             return model;
         }
         return null;
-    }
-
-    private static bool RipcordAnchorStillLegal(Ship ship, Ship.RipcordTarget anchor)
-    {
-        var mission = ship.Mission;
-        if (mission is null || ship.Flag is not null) return false;
-        bool Friendly(short? side) => side is not null && (side == ship.SideId ||
-            mission.AllowAlliedRip && ship.IsFriendlySide(side));
-        foreach (var cluster in mission.Sectors)
-        {
-            if (anchor.Ot == (short)IgcObjectType.Station)
-            {
-                foreach (var station in cluster.Stations)
-                    if (station.StationId == anchor.Oid && Friendly(station.SideId))
-                    {
-                        ship.SetRipcordModel(anchor with { ClusterId = cluster.Id });
-                        return true;
-                    }
-            }
-            else if (anchor.Ot == (short)IgcObjectType.Ship)
-            {
-                var target = cluster.Models.OfType<Ship>().FirstOrDefault(s => s.Id == anchor.Oid);
-                if (target is null || target.Dead || target.StationId is not null ||
-                    target.Sector != cluster || !Friendly(target.SideId)) continue;
-                short mask = ship.HullType.HasCapability(DataHullTypeIGC.HabmCanLtRipcord)
-                    ? (short)(DataHullTypeIGC.HabmIsRipcordTarget | DataHullTypeIGC.HabmIsLtRipcordTarget)
-                    : DataHullTypeIGC.HabmIsRipcordTarget;
-                if (!target.HullType.HasCapability(mask)) return false;
-                ship.SetRipcordModel(anchor with { ClusterId = cluster.Id });
-                return true;
-            }
-            else if (anchor.Ot == (short)IgcObjectType.Probe)
-            {
-                var target = cluster.Models.OfType<Probe>().FirstOrDefault(p => p.Id == anchor.Oid);
-                if (target is null || !Friendly(target.SideId)) continue;
-                // ContinueRipcord checks presence/side for non-ships. The full
-                // activation/expiry horizon belongs to FindRipcordModel, not
-                // every subsequent tick (FedSrv.CPP:13420-13421).
-                ship.SetRipcordModel(anchor with { ClusterId = cluster.Id });
-                return true;
-            }
-        }
-        return false;
     }
 
     /// <summary>
@@ -2051,7 +2075,7 @@ public sealed class Sector : IClusterIgc
                 if (ord is Missile warpBombMissile && warpBombMissile.MissileType.HasWarpBombCapability)
                 {
                     spent.Add(ord);
-                    _models.Remove(warpBombMissile);                       // HandleCollision → Terminate
+                    Terminate(warpBombMissile);                            // HandleCollision → Terminate (P754b: notifies the site)
                     if (warpBombMissile.Launcher is Ship wbLauncher)
                         wbLauncher.Mission?.Site.MissileDestroyedEvent(warpBombMissile);
                     continue;
@@ -2084,7 +2108,7 @@ public sealed class Sector : IClusterIgc
                     attacker.Mission?.Site.VictimDamagedEvent(attacker.Id, ship.Id, ord.Power * gaMul);
 
                 spent.Add(ord);
-                _models.Remove((Model)ord);            // HandleCollision → Terminate (projectileIGC.cpp:230)
+                Terminate((Model)ord);                 // HandleCollision → Terminate (projectileIGC.cpp:230; P754b notifies the site)
 
                 // Blast-on-impact (P97): an area-effect round (BlastPower ≠ 0)
                 // additionally creates a REAL explosion at the impact position,
@@ -2112,7 +2136,7 @@ public sealed class Sector : IClusterIgc
                 MaybeRaiseProjectileHit(ord, position1, position2, Id,
                     0.5f * ship.HullType.Length, ship.Id, shipDr);
 
-                if (ship.Dead) _models.Remove(ship);   // killed: leaves the sector (README death contract)
+                if (ship.Dead) Terminate(ship);        // killed: leaves the sector (README death contract; P754b notifies the site)
             }
             else if (probe is not null)
             {
@@ -2145,7 +2169,7 @@ public sealed class Sector : IClusterIgc
                     ord.Launcher);
 
                 spent.Add(ord);
-                _models.Remove((Model)ord);            // HandleCollision → Terminate (projectileIGC.cpp:230)
+                Terminate((Model)ord);                 // HandleCollision → Terminate (projectileIGC.cpp:230; P754b notifies the site)
 
                 // Blast-on-impact (P97) fires UNCONDITIONALLY per the native's
                 // own comment ("Area effect weapon: create an explosion (no
@@ -2173,7 +2197,7 @@ public sealed class Sector : IClusterIgc
                 MaybeRaiseProjectileHit(ord, position1, position2, Id,
                     probe.ProbeType.Radius, probe.Id, probeDr);
 
-                if (probe.Dead) _models.Remove(probe); // destroyed: leaves the sector, identical to the ship's death bookkeeping
+                if (probe.Dead) Terminate(probe);      // destroyed: leaves the sector, identical to the ship's death bookkeeping (P754b notifies the site)
             }
             else if (station is not null)
             {
@@ -2240,7 +2264,7 @@ public sealed class Sector : IClusterIgc
                 }
 
                 spent.Add(ord);
-                _models.Remove((Model)ord);            // HandleCollision → Terminate (projectileIGC.cpp:230)
+                Terminate((Model)ord);                 // HandleCollision → Terminate (projectileIGC.cpp:230; P754b notifies the site)
 
                 // Blast-on-impact (P97) fires UNCONDITIONALLY per the native's
                 // own comment ("Area effect weapon: create an explosion (no
@@ -2325,7 +2349,7 @@ public sealed class Sector : IClusterIgc
                     ord.Launcher);
 
                 spent.Add(ord);
-                _models.Remove((Model)ord);            // HandleCollision → Terminate (projectileIGC.cpp:230)
+                Terminate((Model)ord);                 // HandleCollision → Terminate (projectileIGC.cpp:230; P754b notifies the site)
 
                 // Blast-on-impact (P97) fires UNCONDITIONALLY per the native's
                 // own comment ("Area effect weapon: create an explosion (no
@@ -2639,7 +2663,7 @@ public sealed class Sector : IClusterIgc
         // pass does for its own kills.
         if (dr1 == DamageResult.Killed || dr2 == DamageResult.Killed)
         {
-            if (dr1 == DamageResult.Killed) _models.Remove(ship);
+            if (dr1 == DamageResult.Killed) Terminate(ship);
             if (dr2 == DamageResult.Killed) RemoveAsteroid(ast);
             return;
         }
@@ -2732,10 +2756,9 @@ public sealed class Sector : IClusterIgc
     /// <para><b>Carrier-landing exclusion.</b> Native's third friendly special
     /// case (<c>shipIGC.cpp:1046-1059</c>, <c>LandOnCarrierEvent</c>/<c>InGarage</c>)
     /// is a ship-vs-ship carrier-landing mechanism. This port's carrier handling
-    /// (<c>ResolveCarrierLandings</c>, P116) is detection-only and does not build a
-    /// physical carrier landing, so there is no collision-excludable carrier
-    /// landing to exclude here — a pre-existing separate gap, noted but not built
-    /// (out of scope).</para>
+    /// (<c>ResolveCarrierLandings</c>, P116) is a separate resolution pass, so
+    /// this physics pass has no carrier-landing pair to exclude — a pre-existing
+    /// separate gap, noted but not built (out of scope).</para>
     /// <para><b>Client-side effects.</b> Sound/FF/jiggle (<c>shipIGC.cpp:1189-1195</c>)
     /// are out of scope (a separate task, the same exclusion P254 established);
     /// the position/velocity corrections ride real server updates to the client.</para>
@@ -2905,8 +2928,8 @@ public sealed class Sector : IClusterIgc
         // bookkeeping instead.
         if (dr1 == DamageResult.Killed || dr2 == DamageResult.Killed)
         {
-            if (dr1 == DamageResult.Killed) _models.Remove(ship1);
-            if (dr2 == DamageResult.Killed) _models.Remove(ship2);
+            if (dr1 == DamageResult.Killed) Terminate(ship1);
+            if (dr2 == DamageResult.Killed) Terminate(ship2);
             return;
         }
 
@@ -3129,7 +3152,7 @@ public sealed class Sector : IClusterIgc
         // docked ships exactly as a weapon kill does.
         if (dr1 == DamageResult.Killed || dr2 == DamageResult.Killed)
         {
-            if (dr1 == DamageResult.Killed) _models.Remove(ship);
+            if (dr1 == DamageResult.Killed) Terminate(ship);
             if (dr2 == DamageResult.Killed)
             {
                 RemoveStation(station);
@@ -3880,7 +3903,7 @@ public sealed class Sector : IClusterIgc
                 // (2) consume the missile NOW (at trigger, not at timeExplosion) —
                 // the same terminate-on-impact contract every other missile path
                 // honors (native falls through to KillMissileEvent, missileigc.cpp:512).
-                _models.Remove(missile);
+                Terminate(missile);
 
                 // (3)+(4) raise the site events. Route through the launcher's
                 // mission site, exactly like the destroy path (Sector.cs:459-460);

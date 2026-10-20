@@ -5,7 +5,7 @@ namespace Allegiance.Core.Sim;
 
 /// <summary>A live pickup following the native analytical drift and expiry rules
 /// (Igc/treasureIGC.cpp:18,95-116,193-197,215-277).</summary>
-public sealed class Treasure : Model
+public sealed class Treasure : Model, ITreasureIgc
 {
     /// <summary>Original trajectory, exported unchanged, with creation time in server milliseconds.
     /// Clients evaluate the same curve; native exports m_data (treasureIGC.cpp:268-277).</summary>
@@ -42,7 +42,7 @@ public sealed class Treasure : Model
     {
         if (now >= ExpireAt)
         {
-            OwnerSector.Remove(this);
+            OwnerSector.Terminate(this);       // P754b: real Terminate (CmodelIGC::Terminate, modelIGC.cpp:55-61)
             OwnerMission?.Site.TreasureDestroyedEvent(this);
             return;
         }

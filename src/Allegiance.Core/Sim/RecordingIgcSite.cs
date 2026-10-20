@@ -203,7 +203,7 @@ public sealed class RecordingIgcSite : IIgcSite
         Wrap(nameof(VictoryByStationsComputed), () => { }, mission, changed, winner);
     public bool LandOnCarrierEvent(IShipIgc shipCarrier, IShipIgc ship, float tCollision) =>
         Wrap(nameof(LandOnCarrierEvent), () => _default.LandOnCarrierEvent(shipCarrier, ship, tCollision), shipCarrier, ship, tCollision);
-    public bool RescueShipEvent(IShipIgc shipRescued, IShipIgc shipRescuer) =>
+    public bool RescueShipEvent(IShipIgc shipRescued, IShipIgc? shipRescuer) =>
         Wrap(nameof(RescueShipEvent), () => _default.RescueShipEvent(shipRescued, shipRescuer), shipRescued, shipRescuer);
 
     // ── warps / treasures ─────────────────────────────────────────────────
@@ -225,7 +225,7 @@ public sealed class RecordingIgcSite : IIgcSite
         Wrap(nameof(UseRipcord), () => _default.UseRipcord(ship, pmodel), ship, pmodel);
 
     // ── combat firing ─────────────────────────────────────────────────────
-    public void FireMissile(IShipIgc pship, IMagazineIgc pmagazine, double timeFired, IModelIgc pTarget, float lockFraction) =>
+    public void FireMissile(IShipIgc pship, IMagazineIgc pmagazine, double timeFired, IModelIgc? pTarget, float lockFraction) =>
         Wrap(nameof(FireMissile), () => { }, pship, pmagazine, timeFired, pTarget, lockFraction);
     public void FireExpendable(IShipIgc pship, IDispenserIgc pdispenser, double timeFired) =>
         Wrap(nameof(FireExpendable), () => { }, pship, pdispenser, timeFired);

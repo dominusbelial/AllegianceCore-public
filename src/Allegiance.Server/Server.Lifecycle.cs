@@ -781,6 +781,9 @@ public sealed partial class Server
         _host.BucketChanged += OnBucketChanged;
         _host.Mine = OnMine;                    // wire the site's MineAsteroidEvent to the host logger
         _host.ShipDocked = OnShipDocked;        // wire the site's DockWithStationEvent to the per-peer docked notify
+        _host.CarrierLanding = (carrier, lander, _) => PerformRelaunch(lander, carrier);   // P754b: LandOnCarrierEvent performs the native relaunch body itself (FedSrv.CPP:12814-13031)
+        _host.RipcordUsed = (ship, _) => PerformRipcordTeleport(ship);                   // P754b: UseRipcord performs the native teleport body itself (FedSrv.CPP:13440-13504)
+        _host.RescueDestination = rescuee => FindFriendlyStation(rescuee) is not null;    // P754b: RescueShipEvent's native return (`pstation ? ... : false`, FedSrv.CPP:13073-13075)
         _host.ProjectileCreated = BroadcastProjectileInstance;   // P88: wire the site's ProjectileCreatedEvent to the wire broadcast
         _host.MissileCreated = BroadcastFireMissile;            // P90: wire the site's MissileCreatedEvent to the wire broadcast
         _host.MissileDestroyed = BroadcastMissileDestroyed;     // P90: wire the site's MissileDestroyedEvent to the wire broadcast
@@ -1950,7 +1953,7 @@ public sealed partial class Server
         //    death contract uses, Sector.cs:1082/1499) so Mission.Update stops
         //    flying it. Nulling Sector mirrors native Terminate's
         //    GetCluster() → NULL.
-        sector.Remove(ship);
+        sector.Terminate(ship);                 // P754b: real termination (CmodelIGC::Terminate, modelIGC.cpp:55-61)
         ship.Sector = null;
     }
 

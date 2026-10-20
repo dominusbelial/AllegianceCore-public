@@ -463,7 +463,7 @@ public interface IIgcSite
     /// <summary>Permitted by default. C++ <c>igc.h:4859</c>.</summary>
     bool LandOnCarrierEvent(IShipIgc shipCarrier, IShipIgc ship, float tCollision) => true;
     /// <summary>Permitted by default. C++ <c>igc.h:4860</c>.</summary>
-    bool RescueShipEvent(IShipIgc shipRescued, IShipIgc shipRescuer) => true;
+    bool RescueShipEvent(IShipIgc shipRescued, IShipIgc? shipRescuer) => true;
 
     // ── warps / treasures ─────────────────────────────────────────────────
     // igc.h:4861-4866.
@@ -476,14 +476,24 @@ public interface IIgcSite
     // ── ripcord ───────────────────────────────────────────────────────────
     // igc.h:4865-4867.
     void RequestRipcord(IShipIgc ship, IClusterIgc pcluster) { }
-    /// <summary>Allowed by default. C++ <c>igc.h:4866</c>.</summary>
-    bool ContinueRipcord(IShipIgc ship, IModelIgc pmodel) => true;
+    /// <summary>
+    /// P754b — the real native rule, hoisted into the seam:
+    /// <c>FedSrvSiteBase::ContinueRipcord</c> (<c>FedSrv.CPP:13379-13437</c>) via
+    /// <see cref="RipcordRules.AnchorStillLegal"/>. Native's raw
+    /// <c>IIgcSite</c> default is <c>return true</c> (<c>igc.h:4866</c>); the port
+    /// expresses the server's override here so every domain — including the
+    /// bare-domain <see cref="NullIgcSite"/> fixtures — obeys the same rule, and
+    /// <c>ServerHost.ContinueRipcord</c> is the production binding of the same
+    /// helper. The sector consumes this boolean and nothing else (P754b removed
+    /// its own copy of the rule).
+    /// </summary>
+    bool ContinueRipcord(IShipIgc ship, IModelIgc pmodel) => RipcordRules.AnchorStillLegal(ship, pmodel);
     /// <summary>Denied by default. C++ <c>igc.h:4867</c>.</summary>
     bool UseRipcord(IShipIgc ship, IModelIgc pmodel) => false;
 
     // ── combat firing ─────────────────────────────────────────────────────
     // igc.h:4868-4871.
-    void FireMissile(IShipIgc pship, IMagazineIgc pmagazine, double timeFired, IModelIgc pTarget, float lockFraction) { }
+    void FireMissile(IShipIgc pship, IMagazineIgc pmagazine, double timeFired, IModelIgc? pTarget, float lockFraction) { }
     void FireExpendable(IShipIgc pship, IDispenserIgc pdispenser, double timeFired) { }
     // GetDroneFromShip (igc.h:4872) skipped — returns an internal Drone*, not
     // an IGC interface; see README.

@@ -2053,7 +2053,7 @@ public sealed partial class Server
     private static void FinalizeDeadShip(Ship ship)
     {
         ship.SetFraction(0f);                 // Dead == true (the port's death contract)
-        if (ship.Sector is { } sec) sec.Remove(ship);   // leave the sector's _models (native SetCluster(NULL))
+        if (ship.Sector is { } sec) sec.Terminate(ship);   // leave the sector's _models (native SetCluster(NULL)); P754b: Terminate, not a move
         ship.Sector = null;
     }
 

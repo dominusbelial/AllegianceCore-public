@@ -1023,7 +1023,7 @@ public sealed partial class Server
     private void BroadcastTreasureDestroyed(Treasure treasure)
     {
         var sector = treasure.OwnerSector;
-        sector.Remove(treasure);
+        sector.Terminate(treasure);            // P754b: KillTreasureEvent → ptreasure->Terminate() (FedSrv.CPP:12509)
         var msg = new DestroyTreasure { TreasureId = treasure.Id, SectorId = sector.Id };
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
         int n = 0;

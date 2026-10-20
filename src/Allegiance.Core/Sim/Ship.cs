@@ -4106,9 +4106,26 @@ public sealed partial class Ship : Model, IShipIgc
         float launchLock = (requestedLock is { } l && float.IsFinite(l)
             ? Math.Clamp(l, 0f, 1f) : MissileLock) * missileType.MaxLock;
         MissileLock = 0f; // magazineigc.cpp:115-118: reset before the fire callback
+        // P754 — invoke the IIgcSite.FireMissile seam (igc.h:4868;
+        // magazineigc.cpp:118). The port has no mountable magazine model, so
+        // the IMagazineIgc argument is a sentinel marker; the actual missile
+        // creation and wire broadcast follow immediately via FireMissile and
+        // MissileCreatedEvent.
+        mission.Site.FireMissile(this, MagazineSentinel.Instance, now, target,
+            missileType.MaxLock > 0f ? launchLock / missileType.MaxLock : 1f);
         FireMissile(missileType, now, target, launchLock, dud);
         SetPartAmount(launcher, (short)(launcher.Amount - 1));         // ammo decrement (FedSrv.CPP:5509-5510)
         return true;
+    }
+
+    /// <summary>P754 sentinel: the port has no mountable magazine model, but
+    /// the IIgcSite.FireMissile seam requires an IMagazineIgc argument. This
+    /// empty marker satisfies the contract without inventing a persisted
+    /// magazine entity.</summary>
+    private sealed class MagazineSentinel : IMagazineIgc
+    {
+        public static readonly MagazineSentinel Instance = new();
+        private MagazineSentinel() { }
     }
 
     /// <summary>

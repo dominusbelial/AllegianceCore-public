@@ -261,7 +261,7 @@ public sealed class Probe : Model, IProbeIgc
                 // expiry branch makes (Probe.cs:200-201) — remove from the
                 // sector and raise ProbeDestroyedEvent (the C++'s
                 // KillProbeEvent(this), probeigc.h:138).
-                _sector.Remove(this);
+                _sector.Terminate(this);        // P754b: real Terminate (modelIGC.cpp:55-61)
                 (_sector.Mission ?? (Launcher as Ship)?.Mission)?.Site.ProbeDestroyedEvent(this);
                 dr = DamageResult.Killed;                       // probeigc.h:139
             }
@@ -563,7 +563,7 @@ public sealed class Probe : Model, IProbeIgc
                 if (_ammo <= 0)
                 {
                     _ammo = 0;
-                    _sector.Remove(this);
+                    _sector.Terminate(this);    // P754b: real Terminate (modelIGC.cpp:55-61)
                     Mission?.Site.ProbeDestroyedEvent(this);
                 }
             }
@@ -688,7 +688,7 @@ public sealed class Probe : Model, IProbeIgc
         if (_terminated) return;
         if (now >= _timeExpire)
         {
-            _sector.Remove(this);
+            _sector.Terminate(this);                // P754b: real Terminate (modelIGC.cpp:55-61)
             Mission?.Site.ProbeDestroyedEvent(this);
         }
         else

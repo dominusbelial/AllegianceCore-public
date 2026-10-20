@@ -1218,6 +1218,133 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         return true;
     }
 
+    // ── P754b callback overrides — the native REAL rules ────────────────────
+    // P754 added these overrides as bare `Action` hooks nobody subscribed to
+    // that returned a constant. Native puts the real work and the real decision
+    // inside each site method, so each override below now routes the port's
+    // existing production logic (or the rule that logic enforces) and returns
+    // its result. Native citations are per member.
+
+    /// <summary>P754 — optional hook for <see cref="IIgcSite.TerminateModelEvent"/>
+    /// (<c>src/Igc/modelIGC.cpp:55-61</c>). Raised by <c>Sector.Terminate(model)</c>
+    /// (<c>src/Allegiance.Core/Model/Sector.cs</c>) — real termination only, so a
+    /// sector move raises nothing (P754b).
+    /// Native's server site does not override this (only <c>BaseClient</c> does,
+    /// <c>clintlib.cpp:2812</c>), so a host that ignores it is faithful.</summary>
+    public Action<Model>? ModelTerminated;
+    public void TerminateModelEvent(IModelIgc model)
+    {
+        if (model is Model m) ModelTerminated?.Invoke(m);
+    }
+
+    /// <summary>P754 — optional hook for <see cref="IIgcSite.TerminateMissionEvent"/>
+    /// (<c>src/Igc/missionigc.cpp:3082</c>). Raised as Server.Lobby rotates a
+    /// mission out after game over, before peers are migrated.</summary>
+    public Action<Mission>? MissionTerminated;
+    public void TerminateMissionEvent(IMissionIgc pMission)
+    {
+        if (pMission is Mission m) MissionTerminated?.Invoke(m);
+    }
+
+    /// <summary>
+    /// P754b — the production port of <c>FedSrvSiteBase::LandOnCarrierEvent</c>
+    /// (<c>FedSrv.CPP:12814-13031</c>). The native body IS the landing (refill the
+    /// lander's expendables, buy back the missing loadout parts, place it on a
+    /// launch slot and broadcast RELAUNCH_SHIP) and its only return is <c>true</c>
+    /// (<c>FedSrv.CPP:13029</c>). The owner wires <see cref="CarrierLanding"/> to
+    /// <c>Server.PerformRelaunch</c> — the port's implementation of that body — so
+    /// the landing is handled here, inside the callback, exactly as native handles
+    /// it; the sector then treats it as consumed and queues no second detection.
+    /// </summary>
+    public Action<Ship, Ship, float>? CarrierLanding;
+    public bool LandOnCarrierEvent(IShipIgc shipCarrier, IShipIgc ship, float tCollision)
+    {
+        if (shipCarrier is Ship carrier && ship is Ship lander)
+            CarrierLanding?.Invoke(carrier, lander, tCollision);
+        return true;                       // FedSrv.CPP:13029 — always handled
+    }
+
+    /// <summary>
+    /// P754b — the production port of <c>FedSrvSiteBase::RescueShipEvent</c>
+    /// (<c>FedSrv.CPP:13033-13076</c>). The native return value is
+    /// <c>pstation ? DockWithStationEvent(pshipRescued, pstation) : false</c>
+    /// (<c>FedSrv.CPP:13073-13075</c>): a rescue only succeeds when a friendly
+    /// restart station can be found. The owning Server supplies that exact search
+    /// through <see cref="RescueDestination"/> (its <c>FindFriendlyStation</c>, the
+    /// port of the <c>FindTarget(... c_sabmRestart)</c> call at
+    /// <c>FedSrv.CPP:13060-13064</c>), so the sector queues only rescues the
+    /// production rule allows and <c>Server.PerformRescue</c> performs them with
+    /// the same search. Unwired (a standalone host) keeps the native interface
+    /// default: accepted.
+    /// </summary>
+    public Func<Ship, bool>? RescueDestination;
+    public bool RescueShipEvent(IShipIgc shipRescued, IShipIgc? shipRescuer)
+        => shipRescued is not Ship rescuee || RescueDestination is null || RescueDestination(rescuee);
+
+    /// <summary>
+    /// P754b — the production port of the top of <c>FedSrvSiteBase::HitTreasureEvent</c>:
+    /// the flag refusal gates (<c>FedSrv.CPP:13562-13568</c>). A ship already
+    /// carrying a flag (<c>GetFlag() != NA</c>) may not take a second one, and a
+    /// side may not pick up its own flag (<c>oid == ship-&gt;GetSide()-&gt;GetObjectID()</c>).
+    /// False means refused: the sector does not queue the pickup and the treasure
+    /// stays (native returns false before any side effect — no GAIN_FLAG, no
+    /// destroy). Every accepted treasure is performed by
+    /// <c>Server.PerformTreasurePickup</c> from the sector drain (the port's split
+    /// of the remaining native body — cash/part/powerup/flag credit + wire — into
+    /// the host).
+    /// </summary>
+    public bool HitTreasureEvent(double now, IShipIgc ship, ITreasureIgc treasure)
+    {
+        if (ship is not Ship sh || treasure is not Treasure t) return true;
+        if (t.Code != TreasureCode.Flag) return true;
+        // The flag's side is carried in the treasure's TreasureId (native
+        // oid = treasure->GetTreasureID() IS the original side whose flag this
+        // is, shipIGC.h:1349).
+        if (sh.Flag is not null) return false;                       // FedSrv.CPP:13565
+        if (sh.SideId == t.Data.TreasureId) return false;            // FedSrv.CPP:13565
+        return true;
+    }
+
+    /// <summary>
+    /// P754b — the production port of <c>FedSrvSiteBase::ContinueRipcord</c>
+    /// (<c>FedSrv.CPP:13379-13437</c>): the flag/side/LtRipcord legality rule in
+    /// <see cref="RipcordRules.AnchorStillLegal"/>. False aborts the ripcord — the
+    /// sector clears the state and broadcasts RIPCORD_ABORTED, the native side
+    /// effects at <c>FedSrv.CPP:13425-13435</c>.
+    /// </summary>
+    public bool ContinueRipcord(IShipIgc ship, IModelIgc? pmodel)
+        => RipcordRules.AnchorStillLegal(ship, pmodel);
+
+    /// <summary>
+    /// P754b — the production port of <c>FedSrvSiteBase::UseRipcord</c>
+    /// (<c>FedSrv.CPP:13440-13504</c>): the teleport itself. Native always returns
+    /// <c>true</c> — the attempt is consumed, never retried when the anchor later
+    /// regains energy (<c>FedSrv.CPP:13451-13460</c>) — so this returns true and
+    /// the owner wires <see cref="RipcordUsed"/> to
+    /// <c>Server.PerformRipcordTeleport</c>, which IS the port of that body
+    /// (station Launch / ship energy cost + placement / cluster move / abort
+    /// broadcast). The sector clears the ripcord state on true, exactly as
+    /// <c>shipIGC.cpp:285-289</c> does.
+    /// </summary>
+    public Action<Ship, Model?>? RipcordUsed;
+    public bool UseRipcord(IShipIgc ship, IModelIgc? pmodel)
+    {
+        if (ship is not Ship sh) return true;
+        RipcordUsed?.Invoke(sh, pmodel as Model);
+        return true;                       // FedSrv.CPP:13504 — always consumed
+    }
+
+    /// <summary>P754 — optional hook for <see cref="IIgcSite.FireMissile"/>
+    /// (<c>src/Igc/igc.h:4868</c>; <c>src/Igc/magazineigc.cpp:118</c>). Raised
+    /// by Ship.TryFireMissile after lock reset and before missile creation.
+    /// The port has no mountable magazine model, so the IMagazineIgc argument
+    /// is a sentinel marker carried from the caller.</summary>
+    public Action<Ship, Model?, double, float>? MissileFired;
+    public void FireMissile(IShipIgc pship, IMagazineIgc pmagazine, double timeFired, IModelIgc? pTarget, float lockFraction)
+    {
+        if (pship is Ship ship) MissileFired?.Invoke(ship, pTarget as Model, timeFired, lockFraction);
+    }
+
     /// <summary>Uniform source for the small exit-offset jitter, matching the
     /// C++ <c>random(2.0f, 5.0f)</c> (<c>fsship.cpp:130-131</c>). Accessed only
     /// on the simulation thread, so no synchronization is needed.</summary>

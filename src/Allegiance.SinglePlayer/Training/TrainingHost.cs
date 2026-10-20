@@ -459,7 +459,7 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         if (_drones.TryGetValue(shipId, out var ship))
         {
             _drones.Remove(shipId);
-            ship.Sector?.Remove(ship);
+            ship.Sector?.Terminate(ship);          // P754b: destroyed drone = real termination
             ship.Sector = null;
         }
         _destroyed.Add(shipId);

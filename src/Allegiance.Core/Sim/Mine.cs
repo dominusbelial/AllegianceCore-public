@@ -271,7 +271,7 @@ public sealed class Mine : Model
     /// </summary>
     private void DestroyMine()
     {
-        _sector.Remove(this);
+        _sector.Terminate(this);                // P754b: real Terminate (modelIGC.cpp:55-61)
         if (Launcher is Ship launcherShip)
             launcherShip.Mission?.Site.MineDestroyedEvent(this);
     }

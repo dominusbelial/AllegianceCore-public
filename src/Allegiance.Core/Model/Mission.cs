@@ -23,7 +23,7 @@ using Allegiance.Core.Sim;
 /// destination is the sector containing its partner warp (or the sector named
 /// directly), matching <c>warpIGC.h:129-141</c> and the corpus validator.
 /// </remarks>
-public sealed partial class Mission
+public sealed partial class Mission : IMissionIgc
 {
     /// <summary>Enabled by the authoritative server; absent in client simulations.</summary>
     public SkillTelemetry? Skills { get; set; }

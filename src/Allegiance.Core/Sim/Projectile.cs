@@ -105,7 +105,7 @@ public sealed class Projectile : Model, IOrdnance
         if (LastUpdate >= _timeExpire)
         {
             _terminated = true;
-            _sector.Remove(this);
+            _sector.Terminate(this);            // P754b: real Terminate (CmodelIGC::Terminate, modelIGC.cpp:55-61)
             return;
         }
         if (now >= _timeExpire && ProjectileType.BlastPower != 0)

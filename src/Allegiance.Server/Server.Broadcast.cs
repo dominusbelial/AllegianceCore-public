@@ -188,13 +188,15 @@ public sealed partial class Server
                             SendRipcordSectorWide(ripSec,
                                 new RipcordAborted { ShipidRipcord = rip.Id }.Encode());
         });
-        // P113 — perform the ripcord teleports whose countdowns reached zero
-        // this tick (Sector.ResolveRipcordCountdowns). Server.PerformRipcordTeleport
-        // is the port of UseRipcord (FedSrv.CPP:13440-13500): it relocates the
-        // ripper (station/ship anchor), pays the energy cost, broadcasts
-        // RIPCORD_ABORTED on energy-insufficiency, and clears the ripcord state.
-        // Runs on the sim thread before the broadcast below so the position
-        // delta is picked up by the same tick's SINGLE_SHIP_UPDATE.
+        // P113/P754b — the ripcord teleports a DEFERRING site left for the drain.
+        // Server.PerformRipcordTeleport is the port of UseRipcord
+        // (FedSrv.CPP:13440-13500): it relocates the ripper (station/ship anchor),
+        // pays the energy cost, broadcasts RIPCORD_ABORTED on
+        // energy-insufficiency, and clears the ripcord state. The production host
+        // no longer defers: ServerHost.UseRipcord performs it inside the callback
+        // (wired to this same method in Server.Lifecycle), exactly as native runs
+        // it in CshipIGC::Update. This step remains the native false-at-zero
+        // retry path for a site that answers false (shipIGC.cpp:288-289).
         Step("ripcordTeleports", () =>
         {
             foreach (var m in _missions)
@@ -233,22 +235,12 @@ public sealed partial class Server
                         PerformStationRescue(rescuee, station);
         });
         Step("podTrips", () => _podTrips.Sample(now, _missions));
-        // P117 — perform the real relaunch this tick's carrier-landing pass
-        // found (Sector.ResolveCarrierLandings). Server.PerformRelaunch is the
-        // port of LandOnCarrierEvent (FedSrv.CPP:12808-13031): restore the
-        // lander's ship-level energy/ammo pools, reposition it at a real
-        // launch slot (or the fallback backward offset when the carrier has no
-        // launch frames), and broadcast RELAUNCH_SHIP(192) sector-wide. Runs
-        // on the sim thread before the broadcast below so the lander's new
-        // position/attitude is picked up by the same tick's
-        // SINGLE_SHIP_UPDATE.
-        Step("carrierRelaunches", () =>
-        {
-            foreach (var m in _missions)
-                foreach (var sector in m.Sectors)
-                    foreach (var (carrier, lander) in sector.DrainCarrierLandings())
-                        PerformRelaunch(lander, carrier);
-        });
+        // P754b — carrier relaunches are NOT drained any more: the landing is
+        // performed inside the site callback itself (ServerHost.LandOnCarrierEvent
+        // → Server.PerformRelaunch), which is exactly where native runs it
+        // (FedSrv.CPP:12814-13031, reached from the collision pass). The sector's
+        // DrainCarrierLandings queue now only feeds mission-less detection
+        // fixtures (P116).
         // P123 — perform the cash-treasure pickups this tick's proximity pass
         // found (Sector.ResolveTreasurePickups). Server.PerformTreasurePickup
         // is the port of the c_tcCash branch of HitTreasureEvent followed by

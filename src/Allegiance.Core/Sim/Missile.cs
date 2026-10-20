@@ -140,7 +140,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
             Fraction = maxHP > 0 ? MathF.Max(0, Fraction - amount / maxHP) : 0;
             if (Dead && previous > 0)
             {
-                _sector.Remove(this);
+                _sector.Terminate(this);        // P754b: real Terminate (modelIGC.cpp:55-61)
                 mission?.Site.MissileDestroyedEvent(this);
                 // FedSrv.CPP:12524-12529: killed missiles also explode, except
                 // the zero-position resonator sentinel. Remove first so the
@@ -184,7 +184,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         if (LastUpdate >= _timeExpire)
         {
             _terminated = true;
-            _sector.Remove(this);
+            _sector.Terminate(this);            // P754b: real Terminate (modelIGC.cpp:55-61)
             if (MissileType.BlastPower != 0)
                 _sector.ResolveExplosion(new Explosion(MissileType.DamageType,
                     MissileType.BlastPower * GaFactor(GlobalAttributeSet.DamageMissiles),

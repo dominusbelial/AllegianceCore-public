@@ -134,7 +134,7 @@ public sealed class Chaff : Model
         double dtLeft = _timeExpire - now;
         if (dtLeft <= 0.0)
         {
-            _sector.Remove(this);
+            _sector.Terminate(this);            // P754b: real Terminate (modelIGC.cpp:55-61)
             return;
         }
 

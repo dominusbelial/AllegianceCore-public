@@ -472,6 +472,11 @@ public sealed partial class Server
             return;
         }
 
+        // P754 — notify the site that the mission is terminating, while the
+        // mission object and its side/cluster state are still intact
+        // (src/Igc/missionigc.cpp:3082).
+        mission.Site.TerminateMissionEvent(mission);
+
         // Broadcast MISSION_STAGE(37) Over to the OLD mission's peers, so
         // already-connected clients get the stage native would give them
         // (SetStage always broadcasts MISSION_STAGE, fsmission.cpp:1750-1768).
