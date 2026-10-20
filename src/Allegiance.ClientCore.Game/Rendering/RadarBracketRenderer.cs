@@ -74,7 +74,21 @@ public sealed class RadarBracketRenderer
         Color? SideColour = null,
         bool IsSelectedTarget = false,
         bool IsInvestBuildSpot = false,
+        // HUD-5 overlay bracket flags (native radarimage.cpp:334-357).
+        bool IsEnemy = false,
         bool IsSelf = false,
+        bool AcceptedOrder = false,
+        bool QueuedOrder = false,
+        bool Threat = false,
+        bool ThreatFlash = false,
+        bool Subject = false,
+        bool CarriedFlag = false,
+        bool CarriedArtifact = false,
+        bool Ripcord = false,
+        bool Highlight = false,
+        bool NearestEnemy = false,
+        // HUD-4 — a treasure contact that resolves to the native tech icon
+        // (radarimage.cpp:506-511).
         bool IsTech = false);
 
     private readonly SpriteBatch _sb;
@@ -114,6 +128,20 @@ public sealed class RadarBracketRenderer
     // it cannot alias the target "lock". Public so the hue is unit-testable.
     public static readonly Color BuildSpotHighlightColour = new(1.00f, 0.665f, 0.075f);
 
+    // HUD-5 — overlay bracket palette. Native uses per-command artwork surfaces
+    // (radarimage.cpp:328-357); the port keeps procedural frames in the same
+    // positions, using distinct hues so the overlays never alias the base icons.
+    // Accepted/queued orders have no native bracket (radarimage.cpp:352 draws
+    // only target/enemy/me/subject/flag/artifact/rip/targeted/threat) — they are
+    // conveyed by the label plus the native brightness step instead.
+    public static readonly Color EnemyBracketColour = new(1.00f, 0.20f, 0.15f);
+    public static readonly Color SubjectBracketColour = new(0.95f, 0.98f, 1.00f);
+    public static readonly Color FlagMarkerColour = new(1.00f, 0.82f, 0.20f);
+    public static readonly Color ArtifactMarkerColour = new(0.86f, 0.44f, 0.97f);
+    public static readonly Color RipcordMarkerColour = new(0.30f, 0.90f, 0.98f);
+    public static readonly Color ThreatMarkerColour = new(1.00f, 0.10f, 0.05f);
+    public static readonly Color HighlightMarkerColour = new(1.00f, 1.00f, 1.00f);
+
     public RadarBracketRenderer(SpriteBatch spriteBatch, Texture2D whitePixel)
     {
         _sb = spriteBatch;
@@ -149,9 +177,10 @@ public sealed class RadarBracketRenderer
         Draw(model.Context.Contacts, viewport, model.Context.RadarPulse, colorBlindSafe);
     }
 
-    /// <summary>HUD-4b — draw every contact straight from the model's contact
-    /// list (mapping on the stack) instead of allocating a per-frame
-    /// <c>RadarContact[]</c> via LINQ <c>Select…ToArray</c>.</summary>
+    /// <summary>Draw every contact straight from the model's contact list,
+    /// mapping each struct on the stack — no per-frame <c>RadarContact[]</c>
+    /// copy (HUD-5b: the former LINQ <c>Select…ToArray</c> allocated once per
+    /// frame per contact at 107v107).</summary>
     public void Draw(IReadOnlyList<HudContact> contacts, Viewport viewport, float highlightPulse, bool colorBlindSafe)
     {
         if (contacts.Count == 0)
@@ -159,8 +188,9 @@ public sealed class RadarBracketRenderer
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
         {
-            foreach (var c in contacts)
+            for (int i = 0; i < contacts.Count; i++)
             {
+                var c = contacts[i];
                 Color? side = c.SideColor is { } color
                     ? (colorBlindSafe
                         ? HudPalette.Side(new Color(color.R, color.G, color.B, color.A))
@@ -168,7 +198,10 @@ public sealed class RadarBracketRenderer
                     : null;
                 DrawContact(new RadarContact((RadarContactType)c.Kind,
                     new(c.Position.X, c.Position.Y), c.OnScreen, c.Opacity, side,
-                    c.Selected, c.BuildSpot, c.IsSelf, c.IsTech), highlightPulse);
+                    c.Selected, c.BuildSpot,
+                    c.IsEnemy, c.IsSelf, c.AcceptedOrder, c.QueuedOrder, c.Threat, c.ThreatFlash,
+                    c.Subject, c.CarriedFlag, c.CarriedArtifact, c.Ripcord, c.Highlight, c.NearestEnemy,
+                    c.IsTech), highlightPulse);
             }
         }
         finally
@@ -229,7 +262,11 @@ public sealed class RadarBracketRenderer
     {
         var pt = new Vector2(c.ScreenPoint.X, c.ScreenPoint.Y);
         float a = Math.Clamp(c.Opacity, 0f, 1f);
-        var colour = ContactColour(c.Type, c.SideColour);
+        // Native threat flash overrides a side colour with red while the damage
+        // bucket's flash phase is lit (radarimage.cpp:682-684); neutral objects
+        // keep their neutral white.
+        var colour = c.ThreatFlash && c.SideColour is not null
+            ? Color.Red : ContactColour(c.Type, c.SideColour);
         switch (c.Type)
         {
             case RadarContactType.Ship:
@@ -283,6 +320,13 @@ public sealed class RadarBracketRenderer
         // distinct hollow square around the own ship's square icon.
         if (c.IsSelf)
             DrawHollowSquare(pt, 11f, colour, a);
+        // HUD-5 — native overlay brackets (radarimage.cpp:334-357), drawn over
+        // the base icon: nearest enemy, command subjects, carried flag/artifact,
+        // ripcord, threat last-fired and the flag-treasure highlight. Accepted
+        // and queued orders have no native bracket — they change the label and
+        // the bracket brightness only (radarimage.cpp:1094-1096), so they are
+        // deliberately absent here.
+        DrawOverlayBrackets(c, pt, a);
         // P436 — the player's own selected target: draw the bright highlight
         // AFTER the base icon so it dominates, whether the contact is on-screen
         // or edge-clamped off-screen (the edge case is the exact reported gap).
@@ -294,6 +338,72 @@ public sealed class RadarBracketRenderer
         if (c.IsInvestBuildSpot)
             DrawBuildSpotHighlight(pt, a, highlightPulse);
     }
+
+    /// <summary>HUD-5b — whether native draws any overlay bracket at all for
+    /// this contact. The bracket surfaces are exactly
+    /// enemy/me/subject/flag/artifact/rip/targeted/last-fired
+    /// (radarimage.cpp:352-357); an accepted or queued order is NOT one of them
+    /// (native conveys it through the command icon plus the label/bracket
+    /// brightness, radarimage.cpp:1094-1096), so the former green/amber corner
+    /// frames are gone. Pure and GPU-free so the rule is unit-testable.</summary>
+    public static bool HasOverlayBracket(in RadarContact c)
+        => c.NearestEnemy || c.Subject || c.CarriedFlag || c.CarriedArtifact
+           || c.Ripcord || c.Threat || c.Highlight;
+
+    private void DrawOverlayBrackets(RadarContact c, Vector2 pt, float a)
+    {
+        if (!HasOverlayBracket(c)) return;
+        // Native draws every bracket in colorOther, the brightness-dimmed side
+        // colour (radarimage.cpp:1094-1096): ×1.0 for the important masks,
+        // ×0.75 for a queued order, ×0.5 otherwise.
+        float brightness = RadarLabelModel.BracketBrightness(
+            importantMask: c.IsSelectedTarget || c.AcceptedOrder || c.Threat || c.ThreatFlash
+                || c.Highlight || c.CarriedFlag || c.CarriedArtifact,
+            queued: c.QueuedOrder);
+        float ba = Math.Max(a, .9f) * brightness;
+        if (c.NearestEnemy) DrawDiamond(pt, 15f, EnemyBracketColour, ba);
+        if (c.Subject) DrawOpenCorners(pt, 13f, 1.6f, SubjectBracketColour, ba);
+        if (c.CarriedFlag) DrawPennant(pt, 16f, FlagMarkerColour, ba);
+        if (c.CarriedArtifact) DrawPennant(pt, 16f, ArtifactMarkerColour, ba);
+        if (c.Ripcord) DrawRing(pt, 13f, 2f, RipcordMarkerColour, ba);
+        if (c.Threat) DrawThreatTicks(pt, ThreatMarkerColour, ba);
+        if (c.Highlight) DrawRing(pt, 17f, 1.6f, HighlightMarkerColour, ba);
+    }
+
+    private void DrawOpenCorners(Vector2 c, float half, float thickness, Color colour, float a)
+    {
+        var col = WithAlpha(colour, a);
+        float arm = half * 0.45f;
+        foreach (int sx in new[] { -1, 1 })
+            foreach (int sy in new[] { -1, 1 })
+            {
+                var corner = c + new Vector2(sx * half, sy * half);
+                DrawLine(corner, corner - new Vector2(sx * arm, 0), thickness, col);
+                DrawLine(corner, corner - new Vector2(0, sy * arm), thickness, col);
+            }
+    }
+
+    private void DrawPennant(Vector2 c, float radius, Color colour, float a)
+    {
+        var top = c + new Vector2(0f, -radius);
+        var right = c + new Vector2(radius * .8f, -radius * .2f);
+        var left = c + new Vector2(-radius * .8f, -radius * .2f);
+        DrawLine(top, right, 2.2f, colour);
+        DrawLine(right, left, 2.2f, colour);
+        DrawLine(left, top, 2.2f, colour);
+    }
+
+    private void DrawThreatTicks(Vector2 c, Color colour, float a)
+    {
+        var col = WithAlpha(colour, a);
+        for (int i = 0; i < 4; i++)
+        {
+            float angle = i * MathHelper.TwoPi / 4 + MathHelper.PiOver4;
+            var dir = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+            DrawLine(c + dir * 11f, c + dir * 16f, 2.4f, col);
+        }
+    }
+
 
     /// <summary>
     /// P495 — the distinct marker for a build-spot asteroid of the hovered

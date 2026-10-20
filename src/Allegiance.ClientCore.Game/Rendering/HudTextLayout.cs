@@ -43,5 +43,34 @@ public sealed class HudTextLayout
         // contract. Normal flight layouts reserve enough room even at 150%.
         throw new InvalidOperationException($"HUD has no free text zone for '{text}' at {_width}x{_height}");
     }
+
+    /// <summary>Place a pre-measured multi-line block (radar labels, which stack
+    /// name/range text and health bars). Unlike <see cref="Place"/> the block is
+    /// also reserved so later notices/text yield to it, and it is recorded so the
+    /// overlap check still sees it.</summary>
+    public Rectangle PlaceBlock(string text, Rectangle desired)
+    {
+        int width = Math.Min(_width - 8, Math.Max(1, desired.Width));
+        int height = Math.Min(_height - 8, Math.Max(1, desired.Height));
+        int x = Math.Clamp(desired.X, 4, Math.Max(4, _width - width - 4));
+        int y = Math.Clamp(desired.Y, 4, Math.Max(4, _height - height - 4));
+        var candidate = new Rectangle(x, y, width, height);
+        for (int column = 0; column < 7; column++)
+        {
+            int cx = Math.Clamp(x + ((column + 1) / 2) * (column % 2 == 0 ? -1 : 1) * (width + 8), 4, Math.Max(4, _width - width - 4));
+            for (int row = 0; row < _height / Math.Max(1, height + 4) * 2 + 2; row++)
+            {
+                int cy = y + ((row + 1) / 2) * (row % 2 == 0 ? -1 : 1) * (height + 4);
+                if (cy < 4 || cy + height > _height - 4) continue;
+                candidate = new(cx, cy, width, height);
+                if (_text.Any(t => Padded(t.Bounds).Intersects(candidate))) continue;
+                if (_reserved.Any(r => r.Intersects(candidate))) continue;
+                _text.Add(new(text, candidate));
+                _reserved.Add(candidate);
+                return candidate;
+            }
+        }
+        throw new InvalidOperationException($"HUD has no free block zone for '{text}' at {_width}x{_height}");
+    }
     private static Rectangle Padded(Rectangle r) { r.Inflate(2, 2); return r; }
 }

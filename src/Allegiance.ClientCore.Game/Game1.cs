@@ -288,10 +288,16 @@ public sealed partial class Game1 : Game
     private readonly List<DamageDebrisView> _drawDebrisViews = new();
     private readonly List<TrailParticleView> _drawEngineTrailViews = new();
     private readonly List<Rendering.ShipTrailStrip> _drawMotionTrailStrips = new();
-    private readonly List<RadarBracketRenderer.RadarContact> _drawRadarContacts = new();
-    // HUD-4b — reused scratch buffer for the per-frame radar-contact snapshot,
-    // so the HUD adapter fills this instead of allocating a fresh HudContact[].
-    private HudContact[] _drawRadarContactsBuffer = Array.Empty<HudContact>();
+    private readonly List<HudContact> _drawRadarContacts = new();
+    // HUD-5b — reused candidate buffer for the native nearest-enemy lookup
+    // (RadarLabelModel.NearestEnemy), filled only while bRangeLabels is on.
+    private readonly List<RadarLabelModel.NearestEnemyCandidate> _nearestEnemyScratch = new();
+    // HUD-5b — opt-in real-client evidence: ALLEGIANCE_RADAR_PROOF=1 makes the
+    // client log the radar snapshot held on the frame each autoshot captures
+    // (which contacts, which of them enemies, their range labels and the
+    // nearest-enemy bracket), so a screenshot can be tied to real radar state.
+    private readonly bool _radarProofEnabled = Environment.GetEnvironmentVariable("ALLEGIANCE_RADAR_PROOF") == "1";
+    private string? _radarProofLine;
     // P372 — the per-ship in-world side-colour "team tags" (hull-attached side
     // indicator for the 3D view), gathered in the same DrawRadar pass as the
     // brackets and rendered by ShipSideTagRenderer.

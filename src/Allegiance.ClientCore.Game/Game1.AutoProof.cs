@@ -644,6 +644,10 @@ public sealed partial class Game1
         return sb.Length == 0 ? "sector" : sb.ToString();
     }
 
+    /// <summary>HUD-5b — the radar snapshot summary for evidence logging
+    /// (null unless ALLEGIANCE_RADAR_PROOF=1).</summary>
+    private string? RadarProofLine() => _radarProofEnabled ? _radarProofLine : null;
+
     /// <summary>Write the queued autoshot. Called from the Draw-end hook where
     /// the real backbuffer holds the completed frame. Writes a VALID PNG via
     /// SaveAsPng (not the P566-bad-CRC encoder) so the file opens in a normal
@@ -668,6 +672,8 @@ public sealed partial class Game1
             using var fs = System.IO.File.Create(path);
             tex.SaveAsPng(fs, w, h);
             Console.WriteLine($"[autoproof] screenshot saved: {path}");
+            if (RadarProofLine() is { } radarProof)
+                Console.WriteLine($"[autoproof] radar on that frame: {radarProof}");
         }
         catch (Exception ex)
         {

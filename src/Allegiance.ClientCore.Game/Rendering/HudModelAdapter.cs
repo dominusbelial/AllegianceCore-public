@@ -15,11 +15,11 @@ public static class HudModelAdapter
         string? ripcord = null, string? commandee = null, bool turret = false,
         string? diagnostics = null, bool hidden = false, bool docked = false,
         bool dead = false, bool commandView = false, IReadOnlyList<HudNotice>? notices = null,
-        IReadOnlyList<RadarBracketRenderer.RadarContact>? contacts = null, HudContact[]? contactsBuffer = null, float radarPulse = 0f,
         RadarMode radarMode = RadarMode.Default, HudChat? chat = null,
         string? cargoLine = null, string? flightPartsLine = null,
         IReadOnlyList<string>? commandLines = null, bool inventoryVisible = false,
         IReadOnlyList<LastBaseHudView>? lastBaseObjectives = null, bool hitConfirmation = false, string? podReturnInstruction = null,
+        IReadOnlyList<HudContact>? contacts = null, float radarPulse = 0f,
         HudTargetPane? targetPane = null, bool roundRadar = false)
         => HudModel.Create(frame, new HudContext
         {
@@ -37,29 +37,8 @@ public static class HudModelAdapter
             RadarPulse = radarPulse, RadarMode = radarMode, Chat = chat,
             CargoLine = cargoLine, FlightPartsLine = flightPartsLine,
             CommandLines = commandLines ?? Array.Empty<string>(), InventoryVisible = inventoryVisible,
-            Contacts = BuildContacts(contacts, contactsBuffer)
+            Contacts = contacts ?? Array.Empty<HudContact>()
         });
 
     private static HudPoint Point(Vector2 v) => new(v.X, v.Y);
-
-    /// <summary>HUD-4b — fill a caller-reused <see cref="HudContact"/> buffer
-    /// from the radar contact list instead of a per-frame LINQ
-    /// <c>Select…ToArray</c>. When no buffer is supplied the old one-shot path
-    /// still applies (menu/spectate callers pass no contacts).</summary>
-    private static IReadOnlyList<HudContact> BuildContacts(
-        IReadOnlyList<RadarBracketRenderer.RadarContact>? contacts, HudContact[]? buffer)
-    {
-        if (contacts is not { Count: > 0 }) return Array.Empty<HudContact>();
-        if (buffer is null || buffer.Length < contacts.Count)
-            buffer = new HudContact[contacts.Count];
-        for (int i = 0; i < contacts.Count; i++)
-        {
-            var c = contacts[i];
-            buffer[i] = new HudContact((HudContactKind)c.Type,
-                new(c.ScreenPoint.X, c.ScreenPoint.Y), c.OnScreen, c.Opacity,
-                c.SideColour is { } color ? new HudColor(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f) : null,
-                c.IsSelectedTarget, c.IsInvestBuildSpot, c.IsSelf, c.IsTech);
-        }
-        return new ArraySegment<HudContact>(buffer, 0, contacts.Count);
-    }
 }

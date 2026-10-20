@@ -113,9 +113,23 @@ sealed class Proof : Game
                 _ => RadarLod.ShowTreasure(mode, useful: true, separation, isSel),
             };
             if (!shown) continue;
-            contacts.Add(new(kind, new(w * .2f + i * 70, h * .48f), i % 3 != 0, .9f,
-                kind is HudContactKind.Treasure or HudContactKind.Tech ? null : new HudColor(.1f, .8f, .9f),
-                isSel, i == 3, isSelf, kind == HudContactKind.Tech));
+            var position = new HudPoint(w * .2f + i * 70, h * .48f);
+            // HUD-5 — a small number of labelled/overlaid contacts exercise the
+            // radar overlay + label block in the overlap sweep without crowding.
+            if (i == 0)
+                contacts.Add(new(kind, position, i % 3 != 0, .9f, new(.1f, .8f, .9f), true, false,
+                    "Enemy fighter with a long pilot name", 1250, .3f, .6f, null, true, false, false,
+                    AcceptedOrder: true, CommandId: 2, CommandAccepted: true, NearestEnemy: true));
+            else if (i == 1 && kind == HudContactKind.Station)
+                contacts.Add(new(kind, position, i % 3 != 0, .9f, new(.9f, .7f, .3f), false, false,
+                    "Garrison", 800, .5f, .8f, null, false, false, true));
+            else if (i == 2 && kind == HudContactKind.Warp)
+                contacts.Add(new(kind, position, i % 3 != 0, .9f, null, false, false,
+                    "A-4 Aleph", 600));
+            else
+                contacts.Add(new(kind, position, i % 3 != 0, .9f,
+                    kind is HudContactKind.Treasure or HudContactKind.Tech ? null : new HudColor(.1f, .8f, .9f),
+                    isSel, i == 3, IsSelf: isSelf, IsTech: kind == HudContactKind.Tech));
         }
         return HudModel.Create(frame, new HudContext
         {

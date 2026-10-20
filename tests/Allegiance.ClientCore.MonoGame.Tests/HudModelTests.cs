@@ -173,6 +173,26 @@ public class HudModelTests
         Assert.False(hidden.Elements.Single(e => e.Id == "Chat composition and recipient").Visible);
     }
 
+    [Fact]
+    public void Radar_overlay_and_label_rows_follow_contact_data_and_are_snapshotted()
+    {
+        var contacts = new List<HudContact>
+        {
+            new(HudContactKind.Ship, new(100, 100), true, 1f, null, true, false,
+                "Scout", 700, .5f, .6f, null, false, false, true,
+                AcceptedOrder: true, CommandId: 2, CommandAccepted: true, NearestEnemy: true),
+        };
+        var model = HudModel.Create(Frame, new HudContext { Contacts = contacts, RadarMode = RadarMode.All });
+        Assert.True(model.Elements.Single(e => e.Id == "Radar name labels").Visible);
+        Assert.True(model.Elements.Single(e => e.Id == "Radar range labels").Visible);
+        Assert.True(model.Elements.Single(e => e.Id == "Radar hull and shield bars").Visible);
+        Assert.True(model.Elements.Single(e => e.Id == "Radar accepted order brackets").Visible);
+        Assert.True(model.Elements.Single(e => e.Id == "Radar nearest enemy bracket").Visible);
+        Assert.Equal(1f, model.Elements.Single(e => e.Id == "Radar name labels").Value);
+        contacts.Clear();
+        Assert.Single(model.Context.Contacts);
+    }
+
     [Theory]
     [InlineData(CameraMode.Cockpit, true)]
     [InlineData(CameraMode.Chase, true)]

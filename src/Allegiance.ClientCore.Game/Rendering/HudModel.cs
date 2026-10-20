@@ -39,9 +39,26 @@ public readonly record struct HudTargetPane(
     bool IsShip);
 public readonly record struct HudNotice(string Text, bool Critical, float Opacity);
 public enum HudContactKind { Ship, Station, Warp, Asteroid, Missile, Probe, Mine, Treasure, Tech }
-public readonly record struct HudContact(HudContactKind Kind, HudPoint Position,
+/// <summary>One radar contact plus its overlay/label payload. The radar
+/// snapshot fills the raw readings native <c>radarimage.cpp:590-1120</c> uses;
+/// <see cref="RadarLabelModel"/> then applies the per-kind LOD/visibility rules
+/// before any renderer draws a bracket or label.</summary>
+public readonly record struct HudContact(
+    HudContactKind Kind, HudPoint Position,
     bool OnScreen, float Opacity, HudColor? SideColor, bool Selected, bool BuildSpot,
-    bool IsSelf = false, bool IsTech = false);
+    // HUD-5 radar overlays and labels (radarimage.cpp:334-357,590-1120,1199-1416).
+    string? Name = null, int? Range = null,
+    float? Shield = null, float? Hull = null, float? Fill = null,
+    bool IsEnemy = false, bool IsSelf = false, bool IsSameSide = false,
+    bool AcceptedOrder = false, bool QueuedOrder = false,
+    bool Threat = false, bool ThreatFlash = false,
+    bool Subject = false, bool CarriedFlag = false, bool CarriedArtifact = false,
+    bool Ripcord = false, bool Highlight = false, bool NearestEnemy = false,
+    int? CommandId = null, bool CommandAccepted = false,
+    int? RipcordSeconds = null, bool DetectionEye = false,
+    // HUD-4 treasure contact that resolves to the native tech icon
+    // (radarimage.cpp:506-511).
+    bool IsTech = false);
 public sealed record HudChat(IReadOnlyList<string> Lines, int Offset, string Input,
     bool Composing, double NowSeconds, string Recipient);
 

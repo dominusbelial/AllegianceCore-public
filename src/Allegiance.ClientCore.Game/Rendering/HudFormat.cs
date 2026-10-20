@@ -9,6 +9,33 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// </summary>
 public static class HudFormat
 {
+    /// <summary>Replace any character outside printable ASCII (and newline) with
+    /// '?'. HUD-5b — returns the SAME instance when the text is already clean
+    /// (every ship name, range and label is), so the per-frame label path does
+    /// not allocate a copy per string the way <c>new string(text.Select(...))</c>
+    /// did at 107v107.</summary>
+    public static string Printable(string text)
+    {
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (c is >= ' ' and <= '~' or '\n') continue;
+            return Sanitize(text);
+        }
+        return text;
+    }
+
+    private static string Sanitize(string text)
+    {
+        var chars = new char[text.Length];
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            chars[i] = c is >= ' ' and <= '~' or '\n' ? c : '?';
+        }
+        return new string(chars);
+    }
+
     /// <summary>Clamp a 0..1 fraction into [0,1] (defensive against a stray
     /// wire value; <c>ServerShipUpdate</c>'s percent decode already clamps, but
     /// the colour ramp must never extrapolate outside the intended range).</summary>

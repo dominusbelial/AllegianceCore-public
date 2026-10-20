@@ -179,6 +179,10 @@ public class HudRenderer
             if (model.IndicatorsVisible && context.TargetBearing is { } tb)
                 DrawTargetBearingArrow(new(tb.X, tb.Y), viewport);
 
+            // HUD-5 — radar overlays/labels (native radarimage.cpp:1199-1416);
+            // drawn after the target markers so labels yield to those boxes.
+            DrawRadarLabels(model, viewport);
+
             if (lastBaseObjectives is { } objectives)
                 for (int i = 0; i < objectives.Count; i++)
                 {
@@ -330,6 +334,9 @@ public class HudRenderer
     }
 
     public HudTextLayout Layout { get; } = new();
+    // HUD-5b — per-contact cache for the resolved radar labels and their
+    // formatted lines (no per-frame string/array allocation at 107v107).
+    private readonly RadarLabelCache _radarLabels = new();
     protected virtual float TextScale => 1;
     protected virtual void ElementDrawn(params string[] ids) { }
     protected virtual bool UsesModernGauges => false;
@@ -360,11 +367,135 @@ public class HudRenderer
     public Rectangle DrawOverlayText(string text, Vector2 position, Color color) => DrawMeasuredText(_small, text, position, color);
     protected void DrawText(SpriteFont font, string text, Vector2 position, Color color)
         => DrawMeasuredText(font, text, position, color);
-    public Rectangle DrawMeasuredText(SpriteFont font, string text, Vector2 position, Color color, bool instrument = false, bool centerAtScale = true, float? maxWidth = null)
+
+    /// <summary>
+    /// HUD-5 — radar name/range/stat labels stacked beside each projected or
+    /// edge-clamped contact (native radarimage.cpp:1199-1416). The shared model
+    /// already applied the per-kind LOD and important-mask visibility; this only
+    /// draws the resolved block and records its measured bounds for the overlap
+    /// check. Text routes through <see cref="RenderText"/> so Modern uses its SDF
+    /// atlas while Classic keeps the bitmap font.
+    /// </summary>
+    protected virtual void DrawRadarLabels(HudModel model, Viewport viewport)
+    {
+        if (!model.FlightVisible) return;
+        float scale = TextScale;
+        var centre = new Vector2(viewport.Width / 2f, viewport.Height / 2f);
+        var contacts = model.Context.Contacts;
+        for (int i = 0; i < contacts.Count; i++)
+        {
+            var contact = contacts[i];
+            // Overlay-bracket rows are drawn by the shared RadarBracketRenderer;
+            // record them here so Modern's coverage check sees the model-driven
+            // brackets as well as the label block below.
+            MarkRadarBrackets(contact);
+            // HUD-5b — the label block (and every string in it) is cached per
+            // contact slot and rebuilt only when the label inputs change.
+            var view = _radarLabels.Resolve(i, contact, model.Context.RadarMode, model.Context.CommandView);
+            if (view.Label is not { } label) continue;
+            DrawRadarLabelBlock(contact, label, view, centre, scale);
+        }
+    }
+
+    private void MarkRadarBrackets(HudContact contact)
+    {
+        // Accepted/queued orders are NOT brackets in native (radarimage.cpp:352,
+        // 1094-1096): they are a command icon plus a brighter label, recorded via
+        // view.Drawn in DrawRadarLabelBlock. Only the native bracket surfaces are
+        // marked here, so the coverage report cannot claim a bracket that is not
+        // drawn.
+        if (contact.NearestEnemy) ElementDrawn("Radar nearest enemy bracket");
+        if (contact.Threat || contact.ThreatFlash) ElementDrawn("Radar threat damage flash");
+        if (contact.Subject) ElementDrawn("Radar command subjects");
+        if (contact.CarriedFlag) ElementDrawn("Radar carried flag marker");
+        if (contact.CarriedArtifact) ElementDrawn("Radar carried artifact marker");
+        if (contact.Ripcord) ElementDrawn("Radar ripcord marker");
+        if (contact.Highlight) ElementDrawn("Radar construction highlight");
+    }
+
+    private void DrawRadarLabelBlock(HudContact contact, RadarLabel label, in RadarLabelView view,
+        Vector2 centre, float scale)
+    {
+        // HUD-5b — native colorOther: brackets and label text carry the
+        // brightness step (×1 important, ×0.75 queued, ×0.5 otherwise,
+        // radarimage.cpp:1094-1096); the icon itself stays full colour.
+        var color = RadarLabelColor(contact) * RadarLabelModel.BracketBrightness(contact);
+        string? nameLine = view.NameLine;
+        string? rangeLine = view.RangeLine;
+        int barCount = (label.Fill is not null ? 1 : 0) + (label.Shield is not null ? 1 : 0)
+            + (label.Hull is not null ? 1 : 0);
+        int lineCount = (nameLine is not null ? 1 : 0) + (rangeLine is not null ? 1 : 0);
+        if (lineCount == 0 && barCount == 0) return;
+
+        float lineHeight = _small.LineSpacing * scale;
+        float maxText = 0f;
+        if (nameLine is not null)
+            maxText = MathF.Max(maxText, _small.MeasureString(HudFormat.Printable(nameLine)).X * scale);
+        if (rangeLine is not null)
+            maxText = MathF.Max(maxText, _small.MeasureString(rangeLine).X * scale);
+        float barRow = barCount > 0 ? 5f * scale : 0f;
+        float blockWidth = MathF.Max(maxText, barCount * (24f + 4f) * scale) + 8f * scale;
+        float blockHeight = lineCount * lineHeight + barRow + 6f * scale;
+
+        // Native stacks labels along the object→centre direction; a contact is
+        // kept clear by nudging the block outward from the view centre.
+        var offset = new Vector2(contact.Position.X - centre.X, contact.Position.Y - centre.Y);
+        if (offset.LengthSquared() < 1f) offset = new Vector2(0f, 1f);
+        offset.Normalize();
+        var desired = new Rectangle(
+            (int)(contact.Position.X + offset.X * 12f * scale - blockWidth / 2f),
+            (int)(contact.Position.Y + offset.Y * 12f * scale),
+            Math.Max(1, (int)MathF.Ceiling(blockWidth)),
+            Math.Max(1, (int)MathF.Ceiling(blockHeight)));
+        var placed = Layout.PlaceBlock(view.BlockKey, desired);
+
+        float y = placed.Y;
+        if (nameLine is not null)
+        {
+            RenderText(_small, HudFormat.Printable(nameLine), new Vector2(placed.X, y), color, scale);
+            y += lineHeight;
+        }
+        if (rangeLine is not null)
+        {
+            RenderText(_small, rangeLine, new Vector2(placed.X, y), color, scale);
+            y += lineHeight;
+        }
+        if (barCount > 0)
+        {
+            float bx = placed.X, by = y + 2f * scale;
+            if (label.Fill is { } fill)
+            {
+                FillRect(bx, by, 24f * scale * Math.Clamp(fill, 0f, 1f), 2f * scale, new Color(0.70f, 0.78f, 0.86f));
+                bx += (24f + 4f) * scale;
+            }
+            if (label.Shield is { } shield)
+            {
+                FillRect(bx, by, 24f * scale * Math.Clamp(shield, 0f, 1f), 2f * scale, new Color(0.30f, 0.55f, 0.95f));
+                bx += (24f + 4f) * scale;
+            }
+            if (label.Hull is { } hull)
+                FillRect(bx, by, 24f * scale * Math.Clamp(hull, 0f, 1f), 2f * scale, new Color(0.95f, 0.30f, 0.22f));
+        }
+
+        if (view.Drawn.Length > 0) ElementDrawn(view.Drawn);
+    }
+
+    /// <summary>The label colour is the contact's side colour (native
+    /// <c>pside-&gt;GetColor()</c>, radarimage.cpp:682-685) with the flash
+    /// override; <see cref="DrawRadarLabelBlock"/> applies the native
+    /// <c>colorOther</c> brightness on top.</summary>
+    private static Color RadarLabelColor(HudContact contact)
+    {
+        if (contact.ThreatFlash) return new Color(1f, 0f, 0f);
+        if (contact.SideColor is { } side) return new Color(side.R, side.G, side.B, side.A);
+        return new Color(0.88f, 0.96f, 0.95f);
+    }
+
+    public Rectangle DrawMeasuredText(SpriteFont font, string text, Vector2 position, Color color, bool instrument = false, bool centerAtScale = true, float? maxWidth = null, bool background = true)
     {
         // Long dynamic names and chat are fitted by measured width, never by a
         // character-count estimate. Retain the full value in the model.
-        text = new string(text.Select(c => c is >= ' ' and <= '~' or '\n' ? c : '?').ToArray());
+        text = HudFormat.Printable(text);
         var measured = font.MeasureString(text);
         float scale = TextScale;
         float limit = Math.Min(_viewportWidth - 16, maxWidth ?? float.MaxValue);
@@ -381,7 +512,7 @@ public class HudRenderer
         }
         if (centerAtScale) position.X += measured.X * (1 - scale) / 2;
         var bounds = Layout.Place(text, measured * scale, position, instrument);
-        FillRect(bounds.X - 3, bounds.Y - 1, bounds.Width + 6, bounds.Height + 2, Color.Black * .58f);
+        if (background) FillRect(bounds.X - 3, bounds.Y - 1, bounds.Width + 6, bounds.Height + 2, Color.Black * .58f);
         RenderText(font, text, new(bounds.X, bounds.Y), color, scale);
         return bounds;
     }

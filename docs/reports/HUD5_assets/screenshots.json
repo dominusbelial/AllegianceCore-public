@@ -1,0 +1,68 @@
+[
+  {
+    "name": "1920x1080-combat-Classic",
+    "file": "1920x1080-combat-Classic.webp",
+    "width": 1920,
+    "height": 1080,
+    "size": 51476,
+    "sha256": "b8884fd26a50c01b4659429943bb2c1536da4521977c67f88dbc9c8ca6909aa9",
+    "source": "proof_t001.0_sFejfar_ccockpit.png",
+    "source_sha256": "204cc6b0d36a4b97a3ddfc005cb855317c52b866e8160a555586ec476a498476",
+    "raw_path": "~/allegiance-evidence/HUD5/hud5b-raw/1920x1080-Classic/proof_t001.0_sFejfar_ccockpit.png"
+  },
+  {
+    "name": "1920x1080-combat-Modern",
+    "file": "1920x1080-combat-Modern.webp",
+    "width": 1920,
+    "height": 1080,
+    "size": 51344,
+    "sha256": "7e23d520157e22bf66d4c2a95b5fa0c5573ebf276121e3295a6098095f882863",
+    "source": "proof_t001.1_sFejfar_ccockpit.png",
+    "source_sha256": "0bdf9ba33c27a3921b7a7df5db1c7cb497b4926b648b817ee9594432751764ca",
+    "raw_path": "~/allegiance-evidence/HUD5/hud5b-raw/1920x1080-Modern/proof_t001.1_sFejfar_ccockpit.png"
+  },
+  {
+    "name": "2560x1440-combat-Classic",
+    "file": "2560x1440-combat-Classic.webp",
+    "width": 2560,
+    "height": 1440,
+    "size": 57636,
+    "sha256": "1170a4b9d01d364a1e4720abde1cd0f269024bb75f269ef864316a9c9e7c8f47",
+    "source": "proof_t001.0_sFejfar_ccockpit.png",
+    "source_sha256": "69bf5ab4fe1403b2f6656b90da904f78c77c26aab664956be6f1036728c34757",
+    "raw_path": "~/allegiance-evidence/HUD5/hud5b-raw/2560x1440-Classic/proof_t001.0_sFejfar_ccockpit.png"
+  },
+  {
+    "name": "2560x1440-combat-Modern",
+    "file": "2560x1440-combat-Modern.webp",
+    "width": 2560,
+    "height": 1440,
+    "size": 71234,
+    "sha256": "fe9f1081f98bab1eb8454f0edf655c3ccda8a65f7c0a6b316e45d2e9f0bba1a2",
+    "source": "proof_t001.1_sFejfar_ccockpit.png",
+    "source_sha256": "c88c0a7d2602d12c0fc66eb77d9fa9272576561959f2cd2f65ed6792a1bcf4c3",
+    "raw_path": "~/allegiance-evidence/HUD5/hud5b-raw/2560x1440-Modern/proof_t001.1_sFejfar_ccockpit.png"
+  },
+  {
+    "name": "radar-All-1920x1080-Classic",
+    "file": "radar-All-1920x1080-Classic.webp",
+    "width": 1920,
+    "height": 1080,
+    "size": 62694,
+    "sha256": "21cd71991f86d1bd482ba597645b30ca53b8d16d07f51722aaf2be336a6fa0b2",
+    "source": "radar-All-1920x1080-Classic.png",
+    "source_sha256": "9417c8f051fd871fd630b7650eed4d3a2cae346fd4bc7e23418175338be10f78",
+    "raw_path": "~/allegiance-evidence/HUD5/hud5b-fixtures/radar-All-1920x1080-Classic.png"
+  },
+  {
+    "name": "radar-All-1920x1080-Modern",
+    "file": "radar-All-1920x1080-Modern.webp",
+    "width": 1920,
+    "height": 1080,
+    "size": 74628,
+    "sha256": "3907f340ca08575f94a3dc74d154b05cc35bc58ec4f073583b8f702bdbf618fc",
+    "source": "radar-All-1920x1080-Modern.png",
+    "source_sha256": "dc1325e9c0e89e293e4666c449ce01c549f7390ce1db1baafb57ae8e7a8d4708",
+    "raw_path": "~/allegiance-evidence/HUD5/hud5b-fixtures/radar-All-1920x1080-Modern.png"
+  }
+]

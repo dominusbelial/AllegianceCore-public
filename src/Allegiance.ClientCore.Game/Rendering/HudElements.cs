@@ -136,6 +136,30 @@ public static class HudElements
         var result = new List<HudElement>(Native.Length);
         var f = model.Telemetry;
         var c = model.Context;
+        // HUD-5 — precompute the radar overlay/label rows once; each row below
+        // reports the count of contacts that carry that native mask/label line.
+        int acceptedOrders = c.Contacts.Count(contact => contact.AcceptedOrder);
+        int queuedOrders = c.Contacts.Count(contact => contact.QueuedOrder);
+        int nearestEnemy = c.Contacts.Count(contact => contact.NearestEnemy);
+        int threatFlash = c.Contacts.Count(contact => contact.Threat || contact.ThreatFlash);
+        int subjects = c.Contacts.Count(contact => contact.Subject);
+        int carriedFlag = c.Contacts.Count(contact => contact.CarriedFlag);
+        int carriedArtifact = c.Contacts.Count(contact => contact.CarriedArtifact);
+        int ripcord = c.Contacts.Count(contact => contact.Ripcord);
+        int highlight = c.Contacts.Count(contact => contact.Highlight);
+        int nameLabels = 0, rangeLabels = 0, hullShieldBars = 0, fillBars = 0, eyes = 0, ripSeconds = 0, verbLabels = 0;
+        foreach (var contact in c.Contacts)
+        {
+            var label = RadarLabelModel.Resolve(contact, c.RadarMode, c.CommandView);
+            if (label is not { } l) continue;
+            if (l.Name is not null) nameLabels++;
+            if (l.RangeText is not null) rangeLabels++;
+            if (l.Hull is not null || l.Shield is not null) hullShieldBars++;
+            if (l.Fill is not null) fillBars++;
+            if (l.Eye) eyes++;
+            if (l.RipcordSeconds is not null) ripSeconds++;
+            if (l.CommandId is not null) verbLabels++;
+        }
         foreach (var (id, placement) in Native)
         {
             var element = new HudElement(id, false, false, placement);
@@ -194,6 +218,22 @@ public static class HudElements
                     case "Radar missile contacts": Contacts(HudContactKind.Missile); break;
                     case "Radar probe and mine contacts": Contacts(HudContactKind.Probe, HudContactKind.Mine); break;
                     case "Radar treasure and tech contacts": Contacts(HudContactKind.Treasure, HudContactKind.Tech); break;
+                    case "Radar accepted order brackets": Set(acceptedOrders, model.FlightVisible && acceptedOrders > 0); break;
+                    case "Radar queued order brackets": Set(queuedOrders, model.FlightVisible && queuedOrders > 0); break;
+                    case "Radar nearest enemy bracket": Set(nearestEnemy, model.FlightVisible && nearestEnemy > 0); break;
+                    case "Radar threat damage flash": Set(threatFlash, model.FlightVisible && threatFlash > 0); break;
+                    case "Radar command subjects": Set(subjects, model.FlightVisible && subjects > 0); break;
+                    case "Radar carried flag marker": Set(carriedFlag, model.FlightVisible && carriedFlag > 0); break;
+                    case "Radar carried artifact marker": Set(carriedArtifact, model.FlightVisible && carriedArtifact > 0); break;
+                    case "Radar ripcord marker": Set(ripcord, model.FlightVisible && ripcord > 0); break;
+                    case "Radar construction highlight": Set(highlight, model.FlightVisible && highlight > 0); break;
+                    case "Radar name labels": Set(nameLabels, model.FlightVisible && nameLabels > 0); break;
+                    case "Radar range labels": Set(rangeLabels, model.FlightVisible && rangeLabels > 0); break;
+                    case "Radar hull and shield bars": Set(hullShieldBars, model.FlightVisible && hullShieldBars > 0); break;
+                    case "Radar ore and miner fill bars": Set(fillBars, model.FlightVisible && fillBars > 0); break;
+                    case "Radar friendly detection eyes": Set(eyes, model.FlightVisible && eyes > 0); break;
+                    case "Radar friendly ripcord seconds": Set(ripSeconds, model.FlightVisible && ripSeconds > 0); break;
+                    case "Radar command verb labels": Set(verbLabels, model.FlightVisible && verbLabels > 0); break;
                     case "Tip text lines": Notices(false); break;
                     case "Critical tip text lines": Notices(true); break;
                     case "Chat history":

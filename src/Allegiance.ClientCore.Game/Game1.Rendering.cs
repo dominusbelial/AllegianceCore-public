@@ -2650,9 +2650,6 @@ public sealed partial class Game1
                     ControlState: up.StateM);
             }
         }
-        // HUD-4b: keep the grown contact buffer so the HUD model doesn't allocate a new array every frame.
-        if (_drawRadarContactsBuffer.Length < _drawRadarContacts.Count)
-            _drawRadarContactsBuffer = new HudContact[Math.Max(_drawRadarContacts.Count, _drawRadarContactsBuffer.Length * 2)];
         var model = HudModelAdapter.Create(frame, _cameraMode, _lockBracket, _leadIndicator,
             _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
             leaderCommand: _leaderBotCommand, ripcord: RipcordStatusLabel(),
@@ -2664,7 +2661,7 @@ public sealed partial class Game1
             docked: hudDocked, dead: hudDead, commandView: CommandCameraActive,
             notices: _tipLines.Select(t => new HudNotice(t.Text, t.Critical,
                 (float)Math.Clamp((t.ExpiresAt - _nowSeconds) / 0.8, 0.0, 1.0))).ToArray(),
-            contacts: _drawRadarContacts, contactsBuffer: _drawRadarContactsBuffer,
+            contacts: _drawRadarContacts,
             radarPulse: (MathF.Sin((float)_nowSeconds * 5f) + 1f) * 0.5f, radarMode: _radarMode,
             chat: new HudChat(BuildChatLines(), _chatScrollOffset,
                 _chatActive ? _chatBuffer.ToString() : string.Empty, _chatActive, _nowSeconds,
@@ -3001,18 +2998,28 @@ public sealed partial class Game1
             // the enemy/friendly test; snapshot under the gate with everything else.
             var radarMode = _radarMode;
             short mySide = world.MySideId ?? -1;
-            bool rangeZero = CommandCameraActive;   // native bRangeLabels = !CommandCamera
+            // Native bRangeLabels = !CommandCamera (radarimage.cpp:523-524). It
+            // suppresses the range text AND is the gate for the nearest-enemy
+            // lookup (radarimage.cpp:582-583) — HUD-5b no longer resolves a
+            // nearest enemy in the command camera / every mode.
+            bool commandCamera = CommandCameraActive;
+            bool rangeLabels = RadarLabelModel.RangeLabelsEnabled(commandCamera);
+            bool rangeZero = !rangeLabels;   // native asteroid LOD reuses bRangeLabels
+            var accepted = world.MyAcceptedCommand;
+            var queued = world.MyQueuedCommand;
             float ownRadius = HullLength(ownEnt.HullId) * 0.5f;
 
             Color? SideColor(short side)
                 => world.TryGetSideColor(side, out float r, out float g, out float b) ? new Color(r, g, b) : null;
+            HudColor? SideHud(short side)
+                => world.TryGetSideColor(side, out float r, out float g, out float b) ? new HudColor(r, g, b) : null;
             bool OwnOrAllied(short side) => side == mySide || world.AreAllied(mySide, side);
             bool IsPedestalType(short typeId)
                 => _shopCatalog?.StationTypes is { } stationTypes
                    && stationTypes.TryGetValue(typeId, out var stationType)
                    && stationType.HasCapability(Allegiance.Core.DataStationTypeIGC.SabmPedestal);
             // Native LOD predicates use the adjusted surface separation
-            // (radarimage.cpp:626-636); range labels would use centre distance.
+            // (radarimage.cpp:626-636); range labels use the centre distance.
             float LodSeparation(float centre, float objectRadius) => MathF.Max(0f, centre - ownRadius - objectRadius);
 
             // P527 — the radar EYE uses the own-ship RENDER pose (P508 local
@@ -3026,6 +3033,37 @@ public sealed partial class Game1
                 ownSimPos = ownUp.Position;
             }
 
+            // HUD-5 — native nearest-enemy bracket: FindTarget(pshipSource,
+            // c_ttShip | c_ttEnemy | c_ttNearest) over the current sector
+            // (radarimage.cpp:582-583; Igc/common.cpp:470-630). Native only
+            // resolves it while bRangeLabels is on, so the command camera never
+            // pays for the scan and never draws the bracket.
+            short? nearestEnemyId = null;
+            if (rangeLabels)
+            {
+                _nearestEnemyScratch.Clear();
+                foreach (var (id, ship) in world.Ships)
+                {
+                    if (id == me || ship.IsNotVisible || ship.Unknown || ship.ParentId >= 0) continue;
+                    if (ship.SectorId != mySector || ship.Latest is not { }) continue;
+                    if (!ResolveRadarContactAnchor(_poses, world.Ships, id, out var enemyPos)) continue;
+                    float distance = (ownSimPos - enemyPos).Length();
+                    _nearestEnemyScratch.Add(new(id,
+                        Enemy: ship.SideId != mySide && !world.AreAllied(mySide, ship.SideId),
+                        DistanceSquared: distance * distance));
+                }
+                nearestEnemyId = RadarLabelModel.NearestEnemy(_nearestEnemyScratch);
+            }
+
+            bool MatchesCommand(QueuedCommandState? command, IgcObjectType type, short id)
+                => command is { } c && c.TargetType == type && c.TargetId == id;
+            (int? CommandId, bool CommandAccepted) CommandFor(IgcObjectType type, short id)
+            {
+                if (MatchesCommand(accepted, type, id)) return (accepted!.Value.CommandId, true);
+                if (MatchesCommand(queued, type, id)) return (queued!.Value.CommandId, false);
+                return (null, false);
+            }
+
             // Own ship — native c_maskMe marker (radarimage.cpp:733-735). The
             // marker only makes sense when the own hull is actually drawn:
             // external/chase cameras, and only when the own ship projects in
@@ -3035,10 +3073,12 @@ public sealed partial class Game1
                 var ownSite = RadarProjection.Project(
                     PoseConverter.ToXna(ownSimPos), cameraEye, view, proj, w, h, inset);
                 if (ownSite.Placement == RadarBracketLayout.RadarPlacement.OnScreen)
-                    _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
-                        RadarBracketRenderer.RadarContactType.Ship,
-                        new NumericsVec2(ownSite.Point.X, ownSite.Point.Y),
-                        true, op, SideColor(mySide), false, false, true, false));
+                    _drawRadarContacts.Add(new HudContact(
+                        HudContactKind.Ship,
+                        new HudPoint(ownSite.Point.X, ownSite.Point.Y),
+                        true, op, SideHud(mySide), false, false,
+                        IsSelf: true, IsSameSide: true,
+                        Range: rangeLabels ? 0 : null));
             }
 
             // Ships — other, living craft in my sector (skip corpses + unknown +
@@ -3050,17 +3090,56 @@ public sealed partial class Game1
                 if (ship.SectorId != mySector) continue;
                 if (ship.Latest is not { }) continue;                     // keep the Latest gate
                 if (!ResolveRadarContactAnchor(_poses, world.Ships, id, out var shipPos)) continue;
-                Color? sideCol = SideColor(ship.SideId);
+                bool isEnemy = ship.SideId != mySide && !world.AreAllied(mySide, ship.SideId);
+                // P436 — is this ship the player's own selected target? Pure
+                // (RadarTargetSelection) so the flagging is unit-testable.
                 bool isSel = RadarTargetSelection.IsSelected(
                     RadarBracketRenderer.RadarContactType.Ship, id, selType, sel?.Id);
+                // P624 — native per-kind LOD (friendly ships leave Target/Minimal).
                 if (!RadarLod.ShowShip(radarMode, OwnOrAllied(ship.SideId), isSelf: false, isSel)) continue;
                 var site = RadarProjection.Project(
                     PoseConverter.ToXna(shipPos), cameraEye, view, proj, w, h, inset);
-                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
-                    RadarBracketRenderer.RadarContactType.Ship,
-                    new NumericsVec2(site.Point.X, site.Point.Y),
-                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
-                    sideCol, isSel, false, false, false));
+                // P372 — resolve the contact's REAL side colour from the side
+                // roster (native pside->GetColor(), radarimage.cpp:682-685);
+                // null keeps the type-based teal fallback only while no roster
+                // colour is known yet (TryGetSideColor returns false).
+                Color? sideCol = SideColor(ship.SideId);
+                var shipCommand = CommandFor(IgcObjectType.Ship, id);
+                bool carriedFlag = ship.CarriedFlagSideId != -1 && ship.CarriedFlagSideId != -2;
+                bool carriedArtifact = ship.CarriedFlagSideId == -2;
+                float separation = (ownSimPos - shipPos).Length();
+                _drawRadarContacts.Add(new HudContact(
+                    HudContactKind.Ship,
+                    new HudPoint(site.Point.X, site.Point.Y),
+                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op, SideHud(ship.SideId), isSel, false,
+                    Name: string.IsNullOrEmpty(ship.CharacterName) ? null : ship.CharacterName,
+                    Range: rangeLabels ? (int)(separation + 0.5f) : null,
+                    Hull: ship.Latest?.HullFraction,
+                    Shield: ship.Latest?.ShieldFraction,
+                    Fill: ship.SideId == mySide ? ship.Latest?.OreFraction : null,
+                    IsEnemy: isEnemy, IsSameSide: ship.SideId == mySide,
+                    AcceptedOrder: shipCommand.CommandAccepted, QueuedOrder: shipCommand.CommandId is not null && !shipCommand.CommandAccepted,
+                    Subject: commandCamera && _commandee is { Kind: TargetKind.Ship } commandee && commandee.Id == id,
+                    CarriedFlag: carriedFlag, CarriedArtifact: carriedArtifact,
+                    NearestEnemy: nearestEnemyId == id,
+                    CommandId: shipCommand.CommandId, CommandAccepted: shipCommand.CommandAccepted,
+                    // Native shows the eye only for another SAME-SIDE PLAYER-piloted
+                    // ship with ShipStatus.GetDetected() set (radarimage.cpp:1006-1019).
+                    // The port has no scanner simulation and the server hard-codes
+                    // Detected=true for every teammate (Server.Broadcast.cs:1654,1667,1700),
+                    // so the detection reading is unknown here (null) — the eye stays
+                    // off instead of lighting up for the whole team.
+                    DetectionEye: RadarLabelModel.ShowDetectionEye(
+                        isSelf: false,
+                        sameSide: ship.SideId == mySide,
+                        playerPiloted: ship.Player is { } pilot
+                            && pilot.PilotType >= Allegiance.Core.Wire.PlayerInfo.PilotTypePlayer,
+                        detected: null)));
+                // P372 — the in-world hull "team tag": drawn only for ON-SCREEN
+                // ships (an off-screen ship's edge-clamped bracket already
+                // carries its side colour), always in the contact's real side
+                // colour, so the 3D-view hull itself carries the side indicator
+                // without recolouring the real per-civ art.
                 if (site.Placement == RadarBracketLayout.RadarPlacement.OnScreen
                     && sideCol is { } tagCol)
                     _drawShipTags.Add(new Rendering.ShipSideTagRenderer.ShipTag(
@@ -3083,10 +3162,19 @@ public sealed partial class Game1
                 bool onScreen = site.Placement == RadarBracketLayout.RadarPlacement.OnScreen;
                 if (!RadarLod.ShowStation(radarMode, pedestal, OwnOrAllied(st.SideId), onScreen,
                     LodSeparation(centre, objectRadius), isSel)) continue;
-                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
-                    RadarBracketRenderer.RadarContactType.Station,
-                    new NumericsVec2(site.Point.X, site.Point.Y),
-                    onScreen, op, SideColor(st.SideId), isSel, false, false, false));
+                var stationCommand = CommandFor(IgcObjectType.Station, sid);
+                _drawRadarContacts.Add(new HudContact(
+                    HudContactKind.Station,
+                    new HudPoint(site.Point.X, site.Point.Y),
+                    onScreen, op, SideHud(st.SideId), isSel, false,
+                    Name: string.IsNullOrEmpty(st.Name) ? null : st.Name,
+                    Range: rangeLabels ? (int)(centre + 0.5f) : null,
+                    Hull: world.StationLive.TryGetValue(sid, out var live) ? live.HullFraction : null,
+                    Shield: world.StationLive.TryGetValue(sid, out var liveShield) ? liveShield.ShieldFraction : null,
+                    IsEnemy: st.SideId != mySide && !world.AreAllied(mySide, st.SideId),
+                    IsSameSide: st.SideId == mySide,
+                    AcceptedOrder: stationCommand.CommandAccepted, QueuedOrder: stationCommand.CommandId is not null && !stationCommand.CommandAccepted,
+                    CommandId: stationCommand.CommandId, CommandAccepted: stationCommand.CommandAccepted));
             }
 
             // Warps in my sector.
@@ -3099,11 +3187,16 @@ public sealed partial class Game1
                 var wPos = Vec(wp.Position);
                 var site = RadarProjection.Project(
                     PoseConverter.ToXna(wPos), cameraEye, view, proj, w, h, inset);
-                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
-                    RadarBracketRenderer.RadarContactType.Warp,
-                    new NumericsVec2(site.Point.X, site.Point.Y),
-                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
-                    null, isSel, false, false, false));
+                float separation = (ownSimPos - wPos).Length();
+                var warpCommand = CommandFor(IgcObjectType.Warp, wid);
+                _drawRadarContacts.Add(new HudContact(
+                    HudContactKind.Warp,
+                    new HudPoint(site.Point.X, site.Point.Y),
+                    site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op, null, isSel, false,
+                    Name: string.IsNullOrEmpty(wp.Name) ? null : wp.Name,
+                    Range: rangeLabels ? (int)(separation + 0.5f) : null,
+                    AcceptedOrder: warpCommand.CommandAccepted, QueuedOrder: warpCommand.CommandId is not null && !warpCommand.CommandAccepted,
+                    CommandId: warpCommand.CommandId, CommandAccepted: warpCommand.CommandAccepted));
             }
 
             // Missiles — outside All only missiles aimed at the player's own side
@@ -3117,16 +3210,18 @@ public sealed partial class Game1
                     IgcObjectType.Station when world.Stations.TryGetValue(ms.TargetId, out var tgtStation) => tgtStation.SideId == mySide,
                     _ => false,
                 };
-                Color? sideCol = ms.LauncherId >= 0 && world.Ships.TryGetValue(ms.LauncherId, out var launchShip)
-                    ? SideColor(launchShip.SideId) : null;
+                short launcherSide = ms.LauncherId >= 0 && world.Ships.TryGetValue(ms.LauncherId, out var launchShip)
+                    ? launchShip.SideId : (short)-1;
+                Color? sideCol = launcherSide >= 0 ? SideColor(launcherSide) : null;
                 if (!RadarLod.ShowMissile(radarMode, aimsAtOwnSide, isSelected: false)) continue;
                 var site = RadarProjection.Project(
                     PoseConverter.ToXna(ms.Position), cameraEye, view, proj, w, h, inset);
-                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
-                    RadarBracketRenderer.RadarContactType.Missile,
-                    new NumericsVec2(site.Point.X, site.Point.Y),
+                _drawRadarContacts.Add(new HudContact(
+                    HudContactKind.Missile,
+                    new HudPoint(site.Point.X, site.Point.Y),
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
-                    sideCol, false, false, false, false));
+                    sideCol is { } c ? new HudColor(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f) : null,
+                    false, false));
             }
 
             // Probes in my sector.
@@ -3142,11 +3237,11 @@ public sealed partial class Game1
                     LodSeparation(centre, objectRadius), isSel)) continue;
                 var site = RadarProjection.Project(
                     PoseConverter.ToXna(pb.Position), cameraEye, view, proj, w, h, inset);
-                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
-                    RadarBracketRenderer.RadarContactType.Probe,
-                    new NumericsVec2(site.Point.X, site.Point.Y),
+                _drawRadarContacts.Add(new HudContact(
+                    HudContactKind.Probe,
+                    new HudPoint(site.Point.X, site.Point.Y),
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
-                    SideColor(pb.SideId), isSel, false, false, false));
+                    SideHud(pb.SideId), isSel, false));
             }
 
             // Mines in my sector.
@@ -3159,11 +3254,11 @@ public sealed partial class Game1
                     LodSeparation(centre, objectRadius), isSelected: false)) continue;
                 var site = RadarProjection.Project(
                     PoseConverter.ToXna(mine.Position), cameraEye, view, proj, w, h, inset);
-                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
-                    RadarBracketRenderer.RadarContactType.Mine,
-                    new NumericsVec2(site.Point.X, site.Point.Y),
+                _drawRadarContacts.Add(new HudContact(
+                    HudContactKind.Mine,
+                    new HudPoint(site.Point.X, site.Point.Y),
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
-                    SideColor(mine.SideId), false, false, false, false));
+                    SideHud(mine.SideId), false, false));
             }
 
             // HUD-4b — resolve the own loadout/hull once per frame so every
@@ -3211,11 +3306,13 @@ public sealed partial class Game1
                 if (!RadarLod.ShowTreasure(radarMode, useful, LodSeparation(centre, 0f), isSel)) continue;
                 var site = RadarProjection.Project(
                     PoseConverter.ToXna(te.Position), cameraEye, view, proj, w, h, inset);
-                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
-                    isTech ? RadarBracketRenderer.RadarContactType.Tech : RadarBracketRenderer.RadarContactType.Treasure,
-                    new NumericsVec2(site.Point.X, site.Point.Y),
+                _drawRadarContacts.Add(new HudContact(
+                    isTech ? HudContactKind.Tech : HudContactKind.Treasure,
+                    new HudPoint(site.Point.X, site.Point.Y),
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
-                    null, isSel, false, false, isTech));
+                    null, isSel, false,
+                    Range: rangeLabels ? (int)(centre + 0.5f) : null,
+                    IsSelf: false, IsTech: isTech));
             }
 
             // Asteroids — native ordinary-rock LOD (radarimage.cpp:903-930) plus
@@ -3234,18 +3331,50 @@ public sealed partial class Game1
                 // Project only asteroids the radar will actually draw (HUD-4b —
                 // avoid a per-frame matrix projection for every rock in sector).
                 if (!buildSpot && !RadarLod.ShowAsteroid(radarMode, namedSpecial, rangeZero, separation, isSel)) continue;
-                var aPos = PoseConverter.ToXna(astPos);
-                var aSite = RadarProjection.Project(aPos, cameraEye, view, proj, w, h, inset);
-                _drawRadarContacts.Add(new RadarBracketRenderer.RadarContact(
-                    RadarBracketRenderer.RadarContactType.Asteroid,
-                    new NumericsVec2(aSite.Point.X, aSite.Point.Y),
+                var aSite = RadarProjection.Project(
+                    PoseConverter.ToXna(astPos), cameraEye, view, proj, w, h, inset);
+                world.AsteroidLive.TryGetValue(aid, out var asteroidLive);
+                var asteroidCommand = CommandFor(IgcObjectType.Asteroid, aid);
+                _drawRadarContacts.Add(new HudContact(
+                    HudContactKind.Asteroid,
+                    new HudPoint(aSite.Point.X, aSite.Point.Y),
                     aSite.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
-                    null, isSel, buildSpot, false, false));
+                    null, isSel, buildSpot,
+                    Name: string.IsNullOrEmpty(ast.Name) ? null : ast.Name,
+                    Range: rangeLabels ? (int)(centre + 0.5f) : null,
+                    Hull: world.AsteroidLive.TryGetValue(aid, out var liveRock) ? liveRock.Fraction : null,
+                    Fill: world.AsteroidLive.TryGetValue(aid, out var liveOre) ? liveOre.OreFraction : null,
+                    AcceptedOrder: asteroidCommand.CommandAccepted, QueuedOrder: asteroidCommand.CommandId is not null && !asteroidCommand.CommandAccepted,
+                    CommandId: asteroidCommand.CommandId, CommandAccepted: asteroidCommand.CommandAccepted));
+            }
+
+            // HUD-5b — opt-in evidence line for the frame (see _radarProofEnabled).
+            if (_radarProofEnabled)
+            {
+                int ships = 0, enemies = 0;
+                var proofLabels = new RadarLabelCache();
+                var enemyProof = new System.Text.StringBuilder();
+                for (int i = 0; i < _drawRadarContacts.Count; i++)
+                {
+                    var c = _drawRadarContacts[i];
+                    if (c.Kind != HudContactKind.Ship || c.IsSelf) continue;
+                    ships++;
+                    if (!c.IsEnemy) continue;
+                    enemies++;
+                    var proofLabel = proofLabels.Resolve(i, c, radarMode, commandCamera);
+                    if (enemyProof.Length > 0) enemyProof.Append("; ");
+                    enemyProof.Append($"{c.Name ?? "?"}@{c.Position.X:0},{c.Position.Y:0}")
+                        .Append(c.OnScreen ? " on" : " off")
+                        .Append(c.NearestEnemy ? " nearest" : "")
+                        .Append($" name='{proofLabel.NameLine ?? "-"}' range='{proofLabel.RangeLine ?? "-"}'");
+                }
+                _radarProofLine = $"contacts={_drawRadarContacts.Count} ships={ships} enemies={enemies}"
+                    + $" nearestEnemy={(nearestEnemyId is { } nid ? nid.ToString() : "none")}"
+                    + $" rangeLabels={rangeLabels} enemy[{enemyProof}]";
             }
         }
 
     }
-
     /// <summary>
     /// P578 — draw the eject/death feedback overlays straight onto the HUD,
     /// called from <see cref="DrawHud"/> after the fight widgets: the critical +
