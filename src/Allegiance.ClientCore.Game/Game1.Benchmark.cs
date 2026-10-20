@@ -88,6 +88,12 @@ public sealed partial class Game1
         EffectsQuality = _upscaling.Effects, EffectsDensity = _benchmarkEffectsDensity, ViewDistance = _benchmarkViewDistance,
         Vsync = _graphics.SynchronizeWithVerticalRetrace, FrameCap = IsFixedTimeStep ? (int)Math.Round(1 / TargetElapsedTime.TotalSeconds) : 0
     };
+    /// <summary>HD-5: the experimental PBR flag follows a recommendation only when the
+    /// player applies it; the startup re-apply (<paramref name="preserveUpscaling"/>)
+    /// keeps the saved graphics setting, so a Ctrl+F6 choice survives a restart.
+    /// Static for unit testing (via InternalsVisibleTo).</summary>
+    internal static bool BenchmarkHdPbr(bool current, BenchmarkRecommendation s, bool preserveUpscaling)
+        => preserveUpscaling ? current : s.HdPbr;
     private void ApplyBenchmarkSettings(BenchmarkRecommendation s, bool preserveUpscaling = false)
     {
         _benchmarkApplied = true;
@@ -98,9 +104,9 @@ public sealed partial class Game1
             _upscaling.HdTextures = s.HdTextures;
             _upscaling.DynamicResolution = false;
         }
-        _upscaling.HdPbr = s.HdPbr;
+        _upscaling.HdPbr = BenchmarkHdPbr(_upscaling.HdPbr, s, preserveUpscaling);
         _nativeShipRenderer.HdTexturesEnabled = _upscaling.HdTextures;
-        _nativeShipRenderer.HdPbrEnabled = s.HdPbr;
+        _nativeShipRenderer.HdPbrEnabled = _upscaling.HdPbr;
         SyncHdMaterialMode();
         ApplyEffectsDetail(s.EffectsQuality);
         _bloomEnabled = s.Bloom && _enhancedVfx && _upscaling.Effects != State.EffectsDetail.Low;

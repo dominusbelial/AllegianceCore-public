@@ -84,6 +84,19 @@ public sealed class HdPbrTests
     }
 
     [Fact]
+    public void Startup_benchmark_reapply_keeps_the_saved_HdPbr_choice()
+    {
+        var legacyOn = new BenchmarkRecommendation { HdPbr = true, HdTextures = true };
+        // Startup re-apply of an old HdPbr=on recommendation must not override a
+        // player who turned PBR off with Ctrl+F6 (or the classic default).
+        Assert.False(Game1.BenchmarkHdPbr(false, legacyOn, preserveUpscaling: true));
+        Assert.True(Game1.BenchmarkHdPbr(true, new BenchmarkRecommendation(), preserveUpscaling: true));
+        // Applying a recommendation from the benchmark screen does take its value.
+        Assert.True(Game1.BenchmarkHdPbr(false, legacyOn, preserveUpscaling: false));
+        Assert.False(Game1.BenchmarkHdPbr(true, new BenchmarkRecommendation(), preserveUpscaling: false));
+    }
+
+    [Fact]
     public void Legacy_saved_HdPbr_migrates_to_the_new_flag()
     {
         string dir = Path.Combine(Path.GetTempPath(), "hd5-migrate-" + Guid.NewGuid());
