@@ -2601,6 +2601,7 @@ public sealed partial class Game1
             _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
             leaderCommand: _leaderBotCommand, ripcord: RipcordStatusLabel(),
             commandee: CommandeeLabel(), turret: IsTurretGunner(),
+            targetPane: ComputeTargetPane(),
             diagnostics: Environment.GetEnvironmentVariable("ALLEGIANCE_LOD_OVERLAY") == "1"
                 ? $"LOD full:{_lodFullCount} far:{_lodFarCount}" : null,
             hidden: _hideHud || _directorActive || _hudHidden,

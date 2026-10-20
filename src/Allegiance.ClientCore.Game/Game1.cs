@@ -82,6 +82,7 @@ public sealed partial class Game1 : Game
     private Dictionary<RockTextureFactory.AsteroidResourceType, Texture2D> _asteroidTextures = null!;
     private Rendering.RockTextures _rockTextures = null!;   // P421 — real original surface bitmaps
     private Rendering.LockTextures _lockTextures = null!;    // P428 — real missile-lock sprites
+    private Rendering.TargetPaneTextures _targetPaneTextures = null!;   // HUD-3 — native target-pane bitmaps
     private Rendering.FeedbackTextures _feedbackTextures = null!;   // P578 — eject-pod panel + death banner art
     // P252 — per-asteroid client-side spin state, keyed by AsteroidId so each
     // rock rotates about its own wire axis at its own wire rate (real
@@ -1733,6 +1734,7 @@ public sealed partial class Game1 : Game
             foreach (var t in _asteroidTextures.Values) t.Dispose();
         _rockTextures?.Dispose();   // P421 — release the real original surface bitmaps
         _lockTextures?.Dispose();   // P428 — release the real missile-lock sprites
+        _targetPaneTextures?.Dispose();   // HUD-3 — release the native target-pane bitmaps
         _feedbackTextures?.Dispose();   // P578 — release the eject-pod panel / death banner art
         _warpRenderer?.Dispose();
         _projectileRenderer?.Dispose();

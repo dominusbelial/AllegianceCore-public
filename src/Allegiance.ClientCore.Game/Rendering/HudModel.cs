@@ -17,6 +17,26 @@ public readonly record struct HudLock(HudPoint Center, MissileLockFeedback.LockS
 public readonly record struct HudLead(HudPoint Center, HudPoint TargetCenter, bool InRange, float Green, double NowSeconds);
 public readonly record struct HudTarget(HudPoint Center, bool Engaged, string? Name,
     float? HullFraction, float? ShieldFraction, bool? IsEnemy, float? OreFraction, float? Distance = null, float? ClosingSpeed = null, HudColor? SideColor = null);
+
+/// <summary>The native bottom target pane (WinTrek/consoledata.cpp:40-199,
+/// Artwork/dialog.mdl:4040-4242). Unlike <see cref="HudTarget"/> (the projected
+/// in-world selection bracket), this pane stays present whenever a target is
+/// selected even if it does not project into the current view. Unknown readings
+/// stay null and the renderer leaves the corresponding native slot empty.</summary>
+public readonly record struct HudTargetPane(
+    bool Present,
+    string? Name,
+    string? TypeDescription,
+    string? SideName,
+    HudColor SideColor,
+    float? HullFraction,
+    float? ShieldFraction,
+    float? Distance,
+    float? Speed,
+    float? OreFraction,
+    float? KillBonusPercent,
+    bool InRange,
+    bool IsShip);
 public readonly record struct HudNotice(string Text, bool Critical, float Opacity);
 public enum HudContactKind { Ship, Station, Warp, Asteroid }
 public readonly record struct HudContact(HudContactKind Kind, HudPoint Position,
@@ -40,6 +60,7 @@ public sealed record HudContext
     public HudLock? Lock { get; init; }
     public HudLead? Lead { get; init; }
     public HudTarget? Target { get; init; }
+    public HudTargetPane? TargetPane { get; init; }
     public HudPoint? TargetBearing { get; init; }
     public LeaderBotCommand? LeaderCommand { get; init; }
     public string? Ripcord { get; init; }
@@ -79,6 +100,14 @@ public sealed class HudModel
     public bool IndicatorsVisible => InstrumentsVisible && Context.Camera is CameraMode.Cockpit or CameraMode.Chase or CameraMode.ExternalMissile;
     public bool ReticleVisible => IndicatorsVisible && Context.Camera == CameraMode.Cockpit;
     public bool MouseStickVisible => IndicatorsVisible && Telemetry?.MouseStick is not null;
+    // Native TargetDisplay pane mask is ofInCockpit | ofInChase | ofGloatCam
+    // (Artwork/dialog.mdl:5402); ofGloatCam is SetTargetGeo's
+    // cmExternalOverride (WinTrek/WinTrek.cpp:6844) — the port's
+    // CameraMode.ExternalOverride. Command view and external turret/missile
+    // views use their own summaries.
+    public bool TargetPaneVisible => InstrumentsVisible
+        && Context.TargetPane is { Present: true }
+        && Context.Camera is CameraMode.Cockpit or CameraMode.Chase or CameraMode.ExternalOverride;
     public bool PodVisible => FlightVisible && Telemetry is { IsAdriftLifepod: true };
     public bool DeathVisible => Visible && Context.Dead && !Context.Docked;
     public string SpeedUnit => "mps"; // Artwork/dialog.mdl:2546-2554.

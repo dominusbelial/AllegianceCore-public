@@ -159,10 +159,15 @@ public static class HudElements
                     case "Speed": Set(f?.Speed, instrument, model.SpeedUnit); break;
                     case "Kill bonus": Set(f?.KillBonusPercent, instrument); break;
                     case "Cloak active": Set(f is { } cloak ? (cloak.Cloaked ? 1 : 0) : null, instrument && f?.Cloaked == true); break;
-                    case "Target name": Target(c.Target?.Name); break;
-                    case "Target hull": Target(null, c.Target?.HullFraction); break;
-                    case "Target range or sector": Target(null, c.Target?.Distance); break;
-                    case "Target shield": Target(null, c.Target?.ShieldFraction); break;
+                    case "Target name": Pane(c.TargetPane?.Name); break;
+                    case "Target type description": Pane(c.TargetPane?.TypeDescription); break;
+                    case "Target side identity": Pane(c.TargetPane?.SideName, color: c.TargetPane?.SideColor); break;
+                    case "Target hull": Pane(null, c.TargetPane?.HullFraction); break;
+                    case "Target range or sector": Pane(null, c.TargetPane?.Distance); break;
+                    case "Target shield": Pane(null, c.TargetPane?.ShieldFraction); break;
+                    case "Target speed": Pane(null, c.TargetPane?.Speed); break;
+                    case "Target kill bonus": Pane(null, c.TargetPane?.KillBonusPercent); break;
+                    case "Target in weapon range": Pane(null, c.TargetPane is { } tp ? (tp.InRange ? 1 : 0) : null); break;
                     case "Target ore": Target(null, c.Target?.OreFraction); break;
                     case "Cockpit centre reticle": element = element with { Available = true, Visible = model.ReticleVisible }; break;
                     case "Joystick turning indicator":
@@ -229,6 +234,11 @@ public static class HudElements
                 bool available = c.Target is not null && (id == "Selected target bracket" || text is not null || value is not null);
                 element = element with { Available = available, Visible = model.FlightVisible && available, Value = value, Text = text };
                 if (c.Target is { } t) element = element with { ScreenPosition = t.Center };
+            }
+            void Pane(string? text, float? value = null, HudColor? color = null)
+            {
+                bool available = c.TargetPane is { Present: true } && (text is not null || value is not null);
+                element = element with { Available = available, Visible = model.TargetPaneVisible && available, Text = text, Value = value, Color = color };
             }
             void Contacts(HudContactKind type) => Set(c.Contacts.Count(contact => contact.Kind == type), model.FlightVisible);
             void Notices(bool critical)

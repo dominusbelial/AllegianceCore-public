@@ -57,6 +57,7 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             float y = viewport.Height / 2f + gauge.NativeOffset.Y * spread;
             Layout.Reserve(new((int)(x - 56 * _scale), (int)(y - 40 * _scale), (int)(112 * _scale), (int)(112 * _scale)));
         }
+        ReserveTargetPane(model, viewport);
     }
     public override void Draw(HudModel model, Viewport viewport)
     {
@@ -135,6 +136,73 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         var color = targetLock.State == Allegiance.ClientCore.State.MissileLockFeedback.LockState.Partial ? new Color(255, 190, 84) : Alert;
         for (int i = 0; i < 4; i++) Arc(targetLock.Center, radius, i * MathF.PI / 2 + .12f, .85f, color, 2 * _scale);
     }
+    protected override void DrawTargetPane(HudModel model, Viewport viewport)
+    {
+        if (!model.TargetPaneVisible || model.Context.TargetPane is not { Present: true } tp) return;
+        float w = viewport.Width, h = viewport.Height;
+        float s = TargetPaneLayout.Scale(w, h);
+        float x0 = TargetPaneLayout.OriginX(w, h);
+        float y0 = TargetPaneLayout.OriginY(w, h);
+        var side = tp.SideColor is { } sc ? new Color(sc.R, sc.G, sc.B, sc.A) : new Color(224, 231, 235);
+        if (_settings.ColorBlindSafe) side = HudPalette.Side(side);
+
+        // Name + type (same native anchor as classic, dialog.mdl:4043-4050).
+        string nameLine = (tp.Name ?? "unknown") + (tp.TypeDescription is { } td ? ": " + td : "");
+        var nameSize = PaneTextSize(_small, nameLine);
+        DrawRawText(_small, nameLine,
+            new(x0 + TargetPaneLayout.LocalCenterX * s - nameSize.X / 2f,
+                y0 - TargetPaneLayout.LocalNameBottom * s - nameSize.Y), side);
+
+        if (tp.Distance is { } distance)
+        {
+            string range = string.Concat("RANGE: ", HudFormat.FormatNativeNumber(distance));
+            DrawRawText(_small, range, new(x0 + 400f * s, y0 - 33f * s - PaneTextSize(_small, range).Y), Muted);
+        }
+        if (tp.Speed is { } speed)
+        {
+            string text = string.Concat("SPEED: ", HudFormat.FormatNativeNumber(speed));
+            var size = PaneTextSize(_small, text);
+            DrawRawText(_small, text, new(x0 + 242f * s - size.X, y0 - 33f * s - size.Y), Muted);
+        }
+
+        // Geometric hull/shield arcs at the native gauge anchors. The arc
+        // radius follows the pane scale s (not the Modern UI scale) so the
+        // gauge geometry stays glued to the native pane extents.
+        float hullX = x0 + (235f + 83f / 2f) * s;
+        float shieldX = x0 + (367f + 84f / 2f) * s;
+        float gaugeY = y0 - (33f + 101f / 2f) * s;
+        float arcRadius = 16f * s;
+        DrawModernTargetGauge(new(hullX, gaugeY), tp.HullFraction ?? 0f, side, s);
+        DrawModernTargetGauge(new(shieldX, gaugeY), tp.ShieldFraction ?? 0f, side, s);
+
+        // ARMOR/SHIELD flank their arcs (native puts them beside the gauges,
+        // dialog.mdl:4220-4222) so the labels never sit on the arc stroke.
+        var armorSize = PaneTextSize(_small, "ARMOR");
+        var shieldSize = PaneTextSize(_small, "SHIELD");
+        DrawRawText(_small, "ARMOR", new(hullX - arcRadius - 8f * s - armorSize.X, gaugeY - armorSize.Y / 2f), Muted);
+        DrawRawText(_small, "SHIELD", new(shieldX + arcRadius + 8f * s, gaugeY - shieldSize.Y / 2f), Muted);
+
+        // Native turret-range flag (dialog.mdl:4073-4081), modern diamond.
+        if (tp.InRange)
+        {
+            var c = new Vector2(x0 + 200f * s, y0 - 90f * s);
+            foreach (int x in new[] { -1, 1 }) foreach (int y in new[] { -1, 1 })
+                DrawLine(c, c + new Vector2(x * 7, y * 7) * _scale, _scale, side);
+        }
+
+        ElementDrawn("Target name", "Target type description", "Target side identity",
+            "Target hull", "Target shield", "Target range or sector", "Target speed", "Target in weapon range");
+    }
+
+    private void DrawModernTargetGauge(Vector2 center, float fraction, Color color, float scale)
+    {
+        float radius = 16f * scale;
+        float frac = Math.Clamp(fraction, 0f, 1f);
+        Arc(center, radius, -MathF.PI * .72f, MathF.PI * 1.44f, Muted * .22f, 2f * scale);
+        if (frac > 0f)
+            Arc(center, radius, -MathF.PI * .72f, MathF.PI * 1.44f * frac, color, 2f * scale);
+    }
+
     protected override void DrawTargetSelectionBracket(in TargetSelectionView target)
     {
         float half = TargetSelectionStyle.HalfSize;

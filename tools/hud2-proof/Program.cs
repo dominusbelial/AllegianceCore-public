@@ -105,6 +105,7 @@ sealed class Proof : Game
             Docked = scenario == "docked", Dead = scenario == "dead", CommandView = scenario == "command", Hidden = scenario == "hidden",
             Camera = scenario == "command" ? CameraMode.Command : CameraMode.Cockpit,
             Target = target ? new(new(w / 2 + 126.5f * spread, h / 2 - 112.5f * spread), true, "Enemy fighter with a long pilot name", .6f, .3f, true, null, 1250, 43, new(1, 0, 0)) : null,
+            TargetPane = target ? new(true, "Enemy fighter with a long pilot name", "Fighter", "Rixian", new(1, 0, 0), .6f, .3f, 1250f, 43f, null, null, true, true) : null,
             Lead = target ? new(new(w / 2 + 100, h / 2 - 50), new(w / 2 + 200, h / 2 - 80), true, .8f, 1) : null,
             Lock = target ? new(new(w / 2 + 200, h / 2 - 80), MissileLockFeedback.LockState.Partial, 1) : null,
             HitConfirmation = target, PodReturnInstruction = "Shift+Z / G AUTOPILOT TO BASE",

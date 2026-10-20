@@ -134,6 +134,21 @@ public class HudFormatTests
         Assert.Equal("0", HudFormat.FormatSpeed(-50f));
     }
 
+    // ── Native NumberString formatter ─────────────────────────────────────
+
+    [Theory]
+    [InlineData(-1f, "0")]     // unseen-speed sentinel: (int)(-1 + 0.5) = 0
+    [InlineData(0f, "0")]
+    [InlineData(0.4f, "0")]
+    [InlineData(0.5f, "1")]
+    [InlineData(2.5f, "3")]    // round-half-up, unlike .NET banker's rounding
+    [InlineData(412.498f, "412")]
+    [InlineData(-0.5f, "0")]   // truncation toward zero
+    public void FormatNativeNumber_Uses_Native_Cast_Plus_Half(float v, string expected)
+    {
+        Assert.Equal(expected, HudFormat.FormatNativeNumber(v));
+    }
+
     // ── Money formatter (P442) ───────────────────────────────────────────
 
     [Theory]

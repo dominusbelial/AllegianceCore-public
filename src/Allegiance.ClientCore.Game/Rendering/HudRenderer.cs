@@ -49,6 +49,7 @@ public class HudRenderer
     protected readonly SpriteFont _big;
     private readonly GaugeTextures? _gauges;
     private readonly LockTextures? _lockTextures;
+    private readonly TargetPaneTextures? _targetPaneTextures;
 
     public HudRenderer(
         SpriteBatch spriteBatch,
@@ -56,7 +57,8 @@ public class HudRenderer
         SpriteFont small,
         SpriteFont big,
         GaugeTextures? gauges = null,
-        LockTextures? lockTextures = null)
+        LockTextures? lockTextures = null,
+        TargetPaneTextures? targetPaneTextures = null)
     {
         _sb = spriteBatch;
         _white = whitePixel;
@@ -64,6 +66,7 @@ public class HudRenderer
         _big = big;
         _gauges = gauges;
         _lockTextures = lockTextures;
+        _targetPaneTextures = targetPaneTextures;
     }
 
     /// <summary>
@@ -96,6 +99,12 @@ public class HudRenderer
         bool turretView = context.Turret;
         float w = viewport.Width;
         float h = viewport.Height;
+
+        // Precompute the target-pane top edge so the bottom-centre readouts
+        // (leader/commandee/speed/mouse-stick) can clear it even though the
+        // pane itself is drawn a few steps later.
+        float paneTop = model.TargetPaneVisible && context.TargetPane is { Present: true }
+            ? TargetPaneLayout.TopY(w, h) : h;
 
         BeginBatch();
         try
@@ -157,7 +166,7 @@ public class HudRenderer
             if (model.FlightVisible && context.Target is { } ts)
                 {
                     DrawTargetSelectionBracket(new(new(ts.Center.X, ts.Center.Y), ts.Engaged, ts.Name, ts.HullFraction, ts.ShieldFraction, ts.IsEnemy, ts.OreFraction, ts.Distance, ts.ClosingSpeed, ts.SideColor));
-                    ElementDrawn("Target name", "Target hull", "Target shield", "Target ore", "Target range or sector", "Selected target bracket");
+                    ElementDrawn("Selected target bracket", "Target ore");
                 }
 
             // P359 — the target bearing arrow: a fixed-position compass chevron in
@@ -201,7 +210,7 @@ public class HudRenderer
             // line under the weapon readout; absent for a non-leader (nothing to
             // draw — the gate is enforced upstream in ResolveLeaderBotCommand).
             if (leaderCommand is { } lc)
-                DrawLeaderCommand(lc.Label, w, h);
+                DrawLeaderCommand(lc.Label, w, model.TargetPaneVisible ? paneTop - 70f : h - 140f);
 
             // P425 — the commanded-ship (commandee) readout: a compact line above
             // the leader-command slot naming the ship/drone the pilot is currently
@@ -210,10 +219,17 @@ public class HudRenderer
             // an idle pilot sees nothing extra. Distinct colour from the leader
             // prompt so the two command affordances read apart.
             if (commandeeLabel is not null)
-                DrawCommandee(commandeeLabel, w, h);
+                DrawCommandee(commandeeLabel, w, model.TargetPaneVisible ? paneTop - 96f : h - 164f);
 
             DrawWarnings(model.Warnings, w, h);
             if (model.Warnings.Count > 0) ElementDrawn("Boundary and crowd warnings");
+
+            // HUD-3 — the native bottom target pane (dialog.mdl:5402, shown in
+            // cockpit/chase). Present for a selected target even when the
+            // projected in-world selection bracket is out of view.
+            if (model.TargetPaneVisible && context.TargetPane is { Present: true })
+                DrawTargetPane(model, viewport);
+
             if (frame is not { } f)
                 return;   // no ship yet — gauges/readouts have nothing to show
 
@@ -227,7 +243,9 @@ public class HudRenderer
                 DrawThrottleGauge(f.Throttle, w, h);
             }
             {
-                DrawSpeed(f.Speed, model.SpeedUnit, w, model.PodVisible && !UsesModernGauges ? h - 130 : h);
+                float speedCy = model.TargetPaneVisible ? paneTop - 40f
+                    : model.PodVisible && !UsesModernGauges ? h - 238f : h - 108f;
+                DrawSpeed(f.Speed, model.SpeedUnit, w, speedCy);
                 ElementDrawn("Speed");
             }
             DrawAfterburner(f.AfterburnerActive, f.Power, w);
@@ -291,7 +309,7 @@ public class HudRenderer
             // stick is centred inside the deadzone so the ship holds steady.
             if (model.MouseStickVisible && f.MouseStick is { } ms)
                 {
-                    DrawMouseStick(ms, w, h);
+                    DrawMouseStick(ms, w, model.TargetPaneVisible ? paneTop - 90f : h - 140f);
                     ElementDrawn("Joystick turning indicator");
                 }
 
@@ -328,6 +346,15 @@ public class HudRenderer
             var p = new Vector2(viewport.Width / 2f + gauge.NativeOffset.X * spread, viewport.Height / 2f + gauge.NativeOffset.Y * spread);
             Layout.Reserve(new Rectangle((int)p.X - 55, (int)p.Y - 50, 110, 150));
         }
+        ReserveTargetPane(model, viewport);
+    }
+
+    /// <summary>Reserve the native bottom target pane so measured text (radar
+    /// labels, notices, projected readouts) is placed around it.</summary>
+    protected void ReserveTargetPane(HudModel model, Viewport viewport)
+    {
+        if (model.TargetPaneVisible && model.Context.TargetPane is { Present: true })
+            Layout.Reserve(TargetPaneLayout.ReserveRect(viewport.Width, viewport.Height));
     }
     public Rectangle DrawOverlayText(string text, Vector2 position, Color color) => DrawMeasuredText(_small, text, position, color);
     protected void DrawText(SpriteFont font, string text, Vector2 position, Color color)
@@ -563,12 +590,11 @@ public class HudRenderer
     }
 
     /// <summary>Bottom-center speed readout: large accent numeral + unit label.</summary>
-    private void DrawSpeed(float speed, string unit, float w, float h)
+    private void DrawSpeed(float speed, string unit, float w, float cy)
     {
         string txt = HudFormat.FormatSpeed(speed);
         var sz = _big.MeasureString(txt);
         float cx = w / 2f;
-        float cy = h - 108f;
         DrawText(_big, txt, new Vector2(cx - sz.X / 2f, cy), Accent);
 
         var usz = _small.MeasureString(unit);
@@ -698,13 +724,13 @@ public class HudRenderer
     /// accent. Present ONLY when the local player is the team leader with a
     /// same-side bot selected — Game1's <see cref="LeaderBotCommand"/> is null
     /// for a non-leader, so this simply never draws for them.</summary>
-    private void DrawLeaderCommand(string label, float w, float h)
+    private void DrawLeaderCommand(string label, float w, float cy)
     {
         var sz = _small.MeasureString(label);
         float cx = w / 2f;
-        // P409 — raised above the bottom-centre speed numeral (h - 108) so the
-        // leader-command prompt never overprints the speed readout.
-        DrawText(_small, label, new Vector2(cx - sz.X / 2f, h - 140f), Accent);
+        // P409 — raised above the bottom-centre speed numeral so the
+        // leader-command prompt never overprints it.
+        DrawText(_small, label, new Vector2(cx - sz.X / 2f, cy), Accent);
     }
 
     /// <summary>
@@ -714,12 +740,12 @@ public class HudRenderer
     /// (h - 164) in a distinct mint colour so the two command affordances never
     /// collide or read the same. Present only while a commandee is selected
     /// (Game1's <c>commandeeLabel</c> is null otherwise).</summary>
-    private void DrawCommandee(string label, float w, float h)
+    private void DrawCommandee(string label, float w, float cy)
     {
         var sz = _small.MeasureString(label);
         float cx = w / 2f;
         var mint = new Color(0.55f, 0.95f, 0.65f);   // mint — distinct from the leader cyan accent
-        DrawText(_small, label, new Vector2(cx - sz.X / 2f, h - 164f), mint);
+        DrawText(_small, label, new Vector2(cx - sz.X / 2f, cy), mint);
     }
 
     /// <summary>
@@ -1107,6 +1133,104 @@ public class HudRenderer
     }
 
     /// <summary>
+    /// HUD-3 — the native bottom target pane (<c>Artwork/dialog.mdl:4217-4242</c>).
+    /// Classic skin: the real target gauge / oval / range bitmaps at their
+    /// native pane-local anchors with side-coloured text
+    /// (<c>WinTrek/consoledata.cpp:40-199</c>). The projected in-world selection
+    /// bracket is drawn separately; this pane stays visible for a selected
+    /// target even when that target is out of view (native
+    /// <c>IsNotNull(Target)</c>).
+    /// </summary>
+    protected virtual void DrawTargetPane(HudModel model, Viewport viewport)
+    {
+        var tp = model.Context.TargetPane!.Value;
+        float w = viewport.Width, h = viewport.Height;
+        float s = TargetPaneLayout.Scale(w, h);
+        float x0 = TargetPaneLayout.OriginX(w, h);
+        float y0 = TargetPaneLayout.OriginY(w, h);
+        var side = From(tp.SideColor);
+
+        // Decorative oval/word art (native white art; the oval colour layer is
+        // side-tinted, dialog.mdl:4165-4191).
+        DrawPaneTexture(_targetPaneTextures?.Oval, x0 + 192f * s, y0 + 75f * s, s, Color.White);
+        DrawPaneTexture(_targetPaneTextures?.OvalColor, x0 + 256f * s, y0 + 2f * s, s, side);
+        DrawPaneTexture(_targetPaneTextures?.OvalWord1, x0 + 193f * s, y0 - 8f * s, s, Color.White);
+        DrawPaneTexture(_targetPaneTextures?.OvalWord2, x0 + 320f * s, y0 - 8f * s, s, Color.White);
+
+        // Name + type (native GetName(Target) ": " GetModelTypeDesc(Target),
+        // dialog.mdl:4043-4050), centred at the pane centre.
+        string nameLine = (tp.Name ?? "unknown") + (tp.TypeDescription is { } td ? ": " + td : "");
+        var nameSize = PaneTextSize(_small, nameLine);
+        DrawRawText(_small, nameLine,
+            new(x0 + TargetPaneLayout.LocalCenterX * s - nameSize.X / 2f,
+                y0 - TargetPaneLayout.LocalNameBottom * s - nameSize.Y), side);
+
+        // Range (left) and speed (right), native local y=33. Both use native
+        // NumberString ((int)(v+0.5), engine/modeler.cpp:2008) so the unseen
+        // speed sentinel -1 reads "0" and exact halves round up.
+        if (tp.Distance is { } distance)
+        {
+            string range = string.Concat("RANGE: ", HudFormat.FormatNativeNumber(distance));
+            DrawRawText(_small, range, new(x0 + 400f * s, y0 - 33f * s - PaneTextSize(_small, range).Y), side);
+        }
+        if (tp.Speed is { } speed)
+        {
+            string text = string.Concat("SPEED: ", HudFormat.FormatNativeNumber(speed));
+            var size = PaneTextSize(_small, text);
+            DrawRawText(_small, text, new(x0 + 242f * s - size.X, y0 - 33f * s - size.Y), side);
+        }
+
+        // ARMOR / SHIELD labels (native medVerdana; port reuses the HUD font).
+        var armorSize = PaneTextSize(_small, "ARMOR");
+        DrawRawText(_small, "ARMOR", new(x0 + 228f * s - armorSize.X, y0 - 73f * s - armorSize.Y), side);
+        DrawRawText(_small, "SHIELD", new(x0 + 410f * s, y0 - 73f * s - PaneTextSize(_small, "SHIELD").Y), side);
+
+        // Dedicated target hull/shield gauges (dialog.mdl:4123-4135), bottom-up
+        // reveal of the real native gauge art.
+        DrawTargetGauge(_targetPaneTextures?.Hull, TargetPaneTextures.HullRect, tp.HullFraction ?? 0f,
+            x0 + 235f * s, y0 - 33f * s, s);
+        DrawTargetGauge(_targetPaneTextures?.Shield, TargetPaneTextures.ShieldRect, tp.ShieldFraction ?? 0f,
+            x0 + 367f * s, y0 - 33f * s, s);
+
+        // Native turret-range icon (dialog.mdl:4073-4081), only when in range.
+        if (tp.InRange)
+            DrawPaneTexture(_targetPaneTextures?.Range, x0 + 200f * s, y0 - 90f * s, s, Color.White);
+
+        ElementDrawn("Target name", "Target type description", "Target side identity",
+            "Target hull", "Target shield", "Target range or sector", "Target speed", "Target in weapon range");
+    }
+
+    /// <summary>Pane strings are sanitised once by
+    /// <see cref="TargetPaneModel"/> (or are ASCII literals/numbers here), so
+    /// the draw path measures and draws them verbatim — no per-frame LINQ.</summary>
+    protected Vector2 PaneTextSize(SpriteFont font, string text) =>
+        font.MeasureString(text) * TextScale;
+
+    protected void DrawRawText(SpriteFont font, string text, Vector2 topLeft, Color color)
+        => RenderText(font, text, topLeft, color, TextScale);
+
+    protected void DrawPaneTexture(Texture2D? tex, float leftX, float bottomY, float scale, Color tint)
+    {
+        if (tex is null) return;
+        var dst = new Rectangle((int)MathF.Round(leftX), (int)MathF.Round(bottomY - tex.Height * scale),
+            (int)MathF.Round(tex.Width * scale), (int)MathF.Round(tex.Height * scale));
+        _sb.Draw(tex, dst, tint);
+    }
+
+    protected void DrawTargetGauge(Texture2D? tex, Rectangle srcFull, float fraction,
+        float leftX, float bottomY, float scale)
+    {
+        if (tex is null) return;
+        float frac = HudFormat.Clamp01(fraction);
+        int srcH = (int)MathF.Round(srcFull.Height * frac);
+        if (srcH <= 0) return;
+        var src = new Rectangle(srcFull.X, srcFull.Y + (srcFull.Height - srcH), srcFull.Width, srcH);
+        var dst = new Rectangle((int)MathF.Round(leftX), (int)MathF.Round(bottomY - srcH * scale),
+            (int)MathF.Round(srcFull.Width * scale), (int)MathF.Round(srcH * scale));
+        _sb.Draw(tex, dst, src, Color.White);
+    }
+
+    /// <summary>
     /// P359 — the target bearing arrow: a fixed-position compass chevron in the
     /// bottom-right corner whose pointing direction is the selected target's REAL
     /// relative bearing from the camera, supplied as a normalized screen-space unit
@@ -1263,11 +1387,10 @@ public class HudRenderer
     /// the teal accent colour once it leaves the deadzone. A caption beneath
     /// states the deadzone % and the curve mode (QUAD default / LIN).
     /// </summary>
-    private void DrawMouseStick(in MouseStickView v, float w, float h)
+    private void DrawMouseStick(in MouseStickView v, float w, float cy)
     {
         const float R = 38f;
         float cx = w / 2f;
-        float cy = h - 140f;
 
         // Range (unit-deflection) circle + light cross-hairs.
         DrawCircleOutline(cx, cy, R, BorderDim);

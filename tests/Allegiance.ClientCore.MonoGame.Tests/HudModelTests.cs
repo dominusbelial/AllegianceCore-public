@@ -145,9 +145,13 @@ public class HudModelTests
         Assert.Equal(Frame.HullFraction, model.Elements.Single(e => e.Id == "Hull integrity").Value);
         Assert.False(model.Elements.Single(e => e.Id == "Target hull").Available);
         Assert.False(model.Elements.Single(e => e.Id == "Target range or sector").Available);
-        var ranged = HudModel.Create(Frame, model.Context with { Target = model.Context.Target!.Value with { Distance = 1250 } });
+        var pane = new HudTargetPane(true, "Enemy fighter", "Fighter", "Rixian", new(1, 0, 0), .6f, .3f, 1250f, 43f, null, null, true, true);
+        var ranged = HudModel.Create(Frame, model.Context with { TargetPane = pane });
         Assert.Equal(1250, ranged.Elements.Single(e => e.Id == "Target range or sector").Value);
         Assert.True(ranged.Elements.Single(e => e.Id == "Target range or sector").Visible);
+        Assert.Equal(43f, ranged.Elements.Single(e => e.Id == "Target speed").Value);
+        Assert.Equal("Rixian", ranged.Elements.Single(e => e.Id == "Target side identity").Text);
+        Assert.True(ranged.Elements.Single(e => e.Id == "Target in weapon range").Visible);
         var ore = model.Elements.Single(e => e.Id == "Target ore");
         Assert.True(ore.Visible);
         Assert.Equal(.5f, ore.Value);
@@ -167,5 +171,30 @@ public class HudModelTests
         Assert.True(model.Elements.Single(e => e.Id == "Chat composition and recipient").Visible);
         var hidden = HudModel.Create(Frame, context with { Hidden = true });
         Assert.False(hidden.Elements.Single(e => e.Id == "Chat composition and recipient").Visible);
+    }
+
+    [Theory]
+    [InlineData(CameraMode.Cockpit, true)]
+    [InlineData(CameraMode.Chase, true)]
+    [InlineData(CameraMode.ExternalOverride, true)]   // ofGloatCam (WinTrek/WinTrek.cpp:6844)
+    [InlineData(CameraMode.ExternalTurret, false)]
+    [InlineData(CameraMode.Command, false)]
+    public void Target_pane_follows_native_cockpit_chase_mask(CameraMode camera, bool expected)
+    {
+        var pane = new HudTargetPane(true, "Enemy fighter", "Fighter", null, new(1, 0, 0), .6f, .3f, 1250f, 43f, null, null, true, true);
+        var model = HudModel.Create(Frame, new() { Camera = camera, TargetPane = pane });
+        Assert.Equal(expected, model.TargetPaneVisible);
+        Assert.Equal(expected, model.Elements.Single(e => e.Id == "Target name").Visible);
+    }
+
+    [Fact]
+    public void Target_pane_hides_when_docked_dead_or_hidden_but_not_for_null_telemetry()
+    {
+        var pane = new HudTargetPane(true, "rock", "asteroid", null, new(1, 1, 1), null, null, null, 0f, null, null, false, false);
+        Assert.False(HudModel.Create(Frame, new() { Docked = true, TargetPane = pane }).TargetPaneVisible);
+        Assert.False(HudModel.Create(Frame, new() { Dead = true, TargetPane = pane }).TargetPaneVisible);
+        Assert.False(HudModel.Create(Frame, new() { Hidden = true, TargetPane = pane }).TargetPaneVisible);
+        // The pane is telemetry-independent: a selected target still shows it.
+        Assert.True(HudModel.Create(null, new() { TargetPane = pane }).TargetPaneVisible);
     }
 }

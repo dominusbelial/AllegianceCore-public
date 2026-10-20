@@ -261,10 +261,14 @@ public sealed partial class Game1
         // the procedural bracket.
         var lockTextures = LockTextures.Load(GraphicsDevice, _assets);
         _lockTextures = lockTextures;
+        // HUD-3 — the real native bottom target-pane bitmaps (gauges, range
+        // icon, oval decoration); graceful text/procedural fallback when absent.
+        var targetPaneTextures = TargetPaneTextures.Load(GraphicsDevice, _assets);
+        _targetPaneTextures = targetPaneTextures;
         // P578 — the real eject-pod panel + death banner .mdl bitmaps (graceful
         // procedural fallback when the artwork is absent).
         _feedbackTextures = Rendering.FeedbackTextures.Load(GraphicsDevice, _assets);
-        _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, gauges, lockTextures);
+        _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, gauges, lockTextures, targetPaneTextures);
 
         // P214 — in-flight chat overlay (same SpriteBatch/font plumbing as the HUD).
         _modernHudRenderer = new ModernHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings, Content.Load<SpriteFont>("HUDModern"));

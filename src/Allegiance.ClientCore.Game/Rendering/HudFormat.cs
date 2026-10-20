@@ -72,6 +72,15 @@ public static class HudFormat
             System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>
+    /// Native <c>NumberString</c> (<c>engine/modeler.cpp:2008</c>):
+    /// <c>(int)(v + 0.5f)</c> — truncation toward zero, so the target pane's
+    /// unseen-speed sentinel <c>-1</c> displays as <c>"0"</c> and exact halves
+    /// round up (2.5 → 3, unlike .NET's banker's rounding).
+    /// </summary>
+    public static string FormatNativeNumber(float v) =>
+        ((int)(v + 0.5f)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>
     /// P442 — format a player's money the way native presents it: a dollar
     /// sign followed by the plain decimal integer (native formats money with
     /// <c>wsprintf(cbTemp, "%d", pplayer->GetMoney())</c>,

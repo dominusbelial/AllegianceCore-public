@@ -181,6 +181,36 @@ public sealed partial class Game1
     }
 
     /// <summary>
+    /// HUD-3 — resolve the native bottom target-pane snapshot from the player's
+    /// own T/G selection, independent of whether the target projects into the
+    /// current view. Values follow <c>WinTrek/consoledata.cpp:40-199</c>:
+    /// visible type (or "unknown" — the port has no native last-seen hull/sector
+    /// wire fields), side name + actual side colour, damageable hull/shield
+    /// fractions (0 when not visible/live), same-cluster range (-1 → the
+    /// sector-name fallback the port leaves unavailable), target speed (0 static,
+    /// -1 unseen dynamic), asteroid-only ore, and the lead predictor's in-range
+    /// flag (<c>WinTrek/indicator.cpp:405</c>).
+    /// </summary>
+    private HudTargetPane? ComputeTargetPane()
+    {
+        lock (_session.Gate)
+        {
+            if (_autoTarget is not { } t) return null;
+            var kind = t.Kind switch
+            {
+                TargetKind.Ship => IgcObjectType.Ship,
+                TargetKind.Station => IgcObjectType.Station,
+                TargetKind.Asteroid => IgcObjectType.Asteroid,
+                TargetKind.Warp => IgcObjectType.Warp,
+                TargetKind.Probe => IgcObjectType.Probe,
+                TargetKind.Cluster => IgcObjectType.Cluster,
+                _ => IgcObjectType.Treasure,
+            };
+            return TargetPaneModel.Build(_session.World, kind, t.Id, t.Name, _hullById, _shopCatalog?.StationTypes);
+        }
+    }
+
+    /// <summary>
     /// P359 — the screen-space unit DIRECTION from the camera toward the selected
     /// autopilot target, regardless of whether that target projects into the view
     /// frustum (the bearing arrow's whole point is telling the pilot which way to

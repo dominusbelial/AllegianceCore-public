@@ -1,0 +1,42 @@
+{
+  "1920x1080-combat-Classic": {
+    "source": "/home/domingo/allegiance-evidence/HUD3b/1920x1080-combat-Classic.png",
+    "size": [
+      1920,
+      1080
+    ],
+    "sha256": "ea912abf4169ef7baa431ab3e523c188bb8e148c786f135515ccf6edc21f035b",
+    "bytes": 968842,
+    "webp": "1920x1080-combat-Classic.webp"
+  },
+  "1920x1080-combat-Modern": {
+    "source": "/home/domingo/allegiance-evidence/HUD3b/1920x1080-combat-Modern.png",
+    "size": [
+      1920,
+      1080
+    ],
+    "sha256": "43d9dc4dcba0bc51a5df1c1a692690cd5997350911846285ba445ac604cdf8c6",
+    "bytes": 224715,
+    "webp": "1920x1080-combat-Modern.webp"
+  },
+  "2560x1440-combat-Classic": {
+    "source": "/home/domingo/allegiance-evidence/HUD3b/2560x1440-combat-Classic.png",
+    "size": [
+      2560,
+      1440
+    ],
+    "sha256": "cd78daede2984c413c79e81ee34ae45038362d2a8a36ed068cbe15cb96adf880",
+    "bytes": 1588087,
+    "webp": "2560x1440-combat-Classic.webp"
+  },
+  "2560x1440-combat-Modern": {
+    "source": "/home/domingo/allegiance-evidence/HUD3b/2560x1440-combat-Modern.png",
+    "size": [
+      2560,
+      1440
+    ],
+    "sha256": "7abe59d0f2a4211992f486476c1579b5fb87397364b269d8a4d6efe97b1482f9",
+    "bytes": 327190,
+    "webp": "2560x1440-combat-Modern.webp"
+  }
+}
