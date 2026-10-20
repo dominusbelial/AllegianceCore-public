@@ -44,6 +44,11 @@ public sealed partial class ClientWorld
         if (index < 0 || inventory[index].Amount <= 0) return;
         inventory[index] = inventory[index] with { Amount = (short)(inventory[index].Amount - 1) };
         StoreInventory(ship, inventory);
+
+        // P755 — SIM-0446: native BaseClient::FireExpendable plays deployChaffSound
+        // for the local ship when the expendable type is chaff (clintlib.cpp:3249).
+        if (message.LauncherId == MyShipId && message.EquipmentType == EquipmentType.ChaffLauncher)
+            RecordSoundEvent(ClientSoundEventKind.DeployChaff, message.LauncherId);
     }
 
     // appmsg.cpp:2631-2636 resolves on our SIDE, rather than the whole roster.

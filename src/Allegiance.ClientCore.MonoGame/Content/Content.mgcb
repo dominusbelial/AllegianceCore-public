@@ -69,6 +69,18 @@
 /processorParam:Quality=Best
 /build:Sounds/dropmine.ogg
 
+#begin Sounds/dropobject.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dropobject.ogg
+
+#begin Sounds/mousedown.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/mousedown.ogg
+
 #begin Sounds/vo_sal_shieldsoffline.ogg
 /importer:OggImporter
 /processor:SoundEffectProcessor

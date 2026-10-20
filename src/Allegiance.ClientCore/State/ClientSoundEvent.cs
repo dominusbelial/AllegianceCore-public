@@ -197,6 +197,12 @@ public enum ClientSoundEventKind
     /// when the mine's <c>LauncherId</c> is the local ship.</summary>
     MineDeployed,
 
+    /// <summary><c>deployChaffSound</c> — the LOCAL ship deployed chaff
+    /// (clintlib.cpp:3249, <c>if (pShip == m_ship)</c>; wave <c>dropobject</c>,
+    /// sounddef.mdl:367). Detected on the own ship's FM_S_FIRE_EXPENDABLE(74)
+    /// when the launcher is the local ship and the equipment type is chaff.</summary>
+    DeployChaff,
+
     /// <summary><c>salShieldsOfflineSound</c> — the local ship's shield was
     /// knocked offline (overload damage, shieldIGC.cpp:186; wave
     /// <c>vo_sal_shieldsoffline</c>, sounddef.mdl:791). Detected on the local

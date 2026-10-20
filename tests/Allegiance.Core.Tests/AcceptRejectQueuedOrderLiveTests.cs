@@ -133,6 +133,7 @@ public sealed class AcceptRejectQueuedOrderLiveTests
             CommandId = OrderChange.CidGoto,
             TargetType = IgcObjectType.Ship,
             TargetId = 555,
+            SenderId = 777,
         };
         var bytes = msg.Encode();
         Assert.Equal(QueuedCommandUpdate.FixedSize, bytes.Length);
@@ -140,12 +141,14 @@ public sealed class AcceptRejectQueuedOrderLiveTests
         Assert.Equal(OrderChange.CidGoto, dec.CommandId);
         Assert.Equal(IgcObjectType.Ship, dec.TargetType);
         Assert.Equal((short)555, dec.TargetId);
+        Assert.Equal((short)777, dec.SenderId);
         Assert.True(dec.HasPending);
 
         // A clear (CidNone) notification has no pending order.
-        var clear = new QueuedCommandUpdate { CommandId = OrderChange.CidNone, TargetType = (IgcObjectType)(-1), TargetId = -1 };
+        var clear = new QueuedCommandUpdate { CommandId = OrderChange.CidNone, TargetType = (IgcObjectType)(-1), TargetId = -1, SenderId = -1 };
         var decClear = QueuedCommandUpdate.Decode(clear.Encode());
         Assert.False(decClear.HasPending);
+        Assert.Equal((short)-1, decClear.SenderId);
         Console.WriteLine("P424-CODEC: QUEUED_COMMAND_UPDATE(215) queued + cleared shapes round-tripped");
     }
 

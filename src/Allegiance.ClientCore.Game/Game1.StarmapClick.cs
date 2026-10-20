@@ -189,6 +189,13 @@ public sealed partial class Game1
             return;
         }
 
+        if (!mark)
+        {
+            // P755 — native plays mouseclickSound for a left click that lands on
+            // a cluster, before the action branches (sectormap.cpp:1523).
+            _sound?.PlayMapClick();
+        }
+
         if (mark)
         {
             // Native sectormap.cpp:1491-1510: leader broadcasts toggle, other

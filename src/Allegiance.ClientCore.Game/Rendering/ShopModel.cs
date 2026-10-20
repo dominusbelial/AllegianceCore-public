@@ -240,9 +240,12 @@ public sealed class ShopModel
     {
         if (BuyableHulls.Count == 0) return;
         var hull = BuyableHulls[HullCursor];
-        ChosenHullId = hull.HullId == CurrentHullId ? null : hull.HullId;
+        bool picked = hull.HullId != CurrentHullId;   // re-picking de-picks (keep current)
+        ChosenHullId = picked ? hull.HullId : null;
         RebaseForEffectiveHull();
         BlockReason = null;
+        if (picked)
+            HullChosen?.Invoke();            // native mountSound on hull pick, load.cpp:1480-1487
     }
 
     /// <summary>The hull row the HULLS cursor is on (for the detail panel).</summary>
@@ -361,6 +364,19 @@ public sealed class ShopModel
         private set => _partCursor = Math.Clamp(value, 0, OpenSlotParts.Count); // +1 reserved for the "(empty)" row
     }
 
+    /// <summary>P755 — a slot part choice was made from the open-slot menu:
+    /// <c>true</c> = a part was mounted, <c>false</c> = the slot was emptied
+    /// (the native loadout menu plays mountSound / unmountSound here,
+    /// load.cpp:1887/1889). Game1 maps these to SoundManager.PlayMountPart /
+    /// PlayUnmountPart.</summary>
+    public event Action<bool>? SlotPartChosen;
+
+    /// <summary>P755 — a different hull was picked from the HULLS list, so the
+    /// pending loadout was rebased onto its default loadout (the native hull-menu
+    /// selection plays mountSound here, load.cpp:1480-1487). Game1 maps it to
+    /// SoundManager.PlayMountPart.</summary>
+    public event Action? HullChosen;
+
     /// <summary>P519 — choose the part under the open-slot cursor, filling the
     /// open slot in the pending loadout, then return to the slot list.</summary>
     public void ChoosePartInOpenSlot()
@@ -370,11 +386,13 @@ public sealed class ShopModel
         if (_partCursor >= OpenSlotParts.Count)
         {
             ClearSlot(slot);
+            SlotPartChosen?.Invoke(false);   // native unmountSound, load.cpp:1889
         }
         else
         {
             var offer = OpenSlotParts[_partCursor];
             FillSlot(slot, offer);
+            SlotPartChosen?.Invoke(true);    // native mountSound, load.cpp:1887
         }
         CloseSlot();
         BlockReason = null;

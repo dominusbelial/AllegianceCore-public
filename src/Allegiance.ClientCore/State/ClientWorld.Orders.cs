@@ -10,13 +10,43 @@ public sealed partial class ClientWorld
     public QueuedCommandState? MyAcceptedCommand { get; private set; }
 
     public void ClearAcceptedCommand() => MyAcceptedCommand = null;
-    public void RejectQueuedCommand() => _myQueuedCommand = null;
 
-    /// <summary>Native AcceptQueuedCommand, WinTrek.cpp:10659-10696. Returns the
-    /// legal order consumed; join changes wing without replacing accepted.</summary>
+    /// <summary>Native RejectQueuedCommand(true, true), WinTrek.cpp:10583-10623.
+    /// P755 also sends the native voNegativeSound reply to the order's sender.</summary>
+    public void RejectQueuedCommand()
+    {
+        if (_lastCommandOrMoneySender != MyShipId && _ships.ContainsKey(_lastCommandOrMoneySender))
+            SendNegativeChat(_lastCommandOrMoneySender);
+        _myQueuedCommand = null;
+        _lastCommandOrMoneySender = Na;
+    }
+
+    /// <summary>Native AcceptQueuedCommand, WinTrek.cpp:10659-10712. Returns the
+    /// order only when it was actually consumed — everything (the accepted slot,
+    /// the wing change, the caller's accept sound / autopilot engage) is gated on
+    /// <c>pmodel && LegalCommand(cid, pmodel)</c> (WinTrek.cpp:10662-10699); an
+    /// illegal order is not consumed and the caller must not accept it. The
+    /// voAffirmativeSound reply still goes out for any pending order, legal or
+    /// not (WinTrek.cpp:10703-10706). P755.</summary>
     public QueuedCommandState? AcceptQueuedCommand()
     {
-        if (_myQueuedCommand is not { } command || !LegalQueuedCommand(command)) return null;
+        if (_myQueuedCommand is not { } command)
+        {
+            _lastCommandOrMoneySender = Na;
+            return null;
+        }
+        // native sends the affirmative whenever the order's sender is not the
+        // local ship, legal or not (WinTrek.cpp:10703-10706), and then drops the
+        // sender (10709) — a second accept press replies no more.
+        if (_lastCommandOrMoneySender != MyShipId && _ships.ContainsKey(_lastCommandOrMoneySender))
+            SendAffirmativeChat(_lastCommandOrMoneySender);
+        _lastCommandOrMoneySender = Na;
+        if (!LegalQueuedCommand(command))
+        {
+            // native consumes nothing for an illegal order; the pending order
+            // stays until its 15 s expiry (WinTrek.cpp:10662,10699).
+            return null;
+        }
         if (command.CommandId == OrderChange.CidJoin)
         {
             if (MyShipId is { } me) Upsert(me).WingId = _ships[command.TargetId].WingId;

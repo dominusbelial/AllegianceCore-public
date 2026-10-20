@@ -189,13 +189,13 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _missileAmbient = null!;  // mmissile — HornetMissileFlight, sounddef.mdl:1303
     private readonly Dictionary<ExplosionSoundTier, SoundEffect> _explosions = new(); // explosionshockwave/ef24/ef120
     private readonly Dictionary<short, SoundEffectInstance> _missileAmbients = new(); // keyed by MissileID (P234)
-    // P260 — probe cues. Real single-default assets: deploy reuses the generic
-    // expendable-launch asset (native deployProbeSound = dropobject is reused for
-    // chaff/mine/probe alike, clintlib.cpp:3245-3257; the wave is absent here), and
-    // the ambient is the scanning-loop default (per-type ambientSound unreachable
-    // client-side). See ProbeAmbientSoundCurve remarks.
-    private SoundEffect _probeDeploy = null!;     // lrgslideout — generic expendable deploy (deployProbeSound=dropobject stand-in)
+    // P260 — probe cues. Real single-default assets: the deploy one-shot is the
+    // real dropobject wave (native deployProbeSound = dropobject, sounddef.mdl:369,
+    // P755), and the ambient is the scanning-loop default (per-type ambientSound
+    // unreachable client-side). See ProbeAmbientSoundCurve remarks.
+    private SoundEffect _probeDeploy = null!;     // dropobject — deployProbeSound (sounddef.mdl:369)
     private SoundEffect _mineDeploy = null!;      // P717 — dropmine (deployMineSound, sounddef.mdl:368)
+    private SoundEffect _chaffDeploy = null!;     // P755 — dropobject (deployChaffSound, sounddef.mdl:367)
     private SoundEffect _probeAmbient = null!;    // erbeam — scanning-loop default
     private readonly Dictionary<short, SoundEffectInstance> _probeAmbients = new(); // keyed by ProbeId
     // P267 — hull maneuvering-thruster loop (adjust), the local ship's turn
@@ -332,6 +332,7 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _ungroupWeapons = null!;  // ungroupweapons — ungroupWeaponsSound (:377)
     private SoundEffect _mount = null!;           // mount — mountSound (:286)
     private SoundEffect _unmount = null!;         // unmount — unmountSound (:288)
+    private SoundEffect _mapClick = null!;        // P755 — mousedown — mouseclickSound (sounddef.mdl:321)
     private SoundEffect _cargoFull = null!;       // vo_sal_cargofull — salCargoFullSound (:810)
     // P736 — presence / side-change salutation one-shots (parity wave 23).
     // Waves from sounddef.mdl:825-831 (vo_sal_recruitsarrived / vo_sal_mia /
@@ -769,8 +770,9 @@ public sealed class SoundManager : IDisposable
             _rockHit = LoadSound("Sounds/hitrock");
             _mouseover = LoadSound("Sounds/mouseover");   // P752c — UI hover cue (mouseoverSound, sounddef.mdl:322)
             // P260 — probe cues (single-real-default; see ProbeAmbientSoundCurve remarks).
-            _probeDeploy = LoadSound("Sounds/lrgslideout");  // generic expendable deploy (deployProbeSound=dropobject stand-in)
+            _probeDeploy = LoadSound("Sounds/dropobject");  // P755 — deployProbeSound (sounddef.mdl:369)
             _mineDeploy = LoadSound("Sounds/dropmine");     // P717 — deployMineSound (sounddef.mdl:368)
+            _chaffDeploy = LoadSound("Sounds/dropobject");  // P755 — deployChaffSound (sounddef.mdl:367)
             _probeAmbient = LoadSound("Sounds/erbeam");      // scanning-loop default
             // P267 — hull maneuvering-thruster turn loop (adjust), hull exterior
             // loop (shipout), station exterior ambient loop (shipout), and the tech
@@ -831,6 +833,7 @@ public sealed class SoundManager : IDisposable
             _ungroupWeapons = LoadSound("Sounds/ungroupweapons");
             _mount = LoadSound("Sounds/mount");
             _unmount = LoadSound("Sounds/unmount");
+            _mapClick = LoadSound("Sounds/mousedown");      // P755 — mouseclickSound (sounddef.mdl:321)
             _cargoFull = LoadSound("Sounds/vo_sal_cargofull");
             // P736 — presence / side-change salutation one-shots. Waves
             // sounddef.mdl:825-831 (recruitsarrived / mia / quit / traitor /
@@ -1111,6 +1114,16 @@ public sealed class SoundManager : IDisposable
         PlayWarnOneShot(_jump);
     }
 
+    /// <summary>P755 — play the teleport-pane board-a-ship cue (<c>jumpin</c>,
+    /// native <c>personalJumpSound</c>, sounddef.mdl:274) when the teleport pane
+    /// boards a ship (teleportpane.cpp:319-320, the OT_ship branch of
+    /// <c>OnButtonTeleport</c>). Same wave as <see cref="PlayJump"/>, distinct
+    /// native trigger site. No-op when audio is not loaded.</summary>
+    public void PlayPersonalJump()
+    {
+        PlayWarnOneShot(_jump);
+    }
+
     // ── P710 — wealth announcements (clintlib/appmsg.cpp) ────────────────────
     /// <summary>Play the payday cue (<c>payday</c>, native <c>paydaySound</c>,
     /// appmsg.cpp:1313) on each PAYDAY broadcast. No-op when audio is not
@@ -1260,6 +1273,11 @@ public sealed class SoundManager : IDisposable
     /// <summary>P719 — play the mount cue (<c>mount</c>, native <c>mountSound</c>,
     /// WinTrek.cpp:9098). No-op when not loaded.</summary>
     public void PlayMountPart() => PlayWarnOneShot(_mount);
+
+    /// <summary>P755 — play the sector-map selection click (<c>mousedown</c>,
+    /// native <c>mouseclickSound</c>, sounddef.mdl:321) when a map click lands on
+    /// a cluster (sectormap.cpp:1523). No-op when not loaded.</summary>
+    public void PlayMapClick() => PlayWarnOneShot(_mapClick);
 
     /// <summary>P719 — play the unmount cue (<c>unmount</c>, native
     /// <c>unmountSound</c>, WinTrek.cpp:9102). No-op when not loaded.</summary>
@@ -1770,6 +1788,16 @@ public sealed class SoundManager : IDisposable
         if (IsLoaded) PlayOneShot(_mineDeploy, SoundCategory.WeaponFire, 1f);
     }
 
+    /// <summary>P755 — play the chaff-deploy one-shot (<c>dropobject.ogg</c>;
+    /// native <c>deployChaffSound</c>, sounddef.mdl:367, played for the local
+    /// ship's own drop at <c>clintlib.cpp:3249</c>). Non-positional cockpit-range
+    /// one-shot, mirroring <see cref="PlayMineDeploy"/>. No-op when audio is not
+    /// loaded.</summary>
+    public void PlayChaffDeploy()
+    {
+        if (IsLoaded) PlayOneShot(_chaffDeploy, SoundCategory.WeaponFire, 1f);
+    }
+
     /// <summary>P260 — begin a probe's continuous scanning ambient loop (a looped
     /// instance keyed by the probe's real <c>ProbeId</c>), seeded at the given
     /// volume. Starts it only if one is not already playing for that probe.
@@ -2132,6 +2160,7 @@ public sealed class SoundManager : IDisposable
             foreach (var inst in _missileAmbients.Values) inst.Dispose();
             _probeDeploy?.Dispose();
             _mineDeploy?.Dispose();  // P717
+            _chaffDeploy?.Dispose(); // P755
             _probeAmbient?.Dispose();
             foreach (var inst in _probeAmbients.Values) inst.Dispose();
             _turnThruster?.Dispose();
@@ -2165,6 +2194,7 @@ public sealed class SoundManager : IDisposable
             _ungroupWeapons?.Dispose();        // P719
             _mount?.Dispose();                 // P719
             _unmount?.Dispose();               // P719
+            _mapClick?.Dispose();              // P755
             _cargoFull?.Dispose();             // P719
             // P736 — presence / side-change salutations.
             _salQuit?.Dispose();

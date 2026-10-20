@@ -103,6 +103,12 @@ public sealed partial class Game1
                     mySe.HullId,
                     mySe.Loadout ?? Array.Empty<ExpandedPartData>(),
                     world.MyMoney);
+                // P755 — the loadout menu's own-deploy cues: part chosen / slot
+                // emptied → mountSound/unmountSound (load.cpp:1887/1889); a hull
+                // pick rebases the default loadout → mountSound (load.cpp:1480-1487).
+                _shopModel.SlotPartChosen += mounted => _sound?.PlayWarnPartSound(
+                    mounted ? Allegiance.Core.FlightPartAction.Mount : Allegiance.Core.FlightPartAction.Unmount);
+                _shopModel.HullChosen += () => _sound?.PlayMountPart();
                 // P273 — build the teleport destination list from the live world.
                 _teleportModel = BuildTeleportModel(world, mySe);
                 _teleportActive = false;
@@ -868,6 +874,10 @@ public sealed partial class Game1
         switch (action.Kind)
         {
             case Rendering.TeleportPaneModel.ActionKind.BoardShip:
+                // P755 — native OnButtonTeleport plays personalJumpSound when the
+                // destination is a ship (teleportpane.cpp:319-320); the station
+                // branch plays nothing (teleportpane.cpp:325-352).
+                _sound?.PlayPersonalJump();
                 if (onboard) { _session.SendBoardShip(Rendering.TeleportPaneModel.Na); Console.WriteLine("[monogame] teleport: leave current ship (DisembarkAndBoard)"); }
                 _session.SendBoardShip(action.TargetId);
                 Console.WriteLine($"[monogame] teleport: board ship {action.TargetId} as gunner -> BOARD_SHIP");

@@ -393,6 +393,12 @@ public sealed partial class ClientWorld
     /// the owner-only QUEUED_COMMAND_UPDATE(215) message (see
     /// <see cref="Apply(QueuedCommandUpdate)"/>).</summary>
     private QueuedCommandState? _myQueuedCommand;
+
+    /// <summary>P755 — the ShipID of the player who sent the pending queued
+    /// order or money request, tracked so Accept/Reject can reply with the
+    /// native voAffirmativeSound/voNegativeSound chat (WinTrek.cpp:10596-10705).
+    /// NA (-1) when no sender is known.</summary>
+    private short _lastCommandOrMoneySender = Na;
     private readonly List<ProjectileEntity> _projectiles = new();
     // P539b — drain cursor for TakeNewProjectiles (index of the first not-yet-drained entry).
     private int _projectileDrainCursor;
@@ -2894,10 +2900,19 @@ public sealed partial class ClientWorld
     /// </summary>
     private void Apply(QueuedCommandUpdate u)
     {
-        if (u.HasPending) _moneyRequest = null;
-        _myQueuedCommand = u.HasPending
-            ? new QueuedCommandState(u.CommandId, u.TargetType, u.TargetId)
-            : null;
+        if (u.HasPending)
+        {
+            _moneyRequest = null;
+            _lastCommandOrMoneySender = u.SenderId;
+            _myQueuedCommand = new QueuedCommandState(u.CommandId, u.TargetType, u.TargetId);
+        }
+        else
+        {
+            _myQueuedCommand = null;
+            // Native clears the sender when the queued command times out
+            // (WinTrek.cpp:7687), so a later Reject can't reply to a stale sender.
+            if (_moneyRequest is null) _lastCommandOrMoneySender = Na;
+        }
     }
 
     /// <summary>Successful reload relay: retain the weapon-status counter and

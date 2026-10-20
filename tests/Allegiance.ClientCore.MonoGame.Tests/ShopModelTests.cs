@@ -434,6 +434,83 @@ public class ShopModelTests
             }
         throw new InvalidOperationException("PCore001 has no (hull,weapon,non-fitting-other-hull) triple");
     }
+
+    // ── P755: loadout-menu sound events (native load.cpp:1480-1489,1880-1895) ──
+
+    /// <summary>P755 — choosing a part in the open-slot menu raises
+    /// SlotPartChosen(mounted: true); the "(make slot empty)" row raises it with
+    /// mounted: false — the native mountSound / unmountSound split
+    /// (load.cpp:1887/1889).</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Slot_part_choice_raises_mount_and_clear_events()
+    {
+        Require.Artwork();
+        var hull = HullWithMagazine();
+        var m = new ShopModel(Catalog, hull.HullId, Array.Empty<ExpandedPartData>());
+
+        m.SwitchTab(ShopTab.Parts);
+        int idx = 0;
+        while (m.Slots[idx].Type != EquipmentType.Magazine) idx++;
+        m.MoveCursor(idx - m.Cursor);
+        m.Activate();               // open the slot
+
+        var events = new List<bool>();
+        m.SlotPartChosen += mounted => events.Add(mounted);
+
+        m.Activate();               // choose the first offered part
+        Assert.Equal([true], events);
+
+        // reopen and clear the slot
+        m.SwitchTab(ShopTab.Parts);
+        idx = 0;
+        while (m.Slots[idx].Type != EquipmentType.Magazine) idx++;
+        m.MoveCursor(idx - m.Cursor);
+        m.Activate();
+        m.MoveCursor(m.OpenSlotParts.Count - m.Cursor);   // the "(empty)" row
+        m.Activate();
+        Assert.Equal([true, false], events);
+    }
+
+    /// <summary>P755 — picking a different hull in the HULLS list raises
+    /// HullChosen exactly when the effective hull changes (the native hull-menu
+    /// selection mounts the new hull's default loadout with mountSound,
+    /// load.cpp:1480-1487); re-picking the current hull does not.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Hull_pick_raises_hull_chosen_only_on_change()
+    {
+        Require.Artwork();
+        var cur = CurrentHull();
+        var other = Catalog.Hulls.First(h => h.HullId != cur.HullId);
+        var m = new ShopModel(Catalog, cur.HullId, Array.Empty<ExpandedPartData>());
+
+        int raised = 0;
+        m.HullChosen += () => raised++;
+
+        // move the cursor onto the other hull and pick it
+        int idx = 0;
+        foreach (var h in m.BuyableHulls) { if (h.HullId == other.HullId) break; idx++; }
+        m.MoveCursor(idx - m.Cursor);
+        m.Activate();
+        Assert.Equal(1, raised);
+        Assert.Equal(other.HullId, m.EffectiveHullId);
+
+        // re-picking the same hull remounts its default loadout again (native
+        // plays mountSound for every hull-menu selection, load.cpp:1480-1487)
+        m.Activate();
+        Assert.Equal(2, raised);
+        Assert.Equal(other.HullId, m.EffectiveHullId);
+
+        // clicking the CURRENT hull de-picks (keep current) without a loadout
+        // change → no event
+        int curIdx = 0;
+        foreach (var h in m.BuyableHulls) { if (h.HullId == cur.HullId) break; curIdx++; }
+        m.MoveCursor(curIdx - m.Cursor);
+        m.Activate();
+        Assert.Equal(2, raised);
+        Assert.Equal(cur.HullId, m.EffectiveHullId);
+    }
 }
 
 internal static class ShopModelTestExtensions

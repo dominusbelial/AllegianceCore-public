@@ -1461,7 +1461,7 @@ public sealed partial class Server
     /// <param name="wireOidTarget">The target's wire object id, used when
     /// <paramref name="targetModel"/> is null (a non-Model target).</param>
     public void QueueCommandForPlayer(Ship target, short commandId, Model? targetModel = null,
-        IgcObjectType wireOtTarget = (IgcObjectType)(-1), short wireOidTarget = -1)
+        IgcObjectType wireOtTarget = (IgcObjectType)(-1), short wireOidTarget = -1, short senderId = -1)
     {
         if (target.IsNpc || ConnOf(target) is not { } conn)
         {
@@ -1498,6 +1498,7 @@ public sealed partial class Server
             CommandId = commandId,
             TargetType = targetType,
             TargetId = targetId,
+            SenderId = senderId,
         };
         SendPeer(conn, FedPacket.Pack(new[] { upd.Encode() }));
         Console.WriteLine($"[queuedcmd] queued order commandID={commandId} on ship {target.Id} (target {(targetModel is null ? (targetId < 0 ? "none" : $"wire #{targetId} {targetType}") : $"#{targetModel.Id} {targetType}")}), 15s auto-reject armed @{target.QueuedAt:0.###}");
@@ -1538,7 +1539,7 @@ public sealed partial class Server
             var rs = recipLive.Ship;
             if (rs.IsNpc) continue;                                 // NPC recipients -> P469
             if (rs.SideId != sender.SideId) continue;               // same-side only
-            QueueCommandForPlayer(rs, cid, model, ot, oid);
+            QueueCommandForPlayer(rs, cid, model, ot, oid, sender.Id);
         }
     }
 

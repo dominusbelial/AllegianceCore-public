@@ -23,12 +23,10 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// where <c>deployProbeSound = GainSound(SFXGain, ImportWave("dropobject"))</c>
 /// (<c>sounddef.mdl:369</c>) — a generic expendable-drop sound <b>reused for
 /// chaff, mine and probe alike</b> (lines 367-369), so native deliberately does
-/// NOT give the probe its own launch sound. The <c>dropobject</c> wave is absent
-/// from this port's content tree, so per the P236 convention the deploy cue maps
-/// to the port's existing single generic expendable-launch asset
-/// (<c>lrgslideout</c>, the same asset P236 chose as the generic missile-launch
-/// cue) — faithfully mirroring that native reuses ONE generic deploy sound for
-/// all expendables.</para>
+/// NOT give the probe its own launch sound. P755 bundles the real
+/// <c>dropobject</c> wave (for the chaff-deploy cue), so the deploy cue now maps
+/// to it directly (sounddef.mdl:369) — faithfully mirroring that native reuses
+/// ONE generic deploy sound for all expendables.</para>
 /// </remarks>
 public static class ProbeAmbientSoundCurve
 {

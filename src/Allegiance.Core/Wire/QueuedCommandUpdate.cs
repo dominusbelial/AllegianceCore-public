@@ -36,6 +36,8 @@ namespace Allegiance.Core.Wire;
 ///   offset 6: short  objectType   (ObjectType — of the pending order's target; OT_invalid when none)
 ///   offset 8: short  objectID     (ObjectID — of the pending order's target; NA when none)
 ///   = 10 B fixed, no var items → cbmsg = 10
+    ///   offset 10: short senderID     (ShipID of the player who issued the order; NA when none)
+    ///   = 12 B fixed, no var items → cbmsg = 12
 /// </code>
 /// Same short/short/short fixed shape as the <c>ORDER_CHANGE</c> payload fields,
 /// distinct in fmid and direction (server → the single owning peer).
@@ -45,8 +47,8 @@ public sealed class QueuedCommandUpdate : IFedMessage
     public const ushort Fmid = 215;
 
     /// <summary>Wire width of the whole message: header(4) + commandID(2) +
-    /// objectType(2) + objectID(2). No alignment gaps.</summary>
-    public const int FixedSize = 10;
+    /// objectType(2) + objectID(2) + senderID(2). No alignment gaps.</summary>
+    public const int FixedSize = 12;
 
     /// <summary>The pending queued order's action (<c>CommandID</c>), or
     /// <see cref="OrderChange.CidNone"/> (-1) when there is no pending order.</summary>
@@ -59,6 +61,13 @@ public sealed class QueuedCommandUpdate : IFedMessage
     /// <summary>The <see cref="ObjectID"/> of the pending order's target;
     /// NA (-1) when the order carries no target.</summary>
     public short TargetId;
+
+    /// <summary>The ShipID of the player who issued the queued
+    /// order. Native's client tracks this in trekClient.GetLastSender()
+    /// (WinTrek.cpp:10713-10727) so that Accept/Reject can send the
+    /// voAffirmativeSound/voNegativeSound reply to the correct
+    /// individual. NA (-1) when not set.</summary>
+    public short SenderId = -1;
 
     /// <summary>True iff a queued order is currently pending (id != CidNone).</summary>
     public bool HasPending => CommandId != OrderChange.CidNone;
@@ -74,6 +83,7 @@ public sealed class QueuedCommandUpdate : IFedMessage
         w.WriteI16(CommandId);                          // offset 4: commandID
         w.WriteI16((short)TargetType);                  // offset 6: objectType
         w.WriteI16(TargetId);                           // offset 8: objectID
+        w.WriteI16(SenderId);                           // offset 10: senderID
         w.WriteU16At(0, (ushort)w.Position);
         if (w.Position != FixedSize) throw new InvalidOperationException($"QUEUED_COMMAND_UPDATE internal layout drift: {w.Position} != {FixedSize}");
         return buf;
@@ -94,6 +104,7 @@ public sealed class QueuedCommandUpdate : IFedMessage
             CommandId = r.ReadI16(),
             TargetType = (IgcObjectType)r.ReadI16(),
             TargetId = r.ReadI16(),
+            SenderId = r.ReadI16(),
         };
     }
 }

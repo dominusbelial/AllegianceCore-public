@@ -539,6 +539,12 @@ public sealed partial class Game1
                     // clintlib.cpp:3253; wave dropmine, sounddef.mdl:368).
                     snd.PlayMineDeploy();
                     break;
+                case ClientSoundEventKind.DeployChaff:
+                    // P755 — the own ship deployed chaff (native deployChaffSound,
+                    // clintlib.cpp:3249; wave dropobject, sounddef.mdl:367).
+                    snd.PlayChaffDeploy();
+                    Console.WriteLine($"[monogame] audio: chaff deploy (ship {ev.Id})");
+                    break;
                 case ClientSoundEventKind.ShieldsOffline:
                     // P717 — the own shield was knocked offline (native
                     // salShieldsOfflineSound, shieldIGC.cpp:186; vo_sal_shieldsoffline).

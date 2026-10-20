@@ -1,0 +1,6 @@
+P755 sounds-A scorecard (docs/parity/sim-rules-matrix.csv, area=sounds)
+BEFORE (HEAD=fc9cfdbd WIP, after merge 5c45bc31): implemented 173, partial 12, missing 27, n/a 23  (total 235)
+AFTER  (this task):                               implemented 179, partial 11, missing 22, n/a 23  (total 235)
+
+Rows moved to implemented (6): SIM-0322, SIM-0323, SIM-0324, SIM-0331, SIM-0338, SIM-0446
+Rows updated in place (1):     SIM-0448 (already implemented; asset stand-in removed)

@@ -1247,4 +1247,289 @@ public class ClientWorldSoundEventTests
         Assert.NotNull(ev.Voice);
         Assert.Equal(wave, ev.Voice!.Stem);
     }
+
+    // ── P755 — chaff deploy one-shot ─────────────────────────────────────
+    // Native BaseClient::FireExpendable plays deployChaffSound for the local
+    // ship when the expendable type is chaff (clintlib.cpp:3249).
+
+    [Fact]
+    public void OwnShipFireExpendable_Chaff_RecordsDeployChaff()
+    {
+        short me = 5000;
+        var w = ReloadWorld(me,
+            [(mount: 0, partId: 5001, type: ReloadPart(5001, new DataPartTypeIGC.ChaffLauncher(6)))]);
+        w.Apply(new EnterGame());
+        w.PartTypeResolver = pid => pid == 5001 ? ReloadPart(5001, new DataPartTypeIGC.ChaffLauncher(6)) : null;
+        w.Apply(new FireExpendable { LauncherId = me, EquipmentType = EquipmentType.ChaffLauncher });
+
+        var ev = Assert.Single(w.TakeSoundEvents());
+        Assert.Equal(ClientSoundEventKind.DeployChaff, ev.Kind);
+        Assert.Equal(me, ev.Id);
+    }
+
+    [Fact]
+    public void OtherShipFireExpendable_Chaff_DoesNotRecordDeployChaff()
+    {
+        short me = 5002, other = 5003;
+        var w = ReloadWorld(me, []);
+        w.Apply(new EnterGame());
+        w.Apply(new ExportShip { ShipId = other, SideId = 2 });
+        // Give the other ship a chaff launcher so the fire is accepted.
+        w.Apply(new BuyLoadoutAck
+        {
+            HullId = 7813,
+            FBoughtEverything = true,
+            Parts = [new ExpandedPartData(PartId: 5004, Amount: 1, MountId: 0, FractionMounted: 0)],
+        });
+        w.PartTypeResolver = pid => pid == 5004 ? ReloadPart(5004, new DataPartTypeIGC.ChaffLauncher(6)) : null;
+        w.Apply(new FireExpendable { LauncherId = other, EquipmentType = EquipmentType.ChaffLauncher });
+
+        Assert.Empty(w.TakeSoundEvents());
+    }
+
+    // ── P755 — queued-command / money-request accept/reject voice replies ──
+    // Native AcceptQueuedCommand/RejectQueuedCommand send an Individual chat
+    // carrying voAffirmativeSound (1178) / voNegativeSound (1185) to the player
+    // who issued the queued command or money request (WinTrek.cpp:10596-10705).
+
+    [Fact]
+    public void AcceptQueuedCommand_SendsAffirmativeToSender()
+    {
+        short me = 10, sender = 20;
+        var world = WorldWithMeSeated(me);
+        world.Apply(new ExportShip { ShipId = sender, HullId = 1, SideId = 2, CharacterName = "Leader" });
+        // a real station target keeps the order legal so AcceptQueuedCommand
+        // consumes it (native WinTrek.cpp:10662-10699)
+        world.Apply(new ExportStation { Station = Station(id: 31, side: 2) });
+        world.Apply(new QueuedCommandUpdate
+        {
+            CommandId = OrderChange.CidGoto,
+            TargetType = IgcObjectType.Station,
+            TargetId = 31,
+            SenderId = sender,
+        });
+
+        ChatMessage? captured = null;
+        world.OutgoingChatRequested += m => captured = m;
+        var accepted = world.AcceptQueuedCommand();
+
+        Assert.NotNull(accepted);
+        Assert.NotNull(captured);
+        Assert.Equal("Affirmative.", captured!.Message);
+        Assert.Equal((int)Allegiance.Core.Sim.ChatTarget.Individual, captured.ChatTarget);
+        Assert.Equal(sender, captured.OidRecipient);
+        Assert.Equal((short)1178, captured.VoiceOver);
+        Assert.Equal(me, captured.SidSender);
+    }
+
+    [Fact]
+    public void RejectQueuedCommand_SendsNegativeToSender()
+    {
+        short me = 11, sender = 21;
+        var world = WorldWithMeSeated(me);
+        world.Apply(new ExportShip { ShipId = sender, HullId = 1, SideId = 2, CharacterName = "Leader" });
+        world.Apply(new QueuedCommandUpdate
+        {
+            CommandId = OrderChange.CidAttack,
+            TargetType = IgcObjectType.Ship,
+            TargetId = 99,
+            SenderId = sender,
+        });
+
+        ChatMessage? captured = null;
+        world.OutgoingChatRequested += m => captured = m;
+        world.RejectQueuedCommand();
+
+        Assert.NotNull(captured);
+        Assert.Equal("Negative.", captured!.Message);
+        Assert.Equal((int)Allegiance.Core.Sim.ChatTarget.Individual, captured.ChatTarget);
+        Assert.Equal(sender, captured.OidRecipient);
+        Assert.Equal((short)1185, captured.VoiceOver);
+    }
+
+    [Fact]
+    public void AcceptMoneyRequest_SendsAffirmativeAndDonation()
+    {
+        short me = 12, sender = 22;
+        var world = WorldWithMeSeated(me);
+        world.Apply(new ExportShip { ShipId = sender, HullId = 1, SideId = 2, CharacterName = "Requester" });
+        world.Apply(new SetMoney { ShipId = me, Money = 500 });
+        world.GetMoneyRequest(sender, 200, 1);
+
+        ChatMessage? captured = null;
+        world.OutgoingChatRequested += m => captured = m;
+        var donation = world.AcceptMoneyRequest();
+
+        Assert.NotNull(donation);
+        Assert.Equal(sender, donation!.ShipID);
+        Assert.Equal(200, donation.MoneyGiven);
+        Assert.NotNull(captured);
+        Assert.Equal("Affirmative.", captured!.Message);
+        Assert.Equal((short)1178, captured.VoiceOver);
+        Assert.Equal(sender, captured.OidRecipient);
+    }
+
+    [Fact]
+    public void RejectMoneyRequest_SendsNegative()
+    {
+        short me = 13, sender = 23;
+        var world = WorldWithMeSeated(me);
+        world.Apply(new ExportShip { ShipId = sender, HullId = 1, SideId = 2, CharacterName = "Requester" });
+        world.GetMoneyRequest(sender, 200, 1);
+
+        ChatMessage? captured = null;
+        world.OutgoingChatRequested += m => captured = m;
+        world.RejectMoneyRequest();
+
+        Assert.NotNull(captured);
+        Assert.Equal("Negative.", captured!.Message);
+        Assert.Equal((short)1185, captured.VoiceOver);
+        Assert.Equal(sender, captured.OidRecipient);
+    }
+
+    [Fact]
+    public void AcceptQueuedCommand_SelfOrder_DoesNotReply()
+    {
+        short me = 14;
+        var world = WorldWithMeSeated(me);
+        world.Apply(new QueuedCommandUpdate
+        {
+            CommandId = OrderChange.CidGoto,
+            TargetType = IgcObjectType.Asteroid,
+            TargetId = 5,
+            SenderId = me,
+        });
+
+        ChatMessage? captured = null;
+        world.OutgoingChatRequested += m => captured = m;
+        world.AcceptQueuedCommand();
+
+        Assert.Null(captured);
+    }
+
+    [Fact]
+    public void AcceptQueuedCommand_NoPending_DoesNotReply()
+    {
+        var world = WorldWithMeSeated(15);
+        ChatMessage? captured = null;
+        world.OutgoingChatRequested += m => captured = m;
+        world.RejectQueuedCommand();
+        Assert.Null(captured);
+    }
+
+    [Fact]
+    public void AcceptQueuedCommand_IllegalOrder_IsNotConsumed()
+    {
+        // Regression: the WIP returned the order even when illegal, so the caller
+        // built an accepted order, played the accept sound and could engage
+        // autopilot. Native consumes nothing unless
+        // `pmodel && LegalCommand(cid, pmodel)` (WinTrek.cpp:10662-10699).
+        short me = 16, sender = 26;
+        var world = WorldWithMeSeated(me);
+        world.Apply(new ExportShip { ShipId = sender, HullId = 1, SideId = 2, CharacterName = "Leader" });
+        world.Apply(new QueuedCommandUpdate
+        {
+            CommandId = OrderChange.CidGoto,
+            TargetType = IgcObjectType.Asteroid,
+            TargetId = 999,                       // no such asteroid → illegal
+            SenderId = sender,
+        });
+
+        ChatMessage? captured = null;
+        world.OutgoingChatRequested += m => captured = m;
+        var accepted = world.AcceptQueuedCommand();
+
+        Assert.Null(accepted);
+        Assert.Null(world.MyAcceptedCommand);
+        Assert.NotNull(captured);                 // the affirmative still goes out (WinTrek.cpp:10703-10706)
+        Assert.Equal(sender, captured!.OidRecipient);
+
+        // native drops LastSender on the first accept (WinTrek.cpp:10707-10709):
+        // a second accept press replies no more.
+        captured = null;
+        world.AcceptQueuedCommand();
+        Assert.Null(captured);
+    }
+
+    [Fact]
+    public void RejectQueuedCommand_AfterServerClearsTheOrder_SendsNoStaleNegative()
+    {
+        // The server's auto-reject clears the queued order (HasPending=false);
+        // native drops the sender then (WinTrek.cpp:7687), so a later Reject
+        // press must not reply "Negative." to the old sender (WinTrek.cpp:10603).
+        short me = 18, sender = 28;
+        var world = WorldWithMeSeated(me);
+        world.Apply(new ExportShip { ShipId = sender, HullId = 1, SideId = 2, CharacterName = "Leader" });
+        world.Apply(new QueuedCommandUpdate
+        {
+            CommandId = OrderChange.CidGoto, TargetType = IgcObjectType.Asteroid, TargetId = 999, SenderId = sender,
+        });
+        world.Apply(new QueuedCommandUpdate { CommandId = OrderChange.CidNone });
+
+        ChatMessage? captured = null;
+        world.OutgoingChatRequested += m => captured = m;
+        world.RejectQueuedCommand();
+        Assert.Null(captured);
+    }
+
+    [Fact]
+    public void AcceptQueuedCommand_LegalOrder_IsConsumed()
+    {
+        short me = 17, sender = 27;
+        var world = WorldWithMeSeated(me);
+        world.Apply(new ExportShip { ShipId = sender, HullId = 1, SideId = 2, CharacterName = "Leader" });
+        // a real station target keeps the order legal (CidGoto only needs the
+        // target to resolve, ClientWorld.Orders.cs LegalQueuedCommand)
+        world.Apply(new ExportStation { Station = Station(id: 31, side: 1) });
+        world.Apply(new QueuedCommandUpdate
+        {
+            CommandId = OrderChange.CidGoto,
+            TargetType = IgcObjectType.Station,
+            TargetId = 31,
+            SenderId = sender,
+        });
+
+        var accepted = world.AcceptQueuedCommand();
+
+        Assert.NotNull(accepted);
+        Assert.Equal(OrderChange.CidGoto, accepted!.Value.CommandId);
+        Assert.Null(world.MyQueuedCommand);       // consumed
+        Assert.NotNull(world.MyAcceptedCommand);  // moved to the accepted slot
+    }
+
+    [Fact]
+    public void AcceptMoneyRequest_SelfRequest_NoDonation()
+    {
+        // Regression: the WIP dropped the own-request guard, letting you donate
+        // to yourself. Native donates only when
+        // `pshipSender != trekClient.GetShip()` (WinTrek.cpp:10639).
+        short me = 18;
+        var world = WorldWithMeSeated(me);
+        world.Apply(new SetMoney { Money = 500 });
+        world.GetMoneyRequest(me, 200, 1);
+
+        ChatMessage? captured = null;
+        world.OutgoingChatRequested += m => captured = m;
+        var donation = world.AcceptMoneyRequest();
+
+        Assert.Null(donation);
+        Assert.Null(captured);
+        Assert.Null(world.PendingMoneyRequest);   // still consumed
+    }
+
+    [Fact]
+    public void AcceptMoneyRequest_ClampsToWallet()
+    {
+        short me = 19, sender = 29;
+        var world = WorldWithMeSeated(me);
+        world.Apply(new ExportShip { ShipId = sender, HullId = 1, SideId = 2, CharacterName = "Requester" });
+        world.Apply(new SetMoney { ShipId = me, Money = 50 });
+        world.GetMoneyRequest(sender, 200, 1);
+
+        var donation = world.AcceptMoneyRequest();
+
+        Assert.NotNull(donation);
+        Assert.Equal(50, donation!.MoneyGiven);   // native clamp, WinTrek.cpp:10643-10644
+        Assert.Equal(sender, donation.ShipID);
+    }
 }

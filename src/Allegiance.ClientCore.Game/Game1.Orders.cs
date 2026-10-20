@@ -58,20 +58,32 @@ public sealed partial class Game1
     {
         CommandActionInput.Result result;
         AutopilotTarget? selection;
-        lock (_session.Gate)
+        ChatMessage? reply = null;
+        _session.World.OutgoingChatRequested += OnOutgoingChat;
+        try
         {
-            result = _commandActionInput.Step(keys, composing, KeyBindingStore.Instance.Map, _session.World);
-            selection = CommandSelection(_session.World, result.Selection);
-            if (result.JoinWing is { } wing && _session.World.MyShipId is { } me)
-                _session.SendWingId(me, wing);
-            // A rescuing ship also tells the pod to pick it up (native 10664-10677).
-            if (result.Request is { CommandId: OrderChange.CidPickup } && result.Selection is { TargetType: IgcObjectType.Ship } pickup
-                && _session.World.MyShipId is { } rescuer && _session.World.Ships.TryGetValue(rescuer, out var own)
-                && _session.World.MissionCore?.HullTypes.TryGetValue(own.HullId, out var hull) == true
-                && (hull.HabmCapabilities & DataHullTypeIGC.HabmRescue) != 0)
-                _session.SendChat("", Allegiance.Core.Sim.ChatTarget.Individual, pickup.TargetId,
-                    commandId: OrderChange.CidPickup, objectModel: true, oidTarget: rescuer, otTarget: (short)IgcObjectType.Ship);
+            lock (_session.Gate)
+            {
+                result = _commandActionInput.Step(keys, composing, KeyBindingStore.Instance.Map, _session.World);
+                selection = CommandSelection(_session.World, result.Selection);
+                if (result.JoinWing is { } wing && _session.World.MyShipId is { } me)
+                    _session.SendWingId(me, wing);
+                // A rescuing ship also tells the pod to pick it up (native 10664-10677).
+                if (result.Request is { CommandId: OrderChange.CidPickup } && result.Selection is { TargetType: IgcObjectType.Ship } pickup
+                    && _session.World.MyShipId is { } rescuer && _session.World.Ships.TryGetValue(rescuer, out var own)
+                    && _session.World.MissionCore?.HullTypes.TryGetValue(own.HullId, out var hull) == true
+                    && (hull.HabmCapabilities & DataHullTypeIGC.HabmRescue) != 0)
+                    _session.SendChat("", Allegiance.Core.Sim.ChatTarget.Individual, pickup.TargetId,
+                        commandId: OrderChange.CidPickup, objectModel: true, oidTarget: rescuer, otTarget: (short)IgcObjectType.Ship);
+            }
         }
+        finally
+        {
+            _session.World.OutgoingChatRequested -= OnOutgoingChat;
+        }
+        if (reply is { } chat)
+            _session.SendChat(chat.Message, (Allegiance.Core.Sim.ChatTarget)chat.ChatTarget, chat.OidRecipient,
+                voiceOver: chat.VoiceOver, absentMessage: chat.MessageIsAbsent);
         if (result.Donation is { } donation) _session.SendPlayerDonation(donation);
         if (result.Request is { CommandId: not OrderChange.CidNone }) _sound?.PlayCommandAccepted();
         if (result.Request is { } request)
@@ -82,6 +94,7 @@ public sealed partial class Game1
             if (selection is { } chosen && result.Engage) EngageAutopilotToward(chosen, "execute:");
             RefreshWindowTitle();
         }
+        void OnOutgoingChat(ChatMessage m) => reply = m;
     }
 
     // TK_TargetCommand uses the accepted slot, never the current selection or queue.
