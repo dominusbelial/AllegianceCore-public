@@ -74,7 +74,9 @@ public sealed class P733ResearchTimeTests
         var type = mission.Core.StationTypes.Values.First(st => st.AabmBuild != 0 && st.ConstructionDroneTypeId >= 0
             && mission.Core.DroneTypes.ContainsKey(st.ConstructionDroneTypeId));
         var rock = new Asteroid(new(1, [2000, 2000, 2000], [0,1,0], [1,0,0], [0,0,0,1], 0, 0,
-            type.AabmBuild, 30000, 1000, 60, "rock_build", "", "", sector.Id, "P733 timer fixture", 255));
+            type.AabmBuild, 30000, 1000, 60,
+            NativeAsteroidTypes.GetTypeDefaults(NativeAsteroidTypes.ResolveTypeIndex(type.AabmBuild)).ModelName,
+            "", "", sector.Id, "P733 timer fixture", 255));
         mission.PlaceAsteroid(rock, sector);
         var builder = server.SpawnNpcShip(mission, sector, 0, new(2000, 2000, 2000), type.ConstructionDroneTypeId);
         var effect = sector.StartBuildingEffect(builder, rock, type, server.SimNow);

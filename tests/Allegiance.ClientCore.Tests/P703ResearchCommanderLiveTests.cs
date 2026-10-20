@@ -124,8 +124,9 @@ public sealed class P703ResearchCommanderLiveTests(ITestOutputHelper output)
                 {
                     double angle = slot++ * 2.399963;
                     float x = home[0] + 3000 * (float)Math.Cos(angle), y = home[1] + 3000 * (float)Math.Sin(angle);
+                    var astDef = Allegiance.Core.NativeAsteroidTypes.GetTypeDefaults(Allegiance.Core.NativeAsteroidTypes.ResolveTypeIndex(capability));
                     mission.PlaceAsteroid(new Asteroid(new(1, [x, y, home[2] + copy * 800], [0,1,0], [1,0,0], [0,0,0,1],
-                        0, 0, capability, rockId++, 1000, 60, "rock_build", "", "", sector.Id, "Research map resource", 255)), sector);
+                        0, 0, capability, rockId++, 1000, 60, astDef.ModelName, astDef.TextureName, astDef.IconName, sector.Id, "Research map resource", 255)), sector);
                 }
             Assert.Contains(sector.Asteroids, a => (a.AabmCapabilities & firstBranch[side.Id].AsteroidClass!.Value) != 0);
         }

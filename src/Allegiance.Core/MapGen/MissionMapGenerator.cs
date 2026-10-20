@@ -1240,27 +1240,29 @@ public sealed class MissionMapGenerator
     }
 
 
-    // Port of native CreateAsteroid (common.cpp:2844-2893), but the port has no
-    // OT_asteroidType catalog, so GetTypeDefaults is a small constructed record
-    // keyed on the requested capability mask. See the P397 report for the
-    // simplification.
+    // Port of native CreateAsteroid (common.cpp:2844-2893). The type table and
+    // its selection live in one shared place — NativeAsteroidTypes — which the
+    // port of GetRandomType/GetTypeDefaults populates with the real native
+    // models/icons (bgrndNN / *rock), hit points, radii and name prefixes
+    // (asteroidigc.cpp:126-137,231-255,174-177) instead of the invented
+    // "rock_mine"/"rock_build" names. See the P750 report.
     private void AddAsteroid(short clusterId, short capabilities, float amountHe3)
     {
         var rng = Random.Shared;
-        // Base radius per kind (native varies by type definition).
-        int baseRadius = capabilities == DataAsteroidIGC.AabmMineHe3 ? 120
-                       : capabilities == DataAsteroidIGC.AabmSpecial ? 100
-                       : 140;
-        short radius = (short)rng.Next(baseRadius, 2 * baseRadius + 1);   // randomInt(def.radius, 2*def.radius)
+        int typeIndex = NativeAsteroidTypes.ResolveTypeIndex(capabilities);
+        var def = NativeAsteroidTypes.GetTypeDefaults(typeIndex);
 
-        float ore = 0f;
-        if (capabilities == DataAsteroidIGC.AabmMineHe3 && amountHe3 > 0f)
-            ore = 1.0f * amountHe3;      // base type ore (1.0) * per-map He3 scale
+        // randomInt(def.radius, 2*def.radius) inclusive (common.cpp:2865).
+        short radius = (short)rng.Next(def.Radius, 2 * def.Radius + 1);
+
+        // da.asteroidDef.ore *= amountHe3 only when the type's base ore is
+        // non-zero (common.cpp:2873-2874); only the helium rows carry ore (1.0).
+        float ore = def.Ore != 0f ? def.Ore * amountHe3 : 0f;
         float oreMax = ore;              // da.asteroidDef.oreMax = da.asteroidDef.ore (common.cpp:2875)
 
         float[] fwd = RandomDirection();
         float[] up = Orthogonalize(fwd);
-        float signature = radius / 100.0f;
+        float signature = radius / 100.0f;   // common.cpp:2866
         int id = _nextAsteroidId++;
 
         _asteroids.Add(new DataAsteroidIGC(
@@ -1273,13 +1275,13 @@ public sealed class MissionMapGenerator
             OreMax: oreMax,
             AabmCapabilities: capabilities,
             AsteroidId: (short)id,
-            HitPoints: 1000f,
+            HitPoints: def.HitPoints,
             Radius: radius,
-            ModelName: capabilities == DataAsteroidIGC.AabmMineHe3 ? "rock_mine" : "rock_build",
-            TextureName: "",
-            IconName: "",
+            ModelName: def.ModelName,
+            TextureName: def.TextureName,
+            IconName: def.IconName,
             ClusterId: clusterId,
-            Name: $"Ast{id}-{_ctx.GetCluster(clusterId).Name}",
+            Name: NativeAsteroidTypes.AsteroidName(typeIndex, (short)id),
             Fraction: 255));
     }
 

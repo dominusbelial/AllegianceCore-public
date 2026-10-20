@@ -90,10 +90,16 @@ public sealed partial class Server
                     float radius = 3500 + slot / 12 * 700;
                     float z = home.Position[2] + (slot % 3 - 1) * 800;
                     slot++;
+                    // Real native model/icon/hp/radius/prefix for this rock's
+                    // build capability (asteroidigc.cpp:126-137) instead of the
+                    // invented "rock_build"; ore stays 0 (these are build sites).
+                    int typeIndex = NativeAsteroidTypes.ResolveTypeIndex(mask);
+                    var astDef = NativeAsteroidTypes.GetTypeDefaults(typeIndex);
                     rocks.Add(new(1, [home.Position[0] + radius * (float)Math.Cos(angle),
                         home.Position[1] + radius * (float)Math.Sin(angle), z],
                         [0, 1, 0], [1, 0, 0], [0, 0, 0, 1], 0, 0, mask, id,
-                        1000, 60, "rock_build", "", "", home.ClusterId, "Research map resource", 255));
+                        astDef.HitPoints, astDef.Radius, astDef.ModelName, astDef.TextureName, astDef.IconName,
+                        home.ClusterId, NativeAsteroidTypes.AsteroidName(typeIndex, id), 255));
                     added++;
                 }
                 Console.WriteLine($"[research-map] side={side} capability={mask} available={present + added} planned={requirement.Count()} added={added}");

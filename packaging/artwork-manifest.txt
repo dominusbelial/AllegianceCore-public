@@ -1181,6 +1181,7 @@ machinegun2pwrup.ogg
 machinegun3.ogg
 machinegun3pwrup.ogg
 mebmp.mdl
+meteoriconbmp.mdl
 minebmp.mdl
 minigun1.ogg
 minigun1pwrup.ogg

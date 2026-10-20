@@ -24,8 +24,9 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// deliberately falls back to the procedural generator (see <see cref="RockTextures"/>).
 /// </para>
 /// <para>
-/// The small <c>*rockbmp.mdl</c> files (<c>heliumrockbmp</c>/<c>hotrockbmp</c>/
-/// <c>copperrockbmp</c>/<c>carbonrockbmp</c>/<c>goldrockbmp</c>/<c>waterrockbmp</c>)
+/// The small <c>*rockbmp.mdl</c> files (<c>meteoriconbmp</c>/<c>heliumrockbmp</c>/
+/// <c>hotrockbmp</c>/<c>copperrockbmp</c>/<c>carbonrockbmp</c>/<c>goldrockbmp</c>/
+/// <c>waterrockbmp</c>)
 /// are the native <c>iconName</c> RADAR/MAP icons (16×16), not surface textures —
 /// they are deliberately <b>not</b> used here as rock surfaces.
 /// </para>
