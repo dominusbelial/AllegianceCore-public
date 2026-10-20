@@ -158,13 +158,33 @@ public sealed class Asteroid : IAsteroidIgc, ISideVisible
     private float _lastReportedOre;
 
     /// <summary>Wrap a static record as the runtime model, seeding the pool from
-    /// its <see cref="DataAsteroidIGC.Ore"/>.</summary>
+    /// its <see cref="DataAsteroidIGC.Ore"/> and the P766 sim orientation from
+    /// the record's forward/up (native <c>CasteroidIGC::Initialize</c>,
+    /// <c>Igc/asteroidigc.cpp:41-44</c>: <c>Orientation o(forward, up);
+    /// SetOrientation(o)</c>).</summary>
     public Asteroid(DataAsteroidIGC data)
     {
         Data = data;
         OreRemaining = data.Ore;
         _lastReportedOre = data.Ore;
+        if (data.Forward is { Length: 3 } fwd && data.Up is { Length: 3 } up)
+            Orientation.Set(new Vector3(fwd[0], fwd[1], fwd[2]), new Vector3(up[0], up[1], up[2]));
     }
+
+    /// <summary>
+    /// P766 / SIM-0078 — the rock's sim orientation (the native hit-test
+    /// orientation, <c>CmodelIGC::GetOrientation</c>), seeded from the record's
+    /// forward/up (<c>asteroidigc.cpp:41-44</c>) and post-rotated about the
+    /// record's rotation axis by <c>angle·dt</c> every tick
+    /// (<see cref="Update"/>, the port of <c>CmodelIGC::Update</c>'s rotation
+    /// block, <c>Igc/modelIGC.cpp:85-99</c>). The port's asteroid hit test is
+    /// spherical (<c>Sector.ResolveShipAsteroidCollision</c> builds every rock
+    /// collider with <c>HitShape.Sphere</c>), so this orientation does not
+    /// change collision outcomes — but the native rule advances it regardless
+    /// whenever the rotation angle is non-zero, so it advances here too.
+    /// Read-only view: callers mutate through the spin step only.
+    /// </summary>
+    public Orientation Orientation { get; } = new();
 
     /// <summary>
     /// Grant ore up to <paramref name="requested"/> from this asteroid's pool,
@@ -222,6 +242,16 @@ public sealed class Asteroid : IAsteroidIgc, ISideVisible
     /// </summary>
     internal void Update(double now, float dt, float regeneration)
     {
+        // P766 / SIM-0078 — CmodelIGC::Update's rotation block
+        // (Igc/modelIGC.cpp:85-99): a visible model with a non-zero rotation
+        // angle post-rotates its hit-test orientation by angle·dt and
+        // renormalizes (PostRotate renormalizes internally). Zero-angle rocks
+        // (the common case for authored maps is non-zero, but fixture rocks
+        // use 0) skip the step entirely — the native `if (angle != 0)` guard.
+        // Allocation-free: stack arithmetic + the in-place matrix edit.
+        float[] rot = Data.Rotation;
+        if (rot is { Length: >= 4 } r && r[3] != 0f)
+            Orientation.PostRotate(new Vector3(r[0], r[1], r[2]), r[3] * dt);
         Regenerate(dt, regeneration);
         UpdateOreKnowledge();
         BuildingEffect?.AsteroidUpdate(now); // Igc/asteroidigc.h:85-91

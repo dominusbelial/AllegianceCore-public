@@ -2056,7 +2056,10 @@ public sealed partial class Server
                 case IgcObjectType.Station:
                     foreach (var st in sec.StationRuntimes)
                         if (st.StationId == oid)
-                            return new GotoOrder(GotoKind.Waypoint, sec.Id, st.Center);
+                            // P766 / SIM-0119 — carry the station object so goto
+                            // completion can clear command slots naming it
+                            // (shipIGC.cpp:2802-2810).
+                            return new GotoOrder(GotoKind.Waypoint, sec.Id, st.Center, st.StationId);
                     break;
                 case IgcObjectType.Asteroid:
                     foreach (var rock in sec.Mineable)

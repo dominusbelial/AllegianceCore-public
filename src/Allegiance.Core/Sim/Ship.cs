@@ -5585,6 +5585,23 @@ public sealed partial class Ship : Model, IShipIgc
                     (gw.Kind == GotoKind.Waypoint && (gw.Position - Position).Length() <= AutopilotArrivalRadius))
                 {
                     ConsoleLog.Write($"[goto] ship {Id} (side {SideId}) — arrived {(gw.Kind == GotoKind.Cluster ? $"in sector {gw.ClusterId}" : $"at waypoint ({gw.Position.X:0},{gw.Position.Y:0},{gw.Position.Z:0})")}; clearing goto");
+                    // P766 / SIM-0119 — native gotoplan completion for a c_cidGoto
+                    // plan clears EVERY command slot whose target is the plan
+                    // target, the accepted slot included (shipIGC.cpp:2802-2810:
+                    // for i < c_cmdMax, if m_commandTargets[i] == pmodelPlan →
+                    // SetCommand(i, NULL, c_cidNone)). The port's c_cmdAccepted is
+                    // AcceptedTarget/AcceptedCommandId; it matches the goto by the
+                    // target STATION OBJECT (StationId), never by position. An
+                    // accepted goto to any other target survives, exactly like
+                    // native's loop (only slots naming pmodelPlan are cleared).
+                    if (gw.TargetStationId is { } gotoStation &&
+                        AcceptedCommandId == OrderChange.CidGoto &&
+                        AcceptedTarget is { } accepted && accepted.StationId == gotoStation)
+                    {
+                        AcceptedTarget = null;
+                        AcceptedCommandId = OrderChange.CidNone;
+                        ConsoleLog.Write($"[goto] ship {Id} (side {SideId}) — goto completion clears the accepted goto to station {gotoStation} (shipIGC.cpp:2802-2810)");
+                    }
                     GotoWaypoint = null;
                     return;
                 }
@@ -7323,9 +7340,26 @@ public sealed partial class Ship : Model, IShipIgc
         {
             if (_builderAsteroidTarget == value) return;
             _builderAsteroidTarget = value;
+            // P766 — a new plan (or the effect registering, which nulls the
+            // target) ends the drilling state, the port of SetCommand(c_cmdPlan)
+            // clearing drillingMaskIGC for drones (shipIGC.h:755-757) and of the
+            // drilling|building mask rewrite in buildingeffectigc.h:66.
+            _isDrilling = false;
             DronePlanChanged();
         }
     }
+
+    private bool _isDrilling;
+    /// <summary>P766 — the drilling latch, the port's stand-in for the native
+    /// <c>drillingMaskIGC</c> state bit (Igc/igc.h:819; the port's
+    /// <see cref="ShipControlState"/> declares only the movement/weapon bits).
+    /// Native sets it ONLY on goto arrival at the build approach
+    /// (shipIGC.cpp:2817, <c>c_cmdPlan == c_cidBuild</c> + gotoplan completion)
+    /// and clears it on any new plan (shipIGC.h:755-757), on drifting off-track
+    /// (shipIGC.cpp:2303, <c>SetStateM(0)</c>) and when the building effect
+    /// registers (buildingeffectigc.h:66 rewrites the mask as
+    /// drilling|building). Exposed for tests.</summary>
+    public bool IsDrilling => _isDrilling;
 
     /// <summary>Native WingmanBehaviour bits (igc.h:789-790); default from
     /// shipIGC.cpp:197; repair consumes Strafe/UseMines as well as retreat policy.</summary>
@@ -7546,8 +7580,14 @@ public sealed partial class Ship : Model, IShipIgc
     {
         // shipIGC.h:1607-1617 — null target (pmodel == NULL) and the
         // buildingMask gate both reduce to "only DoNothing is legal".
+        // P766 — the native builder branch additionally refuses every command
+        // while DRILLING: bLegal = ((m_stateM & (drillingMaskIGC|buildingMaskIGC)) == 0)
+        // && ... (shipIGC.h:1582-1586). IsBuilding is the port's buildingMask;
+        // IsDrilling is the port's drillingMaskIGC latch.
         if (target is null || IsBuilding)
             return cid == OrderChange.CidDoNothing;
+        if (PilotType == PilotTypeBuilder && IsDrilling)
+            return cid == OrderChange.CidDoNothing;                       // shipIGC.h:1582
 
         // shipIGC.h:1608-1611 — the ship itself or a model from another mission
         // is not a legal target either.
@@ -7650,19 +7690,45 @@ public sealed partial class Ship : Model, IShipIgc
     /// In the building state (<see cref="IsBuilding"/>, the port's
     /// <c>buildingMaskIGC</c> latch set by <c>StartBuildingEffect</c>) the
     /// builder stops turning and backs off with roll 1 / throttle -0.8. While
-    /// drilling (<see cref="BuilderAsteroidTarget"/> set, no effect yet) it
-    /// stays locked on the rock's rotation axis: off-track means the native
-    /// clears its drilling mask and lets the flight plot re-approach, which is
-    /// exactly what this method does by not overriding the autopilot controls.
+    /// DRILLING it stays locked on the rock's rotation axis while the on-track
+    /// test passes (offset² &lt; 50 and distance² &lt; (r_ship+r_rock+25)²,
+    /// shipIGC.cpp:2280-2296); off-track clears the drilling state — the native
+    /// <c>SetStateM(0)</c> at shipIGC.cpp:2303 — and the flight plot
+    /// re-approaches, which is what leaving the autopilot controls untouched
+    /// does here.
+    /// <para>P766: drilling is gated on the <see cref="IsDrilling"/> latch
+    /// (the port's drillingMaskIGC, shipIGC.h:755-757/igc.h:819), which is SET
+    /// only on arrival at the build approach — the port's arrival idiom
+    /// (stopped, velocity² &lt; 1, the same stopped test
+    /// <c>TryStartBuilderBuild</c>/<c>IsReadyToMine</c> use) combined with the
+    /// on-track test, the role native's gotoplan completion plays at
+    /// shipIGC.cpp:2810-2817 — and CLEARED on any new plan
+    /// (<see cref="BuilderAsteroidTarget"/> setter), off-track, and when the
+    /// building effect registers (buildingeffectigc.h:66).</para>
     /// </summary>
     internal void ApplyBuilderDrillingControls()
     {
         if (!IsNpc || PilotType != PilotTypeBuilder || StationId is not null || Dead) return;
         if (IsBuilding)
         {
+            _isDrilling = false;   // building takes over (buildingeffectigc.h:66 drilling|building)
             Controls = Controls with { Yaw = 0f, Pitch = 0f, Roll = 1f, Throttle = -0.8f };
             return;
         }
+        // P766: no drilling before arrival — a builder still flying its
+        // approach (not yet stopped on-track inside the drill sphere) gets no
+        // drilling hold; native latches the mask on gotoplan arrival
+        // (shipIGC.cpp:2810-2817), never mid-flight.
+        // Merge fixup: another builder's effect already claimed this rock
+        // (TryStartBuilderBuild backs off). Drop the target instead of
+        // latching drilling, which would refuse every later order forever.
+        if (BuilderAsteroidTarget is { BuildingEffect: { } claimed } && !ReferenceEquals(claimed.Builder, this))
+        {
+            _isDrilling = false;
+            BuilderAsteroidTarget = null;
+            return;
+        }
+        if (!_isDrilling && Velocity.LengthSquared() >= 1f) return;
         if (BuilderAsteroidTarget is not { } rock || rock.Data.Position is not { Length: 3 } rp) return;
 
         Vector3 dp = Position - new Vector3(rp[0], rp[1], rp[2]);
@@ -7673,11 +7739,31 @@ public sealed partial class Ship : Model, IShipIgc
         float offset2 = distance2 - dot * dot;
         float radius = 0.5f * HullType.Length + rock.Radius + 25f;
         if (offset2 < 50f && distance2 < radius * radius)
+        {
+            _isDrilling = true;   // P766: arrival at the build approach latches drilling (shipIGC.cpp:2817)
             Controls = Controls with { Yaw = 0f, Pitch = 0f, Roll = 1f, Throttle = 0f };
+        }
+        else
+        {
+            // Off-track — native SetStateM(0) (shipIGC.cpp:2303): clear the
+            // drilling bit and fall through to the flight plot's re-approach,
+            // which is what leaving the autopilot controls untouched does here.
+            _isDrilling = false;
+        }
     }
 
     private void TryStartBuilderBuild(double now)
     {
+        // P766 — documented FALLBACK, not the primary path. Native creates the
+        // building effect from the COLLISION of a drilling builder with its
+        // rock (shipIGC.cpp:875-885, m_bAutopilot && no effect yet), and the
+        // port's collision branch (Sector.ResolveShipAsteroidCollision) does
+        // exactly that. This stopped-within-(r_rock + half-length + 30) test
+        // remains for builders that are already at their rock without a
+        // collision this tick — the P652 reservation flow where the
+        // constructor is ordered onto a rock it is parked next to (spawned at
+        // contact distance minus 20, never overlapping, so no collision event
+        // ever fires) — see P652ConstructorBuildTests.
         if (!IsNpc || PilotType != PilotTypeBuilder || IsRunningAway || IsBuilding || StationId is not null ||
             PlanTarget is not null || GotoWaypoint is not null || BuilderAsteroidTarget is not { } rock ||
             BuilderStationType is not { } type || Sector is not { } sector ||
@@ -8580,8 +8666,13 @@ public enum GotoKind
 /// P403 — a player-issued "goto" order: fly toward a target sector (and optionally a
 /// point within it), then clear on arrival. Carried on <see cref="Ship.GotoWaypoint"/>
 /// and resolved through the shared <see cref="Ship.ApplyNpcAutopilot"/> navigation path.
+/// <para>P766 / SIM-0119 — <see cref="TargetStationId"/> records the station OBJECT a
+/// goto was issued against (native command targets are models, not positions,
+/// shipIGC.cpp:2802-2810), so goto completion can clear every command slot —
+/// the accepted slot included — that names the same target, matched by object
+/// identity, never by position.</para>
 /// </summary>
-public readonly record struct GotoOrder(GotoKind Kind, short ClusterId, Vector3 Position);
+public readonly record struct GotoOrder(GotoKind Kind, short ClusterId, Vector3 Position, short? TargetStationId = null);
 
 /// <summary>
 /// P361 — the outcome of a single auto-reload attempt on an empty-ammo ship

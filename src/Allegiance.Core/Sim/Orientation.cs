@@ -243,6 +243,54 @@ public sealed class Orientation
         (r20, r21, r22) = (n20, n21, n22);
     }
 
+    /// <summary>
+    /// Post-rotate about an arbitrary world axis — the port of
+    /// <c>Orientation::PostRotate(axis, theta)</c> (<c>zlib/orientation.cpp:595-603</c>),
+    /// which builds <c>Orientation o(axis, theta)</c> from
+    /// <c>Matrix::SetRotate</c> (<c>zlib/matrix.cpp:408-452</c>, standard Rodrigues
+    /// form) and post-multiplies (<c>this = this · o</c>). With the row-vector
+    /// transform convention (<c>world = local · M</c>) a post-multiplication
+    /// rotates each basis row of this matrix — the world image of each local
+    /// axis — about the axis by <c>theta</c>, which is exactly Rodrigues'
+    /// <c>v· = v·cosθ + (a×v)·sinθ + a(a·v)(1−cosθ)</c> applied per row.
+    /// Rows are rotated from the pre-rotation values and the basis is
+    /// re-orthonormalized afterwards (<c>CmodelIGC::Update</c> calls
+    /// <c>Renormalize()</c> right after <c>PostRotate</c>,
+    /// <c>Igc/modelIGC.cpp:95-97</c>). A zero-length axis or a zero angle is a
+    /// no-op (native skips the whole block when <c>m_rotation.angle() == 0</c>,
+    /// modelIGC.cpp:87; <c>Matrix::SetRotate</c> normalizes the axis itself).
+    /// Allocation-free: everything is stack arithmetic on the nine cells.
+    /// </summary>
+    public void PostRotate(Vector3 axis, float theta)
+    {
+        float length = axis.Length();
+        if (length == 0f || theta == 0f) return;
+        float x = axis.X / length, y = axis.Y / length, z = axis.Z / length;
+        float c = MathF.Cos(theta);
+        float s = MathF.Sin(theta);
+        float t = 1f - c;
+
+        // Rodrigues terms shared by the three rows.
+        float xx = x * x * t, yy = y * y * t, zz = z * z * t;
+        float xy = x * y * t, xz = x * z * t, yz = y * z * t;
+        float sx = s * x, sy = s * y, sz = s * z;
+
+        float n00 = (xx + c) * r00 + (xy - sz) * r01 + (xz + sy) * r02;
+        float n01 = (xy + sz) * r00 + (yy + c) * r01 + (yz - sx) * r02;
+        float n02 = (xz - sy) * r00 + (yz + sx) * r01 + (zz + c) * r02;
+        float n10 = (xx + c) * r10 + (xy - sz) * r11 + (xz + sy) * r12;
+        float n11 = (xy + sz) * r10 + (yy + c) * r11 + (yz - sx) * r12;
+        float n12 = (xz - sy) * r10 + (yz + sx) * r11 + (zz + c) * r12;
+        float n20 = (xx + c) * r20 + (xy - sz) * r21 + (xz + sy) * r22;
+        float n21 = (xy + sz) * r20 + (yy + c) * r21 + (yz - sx) * r22;
+        float n22 = (xz - sy) * r20 + (yz + sx) * r21 + (zz + c) * r22;
+
+        r00 = n00; r01 = n01; r02 = n02;
+        r10 = n10; r11 = n11; r12 = n12;
+        r20 = n20; r21 = n21; r22 = n22;
+        Renormalize();
+    }
+
     /// <summary><c>Orientation::Roll(theta)</c> (<c>orientation.cpp:562</c>) — pre-multiplied rotation about +z.</summary>
     public void Roll(float theta)
     {
