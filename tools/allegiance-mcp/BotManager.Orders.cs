@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.Session;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Wire;
@@ -6,6 +7,16 @@ namespace Allegiance.Tools.McpSpawner;
 
 internal sealed partial class BotManager
 {
+    // SC7 — goto hold-law constants. An aleph must be approached and HELD
+    // short of its transit sphere (warp.Radius + ship.Radius, ~110 u), never
+    // flown through (FlyWarpLeg) — the group bunches on our side of the border.
+    private const float GotoWarpHoldArrival = 750f;
+    private const float GotoWarpHoldBrake = 1100f;
+    private const float GotoObjectHoldArrival = 550f;
+    private const float GotoObjectHoldBrake = 900f;
+    private const float FollowFriendlyArrival = 220f;
+    private const float FollowFriendlyBrake = 360f;
+
     internal sealed record CommanderOrderReport(short Ship, short? OrderedTarget, short? Target, short? Command, short? TargetType, short? TargetId);
     internal CommanderOrderReport[] CommanderOrders()
     {
@@ -107,6 +118,47 @@ internal sealed partial class BotManager
             if (threat is { } id) EngageShipAt(bot, cs, id, now, 0, 0);
             else CombatFlyTo(bot, point, 250, 600, 0);
         }
+        else if (command.CommandId == OrderChange.CidGoto)
+        {
+            // SC7 — goto: fly to the object and HOLD without attacking.
+            bot.TargetId = null;
+            switch (command.TargetType)
+            {
+                case IgcObjectType.Warp:
+                    // Aleph rally: fly to the mouth and hold JUST short of the
+                    // transit sphere (threshold = warp.Radius + ship.Radius, ~110 u)
+                    // so the group bunches on OUR side of the aleph, not crossing.
+                    CombatFlyTo(bot, point, GotoWarpHoldArrival, GotoWarpHoldBrake, 0);
+                    break;
+                case IgcObjectType.Ship:
+                    // A goto naming an ENEMY ship is the port's "engage that ship"
+                    // action (P431 keys on TargetType == Ship for any command id), so
+                    // preserve the established focus-fire path.
+                    if (enemy)
+                    {
+                        bot.OrderedTargetId = command.TargetId;
+                        EngageCombat(bot, now, null);
+                    }
+                    else
+                    {
+                        // SC7 — goto to a FRIENDLY ship = escort/follow: track its
+                        // LIVE position each tick (a one-shot waypoint strands the
+                        // escort as the leader flies on).
+                        FollowFriendlyShip(bot, cs, command.TargetId);
+                    }
+                    break;
+                case IgcObjectType.Station:
+                    // Friendly station goto: keep the existing dock/approach.
+                    if (TryDockApproachControl(cs, bot, command.TargetId, out var controls, out var movement)) cs.CommandControls(controls, movement);
+                    else if (TryCsPose(cs, bot.ShipId, out var position, out var orientation))
+                        cs.CommandControls(Allegiance.ClientCore.Flight.AutopilotSteering.Pursue(position, orientation, point), 0);
+                    break;
+                default:
+                    // Asteroid / other named friendly-neutral object: fly and hold.
+                    CombatFlyTo(bot, point, GotoObjectHoldArrival, GotoObjectHoldBrake, 0);
+                    break;
+            }
+        }
         else if (enemy && command.TargetType == IgcObjectType.Ship)
         {
             // Retain the established OrderedTarget focus-fire path.
@@ -118,13 +170,6 @@ internal sealed partial class BotManager
             bot.TargetId = command.TargetId;
             EngageShipAt(bot, cs, command.TargetId, now, 0, 0, stationTarget: true);
         }
-        else if (!enemy && command.TargetType == IgcObjectType.Station && command.CommandId == OrderChange.CidGoto)
-        {
-            bot.TargetId = null;
-            if (TryDockApproachControl(cs, bot, command.TargetId, out var controls, out var movement)) cs.CommandControls(controls, movement);
-            else if (TryCsPose(cs, bot.ShipId, out var position, out var orientation))
-                cs.CommandControls(Allegiance.ClientCore.Flight.AutopilotSteering.Pursue(position, orientation, point), 0);
-        }
         else if (command.TargetType == IgcObjectType.Warp)
         { bot.OrderedWarpOrigin = sector; FlyWarpLeg(bot, point); }
         else
@@ -135,5 +180,17 @@ internal sealed partial class BotManager
         }
         bot.LastCluster = current;
         return true;
+    }
+    /// <summary>SC7 — escort/follow a friendly ship: each tick re-read the
+    /// friend's LIVE pose and fly to it at a soft standoff, never attacking.
+    /// A one-shot waypoint (the pre-SC7 fallback) strands the escort the moment
+    /// the leader moves on.</summary>
+    private static void FollowFriendlyShip(ActiveBot bot, ConnectionSession cs, short targetId)
+    {
+        lock (cs.Gate)
+        {
+            if (!cs.World.Ships.TryGetValue(targetId, out var s) || s.Latest is not { } pose) return;
+            CombatFlyTo(bot, pose.Position, FollowFriendlyArrival, FollowFriendlyBrake, 0);
+        }
     }
 }
