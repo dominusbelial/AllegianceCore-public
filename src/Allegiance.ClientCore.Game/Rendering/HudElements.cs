@@ -136,21 +136,42 @@ public static class HudElements
         var result = new List<HudElement>(Native.Length);
         var f = model.Telemetry;
         var c = model.Context;
-        // HUD-5 — precompute the radar overlay/label rows once; each row below
-        // reports the count of contacts that carry that native mask/label line.
-        int acceptedOrders = c.Contacts.Count(contact => contact.AcceptedOrder);
-        int queuedOrders = c.Contacts.Count(contact => contact.QueuedOrder);
-        int nearestEnemy = c.Contacts.Count(contact => contact.NearestEnemy);
-        int threatFlash = c.Contacts.Count(contact => contact.Threat || contact.ThreatFlash);
-        int subjects = c.Contacts.Count(contact => contact.Subject);
-        int carriedFlag = c.Contacts.Count(contact => contact.CarriedFlag);
-        int carriedArtifact = c.Contacts.Count(contact => contact.CarriedArtifact);
-        int ripcord = c.Contacts.Count(contact => contact.Ripcord);
-        int highlight = c.Contacts.Count(contact => contact.Highlight);
+        // HUD-11 — count every radar overlay/label row in ONE pass over the
+        // contacts (HUD-10 ran nine separate Count(...) walks plus an uncached
+        // RadarLabelModel.Resolve per contact). The label decision reuses the
+        // HUD-5b cache when the caller supplied snapshot buffers, so a steady
+        // frame allocates no RadarLabel/string per contact.
+        int acceptedOrders = 0, queuedOrders = 0, nearestEnemy = 0, threatFlash = 0;
+        int subjects = 0, carriedFlag = 0, carriedArtifact = 0, ripcord = 0, highlight = 0;
+        int shipContacts = 0, stationContacts = 0, warpContacts = 0, asteroidContacts = 0;
+        int missileContacts = 0, probeMineContacts = 0, treasureTechContacts = 0;
         int nameLabels = 0, rangeLabels = 0, hullShieldBars = 0, fillBars = 0, eyes = 0, ripSeconds = 0, verbLabels = 0;
-        foreach (var contact in c.Contacts)
+        var labels = model.RadarLabels;
+        for (int i = 0; i < c.Contacts.Count; i++)
         {
-            var label = RadarLabelModel.Resolve(contact, c.RadarMode, c.CommandView);
+            var contact = c.Contacts[i];
+            if (contact.AcceptedOrder) acceptedOrders++;
+            if (contact.QueuedOrder) queuedOrders++;
+            if (contact.NearestEnemy) nearestEnemy++;
+            if (contact.Threat || contact.ThreatFlash) threatFlash++;
+            if (contact.Subject) subjects++;
+            if (contact.CarriedFlag) carriedFlag++;
+            if (contact.CarriedArtifact) carriedArtifact++;
+            if (contact.Ripcord) ripcord++;
+            if (contact.Highlight) highlight++;
+            switch (contact.Kind)
+            {
+                case HudContactKind.Ship: shipContacts++; break;
+                case HudContactKind.Station: stationContacts++; break;
+                case HudContactKind.Warp: warpContacts++; break;
+                case HudContactKind.Asteroid: asteroidContacts++; break;
+                case HudContactKind.Missile: missileContacts++; break;
+                case HudContactKind.Probe: case HudContactKind.Mine: probeMineContacts++; break;
+                case HudContactKind.Treasure: case HudContactKind.Tech: treasureTechContacts++; break;
+            }
+            var label = labels is { } cache
+                ? cache.Resolve(i, contact, c.RadarMode, c.CommandView).Label
+                : RadarLabelModel.Resolve(contact, c.RadarMode, c.CommandView);
             if (label is not { } l) continue;
             if (l.Name is not null) nameLabels++;
             if (l.RangeText is not null) rangeLabels++;
@@ -246,13 +267,13 @@ public static class HudElements
                         Set(c.RoundRadar ? 1 : 0, model.FlightVisible); break;
                     case "Radar LOD modes":
                         Set((float)c.RadarMode, model.FlightVisible); break;
-                    case "Radar ship contacts": Contacts(HudContactKind.Ship); break;
-                    case "Radar station contacts": Contacts(HudContactKind.Station); break;
-                    case "Radar warp contacts": Contacts(HudContactKind.Warp); break;
-                    case "Radar asteroid contacts": Contacts(HudContactKind.Asteroid); break;
-                    case "Radar missile contacts": Contacts(HudContactKind.Missile); break;
-                    case "Radar probe and mine contacts": Contacts(HudContactKind.Probe, HudContactKind.Mine); break;
-                    case "Radar treasure and tech contacts": Contacts(HudContactKind.Treasure, HudContactKind.Tech); break;
+                    case "Radar ship contacts": Set(shipContacts, model.FlightVisible); break;
+                    case "Radar station contacts": Set(stationContacts, model.FlightVisible); break;
+                    case "Radar warp contacts": Set(warpContacts, model.FlightVisible); break;
+                    case "Radar asteroid contacts": Set(asteroidContacts, model.FlightVisible); break;
+                    case "Radar missile contacts": Set(missileContacts, model.FlightVisible); break;
+                    case "Radar probe and mine contacts": Set(probeMineContacts, model.FlightVisible); break;
+                    case "Radar treasure and tech contacts": Set(treasureTechContacts, model.FlightVisible); break;
                     case "Radar accepted order brackets": Set(acceptedOrders, model.FlightVisible && acceptedOrders > 0); break;
                     case "Radar queued order brackets": Set(queuedOrders, model.FlightVisible && queuedOrders > 0); break;
                     case "Radar nearest enemy bracket": Set(nearestEnemy, model.FlightVisible && nearestEnemy > 0); break;
@@ -374,7 +395,6 @@ public static class HudElements
                 bool available = c.TargetPane is { Present: true } && (text is not null || value is not null);
                 element = element with { Available = available, Visible = model.TargetPaneVisible && available, Text = text, Value = value, Color = color };
             }
-            void Contacts(params HudContactKind[] types) => Set(c.Contacts.Count(contact => types.Contains(contact.Kind)), model.FlightVisible);
             void Notices(bool critical)
             {
                 if (critical)

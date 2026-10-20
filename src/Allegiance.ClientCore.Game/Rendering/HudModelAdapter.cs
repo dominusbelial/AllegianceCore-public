@@ -23,7 +23,8 @@ public static class HudModelAdapter
         HudConsoleText? console = null,
         Vector2? velocityMarker = null, Vector2? chaseAim = null, HudOrderArrows? orderArrows = null,
         HudInventoryPane? inventoryPane = null,
-        HudTargetPane? targetPane = null, bool roundRadar = false, float inventorySlide = 0f)
+        HudTargetPane? targetPane = null, bool roundRadar = false, float inventorySlide = 0f,
+        HudSnapshotBuffers? buffers = null)
         => HudModel.Create(frame, new HudContext
         {
             PodReturnInstruction = podReturnInstruction, HitConfirmation = hitConfirmation, Camera = mode, CameraLabel = cameraLabel, Hidden = hidden,
@@ -45,8 +46,9 @@ public static class HudModelAdapter
             CommandLines = commandLines ?? Array.Empty<string>(), InventoryVisible = inventoryVisible,
             Console = console,
             InventoryPane = inventoryPane,
-            Contacts = contacts ?? Array.Empty<HudContact>()
-        });
+            Contacts = contacts ?? Array.Empty<HudContact>(),
+            InventorySlide = inventorySlide
+        }, buffers);
 
     private static HudPoint Point(Vector2 v) => new(v.X, v.Y);
 }

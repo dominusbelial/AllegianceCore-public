@@ -297,6 +297,10 @@ public sealed partial class Game1 : Game
     private readonly List<TrailParticleView> _drawEngineTrailViews = new();
     private readonly List<Rendering.ShipTrailStrip> _drawMotionTrailStrips = new();
     private readonly List<HudContact> _drawRadarContacts = new();
+    // HUD-11 — long-lived snapshot scratch: the per-frame HUD snapshot copies
+    // the hot contact/inventory lists into these reused buffers (no ToArray per
+    // frame) and shares the HUD-5b label cache with the row-count pass.
+    private readonly Rendering.HudSnapshotBuffers _hudSnapshotBuffers = new();
     // HUD-5b — reused candidate buffer for the native nearest-enemy lookup
     // (RadarLabelModel.NearestEnemy), filled only while bRangeLabels is on.
     private readonly List<RadarLabelModel.NearestEnemyCandidate> _nearestEnemyScratch = new();

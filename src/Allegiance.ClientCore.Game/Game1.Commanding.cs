@@ -328,12 +328,16 @@ public sealed partial class Game1
                 Rendering.CommandBarLayout.WingWidth, Rendering.CommandBarLayout.WingHeight),
                 new Rectangle(0, 0, Rendering.CommandBarLayout.WingWidth, Rendering.CommandBarLayout.WingHeight), Color.White);
 
+        // HUD-11 — the native ImageComboFacePane ignores SetString and shows only
+        // the baked "WING ▾" art (effect/combopane.cpp:88-99), so drawing the
+        // wing name on the combo overprinted "WING" (HUD-10 shot). Keep the
+        // selected wing legible in a caption BELOW the panel instead.
         string name = Rendering.CommandBarLayout.WingNames[Math.Clamp(_commandWing, 0,
             Rendering.CommandBarLayout.WingNames.Length - 1)];
         var size = _hudSmall.MeasureString(name);
         _spriteBatch.DrawString(_hudSmall, name,
             new Vector2(left + Rendering.CommandBarLayout.WingLeft + (Rendering.CommandBarLayout.WingWidth - size.X) / 2f,
-                top + Rendering.CommandBarLayout.WingTop + (Rendering.CommandBarLayout.WingHeight - size.Y) / 2f),
+                Rendering.CommandBarLayout.WingCaptionTop(top)),
             Color.White);
     }
 
@@ -399,7 +403,10 @@ public sealed partial class Game1
                     _spriteBatch.Draw(_whitePixel, new Rectangle(x + w, y0, 1, h), Color.White);
                 }
             }
-            float y = 60;
+            // HUD-11 — the native chat pane always ends 126 px below the top
+            // (CommPane SideTop(-160,-126), dialog.mdl:5394); start the port's
+            // command-view summary below it instead of overprinting the chat.
+            float y = Rendering.ChatPaneLayout.BottomFromTop + 6;
             foreach (var line in lines)
             {
                 if (_hudSettings.Style == HudStyle.Modern) continue;

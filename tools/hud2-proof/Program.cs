@@ -80,16 +80,21 @@ sealed class Proof : Game
                     if (size == 1 && width == 1920 && scenario is "combat" or "critical")
                     {
                         RequireBox(boxes, "Current location:", 37);
-                        RequireBox(boxes, "Alystra", 51);
+                        // HUD-11 — the port font line height (22 px), not native's
+                        // raw 14 px, separates label and value (dialog.mdl:1473-1485).
+                        RequireBox(boxes, "Alystra", 59);
                         if (scenario == "combat")
                         {
                             RequireBox(boxes, "Current orders:", 37);
-                            RequireBox(boxes, "attack Enemy fighter", 57);
-                            RequireBox(boxes, "defend Garrison", 77);
+                            RequireBox(boxes, "attack Enemy fighter", 59);
+                            RequireBox(boxes, "defend Garrison", 81);
                         }
-                        RequireBox(boxes, "Reloading ammo...", 74);
+                        // HUD-11 — critical-tip offset uses configured NumChatLines (7): 50+12*7.
+                        RequireBox(boxes, "Reloading ammo...", 134);
                         if (scenario == "critical")
-                            RequireBox(boxes, "Vote: Mutiny against the commander? (Y/N)", 109);
+                            // HUD-11 — configured NumChatLines (7) drives the vote
+                            // offset even though only two lines are shown.
+                            RequireBox(boxes, "Vote: Mutiny against the commander? (Y/N)", 169);
                         RequireBox(boxes, "Ripcord in: 9", 525, 885);
                     }
                     float renderScale = renderer == modern ? Math.Clamp(height / 1080f * settings.Size, .5f, 4) : 1f;
@@ -162,9 +167,13 @@ sealed class Proof : Game
             }
             if (row.StatsText is { } stats)
             {
+                // HUD-11 — production scales the stats font into the native
+                // Point(130,5) slot instead of clipping the reading
+                // (invsweapon.mdl StatsBar); assert the FULL string fits.
                 float statsMax = (InventoryPaneLayout.LineWidth - InventoryPaneLayout.StatsX - 3f) * s;
-                string fit = HudFormat.FitToWidth(stats, t => small.MeasureString(t).X * renderScale, statsMax);
-                Require(small.MeasureString(fit).X * renderScale <= statsMax + .01f, $"inventory stats '{stats}' exceeds the pane at {w}x{h}");
+                float fitScale = InventoryPaneLayout.FitFontScale(stats, statsMax, t => small.MeasureString(t).X * renderScale);
+                Require(small.MeasureString(stats).X * renderScale * fitScale <= statsMax + .01f,
+                    $"inventory stats '{stats}' exceeds the pane at {w}x{h}");
             }
         }
     }

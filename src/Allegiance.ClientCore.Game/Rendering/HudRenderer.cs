@@ -382,6 +382,19 @@ public class HudRenderer
     // formatted lines (no per-frame string/array allocation at 107v107).
     private readonly RadarLabelCache _radarLabels = new();
     protected virtual float TextScale => 1;
+    /// <summary>HUD-11 — the rendered height of one HUD text line. Native
+    /// dialogs translate labels by raw 14 px because native promptFont is 14 px
+    /// high (dialog.mdl:1473-1485); the port's substitute font is taller, so
+    /// stacked console lines use this measured height instead.</summary>
+    protected virtual float TextLineHeight => _small.LineSpacing * TextScale;
+
+    /// <summary>HUD-11 — the native top-centre chat pane owns x =
+    /// [centre-160, centre+195] (CommPane, dialog.mdl:5394; 355 px wide,
+    /// dialog.mdl:180). The port's afterburner/weapons/mining/TiDi cluster is a
+    /// port extension (native has no text there), so it moves into the free slot
+    /// immediately right of the pane instead of drawing over it.</summary>
+    protected float TopStatusCenterX(float viewportWidth)
+        => viewportWidth / 2f + (ChatPaneLayout.Width - ChatPaneLayout.LeftFromCentre) + 16f + 110f * TextScale;
     protected virtual void ElementDrawn(params string[] ids) { }
     protected virtual bool UsesModernGauges => false;
     protected virtual bool DeferWarpFlash => false;
@@ -428,20 +441,66 @@ public class HudRenderer
     /// ignores these reservations.</summary>
     protected void ReserveConsoleAnchors(HudModel model, Viewport viewport)
     {
-        if (model.Context.Console is not { } console) return;
         float w = viewport.Width;
-        int chatLines = model.Context.Chat is { } chat ? chat.Lines.Count : 0;
+        float scale = TextScale;
+        float lineHeight = TextLineHeight;
+        float cxRight = w - 100f * scale;
+
+        // HUD-11 — the native top-centre chat pane owns its slot; clamped radar
+        // labels and dynamic notices yield to it (instead of drawing over the
+        // port's former top-centre afterburner/weapons cluster).
+        int paneLines = ChatPaneLayout.ConfiguredLines(
+            model.Context.Chat?.PaneLines ?? ChatPaneLayout.DefaultLines, model.Context.Docked);
+        Layout.Reserve(new Rectangle(ChatPaneLayout.Left(viewport.Width),
+            ChatPaneLayout.Top(paneLines), ChatPaneLayout.Width, ChatPaneLayout.Height(paneLines)));
+        float statusCx = TopStatusCenterX(w);
+        Layout.Reserve(new Rectangle((int)(statusCx - 160f * scale), 6,
+            (int)(320f * scale), (int)(120f * scale)));
+
+        if (model.Context.Console is not { } console) return;
+        int chatLines = HudConsoleFormat.BannerChatLines(model.Context.Chat);
+
+        // HUD-11 — the native top-right sector block and top-left order block
+        // are fixed anchors: reserve their exact measured boxes before radar
+        // labels are placed, so an edge-clamped label can never overlap them
+        // (and no placement pass can shuffle the block).
+        if (model.FlightVisible && console.SectorName is { } sector)
+        {
+            float labelTop = HudConsoleFormat.SectorLabelTop * scale;
+            float nameTop = HudConsoleFormat.NameBelowLabel(labelTop, lineHeight);
+            ReserveAnchor("Current location:", cxRight, labelTop, centered: true);
+            ReserveAnchor(sector, cxRight, nameTop, centered: true);
+        }
+        if (model.FlightVisible && console.BoardState == 2 && console.CarrierName is { } carrier)
+        {
+            float labelTop = HudConsoleFormat.TurretLabelTop * scale;
+            float nameTop = HudConsoleFormat.NameBelowLabel(labelTop, lineHeight);
+            ReserveAnchor("Turret of:", cxRight, labelTop, centered: true);
+            ReserveAnchor(carrier, cxRight, nameTop, centered: true);
+        }
+        if (console.AcceptedOrder is not null || console.QueuedOrder is not null)
+        {
+            float labelTop = HudConsoleFormat.OrderLabelTop * scale;
+            ReserveAnchor("Current orders:", HudConsoleFormat.OrderLabelX * scale, labelTop, centered: false);
+            if (console.QueuedOrder is { } queued)
+                ReserveAnchor(queued, HudConsoleFormat.OrderTextX * scale,
+                    HudConsoleFormat.OrderQueuedTop(labelTop, lineHeight), centered: false);
+            if (console.AcceptedOrder is { } accepted)
+                ReserveAnchor(accepted, HudConsoleFormat.OrderTextX * scale,
+                    HudConsoleFormat.OrderAcceptedTop(labelTop, lineHeight), centered: false);
+        }
+
         if (model.FlightVisible && model.Context.Ripcord is { } ripcord)
-            ReserveAnchor(ripcord, w / 2f - HudConsoleFormat.RipcordLeft * TextScale,
-                viewport.Height / 2f - HudConsoleFormat.RipcordTop * TextScale, centered: false);
+            ReserveAnchor(ripcord, w / 2f - HudConsoleFormat.RipcordLeft * scale,
+                viewport.Height / 2f - HudConsoleFormat.RipcordTop * scale, centered: false);
         int criticalCount = console.CriticalTips.Count;
         for (int slot = 0; slot < criticalCount; slot++)
         {
             var tip = console.CriticalTips[criticalCount - 1 - slot];
-            ReserveAnchor(tip.Text, w / 2f, HudConsoleFormat.CriticalTipTop(chatLines, slot) * TextScale, centered: true);
+            ReserveAnchor(tip.Text, w / 2f, HudConsoleFormat.CriticalTipTop(chatLines, slot) * scale, centered: true);
         }
         if (console.VoteText is { } vote)
-            ReserveAnchor(vote, w / 2f, HudConsoleFormat.VoteTop(chatLines) * TextScale, centered: true);
+            ReserveAnchor(vote, w / 2f, HudConsoleFormat.VoteTop(chatLines) * scale, centered: true);
     }
 
     private void ReserveAnchor(string text, float anchorX, float top, bool centered)
@@ -627,7 +686,10 @@ public class HudRenderer
         var cortText = new Color(0.586f, 0.578f, 0.680f);   // native cortText/softText (dialog.mdl:24, :3517)
         var yellow = new Color(1f, 1f, 0f);       // native promptFont yellowText
         var red = new Color(1f, 0f, 0f);          // native critical/queued red
-        int chatLines = model.Context.Chat is { } chat ? chat.Lines.Count : 0;
+        float scale = TextScale;
+        float lineHeight = TextLineHeight;
+        float cxRight = w - 100f * scale;
+        int chatLines = HudConsoleFormat.BannerChatLines(model.Context.Chat);
 
         // Sector location — SideTopRight(-180,-37), ofInFlight (dialog.mdl:5419).
         // The image origin is the label's top-left, 37 px below the top edge; the
@@ -635,11 +697,12 @@ public class HudRenderer
         // and uses cortText, not the side colour (dialog.mdl:24, :1438-1445).
         if (model.FlightVisible && console.SectorName is { } sector)
         {
-            float cx = w - 100f;   // 160-wide JustifyCenter box ending 20 px from right
+            float labelTop = HudConsoleFormat.SectorLabelTop * scale;
+            float nameTop = HudConsoleFormat.NameBelowLabel(labelTop, lineHeight);
             var psz = _small.MeasureString("Current location:");
             var nsz = _small.MeasureString(sector);
-            DrawMeasuredText(_small, "Current location:", new(cx - psz.X / 2, HudConsoleFormat.SectorLabelTop), yellow, fixedAnchor: true);
-            DrawMeasuredText(_small, sector, new(cx - nsz.X / 2, HudConsoleFormat.SectorLabelTop + HudConsoleFormat.SectorNameBelowLabel), cortText, fixedAnchor: true);
+            DrawMeasuredText(_small, "Current location:", new(cxRight - psz.X / 2, labelTop), yellow, fixedAnchor: true);
+            DrawMeasuredText(_small, sector, new(cxRight - nsz.X / 2, nameTop), cortText, fixedAnchor: true);
             ElementDrawn("Sector location");
         }
 
@@ -648,11 +711,12 @@ public class HudRenderer
         // line, carrier name 14 px below it, red as native PilotNameImage.
         if (model.FlightVisible && console.BoardState == 2 && console.CarrierName is { } carrier)
         {
-            float cx = w - 100f;
+            float labelTop = HudConsoleFormat.TurretLabelTop * scale;
+            float nameTop = HudConsoleFormat.NameBelowLabel(labelTop, lineHeight);
             var hsz = _small.MeasureString("Turret of:");
             var nsz = _small.MeasureString(carrier);
-            DrawMeasuredText(_small, "Turret of:", new(cx - hsz.X / 2, HudConsoleFormat.TurretLabelTop), yellow, fixedAnchor: true);
-            DrawMeasuredText(_small, carrier, new(cx - nsz.X / 2, HudConsoleFormat.TurretLabelTop + HudConsoleFormat.SectorNameBelowLabel), red, fixedAnchor: true);
+            DrawMeasuredText(_small, "Turret of:", new(cxRight - hsz.X / 2, labelTop), yellow, fixedAnchor: true);
+            DrawMeasuredText(_small, carrier, new(cxRight - nsz.X / 2, nameTop), red, fixedAnchor: true);
             ElementDrawn("Turret carrier identity");
         }
 
@@ -663,16 +727,16 @@ public class HudRenderer
         // AcceptedOrderImage/QueuedOrderImage colours, dialog.mdl:1605-1648).
         if (console.AcceptedOrder is not null || console.QueuedOrder is not null)
         {
-            float labelTop = HudConsoleFormat.OrderLabelTop;
-            DrawMeasuredText(_small, "Current orders:", new(HudConsoleFormat.OrderLabelX, labelTop), yellow, fixedAnchor: true, centerAtScale: false);
+            float labelTop = HudConsoleFormat.OrderLabelTop * scale;
+            DrawMeasuredText(_small, "Current orders:", new(HudConsoleFormat.OrderLabelX * scale, labelTop), yellow, fixedAnchor: true, centerAtScale: false);
             if (console.QueuedOrder is { } q)
             {
-                DrawMeasuredText(_small, q, new(HudConsoleFormat.OrderTextX, labelTop + HudConsoleFormat.OrderQueuedBelowLabel), red, fixedAnchor: true, centerAtScale: false);
+                DrawMeasuredText(_small, q, new(HudConsoleFormat.OrderTextX * scale, HudConsoleFormat.OrderQueuedTop(labelTop, lineHeight)), red, fixedAnchor: true, centerAtScale: false);
                 ElementDrawn("Queued order text");
             }
             if (console.AcceptedOrder is { } a)
             {
-                DrawMeasuredText(_small, a, new(HudConsoleFormat.OrderTextX, labelTop + HudConsoleFormat.OrderAcceptedBelowLabel), cortText, fixedAnchor: true, centerAtScale: false);
+                DrawMeasuredText(_small, a, new(HudConsoleFormat.OrderTextX * scale, HudConsoleFormat.OrderAcceptedTop(labelTop, lineHeight)), cortText, fixedAnchor: true, centerAtScale: false);
                 ElementDrawn("Accepted order text");
             }
         }
@@ -1071,7 +1135,7 @@ public class HudRenderer
         string ab = active ? "AFTERBURNER ACTIVE" : "AFTERBURNER";
         var color = active ? Accent : TextDim;
         var sz = _small.MeasureString(ab);
-        float cx = w / 2f;
+        float cx = TopStatusCenterX(w);
         DrawText(_small, ab, new Vector2(cx - sz.X / 2f, 20f), color);
 
         string pwr = "PWR " + HudFormat.FormatPercent(power) + "%";
@@ -1094,7 +1158,7 @@ public class HudRenderer
         // Highlight the non-default single-weapon mode (accent), dim the default.
         var color = f.GroupFire ? TextDim : Accent;
         var sz = _small.MeasureString(mode);
-        float cx = w / 2f;
+        float cx = TopStatusCenterX(w);
         DrawText(_small, mode, new Vector2(cx - sz.X / 2f, 58f), color);
     }
 
@@ -1106,7 +1170,7 @@ public class HudRenderer
         const string tag = "MINING";
         var color = new Color(0.98f, 0.74f, 0.24f);   // warm amber — activity, not alarm
         var sz = _small.MeasureString(tag);
-        float cx = w / 2f;
+        float cx = TopStatusCenterX(w);
         DrawText(_small, tag, new Vector2(cx - sz.X / 2f, 82f), color);
     }
 
@@ -1125,7 +1189,7 @@ public class HudRenderer
         string label = pct >= 100 ? "TIME DILATION 100%" : $"TIME DILATION {pct}%";
         var color = new Color(0.98f, 0.66f, 0.20f);   // warm amber — performance/system condition
         var sz = _small.MeasureString(label);
-        float cx = w / 2f;
+        float cx = TopStatusCenterX(w);
         DrawText(_small, label, new Vector2(cx - sz.X / 2f, 16f), color);
     }
 
@@ -2044,7 +2108,12 @@ public class HudRenderer
         Color nameColor = row.Selected ? white : row.IsEmpty ? grey : new Color(0.88f, 0.96f, 0.95f);
         if (row.Name.Length > 0)
         {
-            float nameMax = Math.Max(0f, (InventoryPaneLayout.StatsX - InventoryPaneLayout.NameX - 2f) * scale);
+            // HUD-11 — a row with no ammo/stats has no right-hand columns, so its
+            // name may use the whole line (native <c><cargo mount></c> fits at
+            // 1080p instead of clipping to "<cargo moun…").
+            bool hasRightColumn = row.OutOfAmmo || row.StatsText is not null || row.ReadyState is 1 or 2;
+            float nameMax = Math.Max(0f, ((hasRightColumn ? InventoryPaneLayout.StatsX : InventoryPaneLayout.LineWidth)
+                - InventoryPaneLayout.NameX - (hasRightColumn ? 2f : 3f)) * scale);
             _sb.DrawString(_small, FitText(row.Name, nameMax, TextScale),
                 new Vector2(left + InventoryPaneLayout.NameX * scale, textY), nameColor);
         }
@@ -2072,9 +2141,14 @@ public class HudRenderer
         }
         else if (row.StatsText is { } stats)
         {
+            // HUD-11 — native StatsBar lives at Point(130,5) in a 214-wide row
+            // (invsweapon.mdl); the port font is wider, so a raw fit clipped the
+            // reading. Scale the stats glyphs into the native stats slot instead
+            // (HudFormat.FitToWidth is the tested width contract).
             float statsMax = Math.Max(0f, (InventoryPaneLayout.LineWidth - InventoryPaneLayout.StatsX - 3f) * scale);
-            _sb.DrawString(_small, FitText(stats, statsMax, TextScale),
-                new Vector2(left + InventoryPaneLayout.StatsX * scale, textY), white);
+            float statsScale = InventoryPaneLayout.FitFontScale(stats, statsMax, t => _small.MeasureString(t).X);
+            _sb.DrawString(_small, stats, new Vector2(left + InventoryPaneLayout.StatsX * scale, textY),
+                white, 0f, Vector2.Zero, statsScale, SpriteEffects.None, 0f);
         }
     }
 }

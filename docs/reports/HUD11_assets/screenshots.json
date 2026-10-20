@@ -1,0 +1,92 @@
+[
+  {
+    "file": "command-1920x1080-Classic.webp",
+    "source": "~/allegiance-evidence/HUD11/after/command-1920x1080-Classic.png",
+    "source_sha256": "87061600e56c83bd987cc13a15bb6b016b7c9e055054b319842c4714755ebf8f",
+    "bytes": 89682,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  },
+  {
+    "file": "command-1920x1080-Modern.webp",
+    "source": "~/allegiance-evidence/HUD11/after/command-1920x1080-Modern.png",
+    "source_sha256": "c055cb777568a8fd345216cd4717bb8ffde8c878ffc57a41b4362eb55d9809a9",
+    "bytes": 102074,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  },
+  {
+    "file": "command-2560x1440-Classic.webp",
+    "source": "~/allegiance-evidence/HUD11/after/command-2560x1440-Classic.png",
+    "source_sha256": "9f87b5fc56bce2357b736c9a49cd6d3d99f1e8fe0374b9d3629570d4056d6c06",
+    "bytes": 129086,
+    "width": 2560,
+    "height": 1440,
+    "kind": "real-client"
+  },
+  {
+    "file": "command-2560x1440-Modern.webp",
+    "source": "~/allegiance-evidence/HUD11/after/command-2560x1440-Modern.png",
+    "source_sha256": "3452564ebe2a6334ebce43e7c46de8b32f0052470d797b578e0f2fea15dccefe",
+    "bytes": 132370,
+    "width": 2560,
+    "height": 1440,
+    "kind": "real-client"
+  },
+  {
+    "file": "layout-1920x1080-Classic.webp",
+    "source": "~/allegiance-evidence/HUD11/after/layout-1920x1080-Classic.png",
+    "source_sha256": "894eb8c11d8096fc7b8d54e724f0f9bdbd955db19dea4eff360f2949d7a43c68",
+    "bytes": 67498,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  },
+  {
+    "file": "layout-1920x1080-Modern.webp",
+    "source": "~/allegiance-evidence/HUD11/after/layout-1920x1080-Modern.png",
+    "source_sha256": "af973c9989913b157cc9688ad45a87ac94e04e6fe2b535fe62e1fbd7e540a1e9",
+    "bytes": 66026,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  },
+  {
+    "file": "layout-2560x1440-Classic.webp",
+    "source": "~/allegiance-evidence/HUD11/after/layout-2560x1440-Classic.png",
+    "source_sha256": "63bdd794056b197286a3c773739158795043ddb3775b8554e082c2638e80ba07",
+    "bytes": 73448,
+    "width": 2560,
+    "height": 1440,
+    "kind": "real-client"
+  },
+  {
+    "file": "layout-2560x1440-Modern.webp",
+    "source": "~/allegiance-evidence/HUD11/after/layout-2560x1440-Modern.png",
+    "source_sha256": "2104d29cc17800001a8472494f08d3ace9bde705eecf50bd33cca8d0d49cacf2",
+    "bytes": 89366,
+    "width": 2560,
+    "height": 1440,
+    "kind": "real-client"
+  },
+  {
+    "file": "velocity-1920x1080-Classic.webp",
+    "source": "~/allegiance-evidence/HUD11/after/velocity-1920x1080-Classic.png",
+    "source_sha256": "14053255e7a49d2893f84493d6403b5d612c001eeb0149b87ff04dd26deee0b5",
+    "bytes": 34484,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  },
+  {
+    "file": "velocity-1920x1080-Modern.webp",
+    "source": "~/allegiance-evidence/HUD11/after/velocity-1920x1080-Modern.png",
+    "source_sha256": "7dd4521b4f853f15c7e1e749b6e28d13ca81c80afb4c741b35a479a613747ecb",
+    "bytes": 37888,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  }
+]

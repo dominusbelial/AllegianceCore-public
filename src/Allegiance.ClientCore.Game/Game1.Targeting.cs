@@ -1210,30 +1210,9 @@ public sealed partial class Game1
         // (Igc/shipIGC.h:2071-2161): side relationship + the target's
         // hull/station/probe capabilities, resolved from the same client-side
         // catalogues the rest of the commander UI reads.
-        bool? friendly;
-        short? targetHullAbm = null;
-        short? stationSabm = null;
-        short? probeEabm = null;
-        lock (_session.Gate)
-        {
-            short? side = tgt.Kind == TargetKind.Ship && world.Ships.TryGetValue(tgt.Id, out var shipTarget) ? shipTarget.SideId
-                : tgt.Kind == TargetKind.Station && world.Stations.TryGetValue(tgt.Id, out var stationTarget) ? stationTarget.SideId
-                : tgt.Kind == TargetKind.Probe && world.Probes.TryGetValue(tgt.Id, out var probeTarget) ? probeTarget.SideId
-                : null;
-            friendly = side is { } other && world.MySideId is { } ownSide
-                ? other == ownSide || world.AreAllied(ownSide, other)
-                : null;
-            if (tgt.Kind == TargetKind.Ship && world.Ships.TryGetValue(tgt.Id, out var shipT))
-                targetHullAbm = ShipRoleBits(shipT.HullId);
-            else if (tgt.Kind == TargetKind.Station && world.Stations.TryGetValue(tgt.Id, out var stT)
-                     && _shopCatalog is { StationTypes: { } stypes } && stypes.TryGetValue(stT.StationTypeId, out var stype))
-                stationSabm = stype.SabmCapabilities;
-            else if (tgt.Kind == TargetKind.Probe && world.Probes.TryGetValue(tgt.Id, out var prT)
-                     && _shopCatalog is { ProbeTypes: { } ptypes } && ptypes.TryGetValue(prT.ProbetypeId, out var ptype))
-                probeEabm = ptype.EabmCapabilities;
-        }
-        var order = CommandOrderResolver.ResolveDefaultOrder(roleBits, commandeeIsLayer, commandeeOnParent,
-            new CommandTargetProfile(tgt.Kind, tgt.Id, friendly, targetHullAbm, stationSabm, probeEabm));
+        CommandTargetProfile profile;
+        lock (_session.Gate) profile = BuildTargetProfile(world, tgt);
+        var order = CommandOrderResolver.ResolveDefaultOrder(roleBits, commandeeIsLayer, commandeeOnParent, profile);
         if (order is not { } o)
         {
             Console.WriteLine($"[monogame] issue order: no applicable order for commandee {cmd.Name} (#{cmd.Id}) + target {tgt.Name} ({tgt.Kind}#{tgt.Id})");
@@ -1267,6 +1246,32 @@ public sealed partial class Game1
         Allegiance.Core.Wire.OrderChange.CidPickup => "PICKUP",
         _ => $"commandID={commandId}",
     };
+
+    /// <summary>HUD-11 — the target half of the native default-order table
+    /// (<see cref="CommandOrderResolver.ResolveDefaultOrder"/>): side relationship
+    /// plus the target hull/station/probe capabilities. Call under the session
+    /// gate; used by both the issue-order key (commandee) and the plain target
+    /// pick's native <c>SetTarget(pmodel, c_cidDefault)</c> send (WinTrek.cpp:8830-8833).</summary>
+    private CommandTargetProfile BuildTargetProfile(ClientWorld world, AutopilotTarget tgt)
+    {
+        short? side = tgt.Kind == TargetKind.Ship && world.Ships.TryGetValue(tgt.Id, out var shipTarget) ? shipTarget.SideId
+            : tgt.Kind == TargetKind.Station && world.Stations.TryGetValue(tgt.Id, out var stationTarget) ? stationTarget.SideId
+            : tgt.Kind == TargetKind.Probe && world.Probes.TryGetValue(tgt.Id, out var probeTarget) ? probeTarget.SideId
+            : null;
+        bool? friendly = side is { } other && world.MySideId is { } ownSide
+            ? other == ownSide || world.AreAllied(ownSide, other)
+            : null;
+        short? targetHullAbm = null, stationSabm = null, probeEabm = null;
+        if (tgt.Kind == TargetKind.Ship && world.Ships.TryGetValue(tgt.Id, out var shipT))
+            targetHullAbm = ShipRoleBits(shipT.HullId);
+        else if (tgt.Kind == TargetKind.Station && world.Stations.TryGetValue(tgt.Id, out var stT)
+                 && _shopCatalog is { StationTypes: { } stypes } && stypes.TryGetValue(stT.StationTypeId, out var stype))
+            stationSabm = stype.SabmCapabilities;
+        else if (tgt.Kind == TargetKind.Probe && world.Probes.TryGetValue(tgt.Id, out var prT)
+                 && _shopCatalog is { ProbeTypes: { } ptypes } && ptypes.TryGetValue(prT.ProbetypeId, out var ptype))
+            probeEabm = ptype.EabmCapabilities;
+        return new CommandTargetProfile(tgt.Kind, tgt.Id, friendly, targetHullAbm, stationSabm, probeEabm);
+    }
 
     /// <summary>P415 — resolve a ship hull id to its role-relevant ABILITY bits
     /// from the client's static <see cref="ShopCatalog"/> (HabmCapabilities;

@@ -53,6 +53,23 @@ public static class ChatPaneLayout
 
     /// <summary>Visible history lines for the pane's native height.</summary>
     public static int VisibleLines => DefaultLines;
+
+    /// <summary>HUD-11 — the native pane height in lines for a configured
+    /// <c>ChatLines</c> preference: the configured value in flight, capped at 6
+    /// in the loadout view (WinTrek.cpp:6694-6700), range 1-10
+    /// (SetChatLines, WinTrek.cpp:5262-5280).</summary>
+    public static int ConfiguredLines(int configured, bool loadoutView = false)
+    {
+        int lines = Math.Clamp(configured, 1, 10);
+        return loadoutView ? Math.Min(lines, 6) : lines;
+    }
+
+    /// <summary>HUD-11 — the port's chat glyph scale that keeps the substitute
+    /// font inside the native 14 px item slot (native largeFont at ChatFontSize
+    /// 2; chatpane.cpp:374-380). A line drawn at this scale never overlaps the
+    /// row below, however tall the port font is.</summary>
+    public static float TextScale(float fontLineSpacing)
+        => fontLineSpacing <= NativeFontHeight ? 1f : NativeFontHeight / fontLineSpacing;
 }
 
 /// <summary>Native compose states (<c>ConsoleDataImpl::ComposeState</c>,
@@ -180,6 +197,16 @@ public static class CommandBarLayout
     public const int VerbsHeight = 54;
     public static readonly int[] VerbColumns = [32, 62, 92, 122, 152, 182, 212, 242, 268];
 
+    /// <summary>HUD-11 — native <c>WingCombo</c> is an
+    /// <c>ImageComboPane(btnchangewing3.png, smallFont)</c> whose face is a
+    /// <c>ImageComboFacePane</c>; its <c>SetString</c> is a no-op, so the native
+    /// button shows ONLY the baked "WING ▾" art and never the selected wing name
+    /// (effect/combopane.cpp:88-99; dialog.mdl:47-49). The port keeps a small
+    /// caption BELOW the panel (a documented extension) so the selected wing is
+    /// still legible without overprinting the native art.
+    /// </summary>
+    public const int WingCaptionBelowPanel = 3;
+
     /// <summary>Native wing names <c>c_pszWingName</c> (Igc/common.cpp:23-33).</summary>
     public static readonly string[] WingNames =
         ["command", "attack", "defend", "escort", "search", "alpha", "bravo", "charlie", "delta"];
@@ -193,6 +220,10 @@ public static class CommandBarLayout
             + (OnBottomFromScreenBottom - OffBottomFromScreenBottom) * Math.Clamp(progress, 0f, 1f);
         return viewportHeight - bottom - PanelHeight;
     }
+
+    /// <summary>HUD-11 — screen Y of the port's selected-wing caption, below the
+    /// native panel art (never inside the baked "WING" glyphs).</summary>
+    public static float WingCaptionTop(float panelTop) => panelTop + PanelHeight + WingCaptionBelowPanel;
 
     /// <summary>Recipient column (0..3) at a panel-local point, or -1.</summary>
     public static int RecipientColumn(int x, int y)

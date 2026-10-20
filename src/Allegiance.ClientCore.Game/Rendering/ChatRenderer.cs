@@ -50,7 +50,8 @@ public sealed class ChatRenderer
     public void Draw(IReadOnlyList<string> lines, int offset, string inputLine, bool composing,
         double nowSeconds, Viewport viewport, string targetLabel, string? filterLabel = null,
         NativeComposeState composeState = NativeComposeState.NotComposing, float composeProgress = 0f,
-        IReadOnlyList<HudColor?>? lineColors = null, HudColor? sideColor = null)
+        IReadOnlyList<HudColor?>? lineColors = null, HudColor? sideColor = null,
+        int paneLines = ChatPaneLayout.DefaultLines)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -61,8 +62,13 @@ public sealed class ChatRenderer
             int take = Math.Min(MaxVisible, Math.Max(0, lines.Count));
             bool scrolled = offset > 0;
             int paneLeft = ChatPaneLayout.Left(viewport.Width);
-            int paneTop = ChatPaneLayout.Top(ChatPaneLayout.DefaultLines);
-            int paneHeight = ChatPaneLayout.Height(ChatPaneLayout.DefaultLines);
+            int paneTop = ChatPaneLayout.Top(ChatPaneLayout.ConfiguredLines(paneLines));
+            int paneHeight = ChatPaneLayout.Height(ChatPaneLayout.ConfiguredLines(paneLines));
+            // HUD-11 — native largeFont at ChatFontSize 2 is 14 px high
+            // (chatpane.cpp:374-380); the port spritefont is taller, so scale
+            // each line into its native item slot. Rows no longer overlap and
+            // the pane stops bleeding over the top-centre readouts.
+            float textScale = ChatPaneLayout.TextScale(_font.LineSpacing);
 
             if (take > 0)
             {
@@ -74,13 +80,15 @@ public sealed class ChatRenderer
 
                 if (scrolled)
                     _sb.DrawString(_font, "(OLDER - PgDn to newest)",
-                        new Vector2(paneLeft + 3f, paneTop - _font.LineSpacing), OlderHint);
+                        new Vector2(paneLeft + 3f, paneTop - _font.LineSpacing * textScale), OlderHint, 0f,
+                        Vector2.Zero, textScale, SpriteEffects.None, 0f);
 
                 if (filterLabel is not null)
                 {
                     string label = $"[{filterLabel}]";
-                    float lx = paneLeft + ChatPaneLayout.Width - _font.MeasureString(label).X - 8f;
-                    _sb.DrawString(_font, label, new Vector2(Math.Max(paneLeft, lx), paneTop - _font.LineSpacing), OlderHint);
+                    float lx = paneLeft + ChatPaneLayout.Width - _font.MeasureString(label).X * textScale - 8f;
+                    _sb.DrawString(_font, label, new Vector2(Math.Max(paneLeft, lx), paneTop - _font.LineSpacing * textScale),
+                        OlderHint, 0f, Vector2.Zero, textScale, SpriteEffects.None, 0f);
                 }
 
                 // Native item text starts 3 px inside the list item (chatpane.cpp:95)
@@ -90,13 +98,14 @@ public sealed class ChatRenderer
                 for (int i = 0; i < take; i++)
                 {
                     string line = lines[i];
-                    if (_font.MeasureString(line).X > ChatPaneLayout.Width - 6f)
-                        line = TruncateToWidth(line, ChatPaneLayout.Width - 6f);
+                    if (_font.MeasureString(line).X * textScale > ChatPaneLayout.Width - 6f)
+                        line = TruncateToWidth(line, (ChatPaneLayout.Width - 6f) / textScale);
                     int y = paneTop + 3 + i * ChatPaneLayout.NativeFontHeight;
                     if (y + ChatPaneLayout.NativeFontHeight > paneTop + paneHeight) break;
                     Color color = lineColors is not null && i < lineColors.Count && lineColors[i] is { } lc
                         ? From(lc) : TextMain;
-                    _sb.DrawString(_font, line, new Vector2(paneLeft + 3f, y), color);
+                    _sb.DrawString(_font, line, new Vector2(paneLeft + 3f, y), color, 0f,
+                        Vector2.Zero, textScale, SpriteEffects.None, 0f);
                 }
             }
 
@@ -195,7 +204,7 @@ public sealed class ChatRenderer
         if (!model.Visible || model.Context.Chat is not { } chat) return;
         Draw(chat.Lines, chat.Offset, chat.Input, chat.Composing, chat.NowSeconds, viewport,
             chat.Recipient, chat.FilterLabel, chat.ComposeState, chat.ComposeProgress,
-            chat.LineColors, chat.SideColor);
+            chat.LineColors, chat.SideColor, chat.PaneLines);
     }
 
     private string TruncateToWidth(string s, float maxWidth)

@@ -20,12 +20,19 @@ public sealed class HudSettings
     /// extension (native flashes only the hull/shield gauge art, dialog.mdl:2403-2506).
     /// Default on to preserve existing behaviour; set false for native-only flash.</summary>
     public bool DamageWash { get; set; } = true;
+    /// <summary>HUD-11 — native <c>ChatLines</c> preference
+    /// (<c>LoadPreference("ChatLines", 7)</c>, WinTrek.cpp:3317, range 1-10
+    /// SetChatLines WinTrek.cpp:5262-5280). This is the CONFIGURED chat-pane
+    /// height (native <c>NumChatLines</c>), not the number of lines currently
+    /// shown: the vote/critical-tip banner offsets read it.</summary>
+    public int ChatLines { get; set; } = 7;
     public static string DefaultPath => Environment.GetEnvironmentVariable("ALLEGIANCE_HUD_SETTINGS")
         ?? Path.Combine(IntroPreferences.DirectoryPath, "hud.json");
     public void Normalize()
     {
         if (!Enum.IsDefined(Style)) Style = HudStyle.Classic;
         Size = float.IsFinite(Size) ? Math.Clamp(Size, .75f, 1.5f) : 1;
+        ChatLines = Math.Clamp(ChatLines, 1, 10);
     }
     public static HudSettings Load(string path, bool existingPlayer)
     {

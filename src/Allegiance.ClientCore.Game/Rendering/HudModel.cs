@@ -83,7 +83,12 @@ public sealed record HudChat(IReadOnlyList<string> Lines, int Offset, string Inp
     bool Composing, double NowSeconds, string Recipient, string? FilterLabel = null,
     NativeComposeState ComposeState = NativeComposeState.NotComposing,
     float ComposeProgress = 0f, HudColor? SideColor = null,
-    IReadOnlyList<HudColor?>? LineColors = null);
+    IReadOnlyList<HudColor?>? LineColors = null,
+    /// <summary>HUD-11 — native <c>NumChatLines</c>: the configured chat-pane
+    /// height (<c>ChatLines</c> preference, capped at 6 in the loadout view),
+    /// NOT the number of history lines currently shown. Drives the native pane
+    /// geometry and the vote/critical-tip Y offsets.</summary>
+    int PaneLines = ChatPaneLayout.DefaultLines);
 
 /// <summary>Presentation context supplied by the client; no textures, fonts,
 /// graphics device or classic skin settings belong here.</summary>
@@ -160,6 +165,11 @@ public sealed class HudModel
     /// fields. The classic renderer uses the strongly typed groups above;
     /// another renderer can enumerate these semantic elements as well.</summary>
     public IReadOnlyList<HudElement> Elements => HudElements.Build(this);
+    /// <summary>HUD-11 — the caller-owned radar label cache (when the caller
+    /// supplied snapshot buffers), so HudElements' row counts reuse the same
+    /// per-contact cache the renderer draws from instead of resolving the
+    /// native label rules once per contact per count pass.</summary>
+    public RadarLabelCache? RadarLabels { get; }
     public bool Visible => !Context.Hidden;
     public bool FlightVisible => Visible && !Context.Docked && !Context.Dead;
     public bool InstrumentsVisible => FlightVisible && !Context.CommandView;
@@ -208,8 +218,9 @@ public sealed class HudModel
         _ => "CHASE"
     });
 
-    private HudModel(HudFrame? telemetry, HudContext context)
+    private HudModel(HudFrame? telemetry, HudContext context, HudSnapshotBuffers? buffers)
     {
+        RadarLabels = buffers?.RadarLabels;
         // Copy collections so a subsequent world/loadout update cannot alter a
         // snapshot that a second renderer or an evidence capture still owns.
         Telemetry = telemetry is { } t
@@ -226,7 +237,12 @@ public sealed class HudModel
         Context = context with
         {
             Notices = Array.AsReadOnly(context.Notices.ToArray()),
-            Contacts = Array.AsReadOnly(context.Contacts.ToArray()),
+            // HUD-11 — the contact snapshot is the hottest per-frame copy
+            // (~214 contacts at 107v107); reuse the caller's buffer when one was
+            // supplied, otherwise keep the old isolated copy for other callers.
+            Contacts = buffers is { } contactBuffers
+                ? contactBuffers.Contacts.Set(context.Contacts)
+                : Array.AsReadOnly(context.Contacts.ToArray()),
             Chat = context.Chat is { } chat ? chat with
             {
                 Lines = Array.AsReadOnly(chat.Lines.ToArray()),
@@ -239,7 +255,12 @@ public sealed class HudModel
                 CriticalTips = Array.AsReadOnly(console.CriticalTips.ToArray())
             } : null,
             CommandLines = Array.AsReadOnly(context.CommandLines.ToArray()),
-            InventoryPane = context.InventoryPane is { } pane ? pane with { Rows = Array.AsReadOnly(pane.Rows.ToArray()) } : null
+            InventoryPane = context.InventoryPane is { } pane ? pane with
+            {
+                Rows = buffers is { } rowBuffers
+                    ? rowBuffers.InventoryRows.Set(pane.Rows)
+                    : Array.AsReadOnly(pane.Rows.ToArray())
+            } : null
         };
         var gauges = new List<HudGauge>();
         if (Telemetry is { } f)
@@ -308,5 +329,6 @@ public sealed class HudModel
             visible);
     }
 
-    public static HudModel Create(HudFrame? telemetry, HudContext? context = null) => new(telemetry, context ?? new());
+    public static HudModel Create(HudFrame? telemetry, HudContext? context = null, HudSnapshotBuffers? buffers = null)
+        => new(telemetry, context ?? new(), buffers);
 }

@@ -398,7 +398,11 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         Color nameColor = row.Selected ? white : row.IsEmpty ? grey : new Color(224, 236, 238);
         if (row.Name.Length > 0)
         {
-            float nameMax = Math.Max(0f, (InventoryPaneLayout.StatsX - InventoryPaneLayout.NameX - 2f) * s);
+            // HUD-11 — no right-hand columns on a cargo/empty row: let the name
+            // use the full line so "<cargo mount>" is not clipped.
+            bool hasRightColumn = row.OutOfAmmo || row.StatsText is not null || row.ReadyState is 1 or 2;
+            float nameMax = Math.Max(0f, ((hasRightColumn ? InventoryPaneLayout.StatsX : InventoryPaneLayout.LineWidth)
+                - InventoryPaneLayout.NameX - (hasRightColumn ? 2f : 3f)) * s);
             RenderText(_small, FitText(row.Name, nameMax, _scale),
                 new(left + InventoryPaneLayout.NameX * s, textY), nameColor, _scale);
         }
@@ -421,9 +425,11 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         }
         else if (row.StatsText is { } stats)
         {
+            // HUD-11 — scale the native StatsBar reading into its 81-native-px
+            // slot instead of clipping it (invsweapon.mdl Point(130,5)).
             float statsMax = Math.Max(0f, (InventoryPaneLayout.LineWidth - InventoryPaneLayout.StatsX - 3f) * s);
-            RenderText(_small, FitText(stats, statsMax, _scale),
-                new(left + InventoryPaneLayout.StatsX * s, textY), white, _scale);
+            float fit = InventoryPaneLayout.FitFontScale(stats, statsMax, t => _small.MeasureString(t).X * _scale);
+            RenderText(_small, stats, new(left + InventoryPaneLayout.StatsX * s, textY), white, _scale * fit);
         }
     }
 
@@ -437,28 +443,38 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             // (offset applied once). Re-applying StartIndex here collapsed every
             // scrolled window back to the newest page (P757b).
             int take = Math.Min(ChatRenderer.MaxVisible, chat.Lines.Count);
-            // HUD-10 — the native ChatListPane geometry: 355 px wide, seven
-            // lines at the native line height, CommPane at SideTop(-160,-126)
-            // (dialog.mdl:180,5394; chatpane.cpp:374-380).
+            // HUD-10/HUD-11 — the native ChatListPane geometry: 355 px wide,
+            // configured NumChatLines at the native 14 px line height, CommPane
+            // at SideTop(-160,-126) (dialog.mdl:180,5394; chatpane.cpp:374-380).
+            // The port glyphs are scaled into the native item slot so history
+            // rows never overlap each other or the afterburner/weapons block.
+            int paneLines = ChatPaneLayout.ConfiguredLines(chat.PaneLines);
             int paneLeft = ChatPaneLayout.Left(viewport.Width);
-            int paneTop = ChatPaneLayout.Top(ChatPaneLayout.DefaultLines);
-            float row = ChatPaneLayout.NativeFontHeight * _scale;
-            float maxWidth = ChatPaneLayout.Width * _scale;
-            float markerY = paneTop - _small.LineSpacing * _scale;
+            int paneTop = ChatPaneLayout.Top(paneLines);
+            float row = ChatPaneLayout.NativeFontHeight;
+            float maxWidth = ChatPaneLayout.Width;
+            float textScale = ChatPaneLayout.TextScale(_small.LineSpacing);
+            float markerY = paneTop - _small.LineSpacing * textScale;
             if (chat.Offset > 0)
-                DrawMeasuredText(_small, "(OLDER - PgDn to newest)", new(paneLeft, markerY), Muted, centerAtScale: false);
+                _smallSdf.Draw(_sb, "(OLDER - PgDn to newest)", new(paneLeft, markerY), Muted, textScale);
             if (chat.FilterLabel is { } fl && take > 0)
             {
                 string label = $"[{fl}]";
-                float labelX = Math.Max(paneLeft, paneLeft + maxWidth - _small.MeasureString(label).X * _scale);
-                DrawMeasuredText(_small, label, new(labelX, markerY), Muted, centerAtScale: false);
+                float labelX = Math.Max(paneLeft, paneLeft + maxWidth - _small.MeasureString(label).X * textScale);
+                _smallSdf.Draw(_sb, label, new(labelX, markerY), Muted, textScale);
             }
             for (int i = 0; i < take; i++)
             {
                 Color colour = chat.LineColors is { } colors && i < colors.Count && colors[i] is { } lc
                     ? new Color(lc.R, lc.G, lc.B, lc.A) : Color.White;
-                DrawMeasuredText(_small, chat.Lines[i], new(paneLeft + 3 * _scale, paneTop + 3 * _scale + i * row),
-                    colour, centerAtScale: false, maxWidth: maxWidth);
+                string rowText = chat.Lines[i];
+                if (_small.MeasureString(rowText).X * textScale > maxWidth - 6f)
+                {
+                    while (rowText.Length > 0 && _small.MeasureString(rowText + "...").X * textScale > maxWidth - 6f)
+                        rowText = rowText[..^1];
+                    rowText += "...";
+                }
+                _smallSdf.Draw(_sb, rowText, new(paneLeft + 3, paneTop + 3 + i * row), colour, textScale);
             }
             if (take > 0) Mark("Chat history");
             if (chat.Composing)
@@ -480,7 +496,9 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             if (model.Context.CargoLine is { } cargo) { DrawMeasuredText(_small, cargo, new(20, h - 132 * _scale), Muted, centerAtScale: false, maxWidth: leftWidth); Mark("Inventory cargo slots"); }
             if (model.Context.FlightPartsLine is { } parts) { DrawMeasuredText(_small, parts, new(20, h - 158 * _scale), Accent, centerAtScale: false, maxWidth: leftWidth); }
         }
-        float commandY = 60;
+        // HUD-11 — below the native chat pane (its bottom is always 126 px from
+        // the top, dialog.mdl:5394), so the summary never overprints it.
+        float commandY = ChatPaneLayout.BottomFromTop + 6;
         foreach (var command in model.Context.CommandLines)
         {
             DrawMeasuredText(_small, command, new((w - _small.MeasureString(command).X) / 2, commandY), Accent);
@@ -528,24 +546,27 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         var cortText = new Color(0.586f, 0.578f, 0.680f);   // native cortText/softText (dialog.mdl:24, :3517)
         var yellow = new Color(255, 224, 96);
         var red = Alert;
-        int chatLines = model.Context.Chat is { } chat ? chat.Lines.Count : 0;
+        float lineHeight = TextLineHeight;
+        int chatLines = HudConsoleFormat.BannerChatLines(model.Context.Chat);
 
         if (model.FlightVisible && console.SectorName is { } sector)
         {
             float cx = w - 100 * _scale;
+            float labelTop = HudConsoleFormat.SectorLabelTop * _scale;
             var psz = _small.MeasureString("Current location:");
             var nsz = _small.MeasureString(sector);
-            DrawMeasuredText(_small, "Current location:", new(cx - psz.X / 2, HudConsoleFormat.SectorLabelTop * _scale), yellow, fixedAnchor: true);
-            DrawMeasuredText(_small, sector, new(cx - nsz.X / 2, (HudConsoleFormat.SectorLabelTop + HudConsoleFormat.SectorNameBelowLabel) * _scale), cortText, fixedAnchor: true);
+            DrawMeasuredText(_small, "Current location:", new(cx - psz.X / 2, labelTop), yellow, fixedAnchor: true);
+            DrawMeasuredText(_small, sector, new(cx - nsz.X / 2, HudConsoleFormat.NameBelowLabel(labelTop, lineHeight)), cortText, fixedAnchor: true);
             Mark("Sector location");
         }
         if (model.FlightVisible && console.BoardState == 2 && console.CarrierName is { } carrier)
         {
             float cx = w - 100 * _scale;
+            float labelTop = HudConsoleFormat.TurretLabelTop * _scale;
             var hsz = _small.MeasureString("Turret of:");
             var nsz = _small.MeasureString(carrier);
-            DrawMeasuredText(_small, "Turret of:", new(cx - hsz.X / 2, HudConsoleFormat.TurretLabelTop * _scale), yellow, fixedAnchor: true);
-            DrawMeasuredText(_small, carrier, new(cx - nsz.X / 2, (HudConsoleFormat.TurretLabelTop + HudConsoleFormat.SectorNameBelowLabel) * _scale), red, fixedAnchor: true);
+            DrawMeasuredText(_small, "Turret of:", new(cx - hsz.X / 2, labelTop), yellow, fixedAnchor: true);
+            DrawMeasuredText(_small, carrier, new(cx - nsz.X / 2, HudConsoleFormat.NameBelowLabel(labelTop, lineHeight)), red, fixedAnchor: true);
             Mark("Turret carrier identity");
         }
         if (console.AcceptedOrder is not null || console.QueuedOrder is not null)
@@ -554,12 +575,12 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             DrawMeasuredText(_small, "Current orders:", new(HudConsoleFormat.OrderLabelX * _scale, labelTop), yellow, fixedAnchor: true, centerAtScale: false);
             if (console.QueuedOrder is { } q)
             {
-                DrawMeasuredText(_small, q, new(HudConsoleFormat.OrderTextX * _scale, labelTop + HudConsoleFormat.OrderQueuedBelowLabel * _scale), red, fixedAnchor: true, centerAtScale: false);
+                DrawMeasuredText(_small, q, new(HudConsoleFormat.OrderTextX * _scale, HudConsoleFormat.OrderQueuedTop(labelTop, lineHeight)), red, fixedAnchor: true, centerAtScale: false);
                 Mark("Queued order text");
             }
             if (console.AcceptedOrder is { } a)
             {
-                DrawMeasuredText(_small, a, new(HudConsoleFormat.OrderTextX * _scale, labelTop + HudConsoleFormat.OrderAcceptedBelowLabel * _scale), cortText, fixedAnchor: true, centerAtScale: false);
+                DrawMeasuredText(_small, a, new(HudConsoleFormat.OrderTextX * _scale, HudConsoleFormat.OrderAcceptedTop(labelTop, lineHeight)), cortText, fixedAnchor: true, centerAtScale: false);
                 Mark("Accepted order text");
             }
         }

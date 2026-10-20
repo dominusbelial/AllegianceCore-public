@@ -53,6 +53,19 @@ public static class InventoryPaneLayout
     public static float TopY(int rowCount, float viewportW, float viewportH) =>
         BottomY(viewportW, viewportH) - Height(rowCount, viewportH);
 
+    /// <summary>HUD-11 — the native slots row ends at 214 px with the stats bar
+    /// starting at 130 px (invsweapon.mdl <c>StatsBar</c>/<c>Point(130,5)</c>),
+    /// leaving 81 native px. The port font is wider than native medVerdana, so a
+    /// raw-fit stats string was truncated with "..." at 1080p (HUD-7 shot). Fit
+    /// the stats glyphs into the available width by scaling the font down instead
+    /// of clipping the reading. Returns 1 when the text already fits.</summary>
+    public static float FitFontScale(string text, float maxWidth, Func<string, float> measure)
+    {
+        if (text.Length == 0 || maxWidth <= 0f) return 1f;
+        float width = measure(text);
+        return width <= maxWidth ? 1f : maxWidth / width;
+    }
+
     /// <summary>The on-screen rectangle the pane occupies, for text-layout
     /// reservation.</summary>
     public static Rectangle ReserveRect(int rowCount, float viewportW, float viewportH)

@@ -35,10 +35,17 @@ public sealed class RadarLabelCache
 
     private Slot[] _slots = Array.Empty<Slot>();
 
+    /// <summary>HUD-11 — diagnostics: how many times <see cref="Resolve"/> was
+    /// called. The row-count pass in <see cref="HudElements"/> is pinned to one
+    /// call per contact (not nine Count walks); tests read/clear this.</summary>
+    internal int ResolveCalls { get; private set; }
+    internal void ResetResolveCalls() => ResolveCalls = 0;
+
     /// <summary>Resolve (or reuse) the label block for the contact at
     /// <paramref name="index"/>. A negative index bypasses the cache.</summary>
     public RadarLabelView Resolve(int index, in HudContact contact, RadarMode mode, bool commandCamera)
     {
+        ResolveCalls++;
         if (index >= 0 && index < _slots.Length)
         {
             ref var slot = ref _slots[index];

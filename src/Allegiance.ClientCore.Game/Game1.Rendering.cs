@@ -2821,7 +2821,8 @@ public sealed partial class Game1
             lastBaseObjectives: _lastBaseHud, hitConfirmation: _nowSeconds < _hudHitUntil,
             console: BuildConsoleText(),
             podReturnInstruction: $"{KeyOf("TargetFriendlyBaseNearest").Label} / {KeyOf("ToggleAutopilot").Label} AUTOPILOT TO BASE",
-            roundRadar: _hudSettings.RoundRadar);
+            roundRadar: _hudSettings.RoundRadar,
+            buffers: _hudSnapshotBuffers);
         if (_hudSettings.Style == HudStyle.Classic) _radarRenderer.Draw(model, GraphicsDevice.Viewport);
         if (model.FlightVisible && model.Context.Contacts.Count > 0)
             _shipTagRenderer.Draw(_hudSettings.Style == HudStyle.Modern && _hudSettings.ColorBlindSafe
@@ -2855,7 +2856,8 @@ public sealed partial class Game1
             _chatActive ? _chatBuffer.ToString() : string.Empty,
             state != NativeComposeState.NotComposing, _nowSeconds,
             ChatTargetLogic.ComposeLabel(_chatTarget), ChatPaneFilterLabel(),
-            state, composeProgress, side, colors);
+            state, composeProgress, side, colors,
+            Rendering.ChatPaneLayout.ConfiguredLines(_hudSettings.ChatLines, _dockedActive));
     }
 
     /// <summary>HUD-6 — native signature percentage = 100·signature / side

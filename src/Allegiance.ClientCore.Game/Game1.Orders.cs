@@ -125,14 +125,47 @@ public sealed partial class Game1
     internal static QueuedCommandState? CurrentCommandState(AutopilotTarget? target)
     {
         if (target is not { } t) return null;
-        var type = t.Kind switch
-        {
-            TargetKind.Ship => IgcObjectType.Ship, TargetKind.Station => IgcObjectType.Station,
-            TargetKind.Asteroid => IgcObjectType.Asteroid, TargetKind.Warp => IgcObjectType.Warp,
-            TargetKind.Probe => IgcObjectType.Probe, TargetKind.Treasure => IgcObjectType.Treasure,
-            _ => (IgcObjectType)(-1),
-        };
-        return type == (IgcObjectType)(-1) ? null : new QueuedCommandState(t.CommandId, type, t.Id);
+        var type = ObjectTypeFor(t.Kind);
+        return type is { } ot ? new QueuedCommandState(t.CommandId, ot, t.Id) : null;
+    }
+
+    /// <summary>The orderable target kinds → native <c>ObjectType</c>; null for a
+    /// cluster rectangle, which is not a model target (WinTrek.cpp:8845-8854).</summary>
+    internal static IgcObjectType? ObjectTypeFor(TargetKind kind) => kind switch
+    {
+        TargetKind.Ship => IgcObjectType.Ship, TargetKind.Station => IgcObjectType.Station,
+        TargetKind.Asteroid => IgcObjectType.Asteroid, TargetKind.Warp => IgcObjectType.Warp,
+        TargetKind.Probe => IgcObjectType.Probe, TargetKind.Treasure => IgcObjectType.Treasure,
+        _ => null,
+    };
+
+    /// <summary>HUD-11 — the exact <c>c_cmdCurrent</c> payload native
+    /// <c>SetTarget</c> sends (WinTrek.cpp:8827-8854). A plain target pick carries
+    /// <c>c_cidNone</c> in the <see cref="AutopilotTarget"/>; native treats
+    /// <c>c_cidDefault</c> as "resolve GetDefaultOrder(pmodel)" and sends that
+    /// concrete id. A target selected from a command keeps its explicit id.</summary>
+    internal readonly record struct CurrentCommandSet(short CommandId, IgcObjectType ObjectType, short ObjectId);
+
+    /// <summary>Native <c>GetDefaultOrder</c> switches on <c>m_pilotType</c>
+    /// (<c>shipIGC.h:2078-2100</c>); a human is <c>c_ptPlayer</c>, so the
+    /// Miner/Builder/Layer branches never apply to the own ship even when its
+    /// hull carries those capability bits. The remaining hull bits still feed
+    /// the player branch (rescue, lifepod, carrier landing, fighter).</summary>
+    internal static short PlayerPilotRoles(short hullRoles) =>
+        (short)(hullRoles & ~(DataHullTypeIGC.HabmMiner | DataHullTypeIGC.HabmBuilder));
+
+    internal static CurrentCommandSet? CurrentCommandSetFor(
+        AutopilotTarget? target, short ownRoleBits, bool ownIsLayer, bool ownHasParent,
+        in CommandTargetProfile profile)
+    {
+        if (target is not { } t) return null;
+        var type = ObjectTypeFor(t.Kind);
+        if (type is null) return null;
+        if (t.CommandId != OrderChange.CidNone) return new(t.CommandId, type.Value, t.Id);
+        var order = CommandOrderResolver.ResolveDefaultOrder(ownRoleBits, ownIsLayer, ownHasParent, profile);
+        return order is { } o
+            ? new(o.CommandId, o.ObjectType, o.ObjectId)
+            : new(OrderChange.CidNone, type.Value, t.Id);
     }
 
     // HUD-8b — native SetTarget sends ORDER_CHANGE command=c_cmdCurrent
@@ -142,10 +175,34 @@ public sealed partial class Game1
     private void SendCurrentCommandToServer(AutopilotTarget? target)
     {
         short? me;
-        lock (_session.Gate) me = _session.World.MyShipId;
+        short ownRoles = 0;
+        bool ownIsLayer = false, ownHasParent = false;
+        CommandTargetProfile profile = default;
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            me = world.MyShipId;
+            if (me is { } shipId)
+            {
+                if (world.Ships.TryGetValue(shipId, out var own))
+                {
+                    // Native GetDefaultOrder is evaluated on the SHIP (SetTarget,
+                    // WinTrek.cpp:8830-8831): the own hull's role decides the
+                    // default command, not the commandee's.
+                    ownRoles = PlayerPilotRoles(ShipRoleBits(own.HullId));
+                    ownIsLayer = false;   // a human is c_ptPlayer, never c_ptLayer
+                    ownHasParent = own.ParentId != -1;
+                }
+                if (target is { } t) profile = BuildTargetProfile(world, t);
+            }
+        }
         if (me is not { } myId) return;
-        if (CurrentCommandState(target) is { } cmd)
-            _session.SendOrderChange(myId, cmd.CommandId, OrderChange.CmdCurrent, cmd.TargetType, cmd.TargetId);
+        // HUD-11 — native SetTarget resolves c_cidDefault through
+        // GetDefaultOrder(pmodel); send that concrete default id instead of the
+        // port's former c_cidNone (WinTrek.cpp:8830-8833, shipIGC.h:2071-2161).
+        if (CurrentCommandSetFor(target, ownRoles, ownIsLayer, ownHasParent, profile) is { } cmd
+            && cmd.CommandId != OrderChange.CidNone)
+            _session.SendOrderChange(myId, cmd.CommandId, OrderChange.CmdCurrent, cmd.ObjectType, cmd.ObjectId);
         else
             _session.SendOrderChange(myId, OrderChange.CidNone, OrderChange.CmdCurrent, (IgcObjectType)(-1), -1);
     }

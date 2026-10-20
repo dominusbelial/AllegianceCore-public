@@ -98,6 +98,30 @@ public static class HudConsoleFormat
     /// like native VoteTextImageYOffset (dialog.mdl:5174).</summary>
     public static float VoteTop(int chatLines) => VoteTopBase + ChatLineYStep * chatLines;
 
+    /// <summary>HUD-11 — native <c>NumChatLines</c> for the banner offsets is the
+    /// CONFIGURED pane height (<see cref="HudChat.PaneLines"/>, the
+    /// <c>ChatLines</c> preference), not the number of lines currently shown
+    /// (WinTrek.cpp:4783-4806, dialog.mdl:5173-5174). Falls back to the native
+    /// default 7 when no chat snapshot was supplied.</summary>
+    public static int BannerChatLines(HudChat? chat)
+        => chat is { PaneLines: > 0 } configured ? configured.PaneLines : ChatPaneLayout.DefaultLines;
+
+    /// <summary>HUD-11 — the sector/turret name line sits one rendered font line
+    /// below its label. Native translates it by 14 px because native promptFont
+    /// is 14 px high (dialog.mdl:1473-1485); the port substitute font is taller,
+    /// so a raw 14 px overlap at 1080p. Callers pass the measured line height.
+    /// </summary>
+    public static float NameBelowLabel(float labelTop, float lineHeight) => labelTop + lineHeight;
+
+    /// <summary>HUD-11 — the current-order red queued line one rendered line
+    /// below the label (native Point(0,-20), dialog.mdl:1648-1649, is the same
+    /// raw-pixel assumption; the port font needs a full line).</summary>
+    public static float OrderQueuedTop(float labelTop, float lineHeight) => labelTop + lineHeight;
+
+    /// <summary>HUD-11 — the accepted (cortText) order line two rendered lines
+    /// below the label (native Point(0,-40), dialog.mdl:1649).</summary>
+    public static float OrderAcceptedTop(float labelTop, float lineHeight) => labelTop + 2f * lineHeight;
+
     /// <summary>Native ripcord HUD label (<c>dialog.mdl:5139-5154</c>,
     /// <c>consoledata.cpp:521-532</c>): null when inactive or the start time is
     /// unknown (never a fabricated "Ripcord in: 1"), otherwise "Ripcord in: n"
