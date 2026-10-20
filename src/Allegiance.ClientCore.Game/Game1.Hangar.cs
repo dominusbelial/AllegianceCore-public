@@ -11,6 +11,7 @@ public sealed partial class Game1
 {
     private readonly HangarLaunchSequence _hangarLaunch = new();
     private long _hangarBoardFailure;
+    private bool _hangarBuyAfterDisembark;
     private HangarAction _hangarHover;
     private bool _hangarMouseDown;
     private bool _hangarQuitConfirm;
@@ -39,7 +40,50 @@ public sealed partial class Game1
         if (_hangarLaunch.AwaitingDisembark && _session.World.BoardFailureRevision != _hangarBoardFailure)
             _hangarLaunch.Cancel();
         else if (_hangarLaunch.Acknowledged(ship.ParentId, ship.StationId >= 0))
-            LaunchFromHangar(ship);
+        {
+            if (_hangarBuyAfterDisembark)
+            {
+                _hangarBuyAfterDisembark = false;
+                BuyFromHangar(ship);
+            }
+            else
+            {
+                LaunchFromHangar(ship);
+            }
+        }
+    }
+
+    /// <summary>
+    /// P759 — the native <c>OnButtonBuy</c> action (<c>load.cpp:1503-1521</c>):
+    /// when the loadout is not affordable the client sends <c>REQUEST_MONEY</c>
+    /// for the shortfall (<c>cost = new - (current + money)</c>); otherwise it
+    /// buys without launching (<c>BuyLoadout(pship, false)</c>) and saves the
+    /// custom loadout slot 0. A boarded ship first disembarks (native
+    /// <c>DisembarkAndBuy</c>), reusing the existing launch disembark sequence
+    /// with a buy-after-disembark flag.
+    /// </summary>
+    private void BuyFromHangar(ShipEntity ship)
+    {
+        if (_launchSent || _hangarLaunch.AwaitingDisembark) return;
+        if (ship.ParentId >= 0)
+        {
+            _hangarBoardFailure = _session.World.BoardFailureRevision;
+            _hangarBuyAfterDisembark = true;
+            _hangarLaunch.Begin(ship.ParentId);
+            _session.SendBoardShip(-1);
+            return;
+        }
+        if (_shopModel is not { } shop) return;
+        long shortfall = shop.BuyShortfall;
+        if (shortfall > 0)
+        {
+            _session.SendMoneyRequest((int)Math.Min(shortfall, int.MaxValue), shop.EffectiveHullId);
+            Console.WriteLine($"[monogame] BUY short ${shortfall} -> REQUEST_MONEY hull {shop.EffectiveHullId}");
+            return;
+        }
+        shop.SaveCustomLoadout();
+        _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: false, parts: shop.ChosenParts);
+        Console.WriteLine($"[monogame] BUY_LOADOUT(fLaunch=false) hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
     }
 
     // This dispatcher is shared by the real pointer buttons and headless transition tests.
@@ -51,6 +95,10 @@ public sealed partial class Game1
         switch (action)
         {
             case HangarAction.Launch: LaunchFromHangar(ship); break;
+            case HangarAction.Buy: BuyFromHangar(ship); break;
+            case HangarAction.Default:
+                _shopModel?.ApplyDefaultLoadout();
+                break;
             case HangarAction.Command:
                 if (!world.Stations.TryGetValue(ship.StationId, out var station)) break;
                 ApplyConsoleMode("ViewCommand", updatePointer: false);

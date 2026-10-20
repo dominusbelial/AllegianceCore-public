@@ -1214,6 +1214,10 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         try { _world.Apply(ResearchBriefing.Decode(m)); }
                         catch (Exception ex) { Console.WriteLine($"[research] invalid briefing ignored: {ex.Message}"); }
                         break;
+                    case MissionBriefingInfo.Fmid:
+                        try { _world.Apply(MissionBriefingInfo.Decode(m)); }
+                        catch (Exception ex) { Console.WriteLine($"[briefing] invalid mission briefing info ignored: {ex.Message}"); }
+                        break;
                     case Payday.Fmid:
                         _world.Apply(Payday.Decode(m));
                         break;

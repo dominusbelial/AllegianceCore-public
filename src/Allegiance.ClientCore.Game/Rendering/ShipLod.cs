@@ -64,6 +64,17 @@ public sealed class ShipLodProfile
     public float FadeBandPixelRadius = 5f;
 
     /// <summary>
+    /// P759 — the runtime LOD bias, the port of native <c>ThingGeo::SetLODBias</c>
+    /// (<c>effect/thinggeo.cpp:1750-1753</c>) driven by the LOD slider
+    /// (<c>WinTrek.cpp:3553-3555</c>, <c>SetLODBias(value / 100)</c>). It scales
+    /// the projected pixel radius BEFORE tier/LODGeo selection exactly like
+    /// native's <c>SetLOD(screenRadius * lodBias)</c> (<c>thinggeo.cpp:1624</c>):
+    /// 1.0 = native default (<c>s_lodBias = 1</c>, thinggeo.cpp:1674), lower = coarser.
+    /// Clamped to [0,1] on every write (native <c>ZAssert(lodBias &gt;=0 &amp;&amp; lodBias &lt;=1)</c>).
+    /// </summary>
+    public float LodBias = 1f;
+
+    /// <summary>
     /// Parse a profile from the environment (absent/unparseable → defaults).
     /// <c>ALLEGIANCE_LOD_FAR_PX</c>, <c>ALLEGIANCE_LOD_ENTER_PX</c>,
     /// <c>ALLEGIANCE_LOD_FADE_PX</c>. Clamps the hysteresis ceiling above the
@@ -78,6 +89,7 @@ public sealed class ShipLodProfile
         if (p.EnterFullPixelRadius <= p.FarPixelRadius)
             p.EnterFullPixelRadius = p.FarPixelRadius + 1f;
         if (p.FadeBandPixelRadius < 0f) p.FadeBandPixelRadius = 0f;
+        p.LodBias = Math.Clamp(p.LodBias, 0f, 1f);
         return p;
     }
 
@@ -171,6 +183,13 @@ public static class ShipLod
             return projectedPx < p.EnterFullPixelRadius;   // stay Far until big enough
         return projectedPx <= p.FarPixelRadius;            // become Far when small enough
     }
+
+    /// <summary>
+    /// P759 — apply <see cref="ShipLodProfile.LodBias"/> to a projected pixel
+    /// radius before tier/LODGeo selection, reproducing native
+    /// <c>SetLOD(screenRadius * lodBias)</c> (<c>thinggeo.cpp:1624</c>).</summary>
+    public static float ApplyLodBias(float projectedPx, in ShipLodProfile p)
+        => projectedPx * Math.Clamp(p.LodBias, 0f, 1f);
 
     /// <summary>
     /// P628 native LOD level selection — the port of native <c>LODGeoImpl::Render</c>

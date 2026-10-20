@@ -376,6 +376,66 @@ public class ShopModelTests
         Assert.False(m.PartRowGreyed(pricey.PartId, pricey.Price));
     }
 
+    // ── P759: native OnButtonBuy / OnButtonDefault / SaveCustomLoadout ──────
+
+    /// <summary>P759 — native OnButtonBuy shortfall (load.cpp:1503-1507): the
+    /// REQUEST_MONEY amount is exactly <c>new - (current + money)</c>, 0 once
+    /// affordable.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Buy_shortfall_is_new_value_minus_current_and_money()
+    {
+        Require.Artwork();
+        var current = Catalog.Hulls.OrderBy(h => h.Price).First();
+        var target = Catalog.Hulls.Where(h => h.Price > current.Price).OrderBy(h => h.Price).First();
+        long cost = (long)target.Price - current.Price;
+
+        var broke = new ShopModel(Catalog, current.HullId, Array.Empty<ExpandedPartData>(), money: 0);
+        broke.MoveCursor(Catalog.Hulls.ToList().FindIndex(h => h.HullId == target.HullId) - broke.Cursor);
+        broke.Activate();
+        Assert.Equal(cost, broke.BuyShortfall);
+
+        var exact = new ShopModel(Catalog, current.HullId, Array.Empty<ExpandedPartData>(), money: (int)cost);
+        exact.MoveCursor(Catalog.Hulls.ToList().FindIndex(h => h.HullId == target.HullId) - exact.Cursor);
+        exact.Activate();
+        Assert.Equal(0L, exact.BuyShortfall);
+    }
+
+    /// <summary>P759 — native OnButtonDefault (load.cpp:1639-1648) seeds the
+    /// hull's native default loadout and saves it to custom-loadout slot 0; a
+    /// later hull swap re-seeds from that saved slot rather than the default.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Default_loadout_is_saved_and_reused_on_the_next_hull_swap()
+    {
+        Require.Artwork();
+        var hull = CurrentHull();
+        var m = new ShopModel(Catalog, hull.HullId, Array.Empty<ExpandedPartData>(), money: 100_000);
+        m.ApplyDefaultLoadout();
+        Assert.NotEmpty(m.ChosenParts);
+        var saved = m.ChosenParts.Select(p => p.PartId).OrderBy(x => x).ToArray();
+
+        // Divert the pending loadout from the saved slot (clear one filled slot).
+        bool cleared = false;
+        foreach (var slot in m.Slots)
+        {
+            if (m.SlotFilled(slot))
+            {
+                m.ClearSlot(slot);
+                cleared = true;
+                break;
+            }
+        }
+        if (!cleared) return;   // nothing to discriminate with on this catalogue
+        Assert.NotEqual(saved, m.ChosenParts.Select(p => p.PartId).OrderBy(x => x).ToArray());
+
+        // Swap away and back: the return swap must re-seed from slot 0 (saved),
+        // not from the hull default (native BuyHull → RefreshLoadout(customLoadouts[0], phullType)).
+        m.CycleHull(true);
+        m.CycleHull(false);
+        Assert.Equal(saved, m.ChosenParts.Select(p => p.PartId).OrderBy(x => x).ToArray());
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────
 
     /// <summary>Drive the P519 slot UI to mount a part by id: pick a hull that

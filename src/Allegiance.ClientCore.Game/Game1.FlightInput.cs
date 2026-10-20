@@ -592,6 +592,7 @@ public sealed partial class Game1
         if (_state != ClientState.Flying)
         {
             if (_state == ClientState.Lobby) UpdateLobby(ks);
+            else if (_state == ClientState.ConnectFailed) UpdateConnectFailed(ks);
             // P731 — the intro screen (no command-line args).
             else if (_state == ClientState.Intro) UpdateIntro(ks);
             // P757 — the splash screen (native splashscreen.cpp): times out to
@@ -1065,6 +1066,19 @@ public sealed partial class Game1
         ToggleCameraKey(ks, composing, "ViewChase", CameraMode.Chase, ref _viewChaseWasDown);
         ToggleCameraKey(ks, composing || !IsTurretGunner(), "ViewTurret", CameraMode.ExternalTurret, ref _viewTurretWasDown);
 
+        // P759 — the runtime LOD slider commands (native WinTrek.cpp:9448-9453,
+        // 10415-10424). Edge-triggered + composing-gated like every discrete
+        // in-flight key; they drive the pure LodControl and the renderer copies
+        // its Bias into _shipLodProfile before drawing ships.
+        bool lodToggle = ActionDown(ks, "ToggleLODSlider");
+        if (!composing && lodToggle && !_lodToggleWasDown) _lodControl.ToggleVisible();
+        _lodToggleWasDown = lodToggle;
+        bool lodUp = ActionDown(ks, "LODUp");
+        if (!composing && lodUp && !_lodUpWasDown) _lodControl.PageUp();
+        _lodUpWasDown = lodUp;
+        bool lodDown = ActionDown(ks, "LODDown");
+        if (!composing && lodDown && !_lodDownWasDown) _lodControl.PageDown();
+        _lodDownWasDown = lodDown;
 
         // P626 — vote YES/NO (TK_VoteYes/TK_VoteNo, native WinTrek.cpp:10377-10387
         // trekClient.Vote(bAgree)). Edge-triggered + composing-gated like every

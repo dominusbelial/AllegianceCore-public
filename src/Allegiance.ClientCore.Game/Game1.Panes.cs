@@ -449,13 +449,21 @@ public sealed partial class Game1
         // native's OnButtonInvest turns off the other banishable panes
         // (hangarscreen.cpp:201-206).
         bool iKey = ActionDown(ks, "ToggleInvestmentPane");
-        if (!composing && iKey && !_invIWasDown)
+        // P759 — TK_ConModeInvest (WinTrek.cpp:10025-10033) is gated on native
+        // AllowDevelopments(): the key is a no-op when developments are disabled.
+        // The same gate hides the docked hangar Invest button (HangarDevelopments).
+        bool developments = _session.World.ResearchBriefing?.Settings.AllowDevelopments ?? true;
+        if (Rendering.InvestmentPaneModel.TogglePermitted(developments, composing, iKey, _invIWasDown))
         {
             _investActive = !_investActive;
             if (_investActive) _teleportActive = false;
             Console.WriteLine($"[monogame] investment pane {( _investActive ? "OPEN" : "CLOSED" )}");
         }
         _invIWasDown = iKey;
+        if (!developments && _investActive)
+        {
+            _investActive = false;
+        }
         int tabDelta = _investmentTabs.Step(ks, KeyBindingStore.Instance.Map, _investActive && !composing,
             nav.LeftShoulder, nav.RightShoulder);
         lock (_session.Gate)

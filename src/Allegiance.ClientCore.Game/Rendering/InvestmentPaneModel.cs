@@ -299,4 +299,14 @@ public sealed class InvestmentPaneModel
         bucketId = b.Id;
         return true;
     }
+
+    /// <summary>
+    /// P759 — the pure half of the <c>TK_ConModeInvest</c> edge trigger
+    /// (<c>WinTrek.cpp:10025-10033</c>): an edge press toggles the investment
+    /// overlay only while not composing and while the mission allows developments
+    /// (<c>AllowDevelopments()</c>). Kept static so the gate is headless-testable;
+    /// <see cref="Game1.HandleInvestmentScreen"/> is the production caller.
+    /// </summary>
+    public static bool TogglePermitted(bool developments, bool composing, bool keyDown, bool wasDown)
+        => developments && !composing && keyDown && !wasDown;
 }

@@ -70,6 +70,17 @@ public sealed class ShopModel
     private ShopCatalog _cat;
     private readonly List<ExpandedPartData> _chosenParts = new();
 
+    /// <summary>
+    /// P759 — the in-memory custom-loadout slot 0 (native
+    /// <c>m_customLoadouts[0]</c>, <c>clintlib.h:1155</c> + <c>SaveCustomLoadout</c>,
+    /// <c>clintlib.h:1425-1428</c>), keyed by hull id. Native persists this list
+    /// to disk (<c>SaveCustomLoadoutFile</c>, clintlib.h:1944-1956); the port keeps
+    /// the session slot and uses it for the hull-swap refresh
+    /// (<c>BuyHull</c> → <c>RefreshLoadout(customLoadouts[0], phullType)</c>,
+    /// load.cpp:1478-1486), which is the behaviour this row pins.
+    /// </summary>
+    private readonly Dictionary<short, List<ExpandedPartData>> _customLoadouts = new();
+
     /// <summary>P434/P435 — the real launcher/dispenser offers (missile + mine +
     /// chaff + probe), normalized to empty so a null Launchers is safe.</summary>
     private IReadOnlyList<LauncherOffer> _launchers;
@@ -177,6 +188,16 @@ public sealed class ShopModel
     public long Cost => NewLoadoutValue - CurrentShipValue;
 
     public bool CanAffordTotal => AffordabilityKnown && Cost <= MyMoney!.Value;
+
+    /// <summary>
+    /// P759 — the native <c>OnButtonBuy</c> shortfall (<c>load.cpp:1503-1507</c>):
+    /// <c>cost = new - (current + money)</c>, i.e. the amount the server must
+    /// grant via <c>REQUEST_MONEY</c> before the buy can complete. 0 when the
+    /// player can already afford the loadout (or money is unknown — then the
+    /// server stays authoritative and the client does not fabricate a request).
+    /// </summary>
+    public long BuyShortfall =>
+        AffordabilityKnown ? Math.Max(0L, Cost - MyMoney!.Value) : 0L;
 
     public string? BlockReason { get; private set; }
 
@@ -600,12 +621,47 @@ public sealed class ShopModel
         if (!WillSwapHull) return;
         if (EffectiveHull is not { } eff) return;
         _chosenParts.Clear();
-        foreach (var p in DefaultLoadoutFor(eff))
+        // P759 — native BuyHull refreshes the NEW hull from the saved custom
+        // loadout slot 0 for that hull when one exists, else its native default
+        // (RefreshLoadout(customLoadouts[0], phullType), load.cpp:1478-1486).
+        IReadOnlyList<ExpandedPartData> seed =
+            _customLoadouts.TryGetValue(eff.HullId, out var saved)
+                ? saved
+                : DefaultLoadoutFor(eff);
+        foreach (var p in seed)
             _chosenParts.Add(p);
         NormalizeWeaponMounts();
         // Keep the chosen slots consistent with the new hull (a filled slot that
         // vanished is just empty).
         SlotCursor = 0;
+    }
+
+    /// <summary>
+    /// P759 — save the current pending loadout as the native custom-loadout slot 0
+    /// for the effective hull (<c>SaveCustomLoadout(m_pship, 0)</c>, load.cpp:1521/
+    /// 1646; <c>clintlib.h:1425-1428</c>). Idempotent; the next swap to this hull
+    /// re-seeds from this list.
+    /// </summary>
+    public void SaveCustomLoadout()
+    {
+        _customLoadouts[EffectiveHullId] = new List<ExpandedPartData>(_chosenParts);
+    }
+
+    /// <summary>
+    /// P759 — the native <c>OnButtonDefault</c> action (<c>load.cpp:1639-1648</c>):
+    /// replace the pending loadout with the hull's native default
+    /// (<c>BuyDefaultLoadout</c>, clintlib.h:2110-2160) and save it back to the
+    /// custom-loadout slot 0 (<c>SaveCustomLoadout(m_pship, 0)</c>).
+    /// </summary>
+    public void ApplyDefaultLoadout()
+    {
+        if (EffectiveHull is not { } eff) return;
+        _chosenParts.Clear();
+        foreach (var p in DefaultLoadoutFor(eff))
+            _chosenParts.Add(p);
+        NormalizeWeaponMounts();
+        SaveCustomLoadout();
+        BlockReason = null;
     }
 
     /// <summary>P571 — the hull's NATIVE default loadout as a pending part list:

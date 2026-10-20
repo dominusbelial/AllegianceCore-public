@@ -54,22 +54,29 @@ public sealed class MissionBriefingRenderer
 
     /// <summary>
     /// Draw the briefing popup for the current viewport. <paramref name="title"/>
-    /// is the synthesized title (in this port the real starting-cluster name from
-    /// the wire, used as both the title and the body — the server sends only that
-    /// one location string with <c>FGenerateCivBriefing=true</c>). <paramref name="body"/>
-    /// is the <c>SET_BRIEFING_TEXT(9)</c> <c>Text</c> body verbatim (real wire data).
+    /// is the mdl civ <c>Title</c> string (native
+    /// <c>GetMissionBriefingTitle</c>, teamscreen.cpp:796-799). <paramref name="objective"/>
+    /// is the mdl civ <c>String</c> line (native
+    /// <c>GetMissionBriefingString</c>, teamscreen.cpp:801-806 — e.g.
+    /// "Tactical Briefing"), drawn under the title like native's two header
+    /// panes; pass empty to skip it (the pre-P759 fallback body). <paramref name="body"/>
+    /// is the civ briefing body (mdl <c>NoWin</c>/<c>Default</c> text + secondary
+    /// objectives + tip, native <c>GetCivMissionBriefing</c> + <c>GetMissionTip</c>,
+    /// teamscreen.cpp:732-826).
     /// <paramref name="remainingSeconds"/> is the integer seconds left in the
     /// briefing countdown, or <c>null</c> if the countdown has not begun yet
     /// (the popup then shows a neutral preparing line instead of a ticking number).
     /// </summary>
-    public void Draw(Viewport viewport, string title, string body, int? remainingSeconds)
+    public void Draw(Viewport viewport, string title, string body, int? remainingSeconds,
+        string objective = "")
     {
         float w = viewport.Width;
         float h = viewport.Height;
 
         // Sanitise every string to the ASCII range the spritefonts bake.
         string safeTitle = ScoreboardLayout.AsciiSafe(title);
-        string safeBody = ScoreboardLayout.AsciiSafe(body);
+        string safeBody = string.Join('\n', body.Split('\n').Select(ScoreboardLayout.AsciiSafe));
+        string safeObjective = ScoreboardLayout.AsciiSafe(objective);
 
         string countdown = remainingSeconds is { } rem
             ? $"MISSION STARTS IN {rem}s..."
@@ -79,11 +86,12 @@ public sealed class MissionBriefingRenderer
         // clips the viewport, and wrap the body to that width.
         float headerW = _small.MeasureString(Header).X;
         float titleW = _big.MeasureString(safeTitle).X;
+        float objectiveW = safeObjective.Length > 0 ? _small.MeasureString(safeObjective).X : 0f;
         float countdownW = _small.MeasureString(countdown).X;
         float hintW = _small.MeasureString(Hint).X;
         float bodyOneLine = _small.MeasureString(safeBody).X;
 
-        float maxLine = MathF.Max(MathF.Max(headerW, titleW),
+        float maxLine = MathF.Max(MathF.Max(MathF.Max(headerW, titleW), objectiveW),
             MathF.Max(MathF.Max(countdownW, hintW), bodyOneLine));
         float viewportLimit = w * MissionBriefingLayout.MaxPanelWidthFraction
                             - 2f * MissionBriefingLayout.Padding;
@@ -101,10 +109,12 @@ public sealed class MissionBriefingRenderer
         float panelW = actualContentW + 2f * MissionBriefingLayout.Padding;
         float titleH = _big.MeasureString("M").Y;
         float smallH = _small.MeasureString("M").Y;
+        float objectiveH = safeObjective.Length > 0 ? smallH : 0f;
         float panelH = MissionBriefingLayout.Padding
                      + smallH                                  // header
                      + MissionBriefingLayout.BlockGap
                      + titleH                                  // title
+                     + objectiveH                              // mdl String line
                      + MissionBriefingLayout.BlockGap
                      + bodyLines.Count * MissionBriefingLayout.LineHeight  // body
                      + MissionBriefingLayout.BlockGap
@@ -119,7 +129,7 @@ public sealed class MissionBriefingRenderer
 
         float headerY = panelY + MissionBriefingLayout.Padding;
         float titleY = headerY + smallH + MissionBriefingLayout.BlockGap;
-        float bodyY = titleY + titleH + MissionBriefingLayout.BlockGap;
+        float bodyY = titleY + titleH + objectiveH + MissionBriefingLayout.BlockGap;
         float countdownY = bodyY + bodyLines.Count * MissionBriefingLayout.LineHeight
                          + MissionBriefingLayout.BlockGap;
         float hintY = countdownY + smallH + MissionBriefingLayout.BlockGap;
@@ -133,6 +143,8 @@ public sealed class MissionBriefingRenderer
 
             CenterSmall(Header, cx, headerY, HeaderColor);
             CenterBig(safeTitle, cx, titleY, TitleColor);
+            if (safeObjective.Length > 0)
+                CenterSmall(safeObjective, cx, titleY + titleH, BodyColor);
             foreach (var (line, i) in bodyLines.Select((l, i) => (l, i)))
                 CenterSmall(line, cx, bodyY + i * MissionBriefingLayout.LineHeight, BodyColor);
             CenterSmall(countdown, cx, countdownY,

@@ -53,6 +53,20 @@ public static class MissionBriefingLayout
         if (string.IsNullOrWhiteSpace(text) || maxWidth <= 0f)
             return Array.Empty<string>();
 
+        // Native briefing strings carry explicit line breaks (missionbrief.mdl
+        // "\n\nOther objectives include:\n", "\n *  Control …"): each
+        // paragraph wraps on its own and blank lines are kept.
+        if (text.Contains('\n'))
+        {
+            var all = new List<string>();
+            foreach (var paragraph in text.Split('\n'))
+            {
+                if (string.IsNullOrWhiteSpace(paragraph)) { all.Add(""); continue; }
+                all.AddRange(WrapWords(paragraph, measureWord, spaceWidth, maxWidth));
+            }
+            return all;
+        }
+
         var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var lines = new List<string>();
         var cur = new StringBuilder();

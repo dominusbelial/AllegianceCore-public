@@ -748,6 +748,11 @@ public sealed partial class Game1 : Game
     private Rendering.ShipLodProfile _shipLodProfile = Rendering.ShipLodProfile.FromEnv();
     private Rendering.ShipLodSpriteRenderer? _shipLodSpriteRenderer;
 
+    // P759 — the runtime LOD slider (native WinTrek.cpp:9448/10415/10421). Pure
+    // model, driven by the action map; its Bias is copied into _shipLodProfile
+    // every frame before ship rendering.
+    private readonly Rendering.LodControl _lodControl = new();
+
     // P566 — the native-ship renderer switch (--ships native|meshy; default native).
     private readonly bool _shipsNative;
     // P565 — the committed per-hull art override (assets/ships/ship-art.json) consulted by
@@ -908,6 +913,8 @@ public sealed partial class Game1 : Game
     // briefing countdown expires (mission goes live), mirroring native's
     // MissionBriefPopup closing as the stage leaves STAGE_STARTING.
     private Rendering.MissionBriefingRenderer _briefingRenderer = null!;
+    private Allegiance.Core.Wire.MissionBriefingInfo? _builtBriefingFor;
+    private (string Title, string Objective, string Body) _builtBriefing;
     private bool _briefingDismissed;
 
     // P281 — the post-connect SIDE-SELECT screen. The server defers a joining
@@ -1042,6 +1049,9 @@ public sealed partial class Game1 : Game
     private bool _viewMissileWasDown;
     private bool _viewChaseWasDown;
     private bool _viewTurretWasDown;
+    private bool _lodToggleWasDown;
+    private bool _lodUpWasDown;
+    private bool _lodDownWasDown;
     // P266 — the per-frame lead-indicator descriptor computed in Draw (projected
     // from the world's lead point + target) and consumed by DrawHud; null when
     // there is no lead granted or it is out of view.
@@ -1192,6 +1202,9 @@ public sealed partial class Game1 : Game
     private ushort _connectPort;
     private bool _returnToLobbyOnFailure;   // join-from-lobby failed → revert, don't exit
     private bool _returnToIntroOnFailure;   // P731 — join-from-intro failed → return to the intro, don't exit
+    private string? _connectFailureReason;  // P759 — staged connect/logon failure for the retry/abort screen
+    private bool _connectRetryWasDown;
+    private bool _connectAbortWasDown;
     // Server-browser (lobby) state.
     private readonly HttpClient _http;
     private readonly List<ServerListing> _servers = new();

@@ -74,4 +74,19 @@ public class ConnectScreenLayoutTests
         Assert.False(r0.Contains(midX, below));
         Assert.True(r1.Contains(midX, below));
     }
+
+    // P759 — OnLogonGameServerFailed(false, reason) abort routing
+    // (introscreen.cpp:1667-1699): intro wins, then lobby, then exit.
+    [Fact]
+    public void Abort_destination_prefers_intro_then_lobby_then_exit()
+    {
+        Assert.Equal(ConnectScreenLayout.ConnectAbortDestination.Intro,
+            ConnectScreenLayout.AbortDestination(returnToIntro: true, returnToLobby: true));
+        Assert.Equal(ConnectScreenLayout.ConnectAbortDestination.Intro,
+            ConnectScreenLayout.AbortDestination(returnToIntro: true, returnToLobby: false));
+        Assert.Equal(ConnectScreenLayout.ConnectAbortDestination.Lobby,
+            ConnectScreenLayout.AbortDestination(returnToIntro: false, returnToLobby: true));
+        Assert.Equal(ConnectScreenLayout.ConnectAbortDestination.Exit,
+            ConnectScreenLayout.AbortDestination(returnToIntro: false, returnToLobby: false));
+    }
 }

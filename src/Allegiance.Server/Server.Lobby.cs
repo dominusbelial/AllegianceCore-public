@@ -2364,7 +2364,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                             && kv.Value.Ship.SideId == sideId
                             && !ReferenceEquals(kv.Value.Ship, exclude));
 
-/// <summary>
+    /// <summary>
     /// P183 — the <c>RemovePlayerFromSide</c> port's leader-succession branch
     /// (native fsmission.cpp:848-1099), applied when <paramref name="ship"/>
     /// leaves a side (whether by disconnecting or by switching sides). No-op
@@ -3401,12 +3401,14 @@ private void CompleteStartCountdown(Mission mission, double now)
                 // nearest-station/GetBase lookup (Server.cs:4750-4759).
                 // Sent to the joining peer only, exactly like SET_MONEY.
                 var friendlyStation = FindFriendlyStation(live.Ship);
+                string briefingCluster = "";
                 if (friendlyStation is { } briefStation)
                 {
                     var clusterName = _missions[0].Sectors
                         .FirstOrDefault(s => s.Id == briefStation.ClusterId)?.Name;
                     if (clusterName is not null)
                     {
+                        briefingCluster = clusterName;
                         SendPeer(from, FedPacket.Pack(new[]
                         {
                             new SetBriefingText { Text = clusterName, FGenerateCivBriefing = true }.Encode(),
@@ -3425,6 +3427,11 @@ private void CompleteStartCountdown(Mission mission, double now)
                     // fabricating text.
                     Console.WriteLine($"[briefing] peer {from} '{req.CharacterName}' -> no friendly station for side {setMoneySideId} — SET_BRIEFING_TEXT skipped");
                 }
+
+                // P759 — send the client-side civ-briefing inputs (native
+                // GetCivMissionBriefing reads these live: teamscreen.cpp:732-793).
+                // Sent to the joining peer only, right after SET_BRIEFING_TEXT.
+                SendMissionBriefingInfo(from, _missions[0], smSide, briefingCluster);
             }
         }
 
@@ -3824,6 +3831,52 @@ private void CompleteStartCountdown(Mission mission, double now)
     {
         foreach (var key in _pendingSideSelect.Keys.ToList())
             SendSideRoster(key);
+    }
+
+    /// <summary>
+    /// P759 — send one <see cref="MissionBriefingInfo"/> to a joining peer: the
+    /// side/civ names, the briefing text and the authoritative win-condition
+    /// flags native's client-side <c>GetCivMissionBriefing</c> reads from
+    /// <c>MissionParams</c>/side/civ (<c>teamscreen.cpp:732-793</c>). NoWin is
+    /// native's <c>IsNoWinningConditionsGame()</c> — none of the port's win
+    /// flags set.
+    /// </summary>
+    private void SendMissionBriefingInfo(ConnectionId to, Mission mission, Side side, string briefingText)
+    {
+        bool noWin = !mission.ConquestEnabled && !mission.ArtifactEnabled && !mission.FlagsEnabled
+                     && !mission.KillsEnabled && !mission.ProsperityEnabled;
+        var info = new MissionBriefingInfo
+        {
+            SideName = side.Name ?? $"side{side.Id}",
+            CivName = side.Civilization.Name,
+            // Native's GetCivString prefixes each key with the civ's icon name
+            // (teamscreen.cpp:636-639); the client reads the strings themselves
+            // from missionbrief.mdl in the artwork corpus.
+            CivIconName = side.Civilization.IconName,
+            // Native %s is GetBriefingText() = the SET_BRIEFING_TEXT text.
+            BriefingText = briefingText,
+            CivList = mission.Sides.Select(s => s.Civilization.Name).ToList(),
+            NoWin = noWin,
+            Conquest = mission.ConquestEnabled,
+            ConquestPercent = mission.ConquestEnabled ? Mission.ConquestWinThreshold : 0,
+            Artifacts = mission.ArtifactEnabled,
+            ArtifactGoal = mission.ArtifactWinGoal,
+            Flags = mission.FlagsEnabled,
+            FlagsGoal = mission.FlagsWinGoal,
+            Deathmatch = mission.KillsEnabled,
+            KillLimit = mission.KillsWinGoal,
+            // Native IsCountdownGame() ⇔ dtGameLength != 0 (igc.h:1526,1553-1556);
+            // the client divides by 60 for the minutes shown (teamscreen.cpp:773-777).
+            CountdownSeconds = mission.CountdownDuration ?? 0,
+            Prosperity = mission.ProsperityEnabled,
+            // The native prosperity amount is fGoalTeamMoney × c_fcidWinTheGameMoney
+            // (teamscreen.cpp:790-793); this port prices the team-money bucket but
+            // does not carry fGoalTeamMoney, so the amount is left 0 and the client
+            // omits the number for a prosperity objective.
+            ProsperityMoney = 0,
+        };
+        SendPeer(to, FedPacket.Pack(new[] { info.Encode() }));
+        Console.WriteLine($"[briefing] peer {to} -> MISSION_BRIEFING_INFO(996) side='{info.SideName}' civ='{info.CivName}' noWin={info.NoWin}");
     }
 
 /// <summary>P281/P763 — the per-tick driver that seats pending side-select

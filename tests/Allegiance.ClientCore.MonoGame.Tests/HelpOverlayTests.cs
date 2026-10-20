@@ -275,21 +275,36 @@ public class HelpOverlayTests
     [Fact]
     public void Table_BalancesIntoTypicalPanelWithoutOverflow()
     {
-        // The REAL table — now the full 14-category reference (P625b routed every
+        // The REAL table — now the full 17-category reference (P625b routed every
         // pane/menu, free-cam and system command into the map, so the help overlay
         // lists them all). At the client's standard 2560x1440 backbuffer (the
         // resolution every live proof captures) the balanced columns fit the
-        // panel without overflow: a handful of columns, every group within bounds.
-        var heights = KeyBindingTable.All.Select(g => g.Height).ToArray();
+        // panel without overflow. Uses the production splittable layout
+        // (LayoutSections, what HelpOverlayRenderer actually draws): since the
+        // P757+P759 merge the CAMERA/VIEW group alone is taller than the 1440p
+        // band, so the whole-group Layout can no longer place it — the renderer
+        // splits such groups across columns, and this test pins that no section
+        // of any group exceeds the panel.
+        var groups = KeyBindingTable.All;
         const float panelY = 22f;
         const float panelH = 1440f * 0.90f - 2f * HelpOverlayLayout.Padding;
-        var slots = HelpOverlayLayout.Layout(heights, panelY, panelH);
+        var sections = HelpOverlayLayout.LayoutSections(
+            groups.Select(g => g.Entries.Count).ToArray(), panelY, panelH);
 
-        Assert.InRange(slots.Max(s => s.Column) + 1, 2, 6);
-        for (int i = 0; i < heights.Length; i++)
+        Assert.InRange(sections.Max(s => s.Column) + 1, 2, HelpOverlayLayout.MaxSectionColumns);
+        foreach (var section in sections)
         {
-            Assert.True(slots[i].Y + heights[i] <= panelY + panelH,
-                $"group {i} overflows the typical panel");
+            Assert.True(section.Y >= panelY, $"section of group {section.GroupIndex} starts above the panel");
+            Assert.True(section.Y + section.Height <= panelY + panelH,
+                $"section of group {section.GroupIndex} overflows the typical panel "
+                + $"(y={section.Y}, h={section.Height}, panel={panelY}+{panelH})");
+        }
+        for (int g = 0; g < groups.Count; g++)
+        {
+            var covered = sections.Where(s => s.GroupIndex == g).SelectMany(
+                s => Enumerable.Range(s.FirstEntry, s.EntryCount)).ToArray();
+            Assert.Equal(groups[g].Entries.Count, covered.Length);
+            Assert.Equal(Enumerable.Range(0, groups[g].Entries.Count), covered);
         }
     }
 }

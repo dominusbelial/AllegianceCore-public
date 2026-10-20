@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 // Native hover values: WinTrek/hangarscreen.cpp:37-48,243-300.
-public enum HangarAction { None, Launch, Command, Loadout, Invest, Help, Teleport, Team, Exit }
+public enum HangarAction { None, Launch, Buy, Command, Loadout, Default, Invest, Help, Teleport, Team, Exit }
 
 /// <summary>Shared drawing/hit-test geometry for native hangar verbs.</summary>
 public static class HangarControls
@@ -14,7 +14,8 @@ public static class HangarControls
     public static Rectangle Bounds(int width, int height, HangarAction action)
     {
         int index = (int)action - 1;
-        int cell = Math.Max(1, (width - 32) / 8);
+        int count = Enum.GetValues<HangarAction>().Length - 1;   // exclude None
+        int cell = Math.Max(1, (width - 32) / count);
         return new Rectangle(16 + index * cell, height - 72, cell - 4, 30);
     }
 
@@ -24,8 +25,10 @@ public static class HangarControls
     public static string Feedback(HangarAction action) => action switch
     {
         HangarAction.Launch => "Launch your ship",
+        HangarAction.Buy => "Buy this loadout (request money if short)",
         HangarAction.Command => "View the station's sector in command view",
         HangarAction.Loadout => "Configure your ship's hull and equipment",
+        HangarAction.Default => "Reset to this hull's default loadout",
         HangarAction.Invest => "Invest in your team's developments and construction",
         HangarAction.Help => "Open help and controls",
         HangarAction.Teleport => "Teleport to a station or board a teammate",

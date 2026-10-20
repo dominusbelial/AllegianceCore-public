@@ -1,0 +1,26 @@
+[
+  {
+    "name": "hangar-buy-default-720p",
+    "ship": 8096,
+    "station": 1051,
+    "hover": "Buy"
+  },
+  {
+    "name": "lod-slider-720p",
+    "ship": 8096,
+    "station": -1,
+    "hover": "Buy"
+  },
+  {
+    "name": "briefing-civ-720p",
+    "ship": 8096,
+    "station": -1,
+    "hover": "Buy"
+  },
+  {
+    "name": "connect-failed-720p",
+    "ship": 8096,
+    "station": -1,
+    "hover": "Buy"
+  }
+]

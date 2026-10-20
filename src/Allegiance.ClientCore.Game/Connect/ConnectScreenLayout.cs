@@ -61,6 +61,21 @@ public static class ConnectScreenLayout
     /// inset (see <see cref="SafeBottom"/>) so the row is visible/tappable on
     /// Android, where the bottom ~6% of the viewport is clipped.
     /// </summary>
+    /// <summary>
+    /// P759 — the abort destination for a failed join, the pure half of native
+    /// <c>OnLogonGameServerFailed(false, reason)</c> (<c>introscreen.cpp:1667-1699</c>):
+    /// back to the intro find-server flow, back to the lobby browser, or exit
+    /// (the unchanged direct-connect path).
+    /// </summary>
+    public enum ConnectAbortDestination { Intro, Lobby, Exit }
+
+    /// <summary>Resolve the abort destination from the two origin flags
+    /// (<c>_returnToIntroOnFailure</c> wins, then <c>_returnToLobbyOnFailure</c>).</summary>
+    public static ConnectAbortDestination AbortDestination(bool returnToIntro, bool returnToLobby)
+        => returnToIntro ? ConnectAbortDestination.Intro
+            : returnToLobby ? ConnectAbortDestination.Lobby
+            : ConnectAbortDestination.Exit;
+
     public static IReadOnlyList<(Button Kind, FRect Rect)> ComputeButtons(float viewportWidth, float viewportHeight)
     {
         const float gap = 10f;

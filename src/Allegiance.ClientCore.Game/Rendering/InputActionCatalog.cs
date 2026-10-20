@@ -321,6 +321,13 @@ public static class InputActionCatalog
         new("ViewTarget", "CAMERA / VIEW", "External target camera [TK_ViewTarget]", K(Keys.F7), null),
         new("ViewBase", "CAMERA / VIEW", "External base camera [TK_ViewBase]", K(Keys.F10), null),
         new("ViewExternalStation", "CAMERA / VIEW", "External station camera [TK_ViewExternalStation]", K(Keys.F11), null),
+        // P759 — native LOD slider commands (WinTrek.cpp:9448, 10415, 10421;
+        // trekinput.cpp:223-224, 297). Native binds no keyboard default for any
+        // of the three (no defaultinputmap.mdl entry), so they are unbound but
+        // rebindable, exactly like the other U() camera commands.
+        new("ToggleLODSlider", "CAMERA / VIEW", "Show/hide the LOD slider [TK_ToggleLODSlider]", U(), A(Keys.J)),
+        new("LODUp", "CAMERA / VIEW", "LOD slider up (higher detail) [TK_LODUp]", A(Keys.OemOpenBrackets), A(Keys.OemOpenBrackets)),
+        new("LODDown", "CAMERA / VIEW", "LOD slider down (lower detail) [TK_LODDown]", A(Keys.OemCloseBrackets), A(Keys.OemCloseBrackets)),
         new("FreeCam", "CAMERA / VIEW", "Free-flight spectator camera (detached) [P612]", K(Keys.F8), null),
         new("OrbitCam", "CAMERA / VIEW", "Orbit spectator camera (locks a ship/station) [P612]", K(Keys.F9), null),
         new("Director", "CAMERA / VIEW", "Director b-roll camera (opt-in, hides HUD) [P580]", K(Keys.F2), null),

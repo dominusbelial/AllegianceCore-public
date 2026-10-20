@@ -379,7 +379,7 @@ public sealed partial class Game1
     /// logging on and being seated; ReadyCheck (P282) is the pre-flight ready
     /// screen between seating and the mission actually starting; Flying is the
     /// joined-in-flight mode (existing behaviour).</summary>
-    private enum ClientState { Lobby, Connecting, SideSelect, ReadyCheck, Flying, Disconnected, Inspecting, Intro, Splash }
+    private enum ClientState { Lobby, Connecting, ConnectFailed, SideSelect, ReadyCheck, Flying, Disconnected, Inspecting, Intro, Splash }
 
     private ClientState _state;
 
@@ -692,6 +692,37 @@ public sealed partial class Game1
         }
     }
 
+    /// <summary>
+    /// P759 — the connect-failure screen (native OnLogonGameServerFailed's
+    /// retry/abort decision): shows the failure reason and the two keys.
+    /// </summary>
+    private void DrawConnectFailed()
+    {
+        var vp = GraphicsDevice.Viewport;
+        float w = vp.Width;
+        float h = vp.Height;
+        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        try
+        {
+            var title = "CONNECT FAILED";
+            var tsz = _hudBig.MeasureString(title);
+            _spriteBatch.DrawString(_hudBig, title, new Vector2((w - tsz.X) / 2f, h / 2f - 60f),
+                new Color(1f, 0.62f, 0.35f));
+            string reason = _connectFailureReason ?? "unknown failure";
+            var rsz = _hudSmall.MeasureString(reason);
+            _spriteBatch.DrawString(_hudSmall, reason, new Vector2((w - rsz.X) / 2f, h / 2f - 18f),
+                new Color(0.88f, 0.96f, 0.95f));
+            string hint = $"{KeyOf("LobbyRefresh").Label} retry    {KeyOf("MainMenu").Label} abort";
+            var hsz = _hudSmall.MeasureString(hint);
+            _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - hsz.X) / 2f, h / 2f + 22f),
+                new Color(0.62f, 0.74f, 0.74f));
+        }
+        finally
+        {
+            _spriteBatch.End();
+        }
+    }
+
     /// <summary>P320 — the session-loss screen: a clear, full-panel
     /// "CONNECTION LOST" indication over the (now frozen) world, replacing the
     /// old silent frame-identical freeze with an unmistakable state.</summary>
@@ -740,25 +771,70 @@ public sealed partial class Game1
         }
         catch (Exception ex)
         {
+            // P759 — native OnLogonGameServerFailed (introscreen.cpp:1667-1699)
+            // presents a retry/abort decision instead of silently bouncing back.
+            // Stage the failure on a dedicated screen; R retries the same
+            // host/port, Esc aborts to wherever the join was launched from.
             Console.WriteLine($"[monogame] FAILED to connect/log on: {ex.Message}");
-            if (_returnToIntroOnFailure)
-            {
+            _connectFailureReason = $"Could not join {host}:{port} - {ex.Message}";
+            _state = ClientState.ConnectFailed;
+        }
+    }
+
+    /// <summary>
+    /// P759 — the connect-failure screen's abort half (native
+    /// <c>OnLogonGameServerFailed(false, reason)</c> → message box, then back to
+    /// the origin): intro when launched from the intro find-server flow, lobby
+    /// when joined from the browser, else exit.
+    /// </summary>
+    private void AbortConnect()
+    {
+        string reason = _connectFailureReason ?? "unknown connect failure";
+        _connectFailureReason = null;
+        switch (ConnectScreenLayout.AbortDestination(_returnToIntroOnFailure, _returnToLobbyOnFailure))
+        {
+            case ConnectScreenLayout.ConnectAbortDestination.Intro:
                 _returnToIntroOnFailure = false;
-                if (_skirmish is not null) { StopSkirmish(); _skirmishError = ex.Message; }
+                if (_skirmish is not null) { StopSkirmish(); _skirmishError = reason; }
                 _state = ClientState.Intro;
-                _introFindError = $"Could not join {host}:{port} - {ex.Message}";
-            }
-            else if (_returnToLobbyOnFailure)
-            {
+                _introFindError = reason;
+                break;
+            case ConnectScreenLayout.ConnectAbortDestination.Lobby:
                 _returnToLobbyOnFailure = false;
                 _state = ClientState.Lobby;
-                _lobbyError = $"Could not join {host}:{port} - {ex.Message}";
-            }
-            else
-            {
+                _lobbyError = reason;
+                break;
+            default:
                 Exit();
-            }
+                break;
         }
+    }
+
+    /// <summary>
+    /// P759 — drive the connect-failure screen: R retries the same host/port
+    /// (native <c>OnLogonGameServerFailed(bRetry=true)</c> re-opens the logon
+    /// flow), Esc aborts (<see cref="AbortConnect"/>). Edge-triggered via the
+    /// action map so a rebind is honoured.
+    /// </summary>
+    private void UpdateConnectFailed(KeyboardState ks)
+    {
+        bool retry = ActionDown(ks, "LobbyRefresh");
+        if (retry && !_connectRetryWasDown)
+        {
+            Console.WriteLine($"[monogame] connect-failure: retrying {_connectHost}:{_connectPort}");
+            _connectFailureReason = null;
+            BeginConnect(_connectHost!, _connectPort);
+            return;
+        }
+        _connectRetryWasDown = retry;
+
+        bool abort = ActionDown(ks, "MainMenu") || ActionDown(ks, "MenuBack");
+        if (abort && !_connectAbortWasDown)
+        {
+            Console.WriteLine("[monogame] connect-failure: abort");
+            AbortConnect();
+        }
+        _connectAbortWasDown = abort;
     }
 
     // ── P499 — Android lifecycle seams ──────────────────────────────────────

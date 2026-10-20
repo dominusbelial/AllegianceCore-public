@@ -588,6 +588,11 @@ public sealed partial class ClientWorld
     private string _briefingText = "";
     private bool _briefingFGenerateCivBriefing;
 
+    // P759 — the civ-briefing inputs sent with MISSION_BRIEFING_INFO(993), the
+    // data native GetCivMissionBriefing reads live (side/civ name, civ list,
+    // win conditions, teamscreen.cpp:732-793). Null until the message arrives.
+    private MissionBriefingInfo? _missionBriefingInfo;
+
     // P262 — the end-of-mission snapshot received on FM_S_GAME_OVER(62). Kept
     // separate from _mission (which only mirrors Stage=Over): this is the real
     // reason string, winning side id and per-side records the Game1 overlay
@@ -1013,6 +1018,12 @@ public sealed partial class ClientWorld
     /// SET_BRIEFING_TEXT arrives; the MonoGame client renders it as the
     /// dismissible mission-briefing popup during the pre-launch countdown.</summary>
     public string BriefingText => _briefingText;
+
+    /// <summary>P759 — the live civ-briefing inputs from MISSION_BRIEFING_INFO(993),
+    /// or null until the join-sync burst delivers them. The MonoGame client feeds
+    /// this to <see cref="Rendering.MissionBriefingGenerator"/> for the
+    /// native-shaped civ prose + random tip.</summary>
+    public MissionBriefingInfo? MissionBriefing => _missionBriefingInfo;
 
     /// <summary>P271 — the <c>fGenerateCivBriefing</c> flag from the last
     /// <c>SET_BRIEFING_TEXT</c>. The port's server always sends true (P121);
@@ -1789,6 +1800,7 @@ public sealed partial class ClientWorld
         _scoreRoster = [];
         _briefingText = "";
         _briefingFGenerateCivBriefing = false;
+        _missionBriefingInfo = null;
         _missileLock = MissileLockState.None;
         _prevLockState = MissileLockFeedback.LockState.None;
         _prevLockTargetId = -1;
@@ -2072,6 +2084,9 @@ public sealed partial class ClientWorld
                 break;
             case SetBriefingText briefing:
                 Apply(briefing);
+                break;
+            case MissionBriefingInfo briefingInfo:
+                Apply(briefingInfo);
                 break;
             case GameOver gameOver:
                 Apply(gameOver);
@@ -4539,6 +4554,7 @@ public sealed partial class ClientWorld
         _scoreRoster = [];
         _briefingText = "";
         _briefingFGenerateCivBriefing = false;
+        _missionBriefingInfo = null;
         _missileLock = MissileLockState.None;
         _prevLockState = MissileLockFeedback.LockState.None;
         _prevLockTargetId = -1;
@@ -4628,6 +4644,11 @@ public sealed partial class ClientWorld
         _briefingText = briefing.Text;
         _briefingFGenerateCivBriefing = briefing.FGenerateCivBriefing;
     }
+
+    /// <summary>P759 — store the civ-briefing inputs the server sends beside
+    /// SET_BRIEFING_TEXT. The message is per-joiner join-sync, so it applies to
+    /// the local mission unconditionally (there is only ever one briefing).</summary>
+    private void Apply(MissionBriefingInfo info) => _missionBriefingInfo = info;
 
     /// <summary>FM_S_GAME_OVER(62) — the server's real end-of-mission broadcast
     /// (Server.DeclareGameOver → GAME_OVER to every peer still on the mission).

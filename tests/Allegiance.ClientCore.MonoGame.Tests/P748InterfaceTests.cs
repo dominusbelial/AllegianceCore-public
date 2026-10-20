@@ -57,7 +57,7 @@ public sealed class P748InterfaceTests
     public void Every_hangar_button_has_distinct_hit_geometry_and_native_hover_leave_values(int width, int height)
     {
         var actions = HangarControls.Actions(true).ToArray();
-        Assert.Equal(8, actions.Length);
+        Assert.Equal(10, actions.Length);   // P759 added Buy + Default
         foreach (var action in actions)
         {
             var rect = HangarControls.Bounds(width, height, action);

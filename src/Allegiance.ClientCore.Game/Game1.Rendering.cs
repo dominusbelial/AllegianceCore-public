@@ -1,4 +1,7 @@
 using Allegiance.ClientCore.MonoGame.Assets;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Linq;
@@ -357,6 +360,10 @@ public sealed partial class Game1
         {
             DrawConnecting();
         }
+        else if (_state == ClientState.ConnectFailed)
+        {
+            DrawConnectFailed();
+        }
         else if (_state == ClientState.SideSelect)
         {
             DrawSideSelect();
@@ -673,6 +680,10 @@ public sealed partial class Game1
                     float viewH = GraphicsDevice.Viewport.Height;
                     float worldRadius = _shipRadiusById.TryGetValue(id, out var wr) && wr > 0f ? wr : 1f;
                     float px = Rendering.ShipLod.ProjectedPixelRadius(eyeRel, worldRadius, view, proj, viewH);
+                    // P759 — apply the LOD slider bias before tier/LODGeo selection
+                    // (native SetLOD(screenRadius * lodBias), thinggeo.cpp:1624).
+                    _shipLodProfile.LodBias = _lodControl.Bias;
+                    px = Rendering.ShipLod.ApplyLodBias(px, _shipLodProfile);
                     float farAmt = Rendering.ShipLod.FarAmount(px, _shipLodProfile);
                     bool wasFar = _shipLodFar.TryGetValue(id, out var wf) && wf;
                     bool isFar = Rendering.ShipLod.NextFarState(px, wasFar, _shipLodProfile);
@@ -1793,6 +1804,12 @@ public sealed partial class Game1
             DrawFlightPartsHud(hudModel);
         }
 
+        // P759 — the runtime LOD slider overlay (native TK_ToggleLODSlider /
+        // m_pwrapImageLOD). A compact horizontal bar, drawn only while toggled
+        // on and in flight.
+        if (!_directorActive && _lodControl.Visible)
+            DrawLodSlider();
+
             // P217 — the quick-chat voice-macro menu, on top of the chat log
             // (itself above the HUD). Only drawn while a menu level is open.
             if (_qcMenuOpen && _qcMenuNode is { } qn && _qcMenuPath.Count > 0)
@@ -1844,8 +1861,36 @@ public sealed partial class Game1
         // when the countdown expires (IsBriefingVisible).
         if (_state == ClientState.Flying && !gameOverUp && IsBriefingVisible(out int? brRemaining))
         {
-            string briefText = _session.World.BriefingText;
-            _briefingRenderer.Draw(GraphicsDevice.Viewport, briefText, briefText, brRemaining);
+            // P759b — when the join-sync carried MISSION_BRIEFING_INFO(996), build
+            // the native briefing from the artwork's missionbrief.mdl civ strings
+            // (teamscreen.cpp:732-826); when the mdl/artwork is unavailable, fall
+            // back to the pre-P759 rendering (the raw starting-cluster name).
+            if (_session.World.MissionBriefing is { } briefing)
+            {
+                try
+                {
+                    // Native picks the tip once when the popup is built (GetMissionTip):
+                    // build once per briefing, not every frame.
+                    if (!ReferenceEquals(_builtBriefingFor, briefing))
+                    {
+                        _builtBriefing = Rendering.MissionBriefingGenerator.Build(briefing);
+                        _builtBriefingFor = briefing;
+                    }
+                    var (title, objective, body) = _builtBriefing;
+                    _briefingRenderer.Draw(GraphicsDevice.Viewport, title, body, brRemaining, objective);
+                }
+                catch (Exception ex) when (ex is ExternalResourceUnavailableException or IOException
+                    or InvalidDataException or KeyNotFoundException)
+                {
+                    string briefText = _session.World.BriefingText;
+                    _briefingRenderer.Draw(GraphicsDevice.Viewport, briefText, briefText, brRemaining);
+                }
+            }
+            else
+            {
+                string briefText = _session.World.BriefingText;
+                _briefingRenderer.Draw(GraphicsDevice.Viewport, briefText, briefText, brRemaining);
+            }
         }
 
         // P257 — H keybinding-reference overlay, drawn TOP-MOST over every
@@ -2508,6 +2553,39 @@ public sealed partial class Game1
             return "TEAM";
         }
         return "UNKNOWN";
+    }
+
+    /// <summary>
+    /// P759 — draw the runtime LOD slider overlay (native TK_ToggleLODSlider /
+    /// m_pwrapImageLOD). A compact horizontal bar whose thumb position is the
+    /// pure <see cref="Rendering.LodControl.Value"/> (0..100); the label is the
+    /// applied bias <see cref="Rendering.LodControl.Bias"/> as a percentage.
+    /// </summary>
+    private void DrawLodSlider()
+    {
+        var vp = GraphicsDevice.Viewport;
+        int barW = 220;
+        int barH = 14;
+        int x = 24;
+        // P759b — h−84 put the bar across the bottom-left console/chat line
+        // (e.g. "Ceto secured") and h−70 across the nav-target distance readout;
+        // h−120 sits in the clear band between the WEAPONS/BOOST status line and
+        // the nav readout so the slider never covers a chat/HUD line.
+        int y = vp.Height - 120;
+        var track = new Rectangle(x, y, barW, barH);
+        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        try
+        {
+            _spriteBatch.Draw(_whitePixel, track, new Color(8, 18, 26));
+            int thumb = (int)MathF.Round(barW * _lodControl.Value / (float)Rendering.LodControl.MaxValue);
+            _spriteBatch.Draw(_whitePixel, new Rectangle(x + Math.Clamp(thumb - 2, 0, barW - 4), y + 2, 4, barH - 4), new Color(0.40f, 0.88f, 0.84f));
+            _spriteBatch.DrawString(_hudSmall, $"LOD {(int)MathF.Round(_lodControl.Bias * 100f)}%",
+                new Vector2(x + barW + 8, y - 2), new Color(0.88f, 0.96f, 0.95f));
+        }
+        finally
+        {
+            _spriteBatch.End();
+        }
     }
 
     /// <summary>

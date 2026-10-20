@@ -52,4 +52,55 @@ public class ClientWorldBriefingTests
         Assert.Equal("Serpentis", decoded.Text);
         Assert.True(decoded.FGenerateCivBriefing);
     }
+
+    // P759 — MISSION_BRIEFING_INFO(993) join-sync storage + wire round-trip.
+    [Fact]
+    public void MissionBriefingInfo_StoresCivBriefingInputs()
+    {
+        var world = new ClientWorld();
+        Assert.Null(world.MissionBriefing);
+
+        var info = new MissionBriefingInfo
+        {
+            SideName = "Alpha",
+            CivName = "Iron Coalition",
+            BriefingText = "Sector 1",
+            CivList = ["Iron Coalition", "Belters"],
+            NoWin = false,
+            Conquest = true,
+            ConquestPercent = 65,
+        };
+        world.Apply(info);
+
+        Assert.NotNull(world.MissionBriefing);
+        Assert.Equal("Alpha", world.MissionBriefing!.SideName);
+        Assert.Equal("Iron Coalition", world.MissionBriefing.CivName);
+        Assert.True(world.MissionBriefing.Conquest);
+        Assert.Equal(65, world.MissionBriefing.ConquestPercent);
+    }
+
+    [Fact]
+    public void MissionBriefingInfo_RoundTripsThroughItsRealCodec()
+    {
+        var msg = new MissionBriefingInfo
+        {
+            SideName = "Bravo",
+            CivName = "Belters",
+            BriefingText = "Home",
+            CivList = ["Belters", "Rixian"],
+            NoWin = false,
+            Artifacts = true,
+            ArtifactGoal = 4,
+            Deathmatch = true,
+            KillLimit = 25,
+        };
+        var decoded = MissionBriefingInfo.Decode(msg.Encode());
+
+        Assert.Equal("Bravo", decoded.SideName);
+        Assert.Equal("Belters", decoded.CivName);
+        Assert.True(decoded.Artifacts);
+        Assert.Equal(4, decoded.ArtifactGoal);
+        Assert.True(decoded.Deathmatch);
+        Assert.Equal(25, decoded.KillLimit);
+    }
 }

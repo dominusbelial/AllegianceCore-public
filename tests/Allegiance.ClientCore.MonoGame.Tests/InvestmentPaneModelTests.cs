@@ -220,4 +220,16 @@ public class InvestmentPaneModelTests
         Assert.Equal(b.Id, id);
         Assert.Equal(100, amt);    // 10% of 1000
     }
+
+    // P759 — TK_ConModeInvest edge trigger (WinTrek.cpp:10025-10033): an edge
+    // press toggles only when developments are allowed and no modal composes.
+    [Fact]
+    public void ConModeInvest_ToggleRequiresDevelopmentsAndEdge()
+    {
+        Assert.True(InvestmentPaneModel.TogglePermitted(developments: true, composing: false, keyDown: true, wasDown: false));
+        Assert.False(InvestmentPaneModel.TogglePermitted(developments: false, composing: false, keyDown: true, wasDown: false));
+        Assert.False(InvestmentPaneModel.TogglePermitted(developments: true, composing: true, keyDown: true, wasDown: false));
+        Assert.False(InvestmentPaneModel.TogglePermitted(developments: true, composing: false, keyDown: true, wasDown: true));
+        Assert.False(InvestmentPaneModel.TogglePermitted(developments: true, composing: false, keyDown: false, wasDown: false));
+    }
 }
