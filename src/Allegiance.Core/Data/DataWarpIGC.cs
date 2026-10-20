@@ -32,6 +32,13 @@ public readonly record struct DataWarpIGC(
     float Signature,
     short ClusterId)
 {
+    /// <summary>Andon aleph mass limit, parsed from the map definition by the
+    /// native runtime (<c>warpIGC.cpp:67-99</c>; <c>igc.h:4177</c>). It is NOT
+    /// part of the fixed 108-byte <c>DataWarpIGC</c> payload, so it defaults to
+    /// <c>-1</c> (unlimited) and must be supplied by the map loader/test harness
+    /// when a limit is desired.</summary>
+    public float MassLimit { get; init; } = -1f;
+
     /// <summary>Exact payload size in bytes: <c>sizeof(DataWarpIGC)</c>.</summary>
     public const int Size = 108;
 

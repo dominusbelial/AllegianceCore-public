@@ -3827,7 +3827,10 @@ public sealed class Sector : IClusterIgc
             if (model is not Ship ship) continue;
             if (ship.Dead) continue;                 // the dead cannot warp
             if (ship.Mission is null) continue;      // unplaced ship has no host to route to
-            if (now - ship.LastWarpTime < WarpCooldownSeconds) continue;  // debounce (native warpState)
+            // P760 — players use the native update handshake (WarpState); NPCs
+            // keep the existing LastWarpTime cooldown (fsship.cpp:79-82).
+            if (!ship.WarpReady) continue;
+            if (now - ship.LastWarpTime < WarpCooldownSeconds) continue;
 
             // Ship radius is the half-length, exactly as the combat pass builds
             // its sphere (Sector.cs:174, shipIGC.cpp:1419).

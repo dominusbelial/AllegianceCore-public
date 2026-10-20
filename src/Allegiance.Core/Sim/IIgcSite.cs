@@ -106,7 +106,7 @@ public interface IIgcSite
 
     // igc.h:4801-4810. SendChat routes chat to clients; no-op default.
     void SendChat(
-        IShipIgc pshipSender,
+        IShipIgc? pshipSender,
         ChatTarget chatTarget,
         short oidRecipient,
         short soVoiceOver,
@@ -542,9 +542,9 @@ public interface IIgcSite
 
     // ── cluster-change routing ────────────────────────────────────────────
     // igc.h:4876-4881.
-    void ChangeStation(IShipIgc pship, IStationIgc pstationOld, IStationIgc pstationNew) { }
+    bool ChangeStation(IShipIgc pship, IStationIgc? pstationOld, IStationIgc? pstationNew) => true;
     void ChangeCluster(IShipIgc pship, IClusterIgc pclusterOld, IClusterIgc pclusterNew) { }
-    void CommandChangedEvent(short i, IShipIgc pship, IModelIgc ptarget, short cid) { }
+    void CommandChangedEvent(short i, IShipIgc pship, IModelIgc? ptarget, short cid) { }
     /// <summary>C++ default <c>false</c> (<c>igc.h:4883</c>).</summary>
     bool HandlePickDefaultOrder(IShipIgc pship) => false;
 

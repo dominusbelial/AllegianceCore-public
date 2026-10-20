@@ -774,6 +774,10 @@ public sealed partial class Server
         Console.WriteLine($"[boot] receive.decouple = {decouple.ToString().ToLowerInvariant()} (receive-worker decode; tick-boundary apply)");
         _host.ShipKilled = BroadcastKillShip;   // wire the site's KillShipEvent to a broadcast
         _host.ShipWarped = OnShipWarped;        // wire the site's HitWarpEvent transit to per-peer routing
+        _host.ShipChangedCluster = OnShipChangedCluster; // P760: ChangeCluster -> SDR_LEFTSECTOR
+        _host.GainFlagSent = OnGainFlagSent;    // P760: ChangeStation tech recovery -> side group
+        _host.TechsRecovered = OnTechsRecovered;// P760: score/achievement hook for tech recovery
+        _host.CommandChanged = OnCommandChanged;// P760: CommandChangedEvent -> ORDER_CHANGE broadcast
         _host.Payday = OnPayday;                // wire the site's PaydayEvent to the per-side wire payout
         _host.StationConstructed = OnStationConstructed;
         _host.StationBuilt = OnStationBuilt;

@@ -844,6 +844,117 @@ public sealed partial class Game1
         if (changed) _sound?.PlayNewTarget();
     }
 
+    /// <summary>P760b/SIM-0197 — drain the world's killed-model queue once per
+    /// frame (on the game thread, from the UpdateFeedback call site) and run
+    /// the native TargetKilled body for each. The receive thread only enqueues
+    /// (Apply(KillShip) → RecordTargetKilled): the retarget reads the own pose
+    /// and mutates Game1's target/autopilot state, which is game-thread state.</summary>
+    private void UpdateTargetKilled()
+    {
+        List<ClientWorld.TargetKilledModel> kills;
+        lock (_session.Gate) kills = _session.World.TakeTargetKilledModels();
+        foreach (var killed in kills) OnTargetKilled(killed);
+    }
+
+    /// <summary>P760b/SIM-0197 — the port of native
+    /// <c>WinTrekClient::TargetKilled</c> (<c>trekigc.cpp:2934-2974</c>):
+    /// <list type="number">
+    /// <item>Compare the victim with the ship's <b>c_cmdCurrent</b> target
+    /// (<c>:2936</c>) — the HUD-8 slot (<see cref="ClientWorld.MyCurrentCommand"/>),
+    /// NOT the client-local autopilot selection — for ANY model type.</item>
+    /// <item>Gate on the SOURCE ship (own ship, or the carrier when boarded as
+    /// a gunner, <c>GetSourceShip()</c>) being in a cluster (<c>:2940-2941</c>).</item>
+    /// <item>Build the victim's similar-target mask (<c>GetSimilarTargetMask</c>,
+    /// <c>WinTrek.cpp:267-284</c>: type bits + friendly/enemy by side/alliance);
+    /// when it is the enemy-ship mask, try rescue-capable first, then
+    /// miner/builder, then any (<c>:2946-2960</c>).</item>
+    /// <item>SetTarget the pick (<c>:2966</c>), never the dead model itself
+    /// (<c>:2962-2963</c>).</item>
+    /// <item>Re-engage the autopilot when the PLAN target was the killed model
+    /// (<c>:2968-2969</c>) — the port's plan proxy is the autopilot target.</item>
+    /// </list></summary>
+    private void OnTargetKilled(in ClientWorld.TargetKilledModel killed)
+    {
+        var world = _session.World;
+
+        // 1. c_cmdCurrent comparison (trekigc.cpp:2936).
+        QueuedCommandState? current;
+        lock (_session.Gate) current = world.MyCurrentCommand;
+        if (current is not { } cmd || cmd.TargetType != killed.ObjectType || cmd.TargetId != killed.ModelId)
+            return;
+
+        // 2. Source ship in a cluster (trekigc.cpp:2940-2941).
+        ShipEntity? source;
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)) return;
+            source = own.ParentId >= 0 && world.Ships.TryGetValue(own.ParentId, out var parent) ? parent : own;
+        }
+        if (source is null || source.SectorId < 0) return;
+
+        // 3. Similar-target mask (WinTrek.cpp:267-284). The only producer is a
+        // ship kill, so the mask is ship + friendly-or-enemy; the relation is
+        // computed from the victim's side (alliances included, as native does).
+        // An unknown victim side defaults to the enemy mask (native's
+        // GetSide() != my side leg).
+        bool enemy = true;
+        lock (_session.Gate)
+        {
+            if (world.Ships.TryGetValue(killed.ModelId, out var victim)
+                && victim.SideId is { } vs && world.MySideId is { } mySide
+                && (vs == mySide || world.AreAllied(mySide, vs)))
+                enemy = false;
+        }
+
+        if (!TryOwnPose(out var pos, out var orient, out _)) return;
+
+        // The plan-target capture must precede the commit: CommitTargetForPlayer
+        // overwrites the autopilot target.
+        bool planWasKilled = _autoPilotEngaged
+            && _autoTarget is { } plan && plan.Kind == TargetKind.Ship && plan.Id == killed.ModelId;
+
+        AutopilotTarget? picked = null;
+        if (enemy)
+        {
+            // mask == (c_ttShip | c_ttEnemy | c_ttNearest) → abm = c_habmRescue,
+            // with the miner/builder and plain retries (trekigc.cpp:2944-2960).
+            picked = SelectFilteredTarget(pos, orient,
+                new TargetFilterSpec(TargetRelation.Enemy, DataHullTypeIGC.HabmRescue), StepDirection.Nearest);
+            picked ??= SelectFilteredTarget(pos, orient,
+                new TargetFilterSpec(TargetRelation.Enemy, unchecked((short)(DataHullTypeIGC.HabmMiner | DataHullTypeIGC.HabmBuilder))),
+                StepDirection.Nearest);
+            picked ??= SelectFilteredTarget(pos, orient,
+                new TargetFilterSpec(TargetRelation.Enemy), StepDirection.Nearest);
+        }
+        else
+        {
+            // Friendly mask (abm = 0): nearest similar friendly model.
+            picked = SelectFilteredTarget(pos, orient,
+                new TargetFilterSpec(TargetRelation.Friendly), StepDirection.Nearest);
+        }
+
+        // Native never re-picks the dead model (trekigc.cpp:2962-2963).
+        if (picked is { } p && p.Kind == TargetKind.Ship && p.Id == killed.ModelId) picked = null;
+
+        // 4. SetTarget(pmodelTarget, c_cidDefault) (trekigc.cpp:2966); a null
+        // pick clears the slot (native SetTarget(NULL)).
+        if (picked is { } sel)
+        {
+            CommitTargetForPlayer(sel);
+        }
+        else
+        {
+            _autoTarget = null;
+            SendCurrentCommandToServer(null);
+        }
+
+        // 5. Re-engage the autopilot when the plan target was the killed model
+        // (trekigc.cpp:2968-2969). With no new target the flight layer's own
+        // "target lost" disengage handles the fallback.
+        if (planWasKilled && picked is { } re)
+            EngageAutopilotToward(re, "target killed:");
+    }
+
     /// <summary>P623 — the live CLASS-FILTER target key (TK_Target{Friendly|Enemy}
     /// {Bomber|Fighter|Miner|Constructor|Lifepod}[Nearest|Prev],
     /// WinTrek.cpp:10162-10331). Builds the per-class spec from

@@ -1344,15 +1344,10 @@ public sealed partial class Server
                 // Clear-target: SetTarget/SetAccepted's pmodel==NULL case sends
                 // objectType=OT_invalid + objectID=NA (WinTrek.cpp:8834-8836);
                 // native SetCommand(command, NULL, cid) clears the slot.
-                if (accepted)
-                {
-                    target.AcceptedShipTarget = null;
-                    target.AcceptedShipCommandId = OrderChange.CidNone;
-                }
-                else
-                {
-                    target.CommandTarget = null;
-                }
+                // P760b — set the slot through the ship's SetCommand, which
+                // fires the site's CommandChangedEvent only when the cid or the
+                // target actually changed (shipIGC.h:784-786).
+                target.SetCommand(req.Command, null, req.CommandId);
                 if (ConsoleLog.Verbose) ConsoleLog.Write($"[orderchange] {from} ship {ship.Id}: {target.Id} cleared {(accepted ? "accepted ship target" : "command target")} ({(accepted ? "c_cmdAccepted" : "c_cmdCurrent")}, objectID=NA sentinel, WinTrek.cpp:8834-8836)");
             }
             else if (req.ObjectType == IgcObjectType.Ship)
@@ -1368,15 +1363,8 @@ public sealed partial class Server
                 // is visible (WinTrek/WinTrek.cpp:10650-10696). CanSee belongs to
                 // missile lock/firing (Igc/magazineigc.cpp:127-132), which recheck
                 // visibility independently. Keep the player-slot ownership gate above.
-                if (accepted)
-                {
-                    target.AcceptedShipTarget = found;
-                    target.AcceptedShipCommandId = req.CommandId;
-                }
-                else
-                {
-                    target.CommandTarget = found;
-                }
+                // P760b — through SetCommand: fires on change only.
+                target.SetCommand(req.Command, found, req.CommandId);
                 string foundDesc = found is null
                     ? $"ship {req.ObjectID} not found — {(accepted ? "accepted ship target" : "command target")} cleared (FedSrv.CPP:7336-7338)"
                     : $"target ship {found.Id} (side {found.SideId}, {(found.IsNpc ? "NPC" : "peer")}{(accepted ? $") cmdID={req.CommandId}" : ")")} — {slot} set (FedSrv.CPP:7335-7339)";
@@ -1384,7 +1372,8 @@ public sealed partial class Server
             }
             else if (!accepted)
             {
-                target.CommandTarget = EquipmentTarget.Resolve(target.Sector, req.ObjectType, req.ObjectID);
+                var et = EquipmentTarget.Resolve(target.Sector, req.ObjectType, req.ObjectID);
+                target.SetCommand(req.Command, et, req.CommandId);
             }
             return;
         }

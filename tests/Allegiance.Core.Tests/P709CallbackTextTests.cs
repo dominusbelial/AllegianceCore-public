@@ -10,7 +10,7 @@ public sealed class P709CallbackTextTests
         public readonly List<(bool Critical, string Text)> Text = [];
         public readonly List<(ChatTarget Target, short Recipient, short Voice, string Text, short Command, short Type)> Chats = [];
         public void PostPlainText(bool bCritical, string pszText) => Text.Add((bCritical, pszText));
-        public void SendChat(IShipIgc sender, ChatTarget target, short recipient, short voice, string text,
+        public void SendChat(IShipIgc? sender, ChatTarget target, short recipient, short voice, string text,
             short cid = -1, Allegiance.Core.IgcObjectType type = (Allegiance.Core.IgcObjectType)(-1),
             short id = -1, IModelIgc? model = null, bool objectModel = false) =>
             Chats.Add((target, recipient, voice, text, cid, (short)type));

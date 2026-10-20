@@ -2186,6 +2186,12 @@ public sealed partial class Game1
         // drained from the world's KILL_SHIP/PLAYER_RESCUED queues each frame.
         UpdateFeedback();
 
+        // P760b/SIM-0197 — killed-current-target retargeting, drained from the
+        // world's KILL_SHIP queue each frame on the game thread (the receive
+        // thread only enqueues; the retarget reads the own pose and mutates
+        // Game1's target/autopilot state).
+        UpdateTargetKilled();
+
         // P463 — the four projectile hit sounds (my/other × shield/hull), drained
         // from the same PROJECTILE_HULL_HIT(213) wire stream the spark renderer
         // consumes, at most one cue per target per frame.

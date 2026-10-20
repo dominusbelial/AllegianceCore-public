@@ -752,7 +752,7 @@ public sealed partial class Server
         // docked. FindFriendlyStation already guarantees same-side, so the
         // native's same-side fallback is satisfied.
         var destSector = mission.Sectors.First(s => s.Stations.Contains(station.Value));
-        MoveShipToSector(rescuee, destSector);   // P307: real list move (old.Remove → dest.Add → Sector), not just the back-ref
+        MoveShipToSector(rescuee, destSector, announceExit: false);   // P307: real list move; dock-bound → no flying-exit announce (native SetCluster(NULL) first, FedSrv.CPP:12045)
         foreach (var kid in rescuee.ChildShips)   // empty for a solo lifepod; mirrored for parity
             kid.StationId = station.Value.StationId;
         rescuee.StationId = station.Value.StationId;
@@ -822,7 +822,7 @@ public sealed partial class Server
         // owning peer's LiveShip.Sector snapshot at the station's cluster so the
         // next SHIP_STATUS/SINGLE_SHIP_UPDATE read the right sector).
         var destSector = mission.Sectors.First(s => s.Stations.Contains(station.Data));
-        MoveShipToSector(rescuee, destSector);   // P307: real list move (old.Remove → dest.Add → Sector), not just the back-ref
+        MoveShipToSector(rescuee, destSector, announceExit: false);   // P307: real list move; dock-bound → no flying-exit announce (native SetCluster(NULL) first, FedSrv.CPP:12045)
         foreach (var kid in rescuee.ChildShips)
             kid.StationId = station.StationId;
         rescuee.StationId = station.StationId;
@@ -1346,7 +1346,7 @@ public sealed partial class Server
     /// (<c>SetCluster(pcluster)</c>, FedSrv.CPP:13474-13476): out of its old
     /// sector's model list, into the target's, and update its <see cref="Ship.Sector"/>
     /// back-ref so it ticks with the new sector next pass.</summary>
-    private static void MoveShipToSector(Ship ship, Sector target)
+    private static void MoveShipToSector(Ship ship, Sector target, bool announceExit = true)
     {
         // P307 hardening (ghost-ship sector-membership desync): make the
         // relocation exact-once-safe so every call site converges on the same
@@ -1364,6 +1364,20 @@ public sealed partial class Server
         if (!target.Models.Contains(ship))
             target.Add(ship);
         ship.Sector = target;
+        // P760b/SIM-0220 — native's IshipIGC::SetCluster routes EVERY cluster
+        // move through the site's ChangeCluster (shipIGC.h:254), which announces
+        // the exit from the old cluster with SDR_LEFTSECTOR when both clusters
+        // are real and different (FedSrv.CPP:13513-13528). This helper is the
+        // port's SetCluster (ripcord, teleport, rescue, lifepod respawn), so it
+        // reaches the site the same way — via the ship's mission, so a Server
+        // that was never started (null _host) still records the callback.
+        // Dock-bound relocations (rescue placement, teleport-to-station,
+        // lifepod respawn) pass announceExit:false: native nulls the cluster
+        // FIRST there (FedSrv.CPP:12045 SetCluster(NULL) → ChangeCluster(old,
+        // NULL) announces nothing) and the dock bookkeeping carries its own
+        // status, so a flying-exit notice would be a spurious duplicate.
+        if (announceExit && !ReferenceEquals(old, target))
+            ship.Mission?.Site.ChangeCluster(ship, old!, target);
     }
 
     /// <summary>P113 — keep the owning peer's broadcast bookkeeping coherent
@@ -1921,34 +1935,32 @@ public sealed partial class Server
     private void UndockShipState(Ship ship, Sector sector)
     {
         var station = ship.StationId!.Value;
+
+        // Use the station's native slot rotation, offsets, jitter, and velocity.
+        DataStationIGC? stationModel = null;
+        foreach (var st in sector.Stations)
+            if (st.StationId == station) { stationModel = st; break; }
+
+        // P760 — route the launch through ChangeStation so RepairAndRefuel and
+        // the STAGE_STARTED / not-a-turret gates flow through the native callback
+        // (FedSrv/FedSrv.CPP:13179-13191). RepositionForLaunch stays here because
+        // it needs the server's sim-time (_simNow).
+        // P760b — route through the mission's site (ship.Mission?.Site), like the
+        // CommandChangedEvent calls below: a Server that was never started has a
+        // null _host (the P753 docked-NPC launch test constructs one), and native
+        // reaches the site through the mission anyway (FedSrv.CPP:13179).
+
+        if (stationModel is { } stFound)
+            ship.Mission?.Site.ChangeStation(ship, new DockStation(stFound), null);
+
         ship.StationId = null;
         // Native ChangeStation propagates station state to every child
         // (FedSrv/FedSrv.CPP:13165-13175). Otherwise a gunner remains marked
         // docked forever after its parent launches, blocking valid turret input.
         foreach (var child in ship.ChildShips) child.StationId = null;
 
-        // Use the station's native slot rotation, offsets, jitter, and velocity.
-        DataStationIGC? stationModel = null;
-        foreach (var st in sector.Stations)
-            if (st.StationId == station) { stationModel = st; break; }
-        if (stationModel is { } stFound)
-        {
-            // P261: the launch repair/reload — native fires
-            // CstationIGC::RepairAndRefuel in ChangeStation's undock branch
-            // (FedSrv.CPP:13189-13191), i.e. at LAUNCH, gated on the DOCKED
-            // station's type capabilities. Both undock arms (real-peer
-            // PerformUndock and the docked-NPC launch arm of HandleOrderChange)
-            // converge here, so this single call restores every launching ship.
-            // The station's StationTypeId is resolved to its DataStationTypeIGC
-            // from the mission core exactly as FindNearestFriendlyStation does
-            // (Server's existing core-resolution idiom); an unresolvable type
-            // can't gate capabilities, so the restore is skipped (defensive —
-            // every real map station has a resolvable type).
-            if (ship.Mission?.Core.StationTypes.TryGetValue(stFound.StationTypeId, out var dtype) == true)
-                ship.RepairAndRefuel(dtype);
-
-            RepositionForLaunch(ship, stFound);
-        }
+        if (stationModel is { } stFound2)
+            RepositionForLaunch(ship, stFound2);
 
         // P75: start the undock debounce — Sector.ResolveDockCollisions won't
         // consider this ship for re-docking again until Sector.LaunchCooldownSeconds
@@ -2138,7 +2150,7 @@ public sealed partial class Server
         // Relocate to the target station's cluster and dock there — move any
         // boarded children first, then the ship itself (FedSrv.CPP:7124-7131).
         var destSector = mission.Sectors.First(s => s.Stations.Contains(target!.Value));
-        MoveShipToSector(ship, destSector);      // P307: real list move (old.Remove → dest.Add → Sector), not just the back-ref
+        MoveShipToSector(ship, destSector, announceExit: false);      // P307: real list move; dock-bound → no flying-exit announce (native SetCluster(NULL) first, FedSrv.CPP:12045)
         foreach (var kid in ship.ChildShips)          // empty in the bNewHull case (booted above)
             kid.StationId = targetStationId;
         ship.StationId = targetStationId;

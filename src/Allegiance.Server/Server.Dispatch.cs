@@ -2305,6 +2305,32 @@ public sealed partial class Server
             pu.LastPosePosition = position;
             ship.Position = position;
             ship.Velocity = velocity;
+
+            // P760 — native warp-state handshake (fsship.cpp:1185-1191).
+            // Accepted update transitions NoUpdate -> Waiting (armed for 2 s)
+            // and Waiting -> Ready once the armed time has passed.
+            // P760b — one clock: native arms and compares against g.timeNow, the
+            // mission clock (fsship.cpp:1188), the same clock LastWarpTime is
+            // stamped with and Ship.OnUpdate compares against — so TimeNextWarp
+            // is armed and checked in mission time here too, never the server
+            // receive clock.
+            if (!ship.IsNpc)
+            {
+                double missionNow = ship.Mission?.LastUpdate ?? SimNow;
+                switch (ship.PlayerWarpState)
+                {
+                    case WarpState.NoUpdate:
+                        ship.PlayerWarpState = WarpState.Waiting;
+                        ship.TimeNextWarp = missionNow + 2.0;
+                        ConsoleLog.Write($"[warp] ship {ship.Id} update accepted: NoUpdate -> Waiting, next warp at {ship.TimeNextWarp:F3}");
+                        break;
+                    case WarpState.Waiting when missionNow >= ship.TimeNextWarp:
+                        ship.PlayerWarpState = WarpState.Ready;
+                        ConsoleLog.Write($"[warp] ship {ship.Id} update accepted: Waiting -> Ready");
+                        break;
+                }
+            }
+
             ConsoleLog.Write($"[ctrlak] {from} ship {ship.Id}: ACCEPTED (dist {MathF.Sqrt(dSq):0.##}m, deltaT {deltaT:0.###}s)");
         }
         else

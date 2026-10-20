@@ -129,7 +129,7 @@ public sealed class RecordingIgcSite : IIgcSite
             pmodelTarget);
 
     public void SendChat(
-        IShipIgc pshipSender, ChatTarget chatTarget, short oidRecipient,
+        IShipIgc? pshipSender, ChatTarget chatTarget, short oidRecipient,
         short soVoiceOver, string szText, short cid,
         IgcObjectType otTarget, short oidTarget, IModelIgc? pmodelTarget, bool bObjectModel) =>
         Wrap(nameof(SendChat), () => { },
@@ -239,11 +239,14 @@ public sealed class RecordingIgcSite : IIgcSite
         Wrap(nameof(SideUpdated), () => { }, side, now);
 
     // ── cluster-change routing ────────────────────────────────────────────
-    public void ChangeStation(IShipIgc pship, IStationIgc pstationOld, IStationIgc pstationNew) =>
+    public bool ChangeStation(IShipIgc pship, IStationIgc? pstationOld, IStationIgc? pstationNew)
+    {
         Wrap(nameof(ChangeStation), () => { }, pship, pstationOld, pstationNew);
+        return true;
+    }
     public void ChangeCluster(IShipIgc pship, IClusterIgc pclusterOld, IClusterIgc pclusterNew) =>
         Wrap(nameof(ChangeCluster), () => { }, pship, pclusterOld, pclusterNew);
-    public void CommandChangedEvent(short i, IShipIgc pship, IModelIgc ptarget, short cid) =>
+    public void CommandChangedEvent(short i, IShipIgc pship, IModelIgc? ptarget, short cid) =>
         Wrap(nameof(CommandChangedEvent), () => { }, i, pship, ptarget, cid);
     public bool HandlePickDefaultOrder(IShipIgc pship) =>
         Wrap(nameof(HandlePickDefaultOrder), () => _default.HandlePickDefaultOrder(pship), pship);

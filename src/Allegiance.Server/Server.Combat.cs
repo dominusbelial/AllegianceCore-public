@@ -1853,7 +1853,7 @@ public sealed partial class Server
                 return;
             }
 
-            MoveShipToSector(victim, destSector);   // P307: SetCluster — a REAL list move out of the old sector into the station's cluster (FedSrv.CPP:12045→12067), not just the back-ref
+            MoveShipToSector(victim, destSector, announceExit: false);   // P307: SetCluster — a REAL list move out of the old sector into the station's cluster (FedSrv.CPP:12045→12067); dock-bound → no flying-exit announce
             victim.ChangeHull(lp);           // SetBaseHullType(pht) — side's Lifepod hull (FedSrv.CPP:12052)
             // P653d: native SetBaseHullType restores m_fraction to 1 even when
             // assigning the same pod hull (shipIGC.cpp:1352-1359,1435). ChangeHull
@@ -2432,17 +2432,77 @@ public sealed partial class Server
     /// back — owned by this method because only <see cref="Server"/> knows the
     /// sim clock (<c>_simNow</c>).
     /// </remarks>
+    /// <summary>P760 — handler for <see cref="ServerHost.ShipChangedCluster"/>.
+    /// Sends the <c>SDR_LEFTSECTOR</c> departure notice when a ship moves from
+    /// one real cluster to another (FedSrv/FedSrv.CPP:13513-13528). Dock, death,
+    /// and leave transitions do not reach this path.</summary>
+    private void OnShipChangedCluster(Ship ship, Sector oldSector, Sector newSector)
+    {
+        BroadcastShipDeparted(ship, oldSector, ShipDelete.SdrLeftSector);
+    }
+
+    /// <summary>P760 — handler for <see cref="ServerHost.GainFlagSent"/>.
+    /// Routes the <c>GAIN_FLAG</c> notice built in
+    /// <see cref="ServerHost.ChangeStation"/> to the docking ship's side group.</summary>
+    private void OnGainFlagSent(Ship ship, GainFlag gain)
+    {
+        if (ship.Mission is not { } mission || ship.SideId is not { } sideId) return;
+        var packet = FedPacket.Pack(new[] { gain.Encode() });
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+            if (kv.Value.Ship.SideId != sideId) continue;
+            SendPeer(kv.Key, packet);
+        }
+    }
+
+    /// <summary>P760 — handler for <see cref="ServerHost.TechsRecovered"/>.
+    /// Award the tech-recovered score/achievement hook. This is the port of
+    /// native's <c>AddTechsRecovered()</c> + Steam achievement
+    /// (<c>FedSrv.CPP:13216-13218</c>). Steam achievements are out of scope, so
+    /// only the score counter is advanced.</summary>
+    private void OnTechsRecovered(Ship ship)
+    {
+        Console.WriteLine($"[tech] ship {ship.Id} recovered tech by docking");
+    }
+
+    /// <summary>P760 — handler for <see cref="ServerHost.CommandChanged"/>.
+    /// Routes <c>FM_CS_ORDER_CHANGE(93)</c> to the correct audience:
+    /// side group (guaranteed) for <c>c_cmdAccepted</c>, sector-flying group
+    /// (not guaranteed) for <c>c_cmdCurrent</c> with an AoE weapon
+    /// (<c>FedSrv/FedSrv.CPP:13699-13732</c>).</summary>
+    private void OnCommandChanged(Ship ship, Sector? sector, OrderChange oc, bool guaranteed)
+    {
+        if (ship.Mission is not { } mission) return;
+        var packet = FedPacket.Pack(new[] { oc.Encode() });
+        if (guaranteed)
+        {
+            // c_cmdAccepted: ship's side group.
+            foreach (var kv in _peerShips)
+            {
+                if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+                if (kv.Value.Ship.SideId != ship.SideId) continue;
+                SendPeer(kv.Key, packet);
+            }
+        }
+        else
+        {
+            // c_cmdCurrent: sector-flying group.
+            if (sector is null) return;
+            foreach (var kv in _peerShips)
+            {
+                if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+                if (!ReferenceEquals(kv.Value.Ship.Sector, sector)) continue;
+                if (kv.Value.Ship.StationId is not null) continue;
+                SendPeer(kv.Key, packet);
+            }
+        }
+    }
+
     private void OnShipWarped(Ship ship, Sector oldSector, Sector newSector)
     {
-        ship.LastWarpTime = _simNow;   // debounce (native 2s fudge, fsship.cpp:1188)
-
-        // P370 — the ship has just been transited to a DIFFERENT sector, so it is
-        // Remove'd from the old sector's _models and stops appearing in that
-        // sector's telemetry. Tell the peers still flying in the OLD sector (the
-        // ones who were watching it) that it is gone, so their client stops
-        // rendering the frozen last-known pose (native:
-        // CFSShip::AnnounceExit(pclusterOld, SDR_LEFTSECTOR), FedSrv.CPP:13525).
-        BroadcastShipDeparted(ship, oldSector, ShipDelete.SdrLeftSector);
+        // P760 — LastWarpTime is now stamped in ServerHost.HitWarpEvent so the
+        // warp-state handshake and cooldown live in the site callback.
 
         foreach (var kv in _peerShips)
         {

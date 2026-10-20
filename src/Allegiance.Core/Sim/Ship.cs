@@ -4,6 +4,15 @@ using Allegiance.Core.Wire;
 
 namespace Allegiance.Core.Sim;
 
+/// <summary>P760 — native <c>CFSShip::WarpState</c>
+/// (<c>fsship.h:204-207</c>).</summary>
+public enum WarpState
+{
+    NoUpdate,
+    Waiting,
+    Ready,
+}
+
 /// <summary>
 /// A standalone ship — the flight-model slice. Holds the kinematic state the
 /// C++ <c>CshipIGC</c> exposes (position, velocity, orientation, controls,
@@ -609,6 +618,24 @@ public sealed partial class Ship : Model, IShipIgc
     /// </summary>
     public double LastWarpTime { get; set; } = double.NegativeInfinity;
 
+    /// <summary>P760 — native <c>CFSShip::WarpState</c>
+    /// (<c>fsship.h:188-209</c>; <c>fsship.cpp:1185-1191</c>). Player ships only:
+    /// <c>NoUpdate</c> immediately after a warp transit, <c>Waiting</c> after the
+    /// first accepted ship update (armed until <c>TimeNextWarp</c>), and
+    /// <c>Ready</c> once a later update arrives after that time. NPCs never leave
+    /// <c>Ready</c> (<c>fsship.cpp:79-82</c>).</summary>
+    public WarpState PlayerWarpState { get; set; } = WarpState.Ready;
+
+    /// <summary>P760 — the sim-time at which a player's <c>WarpState.Waiting</c>
+    /// re-arms to <c>Ready</c> (<c>fsship.cpp:1188</c>: <c>g.timeNow + 2.0f</c>).
+    /// </summary>
+    public double TimeNextWarp { get; set; } = double.NegativeInfinity;
+
+    /// <summary>P760 — a ship may enter an aleph only when it is warp-ready.
+    /// Players use the update handshake; NPCs are always ready and rely on the
+    /// <see cref="LastWarpTime"/> cooldown.</summary>
+    public bool WarpReady => IsNpc || PlayerWarpState == WarpState.Ready;
+
     /// <summary>
     /// P591b — the warp this ship most recently arrived <b>through</b> (the
     /// destination-side partner warp it emerged at), or <c>-1</c> once it has
@@ -742,6 +769,25 @@ public sealed partial class Ship : Model, IShipIgc
     /// round-trippable, not yet functional — Phase 2). This is what the server
     /// echoes back in a <c>BUY_LOADOUT_ACK</c> tail.</summary>
     public IReadOnlyList<MountedPart> Parts => _parts;
+
+    /// <summary>P760 — a ship is "using an area-effect weapon" when any mounted
+    /// weapon fires a projectile whose <c>BlastRadius</c> is positive
+    /// (<c>shipIGC.h:788</c>; <c>FedSrv.CPP:13709</c>). Used by
+    /// <see cref="IIgcSite.CommandChangedEvent"/> to decide whether
+    /// <c>c_cmdCurrent</c> order changes are forwarded to the sector-flying
+    /// group.</summary>
+    public bool IsUsingAreaOfEffectWeapon
+    {
+        get
+        {
+            foreach (var part in _parts)
+            {
+                if (part.FunctionalWeapon is not { } fw) continue;
+                if (fw.ProjectileType is { } pt && pt.BlastRadius > 0f) return true;
+            }
+            return false;
+        }
+    }
 
     private readonly List<MountedPart> _parts = [];
 
@@ -1481,13 +1527,61 @@ public sealed partial class Ship : Model, IShipIgc
         set
         {
             // Native shipIGC.h:743-746 clears magazine lock on target change.
-            if (!ReferenceEquals(_commandTarget, value)
-                && (_commandTarget is null || value is null || _commandTarget.Id != value.Id
-                    || EquipmentTarget.TypeOf(_commandTarget) != EquipmentTarget.TypeOf(value)))
+            bool changed = !SameCommandTarget(_commandTarget, value);
+            if (changed)
                 MissileLock = 0f;
-            if (value is not null && !ReferenceEquals(_commandTarget, value))
+            if (value is not null && changed)
                 Mission?.Skills?.Record(SideId, ShowcaseSkill.Targeting);
             _commandTarget = value;
+        }
+    }
+
+    /// <summary>P760b — the command id paired with the <see cref="CommandTarget"/>
+    /// slot, the port of native <c>m_commandIDs[c_cmdCurrent]</c>
+    /// (<c>shipIGC.h:2624-2631</c>). Written only by <see cref="SetCommand"/>;
+    /// read by the site's <c>LoadoutChangeEvent</c> AoE re-send
+    /// (<c>FedSrv.CPP:13540-13541</c>, <c>GetCommandID(c_cmdCurrent)</c>).</summary>
+    public short CurrentCommandId { get; private set; } = OrderChange.CidNone;
+
+    /// <summary>P760b/SIM-0221 — the port of native
+    /// <c>CshipIGC::SetCommand</c> (<c>shipIGC.h:721-790</c>) for the two slots
+    /// this port keeps on the server: <c>c_cmdCurrent</c> (<see cref="CommandTarget"/>
+    /// + <see cref="CurrentCommandId"/>) and <c>c_cmdAccepted</c>
+    /// (<see cref="AcceptedShipTarget"/> + <see cref="AcceptedShipCommandId"/>).
+    /// The site's <c>CommandChangedEvent</c> fires ONLY when the cid or the
+    /// target actually changed (<c>shipIGC.h:784-786</c>:
+    /// <c>cidOld != cid || pmodelOld != target</c>) — a re-issued identical
+    /// order is silent, so every player target pick after HUD-8 does not
+    /// broadcast. Native fires from every SetCommand caller (player orders and
+    /// NPC AI alike); this port's NPC AI writes the underlying slots directly
+    /// and stays silent — a stated residual, recorded in the matrix.</summary>
+    /// <summary>Native compares target pointers (<c>shipIGC.h:784-786</c>). The
+    /// port's <see cref="EquipmentTarget.Resolve"/> wraps stations, asteroids and
+    /// warps in a fresh object on every lookup, so re-picking the same model
+    /// compares by object type + id instead of by reference.</summary>
+    private static bool SameCommandTarget(Model? a, Model? b) =>
+        ReferenceEquals(a, b)
+        || (a is not null && b is not null && a.Id == b.Id && EquipmentTarget.TypeOf(a) == EquipmentTarget.TypeOf(b));
+
+    public void SetCommand(short command, Model? target, short cid)
+    {
+        if (command == OrderChange.CmdCurrent)
+        {
+            var oldTarget = _commandTarget;
+            var oldCid = CurrentCommandId;
+            CommandTarget = target;
+            CurrentCommandId = cid;
+            if (oldCid != cid || !SameCommandTarget(oldTarget, target))
+                Mission?.Site.CommandChangedEvent(command, this, target, cid);
+        }
+        else if (command == OrderChange.CmdAccepted)
+        {
+            var oldTarget = AcceptedShipTarget;
+            var oldCid = AcceptedShipCommandId;
+            AcceptedShipTarget = target;
+            AcceptedShipCommandId = cid;
+            if (oldCid != cid || !SameCommandTarget(oldTarget, target))
+                Mission?.Site.CommandChangedEvent(command, this, target, cid);
         }
     }
 
@@ -8057,6 +8151,19 @@ public sealed partial class Ship : Model, IShipIgc
             StateM = 0;
             Velocity = Vector3.Zero;
             return;
+        }
+
+        // P760 — native Waiting -> Ready transition also occurs once the armed
+        // time has elapsed, even if no further accepted peer update arrives in
+        // the exact tick. The NoUpdate fallback after the 2 s cooldown keeps
+        // tests and direct server-side ship manipulation working while still
+        // requiring the real handshake for normal player traffic.
+        if (!IsNpc && PlayerWarpState != WarpState.Ready)
+        {
+            if (PlayerWarpState == WarpState.Waiting && now >= TimeNextWarp)
+                PlayerWarpState = WarpState.Ready;
+            else if (PlayerWarpState == WarpState.NoUpdate && now >= LastWarpTime + Sector.WarpCooldownSeconds)
+                PlayerWarpState = WarpState.Ready;
         }
 
         if (!_skillFlight && Velocity.LengthSquared() > 1 && Mission?.Skills is { } skills)

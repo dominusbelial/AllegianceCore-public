@@ -1,3 +1,5 @@
+using Allegiance.Core;
+using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 
@@ -26,6 +28,42 @@ public sealed partial class ClientWorld
     {
         if (MyShipId == modelShipId) PostText(critical, format, args);
     }
+
+    /// <summary>P760b/SIM-0197 — one killed model awaiting the game thread.
+    /// Native's <c>TargetKilled</c> compares the victim against the ship's
+    /// <c>c_cmdCurrent</c> target, which can be ANY model type
+    /// (<c>trekigc.cpp:2936-2938</c>), so the entry carries the object type.
+    /// In production the client only learns of ship deaths (KILL_SHIP), so the
+    /// ship type is the only producer; the type field keeps the comparison
+    /// honest for the c_cmdCurrent slot's station/probe/warp targets.</summary>
+    public readonly record struct TargetKilledModel(IgcObjectType ObjectType, short ModelId);
+
+    private readonly List<TargetKilledModel> _targetKilled = [];
+
+    /// <summary>P760b — the pending killed-model queue in arrival order. Game1
+    /// drains it via <see cref="TakeTargetKilledModels"/> once per frame and
+    /// performs the native retarget on the game thread (the previous P760 seam
+    /// raised the callback inside <see cref="Apply(KillShip)"/> on the receive
+    /// thread, where it mutated Game1._autoTarget, called
+    /// CommitTargetForPlayer and read the own pose).</summary>
+    public IReadOnlyList<TargetKilledModel> TargetKilledModels => _targetKilled;
+
+    /// <summary>P760b — atomically drain (clear and return) the pending
+    /// killed-model entries. Called once per frame by Game1 under the gate
+    /// lock, like the other world→Game1 handoffs (TakeFeedbackLines,
+    /// TakeCameraOverrideRequests, TakeSoundEvents).</summary>
+    public List<TargetKilledModel> TakeTargetKilledModels()
+    {
+        var copy = new List<TargetKilledModel>(_targetKilled);
+        _targetKilled.Clear();
+        return copy;
+    }
+
+    /// <summary>P760b — enqueue a killed model for the game thread. Called from
+    /// <c>Apply(KillShip)</c> for a true death only (an in-space eject keeps the
+    /// ship alive as a Lifepod and must not retarget anyone).</summary>
+    internal void RecordTargetKilled(IgcObjectType objectType, short modelId) =>
+        _targetKilled.Add(new TargetKilledModel(objectType, modelId));
 
     public readonly record struct MoneyRequestState(short SenderId, int Amount, short HullId, double ExpiresAt);
     private MoneyRequestState? _moneyRequest;

@@ -4126,6 +4126,13 @@ public sealed partial class ClientWorld
             // P448b — a dead ship stops being dead-reckoned (its extrapolation would walk
             // a corpse onward); a recycled id re-seeds fresh when/if it comes back.
             _remoteReckoners.Remove(m.ShipId);
+
+            // P760b — enqueue the kill for the game thread's native-style
+            // retargeting (trekigc.cpp:2934-2974). Never raised inline: this
+            // Apply runs on the receive thread and the retarget reads the own
+            // pose and mutates Game1's target state.
+            if (_ships.ContainsKey(m.ShipId))
+                RecordTargetKilled(IgcObjectType.Ship, m.ShipId);
         }
 
         // P578 — produce the eject/kill HUD feedback line for this receiver's

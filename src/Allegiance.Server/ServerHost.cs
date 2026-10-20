@@ -4,6 +4,7 @@ using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
+using Allegiance.Core.Wire;
 using ChatMessage = Allegiance.Core.Wire.ChatMessage;
 
 namespace Allegiance.Server;
@@ -215,6 +216,28 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// entered.
     /// </summary>
     public Action<Ship, Sector, Sector>? ShipWarped;
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <c>IIgcSite.ChangeCluster</c> transition that moves a ship between two
+    /// real sectors (FedSrv/FedSrv.CPP:13513-13528). Raised by
+    /// <see cref="ChangeCluster"/> only when both the old and new clusters are
+    /// non-null and different; the handler sends the <c>SDR_LEFTSECTOR</c>
+    /// departure notice to peers still flying in the old sector. Dock, death,
+    /// and leave transitions do NOT raise this hook because they carry their
+    /// own <c>SHIP_DELETE</c> reasons.</summary>
+    public Action<Ship, Sector, Sector>? ShipChangedCluster;
+
+    /// <summary>
+    /// Optional hook the owning <see cref="Server"/> subscribes to receive every
+    /// <c>IIgcSite.CommandChangedEvent</c> that should be forwarded over the
+    /// wire as <c>FM_CS_ORDER_CHANGE(93)</c>
+    /// (<c>FedSrv/FedSrv.CPP:13699-13732</c>). The site decides the audience
+    /// (side group guaranteed for <c>c_cmdAccepted</c>; sector-flying not
+    /// guaranteed for <c>c_cmdCurrent</c> with an AoE weapon) and passes the
+    /// already-built <see cref="OrderChange"/> message plus the ship, sector,
+    /// and guarantee flag. Null by default.</summary>
+    public Action<Ship, Sector?, OrderChange, bool>? CommandChanged;
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
@@ -548,29 +571,49 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// <see cref="LoadoutChange"/> kind. Joins the same broadcast seam the
     /// <see cref="ProjectileCreated"/>/<see cref="MissileDestroyed"/> hooks bridge;
     /// everything else keeps the interface default.</summary>
-    public Action<IShipIgc, IPartIgc, LoadoutChange>? LoadoutChange;
+    public Action<IShipIgc, IPartIgc, Allegiance.Core.Sim.LoadoutChange>? LoadoutChange;
     public bool QueueRipcordUse => true;
     public Action<Ship, string>? WeaponReadyNotification;
     public void WeaponReady(Ship ship, string partName) => WeaponReadyNotification?.Invoke(ship, partName);
 
     public Action<Ship?, ChatMessage>? ChatRequested;
     // Igc/igc.h:4801-4825; FedSrv/FedSrv.CPP:13652-13693.
-    public void SendChat(IShipIgc pshipSender, ChatTarget chatTarget, short oidRecipient,
+    public void SendChat(IShipIgc? pshipSender, ChatTarget chatTarget, short oidRecipient,
         short soVoiceOver, string szText, short cid = -1,
         IgcObjectType otTarget = (IgcObjectType)(-1), short oidTarget = -1,
-        IModelIgc? pmodelTarget = null, bool bObjectModel = false) =>
+        IModelIgc? pmodelTarget = null, bool bObjectModel = false)
+    {
+        // P760 — CHAT_ADMIN is NYI in native (FedSrv.CPP:3473-3477); drop it
+        // at the site callback so every consumer sees the same gate.
+        if (chatTarget == ChatTarget.Admin) return;
         ChatRequested?.Invoke(pshipSender as Ship, new ChatMessage
         {
             Message = szText, SidSender = pshipSender is Ship sender ? sender.Id : (short)-1,
             ChatTarget = (int)chatTarget, OidRecipient = oidRecipient, VoiceOver = soVoiceOver,
             CommandID = cid, OtTarget = (short)otTarget, OidTarget = oidTarget, BObjectModel = bObjectModel,
         });
+    }
     /// <summary>The world-mission site implementation of
     /// <see cref="IIgcSite.LoadoutChangeEvent"/>: raise the
     /// <see cref="LoadoutChange"/> hook so the owning <see cref="Server"/> can
-    /// broadcast a real <c>FM_S_LOADOUT_CHANGE(96)</c>.</summary>
-    public void LoadoutChangeEvent(IShipIgc pship, IPartIgc ppart, LoadoutChange lc) =>
+    /// broadcast a real <c>FM_S_LOADOUT_CHANGE(96)</c>. Also re-sends the
+    /// current target as <c>FM_CS_ORDER_CHANGE</c> when an area-effect weapon is
+    /// mounted (<c>FedSrv/FedSrv.CPP:13530-13545</c>).</summary>
+    public void LoadoutChangeEvent(IShipIgc pship, IPartIgc ppart, Allegiance.Core.Sim.LoadoutChange lc)
+    {
         LoadoutChange?.Invoke(pship, ppart, lc);
+
+        // P760 — re-send current target when an AoE weapon is mounted
+        // (FedSrv/FedSrv.CPP:13530-13545).
+        // P760b — use the ship's REAL c_cmdCurrent cid (GetCommandID(c_cmdCurrent),
+        // FedSrv.CPP:13541) — not an invented CidAttack/CidNone.
+        if (lc == Allegiance.Core.Sim.LoadoutChange.Added && ppart is MountedPart mp
+            && mp.FunctionalWeapon is { } fw && fw.ProjectileType.BlastRadius > 0f
+            && pship is Ship ship)
+        {
+            CommandChangedEvent(OrderChange.CmdCurrent, ship, ship.CommandTarget, ship.CurrentCommandId);
+        }
+    }
 
     /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
@@ -1123,6 +1166,15 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             return true;
         }
 
+        // P760 — route the actual station transition through ChangeStation so
+        // launch repair, first-dock tech recovery, dock gates, and NPC upgrade
+        // all flow through the native callback (FedSrv/FedSrv.CPP:13179-13311).
+        if (!ChangeStation(sh, null, ds))
+        {
+            Console.WriteLine($"[dock] ship {sh.Id}: ChangeStation refused dock at station {ds.Station.StationId}");
+            return false;
+        }
+
         sh.StationId = ds.Station.StationId;
 
         // P386 — an NPC's return-to-sell PlanTarget is never cleared anywhere
@@ -1362,6 +1414,8 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// on the simulation thread, so no synchronization is needed.</summary>
     private readonly Random _rand = new();
 
+    private static double MissionTime(Mission? mission) => mission?.LastUpdate ?? 0.0;
+
     /// <summary>
     /// The world-mission site implementation of <c>HitWarpEvent</c>
     /// (<c>igc.h:4862</c>) — the actual warp transit, ported from
@@ -1393,10 +1447,16 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// the exit orientation via <c>Orientation.Set</c>. The forward — hence the
     /// exit velocity direction and the outward offset — matches native; only
     /// roll about the forward axis is unspecified.</item>
-    /// <item><b>No mass-limit gate.</b> Native blocks overweight ships
+    /// <item><b>Mass-limit gate.</b> Native blocks overweight ships
     /// (<c>fsship.cpp:77</c>, <c>pwarp->MassLimit()</c>). <c>DataWarpIGC</c>
-    /// does not decode a mass limit, so the gate is omitted (everything may
-    /// transit).</item>
+    /// now carries a runtime <see cref="DataWarpIGC.MassLimit"/> defaulting to
+    /// <c>-1</c> (unlimited). The gate is applied exactly as native: pass if
+    /// ship mass ≤ limit, or the ship is an NPC whose limit is positive, or the
+    /// limit is negative.</item>
+    /// <item><b>Warp-state handshake.</b> Native player ships enter
+    /// <c>warpNoUpdate</c> on transit and only re-arm to <c>warpReady</c> after
+    /// an accepted ship update and a 2 s fudge (<c>fsship.cpp:81,1185-1191</c>).
+    /// This port mirrors that via <see cref="Ship.PlayerWarpState"/>.</item>
     /// <item><b>Loaded exit-speed bonus.</b> See <c>c_fcidExitWarpSpeed</c> (slot 3, fsship.cpp:126).</item>
     /// <item><b>Reverse is in place.</b> <c>Ship.Orientation</c> is a get-only,
     /// mutable class; <c>Orientation.Set</c> mutates it in place, so the ship
@@ -1420,6 +1480,17 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         if (oldSector is null)
         {
             Console.WriteLine($"[warp] transit refused: ship {sh.Id} has no source sector");
+            return;
+        }
+
+        // P760 — Andon aleph mass limit (fsship.cpp:77).
+        float massLimit = rw.Warp.MassLimit;
+        bool massOk = sh.Mass <= massLimit
+                      || massLimit < 0f
+                      || (sh.IsNpc && massLimit > 0f);
+        if (!massOk)
+        {
+            Console.WriteLine($"[warp] transit refused: ship {sh.Id} mass {sh.Mass:F1} exceeds warp {rw.Warp.WarpId} limit {massLimit:F1}");
             return;
         }
 
@@ -1477,12 +1548,251 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         destSector.Add(sh);
         sh.Sector = destSector;
 
+        // P760 — native warp-state handshake (fsship.cpp:81,1185-1191).
+        // Player ships enter NoUpdate immediately; NPCs stay Ready.
+        if (!sh.IsNpc)
+            sh.PlayerWarpState = WarpState.NoUpdate;
+        sh.LastWarpTime = MissionTime(sh.Mission);
+
         var warpNote = $"[warp] ship {sh.Id} crossed from '{oldSector.Name}' ({oldSector.Id}) " +
                        $"to '{destSector.Name}' ({destSector.Id}) via warp {rw.Warp.WarpId}";
         Console.WriteLine(warpNote);
         ReportNotable(warpNote);                            // spectator event feed (same text)
         sh.Mission?.Skills?.Record(sh.SideId, ShowcaseSkill.Warp);
         ShipWarped?.Invoke(sh, oldSector, destSector);
+        ChangeCluster(sh, oldSector, destSector);
+    }
+
+    /// <summary>The world-mission site implementation of <c>ChangeCluster</c>
+    /// (<c>igc.h:4879</c>; <c>FedSrv/FedSrv.CPP:13513-13528</c>). Only when a
+    /// ship moves from one real cluster to another do we announce its exit with
+    /// <c>SDR_LEFTSECTOR</c>; dock, death, and leave transitions carry their own
+    /// <c>SHIP_DELETE</c> reasons and do not pass through here.</summary>
+    public void ChangeCluster(IShipIgc pship, IClusterIgc pclusterOld, IClusterIgc pclusterNew)
+    {
+        if (pship is not Ship ship) return;
+        if (pclusterOld is not Sector oldSector || pclusterNew is not Sector newSector) return;
+        if (oldSector == newSector) return;
+        ShipChangedCluster?.Invoke(ship, oldSector, newSector);
+    }
+
+    /// <summary>The world-mission site implementation of <c>ChangeStation</c>
+    /// (<c>igc.h:4876</c>; <c>FedSrv/FedSrv.CPP:13179-13311</c>). Returns
+    /// <c>true</c> when the transition is allowed to complete.
+    /// <list type="bullet">
+    /// <item><b>Launch (<paramref name="pstationNew"/> == null):</b> repairs and
+    /// refuels the ship from the old station, matching native's launch branch
+    /// (<c>FedSrv.CPP:13189-13191</c>).</item>
+    /// <item><b>First dock at own side:</b> applies tech recovery from the ship's
+    /// parts (<c>FedSrv.CPP:13195-13218</c>) and sends <c>GAIN_FLAG</c> notices
+    /// for newly secured development techs.</item>
+    /// <item><b>Dock gates:</b> refuses a lifepod docking at an enemy station and
+    /// refuses a ship with turrets docking at a non-own station
+    /// (<c>FedSrv.CPP:13233-13238</c>).</item>
+    /// <item><b>NPC upgrade:</b> calls <see cref="UpgradeNpcShipAtStation"/> when
+    /// an NPC docks (<c>FedSrv.CPP:13240</c>). Allied rearm/relaunch
+    /// (<c>FedSrv.CPP:13242+</c>) remains out of scope and is not claimed.</item>
+    /// </list>
+    /// </summary>
+    public bool ChangeStation(IShipIgc pship, IStationIgc? pstationOld, IStationIgc? pstationNew)
+    {
+        if (pship is not Ship ship) return false;
+        var oldStation = (pstationOld as DockStation)?.Station;
+        var newStation = (pstationNew as DockStation)?.Station;
+
+        if (pstationNew is null)
+        {
+            // Launch branch: native ChangeStation calls RepairAndRefuel then Launch
+            // (FedSrv.CPP:13189-13191), gated on STAGE_STARTED and not a turret.
+            if (ship.Mission?.Stage != MissionStage.Started || ship.ParentShip is not null)
+                return false;
+            if (oldStation is { } oldSt && ship.Mission?.Core.StationTypes.TryGetValue(oldSt.StationTypeId, out var stType) == true)
+                ship.RepairAndRefuel(stType);
+            return true;
+        }
+
+        if (newStation is null)
+            return false;
+
+        var station = newStation.Value;
+        var side = ship.Mission?.Sides.FirstOrDefault(s => s.Id == ship.SideId);
+
+        // First dock at own side: tech recovery (FedSrv.CPP:13195-13218).
+        if (pstationOld is null && station.SideId == ship.SideId && side is not null)
+        {
+            var ttbm = TechTreeBitMask.Empty;
+            foreach (var part in ship.Parts)
+            {
+                var effectTechs = TechTreeBitMask.FromBytes(part.Type.TtbmEffects);
+                ttbm = ttbm.Or(effectTechs);
+                if (!effectTechs.IsSubsetOf(side.DevelopmentTechs))
+                {
+                    // P760 — GAIN_FLAG notice: ship secured new tech by docking.
+                    GainFlagSent?.Invoke(ship, new GainFlag
+                    {
+                        SideidFlag = -1,
+                        ShipidRecipient = ship.Id,
+                        BIsTreasureDocked = true,
+                        ParttypeidDocked = part.Type.PartId,
+                    });
+                }
+            }
+            if (!ttbm.IsSubsetOf(side.DevelopmentTechs))
+            {
+                side.DevelopmentTechs = side.DevelopmentTechs.Or(ttbm);
+                TechsRecovered?.Invoke(ship);
+            }
+        }
+
+        // Dock gates (FedSrv.CPP:13233-13238). Native's UpgradeShip call sits
+        // AFTER this gate if/else (FedSrv.CPP:13240), so a refused NPC dock is
+        // still upgraded — the gates only skip the Dock body itself.
+        bool docked = true;
+        if (ship.HullType.HasCapability(DataHullTypeIGC.HabmLifepod) && station.SideId != ship.SideId)
+        {
+            Console.WriteLine($"[changestation] ship {ship.Id}: lifepod dock at enemy station {station.StationId} refused");
+            docked = false;
+        }
+        else if (station.SideId != ship.SideId && (ship.ChildShips.Count > 0 || ship.ParentShip is not null))
+        {
+            Console.WriteLine($"[changestation] ship {ship.Id}: dock with turrets at non-own station {station.StationId} refused");
+            docked = false;
+        }
+
+        // NPC upgrade on every dock — refused ones included (FedSrv.CPP:13240).
+        if (ship.IsNpc)
+            UpgradeNpcShipAtStation(ship, station);
+
+        return docked;
+    }
+
+    /// <summary>The world-mission site implementation of <c>CommandChangedEvent</c>
+    /// (<c>igc.h:4882</c>; <c>FedSrv/FedSrv.CPP:13699-13732</c>). Builds an
+    /// <c>FM_CS_ORDER_CHANGE(93)</c> message and forwards it:
+    /// <list type="bullet">
+    /// <item><c>c_cmdAccepted</c>: to the ship's side group, guaranteed.</item>
+    /// <item><c>c_cmdCurrent</c>: to the sector-flying group only when the pilot
+    /// is a player flying in a cluster and using an area-effect weapon,
+    /// not guaranteed.</item>
+    /// </list>
+    /// </summary>
+    public void CommandChangedEvent(short i, IShipIgc pship, IModelIgc? ptarget, short cid)
+    {
+        if (pship is not Ship ship) return;
+        if (i != OrderChange.CmdAccepted && i != OrderChange.CmdCurrent) return;
+
+        bool current = i == OrderChange.CmdCurrent;
+        if (current)
+        {
+            if (ship.IsNpc || ship.Sector is null || !ship.IsUsingAreaOfEffectWeapon)
+                return;
+        }
+
+        var targetModel = ptarget as Model;
+        var oc = new OrderChange
+        {
+            Command = i,
+            ShipID = ship.Id,
+            CommandId = cid,
+            ObjectType = targetModel is null ? (IgcObjectType)(-1) : EquipmentTarget.TypeOf(targetModel),
+            ObjectID = targetModel?.Id ?? -1,
+        };
+        CommandChanged?.Invoke(ship, ship.Sector, oc, !current);
+    }
+
+    /// <summary>P760 — optional hook raised when a ship recovers tech by docking
+    /// at an own-side station (<c>FedSrv.CPP:13218</c>). The server wires this to
+    /// a score/achievement callback; the default is no-op.</summary>
+    public Action<Ship>? TechsRecovered;
+
+    /// <summary>P760 — optional hook the owning <see cref="Server"/> subscribes to
+    /// receive every <c>GAIN_FLAG</c> notice that must be sent to the docking
+    /// ship's side group (<c>FedSrv.CPP:13205-13212</c>). The site builds the
+    /// message; the server routes it to the correct peers.</summary>
+    public Action<Ship, GainFlag>? GainFlagSent;
+
+    /// <summary>P760 — the port of <c>FedSrvSiteBase::UpgradeShip</c>
+    /// (<c>FedSrv.CPP:11554-11639</c>). Upgrades the hull to its buyable
+    /// successor; when the hull changes, native nukes all the parts, swaps the
+    /// hull and BUYS A DEFAULT LOADOUT: for every preferred part type of the
+    /// new hull (<c>GetPreferredPartTypes</c>, <c>FedSrv.CPP:11584</c>) that the
+    /// station <c>CanBuy</c> (<c>:11586</c>), it mounts the part's buyable
+    /// successor (<c>GetSuccessor</c>, <c>:11589</c>) on EVERY free mount —
+    /// <c>GetMaxWeapons()</c> sockets for a weapon, 1 for anything else
+    /// (<c>:11592-11600</c>), ignoring price (it is included in the drone's
+    /// cost). Same-hull docks keep the per-part successor walk and the cargo
+    /// purge (<c>:11606-11635</c>). Runs even when the dock gates refused the
+    /// dock — native calls it after the gate if/else, unconditionally for NPCs
+    /// (<c>FedSrv.CPP:13240</c>).</summary>
+    private void UpgradeNpcShipAtStation(Ship ship, DataStationIGC station)
+    {
+        if (ship.Mission?.Core is not { } core) return;
+        var side = ship.Mission.Sides.FirstOrDefault(s => s.Id == ship.SideId);
+        if (side is null) return;
+
+        var stationLocal = core.StationTypes.GetValueOrDefault(station.StationTypeId);
+        byte[]? stationLocalTechs = stationLocal.TtbmLocal;
+        var newHull = SuccessorUpgrade.HullSuccessor(core, ship.HullType, stationLocalTechs, side.DevelopmentTechs);
+        if (newHull.HullId != ship.HullType.HullId)
+        {
+            // Hull changed: nuke all the parts and change hull (FedSrv.CPP:11572-11581).
+            ship.ClearLoadout();
+            ship.ChangeHull(newHull);
+            BuyPreferredLoadout(ship, newHull, stationLocalTechs, side.DevelopmentTechs);
+        }
+        else
+        {
+            // Same hull: upgrade mounted parts and remove cargo.
+            var parts = ship.Parts.ToArray();
+            foreach (var part in parts)
+            {
+                if (part.MountId < 0)
+                {
+                    ship.TryRemoveCargoPart(part.MountId, out _);
+                    continue;
+                }
+                var successor = SuccessorUpgrade.PartSuccessor(core, part.Type, stationLocalTechs, side.DevelopmentTechs);
+                if (successor.PartId != part.Type.PartId && ship.HullType.CanMountPart(successor, part.MountId))
+                {
+                    if (ship.TryRemovePart(part.EquipmentType, (byte)part.MountId, out _))
+                        ship.MountPart(successor, part.Amount, (byte)part.MountId, ExpandedPartData.FullyMounted, part.FreeSpawn);
+                }
+            }
+        }
+    }
+
+    /// <summary>P760b — the "buy a default loadout" half of native
+    /// <c>UpgradeShip</c>'s hull-change branch (<c>FedSrv.CPP:11583-11602</c>):
+    /// walk the hull's preferred part types; a part the station cannot buy is
+    /// skipped (<c>CanBuy</c>, stationIGC.h:383-391 — required techs covered by
+    /// station-local ∪ side techs); a buyable one is upgraded to its successor
+    /// and mounted on every free mount that accepts it (weapons into all
+    /// <c>MaxWeapons</c> hardpoints, everything else into socket 0).
+    /// Price is ignored (native comment: included in the cost of the drone).
+    /// Mirrors the client shop's <c>DefaultLoadoutFor</c> (ShopModel.cs:612)
+    /// with the server's successor resolution.</summary>
+    private static void BuyPreferredLoadout(
+        Ship ship, DataHullTypeIGC hull, byte[]? stationLocalTechs, TechTreeBitMask sideTechs)
+    {
+        if (ship.Mission?.Core is not { } core) return;
+        foreach (var rawPartId in hull.PreferredPartsTypes)
+        {
+            if (rawPartId == -1) break;                     // NA terminates the list
+            if (!core.PartTypes.TryGetValue(rawPartId, out var ppt)
+                && !core.TryBuildExpendableLauncher(rawPartId, out ppt)) continue;
+            // pstation->CanBuy(ppt) (stationIGC.h:383-391).
+            if (!TechTreeBitMask.RequiredTechsBuyable(ppt.TtbmRequired, stationLocalTechs, sideTechs)) continue;
+            var mounted = SuccessorUpgrade.PartSuccessor(core, ppt, stationLocalTechs, sideTechs);
+            var et = mounted.EquipmentType;
+            int mountMax = et == EquipmentType.Weapon ? hull.MaxWeapons : 1;
+            for (int i = 0; i < mountMax; i++)
+            {
+                // GetMountedPart(et, i) == NULL && pht->CanMount(ppt, i)
+                if (ship.Parts.Any(p => p.EquipmentType == et && p.MountId == i)) continue;
+                if (!hull.CanMountPart(mounted, i)) continue;
+                ship.MountPart(mounted, 0x7fff, (byte)i, ExpandedPartData.FullyMounted);
+            }
+        }
     }
 
     /// <summary>P172 — optional hook the owning <see cref="Server"/> subscribes to
