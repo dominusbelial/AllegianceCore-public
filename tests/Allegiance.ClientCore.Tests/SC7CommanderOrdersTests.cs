@@ -76,6 +76,77 @@ public sealed class SC7CommanderOrdersTests
             t3.Tick(0, true, one, onlyGarrisons));
     }
 
+    private static readonly ResearchTactics.Target[] RallyTargets =
+    [
+        new(50, IgcObjectType.Station, 1, new(0, 0, 0), true),
+        new(300, IgcObjectType.Warp, 1, new(1000, 0, 0), true, DestinationSector: 2),
+        new(100, IgcObjectType.Station, 2, new(5000, 0, 0), false),
+    ];
+
+    [Fact]
+    public void Orders_stay_capped_per_tick_across_strike_and_other_pilots()
+    {
+        // Claude SC-7 review: the second loop's "== 2" never fired once the strike
+        // loop had filled the cap, so 3 strike + 30 others gave 32 orders a tick.
+        var tactics = new ResearchTactics();
+        var pilots = new List<ResearchTactics.Pilot>
+        {
+            new(1, 1, new(9000, 0, 0), false, true), new(2, 1, new(9000, 50, 0), false, true),
+            new(3, 1, new(9000, -50, 0), false, true),
+        };
+        var targets = RallyTargets.ToList();
+        for (short i = 0; i < 30; i++)
+        {
+            pilots.Add(new((short)(10 + i), 2, new(i * 10, 0, 0), false, false));
+            targets.Add(new((short)(500 + i), IgcObjectType.Ship, 2, new(i * 10, 5, 0), false));
+        }
+        for (int tick = 0; tick < 5; tick++)
+            Assert.True(tactics.Tick(tick * 2, true, pilots.ToArray(), targets.ToArray()).Length <= ResearchTactics.MaxOrdersPerTick);
+    }
+
+    [Fact]
+    public void A_short_strike_group_commits_after_the_rally_timeout()
+    {
+        // Two launched bombers (< StrikeGroupSize) used to rally forever.
+        var tactics = new ResearchTactics();
+        ResearchTactics.Pilot[] two = [new(1, 1, new(1000, 0, 0), false, true), new(2, 1, new(1000, 80, 0), false, true)];
+        Assert.All(tactics.Tick(0, true, two, RallyTargets), o => Assert.Equal(OrderChange.CidGoto, o.Command));
+        Assert.DoesNotContain(tactics.Tick(30, true, two, RallyTargets), o => o.Command == OrderChange.CidAttack);
+        var later = tactics.Tick(ResearchTactics.RallyTimeoutSeconds + 1, true, two, RallyTargets);
+        Assert.NotEmpty(later);
+        Assert.All(later, o => { Assert.Equal(OrderChange.CidAttack, o.Command); Assert.Equal((short)100, o.Target); });
+    }
+
+    [Fact]
+    public void Gathering_and_on_target_checks_respect_the_sector()
+    {
+        // Pilots in sector 0 that happen to sit at the aleph's / station's
+        // coordinates are NOT at the rally (per-sector coordinates).
+        var tactics = new ResearchTactics();
+        ResearchTactics.Pilot[] elsewhere = [new(1, 0, new(1000, 0, 0), false, true),
+            new(2, 0, new(1000, 50, 0), false, true), new(3, 0, new(5000, 0, 0), false, true)];
+        var orders = tactics.Tick(0, true, elsewhere, RallyTargets);
+        Assert.NotEmpty(orders);
+        Assert.All(orders, o => Assert.Equal(OrderChange.CidGoto, o.Command));
+    }
+
+    [Fact]
+    public void Rally_prefers_an_aleph_outside_enemy_held_sectors()
+    {
+        var tactics = new ResearchTactics();
+        // No friendly station next to either aleph; warp 301 (lower id) sits in
+        // sector 3, which holds an enemy station; warp 302 in sector 4 does not.
+        ResearchTactics.Target[] targets = [new(50, IgcObjectType.Station, 1, new(0, 0, 0), true),
+            new(301, IgcObjectType.Warp, 3, new(0, 0, 0), true, DestinationSector: 2),
+            new(302, IgcObjectType.Warp, 4, new(0, 0, 0), true, DestinationSector: 2),
+            new(110, IgcObjectType.Station, 3, new(4000, 0, 0), false),
+            new(100, IgcObjectType.Station, 2, new(5000, 0, 0), false, true)];
+        ResearchTactics.Pilot[] three = [new(1, 1, new(9000, 0, 0), false, true),
+            new(2, 1, new(9000, 50, 0), false, true), new(3, 1, new(9000, -50, 0), false, true)];
+        var orders = tactics.Tick(0, true, three, targets);
+        Assert.All(orders, o => { Assert.Equal(OrderChange.CidGoto, o.Command); Assert.Equal((short)302, o.Target); });
+    }
+
     [Fact]
     public void Bot_accepts_goto_to_aleph_and_friendly_ship_and_station()
     {

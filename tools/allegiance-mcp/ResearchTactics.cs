@@ -39,12 +39,23 @@ internal sealed class ResearchTactics
     /// shortcuts.</summary>
     internal const float StrikeOnTargetRadius = 2400f;
 
+    /// <summary>SC7 review — a side short on launched bombers must not park them at
+    /// the rally forever: after this long rallying, whoever has gathered commits
+    /// (with fewer than <see cref="StrikeGroupSize"/> pilots too).</summary>
+    internal const double RallyTimeoutSeconds = 90;
+
+    /// <summary>At most this many orders per tick across both loops, so a large fleet
+    /// cannot flood chat.</summary>
+    internal const int MaxOrdersPerTick = 2;
+
     // SC7 — strike-wave state. One shared station target + rally point for the whole
     // group, kept stable across ticks (a human commander commits, doesn't flick).
     private short? _strikeTarget;
     private short _strikeSector = -1;
     private Target? _rally;
     private bool _gathered;
+    private double _rallySince = double.NaN;
+    private double _committedAt = double.NaN;
 
     internal Order[] Tick(double time, bool started, Pilot[] pilots, Target[] targets)
     {
@@ -57,12 +68,12 @@ internal sealed class ResearchTactics
         var strikePilots = pilots.Where(p => p.Strike && !p.Support).ToArray();
 
         // ---- SC7 strike wave: rally with goto, then focus ONE shared station ----
-        if (strikePilots.Length == 0) { _gathered = false; _rally = null; }
+        if (strikePilots.Length == 0) { _gathered = false; _rally = null; _rallySince = double.NaN; }
         if (strikePilots.Length > 0)
         {
             // Validate the shared station: it must still exist as an enemy station.
             if (_strikeTarget is { } cur && enemyStations.All(s => s.Id != cur))
-            { _strikeTarget = null; _gathered = false; _rally = null; }
+            { _strikeTarget = null; _gathered = false; _rally = null; _rallySince = double.NaN; }
             if (_strikeTarget is null)
             {
                 var picked = PickStrikeStation(enemyStations, strikePilots);
@@ -72,16 +83,31 @@ internal sealed class ResearchTactics
                     _strikeSector = picked.Sector;
                     _gathered = false;
                     _rally = ChooseRally(friendlyStations, targets, _strikeSector);
+                    _rallySince = time;
                 }
             }
             if (_strikeTarget is { } stationId && enemyStations.FirstOrDefault(s => s.Id == stationId) is { } station)
             {
-                // Gather quorum: strike pilots already within the rally radius.
+                // Positions are per-sector coordinates: only a pilot in the same
+                // sector can be near the rally or the station.
                 int atRally = _rally is { } rp
-                    ? strikePilots.Count(p => (p.Position - rp.Position).LengthSquared() <= RallyGatherRadius * RallyGatherRadius)
+                    ? strikePilots.Count(p => p.Sector == rp.Sector
+                        && (p.Position - rp.Position).LengthSquared() <= RallyGatherRadius * RallyGatherRadius)
                     : strikePilots.Length;
-                if (!_gathered && strikePilots.Length >= StrikeGroupSize && atRally >= StrikeGroupSize)
-                    _gathered = true;
+                if (double.IsNaN(_rallySince)) _rallySince = time;
+                bool timedOut = time - _rallySince >= RallyTimeoutSeconds;
+                // Commit when a full group has gathered, or after the rally timeout
+                // with whoever made it (a short side still attacks).
+                if (!_gathered && ((strikePilots.Length >= StrikeGroupSize && atRally >= StrikeGroupSize)
+                                   || (timedOut && atRally > 0)
+                                   || time - _rallySince >= 2 * RallyTimeoutSeconds))
+                { _gathered = true; _committedAt = time; }
+                // Re-form after the committed group is gone from the target sector,
+                // so reinforcements don't trickle in solo.
+                // (Allow the committed group RallyTimeoutSeconds to reach the target.)
+                if (_gathered && _rally is not null && !strikePilots.Any(p => p.Sector == station.Sector)
+                    && time - _committedAt >= RallyTimeoutSeconds)
+                { _gathered = false; _rallySince = time; _committedAt = double.NaN; }
 
                 foreach (var pilot in strikePilots
                     .OrderBy(p => _sent.TryGetValue(p.Id, out var sent) ? sent.Time : double.NegativeInfinity).ThenBy(p => p.Id))
@@ -89,8 +115,8 @@ internal sealed class ResearchTactics
                     // Commit together: everyone attacks the same station, or everyone
                     // routes to the rally first. A pilot already on the target attacks
                     // even while latecomers still rally.
-                    bool alreadyOn = (pilot.Position - station.Position).LengthSquared()
-                        <= StrikeOnTargetRadius * StrikeOnTargetRadius;
+                    bool alreadyOn = pilot.Sector == station.Sector
+                        && (pilot.Position - station.Position).LengthSquared() <= StrikeOnTargetRadius * StrikeOnTargetRadius;
                     Order order = (_gathered || alreadyOn)
                         ? new Order(pilot.Id, OrderChange.CidAttack, IgcObjectType.Station, stationId)
                         : (_rally is { } r
@@ -100,7 +126,7 @@ internal sealed class ResearchTactics
                         && time - previous.Time < (previous.Order == order ? 15 : 2)) continue;
                     _sent[pilot.Id] = (order, time);
                     result.Add(order);
-                    if (result.Count == 2) break;
+                    if (result.Count >= MaxOrdersPerTick) break;
                 }
             }
         }
@@ -108,6 +134,7 @@ internal sealed class ResearchTactics
         foreach (var pilot in pilots.Where(p => !(p.Strike && !p.Support))
             .OrderBy(p => _sent.TryGetValue(p.Id, out var sent) ? sent.Time : double.NegativeInfinity).ThenBy(p => p.Id))
         {
+            if (result.Count >= MaxOrdersPerTick) break;
             Target? target;
             if (pilot.Support)
                 target = targets.Where(t => t.Friendly && t.Damaged
@@ -133,7 +160,7 @@ internal sealed class ResearchTactics
                 && time - previous.Time < (previous.Order == order ? 15 : 2)) continue;
             _sent[pilot.Id] = (order, time);
             result.Add(order);
-            if (result.Count == 2) break;
+            if (result.Count >= MaxOrdersPerTick) break;
         }
         return result.ToArray();
     }
@@ -151,15 +178,20 @@ internal sealed class ResearchTactics
     private static Target? PickStrikeStation(Target[] enemyStations, Pilot[] strikePilots)
     {
         if (enemyStations.Length == 0) return null;
-        Vector3 centroid = strikePilots.Length > 0
-            ? new Vector3(strikePilots.Average(p => p.Position.X),
-                          strikePilots.Average(p => p.Position.Y),
-                          strikePilots.Average(p => p.Position.Z))
-            : Vector3.Zero;
+        // Coordinates are per sector: measure only from strike pilots already in
+        // the station's sector; stations in other sectors tie and fall to the id.
+        float Distance(Target s)
+        {
+            var local = strikePilots.Where(p => p.Sector == s.Sector).ToArray();
+            if (local.Length == 0) return float.MaxValue;
+            var centroid = new Vector3(local.Average(p => p.Position.X),
+                local.Average(p => p.Position.Y), local.Average(p => p.Position.Z));
+            return (s.Position - centroid).LengthSquared();
+        }
         return enemyStations
             .OrderByDescending(s => s.Damaged)
             .ThenBy(s => s.Garrison ? 1 : 0)
-            .ThenBy(s => (s.Position - centroid).LengthSquared())
+            .ThenBy(Distance)
             .ThenBy(s => s.Id)
             .FirstOrDefault();
     }
@@ -175,7 +207,11 @@ internal sealed class ResearchTactics
         var alephs = targets.Where(t => t.Type == IgcObjectType.Warp && t.DestinationSector == strikeSector).ToArray();
         var controlled = alephs.Where(a => friendlyStations.Any(f => f.Sector == a.Sector)).OrderBy(a => a.Id).FirstOrDefault();
         if (controlled is not null) return controlled;
-        if (alephs.Length > 0) return alephs.OrderBy(a => a.Id).First();
-        return friendlyStations.Where(f => alephs.Any(a => a.Sector == f.Sector)).OrderBy(f => f.Id).FirstOrDefault();
+        // No aleph from a sector we hold: prefer one whose sector has no observed
+        // enemy station, so the group doesn't hold in enemy space. (A friendly
+        // station is not used as a rally: goto a friendly station means docking.)
+        var enemySectors = targets.Where(t => !t.Friendly && t.Type == IgcObjectType.Station)
+            .Select(t => t.Sector).ToHashSet();
+        return alephs.OrderBy(a => enemySectors.Contains(a.Sector) ? 1 : 0).ThenBy(a => a.Id).FirstOrDefault();
     }
 }
