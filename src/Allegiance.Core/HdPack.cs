@@ -11,6 +11,9 @@ public sealed class HdPack
     private readonly string _root;
     private readonly Dictionary<string, Entry> _entries = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<(string, string), Material?> _resolved = new();
+    // HD-6 — optional per-atlas material tuning ({"materialTuning": {stem:{Param:value}}})
+    // so hull plating can differ from rubber/glass/glow without regenerating textures.
+    private readonly Dictionary<string, Dictionary<string, float>> _tuning = new(StringComparer.OrdinalIgnoreCase);
     private readonly Action<string> _log;
     private int _schema;
     private sealed record Entry(string Model, string Texture, string TextureHash, string ModelHash, bool Accepted);
@@ -58,6 +61,20 @@ public sealed class HdPack
                 }
                 catch (Exception e) when (e is KeyNotFoundException or InvalidOperationException) { }
             }
+            // HD-6 — optional per-atlas material tuning section (harmless if absent).
+            if (manifest.TryGetProperty("materialTuning", out var tuning))
+            {
+                foreach (var entry in tuning.EnumerateObject())
+                {
+                    if (!SafeStem(entry.Name) || entry.Value.ValueKind != JsonValueKind.Object) continue;
+                    var map = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var p in entry.Value.EnumerateObject())
+                    {
+                        if (p.Value.TryGetSingle(out var val)) map[p.Name] = val;
+                    }
+                    if (map.Count > 0) _tuning[entry.Name] = map;
+                }
+            }
             _log($"catalogue loaded ({_entries.Count} materials, schema {_schema}); maps load on demand");
         }
         catch (Exception e) when (e is IOException or InvalidDataException or UnauthorizedAccessException or FormatException or JsonException or InvalidOperationException or KeyNotFoundException)
@@ -102,6 +119,13 @@ public sealed class HdPack
                 throw new InvalidDataException("native SHA256 mismatch: " + stem);
         }
     }
+
+    /// <summary>HD-6 — optional per-atlas material tuning for <paramref name="stem"/>
+    /// from the manifest's "materialTuning" section (case-insensitive param → value),
+    /// or null when the manifest specifies none. The renderer maps these onto
+    /// <c>MaterialTuning</c> (defaults when null).</summary>
+    public IReadOnlyDictionary<string, float>? TuningFor(string stem)
+        => stem is null || !_tuning.TryGetValue(stem, out var map) ? null : map;
 
     private static bool SafeStem(string s) => s.Length > 0 && s.All(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-');
 }

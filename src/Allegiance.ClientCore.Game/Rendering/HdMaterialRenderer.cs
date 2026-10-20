@@ -17,6 +17,7 @@ public sealed class HdMaterialRenderer : IDisposable
     private readonly Func<string, Stream> _openNative;
     private readonly ShaderAssetCache _shaders;
     private readonly Dictionary<string, Resident> _resident = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, MaterialTuning> _tuningCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _failed = new(StringComparer.OrdinalIgnoreCase);
     private readonly long _budget;
     private readonly bool _forceBc3;
@@ -129,6 +130,22 @@ public sealed class HdMaterialRenderer : IDisposable
         e.Parameters["Ambient"].SetValue(Vector3.Max(light.Ambient, ShipRenderer.ShipAmbientFloor));
         e.Parameters["CompressedMaps"].SetValue(material.Compressed ? 1f : 0f);
         e.Parameters["Opacity"].SetValue(Math.Clamp(opacity, 0, 1));
+        // HD-6 — per-material tuning (native-faithful ambient + map curves +
+        // exposure/tonemap), sourced from the pack manifest or defaults.
+        var tuning = TuningFor(material);
+        e.Parameters["RoughnessScale"].SetValue(tuning.RoughnessScale);
+        e.Parameters["RoughnessBias"].SetValue(tuning.RoughnessBias);
+        e.Parameters["RoughnessMin"].SetValue(tuning.RoughnessMin);
+        e.Parameters["RoughnessMax"].SetValue(tuning.RoughnessMax);
+        e.Parameters["MetallicGain"].SetValue(tuning.MetallicGain);
+        e.Parameters["MetallicDeadband"].SetValue(tuning.MetallicDeadband);
+        e.Parameters["MetallicMin"].SetValue(tuning.MetallicMin);
+        e.Parameters["MetallicMax"].SetValue(tuning.MetallicMax);
+        e.Parameters["AmbientMetalFloor"].SetValue(tuning.AmbientMetalFloor);
+        e.Parameters["Exposure"].SetValue(tuning.Exposure);
+        e.Parameters["TonemapThreshold"].SetValue(tuning.TonemapThreshold);
+        e.Parameters["TonemapSlope"].SetValue(tuning.TonemapSlope);
+        e.Parameters["EnvSheen"].SetValue(tuning.EnvSheen);
         string[] parameters = ["BaseMap", "NormalMap", "MetalMap", "RoughMap", "EmissionMap"];
         for (int i = 0; i < maps.Length; i++) e.Parameters[parameters[i]].SetValue(maps[i]);
         var sampler = _gd.SamplerStates[0];
@@ -139,6 +156,17 @@ public sealed class HdMaterialRenderer : IDisposable
         _gd.SetVertexBuffer(vertices()); _gd.Indices = indices;
         _gd.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, startIndex, triangles);
         return true;
+    }
+
+    /// <summary>HD-6 — the per-material tuning for <paramref name="material"/>:
+    /// manifest "materialTuning" overrides (keyed by atlas stem) onto the native-
+    /// faithful defaults, cached per stem.</summary>
+    private MaterialTuning TuningFor(HdPack.Material material)
+    {
+        if (_tuningCache.TryGetValue(material.Model, out var cached)) return cached;
+        var tuning = MaterialTuning.FromOverrides(_pack.TuningFor(material.Model));
+        _tuningCache[material.Model] = tuning;
+        return tuning;
     }
 
     private Texture2D[]? MapsFor(HdPack.Material material, float projectedPixels, bool unlit = false)

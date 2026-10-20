@@ -154,5 +154,26 @@ public sealed class HdPackTests : IDisposable
         File.Delete(material.MapPath("normal"));
         Assert.Null(new HdPack(_root, _logs.Add).Resolve("ship", "atlas_a", _ => new MemoryStream(NativeTexture)));
     }
+
+    [Fact]
+    public void Schema2_materialTuning_section_is_exposed_per_atlas_and_absent_otherwise()
+    {
+        // HD-6 — per-atlas tuning overrides (no texture regeneration). A manifest
+        // "materialTuning" section keyed by atlas stem is surfaced via TuningFor,
+        // case-insensitively; unstyled atlases return null (renderer uses defaults).
+        AtlasManifest();
+        string path = Path.Combine(_root, "manifest.json");
+        string json = File.ReadAllText(path);
+        json = json.Substring(0, json.Length - 1) + ",\"materialTuning\":{\"ATLAS_A\":{\"RoughnessScale\":0.4,\"EnvSheen\":0.0}}}";
+        File.WriteAllText(path, json);
+        var pack = new HdPack(_root, _logs.Add);
+        var a = pack.TuningFor("atlas_a");   // case-insensitive stem lookup
+        Assert.NotNull(a);
+        Assert.Equal(0.4f, a["roughnessscale"]);   // param names case-insensitive
+        Assert.Equal(0f, a["EnvSheen"]);
+        Assert.Null(pack.TuningFor("atlas_b"));    // no override → null (defaults)
+        Assert.Null(pack.TuningFor("absent"));
+    }
+
     public void Dispose() => Directory.Delete(_root, true);
 }
