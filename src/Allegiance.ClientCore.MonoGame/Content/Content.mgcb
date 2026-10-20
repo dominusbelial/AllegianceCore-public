@@ -3782,3 +3782,15 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/mouseover.ogg
+
+#begin Sounds/windowslides.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/windowslides.ogg
+
+#begin Sounds/text.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/text.ogg

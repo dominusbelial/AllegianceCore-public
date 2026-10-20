@@ -142,6 +142,16 @@ public sealed partial class Game1
             return;
         }
 
+        // HUD-10 — the native command bar owns clicks inside its rect; consume
+        // them before the world pick can select a ship behind the bar.
+        if (_cameraMode == CameraMode.Command && left && !_ptrLeftWasDown
+            && TryCommandBarPick(ms))
+        {
+            _ptrLeftDown = false;
+            _ptrLeftWasDown = left; _ptrRightWasDown = right;
+            return;
+        }
+
         bool leftEdge = left && !_ptrLeftWasDown;
         bool leftReleased = !left && _ptrLeftWasDown;
         bool rightEdge = right && !_ptrRightWasDown;

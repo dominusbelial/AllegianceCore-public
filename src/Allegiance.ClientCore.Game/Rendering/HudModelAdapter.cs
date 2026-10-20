@@ -23,7 +23,7 @@ public static class HudModelAdapter
         HudConsoleText? console = null,
         Vector2? velocityMarker = null, Vector2? chaseAim = null, HudOrderArrows? orderArrows = null,
         HudInventoryPane? inventoryPane = null,
-        HudTargetPane? targetPane = null, bool roundRadar = false)
+        HudTargetPane? targetPane = null, bool roundRadar = false, float inventorySlide = 0f)
         => HudModel.Create(frame, new HudContext
         {
             PodReturnInstruction = podReturnInstruction, HitConfirmation = hitConfirmation, Camera = mode, CameraLabel = cameraLabel, Hidden = hidden,

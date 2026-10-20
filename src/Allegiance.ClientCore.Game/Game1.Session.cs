@@ -866,7 +866,13 @@ public sealed partial class Game1
         if (_state == ClientState.Flying && _chatActive)
         {
             if (_chatBuffer.Length < MaxChatLen)
+            {
                 _chatBuffer.Append(c);
+                // HUD-10 — native OnChar plays chatKeySound for every printable
+                // key while composing past the mouse-command state
+                // (console.cpp:2335-2339; sounddef.mdl:324 text wave).
+                _sound?.PlayChatKey();
+            }
         }
     }
 
@@ -879,7 +885,14 @@ public sealed partial class Game1
     /// <c>ChatPassesFilter</c>, chatpane.cpp:299-321): the player-chats-only
     /// flag and any selected channels drop messages before the window is
     /// taken, exactly like native's filtered <c>ChatListPaneImpl</c>.</summary>
-    private List<string> BuildChatLines()
+    private List<string> BuildChatLines() => BuildChatLinesAndColors().Lines;
+
+    /// <summary>HUD-10 — the same visible chat window plus each line's native
+    /// colour. Native <c>ChatInfo::SetChat</c> stores the sender's side colour
+    /// scaled by 0.85 (or 0.75 for your own non-echo line) and the pane draws
+    /// that colour (trekigc.cpp:4736-4741, chatpane.cpp:93-101). Unknown senders
+    /// stay null so the renderer falls back to its neutral text colour.</summary>
+    private (List<string> Lines, List<Rendering.HudColor?> Colors) BuildChatLinesAndColors()
     {
         var world = _session.World;
         lock (_session.Gate)
@@ -891,18 +904,32 @@ public sealed partial class Game1
                     visible.Add(m);
             int start = ChatScroll.StartIndex(_chatPane.Offset, visible.Count, ChatRenderer.MaxVisible);
             var lines = new List<string>(Math.Min(visible.Count, ChatRenderer.MaxVisible));
+            var colors = new List<Rendering.HudColor?>(Math.Min(visible.Count, ChatRenderer.MaxVisible));
             int end = Math.Min(visible.Count, start + ChatRenderer.MaxVisible);
             for (int i = start; i < end; i++)
             {
                 var m = visible[i];
                 string sender = "";
-                if (m.SidSender >= 0 && world.Ships.TryGetValue(m.SidSender, out var ent) && !string.IsNullOrEmpty(ent.CharacterName))
-                    sender = ent.CharacterName!;
+                Allegiance.ClientCore.State.ShipEntity? ent = null;
+                if (m.SidSender >= 0 && world.Ships.TryGetValue(m.SidSender, out var found) && !string.IsNullOrEmpty(found.CharacterName))
+                {
+                    sender = found.CharacterName!;
+                    ent = found;
+                }
                 else if (m.SidSender >= 0)
                     sender = $"sid{m.SidSender}";
                 lines.Add(ChatLogFormat.Format(sender, m.Message, (ChatTarget)m.ChatTarget));
+
+                Rendering.HudColor? color = null;
+                if (ent is { } e && world.TryGetSideColor(e.SideId, out float r, out float g, out float b))
+                {
+                    bool own = world.MyShipId is { } me && e.ShipId == me;
+                    float scale = own ? 0.75f : 0.85f;
+                    color = new Rendering.HudColor(r * scale, g * scale, b * scale, 1f);
+                }
+                colors.Add(color);
             }
-            return lines;
+            return (lines, colors);
         }
     }
 

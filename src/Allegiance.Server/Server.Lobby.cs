@@ -3108,6 +3108,11 @@ private void CompleteStartCountdown(Mission mission, double now)
                 ISideMissionOwner = -1,
                 RgShipIdLeaders = [-1, -1, -1, -1, -1, -1],
                 Stage = 0,
+                // HUD-10 — native MissionParams::dtGameLength / IsCountdownGame
+                // (igc.h:1526-1564). The field already exists on the wire; the
+                // server now fills it from the configured game length so the
+                // client's game-state clock can show countdown remaining.
+                GameLengthSeconds = (float)(_missions[0].CountdownDuration ?? 0d),
             }.Encode(),
             new JoinedMission
             {
@@ -3180,6 +3185,7 @@ private void CompleteStartCountdown(Mission mission, double now)
                 RgCivId = mdSides.Select(s => s.Civilization.CivilizationId).ToArray(),
                 ISideMissionOwner = -1,
                 RgShipIdLeaders = [-1, -1, -1, -1, -1, -1],
+                GameLengthSeconds = (float)(_missions[0].CountdownDuration ?? 0d),
             }.Encode(),
         }));
         Console.WriteLine($"[sides] peer {from} '{req.CharacterName}' -> MISSIONDEF(38) nTeams {mdSides.Count} civIds [{string.Join(", ", mdSides.Select(s => s.Civilization.CivilizationId))}] (create SIDE_TEAMLOBBY + real sides via UpdateSides)");

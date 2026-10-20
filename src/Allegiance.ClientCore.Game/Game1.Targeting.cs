@@ -1129,7 +1129,9 @@ public sealed partial class Game1
             return;
         }
 
-        short command = o.CommandId;
+        // HUD-10 — a verb chosen on the native command bar overrides the
+        // role/target default for this order (console.cpp:1276 SetVerb).
+        short command = _commandVerb != 0 ? _commandVerb : o.CommandId;
         lock (_session.Gate)
         {
             _commanderBuildOrders.Cancel(cmd.Id);

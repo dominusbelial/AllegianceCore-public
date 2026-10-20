@@ -81,6 +81,12 @@ public enum SoundCategory
     /// to the nearest few by <see cref="SoundCategories.GroupCap"/> so hundreds
     /// of bolts can never sum into a constant wall of sound.</summary>
     ProjectileAmbient,
+
+    /// <summary>UI feedback one-shots (native <c>GainSound(SFXGain, ImportWave(...))</c>
+    /// at the default priority, e.g. <c>chatKeySound</c>/<c>paneSlideSound</c>,
+    /// sounddef.mdl:323-324). Native default priority is 0 (sounddef.mdl:1-20),
+    /// so it sits below the cockpit warning/voice bed and is unlimited.</summary>
+    Interface,
 }
 
 /// <summary>The static priority and per-kind limit-group cap for each

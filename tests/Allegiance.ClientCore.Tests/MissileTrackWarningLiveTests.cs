@@ -155,6 +155,86 @@ public class MissileTrackWarningLiveTests
         Console.WriteLine($"MISSTRACKWARN-CLIENT-LIVE: enemy missile {missile.Id} homed on local ship, warning ARMED (bestLock 0.6) over {armed} ticks, CLEARED after destruction over {cleared} ticks");
     }
 
+    /// <summary>HUD-10 — native compares the missile target against
+    /// <c>trekClient.GetShip()-&gt;GetSourceShip()</c> (trekigc.cpp:5047-5050), so a
+    /// boarded gunner must be warned about missiles homing on the CARRIER, and a
+    /// pilot about missiles homing on its own ship. The old server loop compared
+    /// against the peer ship directly, which missed the gunner case.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Warning_routes_by_the_source_ship_for_pilot_and_gunner(bool gunner)
+    {
+        Require.Artwork();
+        using var server = new Srv();
+
+        Ship? placedPeer = null;
+        Ship? placedCarrier = null;
+        Ship? placedAttacker = null;
+        StaticCore? placedCore = null;
+        SetShipSpawner(server, (core, mission, shipId) =>
+        {
+            var hull = core.HullTypes.Values.First();
+            var peer = new Ship(shipId, hull, new Vector3(0f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+            if (mission.Sides.Count > 0) peer.SideId = mission.Sides[0].Id;
+            mission.PlaceShip(peer, mission.Sectors[0]);
+
+            // The source ship: the peer itself for a pilot, or a carrier the
+            // peer is boarded on for a gunner (GetSourceShip() == parent).
+            var carrier = new Ship((short)(shipId + 900), hull, new Vector3(100f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+            if (mission.Sides.Count > 0) carrier.SideId = mission.Sides[0].Id;
+            mission.PlaceShip(carrier, mission.Sectors[0]);
+            if (gunner) peer.ParentShip = carrier;
+
+            var attacker = new Ship((short)(shipId + 806), hull, new Vector3(5000f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+            if (mission.Sides.Count > 1) attacker.SideId = mission.Sides[1].Id; else attacker.SideId = 99;
+            mission.PlaceShip(attacker, mission.Sectors[0]);
+
+            var mt = LongNoLockMissile(core);
+            var part = new DataPartTypeIGC(
+                Price: 0, TimeToBuild: 0, ModelName: "", IconName: "", Name: "ml", Description: "",
+                GroupId: 0, TtbmRequired: [], TtbmEffects: [], Mass: 0f, Signature: 0f,
+                PartId: 808, SuccessorPartId: -1, PartMask: 0, InventoryLineMdl: "",
+                Type: new DataPartTypeIGC.MissileLauncher(mt.ExpendableTypeId));
+            attacker.MountPart(part, amount: 5, mountId: 0, fractionMounted: 255);
+
+            placedPeer = peer;
+            placedCarrier = carrier;
+            placedAttacker = attacker;
+            placedCore = core;
+            return (peer, mission.Sectors[0]);
+        });
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;
+
+        using var session = new ConnectionSession();
+        session.Connect(server.BoundPort, gunner ? "MISSTRACKGUN" : "MISSTRACKPILOT");
+        session.SendLogonRequest(Request(gunner ? "MISSTRACKGUN" : "MISSTRACKPILOT"));
+        int joined = PumpUntil(server, () => session.World.MyShipId is not null, 4000);
+        Assert.True(joined < 4000, "client must be assigned a ship");
+        Assert.NotNull(placedPeer);
+        Assert.NotNull(placedCarrier);
+        Assert.NotNull(placedAttacker);
+        Assert.NotNull(placedCore);
+
+        Ship target = gunner ? placedCarrier! : placedPeer!;
+        var missile = placedAttacker!.FireMissile(LongNoLockMissile(placedCore!), placedAttacker.Mission!.LastUpdate,
+            target: target, lockFraction: 0.4f);
+        Assert.Equal(target, missile.Target);
+
+        int armed = SlowPumpUntil(server, () => session.World.MissileTrack.IsTracked, 600);
+        Assert.True(armed < 600, gunner
+            ? "gunner must be warned about a missile homing on the carrier (source ship)"
+            : "pilot must be warned about a missile homing on its own ship");
+        Assert.Equal(0.4f, session.World.MissileTrack.BestLock, 2);
+
+        missile.OwnerSector.Remove(missile);
+        int cleared = SlowPumpUntil(server, () => !session.World.MissileTrack.IsTracked, 600);
+        Assert.True(cleared < 600, "warning must clear once the source-targeting missile is gone");
+        Console.WriteLine($"MISSTRACK-SOURCE-LIVE: gunner={gunner} target ship {target.Id} tracked over {armed} ticks, cleared over {cleared}");
+    }
+
     private static readonly FieldInfo ShipSpawnerField =
         typeof(Srv).GetField("ShipSpawner", BindingFlags.Instance | BindingFlags.NonPublic)
         ?? throw new InvalidOperationException("Allegiance.Server.Server.ShipSpawner field not found");

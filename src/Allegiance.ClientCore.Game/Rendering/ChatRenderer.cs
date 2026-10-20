@@ -5,51 +5,52 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
-/// Renders the in-flight chat overlay: a small scrolling log of the last few
-/// <c>ChatMessage</c> lines (bottom-left, same glass-panel aesthetic as
-/// <see cref="HudRenderer"/>), plus the active composing line beneath it while
-/// chat input is open. Purely presentation — the caller formats the lines via
-/// <see cref="ChatLogFormat"/> (which owns the testable string logic) and hands
-/// already-built strings in here.
+/// Renders the in-flight chat pane. HUD-10 moves the history pane to the native
+/// <c>ChatListPane</c> geometry (355 px wide, <c>8 + ChatFontSize·NumChatLines</c>
+/// tall, hidden scrollbar, <c>CommPane</c> at <c>SideTop(-160,-126)</c>;
+/// dialog.mdl:180, chatpane.cpp:374-380, dialog.mdl:5394) and draws the native
+/// <c>ComposingPane</c> art variants for the compose states the port reaches
+/// (dialog.mdl:89-170). The native chat text is the sender's side colour
+/// (<c>trekigc.cpp:4736-4741</c>); the model carries those colours per line.
 /// </summary>
 public sealed class ChatRenderer
 {
     private static readonly Color PanelBg = new(0.010f, 0.030f, 0.033f, 0.55f);
     private static readonly Color BorderDim = new(0.14f, 0.34f, 0.32f);
     private static readonly Color TextMain = new(0.88f, 0.96f, 0.95f);
-    private static readonly Color InputPrompt = new(0.07f, 0.95f, 0.84f);
     private static readonly Color OlderHint = new(0.5f, 0.6f, 0.58f);
 
-    /// <summary>Maximum chat lines shown in the log panel at once.</summary>
-    public const int MaxVisible = 8;
+    /// <summary>Maximum chat lines shown in the log panel at once. HUD-10 sets
+    /// this to the native default <c>ChatLines</c> count (7, WinTrek.cpp:3317).</summary>
+    public const int MaxVisible = ChatPaneLayout.DefaultLines;
 
     private readonly SpriteBatch _sb;
     private readonly Texture2D _white;
     private readonly SpriteFont _font;
+    private readonly HudNativeTextures? _art;
 
-    public ChatRenderer(SpriteBatch spriteBatch, Texture2D whitePixel, SpriteFont font)
+    public ChatRenderer(SpriteBatch spriteBatch, Texture2D whitePixel, SpriteFont font,
+        HudNativeTextures? art = null)
     {
         _sb = spriteBatch;
         _white = whitePixel;
         _font = font;
+        _art = art;
     }
 
     /// <summary>
     /// Draw the chat log + (optionally) the active input line. Self-contained —
-    /// begins/ends its own <see cref="SpriteBatch"/> session like
-    /// <see cref="HudRenderer.Draw"/>. <paramref name="lines"/> are the already-
-    /// formatted display strings for the ChatPaneModel's current window, oldest
-    /// first (the caller already applied the scroll offset); up to
-    /// <see cref="MaxVisible"/> are drawn. <paramref name="offset"/> only says
-    /// whether the pane is scrolled back: a dim "OLDER" hint then rides the top
-    /// border so the player knows they are not at the live edge. When <paramref name="composing"/> is
-    /// true the <paramref name="inputLine"/> is drawn as the active line, prefixed
-    /// by <paramref name="targetLabel"/> (e.g. "[TEAM] ", P456), with a blinking
-    /// cursor block (blink driven by <paramref name="nowSeconds"/>).
-    /// P757: <paramref name="filterLabel"/> names the pane's active channel filter
-    /// (native ChatPassesFilter machinery) in the pane header; null hides it.
+    /// begins/ends its own <see cref="SpriteBatch"/> session.
+    /// <paramref name="lines"/> are the already-formatted display strings for the
+    /// ChatPaneModel's current window, oldest first. <paramref name="offset"/>
+    /// says whether the pane is scrolled back: a dim "OLDER" hint then rides the
+    /// top border. When <paramref name="composeState"/> is a composing state the
+    /// native panel art is drawn at the native anchor and slide progress.
     /// </summary>
-    public void Draw(IReadOnlyList<string> lines, int offset, string inputLine, bool composing, double nowSeconds, Viewport viewport, string targetLabel, string? filterLabel = null)
+    public void Draw(IReadOnlyList<string> lines, int offset, string inputLine, bool composing,
+        double nowSeconds, Viewport viewport, string targetLabel, string? filterLabel = null,
+        NativeComposeState composeState = NativeComposeState.NotComposing, float composeProgress = 0f,
+        IReadOnlyList<HudColor?>? lineColors = null, HudColor? sideColor = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -57,77 +58,50 @@ public sealed class ChatRenderer
         _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
         {
-            const float margin = 20f;
-            const float rowHeight = 22f;
-            float panelLeft = margin;
-            // Stay left of the central gauge cluster (THR's 128px gauge is
-            // centred at w/2-126.5*spread): the old 52%-of-screen panel ran
-            // under the THR gauge and the WEAPONS/BOOST status line.
-            float spread = Math.Clamp(h / 680f, 1.15f, 2.1f);
-            float panelWidth = Math.Max(220f, w / 2f - 126.5f * spread - 76f);
-            // Bottom of the history pane sits above the lower-left status band
-            // (WEAPONS/BOOST is drawn at h-158).
-            float logBottom = h - 182f;
-
-            // The caller (BuildChatLines) already applied the ChatPaneModel's
-            // offset and hands over the visible window; slicing again here made
-            // a paused pane always fall back to the newest page (P757b). The
-            // offset only tells us whether an OLDER marker is shown.
             int take = Math.Min(MaxVisible, Math.Max(0, lines.Count));
             bool scrolled = offset > 0;
-            // Newest at the bottom, growing upward.
-            float logTop = logBottom - take * rowHeight;
+            int paneLeft = ChatPaneLayout.Left(viewport.Width);
+            int paneTop = ChatPaneLayout.Top(ChatPaneLayout.DefaultLines);
+            int paneHeight = ChatPaneLayout.Height(ChatPaneLayout.DefaultLines);
 
             if (take > 0)
             {
-                float panelH = take * rowHeight + 14f;
-                FillRect(panelLeft - 10f, logTop - 8f, panelWidth + 10f, panelH, PanelBg);
-                FillRect(panelLeft - 10f, logTop - 8f, 2f, panelH, BorderDim);
+                // CommPane is a dark native list over the 3-D scene; the port
+                // keeps the same subtle panel fill rather than drawing a black
+                // box (the native concommdisplay art has no alpha channel).
+                FillRect(paneLeft, paneTop, ChatPaneLayout.Width, paneHeight, PanelBg);
+                FillRect(paneLeft, paneTop, 2f, paneHeight, BorderDim);
 
                 if (scrolled)
-                {
-                    // P626 — a dim "OLDER" tag at the top border marks a scrolled-
-                    // back view (PageDn / NextCommMsg returns to the live edge).
-                    _sb.DrawString(_font, "(OLDER - PgDn to newest)", new Vector2(panelLeft, logTop - 24f), OlderHint);
-                }
+                    _sb.DrawString(_font, "(OLDER - PgDn to newest)",
+                        new Vector2(paneLeft + 3f, paneTop - _font.LineSpacing), OlderHint);
 
-                // P757 — the active channel-filter mode rides the top border on
-                // the right, mirroring the native pane's filtered contents
-                // (chatpane.cpp:299-358). Right-aligned inside the pane, clear of
-                // the THR gauge (the old w*0.52-150 origin sat on it).
                 if (filterLabel is not null)
                 {
                     string label = $"[{filterLabel}]";
-                    float lx = panelLeft + panelWidth - _font.MeasureString(label).X - 8f;
-                    _sb.DrawString(_font, label, new Vector2(Math.Max(panelLeft, lx), logTop - 24f), OlderHint);
+                    float lx = paneLeft + ChatPaneLayout.Width - _font.MeasureString(label).X - 8f;
+                    _sb.DrawString(_font, label, new Vector2(Math.Max(paneLeft, lx), paneTop - _font.LineSpacing), OlderHint);
                 }
 
+                // Native item text starts 3 px inside the list item (chatpane.cpp:95)
+                // and advances by the native line height. The port font is taller,
+                // so each row is clipped to its native 14 px slot and the pane's
+                // bottom edge; the pane size/line count stay native.
                 for (int i = 0; i < take; i++)
                 {
-                    var line = lines[i];
-                    var sz = _font.MeasureString(line);
-                    // Clip long lines to the panel width instead of spilling over.
-                    if (sz.X > panelWidth - 4f)
-                        line = TruncateToWidth(line, panelWidth - 4f);
-                    _sb.DrawString(_font, line, new Vector2(panelLeft, logTop + i * rowHeight), TextMain);
+                    string line = lines[i];
+                    if (_font.MeasureString(line).X > ChatPaneLayout.Width - 6f)
+                        line = TruncateToWidth(line, ChatPaneLayout.Width - 6f);
+                    int y = paneTop + 3 + i * ChatPaneLayout.NativeFontHeight;
+                    if (y + ChatPaneLayout.NativeFontHeight > paneTop + paneHeight) break;
+                    Color color = lineColors is not null && i < lineColors.Count && lineColors[i] is { } lc
+                        ? From(lc) : TextMain;
+                    _sb.DrawString(_font, line, new Vector2(paneLeft + 3f, y), color);
                 }
             }
 
-            if (composing)
-            {
-                // ASCII-only cursor (the HUD spritefonts bake 32..126 only).
-                // P456: the target label (e.g. "[TEAM] ") precedes the cursor so
-                // the player sees who will receive the message. P757: the cursor
-                // is native's always-shown "|" (UpdateComposedChat,
-                // console.cpp:1290-1292: m_strTypedText + "|").
-                string prompt = targetLabel + "> " + inputLine + "|";
-                if (_font.MeasureString(prompt).X > panelWidth - 4f)
-                    prompt = TruncateToWidth(prompt, panelWidth - 4f);
-                float iy = h - 62f;
-                FillRect(panelLeft - 10f, iy - 6f, panelWidth + 10f, 30f, PanelBg);
-                FillRect(panelLeft - 10f, iy - 6f, 2f, 30f, InputPrompt);
-                _sb.DrawString(_font, prompt, new Vector2(panelLeft, iy), TextMain);
-            }
+            if (composing && composeState != NativeComposeState.NotComposing)
+                DrawCompose(inputLine, targetLabel, composeState, composeProgress, viewport, sideColor);
         }
         finally
         {
@@ -135,11 +109,93 @@ public sealed class ChatRenderer
         }
     }
 
+    private void DrawCompose(string inputLine, string targetLabel, NativeComposeState state,
+        float progress, Viewport viewport, HudColor? sideColor)
+    {
+        var variant = ComposePaneLayout.Variant(state);
+        float left = ComposePaneLayout.Left(viewport.Width, progress);
+        float top = ComposePaneLayout.Top(viewport.Height, variant.PanelHeight, progress);
+        var panel = new Rectangle((int)MathF.Round(left), (int)MathF.Round(top),
+            variant.PanelWidth, variant.PanelHeight);
+
+        var art = _art?.ForState(state);
+        if (art is not null)
+            _sb.Draw(art, panel, Color.White);
+        else
+        {
+            FillRect(panel.X, panel.Y, panel.Width, panel.Height, PanelBg);
+            FillRect(panel.X, panel.Y, 2f, panel.Height, BorderDim);
+        }
+
+        Color colour = sideColor is { } sc ? From(sc) : TextMain;
+        // A 1 px dark edge keeps the native yellow/white glyphs legible over the
+        // bright command bar art (the port font is not the native smallFont).
+        if (variant.HasRecipient)
+        {
+            string recipient = targetLabel.Trim();
+            DrawBoxedCentered(recipient, panel.X + variant.RecipientLeft, panel.Y + variant.RecipientTop,
+                variant.RecipientWidth, variant.RecipientHeight, colour);
+        }
+
+        if (variant.HasVerbIcon && _art?.VerbIcons.Count > 0)
+        {
+            short cid = CommandIdForCompose(inputLine);
+            if (_art.VerbIcons.TryGetValue(cid, out var icon))
+                _sb.Draw(icon, new Rectangle(panel.X + variant.VerbLeft, panel.Y + variant.VerbTop, 16, 16), Color.White);
+        }
+
+        if (variant.HasText)
+        {
+            // UpdateComposedChat renders m_strTypedText + "|" (console.cpp:1290-1292).
+            string text = state == NativeComposeState.Command
+                ? inputLine
+                : inputLine + "|";
+            string fit = text;
+            if (_font.MeasureString(fit).X > variant.TextWidth)
+                fit = TruncateToWidth(fit, variant.TextWidth);
+            _sb.DrawString(_font, fit,
+                new Vector2(panel.X + variant.TextLeft, panel.Y + variant.TextTop), colour);
+        }
+    }
+
+    /// <summary>Map the typed command text's leading verb to a CommandID for the
+    /// native verb icon (console.cpp:2334-2355, c_cdAllCommands order).</summary>
+    public static short CommandIdForCompose(string input)
+    {
+        string s = input.TrimStart();
+        if (s.Length == 0) return 0;
+        return char.ToLowerInvariant(s[0]) switch
+        {
+            'a' => 1,   // attack
+            'c' => 2,   // capture
+            'd' => 3,   // defend
+            'p' => 4,   // pickup
+            'g' => 5,   // goto
+            'r' => 6,   // repair
+            'j' => 7,   // join
+            'm' => 8,   // mine
+            'b' => 9,   // build
+            _ => 0,
+        };
+    }
+
+    private void DrawBoxedCentered(string text, int x, int y, int width, int height, Color color)
+    {
+        if (width <= 0 || text.Length == 0) return;
+        float measured = _font.MeasureString(text).X;
+        if (measured > width)
+            text = TruncateToWidth(text, width);
+        _sb.DrawString(_font, text,
+            new Vector2(x + (width - _font.MeasureString(text).X) / 2f, y), color);
+    }
+
     /// <summary>Classic chat presentation of the shared HUD frame.</summary>
     public void Draw(HudModel model, Viewport viewport)
     {
         if (!model.Visible || model.Context.Chat is not { } chat) return;
-        Draw(chat.Lines, chat.Offset, chat.Input, chat.Composing, chat.NowSeconds, viewport, chat.Recipient, chat.FilterLabel);
+        Draw(chat.Lines, chat.Offset, chat.Input, chat.Composing, chat.NowSeconds, viewport,
+            chat.Recipient, chat.FilterLabel, chat.ComposeState, chat.ComposeProgress,
+            chat.LineColors, chat.SideColor);
     }
 
     private string TruncateToWidth(string s, float maxWidth)
@@ -149,6 +205,8 @@ public sealed class ChatRenderer
             t = t.Substring(0, t.Length - 1);
         return t + "...";
     }
+
+    private static Color From(HudColor c) => new(c.R, c.G, c.B, c.A);
 
     private void FillRect(float x, float y, float w, float h, Color color) =>
         _sb.Draw(_white, new Rectangle((int)MathF.Round(x), (int)MathF.Round(y),

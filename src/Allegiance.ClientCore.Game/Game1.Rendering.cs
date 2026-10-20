@@ -1882,7 +1882,8 @@ public sealed partial class Game1
                     _investmentFunding.Status(_session.World)));
             _dockedScreenRenderer.Draw(GraphicsDevice.Viewport, invRows, Rendering.InvestmentLayout.Detail(invModel), money: _session.World.MyMoney,
                 backdropAlpha: Rendering.DockedScreenRenderer.InvestBackdropAlpha,
-                footerHeight: _dockedActive ? 84f : 0f, splitDetailPanels: true);
+                footerHeight: _dockedActive ? 84f : 0f, splitDetailPanels: true,
+                creditBox: _hudNativeTextures?.CreditBox, nativeMoneyPanel: true);
         }
         else if (_dockedActive && _cameraMode != CameraMode.Command && _teleportActive && _teleportModel is { } telPane)
         {
@@ -2552,6 +2553,16 @@ public sealed partial class Game1
                 // ship never flashes" guarantee holds by construction (native's
                 // pShip==GetShip() gate, trekigc.cpp:4281). Monotonic clock =
                 // _nowSeconds (float cast is ample precision for 0.25s flash halves).
+                // HUD-10 — arm from the real per-hit VICTIM_DAMAGED(217) event
+                // when one has arrived (native DamageShipEvent, trekigc.cpp:4270-4283),
+                // then let Update's sampled hull/shield decrease catch damage
+                // sources that have no per-hit wire event (collisions/mines).
+                long hitVersion = world.VictimDamageVersion;
+                if (hitVersion != _lastFlashHitVersion)
+                {
+                    _lastFlashHitVersion = hitVersion;
+                    _flashTracker.Arm((float)_nowSeconds);
+                }
                 bool flashing = _flashTracker.Update((float)_nowSeconds, up.HullFraction, up.ShieldFraction);
 
                 // P245 — feed the local ship's sector into the warp-transit flash
@@ -2717,6 +2728,7 @@ public sealed partial class Game1
             leaderCommand: _leaderBotCommand, ripcord: RipcordStatusLabel(),
             commandee: CommandeeLabel(), turret: IsTurretGunner(),
             targetPane: ComputeTargetPane(),
+            inventorySlide: _paneSlides.Progress(SlidingPane.Inventory, _nowSeconds),
             diagnostics: Environment.GetEnvironmentVariable("ALLEGIANCE_LOD_OVERLAY") == "1"
                 ? $"LOD full:{_lodFullCount} far:{_lodFarCount}" : null,
             hidden: _hideHud || _directorActive || _hudHidden,
@@ -2724,9 +2736,7 @@ public sealed partial class Game1
             notices: BuildTipNotices(),
             contacts: _drawRadarContacts,
             radarPulse: (MathF.Sin((float)_nowSeconds * 5f) + 1f) * 0.5f, radarMode: _radarMode,
-            chat: new HudChat(BuildChatLines(), _chatPane.Offset,
-                _chatActive ? _chatBuffer.ToString() : string.Empty, _chatActive, _nowSeconds,
-                ChatTargetLogic.ComposeLabel(_chatTarget), ChatPaneFilterLabel()),
+            chat: BuildChatModel(),
             cargoLine: BuildCargoHudText(), flightPartsLine: BuildFlightPartsHudText(),
             commandLines: BuildCommandHudLines(), inventoryVisible: _consolePanes.Inventory,
             inventoryPane: inventoryPane,
@@ -2743,6 +2753,31 @@ public sealed partial class Game1
         if (_hudSettings.Style == HudStyle.Classic) DrawEjectDeathOverlays(model);
         DrawTargetNoMatchFeedback();
         return model;
+    }
+
+    /// <summary>HUD-10 — build the chat snapshot with the native compose state
+    /// (console.cpp:524-529) and the per-line sender side colours
+    /// (trekigc.cpp:4736-4741). Production reaches ComposingChat (typed chat) and
+    /// ComposingQuick (the quick-chat menu); the mouse-command / command / shell
+    /// states have no port input path yet and are never fabricated.</summary>
+    private HudChat BuildChatModel()
+    {
+        var (lines, colors) = BuildChatLinesAndColors();
+        NativeComposeState state = _composeVisualState;
+        float composeProgress = ChatComposeProgress;
+        Rendering.HudColor? side = null;
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own)
+                && world.TryGetSideColor(own.SideId, out float r, out float g, out float b))
+                side = new Rendering.HudColor(r * 0.85f, g * 0.85f, b * 0.85f, 1f);
+        }
+        return new HudChat(lines, _chatPane.Offset,
+            _chatActive ? _chatBuffer.ToString() : string.Empty,
+            state != NativeComposeState.NotComposing, _nowSeconds,
+            ChatTargetLogic.ComposeLabel(_chatTarget), ChatPaneFilterLabel(),
+            state, composeProgress, side, colors);
     }
 
     /// <summary>HUD-6 — native signature percentage = 100·signature / side
@@ -3547,69 +3582,73 @@ public sealed partial class Game1
 
         if (!model.Visible) return;
         bool inPod = model.PodVisible, ghost = model.DeathVisible;
+        float oxyFraction = model.Telemetry?.FuelFraction ?? 0f;
         int oxySec = model.Telemetry?.OxygenSecondsRemaining ?? 0;
-        // Tips now render through HudRenderer.DrawConsoleText (native anchors).
         if (!inPod && !ghost) return;
 
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
         {
-            // ── 1. Eject-pod panel ──────────────────────────────────────────
+            // ── 1. Eject-pod identity panel + oxygen endurance bar ─────────
+            // Native DefaultEjectPodDisplayOn: conejectpoddisplaybmp (172x44)
+            // with softgaugebmp (52x4) at (66,10), EjectPodImage at
+            // SideCenter(-86,-87) (dialog.mdl:1922-1996,5436). The art is drawn
+            // at its natural size, not scaled to the viewport.
             if (inPod)
             {
-                float panelW = vp.Width * 0.30f, panelH = vp.Height * 0.075f;
-                float px = (vp.Width - panelW) / 2f, py = vp.Height * 0.855f;
-                // The real conejectpoddisplaybmp when available (native
-                // EjectPodImage, dialog.mdl:1926-1960); else a procedural panel.
+                var (px, py) = LifepodPanelLayout.PanelTopLeft(vp.Width, vp.Height);
                 var panelTex = _feedbackTextures?.EjectPodPanel;
                 if (panelTex is not null)
+                    _spriteBatch.Draw(panelTex, new Rectangle(px, py,
+                        LifepodPanelLayout.PanelWidth, LifepodPanelLayout.PanelHeight), Color.White);
+                else
                 {
-                    float aspect = (float)panelTex.Width / panelTex.Height;
-                    float h = panelH, w = h * aspect;
-                    var dst = new Rectangle((int)(vp.Width / 2f - w / 2f), (int)py, (int)w, (int)h);
-                    _spriteBatch.Draw(panelTex, dst, Color.White);
-                    // The native panel already contains its eject/return-to-base
-                    // text. Keep the large title for the art-missing fallback;
-                    // drawing it here overprints both native instruction lines.
-                    // Endurance gauge: "O : mm:ss" + a bar of the fraction left
-                    // (native softgaugebmp of GetEndurance(Me)).
-                    string od = $"O : {P578Countdown(oxySec)}";
-                    _spriteBatch.DrawString(_hudSmall, od,
-                        new Vector2(vp.Width / 2f + w / 2f + 12f, py + panelH * 0.55f),
-                        new Color(0.07f, 0.95f, 0.84f));
+                    FillP578Rect(px, py, LifepodPanelLayout.PanelWidth, LifepodPanelLayout.PanelHeight,
+                        new Color(0.020f, 0.055f, 0.060f, 0.72f));
+                    FillP578Rect(px, py, LifepodPanelLayout.PanelWidth, 1f, new Color(0.14f, 0.34f, 0.32f));
+                    _spriteBatch.DrawString(_hudSmall, "YOU HAVE EJECTED.",
+                        new Vector2(px + 6f, py + 6f), new Color(0.88f, 0.96f, 0.95f));
+                    _spriteBatch.DrawString(_hudSmall, $"O : {P578Countdown(oxySec)}",
+                        new Vector2(px + 6f, py + LifepodPanelLayout.PanelHeight - _hudSmall.LineSpacing),
+                        new Color(0.6f, 0.6f, 0.6f));
+                }
+
+                // Native GaugeImage(JustifyLeft, softgaugebmp, GetEndurance):
+                // an integer-width left-to-right fill of the 52x4 bar
+                // (dialog.mdl:1927-1935; engine/image.cpp:492-529).
+                var (gx, gy) = LifepodPanelLayout.GaugeTopLeft(vp.Width, vp.Height);
+                var gaugeTex = _hudNativeTextures?.SoftGauge;
+                if (gaugeTex is not null)
+                {
+                    int fill = (int)(LifepodPanelLayout.GaugeWidth * Math.Clamp(oxyFraction, 0f, 1f));
+                    if (fill > 0)
+                        _spriteBatch.Draw(gaugeTex,
+                            new Rectangle(gx, gy, fill, LifepodPanelLayout.GaugeHeight),
+                            new Rectangle(0, 0, fill, LifepodPanelLayout.GaugeHeight), Color.White);
                 }
                 else
                 {
-                    FillP578Rect(px, py, panelW, panelH, new Color(0.020f, 0.055f, 0.060f, 0.72f));
-                    FillP578Rect(px, py, panelW, 1f, new Color(0.14f, 0.34f, 0.32f));
-                    _spriteBatch.DrawString(_hudBig, "YOU HAVE EJECTED.",
-                        new Vector2(vp.Width / 2f - _hudBig.MeasureString("YOU HAVE EJECTED.").X / 2f, py + 6f),
-                        new Color(0.88f, 0.96f, 0.95f));
-                    string od = $"OXYGEN O : {P578Countdown(oxySec)}";
-                    _spriteBatch.DrawString(_hudSmall, od,
-                        new Vector2(vp.Width / 2f - _hudSmall.MeasureString(od).X / 2f, py + panelH - _hudSmall.LineSpacing),
-                        new Color(0.07f, 0.95f, 0.84f));
+                    FillP578Rect(gx, gy, LifepodPanelLayout.GaugeWidth, LifepodPanelLayout.GaugeHeight,
+                        new Color(0.08f, 0.20f, 0.18f));
+                    FillP578Rect(gx, gy, LifepodPanelLayout.GaugeWidth * Math.Clamp(oxyFraction, 0f, 1f),
+                        LifepodPanelLayout.GaugeHeight, new Color(0.07f, 0.95f, 0.84f));
                 }
             }
 
             // ── 3. Death banner (ghost) ────────────────────────────────────
+            // Native DeathBannerPane = unscaled deathbannerbmp at
+            // SideCenter(-105,15) (dialog.mdl:1998-2003,5439).
             if (ghost)
             {
+                var (bx, by) = DeathBannerLayout.TopLeft(vp.Width, vp.Height);
                 var bannerTex = _feedbackTextures?.DeathBanner;
                 if (bannerTex is not null)
-                {
-                    float bw = vp.Width * 0.46f;
-                    float bh = bw * bannerTex.Height / (float)bannerTex.Width;
-                    _spriteBatch.Draw(bannerTex,
-                        new Rectangle((int)(vp.Width / 2f - bw / 2f), (int)(vp.Height * 0.085f), (int)bw, (int)bh),
-                        Color.White);
-                }
+                    _spriteBatch.Draw(bannerTex, new Rectangle(bx, by,
+                        DeathBannerLayout.Width, DeathBannerLayout.Height), Color.White);
                 else
                 {
                     string b = "YOU WERE KILLED";
-                    var bs = _hudBig.MeasureString(b);
-                    _spriteBatch.DrawString(_hudBig, b,
-                        new Vector2((vp.Width - bs.X) / 2f, vp.Height * 0.095f), new Color(0.95f, 0.30f, 0.22f));
+                    _spriteBatch.DrawString(_hudSmall, b, new Vector2(bx, by), new Color(0.95f, 0.30f, 0.22f));
                 }
             }
         }

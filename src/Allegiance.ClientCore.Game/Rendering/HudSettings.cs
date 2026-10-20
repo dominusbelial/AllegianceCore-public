@@ -16,6 +16,10 @@ public sealed class HudSettings
     /// <summary>HUD-4 — native optional round radar border (WinTrek.cpp:2715
     /// defaults false, i.e. square radar).</summary>
     public bool RoundRadar { get; set; }
+    /// <summary>HUD-10 — the full-viewport translucent-red damage wash is a port
+    /// extension (native flashes only the hull/shield gauge art, dialog.mdl:2403-2506).
+    /// Default on to preserve existing behaviour; set false for native-only flash.</summary>
+    public bool DamageWash { get; set; } = true;
     public static string DefaultPath => Environment.GetEnvironmentVariable("ALLEGIANCE_HUD_SETTINGS")
         ?? Path.Combine(IntroPreferences.DirectoryPath, "hud.json");
     public void Normalize()

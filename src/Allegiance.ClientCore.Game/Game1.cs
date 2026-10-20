@@ -85,6 +85,7 @@ public sealed partial class Game1 : Game
     private Rendering.IndicatorTextures _indicatorTextures = null!;   // HUD-8 — flight indicator bitmaps
     private Rendering.TargetPaneTextures _targetPaneTextures = null!;   // HUD-3 — native target-pane bitmaps
     private Rendering.FeedbackTextures _feedbackTextures = null!;   // P578 — eject-pod panel + death banner art
+    private Rendering.HudNativeTextures _hudNativeTextures = null!; // HUD-10 — compose/money/command/endurance art
     private Rendering.StatusTextures _statusTextures = null!;   // HUD-6 — own-ship status icons
     private Rendering.InventoryPaneTextures _inventoryTextures = null!;   // HUD-7 — inventory pane art
     // P252 — per-asteroid client-side spin state, keyed by AsteroidId so each
@@ -1163,6 +1164,9 @@ public sealed partial class Game1 : Game
     // ship by DrawHud (world.MyShipId), matching native's pShip == GetShip()
     // gate (trekigc.cpp:4281) — damage to any other ship never reaches it.
     private readonly Flight.DamageFlashTracker _flashTracker = new();
+    // HUD-10 — last real VICTIM_DAMAGED(217) revision the flash armed from, so a
+    // hit arms the window once (native DamageShipEvent → SetTimeDamaged).
+    private long _lastFlashHitVersion;
 
     // P245 — warp-transit flash tracker: fires the brief blackscreen pulse when
     // the local ship's SectorId changes (the one-shot SET_CLUSTER the server
@@ -1778,6 +1782,7 @@ public sealed partial class Game1 : Game
         _indicatorTextures?.Dispose();   // HUD-8 — release the flight indicator bitmaps
         _targetPaneTextures?.Dispose();   // HUD-3 — release the native target-pane bitmaps
         _feedbackTextures?.Dispose();   // P578 — release the eject-pod panel / death banner art
+        _hudNativeTextures?.Dispose();  // HUD-10 — release compose/money/command/endurance art
         _statusTextures?.Dispose();   // HUD-6 — release the own-ship status icons
         _inventoryTextures?.Dispose();   // HUD-7 — release the inventory-pane art
         _warpRenderer?.Dispose();

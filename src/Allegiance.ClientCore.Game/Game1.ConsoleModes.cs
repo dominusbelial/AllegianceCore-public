@@ -16,6 +16,12 @@ public sealed partial class Game1
     private int _playerPingsPage;
     private const int PlayerPingsPageSize = 16;
     private readonly ActionPressEdges _consolePressEdges = new();
+    // HUD-10 — native overlay-mask change detection + .5 s pane slides
+    // (console.cpp:3268-3290,3400-3415; dialog.mdl:5355-5387).
+    private readonly PaneSlideTracker _paneSlides = new();
+    private ConsoleOverlayMask _lastOverlayMask;
+    private bool _overlayMaskInitialized;
+    private NativeComposeState _composeVisualState = NativeComposeState.NotComposing;
     private readonly ActionPressEdges _playerPingsPressEdges = new();
     private readonly FlightCameraZoom _flightZoom = new();
     private static readonly string[] ConsoleActions = ["ConModeCombat", "ConModeGameState", "ConModeNav",
@@ -58,6 +64,56 @@ public sealed partial class Game1
             IsMouseVisible = _mainMenuVisible || CommandCameraActive || _minimapExpanded || _dockedActive || !_mouseFlightEnabled;
         Console.WriteLine($"[p642] console {action}: {_consolePanes}, hangar={_hangarOnly}");
     }
+
+    /// <summary>HUD-10 — compute the native overlay mask from the live port pane
+    /// state and advance the native .5 s slides. A mask change is exactly when
+    /// native <c>SetOverlayFlags</c> plays <c>paneSlideSound</c>
+    /// (console.cpp:3272-3274; sounddef.mdl:323). Returns the mask.</summary>
+    private ConsoleOverlayMask ComputeOverlayMask()
+    {
+        ConsoleOverlayMask mask = ConsoleOverlayMask.None;
+        if (_state == ClientState.Flying)
+        {
+            mask |= ConsoleOverlayMask.InFlight;
+            if (_dockedActive) mask |= ConsoleOverlayMask.InHangar;
+            if (_cameraMode == CameraMode.Cockpit) mask |= ConsoleOverlayMask.InCockpit;
+            else if (_cameraMode == CameraMode.Chase) mask |= ConsoleOverlayMask.InChase;
+            if (CommandCameraActive)
+                mask |= ConsoleOverlayMask.InFlightCommand | ConsoleOverlayMask.CommandPane;
+            if (_consolePanes.Inventory) mask |= ConsoleOverlayMask.Inventory;
+            if (_consolePanes.GameState) mask |= ConsoleOverlayMask.GameState;
+            if (_teamPaneVisible)
+                mask |= _consolePanes.Team == TeamConsoleSize.Mini
+                    ? ConsoleOverlayMask.Team : ConsoleOverlayMask.ExpandedTeam;
+            if (_investActive) mask |= ConsoleOverlayMask.Investment;
+            if (_teleportActive) mask |= ConsoleOverlayMask.TeleportPane;
+            if (_minimapExpanded) mask |= ConsoleOverlayMask.SectorPane;
+        }
+        return mask;
+    }
+
+    private void UpdateConsoleOverlay()
+    {
+        var mask = ComputeOverlayMask();
+        bool changed = _paneSlides.Update(_nowSeconds, mask);
+        // The compose panel slides on the compose state, not the overlay mask.
+        _paneSlides.SetTarget(SlidingPane.ChatComposition, _nowSeconds,
+            _chatActive || _qcMenuOpen ? 1f : 0f);
+        if (changed && _overlayMaskInitialized)
+            _sound?.PlayPaneSlide();
+        _overlayMaskInitialized = true;
+        _lastOverlayMask = mask;
+
+        // Keep the compose panel's visual state while it slides out (native
+        // Show(false) animates the pane off screen rather than popping it).
+        if (_chatActive) _composeVisualState = NativeComposeState.Chat;
+        else if (_qcMenuOpen) _composeVisualState = NativeComposeState.Quick;
+        else if (_paneSlides.IsOff(SlidingPane.ChatComposition, _nowSeconds))
+            _composeVisualState = NativeComposeState.NotComposing;
+    }
+
+    private float ChatComposeProgress =>
+        _paneSlides.Progress(SlidingPane.ChatComposition, _nowSeconds);
 
     private void HandleConsoleKeys(KeyboardState keys, bool composing, float dt)
     {
@@ -194,6 +250,16 @@ public sealed partial class Game1
         {
             lines.Add(new(TeamPaneLayout.LineKind.Title, "GAME STATE"));
             lines.Add(new(TeamPaneLayout.LineKind.Note, $"MISSION STAGE: {_session.World.Mission?.Stage}  |  MONEY: {_session.World.MyMoney}"));
+            // HUD-10 — native WinTrek.cpp:8128-8143 feeds the game-state container
+            // the countdown-game remaining time or the elapsed mission time. The
+            // standalone CountdownOn/timebmp badge (dialog.mdl:5091-5106) is
+            // never fed natively, so no separate clock badge is drawn.
+            if (_session.World.Mission is { } mission && _session.World.MissionElapsedSeconds() is { } elapsed)
+            {
+                int clock = Rendering.MissionClock.DisplaySeconds(mission.GameLengthSeconds, elapsed);
+                lines.Add(new(TeamPaneLayout.LineKind.Note,
+                    $"{Rendering.MissionClock.Label(mission.GameLengthSeconds)}: {Rendering.MissionClock.Format(clock)}"));
+            }
             foreach (var group in _session.World.ScoreRoster.GroupBy(e => e.SideId).OrderBy(g => g.Key))
                 lines.Add(new(TeamPaneLayout.LineKind.SideHeader, $"SIDE {group.Key}: {(_session.World.IsSideActive(group.Key) ? "ACTIVE" : "ELIMINATED")}  PILOTS {group.Count()}  KILLS {group.Sum(e => e.Kills)}"));
         }

@@ -80,7 +80,10 @@ public readonly record struct HudContact(
     // (radarimage.cpp:506-511).
     bool IsTech = false);
 public sealed record HudChat(IReadOnlyList<string> Lines, int Offset, string Input,
-    bool Composing, double NowSeconds, string Recipient, string? FilterLabel = null);
+    bool Composing, double NowSeconds, string Recipient, string? FilterLabel = null,
+    NativeComposeState ComposeState = NativeComposeState.NotComposing,
+    float ComposeProgress = 0f, HudColor? SideColor = null,
+    IReadOnlyList<HudColor?>? LineColors = null);
 
 /// <summary>Presentation context supplied by the client; no textures, fonts,
 /// graphics device or classic skin settings belong here.</summary>
@@ -132,6 +135,9 @@ public sealed record HudContext
     public string? FlightPartsLine { get; init; }
     public IReadOnlyList<string> CommandLines { get; init; } = Array.Empty<string>();
     public bool InventoryVisible { get; init; }
+    /// <summary>HUD-10 — native inventory pane slide progress (0 off, 1 on;
+    /// dialog.mdl:5387 <c>SideBottomRight(-36,-150)→(-36,40)</c>, .5 s).</summary>
+    public float InventorySlide { get; init; }
     /// <summary>HUD-7 — the resolved native flight equipment/inventory pane
     /// (own ship name + ordered rows). Null when it cannot be resolved (no
     /// hull/catalogue); the renderers then draw nothing rather than inventing
@@ -221,7 +227,12 @@ public sealed class HudModel
         {
             Notices = Array.AsReadOnly(context.Notices.ToArray()),
             Contacts = Array.AsReadOnly(context.Contacts.ToArray()),
-            Chat = context.Chat is { } chat ? chat with { Lines = Array.AsReadOnly(chat.Lines.ToArray()) } : null,
+            Chat = context.Chat is { } chat ? chat with
+            {
+                Lines = Array.AsReadOnly(chat.Lines.ToArray()),
+                LineColors = chat.LineColors is { } colors
+                    ? Array.AsReadOnly(colors.ToArray()) : null
+            } : null,
             Console = context.Console is { } console ? console with
             {
                 OrdinaryTips = Array.AsReadOnly(console.OrdinaryTips.ToArray()),

@@ -345,7 +345,10 @@ public static class HudElements
                     case "Command view ship summary":
                         element = element with { Available = c.CommandLines.Count > 0,
                             Visible = model.Visible && c.CommandLines.Count > 0, Text = string.Join("\n", c.CommandLines) }; break;
-                    case "Money credits": Set(f?.Money, instrument && f?.Money is not null); break;
+                    // HUD-10 — moneyPane lives only in the F5 investment pane
+                    // (dialog.mdl:5199-5203,5368), so the flight HUD has no
+                    // always-visible credits readout.
+                    case "Money credits": Set(f?.Money, false); break;
                     case "Ripcord countdown":
                         element = element with { Available = c.Ripcord is not null, Visible = instrument && c.Ripcord is not null, Text = c.Ripcord }; break;
                     case "Eject pod identity panel": Set(f is not null ? (model.PodVisible ? 1 : 0) : null, model.PodVisible); break;

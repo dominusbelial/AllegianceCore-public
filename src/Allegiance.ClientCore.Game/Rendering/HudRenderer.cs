@@ -51,6 +51,7 @@ public class HudRenderer
     private readonly IndicatorTextures? _indicators;
     private readonly TargetPaneTextures? _targetPaneTextures;
     private readonly InventoryPaneTextures? _inventoryTextures;
+    private readonly bool _damageWash;
 
     public HudRenderer(
         SpriteBatch spriteBatch,
@@ -62,7 +63,8 @@ public class HudRenderer
         StatusTextures? statusTextures = null,
         IndicatorTextures? indicators = null,
         TargetPaneTextures? targetPaneTextures = null,
-        InventoryPaneTextures? inventoryTextures = null)
+        InventoryPaneTextures? inventoryTextures = null,
+        bool damageWash = true)
     {
         _sb = spriteBatch;
         _white = whitePixel;
@@ -74,6 +76,7 @@ public class HudRenderer
         _indicators = indicators;
         _targetPaneTextures = targetPaneTextures;
         _inventoryTextures = inventoryTextures;
+        _damageWash = damageWash;
     }
 
     /// <summary>
@@ -129,8 +132,10 @@ public class HudRenderer
             // red but the telemetry text stays legible above it. Nothing to show
             // until a frame exists (the tracker is fed only the local ship's hull).
             bool flashing = frame is { } flashFrame && flashFrame.Flashing;
+            if (flashing && _damageWash)
+                FillRect(0f, 0f, w, h, FlashRed);
             if (flashing)
-            { FillRect(0f, 0f, w, h, FlashRed); ElementDrawn("Damage flash timer"); }
+                ElementDrawn("Damage flash timer");
 
             // P221 — firing readout: the reticle turns the warning colour and
             // shows a FIRING tag while StateM carries AllWeapons (group fire).
@@ -280,7 +285,8 @@ public class HudRenderer
             // HUD-7 — the native flight equipment/inventory pane (F4) does not
             // need the telemetry frame: it is resolved from the loadout/cargo and
             // draws in command view too (native mask ofInventory, dialog.mdl:5237).
-            if (model.FlightVisible && context.InventoryVisible && context.InventoryPane is { } pane)
+            if (model.FlightVisible && (context.InventoryVisible || context.InventorySlide > 0f)
+                && context.InventoryPane is { } pane)
                 DrawInventoryPane(pane, model, viewport);
 
             if (frame is not { } f)
@@ -325,11 +331,11 @@ public class HudRenderer
             // autopilot, vector lock, carried flag/artifact).
             DrawOwnStatus(model, viewport);
             DrawRoll(f.RollDegrees, w, h);
-            // P442 — the always-visible money readout (top-left, above the kill
-            // bonus): the local player's wallet, "$"-formatted as native does.
-            // Rendered only once the money is KNOWN (f.Money is null otherwise)
-            // — "money unknown" shows nothing, never 0.
-            if (f.Money is { } money) { DrawMoney(money, w); ElementDrawn("Money credits"); }
+            // HUD-10 — native has no in-flight money readout: moneyPane lives only
+            // inside MergedInvestmentsPaneImage under ofInvestment
+            // (dialog.mdl:5199-5203,5368), so the old always-visible "$n" line is
+            // gone from the flight HUD. The investment pane draws the real
+            // creditbox art (Game1.Rendering → DockedScreenRenderer).
 
             // P362 — the weapon/systems status list: a small persistent panel
             // (right edge) naming each mounted weapon/missile system with its
@@ -1959,7 +1965,10 @@ public class HudRenderer
         int rowCount = pane.Rows.Count;
         float scale = InventoryPaneLayout.Scale(h);
         float left = InventoryPaneLayout.LeftX(w, h);
-        float top = InventoryPaneLayout.TopY(rowCount, w, h);
+        // HUD-10 — native SideBottomRight(-36,-150)→(-36,40) slide: the pane
+        // travels 190 px as it comes on screen (dialog.mdl:5387, .5 s).
+        float top = InventoryPaneLayout.TopY(rowCount, w, h)
+            + (1f - Math.Clamp(model.Context.InventorySlide, 0f, 1f)) * 190f;
         float lineW = InventoryPaneLayout.LineWidth * scale;
         float capH = InventoryPaneLayout.CapHeight * scale;
         float rowH = InventoryPaneLayout.RowHeight * scale;

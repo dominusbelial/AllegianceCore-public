@@ -268,6 +268,7 @@ public sealed partial class Game1
         lock (_session.Gate)
             _sound?.UpdateShipWarnings(_session.World.ShipWarnings.Mask, _session.World.ShipWarnings.TakeRisingEdges());
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
+        UpdateConsoleOverlay();   // HUD-10 — native overlay-mask change + pane slides
         // P618 — advance the sim-scaled game clock (wall × live server time
         // scale), including the embedded single-player pause at scale=0.
         // Clamp prevents malformed rates from running effects backwards. A not-yet-
@@ -917,7 +918,14 @@ public sealed partial class Game1
             if (IsBriefingVisible(out _))
                 DismissBriefing();   // P271 — Enter closes the briefing popup, doesn't open chat
             else if (_chatActive) SendChatLine();
-            else { _chatActive = true; _chatBuffer.Clear(); }
+            else
+            {
+                // HUD-10 — native StartChat() plays chatKeySound before it opens
+                // the composer (console.cpp:2422-2424; sounddef.mdl:324 text wave).
+                _sound?.PlayChatKey();
+                _chatActive = true;
+                _chatBuffer.Clear();
+            }
         }
         _enterWasDown = enter;
 

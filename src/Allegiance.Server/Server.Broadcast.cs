@@ -3006,19 +3006,25 @@ public sealed partial class Server
         foreach (var kv in _peerShips)
         {
             var ship = kv.Value.Ship;
+            // HUD-10 — native compares the missile's target with
+            // trekClient.GetShip()->GetSourceShip() (trekigc.cpp:5047-5050), so a
+            // gunner's warning follows the CARRIER (the parent ship), not the
+            // child turret. GetSourceShip() returns m_pshipParent ?: this
+            // (Igc/shipIGC.h:1481-1484).
+            var source = ship.ParentShip ?? ship;
             bool tracked = false;
             float bestLock = 0f;
 
             // Native arms only from missiles in the PLAYER's cluster
             // (pcluster = GetCluster(), trekigc.cpp:5028-5050). The port's
-            // cluster == sector; a missile whose Target is this ship is by
-            // construction in its sector.
-            if (ship.Sector is { } sector)
+            // cluster == sector; the source ship's sector is the cluster the
+            // gunner is watching. A missile homing on the source is in it.
+            if (source.Sector is { } sector)
             {
                 for (int i = 0; i < sector.Models.Count; i++)
                 {
                     var model = sector.Models[i];
-                    if (model is Missile mis && mis.Target == ship)
+                    if (model is Missile mis && mis.Target == source)
                     {
                         tracked = true;
                         if (mis.LockFraction > bestLock)
@@ -3029,7 +3035,7 @@ public sealed partial class Server
 
             SendPeerCoalescing(kv.Key, PackMissileTrack(tracked, bestLock), CoalesceMissileTrack);
             if (tracked)
-                ConsoleLog.Write($"[missiletrack] peer {kv.Key} ship {ship.Id} TRACKED by in-sector missile(s) bestLock {bestLock:F3} -> MISSILE_TRACK_WARNING(208)");
+                ConsoleLog.Write($"[missiletrack] peer {kv.Key} ship {ship.Id} (source {source.Id}) TRACKED by in-sector missile(s) bestLock {bestLock:F3} -> MISSILE_TRACK_WARNING(208)");
         }
     }
 

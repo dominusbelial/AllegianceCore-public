@@ -1,0 +1,74 @@
+[
+  {
+    "file": "1920x1080-chat-compose.jpg",
+    "source": "~/allegiance-evidence/HUD10/hud10-capture/chat-compose-1920x1080.png",
+    "source_sha256": "8f3c45362e3c53316791e1f855a55c082aaa4d97d2a51036af1a831e65336296",
+    "bytes": 97716,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  },
+  {
+    "file": "1920x1080-investment-money.jpg",
+    "source": "~/allegiance-evidence/HUD10/hud10-capture/investment-money-1920x1080.png",
+    "source_sha256": "0d110d634f958ffe1c807b30028252625a54acdd0190b9cba5fa7d1ac0a9a71c",
+    "bytes": 201080,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  },
+  {
+    "file": "1920x1080-gamestate-clock.jpg",
+    "source": "~/allegiance-evidence/HUD10/hud10-capture/gamestate-clock-1920x1080.png",
+    "source_sha256": "abdb94c470ae0f52dbf9eef1decab08a23fe93a10714248622735a262445ed34",
+    "bytes": 107079,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  },
+  {
+    "file": "1920x1080-command-bar.jpg",
+    "source": "~/allegiance-evidence/HUD10/hud10-capture/command-bar-1920x1080.png",
+    "source_sha256": "97d7acca24fc70a5b4f8f5911ecdd4190de13dcf33f02ac3fd8486adf5e81f34",
+    "bytes": 238597,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  },
+  {
+    "file": "1920x1080-death-banner.jpg",
+    "source": "~/allegiance-evidence/HUD10/hud10-capture/death-banner-1920x1080.png",
+    "source_sha256": "e3d4d7ad078f5929c61d20dc01ae4fc0daa1ae34f2d2ea66e32b5937ef6b08f0",
+    "bytes": 235880,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  },
+  {
+    "file": "1920x1080-damage-flash.jpg",
+    "source": "~/allegiance-evidence/HUD10/hud10-capture/damage-flash-1-1920x1080.png",
+    "source_sha256": "4ec52e86ff3b7836468b88e0dd078144b4e3e556d54fb1b4381aaa25ccc71011",
+    "bytes": 89238,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  },
+  {
+    "file": "1920x1080-lifepod.jpg",
+    "source": "~/allegiance-evidence/HUD10/hud10-capture/lifepod-1920x1080.png",
+    "source_sha256": "7a6c16b014cc8c4f1a806960072b8209f0bb2b6993f0014d77649f8b6222fc3c",
+    "bytes": 109575,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  },
+  {
+    "file": "1920x1080-boundary-warning.jpg",
+    "source": "~/allegiance-evidence/HUD10/hud10-capture/boundary-warning-1920x1080.png",
+    "source_sha256": "d098cd76cc79dd7492a521f5f1500eae99eea19541beeec6e63c0d32d49a992f",
+    "bytes": 89517,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  }
+]

@@ -21,6 +21,12 @@ public sealed partial class Game1
         }
     }
     private readonly HashSet<string> _commandHeld = new();
+    // HUD-10 — the native command bar's selected verb/recipient/wing
+    // (console.cpp:742-760,1134-1278). The verb overrides the resolver's default
+    // for the next order; recipients/wing are stored for the bar display.
+    private short _commandVerb;
+    private int _commandRecipientColumn;
+    private int _commandWing;
     private bool _commandCentered;
     private long _commandViewVersion;
     private bool CommandCameraActive => _cameraMode is CameraMode.Command or CameraMode.DroneFollow or CameraMode.DroneCockpit;
@@ -287,13 +293,96 @@ public sealed partial class Game1
         return lines;
     }
 
+    /// <summary>HUD-10 — draw the native CommandPane (dialog.mdl:73-87) at its
+    /// SideBottom(-135,-190)→(-135,40) slide anchor (dialog.mdl:5416) while the
+    /// command view is up. The three real CortUI button-bar bitmaps are drawn
+    /// unscaled; the wing combo shows the current native wing name.</summary>
+    private void DrawCommandBar()
+    {
+        if (_hudNativeTextures is not { } art) return;
+        float progress = _paneSlides.Progress(Rendering.SlidingPane.CommandPane, _nowSeconds);
+        if (progress <= 0f) return;
+        float left = Rendering.CommandBarLayout.Left(GraphicsDevice.Viewport.Width, progress);
+        float top = Rendering.CommandBarLayout.Top(GraphicsDevice.Viewport.Height, progress);
+
+        if (art.CommandBackground is { } bg)
+            _spriteBatch.Draw(bg, new Rectangle((int)left, (int)top,
+                Rendering.CommandBarLayout.PanelWidth, Rendering.CommandBarLayout.PanelHeight),
+                new Rectangle(0, 0, Rendering.CommandBarLayout.PanelWidth, Rendering.CommandBarLayout.PanelHeight), Color.White);
+        if (art.RecipientsBar is { } recipients)
+            _spriteBatch.Draw(recipients, new Rectangle(
+                (int)left + Rendering.CommandBarLayout.RecipientsLeft,
+                (int)top + Rendering.CommandBarLayout.RecipientsTop,
+                Rendering.CommandBarLayout.RecipientsWidth, Rendering.CommandBarLayout.RecipientsHeight),
+                new Rectangle(0, 0, Rendering.CommandBarLayout.RecipientsWidth, Rendering.CommandBarLayout.RecipientsHeight), Color.White);
+        if (art.VerbsBar is { } verbs)
+            _spriteBatch.Draw(verbs, new Rectangle(
+                (int)left + Rendering.CommandBarLayout.VerbsLeft,
+                (int)top + Rendering.CommandBarLayout.VerbsTop,
+                Rendering.CommandBarLayout.VerbsWidth, Rendering.CommandBarLayout.VerbsHeight),
+                new Rectangle(0, 0, Rendering.CommandBarLayout.VerbsWidth, Rendering.CommandBarLayout.VerbsHeight), Color.White);
+        if (art.WingCombo is { } wing)
+            _spriteBatch.Draw(wing, new Rectangle(
+                (int)left + Rendering.CommandBarLayout.WingLeft,
+                (int)top + Rendering.CommandBarLayout.WingTop,
+                Rendering.CommandBarLayout.WingWidth, Rendering.CommandBarLayout.WingHeight),
+                new Rectangle(0, 0, Rendering.CommandBarLayout.WingWidth, Rendering.CommandBarLayout.WingHeight), Color.White);
+
+        string name = Rendering.CommandBarLayout.WingNames[Math.Clamp(_commandWing, 0,
+            Rendering.CommandBarLayout.WingNames.Length - 1)];
+        var size = _hudSmall.MeasureString(name);
+        _spriteBatch.DrawString(_hudSmall, name,
+            new Vector2(left + Rendering.CommandBarLayout.WingLeft + (Rendering.CommandBarLayout.WingWidth - size.X) / 2f,
+                top + Rendering.CommandBarLayout.WingTop + (Rendering.CommandBarLayout.WingHeight - size.Y) / 2f),
+            Color.White);
+    }
+
+    private bool TryCommandBarPick(MouseState mouse)
+    {
+        if (_cameraMode != CameraMode.Command) return false;
+        float progress = _paneSlides.Progress(Rendering.SlidingPane.CommandPane, _nowSeconds);
+        if (progress < 0.9f) return false;
+        float left = Rendering.CommandBarLayout.Left(GraphicsDevice.Viewport.Width, progress);
+        float top = Rendering.CommandBarLayout.Top(GraphicsDevice.Viewport.Height, progress);
+        int x = (int)(mouse.X - left), y = (int)(mouse.Y - top);
+        if (Rendering.CommandBarLayout.InWingCombo(x, y))
+        {
+            _commandWing = (_commandWing + 1) % Rendering.CommandBarLayout.WingNames.Length;
+            _commandRecipientColumn = 4 + _commandWing;
+            Console.WriteLine($"[monogame] command wing -> {Rendering.CommandBarLayout.WingNames[_commandWing]}");
+            return true;
+        }
+        int verb = Rendering.CommandBarLayout.VerbColumn(x, y);
+        if (verb >= 0)
+        {
+            // Native OnVerbButton: play chatKeySound away from the shell state
+            // and arm the selected command (console.cpp:1264-1278).
+            _sound?.PlayChatKey();
+            _commandVerb = Rendering.CommandBarLayout.VerbCommandId(verb);
+            Console.WriteLine($"[monogame] command verb -> {OrderLabel(_commandVerb)}");
+            return true;
+        }
+        int recipient = Rendering.CommandBarLayout.RecipientColumn(x, y);
+        if (recipient >= 0)
+        {
+            _commandRecipientColumn = recipient;
+            _commandWing = recipient >= 4 ? recipient - 4 : _commandWing;
+            Console.WriteLine($"[monogame] command recipient -> column {recipient}");
+            return true;
+        }
+        return false;
+    }
+
     private void DrawCommandHud(Rendering.HudModel model)
     {
         var lines = model.Context.CommandLines;
-        if (!model.Visible || lines.Count == 0) return;
+        if (!model.Visible) return;
         _spriteBatch.Begin();
         try
         {
+            // HUD-10 — the native command bar is a separate CommandPane image,
+            // visible only under ofInFlightCommand (dialog.mdl:5416).
+            if (CommandCameraActive) DrawCommandBar();
             if (_cameraMode == CameraMode.Command)
             {
                 if (_camSmoothInit && ProjectToScreen(new Vector3(0, 3 * CommandGridRenderer.Radius / 4, 0),

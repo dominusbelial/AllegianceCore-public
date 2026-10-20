@@ -72,7 +72,8 @@ public sealed class DockedScreenRenderer
     /// bottom-left, mirroring the flight HUD's money line.</summary>
     public void Draw(Viewport viewport, IReadOnlyList<ShopLayout.Row> rows,
         IReadOnlyList<ShopLayout.Row>? detailRows = null, int? money = null,
-        float backdropAlpha = 0.985f, float footerHeight = 0f, bool splitDetailPanels = false)
+        float backdropAlpha = 0.985f, float footerHeight = 0f, bool splitDetailPanels = false,
+        Texture2D? creditBox = null, bool nativeMoneyPanel = false)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -166,10 +167,33 @@ public sealed class DockedScreenRenderer
             if (detailRows is { Count: > 0 })
                 DrawDetailPanel(w, h - footerHeight, panelX, panelY, panelW, panelH, detailRows, splitDetailPanels);
 
-            // P442 — always-visible money readout, bottom-left (outside the
-            // panel so it survives any scroll). Drawn only when the wallet is
-            // KNOWN (money non-null); unknown shows nothing rather than 0.
-            if (money is { } m)
+            // HUD-10 — the investment pane draws the native creditbox art
+            // (<c>moneyPane</c>, dialog.mdl:1885-1908) at the
+            // MergedInvestmentsPaneImage anchor (SideRight(-490,-265) + (33,0),
+            // dialog.mdl:5368,5200). The P442 bottom-left text readout remains
+            // for the shop/teleport panes, where native has no moneyPane.
+            if (nativeMoneyPanel && money is { } credit)
+            {
+                int mx = MoneyCreditsLayout.Left((int)w), my = MoneyCreditsLayout.Top((int)h);
+                if (creditBox is not null)
+                    _sb.Draw(creditBox, new Rectangle(mx, my,
+                        MoneyCreditsLayout.ArtWidth, MoneyCreditsLayout.ArtHeight), Color.White);
+                else
+                {
+                    FillRect(mx, my, MoneyCreditsLayout.ArtWidth, MoneyCreditsLayout.ArtHeight, PanelBg);
+                    OutlineRect(mx, my, MoneyCreditsLayout.ArtWidth, MoneyCreditsLayout.ArtHeight, PanelBorder);
+                }
+                string value = MoneyCreditsLayout.Value(credit);
+                var asz = _small.MeasureString(value);
+                Draw(value, new Vector2(mx + MoneyCreditsLayout.ValueLeft
+                        + (MoneyCreditsLayout.ValueWidth - asz.X) / 2f,
+                        my + MoneyCreditsLayout.ValueTop), Color.White);
+                var lsz = _small.MeasureString(MoneyCreditsLayout.Label);
+                Draw(MoneyCreditsLayout.Label, new Vector2(mx + MoneyCreditsLayout.LabelLeft
+                        + (MoneyCreditsLayout.LabelWidth - lsz.X) / 2f,
+                        my + MoneyCreditsLayout.LabelTop), Color.White);
+            }
+            else if (money is { } m)
             {
                 string val = HudFormat.FormatMoney(m);
                 var vsz = _small.MeasureString(val);

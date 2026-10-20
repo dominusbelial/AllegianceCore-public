@@ -294,6 +294,8 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _collision = null!;                         // P463c — colisionlarge (collisionSound, sounddef.mdl:308)
     private SoundEffect _rockHit = null!;                           // P463c — hitrock (rockHitSound, sounddef.mdl:266)
     private SoundEffect _mouseover = null!;                         // P752c — mouseover (mouseoverSound, sounddef.mdl:322)
+    private SoundEffect _chatKey = null!;                           // HUD-10 — chatKeySound (text, sounddef.mdl:324)
+    private SoundEffect _paneSlide = null!;                         // HUD-10 — paneSlideSound (windowslides, sounddef.mdl:323)
     // P710 — wealth / treasure announcement one-shots (clintlib/appmsg.cpp).
     // Native plays pickUpPowerupSound/pickUpDevelopmentSound/pickUpCashSound on
     // a treasure pickup (appmsg.cpp:282-303) and paydaySound on each payday
@@ -776,6 +778,8 @@ public sealed class SoundManager : IDisposable
             _collision = LoadSound("Sounds/colisionlarge");
             _rockHit = LoadSound("Sounds/hitrock");
             _mouseover = LoadSound("Sounds/mouseover");   // P752c — UI hover cue (mouseoverSound, sounddef.mdl:322)
+            _chatKey = LoadSound("Sounds/text");          // HUD-10 — chatKeySound (sounddef.mdl:324)
+            _paneSlide = LoadSound("Sounds/windowslides");// HUD-10 — paneSlideSound (sounddef.mdl:323)
             // P260 — probe cues (single-real-default; see ProbeAmbientSoundCurve remarks).
             _probeDeploy = LoadSound("Sounds/dropobject");  // P755 — deployProbeSound (sounddef.mdl:369)
             _mineDeploy = LoadSound("Sounds/dropmine");     // P717 — deployMineSound (sounddef.mdl:368)
@@ -1028,6 +1032,23 @@ public sealed class SoundManager : IDisposable
     /// <summary>P752c — native <c>mouseoverSound</c> (sectormap.cpp:1442): the
     /// starmap hover cue when the pointer lands on a new cluster. One-shot.</summary>
     public void PlayMouseOver() => PlayWarnOneShot(_mouseover);
+
+    /// <summary>HUD-10 — native <c>chatKeySound</c> (<c>text</c> wave,
+    /// sounddef.mdl:324): the chat-compose key click. Native plays it from
+    /// <c>StartChat</c> (console.cpp:2423), every printable key while composing
+    /// (console.cpp:2337) and a verb-bar press (console.cpp:1268).</summary>
+    public void PlayChatKey()
+    {
+        if (IsLoaded) PlayOneShot(_chatKey, SoundCategory.Interface, 1f);
+    }
+
+    /// <summary>HUD-10 — native <c>paneSlideSound</c> (<c>windowslides</c> wave,
+    /// sounddef.mdl:323) on an overlay-mask change
+    /// (<c>ConsoleImage::SetOverlayFlags</c>, console.cpp:3272-3274).</summary>
+    public void PlayPaneSlide()
+    {
+        if (IsLoaded) PlayOneShot(_paneSlide, SoundCategory.Interface, 1f);
+    }
 
     /// <summary>Play the autopilot-disengage voice chime (one-shot). No-op
     /// when audio is not loaded.</summary>

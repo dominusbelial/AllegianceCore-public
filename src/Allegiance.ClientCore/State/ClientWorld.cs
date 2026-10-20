@@ -423,6 +423,13 @@ public sealed partial class ClientWorld
     // P623 — VICTIM_DAMAGED(217) attributions (attacker id, damage, ms) for the
     // local ship's TK_TargetHostile window; drained by Game1 once per frame.
     private readonly List<(short AttackerId, float Damage, long Ms)> _victimDamages = new();
+    private long _victimDamageVersion;
+
+    /// <summary>HUD-10 — monotonic count of real <c>VICTIM_DAMAGED(217)</c> hits
+    /// delivered to this client. The damage flash arms on a change of this value
+    /// (a real per-hit event, native <c>DamageShipEvent</c>, trekigc.cpp:4270-4283)
+    /// instead of only inferring hits from sampled hull/shield decreases.</summary>
+    public long VictimDamageVersion => System.Threading.Interlocked.Read(ref _victimDamageVersion);
     // P463 — one-shot hit SOUND events (my/other × shield/hull) drained into the
     // audio manager each frame; kept separate from _hullHits because the renderer
     // drains those in Draw (after audio runs in Update) and must not lose them.
@@ -1673,6 +1680,18 @@ public sealed partial class ClientWorld
         if (_countdownTargetMs is not { } target || _countdownClockLocalMs is not { } anchor) return null;
         double now = _countdownClockServerMs + ((localMs ?? (long)(NowSeconds() * 1000)) - anchor) * TimeScale;
         return Math.Max(0, (int)Math.Ceiling((target - now) / 1000.0));
+    }
+
+    /// <summary>HUD-10 — native mission-clock input <c>dt = time - timeStart</c>
+    /// (WinTrek.cpp:8131-8139), evaluated on the same PING-anchored server clock
+    /// the countdown sound uses. Null until both the epoch and a server-time
+    /// sample are known; the caller applies <see cref="Rendering.MissionClock"/>
+    /// to turn it into countdown remaining or elapsed time.</summary>
+    public double? MissionElapsedSeconds(long? localMs = null)
+    {
+        if (_missionTimeStartMs is not { } start || _countdownClockLocalMs is not { } anchor) return null;
+        double now = _countdownClockServerMs + ((localMs ?? (long)(NowSeconds() * 1000)) - anchor) * TimeScale;
+        return Math.Max(0d, (now - start) / 1000.0);
     }
 
     /// <summary>Native CheckCountdownSound (WinTrek.cpp:11135-11156). The
@@ -3282,6 +3301,7 @@ public sealed partial class ClientWorld
     {
         if (v.Damage <= 0f) return;
         _victimDamages.Add((v.AttackerId, v.Damage, (long)(NowSeconds() * 1000)));
+        System.Threading.Interlocked.Increment(ref _victimDamageVersion);   // HUD-10 — real per-hit edge for the damage flash
         if (_victimDamages.Count > 128) _victimDamages.RemoveAt(0);
     }
 

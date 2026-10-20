@@ -52,7 +52,8 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         _scale = scale;
         var (mx, my, mw, mh) = MinimapGeometry.CornerPanel(viewport.Width, viewport.Height);
         Layout.Reserve(new((int)mx, (int)my, (int)mw, (int)mh));
-        if (model.FlightVisible && model.Context.InventoryVisible && model.Context.InventoryPane is { Rows.Count: > 0 } pane)
+        if (model.FlightVisible && (model.Context.InventoryVisible || model.Context.InventorySlide > 0f)
+            && model.Context.InventoryPane is { Rows.Count: > 0 } pane)
             Layout.Reserve(InventoryPaneLayout.ReserveRect(pane.Rows.Count, viewport.Width, viewport.Height));
         float spread = Math.Clamp(viewport.Height / 680f, 1.15f, 2.1f);
         foreach (var gauge in model.Gauges.Where(g => g.Visible))
@@ -342,11 +343,13 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     /// colour-blind-safe palette.</summary>
     protected override void DrawInventoryPane(HudInventoryPane pane, HudModel model, Viewport viewport)
     {
+        // HUD-10 — native inventory pane slide (dialog.mdl:5387, 190 px, .5 s).
+        float slideOffset = (1f - Math.Clamp(model.Context.InventorySlide, 0f, 1f)) * 190f;
         float w = viewport.Width, h = viewport.Height;
         int rowCount = pane.Rows.Count;
         float s = InventoryPaneLayout.Scale(h);
         float left = InventoryPaneLayout.LeftX(w, h);
-        float top = InventoryPaneLayout.TopY(rowCount, w, h);
+        float top = InventoryPaneLayout.TopY(rowCount, w, h) + slideOffset;
         float lineW = InventoryPaneLayout.LineWidth * s;
         float capH = InventoryPaneLayout.CapHeight * s;
         float rowH = InventoryPaneLayout.RowHeight * s;
@@ -434,30 +437,39 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             // (offset applied once). Re-applying StartIndex here collapsed every
             // scrolled window back to the newest page (P757b).
             int take = Math.Min(ChatRenderer.MaxVisible, chat.Lines.Count);
-            // Keep the history above the lower-left status band (RADAR at
-            // h-54, cargo at h-132, WEAPONS/BOOST at h-158) so a full pane can
-            // never draw over "WEAPONS: ... BOOST: ...".
-            float chatBottom = h - 176f * _scale;
-            float y = chatBottom - take * line;
-            if (take > 0 || chat.Offset > 0)
+            // HUD-10 — the native ChatListPane geometry: 355 px wide, seven
+            // lines at the native line height, CommPane at SideTop(-160,-126)
+            // (dialog.mdl:180,5394; chatpane.cpp:374-380).
+            int paneLeft = ChatPaneLayout.Left(viewport.Width);
+            int paneTop = ChatPaneLayout.Top(ChatPaneLayout.DefaultLines);
+            float row = ChatPaneLayout.NativeFontHeight * _scale;
+            float maxWidth = ChatPaneLayout.Width * _scale;
+            float markerY = paneTop - _small.LineSpacing * _scale;
+            if (chat.Offset > 0)
+                DrawMeasuredText(_small, "(OLDER - PgDn to newest)", new(paneLeft, markerY), Muted, centerAtScale: false);
+            if (chat.FilterLabel is { } fl && take > 0)
             {
-                float markerY = y - line;
-                if (chat.Offset > 0)
-                    DrawMeasuredText(_small, "(OLDER - PgDn to newest)", new(20, markerY), Muted, centerAtScale: false);
-                if (chat.FilterLabel is { } fl && take > 0)
-                {
-                    // Right-align the filter inside the chat column: the old
-                    // fixed leftWidth-140 origin sat on the THR gauge at 720p.
-                    string label = $"[{fl}]";
-                    float labelX = Math.Max(20f, 20f + leftWidth - _small.MeasureString(label).X * _scale);
-                    DrawMeasuredText(_small, label, new(labelX, markerY), Muted, centerAtScale: false);
-                }
+                string label = $"[{fl}]";
+                float labelX = Math.Max(paneLeft, paneLeft + maxWidth - _small.MeasureString(label).X * _scale);
+                DrawMeasuredText(_small, label, new(labelX, markerY), Muted, centerAtScale: false);
             }
-            for (int i = 0; i < take; i++) { DrawMeasuredText(_small, chat.Lines[i], new(20, y + i * line), Color.White, centerAtScale: false, maxWidth: leftWidth); }
+            for (int i = 0; i < take; i++)
+            {
+                Color colour = chat.LineColors is { } colors && i < colors.Count && colors[i] is { } lc
+                    ? new Color(lc.R, lc.G, lc.B, lc.A) : Color.White;
+                DrawMeasuredText(_small, chat.Lines[i], new(paneLeft + 3 * _scale, paneTop + 3 * _scale + i * row),
+                    colour, centerAtScale: false, maxWidth: maxWidth);
+            }
             if (take > 0) Mark("Chat history");
             if (chat.Composing)
             {
-                DrawMeasuredText(_small, chat.Recipient + "> " + chat.Input + "|", new(20, h - 62 * _scale), Color.White, centerAtScale: false, maxWidth: leftWidth);
+                var variant = ComposePaneLayout.Variant(chat.ComposeState == NativeComposeState.NotComposing
+                    ? NativeComposeState.Chat : chat.ComposeState);
+                float composeTop = ComposePaneLayout.Top(viewport.Height, variant.PanelHeight, 1f);
+                Color colour = chat.SideColor is { } sc ? new Color(sc.R, sc.G, sc.B, sc.A) : Color.White;
+                DrawMeasuredText(_small, chat.Recipient.Trim() + " " + chat.Input + "|",
+                    new(ComposePaneLayout.Left(viewport.Width, 1f) + variant.TextLeft * _scale,
+                        composeTop + variant.TextTop * _scale), colour, centerAtScale: false, maxWidth: maxWidth);
                 Mark("Chat composition and recipient");
             }
         }

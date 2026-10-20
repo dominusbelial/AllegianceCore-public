@@ -274,17 +274,22 @@ public sealed partial class Game1
         // P578 — the real eject-pod panel + death banner .mdl bitmaps (graceful
         // procedural fallback when the artwork is absent).
         _feedbackTextures = Rendering.FeedbackTextures.Load(GraphicsDevice, _assets);
+        // HUD-10 — the native chat-compose panels, command bar, money creditbox
+        // and lifepod endurance gauge (dialog.mdl:89-170,1885-1908,1927-1935).
+        _hudNativeTextures = Rendering.HudNativeTextures.Load(GraphicsDevice, _assets);
         // HUD-6 — the own-ship centre-HUD status icons (radonbmp/concloakbmp/
         // killcounterbmp/captureflag* + the two CortUI PNGs).
         _statusTextures = Rendering.StatusTextures.Load(GraphicsDevice, _assets);
         // HUD-7 — the native classic inventory-pane art (top/line/bottom
         // backgrounds, icons, mounting/arming bar fills). Graceful fallback.
         _inventoryTextures = Rendering.InventoryPaneTextures.Load(GraphicsDevice, _assets);
-        _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, gauges, lockTextures, _statusTextures, indicatorTextures, targetPaneTextures, _inventoryTextures);
+        _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, gauges, lockTextures,
+            _statusTextures, indicatorTextures, targetPaneTextures, _inventoryTextures,
+            damageWash: _hudSettings.DamageWash);
 
         // P214 — in-flight chat overlay (same SpriteBatch/font plumbing as the HUD).
         _modernHudRenderer = new ModernHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings, Content.Load<SpriteFont>("HUDModern"));
-        _chatRenderer = new ChatRenderer(_spriteBatch, _whitePixel, _hudSmall);
+        _chatRenderer = new ChatRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudNativeTextures);
 
         // P217 — the quick-chat voice-macro data, parsed once at runtime from
         // verbatim copies of the original's real .mdl files shipped as Content
