@@ -471,6 +471,15 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// </summary>
     public Action<Projectile, Vector3, Vector3, float, short, short, bool>? ProjectileHit;
 
+    /// <summary>
+    /// P762 — native <c>AddHullHit</c> from a non-projectile source (the
+    /// drilling builder's contact debris, <c>shipIGC.cpp:888-890</c>). The
+    /// host broadcasts the same <c>FM_S_PROJECTILE_HULL_HIT(213)</c> visual
+    /// notice as P364, with source id -1; the struck model supplies its id,
+    /// cluster and radius for the spark. Runs on the sim thread.
+    /// </summary>
+    public Action<Asteroid, Vector3, Vector3>? HullHit;
+
     /// <summary>The world-mission site implementation of
     /// <see cref="IIgcSite.ProjectileHitEvent"/>: raise the
     /// <see cref="ProjectileHit"/> hook so the owning <see cref="Server"/> can
@@ -673,6 +682,9 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         if (ExpendableFired is { } fire) fire(s, p, timeFired);
         else s.FireDispenser(p, timeFired);
     }
+
+    public void HullHitEvent(Asteroid target, Vector3 worldImpact, Vector3 worldNormal) =>
+        HullHit?.Invoke(target, worldImpact, worldNormal);
 
     // Igc/probeigc.cpp:151-154,226-230,341-349. The native server leaves
     // these client notifications at defaults; this host exposes the events

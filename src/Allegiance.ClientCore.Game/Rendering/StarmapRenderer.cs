@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.MonoGame.Assets;
 using Allegiance.Core;
 using Allegiance.Core.Wire;
 using Microsoft.Xna.Framework;
@@ -28,6 +29,12 @@ public sealed class StarmapRenderer
     private readonly SpriteBatch _sb;
     private readonly Texture2D _white;
     private readonly SpriteFont _small;
+
+    // P762 — native sector-map artwork (sectormap.cpp:1056-1099), decoded from
+    // the same .mdl texture pipeline the rest of the HUD/art uses. Null when
+    // the caller supplies no asset source (tests/headless), in which case the
+    // old primitive shapes remain as a graceful fallback.
+    private readonly MdlTexture2D? _icons;
 
     // Palette — the teal HUD accent family for consistency with the cockpit
     // gauges; the CURRENT sector jumps to a bright high-contrast gold so the
@@ -61,11 +68,14 @@ public sealed class StarmapRenderer
     // rings. Drawn as a small offset cross beside the cluster dot.
     private static readonly Color EnemyKnown = new(0.98f, 0.16f, 0.10f);
 
-    public StarmapRenderer(SpriteBatch spriteBatch, Texture2D whitePixel, SpriteFont small)
+    public StarmapRenderer(SpriteBatch spriteBatch, Texture2D whitePixel, SpriteFont small,
+        GraphicsDevice? graphicsDevice = null, IAssetSource? assets = null)
     {
         _sb = spriteBatch;
         _white = whitePixel;
         _small = small;
+        if (graphicsDevice is not null && assets is not null)
+            _icons = new MdlTexture2D(graphicsDevice, assets);
     }
 
     /// <summary>
@@ -88,7 +98,8 @@ public sealed class StarmapRenderer
         IReadOnlyDictionary<short, SectorMapQueries.ClusterOwners>? owners = null,
         Func<short, Color?>? sideColor = null,
         IReadOnlyDictionary<short, int>? knownEnemySectors = null,
-        IReadOnlySet<short>? highlightedClusters = null)
+        IReadOnlySet<short>? highlightedClusters = null,
+        short? chatClusterId = null)
     {
         if (sites.Count == 0)
             return;   // nothing to draw until the join burst populates the graph
@@ -154,11 +165,23 @@ public sealed class StarmapRenderer
                     continue;
 
                 bool isYou = site.Id == currentSectorId;
-                // P374 — flashing cyan sector-outline highlight for the
-                // currently-selected sector (native: `pCluster->GetHighlight()
-                // && !m_bFlashFrame`, sectormap.cpp:1044), the blinking
-                // complement to the on-phase threat icon.
-                if (highlightedClusters?.Contains(site.Id) == true && !flashOn)
+                // P762b — native's chat-cluster and selection artwork
+                // (sectormap.cpp:1094-1099): the player's CHAT CLUSTER
+                // (GetChatCluster(), not the commander's HIGHLIGHT_CLUSTER
+                // set) gets sectorhighlightbmp; otherwise the selected sector
+                // gets sectorselbmp. The chat test wins, exactly native's
+                // if/else chain.
+                var overlay = StarmapThreatPresentation.OverlayFor(site.Id, chatClusterId, selectedSectorId);
+                if (StarmapThreatPresentation.OverlayAssetStem(overlay) is { } overlayStem)
+                    DrawSectorBitmap(overlayStem, pt, 1f);
+
+                // P762b — restore P374's flashing cyan sectorEmpty outline for
+                // the commander's highlighted clusters on the OFF flash phase
+                // (pCluster->GetHighlight() && !m_bFlashFrame,
+                // sectormap.cpp:1043-1046). This is the HIGHLIGHT_CLUSTER
+                // concept; it is deliberately separate from the chat-cluster
+                // overlay above.
+                if (StarmapThreatPresentation.FlashingOutline(highlightedClusters, site.Id, flashOn))
                     DrawFlashingOutline(pt);
                 // P460 — the ownership rings, drawn FIRST (underneath) so the
                 // cluster icon and the on-phase threat icon always stay visible
@@ -228,7 +251,8 @@ public sealed class StarmapRenderer
         IReadOnlyDictionary<short, SectorMapQueries.ClusterOwners>? owners = null,
         Func<short, Color?>? sideColor = null,
         IReadOnlyDictionary<short, int>? knownEnemySectors = null,
-        IReadOnlySet<short>? highlightedClusters = null)
+        IReadOnlySet<short>? highlightedClusters = null,
+        short? chatClusterId = null)
     {
         if (sites.Count == 0)
             return;   // nothing to draw until the join burst populates the graph
@@ -281,7 +305,12 @@ public sealed class StarmapRenderer
                     DrawRing(new Vector2(pt.X, pt.Y), 4f, 1.1f, RingNormal);
                     FillRect(pt.X - 1.4f, pt.Y - 1.4f, 2.8f, 2.8f, DotNormal);
                 }
-                if (highlightedClusters?.Contains(site.Id) == true && !flashOn)
+                // P762b — the compact map uses the same chat-cluster overlay
+                // rule as the full pane (sectormap.cpp:1094-1099); the
+                // compact view has no selection bitmap.
+                if (chatClusterId == site.Id)
+                    DrawSectorBitmap("sectorhighlightbmp", pt, 0.55f);
+                if (StarmapThreatPresentation.FlashingOutline(highlightedClusters, site.Id, flashOn))
                     DrawRing(new Vector2(pt.X, pt.Y), 8f, 2f, HighlightFlash);
                 // P374 — the compact view flashes a small per-severity threat
                 // marker on the on-flash phase (native's closed sector-info
@@ -360,9 +389,11 @@ public sealed class StarmapRenderer
         FillRect(c.X - 3.5f, c.Y - 3.5f, 7f, 7f, YouFill);
     }
 
-    /// <summary>P374 — the flashing cyan sector-outline highlight drawn on the
-    /// OFF-flash phase for the currently-selected sector (native's
-    /// <c>GetHighlight() &amp;&amp; !m_bFlashFrame</c> cyan tint, sectormap.cpp:1044).</summary>
+    /// <summary>P374/P762b — the flashing cyan sector-outline (native's
+    /// <c>sectorEmpty</c> surface tinted <c>Color::Cyan()</c>) drawn on the
+    /// OFF-flash phase for a cluster in the commander's HIGHLIGHT_CLUSTER set
+    /// (<c>GetHighlight() &amp;&amp; !m_bFlashFrame</c>, sectormap.cpp:1043-1046;
+    /// the port draws primitive rings as its stand-in for the surface blit).</summary>
     private void DrawFlashingOutline(NumericsVec2 c)
     {
         var v = new Vector2(c.X, c.Y);
@@ -386,6 +417,10 @@ public sealed class StarmapRenderer
         // P752 — the tier cascade lives in the pure, unit-tested
         // StarmapThreatPresentation (native sectormap.cpp:1066-1082); the
         // renderer only maps tier -> shape/colour.
+        string? stem = StarmapThreatPresentation.AssetStem(
+            StarmapThreatPresentation.IconTier(warning));
+        if (stem is not null && DrawSectorBitmap(stem, c, scale)) return;
+        // Fallback only when the artwork is unavailable.
         switch (StarmapThreatPresentation.IconTier(warning))
         {
             case StarmapThreatPresentation.Tier.Station: DrawTriangle(v, r, ThreatRed); break;
@@ -394,6 +429,20 @@ public sealed class StarmapRenderer
             case StarmapThreatPresentation.Tier.Miner: DrawSquare(v, r, ThreatMiner); break;
             case StarmapThreatPresentation.Tier.Combat: DrawCross(v, r, ThreatCombat); break;
         }
+    }
+
+    /// <summary>
+    /// P762 — blit one native sector-map bitmap centred on <paramref name="c"/>.
+    /// Returns false when the texture pipeline is unavailable/missing so the
+    /// caller can fall back to a primitive shape.
+    /// </summary>
+    private bool DrawSectorBitmap(string stem, NumericsVec2 c, float scale)
+    {
+        var tex = _icons?.Get(stem);
+        if (tex is null) return false;
+        _sb.Draw(tex, new Vector2(c.X - tex.Width * scale * 0.5f, c.Y - tex.Height * scale * 0.5f),
+            null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+        return true;
     }
 
     private void DrawTriangle(Vector2 c, float r, Color color)

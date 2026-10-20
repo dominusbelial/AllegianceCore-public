@@ -15,6 +15,11 @@ public sealed class EquipmentTarget : Model
 
     public IgcObjectType ObjectType { get; }
 
+    /// <summary>The wrapped body (a <see cref="Station"/>, <see cref="Asteroid"/> or
+    /// <see cref="ResolvedWarp"/>) — used by the target-fraction broadcast to read
+    /// the native OT_station/OT_asteroid fraction fields without a second lookup.</summary>
+    public object Body => _body;
+
     /// <summary>The sector this equipment target was resolved in — the cluster
     /// that <see cref="IIgcSite.GetCluster"/> should return for a visible warp,
     /// station or asteroid target.</summary>

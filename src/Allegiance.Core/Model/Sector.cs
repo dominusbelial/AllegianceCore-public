@@ -164,6 +164,31 @@ public sealed class Sector : IClusterIgc
     public const int c_nPassesPerUpdate = 10;
     private int _visPass;
 
+    /// <summary>
+    /// P762b — native <c>CclusterIGC</c>'s <c>activeF</c> gate
+    /// (<c>Igc/clusterIGC.cpp:255</c>, <c>clusterIGC.h:379-382</c>). Native sets
+    /// every real mission cluster active during generation
+    /// (<c>missionigc.cpp:4053</c>); only the wire <c>Export</c> deliberately
+    /// exports <c>activeF = false</c> so clients treat exported clusters as
+    /// inactive (<c>clusterIGC.cpp:492-496</c>). A server-side sector is
+    /// therefore active by default. The collision/mine/visibility block is
+    /// gated on <c>activeF &amp;&amp; bStarted</c>; this port reproduces the gate for
+    /// the mine pass and the every-10th visibility pass, and leaves the default
+    /// true so ordinary missions are unaffected.
+    /// </summary>
+    public bool Active { get; set; } = true;
+
+    /// <summary>
+    /// Whether the Update pass that just completed was one of the every-10th
+    /// active started passes on which native runs each model's
+    /// <c>UpdateSeenBySide</c> and then raises the per-cluster
+    /// <c>ClusterUpdateEvent</c> (<c>clusterIGC.cpp:347-357</c>). The mission
+    /// tick reads this immediately after <see cref="Update"/> and forwards the
+    /// callback only then, so the port raises the site event on native's
+    /// cadence rather than once per chunk. Not an allocation: a plain bool.
+    /// </summary>
+    public bool ClusterUpdateDue { get; private set; }
+
     // P112 — ships whose active ripcord this tick's revalidation
     // (ResolveRipcordCountdowns) found illegal, so the sector cleared their
     // countdown state. Accumulated per tick (across a Mission.Update's chunks,
@@ -900,17 +925,24 @@ public sealed class Sector : IClusterIgc
         // See ResolveShipStationCollisions.
         { using (TickProfiler.Enter("sim.collision")) ResolveShipStationCollisions(timeUpdate, (float)dt); }
 
+        // P762b / SIM-0064 — apply accumulated mine damage AFTER every collision
+        // pass, matching native's collision → mines → Move order
+        // (clusterIGC.cpp:322-345). The port's Move runs inside each model's
+        // OnUpdate before these collision passes, so only the collision→mine
+        // relative order is reproduced here; this method is deliberately NOT
+        // claimed to run before movement (see ResolveMineDetonations remarks).
+        // Native also gates the block on activeF && bStarted
+        // (clusterIGC.cpp:255); the stage/Active check lives inside.
+        if (Mission?.Stage == MissionStage.Started)
+            using (TickProfiler.Enter("sim.mines"))
+                ResolveMineDetonations(timeUpdate, (float)dt);
+
         // P125 — station health regeneration. Stations are static bodies (not
         // Models), so their regen is a pass of its own here rather than a model
         // Update; native does the same math in CstationIGC::Update
         // (stationIGC.h:189-213) — see Station.Regenerate for the
         // armor-then-shield sequencing.
         { using (TickProfiler.Enter("sim.station")) ResolveStationRegen((float)dt); }
-
-        // Mine attrition proximity pass — an armed, hostile-side mine chews on
-        // every moving enemy ship inside its radius (persistent area denial,
-        // not a one-shot blast). See ResolveMineDetonations for the spec.
-        { using (TickProfiler.Enter("sim.mines")) ResolveMineDetonations(timeUpdate, (float)dt); }
 
         // Warp-transit proximity pass — a stationary-object test (ship vs the
         // sector's warps), deliberately separate from the moving-object combat
@@ -989,9 +1021,20 @@ public sealed class Sector : IClusterIgc
         // (clusterIGC.cpp:348 / clusterIGC.h:22) — a target becomes visible/
         // invisible on the same real-world timescale as native, not instantly-
         // every-tick.
-        if ((_visPass++ % c_nPassesPerUpdate) == 0)
+        // SIM-0065 — only an ACTIVE STARTED pass advances the counter: native's
+        // whole visibility/callback block sits inside `if (bStarted)`
+        // (clusterIGC.cpp:348). Starting-stage chunks must not shift the phase.
+        ClusterUpdateDue = false;
+        // P762b — native's visibility/callback block is gated on
+        // `m_data.activeF && bStarted` (clusterIGC.cpp:255-348); an inactive
+        // sector neither advances the pass phase nor raises the callback.
+        if (Active && Mission?.Stage == MissionStage.Started
+            && (_visPass++ % c_nPassesPerUpdate) == 0)
+        {
+            ClusterUpdateDue = true;
             using (TickProfiler.Enter("sim.visibility"))
                 ResolveCrossSideVisibility();
+        }
     }
 
     /// <summary>
@@ -2604,6 +2647,36 @@ public sealed class Sector : IClusterIgc
         // retain it through the registered effect while drilling (native
         // shipIGC.cpp:872-884). Otherwise an arrival/launch impact can destroy
         // the ordered rock before TryStartBuilderBuild registers construction.
+        // P762 / row 7 — native CshipIGC::HandleCollision's drilling-builder
+        // branch (shipIGC.cpp:871-893): a builder colliding with the asteroid
+        // it is drilling creates the building effect ONCE when autopiloted and
+        // the rock has no effect yet, then adds drilling hull-hit debris. Both
+        // happen before the generic asteroid bounce, which is skipped entirely
+        // (native `break` from the OT_asteroid case).
+        if (ReferenceEquals(ship.BuilderAsteroidTarget, ast)
+            && ship.IsNpc && ship.PilotType == Ship.PilotTypeBuilder
+            && ship.Mission is { } builderMission)
+        {
+            if (ast.BuildingEffect is null)
+            {
+                builderMission.Site.CreateBuildingEffect(now, ast, ship);
+                if (ast.BuildingEffect is null && ship.BuilderStationType is { } stationType)
+                    StartBuildingEffect(ship, ast, stationType, now);
+                if (ast.BuildingEffect is not null)
+                    ship.BuilderAsteroidTarget = null;   // effect registered: building state takes over
+            }
+
+            // Drilling debris: AddHullHit at the ship's nose on the rock surface,
+            // normal = the ship's backward vector (shipIGC.cpp:888-890). Native
+            // offsets by GetRadius(), the hit-test radius set to
+            // 0.5 * hull length at construction (shipIGC.cpp:1419, 888-890);
+            // Ship.Radius is that value (P762b).
+            Vector3 backward = ship.Orientation.GetBackward();
+            Vector3 impact = ship.Position - backward * ship.Radius - apos;
+            builderMission.Site.HullHitEvent(ast, impact, backward);
+            return;
+        }
+
         if (ReferenceEquals(ship.MiningAsteroid, ast)
             || ReferenceEquals(ship.MiningAsteroidTarget, ast)
             || ReferenceEquals(ship.BuilderAsteroidTarget, ast)
@@ -3365,9 +3438,18 @@ public sealed class Sector : IClusterIgc
     /// immediately. Mirroring native <c>AddMineDamage</c>/<c>ApplyMineDamage</c>
     /// (<c>shipIGC.h:1998-2035</c>, applied at <c>clusterIGC.cpp:334</c>), each
     /// ship records its <b>largest</b> mine hit this tick and applies it exactly
-    /// once, at the end of the pass, through the reused
+    /// once, walking the ship list back to front (children before parents,
+    /// <c>clusterIGC.cpp:325-335</c>), through the reused
     /// <see cref="Ship.ReceiveDamage"/> — shields and the armor matrix included.
     /// No area <see cref="Explosion"/> is created; a mine never blasts.</para>
+    /// <para><b>Ordering deviation, stated plainly (P762b).</b> Native's order is
+    /// collisions → mines → <c>Move</c> (<c>clusterIGC.cpp:322-345</c>). This
+    /// port performs a ship's <c>Move</c> inside <see cref="Ship.OnUpdate"/>
+    /// during the models loop, which runs <em>before</em> the collision passes;
+    /// the mine pass now runs after every collision pass (P762b moved it), so
+    /// collisions precede mines as native requires, but a ship killed by the
+    /// mine has already moved once this tick. P762's claim that a mine-killed
+    /// ship never moves is withdrawn (see the P762b report).</para>
     /// <para><b>Field lifetime.</b> The mine persists across hits and ships — any
     /// number of ships in the same tick all take damage. When its remaining
     /// endurance drops below 1 (<c>newEndurance &lt; 1.0f</c>, <c>mineigc.h:139-142</c>)
@@ -3380,6 +3462,10 @@ public sealed class Sector : IClusterIgc
     /// </remarks>
     private void ResolveMineDetonations(double now, float dt)
     {
+        // Native applies mine damage inside the `activeF && bStarted` block
+        // (clusterIGC.cpp:255 gates the mine loop at :322-335; bStarted is also
+        // required by the enclosing stage guard at :103).
+        if (!Active || Mission?.Stage != MissionStage.Started) return;
         if (!_models.Any(m => m is Mine)) return;   // nothing to chew on
 
         var snapshot = _models.ToArray();
@@ -3487,10 +3573,17 @@ public sealed class Sector : IClusterIgc
         // throttle (m_timeLastMineExplosion) first decides whether this hit
         // plays the c_etMine explosion — at the hit's native P2 placement —
         // raised as IIgcSite.MineHitEvent for the host to broadcast.
-        foreach (var kv in worst)
+        // Walk the ship list BACK TO FRONT, exactly native's `for (l = m_ships.last();
+        // l; l = lTxen)` (clusterIGC.cpp:325-335): children follow parents in the
+        // list, so applying a child's hit before its parent's means killing the
+        // parent can never leave us applying damage to an entry that a death
+        // handler already retired. The snapshot preserves the list order without
+        // allocating on this pass beyond the array the detection already took.
+        for (int i = snapshot.Length - 1; i >= 0; i--)
         {
-            var ship = kv.Key;
-            var hit = kv.Value;
+            if (snapshot[i] is not Ship ship) continue;
+            if (!worst.TryGetValue(ship, out var hit)) continue;
+            if (!_models.Contains(ship)) continue;   // a child's death handler may retire it
             if (hit.Time > ship.TimeLastMineExplosion + 0.5f)
             {
                 ship.TimeLastMineExplosion = hit.Time;

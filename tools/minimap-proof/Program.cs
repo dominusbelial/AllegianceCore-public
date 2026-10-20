@@ -8,6 +8,7 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Allegiance.Core;
+using Allegiance.ClientCore.MonoGame.Assets;
 
 // P360 live-proof harness: boots a REAL in-process server on a REAL multi-
 // sector map (m2xspiderw, 13 sectors / 44 warps) and connects a REAL client
@@ -35,13 +36,14 @@ sealed class ProofOptions
     public string OutDir = "";
     public bool FooterRegression;
     public bool LabelRegression;
+    public bool Threats;
     public int Width = 1280, Height = 800;
     public string Tag = "after";
 
     public static ProofOptions Parse(string[] args)
     {
         string art = "", content = "", outDir = "";
-        bool footer = false, label = false;
+        bool footer = false, label = false, threats = false;
         int width = 1280, height = 800;
         string tag = "after";
         int i = 0;
@@ -51,6 +53,7 @@ sealed class ProofOptions
             {
                 case "--footer-regression": footer = true; break;
                 case "--label-regression": label = true; break;
+                case "--threats": threats = true; break;
                 case "--window":
                     var size = args[++i].Split('x');
                     width = int.Parse(size[0]); height = int.Parse(size[1]);
@@ -66,7 +69,7 @@ sealed class ProofOptions
         string repo = RepoRoot();
         return new ProofOptions
         {
-            FooterRegression = footer, LabelRegression = label,
+            FooterRegression = footer, LabelRegression = label, Threats = threats,
             Width = width, Height = height, Tag = tag,
             ArtRoot = art.Length > 0 ? art : Path.Combine(repo, "docs", "artwork"),
             ContentRoot = content.Length > 0 ? content : Path.Combine(repo, "src", "Allegiance.ClientCore.MonoGame", "Content", "bin", "DesktopGL", "Content"),
@@ -120,9 +123,10 @@ sealed class ProofRunner : Game
         _white = new Texture2D(GraphicsDevice, 1, 1);
         _white.SetData(new[] { Color.White });
         _font = Content.Load<SpriteFont>("HUD");
-        _starmap = new StarmapRenderer(_sb, _white, _font);
+        _starmap = new StarmapRenderer(_sb, _white, _font, GraphicsDevice,
+            new DirectoryAssetSource(_o.ArtRoot));
         _infoPane = new SectorInfoPaneRenderer(_sb, _white, _font);
-        if (!_o.FooterRegression && !_o.LabelRegression)
+        if (!_o.Threats && !_o.FooterRegression && !_o.LabelRegression)
         {
             try { RunProof(GraphicsDevice); }
             catch (Exception ex) { Failed = true; Console.WriteLine($"[proof] FATAL: {ex}"); }
@@ -134,9 +138,10 @@ sealed class ProofRunner : Game
     // using the same DrawMini and compiled HUD font as the flight client.
     protected override void Draw(GameTime gameTime)
     {
-        if ((!_o.FooterRegression && !_o.LabelRegression) || _captured) return;
+        if ((!_o.Threats && !_o.FooterRegression && !_o.LabelRegression) || _captured) return;
         try
         {
+            if (_o.Threats) { DrawThreatFixture(); return; }
             var sites = _o.LabelRegression ? LabelFixture() : FooterFixture();
             ClusterInfo.WarpEdge[] edges = _o.LabelRegression
                 ? LabelFixtureEdges()
@@ -193,6 +198,58 @@ sealed class ProofRunner : Game
             }
         }
         catch (Exception ex) { Failed = true; Console.WriteLine($"[P715] FATAL: {ex}"); }
+        Exit();
+    }
+
+    // P762 — a real StarmapRenderer capture with every native threat tier and
+    // the chat/selection overlays. The warnings fixture follows native's
+    // sectormap.cpp:1066-1082 cascade; the chat cluster (4) gets
+    // sectorhighlightbmp and the selected cluster (3) sectorselbmp.
+    private void DrawThreatFixture()
+    {
+        StarmapLayout.ClusterSite[] sites =
+        [
+            new(1, "Station threat", 0, 0),
+            new(2, "Capital", 220, -60),
+            new(3, "Selected bomber", 120, 120),
+            new(4, "Chat miner", -180, 100),
+            new(5, "Combat", -120, -140),
+            new(6, "Quiet", 20, 220),
+        ];
+        ClusterInfo.WarpEdge[] edges =
+        [
+            new(1, 2), new(1, 4), new(2, 3), new(3, 4), new(4, 5), new(5, 6), new(1, 6),
+        ];
+        short Warning(short id) => id switch
+        {
+            1 => ClusterWarnings.StationThreatened,
+            2 => ClusterWarnings.CapitalInCluster,
+            3 => ClusterWarnings.BomberInCluster,
+            4 => ClusterWarnings.MinerThreatened,
+            5 => ClusterWarnings.CombatInCluster,
+            _ => ClusterWarnings.NoThreat,
+        };
+        GraphicsDevice.Clear(new Color(0.015f, 0.019f, 0.025f));
+        float panelW = MathF.Min(Width * 0.80f, 1040f);
+        float panelH = MathF.Min(Height * 0.66f, 640f);
+        _starmap.Draw(sites, edges, currentSectorId: 1, selectedSectorId: 3,
+            warnings: Warning, flashOn: true, GraphicsDevice.Viewport,
+            panelW, panelH, highlightedClusters: new HashSet<short> { 4 });
+        if (++_frames < 5) return;
+        Capture("p762_starmap_threats");
+    }
+
+    private void Capture(string stem)
+    {
+        var pixels = new Color[Width * Height];
+        GraphicsDevice.GetBackBufferData(pixels);
+        using var texture = new Texture2D(GraphicsDevice, Width, Height);
+        texture.SetData(pixels);
+        using (var stream = File.Create(Path.Combine(_o.OutDir, $"{stem}_{Width}x{Height}.png")))
+            texture.SaveAsPng(stream, Width, Height);
+        Console.WriteLine($"[P762] captured {stem}_{Width}x{Height}.png");
+        // Leave the frame visible for a moment before Exit() flushes the PNG.
+        _captured = true;
         Exit();
     }
 

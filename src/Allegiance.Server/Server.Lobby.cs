@@ -1130,8 +1130,30 @@ public sealed partial class Server
     {
         if (mission.Stage != MissionStage.NotStarted || _autoRestartDeadline.ContainsKey(mission))
             return;   // intermission holds even when everybody is ready
-        if ((!GameSettings(mission).AllowEmptyTeams && !HasMinimumPlayers(mission)) || !IsAllOccupiedSidesReady(mission))
-            return;   // at least one occupied side is not yet ready
+        var settings = GameSettings(mission);
+        // P762 / SIM-0142 — native bAutoStart gate (FedSrv.CPP:8223): the
+        // ready-up auto-start only exists when the mission parameter enables it.
+        if (!settings.AutoStart) return;
+        // P180 — the port's readiness gate (every occupied side aggregate-ready)
+        // is a DELIBERATE port policy, the port's stand-in for the external
+        // admin/Zone start trigger (P180 report); it is NOT part of native
+        // FAllReady. Native's "every side ready" loop there is unreachable dead
+        // code after the earlier `return true` (fsmission.cpp:4432-4444), so
+        // FAllReady is the balance check only (fsmission.cpp:4375-4430). Keep
+        // this separate so the port's ready-up behaviour is preserved without
+        // misrepresenting native.
+        if (!IsAllOccupiedSidesReady(mission))
+            return;
+
+        // Native's FAllReady balance policy: min/max players, imbalance, rank
+        // spread and the bAllowEmptyTeams inactive-empty skip
+        // (fsmission.cpp:4375-4430). Arena-style missions (bAllowEmptyTeams)
+        // keep the port's established occupied-side rule as a fallback: native's
+        // arena AutoRestart path bypasses FAllReady entirely (FedSrv.CPP:8185),
+        // and an empty arena has no players to satisfy the native minimum-player
+        // clause. This does NOT put the ready loop back into FAllReady.
+        if (!FAllReady(mission) && !settings.AllowEmptyTeams)
+            return;
 
         // P188 — route the ready-up auto-start through the real countdown
         // stage instead of jumping straight to Started. The ENTER_GAME
@@ -1139,8 +1161,114 @@ public sealed partial class Server
         // (AdvanceStartCountdowns → CompleteStartCountdown →
         // BroadcastEnterGameToMission), not here; StartCountdown emits the
         // SET_START_TIME countdown announcement and sets Stage = Starting.
-        Console.WriteLine("[ready] ALL occupied sides ready — mission auto-start begins countdown");
-        StartCountdown(mission, BriefingCountdownSeconds);
+        // P762 — native StartCountdown(fStartCountdown), FedSrv.CPP:8225.
+        Console.WriteLine("[ready] FAllReady — mission auto-start begins countdown");
+        StartCountdown(mission, (float)(settings.StartCountdownSeconds ?? BriefingCountdownSeconds));
+    }
+
+    /// <summary>
+    /// P762b / SIM-0142 — the native <c>CFSMission::FAllReady</c> policy
+    /// (<c>FedSrv/fsmission.cpp:4375-4432</c>), which is the <b>balance check
+    /// only</b>:
+    /// <list type="number">
+    /// <item>Scan every side, skipping inactive empty teams when
+    /// <see cref="GameConfig.AllowEmptyTeams"/> is set (fsmission.cpp:4394-4410).</item>
+    /// <item>Reject when the smallest team has fewer than
+    /// <see cref="GameConfig.MinimumPlayersPerTeam"/>, the largest exceeds
+    /// <see cref="GameConfig.MaxPlayersPerTeam"/>, the smallest plus
+    /// <see cref="GameConfig.MaxTeamImbalance"/> is less than the largest, or —
+    /// in rank-balance mode (<c>iMaxImbalance == 0x7ffe</c>) — the per-side rank
+    /// spread exceeds <see cref="GetRankThreshold"/> (fsmission.cpp:4423-4430).</item>
+    /// <item>Otherwise return true.</item>
+    /// </list>
+    /// Native's following "every side ready" loop (<c>fsmission.cpp:4435-4444</c>)
+    /// is <b>dead code</b>: the balance-check block's own <c>return true</c>
+    /// (<c>fsmission.cpp:4432</c>) sits before it, so it can never execute.
+    /// P762 had mistakenly made that loop part of FAllReady; P762b removes it so
+    /// this method matches native exactly. The port's ready-up gate lives in
+    /// <see cref="TryAutoStart"/> as the separate, documented P180 policy.
+    /// The native team population is the side's ship list; every port ship is
+    /// either a peer (a real player) or an NPC, and only peers count toward the
+    /// native player filters, so the counts and rank sums walk
+    /// <c>_peerShips</c>. Rank sums floor each rank at one
+    /// (<c>fsmission.cpp:1365</c>) and <see cref="GetRankThreshold"/> follows
+    /// the native integer formula (<c>fsmission.cpp:1380-1408</c>).
+    /// </summary>
+    private bool FAllReady(Mission mission)
+    {
+        var settings = GameSettings(mission);
+        int minPlayers = settings.MaxPlayersPerTeam;   // native's "big enough" seed
+        int maxPlayers = 0;
+        int minTeamRank = 1_000_000;
+        int maxTeamRank = 1;
+        foreach (var side in mission.Sides)
+        {
+            int n = 0;
+            int rankSum = 0;
+            foreach (var kv in _peerShips)
+            {
+                if (!ReferenceEquals(kv.Value.Ship.Mission, mission) || kv.Value.Ship.SideId != side.Id) continue;
+                n++;
+                rankSum += Math.Max(1, (int)kv.Value.PlayerScore.Rank);
+            }
+            // KGJV #62 — skip inactive & empty teams when allowed.
+            if (settings.AllowEmptyTeams && n == 0 && !side.Active) continue;
+            if (n < minPlayers) minPlayers = n;
+            if (n > maxPlayers) maxPlayers = n;
+            if (rankSum < minTeamRank) minTeamRank = rankSum;
+            if (rankSum > maxTeamRank) maxTeamRank = rankSum;
+        }
+
+        int threshold = GetRankThreshold(mission);
+        if (minPlayers < settings.MinimumPlayersPerTeam
+            || maxPlayers > settings.MaxPlayersPerTeam
+            || minPlayers + settings.MaxTeamImbalance < maxPlayers
+            || (settings.MaxTeamImbalance == 0x7ffe && maxTeamRank - minTeamRank > threshold))
+            return false;
+
+        // Native returns true here, BEFORE the "every side ready" loop — which
+        // is therefore unreachable dead code (fsmission.cpp:4432-4444). Do not
+        // restore that loop here; the port's readiness gate is P180's separate
+        // TryAutoStart policy.
+        return true;
+    }
+
+    /// <summary>
+    /// P762b / SIM-0142 — native <c>CFSMission::GetRankThreshold</c>
+    /// (<c>FedSrv/fsmission.cpp:1380-1408</c>):
+    /// <c>threshold = highestRank + averageRank² / (highestRank + averageRank)</c>
+    /// (all integer arithmetic). Native divides by <c>m_pMission-&gt;GetShips()</c>
+    /// — the mission's <b>whole ship list</b>, which includes docked ships
+    /// (docking removes a ship from its cluster list but not from the mission
+    /// list, <c>fsmission.cpp:1405</c>). The port keeps that shape: only
+    /// player ranks are summed (native loops the list but adds only
+    /// <c>IsPlayer()</c> ranks), while the divisor counts every ship of the
+    /// mission — peers and NPCs, flying and docked. A docked port ship remains
+    /// in its sector's model list (it is only excluded from
+    /// <see cref="Sector.GetShipUpdateCandidates"/>), so sector models are the
+    /// mission list here; peer ships are unioned in by identity as a defensive
+    /// completeness check. Never use the flying-ships-only accessor here.
+    /// </summary>
+    private int GetRankThreshold(Mission mission)
+    {
+        int highest = 1;
+        int totalRank = 0;
+        var missionShips = new HashSet<Ship>();
+        foreach (var sector in mission.Sectors)
+            foreach (var model in sector.Models)
+                if (model is Ship ship) missionShips.Add(ship);
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship.Mission, mission)) missionShips.Add(kv.Value.Ship);
+        int shipCount = missionShips.Count;
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+            int rank = kv.Value.PlayerScore.Rank;
+            if (rank > highest) highest = rank;
+            totalRank += rank;
+        }
+        int average = shipCount > 0 ? totalRank / shipCount : 0;
+        return highest + (average * average) / (highest + average);
     }
 
 /// <summary>P180/P188 — is every side of <paramref name="mission"/> that
@@ -1250,14 +1378,16 @@ public sealed partial class Server
                 double remaining = deadline - now;
                 if (remaining > BriefingCountdownSeconds)
                 {
+                    // P762 / SIM-0142 — native's warning test is FAllReady
+                    // (FedSrv.CPP:8212-8220), not just the occupancy floor.
                     if (!settings.AllowEmptyTeams && remaining <= 2 * BriefingCountdownSeconds &&
-                        _restartWarnings.Add(m) && !HasMinimumPlayers(m))
+                        _restartWarnings.Add(m) && !FAllReady(m))
                         SendPeriodicNotice(m, "Warning: Game will be canceled if all teams are not ready in 30 seconds.");
                     continue;
                 }
                 if (!settings.AllowEmptyTeams)
                     foreach (var side in m.Sides) side.Ready = true; // native force-ready
-                if (!settings.AllowEmptyTeams && !HasMinimumPlayers(m))
+                if (!settings.AllowEmptyTeams && !FAllReady(m))
                 {
                     if (remaining <= 0)
                     {

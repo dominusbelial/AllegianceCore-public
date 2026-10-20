@@ -739,7 +739,14 @@ public sealed partial class Mission : IMissionIgc
                 {
                     sector.Update(timeUpdate);
                 }
-                Site.ClusterUpdateEvent(sector);        // faithful site call (c++:357)
+                // SIM-0065 — native raises ClusterUpdateEvent once per cluster
+                // only on the every-10th active started pass, immediately after
+                // that pass's UpdateSeenBySide sweep (clusterIGC.cpp:347-357).
+                // Starting-stage passes raise no event (the native block is
+                // gated on bStarted). The sector records whether this pass was
+                // one of those.
+                if (sector.ClusterUpdateDue)
+                    Site.ClusterUpdateEvent(sector);    // faithful site call (c++:357)
             }
             LastUpdate = timeUpdate;
         }

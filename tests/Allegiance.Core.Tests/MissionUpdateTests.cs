@@ -220,8 +220,10 @@ public class MissionUpdateTests
 
         // Sides exactly once each.
         Assert.Equal(sideCount, sideCalls.Count);
-        // Cluster events exactly sectorCount per chunk × n chunks.
-        Assert.Equal(sectorCount * 4, clusterCalls.Count);
+        // P762 / SIM-0065 — ClusterUpdateEvent is raised once per cluster on
+        // the every-tenth active started pass (clusterIGC.cpp:347-357). This
+        // 4-chunk update starts with pass 0, so exactly one callback per sector.
+        Assert.Equal(sectorCount, clusterCalls.Count);
 
         // ALL side updates precede the FIRST cluster chunk: everything recorded
         // before the first ClusterUpdateEvent call is a SideUpdated call.

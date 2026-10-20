@@ -480,15 +480,18 @@ public sealed class MineCombatTests
     /// <summary>The hull fraction a ship ends at after one fresh, full-tick native
     /// attrition hit — the independent hand-compute of the native formula
     /// (<c>mineigc.h:116-128</c>) the formula tests assert against. It uses the
-    /// sim's <b>actual velocity</b> at pass time (measured post-tick; the sim
-    /// damps a ship's commanded velocity each tick, so the velocity read back
-    /// after the tick is exactly what the pass saw) rather than the nominal speed
-    /// the test set. Assumes the ship stays inside the field the whole tick
-    /// (enforced by the selectors' full-tick occupancy filter) and the mine was at
-    /// fraction 1 when hit.</summary>
-    private static float NativeOneTickFraction(Domain2 d, Mine mine, Ship ship)
+    /// sim's <b>actual velocity</b> when the mine pass ran. P762b moved the mine
+    /// pass after the collision passes (native clusterIGC.cpp:322-345), and this
+    /// port's per-ship Move runs earlier in OnUpdate, so the pass sees the
+    /// post-Move (damped) velocity: callers capture that velocity after Step.
+    /// (Native's own pass sees the tick-start velocity because its Move follows
+    /// the mine pass; that ordering half is a stated port deviation.) Assumes
+    /// the ship stays inside
+    /// the field the whole tick (enforced by the selectors' full-tick occupancy
+    /// filter) and the mine was at fraction 1 when hit.</summary>
+    private static float NativeOneTickFraction(Domain2 d, Mine mine, Ship ship, Vector3 passVelocity)
     {
-        float vx = ship.Velocity.X, vy = ship.Velocity.Y, vz = ship.Velocity.Z;
+        float vx = passVelocity.X, vy = passVelocity.Y, vz = passVelocity.Z;
         float a = vx * vx + vy * vy + vz * vz;
         float rMe = mine.MineType.MineRadius;
         float rHim = 0.5f * ship.HullType.Length;
@@ -520,9 +523,12 @@ public sealed class MineCombatTests
         var enemy = AddEnemy(d, 810, Remote + new Vector3(0f, 0f, -2f), new Vector3(hit.Speed, 0f, 0f));
 
         // One controlled tick, then hand-compute the expected hull fraction from
-        // the native formula using the sim's actual (post-damping) velocity.
+        // the native formula using the velocity the mine pass actually saw
+        // (post-Move, because this port moves ships before the collision/mine
+        // passes; see NativeOneTickFraction's note).
         Step(d);
-        float expected = NativeOneTickFraction(d, mine, enemy);
+        var passVelocity = enemy.Velocity;
+        float expected = NativeOneTickFraction(d, mine, enemy, passVelocity);
         Assert.InRange(expected, 0f, 0.998f);
         Assert.Equal(expected, enemy.Fraction, 2);
         Assert.Contains(mine, d.Sector.Models);          // field survives a single gentle crossing
@@ -575,18 +581,20 @@ public sealed class MineCombatTests
         ArmPastDelay(d1);
         var slow = AddEnemy(d1, 813, Remote + new Vector3(0f, 0f, -2f), new Vector3(SlowSpeed, 0f, 0f));
         Step(d1);
+        var slowVelocity = slow.Velocity;
         float slowMaxHp = slow.EffectiveMaxHitPoints();
         float slowDamage = (1f - slow.Fraction) * slowMaxHp / dtm;
-        Assert.Equal(NativeOneTickFraction(d1, m1, slow), slow.Fraction, 2);
+        Assert.Equal(NativeOneTickFraction(d1, m1, slow, slowVelocity), slow.Fraction, 2);
 
         var d2 = AssembleTwoSide(sp.Hull);
         var m2 = DeployRemote(d2, sp.Mine, Remote);
         ArmPastDelay(d2);
         var fast = AddEnemy(d2, 814, Remote + new Vector3(0f, 0f, -2f), new Vector3(FastSpeed, 0f, 0f));
         Step(d2);
+        var fastVelocity = fast.Velocity;
         float fastMaxHp = fast.EffectiveMaxHitPoints();
         float fastDamage = (1f - fast.Fraction) * fastMaxHp / dtm;
-        Assert.Equal(NativeOneTickFraction(d2, m2, fast), fast.Fraction, 2);
+        Assert.Equal(NativeOneTickFraction(d2, m2, fast, fastVelocity), fast.Fraction, 2);
 
         // Damage is proportional to speed² (amount ∝ dt·|v|²), so the 2× faster
         // ship takes ~4× the damage. Both ships are damped proportionally, so the

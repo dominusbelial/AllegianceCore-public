@@ -321,7 +321,7 @@ public sealed partial class Game1
 
         // P249 — whole-mission starmap overlay pane (same SpriteBatch/font
         // plumbing as the HUD and chat overlays).
-        _starmapRenderer = new StarmapRenderer(_spriteBatch, _whitePixel, _hudSmall);
+        _starmapRenderer = new StarmapRenderer(_spriteBatch, _whitePixel, _hudSmall, GraphicsDevice, _assets);
         // P272 — its per-cluster info pane (mirrors native's separate
         // SectorInfoPane class, sectormap.cpp:139).
         _sectorInfoPaneRenderer = new SectorInfoPaneRenderer(_spriteBatch, _whitePixel, _hudSmall);

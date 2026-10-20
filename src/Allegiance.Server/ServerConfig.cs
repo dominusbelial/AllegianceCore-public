@@ -104,6 +104,37 @@ public sealed class GameConfig
     /// </summary>
     public bool AutoRestart { get; set; }
 
+    /// <summary>
+    /// P762 / SIM-0142 — native <c>MissionParams::bAutoStart</c>
+    /// (<c>Igc/igc.h:1140</c>, default <c>false</c> at <c>igc.h:1256</c>):
+    /// when the mission is still NotStarted and <c>FAllReady</c> holds, begin
+    /// the start countdown automatically (FedSrv.CPP:8223-8226). The port's
+    /// ready-up auto-start predicates on this; the default is <c>true</c>
+    /// because that is the established dedicated-server behaviour this port
+    /// shipped (P180/P188), and setting it false restores native's
+    /// "only an admin starts" default without touching P660 AutoNextMatch.
+    /// </summary>
+    public bool AutoStart { get; set; } = true;
+
+    /// <summary>
+    /// P762 / SIM-0142 — native <c>MissionParams::fStartCountdown</c>
+    /// (<c>Igc/igc.h:1146</c>, default <c>15.0f</c> at <c>igc.h:1262</c>):
+    /// the countdown length <c>bAutoStart</c> schedules once <c>FAllReady</c>
+    /// holds (FedSrv.CPP:8225 <c>StartCountdown(fStartCountdown)</c>). Absent →
+    /// the mission briefing constant <c>c_fMissionBriefingCountdown = 15</c>,
+    /// which is the same value.
+    /// </summary>
+    public double? StartCountdownSeconds { get; set; }
+
+    /// <summary>
+    /// P762 / SIM-0142 — native <c>MissionParams::bLockTeamSettings</c>
+    /// (<c>Igc/igc.h:1138</c>, default <c>false</c> at <c>igc.h:1254</c>):
+    /// while set, a side leader may not boot a teammate off the mission
+    /// (FedSrv/FedSrv.CPP:6802; a moderator boot is unaffected). Absent → false,
+    /// the previous port behaviour.
+    /// </summary>
+    public bool LockTeamSettings { get; set; }
+
     /// <summary>Permit countdown completion without connected players.
     /// The dedicated server defaults to arena policy; FedSrv.CPP:8237-8243.</summary>
     public bool AllowEmptyTeams { get; set; } = true;
@@ -662,6 +693,17 @@ public sealed class TransportConfig
 
     // ---- P654 (H-24) per-peer message/chat budget (native's chat budget) ----
 
+    /// <summary>
+    /// P762 / SIM-0145 — select the chat-budget constant profile:
+    /// <c>"dedicated"</c> (the default; P654's era-adjusted 1000 / 20 / +5) or
+    /// <c>"native"</c> (<c>c_chatBudgetMax = 100</c>, <c>c_chatBudgetCost = 20</c>,
+    /// +1 per tick — <c>fsship.h:24-25</c>, <c>FedSrv.CPP:8287</c>). Explicit
+    /// <see cref="ChatBudgetMax"/>/<see cref="ChatBudgetCost"/>/
+    /// <see cref="ChatBudgetRefillPerTick"/> values override the selected
+    /// profile. Overridable by <c>ALLEGIANCE_TRANSPORT_CHAT_BUDGET_PROFILE</c>.
+    /// </summary>
+    public string? ChatBudgetProfile { get; set; }
+
     /// <summary>P654 (H-24) — the per-peer chat/message token-bucket MAXIMUM.
     /// Port of native <c>c_chatBudgetMax = 100</c> (fsship.h:24), sized up from
     /// the modem era so today's busy commanders are not starved (era-constraint
@@ -702,6 +744,25 @@ public sealed class ReceiveConfig
 /// </summary>
 public sealed class ServerConfig
 {
+    /// <summary>
+    /// P762 / SIM-0142-adjacent moderation row — the port's stand-in for the
+    /// native Steam moderator/developer group (<c>FedSrv.CPP:6751-6753</c>):
+    /// each configured entry is a <b>bearer secret</b> whose holder may remove
+    /// any player with a reason and message.
+    /// <para><b>Authentication (P762b).</b> The port has no ASGS/Steam account
+    /// service and does not validate <c>SteamAuthTicket</c>; the logon
+    /// character name, CD key and Steam ID on the wire are all self-asserted.
+    /// This list is therefore matched only against the secret presented in
+    /// <c>LOGONREQ.CDKey</c> (fixed-time comparison), exactly like the P655
+    /// admin-cheat/test-harness bearer secrets. Character names and Steam IDs
+    /// are <b>never</b> matched — a spoofed name must never grant moderator
+    /// rights. Use long random secrets, one per moderator, and distribute them
+    /// out of band; without an authenticating front end a shared secret is the
+    /// only available credential. Empty by default: no moderator privileges are
+    /// granted unless an operator configures this list.</para>
+    /// </summary>
+    public string[] ModeratorAccounts { get; set; } = [];
+
     /// <summary>Optional local benchmark policy; normal games retain an unseeded RNG.</summary>
     public int? BenchmarkSeed { get; set; }
     public ShowcaseConfig Showcase { get; set; } = new();

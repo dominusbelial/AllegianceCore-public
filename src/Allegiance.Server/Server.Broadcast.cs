@@ -2589,14 +2589,10 @@ public sealed partial class Server
             var self = kv.Value.Ship;
             var sector = BroadcastSectorFor(kv.Key, kv.Value.Sector);
             bool admin = IsSpectatorAdmin(kv.Key) && _spectateSector.ContainsKey(kv.Key);
-            Ship? target = null;
-            byte hull = 255, shield = 255;
-            if (self.CommandTarget is { } command && TargetInCluster(command, sector))
-            {
-                if (command is Ship ship && ship != self && ship.ParentShip is null)
-                { target = ship; hull = Percent(ship.Fraction); shield = Percent(ship.ShieldFraction); }
-                else if (command is Probe probe) hull = Percent(probe.Fraction);
-            }
+            // P762 / SIM-0471 — the full native target-type switch, shared by
+            // both broadcast paths (FedSrv.CPP:4079-4124).
+            ResolveTargetFractions(self, self.CommandTarget, sector,
+                out Ship? target, out byte hull, out byte shield);
             BroadcastTierPose(kv.Key, self, target, sector, admin, tickIndex, poseNow, hull, shield);
             return;
         }
@@ -2634,39 +2630,12 @@ public sealed partial class Server
             // 1. Resolve the peer's command target within its own cluster
             //    (native pmodelTarget->GetCommandTarget(c_cmdCurrent) then the
             //    OT_-switch, FedSrv.CPP:4081-4124).
-            Ship? targetShip = null;
-            byte bpTargetHull = 255;    // 255 = "no target" (FedSrv.CPP:4079, appmsg.cpp:742)
-            byte bpTargetShield = 255;
-            var target = self.CommandTarget;
-            if (target is not null && TargetInCluster(target, sector))
-            {
-                switch (target)
-                {
-                    case Ship ts:
-                        // OT_ship, FedSrv.CPP:4086-4104: only a non-self,
-                        // non-boarded source ship occupies the first heavy slot.
-                        // The pfsTarget->GetHasUpdate() gate is skipped — P138
-                        // drops the recent-update timestamp gate, so every
-                        // candidate counts as having an update.
-                        if (ts != self && ts.ParentShip is null)
-                        {
-                            bpTargetHull = Percent(ts.Fraction);
-                            bpTargetShield = Percent(ts.ShieldFraction);
-                            targetShip = ts;
-                        }
-                        break;
-                    case Probe probe:
-                        // OT_probe (also OT_asteroid/OT_missile shape,
-                        // FedSrv.CPP:4117-4122): single fraction for hull, no
-                        // shield, no heavy slot. OT_station/OT_asteroid are
-                        // structurally unreachable here — CommandTarget is
-                        // Model? and Station/Asteroid are not Model subclasses
-                        // (see §2 of the MD); a Missile target has no damage
-                        // fraction concept in this port.
-                        bpTargetHull = Percent(probe.Fraction);
-                        break;
-                }
-            }
+            // P762 / SIM-0471 — native's per-target-type fraction switch:
+            // ship (source ship) hull+shield, station hull+shield, probe/
+            // asteroid/missile hull only; 255 everywhere when the target is
+            // absent or not in the player's cluster (FedSrv.CPP:4079-4124).
+            ResolveTargetFractions(self, self.CommandTarget, sector,
+                out Ship? targetShip, out byte bpTargetHull, out byte bpTargetShield);
 
             // 3. Scalar region: positionReference = own ship position (peer is
             //    in this cluster by construction); fractions = own fractions
@@ -2922,7 +2891,69 @@ public sealed partial class Server
             case Ship ship: return ship.Sector == sector;
             case Probe probe: return probe.OwnerSector == sector;
             case Missile missile: return missile.OwnerSector == sector;
+            // P762 — a station/asteroid/warp command target is an
+            // EquipmentTarget wrapper (the port's ImodelIGC for static bodies)
+            // carrying its owning sector.
+            case EquipmentTarget equipment: return equipment.OwnerSector == sector;
             default: return sector.Models.Contains(target);
+        }
+    }
+
+    /// <summary>
+    /// P762 / SIM-0471 — the native per-target-type target-fraction switch
+    /// (<c>SendShipUpdates</c>, <c>FedSrv/FedSrv.CPP:4079-4124</c>).
+    /// <c>bpTargetHull</c> defaults to 255 ("unknown / no target"); only a
+    /// command target <b>in the player's own cluster</b> contributes:
+    /// <list type="bullet">
+    /// <item><b>OT_ship</b> — the target's <c>GetSourceShip()</c> (root parent);
+    /// skip when that source is the player itself. Hull always, shield only
+    /// when the source has a mounted shield part (<c>GetMountedPart(ET_Shield,
+    /// 0)</c> non-null). The source ship fills the first heavy slot.</item>
+    /// <item><b>OT_station</b> — hull + shield fractions.</item>
+    /// <item><b>OT_probe / OT_asteroid / OT_missile</b> — hull (damage) fraction
+    /// only, shield stays 255.</item>
+    /// <item>Anything else (warp, mine, no target) — both stay 255.</item>
+    /// </list>
+    /// Stations/asteroids arrive as <see cref="EquipmentTarget"/> wrappers in
+    /// this port (static bodies are not <see cref="Model"/> subclasses); the
+    /// wrapper exposes the concrete body and its sector.
+    /// </summary>
+    private static void ResolveTargetFractions(Ship self, Model? target, Sector sector,
+        out Ship? targetShip, out byte hull, out byte shield)
+    {
+        targetShip = null;
+        hull = 255;     // FedSrv.CPP:4079 bpTargetHull.SetChar(255)
+        shield = 255;
+        if (target is null || !TargetInCluster(target, sector)) return;
+
+        switch (target)
+        {
+            case Ship ship:
+            {
+                // FedSrv.CPP:4086-4104: GetSourceShip() collapses a turret/child
+                // to its root ship; a player targeting its own source ship is
+                // skipped (no heavy slot, both bytes stay 255).
+                Ship source = ship;
+                while (source.ParentShip is { } parent) source = parent;
+                if (ReferenceEquals(source, self)) return;
+                targetShip = source;
+                hull = Percent(source.Fraction);
+                if (source.HasMountedShield) shield = Percent(source.ShieldFraction);
+                break;
+            }
+            case EquipmentTarget { Body: Station station }:
+                hull = Percent(station.ArmorFraction);      // CstationIGC::GetFraction
+                shield = Percent(station.ShieldFraction);
+                break;
+            case EquipmentTarget { Body: Asteroid asteroid }:
+                hull = Percent(asteroid.Fraction);          // CasteroidIGC::GetFraction
+                break;
+            case Probe probe:
+                hull = Percent(probe.Fraction);
+                break;
+            case Missile missile:
+                hull = Percent(missile.Fraction);
+                break;
         }
     }
 

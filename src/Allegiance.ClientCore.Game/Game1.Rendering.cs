@@ -3056,6 +3056,11 @@ public sealed partial class Game1
         var sites = new List<StarmapLayout.ClusterSite>();
         IReadOnlyList<ClusterInfo.WarpEdge>? edges = null;
         short? current = null;
+        // P762b — native's chat cluster (GetChatCluster(), clintlib.h:998-1009):
+        // the viewed cluster when set, else the ship's own cluster. This drives
+        // sectorhighlightbmp (sectormap.cpp:1095), separately from the
+        // commander's HIGHLIGHT_CLUSTER set in `highlights`.
+        short? chatCluster = null;
         SectorInfoPaneLayout.Data? pane = null;
         // P460 — per-cluster ownership (sector id -> owners) and the side-colour
         // lookup for the owner/secondary rings.
@@ -3103,6 +3108,7 @@ public sealed partial class Game1
                 }
                 if (RenderShipId(world) is { } me && world.Ships.TryGetValue(me, out var own))
                     current = own.SectorId;
+                chatCluster = world.ViewedClusterId ?? current;
 
                 // P272 — the info pane for the selected cluster: gather that
                 // cluster's asteroids from the client's own decoded EXPORT
@@ -3178,7 +3184,7 @@ public sealed partial class Game1
             float panelY = (vp.Height - panelH) / 2f;
             _starmapRenderer.Draw(sites, edges, current, _selectedSectorId,
                 id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
-                flashOn, vp, panelW, panelH, owners, SideColor, knownEnemySectors, highlights);
+                flashOn, vp, panelW, panelH, owners, SideColor, knownEnemySectors, highlights, chatCluster);
             if (pane is { } p)
             {
                 _sectorInfoPaneRenderer.Draw(p, vp, panelX, panelY, panelW, panelH,
@@ -3200,7 +3206,7 @@ public sealed partial class Game1
             // mini-map — current sector + warp topology at a glance, always on.
             _starmapRenderer.DrawMini(sites, edges, current,
                 id => warningSnapshot.TryGetValue(id, out var w) ? w : (short)0,
-                flashOn, vp, owners, SideColor, knownEnemySectors, highlights);
+                flashOn, vp, owners, SideColor, knownEnemySectors, highlights, chatCluster);
         }
     }
 

@@ -430,7 +430,10 @@ public sealed partial class Server
                             // when a peer has exhausted its token bucket, the relay is
                             // dropped so one chatter cannot amplify into an unbounded
                             // N-fold fan-out that disconnects recipients (H-05).
-                            if (!TryChargeChatBudget(from))
+                            // Group-noecho chat is the native UNPAID send
+                            // (bPay = chatTarget != CHAT_GROUP_NOECHO,
+                            // FedSrv.CPP:3372); every other target pays.
+                            if (!TryChargeChatBudget(from, (ChatTarget)chat.ChatTarget != ChatTarget.GroupNoEcho))
                             {
                                 ConsoleLog.Write($"[chat] {from}: chat budget exhausted — message dropped (native chat budget, H-24)");
                             }
@@ -554,7 +557,7 @@ public sealed partial class Server
                         // translation) is dropped, bounding the N-fold relay
                         // amplification of H-05 (native DecrementChatBudget,
                         // FedSrv.CPP:3372).
-                        if (!TryChargeChatBudget(from))
+                        if (!TryChargeChatBudget(from, (ChatTarget)buoy.ChatTarget != ChatTarget.GroupNoEcho))
                         {
                             ConsoleLog.Write($"[chatbuoy] {from}: chat budget exhausted — CHATBUOY dropped (native chat budget, H-24)");
                         }
@@ -2146,29 +2149,34 @@ public sealed partial class Server
     }
 
     // ── P654 (H-24) per-peer message/chat token budget ─────────────────────
-    // The port of native's chat budget (c_chatBudgetMax=100 / c_chatBudgetCost=20,
-    // fsship.h:24-25; IncrementChatBudget +1/tick, FedSrv.CPP:8287). Charges are
-    // made on the sim thread only (inside ProcessDatagram), so no locking.
-    // Refilled once per eligible player tick by AdvancePeriodicRules.
-    private bool TryChargeChatBudget(ConnectionId peer)
+    // The port of native CFSPlayer::DecrementChatBudget (fsship.h:449-468).
+    // Charges are made on the sim thread only (inside ProcessDatagram), so no
+    // locking. Refilled once per eligible player tick by AdvancePeriodicRules.
+    //
+    // P762 / SIM-0145 — the exact charge/debt semantics:
+    //   bPay=true  : send allowed iff budget >= cost; THEN budget -= cost and
+    //                the result is floored at -cost. A denied paid send therefore
+    //                leaves the player in debt (-cost), not at zero.
+    //   bPay=false : send allowed iff budget >= 0 and the budget is NOT changed
+    //                (the group-noecho chat case, FedSrv.CPP:3372).
+    // A fresh player starts at the configured maximum (fsship.cpp:958).
+    private bool TryChargeChatBudget(ConnectionId peer, bool pay = true)
     {
         long now = TickIndex;
-        int budget;
-        if (_chatBudgets.TryGetValue(peer, out var cur))
+        int budget = _chatBudgets.TryGetValue(peer, out var cur) ? cur.Budget : _chatBudgetMax;
+        bool send;
+        if (pay)
         {
-            budget = cur.Budget;
+            send = budget >= _chatBudgetCost;
+            budget -= _chatBudgetCost;
+            if (budget < -_chatBudgetCost) budget = -_chatBudgetCost;   // fsship.h:464-465
         }
         else
         {
-            budget = _chatBudgetMax;
-        }
-        if (budget >= _chatBudgetCost)
-        {
-            _chatBudgets[peer] = (budget - _chatBudgetCost, now);
-            return true;   // charged — the message may proceed
+            send = budget >= 0;                                          // fsship.h:468
         }
         _chatBudgets[peer] = (budget, now);
-        return false;      // budget exhausted — drop (bounded amplification)
+        return send;
     }
 
     private void RemoveChatBudget(ConnectionId peer) => _chatBudgets.Remove(peer);

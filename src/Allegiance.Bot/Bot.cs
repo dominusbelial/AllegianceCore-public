@@ -1402,6 +1402,18 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// P762 — send a real <c>FM_CS_QUIT_MISSION(124)</c>: the client half of
+    /// the native quit / leader-boot / administrator-removal branch
+    /// (FedSrv.CPP:6749-6818). <paramref name="reason"/> selects which branch
+    /// the server takes (Quit, LeaderBooted or AdminBooted).
+    /// </summary>
+    public void SendQuitMission(short shipId, QuitSideReason reason, string message = "")
+    {
+        var msg = new QuitMission { ShipId = shipId, Reason = reason, Message = message };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_C_START_GAME(157)</c> (P188) — the mission owner's
     /// manual trigger to begin the start countdown. A header-only, zero-payload
     /// marker (Messages.h:868-869). The server gates it on ownership +

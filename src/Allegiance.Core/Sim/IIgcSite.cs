@@ -265,6 +265,19 @@ public interface IIgcSite
     void MissileDestroyedEvent(Missile m) { }
 
     /// <summary>
+    /// C#-only (no igc.h member): native <c>pModel-&gt;GetThingSite()-&gt;AddHullHit(pos,
+    /// normal)</c> for a non-projectile source — the drilling builder's contact
+    /// debris (<c>shipIGC.cpp:888-890</c>). The projectile path has its own
+    /// concrete <see cref="ProjectileHitEvent"/>; this overload carries the
+    /// struck <see cref="Model"/> itself so a static body (an asteroid, in the
+    /// only caller today) can raise the same client-side hull-hit effect. The
+    /// host broadcast reuses <see cref="Wire.ProjectileHullHit"/> with source
+    /// id -1 (a non-ship source), exactly as the wire codec documents. No-op
+    /// default; a mute site simply draws nothing.
+    /// </summary>
+    void HullHitEvent(Asteroid target, Vector3 worldImpact, Vector3 worldNormal) { }
+
+    /// <summary>
     /// C#-only (no igc.h member): a real <see cref="Projectile"/> just struck a
     /// damagable, visible target and dealt hull-or-worse damage without a blast
     /// and without the native <c>c_dmgidNoDebris</c> suppression flag — the exact

@@ -67,6 +67,52 @@ public sealed partial class Server
     private bool PeerInSector(ConnectionId conn, Sector sector)
         => _peerShips.TryGetValue(conn, out var ps) && BroadcastSectorFor(conn, ps.Sector) == sector;
 
+    /// <summary>
+    /// P762 — relay a non-projectile <c>AddHullHit</c> (the drilling builder's
+    /// contact debris, <c>shipIGC.cpp:888-890</c>) through the same
+    /// <see cref="ProjectileHullHit"/> wire message P364 uses, with source id
+    /// -1 because native's call has no launcher. The target supplies the
+    /// cluster/radius/id the client sizes and places the spark with; the
+    /// audience is the builder's side and sector (the peers who can see the
+    /// build). Runs on the sim thread.
+    /// </summary>
+    private void BroadcastHullHit(Asteroid target, Vector3 worldImpact, Vector3 worldNormal)
+    {
+        if (target.Sector is not { } sector) return;
+        short targetId = target.Data.AsteroidId;
+        float radius = target.Radius;
+        var msg = new ProjectileHullHit
+        {
+            TargetId = targetId,
+            ClusterId = sector.Id,
+            Radius = radius,
+            Position = worldImpact,
+            Normal = worldNormal,
+            AbsorbedByShield = false,
+            SourceId = -1,
+        };
+        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        int n = SendToSectorPeerSides(sector, packet);
+        if (ConsoleLog.Verbose) ConsoleLog.Write($"[hull-hit] target {targetId} sector {sector.Id} -> PROJ_HULL_HIT(213) -> {n} peer(s)");
+    }
+
+    /// <summary>
+    /// Send a packet to every peer physically in <paramref name="sector"/>
+    /// (plus the peers of a builder's side? — this helper's audience is the
+    /// sector itself, matching the simulation's visibility of the build).
+    /// </summary>
+    private int SendToSectorPeerSides(Sector sector, byte[] packet)
+    {
+        int n = 0;
+        foreach (var kv in _peerShips)
+        {
+            if (kv.Value.Sector != sector) continue;
+            SendPeer(kv.Key, packet);
+            n++;
+        }
+        return n;
+    }
+
     /// <summary>Relay a projectile impact to the same sector/source audience as creation.
     /// Native delivers its in-process hull hit at projectileIGC.cpp:220-226.
     /// </summary>

@@ -219,6 +219,11 @@ public sealed class ShipsUpdateLiveTests
         seat.B.CommandTarget = seat.A;   // SetCommandTarget: B locks A
         seat.BBot.ResetHeavyShipsUpdates();
 
+        // P762 — native only writes bpTargetShield when the target ship has a
+        // mounted shield part (FedSrv.CPP:4093-4096); a shieldless ship leaves
+        // the byte at 255.
+        byte expectedShield = seat.A.HasMountedShield ? Percent(seat.A.ShieldFraction) : (byte)255;
+
         // The first update after locking can be an in-flight one generated
         // BEFORE the command target was set (the server had sent 255 'no
         // target'); condition-wait for an update that actually CARRIES the
@@ -228,7 +233,7 @@ public sealed class ShipsUpdateLiveTests
             seat.BBot.HeavyShipsUpdates.Any(u => u.HeavyShipEntries.Length >= 1
                 && u.HeavyShipEntries[0].ShipId == seat.A.Id
                 && u.BpTargetHull == Percent(seat.A.Fraction)
-                && u.BpTargetShield == Percent(seat.A.ShieldFraction));
+                && u.BpTargetShield == expectedShield);
 
         PumpUntil(seat.Server, HasTargetUpdate, 20000);
         Assert.True(HasTargetUpdate(), "B must receive a TARGET-carrying HEAVY_SHIPS_UPDATE after locking a target");
@@ -236,7 +241,7 @@ public sealed class ShipsUpdateLiveTests
         var up = seat.BBot.HeavyShipsUpdates.First(u => u.HeavyShipEntries.Length >= 1
             && u.HeavyShipEntries[0].ShipId == seat.A.Id
             && u.BpTargetHull == Percent(seat.A.Fraction)
-            && u.BpTargetShield == Percent(seat.A.ShieldFraction));
+            && u.BpTargetShield == expectedShield);
         Assert.True(up.HeavyShipEntries.Length >= 1, "B's update must contain the locked target in slot 0");
         Assert.Equal(seat.A.Id, up.HeavyShipEntries[0].ShipId);   // first heavy slot = target
 
@@ -245,13 +250,13 @@ public sealed class ShipsUpdateLiveTests
 
         // Scalar region reflects the target's REAL fractions (div-240).
         Assert.Equal(Percent(seat.A.Fraction), up.BpTargetHull);
-        Assert.Equal(Percent(seat.A.ShieldFraction), up.BpTargetShield);
+        Assert.Equal(expectedShield, up.BpTargetShield);
 
         // Still no self double-send, and the target ship rides its real entry.
         Assert.False(HasEntry(up, seat.B.Id), "B must NOT receive its own ship in HEAVY_SHIPS_UPDATE");
 
         Console.WriteLine($"P139-TARGET: B targets A({seat.A.Id}) frac {seat.A.Fraction:F3}/{seat.A.ShieldFraction:F3} " +
-                          $"-> first heavy slot + bpTargetHull {up.BpTargetHull}/240 bpTargetShield {up.BpTargetShield}/240");
+                          $"-> first heavy slot + bpTargetHull {up.BpTargetHull}/240 bpTargetShield {up.BpTargetShield}/240 (255 when no shield mounted)");
     }
 
     /// <summary>⭐ A ship leaving the cluster (removed from its sector's model

@@ -542,6 +542,12 @@ public sealed partial class Ship : Model, IShipIgc
     /// so the wire byte 41 reflects real shield state.</summary>
     public float ShieldFraction => _shieldFraction;
 
+    /// <summary>Whether a shield part is currently mounted. Native's target
+    /// fraction block only writes <c>bpTargetShield</c> when
+    /// <c>GetMountedPart(ET_Shield, 0)</c> is non-null (FedSrv.CPP:4093-4096);
+    /// a shieldless ship leaves the byte at 255.</summary>
+    public bool HasMountedShield => MountedShieldType() is not null;
+
     /// <summary>Absolute hull hit points = <c>Fraction · effective max hit points</c>
     /// (GA-scaled: the native <c>IshipIGC::GetHitPoints() = m_fraction ·
     /// m_myHullType.GetHitPoints()</c> with <c>GetHitPoints()</c> applying
@@ -577,6 +583,17 @@ public sealed partial class Ship : Model, IShipIgc
 
     /// <summary>The sector this ship was placed into, set by <c>Mission.PlaceShip</c> — the analogue of the C++ <c>GetCluster()</c>, which the weapon reads to place a projectile (<c>weaponIGC.cpp:177</c>). <c>null</c> before placement. The warp-transit slice reassigns this (<c>cfsship.cpp::SetCluster</c> route) so a ship that crosses an aleph genuinely changes sector.</summary>
     public Sector? Sector { get; set; }
+
+    /// <summary>
+    /// P762b — native <c>CmodelIGC::GetRadius()</c> for a ship: the hit-test
+    /// radius, set at construction to <c>0.5f * hull length</c>
+    /// (<c>Igc/shipIGC.cpp:1419</c>) and read by the drilling-debris offset
+    /// (<c>shipIGC.cpp:888-890</c>). This port builds every ship collider with
+    /// that same radius (<see cref="CreateCollider"/> callers use
+    /// <c>0.5f * HullType.Length</c>), so this property names it once instead
+    /// of repeating the expression at native call sites.
+    /// </summary>
+    public float Radius => 0.5f * HullType.Length;
 
     /// <summary>
     /// Sim-time of the ship's most recent warp transit, or
@@ -2292,7 +2309,8 @@ public sealed partial class Ship : Model, IShipIgc
                 if (n < bestContention) { bestContention = n; best = ast; }   // strict < : first-found wins a tie (common.cpp:607 shape)
             }
             foreach (var w in sector.Warps)
-                if (w.Destination is { } dest && visited.Add(dest))
+                if (w.Destination is { } dest && visited.Add(dest)
+                    && dest.IsFriendlyCluster(sideId))   // common.cpp:693 c_ttCowardly filter
                     frontier.Enqueue(dest);
         }
         return best;
@@ -7533,6 +7551,37 @@ public sealed partial class Ship : Model, IShipIgc
         Ammo = 0; SetFuel(0); StateM = 0; IsBuilding = false; SetFraction(0);
     }
 
+    /// <summary>
+    /// P762 — native's builder control block (<c>shipIGC.cpp:2262-2300</c>).
+    /// In the building state (<see cref="IsBuilding"/>, the port's
+    /// <c>buildingMaskIGC</c> latch set by <c>StartBuildingEffect</c>) the
+    /// builder stops turning and backs off with roll 1 / throttle -0.8. While
+    /// drilling (<see cref="BuilderAsteroidTarget"/> set, no effect yet) it
+    /// stays locked on the rock's rotation axis: off-track means the native
+    /// clears its drilling mask and lets the flight plot re-approach, which is
+    /// exactly what this method does by not overriding the autopilot controls.
+    /// </summary>
+    internal void ApplyBuilderDrillingControls()
+    {
+        if (!IsNpc || PilotType != PilotTypeBuilder || StationId is not null || Dead) return;
+        if (IsBuilding)
+        {
+            Controls = Controls with { Yaw = 0f, Pitch = 0f, Roll = 1f, Throttle = -0.8f };
+            return;
+        }
+        if (BuilderAsteroidTarget is not { } rock || rock.Data.Position is not { Length: 3 } rp) return;
+
+        Vector3 dp = Position - new Vector3(rp[0], rp[1], rp[2]);
+        float[] rot = rock.Data.Rotation;
+        Vector3 axis = rot is { Length: >= 3 } ? new Vector3(rot[0], rot[1], rot[2]) : Vector3.Zero;
+        float dot = axis.X * dp.X + axis.Y * dp.Y + axis.Z * dp.Z;
+        float distance2 = dp.X * dp.X + dp.Y * dp.Y + dp.Z * dp.Z;
+        float offset2 = distance2 - dot * dot;
+        float radius = 0.5f * HullType.Length + rock.Radius + 25f;
+        if (offset2 < 50f && distance2 < radius * radius)
+            Controls = Controls with { Yaw = 0f, Pitch = 0f, Roll = 1f, Throttle = 0f };
+    }
+
     private void TryStartBuilderBuild(double now)
     {
         if (!IsNpc || PilotType != PilotTypeBuilder || IsRunningAway || IsBuilding || StationId is not null ||
@@ -8074,6 +8123,14 @@ public sealed partial class Ship : Model, IShipIgc
             UpdateWingmanTravel(now);
         _wingmanControlsBeforePlot = Controls;
         ApplyNpcAutopilot(now);
+        // P762 / SIM-0142-SIM-0471-adjacent (row 7) — native PlotShipMove's
+        // builder block (shipIGC.cpp:2262-2300): a builder in the BUILD state
+        // holds yaw/pitch 0, roll 1, throttle -0.8; while DRILLING it holds the
+        // same attitude with throttle 0 only while aligned within 50 units² of
+        // the rock's rotation axis and inside r_ship + r_rock + 25. Off-track
+        // the native clears the state mask and re-approaches; this port leaves
+        // the existing autopilot steer in place, which performs that re-approach.
+        ApplyBuilderDrillingControls();
 
         // SIM-0110 — native resets the shared complaint interval whenever the
         // autopilot drone has a plan again (shipIGC.cpp:2351-2352), so a drone

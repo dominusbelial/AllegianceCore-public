@@ -788,6 +788,7 @@ public sealed partial class Server
         _host.MissileCreated = BroadcastFireMissile;            // P90: wire the site's MissileCreatedEvent to the wire broadcast
         _host.MissileDestroyed = BroadcastMissileDestroyed;     // P90: wire the site's MissileDestroyedEvent to the wire broadcast
         _host.ProjectileHit = BroadcastProjectileHullHit;      // P364: wire the site's ProjectileHitEvent to the wire broadcast
+        _host.HullHit = BroadcastHullHit;                       // P762: drilling-builder AddHullHit debris
         _host.VictimDamaged = BroadcastVictimDamaged;          // P623: wire the site's VictimDamagedEvent to the targeted unicast
         _host.Collision = BroadcastCollision;                  // P463c: wire the site's CollisionEvent to the wire broadcast
         _host.WeaponReadyNotification = BroadcastWeaponReady;
@@ -1514,9 +1515,18 @@ public sealed partial class Server
         // P654 (H-24) — bind the per-peer message/chat token-bucket (native's
         // chat budget) from config (env wins). Cited: c_chatBudgetMax=100 /
         // c_chatBudgetCost=20 (fsship.h:24-25); refill +1/tick (FedSrv.CPP:8287).
-        int cbMax = tc?.ChatBudgetMax is { } cm && cm > 0 ? cm : 1000;
-        int cbCost = tc?.ChatBudgetCost is { } cc && cc > 0 ? cc : 20;
-        int cbRefill = tc?.ChatBudgetRefillPerTick is { } cr && cr > 0 ? cr : 5;
+        // P762 / SIM-0145 — the native profile (100/20/+1) is selectable; the
+        // default remains P654's dedicated-server 1000/20/+5.
+        string cbProfile = tc?.ChatBudgetProfile ?? "dedicated";
+        env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_CHAT_BUDGET_PROFILE");
+        if (!string.IsNullOrEmpty(env)) cbProfile = env;
+        bool nativeChatBudget = string.Equals(cbProfile, "native", StringComparison.OrdinalIgnoreCase);
+        int cbMax = nativeChatBudget ? 100 : 1000;
+        int cbCost = 20;
+        int cbRefill = nativeChatBudget ? 1 : 5;
+        if (tc?.ChatBudgetMax is { } cm && cm > 0) cbMax = cm;
+        if (tc?.ChatBudgetCost is { } cc && cc > 0) cbCost = cc;
+        if (tc?.ChatBudgetRefillPerTick is { } cr && cr > 0) cbRefill = cr;
         env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_CHAT_BUDGET_MAX");
         if (!string.IsNullOrEmpty(env) && int.TryParse(env, out var ecm) && ecm > 0) cbMax = ecm;
         env = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_CHAT_BUDGET_COST");

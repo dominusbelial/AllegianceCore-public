@@ -225,7 +225,10 @@ public sealed class P747ConstructionTests
     {
         Require.Artwork(); var w = World(); var ticks = new List<double>();
         w.Host.ClusterUpdated = sector => { Assert.Same(w.Mission.Sectors[0], sector); ticks.Add(sector.LastUpdate); };
-        w.Mission.Update(.5); Assert.NotEmpty(ticks); Assert.Equal(.5, ticks.Last(), 6);
+        // P762 / SIM-0065 — the callback runs on the every-10th active started
+        // pass (clusterIGC.cpp:347-357), so a 3-chunk update raises it only for
+        // the first completed chunk (native pass 0), not for every chunk.
+        w.Mission.Update(.5); Assert.Single(ticks); Assert.Equal(1.0 / 6.0, ticks[0], 6);
         int count = ticks.Count; w.Mission.Update(.5); Assert.Equal(count, ticks.Count);
     }
 }
