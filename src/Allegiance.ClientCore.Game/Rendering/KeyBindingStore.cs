@@ -89,4 +89,37 @@ public sealed class KeyBindingStore
         Map.SwapBindings(a, b);
         Save();
     }
+
+    /// <summary>P757 — native <c>TrekInput::Close()</c> (trekinput.cpp:2436-2444):
+    /// reload the persisted keymap, falling back to the catalogue defaults when
+    /// no file is readable (<c>LoadMap(INPUTMAP_FILE)</c>, else
+    /// <c>LoadMap(DEFAULTINPUTMAP_FILE)</c>). This is the popup's Cancel path —
+    /// it discards every unsaved in-popup mutation. Deliberately does NOT
+    /// persist the fallback (the file stays as it was).</summary>
+    public void Reload() => ReloadFrom(ResolvePath());
+
+    /// <summary>The reload body with an explicit path (the test seam behind
+    /// <see cref="Reload"/>, which always passes the resolved user path).</summary>
+    internal void ReloadFrom(string path)
+    {
+        if (File.Exists(path))
+        {
+            try
+            {
+                // Native LoadMap builds the map from the defaults + the file's
+                // overrides; applying the JSON to the mutated map alone would
+                // leave removed overrides behind, so reset first.
+                Map.ResetToDefaults();
+                Map.ApplyJson(File.ReadAllText(path));
+                Console.WriteLine($"[keymap] reloaded bindings <- {path}");
+                return;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[keymap] failed to read {path}: {ex.Message} - falling back to defaults");
+            }
+        }
+        Map.ResetToDefaults();
+        Console.WriteLine("[keymap] no readable keymap - reverted to catalogue defaults (not saved)");
+    }
 }

@@ -485,9 +485,33 @@ public sealed partial class Game1
         if (helpKey && !_helpKeyWasDown && !_chatActive && !_qcMenuOpen)
         {
             _helpVisible = !_helpVisible;
+            if (_helpVisible) _helpManual = new Rendering.HelpManualModel();   // hlpStart on open
             Console.WriteLine($"[monogame] help {( _helpVisible ? "ON" : "OFF" )}");
         }
         _helpKeyWasDown = helpKey;
+
+        // P757 — while the help overlay is open it owns the keyboard like the
+        // native help pane (effect/help.cpp): the menu-cursor actions walk the
+        // manual's topics, the chat-delete key (Backspace) goes Back through
+        // the topic history, and the chat page keys scroll the page (native nav
+        // pane + Back button + scroll bars). All routed through the live action
+        // map, so a rebind is honoured (P625b discipline — no raw literals).
+        if (_helpVisible)
+        {
+            bool hUp = ActionDown(ks, "MenuUp");
+            bool hDown = ActionDown(ks, "MenuDown");
+            if (hUp && !_helpNavUpWasDown) _helpManual.MoveTopicSelection(-1);
+            if (hDown && !_helpNavDownWasDown) _helpManual.MoveTopicSelection(+1);
+            _helpNavUpWasDown = hUp; _helpNavDownWasDown = hDown;
+            bool hBack = ActionDown(ks, "ChatDelete");
+            if (hBack && !_helpNavBackWasDown) _helpManual.Back();
+            _helpNavBackWasDown = hBack;
+            bool hPgUp = ActionDown(ks, "ChatPageUp");
+            bool hPgDn = ActionDown(ks, "ChatPageDown");
+            if (hPgUp && !_helpNavPgUpWasDown) _helpManual.ScrollBy(-8, 16);
+            if (hPgDn && !_helpNavPgDnWasDown) _helpManual.ScrollBy(+8, 16);
+            _helpNavPgUpWasDown = hPgUp; _helpNavPgDnWasDown = hPgDn;
+        }
 
         // P577 — F12 toggles the in-game Credits/Licences screen (the visible
         // CC BY / public-domain attribution for the HD sky's telescope data).
@@ -567,6 +591,9 @@ public sealed partial class Game1
             if (_state == ClientState.Lobby) UpdateLobby(ks);
             // P731 — the intro screen (no command-line args).
             else if (_state == ClientState.Intro) UpdateIntro(ks);
+            // P757 — the splash screen (native splashscreen.cpp): times out to
+            // the intro; any key/click skips straight there.
+            else if (_state == ClientState.Splash) UpdateSplash(ks);
             else if (_state == ClientState.SideSelect) UpdateSideSelect(ks);
             // P282 — pre-flight ready screen once seated, before the mission starts.
             else if (_state == ClientState.ReadyCheck)
@@ -867,19 +894,21 @@ public sealed partial class Game1
     }
 
     /// <summary>
-    /// The in-flight state (previously the whole of <see cref="Update"/>): chat
-    /// composition, flight controls, autopilot, remote prediction and the
-    /// minimal auto-start. All keyboard flight input is gated off while a chat
-    /// line is being composed, so typing a word can never also thrust/turn the
-    /// ship; the autopilot (once engaged) may keep steering, since it is not a
-    /// keystroke-derived input.
+    /// P757 — the chat compose/send/focus flow, extracted from
+    /// <see cref="UpdateFlying"/> as the production seam the interface tests
+    /// drive (the P748 <c>HandleHangarQuitInput</c> discipline). Native rules:
+    /// <c>TK_StartChat</c> opens the composer and removes focus from flight
+    /// input (<c>m_pconsoleImage-&gt;StartChat(); m_ptrekInput-&gt;SetFocus(false)</c>,
+    /// WinTrek.cpp:9441-9446 — the port's equivalent is the composing gate in
+    /// <see cref="UpdateFlying"/>); while composing, Enter sends the line via
+    /// <see cref="SendChatLine"/> and Backspace deletes the previous character;
+    /// Tab cycles the recipient while the buffer is empty (native
+    /// <c>ConsoleImage::OnTab</c>, console.cpp:2747-2755). Text itself arrives
+    /// through Window.TextInput (<see cref="OnTextInput"/>). Enter is ignored
+    /// while the quick-chat menu is open (its keys are navigation).
     /// </summary>
-    private void UpdateFlying(KeyboardState ks, GameTime gameTime)
+    private void HandleChatCompose(KeyboardState ks)
     {
-        // Chat: Enter opens the input line; while composing, Enter sends the
-        // line via SendChat and Backspace deletes the previous character. Text
-        // itself arrives through Window.TextInput (OnTextInput). Enter is
-        // ignored while the quick-chat menu is open (its keys are navigation).
         bool enter = ActionDown(ks, "StartChat");
         if (!_mainMenuVisible && !_menuConsumedFrame && !_keyBindVisible && !_qcMenuOpen && enter && !_enterWasDown)
         {
@@ -914,6 +943,24 @@ public sealed partial class Game1
             }
             _chatTabKeyWasDown = chatTab;
         }
+    }
+
+    /// <summary>
+    /// The in-flight state (previously the whole of <see cref="Update"/>): chat
+    /// composition, flight controls, autopilot, remote prediction and the
+    /// minimal auto-start. All keyboard flight input is gated off while a chat
+    /// line is being composed, so typing a word can never also thrust/turn the
+    /// ship; the autopilot (once engaged) may keep steering, since it is not a
+    /// keystroke-derived input.
+    /// </summary>
+    private void UpdateFlying(KeyboardState ks, GameTime gameTime)
+    {
+        // Chat compose/send/focus (native TK_StartChat, WinTrek.cpp:9441-9446,
+        // + UpdateComposedChat, console.cpp:1282-1338): P757 extracted into
+        // <see cref="HandleChatCompose"/> (the same production-seam discipline
+        // the P748 hangar keys use) so the flow is drivable headlessly;
+        // UpdateFlying remains the only flight caller.
+        HandleChatCompose(ks);
 
         // P217 — quick-chat voice macros. R (free in flight) opens the menu;
         // while it is open every shortcut key navigates instead of flying.
@@ -927,36 +974,71 @@ public sealed partial class Game1
 
         // P626 — chat buffer scroll (TK_PrevCommMsg/NextCommMsg/ChatPageUp/Down).
         // Edge-triggered, applies whenever the chat pane is showing (flight, not
-        // inside the quick-chat menu). Steps/page are clamped against the live
+        // inside the quick-chat menu, and not while the help manual owns the
+        // page keys). Steps/page are clamped against the live
         // log length by ChatScroll. A freshly-arrived line snaps a scrolled-back
         // view to the live edge (offset -> 0) so the pane never lingers on stale
         // history over new activity.
-        if (!_qcMenuOpen)
+        if (!_qcMenuOpen && !_helpVisible)
         {
-            int chatCount;
-            lock (_session.Gate) chatCount = _session.World.Events.Chats.Count;
-            if (chatCount != _lastChatCount && chatCount > 0 && _chatScrollOffset > 0)
-                _chatScrollOffset = 0;
-            _lastChatCount = chatCount;
+            // P757 — one-shot: seed the pane's channel-filter mode from the
+            // saved Game Options preference (native m_bPlayerChatsOnly default).
+            if (!_chatPaneFilterSeeded)
+            {
+                _chatPaneFilterSeeded = true;
+                if (IntroPreferences.Load().ChatFilterPlayersOnly)
+                {
+                    _chatPaneFilterMode = 1;
+                    ApplyChatPaneFilterMode();
+                }
+            }
+            // P757 — the chat pane's history view is the ChatPaneModel now
+            // (native chatpane.cpp): new lines scroll only while autoscroll is
+            // on, a paused pane keeps its content (offset grows with the log),
+            // and the ten-second resume timer runs on the game clock.
+            int chatCount = FilteredChatCount();
+            if (chatCount != _lastChatCount)
+            {
+                _chatPane.OnMessagesAppended(chatCount - _lastChatCount, chatCount, ChatRenderer.MaxVisible);
+                _lastChatCount = chatCount;
+            }
+            _chatPane.Tick(_nowSeconds);
 
             bool pgUp = ActionDown(ks, "ChatPageUp");
-            if (pgUp && !_chatPgUpWasDown) _chatScrollOffset = ChatScroll.PageOlder(_chatScrollOffset, chatCount, ChatRenderer.MaxVisible);
+            if (pgUp && !_chatPgUpWasDown) _chatPane.PageUp(chatCount, ChatRenderer.MaxVisible, _nowSeconds);
             _chatPgUpWasDown = pgUp;
             bool pgDn = ActionDown(ks, "ChatPageDown");
-            if (pgDn && !_chatPgDnWasDown) _chatScrollOffset = ChatScroll.PageNewer(_chatScrollOffset, chatCount, ChatRenderer.MaxVisible);
+            if (pgDn && !_chatPgDnWasDown) _chatPane.PageDown(chatCount, ChatRenderer.MaxVisible, _nowSeconds);
             _chatPgDnWasDown = pgDn;
             bool msgUp = ActionDown(ks, "PrevCommMsg");
-            if (msgUp && !_chatMsgUpWasDown) _chatScrollOffset = ChatScroll.StepOlder(_chatScrollOffset, chatCount, ChatRenderer.MaxVisible);
+            if (msgUp && !_chatMsgUpWasDown) _chatPane.ScrollBy(+1, chatCount, ChatRenderer.MaxVisible, _nowSeconds);
             _chatMsgUpWasDown = msgUp;
             bool msgDn = ActionDown(ks, "NextCommMsg");
-            if (msgDn && !_chatMsgDnWasDown) _chatScrollOffset = ChatScroll.StepNewer(_chatScrollOffset, chatCount, ChatRenderer.MaxVisible);
+            if (msgDn && !_chatMsgDnWasDown) _chatPane.ScrollBy(-1, chatCount, ChatRenderer.MaxVisible, _nowSeconds);
             _chatMsgDnWasDown = msgDn;
+
+            // P757 — chat-pane channel filter (Alt+C): cycle All → Players →
+            // Channel. Every state is a native configuration of the same
+            // ChatPassesFilter machinery (chatpane.cpp:299-358): Players = the
+            // native m_bPlayerChatsOnly default; Channel = the lobby pane's
+            // [compose channel, Individual, IndividualNoFilter, Admin] set
+            // (teamscreen.cpp:3085-3101).
+            bool filterKey = ActionDown(ks, "ChatPaneFilter");
+            if (filterKey && !_chatPaneFilterWasDown)
+            {
+                _chatPaneFilterMode = (_chatPaneFilterMode + 1) % 3;
+                ApplyChatPaneFilterMode();
+                Console.WriteLine($"[monogame] chat filter -> {ChatPaneFilterLabel()}");
+            }
+            _chatPaneFilterWasDown = filterKey;
         }
 
         // A modal UI consumes the keyboard: chat composition OR the quick-chat
         // menu both neutralise flight input / toggles / autopilot-steering, so
-        // navigating or typing never also thrusts/turns the ship.
-        bool composing = _chatActive || _qcMenuOpen || _keyBindVisible || _mainMenuVisible || _menuConsumedFrame || _playerPingsVisible;
+        // navigating or typing never also thrusts/turns the ship. P757 — the
+        // help overlay joins them while open (the native help pane owns the
+        // keyboard, effect/help.cpp).
+        bool composing = _chatActive || _qcMenuOpen || _keyBindVisible || _mainMenuVisible || _menuConsumedFrame || _playerPingsVisible || _helpVisible;
         // Investment is modal in flight and command view; ordinary docked
         // command acceptance below must still run when this overlay is closed.
         if ((_investActive || ActionDown(ks, "ToggleInvestmentPane")) && HandleInvestmentScreen(ks, composing)) return;

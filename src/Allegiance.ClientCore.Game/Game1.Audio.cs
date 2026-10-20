@@ -29,6 +29,10 @@ namespace Allegiance.ClientCore.MonoGame;
 /// </summary>
 public sealed partial class Game1
 {
+    /// <summary>P757 — native <c>noTurretsSound</c> (Igc/sounds.h; sounddef.mdl:
+    /// <c>vo_sal_noturrets</c>), the BOARD_NACK turret-race cue.</summary>
+    private const string NoTurretsWave = "vo_sal_noturrets";
+
 
 
     /// <summary>
@@ -437,6 +441,12 @@ public sealed partial class Game1
                     // the jumpin one-shot (native jumpSound, SoundManager.PlayJump).
                     snd.PlayJump();
                     Console.WriteLine($"[monogame] audio: teleport arrived (station {ev.Id})");
+                    break;
+                case ClientSoundEventKind.BoardRefusedTurretsFull:
+                    // P757 — the board request lost the turret race: native's
+                    // noTurretsSound (teleportpane.cpp:285; sounds.h: vo_sal_noturrets).
+                    snd.PlayVoice(NoTurretsWave);
+                    Console.WriteLine($"[monogame] audio: board refused - no turrets open (ship {ev.Id})");
                     break;
                 // ── P710 — wealth announcements (clintlib/appmsg.cpp) ──────
                 case ClientSoundEventKind.PaydayReceived:

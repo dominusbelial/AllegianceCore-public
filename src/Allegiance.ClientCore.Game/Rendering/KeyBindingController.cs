@@ -31,7 +31,8 @@ public enum KeyBindPhase
 public sealed class KeyBindingController
 {
     private readonly ActionMap _map;
-    private readonly Action? _onMutate;
+    private readonly Action? _onCommit;
+    private readonly Action? _onDiscard;
     private readonly string[] _actions;
 
     public KeyBindPhase Phase { get; private set; } = KeyBindPhase.Browse;
@@ -50,13 +51,18 @@ public sealed class KeyBindingController
     /// <summary>Currently selected action name.</summary>
     public string CurrentAction => _actions[SelectedIndex];
 
-    /// <param name="map">The live action map to read and mutate.</param>
-    /// <param name="onMutate">Optional callback fired after a binding is
-    /// actually changed (Game1 uses it to persist; tests leave it null).</param>
-    public KeyBindingController(ActionMap map, Action? onMutate = null)
+    /// <summary>P757 — native OK-versus-Cancel persistence (trekinput.cpp:2436-2458,
+    /// 3005-3030): mutations inside the popup change the in-memory map but are
+    /// <b>not</b> persisted; <see cref="Commit"/> (native <c>OnButtonOK</c> →
+    /// <c>SaveMap</c>) persists, and <see cref="Close"/> (native <c>Close</c> →
+    /// reload <c>INPUTMAP_FILE</c>, else the default map) discards them.
+    /// <paramref name="onCommit"/> saves the map; <paramref name="onDiscard"/>
+    /// reloads it. Tests may leave both null (an isolated map with no store).</summary>
+    public KeyBindingController(ActionMap map, Action? onCommit = null, Action? onDiscard = null)
     {
         _map = map;
-        _onMutate = onMutate;
+        _onCommit = onCommit;
+        _onDiscard = onDiscard;
         _actions = map.Definitions
             .OrderBy(d => IndexOfCategory(d.Category))
             .ThenBy(d => map.BindingOf(d.Name).Label)
@@ -95,9 +101,24 @@ public sealed class KeyBindingController
         Phase = KeyBindPhase.Capture;
     }
 
-    /// <summary>Cancel the whole popup (Esc from Browse).</summary>
+    /// <summary>P757 — native <c>OnButtonOK</c> (trekinput.cpp:2446-2450):
+    /// <c>SaveMap(INPUTMAP_FILE)</c> then close. Persists the popup's pending
+    /// mutations; nothing else ever writes the file.</summary>
+    public void Commit()
+    {
+        _onCommit?.Invoke();
+        Message = "";
+        Phase = KeyBindPhase.Closed;
+    }
+
+    /// <summary>Cancel the whole popup — native <c>Close()</c>
+    /// (trekinput.cpp:2436-2444): reload the persisted map (the default map when
+    /// the file is unreadable), discarding every unsaved mutation. Esc from
+    /// Browse routes here (native <c>OnKey</c> VK_ESCAPE → <c>OnButtonCancel</c>,
+    /// trekinput.cpp:3013-3015).</summary>
     public void Close()
     {
+        _onDiscard?.Invoke();
         Phase = KeyBindPhase.Closed;
         Message = "";
     }
@@ -140,8 +161,10 @@ public sealed class KeyBindingController
         }
         else
         {
-            _onMutate?.Invoke();
-            Message = $"{CapturingAction} -> {chord.Label} (saved)";
+            // P757 — pending until OK: native SaveMap only fires on OnButtonOK
+            // (trekinput.cpp:2446-2450); the live map carries the change but the
+            // file is untouched until Commit (or rolled back by Close).
+            Message = $"{CapturingAction} -> {chord.Label} (Space = OK, Esc = cancel)";
             CapturingAction = null;
             PendingChord = null;
             Phase = KeyBindPhase.Browse;
@@ -156,8 +179,7 @@ public sealed class KeyBindingController
             if (yes)
             {
                 _map.SwapBindings(CapturingAction, ConflictOwner);
-                _onMutate?.Invoke();
-                Message = $"Swapped {CapturingAction} <-> {ConflictOwner} (saved)";
+                Message = $"Swapped {CapturingAction} <-> {ConflictOwner} (Space = OK, Esc = cancel)";
             }
             else
             {
@@ -174,8 +196,7 @@ public sealed class KeyBindingController
             if (yes)
             {
                 _map.ResetToDefaults();
-                _onMutate?.Invoke();
-                Message = "All key bindings reset to defaults.";
+                Message = "All key bindings reset to defaults (Space = OK, Esc = cancel).";
             }
             else
             {

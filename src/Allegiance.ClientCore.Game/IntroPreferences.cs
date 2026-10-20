@@ -39,6 +39,13 @@ public sealed class IntroPreferences
     /// install (native's <c>false == HasTrained</c>).</summary>
     public bool ShowStartupTrainingSuggestion { get; set; } = true;
 
+    /// <summary>P757 — the in-flight chat pane's default channel filter (native
+    /// Game Options "Chat/Mute/Filter" family, WinTrek.cpp:4568-4582): true =
+    /// start the pane in the native player-chats-only mode (m_bPlayerChatsOnly,
+    /// chatpane.cpp:146), false = show every line (the port's historical
+    /// default, since its chat log is also the console surface).</summary>
+    public bool ChatFilterPlayersOnly { get; set; }
+
     public const int MaxRecent = 8;
 
     public static string DirectoryPath => Path.Combine(

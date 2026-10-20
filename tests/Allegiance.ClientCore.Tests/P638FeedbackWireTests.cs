@@ -79,6 +79,9 @@ public class P638FeedbackWireTests
     {
         var s = new ConnectionSession();
         SetOwnShip(s, 5);
+        Feed(s, new EnterGame());
+        Feed(s, new ShipStatusMessage { ShipId = 5, SectorId = 1, StationId = 42, ParentId = -1,
+            State = ShipStatusMessage.StateDocked });
 
         // Native: popup "Teleportation failed." (teleportpane.cpp:276-293) →
         // port system line.
@@ -86,6 +89,109 @@ public class P638FeedbackWireTests
 
         Assert.DoesNotContain((ushort)178, s.UnknownFmids);
         Assert.Equal("Teleportation failed.", LastLine(s));
+    }
+
+    [Fact]
+    public void P757_BoardNack_TurretRaceBranch_PlaysTheNoTurretsCueAndMessage()
+    {
+        // Native OnBoardFailed (teleportpane.cpp:276-294): a requested parent
+        // that still shows a free turret (MannedTurrets < NumTurrets,
+        // NumTurrets = MaxWeapons - MaxFixedWeapons of the parent's hull,
+        // teleportpane.cpp:523-531) gets "Teleportation canceled - no turret
+        // positions were open." plus the noTurretsSound cue.
+        string root = Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork);
+        if (root.Length == 0 || !System.IO.File.Exists(System.IO.Path.Combine(root, "PCore001.igc")))
+            return;   // corpus absent on a clean clone (P597)
+        var core = Allegiance.Core.Model.StaticCore.Load(
+            Allegiance.Core.IgcReader.ParseFile(System.IO.Path.Combine(root, "PCore001.igc")));
+        var turretHull = System.Linq.Enumerable.First(core.HullTypes.Values, h => h.MaxWeapons > h.MaxFixedWeapons);
+
+        var s = new ConnectionSession();
+        s.World.MissionCoreResolver = _ => core;
+        Feed(s, new MissionDef { SzIGCStaticFile = "pcore001" });
+        Feed(s, new JoinedMission { ShipId = 5 });   // loads MissionCore
+        SetOwnShip(s, 5);
+        Feed(s, new EnterGame());
+        Feed(s, new ShipStatusMessage { ShipId = 5, SectorId = 1, StationId = 42, ParentId = -1,
+            State = ShipStatusMessage.StateDocked });
+        // The requested parent: a docked teammate on a turret-carrier hull with
+        // no gunners aboard → MannedTurrets(0) < NumTurrets. (SHIP_STATUS carries
+        // the authoritative hull id — feed it consistently with the EXPORT.)
+        Feed(s, new ExportShip { ShipId = 7, SideId = 0, HullId = turretHull.HullId, CharacterName = "mate" });
+        Feed(s, new ShipStatusMessage { ShipId = 7, SectorId = 1, StationId = 42, ParentId = -1,
+            HullId = turretHull.HullId, State = ShipStatusMessage.StateDocked });
+
+        Feed(s, new BoardNack { SidRequestedParent = 7 });
+
+        Assert.Equal("Teleportation canceled - no turret positions were open.", LastLine(s));
+        var ev = Assert.Single(s.World.TakeSoundEvents());
+        Assert.Equal(ClientSoundEventKind.BoardRefusedTurretsFull, ev.Kind);
+        Assert.Equal(7, ev.Id);
+    }
+
+    [Fact]
+    public void P757b_BoardNack_MannedTurretsCountsOnlyTurretStateChildren()
+    {
+        // Native MannedTurrets (teleportpane.cpp:499-518) counts only ships in
+        // c_ssTurret whose LastSeenParent is the requested parent. A docked or
+        // flying child never occupies a turret slot, so it must not turn a free
+        // turret into a "full" one (the P757 count was every ParentId child).
+        string root = Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork);
+        if (root.Length == 0 || !System.IO.File.Exists(System.IO.Path.Combine(root, "PCore001.igc")))
+            return;   // corpus absent on a clean clone (P597)
+        var core = Allegiance.Core.Model.StaticCore.Load(
+            Allegiance.Core.IgcReader.ParseFile(System.IO.Path.Combine(root, "PCore001.igc")));
+        var turretHull = System.Linq.Enumerable.First(core.HullTypes.Values, h => h.MaxWeapons > h.MaxFixedWeapons);
+        int slots = turretHull.MaxWeapons - turretHull.MaxFixedWeapons;
+
+        ConnectionSession Fight(byte childState, int childCount)
+        {
+            var s = new ConnectionSession();
+            s.World.MissionCoreResolver = _ => core;
+            Feed(s, new MissionDef { SzIGCStaticFile = "pcore001" });
+            Feed(s, new JoinedMission { ShipId = 5 });
+            SetOwnShip(s, 5);
+            Feed(s, new EnterGame());
+            Feed(s, new ShipStatusMessage { ShipId = 5, SectorId = 1, StationId = 42, ParentId = -1,
+                State = ShipStatusMessage.StateDocked });
+            Feed(s, new ExportShip { ShipId = 7, SideId = 0, HullId = turretHull.HullId, CharacterName = "mate" });
+            Feed(s, new ShipStatusMessage { ShipId = 7, SectorId = 1, StationId = 42, ParentId = -1,
+                HullId = turretHull.HullId, State = ShipStatusMessage.StateDocked });
+            for (short i = 0; i < childCount; i++)
+            {
+                short childId = (short)(20 + i);
+                Feed(s, new ExportShip { ShipId = childId, SideId = 0, HullId = turretHull.HullId, CharacterName = $"gunner{i}" });
+                Feed(s, new ShipStatusMessage { ShipId = childId, SectorId = 1, StationId = -1, ParentId = 7,
+                    HullId = turretHull.HullId, State = childState });
+            }
+            Feed(s, new BoardNack { SidRequestedParent = 7 });
+            return s;
+        }
+
+        // Every slot occupied by a DOCKED child -> still no manned turrets -> race.
+        var dockedChildren = Fight(ShipStatusMessage.StateDocked, slots);
+        Assert.Equal("Teleportation canceled - no turret positions were open.", LastLine(dockedChildren));
+        Assert.Equal(ClientSoundEventKind.BoardRefusedTurretsFull, dockedChildren.World.TakeSoundEvents()[^1].Kind);
+
+        // Every slot occupied by a TURRET child -> MannedTurrets == NumTurrets -> generic failure.
+        var turretChildren = Fight(ShipStatusMessage.StateTurret, slots);
+        Assert.Equal("Teleportation failed.", LastLine(turretChildren));
+        Assert.Empty(turretChildren.World.TakeSoundEvents());
+    }
+
+    [Fact]
+    public void P757_BoardNack_IsIgnoredWhenNotInGame()
+    {
+        // Native gates the nack on IsInGame() (appmsg.cpp:1900-1901): before the
+        // game starts the refusal is dropped entirely.
+        var s = new ConnectionSession();
+        SetOwnShip(s, 5);
+        Feed(s, new ShipStatusMessage { ShipId = 5, SectorId = 1, StationId = 42, ParentId = -1,
+            State = ShipStatusMessage.StateDocked });
+        long before = s.World.BoardFailureRevision;
+        Feed(s, new BoardNack { SidRequestedParent = 777 });
+        Assert.Equal(before, s.World.BoardFailureRevision);
+        Assert.Equal("", LastLine(s));
     }
 
     // ── 3. MISSILE_SPOOFED(110) / END_SPOOFING(111) ────────────────────────

@@ -29,7 +29,23 @@ namespace Allegiance.ClientCore.MonoGame;
 /// </summary>
 public sealed partial class Game1
 {
-
+    /// <summary>P757 — a refused teleport (BOARD_NACK) ends the pending
+    /// intentional action exactly like native's lockdown release
+    /// (<c>EndLockDown</c>, appmsg.cpp:1903-1905, feeding
+    /// <c>TeleportPane::OnBoardFailed</c>, teleportpane.cpp:276-294): clear the
+    /// launch latch so the teleport pane/shop stay usable and the player can
+    /// reselect and retry. Production seam extracted from
+    /// <see cref="HandleDockedScreen"/> so the recovery is provable headlessly
+    /// (the P748 <c>HandleHangarQuitInput</c> discipline).</summary>
+    private void ReleaseTeleportOnBoardRefusal()
+    {
+        if (_launchSent && _session.World.BoardFailureRevision != _teleportBoardFailure)
+        {
+            _teleportBoardFailure = _session.World.BoardFailureRevision;
+            _launchSent = false;
+            Console.WriteLine("[monogame] teleport: board refused - pane released for reselection");
+        }
+    }
 
     /// <summary>
     /// P268 — the docked/hangar loadout screen. Returns true (meaning "consume
@@ -122,6 +138,7 @@ public sealed partial class Game1
 
             RefreshDockedOffers(world, mySe);
             ContinueHangarLaunch(mySe);
+            ReleaseTeleportOnBoardRefusal();   // P757 — EndLockDown equivalent
             if (UpdateHangarControls(ks, composing)) return true;
             if (HandleInvestmentScreen(ks, composing)) return true;
             if (_cameraMode == CameraMode.Command) return false;
@@ -896,6 +913,7 @@ public sealed partial class Game1
 
         _teleportActive = false;
         _launchSent = true;   // suppress the unattended-dock auto-launch after an intentional action
+        _teleportBoardFailure = _session.World.BoardFailureRevision;   // P757: a nack releases this latch
     }
 
     /// <summary>

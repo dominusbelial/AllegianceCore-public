@@ -401,6 +401,13 @@ public static class InputActionCatalog
         new("NextCommMsg", "CHAT", "Next chat message (scroll newer) [TK_NextCommMsg]", C(Keys.PageDown), null),
         new("ChatPageUp", "CHAT", "Chat pane: page up (older) [TK_ChatPageUp]", K(Keys.PageUp), K(Keys.PageUp)),
         new("ChatPageDown", "CHAT", "Chat pane: page down (newer) [TK_ChatPageDown]", K(Keys.PageDown), K(Keys.PageDown)),
+        // P757 — the chat pane's channel filter (native ChatPassesFilter /
+        // AddChannel / RemoveChannel / ResetChannels, chatpane.cpp:299-358,
+        // driven in-game by the native Game Options "Chat/Mute/Filter" family).
+        // Alt+C: All → Players (native m_bPlayerChatsOnly) → Channel (the lobby
+        // pane's [channel, Individual, IndividualNoFilter, Admin] set). Alt+C is
+        // unclaimed anywhere in the catalogue (grep-verified).
+        new("ChatPaneFilter", "CHAT", "Chat pane: cycle channel filter (all/players/channel)", A(Keys.C), null),
 
         // -- LOBBY (SERVER BROWSER) --
         new("LobbyUp", "LOBBY (SERVER BROWSER)", "Select server up", K(Keys.Up), null),

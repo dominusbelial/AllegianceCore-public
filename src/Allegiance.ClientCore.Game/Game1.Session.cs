@@ -379,7 +379,7 @@ public sealed partial class Game1
     /// logging on and being seated; ReadyCheck (P282) is the pre-flight ready
     /// screen between seating and the mission actually starting; Flying is the
     /// joined-in-flight mode (existing behaviour).</summary>
-    private enum ClientState { Lobby, Connecting, SideSelect, ReadyCheck, Flying, Disconnected, Inspecting, Intro }
+    private enum ClientState { Lobby, Connecting, SideSelect, ReadyCheck, Flying, Disconnected, Inspecting, Intro, Splash }
 
     private ClientState _state;
 
@@ -873,20 +873,28 @@ public sealed partial class Game1
     /// <summary>Build the display strings for the in-flight chat log from the
     /// real, already-populated <c>ClientWorld.Events.Chats</c> (arrival-ordered),
     /// resolving each sender's character name from the world roster where known.
-    /// P626 — respects the current <see cref="_chatScrollOffset"/> so scrolled-
-    /// back history renders instead of always the newest page.</summary>
+    /// P626 — respects the current chat-pane scroll offset so scrolled-
+    /// back history renders instead of always the newest page. P757 — the lines
+    /// are first passed through the pane's channel filter (native
+    /// <c>ChatPassesFilter</c>, chatpane.cpp:299-321): the player-chats-only
+    /// flag and any selected channels drop messages before the window is
+    /// taken, exactly like native's filtered <c>ChatListPaneImpl</c>.</summary>
     private List<string> BuildChatLines()
     {
         var world = _session.World;
         lock (_session.Gate)
         {
             var chats = world.Events.Chats;
-            int start = ChatScroll.StartIndex(_chatScrollOffset, chats.Count, ChatRenderer.MaxVisible);
-            var lines = new List<string>(Math.Min(chats.Count, ChatRenderer.MaxVisible));
-            int end = Math.Min(chats.Count, start + ChatRenderer.MaxVisible);
+            var visible = new List<ChatMessage>(Math.Min(chats.Count, ChatRenderer.MaxVisible));
+            foreach (var m in chats)
+                if (ChatLinePassesPaneFilter(world, m))
+                    visible.Add(m);
+            int start = ChatScroll.StartIndex(_chatPane.Offset, visible.Count, ChatRenderer.MaxVisible);
+            var lines = new List<string>(Math.Min(visible.Count, ChatRenderer.MaxVisible));
+            int end = Math.Min(visible.Count, start + ChatRenderer.MaxVisible);
             for (int i = start; i < end; i++)
             {
-                var m = chats[i];
+                var m = visible[i];
                 string sender = "";
                 if (m.SidSender >= 0 && world.Ships.TryGetValue(m.SidSender, out var ent) && !string.IsNullOrEmpty(ent.CharacterName))
                     sender = ent.CharacterName!;
@@ -897,6 +905,74 @@ public sealed partial class Game1
             return lines;
         }
     }
+
+    /// <summary>P757 — does one world chat line pass the pane's channel filter?
+    /// Native <c>ChatInfo::IsFromPlayer</c> is "sender ship exists and its
+    /// PlayerInfo is human" (trekigc.cpp:4800-4802, clintlib.cpp:624); the
+    /// port's world only names player ships (EXPORT_SHIP carries the character
+    /// name, Server.Broadcast.cs), so "from player" ≡ the sender resolves to a
+    /// non-empty character name. <c>BObjectModel</c> is the wire's own object-
+    /// model flag. Called under the session gate.</summary>
+    private bool ChatLinePassesPaneFilter(Allegiance.ClientCore.State.ClientWorld world, ChatMessage m)
+    {
+        bool fromPlayer = m.SidSender >= 0
+            && world.Ships.TryGetValue(m.SidSender, out var ent)
+            && !string.IsNullOrEmpty(ent.CharacterName);
+        return _chatPane.PassesFilter(fromPlayer, m.BObjectModel, (ChatTarget)m.ChatTarget);
+    }
+
+    /// <summary>P757 — count of chat lines the pane's filter currently admits
+    /// (the window/offset math runs over the filtered list, like native's
+    /// filtered <c>ChatListPaneImpl</c>).</summary>
+    private int FilteredChatCount()
+    {
+        var world = _session.World;
+        lock (_session.Gate)
+        {
+            int n = 0;
+            foreach (var m in world.Events.Chats)
+                if (ChatLinePassesPaneFilter(world, m))
+                    n++;
+            return n;
+        }
+    }
+
+    /// <summary>P757 — apply the current chat-pane filter mode
+    /// (<see cref="_chatPaneFilterMode"/>) to the pane model. Every mutator
+    /// rebuilds the view and snaps it to the live edge with autoscroll on
+    /// (native <c>AddChannel</c>/<c>RemoveChannel</c>/<c>ResetChannels</c> →
+    /// <c>UpdateContents</c>, chatpane.cpp:286-297, 340-358).</summary>
+    private void ApplyChatPaneFilterMode()
+    {
+        _chatPane.ResetChannels();
+        switch (_chatPaneFilterMode)
+        {
+            case 1:     // Players only — native m_bPlayerChatsOnly default
+                _chatPane.SetPlayerChatsOnly(true);
+                break;
+            case 2:     // Channel set — the native lobby pane's filter
+                        // (teamscreen.cpp:3085-3101)
+                _chatPane.SetPlayerChatsOnly(false);
+                _chatPane.AddChannel(_chatTarget);
+                _chatPane.AddChannel(ChatTarget.Individual);
+                _chatPane.AddChannel(ChatTarget.IndividualNoFilter);
+                _chatPane.AddChannel(ChatTarget.Admin);
+                break;
+            default:    // All — no restriction
+                _chatPane.SetPlayerChatsOnly(false);
+                break;
+        }
+        _lastChatCount = FilteredChatCount();
+    }
+
+    /// <summary>P757 — short label of the active chat-pane filter mode, drawn in
+    /// the pane's header so the player sees what the pane is filtering.</summary>
+    private string ChatPaneFilterLabel() => _chatPaneFilterMode switch
+    {
+        1 => "PLAYERS",
+        2 => $"CHANNEL {_chatTarget.ToString().ToUpperInvariant()}",
+        _ => "ALL",
+    };
 
     /// <summary>Render the in-flight chat overlay (log panel + active composing
     /// line) on top of the HUD.</summary>

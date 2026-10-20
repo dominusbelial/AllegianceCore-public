@@ -20,6 +20,8 @@ public enum IntroCommand
     DirectConnect,
     Options,
     Credits,
+    ReplayIntro,
+    Help,
     Exit,
     Benchmark,
 }
@@ -31,11 +33,16 @@ public enum IntroCommand
 /// </summary>
 public sealed class IntroScreenModel
 {
-    /// <summary>Native's main-menu button slots (see <see cref="IntroCommand"/>).</summary>
+    /// <summary>Native's main-menu button slots (see <see cref="IntroCommand"/>).
+    /// P757 — Replay Intro ← introButtonPane (introscreen.cpp:1224)/
+    /// OnButtonIntro(:1865, → ScreenIDSplashScreen) and Help ← helpButtonPane
+    /// (:1226)/OnButtonHelp(:1806, → GetWindow()-&gt;OnHelp(true)) join the menu
+    /// after Credits, matching the native button set.</summary>
     public static readonly string[] MainLabels =
     {
         "Single Player", "Play Online", "Play LAN / Find Server",
-        "Direct Connect", "Options", "Credits", "Exit", "Benchmark",
+        "Direct Connect", "Options", "Credits", "Replay Intro", "Help",
+        "Exit", "Benchmark",
     };
 
     /// <summary>The currently highlighted main-menu index.</summary>
@@ -56,8 +63,10 @@ public sealed class IntroScreenModel
         3 => IntroCommand.DirectConnect,
         4 => IntroCommand.Options,
         5 => IntroCommand.Credits,
-        6 => IntroCommand.Exit,
-        7 => IntroCommand.Benchmark,
+        6 => IntroCommand.ReplayIntro,
+        7 => IntroCommand.Help,
+        8 => IntroCommand.Exit,
+        9 => IntroCommand.Benchmark,
         _ => IntroCommand.None,
     };
 

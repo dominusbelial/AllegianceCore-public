@@ -23,7 +23,7 @@ public sealed partial class Game1
     /// models each as a view of the same screen). TR-2 splits Single Player into a
     /// Training | Skirmish chooser (native's big single-player button trains,
     /// introscreen.cpp:1221/:1558) plus a first-run training-suggestion dialog.</summary>
-    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSuggest, Credits, Benchmark, BenchmarkOffer, Settings }
+    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSuggest, Credits, Benchmark, BenchmarkOffer, Settings, Help }
 
     private IntroView _introView = IntroView.Main;
     private int _introIndex;
@@ -73,6 +73,58 @@ public sealed partial class Game1
     private long _introProofDelayMs = -1;
     private long _introProofStartMs;
     private bool _introProofWaitExit;
+
+    // P757 — the splash screen (native WinTrek/splashscreen.cpp). The native
+    // constructor arms a timeout that advances to the intro screen — 0.01 s
+    // because the released build's `g_bQuickstart || true` REVIEW comment makes
+    // the quickstart branch unconditional (else 6.85 s) — and ANY key or click
+    // skips straight there (OnKey/OnButton, splashscreen.cpp:34-80).
+    private double _splashStartSeconds;
+
+    /// <summary>Native's effective splash timeout in seconds (splashscreen.cpp:36-39:
+    /// <c>AddEventTarget(&amp;OnTimeout, GetWindow(), 0.01f)</c> — the quickstart
+    /// branch is always taken because of the <c>g_bQuickstart || true</c>
+    /// REVIEW).</summary>
+    public const double SplashTimeoutSeconds = 0.01;
+
+    /// <summary>Enter the splash state (boot, or the intro menu's Replay Intro —
+    /// native <c>ScreenIDSplashScreen</c>).</summary>
+    private void BeginSplash()
+    {
+        _state = ClientState.Splash;
+        _splashStartSeconds = _nowSeconds;
+        Console.WriteLine("[splash] splash screen (timeout to intro)");
+    }
+
+    /// <summary>Native <c>SplashScreen</c>: the timeout (or any key/click)
+    /// advances to the intro screen (splashscreen.cpp:34-46, 63-80).</summary>
+    private void UpdateSplash(KeyboardState ks)
+    {
+        bool anyKey = ks.GetPressedKeyCount() > 0;
+        bool click = Mouse.GetState().LeftButton == ButtonState.Pressed;
+        if (_nowSeconds - _splashStartSeconds >= SplashTimeoutSeconds || anyKey || click)
+        {
+            _state = ClientState.Intro;
+            InitIntro();
+            Console.WriteLine("[splash] -> intro screen");
+        }
+    }
+
+    private void DrawSplash()
+    {
+        var vp = GraphicsDevice.Viewport;
+        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        try
+        {
+            var title = _hudBig.MeasureString("ALLEGIANCE");
+            _spriteBatch.DrawString(_hudBig, "ALLEGIANCE", new Vector2((vp.Width - title.X) / 2f, vp.Height * 0.42f),
+                new Color(0.38f, 0.90f, 0.84f));
+            var sub = _hudSmall.MeasureString("loading...");
+            _spriteBatch.DrawString(_hudSmall, "loading...", new Vector2((vp.Width - sub.X) / 2f, vp.Height * 0.42f + 70f),
+                new Color(0.58f, 0.74f, 0.72f));
+        }
+        finally { _spriteBatch.End(); }
+    }
 
     /// <summary>Load remembered values (player.json, P731) into the intro screen.</summary>
     private void InitIntro()
@@ -202,7 +254,17 @@ public sealed partial class Game1
                 UpdateTrainingSuggest(ks, enter, esc);
                 break;
             case IntroView.Settings:
-                UpdatePrivacySettings();
+                UpdateOptionsMenu(ks);
+                break;
+            case IntroView.Help:
+                // P757 — the manual (native HelpPane: topic nav + Back history +
+                // page scroll, effect/help.cpp:225-296).
+                if (up && !_iUp) _helpManual.MoveTopicSelection(-1);
+                if (down && !_iDown) _helpManual.MoveTopicSelection(+1);
+                if (ks.IsKeyDown(XnaKeys.Back) && !_iBack) _helpManual.Back();
+                if (ks.IsKeyDown(XnaKeys.PageUp) && !_iPgUp) _helpManual.ScrollBy(-6, 14);
+                if (ks.IsKeyDown(XnaKeys.PageDown) && !_iPgDn) _helpManual.ScrollBy(+6, 14);
+                if (esc && !_iEsc) { _introView = IntroView.Main; _introIndex = 7; }
                 break;
             case IntroView.Benchmark:
             case IntroView.BenchmarkOffer:
@@ -216,7 +278,17 @@ public sealed partial class Game1
         HandleIntroBackspace(ks);
 
         _iUp = up; _iDown = down; _iEnter = enter; _iEsc = esc; _iTab = tab;
+        _iBack = ks.IsKeyDown(XnaKeys.Back); _iPgUp = ks.IsKeyDown(XnaKeys.PageUp); _iPgDn = ks.IsKeyDown(XnaKeys.PageDown);
     }
+
+    // P757 — extra intro edge latches (manual Back/scroll).
+    private bool _iBack, _iPgUp, _iPgDn;
+    // P757 — the options-menu row and the intro credits' scroll position
+    // (native creditsTime, introscreen.cpp:643-653).
+    private int _optionsMenuRow;
+    private float _introCreditsScroll;
+    // P757 — the shared manual model (intro Help + the in-flight H overlay).
+    private Rendering.HelpManualModel _helpManual = new();
 
     private void HandleIntroBackspace(KeyboardState ks)
     {
@@ -253,14 +325,26 @@ public sealed partial class Game1
                 _introView = IntroView.DirectConnect;
                 _introEditingDirect = true;
                 break;
-            case IntroCommand.Options:        // the existing settings (Ctrl+F6 key-bindings popup).
+            case IntroCommand.Options:        // native OnButtonOptions → ShowOptionsMenu (introscreen.cpp:1847-1851): the four-group options menu.
                 _introView = IntroView.Settings;
+                _optionsMenuRow = 0;
+                _optionsPrefsLoaded = false;   // re-read player.json once on open (P757b)
+                EnsureOptionsPrefs();
                 break;
             case IntroCommand.Benchmark:
                 _introView = IntroView.Benchmark;
                 break;
             case IntroCommand.Credits:
                 _introView = IntroView.Credits;
+                _introCreditsScroll = 0f;      // native creditsTime resets on open (introscreen.cpp:653)
+                break;
+            case IntroCommand.ReplayIntro:    // native OnButtonIntro → ScreenIDSplashScreen (introscreen.cpp:1865-1876).
+                BeginSplash();
+                break;
+            case IntroCommand.Help:           // native OnButtonHelp → GetWindow()->OnHelp(true) (introscreen.cpp:1806-1810).
+                _introView = IntroView.Help;
+                _helpManual = new Rendering.HelpManualModel();
+                Console.WriteLine("[intro] Help -> manual (hlpStart)");
                 break;
             case IntroCommand.Exit:           // native OnButtonExit: GetWindow()->StartClose(), :1799.
                 Exit();
@@ -440,8 +524,10 @@ public sealed partial class Game1
         DiscoveredServer? target;
         lock (_introFoundLock)
         {
-            if (_introFound.Count == 0) return;
-            target = _introFound[Math.Min(_introFoundIndex, _introFound.Count - 1)];
+            // P757 — join what the filtered, sorted list shows at this cursor.
+            var list = IntroFindServerList.FilterAndSort(_introFound);
+            if (list.Count == 0) return;
+            target = list[Math.Min(_introFoundIndex, list.Count - 1)];
         }
         JoinFromIntro(target.Address, target.Port);
     }
@@ -499,7 +585,7 @@ public sealed partial class Game1
 
             switch (_introView)
             {
-                case IntroView.Settings: DrawPrivacySettings(w, titleCol, dimCol); break;
+                case IntroView.Settings: DrawPrivacySettings(w, h, titleCol, dimCol); break;
                 case IntroView.Benchmark:
                 case IntroView.BenchmarkOffer: DrawBenchmarkMenu(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.Main: DrawIntroMain(w, h, titleCol, dimCol, textCol); break;
@@ -510,6 +596,7 @@ public sealed partial class Game1
                 case IntroView.Training: DrawIntroTraining(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.TrainingSuggest: DrawIntroTrainingSuggest(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.Credits: DrawIntroCredits(w, h, titleCol, dimCol, textCol); break;
+                case IntroView.Help: DrawIntroHelp(w, h, titleCol, dimCol, textCol); break;
             }
         }
         finally
@@ -574,7 +661,10 @@ public sealed partial class Game1
         lock (_introFoundLock)
         {
             scanning = _introScanRunning;
-            list = new List<DiscoveredServer>(_introFound);
+            // P757 — native FindGames post-processing on every display pass:
+            // dedup + the max-player rule + sorted by game name
+            // (introscreen.cpp:903-995).
+            list = IntroFindServerList.FilterAndSort(_introFound);
             if (_introFoundIndex >= list.Count) _introFoundIndex = list.Count > 0 ? list.Count - 1 : 0;
         }
 
@@ -721,6 +811,9 @@ public sealed partial class Game1
     private void DrawIntroCredits(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
         DrawIntroTitle(w, "Credits", "Allegiance  -  a 20-year labour of love", titleCol, dimCol);
+        // P757 — native CreditsPopup scrolls its content over time (the
+        // creditsTime number drives the pane's animation, introscreen.cpp:643-653).
+        _introCreditsScroll += 0.35f;   // px/frame at 60 fps ≈ 21 px/s — a slow roll
         string[] lines =
         {
             "Original game: Microsoft Research / Allegiance team.",
@@ -729,13 +822,48 @@ public sealed partial class Game1
             "",
             "Press ESC to return to the main menu.",
         };
-        float y = h * 0.4f;
+        float y = h * 0.4f - (_introCreditsScroll % (lines.Length * 30f + h * 0.3f));
         foreach (var ln in lines)
         {
-            var sz = _hudSmall.MeasureString(ln);
-            _spriteBatch.DrawString(_hudSmall, ln, new Vector2((w - sz.X) / 2f, y), textCol);
+            if (y > h * 0.24f && y < h * 0.9f)
+            {
+                var sz = _hudSmall.MeasureString(ln);
+                _spriteBatch.DrawString(_hudSmall, ln, new Vector2((w - sz.X) / 2f, y), textCol);
+            }
             y += 30f;
         }
+    }
+
+    /// <summary>P757 — the intro's Help view: the manual's topic bar + the
+    /// current page, with the native navigation (topic Up/Down, Back history,
+    /// page scroll — effect/help.cpp:225-296).</summary>
+    private void DrawIntroHelp(float w, float h, Color titleCol, Color dimCol, Color textCol)
+    {
+        DrawIntroTitle(w, "Help", "The manual - UP/DOWN topics   BACKSPACE back   PGUP/PGDN scroll   ESC close", titleCol, dimCol);
+
+        // Topic bar (native nav pane).
+        float tx = 40f;
+        foreach (var t in Rendering.HelpManualModel.Topics)
+        {
+            bool cur = t.Id == _helpManual.CurrentTopic;
+            var label = (cur ? "[" : " ") + t.Title + (cur ? "]" : " ");
+            _spriteBatch.DrawString(_hudSmall, label, new Vector2(tx, 112f), cur ? titleCol : dimCol);
+            tx += _hudSmall.MeasureString(t.Title).X + 34f;
+        }
+
+        // Current page (native main page + scroll).
+        var topic = _helpManual.Current;
+        float y = 160f;
+        int skip = _helpManual.Scroll;
+        for (int i = 0; i < topic.Lines.Count; i++)
+        {
+            if (i < skip) continue;
+            if (y > h - 60f) break;
+            _spriteBatch.DrawString(_hudSmall, topic.Lines[i], new Vector2(60f, y), textCol);
+            y += 26f;
+        }
+        if (_helpManual.HistoryDepth > 1)
+            _spriteBatch.DrawString(_hudSmall, "BACKSPACE: back", new Vector2(60f, h - 46f), dimCol);
     }
 
     // Guards the shared lobby list (_servers) between the main thread

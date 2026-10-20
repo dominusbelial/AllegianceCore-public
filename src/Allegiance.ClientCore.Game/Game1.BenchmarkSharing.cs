@@ -59,21 +59,113 @@ public sealed partial class Game1
         _shareSessionPending = true;
     }
     private KeyboardState _iPrivacyKeys;
-    private void UpdatePrivacySettings()
+    // P757b — the options screen's preference snapshot. Loaded once when the
+    // screen opens (never from Draw), so drawing does not touch player.json.
+    private IntroPreferences _optionsPrefs = new();
+    private bool _optionsPrefsLoaded;
+
+    private void EnsureOptionsPrefs()
     {
-        var keys = Keyboard.GetState();
-        if (keys.IsKeyDown(Keys.Escape) && !_iPrivacyKeys.IsKeyDown(Keys.Escape)) _introView = IntroView.Main;
-        if (keys.IsKeyDown(Keys.K) && !_iPrivacyKeys.IsKeyDown(Keys.K)) { ToggleKeyBindings(); _introView = IntroView.Main; }
-        if (keys.IsKeyDown(Keys.G)) { _graphicsSettingsVisible = true; _introView = IntroView.Main; }
-        if (keys.IsKeyDown(Keys.S) && _benchmarkSharing?.Available == true) _sharePanel = true;
+        if (_optionsPrefsLoaded) return;
+        _optionsPrefs = IntroPreferences.Load();
+        _optionsPrefsLoaded = true;
+    }
+
+    /// <summary>P757 — the intro Options menu (native
+    /// <c>WinTrek::ShowOptionsMenu</c>, WinTrek.cpp:4429-4442 + GetSubMenu
+    /// :4502-4590): four native-named groups, each backed by the port's real
+    /// controls — Graphics Options (the graphics settings overlay), Sound
+    /// Options (music on/off + volume), Game Options (chat filter default +
+    /// "Map Keys and Controls", both native Game Options items) and the key
+    /// bindings popup. Up/Down + Enter navigate; the inherited hotkeys are
+    /// G (Graphics), S (benchmark sharing) and K (Map Keys and Controls), with
+    /// the new Sound/Game toggles on the previously unused A/F keys.</summary>
+    private void UpdateOptionsMenu(KeyboardState? ks = null)
+    {
+        var keys = ks ?? Keyboard.GetState();
+        EnsureOptionsPrefs();
+        bool Press(Keys key) => keys.IsKeyDown(key) && !_iPrivacyKeys.IsKeyDown(key);
+
+        bool esc = Press(Keys.Escape);
+        if (Press(Keys.Up)) _optionsMenuRow = (_optionsMenuRow + 3) % 4;
+        if (Press(Keys.Down)) _optionsMenuRow = (_optionsMenuRow + 1) % 4;
+
+        void Activate(int row)
+        {
+            switch (row)
+            {
+                case 0:   // Graphics Options (native idmOptions)
+                    _graphicsSettingsVisible = true;
+                    _introView = IntroView.Main;
+                    break;
+                case 1:   // Sound Options (native idmSoundOptions: the port's real
+                          // sound controls are the music toggle + volume)
+                    if (_music is not null) _music.Toggle();
+                    break;
+                case 2:   // Game Options (native idmGameOptions): chat filter + controls
+                    ToggleOptionsChatFilter();
+                    break;
+                case 3:   // Map Keys and Controls (native Game Options 'C')
+                    ToggleKeyBindings();
+                    _introView = IntroView.Main;
+                    break;
+            }
+        }
+
+        // Old, documented hotkeys first (G/S/K keep their pre-P757 meaning),
+        // then the new one-press Sound/Game toggles on unused keys.
+        if (esc) _introView = IntroView.Main;                 // native OnCancel
+        else if (Press(Keys.G)) Activate(0);
+        else if (Press(Keys.S)) { if (_benchmarkSharing?.Available == true) _sharePanel = true; }
+        else if (Press(Keys.K)) Activate(3);
+        else if (Press(Keys.A)) Activate(1);
+        else if (Press(Keys.F)) Activate(2);
+        else if (Press(Keys.Enter)) Activate(_optionsMenuRow);
+
+        if (Press(Keys.M) && _music is not null) _music.Toggle();
+        if (Press(Keys.OemPlus) && _music is not null) _music.VolumeUp();
+        if (Press(Keys.OemMinus) && _music is not null) _music.VolumeDown();
         _iPrivacyKeys = keys;
     }
-    private void DrawPrivacySettings(float width, Color title, Color dim)
+
+    private void ToggleOptionsChatFilter()
     {
-        DrawIntroTitle(width, "Settings", "K: Key bindings   G: Graphics   Escape: Back", title, dim);
+        EnsureOptionsPrefs();
+        _optionsPrefs.ChatFilterPlayersOnly = !_optionsPrefs.ChatFilterPlayersOnly;
+        _optionsPrefs.Save();
+        _chatPaneFilterMode = _optionsPrefs.ChatFilterPlayersOnly ? 1 : 0;
+        ApplyChatPaneFilterMode();
+        Console.WriteLine($"[intro] game options: chat filter -> {(_optionsPrefs.ChatFilterPlayersOnly ? "PLAYERS" : "ALL")}");
+    }
+
+    private void DrawPrivacySettings(float width, float height, Color title, Color dim)
+    {
+        // Drawing reads the cached snapshot only (P757b): Load() does file I/O
+        // and must never run from the Draw path. UpdateOptionsMenu loads it once
+        // before Draw on the same frame the Settings view first becomes active.
+        bool playersOnly = _optionsPrefs.ChatFilterPlayersOnly;
+        DrawIntroTitle(width, "Options", "Graphics / Sound / Game / Controls", title, dim);
+        string[] rows =
+        {
+            "Graphics Options (G)",
+            "Sound Options (A toggle, +/- volume)",
+            $"Game Options (F: chat filter: {(playersOnly ? "PLAYERS" : "ALL")})",
+            "Map Keys and Controls (K)",
+        };
+        float y = height * 0.36f;
+        for (int i = 0; i < rows.Length; i++)
+        {
+            bool sel = i == _optionsMenuRow;
+            if (sel)
+                _spriteBatch.Draw(_whitePixel, new Rectangle(60, (int)y - 4, (int)width - 120, 30),
+                    new Color(0.08f, 0.35f, 0.33f, 0.55f));
+            _spriteBatch.DrawString(_hudSmall, (sel ? "> " : "  ") + rows[i], new Vector2(72, y), sel ? title : Color.White);
+            y += 40f;
+        }
+        _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   ENTER open   ESC back", new Vector2(72, y + 18f), dim);
         if (_benchmarkSharing?.Available == true)
             _spriteBatch.DrawString(_hudSmall, "S: Anonymous benchmark sharing\n" + _benchmarkSharing.Status,
-                new Vector2(60, 210), Color.White);
+                new Vector2(72, y + 60f), Color.White);
     }
     private bool UpdateBenchmarkSharingPanel(KeyboardState keys)
     {

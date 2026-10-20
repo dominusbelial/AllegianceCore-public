@@ -135,7 +135,7 @@ public sealed class KeyBindingRenderer
         bool warn = _ctl.Phase is KeyBindPhase.Conflict or KeyBindPhase.ConfirmReset;
         Draw(msg, new Vector2((w - sz.X) / 2f, my), warn ? WarnColor : NoteColor, 1f);
 
-        string hint = "Up/Down = move   Enter = pick   R = reset to defaults   Esc = back/close";
+        string hint = "Up/Down = move   Enter = pick   R = reset to defaults   Space = OK (save)   Esc = cancel (discard)";
         var hz = _small.MeasureString(hint);
         Draw(hint, new Vector2((w - hz.X) / 2f, panelY + panelH - 40f), NoteColor, 0.9f);
     }

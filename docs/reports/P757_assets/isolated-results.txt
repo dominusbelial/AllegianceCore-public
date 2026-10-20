@@ -1,0 +1,39 @@
+=== MONO run 1
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    92, Skipped:     0, Total:    92, Duration: 144 ms - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)
+=== CORE run 1
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    12, Skipped:     0, Total:    12, Duration: 94 ms - Allegiance.ClientCore.Tests.dll (net10.0)
+=== MONO run 2
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    92, Skipped:     0, Total:    92, Duration: 144 ms - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)
+=== CORE run 2
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    12, Skipped:     0, Total:    12, Duration: 91 ms - Allegiance.ClientCore.Tests.dll (net10.0)
+=== MONO run 3
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    92, Skipped:     0, Total:    92, Duration: 150 ms - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)
+=== CORE run 3
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:    12, Skipped:     0, Total:    12, Duration: 77 ms - Allegiance.ClientCore.Tests.dll (net10.0)
+=== broader run 1
+
+Passed!  - Failed:     0, Passed:    33, Skipped:     0, Total:    33, Duration: 3 s - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)
+=== broader run 2
+
+Passed!  - Failed:     0, Passed:    33, Skipped:     0, Total:    33, Duration: 3 s - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)
+=== broader run 3
+
+Passed!  - Failed:     0, Passed:    33, Skipped:     0, Total:    33, Duration: 3 s - Allegiance.ClientCore.MonoGame.Tests.dll (net10.0)
+=== FINAL help/chat/order run 1: 52 passed, 0 failed
+=== FINAL help/chat/order run 2: 52 passed, 0 failed
+=== FINAL help/chat/order run 3: 52 passed, 0 failed
+=== FINAL options/help run 1: 37 passed, 0 failed
+=== FINAL options/help run 2: 37 passed, 0 failed
+=== FINAL options/help run 3: 37 passed, 0 failed

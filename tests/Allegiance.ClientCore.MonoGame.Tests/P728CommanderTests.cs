@@ -184,12 +184,35 @@ public class P728CommanderTests
     [InlineData(false, (int)Game1.TargetKind.Ship, OrderChange.CidAttack)]
     [InlineData(true, (int)Game1.TargetKind.Ship, OrderChange.CidDefend)]
     [InlineData(false, (int)Game1.TargetKind.Station, OrderChange.CidAttack)]
-    [InlineData(true, (int)Game1.TargetKind.Station, OrderChange.CidGoto)]
-    [InlineData(false, (int)Game1.TargetKind.Warp, OrderChange.CidGoto)]
+    // P757: native's station branch gives Goto only when the station can land the
+    // ship — non-fighter + CapLand, fighter lifepod + (Rescue|Land), or fighter +
+    // Land (shipIGC.h:2124-2135). This test passes NO station capabilities, so the
+    // ladder cannot fire and the native default Defend stands. (The old
+    // approximation returned Goto here; P757b fixed the non-fighter fall-through.)
+    [InlineData(true, (int)Game1.TargetKind.Station, OrderChange.CidDefend)]
     public void Combat_pilots_receive_native_command_chat_defaults(bool friendly, int kind, short command)
     {
-        var order = Game1.CommandOrderResolver.ResolveChat(DataHullTypeIGC.HabmFighter, Game1.TargetKind.Ship, (Game1.TargetKind)kind, 123, friendly);
+        var order = Game1.CommandOrderResolver.ResolveDefaultOrder(DataHullTypeIGC.HabmFighter,
+            commandeeIsLayer: false, commandeeHasParent: false,
+            target: new Game1.CommandTargetProfile((Game1.TargetKind)kind, 123, friendly,
+                TargetHullAbm: null, StationSabm: null, ProbeEabm: null));
         Assert.Equal(command, order!.Value.CommandId);
         Assert.Equal(123, order.Value.ObjectId);
+    }
+
+    [Fact]
+    public void Sideless_targets_keep_the_goto_default()
+    {
+        // Native consults the MODEL's side (shipIGC.h:2073): a warp or asteroid has
+        // none, so it never becomes Attack — the default Goto survives
+        // (:2159-2161 'else if (psideHim != NULL)').
+        foreach (var kind in new[] { Game1.TargetKind.Warp, Game1.TargetKind.Asteroid })
+        {
+            var order = Game1.CommandOrderResolver.ResolveDefaultOrder(DataHullTypeIGC.HabmFighter,
+                commandeeIsLayer: false, commandeeHasParent: false,
+                target: new Game1.CommandTargetProfile(kind, 55, Friendly: null,
+                    TargetHullAbm: null, StationSabm: null, ProbeEabm: null));
+            Assert.Equal(OrderChange.CidGoto, order!.Value.CommandId);
+        }
     }
 }

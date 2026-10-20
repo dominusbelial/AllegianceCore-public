@@ -325,6 +325,17 @@ public sealed partial class Game1
             return;
         }
 
+        // P757 — the splash screen: title + loading, until the timeout/keypress
+        // advances to the intro (native splashscreen.cpp). Flushes any queued
+        // autoshot like the main path's Draw end (the early return would
+        // otherwise defer it past the splash's one visible frame).
+        if (_state == ClientState.Splash)
+        {
+            DrawSplash();
+            FlushScheduledAutoshot();
+            return;
+        }
+
         _lockBracket = null;   // P230 — recomputed only when a lock target projects into view this frame
         _leadIndicator = null; // P266 — recomputed only when a lead point projects into view this frame
         _targetSelectionBracket = null; // P345 — recomputed only when a T-selected target projects into view this frame
@@ -1927,7 +1938,7 @@ public sealed partial class Game1
         }
 
 
-        if (_helpVisible) _helpOverlayRenderer.Draw(GraphicsDevice.Viewport);
+        if (_helpVisible) _helpOverlayRenderer.Draw(GraphicsDevice.Viewport, _helpManual);
         if ((_dockedActive || _investActive) && !LocalSpectating && !SpectatorCameraActive && !_hideHud && !_hudHidden && !_directorActive)
         {
             string[] objectives;
@@ -2693,9 +2704,9 @@ public sealed partial class Game1
             notices: BuildTipNotices(),
             contacts: _drawRadarContacts,
             radarPulse: (MathF.Sin((float)_nowSeconds * 5f) + 1f) * 0.5f, radarMode: _radarMode,
-            chat: new HudChat(BuildChatLines(), _chatScrollOffset,
+            chat: new HudChat(BuildChatLines(), _chatPane.Offset,
                 _chatActive ? _chatBuffer.ToString() : string.Empty, _chatActive, _nowSeconds,
-                ChatTargetLogic.ComposeLabel(_chatTarget)),
+                ChatTargetLogic.ComposeLabel(_chatTarget), ChatPaneFilterLabel()),
             cargoLine: BuildCargoHudText(), flightPartsLine: BuildFlightPartsHudText(),
             commandLines: BuildCommandHudLines(), inventoryVisible: _consolePanes.Inventory,
             lastBaseObjectives: _lastBaseHud, hitConfirmation: _nowSeconds < _hudHitUntil,

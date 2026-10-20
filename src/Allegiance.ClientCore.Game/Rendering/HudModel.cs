@@ -80,7 +80,7 @@ public readonly record struct HudContact(
     // (radarimage.cpp:506-511).
     bool IsTech = false);
 public sealed record HudChat(IReadOnlyList<string> Lines, int Offset, string Input,
-    bool Composing, double NowSeconds, string Recipient);
+    bool Composing, double NowSeconds, string Recipient, string? FilterLabel = null);
 
 /// <summary>Presentation context supplied by the client; no textures, fonts,
 /// graphics device or classic skin settings belong here.</summary>

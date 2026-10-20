@@ -4137,6 +4137,12 @@ public sealed partial class ClientWorld
     /// docked disembark/launch sequences (native appmsg.cpp:1899-1911).</summary>
     public long BoardFailureRevision { get; private set; }
 
+    /// <summary>P757 — the requested parent ship id from the most recent
+    /// BOARD_NACK (native resolves <c>pfmBoardNack-&gt;sidRequestedParent</c> to
+    /// <c>IshipIGC*</c> for the failure branch, appmsg.cpp:1908-1909;
+    /// teleportpane.cpp:276-294). <c>Na</c> when no nack has arrived.</summary>
+    public short LastBoardFailureRequestedParent { get; private set; } = -1;
+
     /// <summary>P638 — <c>FM_S_BOARD_NACK(178)</c>: the server refused our
     /// board/leave request (<c>FedSrv.CPP:6412-6416</c>), own connection only.
     /// Native surfaces it as a popup in the teleport pane's <c>OnBoardFailed</c>
@@ -4145,12 +4151,54 @@ public sealed partial class ClientWorld
     /// <c>noTurretsSound</c>) else "Teleportation failed.". The MonoGame client
     /// has no modal box, so it surfaces the catch-all native string as a system
     /// line (the port's convention for refusals, cf. <see cref="RipcordDenied"/>).
-    /// It cannot reliably assess the target's free-turret count, so the generic
-    /// branch is used; the <c>noTurretsSound</c> has no ported asset.</summary>
+    /// P757 — the full native recovery (appmsg.cpp:1899-1910 →
+    /// <c>TeleportPane::OnBoardFailed</c>, teleportpane.cpp:276-294): gated on
+    /// being in game; while the player is docked (own ship has no cluster,
+    /// <c>GetShip()-&gt;GetCluster() == NULL</c>) the refusal picks the native
+    /// branch — when the requested parent is known and still shows a free
+    /// turret (<c>MannedTurrets &lt; NumTurrets</c>), the turret race message
+    /// plus the <c>noTurretsSound</c> cue; otherwise the generic failure line.
+    /// Manned turrets are the parent's children in the TURRET state only —
+    /// native <c>MannedTurrets</c> counts <c>LastSeenState() == c_ssTurret</c>
+    /// ships whose <c>LastSeenParent</c> is the requested parent
+    /// (teleportpane.cpp:499-518); a docked or flying child never occupies a
+    /// turret slot. Slots come from the mission core's hull table
+    /// (<c>MaxWeapons - MaxFixedWeapons</c>, teleportpane.cpp:520-531).</summary>
     private void Apply(BoardNack m)
     {
+        if (!InGame) return;                       // appmsg.cpp:1900-1901
         BoardFailureRevision++;
-        PostSystemLine("Teleportation failed.");
+        LastBoardFailureRequestedParent = m.SidRequestedParent;
+
+        bool docked = MyShipId is { } me
+            && _ships.TryGetValue(me, out var own)
+            && own.StationId != Na;                 // no live cluster (a gunner rides the parent's cluster)
+        if (!docked) return;                       // appmsg.cpp:277-278
+
+        bool turretRace = false;
+        if (m.SidRequestedParent != Na && _ships.TryGetValue(m.SidRequestedParent, out var parent))
+        {
+            int slots = MissionCore is { } core
+                && core.HullTypes.TryGetValue(parent.HullId, out var hull)
+                ? hull.MaxWeapons - hull.MaxFixedWeapons
+                : 0;
+            int manned = 0;
+            foreach (var s in _ships.Values)
+                if (s.ParentId == m.SidRequestedParent
+                    && s.State == ShipStatusMessage.StateTurret)   // c_ssTurret only, teleportpane.cpp:510
+                    manned++;
+            turretRace = manned < slots;
+        }
+
+        if (turretRace)
+        {
+            PostSystemLine("Teleportation canceled - no turret positions were open.");
+            RecordSoundEvent(ClientSoundEventKind.BoardRefusedTurretsFull, m.SidRequestedParent);
+        }
+        else
+        {
+            PostSystemLine("Teleportation failed.");
+        }
     }
 
     /// <summary>P638 — <c>FM_S_MISSILE_SPOOFED(110)</c>: one missile's lock was

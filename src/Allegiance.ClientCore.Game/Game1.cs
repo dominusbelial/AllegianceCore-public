@@ -844,6 +844,9 @@ public sealed partial class Game1 : Game
     private Rendering.DockedScreenRenderer _dockedScreenRenderer = null!;
     private bool _dockedActive;
     private bool _launchSent;
+    // P757 — BoardFailureRevision observed when the teleport pane last acted;
+    // a later BOARD_NACK releases the pending teleport (EndLockDown equivalent).
+    private long _teleportBoardFailure;
     private bool _dockUpWasDown, _dockDownWasDown, _dockSpaceWasDown, _dockLWasDown, _dockUWasDown;
     // P519 — latches for the tab/cycle/back/enter keys of the reworked docked shop.
     private bool _dockTabWasDown, _dockQWasDown, _dockEWasDown, _dockBWasDown, _dockEnterWasDown;
@@ -1110,7 +1113,10 @@ public sealed partial class Game1 : Game
     private bool _f12WasDown;
     // P577 — the in-game Credits/Licences screen visibility (F12 toggle).
     private bool _creditsVisible;
-    private bool _helpKeyWasDown; // edge-detect H so holding it doesn't re-fire
+    private bool _helpKeyWasDown;
+    // P757 — help-overlay manual navigation edge latches (topic Up/Down,
+    // Back history, page scroll).
+    private bool _helpNavUpWasDown, _helpNavDownWasDown, _helpNavBackWasDown, _helpNavPgUpWasDown, _helpNavPgDnWasDown; // edge-detect H so holding it doesn't re-fire
     private Rendering.ScoreboardOverlayRenderer _scoreboardRenderer = null!;
     private bool _scoreboardVisible;
     private bool _scoreboardKeyWasDown; // edge-detect B so holding it doesn't re-fire
@@ -1213,12 +1219,18 @@ public sealed partial class Game1 : Game
     private ChatTarget _chatTarget = ChatTargetLogic.DefaultTarget;
     private const int MaxChatLen = 880;
     private ChatRenderer _chatRenderer = null!;
-    // P626 — chat-buffer scroll offset (lines pulled from the newest edge; 0 =
-    // the live, newest-visible edge). Driven by the four native chat-scroll
-    // commands (PrevCommMsg/NextCommMsg/ChatPageUp/Down); clamped against the
-    // log length by ChatScroll. Reset to 0 when a new chat line lands so the
-    // pane doesn't linger scrolled-back over fresh activity.
-    private int _chatScrollOffset;
+    // P757 — the chat pane's history view: native ChatListPaneImpl's channel
+    // filter + autoscroll rules (chatpane.cpp), replacing the bare P626
+    // offset. The rendered window still reads the model's Offset (lines pulled
+    // from the newest edge; 0 = live edge).
+    private readonly Rendering.ChatPaneModel _chatPane = new();
+    // P757 — chat-pane channel-filter mode (Alt+C): All (no restriction) →
+    // Players (native m_bPlayerChatsOnly) → the compose channel + the
+    // individual/admin channels (the native lobby pane's set,
+    // teamscreen.cpp:3085-3101) → back to All.
+    private int _chatPaneFilterMode;
+    private bool _chatPaneFilterWasDown;
+    private bool _chatPaneFilterSeeded;
     private bool _chatPgUpWasDown, _chatPgDnWasDown, _chatMsgUpWasDown, _chatMsgDnWasDown;
     private int _lastChatCount;
     // P626 — vote keys (TK_VoteYes/VoteNo) edge latches.
@@ -1559,11 +1571,13 @@ public sealed partial class Game1 : Game
         }
         else if (opts.Intro)
         {
-            // P731 — no command-line game-start arguments: open the intro
-            // screen (native's introscreen.cpp) where the player chooses
-            // single player or multiplayer.
-            _state = ClientState.Intro;
-            InitIntro();
+            // P731 — no command-line game-start arguments: the intro screen
+            // (native's introscreen.cpp) where the player chooses single
+            // player or multiplayer. P757 — native boots through the SPLASH
+            // screen first (WinTrek.cpp:2690 m_screen(ScreenIDSplashScreen)),
+            // which times out to the intro (splashscreen.cpp:34-46).
+            _state = ClientState.Splash;
+            _splashStartSeconds = 0;
         }
         else
         {

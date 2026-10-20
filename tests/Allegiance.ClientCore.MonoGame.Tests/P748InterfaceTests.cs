@@ -46,6 +46,7 @@ public sealed class P748InterfaceTests
         world.Apply(new ShipStatusMessage { ShipId = 10, SectorId = 1, StationId = 42, ParentId = parent,
             State = ShipStatusMessage.StateDocked });
         world.Apply(new MissionDef { Stage = (int)MissionStage.Started });
+        world.Apply(new EnterGame());   // P757: BOARD_NACK only counts in game (native appmsg.cpp:1900)
         world.Apply(new SetMoney { ShipId = 10, Money = 10000 });
         world.Apply(new ExportStation { Station = new DataStationIGC([0, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0, 0],
             7, 0, 42, 1, 255, 255, "station in remote sector") });

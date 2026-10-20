@@ -225,6 +225,54 @@ public class HelpOverlayTests
     }
 
     [Fact]
+    public void ContentBand_ReservesTheTopicBarAndFooter()
+    {
+        // P757b — the manual's topic bar under the header and the footer note
+        // are fixed rows: the columns must start below the bar and end above the
+        // note, so "CAMERA / VIEW" can never collide with the topic bar.
+        const float panelY = 36f, panelH = 648f;
+        var withBar = HelpOverlayLayout.ContentBand(panelY, panelH, topicBar: true);
+        Assert.True(withBar.Top >= panelY + HelpOverlayLayout.Padding + HelpOverlayLayout.TopicBarHeight);
+        Assert.True(withBar.Top + withBar.Height
+            <= panelY + panelH - HelpOverlayLayout.Padding - HelpOverlayLayout.FooterReserve);
+
+        var withoutBar = HelpOverlayLayout.ContentBand(panelY, panelH, topicBar: false);
+        Assert.Equal(withBar.Top - HelpOverlayLayout.TopicBarHeight, withoutBar.Top);
+        Assert.Equal(withBar.Height + HelpOverlayLayout.TopicBarHeight, withoutBar.Height);
+    }
+
+    [Fact]
+    public void ControlsSections_FitThe720pManualBand()
+    {
+        // The real catalogue at 1280x720 with the topic bar: the targeting group
+        // alone is taller than the whole band, so the Controls layout splits it
+        // into sections. Every section stays inside the band, and the sections
+        // still cover every entry of every group exactly once.
+        var groups = KeyBindingTable.All;
+        const float panelY = 720f * 0.05f;
+        const float panelH = 720f * 0.90f;
+        var band = HelpOverlayLayout.ContentBand(panelY, panelH, topicBar: true);
+        var sections = HelpOverlayLayout.LayoutSections(
+            groups.Select(g => g.Entries.Count).ToArray(), band.Top, band.Height);
+
+        Assert.InRange(sections.Max(s => s.Column) + 1, 2, HelpOverlayLayout.MaxSectionColumns);
+        foreach (var section in sections)
+        {
+            Assert.True(section.Y >= band.Top, $"section of group {section.GroupIndex} starts above the band");
+            Assert.True(section.Y + section.Height <= band.Top + band.Height,
+                $"section of group {section.GroupIndex} overflows the 720p band "
+                + $"(y={section.Y}, h={section.Height}, band={band.Top}+{band.Height})");
+        }
+        for (int g = 0; g < groups.Count; g++)
+        {
+            var covered = sections.Where(s => s.GroupIndex == g).SelectMany(
+                s => Enumerable.Range(s.FirstEntry, s.EntryCount)).ToArray();
+            Assert.Equal(groups[g].Entries.Count, covered.Length);
+            Assert.Equal(Enumerable.Range(0, groups[g].Entries.Count), covered);
+        }
+    }
+
+    [Fact]
     public void Table_BalancesIntoTypicalPanelWithoutOverflow()
     {
         // The REAL table — now the full 14-category reference (P625b routed every

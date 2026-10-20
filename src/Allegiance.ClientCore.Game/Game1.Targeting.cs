@@ -1081,6 +1081,8 @@ public sealed partial class Game1
         // keys read (HabmCapabilities) — the client-side mirror of the server's
         // c_habmBuilder gate, so an obviously-illegal order is refused HERE first.
         short roleBits;
+        bool commandeeOnParent;
+        bool commandeeIsLayer;
         lock (_session.Gate)
         {
             if (!world.Ships.TryGetValue(cmd.Id, out var ent))
@@ -1089,16 +1091,38 @@ public sealed partial class Game1
                 return;
             }
             roleBits = ShipRoleBits(ent.HullId);
+            commandeeOnParent = ent.ParentId != -1;   // native m_pshipParent != NULL
+            commandeeIsLayer = ShipIsLayer(ent.HullId);
         }
 
-        bool friendly;
+        // P757 — the target profile for the full native GetDefaultOrder table
+        // (Igc/shipIGC.h:2071-2161): side relationship + the target's
+        // hull/station/probe capabilities, resolved from the same client-side
+        // catalogues the rest of the commander UI reads.
+        bool? friendly;
+        short? targetHullAbm = null;
+        short? stationSabm = null;
+        short? probeEabm = null;
         lock (_session.Gate)
         {
             short? side = tgt.Kind == TargetKind.Ship && world.Ships.TryGetValue(tgt.Id, out var shipTarget) ? shipTarget.SideId
-                : tgt.Kind == TargetKind.Station && world.Stations.TryGetValue(tgt.Id, out var stationTarget) ? stationTarget.SideId : null;
-            friendly = side is { } other && world.MySideId is { } ownSide && (other == ownSide || world.AreAllied(ownSide, other));
+                : tgt.Kind == TargetKind.Station && world.Stations.TryGetValue(tgt.Id, out var stationTarget) ? stationTarget.SideId
+                : tgt.Kind == TargetKind.Probe && world.Probes.TryGetValue(tgt.Id, out var probeTarget) ? probeTarget.SideId
+                : null;
+            friendly = side is { } other && world.MySideId is { } ownSide
+                ? other == ownSide || world.AreAllied(ownSide, other)
+                : null;
+            if (tgt.Kind == TargetKind.Ship && world.Ships.TryGetValue(tgt.Id, out var shipT))
+                targetHullAbm = ShipRoleBits(shipT.HullId);
+            else if (tgt.Kind == TargetKind.Station && world.Stations.TryGetValue(tgt.Id, out var stT)
+                     && _shopCatalog is { StationTypes: { } stypes } && stypes.TryGetValue(stT.StationTypeId, out var stype))
+                stationSabm = stype.SabmCapabilities;
+            else if (tgt.Kind == TargetKind.Probe && world.Probes.TryGetValue(tgt.Id, out var prT)
+                     && _shopCatalog is { ProbeTypes: { } ptypes } && ptypes.TryGetValue(prT.ProbetypeId, out var ptype))
+                probeEabm = ptype.EabmCapabilities;
         }
-        var order = CommandOrderResolver.ResolveChat(roleBits, cmd.Kind, tgt.Kind, tgt.Id, friendly);
+        var order = CommandOrderResolver.ResolveDefaultOrder(roleBits, commandeeIsLayer, commandeeOnParent,
+            new CommandTargetProfile(tgt.Kind, tgt.Id, friendly, targetHullAbm, stationSabm, probeEabm));
         if (order is not { } o)
         {
             Console.WriteLine($"[monogame] issue order: no applicable order for commandee {cmd.Name} (#{cmd.Id}) + target {tgt.Name} ({tgt.Kind}#{tgt.Id})");
@@ -1127,6 +1151,7 @@ public sealed partial class Game1
         Allegiance.Core.Wire.OrderChange.CidAttack => "ATTACK",
         Allegiance.Core.Wire.OrderChange.CidDefend => "DEFEND",
         Allegiance.Core.Wire.OrderChange.CidGoto => "GOTO",
+        Allegiance.Core.Wire.OrderChange.CidPickup => "PICKUP",
         _ => $"commandID={commandId}",
     };
 
@@ -1141,6 +1166,20 @@ public sealed partial class Game1
         foreach (var h in cat.Hulls)
             if (h.HullId == hullId) return h.HabmCapabilities;
         return 0;
+    }
+
+    /// <summary>P757 — is this hull a mine-LAYER drone (native pilot type
+    /// <c>c_ptLayer</c>, Ship.PilotTypeLayer)? The client's EXPORT_SHIP only
+    /// carries player ships, so the drone's pilot type is resolved through the
+    /// ShopCatalog's DroneTypes table (hull → DataDroneTypeIGC.PilotType) —
+    /// the same catalogue the role bits come from.</summary>
+    private bool ShipIsLayer(short hullId)
+    {
+        if (_shopCatalog is not { DroneTypes: { } drones }) return false;
+        foreach (var d in drones.Values)
+            if (d.HullTypeId == hullId && d.PilotType == Allegiance.Core.Sim.Ship.PilotTypeLayer)
+                return true;
+        return false;
     }
 
     /// <summary>P415 — resolve a station TYPE id to its SabmCapabilities from

@@ -48,7 +48,7 @@ public sealed partial class Game1
                 }
                 int count;
                 lock (_session.Gate) count = _session.World.Events.Chats.Count;
-                _chatScrollOffset = Rendering.ChatScroll.PageOlder(0, count, Rendering.ChatRenderer.MaxVisible);
+                _chatPane.PageUp(count, Rendering.ChatRenderer.MaxVisible, _nowSeconds);
                 Console.WriteLine("[inflight-proof] chat paged back (older)");
                 SayInflightShot("chat paged back");
                 break;
@@ -62,8 +62,13 @@ public sealed partial class Game1
                 // Help overlay (H) — shows every new P626 command + the two new
                 // help categories (INVENTORY / CARGO, VOTE / COMMAND). Left ON
                 // so the remaining autoshots capture it.
-                _chatScrollOffset = 0;
+                _chatPane.ScrollToBottom();
                 _helpVisible = true;
+                // P757 — the H overlay now opens the manual; jump straight to the
+                // Controls topic so this proof still captures the full key
+                // reference columns (the P626 commands + help categories).
+                _helpManual = new Rendering.HelpManualModel();
+                _helpManual.GoTo("hlpControls");
                 Console.WriteLine("[inflight-proof] help overlay ON (stays on)");
                 SayInflightShot("help overlay (H)");
                 break;

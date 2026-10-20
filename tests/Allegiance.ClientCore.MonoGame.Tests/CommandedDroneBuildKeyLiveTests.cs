@@ -250,8 +250,10 @@ public sealed class CommandedDroneBuildKeyLiveTests
 
     private static void SendBuild(ConnectionSession client, short droneId, short rockId)
     {
-        var order = Game1.CommandOrderResolver.ResolveChat(DataHullTypeIGC.HabmBuilder,
-            Game1.TargetKind.Ship, Game1.TargetKind.Asteroid, rockId, friendly: false);
+        var order = Game1.CommandOrderResolver.ResolveDefaultOrder(DataHullTypeIGC.HabmBuilder,
+            commandeeIsLayer: false, commandeeHasParent: false,
+            target: new Game1.CommandTargetProfile(Game1.TargetKind.Asteroid, rockId, Friendly: null,
+                TargetHullAbm: null, StationSabm: null, ProbeEabm: null));
         Assert.NotNull(order);
         var payload = order.Value;
         client.SendChat("", ChatTarget.Individual, droneId, commandId: payload.CommandId,

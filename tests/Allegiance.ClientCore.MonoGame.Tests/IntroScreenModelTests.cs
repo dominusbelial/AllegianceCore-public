@@ -23,8 +23,12 @@ public class IntroScreenModelTests
         Assert.Equal(IntroCommand.Options, IntroScreenModel.Activate(4));
         // Credits (native creditsButtonPane, :1225).
         Assert.Equal(IntroCommand.Credits, IntroScreenModel.Activate(5));
+        // Replay Intro (native introButtonPane, :1224 / OnButtonIntro :1865).
+        Assert.Equal(IntroCommand.ReplayIntro, IntroScreenModel.Activate(6));
+        // Help (native helpButtonPane, :1226 / OnButtonHelp :1806).
+        Assert.Equal(IntroCommand.Help, IntroScreenModel.Activate(7));
         // Exit (native exitButtonPane, :1238 / OnButtonExit :1799).
-        Assert.Equal(IntroCommand.Exit, IntroScreenModel.Activate(6));
+        Assert.Equal(IntroCommand.Exit, IntroScreenModel.Activate(8));
     }
 
     [Fact]
@@ -75,12 +79,16 @@ public class IntroScreenModelTests
     }
 
     [Fact]
-    public void Menu_preserves_seven_slots_and_adds_benchmark()
+    public void Menu_preserves_the_native_button_set_and_adds_benchmark()
     {
-        Assert.Equal(8, IntroScreenModel.MainLabels.Length);
-        Assert.Equal("Benchmark", IntroScreenModel.MainLabels[7]);
-        Assert.Equal(IntroCommand.Benchmark, IntroScreenModel.Activate(7));
+        // P757 — Replay Intro and Help join the native button set after
+        // Credits; Benchmark stays the port's extra at the end.
+        Assert.Equal(10, IntroScreenModel.MainLabels.Length);
+        Assert.Equal("Replay Intro", IntroScreenModel.MainLabels[6]);
+        Assert.Equal("Help", IntroScreenModel.MainLabels[7]);
+        Assert.Equal("Exit", IntroScreenModel.MainLabels[8]);
+        Assert.Equal("Benchmark", IntroScreenModel.MainLabels[9]);
+        Assert.Equal(IntroCommand.Benchmark, IntroScreenModel.Activate(9));
         Assert.Equal("Single Player", IntroScreenModel.MainLabels[0]);
-        Assert.Equal("Exit", IntroScreenModel.MainLabels[6]);
     }
 }

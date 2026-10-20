@@ -340,15 +340,34 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         float leftWidth = Math.Max(120, w / 2 - 126.5f * Math.Clamp(h / 680, 1.15f, 2.1f) - 56 * _scale - 40);
         if (model.Context.Chat is { } chat)
         {
-            int start = ChatScroll.StartIndex(chat.Offset, chat.Lines.Count, ChatRenderer.MaxVisible);
-            int take = Math.Min(ChatRenderer.MaxVisible, chat.Lines.Count - start);
-            float y = h - (chat.Composing ? 96 : 74) * _scale - take * line;
-            if (chat.Offset > 0) { DrawMeasuredText(_small, "(OLDER - PgDn to newest)", new(20, y - line), Muted); }
-            for (int i = 0; i < take; i++) { DrawMeasuredText(_small, chat.Lines[start + i], new(20, y + i * line), Color.White, centerAtScale: false, maxWidth: leftWidth); }
+            // BuildChatLines already returns the ChatPaneModel's visible window
+            // (offset applied once). Re-applying StartIndex here collapsed every
+            // scrolled window back to the newest page (P757b).
+            int take = Math.Min(ChatRenderer.MaxVisible, chat.Lines.Count);
+            // Keep the history above the lower-left status band (RADAR at
+            // h-54, cargo at h-132, WEAPONS/BOOST at h-158) so a full pane can
+            // never draw over "WEAPONS: ... BOOST: ...".
+            float chatBottom = h - 176f * _scale;
+            float y = chatBottom - take * line;
+            if (take > 0 || chat.Offset > 0)
+            {
+                float markerY = y - line;
+                if (chat.Offset > 0)
+                    DrawMeasuredText(_small, "(OLDER - PgDn to newest)", new(20, markerY), Muted, centerAtScale: false);
+                if (chat.FilterLabel is { } fl && take > 0)
+                {
+                    // Right-align the filter inside the chat column: the old
+                    // fixed leftWidth-140 origin sat on the THR gauge at 720p.
+                    string label = $"[{fl}]";
+                    float labelX = Math.Max(20f, 20f + leftWidth - _small.MeasureString(label).X * _scale);
+                    DrawMeasuredText(_small, label, new(labelX, markerY), Muted, centerAtScale: false);
+                }
+            }
+            for (int i = 0; i < take; i++) { DrawMeasuredText(_small, chat.Lines[i], new(20, y + i * line), Color.White, centerAtScale: false, maxWidth: leftWidth); }
             if (take > 0) Mark("Chat history");
             if (chat.Composing)
             {
-                DrawMeasuredText(_small, chat.Recipient + "> " + chat.Input + ((long)(chat.NowSeconds * 2) % 2 == 0 ? "_" : ""), new(20, h - 62 * _scale), Color.White, centerAtScale: false, maxWidth: leftWidth);
+                DrawMeasuredText(_small, chat.Recipient + "> " + chat.Input + "|", new(20, h - 62 * _scale), Color.White, centerAtScale: false, maxWidth: leftWidth);
                 Mark("Chat composition and recipient");
             }
         }

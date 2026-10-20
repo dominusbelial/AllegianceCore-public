@@ -41,6 +41,12 @@ public enum ClientSoundEventKind
     /// plays.</summary>
     TeleportArrived,
 
+    /// <summary>P757 — BOARD_NACK refused a board request whose requested parent
+    /// still showed a free turret (the turret race): native plays the
+    /// <c>noTurretsSound</c> alongside "Teleportation canceled - no turret
+    /// positions were open." (teleportpane.cpp:282-286).</summary>
+    BoardRefusedTurretsFull,
+
     /// <summary>Native newCommandMsgSound, appmsg.cpp:1757.</summary>
     SectorHighlighted,
 

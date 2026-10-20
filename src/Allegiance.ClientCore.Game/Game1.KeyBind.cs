@@ -23,9 +23,15 @@ public partial class Game1
 
     private void InitKeyBindingUi(SpriteBatch sb)
     {
+        // P757 — native OK-versus-Cancel persistence (trekinput.cpp:2436-2458,
+        // 3005-3030): the popup mutates the LIVE map (so the help overlay and
+        // the action lookups reflect a rebind immediately, like native's
+        // in-memory map), but nothing is written until OK; Cancel (Esc) reloads
+        // the persisted map and discards the pending changes.
         _keyBindController = new KeyBindingController(
             Rendering.KeyBindingStore.Instance.Map,
-            () => Rendering.KeyBindingStore.Instance.Save());
+            onCommit: () => Rendering.KeyBindingStore.Instance.Save(),
+            onDiscard: () => Rendering.KeyBindingStore.Instance.Reload());
         _keyBindRenderer = new KeyBindingRenderer(sb, _whitePixel, _hudSmall, _keyBindController);
         _keyBindPrevKs = Keyboard.GetState();
         Console.WriteLine("[keymap] Controls popup ready (open: "
@@ -58,21 +64,37 @@ public partial class Game1
 
     /// <summary>Per-frame input while the Controls popup is visible. Edges are
     /// computed against the previous frame's keyboard state so a held key can't
-    /// repeat an action (same discipline as every other in-flight toggle).</summary>
+    /// repeat an action (same discipline as every other in-flight toggle).
+    /// P757 — native popup keys (trekinput.cpp:3005-3030): Space = OK
+    /// (SaveMap + close), Esc = Cancel (reload + close), Enter = edit selection,
+    /// Delete = delete mapping.</summary>
     private void UpdateKeyBindingPopup(KeyboardState ks)
     {
         bool up = Pressed(ks, XnaKeys.Up), down = Pressed(ks, XnaKeys.Down);
         bool enter = Pressed(ks, XnaKeys.Enter), r = Pressed(ks, XnaKeys.R);
         bool esc = Pressed(ks, XnaKeys.Escape), y = Pressed(ks, XnaKeys.Y), n = Pressed(ks, XnaKeys.N);
+        bool space = Pressed(ks, XnaKeys.Space);
 
         switch (_keyBindController.Phase)
         {
             case KeyBindPhase.Browse:
                 if (up) _keyBindController.MoveUp();
                 else if (down) _keyBindController.MoveDown();
-                if (enter) _keyBindController.SelectCurrent();
+                if (space)
+                {
+                    // OnButtonOK — persist and close (trekinput.cpp:3025-3028).
+                    _keyBindController.Commit();
+                    _keyBindVisible = false;
+                    Console.WriteLine("[keymap] Controls OK - bindings saved");
+                }
+                else if (enter) _keyBindController.SelectCurrent();
                 else if (r) _keyBindController.RequestReset();
-                else if (esc) { _keyBindController.Cancel(); if (_keyBindController.Phase == KeyBindPhase.Closed) _keyBindVisible = false; }
+                else if (esc)
+                {
+                    // OnButtonCancel — discard and close (trekinput.cpp:3013-3015).
+                    _keyBindController.Cancel();
+                    if (_keyBindController.Phase == KeyBindPhase.Closed) _keyBindVisible = false;
+                }
                 break;
 
             case KeyBindPhase.Capture:
