@@ -9,7 +9,22 @@ public sealed partial class ClientWorld
     /// slot (WinTrek.cpp:10408-10412,10668-10681). Access under the session gate.</summary>
     public QueuedCommandState? MyAcceptedCommand { get; private set; }
 
+    /// <summary>HUD-8b — the native <c>c_cmdCurrent</c> slot: the current TARGET
+    /// COMMAND (<c>SetTarget</c>, WinTrek.cpp:8823-8852), read by the red order
+    /// turn arrow (<c>indicator.cpp:411-457,783-791</c>). It is independent of the
+    /// client-local autopilot target (<c>Game1._autoTarget</c>): selecting a target
+    /// (T / class keys / <c>TK_TargetCommand</c>) sets it, issuing a command sets it
+    /// to the accepted target, and autopilot engage/disengage does NOT touch it.
+    /// Access under the session gate.</summary>
+    public QueuedCommandState? MyCurrentCommand { get; private set; }
+
     public void ClearAcceptedCommand() => MyAcceptedCommand = null;
+
+    /// <summary>HUD-8b — install/clear the current target command mirror of native
+    /// <c>SetCommand(c_cmdCurrent, …)</c> (shipIGC.h:721-772). A <c>null</c> target
+    /// clears the slot exactly like native <c>SetCommand(c_cmdCurrent, NULL,
+    /// c_cidNone)</c>. Access under the session gate.</summary>
+    public void SetCurrentCommand(QueuedCommandState? command) => MyCurrentCommand = command;
 
     /// <summary>Native RejectQueuedCommand(true, true), WinTrek.cpp:10583-10623.
     /// P755 also sends the native voNegativeSound reply to the order's sender.</summary>
@@ -126,8 +141,19 @@ public sealed partial class ClientWorld
 
     private void Apply(OrderChange order)
     {
-        if (order.ShipID != MyShipId || order.Command != OrderChange.CmdAccepted) return;
-        MyAcceptedCommand = order.CommandId == OrderChange.CidNone ? null
-            : new QueuedCommandState(order.CommandId, order.ObjectType, order.ObjectID);
+        if (order.ShipID != MyShipId) return;
+        if (order.Command == OrderChange.CmdAccepted)
+        {
+            MyAcceptedCommand = order.CommandId == OrderChange.CidNone ? null
+                : new QueuedCommandState(order.CommandId, order.ObjectType, order.ObjectID);
+        }
+        else if (order.Command == OrderChange.CmdCurrent)
+        {
+            // HUD-8b — the current target command slot (WinTrek.cpp:8838-8844:
+            // SetTarget sends command=c_cmdCurrent; objectID=NA clears it).
+            MyCurrentCommand = order.ObjectID == Na
+                ? null
+                : new QueuedCommandState(order.CommandId, order.ObjectType, order.ObjectID);
+        }
     }
 }

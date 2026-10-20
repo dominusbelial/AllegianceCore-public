@@ -347,6 +347,189 @@ public sealed partial class Game1
     }
 
     /// <summary>
+    /// HUD-8 — project a world-space DIRECTION (w=0) to viewport px, mirroring
+    /// native <c>Camera::TransformDirectionToImage</c> + <c>rect.TransformNDCToImage</c>
+    /// (indicator.cpp:140-143). Returns null when the direction does not land
+    /// inside the view rect (native <c>rect.Inside</c>, indicator.cpp:144).
+    /// </summary>
+    private Vector2? TransformDirectionToScreen(Vector3 direction, Matrix view, Matrix proj)
+    {
+        var viewProj = view * proj;
+        var clip = Vector4.Transform(new Vector4(direction.X, direction.Y, direction.Z, 0f), viewProj);
+        if (MathF.Abs(clip.W) < 1e-6f) return null;
+        float sx = clip.X / clip.W;
+        float sy = clip.Y / clip.W;
+        if (MathF.Abs(sx) > 1f || MathF.Abs(sy) > 1f) return null;   // outside the view rect
+        var vp = GraphicsDevice.Viewport;
+        return new Vector2((sx * 0.5f + 0.5f) * vp.Width, (0.5f - sy * 0.5f) * vp.Height);
+    }
+
+    /// <summary>
+    /// HUD-8 — the velocity-direction marker: project the own source ship's
+    /// velocity DIRECTION into the view (cockpit only; the zero-speed and camera
+    /// gates are applied by <see cref="HudModel.VelocityMarkerVisible"/>).
+    /// </summary>
+    private Vector2? ComputeVelocityMarker(Matrix view, Matrix proj)
+    {
+        if (!TryOwnPose(out _, out _, out var velocity)) return null;
+        if ((int)(velocity.Length() + 0.5f) == 0) return null;
+        return TransformDirectionToScreen(PoseConverter.ToXna(velocity), view, proj);
+    }
+
+    /// <summary>
+    /// HUD-8 — chase weapon aim without a target (indicator.cpp:367-405): project
+    /// the mounted weapon's forward range point (speed × lifespan) from the real
+    /// camera as a direction. Returns null when the weapon/loadout is unresolved.
+    /// </summary>
+    private Vector2? ComputeChaseAim(Matrix view, Matrix proj, Vector3 cameraEye)
+    {
+        if (!TryOwnPose(out var position, out var orientation, out _)) return null;
+        if (!TryResolveActiveWeaponRange(out float range)) return null;
+        var shipPosition = PoseConverter.ToXna(position);
+        var forward = PoseConverter.ToXna(orientation.GetForward());
+        var tracking = shipPosition + forward * range;
+        var aim = tracking - cameraEye;
+        if (aim.LengthSquared() < 1e-6f) return null;
+        aim.Normalize();
+        return TransformDirectionToScreen(aim, view, proj);
+    }
+
+    /// <summary>
+    /// HUD-8 — resolve the currently-selected weapon's projectile range
+    /// (speed × lifespan, indicator.cpp:391-393) from the live loadout + core
+    /// projectile table. Mirrors <see cref="BuildWeaponStatusRows"/>'s active
+    /// weapon selection (group-fire → first weapon; single → selected mount).
+    /// </summary>
+    private bool TryResolveActiveWeaponRange(out float range)
+    {
+        range = 0f;
+        var catalog = _shopCatalog;
+        if (catalog?.ProjectileTypes is not { } projectiles) return false;
+        var world = _session.World;
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)
+                || own.Loadout is not { Count: > 0 } loadout) return false;
+
+            DataPartTypeIGC.Weapon? active = null;
+            foreach (var p in loadout)
+            {
+                DataPartTypeIGC part = default;
+                bool found = false;
+                foreach (var candidate in catalog.Parts)
+                    if (candidate.PartId == p.PartId) { part = candidate; found = true; break; }
+                if (!found || part.Type is not DataPartTypeIGC.Weapon weapon) continue;
+                if (_groupFire) { active = weapon; break; }
+                if (p.MountId == _selectedMount) { active = weapon; break; }
+            }
+
+            if (active is not { } resolved || !projectiles.TryGetValue(resolved.ProjectileTypeId, out var projectile)) return false;
+            range = projectile.Speed * projectile.Lifespan;
+            return range > 0f;
+        }
+    }
+
+    /// <summary>
+    /// HUD-8 — accepted/current order turn arrows (indicator.cpp:411-457): the
+    /// normalized centre-relative screen offset toward each off-axis order target,
+    /// gated on same cluster, non-self/source, and offset² &gt; 108². Current target
+    /// is the native <c>c_cmdCurrent</c> TARGET COMMAND
+    /// (<see cref="ClientWorld.MyCurrentCommand"/>, set by <c>SetTarget</c>),
+    /// NOT the client-local autopilot target (<c>_autoTarget</c>); accepted is
+    /// <see cref="ClientWorld.MyAcceptedCommand"/>.
+    /// </summary>
+    private HudOrderArrows? ComputeOrderArrows(Matrix view, Matrix proj, Vector3 cameraEye)
+    {
+        var world = _session.World;
+        QueuedCommandState? currentCommand;
+        QueuedCommandState? accepted;
+        short mySector;
+        short me;
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is not { } myShip) return null;
+            me = myShip;
+            if (!world.Ships.TryGetValue(me, out var own)) return null;
+            mySector = own.SectorId;
+            currentCommand = world.MyCurrentCommand;
+            accepted = world.MyAcceptedCommand;
+        }
+
+        HudPoint currentDirection = default;
+        HudPoint? resolvedCurrentDirection = null;
+        if (currentCommand is { } current
+            && (current.TargetType != IgcObjectType.Ship || current.TargetId != me)
+            && TryResolveCommandPosition(current, out var currentPosition, out var currentCluster)
+            && currentCluster == mySector
+            && TryProjectOrderOffset(currentPosition, view, proj, cameraEye, out currentDirection))
+        {
+            resolvedCurrentDirection = currentDirection;
+        }
+
+        HudPoint acceptedDirection = default;
+        HudPoint? resolvedAcceptedDirection = null;
+        if (accepted is { } acceptedOrder
+            && (acceptedOrder.TargetType != IgcObjectType.Ship || acceptedOrder.TargetId != me)
+            && TryResolveCommandPosition(acceptedOrder, out var acceptedPosition, out var acceptedCluster)
+            && acceptedCluster == mySector
+            && TryProjectOrderOffset(acceptedPosition, view, proj, cameraEye, out acceptedDirection))
+        {
+            resolvedAcceptedDirection = acceptedDirection;
+        }
+
+        HudPoint? currentDirectionResult = resolvedCurrentDirection;
+        HudPoint? acceptedDirectionResult = resolvedAcceptedDirection;
+        if (currentDirectionResult is null && acceptedDirectionResult is null) return null;
+        bool sameTarget = currentCommand is { } ct && accepted is { } ac && SameCommandObject(ct, ac);
+        return new HudOrderArrows(acceptedDirectionResult, currentDirectionResult, sameTarget);
+    }
+
+    private static bool SameCommandObject(QueuedCommandState current, QueuedCommandState accepted) =>
+        current.TargetType == accepted.TargetType && current.TargetId == accepted.TargetId;
+
+    private bool TryProjectOrderOffset(SimVec world, Matrix view, Matrix proj, Vector3 cameraEye, out HudPoint direction)
+    {
+        direction = default;
+        if (!ProjectToScreen(PoseConverter.ToXna(world), view, proj, cameraEye, out Vector2 screen)) return false;
+        var vp = GraphicsDevice.Viewport;
+        float dx = screen.X - vp.Width / 2f;
+        float dy = screen.Y - vp.Height / 2f;
+        float lengthSquared = dx * dx + dy * dy;
+        if (lengthSquared <= 108f * 108f) return false;   // native radiusRing gate, indicator.cpp:425
+        float inv = 1f / MathF.Sqrt(lengthSquared);
+        direction = new HudPoint(dx * inv, dy * inv);
+        return true;
+    }
+
+    private bool TryResolveCommandPosition(QueuedCommandState command, out SimVec position, out short clusterId)
+    {
+        position = default;
+        clusterId = -1;
+        var world = _session.World;
+        lock (_session.Gate)
+        {
+            switch (command.TargetType)
+            {
+                case IgcObjectType.Ship when world.Ships.TryGetValue(command.TargetId, out var ship) && !ship.IsDead:
+                    if (!ResolveShipAnchor(_poses, world.Ships, command.TargetId, out position)) return false;
+                    clusterId = ship.SectorId;
+                    return clusterId >= 0;
+                case IgcObjectType.Station when world.Stations.TryGetValue(command.TargetId, out var station):
+                    position = Vec(station.Position); clusterId = station.ClusterId; return true;
+                case IgcObjectType.Asteroid when world.Asteroids.TryGetValue(command.TargetId, out var asteroid):
+                    position = Vec(asteroid.Position); clusterId = asteroid.ClusterId; return true;
+                case IgcObjectType.Warp when world.Warps.TryGetValue(command.TargetId, out var warp):
+                    position = Vec(warp.Position); clusterId = warp.ClusterId; return true;
+                case IgcObjectType.Probe when world.Probes.TryGetValue(command.TargetId, out var probe):
+                    position = probe.Position; clusterId = probe.ClusterId; return true;
+                case IgcObjectType.Treasure when world.Treasures.TryGetValue(command.TargetId, out var treasure):
+                    position = treasure.Position; clusterId = treasure.ClusterId; return true;
+                default: return false;
+            }
+        }
+    }
+
+    /// <summary>
     /// P295 — whether the local pilot is currently boarded as a gunner on a
     /// carrier's turret. Reuses the port's existing turret-boarding state
     /// (<see cref="Allegiance.ClientCore.State.ShipEntity.ParentId"/> ≠ NA/-1),

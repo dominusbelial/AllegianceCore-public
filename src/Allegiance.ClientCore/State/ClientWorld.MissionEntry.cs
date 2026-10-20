@@ -46,6 +46,7 @@ public sealed partial class ClientWorld
         own.Player = new PlayerInfo { ShipId = message.ShipId, ISide = -1, CharacterName = "<error>" };
         _roster.Clear();
         MyAcceptedCommand = null;
+        MyCurrentCommand = null;
         _myQueuedCommand = null;
         _moneyRequest = null;
         MarkSnapshotDirty();

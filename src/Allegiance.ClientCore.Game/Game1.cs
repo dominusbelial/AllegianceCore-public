@@ -82,6 +82,7 @@ public sealed partial class Game1 : Game
     private Dictionary<RockTextureFactory.AsteroidResourceType, Texture2D> _asteroidTextures = null!;
     private Rendering.RockTextures _rockTextures = null!;   // P421 — real original surface bitmaps
     private Rendering.LockTextures _lockTextures = null!;    // P428 — real missile-lock sprites
+    private Rendering.IndicatorTextures _indicatorTextures = null!;   // HUD-8 — flight indicator bitmaps
     private Rendering.TargetPaneTextures _targetPaneTextures = null!;   // HUD-3 — native target-pane bitmaps
     private Rendering.FeedbackTextures _feedbackTextures = null!;   // P578 — eject-pod panel + death banner art
     private Rendering.StatusTextures _statusTextures = null!;   // HUD-6 — own-ship status icons
@@ -1036,6 +1037,17 @@ public sealed partial class Game1 : Game
     // from the world's lead point + target) and consumed by DrawHud; null when
     // there is no lead granted or it is out of view.
     private LeadIndicatorView? _leadIndicator;
+    // HUD-8 — the per-frame projected velocity-direction marker (cockpit only),
+    // computed in Draw from the own ship's real velocity direction.
+    private Vector2? _velocityMarker;
+    // HUD-8 — the per-frame projected chase/missile weapon-range aim point with
+    // no target (indicator.cpp:367-405); null when unavailable/not applicable.
+    private Vector2? _chaseAim;
+    // HUD-8 — accepted/current order turn-arrow directions (indicator.cpp:411-457).
+    private HudOrderArrows? _orderArrows;
+    // HUD-8 — the exact control vector this frame sent (manual or autopilot),
+    // staged in FlightInput and read by the HUD snapshot for the joystick pointer.
+    private ControlData _lastSentControls;
     private bool _gKeyWasDown; // edge-detect G so holding it doesn't re-fire
     private bool _kKeyWasDown; // edge-detect K (suicide) so holding it doesn't re-fire
     private bool _cKeyWasDown; // edge-detect C (chaff drop) so holding it doesn't re-fire
@@ -1744,6 +1756,7 @@ public sealed partial class Game1 : Game
             foreach (var t in _asteroidTextures.Values) t.Dispose();
         _rockTextures?.Dispose();   // P421 — release the real original surface bitmaps
         _lockTextures?.Dispose();   // P428 — release the real missile-lock sprites
+        _indicatorTextures?.Dispose();   // HUD-8 — release the flight indicator bitmaps
         _targetPaneTextures?.Dispose();   // HUD-3 — release the native target-pane bitmaps
         _feedbackTextures?.Dispose();   // P578 — release the eject-pod panel / death banner art
         _statusTextures?.Dispose();   // HUD-6 — release the own-ship status icons

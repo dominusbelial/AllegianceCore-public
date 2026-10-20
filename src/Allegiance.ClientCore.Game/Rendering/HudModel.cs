@@ -15,6 +15,10 @@ public readonly record struct HudGauge(
 
 public readonly record struct HudLock(HudPoint Center, MissileLockFeedback.LockState State, double NowSeconds, float Fraction = 1, float? ScreenRadius = null);
 public readonly record struct HudLead(HudPoint Center, HudPoint TargetCenter, bool InRange, float Green, double NowSeconds);
+/// <summary>Accepted/current order turn-arrow directions, normalized in
+/// centre-relative screen space (+X right, +Y down). SameTarget collapses the
+/// pair to the native single yellow arrow (indicator.cpp:786-791).</summary>
+public readonly record struct HudOrderArrows(HudPoint? AcceptedDirection, HudPoint? CurrentDirection, bool SameTarget);
 public readonly record struct HudTarget(HudPoint Center, bool Engaged, string? Name,
     float? HullFraction, float? ShieldFraction, bool? IsEnemy, float? OreFraction, float? Distance = null, float? ClosingSpeed = null, HudColor? SideColor = null, float? ScreenRadius = null);
 
@@ -93,6 +97,17 @@ public sealed record HudContext
     public string? CameraLabel { get; init; }
     public HudLock? Lock { get; init; }
     public HudLead? Lead { get; init; }
+    /// <summary>Projected velocity-direction marker (screen px), cockpit only.
+    /// Native directionbmp at indicator.cpp:130-148.</summary>
+    public HudPoint? VelocityMarker { get; init; }
+    /// <summary>Projected weapon-range aim point when in chase/missile view
+    /// with no target (indicator.cpp:367-405).</summary>
+    public HudPoint? ChaseAim { get; init; }
+    /// <summary>Accepted/current order turn arrows (indicator.cpp:411-457).</summary>
+    public HudOrderArrows? OrderArrows { get; init; }
+    /// <summary>Native ShowJoystickIndicator preference, default on
+    /// (WinTrek.cpp:2739,3059).</summary>
+    public bool ShowJoystickIndicator { get; init; } = true;
     public HudTarget? Target { get; init; }
     public HudTargetPane? TargetPane { get; init; }
     public HudPoint? TargetBearing { get; init; }
@@ -141,6 +156,28 @@ public sealed class HudModel
     public bool IndicatorsVisible => InstrumentsVisible && Context.Camera is CameraMode.Cockpit or CameraMode.Chase or CameraMode.ExternalMissile;
     public bool ReticleVisible => IndicatorsVisible && Context.Camera == CameraMode.Cockpit;
     public bool MouseStickVisible => IndicatorsVisible && Telemetry?.MouseStick is not null;
+    // Native RenderDirectionIndicator draws the velocity marker only in the
+    // cockpit and only when the rounded source speed is non-zero
+    // (indicator.cpp:130-148).
+    public bool VelocityMarkerVisible => ReticleVisible && Context.VelocityMarker is not null
+        && Telemetry is { } velocityTelemetry && (int)(velocityTelemetry.Speed + 0.5f) != 0;
+    // Native RenderJoystickIndicator (indicator.cpp:154-177) is shown in every
+    // allowed indicator camera when the ShowJoystickIndicator preference is on
+    // (default on, WinTrek.cpp:2739).
+    public bool JoystickIndicatorVisible => IndicatorsVisible && Telemetry is not null && Context.ShowJoystickIndicator;
+    // Native draws the ballistic lead surface only in the cockpit branch
+    // (indicator.cpp:320-330); chase/missile views use the projected aim point.
+    public bool LeadMarkerVisible => IndicatorsVisible && Context.Camera == CameraMode.Cockpit && Context.Lead is not null;
+    // Native cockpit predictor (centre crosshair, indicator.cpp:334-362) shows
+    // only while the intercept is in range; chase/missile views always draw the
+    // projected aim predictor (green ramp or out-of-range grey).
+    public bool AimPredictorVisible => IndicatorsVisible && Context.Lead is { } aimLead
+        && (Context.Camera != CameraMode.Cockpit || aimLead.InRange);
+    public bool ChaseAimVisible => IndicatorsVisible
+        && Context.Camera is CameraMode.Chase or CameraMode.ExternalMissile
+        && Context.ChaseAim is not null && Context.Lead is null;
+    public bool OrderArrowsVisible => IndicatorsVisible && Context.OrderArrows is { } arrows
+        && (arrows.AcceptedDirection is not null || arrows.CurrentDirection is not null);
     // Native TargetDisplay pane mask is ofInCockpit | ofInChase | ofGloatCam
     // (Artwork/dialog.mdl:5402); ofGloatCam is SetTargetGeo's
     // cmExternalOverride (WinTrek/WinTrek.cpp:6844) — the port's

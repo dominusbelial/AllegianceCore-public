@@ -328,6 +328,9 @@ public sealed partial class Game1
         _lockBracket = null;   // P230 — recomputed only when a lock target projects into view this frame
         _leadIndicator = null; // P266 — recomputed only when a lead point projects into view this frame
         _targetSelectionBracket = null; // P345 — recomputed only when a T-selected target projects into view this frame
+        _velocityMarker = null; // HUD-8 — recomputed each frame from the own velocity direction
+        _chaseAim = null;       // HUD-8 — recomputed only in chase/missile without a target
+        _orderArrows = null;    // HUD-8 — recomputed from accepted/current order targets
         _lastBaseHud = [];
         _targetBearingScreenDir = null; // P359 — recomputed whenever a T-selected target is resolvable this frame
 
@@ -468,6 +471,14 @@ public sealed partial class Game1
                 // descriptor for DrawHud (null when no lead is granted or either
                 // point is out of view).
                 _leadIndicator = ComputeLeadIndicator(view, proj, cameraEye);
+                // HUD-8 — stage the velocity-direction marker (cockpit gate is
+                // applied in HudModel), the chase aim without target, and the
+                // accepted/current order turn arrows for this frame's snapshot.
+                _velocityMarker = ComputeVelocityMarker(view, proj);
+                _chaseAim = _cameraMode is CameraMode.Chase or CameraMode.ExternalMissile
+                    ? ComputeChaseAim(view, proj, cameraEye)
+                    : null;
+                _orderArrows = ComputeOrderArrows(view, proj, cameraEye);
                 // P345 — project the player's OWN T-selected autopilot target into
                 // this frame's view and stage the selection-bracket descriptor for
                 // DrawHud (null when no target is selected or it is out of view).
@@ -2662,11 +2673,16 @@ public sealed partial class Game1
                     AutopilotEngaged: ownStatus.AutopilotEngaged,
                     VectorLockEngaged: ownStatus.VectorLockEngaged,
                     CarriedFlag: ownStatus.CarriedFlag,
-                    CarriedArtifact: ownStatus.CarriedArtifact);
+                    CarriedArtifact: ownStatus.CarriedArtifact,
+                    // HUD-8 — the live turn control vector this frame actually sent
+                    // (jsValues[c_axisYaw]/[c_axisPitch] equivalent).
+                    TurnYaw: _lastSentControls.Yaw,
+                    TurnPitch: _lastSentControls.Pitch);
             }
         }
         var model = HudModelAdapter.Create(frame, _cameraMode, _lockBracket, _leadIndicator,
             _captureSpec is not null ? "OVERVIEW" : null, _targetSelectionBracket, _targetBearingScreenDir,
+            velocityMarker: _velocityMarker, chaseAim: _chaseAim, orderArrows: _orderArrows,
             leaderCommand: _leaderBotCommand, ripcord: RipcordStatusLabel(),
             commandee: CommandeeLabel(), turret: IsTurretGunner(),
             targetPane: ComputeTargetPane(),

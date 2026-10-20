@@ -91,6 +91,11 @@ public sealed partial class Game1
         if (result.ChangeSelection)
         {
             _autoTarget = selection;
+            // HUD-8b — native command issue/target-command writes BOTH c_cmdCurrent
+            // and c_cmdAccepted (WinTrek.cpp:10681-10682; TK_TargetCommand
+            // WinTrek.cpp:10408-10412), so the current target command follows the
+            // accepted target here — not the autopilot slot.
+            SendCurrentCommandToServer(selection);
             if (selection is { } chosen && result.Engage) EngageAutopilotToward(chosen, "execute:");
             RefreshWindowTitle();
         }
@@ -108,5 +113,40 @@ public sealed partial class Game1
             IgcObjectType.Probe => TargetKind.Probe, IgcObjectType.Treasure => TargetKind.Treasure, _ => null,
         };
         return kind is { } k ? new AutopilotTarget(k, c.TargetId, name, c.CommandId) : null;
+    }
+
+    // HUD-8b — the reverse mapping for the native c_cmdCurrent slot: a selected
+    // AutopilotTarget becomes a QueuedCommandState so ComputeOrderArrows can reuse
+    // the same command-position resolution as the accepted arrow. A plain
+    // T-selection carries CommandId=c_cidNone (native SetTarget's
+    // `cid == c_cidDefault → GetDefaultOrder` fallback, WinTrek.cpp:8827-8833);
+    // the concrete action id is preserved when the selection came from a command
+    // (CommandSelection).
+    internal static QueuedCommandState? CurrentCommandState(AutopilotTarget? target)
+    {
+        if (target is not { } t) return null;
+        var type = t.Kind switch
+        {
+            TargetKind.Ship => IgcObjectType.Ship, TargetKind.Station => IgcObjectType.Station,
+            TargetKind.Asteroid => IgcObjectType.Asteroid, TargetKind.Warp => IgcObjectType.Warp,
+            TargetKind.Probe => IgcObjectType.Probe, TargetKind.Treasure => IgcObjectType.Treasure,
+            _ => (IgcObjectType)(-1),
+        };
+        return type == (IgcObjectType)(-1) ? null : new QueuedCommandState(t.CommandId, type, t.Id);
+    }
+
+    // HUD-8b — native SetTarget sends ORDER_CHANGE command=c_cmdCurrent
+    // (WinTrek.cpp:8838-8844); the server writes Ship.CommandTarget, which drives
+    // the lead predictor (indicator.cpp:199-360). The local Apply installs the
+    // client-side MyCurrentCommand slot the red order arrow reads.
+    private void SendCurrentCommandToServer(AutopilotTarget? target)
+    {
+        short? me;
+        lock (_session.Gate) me = _session.World.MyShipId;
+        if (me is not { } myId) return;
+        if (CurrentCommandState(target) is { } cmd)
+            _session.SendOrderChange(myId, cmd.CommandId, OrderChange.CmdCurrent, cmd.TargetType, cmd.TargetId);
+        else
+            _session.SendOrderChange(myId, OrderChange.CidNone, OrderChange.CmdCurrent, (IgcObjectType)(-1), -1);
     }
 }

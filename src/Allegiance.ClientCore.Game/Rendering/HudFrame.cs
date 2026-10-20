@@ -133,4 +133,9 @@ public readonly record struct HudFrame(
     // pship->GetFlag() switch (WinTrek/console.cpp:847-863): a side id means a
     // carried flag, SIDE_TEAMLOBBY (-2) means a carried artifact, NA (-1) none.
     bool CarriedFlag = false,
-    bool CarriedArtifact = false);
+    bool CarriedArtifact = false,
+    // HUD-8 — the live turn control vector (native jsValues[c_axisYaw]/[c_axisPitch],
+    // indicator.cpp:154-177) after keyboard/mouse/joystick/gamepad resolution.
+    // Feeds the joystick turning indicator in both skins.
+    float TurnYaw = 0f,
+    float TurnPitch = 0f);

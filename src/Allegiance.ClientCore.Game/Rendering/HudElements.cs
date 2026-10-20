@@ -203,12 +203,38 @@ public static class HudElements
                     case "Target in weapon range": Pane(null, c.TargetPane is { } tp ? (tp.InRange ? 1 : 0) : null); break;
                     case "Target ore": Target(null, c.Target?.OreFraction); break;
                     case "Cockpit centre reticle": element = element with { Available = true, Visible = model.ReticleVisible }; break;
+                    case "Velocity direction marker":
+                        Set(f?.Speed, model.VelocityMarkerVisible);
+                        if (c.VelocityMarker is { } velocityMarker) element = element with { ScreenPosition = velocityMarker };
+                        break;
                     case "Joystick turning indicator":
-                        Set(f?.MouseStick?.Yaw, model.MouseStickVisible); break;
+                        if (f is { } turningTelemetry) element = element with
+                        {
+                            Available = true,
+                            Visible = model.JoystickIndicatorVisible,
+                            Value = MathF.Min(1f, MathF.Sqrt(turningTelemetry.TurnYaw * turningTelemetry.TurnYaw + turningTelemetry.TurnPitch * turningTelemetry.TurnPitch))
+                        };
+                        break;
                     case "Ballistic lead marker":
+                        Set(c.Lead?.Green, model.LeadMarkerVisible);
+                        if (c.Lead is { } leadMarker) element = element with { ScreenPosition = leadMarker.Center };
+                        break;
                     case "Aim hit-probability predictor":
-                        Set(c.Lead?.Green, model.IndicatorsVisible && c.Lead is not null);
-                        if (c.Lead is { } lead) element = element with { ScreenPosition = lead.Center };
+                        Set(c.Lead?.Green, model.AimPredictorVisible);
+                        if (c.Lead is { } aimLead) element = element with { ScreenPosition = c.Camera == CameraMode.Cockpit ? null : aimLead.Center };
+                        break;
+                    case "Chase weapon aim without target":
+                        Set(c.ChaseAim is not null ? 1 : null, model.ChaseAimVisible);
+                        if (c.ChaseAim is { } chaseAim) element = element with { ScreenPosition = chaseAim };
+                        break;
+                    case "Accepted and current order turn arrows":
+                        element = element with
+                        {
+                            Available = c.OrderArrows is not null,
+                            Visible = model.OrderArrowsVisible,
+                            Value = c.OrderArrows is { } oa && (oa.AcceptedDirection is not null || oa.CurrentDirection is not null) ? 1 : null,
+                            Text = c.OrderArrows is { } orderArrowsText ? (orderArrowsText.SameTarget ? "accepted=current" : "accepted+current") : null
+                        };
                         break;
                     case "Selected target bracket": Target(null); break;
                     case "Missile lock flower":

@@ -1746,6 +1746,7 @@ public sealed partial class ClientWorld
         _mutedPilots.Clear();
         _prevOwnAlarms = null;   // P711 — fresh session: re-arm the low-status alarm snapshots
         MyAcceptedCommand = null;
+        MyCurrentCommand = null;
         _myQueuedCommand = null;
         _moneyRequest = null;
         JoinedShipId = null;
@@ -4396,6 +4397,7 @@ public sealed partial class ClientWorld
         ShipWarnings.Reset();
         MyShipId = null;
         MyAcceptedCommand = null;
+        MyCurrentCommand = null;
         _myQueuedCommand = null;
         _moneyRequest = null;
         JoinedShipId = null;

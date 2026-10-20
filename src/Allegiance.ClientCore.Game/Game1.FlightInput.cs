@@ -2009,6 +2009,11 @@ public sealed partial class Game1
             sentFireM = sentStateM;
         }
 
+        // HUD-8 — stage the exact command this frame sent so DrawHud's snapshot
+        // can feed the native joystick turning indicator (jsValues[c_axisYaw]/
+        // [c_axisPitch], indicator.cpp:154-177) without re-reading any input.
+        _lastSentControls = sentControls;
+
         bool sendArm = !turretGunner;
         _ownShipSendArmed = sendArm;
         if (sendArm)

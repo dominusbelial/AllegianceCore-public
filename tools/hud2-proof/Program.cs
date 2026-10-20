@@ -29,16 +29,17 @@ sealed class Proof : Game
         string artwork = Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork);
         var gauges = Directory.Exists(artwork) ? GaugeTextures.Load(GraphicsDevice, artwork) : null;
         var status = Directory.Exists(artwork) ? StatusTextures.Load(GraphicsDevice, artwork) : null;
+        var indicators = Directory.Exists(artwork) ? IndicatorTextures.Load(GraphicsDevice, artwork) : null;
         var settings = new HudSettings();
         using var modern = new ModernHudRenderer(batch, white, small, big, settings, Content.Load<SpriteFont>("HUDModern"));
-        var classic = new HudRenderer(batch, white, small, big, gauges, statusTextures: status);
+        var classic = new HudRenderer(batch, white, small, big, gauges, statusTextures: status, indicators: indicators);
         var radar = new RadarBracketRenderer(batch, white);   // HUD-4 — classic radar path (the real client draws this separately)
         var summaries = new List<object>();
         foreach (var (width, height) in new[] { (1920, 1080), (2560, 1440), (1280, 720) })
         foreach (float size in new[] { .75f, 1f, 1.5f })
         {
             settings.Size = size; settings.ColorBlindSafe = size == 1.5f;
-            foreach (string scenario in new[] { "flight", "chat-stress", "combat", "critical", "docked", "lifepod", "dead", "command", "hidden", "radar-All", "radar-Default", "radar-Target", "radar-Minimal" })
+            foreach (string scenario in new[] { "flight", "chat-stress", "combat", "critical", "chase", "docked", "lifepod", "dead", "command", "hidden", "radar-All", "radar-Default", "radar-Target", "radar-Minimal" })
             {
                 var model = Scenario(scenario, width, height);
                 using var target = new RenderTarget2D(GraphicsDevice, width, height);
@@ -133,6 +134,9 @@ sealed class Proof : Game
         if (scenario == "lifepod") frame = frame with { IsAdriftLifepod = true, OxygenSecondsRemaining = 95 };
         float spread = Math.Clamp(h / 680f, 1.15f, 2.1f);
         bool target = scenario is "combat" or "critical" || scenario.StartsWith("radar-");
+        bool chase = scenario == "chase";
+        bool flightCockpit = scenario is "flight" or "chat-stress" or "combat" or "critical" or "lifepod"
+            || scenario.StartsWith("radar-");
         var mode = scenario.StartsWith("radar-") ? Enum.Parse<RadarMode>(scenario[6..]) : RadarMode.Default;
         var contacts = new List<HudContact>();
         for (int i = 0; i < 18; i++)
@@ -172,7 +176,10 @@ sealed class Proof : Game
         return HudModel.Create(frame, new HudContext
         {
             Docked = scenario == "docked", Dead = scenario == "dead", CommandView = scenario == "command", Hidden = scenario == "hidden",
-            Camera = scenario == "command" ? CameraMode.Command : CameraMode.Cockpit,
+            Camera = scenario == "command" ? CameraMode.Command : chase ? CameraMode.Chase : CameraMode.Cockpit,
+            VelocityMarker = flightCockpit ? new(w / 2f - 60, h / 2f + 20) : null,
+            OrderArrows = flightCockpit ? new(new(1f, 0f), new(0f, 1f), false) : null,
+            ChaseAim = chase ? new(w / 2f + 40, h / 2f - 30) : null,
             Target = target ? new(new(w / 2 + 126.5f * spread, h / 2 - 112.5f * spread), true, "Enemy fighter with a long pilot name", .6f, .3f, true, null, 1250, 43, new(1, 0, 0)) : null,
             TargetPane = target ? new(true, "Enemy fighter with a long pilot name", "Fighter", "Rixian", new(1, 0, 0), .6f, .3f, 1250f, 43f, null, null, true, true) : null,
             Lead = target ? new(new(w / 2 + 100, h / 2 - 50), new(w / 2 + 200, h / 2 - 80), true, .8f, 1) : null,

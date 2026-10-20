@@ -1,0 +1,82 @@
+[
+  {
+    "scene": "1920x1080-combat-Classic",
+    "source": "/home/domingo/allegiance-evidence/HUD8b/raw/1920x1080-combat-Classic/proof_t014.0_sFejfar_ccockpit.png",
+    "original_png_sha256": "6adc4c127944fee578af1cf6faa23d1454dff82d2ae332eb58375b01bca89a3a",
+    "jpeg": "/home/domingo/allegiance-pi-hud8b/docs/reports/HUD8_assets/1920x1080-combat-Classic.jpg",
+    "jpeg_sha256": "a6a788ebee5a92c9586a9650f755f88c943930140c2b7780f7a87eaf5b4d2efe",
+    "jpeg_bytes": 199649,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "scene": "1920x1080-combat-Modern",
+    "source": "/home/domingo/allegiance-evidence/HUD8b/raw/1920x1080-combat-Modern/proof_t014.0_sFejfar_ccockpit.png",
+    "original_png_sha256": "b1b78beee5644fa39d66444dad2ab1686cb4dc11c1480c74901cb08b53aa5b3b",
+    "jpeg": "/home/domingo/allegiance-pi-hud8b/docs/reports/HUD8_assets/1920x1080-combat-Modern.jpg",
+    "jpeg_sha256": "e2d56a558dc2ed4bb94699ab552b77ff1823db49b23f2b67f758426a52f31aa5",
+    "jpeg_bytes": 197640,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "scene": "1920x1080-flight-Classic",
+    "source": "/home/domingo/allegiance-evidence/HUD8b/raw/1920x1080-flight-Classic/shot_2026-10-20_11-41-19_294.png",
+    "original_png_sha256": "f28e00ba6a3294d8d8476deab9bf0edf203f86efa56d248f2e5b0efe2ee77799",
+    "jpeg": "/home/domingo/allegiance-pi-hud8b/docs/reports/HUD8_assets/1920x1080-flight-Classic.jpg",
+    "jpeg_sha256": "a8cd5f7561981e637f9223a18792cdcf93fe6d45b2154f2dd0011905f0d03457",
+    "jpeg_bytes": 118069,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "scene": "1920x1080-flight-Modern",
+    "source": "/home/domingo/allegiance-evidence/HUD8b/raw/1920x1080-flight-Modern/shot_2026-10-20_11-41-58_940.png",
+    "original_png_sha256": "dd6cc2c6173cb55cc3368f172a289c94d01eb5a419e8c9bbef89edce2c6e4613",
+    "jpeg": "/home/domingo/allegiance-pi-hud8b/docs/reports/HUD8_assets/1920x1080-flight-Modern.jpg",
+    "jpeg_sha256": "eddc1888546af93b41c3b8d622e43f82067ff315c3420bbec4b95cfe06b3ac71",
+    "jpeg_bytes": 119982,
+    "width": 1920,
+    "height": 1080
+  },
+  {
+    "scene": "2560x1440-combat-Classic",
+    "source": "/home/domingo/allegiance-evidence/HUD8b/raw/2560x1440-combat-Classic/proof_t014.0_sFejfar_ccockpit.png",
+    "original_png_sha256": "cf35b0695ecdffb4e379322c6fff47cb1967e3069d3c06317a5e27061cad053b",
+    "jpeg": "/home/domingo/allegiance-pi-hud8b/docs/reports/HUD8_assets/2560x1440-combat-Classic.jpg",
+    "jpeg_sha256": "e59a8794deccac0b6e0304b4400e8b35dac0ccd3d3bf831ba7c34119faac1350",
+    "jpeg_bytes": 241223,
+    "width": 2560,
+    "height": 1440
+  },
+  {
+    "scene": "2560x1440-combat-Modern",
+    "source": "/home/domingo/allegiance-evidence/HUD8b/raw/2560x1440-combat-Modern/proof_t014.0_sFejfar_ccockpit.png",
+    "original_png_sha256": "dceedb98eef185242426ed2e5ba2ad94ef85faf55e043305cd4ab518fe36c2cb",
+    "jpeg": "/home/domingo/allegiance-pi-hud8b/docs/reports/HUD8_assets/2560x1440-combat-Modern.jpg",
+    "jpeg_sha256": "06bd76466fb52dfe3a8afb5a640ddc5722386407688800257f0dc6a9d5bfb9c7",
+    "jpeg_bytes": 210702,
+    "width": 2560,
+    "height": 1440
+  },
+  {
+    "scene": "2560x1440-flight-Classic",
+    "source": "/home/domingo/allegiance-evidence/HUD8b/raw/2560x1440-flight-Classic/shot_2026-10-20_11-42-38_582.png",
+    "original_png_sha256": "19a6c0f87b197db86074b6211553cf994d122680f83ce711a945723d0395f553",
+    "jpeg": "/home/domingo/allegiance-pi-hud8b/docs/reports/HUD8_assets/2560x1440-flight-Classic.jpg",
+    "jpeg_sha256": "62ac35e47158c7806a8b7740e2b7b92048fd509a4c717dde7d5a51e52c8fd0ad",
+    "jpeg_bytes": 151540,
+    "width": 2560,
+    "height": 1440
+  },
+  {
+    "scene": "2560x1440-flight-Modern",
+    "source": "/home/domingo/allegiance-evidence/HUD8b/raw/2560x1440-flight-Modern/shot_2026-10-20_11-43-18_411.png",
+    "original_png_sha256": "5391ee21da96cfab9c639fa06ce26d3d0c3634dfecb99be9b4691b48c5b1c21b",
+    "jpeg": "/home/domingo/allegiance-pi-hud8b/docs/reports/HUD8_assets/2560x1440-flight-Modern.jpg",
+    "jpeg_sha256": "cf2095d86a764b503bef9704808f9c2ee2e4e0d41d103989b56fad2f9e7ca1ae",
+    "jpeg_bytes": 173330,
+    "width": 2560,
+    "height": 1440
+  }
+]

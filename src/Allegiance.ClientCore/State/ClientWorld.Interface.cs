@@ -103,6 +103,7 @@ public sealed partial class ClientWorld
             ClearTeamWorld();
             MySideId = -2;
             MyAcceptedCommand = null;
+            MyCurrentCommand = null;
             _myQueuedCommand = null;
         }
         else if (InGame && _mission?.Stage == MissionStageMessage.StageStarted)

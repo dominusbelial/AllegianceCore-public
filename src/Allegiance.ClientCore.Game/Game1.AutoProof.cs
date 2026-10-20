@@ -460,6 +460,10 @@ public sealed partial class Game1
         {
             _autoTarget = new AutopilotTarget(b.Kind, b.Id, b.Name);
             _autoTargetAtEngage = b.Position;
+            // HUD-8b — a scripted target selection is still native SetTarget: write
+            // c_cmdCurrent so the server's Ship.CommandTarget drives the lead
+            // predictor and the red order arrow reads the current target command.
+            SendCurrentCommandToServer(_autoTarget.Value);
             EngageAutopilotToward(_autoTarget.Value, "autoproof: frame target");
             Console.WriteLine($"[autoproof] auto-target {kind} -> {b.Name} (kind {b.Kind})");
         }

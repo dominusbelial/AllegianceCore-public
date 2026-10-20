@@ -238,6 +238,9 @@ public sealed partial class Game1
                                         world.MySideId, me, leftButton: false);
         if (picked is { } p)
         {
+            // HUD-8b — a pointer pick is native TK_TargetCenter/SetTarget, so it
+            // also writes c_cmdCurrent (the red order arrow reads this slot).
+            SendCurrentCommandToServer(p);
             if (_cameraMode == CameraMode.Command && _commandee is not null)
             {
                 _autoTarget = p;

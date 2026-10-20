@@ -836,6 +836,11 @@ public sealed partial class Game1
     {
         bool changed = !(_autoTarget is { } cur && cur.Kind == picked.Kind && cur.Id == picked.Id);
         _autoTarget = picked;
+        // HUD-8b — native SetTarget also writes the c_cmdCurrent slot
+        // (WinTrek.cpp:8823-8852): send the real ORDER_CHANGE so the server's
+        // Ship.CommandTarget drives the lead predictor, and install the client
+        // slot the red order arrow reads.
+        SendCurrentCommandToServer(picked);
         if (changed) _sound?.PlayNewTarget();
     }
 
@@ -1222,6 +1227,10 @@ public sealed partial class Game1
     private void ClearTarget()
     {
         DisengageAutopilot("target nothing");
+        // HUD-8b — native TK_TargetNothing is SetTarget(NULL, c_cidNone)
+        // (WinTrek.cpp:10446-10449), which clears the c_cmdCurrent slot even though
+        // autopilot disengage alone would not.
+        SendCurrentCommandToServer(null);
     }
 
     /// <summary>P417 — TK_TargetCenter: select the candidate nearest the

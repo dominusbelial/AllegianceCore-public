@@ -167,6 +167,70 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         Arc(lead.LeadCenter, 10 * _scale, 0, MathF.Tau, color, 1.5f * _scale);
         DrawLine(lead.LeadCenter, lead.TargetCenter, _scale, color * .28f);
     }
+    public override void DrawAimPredictor(LeadIndicatorView v, CameraMode camera, Viewport viewport)
+    {
+        Vector2 center = camera == CameraMode.Cockpit
+            ? new Vector2(viewport.Width / 2f, viewport.Height / 2f)
+            : v.LeadCenter;
+        var color = v.InRange ? Color.Lerp(Alert, Accent, v.Green) : Muted;
+        Arc(center, 7 * _scale, 0, MathF.Tau, color, 1.4f * _scale);
+        DrawLine(center + new Vector2(0, -11) * _scale, center + new Vector2(0, -5) * _scale, _scale, color * .8f);
+        DrawLine(center + new Vector2(0, 5) * _scale, center + new Vector2(0, 11) * _scale, _scale, color * .8f);
+        DrawLine(center + new Vector2(-11, 0) * _scale, center + new Vector2(-5, 0) * _scale, _scale, color * .8f);
+        DrawLine(center + new Vector2(5, 0) * _scale, center + new Vector2(11, 0) * _scale, _scale, color * .8f);
+    }
+    protected override void DrawVelocityMarker(Vector2 position)
+    {
+        DrawLine(position + new Vector2(0, -8) * _scale, position + new Vector2(0, 8) * _scale, _scale, Accent);
+        DrawLine(position + new Vector2(-8, 0) * _scale, position + new Vector2(8, 0) * _scale, _scale, Accent);
+        DrawLine(position + new Vector2(-4, -4) * _scale, position + new Vector2(4, 4) * _scale, _scale, Accent * .5f);
+    }
+    protected override void DrawJoystickIndicator(Vector2 center, float yaw, float pitch)
+    {
+        float magnitude = MathF.Min(1f, MathF.Sqrt(yaw * yaw + pitch * pitch));
+        float angle = MathF.Atan2(pitch, yaw) + MathF.PI / 2f;
+        if (yaw < 0f) angle += MathF.PI;
+        var position = center - new Vector2(100f * yaw, 100f * pitch);
+        var color = Color.White * (.35f + .65f * magnitude);
+        float length = 12f * _scale * (0.5f + 0.5f * magnitude);
+        var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+        var tip = position + direction * length;
+        var back = position - direction * length;
+        var side = new Vector2(-direction.Y, direction.X) * (5f * _scale);
+        DrawLine(back + side, tip, 2f * _scale, color);
+        DrawLine(back - side, tip, 2f * _scale, color);
+    }
+    protected override void DrawChaseAim(Vector2 position)
+    {
+        Arc(position, 9 * _scale, 0, MathF.Tau, Muted, 1.5f * _scale);
+        DrawLine(position + new Vector2(0, -4) * _scale, position + new Vector2(0, 4) * _scale, _scale, Muted);
+        DrawLine(position + new Vector2(-4, 0) * _scale, position + new Vector2(4, 0) * _scale, _scale, Muted);
+    }
+    protected override void DrawOrderArrows(HudOrderArrows arrows, Viewport viewport)
+    {
+        var center = new Vector2(viewport.Width / 2f, viewport.Height / 2f);
+        if (arrows.SameTarget && arrows.AcceptedDirection is { } sameDirection)
+        {
+            DrawOrderArrow(center, sameDirection, new Color(255, 255, 0));
+            return;
+        }
+        if (arrows.AcceptedDirection is { } acceptedDirection)
+            DrawOrderArrow(center, acceptedDirection, new Color(0, 255, 0));
+        if (arrows.CurrentDirection is { } currentDirection)
+            DrawOrderArrow(center, currentDirection, new Color(255, 0, 0));
+    }
+    private void DrawOrderArrow(Vector2 center, HudPoint direction, Color color)
+    {
+        var d = new Vector2(direction.X, direction.Y);
+        if (d.LengthSquared() < 1e-6f) return;
+        d.Normalize();
+        var anchor = center + d * 108f;
+        var tip = anchor + d * 13f * _scale;
+        var side = new Vector2(-d.Y, d.X) * (7f * _scale);
+        var back = anchor - d * 4f * _scale;
+        DrawLine(back + side, tip, 2.4f * _scale, color);
+        DrawLine(back - side, tip, 2.4f * _scale, color);
+    }
     protected override void DrawLockBracket(in LockBracketView targetLock)
     {
         float toEdge = MathF.Min(MathF.Min(targetLock.Center.X, targetLock.Center.Y),

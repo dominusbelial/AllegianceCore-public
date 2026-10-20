@@ -20,11 +20,16 @@ public static class HudModelAdapter
         IReadOnlyList<string>? commandLines = null, bool inventoryVisible = false,
         IReadOnlyList<LastBaseHudView>? lastBaseObjectives = null, bool hitConfirmation = false, string? podReturnInstruction = null,
         IReadOnlyList<HudContact>? contacts = null, float radarPulse = 0f,
-        HudConsoleText? console = null, HudTargetPane? targetPane = null, bool roundRadar = false)
+        HudConsoleText? console = null,
+        Vector2? velocityMarker = null, Vector2? chaseAim = null, HudOrderArrows? orderArrows = null,
+        HudTargetPane? targetPane = null, bool roundRadar = false)
         => HudModel.Create(frame, new HudContext
         {
             PodReturnInstruction = podReturnInstruction, HitConfirmation = hitConfirmation, Camera = mode, CameraLabel = cameraLabel, Hidden = hidden,
             Docked = docked, Dead = dead, CommandView = commandView, Turret = turret, RoundRadar = roundRadar,
+            VelocityMarker = velocityMarker is { } velocity ? Point(velocity) : null,
+            ChaseAim = chaseAim is { } aimPoint ? Point(aimPoint) : null,
+            OrderArrows = orderArrows,
             Lock = lockBracket is { } lb ? new(Point(lb.Center), lb.State, lb.NowSeconds, lb.Fraction, lb.ScreenRadius) : null,
             Lead = lead is { } li ? new(Point(li.LeadCenter), Point(li.TargetCenter), li.InRange, li.Green, li.NowSeconds) : null,
             Target = target is { } ts ? new(Point(ts.Center), ts.Engaged, ts.CharacterName,

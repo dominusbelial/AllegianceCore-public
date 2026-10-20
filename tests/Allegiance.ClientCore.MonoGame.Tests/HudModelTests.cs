@@ -316,6 +316,77 @@ public class HudModelTests
     }
 
     [Theory]
+    [InlineData(CameraMode.Cockpit, 120f, true)]
+    [InlineData(CameraMode.Cockpit, 0f, false)]
+    [InlineData(CameraMode.Chase, 120f, false)]
+    public void Velocity_marker_is_cockpit_only_and_hidden_at_zero_speed(CameraMode camera, float speed, bool expected)
+    {
+        var model = HudModel.Create(Frame with { Speed = speed }, new() { Camera = camera, VelocityMarker = new(100, 200) });
+        Assert.Equal(expected, model.VelocityMarkerVisible);
+        Assert.Equal(expected, model.Elements.Single(e => e.Id == "Velocity direction marker").Visible);
+    }
+
+    [Theory]
+    [InlineData(CameraMode.Cockpit, true)]
+    [InlineData(CameraMode.Chase, true)]
+    [InlineData(CameraMode.ExternalTurret, false)]
+    [InlineData(CameraMode.Command, false)]
+    public void Joystick_indicator_follows_native_camera_gate(CameraMode camera, bool expected)
+    {
+        var model = HudModel.Create(Frame with { TurnYaw = .6f, TurnPitch = .8f }, new() { Camera = camera });
+        Assert.Equal(expected, model.JoystickIndicatorVisible);
+        Assert.Equal(expected, model.Elements.Single(e => e.Id == "Joystick turning indicator").Visible);
+    }
+
+    [Fact]
+    public void Joystick_indicator_magnitude_is_clamped_to_one()
+    {
+        var model = HudModel.Create(Frame with { TurnYaw = 2f, TurnPitch = 2f });
+        Assert.Equal(1f, model.Elements.Single(e => e.Id == "Joystick turning indicator").Value);
+    }
+
+    [Theory]
+    [InlineData(CameraMode.Cockpit, true, true, true)]
+    [InlineData(CameraMode.Cockpit, false, true, false)]
+    [InlineData(CameraMode.Chase, true, false, true)]
+    [InlineData(CameraMode.Chase, false, false, true)]
+    public void Lead_marker_and_predictor_follow_the_native_split(CameraMode camera, bool inRange, bool leadVisible, bool aimVisible)
+    {
+        var model = HudModel.Create(Frame, new() { Camera = camera, Lead = new(new(300, 400), new(350, 420), inRange, .8f, 1) });
+        Assert.Equal(leadVisible, model.LeadMarkerVisible);
+        Assert.Equal(aimVisible, model.AimPredictorVisible);
+        Assert.Equal(leadVisible, model.Elements.Single(e => e.Id == "Ballistic lead marker").Visible);
+        Assert.Equal(aimVisible, model.Elements.Single(e => e.Id == "Aim hit-probability predictor").Visible);
+    }
+
+    [Theory]
+    [InlineData(CameraMode.Chase, true)]
+    [InlineData(CameraMode.ExternalMissile, true)]
+    [InlineData(CameraMode.Cockpit, false)]
+    public void Chase_aim_is_only_in_chase_or_missile_without_a_target(CameraMode camera, bool expected)
+    {
+        var model = HudModel.Create(Frame, new() { Camera = camera, ChaseAim = new(400, 300) });
+        Assert.Equal(expected, model.ChaseAimVisible);
+        Assert.Equal(expected, model.Elements.Single(e => e.Id == "Chase weapon aim without target").Visible);
+    }
+
+    [Fact]
+    public void Chase_aim_hides_when_a_target_gives_lead()
+    {
+        var model = HudModel.Create(Frame, new() { Camera = CameraMode.Chase, ChaseAim = new(400, 300), Lead = new(new(300, 400), new(350, 420), true, .8f, 1) });
+        Assert.False(model.ChaseAimVisible);
+    }
+
+    [Fact]
+    public void Order_arrows_are_visible_in_indicator_cameras_when_a_direction_exists()
+    {
+        var arrows = new HudOrderArrows(new(1, 0), new(0, 1), false);
+        Assert.True(HudModel.Create(Frame, new() { OrderArrows = arrows }).OrderArrowsVisible);
+        Assert.False(HudModel.Create(Frame, new() { OrderArrows = new HudOrderArrows(null, null, false) }).OrderArrowsVisible);
+        Assert.False(HudModel.Create(Frame, new() { Camera = CameraMode.ExternalTurret, OrderArrows = arrows }).OrderArrowsVisible);
+    }
+
+    [Theory]
     [InlineData(CameraMode.Cockpit, true)]
     [InlineData(CameraMode.Chase, true)]
     [InlineData(CameraMode.ExternalOverride, true)]   // ofGloatCam (WinTrek/WinTrek.cpp:6844)

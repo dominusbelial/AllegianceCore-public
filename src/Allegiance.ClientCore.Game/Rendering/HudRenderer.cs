@@ -48,6 +48,7 @@ public class HudRenderer
     private readonly GaugeTextures? _gauges;
     private readonly LockTextures? _lockTextures;
     private readonly StatusTextures? _status;
+    private readonly IndicatorTextures? _indicators;
     private readonly TargetPaneTextures? _targetPaneTextures;
 
     public HudRenderer(
@@ -58,6 +59,7 @@ public class HudRenderer
         GaugeTextures? gauges = null,
         LockTextures? lockTextures = null,
         StatusTextures? statusTextures = null,
+        IndicatorTextures? indicators = null,
         TargetPaneTextures? targetPaneTextures = null)
     {
         _sb = spriteBatch;
@@ -67,6 +69,7 @@ public class HudRenderer
         _gauges = gauges;
         _lockTextures = lockTextures;
         _status = statusTextures;
+        _indicators = indicators;
         _targetPaneTextures = targetPaneTextures;
     }
 
@@ -138,6 +141,21 @@ public class HudRenderer
                     ElementDrawn("Cockpit centre reticle");
                 }
 
+            // HUD-8 — velocity direction marker (native directionbmp): projected
+            // source-velocity direction, cockpit only, hidden at zero speed.
+            if (model.VelocityMarkerVisible && context.VelocityMarker is { } velocityMarker)
+                {
+                    DrawVelocityMarker(new(velocityMarker.X, velocityMarker.Y));
+                    ElementDrawn("Velocity direction marker");
+                }
+
+            // HUD-8 — joystick turning indicator (native RenderJoystickIndicator).
+            if (model.JoystickIndicatorVisible && model.Telemetry is { } joystickTelemetry)
+                {
+                    DrawJoystickIndicator(new Vector2(w / 2f, h / 2f), joystickTelemetry.TurnYaw, joystickTelemetry.TurnPitch);
+                    ElementDrawn("Joystick turning indicator");
+                }
+
             // P230 — missile-lock target box: drawn whenever Game1 has projected a
             // lock target into view, tinted/animated by the current lock state
             // (LockBracketStyle). Independently of a ship frame (a target box can
@@ -148,14 +166,34 @@ public class HudRenderer
                     ElementDrawn("Missile lock flower");
                 }
 
-            // P266 — predictive lead reticle: drawn at the projected lead point
-            // whenever the server has granted a lead that is in view. Distinct from
-            // the static round crosshair above, colored green→red by the
-            // hit-probability (grey when the intercept is out of weapon range).
-            if (model.IndicatorsVisible && context.Lead is { } li)
+            // P266/HUD-8 — ballistic lead marker: the native leadin/leadout surface
+            // at the projected lead point, cockpit only (indicator.cpp:320-330).
+            if (model.LeadMarkerVisible && context.Lead is { } leadMarker)
                 {
-                    DrawLeadIndicator(new(new(li.Center.X, li.Center.Y), new(li.TargetCenter.X, li.TargetCenter.Y), li.InRange, li.Green, li.NowSeconds));
-                    ElementDrawn("Ballistic lead marker", "Aim hit-probability predictor");
+                    DrawLeadIndicator(new(new(leadMarker.Center.X, leadMarker.Center.Y), new(leadMarker.TargetCenter.X, leadMarker.TargetCenter.Y), leadMarker.InRange, leadMarker.Green, leadMarker.NowSeconds));
+                    ElementDrawn("Ballistic lead marker");
+                }
+
+            // HUD-8 — aim hit-probability predictor: native centre crosshair
+            // (indicator.cpp:334-362) in cockpit, projected aim point in chase.
+            if (model.AimPredictorVisible && context.Lead is { } aimLead)
+                {
+                    DrawAimPredictor(new(new(aimLead.Center.X, aimLead.Center.Y), new(aimLead.TargetCenter.X, aimLead.TargetCenter.Y), aimLead.InRange, aimLead.Green, aimLead.NowSeconds), context.Camera, viewport);
+                    ElementDrawn("Aim hit-probability predictor");
+                }
+
+            // HUD-8 — chase weapon aim without target (indicator.cpp:367-405).
+            if (model.ChaseAimVisible && context.ChaseAim is { } chaseAim)
+                {
+                    DrawChaseAim(new(chaseAim.X, chaseAim.Y));
+                    ElementDrawn("Chase weapon aim without target");
+                }
+
+            // HUD-8 — accepted/current order turn arrows (indicator.cpp:411-457).
+            if (model.OrderArrowsVisible && context.OrderArrows is { } orderArrows)
+                {
+                    DrawOrderArrows(orderArrows, viewport);
+                    ElementDrawn("Accepted and current order turn arrows");
                 }
 
             // P345 — the player's OWN T/G autopilot-target selection box: a full
@@ -1212,6 +1250,23 @@ public class HudRenderer
         const int segments = 36;
         float radius = turret ? 34f : 26f;
 
+        // Native directioninbmp reticle at the exact view centre with native's
+        // (0.4,0.4,0.4,0.4) additive grey (indicator.cpp:149-150). Additive
+        // blending is approximated with alpha blend in this single-batch HUD;
+        // the firing-colour override below is a retained port extension.
+        if (!turret && _indicators?.Reticle is { } reticle)
+        {
+            _sb.Draw(reticle, c, null, new Color(0.4f, 0.4f, 0.4f, 0.4f), 0f,
+                new Vector2(reticle.Width / 2f, reticle.Height / 2f), 1f, SpriteEffects.None, 0f);
+            if (firing)
+            {
+                string lbl = "FIRING";
+                var sz = _small.MeasureString(lbl);
+                DrawText(_small, lbl, new Vector2(c.X - sz.X / 2f, c.Y + radius + 18f), Warning);
+            }
+            return;
+        }
+
         // P464 — a seated gunner gets a distinct, larger turret reticle so the
         // aim marker reads clearly as "turret" (a bold double-ring cross with a
         // centre pip) rather than the pilot crosshair. Drawn at the same screen
@@ -1603,32 +1658,36 @@ public class HudRenderer
     /// </summary>
     public virtual void DrawLeadIndicator(LeadIndicatorView v)
     {
-        // Render colour: green→red ramp by hit-probability when in range, else the
-        // native out-of-range grey (translucent so the scene stays readable).
-        Color col = v.InRange
-            ? new Color(1f - v.Green, v.Green, 0f)
-            : new Color(0.33f, 0.33f, 0.33f, 0.5f);
-
-        // Open diamond (rotated square) around the lead point — visually distinct
-        // from the round crosshair. Corners of a half-size square rotated 45°.
-        const float half = 14f;
-        var c = v.LeadCenter;
-        var corners = new[]
+        // Native ballistic-lead surface swap (indicator.cpp:328): leadinbmp in
+        // range, leadoutbmp out of range. Procedural diamond is the fallback.
+        Texture2D? surface = v.InRange ? _indicators?.LeadIn : _indicators?.LeadOut;
+        if (surface is { } leadSurface)
         {
-            c + new Vector2(0f, -half),
-            c + new Vector2(half, 0f),
-            c + new Vector2(0f, half),
-            c + new Vector2(-half, 0f),
-        };
-        for (int i = 0; i < corners.Length; i++)
-            DrawLine(corners[i], corners[(i + 1) % corners.Length], 2.2f, col);
+            DrawCentered(leadSurface, v.LeadCenter, Color.White);
+        }
+        else
+        {
+            Color col = v.InRange
+                ? new Color(1f - v.Green, v.Green, 0f)
+                : new Color(0.33f, 0.33f, 0.33f, 0.5f);
 
-        // Centre dot — the precise aim point.
-        FillRect(c.X - 2f, c.Y - 2f, 4f, 4f, col);
+            const float half = 14f;
+            var c = v.LeadCenter;
+            var corners = new[]
+            {
+                c + new Vector2(0f, -half),
+                c + new Vector2(half, 0f),
+                c + new Vector2(0f, half),
+                c + new Vector2(-half, 0f),
+            };
+            for (int i = 0; i < corners.Length; i++)
+                DrawLine(corners[i], corners[(i + 1) % corners.Length], 2.2f, col);
+            FillRect(c.X - 2f, c.Y - 2f, 4f, 4f, col);
+        }
 
-        // Faint hollow ring at the target's CURRENT on-screen centre (where it is
-        // NOW) — the gap between this ring and the diamond is the real predictive
-        // lead, kept visible so the offset is legible rather than decorative.
+        // Port extension: a faint hollow ring at the target's CURRENT on-screen
+        // centre makes the real predictive offset legible (native draws only the
+        // lead surface, not the target-now ring).
         const float tHalf = 8f;
         const int seg = 24;
         var tcol = new Color(0.9f, 0.9f, 0.9f, 0.40f);
@@ -1641,6 +1700,137 @@ public class HudRenderer
             DrawLine(p0, p1, 1.2f, tcol);
         }
     }
+
+    /// <summary>
+    /// HUD-8 — the aim hit-probability predictor (native
+    /// <c>centeroutbmp</c> crosshair, indicator.cpp:334-362). In cockpit it is
+    /// the centre crosshair tinted <c>(1-g, g, 0)</c>; in chase/missile it is
+    /// the projected aim point (green ramp in range, out-of-range grey).
+    /// </summary>
+    public virtual void DrawAimPredictor(LeadIndicatorView v, CameraMode camera, Viewport viewport)
+    {
+        Vector2 center = camera == CameraMode.Cockpit
+            ? new Vector2(viewport.Width / 2f, viewport.Height / 2f)
+            : v.LeadCenter;
+        Color col = v.InRange
+            ? new Color(1f - v.Green, v.Green, 0f)
+            : new Color(0.33f, 0.33f, 0.33f, 0.5f);
+
+        if (_indicators?.CrosshairOut is { } crosshair)
+        {
+            DrawCentered(crosshair, center, col);
+            return;
+        }
+
+        DrawCircleOutline(center.X, center.Y, 12f, col);
+        FillRect(center.X - 2f, center.Y - 2f, 4f, 4f, col);
+    }
+
+    /// <summary>
+    /// HUD-8 — native velocity direction marker (<c>directionbmp</c>,
+    /// indicator.cpp:145), drawn at the projected velocity direction.
+    /// </summary>
+    protected virtual void DrawVelocityMarker(Vector2 position)
+    {
+        if (_indicators?.VelocityMarker is { } marker)
+        {
+            DrawCentered(marker, position, Color.White);
+            return;
+        }
+        DrawLine(position + new Vector2(0f, -6f), position + new Vector2(0f, 6f), 1.6f, Accent);
+        DrawLine(position + new Vector2(-6f, 0f), position + new Vector2(6f, 0f), 1.6f, Accent);
+    }
+
+    /// <summary>
+    /// HUD-8 — native joystick turning indicator (indicator.cpp:154-177): a
+    /// pointer translated to centre − 100·(yaw,pitch), rotated by
+    /// atan2(pitch,yaw)+π/2 with the yaw-sign correction, scaled
+    /// 0.5+0.5·|control|, and alpha = |control|. Flat glyph approximation of the
+    /// native 3-D <c>joystickindicator</c> geometry.
+    /// </summary>
+    protected virtual void DrawJoystickIndicator(Vector2 center, float yaw, float pitch)
+    {
+        float magnitude = MathF.Min(1f, MathF.Sqrt(yaw * yaw + pitch * pitch));
+        float angle = MathF.Atan2(pitch, yaw) + MathF.PI / 2f;
+        if (yaw < 0f) angle += MathF.PI;
+        var position = center - new Vector2(100f * yaw, 100f * pitch);
+        float scale = 0.5f + 0.5f * magnitude;
+        var colour = Color.White * magnitude;
+
+        var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+        float length = 14f * scale;
+        var tip = position + direction * length;
+        var back = position - direction * length;
+        var side = new Vector2(-direction.Y, direction.X) * (6f * scale);
+        DrawLine(back + side, tip, 2f, colour);
+        DrawLine(back - side, tip, 2f, colour);
+        DrawLine(back, position, 1.5f, colour * 0.6f);
+    }
+
+    /// <summary>
+    /// HUD-8 — chase weapon aim without target (indicator.cpp:367-405): a grey
+    /// projected weapon-range aim marker drawn in external chase/missile views.
+    /// </summary>
+    protected virtual void DrawChaseAim(Vector2 position)
+    {
+        var grey = new Color(0.33f, 0.33f, 0.33f, 0.5f);
+        if (_indicators?.CrosshairOut is { } crosshair)
+        {
+            DrawCentered(crosshair, position, grey);
+            return;
+        }
+        const float half = 10f;
+        var corners = new[]
+        {
+            position + new Vector2(0f, -half),
+            position + new Vector2(half, 0f),
+            position + new Vector2(0f, half),
+            position + new Vector2(-half, 0f),
+        };
+        for (int i = 0; i < corners.Length; i++)
+            DrawLine(corners[i], corners[(i + 1) % corners.Length], 2f, grey);
+        FillRect(position.X - 2f, position.Y - 2f, 4f, 4f, grey);
+    }
+
+    /// <summary>
+    /// HUD-8 — accepted/current order turn arrows (indicator.cpp:411-457): arrows
+    /// placed at centre + 108·normalized(target screen offset). Same target = one
+    /// yellow arrow, otherwise accepted green + current red. Native's continuously
+    /// rotating 3-D <c>pointer</c> geometry is approximated by flat chevrons.
+    /// </summary>
+    protected virtual void DrawOrderArrows(HudOrderArrows arrows, Viewport viewport)
+    {
+        var center = new Vector2(viewport.Width / 2f, viewport.Height / 2f);
+        if (arrows.SameTarget && arrows.AcceptedDirection is { } sameDirection)
+        {
+            DrawTurnArrow(center, sameDirection, new Color(1f, 1f, 0f));
+            return;
+        }
+        if (arrows.AcceptedDirection is { } acceptedDirection)
+            DrawTurnArrow(center, acceptedDirection, new Color(0f, 1f, 0f));
+        if (arrows.CurrentDirection is { } currentDirection)
+            DrawTurnArrow(center, currentDirection, new Color(1f, 0f, 0f));
+    }
+
+    private void DrawTurnArrow(Vector2 center, HudPoint direction, Color color)
+    {
+        var d = new Vector2(direction.X, direction.Y);
+        if (d.LengthSquared() < 1e-6f) return;
+        d.Normalize();
+        var anchor = center + d * 108f;
+        var tip = anchor + d * 12f;
+        var side = new Vector2(-d.Y, d.X) * 7f;
+        var back = anchor - d * 4f;
+        DrawLine(back + side, tip, 2.4f, color);
+        DrawLine(back - side, tip, 2.4f, color);
+        DrawLine(back, anchor, 1.6f, color * 0.6f);
+    }
+
+    /// <summary>Draw a decoded HUD bitmap centred at <paramref name="center"/> at
+    /// its native 1:1 size (native <c>Context::DrawImage(…, true, …)</c>).</summary>
+    protected void DrawCentered(Texture2D texture, Vector2 center, Color color) =>
+        _sb.Draw(texture, center, null, color, 0f,
+            new Vector2(texture.Width / 2f, texture.Height / 2f), 1f, SpriteEffects.None, 0f);
 
     /// <summary>Convert a plain <see cref="HudColor"/> to a MonoGame <c>Color</c>.</summary>
     private static Color From(HudColor c) => new(c.R, c.G, c.B, c.A);
