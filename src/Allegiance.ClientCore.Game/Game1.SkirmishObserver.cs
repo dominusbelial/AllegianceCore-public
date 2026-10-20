@@ -118,6 +118,24 @@ public sealed partial class Game1
     {
         _nowSeconds += time.ElapsedGameTime.TotalSeconds;
         _gameSeconds += time.ElapsedGameTime.TotalSeconds * (_skirmish!.Paused ? 0 : 1);
+        if (_observerProofWaitExit)
+        {
+            if (!_autoShotScheduled) { Exit(); return; }
+        }
+        // SP-6 — one-shot status-bar proof: ALLEGIANCE_OBSERVER_AUTOSHOT captures the real
+        // backbuffer (status line shows the chosen speed) and then exits.
+        if (!_autoShotDone && Environment.GetEnvironmentVariable("ALLEGIANCE_OBSERVER_AUTOSHOT") is { Length: > 0 } spShot)
+        {
+            if (_autoShotStartMs <= 0) _autoShotStartMs = Environment.TickCount64;
+            int delay = int.TryParse(spShot, out var sd) && sd > 0 ? sd : 8000;
+            if (Environment.TickCount64 - _autoShotStartMs >= delay)
+            {
+                _autoShotName = "skirmish_status_" + _skirmish.Options.Speed;
+                _autoShotScheduled = true;
+                _autoShotDone = true;
+                _observerProofWaitExit = true;
+            }
+        }
         bool Edge(string action) => ActionDown(keys, action) && !ActionDown(_observerKeys, action);
         if (Edge("Quit")) Exit();
         if (Edge("OpenKeyBindings")) ToggleKeyBindings();

@@ -22,7 +22,7 @@ public sealed record BenchmarkCommand(string Mode, SkirmishSize Size, string? Re
         return new(replay ? "replay" : "skirmish", size, replay ? (value.Length > 7 ? value[7..] : BattleReplay.DefaultPath) : null,
             seconds, Get("--benchmark-output", "benchmark.json"), args.Contains("--benchmark-headless"), Get("--benchmark-record", "") is { Length: > 0 } file ? file : null, args.Contains("--benchmark-exit"));
     }
-    public SkirmishOptions Options => new() { Size = Size, Seed = 729, ResearchSpeed = 8, StartAsSpectator = false };
+    public SkirmishOptions Options => new() { Size = Size, Seed = 729, Speed = SkirmishSpeed.Normal, ResearchSpeed = 8, StartAsSpectator = false };
     public static async Task<int> RunHeadlessAsync(BenchmarkCommand command)
     {
         try

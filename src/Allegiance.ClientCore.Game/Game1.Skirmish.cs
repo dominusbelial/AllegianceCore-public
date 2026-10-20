@@ -15,11 +15,21 @@ public sealed partial class Game1
     private bool _skLeft, _skRight, _skPauseKey, _skExitKey;
     private string _skirmishError = "";
     private bool _skirmishSideRequested;
+    private bool _skirmishRememberedApplied, _skirmishSeededByBenchmark;
+    private bool _observerProofWaitExit;
     private (long Generation, short Ship) _humanCommanderSeat = (-1, -1);
     private double _humanCommanderRetryAt;
 
     private void UpdateSkirmishMenu(KeyboardState keys, bool up, bool down, bool enter, bool esc)
     {
+        // SP-6 — restore the player's remembered local skirmish choices (player.json) once,
+        // unless a saved benchmark recommendation already seeded the screen this run.
+        if (!_skirmishRememberedApplied)
+        {
+            _skirmishRememberedApplied = true;
+            if (!_skirmishSeededByBenchmark && IntroPreferences.Load().Skirmish is { } remembered)
+                _skirmishScreen.ApplyRemembered(remembered);
+        }
         bool left = keys.IsKeyDown(Keys.Left), right = keys.IsKeyDown(Keys.Right);
         if (_skirmishStart is null)
         {
@@ -57,7 +67,11 @@ public sealed partial class Game1
         {
             _observerAutoStarted = true;
             _skirmishCancel = new();
-            _skirmishStart = SkirmishHost.StartAsync(new() { StartAsSpectator = true }, cancellationToken: _skirmishCancel.Token);
+            // SP-6 — ALLEGIANCE_SKIRMISH_SPEED lets a live proof show a chosen speed's status bar.
+            var observerOptions = new SkirmishOptions { StartAsSpectator = true };
+            if (Enum.TryParse<SkirmishSpeed>(Environment.GetEnvironmentVariable("ALLEGIANCE_SKIRMISH_SPEED"), ignoreCase: true, out var speed))
+                observerOptions = observerOptions with { Speed = speed };
+            _skirmishStart = SkirmishHost.StartAsync(observerOptions, cancellationToken: _skirmishCancel.Token);
         }
         if (_skirmishStart is { IsCompleted: true } start)
         {
@@ -71,7 +85,7 @@ public sealed partial class Game1
                 if (_benchmark is not null) _playerName = Allegiance.SinglePlayer.Benchmark.BenchmarkCommand.PilotName;
                 else if (_pilotBuf.Length > 0) _playerName = _pilotBuf.ToString();
                 var preferences = IntroPreferences.Load();
-                if (_benchmark is null) { preferences.Pilot = _playerName; preferences.Save(); }
+                if (_benchmark is null) { preferences.Pilot = _playerName; preferences.Skirmish = SkirmishPrefs.From(_skirmish.Options); preferences.Save(); }
                 if (_benchmark is null && _skirmish.Options.StartAsSpectator) { ObserveBenchmarkSharingSession(); StopIntroScan(); EnterLocalSpectator(); return; }
                 // Local ports are ephemeral; do not save them as a remembered multiplayer server.
                 _returnToIntroOnFailure = true;
@@ -158,8 +172,9 @@ public sealed partial class Game1
     private void DrawSkirmishStatus()
     {
         if (_skirmish is null || _benchmark is not null || (LocalSpectating && (_helpVisible || _keyBindVisible || _creditsVisible))) return;
-        string status = _skirmish.Failure ?? (_skirmish.Paused ? "PAUSED" : (_skirmish.Options.Commander == SkirmishCommander.You
-            ? "Skirmish - You command | I invest | F3 command view" : "Skirmish - AI commander active"));
+        string status = _skirmish.Failure ?? (_skirmish.Paused ? "PAUSED"
+            : $"Skirmish [{_skirmish.Options.Speed} speed] - " + (_skirmish.Options.Commander == SkirmishCommander.You
+                ? "You command | I invest | F3 command view" : "AI commander active"));
         if (_seatChange is not null) status = "Changing seat (waiting for a playable match)...";
         if (_skirmishError.Length > 0) status = _skirmishError;
         status += "   Ctrl+1 Join Alpha   Ctrl+2 Join Bravo   Ctrl+0 Spectate   Ctrl+P Pause   Ctrl+F10 End";

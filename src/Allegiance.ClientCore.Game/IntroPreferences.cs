@@ -28,6 +28,10 @@ public sealed class IntroPreferences
     /// first, capped to a small size.</summary>
     public List<string> Recent { get; set; } = new();
 
+    /// <summary>SP-6 — remembered local skirmish choices (offline), restored when the
+    /// Skirmish setup screen opens. Absent <c>null</c> leaves the defaults.</summary>
+    public Allegiance.SinglePlayer.SkirmishPrefs? Skirmish { get; set; }
+
     /// <summary>TR-2 — the native <c>Ui.ShowStartupTrainingSuggestion</c> config flag
     /// (WinTrek/introscreen.cpp:1305, 1055): the first-run dialog suggesting the player
     /// train before going online is shown once, until they launch a mission or tick

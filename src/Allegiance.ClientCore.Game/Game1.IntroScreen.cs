@@ -98,7 +98,7 @@ public sealed partial class Game1
             _directBuf.Append(IntroScreenModel.DirectAddress(prefs.Server, prefs.Port));
         }
         _introView = _introProofDelayMs >= 0 && Environment.GetEnvironmentVariable("ALLEGIANCE_SKIRMISH_SETUP_PROOF") == "1"
-            ? IntroView.SinglePlayer : IntroView.Main;
+            ? IntroView.SkirmishSetup : IntroView.Main;
         _introIndex = 0;
         // TR-2 — the native first-run training suggestion (introscreen.cpp:1305): shown once
         // until the player trains or ticks "don't ask me again" (Ui.ShowStartupTrainingSuggestion).

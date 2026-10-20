@@ -23,10 +23,18 @@ public static class BenchmarkPolicy
         bool gpu = bottleneck == "GPU-bound";
         bool client = bottleneck == "CPU-bound by client" || bottleneck.StartsWith("Frame-time spikes", StringComparison.Ordinal);
         var chosen = bots ? (SkirmishSize)Math.Max(0, (int)size - 1) : size;
+        // SP-6: suggest a brisk pace only when the measured server tick budget has real headroom;
+        // Showcase (×5000 income / ×8 research) is never auto-applied — it is for rig-class machines.
+        bool tickHeadroom = r.ServerTickMs is { Count: > 0, P95: < 20 };
+        var speed = bots || !tickHeadroom ? SkirmishSpeed.Normal : SkirmishSpeed.Fast;
+        string speedReason = speed == SkirmishSpeed.Fast
+            ? $"Server tick p95 {r.ServerTickMs!.P95:F2} ms and bot budget have headroom; Fast paces income x{SkirmishOptions.FastIncomeMultiplier}/research x{SkirmishOptions.FastResearchTimeScale} for a ~20-30 min single-player match"
+            : "Keep native pacing; Showcase (x5000 income) only on machines that hold the tick budget at the chosen size";
         string split = $"Measured CPU {r.CpuMs?.ToString("F2") ?? "unavailable"} ms / GPU {r.GpuMs?.ToString("F2") ?? "unavailable"} ms at {width}x{height}";
         var result = new BenchmarkRecommendation
         {
             BattleSize = chosen, Difficulty = bots ? SkirmishDifficulty.Easy : SkirmishDifficulty.Normal,
+            Speed = speed,
             Fsr = gpu, FsrPreset = gpu && width >= 2560 ? 2 : 1,
             EffectsQuality = gpu || client ? EffectsDetail.Low : r.GpuMs is < 8 && MeetsTarget(r) ? EffectsDetail.High : EffectsDetail.Medium,
             Bloom = r.GpuMs is < 8 && MeetsTarget(r) && !gpu && !client,
@@ -36,7 +44,7 @@ public static class BenchmarkPolicy
         return result with { Reasons = [
             new("Battle size", chosen.ToString(), bots ? $"Bots consume {r.Workers.Sum(w => w.CpuMs) / Math.Max(.001, r.WallSeconds):F0} CPU ms/s; server tick p95 {r.ServerTickMs?.P95:F2} ms; reduce one size" : r.BotCount == 0 ? "No live bots measured; provisional size, validate with skirmish" : "Measured server and bot budget; retain tested size"),
             new("Bot difficulty", result.Difficulty.ToString(), bots ? "Easy reduces combat pressure; fleet reduction is the CPU remedy" : r.BotCount == 0 ? "No live bots measured; Normal is a provisional default" : "Normal preserves the tested combat policy"),
-            new("Research speed", "1x", "Keep normal economy pacing; acceleration increases concurrent fleet activity"),
+            new("Game speed", result.Speed.ToString(), speedReason),
             new("Spectator default", "On", "Use the measured scripted spectator workload (SP-5 preference)"),
             new("Resolution / FSR", result.Fsr ? (result.FsrPreset == 2 ? "Balanced (59%)" : "Quality (67%)") : "Native (100%)", split),
             new("Bloom", result.Bloom ? "On" : "Off", "Bloom requires measured GPU headroom and the frame target"),

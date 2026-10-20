@@ -50,6 +50,7 @@ public sealed record BenchmarkRecommendation
     public SkirmishSize BattleSize { get; init; }
     public SkirmishDifficulty Difficulty { get; init; } = SkirmishDifficulty.Normal;
     public double ResearchSpeed { get; init; } = 1;
+    public SkirmishSpeed Speed { get; init; } = SkirmishSpeed.Normal;
     public bool SpectatorDefault { get; init; } = true;
     public bool Fsr { get; init; }
     public int FsrPreset { get; init; } = 1;

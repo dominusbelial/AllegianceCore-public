@@ -1,0 +1,215 @@
+{
+  "options": "Small / Fast (income x8, research x4)",
+  "tenMinute": {
+    "simSeconds": 610.999999999992,
+    "sides": [
+      {
+        "side": 0,
+        "developments": 3,
+        "stations": 1
+      },
+      {
+        "side": 1,
+        "developments": 5,
+        "stations": 1
+      }
+    ]
+  },
+  "twentyMinute": {
+    "simSeconds": 1210.399999999447,
+    "sides": [
+      {
+        "side": 0,
+        "developments": 6,
+        "stations": 1
+      },
+      {
+        "side": 1,
+        "developments": 6,
+        "stations": 2
+      }
+    ]
+  },
+  "trail": [
+    {
+      "simSeconds": 100.39999999999644,
+      "sides": [
+        {
+          "side": 0,
+          "developments": 1,
+          "stations": 1
+        },
+        {
+          "side": 1,
+          "developments": 1,
+          "stations": 1
+        }
+      ]
+    },
+    {
+      "simSeconds": 200.50000000001134,
+      "sides": [
+        {
+          "side": 0,
+          "developments": 1,
+          "stations": 1
+        },
+        {
+          "side": 1,
+          "developments": 2,
+          "stations": 1
+        }
+      ]
+    },
+    {
+      "simSeconds": 300.55000000003406,
+      "sides": [
+        {
+          "side": 0,
+          "developments": 2,
+          "stations": 1
+        },
+        {
+          "side": 1,
+          "developments": 2,
+          "stations": 1
+        }
+      ]
+    },
+    {
+      "simSeconds": 400.5500000000568,
+      "sides": [
+        {
+          "side": 0,
+          "developments": 2,
+          "stations": 1
+        },
+        {
+          "side": 1,
+          "developments": 3,
+          "stations": 1
+        }
+      ]
+    },
+    {
+      "simSeconds": 500.65000000007956,
+      "sides": [
+        {
+          "side": 0,
+          "developments": 3,
+          "stations": 1
+        },
+        {
+          "side": 1,
+          "developments": 4,
+          "stations": 1
+        }
+      ]
+    },
+    {
+      "simSeconds": 600.8000000000013,
+      "sides": [
+        {
+          "side": 0,
+          "developments": 3,
+          "stations": 1
+        },
+        {
+          "side": 1,
+          "developments": 5,
+          "stations": 1
+        }
+      ]
+    },
+    {
+      "simSeconds": 700.9999999999102,
+      "sides": [
+        {
+          "side": 0,
+          "developments": 4,
+          "stations": 1
+        },
+        {
+          "side": 1,
+          "developments": 6,
+          "stations": 1
+        }
+      ]
+    },
+    {
+      "simSeconds": 800.7999999998194,
+      "sides": [
+        {
+          "side": 0,
+          "developments": 4,
+          "stations": 1
+        },
+        {
+          "side": 1,
+          "developments": 6,
+          "stations": 1
+        }
+      ]
+    },
+    {
+      "simSeconds": 900.6999999997286,
+      "sides": [
+        {
+          "side": 0,
+          "developments": 4,
+          "stations": 1
+        },
+        {
+          "side": 1,
+          "developments": 6,
+          "stations": 1
+        }
+      ]
+    },
+    {
+      "simSeconds": 1000.6499999996377,
+      "sides": [
+        {
+          "side": 0,
+          "developments": 5,
+          "stations": 1
+        },
+        {
+          "side": 1,
+          "developments": 6,
+          "stations": 1
+        }
+      ]
+    },
+    {
+      "simSeconds": 1100.449999999547,
+      "sides": [
+        {
+          "side": 0,
+          "developments": 5,
+          "stations": 1
+        },
+        {
+          "side": 1,
+          "developments": 6,
+          "stations": 2
+        }
+      ]
+    },
+    {
+      "simSeconds": 1200.1999999994562,
+      "sides": [
+        {
+          "side": 0,
+          "developments": 6,
+          "stations": 1
+        },
+        {
+          "side": 1,
+          "developments": 6,
+          "stations": 2
+        }
+      ]
+    }
+  ]
+}

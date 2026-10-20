@@ -71,6 +71,7 @@ public sealed partial class Game1
         var saved = BenchmarkPreferences.Load();
         if (saved.Applied is { } settings)
         {
+            _skirmishSeededByBenchmark = true;
             _skirmishScreen.ApplyDefaults(settings);
             ApplyBenchmarkSettings(settings, preserveUpscaling: true);
         }
@@ -80,7 +81,8 @@ public sealed partial class Game1
     private BenchmarkRecommendation CurrentBenchmarkSettings() => new()
     {
         BattleSize = _skirmishScreen.Options.Size, Difficulty = _skirmishScreen.Options.Difficulty,
-        ResearchSpeed = _skirmishScreen.Options.ResearchSpeed, SpectatorDefault = _skirmishScreen.Options.SpectatorDefault,
+        ResearchSpeed = _skirmishScreen.Options.ResearchSpeed, Speed = _skirmishScreen.Options.Speed,
+        SpectatorDefault = _skirmishScreen.Options.SpectatorDefault,
         Fsr = _upscaling.Upscaling == UpscalingMode.FSR1, FsrPreset = (int)_upscaling.Preset,
         HdPbr = _nativeShipRenderer.HdPbrEnabled, HdTextures = _upscaling.HdTextures, Bloom = _bloomEnabled,
         EffectsQuality = _upscaling.Effects, EffectsDensity = _benchmarkEffectsDensity, ViewDistance = _benchmarkViewDistance,
@@ -171,7 +173,7 @@ public sealed partial class Game1
             _session.Recording = _benchRecording;
             _skirmishCancel?.Dispose(); _skirmishCancel = new();
             var options = _benchmark.Options;
-            if (_benchSuggestion is { } s) options = options with { Size = s.BattleSize, Difficulty = s.Difficulty, ResearchSpeed = s.ResearchSpeed, SpectatorDefault = s.SpectatorDefault };
+            if (_benchSuggestion is { } s) options = options with { Size = s.BattleSize, Difficulty = s.Difficulty, ResearchSpeed = s.ResearchSpeed, Speed = s.Speed, SpectatorDefault = s.SpectatorDefault };
             _skirmishStart = SkirmishHost.StartAsync(options, cancellationToken: _skirmishCancel.Token);
         }
     }
@@ -339,7 +341,7 @@ public sealed partial class Game1
             TestedSettings = _benchOriginal! with
             {
                 FrameCap = 0, Vsync = false, BattleSize = _benchmark.Size,
-                Difficulty = _benchmark.Options.Difficulty, ResearchSpeed = _benchmark.Options.ResearchSpeed,
+                Difficulty = _benchmark.Options.Difficulty, ResearchSpeed = _benchmark.Options.ResearchSpeed, Speed = _benchmark.Options.Speed,
                 SpectatorDefault = _benchmark.Options.SpectatorDefault
             },
             ReplaySha256 = _benchmark.Mode == "replay" ? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(_benchmark.ReplayFile!))) : null, Runs = _benchRuns.ToArray(), Median = selected,

@@ -24,7 +24,7 @@ public sealed class SP5SpectatorTests
             Assert.True(options.CreateConfig().Transport!.MaxConnectionsPerIp >= options.TeamSize * 2 + 20);
         }
         var menu = new SkirmishScreenModel();
-        menu.Move(6); menu.Change(1);   // row 6 since P728 added Commander at row 5
+        menu.Move(7); menu.Change(1);   // row 7 since SP-6 added Game speed at row 6
         Assert.True(menu.Options.StartAsSpectator);
         Assert.Contains("Start as spectator: Yes", menu.Rows);
     }

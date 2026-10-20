@@ -6,6 +6,10 @@ public enum SkirmishSize { Small, Medium, Large, Epic }
 public enum SkirmishCommander { AI, You }
 public enum SkirmishDifficulty { Easy, Normal, Hard }
 
+/// <summary>SP-6 — single-player economy pace. Determines showcase income/research/finale
+/// pacing for the embedded skirmish host (all local; offline).</summary>
+public enum SkirmishSpeed { Normal, Fast, Showcase }
+
 /// <summary>Local orchestration choices; race identities come from PCore001 (P702).</summary>
 public sealed record SkirmishOptions
 {
@@ -22,6 +26,7 @@ public sealed record SkirmishOptions
     public SkirmishSize Size { get; init; }
     public SkirmishDifficulty Difficulty { get; init; } = SkirmishDifficulty.Normal;
     public SkirmishCommander Commander { get; init; }
+    public SkirmishSpeed Speed { get; init; } = SkirmishSpeed.Normal;
     public string TechMode { get; init; } = "research";
     public string Map { get; init; } = "m2xspiderw.igc";
     private bool? _startAsSpectator;
@@ -39,6 +44,26 @@ public sealed record SkirmishOptions
         SkirmishDifficulty.Normal => (1, 0, 1),
         SkirmishDifficulty.Hard => (1.5f, 0, 1.25f),
         _ => throw new ArgumentOutOfRangeException(nameof(Difficulty))
+    };
+
+    // SP-6 economy pace constants. Showcase mirrors the rig's authored showcase config
+    // (docs/reports/P733_assets/rig-showcase-delta.json: incomeMultiplier 5000,
+    // researchTimeScale 8, finaleTimeoutSeconds 300). Fast is a local SP-6 measurement:
+    // a Small/Medium match reaches mid tech in ~20-30 min at these values.
+    public const double ShowcaseIncomeMultiplier = 5000;
+    public const double ShowcaseResearchTimeScale = 8;
+    public const double RigFinaleTimeoutSeconds = 300;
+    public const double FastIncomeMultiplier = 8;
+    public const double FastResearchTimeScale = 4;
+
+    /// <summary>Showcase economy/research/finale pacing for the chosen speed. Normal uses
+    /// <see cref="ResearchSpeed"/> (the native ×1 default, or a benchmark/legacy override).</summary>
+    public (double Income, double Research, double FinaleSeconds) SpeedProfile => Speed switch
+    {
+        SkirmishSpeed.Normal => (1, ResearchSpeed, RigFinaleTimeoutSeconds),
+        SkirmishSpeed.Fast => (FastIncomeMultiplier, FastResearchTimeScale, RigFinaleTimeoutSeconds),
+        SkirmishSpeed.Showcase => (ShowcaseIncomeMultiplier, ShowcaseResearchTimeScale, RigFinaleTimeoutSeconds),
+        _ => throw new ArgumentOutOfRangeException(nameof(Speed))
     };
 
     public ServerConfig CreateConfig(string? artwork = null)
@@ -59,7 +84,7 @@ public sealed record SkirmishOptions
             },
             ArtPath = artwork ?? Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork),
             Port = 0, BindAddress = "127.0.0.1", Discovery = new() { Enabled = false },
-            Showcase = new() { TechMode = TechMode, ResearchTimeScale = ResearchSpeed },
+            Showcase = new() { TechMode = TechMode, ResearchTimeScale = SpeedProfile.Research, IncomeMultiplier = SpeedProfile.Income, FinaleTimeoutSeconds = SpeedProfile.FinaleSeconds },
             LiveSettings = new()
             {
                 TestUnlock = new() { Enabled = TechMode == "unlocked", Money = 1_000_000 },
@@ -88,4 +113,29 @@ public sealed record SkirmishBudget(int Workers, int CoresPerWorker)
         int workers = Math.Min(Math.Clamp(available / 2, 1, 4), Math.Max(1, (bots + 63) / 64));
         return new(workers, Math.Max(1, available / workers));
     }
+}
+
+/// <summary>SP-6 — remembered local skirmish choices, persisted in the player config
+/// (player.json via <c>IntroPreferences</c>) so a fresh launch restores them offline.
+/// Mirrors the setup rows; absent JSON fields fall back to defaults.</summary>
+public sealed record SkirmishPrefs(
+    SkirmishSize Size = SkirmishSize.Small,
+    SkirmishDifficulty Difficulty = SkirmishDifficulty.Normal,
+    SkirmishCommander Commander = SkirmishCommander.AI,
+    SkirmishSpeed Speed = SkirmishSpeed.Normal,
+    int PlayerCiv = 25,
+    int EnemyCiv = 3,
+    string TechMode = "research",
+    bool StartAsSpectator = false,
+    bool SpectatorDefault = false)
+{
+    public static SkirmishPrefs From(SkirmishOptions o) => new(o.Size, o.Difficulty, o.Commander, o.Speed,
+        o.PlayerCiv, o.EnemyCiv, o.TechMode, o.StartAsSpectator, o.SpectatorDefault);
+
+    public SkirmishOptions ToOptions() => new()
+    {
+        Size = Size, Difficulty = Difficulty, Commander = Commander, Speed = Speed,
+        PlayerCiv = PlayerCiv, EnemyCiv = EnemyCiv, TechMode = TechMode,
+        StartAsSpectator = StartAsSpectator, SpectatorDefault = SpectatorDefault
+    };
 }
