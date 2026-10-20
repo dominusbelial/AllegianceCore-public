@@ -31,15 +31,17 @@ public static class GaugeTextureSource
     };
 
     /// <summary>Short pure-ASCII on-screen label for a gauge (HUD font bakes
-    /// only 32..126).</summary>
+    /// only 32..126). HUD-6: labels now match the native centre-HUD strings
+    /// (dialog.mdl:2173 THRUST / 2226 FUEL / 2278 AMMO / 2331 ENERGY /
+    /// 2404 ARMOR / 2474 SHIELD).</summary>
     public static string LabelFor(GaugeKind kind) => kind switch
     {
-        GaugeKind.Hull => "HULL",
-        GaugeKind.Shield => "SHLD",
-        GaugeKind.Energy => "ENGY",
+        GaugeKind.Hull => "ARMOR",
+        GaugeKind.Shield => "SHIELD",
+        GaugeKind.Energy => "ENERGY",
         GaugeKind.Fuel => "FUEL",
         GaugeKind.Ammo => "AMMO",
-        GaugeKind.Thrust => "THR",
+        GaugeKind.Thrust => "THRUST",
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 

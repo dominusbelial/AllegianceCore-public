@@ -2501,6 +2501,13 @@ public sealed partial class Game1
             {
                 hudDocked = entity.StationId >= 0;
                 hudDead = entity.IsDead;
+                // HUD-6b — resolve the native data sources once per frame from
+                // the same client state the wire already carries (parent/source
+                // ship for flag + signature, echoed CoastButton for vector lock).
+                bool firing = (up.StateM & (Allegiance.Core.Sim.ShipControlState.AllWeapons | Allegiance.Core.Sim.ShipControlState.OneWeapon)) != 0;
+                bool afterburnerActive = (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0;
+                bool cloakActive = (up.StateM & Allegiance.Core.Sim.ShipControlState.CloakActive) != 0;
+                var ownStatus = OwnStatusData.FromClientState(entity, world.Ships, _autoPilotEngaged, up.StateM);
                 // P228 — feed the local ship's hull AND shield fractions into the
                 // damage-flash tracker and read whether the HUD should be flashing
                 // NOW. P463 added the shield fraction: a shield-absorbed hit (hull
@@ -2596,12 +2603,12 @@ public sealed partial class Game1
                     // own throttle). The gauge's fraction mapping is
                     // 0.5*(1+throttle) = % of max cruise speed.
                     Throttle: _throttle,
-                    AfterburnerActive: (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0,
+                    AfterburnerActive: afterburnerActive,
                     // P221 — firing readout: true while StateM carries a fire
                     // bit. Group-fire ORs AllWeapons; single-weapon mode (P225)
                     // ORs OneWeapon instead, so both are detected (the sim sets
                     // exactly one when firing — Weapon.cs:363-375).
-                    Firing: (up.StateM & (Allegiance.Core.Sim.ShipControlState.AllWeapons | Allegiance.Core.Sim.ShipControlState.OneWeapon)) != 0,
+                    Firing: firing,
                     // P225 — the pilot's fire-mode selection (client-local,
                     // not from the wire: group-fire vs the selected fixed mount).
                     // Drives the WEAPONS readout next to the firing indicator.
@@ -2614,7 +2621,7 @@ public sealed partial class Game1
                     Mining: world.MiningAsteroidId != -1,
                     // P270 — true while OUR OWN ship is cloaked (the CloakActive
                     // bit on the own-ship update) — drives the CLOAKED HUD tag.
-                    Cloaked: (up.StateM & Allegiance.Core.Sim.ShipControlState.CloakActive) != 0,
+                    Cloaked: cloakActive,
                     // P298 — the local ship's live Kill Bonus (streamed owner-only
                     // on OwnShipKillBonusUpdate(212); the renderer-only client has
                     // no server-side Ship object to read it from directly).
@@ -2647,7 +2654,15 @@ public sealed partial class Game1
                     // "TIME DILATION nn%" when the server slows the game clock.
                     TimeDilationPercent: 100f * (float)_session.World.TimeScale,
                     WarningMask: world.ShipWarnings.Mask,
-                    ControlState: up.StateM);
+                    ControlState: up.StateM,
+                    // HUD-6 — own-ship centre-HUD status telemetry.
+                    SignaturePercent: OwnSignaturePercent(world, ownStatus.SourceShip,
+                        firing, _groupFire, _selectedMount, afterburnerActive, cloakActive),
+                    Detected: entity.Detected,
+                    AutopilotEngaged: ownStatus.AutopilotEngaged,
+                    VectorLockEngaged: ownStatus.VectorLockEngaged,
+                    CarriedFlag: ownStatus.CarriedFlag,
+                    CarriedArtifact: ownStatus.CarriedArtifact);
             }
         }
         var model = HudModelAdapter.Create(frame, _cameraMode, _lockBracket, _leadIndicator,
@@ -2680,6 +2695,25 @@ public sealed partial class Game1
         if (_hudSettings.Style == HudStyle.Classic) DrawEjectDeathOverlays(model);
         DrawTargetNoMatchFeedback();
         return model;
+    }
+
+    /// <summary>HUD-6 — native signature percentage = 100·signature / side
+    /// c_gaSignature (WinTrek/console.cpp:865-866), evaluated on the SOURCE ship
+    /// (a turret gunner reads the carrier's signature, console.cpp:845) with
+    /// the native per-part gating in <see cref="OwnStatusData.SignaturePercent"/>.
+    /// Unknown hull/side data leaves the readout absent rather than inventing a
+    /// value.</summary>
+    private float? OwnSignaturePercent(ClientWorld world, ShipEntity entity,
+        bool firing, bool groupFire, int selectedMount, bool afterburnerActive, bool cloakActive)
+    {
+        short sideId = entity.SideId;
+        if (_shopCatalog is null) return null;
+        // HUD-6b — the per-frame LINQ hull scan is replaced by the catalogue
+        // dictionary built once in Game1.Lifecycle (same cache HUD-4b uses).
+        if (!_hullById.TryGetValue(entity.HullId, out var ownHull)) return null;
+        float resistance = world.GlobalAttributesFor(sideId).Get(Allegiance.Core.Model.GlobalAttributeSet.Signature);
+        return OwnStatusData.SignaturePercent(ownHull.Signature, entity.Loadout, ResolveFlightPart,
+            firing, groupFire, selectedMount, afterburnerActive, cloakActive, resistance);
     }
 
     /// <summary>P425 — the HUD commandee readout label, or null when the pilot is

@@ -32,8 +32,6 @@ public class HudRenderer
     // whole frame (HUD included) — a genuine blackout, unlike the damage wash.
     private static readonly Color WarpBlack = new(0f, 0f, 0f, 1f);
 
-    // P270 — own-ship cloak colour reused in the CLOAKED tag.
-    private static readonly Color CloakViolet = new(0.62f, 0.55f, 0.98f);
     // P298 — Kill Bonus gold: a warm reward tone (distinct from the teal
     // accents, the red Warning, the amber MINING and the violet CLOAKED tags).
     private static readonly Color BonusGold = new(0.97f, 0.79f, 0.30f);
@@ -49,6 +47,7 @@ public class HudRenderer
     protected readonly SpriteFont _big;
     private readonly GaugeTextures? _gauges;
     private readonly LockTextures? _lockTextures;
+    private readonly StatusTextures? _status;
     private readonly TargetPaneTextures? _targetPaneTextures;
 
     public HudRenderer(
@@ -58,6 +57,7 @@ public class HudRenderer
         SpriteFont big,
         GaugeTextures? gauges = null,
         LockTextures? lockTextures = null,
+        StatusTextures? statusTextures = null,
         TargetPaneTextures? targetPaneTextures = null)
     {
         _sb = spriteBatch;
@@ -66,6 +66,7 @@ public class HudRenderer
         _big = big;
         _gauges = gauges;
         _lockTextures = lockTextures;
+        _status = statusTextures;
         _targetPaneTextures = targetPaneTextures;
     }
 
@@ -265,11 +266,6 @@ public class HudRenderer
             // primary cue (Game1 overrides the own hull orientation); this text
             // just disambiguates it.
             if (f.Mining) DrawMining(w);
-            // P270 — own-ship cloak status tag (a teammate/enemy cloak renders
-            // translucent via CloakVisual; this tells the local pilot THEIR OWN
-            // hull is cloaked, which otherwise has no on-screen cue in cockpit
-            // view). Cool violet — distinct from the amber MINING activity tag.
-            if (f.Cloaked) { DrawCloak(w); ElementDrawn("Cloak active"); }
             // P618 — the TIME DILATION indicator: drawn at the very top-centre
             // whenever the server's live sim time scale is below full speed
             // (f.TimeDilationPercent < 100). Hidden entirely at full speed.
@@ -280,16 +276,10 @@ public class HudRenderer
             // tag, placed beside it (a ripcording ship cannot be mining).
             if (ripcordStatus is { } rc) { DrawRipcord(rc, w); ElementDrawn("Ripcord countdown"); }
 
-            // P298 — the two new readouts native only hints at via training
-            // overlays (KillBonusTrainingOverlay/RollTrainingOverlay,
-            // WinTrek/indicator.cpp:625-642) but this port surfaces as real
-            // live gauges: the ship's Kill Bonus (top-left, warm gold = reward)
-            // and its current roll angle (top-right, teal). Drawn whenever a
-            // frame exists — 0% KB / level 0° are honest readouts, not clutter.
-            {
-                DrawKillBonus(f, w);
-                ElementDrawn("Kill bonus");
-            }
+            // HUD-6 — native centre-HUD own-ship status icons/readouts at their
+            // dialog.mdl anchors (kill bonus, signature, detection eye, cloak,
+            // autopilot, vector lock, carried flag/artifact).
+            DrawOwnStatus(model, viewport);
             DrawRoll(f.RollDegrees, w, h);
             // P442 — the always-visible money readout (top-left, above the kill
             // bonus): the local player's wallet, "$"-formatted as native does.
@@ -696,13 +686,18 @@ public class HudRenderer
         // Bottom-up reveal of the segment arc: draw only the bottom `frac`
         // fraction of the texture, aligned so its bottom edge sits at the
         // gauge's full-height bottom (native GaugeImage JustifyBottom).
+        // Native thrust/fuel use JustifyTop instead (dialog.mdl:2173,2226), so
+        // those reveal from the top edge down.
+        bool revealFromTop = kind is GaugeKind.Thrust or GaugeKind.Fuel;
         int srcH = (int)MathF.Round(tex.Height * frac);
         if (srcH > 0)
         {
-            var src = new Rectangle(0, tex.Height - srcH, tex.Width, srcH);
+            var src = revealFromTop
+                ? new Rectangle(0, 0, tex.Width, srcH)
+                : new Rectangle(0, tex.Height - srcH, tex.Width, srcH);
             var dst = new Rectangle(
                 (int)MathF.Round(anchor.X - gw / 2f),
-                (int)MathF.Round(anchor.Y - gh / 2f + (gh - srcH * gaugeScale)),
+                (int)MathF.Round(anchor.Y - gh / 2f + (revealFromTop ? 0f : gh - srcH * gaugeScale)),
                 (int)MathF.Round(gw),
                 (int)MathF.Round(srcH * gaugeScale));
             _sb.Draw(tex, dst, src, Color.White);
@@ -720,6 +715,113 @@ public class HudRenderer
         // idle throttle must never read "0% WARNING" — always show its accent.
         DrawMeasuredText(_small, pct, new Vector2(anchor.X - psz.X / 2f, ty + lsz.Y + 1f),
             valueColor is { } color ? From(color) : Accent, true);
+    }
+
+    /// <summary>
+    /// HUD-6 — native centre-HUD own-ship status (<c>DefaultCenterHudOn</c>,
+    /// dialog.mdl:2604-2623). Icons use the real native bitmaps at their
+    /// dialog.mdl anchors; missing art falls back to a short text label.
+    /// Kill bonus uses native <c>killcounterbmp</c> + black integer
+    /// (dialog.mdl:2563-2567); signature uses the native <c>SIG: n%</c> string
+    /// (dialog.mdl:2595-2602).
+    /// </summary>
+    protected virtual void DrawOwnStatus(HudModel model, Viewport viewport)
+    {
+        var status = model.Status;
+        if (!status.Visible) return;
+
+        DrawStatusIcon("Detection eye", status.DetectionEyeVisible, _status?.Eye, viewport);
+        DrawStatusIcon("Cloak active", status.CloakActive, _status?.Cloak, viewport);
+        DrawStatusIcon("Autopilot status", status.AutopilotEngaged, _status?.Autopilot, viewport);
+        DrawStatusIcon("Vector lock status", status.VectorLockEngaged, _status?.VectorLock, viewport);
+        DrawStatusIcon("Carried flag", status.CarriedFlag, _status?.Flag, viewport);
+        DrawStatusIcon("Carried artifact", status.CarriedArtifact, _status?.Artifact, viewport);
+
+        if (status.KillBonusPercent is { } kb)
+        {
+            var pos = OwnStatusLayout.ScreenPos("Kill bonus", viewport.Width, viewport.Height);
+            var tex = _status?.KillCounter;
+            if (tex is not null)
+            {
+                float scale = 0.72f;
+                // Native ExperienceImage group: the bitmap member is translated
+                // (-23,-65) from the group anchor (dialog.mdl:2563-2567).
+                var bitmapPos = pos + OwnStatusLayout.KillCounterBitmapOffset(viewport.Height);
+                _sb.Draw(tex, bitmapPos, null, Color.White, 0f,
+                    Vector2.Zero, scale, SpriteEffects.None, 0f);
+                // Native draws the integer in black in a centred 80-wide box at
+                // the group-relative Point(0,5) (dialog.mdl:2561-2566).
+                var numberBox = pos + OwnStatusLayout.KillCounterNumberOffset(viewport.Height);
+                DrawCenteredInNativeBox(_small, $"{kb:0}", numberBox, viewport.Height, Color.Black);
+            }
+            else
+            {
+                string text = $"KB {kb:0}%";
+                DrawMeasuredText(_small, text, pos, BonusGold, true);
+            }
+            ElementDrawn("Kill bonus");
+        }
+
+        if (status.SignaturePercent is { } sig)
+        {
+            var pos = OwnStatusLayout.ScreenPos("Signature percentage", viewport.Width, viewport.Height);
+            string text = $"SIG: {sig:0}%";
+            // Native SignatureImage is StringImage(JustifyCenter, 80, …) whose
+            // TranslateImage anchor is the box's top-left (dialog.mdl:2595-2602,
+            // :2621), so the text centres inside the 80-point box.
+            DrawCenteredInNativeBox(_small, text, pos, viewport.Height, TextMain);
+            ElementDrawn("Signature percentage");
+        }
+
+        if (status.CloakDrained)
+        {
+            var pos = OwnStatusLayout.ScreenPos("Cloak strength and drained state", viewport.Width, viewport.Height);
+            DrawMeasuredText(_small, "CLOAK DRAINED", pos, Warning, true);
+            ElementDrawn("Cloak strength and drained state");
+        }
+    }
+
+    private void DrawStatusIcon(string id, bool shown, Texture2D? tex, Viewport viewport)
+    {
+        if (!shown) return;
+        var pos = OwnStatusLayout.ScreenPos(id, viewport.Width, viewport.Height);
+        if (tex is not null)
+        {
+            // The PNG icons (autopilot/vector lock) are full-bleed 32px glyphs;
+            // the MDL icons are large canvases with a small centred glyph, drawn
+            // at the same 0.72 scale the six gauges use. The native
+            // TranslateImage anchor is the image CORNER (engine/image.cpp:834-845),
+            // so draw from the top-left without centring or nudging.
+            float scale = tex.Width <= 64 ? 1f : 0.72f;
+            _sb.Draw(tex, pos, null, Color.White, 0f,
+                Vector2.Zero, scale, SpriteEffects.None, 0f);
+        }
+        else
+        {
+            string label = id switch
+            {
+                "Detection eye" => "EYE",
+                "Cloak active" => "CLOAK",
+                "Autopilot status" => "AUTOPILOT",
+                "Vector lock status" => "VECTOR LOCK",
+                "Carried flag" => "FLAG",
+                "Carried artifact" => "ARTIFACT",
+                _ => id,
+            };
+            DrawMeasuredText(_small, label, pos, TextMain, true);
+        }
+        ElementDrawn(id);
+    }
+
+    /// <summary>Draw a native <c>StringImage(JustifyCenter, 80, …)</c> string: its
+    /// box top-left is the TranslateImage anchor and the text is centred inside
+    /// the 80-point box (dialog.mdl:2595-2602; Artwork/dialog.mdl:2561-2566).</summary>
+    private void DrawCenteredInNativeBox(SpriteFont font, string text, Vector2 boxTopLeft,
+        int viewportHeight, Color color)
+    {
+        var size = font.MeasureString(text) * TextScale;
+        float boxWidth = OwnStatusLayout.NativeTextWidth * OwnStatusLayout.Spread(viewportHeight);
+        RenderText(font, text, new(boxTopLeft.X + (boxWidth - size.X) / 2f, boxTopLeft.Y), color, TextScale);
     }
 
     /// <summary>Bottom-center speed readout: large accent numeral + unit label.</summary>
@@ -805,19 +907,6 @@ public class HudRenderer
         DrawText(_small, tag, new Vector2(cx - sz.X / 2f, 82f), color);
     }
 
-    /// <summary>P270 — a small "CLOAKED" tag just below the weapon readout
-    /// while the local player's own ship carries the cloak bit. Pure ASCII
-    /// (spritefont char-range pitfall), cool violet to read as stealth rather
-    /// than damage or activity.</summary>
-    private void DrawCloak(float w)
-    {
-        const string tag = "CLOAKED";
-        var color = CloakViolet;   // cool violet — stealth, not alarm
-        var sz = _small.MeasureString(tag);
-        float cx = w / 2f;
-        DrawText(_small, tag, new Vector2(cx - sz.X / 2f, 102f), color);
-    }
-
     /// <summary>P414 — the \"RIPCORDING TO &lt;sector&gt;\" countdown tag, drawn
     /// beneath the CLOAKED/MINING activity tags while the local player's own
     /// ship has a ripcord countdown active. Bright cyan (reads as an active
@@ -898,45 +987,6 @@ public class HudRenderer
         // Value in the teal accent; a dim "MONEY" caption above it.
         DrawText(_small, "MONEY", new Vector2(x, y), TextDim);
         DrawText(_small, val, new Vector2(x, y + vsz.Y + 2f), Accent);
-    }
-
-    /// <summary>
-    /// P298 — the Kill Bonus gauge (top-left): the real live KB readout P278
-    /// computes (native <c>100·(GetExperienceMultiplier()−1)</c>, 0..50 cap 50)
-    /// presented as a labelled gold readout — the percentage numeral, a
-    /// proportional 0..50% bar, and the raw streak tally. Native only flags this
-    /// as a HUD element via the <c>KillBonusTrainingOverlay</c> callout
-    /// (WinTrek/indicator.cpp:625-631, a red arrow labeled "KILL BONUS" at
-    /// centre +(−15,−160.5)) and prints the number only to console
-    /// (WinTrek/console.cpp:826 <c>showexperience</c>); this port gives the pilot
-    /// the live readout the training hint points at. Gold = reward, distinct
-    /// from every other widget colour. Always drawn when a frame exists — 0%
-    /// (a fresh ship) is an honest readout, not clutter.
-    /// </summary>
-    private void DrawKillBonus(in HudFrame f, float w)
-    {
-        const float x = 24f;
-        const float y = 96f;
-        const float barW = 120f;
-        const float barH = 8f;
-
-        // Percent numeral (the headline value) — the actual bonus, 0..50
-        // (native 100·(mult−1)), in gold; 0% renders dim.
-        string pct = $"{f.KillBonusPercent:0}%";
-        var psz = _small.MeasureString(pct);
-        DrawText(_small, pct, new Vector2(x, y), f.KillBonusPercent > 0f ? BonusGold : TextDim);
-
-        // 0..50% proportional bar (native's multiplier scaled to the 50 cap,
-        // so it fills toward 100% as the bonus approaches +50%).
-        DrawBar(f.KillBonusPercent / 50f, x, y + psz.Y + 6f, barW, barH);
-
-        // Raw streak tally under the bar ("N KILLS", singular for one).
-        string streak = f.KillBonusStreak == 1 ? "1 KILL" : $"{f.KillBonusStreak} KILLS";
-        DrawText(_small, streak, new Vector2(x, y + psz.Y + 6f + barH + 5f), TextDim);
-
-        // Small "KILL BONUS" caption above the numeral so the block reads.
-        var csz = _small.MeasureString("KILL BONUS");
-        DrawText(_small, "KILL BONUS", new Vector2(x, y - csz.Y - 2f), TextDim);
     }
 
     /// <summary>

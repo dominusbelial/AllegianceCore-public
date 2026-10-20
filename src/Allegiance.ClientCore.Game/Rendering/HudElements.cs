@@ -178,11 +178,19 @@ public static class HudElements
             else
             {
                 bool instrument = model.InstrumentsVisible && f is not null;
+                var status = model.Status;
                 switch (id)
                 {
                     case "Speed": Set(f?.Speed, instrument, model.SpeedUnit); break;
-                    case "Kill bonus": Set(f?.KillBonusPercent, instrument); break;
-                    case "Cloak active": Set(f is { } cloak ? (cloak.Cloaked ? 1 : 0) : null, instrument && f?.Cloaked == true); break;
+                    case "Kill bonus": Set(status.KillBonusPercent, instrument && status.KillBonusPercent is not null); break;
+                    case "Signature percentage": Set(status.SignaturePercent, instrument && status.SignaturePercent is not null); break;
+                    case "Detection eye": Set(status.DetectionEyeVisible ? 1 : 0, instrument && status.DetectionEyeVisible); break;
+                    case "Cloak active": Set(status.CloakActive ? 1 : 0, instrument && status.CloakActive); break;
+                    case "Cloak strength and drained state": Set(status.CloakDrained ? 1 : 0, instrument && status.CloakDrained); break;
+                    case "Autopilot status": Set(status.AutopilotEngaged ? 1 : 0, instrument && status.AutopilotEngaged); break;
+                    case "Vector lock status": Set(status.VectorLockEngaged ? 1 : 0, instrument && status.VectorLockEngaged); break;
+                    case "Carried flag": Set(status.CarriedFlag ? 1 : 0, instrument && status.CarriedFlag); break;
+                    case "Carried artifact": Set(status.CarriedArtifact ? 1 : 0, instrument && status.CarriedArtifact); break;
                     case "Target name": Pane(c.TargetPane?.Name); break;
                     case "Target type description": Pane(c.TargetPane?.TypeDescription); break;
                     case "Target side identity": Pane(c.TargetPane?.SideName, color: c.TargetPane?.SideColor); break;

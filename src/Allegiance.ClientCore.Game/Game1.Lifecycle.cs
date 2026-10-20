@@ -268,7 +268,10 @@ public sealed partial class Game1
         // P578 — the real eject-pod panel + death banner .mdl bitmaps (graceful
         // procedural fallback when the artwork is absent).
         _feedbackTextures = Rendering.FeedbackTextures.Load(GraphicsDevice, _assets);
-        _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, gauges, lockTextures, targetPaneTextures);
+        // HUD-6 — the own-ship centre-HUD status icons (radonbmp/concloakbmp/
+        // killcounterbmp/captureflag* + the two CortUI PNGs).
+        _statusTextures = Rendering.StatusTextures.Load(GraphicsDevice, _assets);
+        _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, gauges, lockTextures, _statusTextures, targetPaneTextures);
 
         // P214 — in-flight chat overlay (same SpriteBatch/font plumbing as the HUD).
         _modernHudRenderer = new ModernHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings, Content.Load<SpriteFont>("HUDModern"));

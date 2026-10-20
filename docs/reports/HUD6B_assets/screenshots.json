@@ -1,0 +1,61 @@
+{
+ "capture": "real windowed client + local server; fixed ALLEGIANCE_HUD_SETTINGS per run",
+ "raw_dir": "~/allegiance-evidence/HUD6b/raw",
+ "shots": [
+  {
+   "file": "1920x1080-Classic.webp",
+   "size": [
+    1920,
+    1080
+   ],
+   "style": "Classic",
+   "source": "~/allegiance-evidence/HUD6b/raw/1920x1080-Classic.png",
+   "sha256": "d283bbc4e5f1a341febf8f280dd8d649cb00825bff24d833f9d8684cbe6d24a9",
+   "source_sha256": "fc0f9d61fbd2457f35e90c5394838c154c5e1e070fc6e9be54c8069aec4be0f8"
+  },
+  {
+   "file": "1920x1080-Modern.webp",
+   "size": [
+    1920,
+    1080
+   ],
+   "style": "Modern",
+   "source": "~/allegiance-evidence/HUD6b/raw/1920x1080-Modern.png",
+   "sha256": "48d7627d9671e7c45ae5da82789ec88b90f1fbaa4bd952a5d1937eebbd0a8e5d",
+   "source_sha256": "9a3e0cbe8627323b198ec9dca33a306c1906fa38beb524f2bfcb8caea7475bc4"
+  },
+  {
+   "file": "2560x1440-Classic.webp",
+   "size": [
+    2560,
+    1440
+   ],
+   "style": "Classic",
+   "source": "~/allegiance-evidence/HUD6b/raw/2560x1440-Classic.png",
+   "sha256": "f6bb65469b6a706543bbf800cb1926040e8ad8a62754050906084249bba57c90",
+   "source_sha256": "863712a873db7318965b8294b5cf6d955dd6190f24dfff0a257b5a4cbc3f043c"
+  },
+  {
+   "file": "2560x1440-Modern.webp",
+   "size": [
+    2560,
+    1440
+   ],
+   "style": "Modern",
+   "source": "~/allegiance-evidence/HUD6b/raw/2560x1440-Modern.png",
+   "sha256": "4463ccbbd3620be9ecaf39e6be3c41ec3317e4265eed325ea673a23027d846d3",
+   "source_sha256": "4f7deb6c3065b5c186a7e79dd246a470f150a31e9e4e43c82421aaf35a1e87b4"
+  },
+  {
+   "file": "1920x1080-Classic-status-crop.webp",
+   "size": [
+    230,
+    210
+   ],
+   "style": "Classic",
+   "note": "kill-bonus bitmap + SIG readout at native corner anchors",
+   "source": "~/allegiance-evidence/HUD6b/raw/1920x1080-Classic.png",
+   "sha256": "44da9ff07601c71f72f3dbff529dba129c03b7752fb06c63db5203187409f9e1"
+  }
+ ]
+}

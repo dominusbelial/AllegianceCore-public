@@ -1,0 +1,22 @@
+[
+  {
+    "file": "1920x1080-Classic.webp",
+    "sha256": "46941416862a2937082326be077211a144eb468fb5e93ce3b6995e507ef1b11f",
+    "bytes": 52756
+  },
+  {
+    "file": "1920x1080-Modern.webp",
+    "sha256": "3b1b2b6dbb9d0b9999c56722c7c6820a6d2ac0b2e6eef3b73da9cfbca17e8509",
+    "bytes": 49438
+  },
+  {
+    "file": "2560x1440-Classic.webp",
+    "sha256": "ae9e91f7c16721d1a911a0872317d38c53412209e5a1b7bc458d04cccfe11f68",
+    "bytes": 69918
+  },
+  {
+    "file": "2560x1440-Modern.webp",
+    "sha256": "4cddb07104d607a2d75c9195ed27be96cf2a49a3399bf9e34058ec76af6517ab",
+    "bytes": 69274
+  }
+]

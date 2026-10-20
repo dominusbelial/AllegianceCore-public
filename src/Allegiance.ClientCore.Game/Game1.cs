@@ -84,6 +84,7 @@ public sealed partial class Game1 : Game
     private Rendering.LockTextures _lockTextures = null!;    // P428 — real missile-lock sprites
     private Rendering.TargetPaneTextures _targetPaneTextures = null!;   // HUD-3 — native target-pane bitmaps
     private Rendering.FeedbackTextures _feedbackTextures = null!;   // P578 — eject-pod panel + death banner art
+    private Rendering.StatusTextures _statusTextures = null!;   // HUD-6 — own-ship status icons
     // P252 — per-asteroid client-side spin state, keyed by AsteroidId so each
     // rock rotates about its own wire axis at its own wire rate (real
     // m2xspiderw data gives every rock a distinct rate — never lockstep).
@@ -1745,6 +1746,7 @@ public sealed partial class Game1 : Game
         _lockTextures?.Dispose();   // P428 — release the real missile-lock sprites
         _targetPaneTextures?.Dispose();   // HUD-3 — release the native target-pane bitmaps
         _feedbackTextures?.Dispose();   // P578 — release the eject-pod panel / death banner art
+        _statusTextures?.Dispose();   // HUD-6 — release the own-ship status icons
         _warpRenderer?.Dispose();
         _projectileRenderer?.Dispose();
         _projectileSpriteRenderer?.Dispose();

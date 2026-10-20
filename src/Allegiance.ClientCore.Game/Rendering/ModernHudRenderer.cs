@@ -21,6 +21,8 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     private static readonly Color Accent = new(83, 225, 219);
     private static readonly Color Muted = new(162, 189, 201);
     private static readonly Color Alert = new(255, 121, 74);
+    private static readonly Color CloakViolet = new(158, 140, 250);
+    private static readonly Color CarryGold = new(255, 213, 94);
 
     public ModernHudRenderer(SpriteBatch batch, Texture2D white, SpriteFont small, SpriteFont big, HudSettings settings, SpriteFont? outlineSource = null)
         : base(batch, white, outlineSource is null ? small : Metrics(outlineSource, .25f), outlineSource is null ? big : Metrics(outlineSource, 30f / 56))
@@ -112,6 +114,40 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             Mark(gauge.Kind switch { GaugeKind.Hull => "Hull integrity", GaugeKind.Shield => "Shield charge", GaugeKind.Energy => "Energy reserve", GaugeKind.Fuel => "Fuel reserve", GaugeKind.Ammo => "Ammunition reserve", _ => "Thrust setting" });
         }
     }
+
+    /// <summary>HUD-6 — HUD-2 style own-ship status: short measured text labels
+    /// at the same native centre-HUD anchors the classic skin's icons use.</summary>
+    protected override void DrawOwnStatus(HudModel model, Viewport viewport)
+    {
+        var status = model.Status;
+        if (!status.Visible) return;
+
+        DrawStatusText("Detection eye", status.DetectionEyeVisible, "EYE", Muted, viewport);
+        DrawStatusText("Cloak active", status.CloakActive, "CLOAK", CloakViolet, viewport);
+        DrawStatusText("Autopilot status", status.AutopilotEngaged, "AUTOPILOT", Accent, viewport);
+        DrawStatusText("Vector lock status", status.VectorLockEngaged, "VECTOR LOCK", Accent, viewport);
+        DrawStatusText("Carried flag", status.CarriedFlag, "FLAG", CarryGold, viewport);
+        DrawStatusText("Carried artifact", status.CarriedArtifact, "ARTIFACT", CarryGold, viewport);
+
+        if (status.KillBonusPercent is { } kb)
+            DrawStatusText("Kill bonus", true, $"KB {kb:0}%", CarryGold, viewport);
+        if (status.SignaturePercent is { } sig)
+            DrawStatusText("Signature percentage", true, $"SIG: {sig:0}%", Accent, viewport);
+        if (status.CloakDrained)
+            DrawStatusText("Cloak strength and drained state", true, "CLOAK DRAINED", Alert, viewport);
+    }
+
+    private void DrawStatusText(string id, bool shown, string text, Color color, Viewport viewport)
+    {
+        if (!shown) return;
+        // HUD-6b — the native TranslateImage anchor is the image CORNER
+        // (engine/image.cpp:834-845); draw from that point instead of centring
+        // the text on it.
+        var pos = OwnStatusLayout.ScreenPos(id, viewport.Width, viewport.Height);
+        DrawMeasuredText(_small, text, pos, color, instrument: true);
+        Mark(id);
+    }
+
     protected override void DrawCrosshair(Vector2 center, bool firing, bool turret)
     {
         var color = firing ? Color.White : Accent;

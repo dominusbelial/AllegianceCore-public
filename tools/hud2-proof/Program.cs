@@ -28,9 +28,10 @@ sealed class Proof : Game
         var small = Content.Load<SpriteFont>("HUD"); var big = Content.Load<SpriteFont>("HUDLarge");
         string artwork = Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork);
         var gauges = Directory.Exists(artwork) ? GaugeTextures.Load(GraphicsDevice, artwork) : null;
+        var status = Directory.Exists(artwork) ? StatusTextures.Load(GraphicsDevice, artwork) : null;
         var settings = new HudSettings();
         using var modern = new ModernHudRenderer(batch, white, small, big, settings, Content.Load<SpriteFont>("HUDModern"));
-        var classic = new HudRenderer(batch, white, small, big, gauges);
+        var classic = new HudRenderer(batch, white, small, big, gauges, statusTextures: status);
         var radar = new RadarBracketRenderer(batch, white);   // HUD-4 — classic radar path (the real client draws this separately)
         var summaries = new List<object>();
         foreach (var (width, height) in new[] { (1920, 1080), (2560, 1440), (1280, 720) })
@@ -90,7 +91,9 @@ sealed class Proof : Game
     {
         var frame = new HudFrame(.82f, .7f, .8f, .9f, 1, 1, 260, .6f, true, true, true, 0, false, 0, true, true, 15, 3, 24,
             new WeaponStatusRow[] { new(0, "Rapid fire plasma cannon", true, 0, 200, WeaponStatus.NotReady), new(1, "Interceptor missile", false, 0, 0, WeaponStatus.Ready) }, false, 0, 2500,
-            new(.2f, -.3f, .1f, false), 85, ShipWarningMask.OutOfBounds);
+            new(.2f, -.3f, .1f, false), 85, ShipWarningMask.OutOfBounds,
+            SignaturePercent: 42f, Detected: false, AutopilotEngaged: true, VectorLockEngaged: true,
+            CarriedFlag: true, CarriedArtifact: false);
         if (scenario == "critical") frame = frame with { HullFraction = .08f, ShieldFraction = 0, FuelFraction = .10f, EnergyFraction = .02f, Flashing = true };
         if (scenario == "lifepod") frame = frame with { IsAdriftLifepod = true, OxygenSecondsRemaining = 95 };
         float spread = Math.Clamp(h / 680f, 1.15f, 2.1f);

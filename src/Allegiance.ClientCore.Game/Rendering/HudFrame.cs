@@ -117,4 +117,20 @@ public readonly record struct HudFrame(
     Allegiance.Core.Sim.ShipWarningMask WarningMask = Allegiance.Core.Sim.ShipWarningMask.None,
     // Native playerThrottle overrides the cruise setting while a movement or
     // afterburner button is down (WinTrek.cpp:8461-8467).
-    int ControlState = 0);
+    int ControlState = 0,
+    // HUD-6 own-ship status telemetry (centre-HUD DefaultCenterHudOn group).
+    // Signature percentage: native 100*signature/side c_gaSignature
+    // (WinTrek/console.cpp:865-866). Null when the value cannot be derived.
+    float? SignaturePercent = null,
+    // Raw ship status Detected bit (WinTrek/console.cpp:811). The native eye
+    // icon is INVERTED: shown when this is false (dialog.mdl:206-207, 2527-2533).
+    bool Detected = false,
+    // trekClient.autoPilot() (WinTrek/console.cpp:793), client-local state.
+    bool AutopilotEngaged = false,
+    // pship->GetVectorLock() (WinTrek/consoledata.cpp:465-475); server truth
+    // is the StateM CoastButton bit the own-ship update echoes back.
+    bool VectorLockEngaged = false,
+    // pship->GetFlag() switch (WinTrek/console.cpp:847-863): a side id means a
+    // carried flag, SIDE_TEAMLOBBY (-2) means a carried artifact, NA (-1) none.
+    bool CarriedFlag = false,
+    bool CarriedArtifact = false);

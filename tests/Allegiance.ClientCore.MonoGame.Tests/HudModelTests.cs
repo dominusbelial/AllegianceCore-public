@@ -193,6 +193,87 @@ public class HudModelTests
         Assert.Single(model.Context.Contacts);
     }
 
+    [Fact]
+    public void Own_status_inverts_the_detection_eye_and_switches_carried_objects()
+    {
+        var model = HudModel.Create(Frame with { Detected = false, CarriedFlag = true, CarriedArtifact = false });
+        Assert.True(model.Status.DetectionEyeVisible);
+        Assert.True(model.Status.CarriedFlag);
+        Assert.False(model.Status.CarriedArtifact);
+        Assert.True(model.Elements.Single(e => e.Id == "Detection eye").Visible);
+        Assert.True(model.Elements.Single(e => e.Id == "Carried flag").Visible);
+        Assert.False(model.Elements.Single(e => e.Id == "Carried artifact").Visible);
+
+        var detected = HudModel.Create(Frame with { Detected = true, CarriedFlag = false, CarriedArtifact = true });
+        Assert.False(detected.Status.DetectionEyeVisible);
+        Assert.True(detected.Status.CarriedArtifact);
+        Assert.False(detected.Status.CarriedFlag);
+        Assert.False(detected.Elements.Single(e => e.Id == "Detection eye").Visible);
+    }
+
+    [Fact]
+    public void Own_status_surfaces_autopilot_vector_lock_flag_and_artifact()
+    {
+        var model = HudModel.Create(Frame with
+        {
+            AutopilotEngaged = true,
+            VectorLockEngaged = true,
+            CarriedFlag = true,
+            CarriedArtifact = false
+        });
+        Assert.True(model.Status.AutopilotEngaged);
+        Assert.True(model.Status.VectorLockEngaged);
+        Assert.True(model.Status.CarriedFlag);
+        Assert.False(model.Status.CarriedArtifact);
+        Assert.True(model.Elements.Single(e => e.Id == "Autopilot status").Visible);
+        Assert.True(model.Elements.Single(e => e.Id == "Vector lock status").Visible);
+        Assert.True(model.Elements.Single(e => e.Id == "Carried flag").Visible);
+        Assert.False(model.Elements.Single(e => e.Id == "Carried artifact").Visible);
+    }
+
+    [Fact]
+    public void Cloak_active_and_drained_follow_energy_and_instruments()
+    {
+        var drained = HudModel.Create(Frame with { Cloaked = true, EnergyFraction = 0.1f });
+        Assert.True(drained.Status.CloakActive);
+        Assert.True(drained.Status.CloakDrained);
+        Assert.True(drained.Elements.Single(e => e.Id == "Cloak strength and drained state").Visible);
+
+        var fullEnergy = HudModel.Create(Frame with { Cloaked = true, EnergyFraction = 0.9f });
+        Assert.True(fullEnergy.Status.CloakActive);
+        Assert.False(fullEnergy.Status.CloakDrained);
+
+        var docked = HudModel.Create(Frame with { Cloaked = true, EnergyFraction = 0.1f }, new() { Docked = true });
+        Assert.False(docked.Status.Visible);
+        Assert.False(docked.Status.CloakActive);
+    }
+
+    [Fact]
+    public void Signature_and_kill_bonus_surface_native_units_and_stay_null_when_unknown()
+    {
+        var model = HudModel.Create(Frame with { SignaturePercent = 37.5f, KillBonusPercent = 12f });
+        Assert.Equal(37.5f, model.Status.SignaturePercent);
+        Assert.Equal(12f, model.Status.KillBonusPercent);
+        Assert.True(model.Elements.Single(e => e.Id == "Signature percentage").Visible);
+        Assert.True(model.Elements.Single(e => e.Id == "Kill bonus").Visible);
+
+        var unknown = HudModel.Create(Frame);
+        Assert.Null(unknown.Status.SignaturePercent);
+        Assert.False(unknown.Elements.Single(e => e.Id == "Signature percentage").Visible);
+    }
+
+    [Fact]
+    public void Gauge_labels_match_native_dialog_mdl_strings()
+    {
+        var model = HudModel.Create(Frame);
+        Assert.Equal("ARMOR", model.Gauges.Single(g => g.Kind == GaugeKind.Hull).Label);
+        Assert.Equal("SHIELD", model.Gauges.Single(g => g.Kind == GaugeKind.Shield).Label);
+        Assert.Equal("ENERGY", model.Gauges.Single(g => g.Kind == GaugeKind.Energy).Label);
+        Assert.Equal("FUEL", model.Gauges.Single(g => g.Kind == GaugeKind.Fuel).Label);
+        Assert.Equal("AMMO", model.Gauges.Single(g => g.Kind == GaugeKind.Ammo).Label);
+        Assert.Equal("THRUST", model.Gauges.Single(g => g.Kind == GaugeKind.Thrust).Label);
+    }
+
     [Theory]
     [InlineData(CameraMode.Cockpit, true)]
     [InlineData(CameraMode.Chase, true)]

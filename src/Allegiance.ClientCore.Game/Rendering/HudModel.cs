@@ -38,6 +38,22 @@ public readonly record struct HudTargetPane(
     bool InRange,
     bool IsShip);
 public readonly record struct HudNotice(string Text, bool Critical, float Opacity);
+
+/// <summary>HUD-6 resolved own-ship centre-HUD status (the
+/// <c>DefaultCenterHudOn</c> group, Artwork/dialog.mdl:2604-2623). Unknown
+/// telemetry stays null; renderers present only the available fields.</summary>
+public readonly record struct HudOwnStatus(
+    float? KillBonusPercent,
+    float? SignaturePercent,
+    bool DetectionEyeVisible,
+    bool CloakActive,
+    bool CloakDrained,
+    bool AutopilotEngaged,
+    bool VectorLockEngaged,
+    bool CarriedFlag,
+    bool CarriedArtifact,
+    bool Visible);
+
 public enum HudContactKind { Ship, Station, Warp, Asteroid, Missile, Probe, Mine, Treasure, Tech }
 /// <summary>One radar contact plus its overlay/label payload. The radar
 /// snapshot fills the raw readings native <c>radarimage.cpp:590-1120</c> uses;
@@ -109,6 +125,7 @@ public sealed class HudModel
     public HudFrame? Telemetry { get; }
     public HudContext Context { get; }
     public IReadOnlyList<HudGauge> Gauges { get; }
+    public HudOwnStatus Status { get; }
     public IReadOnlyList<string> Warnings { get; }
     /// <summary>Complete native inventory, including explicitly unavailable
     /// fields. The classic renderer uses the strongly typed groups above;
@@ -165,12 +182,12 @@ public sealed class HudModel
         var gauges = new List<HudGauge>();
         if (Telemetry is { } f)
         {
-            Add(GaugeKind.Thrust, (f.Throttle + 1f) / 2f, -126.5f, 93.5f, "THR");
+            Add(GaugeKind.Thrust, (f.Throttle + 1f) / 2f, -126.5f, 93.5f, "THRUST");
             Add(GaugeKind.Fuel, f.FuelFraction, 126.5f, 93.5f, f.IsAdriftLifepod ? "OXY" : "FUEL");
-            Add(GaugeKind.Energy, f.IsAdriftLifepod ? 0f : f.EnergyFraction, 126.5f, -112.5f, "ENGY");
+            Add(GaugeKind.Energy, f.IsAdriftLifepod ? 0f : f.EnergyFraction, 126.5f, -112.5f, "ENERGY");
             Add(GaugeKind.Ammo, f.IsAdriftLifepod ? 0f : f.AmmoFraction, -126.5f, -112.5f, "AMMO");
-            Add(GaugeKind.Hull, f.HullFraction, -65.5f, 35.5f, "HULL");
-            Add(GaugeKind.Shield, f.ShieldFraction, 65.5f, 35.5f, "SHLD");
+            Add(GaugeKind.Hull, f.HullFraction, -65.5f, 35.5f, "ARMOR");
+            Add(GaugeKind.Shield, f.ShieldFraction, 65.5f, 35.5f, "SHIELD");
 
             void Add(GaugeKind kind, float value, float x, float y, string label)
             {
@@ -185,6 +202,7 @@ public sealed class HudModel
             }
         }
         Gauges = gauges.AsReadOnly();
+        Status = BuildStatus(Telemetry, InstrumentsVisible);
         var warnings = new List<string>();
         if (FlightVisible && Telemetry is { } own)
         {
@@ -192,6 +210,40 @@ public sealed class HudModel
             if ((own.WarningMask & ShipWarningMask.CrowdedSector) != 0) warnings.Add("SECTOR CROWDED");
         }
         Warnings = warnings.AsReadOnly();
+    }
+
+    /// <summary>Resolve the own-ship centre-HUD status with the native rules
+    /// (visibility is the centre console mask <c>ofInCockpit | ofInChase</c>,
+    /// dialog.mdl:5397 — approximated by <paramref name="instrumentsVisible"/>
+    /// which the whole flight-instrument group already shares).</summary>
+    private static HudOwnStatus BuildStatus(HudFrame? f, bool instrumentsVisible)
+    {
+        if (f is not { } own)
+            return new(null, null, false, false, false, false, false, false, false, false);
+
+        bool visible = instrumentsVisible;
+        // Native eye shows when the Detected binding is 0, i.e. NOT detected
+        // (WinTrek/console.cpp:811; dialog.mdl:2527-2533). HUD-6b: the port's
+        // own-ship SHIP_STATUS always carries Detected=true (Server.Broadcast.cs:1667,
+        // no scanning system yet), so this gate is unreachable and the row stays
+        // partial; it is retained to match the native binding if detection lands.
+        bool eye = visible && !own.Detected;
+        // Native IsCloaked = GetCloaking() < 1 (WinTrek/consoledata.cpp:563-575);
+        // the port's CloakActive StateM bit is the engaged-cloak analogue.
+        bool cloak = visible && own.Cloaked;
+        // Native GlassHUD drained icon at energy <= .2 (dialog.mdl:651-656).
+        bool drained = cloak && own.EnergyFraction <= 0.2f;
+        return new(
+            own.KillBonusPercent,
+            own.SignaturePercent,
+            eye,
+            cloak,
+            drained,
+            visible && own.AutopilotEngaged,
+            visible && own.VectorLockEngaged,
+            visible && own.CarriedFlag,
+            visible && own.CarriedArtifact,
+            visible);
     }
 
     public static HudModel Create(HudFrame? telemetry, HudContext? context = null) => new(telemetry, context ?? new());
