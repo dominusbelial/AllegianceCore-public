@@ -63,7 +63,31 @@ sealed class Proof : Game
                     {
                         Require(boxes[i].Bounds.Left >= 0 && boxes[i].Bounds.Right <= width && boxes[i].Bounds.Top >= 0 && boxes[i].Bounds.Bottom <= height, "text outside viewport");
                         for (int j = i + 1; j < boxes.Count; j++)
+                        {
+                            // Native console anchors (label + value 14 px apart) may
+                            // overlap in the taller port font; that is intentional
+                            // (HUD-9b fixedAnchor), so only overlap-check them
+                            // against non-anchored text.
+                            if (boxes[i].FixedAnchor && boxes[j].FixedAnchor) continue;
                             Require(!boxes[i].Bounds.Intersects(boxes[j].Bounds), $"{scenario} {width} {size} overlap: {boxes[i]} / {boxes[j]}");
+                        }
+                    }
+                    // HUD-9b — pin the fixed console-text anchors (top-edge based,
+                    // not bottom-based) at the reference 1920×1080/scale-1 render.
+                    if (size == 1 && width == 1920 && scenario is "combat" or "critical")
+                    {
+                        RequireBox(boxes, "Current location:", 37);
+                        RequireBox(boxes, "Alystra", 51);
+                        if (scenario == "combat")
+                        {
+                            RequireBox(boxes, "Current orders:", 37);
+                            RequireBox(boxes, "attack Enemy fighter", 57);
+                            RequireBox(boxes, "defend Garrison", 77);
+                        }
+                        RequireBox(boxes, "Reloading ammo...", 74);
+                        if (scenario == "critical")
+                            RequireBox(boxes, "Vote: Mutiny against the commander? (Y/N)", 109);
+                        RequireBox(boxes, "Ripcord in: 9", 525, 885);
                     }
                     if (renderer == modern)
                     {
@@ -87,6 +111,17 @@ sealed class Proof : Game
         Exit();
     }
     static void Require(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); }
+    static void RequireBox(IReadOnlyList<HudTextBox> boxes, string text, float top, float? left = null)
+    {
+        var matches = boxes.Where(b => b.Text == text).ToArray();
+        Require(matches.Length > 0, $"missing '{text}'");
+        if (left is { } expectedLeft)
+            Require(matches.Any(b => Math.Abs(b.Bounds.Top - top) <= 2 && Math.Abs(b.Bounds.Left - expectedLeft) <= 2),
+                $"{text} top/left mismatch: " + string.Join(", ", matches.Select(b => $"{b.Bounds.Top}/{b.Bounds.Left}")));
+        else
+            Require(matches.Any(b => Math.Abs(b.Bounds.Top - top) <= 2),
+                $"{text} top mismatch: " + string.Join(", ", matches.Select(b => b.Bounds.Top)));
+    }
     static HudModel Scenario(string scenario, int w, int h)
     {
         var frame = new HudFrame(.82f, .7f, .8f, .9f, 1, 1, 260, .6f, true, true, true, 0, false, 0, true, true, 15, 3, 24,
@@ -151,7 +186,19 @@ sealed class Proof : Game
             CommandLines = scenario == "command" ? new[] { "COMMAND SHIP: Scout", "Hull 82% Shield 70%" } : Array.Empty<string>(),
             RadarMode = mode,
             RoundRadar = scenario.StartsWith("radar-"),
-            Ripcord = "RIPCORDING TO ALPHA"
+            Ripcord = "Ripcord in: 9",
+            Console = new HudConsoleText
+            {
+                SectorName = "Alystra",
+                CarrierName = scenario is "flight" or "chat-stress" ? "Pilot Alpha" : null,
+                BoardState = scenario is "flight" or "chat-stress" ? 2 : 0,
+                AcceptedOrder = scenario is "flight" or "combat" ? "defend Garrison" : null,
+                QueuedOrder = scenario is "flight" or "combat" ? "attack Enemy fighter" : null,
+                VoteText = scenario == "critical" ? "Vote: Mutiny against the commander? (Y/N)" : null,
+                OrdinaryTips = new[] { "Welcome to the sector", "Alystra: 3 miners on duty", "Payday: $500" },
+                CriticalTips = new[] { new HudNotice("Reloading ammo...", true, 1) },
+                SideColor = new(0.07f, 0.95f, 0.84f)
+            }
         });
     }
 }

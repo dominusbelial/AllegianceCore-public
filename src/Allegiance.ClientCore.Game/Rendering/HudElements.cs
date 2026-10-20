@@ -160,6 +160,7 @@ public static class HudElements
             if (l.RipcordSeconds is not null) ripSeconds++;
             if (l.CommandId is not null) verbLabels++;
         }
+        var console = c.Console;
         foreach (var (id, placement) in Native)
         {
             var element = new HudElement(id, false, false, placement);
@@ -244,6 +245,29 @@ public static class HudElements
                     case "Radar command verb labels": Set(verbLabels, model.FlightVisible && verbLabels > 0); break;
                     case "Tip text lines": Notices(false); break;
                     case "Critical tip text lines": Notices(true); break;
+                    case "Sector location":
+                        element = element with { Available = console?.SectorName is not null,
+                            Visible = model.FlightVisible && console?.SectorName is not null, Text = console?.SectorName }; break;
+                    case "Turret carrier identity":
+                        element = element with { Available = console is { BoardState: 2, CarrierName: not null },
+                            Visible = model.FlightVisible && console is { BoardState: 2, CarrierName: not null },
+                            Text = console is { BoardState: 2 } ? console.CarrierName : null }; break;
+                    case "Observer and turret board state":
+                        // Native BoardTextImage is loadout-only (dialog.mdl:2106); the
+                        // value is exposed in the model, not drawn in flight.
+                        element = element with { Available = console is not null, Visible = false,
+                            Value = console?.BoardState, Text = console is { } bt ? HudConsoleFormat.BoardLabel(bt.BoardState, bt.CarrierName) : null }; break;
+                    case "Accepted order text":
+                        element = element with { Available = console?.AcceptedOrder is not null,
+                            Visible = model.Visible && console?.AcceptedOrder is not null, Text = console?.AcceptedOrder }; break;
+                    case "Queued order text":
+                        element = element with { Available = console?.QueuedOrder is not null,
+                            Visible = model.Visible && console?.QueuedOrder is not null, Text = console?.QueuedOrder }; break;
+                    case "Vote banner":
+                        element = element with { Available = console?.VoteText is not null,
+                            Visible = model.Visible && console?.VoteText is not null, Text = console?.VoteText }; break;
+                    case "Lives remaining": Set(console?.Lives is { } lives ? lives : null, model.FlightVisible && console?.Lives is not null); break;
+                    case "Mission kills": Set(console?.MissionKills is { } kills ? kills : null, model.FlightVisible && console?.MissionKills is not null); break;
                     case "Chat history":
                         element = element with { Available = c.Chat is not null, Visible = model.Visible && c.Chat?.Lines.Count > 0, Text = c.Chat is { } chat ? string.Join("\n", chat.Lines) : null }; break;
                     case "Chat composition and recipient":
@@ -295,8 +319,18 @@ public static class HudElements
             void Contacts(params HudContactKind[] types) => Set(c.Contacts.Count(contact => types.Contains(contact.Kind)), model.FlightVisible);
             void Notices(bool critical)
             {
-                var notices = c.Notices.Where(n => n.Critical == critical && n.Opacity > 0).ToArray();
-                element = element with { Available = true, Visible = model.Visible && notices.Length > 0, Text = string.Join("\n", notices.Select(n => n.Text)) };
+                if (critical)
+                {
+                    var tips = console?.CriticalTips ?? Array.Empty<HudNotice>();
+                    element = element with { Available = tips.Count > 0, Visible = model.Visible && tips.Count > 0,
+                        Text = string.Join("\n", tips.Select(t => t.Text)) };
+                }
+                else
+                {
+                    var tips = console?.OrdinaryTips ?? Array.Empty<string>();
+                    element = element with { Available = tips.Count > 0, Visible = model.Visible && tips.Count > 0,
+                        Text = string.Join("\n", tips) };
+                }
             }
         }
         return result.AsReadOnly();

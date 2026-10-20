@@ -23,12 +23,18 @@ public sealed partial class Game1
     /// <summary>P578 — how long a HUD feedback line stays visible before it
     /// fades (native <c>fTipTextDuration = Training ? 30.0f : 7.5f</c>,
     /// console.cpp:913 — the non-training value this client uses).</summary>
-    private const double TipDurationSeconds = 7.5;
+    private const double TipDurationSeconds = Rendering.HudConsoleFormat.CriticalTipDurationSeconds;
 
-    /// <summary>P578 — the transient tip lines currently on the HUD
-    /// (text + whether critical + monotonic expiry), oldest first. Pruned in
-    /// <see cref="UpdateFeedback"/> once each expires.</summary>
-    private readonly List<(string Text, bool Critical, double ExpiresAt)> _tipLines = new();
+    /// <summary>P578/HUD-9 — the three ordinary tip slots, newest first,
+    /// retained until overwritten (native <c>TipText/TipText1/TipText2</c> are
+    /// not cleared by the expiry path, console.cpp:913-931; dialog.mdl:5347-5349).</summary>
+    private readonly string[] _ordinaryTips = new string[Rendering.HudConsoleFormat.OrdinaryTipSlots];
+
+    /// <summary>P578/HUD-9 — the up-to-four critical tip slots, oldest first
+    /// (the renderer draws the newest at the bottom, matching native slot 0),
+    /// each expiring after <see cref="TipDurationSeconds"/> (native
+    /// <c>CriticalTipText0..3</c>, console.cpp:726-730, 913-931).</summary>
+    private readonly List<(string Text, double ExpiresAt)> _criticalTips = new();
 
     /// <summary>P578 — the override camera's tracked world point (native
     /// <c>cmExternalOverride</c> tracks a fixed target position,
@@ -73,12 +79,10 @@ public sealed partial class Game1
             _queuedCmdAnnouncedId = qid;
             _sound?.PlayNonCriticalMessage();   // native "new command" cue
             Console.WriteLine($"[monogame] queued order announced: commandID={qid} — press [Home] to accept");
-            _tipLines.Add((
+            PushOrdinaryTip(
                 qid == Allegiance.Core.Wire.OrderChange.CidPickup
                     ? "NEW ORDER: pick up a teammate — [Home] to accept"
-                    : "NEW COMMAND RECEIVED — [Home] to accept",
-                false, _nowSeconds + TipDurationSeconds));
-            if (_tipLines.Count > 6) _tipLines.RemoveAt(0);
+                    : "NEW COMMAND RECEIVED — [Home] to accept");
         }
         else if (qid == Allegiance.Core.Wire.OrderChange.CidNone)
         {
@@ -110,8 +114,7 @@ public sealed partial class Game1
                     Console.WriteLine("[eject] jump cue (jumpin)");
                     break;
             }
-            _tipLines.Add((line.Text, line.IsCritical, _nowSeconds + TipDurationSeconds));
-            if (_tipLines.Count > 6) _tipLines.RemoveAt(0);
+            PushTip(line.Text, line.IsCritical);
         }
 
         foreach (var over in overs)
@@ -127,12 +130,38 @@ public sealed partial class Game1
             }
         }
 
-        // Prune expired tip lines (native expires each tip slot after the
-        // duration, console.cpp:913-931).
-        _tipLines.RemoveAll(t => _nowSeconds >= t.ExpiresAt);
+        // Prune expired critical tips (native expires each critical slot after
+        // the duration, console.cpp:913-931). Ordinary tips are retained.
+        _criticalTips.RemoveAll(t => _nowSeconds >= t.ExpiresAt);
 
         // Revert a finished override camera back to the normal chase view.
         UpdateOverrideCameraExpiry();
+    }
+
+    /// <summary>P578/HUD-9 — route one feedback line into its native slot: the
+    /// three retained ordinary slots or the four expiring critical slots.</summary>
+    private void PushTip(string text, bool critical)
+    {
+        if (critical)
+        {
+            _criticalTips.Add((text, _nowSeconds + TipDurationSeconds));
+            if (_criticalTips.Count > Rendering.HudConsoleFormat.CriticalTipSlots)
+                _criticalTips.RemoveAt(0);
+        }
+        else
+        {
+            PushOrdinaryTip(text);
+        }
+    }
+
+    /// <summary>P578/HUD-9 — push an ordinary tip into the newest-first three
+    /// slots, shifting older lines down (native PostText(false) → TipText
+    /// newest-first shift, console.cpp:723-725).</summary>
+    private void PushOrdinaryTip(string text)
+    {
+        for (int i = Rendering.HudConsoleFormat.OrdinaryTipSlots - 1; i > 0; i--)
+            _ordinaryTips[i] = _ordinaryTips[i - 1];
+        _ordinaryTips[0] = text;
     }
 
 

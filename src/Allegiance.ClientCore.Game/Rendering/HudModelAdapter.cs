@@ -20,7 +20,7 @@ public static class HudModelAdapter
         IReadOnlyList<string>? commandLines = null, bool inventoryVisible = false,
         IReadOnlyList<LastBaseHudView>? lastBaseObjectives = null, bool hitConfirmation = false, string? podReturnInstruction = null,
         IReadOnlyList<HudContact>? contacts = null, float radarPulse = 0f,
-        HudTargetPane? targetPane = null, bool roundRadar = false)
+        HudConsoleText? console = null, HudTargetPane? targetPane = null, bool roundRadar = false)
         => HudModel.Create(frame, new HudContext
         {
             PodReturnInstruction = podReturnInstruction, HitConfirmation = hitConfirmation, Camera = mode, CameraLabel = cameraLabel, Hidden = hidden,
@@ -37,6 +37,7 @@ public static class HudModelAdapter
             RadarPulse = radarPulse, RadarMode = radarMode, Chat = chat,
             CargoLine = cargoLine, FlightPartsLine = flightPartsLine,
             CommandLines = commandLines ?? Array.Empty<string>(), InventoryVisible = inventoryVisible,
+            Console = console,
             Contacts = contacts ?? Array.Empty<HudContact>()
         });
 

@@ -97,7 +97,6 @@ public class HudRenderer
         var lastBaseObjectives = model.FlightVisible ? context.LastBaseObjectives : null;   // P745b
         var leaderCommand = model.FlightVisible ? context.LeaderCommand : null;
         var commandeeLabel = model.FlightVisible ? context.Commandee : null;
-        var ripcordStatus = model.FlightVisible ? context.Ripcord : null;
         bool turretView = context.Turret;
         float w = viewport.Width;
         float h = viewport.Height;
@@ -229,13 +228,13 @@ public class HudRenderer
 
             DrawWarnings(model.Warnings, w, h);
             if (model.Warnings.Count > 0) ElementDrawn("Boundary and crowd warnings");
+            DrawConsoleText(model, viewport);
 
             // HUD-3 — the native bottom target pane (dialog.mdl:5402, shown in
             // cockpit/chase). Present for a selected target even when the
             // projected in-world selection bracket is out of view.
             if (model.TargetPaneVisible && context.TargetPane is { Present: true })
                 DrawTargetPane(model, viewport);
-
             if (frame is not { } f)
                 return;   // no ship yet — gauges/readouts have nothing to show
 
@@ -270,11 +269,8 @@ public class HudRenderer
             // whenever the server's live sim time scale is below full speed
             // (f.TimeDilationPercent < 100). Hidden entirely at full speed.
             if (f.TimeDilationPercent < 99.5f) DrawTimeDilation(f.TimeDilationPercent, w);
-            // P414 — own-ship ripcord countdown tag ("RIPCORDING → <sector>"),
-            // driven by the local ship's ripcord state while active. Bright
-            // cyan so it reads as an active countdown/activity like the mining
-            // tag, placed beside it (a ripcording ship cannot be mining).
-            if (ripcordStatus is { } rc) { DrawRipcord(rc, w); ElementDrawn("Ripcord countdown"); }
+            // Ripcord countdown now renders via DrawConsoleText at the native
+            // centre anchor (consoledata.cpp:521; dialog.mdl:5150).
 
             // HUD-6 — native centre-HUD own-ship status icons/readouts at their
             // dialog.mdl anchors (kill bonus, signature, detection eye, cloak,
@@ -345,6 +341,7 @@ public class HudRenderer
             Layout.Reserve(new Rectangle((int)p.X - 55, (int)p.Y - 50, 110, 150));
         }
         ReserveTargetPane(model, viewport);
+        ReserveConsoleAnchors(model, viewport);
     }
 
     /// <summary>Reserve the native bottom target pane so measured text (radar
@@ -353,6 +350,36 @@ public class HudRenderer
     {
         if (model.TargetPaneVisible && model.Context.TargetPane is { Present: true })
             Layout.Reserve(TargetPaneLayout.ReserveRect(viewport.Width, viewport.Height));
+    }
+
+    /// <summary>HUD-9b — reserve the fixed native console anchors before the
+    /// crosshair/warning pass so the port's dynamic FIRING/TURRET tag and textual
+    /// boundary/crowd warnings yield to them (native has neither, so its anchors
+    /// are always free). The console text itself is drawn with a fixed anchor and
+    /// ignores these reservations.</summary>
+    protected void ReserveConsoleAnchors(HudModel model, Viewport viewport)
+    {
+        if (model.Context.Console is not { } console) return;
+        float w = viewport.Width;
+        int chatLines = model.Context.Chat is { } chat ? chat.Lines.Count : 0;
+        if (model.FlightVisible && model.Context.Ripcord is { } ripcord)
+            ReserveAnchor(ripcord, w / 2f - HudConsoleFormat.RipcordLeft * TextScale,
+                viewport.Height / 2f - HudConsoleFormat.RipcordTop * TextScale, centered: false);
+        int criticalCount = console.CriticalTips.Count;
+        for (int slot = 0; slot < criticalCount; slot++)
+        {
+            var tip = console.CriticalTips[criticalCount - 1 - slot];
+            ReserveAnchor(tip.Text, w / 2f, HudConsoleFormat.CriticalTipTop(chatLines, slot) * TextScale, centered: true);
+        }
+        if (console.VoteText is { } vote)
+            ReserveAnchor(vote, w / 2f, HudConsoleFormat.VoteTop(chatLines) * TextScale, centered: true);
+    }
+
+    private void ReserveAnchor(string text, float anchorX, float top, bool centered)
+    {
+        var size = _small.MeasureString(text) * TextScale;
+        float left = centered ? anchorX - size.X / 2f : anchorX;
+        Layout.Reserve(new Rectangle((int)left, (int)top, (int)MathF.Ceiling(size.X), (int)MathF.Ceiling(size.Y)));
     }
     public Rectangle DrawOverlayText(string text, Vector2 position, Color color) => DrawMeasuredText(_small, text, position, color);
     protected void DrawText(SpriteFont font, string text, Vector2 position, Color color)
@@ -481,7 +508,7 @@ public class HudRenderer
         return new Color(0.88f, 0.96f, 0.95f);
     }
 
-    public Rectangle DrawMeasuredText(SpriteFont font, string text, Vector2 position, Color color, bool instrument = false, bool centerAtScale = true, float? maxWidth = null, bool background = true)
+    public Rectangle DrawMeasuredText(SpriteFont font, string text, Vector2 position, Color color, bool instrument = false, bool centerAtScale = true, float? maxWidth = null, bool background = true, bool fixedAnchor = false)
     {
         // Long dynamic names and chat are fitted by measured width, never by a
         // character-count estimate. Retain the full value in the model.
@@ -501,7 +528,7 @@ public class HudRenderer
             text = text[..lo] + "..."; measured = font.MeasureString(text);
         }
         if (centerAtScale) position.X += measured.X * (1 - scale) / 2;
-        var bounds = Layout.Place(text, measured * scale, position, instrument);
+        var bounds = Layout.Place(text, measured * scale, position, instrument, fixedAnchor);
         if (background) FillRect(bounds.X - 3, bounds.Y - 1, bounds.Width + 6, bounds.Height + 2, Color.Black * .58f);
         RenderText(font, text, new(bounds.X, bounds.Y), color, scale);
         return bounds;
@@ -516,6 +543,113 @@ public class HudRenderer
         {
             var size = _small.MeasureString(warnings[i]);
             DrawText(_small, warnings[i], new Vector2((w - size.X) / 2f, h * 0.19f + i * _small.LineSpacing), Warning);
+        }
+    }
+
+    /// <summary>HUD-9 — console text and banners at their native dialog.mdl
+    /// anchors. Classic draws the port HUD font at the native pane positions;
+    /// the eject-pod/death bitmap art stays in <see cref="DrawEjectDeathOverlays"/>.
+    /// Overridden by Modern to apply the HUD-2 text scale.</summary>
+    protected virtual void DrawConsoleText(HudModel model, Viewport viewport)
+    {
+        if (!model.Visible || model.Context.Console is not { } console) return;
+        float w = viewport.Width, h = viewport.Height;
+        var side = console.SideColor is { } sc ? From(sc) : TextMain;
+        var cortText = new Color(0.586f, 0.578f, 0.680f);   // native cortText/softText (dialog.mdl:24, :3517)
+        var yellow = new Color(1f, 1f, 0f);       // native promptFont yellowText
+        var red = new Color(1f, 0f, 0f);          // native critical/queued red
+        int chatLines = model.Context.Chat is { } chat ? chat.Lines.Count : 0;
+
+        // Sector location — SideTopRight(-180,-37), ofInFlight (dialog.mdl:5419).
+        // The image origin is the label's top-left, 37 px below the top edge; the
+        // sector name is translated 14 px below the label (dialog.mdl:1473-1485)
+        // and uses cortText, not the side colour (dialog.mdl:24, :1438-1445).
+        if (model.FlightVisible && console.SectorName is { } sector)
+        {
+            float cx = w - 100f;   // 160-wide JustifyCenter box ending 20 px from right
+            var psz = _small.MeasureString("Current location:");
+            var nsz = _small.MeasureString(sector);
+            DrawMeasuredText(_small, "Current location:", new(cx - psz.X / 2, HudConsoleFormat.SectorLabelTop), yellow, fixedAnchor: true);
+            DrawMeasuredText(_small, sector, new(cx - nsz.X / 2, HudConsoleFormat.SectorLabelTop + HudConsoleFormat.SectorNameBelowLabel), cortText, fixedAnchor: true);
+            ElementDrawn("Sector location");
+        }
+
+        // Turret carrier identity — SideTopRight(-180,-75) (dialog.mdl:5439-5440;
+        // TurretHeader/PilotNameImage dialog.mdl:1508-1543): label at the 75 px
+        // line, carrier name 14 px below it, red as native PilotNameImage.
+        if (model.FlightVisible && console.BoardState == 2 && console.CarrierName is { } carrier)
+        {
+            float cx = w - 100f;
+            var hsz = _small.MeasureString("Turret of:");
+            var nsz = _small.MeasureString(carrier);
+            DrawMeasuredText(_small, "Turret of:", new(cx - hsz.X / 2, HudConsoleFormat.TurretLabelTop), yellow, fixedAnchor: true);
+            DrawMeasuredText(_small, carrier, new(cx - nsz.X / 2, HudConsoleFormat.TurretLabelTop + HudConsoleFormat.SectorNameBelowLabel), red, fixedAnchor: true);
+            ElementDrawn("Turret carrier identity");
+        }
+
+        // Accepted/queued order text — SideTopLeft(50,-37), ofAlways
+        // (dialog.mdl:5451; LastOrderImage dialog.mdl:1605-1648). The label is
+        // the top element; queued sits 20 px and accepted 40 px below it, red
+        // for the queued line and cortText for the accepted line (native
+        // AcceptedOrderImage/QueuedOrderImage colours, dialog.mdl:1605-1648).
+        if (console.AcceptedOrder is not null || console.QueuedOrder is not null)
+        {
+            float labelTop = HudConsoleFormat.OrderLabelTop;
+            DrawMeasuredText(_small, "Current orders:", new(HudConsoleFormat.OrderLabelX, labelTop), yellow, fixedAnchor: true, centerAtScale: false);
+            if (console.QueuedOrder is { } q)
+            {
+                DrawMeasuredText(_small, q, new(HudConsoleFormat.OrderTextX, labelTop + HudConsoleFormat.OrderQueuedBelowLabel), red, fixedAnchor: true, centerAtScale: false);
+                ElementDrawn("Queued order text");
+            }
+            if (console.AcceptedOrder is { } a)
+            {
+                DrawMeasuredText(_small, a, new(HudConsoleFormat.OrderTextX, labelTop + HudConsoleFormat.OrderAcceptedBelowLabel), cortText, fixedAnchor: true, centerAtScale: false);
+                ElementDrawn("Accepted order text");
+            }
+        }
+
+        // Vote banner — SideTop + VoteTextImageYOffset (dialog.mdl:5174, :5352;
+        // VoteTextImage dialog.mdl:2114-2120), white, 85 + 12·NumChatLines from
+        // the top edge.
+        if (console.VoteText is { } vote)
+        {
+            var vsz = _small.MeasureString(vote);
+            DrawMeasuredText(_small, vote, new(w / 2f - vsz.X / 2, HudConsoleFormat.VoteTop(chatLines)), Color.White, fixedAnchor: true);
+            ElementDrawn("Vote banner");
+        }
+
+        // Critical tips — SideTop + CriticalTipImageYOffset (dialog.mdl:5173,
+        // :5341; CriticalTipImage dialog.mdl:2039-2078). Slot 0 (newest) is at
+        // 50 + 12·NumChatLines from the top; older slots stack 14 px above it.
+        int criticalCount = console.CriticalTips.Count;
+        for (int slot = 0; slot < criticalCount; slot++)
+        {
+            var tip = console.CriticalTips[criticalCount - 1 - slot];
+            var tsz = _small.MeasureString(tip.Text);
+            DrawMeasuredText(_small, tip.Text, new(w / 2f - tsz.X / 2, HudConsoleFormat.CriticalTipTop(chatLines, slot)), red, fixedAnchor: true);
+        }
+        if (criticalCount > 0) ElementDrawn("Critical tip text lines");
+
+        // Ordinary tips — SideBottom(-300,14/25/34), side colour, retained
+        // (dialog.mdl:5347-5349; TipTextImage dialog.mdl:2006-2033).
+        int ordinary = 0;
+        foreach (var tip in console.OrdinaryTips)
+        {
+            var tsz = _small.MeasureString(tip);
+            float fromBottom = 14f + ordinary * 11f;
+            DrawMeasuredText(_small, tip, new(w / 2f - tsz.X / 2, h - fromBottom - tsz.Y), side);
+            ordinary++;
+        }
+        if (ordinary > 0) ElementDrawn("Tip text lines");
+
+        // Ripcord countdown — SideCenter(-75,15): the text's left edge sits at
+        // centre-x − 75 and its top 15 px above centre (dialog.mdl:5150-5163,
+        // :5429-5430). No centering; Game1 only supplies a label when the
+        // ripcord start time is known.
+        if (model.FlightVisible && model.Context.Ripcord is { } ripcord)
+        {
+            DrawMeasuredText(_small, ripcord, new(w / 2f - HudConsoleFormat.RipcordLeft, h / 2f - HudConsoleFormat.RipcordTop), TextMain, fixedAnchor: true, centerAtScale: false);
+            ElementDrawn("Ripcord countdown");
         }
     }
 
@@ -905,20 +1039,6 @@ public class HudRenderer
         var sz = _small.MeasureString(tag);
         float cx = w / 2f;
         DrawText(_small, tag, new Vector2(cx - sz.X / 2f, 82f), color);
-    }
-
-    /// <summary>P414 — the \"RIPCORDING TO &lt;sector&gt;\" countdown tag, drawn
-    /// beneath the CLOAKED/MINING activity tags while the local player's own
-    /// ship has a ripcord countdown active. Bright cyan (reads as an active
-    /// countdown/activity, distinct from amber mining and violet cloak). Pure
-    /// ASCII — the label is built by Game1 as \"RIPCORDING TO &lt;name&gt;\" and
-    /// sector names are ASCII, so it renders in the ASCII-only spritefont.</summary>
-    private void DrawRipcord(string label, float w)
-    {
-        var color = new Color(0.25f, 0.95f, 0.95f);   // bright cyan — active countdown
-        var sz = _small.MeasureString(label);
-        float cx = w / 2f;
-        DrawText(_small, label, new Vector2(cx - sz.X / 2f, 122f), color);
     }
 
     /// <summary>

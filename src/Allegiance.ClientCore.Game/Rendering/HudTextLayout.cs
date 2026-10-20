@@ -2,7 +2,7 @@ using Microsoft.Xna.Framework;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
-public readonly record struct HudTextBox(string Text, Rectangle Bounds);
+public readonly record struct HudTextBox(string Text, Rectangle Bounds, bool FixedAnchor = false);
 
 /// <summary>Per-frame measured text placement shared by both skins. Fixed
 /// instruments reserve their zones first. Projected labels yield to instruments;
@@ -16,12 +16,18 @@ public sealed class HudTextLayout
     public void Reset(int width, int height)
     { _width = width; _height = height; _reserved.Clear(); _text.Clear(); }
     public void Reserve(Rectangle zone) => _reserved.Add(zone);
-    public Rectangle Place(string text, Vector2 measured, Vector2 desired, bool instrument = false)
+    public Rectangle Place(string text, Vector2 measured, Vector2 desired, bool instrument = false, bool fixedAnchor = false)
     {
         int width = Math.Min(_width - 8, Math.Max(1, (int)MathF.Ceiling(measured.X)));
         int height = Math.Min(_height - 8, Math.Max(1, (int)MathF.Ceiling(measured.Y)));
         int x = Math.Clamp((int)MathF.Round(desired.X), 4, Math.Max(4, _width - width - 4));
         int y = Math.Clamp((int)MathF.Round(desired.Y), 4, Math.Max(4, _height - height - 4));
+        if (fixedAnchor)
+        {
+            var fixedBox = new Rectangle(x, y, width, height);
+            _text.Add(new(text, fixedBox, FixedAnchor: true));
+            return fixedBox;
+        }
         var candidate = new Rectangle(x, y, width, height);
         // Keep the native X anchor wherever possible; alternate downward/upward
         // rows before looking in an adjacent column. Every accepted box is tested.

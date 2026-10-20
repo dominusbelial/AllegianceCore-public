@@ -60,6 +60,7 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             Layout.Reserve(new((int)(x - 56 * _scale), (int)(y - 40 * _scale), (int)(112 * _scale), (int)(112 * _scale)));
         }
         ReserveTargetPane(model, viewport);
+        ReserveConsoleAnchors(model, viewport);
     }
     public override void Draw(HudModel model, Viewport viewport)
     {
@@ -273,11 +274,6 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     {
         float w = viewport.Width, h = viewport.Height, line = (_small.LineSpacing + 5) * _scale;
         float leftWidth = Math.Max(120, w / 2 - 126.5f * Math.Clamp(h / 680, 1.15f, 2.1f) - 56 * _scale - 40);
-        foreach (var notice in model.Context.Notices.Where(n => n.Opacity > 0))
-        {
-            DrawMeasuredText(_small, notice.Text, new((w - _small.MeasureString(notice.Text).X) / 2, h * (notice.Critical ? .205f : .30f)), (notice.Critical ? Alert : Accent) * notice.Opacity);
-            Mark(notice.Critical ? "Critical tip text lines" : "Tip text lines");
-        }
         if (model.Context.Chat is { } chat)
         {
             int start = ChatScroll.StartIndex(chat.Offset, chat.Lines.Count, ChatRenderer.MaxVisible);
@@ -334,6 +330,83 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         {
             float a = start + sweep * i / segments, b = start + sweep * (i + 1) / segments;
             DrawLine(center + new Vector2(MathF.Cos(a), MathF.Sin(a)) * radius, center + new Vector2(MathF.Cos(b), MathF.Sin(b)) * radius, thickness, color);
+        }
+    }
+
+    /// <summary>HUD-9 — the same native console-text anchors as Classic, in the
+    /// HUD-2 style (SDF text, HUD size scale, colour-blind palette for side hues).</summary>
+    protected override void DrawConsoleText(HudModel model, Viewport viewport)
+    {
+        if (!model.Visible || model.Context.Console is not { } console) return;
+        float w = viewport.Width, h = viewport.Height;
+        var side = console.SideColor is { } native
+            ? (_settings.ColorBlindSafe ? HudPalette.Side(new(native.R, native.G, native.B)) : new Color(native.R, native.G, native.B))
+            : Accent;
+        var cortText = new Color(0.586f, 0.578f, 0.680f);   // native cortText/softText (dialog.mdl:24, :3517)
+        var yellow = new Color(255, 224, 96);
+        var red = Alert;
+        int chatLines = model.Context.Chat is { } chat ? chat.Lines.Count : 0;
+
+        if (model.FlightVisible && console.SectorName is { } sector)
+        {
+            float cx = w - 100 * _scale;
+            var psz = _small.MeasureString("Current location:");
+            var nsz = _small.MeasureString(sector);
+            DrawMeasuredText(_small, "Current location:", new(cx - psz.X / 2, HudConsoleFormat.SectorLabelTop * _scale), yellow, fixedAnchor: true);
+            DrawMeasuredText(_small, sector, new(cx - nsz.X / 2, (HudConsoleFormat.SectorLabelTop + HudConsoleFormat.SectorNameBelowLabel) * _scale), cortText, fixedAnchor: true);
+            Mark("Sector location");
+        }
+        if (model.FlightVisible && console.BoardState == 2 && console.CarrierName is { } carrier)
+        {
+            float cx = w - 100 * _scale;
+            var hsz = _small.MeasureString("Turret of:");
+            var nsz = _small.MeasureString(carrier);
+            DrawMeasuredText(_small, "Turret of:", new(cx - hsz.X / 2, HudConsoleFormat.TurretLabelTop * _scale), yellow, fixedAnchor: true);
+            DrawMeasuredText(_small, carrier, new(cx - nsz.X / 2, (HudConsoleFormat.TurretLabelTop + HudConsoleFormat.SectorNameBelowLabel) * _scale), red, fixedAnchor: true);
+            Mark("Turret carrier identity");
+        }
+        if (console.AcceptedOrder is not null || console.QueuedOrder is not null)
+        {
+            float labelTop = HudConsoleFormat.OrderLabelTop * _scale;
+            DrawMeasuredText(_small, "Current orders:", new(HudConsoleFormat.OrderLabelX * _scale, labelTop), yellow, fixedAnchor: true, centerAtScale: false);
+            if (console.QueuedOrder is { } q)
+            {
+                DrawMeasuredText(_small, q, new(HudConsoleFormat.OrderTextX * _scale, labelTop + HudConsoleFormat.OrderQueuedBelowLabel * _scale), red, fixedAnchor: true, centerAtScale: false);
+                Mark("Queued order text");
+            }
+            if (console.AcceptedOrder is { } a)
+            {
+                DrawMeasuredText(_small, a, new(HudConsoleFormat.OrderTextX * _scale, labelTop + HudConsoleFormat.OrderAcceptedBelowLabel * _scale), cortText, fixedAnchor: true, centerAtScale: false);
+                Mark("Accepted order text");
+            }
+        }
+        if (console.VoteText is { } vote)
+        {
+            var vsz = _small.MeasureString(vote);
+            DrawMeasuredText(_small, vote, new(w / 2f - vsz.X / 2, HudConsoleFormat.VoteTop(chatLines) * _scale), Color.White, fixedAnchor: true);
+            Mark("Vote banner");
+        }
+        int criticalCount = console.CriticalTips.Count;
+        for (int slot = 0; slot < criticalCount; slot++)
+        {
+            var tip = console.CriticalTips[criticalCount - 1 - slot];
+            var tsz = _small.MeasureString(tip.Text);
+            DrawMeasuredText(_small, tip.Text, new(w / 2f - tsz.X / 2, HudConsoleFormat.CriticalTipTop(chatLines, slot) * _scale), red, fixedAnchor: true);
+        }
+        if (criticalCount > 0) Mark("Critical tip text lines");
+        int ordinary = 0;
+        foreach (var tip in console.OrdinaryTips)
+        {
+            var tsz = _small.MeasureString(tip);
+            float fromBottom = (14f + ordinary * 11f) * _scale;
+            DrawMeasuredText(_small, tip, new(w / 2f - tsz.X / 2, h - fromBottom - tsz.Y), side);
+            ordinary++;
+        }
+        if (ordinary > 0) Mark("Tip text lines");
+        if (model.FlightVisible && model.Context.Ripcord is { } ripcord)
+        {
+            DrawMeasuredText(_small, ripcord, new(w / 2f - HudConsoleFormat.RipcordLeft * _scale, h / 2f - HudConsoleFormat.RipcordTop * _scale), Accent, fixedAnchor: true, centerAtScale: false);
+            Mark("Ripcord countdown");
         }
     }
     public void Dispose() { _smallSdf.Dispose(); _bigSdf.Dispose(); }

@@ -110,6 +110,9 @@ public sealed record HudContext
     /// radarimage.cpp:1130-1177). Defaults to square radar (WinTrek.cpp:2715).</summary>
     public bool RoundRadar { get; init; }
     public HudChat? Chat { get; init; }
+    /// <summary>HUD-9 console text and banner frame (sector, carrier, orders,
+    /// tips, vote). Null when the client did not supply one.</summary>
+    public HudConsoleText? Console { get; init; }
     public string? CargoLine { get; init; }
     public string? FlightPartsLine { get; init; }
     public IReadOnlyList<string> CommandLines { get; init; } = Array.Empty<string>();
@@ -177,6 +180,11 @@ public sealed class HudModel
             Notices = Array.AsReadOnly(context.Notices.ToArray()),
             Contacts = Array.AsReadOnly(context.Contacts.ToArray()),
             Chat = context.Chat is { } chat ? chat with { Lines = Array.AsReadOnly(chat.Lines.ToArray()) } : null,
+            Console = context.Console is { } console ? console with
+            {
+                OrdinaryTips = Array.AsReadOnly(console.OrdinaryTips.ToArray()),
+                CriticalTips = Array.AsReadOnly(console.CriticalTips.ToArray())
+            } : null,
             CommandLines = Array.AsReadOnly(context.CommandLines.ToArray())
         };
         var gauges = new List<HudGauge>();

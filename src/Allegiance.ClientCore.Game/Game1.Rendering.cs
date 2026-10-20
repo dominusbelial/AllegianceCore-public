@@ -2674,8 +2674,7 @@ public sealed partial class Game1
                 ? $"LOD full:{_lodFullCount} far:{_lodFarCount}" : null,
             hidden: _hideHud || _directorActive || _hudHidden,
             docked: hudDocked, dead: hudDead, commandView: CommandCameraActive,
-            notices: _tipLines.Select(t => new HudNotice(t.Text, t.Critical,
-                (float)Math.Clamp((t.ExpiresAt - _nowSeconds) / 0.8, 0.0, 1.0))).ToArray(),
+            notices: BuildTipNotices(),
             contacts: _drawRadarContacts,
             radarPulse: (MathF.Sin((float)_nowSeconds * 5f) + 1f) * 0.5f, radarMode: _radarMode,
             chat: new HudChat(BuildChatLines(), _chatScrollOffset,
@@ -2684,6 +2683,7 @@ public sealed partial class Game1
             cargoLine: BuildCargoHudText(), flightPartsLine: BuildFlightPartsHudText(),
             commandLines: BuildCommandHudLines(), inventoryVisible: _consolePanes.Inventory,
             lastBaseObjectives: _lastBaseHud, hitConfirmation: _nowSeconds < _hudHitUntil,
+            console: BuildConsoleText(),
             podReturnInstruction: $"{KeyOf("TargetFriendlyBaseNearest").Label} / {KeyOf("ToggleAutopilot").Label} AUTOPILOT TO BASE",
             roundRadar: _hudSettings.RoundRadar);
         if (_hudSettings.Style == HudStyle.Classic) _radarRenderer.Draw(model, GraphicsDevice.Viewport);
@@ -2716,6 +2716,85 @@ public sealed partial class Game1
             firing, groupFire, selectedMount, afterburnerActive, cloakActive, resistance);
     }
 
+    /// <summary>P578/HUD-9 — flat tip view for the shared snapshot: the three
+    /// retained ordinary slots plus the up-to-four critical slots (opacity 1;
+    /// native has no fade — expiry alone clears criticals, console.cpp:913-931).</summary>
+    private HudNotice[] BuildTipNotices()
+    {
+        var list = new List<HudNotice>();
+        foreach (var text in _ordinaryTips)
+            if (!string.IsNullOrEmpty(text)) list.Add(new(text, false, 1));
+        foreach (var (text, expiresAt) in _criticalTips)
+            if (_nowSeconds < expiresAt) list.Add(new(text, true, 1));
+        return list.ToArray();
+    }
+
+    /// <summary>HUD-9 — resolve the console text and banner frame from the live
+    /// world under the gate lock. Sector follows the flight/docked context
+    /// (console.cpp:870; dialog.mdl:1430-1456), carrier/board state follow the
+    /// parent ship (console.cpp:797-804), orders use the verb+target wording
+    /// (console.cpp:875-908), and the vote banner reads the active ballot
+    /// (console.cpp:935-937). Mission lives/kills stay null (not on the wire).</summary>
+    private HudConsoleText BuildConsoleText()
+    {
+        var world = _session.World;
+        string? sector = null, carrier = null, accepted = null, queued = null, vote = null;
+        int boardState = 0;
+        lock (_session.Gate)
+        {
+            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own))
+            {
+                short sectorId = own.SectorId;
+                if (own.StationId >= 0 && world.Stations.TryGetValue(own.StationId, out var station))
+                    sectorId = station.ClusterId;
+                if (world.Clusters.TryGetValue(sectorId, out var cluster) && cluster.Name is { Length: > 0 })
+                    sector = cluster.Name;
+
+                if (own.ParentId != -1)
+                {
+                    // Native BoardState: parented non-turret = observer, parented
+                    // turret = gunner (console.cpp:797-804).
+                    boardState = own.State == ShipStatusMessage.StateTurret ? 2 : 1;
+                    if (world.Ships.TryGetValue(own.ParentId, out var parent)
+                        && parent.CharacterName is { Length: > 0 } name)
+                        carrier = name;
+                }
+            }
+            accepted = ResolveOrderText(world, world.MyAcceptedCommand);
+            queued = ResolveOrderText(world, world.MyQueuedCommand);
+            if (world.ActiveBallot is { } ballot && ballot.BallotText is { Length: > 0 } ballotText)
+                vote = ballotText;
+        }
+        HudColor? sideColor = null;
+        lock (_session.Gate)
+            if (world.MySideId is { } mySide && world.TryGetSideColor(mySide, out var sr, out var sg, out var sb))
+                sideColor = new HudColor(sr, sg, sb);
+        return new HudConsoleText
+        {
+            SectorName = sector,
+            CarrierName = carrier,
+            BoardState = boardState,
+            AcceptedOrder = accepted,
+            QueuedOrder = queued,
+            VoteText = vote,
+            OrdinaryTips = _ordinaryTips.Where(t => !string.IsNullOrEmpty(t)).ToArray(),
+            CriticalTips = _criticalTips.Where(t => _nowSeconds < t.ExpiresAt)
+                .Select(t => new HudNotice(t.Text, true, 1)).ToArray(),
+            SideColor = sideColor
+        };
+    }
+
+    /// <summary>Resolve the native accepted/queued order target name and defer the
+    /// verb + target formatting to the tested
+    /// <see cref="HudConsoleFormat.OrderText"/> (console.cpp:875-908).</summary>
+    private static string? ResolveOrderText(ClientWorld world, QueuedCommandState? command)
+    {
+        if (command is not { } c || c.CommandId == OrderChange.CidNone) return null;
+        string? name = world.TryCommandTarget(c, out _, out var targetName) && targetName.Length > 0
+            ? targetName : null;
+        return HudConsoleFormat.OrderText(c.CommandId, name);
+    }
+
     /// <summary>P425 — the HUD commandee readout label, or null when the pilot is
     /// not currently commanding anyone (nothing to draw). Names the same-side
     /// ship/drone selected as <see cref="_commandee"/> plus the issue-order key,
@@ -2728,44 +2807,36 @@ public sealed partial class Game1
         return $"CMD {cmd.Name} (#{cmd.Id})  [Insert]";
     }
 
-    /// <summary>P414 — the HUD "RIPCORDING TO &lt;sector&gt;" label while the local
-    /// player's own ship has a ripcord countdown active, resolved from the
-    /// live world ripcord state under the gate lock (the sector id → the
-    /// cluster's real name from the EXPORT OT_cluster table, same source the
-    /// starmap pane uses). Null when no ripcord is active — the HUD draws no
-    /// tag. ASCII-safe (names are ASCII), so it renders in the spritefont.
-    /// Also self-expires the tag once the countdown's real duration (the own
-    /// hull's <c>RipcordSpeed</c>, the same value the server counts down) has
-    /// elapsed — the server's teleport is silent on the wire, so without this
-    /// the tag would linger after the ship has actually arrived.</summary>
+    /// <summary>P414/HUD-9 — the native ripcord countdown label, "Ripcord in: n",
+    /// resolved from the live world ripcord state under the gate lock. Native
+    /// <c>GetRipcordTimeLeft</c> adds 0.5 s and <c>NumberString</c> adds another
+    /// 0.5 s before truncating (consoledata.cpp:521-532; modeler.cpp:2008), so
+    /// the displayed whole second is <c>(int)(left + 1.0)</c>. Null when no
+    /// ripcord is active. Also self-expires once the countdown's real duration
+    /// (the own hull's <c>RipcordSpeed</c>) has elapsed.</summary>
     private string? RipcordStatusLabel()
     {
         var world = _session.World;
         lock (_session.Gate)
         {
-            if (!world.RipcordActive) return null;
+            // Without a start time the countdown cannot be computed; native
+            // IsRipcording(Me) gates the whole image, so a null start time must
+            // show nothing rather than a fabricated "Ripcord in: 1"
+            // (consoledata.cpp:521; dialog.mdl:5139-5154).
+            if (!world.RipcordActive || world.RipcordActiveSinceLocalMs is null) return null;
 
-            // Self-expire when RipcordSpeed seconds have elapsed since the
-            // activation was decoded (abort clears it sooner via RIPCORD_ABORTED).
-            if (world.RipcordActiveSinceLocalMs is not null)
+            float dur = RipcordDurationSeconds(world);
+            float left = _ripcordCountdownSound.TimeLeft(world.RipcordActive,
+                world.RipcordActiveSinceLocalMs, ClientNowMilliseconds, dur, world.TimeScale);
+            if (dur > 0f && left <= 0f)
             {
-                float dur = RipcordDurationSeconds(world);
-                float left = _ripcordCountdownSound.TimeLeft(world.RipcordActive,
-                    world.RipcordActiveSinceLocalMs, ClientNowMilliseconds, dur, world.TimeScale);
-                if (dur > 0f && left <= 0f)
-                {
-                    world.ClearRipcord();
-                    return null;
-                }
+                world.ClearRipcord();
+                return null;
             }
-
-            if (world.RipcordTargetSectorId is { } sid)
-            {
-                if (world.Clusters.TryGetValue(sid, out var dc) && dc.Name is { Length: > 0 })
-                    return $"RIPCORDING TO {dc.Name}";
-                return $"RIPCORDING TO SECTOR {sid}";
-            }
-            return "RIPCORDING";
+            // Native double-0.5 rounding is in HudConsoleFormat.RipcordLabel
+            // (consoledata.cpp:521; modeler.cpp:2008), which also refuses to
+            // fabricate a label when the start time is unknown.
+            return HudConsoleFormat.RipcordLabel(world.RipcordActive, world.RipcordActiveSinceLocalMs, left);
         }
     }
 
@@ -3429,33 +3500,13 @@ public sealed partial class Game1
         if (!model.Visible) return;
         bool inPod = model.PodVisible, ghost = model.DeathVisible;
         int oxySec = model.Telemetry?.OxygenSecondsRemaining ?? 0;
-        if (model.Context.Notices.Count == 0 && !inPod && !ghost) return;
+        // Tips now render through HudRenderer.DrawConsoleText (native anchors).
+        if (!inPod && !ghost) return;
 
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
         {
-            // ── 1. Tip lines ────────────────────────────────────────────────
-            int critIdx = 0, tipIdx = 0;
-            foreach (var (text, critical, fade) in model.Context.Notices)
-            {
-                var sz = _hudSmall.MeasureString(text);
-                if (critical)
-                {
-                    float y = vp.Height * 0.205f + critIdx * _hudSmall.LineSpacing;
-                    var col = new Color(1f, 0.20f, 0.15f) * fade;   // native red CriticalTipText0
-                    _hudRenderer.DrawMeasuredText(_hudSmall, text, new Vector2((vp.Width - sz.X) / 2f, y), col);
-                    critIdx++;
-                }
-                else
-                {
-                    float y = vp.Height * 0.30f + tipIdx * _hudSmall.LineSpacing;
-                    var col = new Color(0.07f, 0.95f, 0.84f) * fade;   // side accent colour
-                    _hudRenderer.DrawMeasuredText(_hudSmall, text, new Vector2((vp.Width - sz.X) / 2f, y), col);
-                    tipIdx++;
-                }
-            }
-
-            // ── 2. Eject-pod panel ──────────────────────────────────────────
+            // ── 1. Eject-pod panel ──────────────────────────────────────────
             if (inPod)
             {
                 float panelW = vp.Width * 0.30f, panelH = vp.Height * 0.075f;

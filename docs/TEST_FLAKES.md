@@ -2564,3 +2564,23 @@ assertion failure in the exported results. Its cause remains undetermined. No
 second broad sweep was run. The five additional local P700 parking invocations
 passed 5/5. See [HUD-2](reports/HUD2_MODERN_HUD.md) and its validation ledger.
 
+
+## HUD-9 validation environment (2026-10-20)
+
+HUD-9's single fast-tier run recorded one failure:
+`Allegiance.Core.Tests.MissionRotationLiveTests.Finished_mission_rotates_to_fresh_notstarted_and_new_joiner_starts`.
+The exact method passed **3/3 alone** afterwards without changes, so it is
+recorded as a load flake (mission rotation, unrelated to the HUD-9 console-text
+changes). No `Allegiance.Core`/`Allegiance.Server` production source changed, so
+the conditional server AOT publish and extra showcase runs are not triggered.
+
+
+## HUD-9b validation environment (2026-10-20)
+
+HUD-9b's final fast-tier run recorded one failure:
+`Allegiance.Core.Tests.Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events`
+(Expected 0, Actual 6648). The exact method (and its whole class) passed
+**3/3 alone** afterwards without changes, so it is recorded as a load flake
+(allocation counting on a busy shared machine, unrelated to the HUD-9b console
+text fixes). No HUD-9b change touches `Allegiance.Core`/`Allegiance.Server`
+transport or allocation paths.

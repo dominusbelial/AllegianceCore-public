@@ -1,0 +1,38 @@
+[
+  {
+    "file": "1920x1080-flight-Classic.jpg",
+    "source": ".scratch/hud9b-capture/classic-1920/proof_t006.7_sMonmar_ccockpit.png",
+    "source_sha256": "463233457d5c7b8e723d76409d6d601b4bf44bf73f527a265eb98ad341c2abc0",
+    "bytes": 73069,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  },
+  {
+    "file": "1920x1080-flight-Modern.jpg",
+    "source": ".scratch/hud9b-capture/modern-1920/proof_t006.8_sMonmar_ccockpit.png",
+    "source_sha256": "4b226491441f655937f1bb8bf42603e948c052dcf9ee83b81959be1801821063",
+    "bytes": 74346,
+    "width": 1920,
+    "height": 1080,
+    "kind": "real-client"
+  },
+  {
+    "file": "console-text-1920x1080-Classic.jpg",
+    "source": ".scratch/render-cap/combat-1920x1080-Classic.png",
+    "source_sha256": "22cf73a9f64477ba57e97fc97d25af5c323884048f5f2961a622c49d16e9f7b6",
+    "bytes": 107375,
+    "width": 1920,
+    "height": 1080,
+    "kind": "deterministic-production-skin-fixture"
+  },
+  {
+    "file": "console-text-1920x1080-Modern.jpg",
+    "source": ".scratch/render-cap/combat-1920x1080-Modern.png",
+    "source_sha256": "5e5030ff64f97474a07f7f8f817d8c3f26900491f759be4f073c8e4a967aa468",
+    "bytes": 115769,
+    "width": 1920,
+    "height": 1080,
+    "kind": "deterministic-production-skin-fixture"
+  }
+]

@@ -274,6 +274,47 @@ public class HudModelTests
         Assert.Equal("THRUST", model.Gauges.Single(g => g.Kind == GaugeKind.Thrust).Label);
     }
 
+    [Fact]
+    public void Console_text_is_a_snapshot_and_its_elements_follow_the_native_gates()
+    {
+        var tips = new List<string> { "tip a", "tip b", "tip c" };
+        var critical = new List<HudNotice> { new("critical", true, 1) };
+        var console = new HudConsoleText
+        {
+            SectorName = "Alystra", CarrierName = "Pilot", BoardState = 2,
+            AcceptedOrder = "defend Garrison", QueuedOrder = "attack Fighter",
+            VoteText = "Mutiny?", OrdinaryTips = tips, CriticalTips = critical
+        };
+        var model = HudModel.Create(Frame, new() { Console = console });
+        tips.Clear(); critical.Clear();
+        Assert.Equal(3, model.Context.Console!.OrdinaryTips.Count);
+        Assert.Single(model.Context.Console.CriticalTips);
+        Assert.Equal("Alystra", model.Context.Console.SectorName);
+        Assert.Equal(2, model.Context.Console.BoardState);
+
+        Assert.True(model.Elements.Single(e => e.Id == "Sector location").Visible);
+        Assert.True(model.Elements.Single(e => e.Id == "Turret carrier identity").Visible);
+        Assert.Equal("Alystra", model.Elements.Single(e => e.Id == "Sector location").Text);
+        Assert.True(model.Elements.Single(e => e.Id == "Accepted order text").Visible);
+        Assert.True(model.Elements.Single(e => e.Id == "Queued order text").Visible);
+        Assert.True(model.Elements.Single(e => e.Id == "Vote banner").Visible);
+        Assert.True(model.Elements.Single(e => e.Id == "Tip text lines").Visible);
+        Assert.True(model.Elements.Single(e => e.Id == "Critical tip text lines").Visible);
+        Assert.Equal("tip a\ntip b\ntip c", model.Elements.Single(e => e.Id == "Tip text lines").Text);
+
+        // Board state text is loadout-only in native, so it is exposed but not drawn in flight.
+        var board = model.Elements.Single(e => e.Id == "Observer and turret board state");
+        Assert.True(board.Available);
+        Assert.False(board.Visible);
+        Assert.Equal(2, board.Value);
+        Assert.Equal("Turret of Pilot", board.Text);
+
+        // Unknown readings stay null, never fabricated zeroes.
+        var noLives = HudModel.Create(Frame);
+        Assert.False(noLives.Elements.Single(e => e.Id == "Lives remaining").Available);
+        Assert.False(noLives.Elements.Single(e => e.Id == "Mission kills").Available);
+    }
+
     [Theory]
     [InlineData(CameraMode.Cockpit, true)]
     [InlineData(CameraMode.Chase, true)]
