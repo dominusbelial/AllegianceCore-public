@@ -77,6 +77,9 @@ public class FedMsgDispatchCoverageTests
         (177, "ViewClusterReply"), (178, "BoardNack"), (189, "Promote"), (199, "HighlightCluster"), (197, "ChangeAlliances"), (179, "AsteroidsUpdate"),
         (181, "BuildingEffectDestroyed"), (183, "ShipReset"), (185, "RipcordActivate"), (186, "RipcordDenied"),
         (187, "RipcordAborted"), (191, "CreateBuckets"), (198, "AsteroidMined"), (200, "ClusterInfo"),
+        // P758 — the treasure-pickup notice and the warp-bomb notice are now
+        // consumed by the real client (appmsg.cpp:262-308 / 850-868).
+        (162, "AcquireTreasure"), (188, "WarpBomb"),
         (18, "CancelBallot"), (40, "PositionReqBroadcast"), (42, "DelPositionReq"),
         (43, "LockLobby"), (44, "LockSides"), (52, "AutoAccept"),
         // port-added server-sent messages the real client also dispatches:
@@ -100,8 +103,9 @@ public class FedMsgDispatchCoverageTests
         (3, "LOGOFF", "server echo of client LOGOFF; quit handled client-side, echo benign"),
         (31, "NEW_SHIP_INSTANCE", "inactive native definition; active object creation uses EXPORT (P740 n/a)"),
         (89, "TREASURE_SETS", "native WinTrek.cpp:11090-11094 explicitly NYI (P740 n/a); port legacy producer retained"),
-        (162, "ACQUIRE_TREASURE", "part pickup acknowledgment not wired; world sound consumer only"),
-        (188, "WARP_BOMB", "warp-bomb explosion; no warp-bomb mechanic"),
+        // P758 moved 162 ACQUIRE_TREASURE and 188 WARP_BOMB to the consumed
+        // set: the real client now decodes both and answers/offers the native
+        // behaviour (treasure ack / destabilized-aleph state + alert line).
     };
 
     // ── helpers ────────────────────────────────────────────────────────────
@@ -270,12 +274,12 @@ public class FedMsgDispatchCoverageTests
         // Registry entries must be unique; otherwise a duplicate can mask stale counts.
         Assert.Equal(ExpectedConsumedServerSent.Length, consumed.Count);
         Assert.Equal(KnownUnconsumedServerSent.Length, unconsumed.Count);
-        Assert.Equal(97, consumed.Count(f => supportedNativeServerSent.Contains(f)));
+        Assert.Equal(99, consumed.Count(f => supportedNativeServerSent.Contains(f)));
         Assert.Equal(17, consumed.Count(f => !supportedNativeServerSent.Contains(f)));
 
         // Sanity: the executable counts match the audited numbers.
-        Assert.Equal(114, ExpectedConsumedServerSent.Length);
-        Assert.Equal(5, KnownUnconsumedServerSent.Length);
+        Assert.Equal(116, ExpectedConsumedServerSent.Length);
+        Assert.Equal(3, KnownUnconsumedServerSent.Length);
         Assert.Equal(102, supportedNativeServerSent.Length);
     }
 }

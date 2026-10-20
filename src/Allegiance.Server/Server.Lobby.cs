@@ -2382,14 +2382,17 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// <item><b>Side empty &amp; not the owner</b> — just clear the side's
     /// leader, no broadcast.</item>
     /// </list>
-    /// Stated simplifications (per P183 scope, never silent): leader-succession
-    /// always uses "first other player on the side", dropping native's
-    /// donation-based (<c>PickNewLeader</c>) and squad-capability
-    /// (<c>GetCanLeadSquad</c>) tie-breaks — this port has neither donations
-    /// (P119) nor squads; the lobby/side-unlock side effect native does when the
-    /// owner vanishes (fsmission.cpp:1031-1062) is a deliberate no-op
-    /// (<c>LOCK_LOBBY</c>/<c>LOCK_SIDES</c> aren't ported); rank-range/squad-name
-    /// resets are omitted for the same reason.
+    /// P758 — native leader succession on a mid-game leader exit prefers the
+    /// player with the most teammates donating to them (<c>PickNewLeader</c>,
+    /// fsmission.cpp:955-961, FedSrv.CPP:13981-14024); when no donation points
+    /// at a remaining player, native falls back to a squad-capable player, then
+    /// to the first other player (fsmission.cpp:963-986). Squads
+    /// (<c>GetCanLeadSquad</c>) are not ported, so the fallback is the first
+    /// other player by ship id — deterministic and testable. The lobby/side-
+    /// unlock side effect native does when the owner vanishes
+    /// (fsmission.cpp:1031-1062) is still a deliberate no-op
+    /// (<c>LOCK_LOBBY</c>/<c>LOCK_SIDES</c> aren't ported); rank-range/squad-
+    /// name resets are omitted for the same reason.
     /// </summary>
     private void HandleLeaderSuccession(Ship ship)
     {
@@ -2412,7 +2415,19 @@ private void CompleteStartCountdown(Mission mission, double now)
 
         if (remaining.Count > 0)
         {
-            var newLeader = remaining[0];
+            Ship? newLeader = null;
+            if (mission.Stage == MissionStage.Started)
+            {
+                // fsmission.cpp:955-961: a leader leaving a STARTED mission is
+                // replaced by whoever has the most teammates donating to them.
+                var donationWinner = PickNewLeader(remaining, ship, 0);
+                if (donationWinner is not null && remaining.Any(s => ReferenceEquals(s, donationWinner)))
+                    newLeader = donationWinner;
+            }
+            // fsmission.cpp:963-986: otherwise (not started, or no donation
+            // winner) the first remaining player leads. Native's squad-capable
+            // preference (GetCanLeadSquad) is unported — squads don't exist here.
+            newLeader ??= remaining[0];
             side.LeaderShipId = newLeader.Id;
             BroadcastSetTeamLeader(mission, oldSideId, newLeader.Id);
             if (mission.MissionOwnerSideId == oldSideId)

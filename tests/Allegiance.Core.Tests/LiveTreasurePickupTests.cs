@@ -141,6 +141,30 @@ public class LiveTreasurePickupTests
         return t;
     }
 
+    /// <summary>Place a real powerup treasure in the fly sector: its
+    /// <c>TreasureId</c> is the <c>PowerupCode</c> bitmap (native
+    /// <c>treasure-&gt;GetTreasureID()</c>), its amount is NA (native
+    /// <c>dt.amount = NA</c>, missionigc.cpp:4188).</summary>
+    private static Treasure PlacePowerupTreasure(Srv server, Vector3 pos, short bits, short oid)
+    {
+        var mission = server.Missions[0];
+        var fly = mission.Sectors.First(s => s.Id == FlySector);
+        var data = new DataTreasureIGC(
+            P0: [pos.X, pos.Y, pos.Z],
+            V0: [0f, 0f, 0f],
+            Lifespan: 9999f,
+            Time0: 0u,
+            ObjectId: oid,
+            TreasureId: bits,        // PowerupCode bitmap (native GetTreasureID)
+            ClusterId: FlySector,
+            Amount: -1,               // NA — native dt.amount = NA (missionigc.cpp:4188)
+            TreasureCode: TreasureCode.Powerup,
+            CreateNow: true);
+        var t = new Treasure(oid, fly, data, 0.0);
+        fly.Add(t);
+        return t;
+    }
+
     private static bool SectorHasTreasure(Srv server, short oid) =>
         server.Missions[0].Sectors.First(s => s.Id == FlySector).Models.OfType<Treasure>().Any(t => t.Id == oid);
 
@@ -220,6 +244,55 @@ public class LiveTreasurePickupTests
         }
 
         Console.WriteLine($"TREASURE-LIVE: ship {sp.Pickup.Id} (rescue) picked cash amount={amount} -> PICKER WALLET {walletBefore}+{amount}={walletAfter} (side pool unchanged at {side.Money}); MONEY_CHANGE(60) to 2 same-side peers (sidFrom=NA), DESTROY_TREASURE(30) to all 3 peers; treasure {treasure.Id} removed");
+    }
+
+    // ── Scenario 1c: P758 — ACQUIRE_TREASURE(162) carries native fields ────
+
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Powerup_and_cash_pickups_send_ACQUIRE_TREASURE_with_native_fields_to_the_picker_only()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        var sp = InjectSpawn(server, DataHullTypeIGC.HabmRescue, Vector3.Zero);
+        server.Boot(Config());
+        foreach (var __m in server.Missions) __m.Stage = MissionStage.Started;  // P180: test assumes an immediately-flyable/started mission; bypass the ready-up lobby
+
+        var bots = Seat(server, "PA", "PB", "PO");
+        using var pickerBot = bots.Single(b => b.ShipAssignment!.Ship.ShipId == sp.Pickup.Id);
+        using var mateBot = bots.Single(b => b.ShipAssignment!.Ship.ShipId == sp.Bystander.Id);
+        using var outsiderBot = bots.Single(b => b.ShipAssignment!.Ship.ShipId == sp.Outsider.Id);
+
+        // Powerup: native sends treasure->GetTreasureID() — the PowerupCode
+        // bitmap — and treasure->GetAmount() (NA = -1, missionigc.cpp:4188),
+        // to the picker's OWN connection only (FedSrv.CPP:13622-13641).
+        short bits = (short)(PowerupCode.Fuel | PowerupCode.Ammo);
+        var powerup = PlacePowerupTreasure(server, sp.Pickup.Position, bits, 9400);
+        foreach (var b in bots) b.ResetAcquireTreasures();
+        int n = PumpUntil(server, () => pickerBot.AcquireTreasures.Count >= 1 && !SectorHasTreasure(server, powerup.Id), 3000);
+        Assert.True(n < 3000, "powerup ACQUIRE_TREASURE not received in time");
+        var at = Assert.Single(pickerBot.AcquireTreasures);
+        Assert.Equal((byte)TreasureCode.Powerup, at.TreasureCode);
+        Assert.Equal(bits, at.TreasureId);
+        Assert.Equal((short)-1, at.Amount);
+        Assert.Empty(mateBot.AcquireTreasures);      // not side-wide, not whole-mission
+        Assert.Empty(outsiderBot.AcquireTreasures);
+
+        // Cash: native sets amount = treasureID for cash (treasureIGC.cpp:91-92),
+        // so both fields are the dollar value, sent to the picker only.
+        short amount = CashAmount(server);
+        var cash = PlaceCashTreasure(server, sp.Pickup.Position, amount, 9401);
+        foreach (var b in bots) b.ResetAcquireTreasures();
+        n = PumpUntil(server, () => pickerBot.AcquireTreasures.Count >= 1 && !SectorHasTreasure(server, cash.Id), 3000);
+        Assert.True(n < 3000, "cash ACQUIRE_TREASURE not received in time");
+        at = Assert.Single(pickerBot.AcquireTreasures);
+        Assert.Equal((byte)TreasureCode.Cash, at.TreasureCode);
+        Assert.Equal(amount, at.TreasureId);
+        Assert.Equal(amount, at.Amount);
+        Assert.Empty(mateBot.AcquireTreasures);
+        Assert.Empty(outsiderBot.AcquireTreasures);
+
+        Console.WriteLine($"TREASURE-ACQUIRE-LIVE: powerup bits=0x{bits:X2} -> ACQUIRE_TREASURE(162) code=Powerup id=0x{bits:X2} amount=-1; cash {amount} -> code=Cash id={amount} amount={amount}; picker-only both times");
     }
 
     // ── Scenario 1b: P551 — autodonate target receives the cash credit ─────

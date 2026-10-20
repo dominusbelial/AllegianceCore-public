@@ -908,6 +908,11 @@ public sealed partial class Server
             ship.Flag = oid;
             BroadcastGainFlag(mission, oid, ship.Id, bIsTreasureDocked: false, parttypeidDocked: 0);
             BroadcastTreasureDestroyed(treasure);
+            // P758 — native sends the per-player ACQUIRE_TREASURE notice for
+            // EVERY code a player picks (FedSrv.CPP:13622-13641), flag
+            // included: the picker's own client plays pickUpDevelopmentSound
+            // (the NYI flag cue's stand-in, appmsg.cpp:303).
+            SendAcquireTreasureToPicker(ship, TreasureCode.Flag, oid, (short)treasure.Amount);
             Console.WriteLine($"[flag] ship {ship.Id} picked up side {oid}'s flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE");
             return;
         }
@@ -932,22 +937,13 @@ public sealed partial class Server
             if (ship.PendingTreasureOffer is null)
             {
                 ship.PendingTreasureOffer = ((short)treasure.Data.TreasureId, (short)treasure.Amount);
-                var acquire = new AcquireTreasure
-                {
-                    TreasureCode = (byte)TreasureCode.Part,
-                    TreasureId = (short)treasure.Data.TreasureId,
-                    Amount = (short)treasure.Amount,
-                };
-                var owner = _peerShips.FirstOrDefault(kv => ReferenceEquals(kv.Value.Ship, ship));
-                if (owner.Key != default)
-                {
-                    SendPeer(owner.Key, FedPacket.Pack(new[] { acquire.Encode() }));
-                    Console.WriteLine($"[treasure] ship {ship.Id} offered part {treasure.Data.TreasureId} amount={treasure.Amount} -> ACQUIRE_TREASURE(162) to its own connection");
-                }
-                else
-                {
-                    Console.WriteLine($"[treasure] ship {ship.Id} picked part treasure {treasure.Id} but has no connection — offer buffered, ACQUIRE_TREASURE not sent");
-                }
+                // P145/P758 — the offer itself: ACQUIRE_TREASURE to the picking
+                // player's OWN connection only (SendMessages(pfsPlayer->
+                // GetConnection(), ...), FedSrv.CPP:13639-13641); the pending-
+                // offer gate is the part branch's own (FedSrv.CPP:13604-13607).
+                SendAcquireTreasureToPicker(ship, TreasureCode.Part,
+                    (short)treasure.Data.TreasureId, (short)treasure.Amount,
+                    logPrefix: $"offered part {treasure.Data.TreasureId} amount={treasure.Amount}");
             }
             else
             {
@@ -967,6 +963,10 @@ public sealed partial class Server
             int bits = treasure.Data.TreasureId;
             ship.ApplyPowerup(bits);
             Console.WriteLine($"[treasure] ship {ship.Id} picked powerup treasure {treasure.Id} bits=0x{bits:X2} -> fuel {ship.Fuel:F1}/{ship.HullType.MaxFuel:F1}");
+            // P758 — the per-player notice for a powerup pickup
+            // (FedSrv.CPP:13622-13641): the picker's client plays
+            // pickUpPowerupSound (appmsg.cpp:282).
+            SendAcquireTreasureToPicker(ship, TreasureCode.Powerup, (short)bits, (short)treasure.Amount);
             BroadcastTreasureDestroyed(treasure);
             return;
         }
@@ -1012,6 +1012,45 @@ public sealed partial class Server
         }
 
         BroadcastTreasureDestroyed(treasure);                       // DESTROY_TREASURE whole-mission + remove from sector
+
+        // P758 — the per-player notice for a cash pickup
+        // (FedSrv.CPP:13622-13641): the picker's client plays
+        // pickUpCashSound and posts the reward/donation line
+        // (appmsg.cpp:289-299). Native's treasureID for a cash treasure is the
+        // amount itself (treasureIGC.cpp:91-92), mirrored here.
+        SendAcquireTreasureToPicker(ship, TreasureCode.Cash, (short)amount, (short)amount);
+    }
+
+    /// <summary>P758 — the per-player <c>ACQUIRE_TREASURE(162)</c> notice, the
+    /// port of native's tail block (<c>FedSrv.CPP:13622-13641</c>): after a
+    /// player picks ANY treasure (part, powerup, development, cash, flag), the
+    /// server tells that player's own connection what they got —
+    /// <c>treasureCode</c>/<c>treasureID</c>/<c>amount</c> straight from the
+    /// treasure — so the client can voice it and answer a part offer. An NPC
+    /// picker (no connection) is silently skipped, exactly like native's
+    /// <c>pfsShip-&gt;IsPlayer()</c> gate.</summary>
+    private void SendAcquireTreasureToPicker(Ship ship, TreasureCode code, short treasureId, short amount,
+        string? logPrefix = null)
+    {
+        var acquire = new AcquireTreasure
+        {
+            TreasureCode = (byte)code,
+            TreasureId = treasureId,
+            Amount = amount,
+        };
+        var owner = _peerShips.FirstOrDefault(kv => ReferenceEquals(kv.Value.Ship, ship));
+        if (owner.Key != default)
+        {
+            SendPeer(owner.Key, FedPacket.Pack(new[] { acquire.Encode() }));
+            Console.WriteLine($"[treasure] ship {ship.Id} {logPrefix ?? $"picked {code} id={treasureId} amount={amount}"} -> ACQUIRE_TREASURE(162) to its own connection");
+        }
+        else if (logPrefix is not null)
+        {
+            // Preserve the P145 diagnostic for the buffered part offer; other
+            // codes have nothing buffered, so a connectionless picker needs no
+            // log line (native's IsPlayer gate is simply false).
+            Console.WriteLine($"[treasure] ship {ship.Id} picked a treasure but has no connection — notice not sent");
+        }
     }
 
     /// <summary>P123 — remove a treasure from its sector and broadcast

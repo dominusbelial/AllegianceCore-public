@@ -370,6 +370,57 @@ public class LiveTeamLeadershipTests
         Assert.Contains(b.SetTeamLeaders, t => t.ShipId == bId && t.SideId == side0);
     }
 
+    /// <summary>⭐ P758 — a leader leaving a STARTED mission is replaced by the
+    /// remaining player with the MOST teammates donating to them (native
+    /// <c>PickNewLeader</c>, fsmission.cpp:955-961, FedSrv.CPP:13981-14024),
+    /// NOT the deterministic first-other fallback. B and C both donate to C, so
+    /// C succeeds A despite B having the lower ship id.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Started_mission_leader_succession_prefers_donation_target()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.Boot(Config());
+        using var a = new FltBot();
+        using var b = new FltBot();
+        using var c = new FltBot();
+        short aId = Seat(server, a, "LD1");   // first seated → smallest id
+        short side0 = server.Missions[0].Sides[0].Id;
+        var mission0 = server.Missions[0];
+
+        // Establish A as side0's leader while it is the only player on the side.
+        Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));
+        Assert.Equal(aId, Side(server, side0).LeaderShipId);
+
+        // Seat B and C and move them onto occupied side0 (neither becomes leader).
+        short bId = Seat(server, b, "LD2");
+        short cId = Seat(server, c, "LD3");
+        Assert.True(server.TryJoinSide(ShipOf(server, bId), side0));
+        Assert.True(server.TryJoinSide(ShipOf(server, cId), side0));
+        Assert.Equal(aId, Side(server, side0).LeaderShipId);
+        Assert.True(aId < bId && bId < cId, "seat order must yield aId < bId < cId");
+
+        // Both remaining players donate to C: C wins the PickNewLeader vote 2-0
+        // (B's lower ship id is NOT the tie-break native uses — donations are).
+        var cShip = server.Ships.First(s => s.Ship.Id == cId).Ship;
+        server.Ships.First(s => s.Ship.Id == bId).Wallet.AutoDonateTarget = cShip;
+        server.Ships.First(s => s.Ship.Id == cId).Wallet.AutoDonateTarget = cShip;
+
+        Flush(server);
+        mission0.Stage = MissionStage.Started;
+        c.ResetLeadershipSignals();
+
+        a.Dispose();   // abrupt drop → ReleasePeer → leader succession (donation-preference)
+        int settled = PumpUntil(server,
+            () => !server.Ships.Any(s => s.Ship.Id == aId) && c.SetTeamLeaders.Any(t => t.ShipId == cId && t.SideId == side0), 800);
+        Assert.True(settled < 800, "leader departure did not promote the donation target");
+
+        Assert.Equal(cId, mission0.Sides.First(s => s.Id == side0).LeaderShipId);   // C, not B
+        Assert.Contains(c.SetTeamLeaders, t => t.ShipId == cId && t.SideId == side0);
+        Assert.DoesNotContain(c.SetTeamLeaders, t => t.ShipId == bId && t.SideId == side0);
+    }
+
     /// <summary>⭐ The team leader disconnecting as the LAST player on their
     /// side clears LeaderShipId; because they were also the mission owner and
     /// another occupied side exists, that side's existing leader is promoted to

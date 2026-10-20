@@ -1784,6 +1784,7 @@ public sealed partial class ClientWorld
         _clusters.Clear();
         _stations.Clear();
         _warps.Clear();
+        _warpBombs.Clear();   // P758 — no live warp bombs survive a reset
         _asteroids.Clear();
         _asteroidLive.Clear();
         _stationLive.Clear();
@@ -2111,8 +2112,15 @@ public sealed partial class ClientWorld
                 break;
             case AcquireTreasure acquire:
                 // P710 — a treasure was acquired (picked up). Drives the
-                // pickUp*Sound family (appmsg.cpp:282-303).
+                // pickUp*Sound family (appmsg.cpp:282-303); P758 adds the
+                // native TREASURE_ACK reply decision surface (the ack itself is
+                // sent by ConnectionSession) and the cash-reward console line.
                 Apply(acquire);
+                break;
+            case WarpBomb warpBomb:
+                // P758 — FM_S_WARP_BOMB(188): a missile hit an aleph and it
+                // will detonate at the carried deadline (appmsg.cpp:850-868).
+                Apply(warpBomb);
                 break;
             case OwnShipMiningUpdate mining:
                 Apply(mining);
@@ -3955,6 +3963,27 @@ public sealed partial class ClientWorld
     /// recorded unconditionally.
     private void Apply(AcquireTreasure m)
     {
+        // P758 — the native handler's first gate (appmsg.cpp:264):
+        // a client that is not in game ignores the pickup notice entirely.
+        if (!InGame) return;
+
+        // P758 — c_tcCash carries the reward text (appmsg.cpp:289-299): the
+        // autodonate target's name when one is set ("You donated your reward
+        // of $%d to %s."), else the plain reward line ("You received a reward
+        // of $%d."). The picking side's wallets already moved server-side
+        // (MONEY_CHANGE); this is the player-facing notice.
+        if ((Allegiance.Core.TreasureCode)m.TreasureCode == Allegiance.Core.TreasureCode.Cash)
+        {
+            string? donateName = null;
+            if (MyShipId is { } me
+                && _autoDonateTargetByShipId.TryGetValue(me, out short target)
+                && _ships.TryGetValue(target, out var targetShip))
+                donateName = targetShip.CharacterName;
+            PostSystemLine(donateName is { Length: > 0 } named
+                ? $"You donated your reward of ${m.Amount} to {named}."
+                : $"You received a reward of ${m.Amount}.");
+        }
+
         ClientSoundEventKind? kind = (Allegiance.Core.TreasureCode)m.TreasureCode switch
         {
             Allegiance.Core.TreasureCode.Powerup => ClientSoundEventKind.PickupPowerup,
@@ -4504,6 +4533,7 @@ public sealed partial class ClientWorld
         _clusters.Clear();
         _stations.Clear();
         _warps.Clear();
+        _warpBombs.Clear();   // P758 — no live warp bombs survive a reset
         _asteroids.Clear();
         _asteroidLive.Clear();
         _stationLive.Clear();

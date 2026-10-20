@@ -259,6 +259,10 @@ public sealed partial class Game1 : Game
     // the local ship's cluster and applied to every asteroid draw that frame.
     private Allegiance.Core.Rendering.SectorLighting? _sectorLighting;
     private readonly List<(short Id, SimVec Pos, Orientation Ori, float Radius, string TextureName)> _drawWarps = new();
+    /// <summary>P758 — per-warp bomb countdowns (seconds until the carried
+    /// detonation deadline), snapshotted under the session gate each frame for
+    /// the destabilized-aleph draw pass (<see cref="Rendering.WarpBombVisual"/>).</summary>
+    private readonly Dictionary<short, double> _warpBombRemaining = new();
     private readonly List<(SimVec Pos, Orientation Ori, short SideId, float Radius, string? ModelStem, string? TextureName)> _drawStations = new();
     private readonly List<(Vector3 Pos, float Radius, float Alpha)> _drawBuilds = new();
     private readonly List<(SimVec Pos, SimVec Dir, float Len, float Spin, ProjectileVisual Visual)> _drawBolts = new();

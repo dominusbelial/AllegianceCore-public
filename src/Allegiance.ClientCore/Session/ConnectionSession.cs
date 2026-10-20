@@ -399,6 +399,58 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>P758 — the static-core lookup the part-treasure ack decision
+    /// needs (the client-side mirror of the server's core lookups). Native's
+    /// client answers <c>FM_S_ACQUIRE_TREASURE</c> by resolving the offered
+    /// part and the own hull through its local IGC core
+    /// (<c>clintlib/appmsg.cpp:270-275</c> → <c>IshipIGC::HitTreasure</c>,
+    /// <c>shipIGC.h:1239-1305</c>); this port's renderer-only client has no
+    /// core, so the MonoGame head injects its parsed shop catalogue here. Null
+    /// (the plain-session default) makes a part offer decline with
+    /// <c>c_mountNA</c> — the part drops back into space, never silently
+    /// buffered forever.</summary>
+    public ITreasureMountSource? TreasureMountSource { get; set; }
+
+    /// <summary>P758 — send a real <c>FM_C_TREASURE_ACK(163)</c>: the client's
+    /// answer to an offered part treasure (<c>clintlib/appmsg.cpp:270-275</c>).
+    /// <paramref name="mount"/> is the chosen mount
+    /// (<see cref="TreasureMountPicker.PickMount"/>) or
+    /// <see cref="TreasureMountPicker.MountNA"/> to decline. The server merges/
+    /// mounts and broadcasts <c>ADD_PART(164)</c>, or re-creates the treasure on
+    /// a decline (<c>FedSrv.CPP:6094-6152</c>).</summary>
+    public void SendTreasureAck(sbyte mount)
+    {
+        var msg = new TreasureAck { MountId = unchecked((byte)mount) };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>P758 — the mount decision for an offered part treasure: run the
+    /// native <c>HitTreasure(c_tcPart, …)</c> search
+    /// (<see cref="TreasureMountPicker.PickMount"/>, <c>shipIGC.h:1239-1305</c>)
+    /// against the live own-ship loadout. Called from the receive loop with the
+    /// session gate held (Monitor is re-entrant on this thread), so reading the
+    /// world is safe. Without a mount source, or when the offered part or own
+    /// hull cannot be resolved, the offer is declined with
+    /// <see cref="TreasureMountPicker.MountNA"/> — the server re-creates the
+    /// treasure in space (<c>FedSrv.CPP:6125-6130</c>), never leaving the offer
+    /// buffered forever.</summary>
+    private sbyte PartOfferMount(AcquireTreasure offer)
+    {
+        var source = TreasureMountSource;
+        var world = _world;
+        if (source is null) return TreasureMountPicker.MountNA;
+        if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own))
+            return TreasureMountPicker.MountNA;
+        if (!source.TryGetHull(own.HullId, out var hull)
+            || !source.TryGetPart(offer.TreasureId, out var part))
+            return TreasureMountPicker.MountNA;
+        return TreasureMountPicker.PickMount(
+            hull, source.Core, part,
+            own.Loadout ?? Array.Empty<ExpandedPartData>(),
+            own.Cargo ?? Array.Empty<ExpandedPartData>(),
+            (short)offer.Amount);
+    }
+
     /// <summary>Send a real <c>FM_C_BUY_LOADOUT(4)</c> — what the native
     /// WinTrek client's Hangar screen "Launch" button sends. Same
     /// signature/semantics as <c>Bot.SendBuyLoadout</c>: <paramref name="parts"/>
@@ -1051,6 +1103,29 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         _world.Apply(QueuedCommandUpdate.Decode(m));
                         break;
 
+                    case AcquireTreasure.Fmid:
+                    {
+                        // P758 — FM_S_ACQUIRE_TREASURE(162): the server's
+                        // "you picked up a treasure" notice. Native's client
+                        // handler (appmsg.cpp:262-308) is in the CLIENT CORE, so
+                        // the reply lives here: a c_tcPart offer is answered
+                        // immediately with FM_C_TREASURE_ACK carrying the mount
+                        // native's HitTreasure picks (shipIGC.h:1239-1305).
+                        // Every code then drives the world (sounds + the
+                        // c_tcCash reward line).
+                        var acquire = AcquireTreasure.Decode(m);
+                        if (acquire.TreasureCode == (byte)TreasureCode.Part)
+                            SendTreasureAck(PartOfferMount(acquire));
+                        _world.Apply(acquire);
+                        break;
+                    }
+                    case WarpBomb.Fmid:
+                        // P758 — FM_S_WARP_BOMB(188): a missile hit an aleph; it
+                        // detonates at the carried deadline
+                        // (appmsg.cpp:850-868 — AddBomb + the sector-gated
+                        // "Aleph to %s destabilized" line).
+                        _world.Apply(WarpBomb.Decode(m));
+                        break;
                     case PlayerInfo.Fmid:
                         _world.Apply(PlayerInfo.Decode(m));
                         break;

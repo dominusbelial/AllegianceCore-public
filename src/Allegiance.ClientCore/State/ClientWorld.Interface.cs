@@ -187,4 +187,22 @@ public sealed partial class ClientWorld
         }
         LastDeparture = new(message.ShipId, message.Reason, message.Message, true);
     }
+
+    /// <summary>P758 — the booted player's own console/lobby message, the port
+    /// of native <c>trekigc.cpp:5265-5335</c> (the <c>QSR_*</c> →
+    /// <c>strMessage</c> switch in <c>OnQuitMission</c>). Returns <c>null</c>
+    /// for the reasons native deliberately leaves message-less (self-quit,
+    /// link-dead, side-switch/randomize, and the dynamic-message cases
+    /// duplicate-CDK/Steam-ban, which carry their text on the wire instead).
+    /// </summary>
+    public static string? OwnBootMessage(QuitSideReason reason) => reason switch
+    {
+        QuitSideReason.LeaderBooted => "You have been booted by your commander! You can rejoin the game by logging in with a different ASGS callsign.",
+        QuitSideReason.OwnerBooted => "You have been lobby booted by the mission owner!  You can rejoin the game by logging in with a different ASGS callsign.",
+        QuitSideReason.AdminBooted => "You have been booted by a server administrator!",
+        QuitSideReason.ServerShutdown => "The game has been shut down by an administrator.",
+        QuitSideReason.DuplicateRemoteLogon => "Someone used your zone account to log into another game.",
+        QuitSideReason.DuplicateLocalLogon => "Someone used your zone account to log into the game you were playing.",
+        _ => null,
+    };
 }

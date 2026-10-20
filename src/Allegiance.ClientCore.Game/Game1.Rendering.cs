@@ -843,10 +843,16 @@ public sealed partial class Game1
                 // against the ~190-unit rendered ship model). The real gameplay
                 // Radius is untouched everywhere else.
                 _drawWarps.Clear();
+                _warpBombRemaining.Clear();
                 lock (_session.Gate)
                 {
                     if (TrySceneSector(world, me, out short myWarpSector))
                     {
+                        // P758 — snapshot the live warp-bomb countdowns with
+                        // the same gate hold as the warp table itself.
+                        double serverNow = world.ServerClockSeconds;
+                        foreach (var (bombId, bomb) in world.WarpBombs)
+                            _warpBombRemaining[bombId] = bomb.ExplosionServerSeconds - serverNow;
                         foreach (var (_, wp) in world.Warps)
                         {
                             if (wp.ClusterId != myWarpSector) continue;
@@ -870,8 +876,14 @@ public sealed partial class Game1
                     // funnel (1.0 idle, no change when the glimpse/opt-in is off).
                     float funnelBoost = 1f + (Rendering.WarpRenderer.PeakFunnelBoost - 1f)
                                         * _warpPulses.Strength(wId, _gameSeconds);
+                    // P758 — a bombed aleph destabilizes (WARP_BOMB(188) →
+                    // AddBomb, appmsg.cpp:858-866): pulse the funnel red until
+                    // the carried detonation deadline.
+                    float destabilize = _warpBombRemaining.TryGetValue(wId, out double remaining)
+                        ? Rendering.WarpBombVisual.Pulse(remaining, _gameSeconds)
+                        : 0f;
                     _warpRenderer.Draw(wWorld, view, proj, dt,
-                        wRadius * Rendering.WarpRenderer.VisualScaleMultiplier, wTex, wId, funnelBoost);
+                        wRadius * Rendering.WarpRenderer.VisualScaleMultiplier, wTex, wId, funnelBoost, destabilize);
                 }
 
                 // P289 — stations. Same sector-filter discipline as the P218

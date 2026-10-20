@@ -330,8 +330,10 @@ public sealed partial class Game1
             && world.OwnMissionDeparture is { } departure)
         {
             _state = ClientState.Lobby;
-            _lobbyError = departure.Reason == QuitSideReason.LeaderBooted
-                ? "You have been removed from the mission by your team leader." : "You left the mission.";
+            // P758 — native OnQuitMission's QSR_* → strMessage switch
+            // (trekigc.cpp:5265-5335); message-less reasons fall back to a plain
+            // "You left the mission." lobby line.
+            _lobbyError = ClientWorld.OwnBootMessage(departure.Reason) ?? "You left the mission.";
             _session.Dispose();
         }
 

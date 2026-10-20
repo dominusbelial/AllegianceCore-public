@@ -128,6 +128,7 @@ public class ClientWorldSoundEventTests
     public void AcquireTreasure_RecordsPerTypePickupSound(byte code, ClientSoundEventKind expected)
     {
         var world = new ClientWorld();
+        world.Apply(new EnterGame());   // P758 — native gates ACQUIRE_TREASURE on IsInGame() (appmsg.cpp:264)
         world.Apply(new AcquireTreasure { TreasureCode = code, TreasureId = 501, Amount = 100 });
         Assert.Equal(expected, Assert.Single(world.TakeSoundEvents()).Kind);
     }
@@ -139,6 +140,7 @@ public class ClientWorldSoundEventTests
         // (native plays it server-side at the ship, shipIGC.h:1307; the client
         // ACQUIRE_TREASURE handler itself is silent, appmsg.cpp:267-276).
         var world = new ClientWorld();
+        world.Apply(new EnterGame());   // P758 — native gates ACQUIRE_TREASURE on IsInGame() (appmsg.cpp:264)
         world.Apply(new AcquireTreasure { TreasureCode = (byte)Allegiance.Core.TreasureCode.Part, TreasureId = 601, Amount = 1 });
         var ev = Assert.Single(world.TakeSoundEvents());
         Assert.Equal(ClientSoundEventKind.PickupPart, ev.Kind);

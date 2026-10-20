@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using Allegiance.Core;
+using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.Session;
@@ -345,6 +346,11 @@ public sealed partial class Game1
         // before the wire receive path starts.
         _session.World.LifepodHullResolver = ResolveLifepodHull;
         _session.World.PartTypeResolver = ResolveFlightPart;
+        // P758 — the part-treasure ack decision surface: the session answers a
+        // c_tcPart ACQUIRE_TREASURE offer with the native HitTreasure mount
+        // pick (shipIGC.h:1239-1305), resolved through the same loaded shop
+        // catalogue the docked screen uses.
+        _session.TreasureMountSource = new ShopCatalogMountSource(_shopCatalog);
         // P465b — cache the core's projectile-type table once (from the same
         // loaded core the shop catalogue reads) so the per-frame bolt gather can
         // style each bolt by its real type. Null when the core is missing →
@@ -972,5 +978,32 @@ public sealed partial class Game1
         return $"{cat.Hulls.Count} hulls, {cat.Parts.Count} parts, {ls.Count} launchers "
                + $"({Count(LauncherKind.Missile)} missile, {Count(LauncherKind.Mine)} mine, "
                + $"{Count(LauncherKind.Chaff)} chaff, {Count(LauncherKind.Probe)} probe)";
+    }
+
+    /// <summary>P758 — <see cref="Session.ConnectionSession.TreasureMountSource"/>
+    /// backed by the loaded shop catalogue: the client-side static-core lookup
+    /// the part-treasure ack decision runs against (the port's stand-in for
+    /// native's local IGC core, <c>clintlib/appmsg.cpp:270-275</c>). A null
+    /// catalogue declines every offer with <c>c_mountNA</c> (the part drops back
+    /// into space — never silently buffered).</summary>
+    private sealed class ShopCatalogMountSource(Rendering.ShopCatalog? catalog) : ITreasureMountSource
+    {
+        public StaticCore? Core => catalog?.Core;
+        public bool TryGetHull(short hullId, out DataHullTypeIGC hull)
+        {
+            hull = default;
+            if (catalog is null) return false;
+            foreach (var h in catalog.Hulls)
+                if (h.HullId == hullId) { hull = h; return true; }
+            return false;
+        }
+        public bool TryGetPart(short partTypeId, out DataPartTypeIGC part)
+        {
+            part = default;
+            if (catalog is null) return false;
+            foreach (var p in catalog.Parts)
+                if (p.PartId == partTypeId) { part = p; return true; }
+            return false;
+        }
     }
 }

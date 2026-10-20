@@ -171,13 +171,14 @@ public sealed class WarpRenderer : IDisposable
     /// name="warpId"/> keys the transit-swell timeline.
     /// </summary>
     public void Draw(Matrix world, Matrix view, Matrix projection, double deltaSeconds,
-        float worldRadius, string textureName, short warpId, float funnelBoost = IdleFunnelBoost)
+        float worldRadius, string textureName, short warpId, float funnelBoost = IdleFunnelBoost,
+        float destabilize = 0f)
     {
         _time += (float)Math.Max(0.0, deltaSeconds);
 
         // --- Funnel: textured double-horn vortex ---------------------------------
         int tier = SelectLodTier(world, projection, worldRadius);
-        UpdateFunnelVertices(tier, _time, funnelBoost);
+        UpdateFunnelVertices(tier, _time, funnelBoost, destabilize);
         var nativeTexture = FunnelTexture(textureName);
         string? stem = _funnelStems.GetValueOrDefault(textureName);
         _effect.Texture = stem is null ? nativeTexture : _hd.EmissiveTexture(stem) ?? nativeTexture;
@@ -246,7 +247,7 @@ public sealed class WarpRenderer : IDisposable
         _batcher.Draw(items, tex, view, projection);
     }
 
-    private void UpdateFunnelVertices(int tier, float time, float funnelBoost)
+    private void UpdateFunnelVertices(int tier, float time, float funnelBoost, float destabilize = 0f)
     {
         var mesh = _lodMeshes[tier];
         var pos = mesh.Positions;
@@ -259,6 +260,10 @@ public sealed class WarpRenderer : IDisposable
         float timeFlow = (time / 10f) % 1f;
         if (timeFlow < 0f) timeFlow += 1f;
         float boost = Math.Clamp(funnelBoost, 0f, 8f);
+        // P758 — a destabilized (bombed) aleph burns red-hot: the red channel is
+        // driven up and green/blue down with the WarpBombVisual pulse strength,
+        // the port of native's bomb art swap (appmsg.cpp:858-866 AddBomb).
+        float d = Math.Clamp(destabilize, 0f, 1f);
 
         for (int vi = 0; vi < n; vi++)
         {
@@ -266,6 +271,12 @@ public sealed class WarpRenderer : IDisposable
             // (clamped at 255/channel) so the additive funnel burns brighter
             // during an opt-in transit pulse; 1.0 leaves the native look intact.
             float r = col[vi * 4] * boost, g = col[vi * 4 + 1] * boost, b = col[vi * 4 + 2] * boost;
+            if (d > 0f)
+            {
+                r = MathF.Min(1f, r + d * (1f - r));
+                g *= 1f - 0.75f * d;
+                b *= 1f - 0.75f * d;
+            }
             v[vi] = new VertexPositionColorTexture(
                 new Vector3(pos[vi * 3], pos[vi * 3 + 1], pos[vi * 3 + 2]),
                 new Color(Math.Clamp(r, 0f, 1f), Math.Clamp(g, 0f, 1f), Math.Clamp(b, 0f, 1f), col[vi * 4 + 3]),   // colours are floats in [0,1] (WarpMesh.Colors)
