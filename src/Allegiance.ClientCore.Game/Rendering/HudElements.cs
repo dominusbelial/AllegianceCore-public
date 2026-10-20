@@ -299,20 +299,49 @@ public static class HudElements
                     case "Chat composition and recipient":
                         element = element with { Available = c.Chat is not null, Visible = model.Visible && c.Chat?.Composing == true, Text = c.Chat is { } compose ? compose.Recipient + compose.Input : null }; break;
                     case "Flight equipment inventory pane":
-                        element = element with { Available = true, Visible = model.FlightVisible && c.InventoryVisible }; break;
+                        Inv(c.InventoryPane?.ShipName, c.InventoryPane is not null); break;
                     case "Equipment part identity and key":
-                        element = element with { Available = f?.WeaponSystems.Count > 0,
-                            Visible = instrument && f?.WeaponSystems.Count > 0,
-                            Text = f is { } identity ? string.Join("; ", identity.WeaponSystems.Select(w => w.Name)) : null }; break;
+                        InvText(Join(Rows().Where(r => r.Key.Length > 0).Select(r => $"{r.Key} {r.Name}"))); break;
                     case "Equipment selected and active state":
-                        element = element with { Available = f is not null, Visible = instrument,
-                            Text = c.FlightPartsLine }; break;
+                        InvText(Join(Rows().Where(r => r.Selected || r.Active).Select(r => $"{r.Key}{r.Name}"))); break;
                     case "Equipment quantity and empty warning":
-                        element = element with { Available = f?.WeaponSystems.Count > 0,
-                            Visible = instrument && f?.WeaponSystems.Count > 0,
-                            Text = f is { } weapons ? string.Join("; ", weapons.WeaponSystems.Select(w => $"{w.MountId}:{w.Name} {w.Ammo}/{w.CapacityAmmo}")) : null }; break;
+                        InvText(Join(Rows().Where(r => r.OutOfAmmo || r.Quantity is not null)
+                            .Select(r => r.OutOfAmmo ? $"A {r.Name}" : $"{r.Name} x{r.Quantity:0.####}"))); break;
+                    case "Equipment mounting progress":
+                    {
+                        var row = Rows().FirstOrDefault(r => r.ReadyState == 1);
+                        Inv(row.StatsText, row.ReadyState == 1, row.MountedFraction); break;
+                    }
+                    case "Launcher arming progress":
+                    {
+                        var row = Rows().FirstOrDefault(r => r.ReadyState == 2);
+                        Inv(row.StatsText, row.ReadyState == 2, row.ArmedFraction); break;
+                    }
+                    case "Equipment weapon range":
+                        InvText(Join(Rows().Where(r => r.IsWeapon).Select(r => r.StatsText))); break;
+                    case "Equipment shot damage":
+                        InvText(Join(Rows().Where(r => r.IsWeapon).Select(r => r.StatsText))); break;
+                    case "Equipment burst rate":
+                        InvText(Join(Rows().Where(r => r.IsWeapon).Select(r => r.StatsText))); break;
+                    case "Equipment shield strength":
+                        InvText(Join(Rows().Where(r => r.Kind == HudInventoryRowKind.Shield).Select(r => r.StatsText))); break;
+                    case "Equipment shield recharge seconds":
+                        InvText(Join(Rows().Where(r => r.Kind == HudInventoryRowKind.Shield).Select(r => r.StatsText))); break;
+                    case "Equipment afterburner top speed":
+                        InvText(Join(Rows().Where(r => r.Kind == HudInventoryRowKind.Afterburner).Select(r => r.StatsText))); break;
+                    case "Equipment afterburner endurance":
+                        InvText(Join(Rows().Where(r => r.Kind == HudInventoryRowKind.Afterburner).Select(r => r.StatsText))); break;
+                    case "Equipment cloak endurance":
+                        InvText(Join(Rows().Where(r => r.Kind == HudInventoryRowKind.Cloak).Select(r => r.StatsText))); break;
+                    case "Inventory turret gunner identity":
+                        Inv(null, false); break;
                     case "Inventory cargo slots":
-                        element = element with { Available = c.CargoLine is not null, Visible = model.FlightVisible && c.CargoLine is not null, Text = c.CargoLine }; break;
+                        InvText(Join(Rows().Where(r => r.Kind is HudInventoryRowKind.Cargo or HudInventoryRowKind.EmptyCargo)
+                            .Select(r => r.Quantity is { } q ? $"{r.Key}{r.Name} x{q:0.####}" : $"{r.Key}{r.Name}"))); break;
+                    case "Inventory own ship name":
+                        Inv(c.InventoryPane?.ShipName, !string.IsNullOrEmpty(c.InventoryPane?.ShipName)); break;
+                    case "Equipment empty slot affordances":
+                        InvText(Join(Rows().Where(r => r.IsEmpty).Select(r => $"{r.Key}{r.Name}"))); break;
                     case "Command view ship summary":
                         element = element with { Available = c.CommandLines.Count > 0,
                             Visible = model.Visible && c.CommandLines.Count > 0, Text = string.Join("\n", c.CommandLines) }; break;
@@ -357,6 +386,16 @@ public static class HudElements
                     element = element with { Available = tips.Count > 0, Visible = model.Visible && tips.Count > 0,
                         Text = string.Join("\n", tips) };
                 }
+            }
+            bool InvVisible() => model.FlightVisible && c.InventoryVisible && c.InventoryPane is { Rows.Count: > 0 };
+            IReadOnlyList<HudInventoryRow> Rows() => c.InventoryPane?.Rows ?? Array.Empty<HudInventoryRow>();
+            void Inv(string? text, bool available, float? value = null) => element = element with
+            { Available = available, Visible = InvVisible() && available, Text = text, Value = value };
+            void InvText(string? text) => Inv(text, text is not null);
+            static string? Join(IEnumerable<string?> parts)
+            {
+                var present = parts.Where(p => p is not null).ToArray();
+                return present.Length == 0 ? null : string.Join("; ", present);
             }
         }
         return result.AsReadOnly();

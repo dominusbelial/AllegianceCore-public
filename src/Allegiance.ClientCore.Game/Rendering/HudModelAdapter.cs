@@ -22,6 +22,7 @@ public static class HudModelAdapter
         IReadOnlyList<HudContact>? contacts = null, float radarPulse = 0f,
         HudConsoleText? console = null,
         Vector2? velocityMarker = null, Vector2? chaseAim = null, HudOrderArrows? orderArrows = null,
+        HudInventoryPane? inventoryPane = null,
         HudTargetPane? targetPane = null, bool roundRadar = false)
         => HudModel.Create(frame, new HudContext
         {
@@ -43,6 +44,7 @@ public static class HudModelAdapter
             CargoLine = cargoLine, FlightPartsLine = flightPartsLine,
             CommandLines = commandLines ?? Array.Empty<string>(), InventoryVisible = inventoryVisible,
             Console = console,
+            InventoryPane = inventoryPane,
             Contacts = contacts ?? Array.Empty<HudContact>()
         });
 

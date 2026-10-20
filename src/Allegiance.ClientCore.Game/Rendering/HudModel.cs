@@ -132,6 +132,11 @@ public sealed record HudContext
     public string? FlightPartsLine { get; init; }
     public IReadOnlyList<string> CommandLines { get; init; } = Array.Empty<string>();
     public bool InventoryVisible { get; init; }
+    /// <summary>HUD-7 — the resolved native flight equipment/inventory pane
+    /// (own ship name + ordered rows). Null when it cannot be resolved (no
+    /// hull/catalogue); the renderers then draw nothing rather than inventing
+    /// rows.</summary>
+    public HudInventoryPane? InventoryPane { get; init; }
 }
 
 /// <summary>A renderer-independent snapshot of one HUD frame. HudFrame is the
@@ -222,7 +227,8 @@ public sealed class HudModel
                 OrdinaryTips = Array.AsReadOnly(console.OrdinaryTips.ToArray()),
                 CriticalTips = Array.AsReadOnly(console.CriticalTips.ToArray())
             } : null,
-            CommandLines = Array.AsReadOnly(context.CommandLines.ToArray())
+            CommandLines = Array.AsReadOnly(context.CommandLines.ToArray()),
+            InventoryPane = context.InventoryPane is { } pane ? pane with { Rows = Array.AsReadOnly(pane.Rows.ToArray()) } : null
         };
         var gauges = new List<HudGauge>();
         if (Telemetry is { } f)

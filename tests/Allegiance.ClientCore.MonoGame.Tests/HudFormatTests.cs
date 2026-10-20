@@ -167,4 +167,33 @@ public class HudFormatTests
     {
         Assert.Equal("-$42", HudFormat.FormatMoney(-42));
     }
+
+    // ── Measured text fit (HUD-7) ─────────────────────────────────────────
+
+    private static float CharWidth(string s) => s.Length;   // 1 unit per glyph
+
+    [Fact]
+    public void FitToWidth_KeepsTextThatAlreadyFits()
+    {
+        Assert.Equal("SRM Dumbfire 3", HudFormat.FitToWidth("SRM Dumbfire 3", CharWidth, 100f));
+    }
+
+    [Fact]
+    public void FitToWidth_TruncatesWithEllipsis_WhenWiderThanTheColumn()
+    {
+        // Column 10 units wide: "SRM Dum..." is 10 glyphs (7 prefix + 3 dots).
+        Assert.Equal("SRM Dum...", HudFormat.FitToWidth("SRM Dumbfire 3", CharWidth, 10f));
+    }
+
+    [Fact]
+    public void FitToWidth_NeverReturnsBareEmptyForNonEmptyText()
+    {
+        Assert.Equal("...", HudFormat.FitToWidth("5 / 1125m / 150", CharWidth, 0f));
+    }
+
+    [Fact]
+    public void FitToWidth_EmptyInput_StaysEmpty()
+    {
+        Assert.Equal("", HudFormat.FitToWidth("", CharWidth, 5f));
+    }
 }

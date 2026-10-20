@@ -1,0 +1,41 @@
+{
+  "assets": [
+    {
+      "scenario": "flight inventory (F4 open)",
+      "style": "Classic",
+      "resolution": "1920x1080",
+      "webp": "1920x1080-inventory-Classic.webp",
+      "webp_sha256": "f5ef183216eefc724ce5bd2b62b1abdf5e3f8d641ae2e9149eb15c17bc030125",
+      "source_png": "~/allegiance-evidence/HUD7b/1920x1080-inventory-Classic/proof_t008.0_sFejfar_ccockpit.png",
+      "source_png_sha256": "f9da6324445c22ac0515459ca751aba179535d229fc4e26bd3f61c2202ac5de9"
+    },
+    {
+      "scenario": "flight inventory (F4 open)",
+      "style": "Modern",
+      "resolution": "1920x1080",
+      "webp": "1920x1080-inventory-Modern.webp",
+      "webp_sha256": "5ca8cac84d84738b537e9757b504768b07e2e4379a68b9eb5b71784b11f60e59",
+      "source_png": "~/allegiance-evidence/HUD7b/1920x1080-inventory-Modern/proof_t008.0_sFejfar_ccockpit.png",
+      "source_png_sha256": "cb19458a8cd019d724ee21a958682d43462505f326de54042b26b8063ddfa073"
+    },
+    {
+      "scenario": "flight inventory (F4 open)",
+      "style": "Classic",
+      "resolution": "2560x1440",
+      "webp": "2560x1440-inventory-Classic.webp",
+      "webp_sha256": "ddb536671de4d1d429e5eb5c89943224b26b9bce2f821f0809b00c7a7a0c1501",
+      "source_png": "~/allegiance-evidence/HUD7b/2560x1440-inventory-Classic/proof_t008.0_sFejfar_ccockpit.png",
+      "source_png_sha256": "68b30ba3769d619c2d56d35314c998a0e89e043f09c2950aecda469c3826a96f"
+    },
+    {
+      "scenario": "flight inventory (F4 open)",
+      "style": "Modern",
+      "resolution": "2560x1440",
+      "webp": "2560x1440-inventory-Modern.webp",
+      "webp_sha256": "c07bc86e02570cd395ea90be491ac008fbc381a2012872e6d4dc41956daae1e7",
+      "source_png": "~/allegiance-evidence/HUD7b/2560x1440-inventory-Modern/proof_t008.0_sFejfar_ccockpit.png",
+      "source_png_sha256": "74691e3b0dd7a7844e918d4f5fb41fe4eebd4d9861e82a519bd91469fd134fc6"
+    }
+  ],
+  "note": "real windowed clients, local server m2scatter.igc/PCore001.igc, --auto-launch \"Adv Fighter\" --auto-inventory --autoshots 6,7,8; representative shot t008.0; raw PNGs/logs: ~/allegiance-evidence/HUD7b/"
+}

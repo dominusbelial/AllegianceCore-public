@@ -197,12 +197,10 @@ public sealed partial class Game1
             foreach (var group in _session.World.ScoreRoster.GroupBy(e => e.SideId).OrderBy(g => g.Key))
                 lines.Add(new(TeamPaneLayout.LineKind.SideHeader, $"SIDE {group.Key}: {(_session.World.IsSideActive(group.Key) ? "ACTIVE" : "ELIMINATED")}  PILOTS {group.Count()}  KILLS {group.Sum(e => e.Kills)}"));
         }
-        if (_consolePanes.Inventory && !_dockedActive)
-        {
-            lines.Add(new(TeamPaneLayout.LineKind.Title, "INVENTORY"));
-            foreach (var part in OwnInventory()) lines.Add(new(TeamPaneLayout.LineKind.Pilot,
-                $"{ResolveFlightPart(part.PartId)?.Name ?? $"part {part.PartId}"}  MOUNT {unchecked((sbyte)part.MountId)}  x{part.Amount}", _inventorySelection == part));
-        }
+        // HUD-7 — the centre team-pane "INVENTORY" list is gone: F4 now shows
+        // only the native bottom-right equipment pane (the native mask
+        // ofInventory, dialog.mdl:5237). The old list duplicated the pane and
+        // covered the gauges, so it is no longer drawn here.
         if (lines.Count > 0) _teamPaneRenderer.Draw(GraphicsDevice.Viewport, lines);
     }
     private void DrawMainMenu()

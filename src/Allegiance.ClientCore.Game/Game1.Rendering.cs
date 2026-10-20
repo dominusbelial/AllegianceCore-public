@@ -2521,6 +2521,7 @@ public sealed partial class Game1
         if (LocalSpectating) return HudModelAdapter.Create(null, _cameraMode, hidden: true);   // SP-5: no pilot HUD while spectating
         var world = _session.World;
         HudFrame? frame = null;
+        HudInventoryPane? inventoryPane = null;
         bool hudDocked = _dockedActive, hudDead = false;
         lock (_session.Gate)
         {
@@ -2594,6 +2595,13 @@ public sealed partial class Game1
                 // flight never buys one) — the HUD panel then draws nothing.
                 if (_weaponFrameShipId != me) { _weaponReloadTracker.Reset(); _weaponFrameShipId = me; }
                 var weaponRows = BuildWeaponStatusRows(entity, up.AmmoFraction);
+
+                // HUD-7 — the native flight equipment/inventory pane (F4). Built
+                // only while the pane is actually shown (native rebuilds on
+                // loadout/cluster change, inventoryimage.cpp:356-393 — never
+                // every frame); the model's InventoryVisible flag gates the draw.
+                if (HudInventoryPaneBuilder.ShouldBuild(_consolePanes.Inventory, entity.StationId >= 0, entity.IsDead))
+                    inventoryPane = BuildInventoryPane(entity, up);
 
                 // P377 — is the LOCAL ship an actively-drifting Lifepod whose
                 // oxygen is genuinely burning? (lifepod capability from the own
@@ -2721,6 +2729,7 @@ public sealed partial class Game1
                 ChatTargetLogic.ComposeLabel(_chatTarget), ChatPaneFilterLabel()),
             cargoLine: BuildCargoHudText(), flightPartsLine: BuildFlightPartsHudText(),
             commandLines: BuildCommandHudLines(), inventoryVisible: _consolePanes.Inventory,
+            inventoryPane: inventoryPane,
             lastBaseObjectives: _lastBaseHud, hitConfirmation: _nowSeconds < _hudHitUntil,
             console: BuildConsoleText(),
             podReturnInstruction: $"{KeyOf("TargetFriendlyBaseNearest").Label} / {KeyOf("ToggleAutopilot").Label} AUTOPILOT TO BASE",

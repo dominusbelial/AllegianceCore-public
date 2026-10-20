@@ -321,10 +321,18 @@ public sealed partial class Game1
     private bool _autoHighlightSent;
     private bool _autoHighlightConfirmed;
     private short _autoHighlightId;
+    private bool _autoInventoryOpened;
     private void ApplyAutoProofFlying()
     {
         if (_autoPlan.AutoFlightParts) ApplyAutoFlightParts();
         if (_autoPlan.AutoParityCommands) ApplyAutoParityCommands();
+        // HUD-7 — open the native flight equipment/inventory pane (F4) once,
+        // then leave it open for the scheduled autoshots.
+        if (_autoPlan.AutoInventory && !_autoInventoryOpened && (_auto?.SecondsSinceLaunch ?? 0) >= 1)
+        {
+            ApplyConsoleMode("ConModeInventory");
+            _autoInventoryOpened = true;
+        }
         if (!_autoCommandOrientationReady && _autoPlan.Camera is "command" or "commandtd")
         {
             _commandCamera.TopDown = _autoPlan.Camera == "commandtd";

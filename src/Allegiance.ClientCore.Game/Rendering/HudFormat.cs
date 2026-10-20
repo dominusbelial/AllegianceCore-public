@@ -108,6 +108,28 @@ public static class HudFormat
         ((int)(v + 0.5f)).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     /// <summary>
+    /// HUD-7 — fit a string to a measured width by truncating with an ellipsis
+    /// (binary search, same recipe as <c>HudRenderer.DrawMeasuredText</c>). The
+    /// caller supplies the measurement function so this stays free of MonoGame
+    /// types and is unit-testable headless. The full value is retained by the
+    /// model; only the glyphs presented are clipped. An empty/oversized target
+    /// yields <c>"..."</c> (never a bare empty string for non-empty input).
+    /// </summary>
+    public static string FitToWidth(string text, Func<string, float> measure, float maxWidth)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        if (measure(text) <= maxWidth) return text;
+        int lo = 0, hi = text.Length;
+        while (lo < hi)
+        {
+            int mid = (lo + hi + 1) / 2;
+            if (measure(text[..mid] + "...") <= maxWidth) lo = mid;
+            else hi = mid - 1;
+        }
+        return text[..lo] + "...";
+    }
+
+    /// <summary>
     /// P442 — format a player's money the way native presents it: a dollar
     /// sign followed by the plain decimal integer (native formats money with
     /// <c>wsprintf(cbTemp, "%d", pplayer->GetMoney())</c>,

@@ -86,6 +86,7 @@ public sealed partial class Game1 : Game
     private Rendering.TargetPaneTextures _targetPaneTextures = null!;   // HUD-3 — native target-pane bitmaps
     private Rendering.FeedbackTextures _feedbackTextures = null!;   // P578 — eject-pod panel + death banner art
     private Rendering.StatusTextures _statusTextures = null!;   // HUD-6 — own-ship status icons
+    private Rendering.InventoryPaneTextures _inventoryTextures = null!;   // HUD-7 — inventory pane art
     // P252 — per-asteroid client-side spin state, keyed by AsteroidId so each
     // rock rotates about its own wire axis at its own wire rate (real
     // m2xspiderw data gives every rock a distinct rate — never lockstep).
@@ -1778,6 +1779,7 @@ public sealed partial class Game1 : Game
         _targetPaneTextures?.Dispose();   // HUD-3 — release the native target-pane bitmaps
         _feedbackTextures?.Dispose();   // P578 — release the eject-pod panel / death banner art
         _statusTextures?.Dispose();   // HUD-6 — release the own-ship status icons
+        _inventoryTextures?.Dispose();   // HUD-7 — release the inventory-pane art
         _warpRenderer?.Dispose();
         _projectileRenderer?.Dispose();
         _projectileSpriteRenderer?.Dispose();

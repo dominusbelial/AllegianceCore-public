@@ -52,6 +52,8 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         _scale = scale;
         var (mx, my, mw, mh) = MinimapGeometry.CornerPanel(viewport.Width, viewport.Height);
         Layout.Reserve(new((int)mx, (int)my, (int)mw, (int)mh));
+        if (model.FlightVisible && model.Context.InventoryVisible && model.Context.InventoryPane is { Rows.Count: > 0 } pane)
+            Layout.Reserve(InventoryPaneLayout.ReserveRect(pane.Rows.Count, viewport.Width, viewport.Height));
         float spread = Math.Clamp(viewport.Height / 680f, 1.15f, 2.1f);
         foreach (var gauge in model.Gauges.Where(g => g.Visible))
         {
@@ -334,6 +336,94 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             top = box.Bottom + 4;
         }
     }
+    /// <summary>HUD-7 — the native flight equipment/inventory pane in the
+    /// HUD-2 style: a geometric panel at the same SideBottomRight anchor, with
+    /// measured SDF text and thin progress bars honouring the HUD size and the
+    /// colour-blind-safe palette.</summary>
+    protected override void DrawInventoryPane(HudInventoryPane pane, HudModel model, Viewport viewport)
+    {
+        float w = viewport.Width, h = viewport.Height;
+        int rowCount = pane.Rows.Count;
+        float s = InventoryPaneLayout.Scale(h);
+        float left = InventoryPaneLayout.LeftX(w, h);
+        float top = InventoryPaneLayout.TopY(rowCount, w, h);
+        float lineW = InventoryPaneLayout.LineWidth * s;
+        float capH = InventoryPaneLayout.CapHeight * s;
+        float rowH = InventoryPaneLayout.RowHeight * s;
+        float totalH = capH * 2f + rowH * rowCount;
+
+        var panel = new Color(0.02f, 0.055f, 0.06f, 0.82f);
+        FillRect(left - 6 * _scale, top - 6 * _scale, lineW + 12 * _scale, totalH + 12 * _scale, panel);
+        FillRect(left - 6 * _scale, top - 6 * _scale, 2 * _scale, totalH + 12 * _scale, Accent * 0.6f);
+        OutlineRect(left - 6 * _scale, top - 6 * _scale, lineW + 12 * _scale, totalH + 12 * _scale, Muted * 0.35f);
+
+        if (pane.ShipName.Length > 0)
+        {
+            var nameSize = _small.MeasureString(pane.ShipName) * _scale;
+            RenderText(_small, pane.ShipName,
+                new(left + MathF.Max(0f, (lineW - nameSize.X) / 2f), top + capH * 0.5f - nameSize.Y * 0.5f), Color.White, _scale);
+        }
+
+        float rowTop = top + capH;
+        foreach (var row in pane.Rows)
+        {
+            DrawModernInventoryRow(row, left, rowTop, s);
+            rowTop += rowH;
+        }
+        Mark("Flight equipment inventory pane", "Equipment part identity and key",
+            "Equipment selected and active state", "Equipment quantity and empty warning",
+            "Equipment mounting progress", "Launcher arming progress", "Equipment weapon range",
+            "Equipment shot damage", "Equipment burst rate", "Equipment shield strength",
+            "Equipment shield recharge seconds", "Equipment afterburner top speed",
+            "Equipment afterburner endurance", "Equipment cloak endurance",
+            "Inventory turret gunner identity", "Inventory cargo slots", "Inventory own ship name",
+            "Equipment empty slot affordances");
+    }
+
+    private void DrawModernInventoryRow(HudInventoryRow row, float left, float rowTop, float s)
+    {
+        float rowH = InventoryPaneLayout.RowHeight * s;
+        float textY = rowTop + 1.5f * _scale;
+        var white = Color.White;
+        var grey = new Color(162, 189, 201);
+        var yellow = new Color(255, 235, 120);
+
+        Color keyColor = row.Active ? yellow : row.IsEmpty ? grey : white;
+        if (row.Key.Length > 0)
+            RenderText(_small, row.Key, new(left + InventoryPaneLayout.KeyX * s, textY), keyColor, _scale);
+
+        Color nameColor = row.Selected ? white : row.IsEmpty ? grey : new Color(224, 236, 238);
+        if (row.Name.Length > 0)
+        {
+            float nameMax = Math.Max(0f, (InventoryPaneLayout.StatsX - InventoryPaneLayout.NameX - 2f) * s);
+            RenderText(_small, FitText(row.Name, nameMax, _scale),
+                new(left + InventoryPaneLayout.NameX * s, textY), nameColor, _scale);
+        }
+
+        if (row.OutOfAmmo)
+            RenderText(_small, "A", new(left + InventoryPaneLayout.AmmoX * s, textY), Alert, _scale);
+
+        if (row.ReadyState is 1 or 2)
+        {
+            float bx = left + InventoryPaneLayout.StatsX * s;
+            float by = rowTop + 2f * _scale;
+            float bw = 64f * s;
+            float bh = 14f * s;
+            FillRect(bx, by, bw, bh, new Color(0f, 0f, 0f, 0.7f));
+            float frac = HudFormat.Clamp01(row.MountedFraction);
+            if (frac > 0f)
+                FillRect(bx + 1f, by + 1f, (bw - 2f) * frac, bh - 2f,
+                    row.ReadyState == 2 ? new Color(140, 220, 150) : new Color(200, 205, 210));
+            OutlineRect(bx, by, bw, bh, Muted * 0.4f);
+        }
+        else if (row.StatsText is { } stats)
+        {
+            float statsMax = Math.Max(0f, (InventoryPaneLayout.LineWidth - InventoryPaneLayout.StatsX - 3f) * s);
+            RenderText(_small, FitText(stats, statsMax, _scale),
+                new(left + InventoryPaneLayout.StatsX * s, textY), white, _scale);
+        }
+    }
+
     private void DrawModelOverlays(HudModel model, Viewport viewport)
     {
         float w = viewport.Width, h = viewport.Height, line = (_small.LineSpacing + 5) * _scale;
@@ -375,10 +465,8 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         {
             string radar = $"RADAR {RadarLod.Label(model.Context.RadarMode)}";
             DrawMeasuredText(_small, radar, new(20, h - 54 * _scale), Muted, centerAtScale: false, maxWidth: leftWidth);
-            if (model.Context.InventoryVisible) DrawMeasuredText(_small, "EQUIPMENT", new(w - 250 * _scale, h - 200 * _scale), Muted);
             if (model.Context.CargoLine is { } cargo) { DrawMeasuredText(_small, cargo, new(20, h - 132 * _scale), Muted, centerAtScale: false, maxWidth: leftWidth); Mark("Inventory cargo slots"); }
             if (model.Context.FlightPartsLine is { } parts) { DrawMeasuredText(_small, parts, new(20, h - 158 * _scale), Accent, centerAtScale: false, maxWidth: leftWidth); }
-            if (model.Context.InventoryVisible) Mark("Flight equipment inventory pane");
         }
         float commandY = 60;
         foreach (var command in model.Context.CommandLines)

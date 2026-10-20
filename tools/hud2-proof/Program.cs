@@ -31,7 +31,9 @@ sealed class Proof : Game
         var status = Directory.Exists(artwork) ? StatusTextures.Load(GraphicsDevice, artwork) : null;
         var indicators = Directory.Exists(artwork) ? IndicatorTextures.Load(GraphicsDevice, artwork) : null;
         var settings = new HudSettings();
-        using var modern = new ModernHudRenderer(batch, white, small, big, settings, Content.Load<SpriteFont>("HUDModern"));
+        var modernOutline = Content.Load<SpriteFont>("HUDModern");
+        var modernSmall = Metrics(modernOutline, .25f);   // ModernHudRenderer's measured _small
+        using var modern = new ModernHudRenderer(batch, white, small, big, settings, modernOutline);
         var classic = new HudRenderer(batch, white, small, big, gauges, statusTextures: status, indicators: indicators);
         var radar = new RadarBracketRenderer(batch, white);   // HUD-4 — classic radar path (the real client draws this separately)
         var summaries = new List<object>();
@@ -39,7 +41,7 @@ sealed class Proof : Game
         foreach (float size in new[] { .75f, 1f, 1.5f })
         {
             settings.Size = size; settings.ColorBlindSafe = size == 1.5f;
-            foreach (string scenario in new[] { "flight", "chat-stress", "combat", "critical", "chase", "docked", "lifepod", "dead", "command", "hidden", "radar-All", "radar-Default", "radar-Target", "radar-Minimal" })
+            foreach (string scenario in new[] { "flight", "chat-stress", "combat", "critical", "chase", "docked", "lifepod", "dead", "command", "hidden", "inventory", "systems", "radar-All", "radar-Default", "radar-Target", "radar-Minimal" })
             {
                 var model = Scenario(scenario, width, height);
                 using var target = new RenderTarget2D(GraphicsDevice, width, height);
@@ -90,6 +92,13 @@ sealed class Proof : Game
                             RequireBox(boxes, "Vote: Mutiny against the commander? (Y/N)", 109);
                         RequireBox(boxes, "Ripcord in: 9", 525, 885);
                     }
+                    float renderScale = renderer == modern ? Math.Clamp(height / 1080f * settings.Size, .5f, 4) : 1f;
+                    RequireInventoryColumnsFit(model, renderer == modern ? modernSmall : small, width, height, renderScale);
+                    bool inventoryPaneUp = model.Context.InventoryVisible && model.Context.InventoryPane is { Rows.Count: > 0 };
+                    if (inventoryPaneUp)
+                        Require(!boxes.Any(b => b.Text == "SYSTEMS"), $"{scenario} SYSTEMS list must hide while the inventory pane is up");
+                    if (scenario == "systems")
+                        Require(boxes.Any(b => b.Text == "SYSTEMS"), "SYSTEMS list should draw when the inventory pane is hidden");
                     if (renderer == modern)
                     {
                         var missing = model.Elements.Where(e => e.Visible && !modern.DrawnElements.Contains(e.Id)).Select(e => e.Id).ToArray();
@@ -98,7 +107,7 @@ sealed class Proof : Game
                         if (!model.Visible) Require(boxes.Count == 0, "hidden text");
                         if (model.Visible) Require(boxes.Count > 0, "blank visible frame");
                     }
-                    if (_capture && size == 1 && width >= 1920 && (scenario is "critical" or "combat" || scenario.StartsWith("radar-")))
+                    if (_capture && size == 1 && width >= 1920 && (scenario is "critical" or "combat" or "inventory" || scenario.StartsWith("radar-")))
                     {
                         using var file = File.Create(Path.Combine(_out, $"{scenario}-{width}x{height}-{(renderer == modern ? "Modern" : "Classic")}.png"));
                         target.SaveAsPng(file, width, height);
@@ -123,6 +132,43 @@ sealed class Proof : Game
             Require(matches.Any(b => Math.Abs(b.Bounds.Top - top) <= 2),
                 $"{text} top mismatch: " + string.Join(", ", matches.Select(b => b.Bounds.Top)));
     }
+
+    /// <summary>The same sprite-font metric scaling ModernHudRenderer applies to
+    /// its outline source so the column-fit assertion measures the SAME glyphs.</summary>
+    static SpriteFont Metrics(SpriteFont source, float scale)
+    {
+        var glyphs = source.GetGlyphs().Values.OrderBy(g => g.Character).ToArray();
+        return new SpriteFont(source.Texture, glyphs.Select(g => g.BoundsInTexture).ToList(),
+            glyphs.Select(g => new Rectangle((int)MathF.Round(g.Cropping.X * scale), (int)MathF.Round(g.Cropping.Y * scale), (int)MathF.Round(g.Cropping.Width * scale), (int)MathF.Round(g.Cropping.Height * scale))).ToList(),
+            glyphs.Select(g => g.Character).ToList(), (int)MathF.Round(source.LineSpacing * scale), source.Spacing * scale,
+            glyphs.Select(g => new Vector3(g.LeftSideBearing, g.Width, g.RightSideBearing) * scale).ToList(), source.DefaultCharacter);
+    }
+
+    /// <summary>HUD-7 — prove the inventory pane's name/stats columns clip inside
+    /// the pane rectangle using the SAME public fit helper + real font metrics,
+    /// independent of the renderer's internal call. This is the objective
+    /// replacement for eyeballing the captured PNGs.</summary>
+    static void RequireInventoryColumnsFit(HudModel model, SpriteFont small, int w, int h, float renderScale)
+    {
+        if (model.Context.InventoryPane is not { Rows.Count: > 0 } pane) return;
+        float s = InventoryPaneLayout.Scale(h);
+        foreach (var row in pane.Rows)
+        {
+            if (row.Name.Length > 0)
+            {
+                float nameMax = (InventoryPaneLayout.StatsX - InventoryPaneLayout.NameX - 2f) * s;
+                string name = HudFormat.FitToWidth(row.Name, t => small.MeasureString(t).X * renderScale, nameMax);
+                Require(small.MeasureString(name).X * renderScale <= nameMax + .01f, $"inventory name '{row.Name}' exceeds its column at {w}x{h}");
+            }
+            if (row.StatsText is { } stats)
+            {
+                float statsMax = (InventoryPaneLayout.LineWidth - InventoryPaneLayout.StatsX - 3f) * s;
+                string fit = HudFormat.FitToWidth(stats, t => small.MeasureString(t).X * renderScale, statsMax);
+                Require(small.MeasureString(fit).X * renderScale <= statsMax + .01f, $"inventory stats '{stats}' exceeds the pane at {w}x{h}");
+            }
+        }
+    }
+
     static HudModel Scenario(string scenario, int w, int h)
     {
         var frame = new HudFrame(.82f, .7f, .8f, .9f, 1, 1, 260, .6f, true, true, true, 0, false, 0, true, true, 15, 3, 24,
@@ -189,7 +235,19 @@ sealed class Proof : Game
             Notices = new[] { new HudNotice("NO ENEMY FIGHTER IN SECTOR", false, 1), new HudNotice("Reloading ammo...", true, 1) },
             Chat = new(scenario == "chat-stress" ? Enumerable.Range(0, 8).Select(i => $"[TEAM] Pilot {i}: " + new string('W', 250)).ToArray() : new[] { "[TEAM] Pilot: defend the base", "[ALL] Enemy: incoming" }, 0, scenario == "chat-stress" ? new string('W', 250) : "returning", true, 1, "[TEAM] "),
             FlightPartsLine = "WEAPONS: GROUP  BOOST: ON  [1:Plasma]", CargoLine = "CARGO 1/5  Ammo pack x3",
-            Contacts = contacts, InventoryVisible = true,
+            InventoryPane = new HudInventoryPane("Fig Adv", new HudInventoryRow[]
+            {
+                new(HudInventoryRowKind.Weapon, "1.", "Gatling Gun", true, true, false, "800m / 15 X 8", 3, 1f, null, null),
+                new(HudInventoryRowKind.Weapon, "2.", "Plasma Cannon", false, false, false, "1200m / 20 X 5", 3, 1f, null, null),
+                new(HudInventoryRowKind.Weapon, "Y.", "Turret weapon", false, false, false, null, 1, 0.45f, null, null),
+                new(HudInventoryRowKind.Magazine, "5.", "SRM Dumbfire 3", false, false, false, "5 / 1125m / 150", 3, 1f, null, 5),
+                new(HudInventoryRowKind.Shield, "7.", "Energy Shield", false, false, false, "500 / 3 sec", 3, 1f, null, 1),
+                new(HudInventoryRowKind.Afterburner, "9.", "Booster", false, false, false, "220mps / 8", 3, 1f, null, 1),
+                new(HudInventoryRowKind.Cloak, "8.", "Cloaking Device", false, false, false, "12 sec", 3, 1f, null, 1),
+                new(HudInventoryRowKind.Cargo, "S.", "Ammo Pack", false, false, false, "3", 0, 0f, null, 3),
+                new(HudInventoryRowKind.EmptyWeapon, "3.", "<small weapon mount>", false, false, false, null, 0, 0f, null, null),
+            }),
+            Contacts = contacts, InventoryVisible = scenario != "systems",
             CommandLines = scenario == "command" ? new[] { "COMMAND SHIP: Scout", "Hull 82% Shield 70%" } : Array.Empty<string>(),
             RadarMode = mode,
             RoundRadar = scenario.StartsWith("radar-"),

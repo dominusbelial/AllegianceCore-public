@@ -1,6 +1,8 @@
 using Allegiance.Core;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Allegiance.Core.Wire;
+using Allegiance.Core.Model;
+using Allegiance.ClientCore.State;
 using Allegiance.ClientCore.MonoGame.Flight;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -46,6 +48,38 @@ public sealed partial class Game1
         lock (_session.Gate)
             return _session.World.MyShipId is { } id && _session.World.Ships.TryGetValue(id, out var ship)
                 ? (ship.Loadout ?? []).Concat(ship.Cargo ?? []).ToList() : [];
+    }
+
+    /// <summary>HUD-7 — resolve the native flight equipment/inventory pane for
+    /// the local source ship (WinTrek/inventoryimage.cpp:299-346), driven by the
+    /// granted loadout + cargo, the core catalogue, the own hull, the side's
+    /// global attributes and the live resource fractions. Null when the hull or
+    /// catalogue is unavailable (the renderers then draw nothing).</summary>
+    private HudInventoryPane? BuildInventoryPane(ShipEntity entity, ServerShipUpdate up)
+    {
+        var catalog = _shopCatalog;
+        if (catalog is null) return null;
+        var hull = catalog.Hulls.FirstOrDefault(h => h.HullId == entity.HullId);
+        if (hull.HullId != entity.HullId) return null;
+        // Native Rebuild resolves the source ship (inventoryimage.cpp:289); the
+        // stats hull is GetSourceShip()->GetHullType() (consoledata.cpp:855,976)
+        // — the carrier when the local pilot is a turret gunner (WinTrek.cpp:10215).
+        DataHullTypeIGC? sourceHull = hull;
+        if (entity.ParentId >= 0 && _session.World.Ships.TryGetValue(entity.ParentId, out var carrier))
+        {
+            var carrierHull = catalog.Hulls.FirstOrDefault(h => h.HullId == carrier.HullId);
+            if (carrierHull.HullId == carrier.HullId) sourceHull = carrierHull;
+        }
+        var inventory = OwnInventory();
+        var loadout = inventory.Where(e => !CargoSelector.IsCargoMount(e.MountId)).ToList();
+        var cargo = inventory.Where(e => CargoSelector.IsCargoMount(e.MountId)).ToList();
+        var attributes = _session.World.MySideId is { } sideId
+            ? _session.World.GlobalAttributesFor(sideId) : GlobalAttributeSet.Identity;
+        return HudInventoryPaneBuilder.Build(
+            catalog, hull, loadout, cargo, attributes,
+            up.FuelFraction, up.EnergyFraction, up.ShieldFraction, up.AmmoFraction,
+            _groupFire, _selectedMount, _selectedCargoMount,
+            hull.Name, isPilot: !IsTurretGunner(), sourceHull: sourceHull);
     }
 
     private void CycleInventory(bool next)

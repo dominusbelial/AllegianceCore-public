@@ -95,6 +95,10 @@ public sealed class AutoProofPlan
     public string AutoHighlightSector = "";
     public bool AutoFlightParts;
     public bool AutoParityCommands;
+    /// <summary>HUD-7 — open the in-flight equipment/inventory pane (F4,
+    /// ConModeInventory) once after launch so a real-window autoshot captures
+    /// the native inventory pane (<c>--auto-inventory</c>).</summary>
+    public bool AutoInventory;
 
     /// <summary>P580 — enable the director b-roll camera at launch
     /// (<c>--director</c>). Mutually the same thing the F2 key toggles; the flag
@@ -241,6 +245,8 @@ public sealed class AutoProofPlan
             }
             else if (a == "--auto-parity-commands") plan.AutoParityCommands = true;
             else if (a == "--auto-flight-parts") plan.AutoFlightParts = true;
+            else if (a == "--auto-inventory" || a == "--auto-inventory=true") plan.AutoInventory = true;
+            else if (a == "--auto-inventory=false") plan.AutoInventory = false;
             else if (a == "--auto-highlight")
             {
                 if (i + 1 < args.Count && !args[i + 1].StartsWith('-')) plan.AutoHighlightSector = args[++i];
@@ -399,7 +405,7 @@ public sealed class AutoProofPlan
         AutoSide.HasValue || AutoReady || AutoLaunchRequested ||
         AutoCredits || AutoScreen != AutoScreenKind.None || AutoGraphicsSettings ||
         GotoSector.Length > 0 || Target != AutoTargetKind.None || AutoTargetClass.Length > 0 ||
-        HideHud || AutoParityCommands || AutoFlightParts || AutoHighlightSector.Length > 0 || AutoshotSeconds.Length > 0 ||
+        HideHud || AutoParityCommands || AutoFlightParts || AutoInventory || AutoHighlightSector.Length > 0 || AutoshotSeconds.Length > 0 ||
         AutoDockAfter.HasValue || DockSweepCount > 0 || ExitAfter.HasValue ||
         AutoSuicideAt.Length > 0 ||
         Director || FollowShip != -1 || DirectorSeed.HasValue ||

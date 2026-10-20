@@ -50,6 +50,7 @@ public class HudRenderer
     private readonly StatusTextures? _status;
     private readonly IndicatorTextures? _indicators;
     private readonly TargetPaneTextures? _targetPaneTextures;
+    private readonly InventoryPaneTextures? _inventoryTextures;
 
     public HudRenderer(
         SpriteBatch spriteBatch,
@@ -60,7 +61,8 @@ public class HudRenderer
         LockTextures? lockTextures = null,
         StatusTextures? statusTextures = null,
         IndicatorTextures? indicators = null,
-        TargetPaneTextures? targetPaneTextures = null)
+        TargetPaneTextures? targetPaneTextures = null,
+        InventoryPaneTextures? inventoryTextures = null)
     {
         _sb = spriteBatch;
         _white = whitePixel;
@@ -71,6 +73,7 @@ public class HudRenderer
         _status = statusTextures;
         _indicators = indicators;
         _targetPaneTextures = targetPaneTextures;
+        _inventoryTextures = inventoryTextures;
     }
 
     /// <summary>
@@ -273,6 +276,13 @@ public class HudRenderer
             // projected in-world selection bracket is out of view.
             if (model.TargetPaneVisible && context.TargetPane is { Present: true })
                 DrawTargetPane(model, viewport);
+
+            // HUD-7 — the native flight equipment/inventory pane (F4) does not
+            // need the telemetry frame: it is resolved from the loadout/cargo and
+            // draws in command view too (native mask ofInventory, dialog.mdl:5237).
+            if (model.FlightVisible && context.InventoryVisible && context.InventoryPane is { } pane)
+                DrawInventoryPane(pane, model, viewport);
+
             if (frame is not { } f)
                 return;   // no ship yet — gauges/readouts have nothing to show
 
@@ -325,12 +335,16 @@ public class HudRenderer
             // (right edge) naming each mounted weapon/missile system with its
             // live ammo and a per-system READY/RELOAD/DEPLETED status derived
             // from P361's auto-reload behaviour. Empty list (loadout not yet
-            // known) draws nothing.
-            if (f.WeaponSystems is { Count: > 0 } ws)
+            // known) draws nothing. HUD-7: it duplicates the native inventory
+            // pane's part identity/quantity columns, so it is hidden while that
+            // pane is up (the pane already owns those two parity rows).
+            if (f.WeaponSystems is { Count: > 0 } ws
+                && !(model.Context.InventoryVisible && model.Context.InventoryPane is { Rows.Count: > 0 }))
                 {
                     DrawWeaponStatusList(ws, viewport);
                     ElementDrawn("Equipment part identity and key", "Equipment quantity and empty warning");
                 }
+
 
             // P506 — virtual-joystick indicator: a small reticle + deadzone
             // circle + stick-position dot, drawn while mouse flight is on (the
@@ -368,10 +382,21 @@ public class HudRenderer
     protected virtual void BeginBatch() => _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
     protected virtual void RenderText(SpriteFont font, string text, Vector2 position, Color color, float scale)
         => _sb.DrawString(font, text, position, color, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
+
+    /// <summary>HUD-7 — fit a pane column string to a measured on-screen width by
+    /// truncating with an ellipsis (the same binary-search fit as
+    /// <see cref="DrawMeasuredText"/>, without its background fill or collision
+    /// placement). The full value stays in the model; only the glyphs clip.
+    /// </summary>
+    protected string FitText(string text, float maxWidth, float scale)
+        => HudFormat.FitToWidth(text, t => _small.MeasureString(t).X * scale, Math.Max(0f, maxWidth));
+
     protected virtual void PrepareLayout(HudModel model, Viewport viewport)
     {
         var (mx, my, mw, mh) = MinimapGeometry.CornerPanel(viewport.Width, viewport.Height);
         Layout.Reserve(new((int)mx, (int)my, (int)mw, (int)mh));
+        if (model.FlightVisible && model.Context.InventoryVisible && model.Context.InventoryPane is { Rows.Count: > 0 } pane)
+            Layout.Reserve(InventoryPaneLayout.ReserveRect(pane.Rows.Count, viewport.Width, viewport.Height));
         float spread = Math.Clamp(viewport.Height / 680f, 1.15f, 2.1f);
         foreach (var gauge in model.Gauges.Where(g => g.Visible))
         {
@@ -1919,5 +1944,128 @@ public class HudRenderer
         string mode = v.LinearControls ? "LIN" : "QUAD";
         DrawText(_small, $"MOUSE DZ {(int)(v.Deadzone * 100f)}% {mode}",
             new Vector2(cx - 58f, cy + R + 6f), TextDim);
+    }
+
+    /// <summary>
+    /// HUD-7 — the native flight equipment/inventory pane at
+    /// <c>SideBottomRight (-36, 40)</c> (dialog.mdl:5387). Classic skin: the
+    /// real CortUI classic top/line/bottom backgrounds + native icons and
+    /// mounting/arming bar fills, with the port HUD font for the text columns
+    /// (the native <c>medVerdana</c>/<c>smVerdana</c> fonts are not shipped, so
+    /// text-bearing rows remain partial — the same HUD-3 convention).</summary>
+    protected virtual void DrawInventoryPane(HudInventoryPane pane, HudModel model, Viewport viewport)
+    {
+        float w = viewport.Width, h = viewport.Height;
+        int rowCount = pane.Rows.Count;
+        float scale = InventoryPaneLayout.Scale(h);
+        float left = InventoryPaneLayout.LeftX(w, h);
+        float top = InventoryPaneLayout.TopY(rowCount, w, h);
+        float lineW = InventoryPaneLayout.LineWidth * scale;
+        float capH = InventoryPaneLayout.CapHeight * scale;
+        float rowH = InventoryPaneLayout.RowHeight * scale;
+
+        var art = _inventoryTextures is { } tex && tex.AllLoaded ? tex : null;
+        if (art is not null)
+        {
+            _sb.Draw(art.Top!, new Rectangle((int)MathF.Round(left), (int)MathF.Round(top), (int)MathF.Round(lineW), (int)MathF.Round(capH)), Color.White);
+            float y = top + capH;
+            for (int i = 0; i < rowCount; i++)
+            {
+                _sb.Draw(art.Line!, new Rectangle((int)MathF.Round(left), (int)MathF.Round(y), (int)MathF.Round(lineW), (int)MathF.Round(rowH)), Color.White);
+                y += rowH;
+            }
+            _sb.Draw(art.Bottom!, new Rectangle((int)MathF.Round(left), (int)MathF.Round(y), (int)MathF.Round(lineW), (int)MathF.Round(capH)), Color.White);
+        }
+        else
+        {
+            FillRect(left, top, lineW, capH * 2f + rowH * rowCount, PanelBg);
+            OutlineRect(left, top, lineW, capH * 2f + rowH * rowCount, BorderDim);
+        }
+
+        // Own-ship name header (native ShipNameImage, dialog.mdl:1803-1807).
+        if (pane.ShipName.Length > 0)
+        {
+            var name = _small.MeasureString(pane.ShipName);
+            float nx = left + MathF.Max(0f, (lineW - name.X) / 2f);
+            _sb.DrawString(_small, pane.ShipName, new Vector2(nx, top + capH * 0.5f - name.Y * 0.5f), TextMain);
+        }
+
+        float rowTop = top + capH;
+        for (int i = 0; i < rowCount; i++)
+        {
+            DrawInventoryRow(pane.Rows[i], art, left, rowTop, scale);
+            rowTop += rowH;
+        }
+        ElementDrawn("Flight equipment inventory pane", "Equipment part identity and key",
+            "Equipment selected and active state", "Equipment quantity and empty warning",
+            "Equipment mounting progress", "Launcher arming progress", "Equipment weapon range",
+            "Equipment shot damage", "Equipment burst rate", "Equipment shield strength",
+            "Equipment shield recharge seconds", "Equipment afterburner top speed",
+            "Equipment afterburner endurance", "Equipment cloak endurance",
+            "Inventory turret gunner identity", "Inventory cargo slots", "Inventory own ship name",
+            "Equipment empty slot affordances");
+    }
+
+    private void DrawInventoryRow(HudInventoryRow row, InventoryPaneTextures? art, float left, float rowTop, float scale)
+    {
+        float rowH = InventoryPaneLayout.RowHeight * scale;
+        float textY = rowTop + 2f * scale;
+        var white = new Color(1f, 1f, 1f);
+        var grey = new Color(0.75f, 0.75f, 0.75f);
+        var yellow = new Color(1f, 1f, 0f);
+
+        // Icon (native inv*.mdl Point(5,5)).
+        Texture2D? icon = row.Kind switch
+        {
+            HudInventoryRowKind.Weapon => art?.WeaponIcon,
+            HudInventoryRowKind.EmptyWeapon => art?.WeaponIcon,
+            _ => art?.EquipmentIcon,
+        };
+        if (icon is { } ic)
+            _sb.Draw(ic, new Vector2(left + InventoryPaneLayout.IconX * scale, rowTop + (rowH - ic.Height * scale) / 2f), null, Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
+
+        // Key (native Point(23,5)); yellow when active, grey for empty slots.
+        Color keyColor = row.Active ? yellow : row.IsEmpty ? grey : white;
+        if (row.Key.Length > 0)
+            _sb.DrawString(_small, row.Key, new Vector2(left + InventoryPaneLayout.KeyX * scale, textY), keyColor);
+
+        // Name (native Point(35,5)); white when selected, dim grey otherwise.
+        // Fit to the gap before the stats column (a small margin keeps the two
+        // columns from colliding).
+        Color nameColor = row.Selected ? white : row.IsEmpty ? grey : new Color(0.88f, 0.96f, 0.95f);
+        if (row.Name.Length > 0)
+        {
+            float nameMax = Math.Max(0f, (InventoryPaneLayout.StatsX - InventoryPaneLayout.NameX - 2f) * scale);
+            _sb.DrawString(_small, FitText(row.Name, nameMax, TextScale),
+                new Vector2(left + InventoryPaneLayout.NameX * scale, textY), nameColor);
+        }
+
+        // Out-of-ammo red "A" (native Point(110,5), invsweapon.mdl:90).
+        if (row.OutOfAmmo)
+            _sb.DrawString(_small, "A", new Vector2(left + InventoryPaneLayout.AmmoX * scale, textY), Warning);
+
+        // Ready stats or mounting/arming progress (native Point(130,5)).
+        if (row.ReadyState is 1 or 2)
+        {
+            float bx = left + InventoryPaneLayout.StatsX * scale;
+            float by = rowTop + 2f * scale;
+            float bw = 64f * scale;
+            float bh = 14f * scale;
+            Texture2D? fill = row.ReadyState == 2 ? art?.ArmingBar : art?.MountingBar;
+            FillRect(bx, by, bw, bh, new Color(0f, 0f, 0f, 0.85f));
+            if (fill is { } f && row.MountedFraction > 0f)
+            {
+                int fillW = (int)MathF.Round(bw * HudFormat.Clamp01(row.MountedFraction));
+                if (fillW > 0)
+                    _sb.Draw(f, new Rectangle((int)MathF.Round(bx), (int)MathF.Round(by), fillW, (int)MathF.Round(bh)), Color.White);
+            }
+            OutlineRect(bx, by, bw, bh, BorderDim);
+        }
+        else if (row.StatsText is { } stats)
+        {
+            float statsMax = Math.Max(0f, (InventoryPaneLayout.LineWidth - InventoryPaneLayout.StatsX - 3f) * scale);
+            _sb.DrawString(_small, FitText(stats, statsMax, TextScale),
+                new Vector2(left + InventoryPaneLayout.StatsX * scale, textY), white);
+        }
     }
 }
