@@ -59,6 +59,12 @@ internal static class PlayerBundleCheck
             string roots = Option("--roots", Path.Combine(AppContext.BaseDirectory, "artwork-roots.txt"));
             foreach (string path in ManifestAssetSource.ReadPaths(roots)) Touch(path);
             foreach (string path in paths) Touch(path);
+            // P749 — exercise EVERY mode's asset closure through the packaged
+            // ManifestAssetSource: the training static core (PCore014) + each
+            // training mission map, and the skirmish/benchmark map. A missing
+            // core/map — or any referenced asset absent from the manifest — is
+            // caught here at build time, before a player hits it.
+            Assets.ModeAssetClosure.TouchModeAssetClosure(recorder);
             if (guard.Violations.Count != 0)
                 throw new InvalidDataException("Unlisted assets: " + string.Join(", ", guard.Violations));
             if (args.Contains("--check-assets"))

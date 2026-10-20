@@ -36,6 +36,10 @@ public sealed partial class Game1
     protected override void LoadContent()
     {
         base.LoadContent();
+        // P749 — capture the GPU name for the crash header now that the device
+        // exists (best effort; a graphics failure never prevents the report).
+        try { Diagnostics.CrashLog.SetGpu(GraphicsDevice.Adapter.Description); }
+        catch { }
         // P601 — the optional private Meshy asset pack. When it is configured and
         // built (MeshyPack.IsAvailable) we root a second ContentManager at its
         // compiled content and load every Meshy model/texture through it; when it

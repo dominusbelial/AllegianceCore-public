@@ -1,6 +1,12 @@
 using Allegiance.ClientCore.MonoGame;
 using Allegiance.ClientCore.MonoGame.Assets;
+using Allegiance.ClientCore.MonoGame.Diagnostics;
 using Allegiance.ClientCore.MonoGame.LiveProof;
+
+// P749 — crash safety first: capture console output and install the unhandled-
+// exception handler BEFORE anything that can throw, so a crash always leaves a
+// report even when launched from Finder / a .desktop shortcut with no console.
+CrashLog.Install();
 
 Allegiance.SinglePlayer.Benchmark.BenchmarkCommand? benchmark;
 try { benchmark = Allegiance.SinglePlayer.Benchmark.BenchmarkCommand.Parse(args); }
@@ -643,6 +649,12 @@ else
     Console.WriteLine("[monogame] intro mode: no positional args (choose Single Player or Multiplayer at start)");
 }
 
+// P749 — record the launch mode so a crash report says what the client was
+// doing. Finer-grained modes (training/skirmish/connect) are set by Game1 as
+// the player moves between screens.
+CrashLog.SetMode(opts.DirectHost is { Length: > 0 } ? $"connect:{opts.DirectHost}:{opts.DirectPort}"
+    : opts.Intro ? "intro" : opts.Capture is not null ? "capture" : "direct");
+
 using var game = new Game1(opts);
 if (recorder is not null)
 {
@@ -656,7 +668,18 @@ if (recorder is not null)
                           $"({recorder.TotalBytes:N0} bytes) -> {assetManifestPath}");
     };
 }
-game.Run();
+try
+{
+    game.Run();
+}
+catch (Exception ex)
+{
+    // P749 — an exception that escaped the MonoGame loop (rare; the AppDomain
+    // handler above is the backstop) must still leave a crash report before
+    // the process terminates.
+    CrashLog.WriteCrash(ex, "MonoGame game loop");
+    throw;
+}
 if (game.BenchmarkFailed) return 1;
 if (manifestGuard is { Violations.Count: > 0 })
 {

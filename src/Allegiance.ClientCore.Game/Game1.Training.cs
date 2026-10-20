@@ -33,7 +33,6 @@ public sealed partial class Game1
             Console.WriteLine($"[training] {_trainingError}");
             return;
         }
-
         // The embedded training host realises the mission's universe/creation actions (TR-2b). The
         // variant selects the native map/hull/start-sector (M2/M3: training_1/1010; M4: training_3/1030;
         // M5: training_5/1050; M6+M10: training_6/2080; M8: training_nan/1051).
@@ -48,7 +47,19 @@ public sealed partial class Game1
             Tm10FreeFlight => TrainingHost.FreeFlight,
             _ => TrainingHost.BasicFlight,
         };
-        _embeddedHost = TrainingHost.Start(variant);
+        // P749 — a missing training core/map (or any start-time asset fault) must
+        // NOT kill the app: it returns to the chooser with a clear message and
+        // points the player at the log. Never leaves a half-built host behind.
+        var started = TryStartTraining(variant, v => TrainingHost.Start(v));
+        if (started.Error is not null)
+        {
+            _embeddedHost = null;
+            _trainingError = started.Error;
+            Diagnostics.CrashLog.SetMode("training-error");
+            return;
+        }
+        _embeddedHost = started.Host!;
+        Diagnostics.CrashLog.SetMode($"training:{variant.GameName}");
 
         var facilities = new ClientTrainingFacilities
         {
@@ -126,4 +137,29 @@ public sealed partial class Game1
 
     private static System.Numerics.Vector3 ToSys(Allegiance.Core.Collision.Vector3 v)
         => new(v.X, v.Y, v.Z);
+
+    /// <summary>
+    /// P749 — guarded training-host start. Runs <paramref name="start"/> and,
+    /// on any fault (missing core/map, unreadable asset, boot failure), returns
+    /// a clear player-facing message instead of letting the exception kill the
+    /// app. The host is left null on failure so the caller returns to the
+    /// chooser. Internal so tests can drive the failure path with a throwing
+    /// starter (no GraphicsDevice required).
+    /// </summary>
+    internal static (TrainingHost? Host, string? Error) TryStartTraining(
+        TrainingHost.TrainingVariant variant, Func<TrainingHost.TrainingVariant, TrainingHost> start)
+    {
+        try
+        {
+            return (start(variant), null);
+        }
+        catch (Exception ex)
+        {
+            string error =
+                $"Training files are missing from this install: {variant.Map}. Reinstall or report this log.";
+            Console.WriteLine($"[training] {error} ({ex.GetType().Name}: {ex.Message})");
+            Console.WriteLine("[training] full details in the crash/client log (see docs/reports/P749_CRASH_SAFETY.md)");
+            return (null, error);
+        }
+    }
 }

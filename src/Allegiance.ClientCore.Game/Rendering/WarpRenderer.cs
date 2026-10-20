@@ -365,32 +365,76 @@ public sealed class WarpRenderer : IDisposable
     /// case-sensitive filesystem the igc name is lowercase (<c>"aleph"</c>)
     /// while the artwork file is capitalised (<c>Alephbmp.mdl</c>), so a failed
     /// exact lookup falls back to a case-insensitive match in the artwork root.
-    /// </summary>
+    /// P749 — never lets a missing/unlisted/unreadable optional texture escape:
+    /// any fault is swallowed and returns null so the caller falls back to the
+    /// soft placeholder (logged once per stem).</summary>
+    private readonly HashSet<string> _missingLogged = new(StringComparer.OrdinalIgnoreCase);
     private string? _lastLoadedStem;
     private Texture2D? LoadTextureFile(string stem)
     {
-        string rel = stem + "bmp.mdl";
-        if (!_assets.Exists(rel))
+        try
         {
-            rel = FindCaseInsensitive(stem + "bmp.mdl") ?? "";
-            if (rel.Length == 0) return null;
-        }
+            string rel = stem + "bmp.mdl";
+            if (!_assets.Exists(rel))
+            {
+                rel = FindCaseInsensitive(stem + "bmp.mdl") ?? "";
+                if (rel.Length == 0) return null;
+            }
 
-        var bytes = AssetSources.ReadAllBytes(_assets, rel);
-        var res = NativeEffectTextures.Resolve(bytes);
-        if (res.Kind == NativeEffectTextures.NativeTextureKind.Binary)
-        {
-            _lastLoadedStem = Path.GetFileNameWithoutExtension(rel);
-            return UploadOpaque(res.Texture!);
+            var bytes = TryReadOptional(_assets, rel);
+            if (bytes is null) return null;
+            var res = NativeEffectTextures.Resolve(bytes);
+            if (res.Kind == NativeEffectTextures.NativeTextureKind.Binary)
+            {
+                _lastLoadedStem = Path.GetFileNameWithoutExtension(rel);
+                return UploadOpaque(res.Texture!);
+            }
+            if (res.Kind == NativeEffectTextures.NativeTextureKind.Png && res.PngName is not null
+                && _assets.Exists(res.PngName))
+            {
+                _lastLoadedStem = Path.GetFileNameWithoutExtension(rel);
+                using (var s = _assets.OpenRead(res.PngName!))
+                    return Texture2D.FromStream(_gd, s);
+            }
+            return null;
         }
-        if (res.Kind == NativeEffectTextures.NativeTextureKind.Png && res.PngName is not null
-            && _assets.Exists(res.PngName))
+        catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException
+                                   or ObjectDisposedException or System.Runtime.InteropServices.ExternalException
+                                   or ArgumentException)
         {
-            _lastLoadedStem = Path.GetFileNameWithoutExtension(rel);
-            using (var s = _assets.OpenRead(res.PngName!))
-                return Texture2D.FromStream(_gd, s);
+            // P749 — an optional warp texture that is missing, unlisted in the
+            // manifest, or corrupt must fall back to the soft placeholder, never
+            // crash the player. Log once per stem so a broken install is visible
+            // without flooding every frame.
+            if (_missingLogged.Add(stem))
+                Console.WriteLine($"[warp] texture '{stem}bmp' unavailable ({ex.GetType().Name}: {ex.Message}) — using the soft fallback");
+            return null;
         }
-        return null;
+    }
+
+    /// <summary>
+    /// P749 — guarded read of an optional artwork file. Returns the bytes, or
+    /// null when the file is absent, unlisted in the player manifest, or
+    /// unreadable — swallowing the controlled faults (never the programmer
+    /// bugs) so a player-mode optional texture falls back instead of crashing.
+    /// Static and GPU-free so tests drive it directly.
+    /// </summary>
+    internal static byte[]? TryReadOptional(Assets.IAssetSource assets, string relativePath)
+    {
+        try
+        {
+            if (!assets.Exists(relativePath)) return null;
+            using var s = assets.OpenRead(relativePath);
+            using var m = new MemoryStream();
+            s.CopyTo(m);
+            return m.ToArray();
+        }
+        catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException
+                                   or ObjectDisposedException or System.Runtime.InteropServices.ExternalException
+                                   or ArgumentException)
+        {
+            return null;
+        }
     }
 
     private string? FindCaseInsensitive(string rel)
