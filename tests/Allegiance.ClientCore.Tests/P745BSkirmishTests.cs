@@ -19,7 +19,7 @@ public sealed class P745BSkirmishTests
     }
 
     [SkippableFact]
-    public async Task Offline_owned_host_spectates_then_drop_in_receives_last_base_objective()
+    public async Task Offline_owned_host_drop_in_sees_no_last_base_objective_in_the_opening_state()
     {
         Require.Artwork();
         using var host = await SkirmishHost.StartAsync(new()
@@ -40,10 +40,14 @@ public sealed class P745BSkirmishTests
         pilot.WaitForAck(10000); pilot.SendPositionReq(0);
         await Until(() => { lock (pilot.Gate) return pilot.World.MyShipId is not null; });
         pilot.SendPlayerReady(true, pilot.World.MyShipId!.Value);
-        await Until(() => { lock (pilot.Gate) return pilot.World.LastBaseObjectives().Any(o => !o.Defending); });
+        // Every side starts with exactly one Garrison: that is the normal opening state, not "our last base".
+        // The objective only appears once a finale is armed or a side that had more restart bases is down to one
+        // (Domingo's skirmish, 2026-10-19: "Our last Garrison: defend it" from minute one was misleading).
+        await Until(() => { lock (pilot.Gate) return pilot.World.MyShipId is not null && pilot.World.Mission is not null; });
+        await Task.Delay(3000);
         lock (pilot.Gate)
         {
-            Assert.Contains(pilot.World.LastBaseObjectives(), o => o.Defending);
+            Assert.Empty(pilot.World.LastBaseObjectives());
             Assert.Empty(pilot.World.LastBaseObjectives(spectating: true));
         }
         Assert.Null(host.Failure);
