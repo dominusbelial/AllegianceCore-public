@@ -47,21 +47,24 @@ public class CollisionFeedbackTests
 
     // ══ the collision-sound selection happens once per party ══
     [Fact]
-    public void Sound_selection_yields_one_source_per_collision_in_local_sector()
+    public void Sound_selection_yields_one_source_per_party_in_local_sector()
     {
         var inSector = Ev(1, 2, 7, pos: new Vector3(100, 0, 0));      // ship-ship (two parties, one point)
         var outSector = Ev(3, 4, 99, pos: new Vector3(0, 50, 0));     // different sector → silent here
-        var rock = Ev(5, -1, 7, j2: 0, pos: new Vector3(0, 0, 200));  // ship-rock (one ship party)
+        var rock = Ev(5, -1, 7, j2: 0, pos: new Vector3(0, 0, 200));  // ship-rock (one ship party, NA rock)
 
         var sources = CollisionFeedback.SelectSoundSources(new[] { inSector, outSector, rock }, 7).ToList();
 
-        // Exactly two sources (the in-sector ship-ship and the in-sector ship-rock),
-        // each yielding the SINGLE shared impact point — the ship-ship collision's
-        // two parties collapse to one cue rather than doubling up (native plays
-        // collisionSound once per party, but every party sits at the impact point).
-        Assert.Equal(2, sources.Count);
-        Assert.Equal(new Vector3(100, 0, 0), sources[0]);
-        Assert.Equal(new Vector3(0, 0, 200), sources[1]);
+        // Native plays collisionSound once per party (Igc/shipIGC.cpp:1193 and the
+        // sibling branch for the other party). A ship-ship collision yields two
+        // sources at the same impact point; a ship-rock collision yields one.
+        Assert.Equal(3, sources.Count);
+        Assert.Equal(new Vector3(100, 0, 0), sources[0].Position);
+        Assert.Equal((short)1, sources[0].PartyId);
+        Assert.Equal(new Vector3(100, 0, 0), sources[1].Position);
+        Assert.Equal((short)2, sources[1].PartyId);
+        Assert.Equal(new Vector3(0, 0, 200), sources[2].Position);
+        Assert.Equal((short)5, sources[2].PartyId);
     }
 
     [Fact]

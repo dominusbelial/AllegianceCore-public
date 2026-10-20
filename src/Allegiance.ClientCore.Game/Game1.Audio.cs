@@ -736,11 +736,13 @@ public sealed partial class Game1
     /// <summary>
     /// P463c — drain the world's COLLISION events (one per real
     /// <c>COLLISION_EVENT(216)</c> broadcast; <see cref="CollisionEntity"/>) into
-    /// the audio pass: play the positional collision one-shot once per collision
-    /// (both parties share the single impact point, collapsed by
-    /// <see cref="Audio.CollisionFeedback.SelectSoundSources"/>), and — when the
-    /// local ship IS one of the two parties — feed that party's jiggle intensity
-    /// into P449b's <see cref="Rendering.FlightJiggle"/> via
+    /// the audio pass: play the positional collision one-shot once <b>per
+    /// party</b> (native <c>Igc/shipIGC.cpp:1193</c> and the sibling branch for
+    /// the other party each call <c>PlaySoundEffect(collisionSound)</c>; a
+    /// ship-ship collision therefore produces two sources at the shared impact
+    /// point, selected by <see cref="Audio.CollisionFeedback.SelectSoundSources"/>),
+    /// and — when the local ship IS one of the two parties — feed that party's
+    /// jiggle intensity into P449b's <see cref="Rendering.FlightJiggle"/> via
     /// <see cref="Rendering.FlightJiggle.SetJiggle"/> (the "own ship only" rule:
     /// <see cref="Audio.CollisionFeedback.JiggleForOwnShip"/> returns 0 for a
     /// witnessed collision, so an observer's camera never shakes). Filtered to
@@ -782,17 +784,20 @@ public sealed partial class Game1
                 _flightJiggle.SetJiggle(jiggle);
                 Console.WriteLine($"[monogame] audio: collision jiggle {jiggle:F3} (own ship {myShipId})");
             }
+        }
 
-            // Positional collision sound, once per collision in the local sector
-            // (both parties collapse to the shared impact point). No local
-            // anchor -> no listener -> nothing to place.
-            if (mySector is not { } sec || c.ClusterId != sec) continue;
-            if (anchor is not { } a) continue;
-            float dist = (c.Position - a).Length();
-            float volume = Audio.CollisionSoundCurve.Volume(dist);
-            if (volume <= 0f) continue;
-            snd.PlayCollisionSound(volume);
-            Console.WriteLine($"[monogame] audio: collision sound ({c.Party1Id}x{c.Party2Id}, vol {volume:F3})");
+        // Positional collision sound, once per party in the local sector.
+        // No local anchor -> no listener -> nothing to place.
+        if (anchor is { } a)
+        {
+            foreach (var src in Audio.CollisionFeedback.SelectSoundSources(events, mySector))
+            {
+                float dist = (src.Position - a).Length();
+                float volume = Audio.CollisionSoundCurve.Volume(dist);
+                if (volume <= 0f) continue;
+                snd.PlayCollisionSound(volume);
+                Console.WriteLine($"[monogame] audio: collision sound (party {src.PartyId}, vol {volume:F3})");
+            }
         }
     }
 

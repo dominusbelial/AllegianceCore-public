@@ -38,6 +38,17 @@ public class P721ShipLoopBedsTests
     public void SideThrust_BedAssetFollowsHullClass(bool capital, string wave)
         => Assert.Equal(wave, Allegiance.ClientCore.MonoGame.Audio.ShipLoopBeds.SideThrust(capital));
 
+    [Theory]
+    [InlineData((short)300, false, "adjust")]       // smallShipTurnInteriorSound (:1016)
+    [InlineData((short)320, true, "accelsmall")]    // capitalShipTurnInteriorSound (:1023)
+    [InlineData((short)340, false, "adjust")]       // smallShipTurnExteriorSound (:1017)
+    [InlineData((short)360, true, "accelsmall")]    // capitalShipTurnExteriorSound (:1024)
+    [InlineData((short)0, false, "adjust")]         // unknown id → class fallback
+    [InlineData((short)0, true, "accelsmall")]      // unknown id → class fallback
+    [InlineData((short)999, false, "adjust")]       // unknown id → class fallback
+    public void TurnExterior_ResolvesHullSoundId_WithClassFallback(short soundId, bool capital, string wave)
+        => Assert.Equal(wave, Allegiance.ClientCore.MonoGame.Audio.ShipLoopBeds.TurnExterior(soundId, capital));
+
     [Fact]
     public void ExteriorBed_IsShipout()
         => Assert.Equal("shipout", Allegiance.ClientCore.MonoGame.Audio.ShipLoopBeds.Exterior);

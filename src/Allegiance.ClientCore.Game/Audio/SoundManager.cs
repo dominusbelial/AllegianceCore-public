@@ -198,10 +198,17 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _chaffDeploy = null!;     // P755 — dropobject (deployChaffSound, sounddef.mdl:367)
     private SoundEffect _probeAmbient = null!;    // erbeam — scanning-loop default
     private readonly Dictionary<short, SoundEffectInstance> _probeAmbients = new(); // keyed by ProbeId
-    // P267 — hull maneuvering-thruster loop (adjust), the local ship's turn
-    // sound; and the hull exterior loop (shipout), audible in the chase/
-    // exterior view (native's always-on exterior muted by camera mode).
-    private SoundEffectInstance? _turnThruster;   // adjust — smallShipTurnInteriorSound, sounddef id 300 (:1016)
+    // P267/P756 — hull maneuvering-thruster loops. Native keeps separate
+    // interior and exterior instances (trekigc.cpp:1317-1319 and :1341-1343)
+    // and mutes the wrong volume bus by camera view; the bundled PCore001
+    // assets happen to be the same pair for both buses, but the instances are
+    // kept distinct so custom cores with different interior/exterior sounds
+    // are honored.
+    private SoundEffectInstance? _turnThruster;                // adjust — smallShipTurnInteriorSound, sounddef id 300 (:1016)
+    private SoundEffectInstance? _turnThrusterExterior;        // adjust — smallShipTurnExteriorSound, sounddef id 340 (:1017)
+    private SoundEffectInstance? _turnThrusterExteriorCapital; // accelsmall — capitalShipTurnExteriorSound, sounddef id 360 (:1024)
+    // P267 — hull exterior loop (shipout), audible in the chase/exterior view
+    // (native's always-on exterior muted by camera mode).
     private SoundEffectInstance? _shipExterior;   // shipout — smallShipExteriorSound, sounddef id 180 (:1013)
     // P267 — station exterior ambient loop (shipout), one looped instance per
     // station within earshot, keyed by the station's real StationId
@@ -774,11 +781,14 @@ public sealed class SoundManager : IDisposable
             _mineDeploy = LoadSound("Sounds/dropmine");     // P717 — deployMineSound (sounddef.mdl:368)
             _chaffDeploy = LoadSound("Sounds/dropobject");  // P755 — deployChaffSound (sounddef.mdl:367)
             _probeAmbient = LoadSound("Sounds/erbeam");      // scanning-loop default
-            // P267 — hull maneuvering-thruster turn loop (adjust), hull exterior
-            // loop (shipout), station exterior ambient loop (shipout), and the tech
-            // completion chime (vo_sal_researchcomplete). See the field docs.
+            // P267/P756 — hull maneuvering-thruster turn loops (interior and
+            // exterior twins, trekigc.cpp:1317-1319 / :1341-1343), hull exterior
+            // loop (shipout), station exterior ambient loop (shipout), and the
+            // tech completion chime (vo_sal_researchcomplete). See the field docs.
             _turnThruster = Loop($"Sounds/{ShipLoopBeds.FighterTurn}");
             _turnThrusterCapital = Loop($"Sounds/{ShipLoopBeds.CapitalTurn}"); // P721 — capital turn bed (sounddef.mdl:1023)
+            _turnThrusterExterior = Loop($"Sounds/{ShipLoopBeds.FighterTurn}");
+            _turnThrusterExteriorCapital = Loop($"Sounds/{ShipLoopBeds.CapitalTurn}");
             _sideThrustSmall = Loop($"Sounds/{ShipLoopBeds.FighterSideThrust}"); // P721 — fighter sidethrust loop (SIM-0376/0382)
             _sideThrustCapital = Loop($"Sounds/{ShipLoopBeds.CapitalSideThrust}"); // P721 — capital sidethrust loop (SIM-0377/0383)
             _shipExterior = Loop("Sounds/shipout");
@@ -1839,22 +1849,47 @@ public sealed class SoundManager : IDisposable
         }
     }
 
-    /// <summary>P267 — drive the local ship's maneuvering-thruster turn loop
-    /// from its current turn level (0..1, see
+    /// <summary>P267/P756 — drive the local ship's maneuvering-thruster
+    /// INTERIOR turn loop from its current turn level (0..1, see
     /// <see cref="TurnThrusterSound"/>). Audible only while turning
-    /// (<see cref="TurnThrusterSound.IsAudible"/>), with pitch rising with the
-    /// level (native <c>SetPitch(0.50f + m_fTurnSoundLevel/3)</c>,
-    /// trekigc.cpp:1167-1169). P721 — the bed asset is resolved by hull class:
-    /// a fighter uses <c>adjust</c> (smallShipTurn sounddef.mdl:1016-1017),
-    /// a capital uses <c>accelsmall</c> (capitalShipTurn sounddef.mdl:1023-1024),
-    /// matching native's per-hull GetManuveringThrusterInteriorSound
-    /// (trekigc.cpp:1317, 1341). No-op when audio is not loaded.</summary>
-    public void UpdateTurnThruster(float turnLevel, bool capitalHull = false)
+    /// (<see cref="TurnThrusterSound.IsAudible"/>) and only in the cockpit
+    /// camera view, with pitch rising with the level (native
+    /// <c>SetPitch(0.50f + m_fTurnSoundLevel/3)</c>, trekigc.cpp:1167-1169).
+    /// The bed is resolved from the hull's <c>ManuveringThrusterInteriorSound</c>
+    /// SoundID when supplied, falling back to the fighter/capital class defaults.
+    /// No-op when audio is not loaded.</summary>
+    public void UpdateTurnThruster(float turnLevel, bool capitalHull = false, bool cockpitView = true, short interiorSoundId = 0)
     {
         if (!IsLoaded) return;
-        var t = capitalHull ? _turnThrusterCapital : _turnThruster;
+        string stem = HullLoopSoundMap.TurnStem(interiorSoundId) ?? ShipLoopBeds.Turn(capitalHull);
+        var t = stem == ShipLoopBeds.CapitalTurn ? _turnThrusterCapital : _turnThruster;
         if (t is not { } th) return;
-        if (TurnThrusterSound.IsAudible(turnLevel))
+        if (cockpitView && TurnThrusterSound.IsAudible(turnLevel))
+        {
+            SetLoopVolume(th, 0.8f * _masterVolume);
+            Safe(() => th.Pitch = TurnThrusterSound.PitchFor(turnLevel));
+            if (th.State != SoundState.Playing) Safe(th.Play);
+        }
+        else if (th.State == SoundState.Playing)
+        {
+            Safe(th.Stop);
+        }
+    }
+
+    /// <summary>P756 — drive the local ship's maneuvering-thruster EXTERIOR
+    /// turn loop from its current turn level (0..1). Native plays this on the
+    /// hull's world sound source while turning in exterior/chase view
+    /// (<c>WinTrek/trekigc.cpp:1341-1343</c>,
+    /// <c>GetManuveringThrusterExteriorSound()</c>). The bed is resolved from
+    /// the supplied <c>ManuveringThrusterExteriorSound</c> SoundID, falling back
+    /// to the fighter/capital class defaults. No-op when audio is not loaded.</summary>
+    public void UpdateTurnThrusterExterior(float turnLevel, bool exteriorView, bool capitalHull = false, short exteriorSoundId = 0)
+    {
+        if (!IsLoaded) return;
+        string stem = ShipLoopBeds.TurnExterior(exteriorSoundId, capitalHull);
+        var t = stem == ShipLoopBeds.CapitalTurn ? _turnThrusterExteriorCapital : _turnThrusterExterior;
+        if (t is not { } th) return;
+        if (exteriorView && TurnThrusterSound.IsAudible(turnLevel))
         {
             SetLoopVolume(th, 0.8f * _masterVolume);
             Safe(() => th.Pitch = TurnThrusterSound.PitchFor(turnLevel));
@@ -2165,6 +2200,8 @@ public sealed class SoundManager : IDisposable
             foreach (var inst in _probeAmbients.Values) inst.Dispose();
             _turnThruster?.Dispose();
             _turnThrusterCapital?.Dispose();     // P721
+            _turnThrusterExterior?.Dispose();    // P756
+            _turnThrusterExteriorCapital?.Dispose(); // P756
             _sideThrustSmall?.Dispose();         // P721
             _sideThrustCapital?.Dispose();       // P721
             _shipExterior?.Dispose();

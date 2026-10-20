@@ -48,4 +48,13 @@ public static class ShipLoopBeds
     public static string Interior(bool capital) => capital ? CapitalInterior : FighterInterior;
     public static string Turn(bool capital) => capital ? CapitalTurn : FighterTurn;
     public static string SideThrust(bool capital) => capital ? CapitalSideThrust : FighterSideThrust;
+
+    /// <summary>P756 — resolves the hull's <c>ManuveringThrusterExteriorSound</c>
+    /// SoundID (<c>DataHullTypeIGC.ManuveringThrusterExteriorSound</c>,
+    /// <c>src/Igc/igc.h:1816</c>) to the bundled wave stem, mirroring native's
+    /// <c>GetManuveringThrusterExteriorSound()</c> read in
+    /// <c>WinTrek/trekigc.cpp:1341</c>. Falls back to the fighter/capital class
+    /// defaults when the hull carries an unlisted id.</summary>
+    public static string TurnExterior(short soundId, bool capital) =>
+        HullLoopSoundMap.TurnStem(soundId) ?? (capital ? CapitalTurn : FighterTurn);
 }

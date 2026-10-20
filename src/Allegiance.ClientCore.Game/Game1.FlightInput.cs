@@ -2284,15 +2284,28 @@ public sealed partial class Game1
                         capitalHull: capitalHull,
                         sidethrustActive: sidethrustActive);
 
-                    // P267 — the hull's maneuvering-thruster (turn) loop, driven
-                    // from the local ship's real commanded turn axes (the same
-                    // ControlData the engine mix reads), and the hull exterior
-                    // loop audible in the chase/exterior view.
+                    // P267/P756 — the hull's maneuvering-thruster (turn) loop,
+                    // driven from the local ship's real commanded turn axes (the
+                    // same ControlData the engine mix reads). Native keeps
+                    // separate interior/exterior instances and mutes the wrong
+                    // bus by camera view; the port plays the interior twin only
+                    // in cockpit view and the exterior twin only in chase/
+                    // exterior view, each resolved from the hull type's SoundID.
+                    bool cockpitView = _cameraMode == CameraMode.Cockpit;
+                    bool exteriorView = !cockpitView;
+                    float turnLevel = Audio.TurnThrusterSound.LevelFor(
+                        mineUp.Controls.Yaw, mineUp.Controls.Pitch, mineUp.Controls.Roll);
                     _sound?.UpdateTurnThruster(
-                        Audio.TurnThrusterSound.LevelFor(
-                            mineUp.Controls.Yaw, mineUp.Controls.Pitch, mineUp.Controls.Roll),
-                        capitalHull: capitalHull);
-                    _sound?.UpdateShipExterior(_cameraMode != CameraMode.Cockpit);
+                        turnLevel,
+                        capitalHull: capitalHull,
+                        cockpitView: cockpitView,
+                        interiorSoundId: ownHull.ManuveringThrusterInteriorSound);
+                    _sound?.UpdateTurnThrusterExterior(
+                        turnLevel,
+                        exteriorView: exteriorView,
+                        capitalHull: capitalHull,
+                        exteriorSoundId: ownHull.ManuveringThrusterExteriorSound);
+                    _sound?.UpdateShipExterior(exteriorView);
                 }
             }
             foreach (var (id, ship) in world.Ships)
@@ -3215,6 +3228,14 @@ public sealed partial class Game1
             _session.World.OwnEchoDropPredicate = _ownShotEcho.ShouldDropServerEcho;
     }
 
+    /// <summary>P756 — the rule for whether an autopilot disengage transition
+    /// should produce the <c>salAutopilotDisengageSound</c> cue. Native plays it
+    /// once when the autopilot was engaged and is now cancelled
+    /// (<c>WinTrek/WinTrek.cpp:8315</c>). Exposed internally so the MonoGame test
+    /// suite can pin the one-cue-per-transition guarantee without instantiating
+    /// the full <see cref="Game1"/>.</summary>
+    internal static bool ShouldPlayAutopilotDisengageCue(bool wasEngaged) => wasEngaged;
+
     /// <summary>Clear the autopilot (engaged flag + stored target) with a
     /// console note. Called on G toggle-off, on ANY manual flight input (native
     /// SenseJoystick behaviour), and when the target becomes unresolvable.</summary>
@@ -3226,7 +3247,7 @@ public sealed partial class Game1
         _autoTarget = null;
         _autoTargetAtEngage = null;
         Console.WriteLine($"[monogame] autopilot OFF ({reason})");
-        if (wasEngaged) _sound?.PlayAutopilotDisengage();
+        if (ShouldPlayAutopilotDisengageCue(wasEngaged)) _sound?.PlayAutopilotDisengage();
         RefreshWindowTitle();
     }
 

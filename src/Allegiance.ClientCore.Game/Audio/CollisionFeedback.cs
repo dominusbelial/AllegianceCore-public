@@ -44,22 +44,33 @@ public static class CollisionFeedback
     }
 
     /// <summary>
-    /// The once-per-collision positional sound sources from one frame's drained
-    /// collisions: the impact point of each collision that occurred in the local
-    /// ship's sector (<paramref name="mySector"/>), in arrival order. Native
-    /// plays <c>collisionSound</c> once <b>per party</b>, but every party of a
-    /// single collision sits at the same impact point (the spot they met), so
-    /// the audible outcome is one cue per collision — reduced here to exactly
-    /// that, so a ship-ship hit (two parties) sounds once rather than doubling
-    /// up. A null <paramref name="mySector"/> (no local ship yet) yields nothing.
+    /// The positional sound sources from one frame's drained collisions: the
+    /// impact point once <b>per party</b> for each collision that occurred in
+    /// the local ship's sector (<paramref name="mySector"/>), in arrival order.
+    /// Native plays <c>collisionSound</c> once per party
+    /// (<c>Igc/shipIGC.cpp:1193</c> and sibling branches for the other party),
+    /// and every party of a single collision sits at the same impact point
+    /// (the spot they met), so a ship-ship hit yields two sources at the same
+    /// position. A null <paramref name="mySector"/> (no local ship yet) yields
+    /// nothing. The second party id is ignored when it is <c>NA</c> (rock/station
+    /// collisions where only the ship party produces a live sound site).
     /// </summary>
-    public static IEnumerable<Vector3> SelectSoundSources(
+    public static IEnumerable<CollisionSoundSource> SelectSoundSources(
         IEnumerable<CollisionEntity> collisions, short? mySector)
     {
         foreach (var c in collisions)
-            if (mySector is { } sec && c.ClusterId == sec)
-                yield return c.Position;
+        {
+            if (mySector is not { } sec || c.ClusterId != sec) continue;
+            yield return new CollisionSoundSource(c.Position, c.Party1Id);
+            if (c.Party2Id >= 0)
+                yield return new CollisionSoundSource(c.Position, c.Party2Id);
+        }
     }
+
+    /// <summary>A positional collision-sound source: impact point plus the
+    /// party id it belongs to (used by the mixer to keep one instance per
+    /// party, mirroring native's per-party <c>PlaySoundIf</c> instances).</summary>
+    public readonly record struct CollisionSoundSource(Vector3 Position, short PartyId);
 }
 
 /// <summary>
