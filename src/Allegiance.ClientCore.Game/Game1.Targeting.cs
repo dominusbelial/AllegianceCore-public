@@ -1397,7 +1397,7 @@ public sealed partial class Game1
     /// manual-input disengage already use.</summary>
     private void ClearTarget()
     {
-        DisengageAutopilot("target nothing");
+        DisengageAutopilot(AutopilotDisengageReason.TargetNothing);
         // HUD-8b — native TK_TargetNothing is SetTarget(NULL, c_cidNone)
         // (WinTrek.cpp:10446-10449), which clears the c_cmdCurrent slot even though
         // autopilot disengage alone would not.

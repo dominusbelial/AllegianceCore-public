@@ -178,7 +178,7 @@ public sealed partial class Game1
     {
         if (_autoPilotEngaged)
         {
-            DisengageAutopilot("toggle-off");
+            DisengageAutopilot(AutopilotDisengageReason.ToggleOff);
             return;
         }
 
@@ -2147,7 +2147,7 @@ public sealed partial class Game1
             mouseManualInput ||
             joystickTurnActive);   // P380 — a real stick deflection past deadzone is manual input too
         if (_autoPilotEngaged && manualFlightInput)
-            DisengageAutopilot("manual input");
+            DisengageAutopilot(AutopilotDisengageReason.ManualInput);
 
         // Send controls: while autopilot drives, its steering REPLACES the
         // manual command; station docking also supplies native directional
@@ -2189,7 +2189,7 @@ public sealed partial class Game1
             }
             else
             {
-                if (_autoPilotEngaged) DisengageAutopilot("target lost");
+                if (_autoPilotEngaged) DisengageAutopilot(AutopilotDisengageReason.TargetLost);
                 sentControls = cmd.Controls;
                 sentStateM = cmd.StateM;
                 sentFireM = cmd.StateM;
@@ -2672,7 +2672,7 @@ public sealed partial class Game1
         // autopilot HUD/sound settle exactly once).
         if (tgt.Kind == TargetKind.Cluster && IsInTargetCluster(tgt.Id))
         {
-            DisengageAutopilot("arrived");
+            DisengageAutopilot(AutopilotDisengageReason.Arrived);
             return false;
         }
 
@@ -2724,7 +2724,7 @@ public sealed partial class Game1
             // autopilot exactly once, like every other terminal.
             if (IsOwnShipDocked())
             {
-                DisengageAutopilot("docked");
+                DisengageAutopilot(AutopilotDisengageReason.Docked);
                 return false;
             }
             controls = dockControls;
@@ -2751,7 +2751,7 @@ public sealed partial class Game1
                 // engagement exactly once, like every other terminal. (Without
                 // this the stale pod target would leave the autopilot hung, since
                 // ResolveTargetPosition above returns false without disengaging.)
-                DisengageAutopilot("rescued");
+                DisengageAutopilot(AutopilotDisengageReason.Rescued);
                 return false;
             }
             controls = AutopilotSteering.PodPickup(pos, orient, goal, podVel, ownMaxSpeed);
@@ -2769,7 +2769,7 @@ public sealed partial class Game1
                 && (goal - engagePos).Length() < 1f;
             if (targetStationary && distance <= AutopilotSteering.AutopilotArrivalRadius)
             {
-                DisengageAutopilot("arrived");
+                DisengageAutopilot(AutopilotDisengageReason.Arrived);
                 return false;
             }
         }
@@ -3459,18 +3459,42 @@ public sealed partial class Game1
             _session.World.OwnEchoDropPredicate = _ownShotEcho.ShouldDropServerEcho;
     }
 
-    /// <summary>P756 — the rule for whether an autopilot disengage transition
+    /// <summary>Native-autopilot sound transition classification.
+    /// Only <see cref="ToggleOff"/> and <see cref="ManualInput"/> play
+    /// <c>salAutopilotDisengageSound</c> in native (WinTrek/WinTrek.cpp:8315,
+    /// :10365). The other reasons are silent transitions:
+    /// target lost/arrived/docked/rescued/spectating/target nothing
+    /// (clintlib/appmsg.cpp:2045 boards as passenger silently; TK_TargetNothing
+    /// is SetTarget(NULL, c_cidNone) at WinTrek/WinTrek.cpp:10446-10449 and
+    /// plays no autopilot sound). The commented-out order-accept disengage at
+    /// WinTrek/WinTrek.cpp:8877-8898 (sound at :8895) must also stay silent.</summary>
+    internal enum AutopilotDisengageReason
+    {
+        ToggleOff,
+        ManualInput,
+        TargetLost,
+        Arrived,
+        Docked,
+        Rescued,
+        Spectating,
+        TargetNothing
+    }
+
+    /// <summary>P756/SIM-0276 — the rule for whether an autopilot disengage transition
     /// should produce the <c>salAutopilotDisengageSound</c> cue. Native plays it
-    /// once when the autopilot was engaged and is now cancelled
-    /// (<c>WinTrek/WinTrek.cpp:8315</c>). Exposed internally so the MonoGame test
-    /// suite can pin the one-cue-per-transition guarantee without instantiating
-    /// the full <see cref="Game1"/>.</summary>
-    internal static bool ShouldPlayAutopilotDisengageCue(bool wasEngaged) => wasEngaged;
+    /// only when the autopilot was engaged and the transition is a manual flight
+    /// input (WinTrek/WinTrek.cpp:8315) or the autopilot toggle key
+    /// (WinTrek/WinTrek.cpp:10365). All other off transitions are silent.
+    /// Exposed internally so the MonoGame test suite can pin the rule without
+    /// instantiating the full <see cref="Game1"/>.</summary>
+    internal static bool ShouldPlayAutopilotDisengageCue(bool wasEngaged, AutopilotDisengageReason reason)
+        => wasEngaged && reason is AutopilotDisengageReason.ToggleOff or AutopilotDisengageReason.ManualInput;
 
     /// <summary>Clear the autopilot (engaged flag + stored target) with a
-    /// console note. Called on G toggle-off, on ANY manual flight input (native
-    /// SenseJoystick behaviour), and when the target becomes unresolvable.</summary>
-    private void DisengageAutopilot(string reason)
+    /// console note. Called by every autopilot-off transition (see
+    /// <see cref="AutopilotDisengageReason"/>); only ToggleOff and ManualInput
+    /// play the cue (WinTrek.cpp:8315,10365).</summary>
+    private void DisengageAutopilot(AutopilotDisengageReason reason)
     {
         if (!_autoPilotEngaged && _autoTarget is null) return;
         bool wasEngaged = _autoPilotEngaged;
@@ -3478,7 +3502,7 @@ public sealed partial class Game1
         _autoTarget = null;
         _autoTargetAtEngage = null;
         Console.WriteLine($"[monogame] autopilot OFF ({reason})");
-        if (ShouldPlayAutopilotDisengageCue(wasEngaged)) _sound?.PlayAutopilotDisengage();
+        if (ShouldPlayAutopilotDisengageCue(wasEngaged, reason)) _sound?.PlayAutopilotDisengage();
         RefreshWindowTitle();
     }
 

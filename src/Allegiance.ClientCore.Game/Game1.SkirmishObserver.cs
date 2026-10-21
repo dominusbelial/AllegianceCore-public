@@ -45,7 +45,7 @@ public sealed partial class Game1
 
     private void EnterLocalSpectator()
     {
-        DisengageAutopilot("spectating");
+        DisengageAutopilot(AutopilotDisengageReason.Spectating);
         _autoTarget = null;
         _directorActive = false;
         _spectatorFollowId = -1;

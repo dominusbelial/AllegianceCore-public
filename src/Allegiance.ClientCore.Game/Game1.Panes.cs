@@ -91,7 +91,7 @@ public sealed partial class Game1
                 // pod autopilot lives only while actually in the pod (P540), i.e.
                 // only while NOT docked.
                 if (!EjectAutopilotStaysEngaged(myDocked))
-                    DisengageAutopilot("docked");
+                    DisengageAutopilot(AutopilotDisengageReason.Docked);
                 _launchSent = false;
                 // P284 — gate the offered hulls/parts by the docked station's
                 // tech and the side's researched developments: an item shows iff
