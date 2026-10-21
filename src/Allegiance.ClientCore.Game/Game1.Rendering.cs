@@ -1856,11 +1856,12 @@ public sealed partial class Game1
             _scoreboardRenderer.Draw(GraphicsDevice.Viewport, rows, self);
         }
 
-        // P275 — P Pilot Info overlay: the local player's OWN live stats (kills,
-        // deaths, combat rating, rank, score) extracted from the same derived
-        // roster as the scoreboard (P774: PLAYERINFO + KILL_SHIP, no 209), with
-        // their rank NAME resolved from the RANK_INFO(13) table. Independent flag from
-        // the scoreboard, so both can be open at once; drawn only while flying.
+        // P275 — P Pilot Info overlay: the local player's OWN live stats (rank,
+        // kills, deaths, ejections — P774b: the roster fields with a native
+        // in-mission source) extracted from the same derived roster as the
+        // scoreboard (P774: PLAYERINFO + KILL_SHIP, no 209), with their rank
+        // NAME resolved from the RANK_INFO(13) table. Independent flag from the
+        // scoreboard, so both can be open at once; drawn only while flying.
         if (_state == ClientState.Flying && _pilotInfoVisible && !gameOverUp)
         {
             var info = Rendering.PilotInfoLayout.Build(_session.World.ScoreRoster,

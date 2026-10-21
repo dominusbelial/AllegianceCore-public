@@ -227,8 +227,8 @@ public class P761TeamPaneSortTests
     {
         var entries = new List<ScoreRosterEntry>
         {
-            new("b", 0, 5, 0, 1, 0, 0),
-            new("a", 0, 9, 0, 3, 0, 0),
+            new("b", 0, 5, 0, 0, 1),
+            new("a", 0, 9, 0, 0, 3),
         };
         var ships = new Dictionary<string, TeamPaneLayout.ShipBrief>();
         var lines = TeamPaneLayout.Build(entries, Array.Empty<RankInfoEntry>(), ships,
@@ -347,7 +347,7 @@ public class P761TeamPaneSortTests
     [Fact]
     public void Layout_RendersResolvedSectorAndHullNames_AndTheObjectiveText_NotIds()
     {
-        var entries = new List<ScoreRosterEntry> { new("p10", 0, 0, 0, 0, 0, 0) };
+        var entries = new List<ScoreRosterEntry> { new("p10", 0, 0, 0, 0, 0) };
         var ships = new Dictionary<string, TeamPaneLayout.ShipBrief>
         {
             ["p10"] = new(22, 1, -1, false, false,
@@ -390,8 +390,8 @@ public class P761TeamPaneSortTests
     {
         var entries = new List<ScoreRosterEntry>
         {
-            new("p10", 0, 0, 0, 0, 0, 0),
-            new("p11", 0, 0, 0, 0, 0, 0),
+            new("p10", 0, 0, 0, 0, 0),
+            new("p11", 0, 0, 0, 0, 0),
         };
         var ships = new Dictionary<string, TeamPaneLayout.ShipBrief>
         {

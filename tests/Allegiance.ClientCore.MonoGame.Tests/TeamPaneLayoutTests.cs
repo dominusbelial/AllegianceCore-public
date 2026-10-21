@@ -43,7 +43,7 @@ public class TeamPaneLayoutTests
     }
 
     private static ScoreRosterEntry E(string name, short side, short kills = 0, short deaths = 0, short rank = 0) =>
-        new(name, side, kills, deaths, rank, 0f, 0f);
+        new(name, side, kills, deaths, 0, rank);
 
     private static RankInfoEntry R(short rank, string name) =>
         new(RequiredRanking: 0, Civ: -1, Rank: rank, RankName: name);

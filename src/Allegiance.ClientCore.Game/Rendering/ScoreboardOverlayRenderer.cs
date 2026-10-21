@@ -8,14 +8,16 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <summary>
 /// P639 — draws the LEADERBOARD screen (the upgraded in-mission scoreboard): a
 /// translucent panel listing every real-side player's in-side position, name,
-/// side, rank name, overall rating, combat rating, kills, deaths, base kills
-/// and base captures — from the derived roster (P774: PLAYERINFO + KILL_SHIP)
-/// in <c>ClientWorld.ScoreRoster</c> + the <c>RANK_INFO(13)</c> rank
-/// table (<c>ClientWorld.RankTable</c>). See <see cref="ScoreboardLayout"/> for
-/// the ordering (side asc, score desc), the in-side position numbering and the
-/// native (leaderboardscreen.cpp:54-67) column mapping; the career-ladder
-/// columns native drew from its stats DB are an era/infra constraint (see the
-/// layout docs) and are marked in the report, not faked.
+/// side, rank name and live kills/deaths — from the derived roster (P774:
+/// PLAYERINFO + KILL_SHIP) in <c>ClientWorld.ScoreRoster</c> + the
+/// <c>RANK_INFO(13)</c> rank table (<c>ClientWorld.RankTable</c>). See
+/// <see cref="ScoreboardLayout"/> for the ordering (side asc, kills desc,
+/// deaths asc, name), the in-side position numbering and the column mapping
+/// (P774b: the in-mission columns are exactly RANK/name/K/D — score and base
+/// kills/captures are game-over-only, GAME_OVER_PLAYERS,
+/// gameoverscreen.cpp:146-158, and the game-over screen shows them;
+/// career-ladder columns native drew from its stats DB are an era/infra
+/// constraint (see the layout docs) and are marked in the report, not faked).
 ///
 /// <para>Conventions mirror <see cref="HelpOverlayRenderer"/>: it begins/ends
 /// its own <see cref="SpriteBatch"/> session, draws a translucent panel with a
@@ -57,12 +59,12 @@ public sealed class ScoreboardOverlayRenderer
         float w = viewport.Width;
         float h = viewport.Height;
 
-        var (cwPos, cwName, cwSide, cwRank, cwScore, cwCombat, cwKills, cwDeaths, cwBk, cwBc) =
+        var (cwPos, cwName, cwSide, cwRank, cwKills, cwDeaths) =
             ScoreboardLayout.ColumnWidths(rows, s => _small.MeasureString(s).X);
 
         // Panel width = header/row extent + side margins; height fits header +
         // rows (cap so many players never overflow past the screen).
-        float[] cw = { cwPos, cwName, cwSide, cwRank, cwScore, cwCombat, cwKills, cwDeaths, cwBk, cwBc };
+        float[] cw = { cwPos, cwName, cwSide, cwRank, cwKills, cwDeaths };
         float contentW = 0f;
         for (int c = 0; c < cw.Length; c++)
         {
@@ -96,14 +98,7 @@ public sealed class ScoreboardOverlayRenderer
             // Header.
             Draw("LEADERBOARD  (B TOGGLE)", new Vector2(xs[0], panelY + ScoreboardLayout.Padding - 14f), HeaderColor);
             float headY = panelY + ScoreboardLayout.Padding + ScoreboardLayout.HeaderGap - 4f;
-            string[] headers =
-            {
-                ScoreboardLayout.Row.HeaderPosition, ScoreboardLayout.Row.HeaderName,
-                ScoreboardLayout.Row.HeaderSide, ScoreboardLayout.Row.HeaderRank,
-                ScoreboardLayout.Row.HeaderScore, ScoreboardLayout.Row.HeaderCombat,
-                ScoreboardLayout.Row.HeaderKills, ScoreboardLayout.Row.HeaderDeaths,
-                ScoreboardLayout.Row.HeaderBaseKills, ScoreboardLayout.Row.HeaderBaseCaptures,
-            };
+            string[] headers = ScoreboardLayout.Row.HeaderCells;
             for (int c = 0; c < headers.Length; c++)
                 Draw(headers[c], new Vector2(xs[c], headY), HeaderColor);
 
@@ -115,8 +110,7 @@ public sealed class ScoreboardOverlayRenderer
                 Color nc = self ? SelfColor : NameColor;
                 string[] cells =
                 {
-                    r.Position, r.Name, r.SideLabel, r.RankName, r.Score, r.CombatRating,
-                    r.Kills, r.Deaths, r.BaseKills, r.BaseCaptures,
+                    r.Position, r.Name, r.SideLabel, r.RankName, r.Kills, r.Deaths,
                 };
                 for (int c = 0; c < cells.Length; c++)
                 {

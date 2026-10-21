@@ -190,7 +190,7 @@ public class P642ConsoleZoomTests
     [Fact]
     public void Mini_team_uses_only_own_side_and_preserves_self_highlight_and_money()
     {
-        Allegiance.ClientCore.State.ScoreRosterEntry[] entries = [new("pilot", 0, 2, 1, 0, 0, 0), new("enemy", 1, 5, 0, 0, 0, 0)];
+        Allegiance.ClientCore.State.ScoreRosterEntry[] entries = [new("pilot", 0, 2, 1, 0, 0), new("enemy", 1, 5, 0, 0, 0)];
         var expanded = TeamPaneLayout.Build(entries, [], new Dictionary<string, TeamPaneLayout.ShipBrief>(), null, 123, null, false, "pilot");
         var mini = TeamPaneLayout.Compact(expanded, entries, 0);
         var pilot = Assert.Single(mini, l => l.Kind == TeamPaneLayout.LineKind.Pilot);

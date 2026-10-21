@@ -51,14 +51,8 @@ public sealed class P774DerivedScoreRosterTests
         Assert.Equal((short)1, ace.Deaths);
         Assert.Equal((short)1, ace.Ejections);
         Assert.Equal((short)3, ace.Rank);
-        // The seven fields with no native in-mission source read 0 until P774b.
-        Assert.Equal(0f, ace.Score);
-        Assert.Equal(0f, ace.CombatRating);
-        Assert.Equal((short)0, ace.Rescues);
-        Assert.Equal((short)0, ace.BaseKills);
-        Assert.Equal((short)0, ace.BaseCaptures);
-        Assert.Equal((short)0, ace.Artifacts);
-        Assert.Equal((short)0, ace.Flags);
+        // P774b — the record carries exactly the six fields with a native
+        // in-mission source; the seven display-only fields no longer exist.
         Assert.Equal("Bee", roster[1].CharacterName);
         Assert.Equal((short)1, roster[1].SideId);
     }

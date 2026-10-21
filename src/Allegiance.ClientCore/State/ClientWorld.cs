@@ -1543,9 +1543,9 @@ public sealed partial class ClientWorld
     /// keeps them (<c>clintlib.h:343-361</c>): PLAYERINFO(10) seeds, KILL_SHIP
     /// updates. Empty until the first PLAYERINFO lands. Rebuilt once per
     /// applied batch (in <see cref="MarkApplied"/>) when an input changed; two
-    /// reads with no rebuild in between return the same instance. Score/combat rating/rescues/base kills/base captures/
-    /// artifacts/flags read 0 until P774b (they have no native in-mission
-    /// source either).</summary>
+    /// reads with no rebuild in between return the same instance. The seven
+    /// fields with no native in-mission display were dropped from the record
+    /// (P774b).</summary>
     public IReadOnlyList<ScoreRosterEntry> ScoreRoster => _scoreRoster;
 
     /// <summary>P774 — how many times the derived score roster was rebuilt
@@ -3797,10 +3797,8 @@ public sealed partial class ClientWorld
                 SideId: p.ISide,
                 Kills: p.NKills,
                 Deaths: p.NDeaths,
-                Rank: p.Rank,
-                Score: 0f,
-                CombatRating: 0f,
-                Ejections: p.NEjections);
+                Ejections: p.NEjections,
+                Rank: p.Rank);
         }
         buf.Clear();
         _scoreRoster = rows;

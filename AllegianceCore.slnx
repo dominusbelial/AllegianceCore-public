@@ -41,6 +41,7 @@
     <Project Path="tools/p629-proof/p629-proof.csproj" />
     <Project Path="tools/p748-ui-proof/p748-ui-proof.csproj" />
     <Project Path="tools/p759-ui-proof/p759-ui-proof.csproj" />
+    <Project Path="tools/p774b-ui-proof/p774b-ui-proof.csproj" />
     <Project Path="tools/receive-proof/receive-proof.csproj" />
   </Folder>
 </Solution>

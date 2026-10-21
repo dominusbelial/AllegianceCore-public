@@ -20,16 +20,19 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <para><b>Native fidelity.</b> Native's <c>CharInfoScreen</c>
 /// (<c>WinTrek/CharInfoScreen.cpp</c>) is the career sheet: pilot identity, the
 /// rank banner (<c>m_pstringRank-&gt;SetValue(trekClient.LookupRankName(...))</c>,
-/// CharInfoScreen.cpp:739) and a full stat breakdown. The persistent half
-/// (medals, squads, civ selection, cross-session career counters) is backed by
-/// the Zone Club meta-server (<c>REQ_CHARACTER_INFO</c> →
-/// <c>trekClient.m_fmClub</c>, CharInfoScreen.cpp:242-260) which this port does
-/// not have (no persistence — P129/P275). So this sheet is the honest in-mission
-/// slice: identity + rank name (via the real RANK_INFO wire table, faithfully
-/// resolved through <see cref="RankNameLookup"/> = native
-/// <c>BaseClient::LookupRankName</c>) + every live roster counter. Medals,
-/// squads and civ selection are an era/infra constraint (classified in the
-/// report), not faked.</para>
+/// CharInfoScreen.cpp:739) and a full stat breakdown backed by the Zone Club
+/// career database (<c>REQ_CHARACTER_INFO</c> → <c>trekClient.m_fmClub</c>,
+/// CharInfoScreen.cpp:242-260,717-774) which this port does not have (no
+/// persistence — P129/P275). P774b — the in-mission sheet shows exactly the
+/// roster fields with a native in-mission source: RANK (via the real
+/// RANK_INFO wire table, faithfully resolved through
+/// <see cref="RankNameLookup"/> = native <c>BaseClient::LookupRankName</c>,
+/// clintlib.h:359-361), KILLS, DEATHS and EJECTIONS (the PlayerInfo counters,
+/// clintlib.h:346-348). Rescues, base kills/captures, artifacts, flags, combat
+/// rating and score have no native in-mission display (never shown, or
+/// game-over-only — see <see cref="ScoreboardLayout"/>) and are dropped.
+/// Medals, squads and civ selection are an era/infra constraint (classified in
+/// the report), not faked.</para>
 /// </summary>
 public static class PilotInfoLayout
 {
@@ -73,17 +76,10 @@ public static class PilotInfoLayout
             RankName: ScoreboardLayout.AsciiSafe(rankName),
             Stats:
             [
-                new Stat("RANK NAME", string.IsNullOrWhiteSpace(rankName) ? "(none)" : ScoreboardLayout.AsciiSafe(rankName)),
+                new Stat("RANK", string.IsNullOrWhiteSpace(rankName) ? "(none)" : ScoreboardLayout.AsciiSafe(rankName)),
                 new Stat("KILLS", s.Kills.ToString()),
                 new Stat("DEATHS", s.Deaths.ToString()),
                 new Stat("EJECTIONS", s.Ejections.ToString()),
-                new Stat("RESCUES", s.Rescues.ToString()),
-                new Stat("BASE KILLS", s.BaseKills.ToString()),
-                new Stat("BASE CAPTURES", s.BaseCaptures.ToString()),
-                new Stat("ARTIFACTS", s.Artifacts.ToString()),
-                new Stat("FLAGS", s.Flags.ToString()),
-                new Stat("COMBAT RATING", s.CombatRating.ToString("F1")),
-                new Stat("SCORE", s.Score.ToString("F0")),
             ]);
     }
 

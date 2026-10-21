@@ -7,9 +7,9 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <summary>
 /// P639 — draws the CHARACTER SHEET (the upgraded Pilot Info screen): a
 /// translucent panel showing the local player's <b>own</b> live session stats
-/// (kills, deaths, ejections, rescues, base kills, base captures, artifacts,
-/// flags, combat rating, score) and their resolved rank name, from the local
-/// player's row of the derived roster (P774: PLAYERINFO + KILL_SHIP)
+/// (rank, kills, deaths, ejections — the roster fields with a native in-mission
+/// source, P774b) and their resolved rank name, from the local player's row of
+/// the derived roster (P774: PLAYERINFO + KILL_SHIP)
 /// (<c>ClientWorld.ScoreRoster</c>) + the <c>RANK_INFO(13)</c> rank table
 /// (<c>ClientWorld.RankTable</c>). See <see cref="PilotInfoLayout"/> for the
 /// field mapping and the native CharInfoScreen fidelity notes (career
@@ -152,7 +152,7 @@ public sealed class PilotInfoOverlayRenderer
 
             foreach (var st in p.Stats)
             {
-                if (st.Label == "RANK NAME") continue;   // already shown as the banner above
+                if (st.Label == "RANK") continue;   // already shown as the banner above
                 Draw(st.Label, new Vector2(labelX, y), LabelColor);
                 // Clamp a too-wide value to the inner width, then right-align it.
                 string value = st.Value;
