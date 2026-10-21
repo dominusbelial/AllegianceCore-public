@@ -53,5 +53,8 @@ public sealed class ModerationModel
 
     private static bool CanBoot(ClientWorld world, short id) => world.IsTeamLeader
         && id != world.MyShipId && world.Ships.TryGetValue(id, out var target)
-        && target.SideId == world.MySideId && target.Player is not null;
+        // HUD-20 — a drone now has a PLAYERINFO too; native boot/ban is for
+        // human pilots only (dtidDrone == NA, FedSrv.CPP:2088-2091).
+        && target.SideId == world.MySideId
+        && target.Player is { DtidDrone: Allegiance.Core.Wire.PlayerInfo.NA };
 }

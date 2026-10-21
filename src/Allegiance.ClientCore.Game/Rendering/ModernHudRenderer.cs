@@ -346,6 +346,18 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
                 DrawLine(c, c + new Vector2(x * 7, y * 7) * _scale, _scale, side);
         }
 
+        // HUD-20 — the same native TargetExperienceImage anchor (pane-local
+        // 280,110 = the text top, engine/image.cpp:336-388), as a Modern text readout; the native switch hides it for
+        // non-ships (dialog.mdl:4208-4214,4232).
+        if (tp.IsShip && tp.KillBonusPercent is { } killBonus)
+        {
+            string number = HudStringCache.KillBonusBadge(killBonus);
+            var (numberLeft, numberTop) = TargetPaneLayout.ExperienceNumberTopLeft(x0, y0, s,
+                PaneTextSize(_small, number).X);   // StringImage origin = text top
+            DrawRawText(_small, number, new(numberLeft, numberTop), CarryGold);
+            Mark("Target kill bonus");
+        }
+
         ElementDrawn("Target name", "Target type description", "Target side identity",
             "Target hull", "Target shield", "Target range or sector", "Target speed",
             "Target in weapon range", "Target time to intercept");
@@ -441,6 +453,14 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         var white = Color.White;
         var grey = new Color(162, 189, 201);
         var yellow = new Color(255, 235, 120);
+
+        // HUD-20 — invobserver.mdl:1-12: white "Observers: N" at the native key
+        // column Point(23,5), no icon, no key.
+        if (row.Kind == HudInventoryRowKind.Observers)
+        {
+            RenderText(_small, row.Name, new(left + InventoryPaneLayout.KeyX * s, textY), white, _scale);
+            return;
+        }
 
         Color keyColor = row.Active ? yellow : row.IsEmpty ? grey : white;
         if (row.Key.Length > 0)
@@ -607,6 +627,20 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             var nsz = _small.MeasureString(sector);
             DrawMeasuredText(_small, "Current location:", new(cx - psz.X / 2, labelTop), yellow, fixedAnchor: true);
             DrawMeasuredText(_small, sector, new(cx - nsz.X / 2, HudConsoleFormat.NameBelowLabel(labelTop, lineHeight)), cortText, fixedAnchor: true);
+            Mark("Sector location");
+        }
+        else if (HudConsoleFormat.DockedLookingAt(model.Visible, model.FlightVisible,
+            model.Context.Docked, model.Context.CommandView, console.ViewedSectorName) is { } looking)
+        {
+            // HUD-20 — docked command view: "Currently viewing:" + the viewed
+            // sector name in native Color(1,0,0) (dialog.mdl:1429-1471,5421-5422).
+            float cx = w - 100 * _scale;
+            float labelTop = HudConsoleFormat.SectorLabelTop * _scale;
+            var psz = _small.MeasureString(looking.Label);
+            var nsz = _small.MeasureString(looking.Name);
+            DrawMeasuredText(_small, looking.Label, new(cx - psz.X / 2, labelTop), yellow, fixedAnchor: true);
+            DrawMeasuredText(_small, looking.Name, new(cx - nsz.X / 2, HudConsoleFormat.NameBelowLabel(labelTop, lineHeight)),
+                new Color(looking.Color.R, looking.Color.G, looking.Color.B, looking.Color.A), fixedAnchor: true);
             Mark("Sector location");
         }
         if (model.FlightVisible && console.BoardState == 2 && console.CarrierName is { } carrier)

@@ -632,6 +632,17 @@ public class HudRenderer
             ReserveAnchor("Current location:", cxRight, labelTop, centered: true);
             ReserveAnchor(sector, cxRight, nameTop, centered: true);
         }
+        // HUD-20 — the docked command-view "Currently viewing:" block sits at the
+        // same SideTopRight(-180,-37) anchor (dialog.mdl:5421-5422); reserve it
+        // the same way so a clamped radar label never overlaps it.
+        else if (HudConsoleFormat.DockedLookingAt(model.Visible, model.FlightVisible,
+            model.Context.Docked, model.Context.CommandView, console.ViewedSectorName) is { } looking)
+        {
+            float labelTop = HudConsoleFormat.SectorLabelTop * scale;
+            float nameTop = HudConsoleFormat.NameBelowLabel(labelTop, lineHeight);
+            ReserveAnchor(looking.Label, cxRight, labelTop, centered: true);
+            ReserveAnchor(looking.Name, cxRight, nameTop, centered: true);
+        }
         if (model.FlightVisible && console.BoardState == 2 && console.CarrierName is { } carrier)
         {
             float labelTop = HudConsoleFormat.TurretLabelTop * scale;
@@ -926,6 +937,27 @@ public class HudRenderer
             var nsz = medVerdana.MeasureString(sector);
             DrawMeasuredText(promptFont, "Current location:", new(cxRight - psz.X / 2, labelTop), yellow, fixedAnchor: true);
             DrawMeasuredText(medVerdana, sector, new(cxRight - nsz.X / 2, nameTop), cortText, fixedAnchor: true);
+            ElementDrawn("Sector location");
+        }
+        // HUD-20 — docked command view (native ofInStationCommand, WinTrek.cpp:6831-6840)
+        // draws LookingAtImage at the SAME SideTopRight(-180,-37) anchor as the
+        // in-flight location block: yellow "Currently viewing:" with the viewed
+        // sector name in native Color(1,0,0) (dialog.mdl:1429-1471,5421-5422).
+        else if (HudConsoleFormat.DockedLookingAt(model.Visible, model.FlightVisible,
+            model.Context.Docked, model.Context.CommandView, console.ViewedSectorName) is { } looking)
+        {
+            // Same FONT-1 fonts as the in-flight block: promptFont label,
+            // medVerdana name (LookingAtImage / CurrentViewSectorNameImage,
+            // dialog.mdl:1430-1437,1458-1471).
+            float labelTop = HudConsoleFormat.SectorLabelTop * scale;
+            float nameTop = HudConsoleFormat.NameBelowLabel(labelTop, lineHeight);
+            var promptFont = NativeFontAt(NativeFont.PromptFont);
+            var medVerdana = NativeFontAt(NativeFont.MedVerdana);
+            var psz = promptFont.MeasureString(looking.Label);
+            var nsz = medVerdana.MeasureString(looking.Name);
+            DrawMeasuredText(promptFont, looking.Label, new(cxRight - psz.X / 2, labelTop), yellow, fixedAnchor: true);
+            DrawMeasuredText(medVerdana, looking.Name, new(cxRight - nsz.X / 2, nameTop),
+                From(looking.Color), fixedAnchor: true);
             ElementDrawn("Sector location");
         }
 
@@ -2310,6 +2342,26 @@ public class HudRenderer
         if (tp.InRange)
             DrawPaneTexture(_targetPaneTextures?.Range, x0 + 200f * s, y0 - 90f * s, s, Color.White);
 
+        // HUD-20 — native TargetExperienceImage: the targetexperiencebmp with its
+        // lower-left at pane-local (280+25, 110−21) and a black medBoldVerdana
+        // number centred in the 80-wide box whose StringImage origin is (280,110)
+        // — the TOP of the text, since a StringImage hangs below its origin
+        // (engine/image.cpp:336-388). The native switch hides it for every
+        // non-ship (dialog.mdl:4192-4206,4208-4214,4232). FONT-1 — the number
+        // uses the native medBoldVerdana at the pane scale, so the native anchor
+        // places it on the medal with no substitute-font centring.
+        if (tp.IsShip && tp.KillBonusPercent is { } killBonus)
+        {
+            var (artLeft, artBottom) = TargetPaneLayout.ExperienceArtBottomLeft(x0, y0, s);
+            DrawPaneTexture(_targetPaneTextures?.TargetExperience, artLeft, artBottom, s, Color.White);
+            var (expFont, expFs) = HudFont(NativeFont.MedBoldVerdana, s);
+            string number = HudStringCache.KillBonusNumber(killBonus);
+            var (numberLeft, numberTop) = TargetPaneLayout.ExperienceNumberTopLeft(x0, y0, s,
+                PaneTextSize(expFont, number, expFs).X);
+            DrawRawText(expFont, number, new(numberLeft, numberTop), Color.Black, expFs);
+            ElementDrawn("Target kill bonus");
+        }
+
         ElementDrawn("Target name", "Target type description", "Target side identity",
             "Target hull", "Target shield", "Target range or sector", "Target speed", "Target in weapon range");
     }
@@ -2781,11 +2833,23 @@ public class HudRenderer
         // the pane scale.
         var (rowFont, rowFs) = HudFont(NativeFont.SmallFont, scale);
 
+        // HUD-20 — invobserver.mdl:1-12: white "Observers: N" at the native key
+        // column Point(23,5), with no icon and no key. FONT-1 — the StringPane
+        // default smallFont at the pane scale, like every other row string.
+        if (row.Kind == HudInventoryRowKind.Observers)
+        {
+            RenderText(rowFont, row.Name,
+                new Vector2(left + InventoryPaneLayout.KeyX * scale, textY), white, rowFs);
+            return;
+        }
+
         // Icon (native inv*.mdl Point(5,5)).
         Texture2D? icon = row.Kind switch
         {
             HudInventoryRowKind.Weapon => art?.WeaponIcon,
             HudInventoryRowKind.EmptyWeapon => art?.WeaponIcon,
+            // HUD-20 — an observer row has no icon natively (invobserver.mdl:1-12).
+            HudInventoryRowKind.Observers => null,
             _ => art?.EquipmentIcon,
         };
         if (icon is { } ic)

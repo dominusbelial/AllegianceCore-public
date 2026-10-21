@@ -303,15 +303,26 @@ public static class HudElements
                     case "Tip text lines": Notices(false); break;
                     case "Critical tip text lines": Notices(true); break;
                     case "Sector location":
-                        element = element with { Available = console?.SectorName is not null,
-                            Visible = model.FlightVisible && console?.SectorName is not null, Text = console?.SectorName }; break;
+                        // HUD-20 — in flight the native ofInFlight block shows the
+                        // ship's sector; in docked command view LookingAtImage shows
+                        // the VIEWED sector under ofInStationCommand
+                        // (dialog.mdl:5419-5422, WinTrek.cpp:6831-6840).
+                        if (model.FlightVisible && console?.SectorName is not null)
+                            element = element with { Available = true, Visible = true, Text = console.SectorName };
+                        else if (model.Visible && c.Docked && c.CommandView && console?.ViewedSectorName is not null)
+                            element = element with { Available = true, Visible = true, Text = console.ViewedSectorName };
+                        else
+                            element = element with { Available = console?.ViewedSectorName is not null || console?.SectorName is not null };
+                        break;
                     case "Turret carrier identity":
                         element = element with { Available = console is { BoardState: 2, CarrierName: not null },
                             Visible = model.FlightVisible && console is { BoardState: 2, CarrierName: not null },
                             Text = console is { BoardState: 2 } ? console.CarrierName : null }; break;
                     case "Observer and turret board state":
                         // Native BoardTextImage is loadout-only (dialog.mdl:2106); the
-                        // value is exposed in the model, not drawn in flight.
+                        // value is exposed in the model, not drawn in flight. HUD-20
+                        // draws the inventory observer count (invobserver.mdl) —
+                        // that is a separate element of the inventory pane.
                         element = element with { Available = console is not null, Visible = false,
                             Value = console?.BoardState, Text = console is { } bt ? HudConsoleFormat.BoardLabel(bt.BoardState, bt.CarrierName) : null }; break;
                     case "Accepted order text":

@@ -163,7 +163,10 @@ public class LeaderBotCommandTests
         var world = LeaderWorld(Me, Side);
         AddFlyingBot(world, Bot, Side);
         // Now a real peer's PLAYERINFO lands for that same ship -> no longer a bot.
-        world.Apply(new PlayerInfo { ShipId = Bot, ISide = Side, CharacterName = "human", PilotType = PlayerInfo.PilotTypePlayer });
+        // HUD-20 — native marks a human with dtidDrone == NA (FedSrv.CPP:2088-2091);
+        // a drone carries its type id.
+        world.Apply(new PlayerInfo { ShipId = Bot, ISide = Side, CharacterName = "human",
+            PilotType = PlayerInfo.PilotTypePlayer, DtidDrone = PlayerInfo.NA });
 
         Assert.Null(LeaderBotCommandResolver.Resolve(world, Bot));
     }

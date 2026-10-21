@@ -182,14 +182,16 @@ public class LeaderSameSideBotClientLiveTests
         // same-side NPC EXPORT): it appears with its real side + the EXPORT's
         // identity fields (HullId + CharacterName — the heavy-kinematic update
         // never sets either, so these are the export-only discriminator that
-        // proves the same-side NPC identity really reached the client) + no
-        // PlayerInfo (the P366 bot discriminator), so the resolver OFFERS the command.
+        // proves the same-side NPC identity really reached the client). HUD-20
+        // gives a drone a PLAYERINFO too (native seeds every mission ship,
+        // FedSrv.CPP:2129-2134), so the bot discriminator is PLAYERINFO's
+        // dtidDrone != NA (FedSrv.CPP:2088-2091), not "no PlayerInfo".
         int se = PumpUntil(rig.Server,
             () => rig.Leader.World.Ships.TryGetValue(npc.Id, out var se2)
                   && se2.SideId == rig.Side0
                   && se2.HullId == npc.HullType.HullId
                   && se2.CharacterName.Length > 0
-                  && se2.Player is null && se2.Latest is not null,
+                  && se2.Player is { DtidDrone: not PlayerInfo.NA } && se2.Latest is not null,
             4000);
         Assert.True(se < 4000, "leader's ClientWorld must be shown the same-side bot (EXPORT with SideId + hull identity + pose)");
 
@@ -203,7 +205,8 @@ public class LeaderSameSideBotClientLiveTests
         int mateSeen = PumpUntil(rig.Server,
             () => rig.Mate.World.Ships.TryGetValue(npc.Id, out var memberBot)
                   && memberBot.SideId == rig.Side0 && memberBot.HullId == npc.HullType.HullId
-                  && memberBot.CharacterName.Length > 0 && memberBot.Player is null && memberBot.Latest is not null,
+                  && memberBot.CharacterName.Length > 0
+                  && memberBot.Player is { DtidDrone: not PlayerInfo.NA } && memberBot.Latest is not null,
             4000);
         Assert.True(mateSeen < 4000, "non-leader B must receive the same-side NPC identity and pose");
         // A NON-leader on the same side sees NO command for the same bot.

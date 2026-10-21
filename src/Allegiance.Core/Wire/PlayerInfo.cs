@@ -34,11 +34,11 @@ namespace Allegiance.Core.Wire;
 ///   offset 42: short nKills = 0
 ///   offset 44: short nEjections = 0
 ///   offset 46: short nDeaths = 0
-///   offset 48: float fExperience = 0
+///   offset 48: float fExperience      (HUD-20: the ship's KillBonus, FedSrv.CPP:2084)
 ///   offset 52: short iSide          ← THE FIELD this message exists to carry
 ///   offset 54: short shipID         (must match the peer's assigned id)
 ///   offset 56: short rankID = 0
-///   offset 58: short dtidDrone = 0  (drone piloting out of scope)
+///   offset 58: short dtidDrone        (NA = human, else the drone type id, FedSrv.CPP:2088-2091)
 ///   offset 60: uchar pilotType = 10 (c_ptPlayer; harmless since the ship is
 ///                                    reused from the earlier EXPORT — see below)
 ///   offset 61: 1 pad byte to the 2-aligned short
@@ -191,11 +191,16 @@ public sealed class PlayerInfo : IFedMessage
         w.WriteByte(0);                              // 3×bool:1 = 0
         w.Advance(NKillsOffset - w.Position);        // → nKills @42
         w.WriteI16(NKills); w.WriteI16(NEjections); w.WriteI16(NDeaths); // nKills, nEjections, nDeaths @42/44/46
-        w.WriteI32(BitConverter.SingleToInt32Bits(0f)); // fExperience @48 (float 0)
+        // HUD-20 — native fills fExperience from the ship's IGC experience
+        // (FedSrv.CPP:2084); the target pane's kill bonus reads it back
+        // (appmsg.cpp:2280 -> consoledata.cpp:831-843).
+        w.WriteI32(BitConverter.SingleToInt32Bits(FExperience)); // fExperience @48
         w.WriteI16(ISide);                           // iSide @52  ← THE FIELD
         w.WriteI16(ShipId);                          // shipID @54
         w.WriteI16(0);                               // rankID @56
-        w.WriteI16(0);                               // dtidDrone @58
+        // HUD-20 — native dtidDrone is NA for a human and the drone type id for
+        // a drone (FedSrv.CPP:2088-2091); the client tells them apart with it.
+        w.WriteI16(DtidDrone);                       // dtidDrone @58
         w.WriteByte(PilotType);                      // pilotType @60
         w.Advance(AbmOrdersOffset - w.Position);     // → abmOrders @62
         w.WriteI16(0);                               // abmOrders @62

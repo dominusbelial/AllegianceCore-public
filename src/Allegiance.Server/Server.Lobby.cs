@@ -894,6 +894,7 @@ public sealed partial class Server
         _teammateExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         _stationIdentitySent.RemoveWhere(e => e.Recipient == conn);
         _teammatePlayerInfoSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
+        _missionPlayerInfoSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         _crossSideExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         _crossSideMineExportSent.RemoveWhere(e => e.Recipient == conn);
         _sameSideNpcExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
@@ -3628,19 +3629,10 @@ private void CompleteStartCountdown(Mission mission, double now)
         // assert holds on the live client is P31b's empirical job.
         SendPeer(from, FedPacket.Pack(new[]
         {
-            new PlayerInfo
-            {
-                CharacterName = req.CharacterName ?? "",
-                Money = 0,
-                ISide = live.Ship.SideId ?? -1,
-                ShipId = shipId,
-                PilotType = PlayerInfo.PilotTypePlayer,
-                // HUD-12 — native sends the player's real mission kills/deaths
-                // here (FedSrv.CPP:2085-2086); the client seeds MissionKills/
-                // MissionDeaths from it (appmsg.cpp:2254-2256, clintlib.h:346-347).
-                NKills = (short)Math.Clamp(live.PlayerScore.Kills, short.MinValue, short.MaxValue),
-                NDeaths = (short)Math.Clamp(live.PlayerScore.Deaths, short.MinValue, short.MaxValue),
-            }.Encode(),
+            // HUD-20 — the shared native-shape builder fills fExperience,
+            // pilotType and dtidDrone too (FedSrv.CPP:2084,2088-2091).
+            BuildPlayerInfo(live.Ship, live.Ship.SideId ?? -1, req.CharacterName ?? "",
+                live.PlayerScore.Kills, live.PlayerScore.Deaths).Encode(),
         }));
         Console.WriteLine($"[playerinfo] peer {from} '{req.CharacterName}' -> PLAYERINFO(10) ship {shipId} iSide {live.Ship.SideId?.ToString() ?? "(none)"} (side assignment for the direct-connect ship)");
 
@@ -3941,12 +3933,9 @@ private void CompleteStartCountdown(Mission mission, double now)
             // 2934-2944,2976-2986). No hull or tactical position is disclosed.
             foreach (var (peer, player) in _peerShips)
                 if (player.Ship.Mission == lobbyMission && player.Ship.Id != shipId)
-                    lobbyState.Add(new PlayerInfo { ShipId = player.Ship.Id,
-                        ISide = player.Ship.SideId ?? -2, Money = 0,
-                        CharacterName = _peerNames.TryGetValue(peer, out var name) ? name : "",
-                        PilotType = PlayerInfo.PilotTypePlayer,
-                        NKills = (short)Math.Clamp(player.PlayerScore.Kills, short.MinValue, short.MaxValue),
-                        NDeaths = (short)Math.Clamp(player.PlayerScore.Deaths, short.MinValue, short.MaxValue) }.Encode());
+                    lobbyState.Add(BuildPlayerInfo(player.Ship, player.Ship.SideId ?? -2,
+                        _peerNames.TryGetValue(peer, out var name) ? name : "",
+                        player.PlayerScore.Kills, player.PlayerScore.Deaths).Encode());
             foreach (var side in lobbyMission.Sides)
             {
                 if (side.LeaderShipId is { } leader)

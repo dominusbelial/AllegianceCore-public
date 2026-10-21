@@ -75,11 +75,27 @@ public sealed partial class Game1
         var cargo = inventory.Where(e => CargoSelector.IsCargoMount(e.MountId)).ToList();
         var attributes = _session.World.MySideId is { } sideId
             ? _session.World.GlobalAttributesFor(sideId) : GlobalAttributeSet.Identity;
+        // HUD-20 — native GetCloaking(Me) = 100·(1−GetCloaking()) for the own or
+        // parent ship only (consoledata.cpp:480-490), from the owner-only
+        // OwnShipCloakUpdate(220) the HUD-12 path already reads.
+        float? cloakStrength = _session.World.MyCloaking is { } cloaking
+            ? Allegiance.Core.Wire.OwnShipCloakUpdate.StrengthPercent(cloaking)
+            : null;
+        // HUD-20 — native ProcessObservers counts the source ship's children with
+        // GetTurretID() == NA (inventoryimage.cpp:141-169); the source ship is the
+        // own ship, or the carrier when the local pilot is boarded
+        // (GetSourceShip(), inventoryimage.cpp:290).
+        int observers = 0;
+        short sourceId = entity.ParentId >= 0 ? entity.ParentId : entity.ShipId;
+        foreach (var other in _session.World.Ships.Values)
+            if (other.ParentId == sourceId && other.BoardTurretId == ShipEntity.BoardTurretObserver)
+                observers++;
         return HudInventoryPaneBuilder.Build(
             catalog, hull, loadout, cargo, attributes,
             up.FuelFraction, up.EnergyFraction, up.ShieldFraction, up.AmmoFraction,
             _groupFire, _selectedMount, _selectedCargoMount,
-            hull.Name, isPilot: !IsTurretGunner(), sourceHull: sourceHull);
+            hull.Name, isPilot: !IsTurretGunner(), sourceHull: sourceHull,
+            cloakStrengthPercent: cloakStrength, observerCount: observers);
     }
 
     private void CycleInventory(bool next)

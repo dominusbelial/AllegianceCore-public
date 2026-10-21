@@ -22,6 +22,31 @@ public static class TargetPaneLayout
     public const float LocalAnchorX = 320f;  // SideBottom -320
     public const float LocalAnchorY = 25f;   // SideBottom +25
 
+    // HUD-20 — native TargetExperienceImage inside DefaultNormalTargetDisplay:
+    // group at Point(280,110) holding a JustifyCenter 80-wide StringImage and the
+    // targetexperiencebmp translated Point(25,-21) (dialog.mdl:4192-4206,:4232).
+    // A native StringImage hangs BELOW its origin: bounds Rect(0,-ysize,w,0) and
+    // each line drawn at y -= size.Y (engine/image.cpp:336-388), so in the y-up
+    // pane space local 110 is the TOP of the number (glyphs span ~97..110,
+    // inside the 32x32 medal at 89..121).
+    public const float ExperienceLeft = 280f;
+    public const float ExperienceTextTop = 110f;
+    public const float ExperienceBoxWidth = 80f;
+    public const float ExperienceBitmapX = 25f;   // TranslateImage Point(25,…)
+    public const float ExperienceBitmapY = 21f;   // TranslateImage Point(…,-21)
+
+    /// <summary>HUD-20 — screen lower-left of the targetexperiencebmp: pane-local
+    /// (280+25, 110−21) mapped by the pane rule <c>x0 + x·s</c>, <c>y0 − y·s</c>.</summary>
+    public static (float Left, float Bottom) ExperienceArtBottomLeft(float x0, float y0, float s) =>
+        (x0 + (ExperienceLeft + ExperienceBitmapX) * s, y0 - (ExperienceTextTop - ExperienceBitmapY) * s);
+
+    /// <summary>HUD-20 — screen top-left of the kill-bonus number of measured
+    /// width <paramref name="numberWidth"/>: JustifyCenter in the 80-wide box at
+    /// pane-local x 280, with the StringImage origin (local y 110) as the text
+    /// TOP (<c>engine/image.cpp:336-388</c>).</summary>
+    public static (float Left, float Top) ExperienceNumberTopLeft(float x0, float y0, float s, float numberWidth) =>
+        (x0 + (ExperienceLeft + ExperienceBoxWidth / 2f) * s - numberWidth / 2f, y0 - ExperienceTextTop * s);
+
     /// <summary>The native coordinate scale for a viewport, width-clamped so the
     /// pane's right edge never reaches the bottom-right minimap (the HUD-2
     /// overlap rule). Matches the gauge spread at large heights.</summary>

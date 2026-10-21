@@ -448,6 +448,14 @@ public sealed partial class Server
         }
     }
 
+    /// <summary>HUD-20 — native's <c>PassengerData.turretID</c> is a <c>Mount</c>
+    /// whose <c>NA</c> (-1, 0xFF on the wire) marks an observer
+    /// (<c>Inc/Messages.h:30-34</c>; <c>clintlib/appmsg.cpp:2064-2068,2073</c>).
+    /// The old <c>?? 0</c> sent every observer as mount 0, so a client could not
+    /// tell an observer from a gunner.</summary>
+    internal static PassengerData PassengerRecord(Ship child) =>
+        new(child.Id, (byte)(child.TurretId ?? -1));
+
     private void BroadcastLoadoutChange(IShipIgc pship, IPartIgc ppart, LoadoutChange lc)
     {
         if (pship is not Ship ship)
@@ -495,9 +503,7 @@ public sealed partial class Server
                 .Select(p => p.FractionMounted == byte.MaxValue
                     ? p with { FractionMounted = ExpandedPartData.FullyMounted } : p)
                 .ToArray(),
-            Passengers = ship.ChildShips
-                .Select(c => new PassengerData(c.Id, (byte)(c.TurretId ?? 0)))
-                .ToArray(),
+            Passengers = ship.ChildShips.Select(PassengerRecord).ToArray(),
         };
         byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
 
@@ -1808,6 +1814,11 @@ public sealed partial class Server
             {
                 Console.WriteLine($"[lifepod] ship {victim.Id} has no owning peer (bot/non-player) — no respawn, stays dead");
                 FinalizeDeadShip(victim);   // P323 M6 — really leave the sector & mark dead (native deletes the drone, FedSrv.CPP:12084)
+                // HUD-20 — the drone is gone for good (native deletes it,
+                // FedSrv.CPP:12084): free its one-shot PLAYERINFO seed latches so
+                // the set does not grow with every dead drone and a later ship
+                // that reuses the id (AllocateShipId wraps) is seeded afresh.
+                if (victim.IsNpc) _missionPlayerInfoSent.RemoveWhere(e => e.ShipId == victim.Id);
                 return;
             }
 

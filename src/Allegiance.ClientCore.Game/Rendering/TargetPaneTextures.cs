@@ -20,6 +20,11 @@ public sealed class TargetPaneTextures : IDisposable
     public const string OvalColorMdl = "targetovalcolorbmp";
     public const string OvalWord1Mdl = "targetovalword1bmp";
     public const string OvalWord2Mdl = "targetovalword2bmp";
+    // HUD-20 — native TargetExperienceOnImage's art, translated Point(25,-21)
+    // inside a group at pane-local Point(280,110) (Artwork/dialog.mdl:4192-4206,
+    // :4232). The file is Artwork/TargetExperiencebmp.mdl — capital T; Linux
+    // asset lookup is case sensitive, so this literal must match exactly.
+    public const string TargetExperienceMdl = "TargetExperiencebmp";
 
     // Native GaugeImageRect source rectangles inside the 128x128 gauge bitmaps
     // (Artwork/dialog.mdl:4123-4135).
@@ -33,6 +38,7 @@ public sealed class TargetPaneTextures : IDisposable
     private Texture2D? _ovalColor;
     private Texture2D? _ovalWord1;
     private Texture2D? _ovalWord2;
+    private Texture2D? _targetExperience;
     private bool _disposed;
 
     public Texture2D? Hull => _hull;
@@ -42,6 +48,7 @@ public sealed class TargetPaneTextures : IDisposable
     public Texture2D? OvalColor => _ovalColor;
     public Texture2D? OvalWord1 => _ovalWord1;
     public Texture2D? OvalWord2 => _ovalWord2;
+    public Texture2D? TargetExperience => _targetExperience;
 
     public bool AllGaugesLoaded => _hull is not null && _shield is not null;
 
@@ -56,6 +63,7 @@ public sealed class TargetPaneTextures : IDisposable
         _ovalColor?.Dispose(); _ovalColor = null;
         _ovalWord1?.Dispose(); _ovalWord1 = null;
         _ovalWord2?.Dispose(); _ovalWord2 = null;
+        _targetExperience?.Dispose(); _targetExperience = null;
     }
 
     /// <summary>Back-compat convenience: load from an on-disk artwork directory.</summary>
@@ -77,6 +85,7 @@ public sealed class TargetPaneTextures : IDisposable
         LoadOne(OvalColorMdl, t => result._ovalColor = t);
         LoadOne(OvalWord1Mdl, t => result._ovalWord1 = t);
         LoadOne(OvalWord2Mdl, t => result._ovalWord2 = t);
+        LoadOne(TargetExperienceMdl, t => result._targetExperience = t);
         return result;
 
         void LoadOne(string stem, Action<Texture2D> set)

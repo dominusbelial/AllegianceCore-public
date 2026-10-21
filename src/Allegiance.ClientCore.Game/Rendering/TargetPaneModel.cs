@@ -44,6 +44,7 @@ public static class TargetPaneModel
         string? sideName = null;
         HudColor sideColor = Neutral;
         float? hull = null, shield = null, ore = null, speed = null;
+        float killBonus = 0f;
         bool isShip = false;
 
         // Native GetRange (consoledata.cpp:182-199) needs the target in the
@@ -63,6 +64,11 @@ public static class TargetPaneModel
                 isShip = true;
                 if (world.Ships.TryGetValue(id, out var ship))
                 {
+                    // HUD-20 — native TargetExperience = 100·(GetExperienceMultiplier()−1)
+                    // of a ship target (consoledata.cpp:831-843); the ship counter
+                    // is seeded from PLAYERINFO's fExperience (appmsg.cpp:2280) and
+                    // kept current from KILL_SHIP (:2769,2807-2811).
+                    killBonus = TargetExperience(ship.Experience);
                     name = Safe(string.IsNullOrEmpty(ship.CharacterName) ? $"ship {id}" : ship.CharacterName);
                     if (hullTypes is { } hulls && hulls.TryGetValue(ship.HullId, out var hullType))
                         type = Safe(hullType.Name) ?? "unknown";
@@ -185,7 +191,7 @@ public static class TargetPaneModel
             Distance: distance,
             Speed: speed,
             OreFraction: ore,
-            KillBonusPercent: null,   // per-target experience is not on the client wire
+            KillBonusPercent: isShip ? killBonus : null,   // native switch hides non-ships (dialog.mdl:4208-4214)
             // HUD-18 — the client-side in-range flag (indicator.cpp:405,407),
             // supplied by Game1.ComputeTargetPane; never the lead message.
             InRange: inRange,
@@ -259,6 +265,15 @@ public static class TargetPaneModel
             _ => false,
         };
     }
+
+    /// <summary>HUD-20 — native <c>ModelData::TargetExperience</c>
+    /// (<c>WinTrek/consoledata.cpp:831-843</c>):
+    /// <c>100·(GetExperienceMultiplier()−1)</c> = <c>50·e/(e+4)</c>
+    /// (<c>Igc/shipIGC.h:1812-1818</c>), where <c>e</c> is the ship's experience
+    /// (<c>shipIGC.h:2610</c>). Only an <c>OT_ship</c> has one; the native switch
+    /// hides the readout for every other object type (dialog.mdl:4208-4214).</summary>
+    public static float TargetExperience(float experience) =>
+        50f * experience / (experience + 4f);
 
     /// <summary>Printable-ASCII sanitisation (spritefont range 32..126), but
     /// null/empty stays null so renderers keep the native "unknown" fallback.</summary>

@@ -68,6 +68,7 @@ public sealed partial class ClientWorld
             || !_ships.TryGetValue(message.CarrierId, out var carrier)) return;
         var previous = ship.Latest;
         ship.ParentId = -1;
+        ship.BoardTurretId = -1;   // HUD-20 — relaunched, no longer boarded
         ship.HasPendingEject = false;
         ship.HullId = message.HullId;
         StoreInventory(ship, message.Parts.ToList());

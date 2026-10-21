@@ -419,6 +419,11 @@ public class ShipStatusServerTests
             return (ship, sector);
         };
         server.Boot(Config());
+        // HUD-20 review — a STARTED mission: the mission-wide PLAYERINFO seed only
+        // runs once the mission is Started/Starting, so the "exactly once per
+        // (recipient, teammate)" assertion below must hold there too (it once
+        // passed only because the mission never started).
+        foreach (var m in server.Missions) m.Stage = MissionStage.Started;
 
         string obsName = "p63_commander", subjName = "p63_miner";
         using var observer = new FltBot();

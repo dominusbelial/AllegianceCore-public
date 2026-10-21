@@ -83,9 +83,11 @@ public class HudInventoryPaneTests
     private static HudInventoryPane Build(
         IReadOnlyList<ExpandedPartData> loadout, IReadOnlyList<ExpandedPartData> cargo,
         float fuel = 0.9f, float energy = 0.8f, float shield = 0.5f, float ammo = 0.6f,
-        bool groupFire = false, int selectedMount = 0, int selectedCargoMount = -1) =>
+        bool groupFire = false, int selectedMount = 0, int selectedCargoMount = -1,
+        float? cloakStrengthPercent = null, int observerCount = 0) =>
         HudInventoryPaneBuilder.Build(Catalog(), Hull(), loadout, cargo, GlobalAttributeSet.Identity,
-            fuel, energy, shield, ammo, groupFire, selectedMount, selectedCargoMount, "Fig Adv");
+            fuel, energy, shield, ammo, groupFire, selectedMount, selectedCargoMount, "Fig Adv",
+            cloakStrengthPercent: cloakStrengthPercent, observerCount: observerCount);
 
     [Theory]
     [InlineData(true, false, false, true)]
@@ -202,6 +204,56 @@ public class HudInventoryPaneTests
         var cloak = Build([new(CloakId, 1, 0, ExpandedPartData.FullyMounted)], [], energy: 0.8f)
             .Rows.Single(r => r.Kind == HudInventoryRowKind.Cloak);
         Assert.Equal("32 sec", cloak.StatsText);
+    }
+
+    [Fact]
+    public void Cloak_row_prints_native_strength_percentage_and_endurance()
+    {
+        // HUD-20 — invcloak.mdl:10-23 is
+        // `NumberString(GetCloaking(Me)) + "% / " + CloakTimeLeft + " sec"`.
+        // ModelData::GetCloaking = 100*(1-GetCloaking()) for the own/parent ship
+        // (consoledata.cpp:480-490); NumberString rounds as (int)(v+0.5).
+        var cloak = Build([new(CloakId, 1, 0, ExpandedPartData.FullyMounted)], [],
+            energy: 0.8f, cloakStrengthPercent: 37.4f)
+            .Rows.Single(r => r.Kind == HudInventoryRowKind.Cloak);
+        Assert.Equal("37% / 32 sec", cloak.StatsText);
+    }
+
+    [Fact]
+    public void Cloak_row_without_a_strength_update_keeps_the_endurance_only_text()
+    {
+        // Before the first OwnShipCloakUpdate(220) the strength is unknown; the
+        // row must not invent a 0%.
+        var cloak = Build([new(CloakId, 1, 0, ExpandedPartData.FullyMounted)], [], energy: 0.8f)
+            .Rows.Single(r => r.Kind == HudInventoryRowKind.Cloak);
+        Assert.Equal("32 sec", cloak.StatsText);
+    }
+
+    [Fact]
+    public void Observers_row_sits_between_fixed_weapons_and_turrets()
+    {
+        // HUD-20 — native ProcessObservers adds one invobserver row only when the
+        // count is > 0, after the fixed-weapon loop and before the turret loop
+        // (inventoryimage.cpp:320-332). Hull: 2 fixed mounts + 1 turret mount.
+        var loadout = new[]
+        {
+            new ExpandedPartData(WeaponId, 1, 0, ExpandedPartData.FullyMounted),
+            new ExpandedPartData(WeaponId, 1, 2, ExpandedPartData.FullyMounted),
+        };
+        var rows = Build(loadout, [], observerCount: 2).Rows;
+        int observers = rows.ToList().FindIndex(r => r.Kind == HudInventoryRowKind.Observers);
+        int firstFixed = rows.ToList().FindIndex(r => r.Kind == HudInventoryRowKind.Weapon);
+        int lastFixed = rows.ToList().FindLastIndex(r => r.Key is "1." or "2.");
+        int firstTurret = rows.ToList().FindIndex(r => r.Key == "Y.");
+        Assert.True(observers > lastFixed, "the observers row follows the fixed-weapon rows");
+        Assert.True(observers < firstTurret, "the observers row precedes the turret rows");
+        Assert.Equal("Observers: 2", rows[observers].Name);
+        Assert.Equal("", rows[observers].Key);
+        Assert.Null(rows[observers].StatsText);
+        Assert.True(firstFixed >= 0);
+
+        // 0 observers -> no row at all.
+        Assert.DoesNotContain(Build(loadout, []).Rows, r => r.Kind == HudInventoryRowKind.Observers);
     }
 
     [Fact]

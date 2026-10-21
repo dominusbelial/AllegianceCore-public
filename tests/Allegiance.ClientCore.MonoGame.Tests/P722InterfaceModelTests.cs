@@ -34,7 +34,9 @@ public sealed class P722InterfaceModelTests
         var reader = new WireReader(payload);
         world.Apply(new SetCluster { SectorId = 3, Ship = ServerShipUpdate.DecodeBody(ref reader) });
         foreach (short id in new short[] { 10, 11, 12 })
-            world.Apply(new PlayerInfo { ShipId = id, ISide = id == 12 ? (short)1 : (short)0, CharacterName = "Pilot " + id });
+            // HUD-20 — these are human pilots: native dtidDrone == NA (FedSrv.CPP:2088-2091).
+            world.Apply(new PlayerInfo { ShipId = id, ISide = id == 12 ? (short)1 : (short)0,
+                CharacterName = "Pilot " + id, DtidDrone = PlayerInfo.NA });
         world.Apply(new SetTeamLeader { SideId = 0, ShipId = 10 });
         return world;
     }

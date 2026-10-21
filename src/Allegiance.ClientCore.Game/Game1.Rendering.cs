@@ -3097,6 +3097,7 @@ public sealed partial class Game1
     {
         var world = _session.World;
         string? sector = null, carrier = null, accepted = null, queued = null, vote = null;
+        string? viewedSector = null;
         int boardState = 0;
         int? lives = null, missionKills = null;
         bool deathmatch = false;
@@ -3109,6 +3110,19 @@ public sealed partial class Game1
                     sectorId = station.ClusterId;
                 if (world.Clusters.TryGetValue(sectorId, out var cluster) && cluster.Name is { Length: > 0 })
                     sector = cluster.Name;
+                // HUD-20 — docked command view shows the VIEWED sector: native
+                // GetCluster() returns the view cluster when one is set, else the
+                // ship's (clintlib.h:996); the port's docking rule is
+                // ViewedClusterId ?? station cluster (ClientWorld.Commanding.cs:10).
+                // "Currently viewing:" is drawn only in ofInStationCommand
+                // (dialog.mdl:5421-5422), so resolve it only while docked.
+                if (own.StationId >= 0)
+                {
+                    short viewedId = HudConsoleFormat.ViewedSectorId(world.ViewedClusterId, sectorId);
+                    if (world.Clusters.TryGetValue(viewedId, out var viewedCluster)
+                        && viewedCluster.Name is { Length: > 0 } viewedName)
+                        viewedSector = viewedName;
+                }
 
                 if (own.ParentId != -1)
                 {
@@ -3143,6 +3157,7 @@ public sealed partial class Game1
         return new HudConsoleText
         {
             SectorName = sector,
+            ViewedSectorName = viewedSector,
             CarrierName = carrier,
             BoardState = boardState,
             AcceptedOrder = accepted,

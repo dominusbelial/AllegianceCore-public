@@ -97,6 +97,7 @@ public sealed partial class ClientWorld
         ship.IsGone = true;
         ship.PoseSectorId = null;
         ship.SectorId = ship.StationId = ship.ParentId = -1;
+        ship.BoardTurretId = -1;   // HUD-20 — leaving the side clears the boarded mount
         ship.Loadout = ship.Cargo = null;
         if (own)
         {

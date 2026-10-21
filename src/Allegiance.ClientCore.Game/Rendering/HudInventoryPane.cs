@@ -9,6 +9,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 public enum HudInventoryRowKind
 {
     Weapon,          // invsweapon.mdl — fixed/turret weapon mount
+    Observers,       // invobserver.mdl — "Observers: N" (inventoryimage.cpp:141-169,320-332)
     Magazine,        // invsmissile.mdl — missile launcher
     Chaff,           // invchaff.mdl — chaff dispenser
     Shield,          // invshield.mdl
@@ -79,7 +80,8 @@ public static class HudInventoryPaneBuilder
         float ShieldFraction,
         float AmmoFraction,
         bool GroupFire,
-        int SelectedMount);
+        int SelectedMount,
+        float? CloakStrengthPercent);
 
     public static HudInventoryPane Build(
         ShopCatalog? catalog,
@@ -96,7 +98,9 @@ public static class HudInventoryPaneBuilder
         int selectedCargoMount,
         string ownShipName,
         bool isPilot = true,
-        DataHullTypeIGC? sourceHull = null)
+        DataHullTypeIGC? sourceHull = null,
+        float? cloakStrengthPercent = null,
+        int observerCount = 0)
     {
         var rows = new List<HudInventoryRow>();
         if (hull is not { } h)
@@ -110,7 +114,7 @@ public static class HudInventoryPaneBuilder
         // GetSourceShip()->GetHullType() (consoledata.cpp:855,976) — the
         // carrier's hull when the local pilot is a turret gunner.
         var ctx = new Ctx(catalog, h, sourceHull ?? h, attributes, fuelFraction,
-            energyFraction, shieldFraction, ammoFraction, groupFire, selectedMount);
+            energyFraction, shieldFraction, ammoFraction, groupFire, selectedMount, cloakStrengthPercent);
 
         int maxFixed = Math.Min(h.MaxFixedWeapons, h.Hardpoints.Length);
         int maxWeapons = Math.Min(h.MaxWeapons, h.Hardpoints.Length);
@@ -119,6 +123,14 @@ public static class HudInventoryPaneBuilder
         for (int mount = 0; mount < maxFixed; mount++)
             AddPart(rows, ctx, all, EquipmentType.Weapon, mount,
                 isPilot && mount < WeaponKeys.Length ? WeaponKeys[mount] : "");
+
+        // Observers — inventoryimage.cpp:320-332 (ProcessObservers), between the
+        // fixed-weapon rows and the turret rows, only when the count is > 0.
+        // invobserver.mdl:1-12: white "Observers: N" in the key column, no icon,
+        // no key.
+        if (observerCount > 0)
+            rows.Add(new HudInventoryRow(HudInventoryRowKind.Observers, "",
+                "Observers: " + Round(observerCount), false, false, false, null, 0, 0, null, null));
 
         // Turrets — inventoryimage.cpp:248-252 (ProcessTurret). The gunner-name
         // row needs per-turret occupant data the port's wire does not carry.
@@ -360,15 +372,22 @@ public static class HudInventoryPaneBuilder
                 // Native GetCloakTimeLeft (consoledata.cpp:967-985): the source
                 // ship's recharge rate (GetSourceShip()->GetHullType()
                 // ->GetRechargeRate(), consoledata.cpp:976; shipIGC.cpp:4565-4568)
-                // drains the LOCAL ship's energy. The leading live cloak
-                // percentage is native's GetCloaking(Me), which the port's wire
-                // does not carry (tracked under the separate "Cloak strength and
-                // drained state" row, out of this wave).
+                // drains the LOCAL ship's energy. HUD-20 adds the leading live
+                // percentage native prints: ModelData::GetCloaking() =
+                // 100·(1−GetCloaking()) for the own or parent ship only
+                // (consoledata.cpp:480-490), streamed owner-only by
+                // OwnShipCloakUpdate(220). invcloak.mdl:10-23 is
+                // `NumberString(GetCloaking(Me)) + "% / " + CloakTimeLeft + " sec"`.
+                // Without a received cloak update the percentage is unknown, so
+                // keep today's endurance-only text rather than invent a 0.
                 float consumption = cloak.EnergyConsumption;
                 float regen = ctx.SourceHull.RechargeRate;
                 float endurance = consumption <= regen ? -1f
                     : (ctx.EnergyFraction * ctx.Hull.MaxEnergy) / (consumption - regen);
-                return $"{Endurance(endurance)} sec";
+                string enduranceText = $"{Endurance(endurance)} sec";
+                return ctx.CloakStrengthPercent is { } strength
+                    ? HudFormat.FormatNativeNumber(strength) + "% / " + enduranceText
+                    : enduranceText;
             }
             case DataPartTypeIGC.ChaffLauncher:
             case DataPartTypeIGC.MineLauncher:

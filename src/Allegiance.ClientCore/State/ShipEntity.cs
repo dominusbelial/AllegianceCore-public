@@ -257,4 +257,24 @@ public sealed class ShipEntity
     /// <summary>The PlayerInfo(10) attached to this ship (may arrive after the
     /// ship itself, so it is upserted independently). Null until one arrives.</summary>
     public PlayerInfo? Player { get; internal set; }
+
+    /// <summary>HUD-20 — the ship's live experience / kill-streak counter, native
+    /// <c>CshipIGC::m_experience</c> (<c>Igc/shipIGC.h:2610</c>). Seeded from
+    /// PLAYERINFO's <c>fExperience</c> (<c>appmsg.cpp:2280</c>) and kept current
+    /// from KILL_SHIP (<c>appmsg.cpp:2769,2807-2811</c>). Drives the target
+    /// pane's kill bonus (<c>consoledata.cpp:831-843</c>,
+    /// <c>shipIGC.h:1812-1818</c>). 0 until a seed arrives.</summary>
+    public float Experience { get; internal set; }
+
+    /// <summary>HUD-20 — the mount this ship is boarded on, from the
+    /// passenger list of the carrier's LOADOUT_CHANGE (<c>PassengerData.turretID</c>,
+    /// <c>Messages.h:30-34</c>; native <c>pshipChild-&gt;SetTurretID(ppd-&gt;turretID)</c>,
+    /// <c>appmsg.cpp:2073</c>). <see cref="BoardTurretObserver"/> (0xFF, native
+    /// <c>NA</c>) is an observer; -1 means unknown/not boarded. Cleared whenever
+    /// <see cref="ParentId"/> is reset.</summary>
+    public short BoardTurretId { get; internal set; } = -1;
+
+    /// <summary>Native <c>NA</c> as a <c>Mount</c> char (0xFF) — a boarded child
+    /// with no turret slot is an observer (<c>inventoryimage.cpp:141-169</c>).</summary>
+    public const short BoardTurretObserver = 0xFF;
 }

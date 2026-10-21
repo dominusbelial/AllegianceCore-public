@@ -14,6 +14,18 @@ public sealed record HudConsoleText
     /// cluster is not yet known.</summary>
     public string? SectorName { get; init; }
 
+    /// <summary>HUD-20 — the sector the commander is LOOKING AT in docked command
+    /// view: native <c>SectorName</c> is <c>trekClient.GetCluster()-&gt;GetName()</c>
+    /// (<c>console.cpp:868-872</c>), and <c>GetCluster()</c> returns the view
+    /// cluster when one is set, otherwise the ship's cluster
+    /// (<c>clintlib/clintlib.h:996</c>). The port resolves that as
+    /// <c>ViewedClusterId ?? station cluster</c> (<c>ClientWorld.Commanding.cs:10</c>,
+    /// the same rule as <c>Game1.Commanding.cs</c> RenderSector). Drawn as
+    /// "Currently viewing:" + red name only when docked and in command view
+    /// (native <c>ofInStationCommand</c>, <c>WinTrek.cpp:6831-6840</c>,
+    /// <c>dialog.mdl:1429-1471,5421-5422</c>).</summary>
+    public string? ViewedSectorName { get; init; }
+
     /// <summary>Turret carrier pilot name. Native <c>GetName(Me)</c> where Me is
     /// the source ship, shown when <see cref="BoardState"/> == 2
     /// (<c>dialog.mdl:1508-1543</c>, <c>console.cpp:797</c>); null otherwise.</summary>
@@ -69,6 +81,10 @@ public sealed record HudConsoleText
     public HudColor? SideColor { get; init; }
 }
 
+/// <summary>HUD-20 — the docked command-view location block: the yellow
+/// "Currently viewing:" label plus the red viewed-sector name.</summary>
+public readonly record struct HudLocationBlock(string Label, string Name, HudColor Color);
+
 /// <summary>Pure formatting for the console-text rows; no MonoGame types.</summary>
 public static class HudConsoleFormat
 {
@@ -99,6 +115,42 @@ public static class HudConsoleFormat
     // on point of -37 is 37 px below the TOP edge, not the bottom.
     public const float SectorLabelTop = 37f;         // dialog.mdl:5419 (-37)
     public const float SectorNameBelowLabel = 14f;   // dialog.mdl:1484
+
+    // HUD-20 — the docked command-view location block. Native LookingAtImage is
+    // the yellow promptFont "Currently viewing:" plus CurrentViewSectorNameImage
+    // (medVerdana, Color(1,0,0), centred 160 wide, translated Point(0,-14)),
+    // drawn only under ofInStationCommand (dialog.mdl:1429-1471,5421-5422;
+    // WinTrek.cpp:6831-6840).
+    public const string CurrentlyViewingLabel = "Currently viewing:";
+    /// <summary>Native <c>Color(1,0,0)</c> for the viewed-sector name.
+    /// <c>dialog.mdl:1438</c>.</summary>
+    public static readonly HudColor ViewedSectorColor = new(1f, 0f, 0f);
+
+    /// <summary>HUD-20 — native <c>trekClient.GetCluster()</c> is the VIEW cluster
+    /// when one is set, otherwise the ship's cluster (<c>clintlib/clintlib.h:996</c>).
+    /// For the docked command view that is the port's
+    /// <c>ViewedClusterId ?? station cluster</c> (ClientWorld.Commanding.cs:10,
+    /// the same rule Game1.Commanding.cs RenderSector uses).</summary>
+    public static short ViewedSectorId(short? viewedClusterId, short stationClusterId) =>
+        viewedClusterId ?? stationClusterId;
+
+    /// <summary>HUD-20 — the "Currently viewing:" block for a resolved viewed
+    /// sector name, or null when no name is known (the renderer draws nothing).
+    /// Pure and allocation-free, so the per-frame draw path can call it.</summary>
+    public static HudLocationBlock? LookingAt(string? viewedSectorName) =>
+        string.IsNullOrEmpty(viewedSectorName)
+            ? null
+            : new HudLocationBlock(CurrentlyViewingLabel, viewedSectorName, ViewedSectorColor);
+
+    /// <summary>HUD-20 — the one gate both skins (and the HUD-11 anchor
+    /// reservation) use for the docked "Currently viewing:" block: native
+    /// <c>LookingAtImage</c> is hung on <c>ofInStationCommand</c> only
+    /// (<c>dialog.mdl:5421-5422</c>), i.e. HUD visible, docked, command view, and
+    /// never while the in-flight <c>LocationInCockpitImage</c> (<c>ofInFlight</c>)
+    /// owns the anchor (<c>WinTrek.cpp:6831-6840</c>). Null when hidden.</summary>
+    public static HudLocationBlock? DockedLookingAt(bool visible, bool flightVisible,
+        bool docked, bool commandView, string? viewedSectorName) =>
+        visible && !flightVisible && docked && commandView ? LookingAt(viewedSectorName) : null;
     public const float TurretLabelTop = 75f;         // dialog.mdl:5425 (-75)
     public const float OrderLabelTop = 37f;          // dialog.mdl:5451 (-37)
     public const float OrderLabelX = 37f;            // dialog.mdl:1647 (label at -13 from the 50 pane)

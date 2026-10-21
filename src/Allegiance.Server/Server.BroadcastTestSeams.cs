@@ -40,6 +40,7 @@ public sealed partial class Server
         _teammateExportSent.Clear();
         _stationIdentitySent.Clear();
         _teammatePlayerInfoSent.Clear();
+        _missionPlayerInfoSent.Clear();
         _teammatePositionSent.Clear();
         _teammateLoadoutVersionSent.Clear();
         _lastTeammateStatusTick.Clear();
@@ -161,6 +162,9 @@ public sealed partial class Server
         {
             if (step is "shipStates") BroadcastShipStates(tickIndex);
             else if (step is "shipsUpdate") BroadcastShipsUpdate(tickIndex);
+            // HUD-20 — the cross-side EXPORT sweep, which now also seeds each new
+            // pair's PLAYERINFO (SeedMissionPlayerInfo).
+            else if (step is "crossSideExports") SweepCrossSideExports();
             else { BroadcastShipStates(tickIndex); BroadcastShipsUpdate(tickIndex); }
         }
         finally

@@ -43,6 +43,7 @@ public sealed partial class ClientWorld
             || !_ships.TryGetValue(promoted.ParentId, out var parent)) return;
         MarkSnapshotDirty();
         promoted.ParentId = -1;
+        promoted.BoardTurretId = -1;   // HUD-20 — the promoted pilot takes the seat, not the mount
         promoted.HullId = parent.HullId;
         promoted.Loadout = parent.Loadout;
         promoted.Cargo = parent.Cargo;

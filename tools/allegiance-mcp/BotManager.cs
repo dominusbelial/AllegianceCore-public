@@ -1362,7 +1362,7 @@ internal sealed partial class BotManager : IDisposable
             {
                 if (kv.Value.IsMine || kv.Value.SideId != side) continue;
                 if (beforeIds.Contains(kv.Key)) continue;        // existed before invest
-                if (kv.Value.Player is not null) continue;       // a real (new) player, not a drone
+                if (!IsDrone(kv.Value)) continue;                // a real (new) player, not a drone
                 news.Add((kv.Key, kv.Value));
             }
         }
@@ -1374,6 +1374,17 @@ internal sealed partial class BotManager : IDisposable
         if (chosen.Id == 0) return null;
         return ToDroneRow(chosen.s);
     }
+
+    /// <summary>HUD-20 — native human/drone test: PLAYERINFO carries
+    /// <c>dtidDrone</c>, and <c>SendPlayerInfo</c> sets it to <c>NA</c> for a human
+    /// player while a drone carries its real drone type id
+    /// (<c>FedSrv/FedSrv.CPP:2088-2091</c>); native's own <c>IsHuman()</c> reads
+    /// exactly that. The old test was <c>Player is null</c>, which broke once
+    /// drones receive PLAYERINFO too. A ship whose PLAYERINFO has not arrived yet
+    /// still classifies as a drone, preserving today's behaviour for the rig.
+    /// </summary>
+    internal static bool IsDrone(ShipEntity ship) =>
+        ship.Player is not { } info || info.DtidDrone != PlayerInfo.NA;
 
     /// <summary>P486 — snapshot one same-side ship as an observable
     /// <see cref="DroneRow"/> (position only when the latest update is known;
@@ -1484,7 +1495,7 @@ internal sealed partial class BotManager : IDisposable
                 var s = kv.Value;
                 if (s.IsMine) continue;
                 if (s.SideId != side) continue;          // same-side only (the only visibility)
-                if (s.Player is not null) continue;      // a real player, not a drone
+                if (!IsDrone(s)) continue;               // a real player, not a drone
                 var row = ToDroneRow(s);
                 if (typeFilter is not null &&
                     !row.Type.Contains(typeFilter, StringComparison.OrdinalIgnoreCase) &&
@@ -1507,7 +1518,7 @@ internal sealed partial class BotManager : IDisposable
             var cs = EnsureCommander(side);
             bool has;
             lock (cs.Gate)
-                has = cs.World.Ships.TryGetValue(droneId, out var e) && e.SideId == side && e.Player is null;
+                has = cs.World.Ships.TryGetValue(droneId, out var e) && e.SideId == side && IsDrone(e);
             if (has) return cs;
         }
         throw new InvalidOperationException(

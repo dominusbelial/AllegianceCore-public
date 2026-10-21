@@ -154,6 +154,7 @@ HullGaugebmp.mdl
 PCore001.igc
 PCore014.igc
 ShieldGaugebmp.mdl
+TargetExperiencebmp.mdl
 ThrustGaugebmp.mdl
 WEPIN.ogg
 Wep07bbmp.mdl

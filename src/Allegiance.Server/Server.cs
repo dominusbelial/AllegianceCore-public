@@ -442,6 +442,16 @@ public sealed partial class Server : IDisposable
     // wasteful. Sim-thread only, like the siblings.
     private readonly HashSet<(ConnectionId Recipient, short ShipId)> _teammatePlayerInfoSent = new();
 
+    // HUD-20 — one-shot tracking for the native "every ship's PLAYERINFO goes to
+    // the whole mission" seed (FedSrv.CPP:2129-2134, fsmission.cpp:3958-3968):
+    // set once per (recipient, mission ship) by SeedMissionPlayerInfo at the
+    // moment that pair's EXPORT latch is first set, covering same-side NPCs and
+    // cross-side enemies (teammates keep their inline P63 send and are skipped
+    // via _teammatePlayerInfoSent). Pruned with the peer (ReleasePeer,
+    // ClearPeerJoinLatches on rotation) and when a drone dies. Sim-thread
+    // only, like the siblings.
+    private readonly HashSet<(ConnectionId Recipient, short ShipId)> _missionPlayerInfoSent = new();
+
     // P332 — one-shot tracking for the P85 teammate-ship SINGLE_SHIP_UPDATE
     // position broadcast: set once a (recipient, subject-ship) pair's real
     // position has been broadcast at least once. Unlike the sibling sets above

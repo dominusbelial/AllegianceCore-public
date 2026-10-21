@@ -2575,6 +2575,7 @@ public sealed partial class ClientWorld
         if (ent.ParentId != -1)
         {
             ent.ParentId = -1;             // SetParentShip(NULL) + OnBoardShip(pShip,NULL), :183-187
+            ent.BoardTurretId = -1;        // HUD-20 — no longer boarded anywhere
         }
         else
         {
@@ -2739,6 +2740,10 @@ public sealed partial class ClientWorld
         e.StatusSectorKnown = true;   // HUD-18 — last-known sector is now real (consoledata.cpp:76-85)
         e.StationId = status.StationId;
         e.ParentId = status.ParentId;
+        // HUD-20 — SHIP_STATUS carries no turret mount; an unparented status
+        // clears the boarded-mount latch, while a parented one leaves it to the
+        // carrier's passenger list (appmsg.cpp:2073).
+        if (status.ParentId < 0) e.BoardTurretId = -1;
         e.State = status.State;
         e.Unknown = status.Unknown;
         e.Detected = status.Detected;
@@ -2819,6 +2824,7 @@ public sealed partial class ClientWorld
             // Only a spotted SHIP_STATUS may clear the scanner-hidden bit.
             e.StationId = -1;
             e.ParentId = -1;
+            e.BoardTurretId = -1;          // HUD-20 — flying free, not boarded
             e.State = ShipStatusMessage.StateFlying;
             e.Latest = ServerShipUpdate.FromValues(
                 entry.ShipId, entry.StateM, entry.Controls,
@@ -3722,6 +3728,11 @@ public sealed partial class ClientWorld
                                             // heard of via PLAYERINFO
         e.Player = info;
         e.SideId = info.ISide;
+        // HUD-20 — native seeds the ship's experience from fExperience
+        // (appmsg.cpp:2280). KILL_SHIP keeps it current from here on; native
+        // never re-sends it (FM_S_SET_EXPERIENCE is a commented-out handler,
+        // appmsg.cpp:2918-2928).
+        e.Experience = info.FExperience;
         if (info.ShipId == (MyShipId ?? JoinedShipId))
         {
             MySideId = info.ISide;
@@ -3829,6 +3840,7 @@ public sealed partial class ClientWorld
         // Native: a passenger is no longer boarded (SetParentShip(NULL),
         // appmsg.cpp:2007-2008).
         e.ParentId = -1;
+        e.BoardTurretId = -1;   // HUD-20 — the mount dies with the parent link
 
         // Native re-applies the whole loadout incl. hull (ProcessShipLoadout,
         // :2029-2031). Split mounted vs cargo like BuyLoadoutAck (P626).
@@ -3855,6 +3867,11 @@ public sealed partial class ClientWorld
                 if (id == MyShipId && child.ParentId != id)
                     RecordSoundEvent(ClientSoundEventKind.Boarded, pd.ShipId);
                 child.ParentId = id;
+                // HUD-20 — native stores the passenger's turret mount from this
+                // same list (`pshipChild->SetTurretID(ppd->turretID)`,
+                // appmsg.cpp:2073); 0xFF (NA) means the child is an observer
+                // (inventoryimage.cpp:141-169).
+                child.BoardTurretId = pd.TurretId;
             }
         }
 
@@ -4193,6 +4210,12 @@ public sealed partial class ClientWorld
         _remoteRipcords.Remove(m.ShipId);
         if (m.BDeathCredit)
         {
+            // HUD-20 — native also zeroes the victim ship's experience on a real
+            // death (appmsg.cpp:2769, `pPlayerInfo->GetShip()->SetExperience(0.0f)`);
+            // an eject (no death credit) keeps it. Keep this on the ShipEntity,
+            // not behind Player?, so a ship whose PLAYERINFO is still pending
+            // updates too.
+            e.Experience = 0f;
             // HUD-12 — native's KILL_SHIP handler credits the victim's
             // PlayerInfo death and the killer's PlayerInfo kill
             // (appmsg.cpp:2766-2773,2807-2810, PlayerInfo::AddDeath/AddKill at
@@ -4228,7 +4251,15 @@ public sealed partial class ClientWorld
         // appmsg.cpp:2807-2810; NPCs have no PlayerInfo here).
         if (m.BKillCredit && m.TypeCredit == (short)IgcObjectType.Ship && m.IdCredit >= 0
             && _ships.TryGetValue(m.IdCredit, out var killerEnt))
+        {
             killerEnt.Player?.AddKill();
+            // HUD-20 — native adds one to the killer ship's experience only for a
+            // cross-side, non-allied kill (appmsg.cpp:2807-2811). This matches the
+            // server's AddKillBonus gate exactly (Server.Combat.cs:1686-1689), so
+            // the client's counter stays in step with the seeded/streamed value.
+            if (killerEnt.SideId != e.SideId && !AreAllied(killerEnt.SideId, e.SideId))
+                killerEnt.Experience += 1f;
+        }
 
         short me = MyShipId ?? -1;
         var line = EjectFeedback.ForKillShip(m, me, DisplayNameFor(m.ShipId), KillerNameFor(m));
@@ -4400,6 +4431,7 @@ public sealed partial class ClientWorld
         MarkSnapshotDirty();
         var ent = Upsert(m.ShipId);
         ent.ParentId = -1;                             // SetParentShip(NULL), :1952
+        ent.BoardTurretId = -1;                        // HUD-20 — no longer boarded
         if (LifepodHullResolver(ent.SideId) is { } lifepod)
             ent.HullId = lifepod;                      // SetBaseHullType(lifepod), :1963
         PostSystemLine("You have entered a lifepod.");
@@ -4418,6 +4450,7 @@ public sealed partial class ClientWorld
             MarkSnapshotDirty();
             var ent = Upsert(m.SidChild);
             ent.ParentId = -1;                          // SetParentShip(NULL), :1920
+            ent.BoardTurretId = -1;                     // HUD-20 — no longer boarded
             // Disembarking a boarded seat with no own hull -> native converts to
             // the side's Lifepod (:1924-1929).
             if (LifepodHullResolver(ent.SideId) is { } lp)
@@ -4429,6 +4462,7 @@ public sealed partial class ClientWorld
         {
             bool leftOurShip = child.ParentId == MyShipId;
             child.ParentId = -1;                        // no longer boarded anywhere
+            child.BoardTurretId = -1;                   // HUD-20 — mount released too
             if (leftOurShip)
                 PostSystemLine($"{DisplayNameFor(m.SidChild)} has left your ship.");
         }
