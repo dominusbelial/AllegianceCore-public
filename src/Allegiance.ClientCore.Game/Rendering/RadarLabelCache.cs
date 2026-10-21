@@ -7,6 +7,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 public readonly record struct RadarLabelView(
     RadarLabel? Label,
     string? NameLine,
+    string? IconNameLine,
     string? RangeLine,
     string BlockKey,
     string[] Drawn);
@@ -96,10 +97,16 @@ public sealed class RadarLabelCache
     {
         var label = RadarLabelModel.Resolve(contact, mode, commandCamera);
         if (label is not { } l)
-            return new RadarLabelView(null, null, null, "radar:none", Array.Empty<string>());
+            return new RadarLabelView(null, null, null, null, "radar:none", Array.Empty<string>());
+        // HUD-15 — two name lines: the historical A<id>/Q<id> prefix (fallback
+        // when the native command icon is missing) and the bare name + eye/rip
+        // suffix used once the icon art draws. Both are cached, so switching
+        // between them per frame costs no string.
+        string? prefixed = FormatNameLine(l);
         return new RadarLabelView(
             l,
-            FormatNameLine(l),
+            prefixed,
+            l.CommandId is null ? prefixed : FormatNameLine(l, includeCommand: false),
             contact.Range is > 0 ? RadarLabelModel.RangeLineText(contact.Range.Value) : null,
             "radar:" + (l.Name ?? l.RangeText ?? "label"),
             DrawnIds(l));
@@ -107,11 +114,13 @@ public sealed class RadarLabelCache
 
     /// <summary>Native label line order: accepted/queued command icon, then the
     /// detection eye, then the name, then the friendly ripcord seconds
-    /// (radarimage.cpp:1234-1310,1199-1208,1021-1034). The port draws text
-    /// instead of the command artwork, so the command id becomes an A/Q prefix.</summary>
-    public static string? FormatNameLine(RadarLabel label)
+    /// (radarimage.cpp:1234-1310,1199-1208,1021-1034). The port's fallback for
+    /// missing command art is an A/Q prefix (<paramref name="includeCommand"/>);
+    /// once the native icon draws (HUD-15) the caller uses the bare line.</summary>
+    public static string? FormatNameLine(RadarLabel label, bool includeCommand = true)
     {
-        string prefix = label.CommandId is { } cid ? (label.CommandAccepted ? "A" : "Q") + cid + " " : "";
+        string prefix = includeCommand && label.CommandId is { } cid
+            ? (label.CommandAccepted ? "A" : "Q") + cid + " " : "";
         string eye = label.Eye ? "*" : "";
         string rip = label.RipcordSeconds is { } seconds ? $" {seconds}s" : "";
         if (label.Name is { Length: > 0 } name) return prefix + eye + name + rip;

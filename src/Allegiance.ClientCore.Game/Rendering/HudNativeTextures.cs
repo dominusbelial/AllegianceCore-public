@@ -32,6 +32,28 @@ public sealed partial class HudNativeTextures : IDisposable
     public Texture2D? WingCombo { get; private set; }
     public IReadOnlyDictionary<short, Texture2D> VerbIcons => _verbIcons;
 
+    // HUD-15 — the console order-line glyphs. Native LastOrderImage translates
+    // ImportImage3D("comacceptbmp", yellowText) / ImportImage3D("comqueuedbmp",
+    // Color(1,0,0)) by Point(-21,-13) beside each order line
+    // (Artwork/dialog.mdl:1605-1640, :1641-1652).
+    /// <summary>Real <c>comacceptbmp.mdl</c> accepted-order glyph, or null.</summary>
+    public Texture2D? CommandAcceptedIcon { get; private set; }
+    /// <summary>Real <c>comqueuedbmp.mdl</c> queued-order glyph, or null.</summary>
+    public Texture2D? CommandQueuedIcon { get; private set; }
+
+    // HUD-15 — the native radar command-icon arrays
+    // (WinTrek/radarimage.cpp:228-235, m_psurfaceAccepted/m_psurfaceQueued).
+    private readonly Dictionary<short, Texture2D> _radarAccepted = new();
+    private readonly Dictionary<short, Texture2D> _radarQueued = new();
+
+    /// <summary>Decoded accepted/queued command radar icons keyed by native
+    /// CommandID (1 = c_cidAttack … 9 = c_cidBuild), or null when that slot's
+    /// artwork is missing (radarimage.cpp:1248-1253 picks accepted vs queued).</summary>
+    public Texture2D? RadarCommandIcon(short commandId, bool accepted) =>
+        accepted
+            ? _radarAccepted.GetValueOrDefault(commandId)
+            : _radarQueued.GetValueOrDefault(commandId);
+
     private readonly Dictionary<short, Texture2D> _verbIcons = new();
     private bool _disposed;
 
@@ -51,12 +73,27 @@ public sealed partial class HudNativeTextures : IDisposable
         t.RecipientsBar = TryDecode(gd, assets, "recipientsbmp");
         t.VerbsBar = TryDecode(gd, assets, "verbsbmp");
         t.WingCombo = TryDecode(gd, assets, "btnchangewing3bmp");
-        // Native CommandID order c_cidAttack..c_cidBuild (Igc/common.cpp:41-52),
-        // each 16x16 in ComposingCommand's SwitchPane (dialog.mdl:122-141).
-        string[] icons = ["ackillbmp", "accptbmp", "acdefendbmp", "acpickupbmp", "acgotobmp",
-            "acrepairbmp", "acjoinbmp", "acminebmp", "acbuildbmp"];
-        for (short i = 0; i < icons.Length; i++)
-            if (TryDecode(gd, assets, icons[i]) is { } icon) t._verbIcons[(short)(i + 1)] = icon;
+        // HUD-15 — the accepted/queued order glyphs (dialog.mdl:1605-1640).
+        t.CommandAcceptedIcon = TryDecode(gd, assets, "comacceptbmp");
+        t.CommandQueuedIcon = TryDecode(gd, assets, "comqueuedbmp");
+        // HUD-15 — the radar command-icon arrays. Native CommandID order
+        // c_cidAttack..c_cidBuild (Igc/common.cpp:41-52; the same 16x16 bitmaps
+        // ComposingCommand's SwitchPane uses, dialog.mdl:122-141), loaded once
+        // by the exact native loop (radarimage.cpp:228-235). The accepted
+        // surfaces are shared with the command bar's verb icons instead of
+        // decoding a second copy.
+        for (short cid = RadarCommandIcons.FirstArtCommandId; cid < RadarCommandIcons.CommandIdCount; cid++)
+        {
+            if (RadarCommandIcons.ArtStem(cid, accepted: true) is { } accepted
+                && TryDecode(gd, assets, accepted) is { } icon)
+            {
+                t._radarAccepted[cid] = icon;
+                t._verbIcons[cid] = icon;
+            }
+            if (RadarCommandIcons.ArtStem(cid, accepted: false) is { } queued
+                && TryDecode(gd, assets, queued) is { } queuedIcon)
+                t._radarQueued[cid] = queuedIcon;
+        }
         return t;
     }
 
@@ -128,11 +165,17 @@ public sealed partial class HudNativeTextures : IDisposable
         if (_disposed) return;
         _disposed = true;
         foreach (var t in new[] { ChatMouse, ChatText, ChatCommand, ChatShell, SoftGauge, CreditBox,
-                     CommandBackground, RecipientsBar, VerbsBar, WingCombo })
+                     CommandBackground, RecipientsBar, VerbsBar, WingCombo, CommandAcceptedIcon, CommandQueuedIcon })
             t?.Dispose();
-        foreach (var t in _verbIcons.Values) t.Dispose();
+        // _verbIcons aliases the accepted radar icons, so dispose each distinct
+        // texture once.
+        foreach (var t in _radarAccepted.Values.Distinct()) t.Dispose();
+        foreach (var t in _radarQueued.Values) t.Dispose();
         _verbIcons.Clear();
+        _radarAccepted.Clear();
+        _radarQueued.Clear();
         ChatMouse = ChatText = ChatCommand = ChatShell = SoftGauge = CreditBox = null;
         CommandBackground = RecipientsBar = VerbsBar = WingCombo = null;
+        CommandAcceptedIcon = CommandQueuedIcon = null;
     }
 }

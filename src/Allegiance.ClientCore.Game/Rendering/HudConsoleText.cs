@@ -105,12 +105,32 @@ public static class HudConsoleFormat
     public const float OrderTextX = 57f;             // dialog.mdl:1648-1649 (text at 7 from the 50 pane)
     public const float OrderQueuedBelowLabel = 20f;  // dialog.mdl:1648
     public const float OrderAcceptedBelowLabel = 40f;// dialog.mdl:1649
+
+    // HUD-15 — the native order-line glyphs. LastOrderImage's queued/accepted
+    // groups translate ImportImage3D("comqueuedbmp"/"comacceptbmp", …) by
+    // Point(-21,-13) (Artwork/dialog.mdl:1605-1640) inside a group the pane
+    // places at SideTopLeft(50,-37) with the lines at Point(7,-20)/(7,-40)
+    // (dialog.mdl:1641-1652, :5451). Both glyph bitmaps are 16x16
+    // (comacceptbmp.mdl/comqueuedbmp.mdl BinarySurfaceInfo), so the glyph's
+    // top-left is 21 px left of the line's text edge and 13 px below the line's
+    // lower-left, i.e. 3 px above the native line top.
+    public const float OrderIconSize = 16f;
+    public const float OrderIconLeft = OrderTextX - 21f;   // 36
+    public const float OrderIconBelowLine = 13f;           // TranslateImage Point(0,-13)
     public const float RipcordLeft = 75f;            // dialog.mdl:5430 (-75 from centre-x)
     public const float RipcordTop = 15f;             // dialog.mdl:5430 (15 above centre-y)
     public const float CriticalTipTopBase = 50f;     // dialog.mdl:5173 (-50)
     public const float CriticalTipSpacing = 14f;     // dialog.mdl:2075-2077
     public const float VoteTopBase = 85f;            // dialog.mdl:5174 (-85)
     public const float ChatLineYStep = 12f;          // dialog.mdl:5172-5174 (12·NumChatLines)
+
+    /// <summary>HUD-15 — top-left of one native order-line glyph in port screen
+    /// space (y down), scaled for the skin. <paramref name="accepted"/> selects
+    /// the accepted line's Point(7,-40) row or the queued line's Point(7,-20).</summary>
+    public static (float X, float Y) OrderIconTopLeft(bool accepted, float scale) => (
+        OrderIconLeft * scale,
+        (OrderLabelTop + (accepted ? OrderAcceptedBelowLabel : OrderQueuedBelowLabel)
+            + OrderIconBelowLine - OrderIconSize) * scale);
 
     /// <summary>Critical-tip slot top (px from the viewport top). Slot 0 is the
     /// newest tip; older slots stack above it (dialog.mdl:2039-2078, :5173).</summary>

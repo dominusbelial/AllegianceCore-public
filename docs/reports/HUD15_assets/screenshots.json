@@ -1,0 +1,49 @@
+{
+  "task": "HUD-15",
+  "client": "Allegiance.ClientCore.MonoGame Release, real 1920x1080 window (Classic and Modern HUD styles)",
+  "server": "real local Allegiance.Server, m2scatter.igc, 2 sides, 'HUD15 pilot'",
+  "captured_by": "tools/hud15-proof (real Game1 over TCP; production autoshot backbuffer path; orders via Server.QueueCommandForPlayer and the bound ACCEPT key edge)",
+  "raw_copies": "~/allegiance-evidence/HUD15/raw/{classic,modern}/",
+  "screenshots": [
+    {
+      "asset": "docs/reports/HUD15_assets/orders-accepted-queued.webp",
+      "sha256": "ed2286b7b132fc72084c1a816f243dc20050aded25589a7dc66e39fd88df6d16",
+      "source_png": "/home/domingo/allegiance-evidence/HUD15/raw/classic/orders-accepted-queued-1920x1080.png",
+      "source_sha256": "5fde271ef9ed06be7b12a694d232bd310c28b2bb2ef2cb675b237ebfae70efab",
+      "bytes": 61448,
+      "visible": "Classic cockpit at 1920x1080. Top-left 'Current orders:' (yellow) with the red comqueuedbmp chevron beside the red 'attack Ship 8099' line and the yellow comacceptbmp checkmark beside the cortText 'goto Ship 8097' line. Radar labels: 'Ship 8097 2870 m' at upper-left with the native acgotobmp accepted-command glyph left of the name, and 'Ship 8099 1857 m' at the left edge with the qukillbmp queued icon. Selected-target ring around 8097; 'NEW COMMAND RECEIVED ? [Home] to accept' tips show the sanitised dashes."
+    },
+    {
+      "asset": "docs/reports/HUD15_assets/radar-accepted-command-icon.webp",
+      "sha256": "a59135454e0746e4a4f3f3903540bd452c9b016162fafddc99b28852b02a8e78",
+      "source_png": "/home/domingo/allegiance-evidence/HUD15/raw/classic/radar-accepted-command-icon-1920x1080.png",
+      "source_sha256": "0f854b90adb6b2ccee509134ae4355b80666c542bc98e4de4a76cc03c624c6ee",
+      "bytes": 64926,
+      "visible": "Classic cockpit at 1920x1080, contacts moved ahead. 'xShip 8097 776 m' at upper-right with the native acgotobmp glyph immediately left of the name, the selected-target ring and its 'Ship 8097 / 947 m' selection label below; 'Ship 8099 1092 m' at mid-left with the qukillbmp queued icon left of the name. Both order lines with their glyphs remain top-left."
+    },
+    {
+      "asset": "docs/reports/HUD15_assets/inventory-mounting-track.webp",
+      "sha256": "e332d174960fe10894f4a0dda53abcfa40b756668b81f44d857cb70ee936e6fe",
+      "source_png": "/home/domingo/allegiance-evidence/HUD15/raw/classic/inventory-mounting-track-1920x1080.png",
+      "source_sha256": "fc82c35a7d9315ef171245427cba3f653ed154f169b54bd9a6851aafa60f28c2",
+      "bytes": 75852,
+      "visible": "Classic flight inventory pane (right side, capped by the minimap) with the 'Adv Scout' header, the ready row '1. ER Nanite 3 400m / -37 X 4', and the mid-mount row '9. Retro Booster' whose 64x14 bar shows the native mountingbarbkgndbmp word 'Mounting' with the dark-red mountingbarbmp fill revealed over its left half (client fraction 120/240 = 0.50)."
+    },
+    {
+      "asset": "docs/reports/HUD15_assets/orders-accepted-queued-modern.webp",
+      "sha256": "a4351ddb499e6c98ba439ce86aeab2060a9ba1aa0e8661047060e09f598752e4",
+      "source_png": "/home/domingo/allegiance-evidence/HUD15/raw/modern/orders-accepted-queued-1920x1080.png",
+      "source_sha256": "a19064ad2a76057440ac8b3e92fa6e58c7e416fda47f6c7ac07dcc375e7eac2b",
+      "bytes": 60192,
+      "visible": "Modern skin at 1920x1080: the same top-left order lines with the red comqueuedbmp chevron and yellow comacceptbmp checkmark, and the radar labels 'Ship 8097 2861 m' (acgotobmp, partly under the selection ring) and 'Ship 8099 1849 m' (qukillbmp) drawn with the same native glyph art."
+    },
+    {
+      "asset": "docs/reports/HUD15_assets/inventory-mounting-track-modern.webp",
+      "sha256": "cb053bb5a2013bc39d85279062903cceba37ecd9b2c2bf30c61ecf5870ce576b",
+      "source_png": "/home/domingo/allegiance-evidence/HUD15/raw/modern/inventory-mounting-track-1920x1080.png",
+      "source_sha256": "7a3128993190450b2f01b1f7b99b48bedf88df7b1a6836e1abdfa75fba6bb61a",
+      "bytes": 73570,
+      "visible": "Modern skin inventory pane: '9. Retro Booster' uses the modern skin's own white bar at 50% inside its bordered slot (no native word art), while '1. ER Nanite 3' shows its stats - the documented modern-skin choice for the mounting track."
+    }
+  ]
+}

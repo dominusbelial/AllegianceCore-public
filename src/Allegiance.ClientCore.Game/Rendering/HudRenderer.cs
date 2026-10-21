@@ -604,12 +604,24 @@ public class HudRenderer
         // HUD-5b — native colorOther: brackets and label text carry the
         // brightness step (×1 important, ×0.75 queued, ×0.5 otherwise,
         // radarimage.cpp:1094-1096); the icon itself stays full colour.
+        // HUD-15 — the native command icon. radarimage.cpp:1248-1253 picks
+        // m_psurfaceAccepted/m_psurfaceQueued[data.m_cid]; :1305-1310 draws it at
+        // 1:1 in the label block's left column, tinted data.m_color (the full side
+        // colour, never the dimmed colorOther). Missing art (or c_cidDefault,
+        // which the native load loop skips) keeps the A<id>/Q<id> text prefix.
+        Texture2D? commandIcon = label.CommandId is { } labelCommand
+            ? _nativeHud?.RadarCommandIcon((short)labelCommand, label.CommandAccepted)
+            : null;
+        if (!RadarCommandIcons.UseIcon(label.CommandId, commandIcon is not null)) commandIcon = null;
+        float iconSize = commandIcon is not null ? 16f * scale : 0f;
+        float iconGap = commandIcon is not null ? 2f * scale : 0f;
+        string? nameLine = commandIcon is not null ? view.IconNameLine : view.NameLine;
         var color = RadarLabelColor(contact) * RadarLabelModel.BracketBrightness(contact);
-        string? nameLine = view.NameLine;
         string? rangeLine = view.RangeLine;
         int barCount = (label.Fill is not null ? 1 : 0) + (label.Shield is not null ? 1 : 0)
             + (label.Hull is not null ? 1 : 0);
-        int lineCount = (nameLine is not null ? 1 : 0) + (rangeLine is not null ? 1 : 0);
+        int lineCount = ((nameLine is not null || commandIcon is not null) ? 1 : 0)
+            + (rangeLine is not null ? 1 : 0);
         if (lineCount == 0 && barCount == 0) return;
 
         float lineHeight = _small.LineSpacing * scale;
@@ -619,7 +631,7 @@ public class HudRenderer
         if (rangeLine is not null)
             maxText = MathF.Max(maxText, _small.MeasureString(rangeLine).X * scale);
         float barRow = barCount > 0 ? 5f * scale : 0f;
-        float blockWidth = MathF.Max(maxText, barCount * (24f + 4f) * scale) + 8f * scale;
+        float blockWidth = MathF.Max(maxText + iconSize + iconGap, barCount * (24f + 4f) * scale) + 8f * scale;
         float blockHeight = lineCount * lineHeight + barRow + 6f * scale;
 
         // Native stacks labels along the object→centre direction; a contact is
@@ -635,9 +647,19 @@ public class HudRenderer
         var placed = Layout.PlaceBlock(view.BlockKey, desired);
 
         float y = placed.Y;
+        if (commandIcon is not null)
+        {
+            // Native's DrawImage3D uses additive blending; the port's single
+            // alpha-blended HUD batch tints the white glyph mask instead (the
+            // same approximation HUD-8 records for the additive direction art).
+            int side = Math.Max(1, (int)MathF.Round(iconSize));
+            _sb.Draw(commandIcon, new Rectangle((int)MathF.Round(placed.X),
+                (int)MathF.Round(y + (lineHeight - iconSize) / 2f), side, side),
+                RadarLabelColor(contact));
+        }
         if (nameLine is not null)
         {
-            RenderText(_small, HudFormat.Printable(nameLine), new Vector2(placed.X, y), color, scale);
+            RenderText(_small, HudFormat.Printable(nameLine), new Vector2(placed.X + iconSize + iconGap, y), color, scale);
             y += lineHeight;
         }
         if (rangeLine is not null)
@@ -771,11 +793,13 @@ public class HudRenderer
             DrawMeasuredText(_small, "Current orders:", new(HudConsoleFormat.OrderLabelX * scale, labelTop), yellow, fixedAnchor: true, centerAtScale: false);
             if (console.QueuedOrder is { } q)
             {
+                DrawOrderLineGlyph(accepted: false, scale, red);
                 DrawMeasuredText(_small, q, new(HudConsoleFormat.OrderTextX * scale, HudConsoleFormat.OrderQueuedTop(labelTop, lineHeight)), red, fixedAnchor: true, centerAtScale: false);
                 ElementDrawn("Queued order text");
             }
             if (console.AcceptedOrder is { } a)
             {
+                DrawOrderLineGlyph(accepted: true, scale, yellow);
                 DrawMeasuredText(_small, a, new(HudConsoleFormat.OrderTextX * scale, HudConsoleFormat.OrderAcceptedTop(labelTop, lineHeight)), cortText, fixedAnchor: true, centerAtScale: false);
                 ElementDrawn("Accepted order text");
             }
@@ -824,6 +848,23 @@ public class HudRenderer
             DrawMeasuredText(_small, ripcord, new(w / 2f - HudConsoleFormat.RipcordLeft, h / 2f - HudConsoleFormat.RipcordTop), TextMain, fixedAnchor: true, centerAtScale: false);
             ElementDrawn("Ripcord countdown");
         }
+    }
+
+    /// <summary>HUD-15 — the native order-line glyph (comacceptbmp/comqueuedbmp).
+    /// LastOrderImage's two rows each translate the ImportImage3D glyph by
+    /// Point(-21,-13) from the line's lower-left (Artwork/dialog.mdl:1605-1640)
+    /// and tint it yellowText (accepted) or Color(1,0,0) (queued); the pane sits
+    /// at SideTopLeft(50,-37) with the rows at Point(7,-20)/(7,-40)
+    /// (dialog.mdl:1641-1652, :5451). <see cref="HudConsoleFormat.OrderIconTopLeft"/>
+    /// is the resulting position; the glyph is 16x16 and unscaled by native.
+    /// Missing art leaves the text-only line (no invented shape).</summary>
+    protected void DrawOrderLineGlyph(bool accepted, float scale, Color tint)
+    {
+        Texture2D? art = accepted ? _nativeHud?.CommandAcceptedIcon : _nativeHud?.CommandQueuedIcon;
+        if (art is null) return;
+        var (left, top) = HudConsoleFormat.OrderIconTopLeft(accepted, scale);
+        int size = Math.Max(1, (int)MathF.Round(HudConsoleFormat.OrderIconSize * scale));
+        _sb.Draw(art, new Rectangle((int)MathF.Round(left), (int)MathF.Round(top), size, size), tint);
     }
 
     /// <summary>Left status panel: labelled horizontal bars for the six live
@@ -2344,12 +2385,28 @@ public class HudRenderer
             float bw = 64f * scale;
             float bh = 14f * scale;
             Texture2D? fill = row.ReadyState == 2 ? art?.ArmingBar : art?.MountingBar;
-            FillRect(bx, by, bw, bh, new Color(0f, 0f, 0f, 0.85f));
+            // HUD-15 — native's mounting track is the real
+            // mountingbarbkgndbmp (the word "Mounting" behind the fill), an
+            // ImagePane the GaugePane is nested in at Point(0,0)
+            // (Artwork/invdefault.mdl:43-52; the pane places the group at
+            // Point(130,5) of the 64x14 row slot, invdefault.mdl:59-66). The
+            // dark rect is only the fallback when that art is missing.
+            if (row.ReadyState == 1 && art?.MountingBarBackground is { } track)
+                _sb.Draw(track, new Rectangle((int)MathF.Round(bx), (int)MathF.Round(by),
+                    (int)MathF.Round(bw), (int)MathF.Round(bh)), Color.White);
+            else
+                FillRect(bx, by, bw, bh, new Color(0f, 0f, 0f, 0.85f));
             if (fill is { } f && row.MountedFraction > 0f)
             {
-                int fillW = (int)MathF.Round(bw * HudFormat.Clamp01(row.MountedFraction));
-                if (fillW > 0)
-                    _sb.Draw(f, new Rectangle((int)MathF.Round(bx), (int)MathF.Round(by), fillW, (int)MathF.Round(bh)), Color.White);
+                // Native GaugePane::Paint (effect/panes.cpp:31-40) BitBlts the left
+                // m_value = int(xsize·v) columns of the fill surface — a
+                // left-to-right reveal, not a horizontal squeeze. Keep the
+                // 64x14 art at its native columns.
+                int srcW = (int)(f.Width * HudFormat.Clamp01(row.MountedFraction));
+                if (srcW > 0)
+                    _sb.Draw(f, new Rectangle((int)MathF.Round(bx), (int)MathF.Round(by),
+                            Math.Max(1, (int)MathF.Round(bw * srcW / (float)f.Width)), (int)MathF.Round(bh)),
+                        new Rectangle(0, 0, srcW, f.Height), Color.White);
             }
             OutlineRect(bx, by, bw, bh, BorderDim);
         }

@@ -585,11 +585,16 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             DrawMeasuredText(_small, "Current orders:", new(HudConsoleFormat.OrderLabelX * _scale, labelTop), yellow, fixedAnchor: true, centerAtScale: false);
             if (console.QueuedOrder is { } q)
             {
+                // HUD-15 — the same native comqueuedbmp/comacceptbmp glyphs fit the
+                // modern skin (16x16 white masks tinted per skin), drawn at the
+                // native offsets before their lines.
+                DrawOrderLineGlyph(accepted: false, _scale, red);
                 DrawMeasuredText(_small, q, new(HudConsoleFormat.OrderTextX * _scale, HudConsoleFormat.OrderQueuedTop(labelTop, lineHeight)), red, fixedAnchor: true, centerAtScale: false);
                 Mark("Queued order text");
             }
             if (console.AcceptedOrder is { } a)
             {
+                DrawOrderLineGlyph(accepted: true, _scale, yellow);
                 DrawMeasuredText(_small, a, new(HudConsoleFormat.OrderTextX * _scale, HudConsoleFormat.OrderAcceptedTop(labelTop, lineHeight)), cortText, fixedAnchor: true, centerAtScale: false);
                 Mark("Accepted order text");
             }

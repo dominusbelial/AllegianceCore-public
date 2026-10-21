@@ -2603,3 +2603,21 @@ HUD-9b's final fast-tier run recorded one failure:
 (allocation counting on a busy shared machine, unrelated to the HUD-9b console
 text fixes). No HUD-9b change touches `Allegiance.Core`/`Allegiance.Server`
 transport or allocation paths.
+
+
+## HUD-15 validation environment (2026-10-20)
+
+HUD-15's single fast-tier run recorded the known `PlayerBundlePathsTests`
+environment baseline (5 of its 9 cases, the same `local.env` ancestor-discovery
+failures documented by HUD-12/SC2 — not new): **9,467 tests, 273.8 s, 5
+failures**, all `Allegiance.Core.Tests.PlayerBundlePathsTests`. No HUD,
+renderer, radar or inventory test failed.
+
+During the intermediate filtered HUD/radar/inventory run the allocation
+assertion in `Allegiance.ClientCore.MonoGame.Tests.Hud12bReviewFixTests.Chat_line_truncation_matches_the_native_clip_and_is_cached_per_source_and_width`
+failed twice ("cached chat truncation allocated 7208 B / 6408 B over 10,000
+frames") and passed **3/3 exact-method isolated invocations** unchanged. It is
+the same full-run-only allocation-sampling effect as the P661/P670 entries
+above (`BytesAllocated` under a busy shared machine), unrelated to the HUD-15
+command-icon work: that test only exercises `ChatLineTruncationCache.Fit`, which
+HUD-15 does not touch. Recorded as a load flake per the 3/3-alone rule.

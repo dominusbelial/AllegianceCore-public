@@ -81,8 +81,8 @@ public sealed partial class Game1
             Console.WriteLine($"[monogame] queued order announced: commandID={qid} — press [Home] to accept");
             PushOrdinaryTip(
                 qid == Allegiance.Core.Wire.OrderChange.CidPickup
-                    ? "NEW ORDER: pick up a teammate — [Home] to accept"
-                    : "NEW COMMAND RECEIVED — [Home] to accept");
+                    ? "NEW ORDER: pick up a teammate - [Home] to accept"
+                    : "NEW COMMAND RECEIVED - [Home] to accept");
         }
         else if (qid == Allegiance.Core.Wire.OrderChange.CidNone)
         {
@@ -142,6 +142,12 @@ public sealed partial class Game1
     /// three retained ordinary slots or the four expiring critical slots.</summary>
     private void PushTip(string text, bool critical)
     {
+        // HUD-15 — the HUD fonts carry printable ASCII only, and the ordinary
+        // tip slots are measured/drawn without the Printable pass the other
+        // console rows go through, so a server tip with a non-ASCII glyph (the
+        // queued-order announcement's em dash) made SpriteFont.MeasureString
+        // throw mid-frame. Sanitise once at the slot write.
+        text = Rendering.HudFormat.Printable(text);
         if (critical)
         {
             _criticalTips.Add((text, _nowSeconds + TipDurationSeconds));
@@ -159,6 +165,9 @@ public sealed partial class Game1
     /// newest-first shift, console.cpp:723-725).</summary>
     private void PushOrdinaryTip(string text)
     {
+        // HUD-15 — see PushTip: the announcement strings below use an em dash,
+        // which the HUD font cannot measure.
+        text = Rendering.HudFormat.Printable(text);
         for (int i = Rendering.HudConsoleFormat.OrdinaryTipSlots - 1; i > 0; i--)
             _ordinaryTips[i] = _ordinaryTips[i - 1];
         _ordinaryTips[0] = text;
