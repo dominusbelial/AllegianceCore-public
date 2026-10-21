@@ -10,7 +10,7 @@ public class Hud4RadarTests
 {
     private static HudFrame Frame => new(0.8f, 0.6f, 0.4f, 0.3f, 0.2f, 1f,
         120f, -1f, false, false, true, 0, false, 0f, false, false,
-        0f, 0, 0f, Array.Empty<WeaponStatusRow>(), false, 0);
+        0f, 0f, Array.Empty<WeaponStatusRow>(), false, 0);
 
     [Fact]
     public void Radar_contact_snapshot_keeps_every_kind_and_extra_fields()

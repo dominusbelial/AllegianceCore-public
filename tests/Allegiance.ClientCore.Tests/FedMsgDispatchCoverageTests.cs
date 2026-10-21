@@ -21,7 +21,7 @@ namespace Allegiance.ClientCore.Tests;
 ///
 ///  1. It encodes every server-sent message the real client is supposed to
 ///     consume (the <see cref="ExpectedConsumedServerSent"/> registry — all 91
-///     native S/CS messages the client dispatches, plus the 17 port-added
+///     native S/CS messages the client dispatches, plus the 16 port-added
 ///     server-sent messages), feeds the real bytes through the real dispatch
 ///     (no sockets — <see cref="ITransportSite.OnReceive"/> is invoked
 ///     directly), and asserts the fmid was consumed, i.e. did NOT land in
@@ -49,8 +49,9 @@ public class FedMsgDispatchCoverageTests
     /// The server-sent messages the REAL MonoGame client must consume. Native
     /// fmid + the <c>Allegiance.Core.Wire</c> codec class that owns that fmid.
     /// This is exactly the set <see cref="ConnectionSession.OnReceive"/>
-    /// dispatches, including the P627 additions PLAYER_RESCUED(16) and
-    /// OwnShipKillBonusUpdate(212).
+    /// dispatches, including the P627 addition PLAYER_RESCUED(16). (The P627
+    /// addition — the kill-bonus update, fmid 212 — was removed again by P773; the
+    /// client derives its own kill bonus from PLAYERINFO/KILL_SHIP experience.)
     /// </summary>
     private static readonly (ushort Fmid, string Type)[] ExpectedConsumedServerSent =
     {
@@ -85,7 +86,7 @@ public class FedMsgDispatchCoverageTests
         // port-added server-sent messages the real client also dispatches:
         (204, "MissileLockUpdate"), (205, "MissileUpdate"), (206, "OwnShipMiningUpdate"),
         (207, "ExplosionEvent"), (208, "MissileTrackWarningUpdate"), (209, "ScoreRosterUpdate"), (219, "ScoreRosterDelta"),
-        (210, "LeadIndicatorUpdate"), (211, "SideRoster"), (212, "OwnShipKillBonusUpdate"),
+        (210, "LeadIndicatorUpdate"), (211, "SideRoster"),
         (213, "ProjectileHullHit"), (214, "ClusterWarningUpdate"), (215, "QueuedCommandUpdate"),
         (216, "CollisionEvent"), (217, "VictimDamaged"), (853, "MineStrength"), (991, "TimescaleUpdate"),
     };
@@ -275,10 +276,10 @@ public class FedMsgDispatchCoverageTests
         Assert.Equal(ExpectedConsumedServerSent.Length, consumed.Count);
         Assert.Equal(KnownUnconsumedServerSent.Length, unconsumed.Count);
         Assert.Equal(99, consumed.Count(f => supportedNativeServerSent.Contains(f)));
-        Assert.Equal(17, consumed.Count(f => !supportedNativeServerSent.Contains(f)));
+        Assert.Equal(16, consumed.Count(f => !supportedNativeServerSent.Contains(f)));
 
         // Sanity: the executable counts match the audited numbers.
-        Assert.Equal(116, ExpectedConsumedServerSent.Length);
+        Assert.Equal(115, ExpectedConsumedServerSent.Length);
         Assert.Equal(3, KnownUnconsumedServerSent.Length);
         Assert.Equal(102, supportedNativeServerSent.Length);
     }

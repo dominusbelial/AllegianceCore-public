@@ -18,7 +18,7 @@ public class Hud14ClassicGaugeTests
 {
     private static HudFrame Frame => new(0.8f, 0.6f, 0.4f, 0.3f, 0.2f, 1f,
         120f, -1f, false, false, true, 0, false, 0f, false, false,
-        0f, 0, 0f, System.Array.Empty<WeaponStatusRow>(), false, 0);
+        0f, 0f, System.Array.Empty<WeaponStatusRow>(), false, 0);
 
     // ── 1. Reveal source rect equals the native GaugeImageRect rule ────────
 

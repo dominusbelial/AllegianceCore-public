@@ -580,7 +580,7 @@ public class HudRenderer
         float top = viewport.Height / 2f - 120f;
         float bottom = top + 20f + 8f * line;   // ship row + six gauges + speed
         if (f.SignaturePercent is not null) bottom += line;
-        if (f.KillBonusPercent > 0f || f.KillBonusStreak > 0) bottom += line;
+        if (f.KillBonusPercent > 0f) bottom += line;   // P773 — 50·e/(e+4) > 0 exactly when e > 0
         bottom += 2f * line + 4f;                // money/AP/radar + target rows
         float right = 36f + 118f * spread + 90f * TextScale;   // gauge + percent column
         Layout.Reserve(new Rectangle(20, (int)(top - 8f),
@@ -1547,7 +1547,7 @@ public class HudRenderer
             DrawSummaryText(summaryFont, summaryFs, HudStringCache.Signature(sig), new Vector2(x, y), TextMain);
             y += line;
         }
-        if (f.KillBonusPercent > 0f || f.KillBonusStreak > 0)
+        if (f.KillBonusPercent > 0f)   // P773 — 50·e/(e+4) > 0 exactly when e > 0
         {
             DrawSummaryText(summaryFont, summaryFs, HudStringCache.KillBonusLine(f.KillBonusPercent), new Vector2(x, y), BonusGold);
             y += line;

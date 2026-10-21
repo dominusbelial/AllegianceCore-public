@@ -1,5 +1,7 @@
 # Kill Bonus + Roll HUD gauges — P298
 
+> Superseded by P773: fmid 212 retired; the client derives the own kill bonus from PLAYERINFO/KILL_SHIP experience.
+
 Two new cockpit HUD readouts in the MonoGame client, surfacing state that
 native FreeAllegiance only hints at via training overlays. This stage gives the
 pilot real, live-value instruments for both.

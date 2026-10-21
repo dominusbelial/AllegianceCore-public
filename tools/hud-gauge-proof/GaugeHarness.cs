@@ -84,7 +84,6 @@ public sealed class GaugeHarness : Game
             Mining: false,
             Cloaked: false,
             KillBonusPercent: 0f,
-            KillBonusStreak: 0,
             RollDegrees: 0f,
             WeaponSystems: Array.Empty<Allegiance.ClientCore.MonoGame.Flight.WeaponStatusRow>(),
             IsAdriftLifepod: false,

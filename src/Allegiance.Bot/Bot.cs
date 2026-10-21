@@ -127,7 +127,6 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<AsteroidDestroyed> _asteroidDestroyeds = new();
     private readonly List<AsteroidMined> _asteroidMineds = new();
     private readonly List<OwnShipMiningUpdate> _ownShipMiningUpdates = new();   // P255
-    private readonly List<OwnShipKillBonusUpdate> _ownShipKillBonusUpdates = new();   // P298
     private readonly List<StationDestroyed> _stationDestroyeds = new();
     private readonly List<StationCapture> _stationCaptures = new();
     private readonly List<GameState> _gameStates = new();
@@ -826,14 +825,6 @@ public sealed class Bot : ITransportSite, IDisposable
 
     /// <summary>P255 — clear the accumulated own-ship mining-target updates.</summary>
     public void ResetOwnShipMining() { lock (_gate) _ownShipMiningUpdates.Clear(); }
-
-    /// <summary>P298 — the owner-only <c>FM_S_OWN_SHIP_KILL_BONUS_UPDATE(212)</c>
-    /// messages this bot has seen (one per tick), each carrying its own ship's
-    /// live Kill Bonus readout and streak.</summary>
-    public IReadOnlyList<OwnShipKillBonusUpdate> OwnShipKillBonusUpdates { get { lock (_gate) return _ownShipKillBonusUpdates.ToArray(); } }
-
-    /// <summary>P298 — clear the accumulated own-ship Kill Bonus updates.</summary>
-    public void ResetOwnShipKillBonus() { lock (_gate) _ownShipKillBonusUpdates.Clear(); }
 
     /// <summary>The <c>FM_S_STATION_DESTROYED(59)</c> notices this bot has seen
     /// (P125) — a <see cref="StationDestroyed"/> per received message, appended
@@ -2013,11 +2004,6 @@ public sealed class Bot : ITransportSite, IDisposable
                         // P255 — owner-only: the rock this bot's own ship is
                         // currently drilling (NA/NA when not mining).
                         _ownShipMiningUpdates.Add(OwnShipMiningUpdate.Decode(m));
-                        break;
-                    case OwnShipKillBonusUpdate.Fmid:
-                        // P298 — owner-only: this bot's own ship's live Kill
-                        // Bonus readout + streak (per-tick stream).
-                        _ownShipKillBonusUpdates.Add(OwnShipKillBonusUpdate.Decode(m));
                         break;
                     case StationDestroyed.Fmid:
                         _stationDestroyeds.Add(StationDestroyed.Decode(m));

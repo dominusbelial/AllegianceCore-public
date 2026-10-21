@@ -207,7 +207,7 @@ public sealed class BroadcastSnapshotLoopbackTests
                     return id is SingleShipUpdate.Fmid or HeavyShipsUpdate.Fmid or LightShipsUpdate.Fmid
                         or StationsUpdate.Fmid or AsteroidsUpdate.Fmid or ProbesUpdate.Fmid
                         or MissileUpdate.Fmid or MissileLockUpdate.Fmid or MissileTrackWarningUpdate.Fmid
-                        or OwnShipMiningUpdate.Fmid or OwnShipKillBonusUpdate.Fmid or LeadIndicatorUpdate.Fmid
+                        or OwnShipMiningUpdate.Fmid or LeadIndicatorUpdate.Fmid
                         or Ping.Fmid; // the test's full-queue barrier is in the stream lane
                 }
                 Assert.Equal(off[i].Where(Stream), on[i].Where(Stream));

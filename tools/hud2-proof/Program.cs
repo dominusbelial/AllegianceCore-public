@@ -180,7 +180,7 @@ sealed class Proof : Game
 
     static HudModel Scenario(string scenario, int w, int h)
     {
-        var frame = new HudFrame(.82f, .7f, .8f, .9f, 1, 1, 260, .6f, true, true, true, 0, false, 0, true, true, 15, 3, 24,
+        var frame = new HudFrame(.82f, .7f, .8f, .9f, 1, 1, 260, .6f, true, true, true, 0, false, 0, true, true, 15, 24,
             new WeaponStatusRow[] { new(0, "Rapid fire plasma cannon", true, 0, 200, WeaponStatus.NotReady), new(1, "Interceptor missile", false, 0, 0, WeaponStatus.Ready) }, false, 0, 2500,
             new(.2f, -.3f, .1f, false), 85, ShipWarningMask.OutOfBounds,
             SignaturePercent: 42f, Detected: false, AutopilotEngaged: true, VectorLockEngaged: true,

@@ -1583,15 +1583,6 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // client silently dropped the "you were rescued" line.
                         _world.Apply(PlayerRescued.Decode(m));
                         break;
-                    case OwnShipKillBonusUpdate.Fmid:
-                        // P627 — FM_S_OWN_SHIP_KILL_BONUS_UPDATE(212): the server's
-                        // per-tick, owner-only kill-bonus snapshot (Server.Broadcast.cs
-                        // P298). The world already stores _killBonusPercent/_killBonusStreak
-                        // and Game1.Rendering/HudFrame render the Kill Bonus gauge;
-                        // only the receive dispatch case was missing, so the real
-                        // client never saw its live kill bonus.
-                        _world.Apply(OwnShipKillBonusUpdate.Decode(m));
-                        break;
                     case OwnShipCloakUpdate.Fmid:
                         // HUD-12 — OWN_SHIP_CLOAK_UPDATE(220): the owner-only
                         // continuous GetCloaking() fraction (Server.Broadcast.cs).

@@ -3041,11 +3041,12 @@ public sealed partial class Game1
                     // decloak ramp too (consoledata.cpp:563-575); the state bit
                     // remains the fallback before the first 220 message.
                     Cloaked: cloaked,
-                    // P298 — the local ship's live Kill Bonus (streamed owner-only
-                    // on OwnShipKillBonusUpdate(212); the renderer-only client has
-                    // no server-side Ship object to read it from directly).
+                    // P773 — the local player's own Kill Bonus, DERIVED
+                    // client-side from the own ship's experience (seeded by
+                    // PLAYERINFO.fExperience, updated by KILL_SHIP —
+                    // console.cpp:824-828, appmsg.cpp:2280,2769,2807-2811).
+                    // The port-only per-tick kill-bonus stream (fmid 212) is retired.
                     KillBonusPercent: world.KillBonusPercent,
-                    KillBonusStreak: world.KillBonusStreak,
                     // P298 — the ship's real current roll angle about its forward
                     // axis, derived from the SAME orientation this client already
                     // tracks for the chase/cockpit cameras (up.Orientation is the

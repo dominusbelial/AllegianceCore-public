@@ -223,7 +223,7 @@ public class Hud12bReviewFixTests
     private static HudFrame FrameWithCloak(float? strength, bool engagedBit, float energy = 1f) =>
         new(1f, 1f, 1f, 1f, energy, 1f, 100f, 0f, false, false, false, 0,
             Flashing: false, WarpFlash: 0f, Mining: false, Cloaked: engagedBit,
-            KillBonusPercent: 0f, KillBonusStreak: 0, RollDegrees: 0f,
+            KillBonusPercent: 0f, RollDegrees: 0f,
             WeaponSystems: Array.Empty<WeaponStatusRow>(), IsAdriftLifepod: false,
             OxygenSecondsRemaining: 0, CloakStrengthPercent: strength);
 

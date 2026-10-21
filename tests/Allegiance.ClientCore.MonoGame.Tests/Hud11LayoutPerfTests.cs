@@ -156,7 +156,7 @@ public class Hud11LayoutPerfTests
             HullFraction: 1f, ShieldFraction: 1f, AmmoFraction: 1f, FuelFraction: 1f,
             EnergyFraction: 1f, Power: 1f, Speed: 100f, Throttle: 1f, AfterburnerActive: false,
             Firing: false, GroupFire: true, SelectedMount: 0, Flashing: false, WarpFlash: 0f,
-            Mining: false, Cloaked: false, KillBonusPercent: 50f, KillBonusStreak: 3,
+            Mining: false, Cloaked: false, KillBonusPercent: 50f,
             RollDegrees: 0f, WeaponSystems: Array.Empty<WeaponStatusRow>(), IsAdriftLifepod: false,
             OxygenSecondsRemaining: 0, Money: 500, MouseStick: null, TimeDilationPercent: 100f,
             WarningMask: 0, ControlState: 0, SignaturePercent: 50f, Detected: true,

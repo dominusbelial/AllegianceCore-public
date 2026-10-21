@@ -420,7 +420,7 @@ public class Hud18TargetPaneTests
     {
         var frame = new HudFrame(0.8f, 0.6f, 0.4f, 0.3f, 0.2f, 1f,
             120f, -1f, false, false, true, 0, false, 0f, false, false,
-            0f, 0, 0f, Array.Empty<WeaponStatusRow>(), false, 0);
+            0f, 0f, Array.Empty<WeaponStatusRow>(), false, 0);
         var pane = new HudTargetPane(true, "station 101", "Station", null,
             TargetPaneModel.Neutral, 0f, 0f, null, 0f, null, null, false, false,
             SectorName: "Ganymede", TimeToIntercept: "0:05");

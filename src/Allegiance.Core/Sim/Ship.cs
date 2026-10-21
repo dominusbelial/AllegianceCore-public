@@ -119,13 +119,26 @@ public sealed partial class Ship : Model, IShipIgc
     public float KillBonus => _experience;
 
     /// <summary>
-    /// P278 — the KB percentage for this streak: <c>50·c/(c+4)</c> capped at
-    /// 50 (the wiki's "KB = 50 × kills/(kills+4)", derived from native's
+    /// P278/P773 — the KB percentage for this streak: <c>50·c/(c+4)</c> capped
+    /// at 50 (the wiki's "KB = 50 × kills/(kills+4)", derived from native's
     /// <c>GetExperienceMultiplier</c>). Starts at 0 for a fresh ship and
     /// reaches 10 at the first kill (<c>c=1</c>), asymptotically approaching —
     /// never exceeding — 50.
     /// </summary>
-    public float KillBonusPercent => Math.Clamp(50.0f * _experience / (_experience + 4.0f), 0f, 50f);
+    public float KillBonusPercent => KillBonusPercentFor(_experience);
+
+    /// <summary>
+    /// P773 — the single <c>50·e/(e+4)</c> readout formula, shared by the
+    /// server-side <see cref="KillBonusPercent"/>, the client's own-ship HUD
+    /// readout (<c>ClientWorld.KillBonusPercent</c>) and the target pane's
+    /// experience row. Native: <c>GetExperienceMultiplier</c> is
+    /// <c>1 + 0.5·m_experience/(m_experience + 4)</c>
+    /// (<c>Igc/shipIGC.h:1812-1818</c>) and the console shows
+    /// <c>100·(GetExperienceMultiplier()−1)</c> every frame
+    /// (<c>WinTrek/console.cpp:824-828</c>) — algebraically
+    /// <c>50·e/(e+4)</c>. Allocation-free (called every frame).</summary>
+    public static float KillBonusPercentFor(float experience) =>
+        Math.Clamp(50.0f * experience / (experience + 4.0f), 0f, 50f);
 
     /// <summary>
     /// P278 — native <c>GetExperienceMultiplier</c> (<c>shipIGC.h:1812-1817</c>):

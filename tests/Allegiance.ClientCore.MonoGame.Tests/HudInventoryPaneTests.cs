@@ -313,7 +313,7 @@ public class HudInventoryPaneTests
     {
         var pane = Build([new(WeaponId, 1, 0, ExpandedPartData.FullyMounted)], [], ammo: 0.6f);
         var frame = new HudFrame(.8f, .6f, .6f, .9f, .8f, 1f, 120f, -1f, false, false, true, 0,
-            false, 0f, false, false, 0f, 0, 0f, Array.Empty<WeaponStatusRow>(), false, 0);
+            false, 0f, false, false, 0f, 0f, Array.Empty<WeaponStatusRow>(), false, 0);
         var model = HudModel.Create(frame, new() { InventoryVisible = true, InventoryPane = pane });
         Assert.True(model.Elements.Single(e => e.Id == "Flight equipment inventory pane").Visible);
         Assert.True(model.Elements.Single(e => e.Id == "Equipment weapon range").Visible);

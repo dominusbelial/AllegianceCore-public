@@ -12,7 +12,10 @@ namespace Allegiance.Core.Wire;
 /// (0/1), not the ramp. The server therefore streams the sim's authoritative
 /// <see cref="Allegiance.Core.Sim.Ship.Cloaking"/> (the direct port of
 /// <c>CcloakIGC::Update</c>, <c>Igc/cloakigc.cpp:85-122</c>) on the same
-/// per-tick owner-only pattern P230/P255/P266/P298 set.
+/// per-tick owner-only pattern P230/P255/P266 set. (P773 note: the P298
+/// kill-bonus stream that once shared this list is retired — native has no
+/// such message; the client derives its own kill bonus from the experience
+/// the standard PLAYERINFO/KILL_SHIP path already carries.)
 /// <para>
 /// <b>Value.</b> <see cref="Cloaking"/> is the native <c>GetCloaking()</c>
 /// VISIBLE fraction: 1.0 = fully visible, falling toward

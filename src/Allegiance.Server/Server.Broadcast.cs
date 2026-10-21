@@ -46,7 +46,8 @@ public sealed partial class Server
     private const int CoalesceMissileLock  = 7;   // FM_S_MISSILE_LOCK_UPDATE(204) owner-only
     private const int CoalesceMissileTrack = 8;   // FM_S_MISSILE_TRACK_WARNING(208) owner-only
     private const int CoalesceOwnMining    = 9;   // FM_S_OWN_SHIP_MINING_UPDATE(206) owner-only
-    private const int CoalesceOwnKillBonus = 10;  // FM_S_OWN_SHIP_KILL_BONUS_UPDATE(212) owner-only
+    // Key 10 is retired (P773: the port-only kill-bonus update, fmid 212);
+    // do NOT renumber the other keys.
     private const int CoalesceLeadIndicator = 11; // FM_S_LEAD_INDICATOR_UPDATE(210) owner-only
     private const int CoalesceOwnCloak     = 13; // FM_S_OWN_SHIP_CLOAK_UPDATE(220) owner-only (HUD-12)
     // P608 — the OWNER's own-ship SingleShipUpdate(78) position stream, on its
@@ -438,13 +439,10 @@ public sealed partial class Server
         // which this renderer-only client cannot — see OwnShipMiningUpdate's
         // doc comment for the P230/P234 owner-only-extension precedent.
         Step("broadcastOwnShipMining", () => BroadcastOwnShipMining());
-        // P298 — per-tick, OWNER-ONLY OwnShipKillBonusUpdate(212) carrying the
-        // peer's own ship's live Kill Bonus (P278 readout) so the renderer-only
-        // MonoGame client can draw a real KB gauge. Native replicated this as
-        // fExperience in PLAYERINFO(10) to a local ship replica; this client has
-        // no replica, so the server streams it — see OwnShipKillBonusUpdate's
-        // doc for the P230/P255/P266 owner-only-extension precedent.
-        Step("broadcastOwnShipKillBonus", () => BroadcastOwnShipKillBonus());
+        // P773 — the port-only per-tick kill-bonus update (fmid 212) owner-only
+        // stream was removed: native has no such message; the client derives the
+        // own kill bonus from the own ship's experience (PLAYERINFO.fExperience
+        // seed + KILL_SHIP updates), exactly as native does.
         // HUD-12 — per-tick, OWNER-ONLY OwnShipCloakUpdate(220) carrying the
         // own ship's continuous GetCloaking() visible fraction, so the HUD can
         // show the native cloak strength (100·(1−Cloaking), consoledata.cpp:480-489)
@@ -3298,31 +3296,12 @@ public sealed partial class Server
     }
 
     /// <summary>
-    /// P298 — per-tick, OWNER-ONLY Kill Bonus stream: for each seated peer, send
-    /// <c>OwnShipKillBonusUpdate(212)</c> carrying its own ship's live P278 Kill
-    /// Bonus (the <c>50·c/(c+4)</c> readout and the raw streak count), so the
-    /// renderer-only MonoGame client can draw a real KB gauge. Sent every tick
-    /// (like <see cref="BroadcastOwnShipMining"/>) — always present, no
-    /// change-tracking, at a cost of 10 bytes per peer per tick. Native
-    /// delivered the same value to a local ship replica via PLAYERINFO.fExperience
-    /// (appmsg.cpp:2280) and read it back with GetExperienceMultiplier()
-    /// (WinTrek/console.cpp:826); this client has no replica, hence the stream.
-    /// </summary>
-    private void BroadcastOwnShipKillBonus()
-    {
-        foreach (var kv in _peerShips)
-        {
-            SendPeerCoalescing(kv.Key, PackKillBonus(kv.Value.Ship), CoalesceOwnKillBonus);
-        }
-    }
-
-    /// <summary>
     /// HUD-12 — per-tick, OWNER-ONLY cloak stream: for each seated peer, send
     /// <c>OwnShipCloakUpdate(220)</c> with its own ship's live
     /// <see cref="Ship.Cloaking"/> (the native <c>GetCloaking()</c> visible
-    /// fraction, <c>Igc/cloakigc.cpp:121</c>). Sent every tick like the Kill
-    /// Bonus stream (8 bytes per peer per tick); the client derives the native
-    /// strength percentage and <c>IsCloaked</c> from it
+    /// fraction, <c>Igc/cloakigc.cpp:121</c>). Sent every tick, always present —
+    /// no change-tracking (8 bytes per peer per tick); the client derives the
+    /// native strength percentage and <c>IsCloaked</c> from it
     /// (<c>WinTrek/consoledata.cpp:480-489,563-575</c>).
     /// </summary>
     private void BroadcastOwnShipCloak()

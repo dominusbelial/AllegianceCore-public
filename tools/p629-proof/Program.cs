@@ -127,7 +127,7 @@ sealed class Proof : Game
             if (world.MyShipId is { } id && world.Ships.TryGetValue(id, out var entity) && entity.Latest is { } u)
                 _hud.Draw(new HudFrame(u.HullFraction, u.ShieldFraction, u.AmmoFraction, u.FuelFraction,
                     u.EnergyFraction, u.Power, u.Velocity.Length(), -1, false, false, false, 0, false, 0,
-                    false, false, 0, 0, 0, [], false, 0, WarningMask: world.ShipWarnings.Mask), CameraMode.Cockpit, GraphicsDevice.Viewport);
+                    false, false, 0, 0, [], false, 0, WarningMask: world.ShipWarnings.Mask), CameraMode.Cockpit, GraphicsDevice.Viewport);
         }
         base.Draw(gameTime);
     }

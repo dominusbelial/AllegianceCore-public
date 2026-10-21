@@ -611,11 +611,12 @@ public sealed partial class ClientWorld
     // by the owner-only OwnShipMiningUpdate(206). NA(-1) = not mining.
     private short _miningAsteroidId = -1;
 
-    // P298 — the LOCAL player's own ship's live Kill Bonus readout (0..50, cap
-    // 50) and raw streak count, streamed by the owner-only
-    // OwnShipKillBonusUpdate(212). Defaults to 0 (a fresh ship has no bonus).
-    private float _killBonusPercent = 0f;
-    private short _killBonusStreak = 0;
+    // P773 — the LOCAL player's own Kill Bonus readout is NOT streamed: it is
+    // derived every frame from the own ShipEntity's experience (seeded by
+    // PLAYERINFO.fExperience, updated by KILL_SHIP) via
+    // Sim.Ship.KillBonusPercentFor — exactly native's
+    // 100·(GetExperienceMultiplier()−1) (console.cpp:824-828). The port-only
+    // fmid-212 kill-bonus stream and its streak field are retired.
 
     // HUD-12 — the LOCAL player's own ship's continuous cloak visible fraction
     // (native GetCloaking(), 1 = fully visible), streamed by the owner-only
@@ -1639,11 +1640,21 @@ public sealed partial class ClientWorld
     /// orient the own hull toward the mine target.</summary>
     public short MiningAsteroidId => _miningAsteroidId;
 
-    /// <summary>P298 — the local player's own ship's live Kill Bonus readout
-    /// (native <c>100·(GetExperienceMultiplier()−1)</c>, 0..50 cap 50), streamed
-    /// on the owner-only <c>OwnShipKillBonusUpdate(212)</c>. 0 = no bonus (a
-    /// fresh ship). Feeds the HUD's Kill Bonus gauge.</summary>
-    public float KillBonusPercent => _killBonusPercent;
+    /// <summary>P773 — the local player's own Kill Bonus readout (native
+    /// <c>100·(GetExperienceMultiplier()−1)</c>, 0..50 cap 50,
+    /// <c>WinTrek/console.cpp:824-828</c>), DERIVED every read from the own
+    /// <see cref="ShipEntity"/>'s experience via
+    /// <see cref="Allegiance.Core.Sim.Ship.KillBonusPercentFor"/> — no stream.
+    /// The experience is seeded by PLAYERINFO's <c>fExperience</c>
+    /// (<c>appmsg.cpp:2280</c>) and updated by KILL_SHIP
+    /// (<c>appmsg.cpp:2769</c> victim reset, <c>appmsg.cpp:2807-2811</c> killer
+    /// +1). 0 when the own ship is unknown (Reset/BeginNextMission clear the
+    /// ship table, so the value returns to 0 with no extra code). Allocation
+    /// free — the HUD reads this every frame.</summary>
+    public float KillBonusPercent =>
+        MyShipId is { } me && _ships.TryGetValue(me, out var own)
+            ? Allegiance.Core.Sim.Ship.KillBonusPercentFor(own.Experience)
+            : 0f;
 
     /// <summary>P414 — whether the LOCAL player's own ship currently has a
     /// ripcord countdown active (a <c>RIPCORD_ACTIVATE(185)</c> naming our own
@@ -1669,11 +1680,6 @@ public sealed partial class ClientWorld
     /// tag when the countdown would have completed. <c>null</c> when no ripcord
     /// is active. Reset on abort / reconnect / completion.</summary>
     public long? RipcordActiveSinceLocalMs { get; private set; }
-
-    /// <summary>P298 — the raw kill-streak count behind
-    /// <see cref="KillBonusPercent"/> (native <c>m_experience</c>), for the
-    /// gauge's kill tally. Streamed on the same <c>OwnShipKillBonusUpdate(212)</c>.</summary>
-    public short KillBonusStreak => _killBonusStreak;
 
     /// <summary>HUD-12 — the LOCAL ship's native <c>GetCloaking()</c> visible
     /// fraction (1 = fully visible; 0 = fully cloaked), from the owner-only
@@ -1860,8 +1866,6 @@ public sealed partial class ClientWorld
         _missileTrack = MissileTrackState.Clear;
         _leadIndicator = LeadIndicatorState.None;
         _miningAsteroidId = -1;
-        _killBonusPercent = 0f;
-        _killBonusStreak = 0;
         _myCloaking = null;              // HUD-12 — no stale cloak fraction across missions
         _remoteRipcords.Clear();         // HUD-12 — remote ripcords do not survive a reset
         ClearRipcord();                  // P414 — drop any ripcord state on reconnect
@@ -2213,9 +2217,6 @@ public sealed partial class ClientWorld
                 break;
             case OwnShipMiningUpdate mining:
                 Apply(mining);
-                break;
-            case OwnShipKillBonusUpdate killBonus:
-                Apply(killBonus);
                 break;
             case OwnShipCloakUpdate cloak:
                 Apply(cloak);
@@ -4701,8 +4702,6 @@ public sealed partial class ClientWorld
         _missileTrack = MissileTrackState.Clear;
         _leadIndicator = LeadIndicatorState.None;
         _miningAsteroidId = -1;
-        _killBonusPercent = 0f;
-        _killBonusStreak = 0;
         _myCloaking = null;              // HUD-12
         _remoteRipcords.Clear();         // HUD-12
         ClearRipcord();
@@ -5173,16 +5172,6 @@ public sealed partial class ClientWorld
     /// caller feeds <see cref="Game1"/> which resolves the id against
     /// <see cref="Asteroids"/> to orient the own hull toward the mine target.</summary>
     private void Apply(OwnShipMiningUpdate m) => _miningAsteroidId = m.AsteroidId;
-
-    /// <summary>FM_S_OWN_SHIP_KILL_BONUS_UPDATE(212) — the owner-only P298
-    /// snapshot of the local ship's live Kill Bonus. Overwrites
-    /// <see cref="KillBonusPercent"/>/<see cref="KillBonusStreak"/> wholesale
-    /// each tick (the server always sends the current value, even 0).</summary>
-    private void Apply(OwnShipKillBonusUpdate m)
-    {
-        _killBonusPercent = m.KillBonusPercent;
-        _killBonusStreak = m.Streak;
-    }
 
     /// <summary>HUD-12 — <c>OWN_SHIP_CLOAK_UPDATE(220)</c>: the owner-only
     /// continuous <c>GetCloaking()</c> visible fraction (the port's answer to

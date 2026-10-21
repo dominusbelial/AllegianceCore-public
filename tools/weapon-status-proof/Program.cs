@@ -396,7 +396,7 @@ sealed class ProofRunner : Game
         Firing: (up.StateM & (ShipControlState.AllWeapons | ShipControlState.OneWeapon)) != 0,
         GroupFire: false, SelectedMount: 0,
         Flashing: false, WarpFlash: 0f, Mining: false, Cloaked: false,
-        KillBonusPercent: 0f, KillBonusStreak: 0,
+        KillBonusPercent: 0f,
         RollDegrees: up.Orientation.GetRollDegrees(),
         WeaponSystems: rows,
         IsAdriftLifepod: false,

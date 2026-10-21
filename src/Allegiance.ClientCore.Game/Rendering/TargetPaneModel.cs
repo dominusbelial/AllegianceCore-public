@@ -271,9 +271,11 @@ public static class TargetPaneModel
     /// <c>100·(GetExperienceMultiplier()−1)</c> = <c>50·e/(e+4)</c>
     /// (<c>Igc/shipIGC.h:1812-1818</c>), where <c>e</c> is the ship's experience
     /// (<c>shipIGC.h:2610</c>). Only an <c>OT_ship</c> has one; the native switch
-    /// hides the readout for every other object type (dialog.mdl:4208-4214).</summary>
+    /// hides the readout for every other object type (dialog.mdl:4208-4214).
+    /// P773 — routes through the shared <see cref="Allegiance.Core.Sim.Ship.KillBonusPercentFor"/>
+    /// formula (one helper for the own and target readouts).</summary>
     public static float TargetExperience(float experience) =>
-        50f * experience / (experience + 4f);
+        Allegiance.Core.Sim.Ship.KillBonusPercentFor(experience);
 
     /// <summary>Printable-ASCII sanitisation (spritefont range 32..126), but
     /// null/empty stays null so renderers keep the native "unknown" fallback.</summary>

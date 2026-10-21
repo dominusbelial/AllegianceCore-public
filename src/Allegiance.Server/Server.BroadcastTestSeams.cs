@@ -244,9 +244,6 @@ public sealed partial class Server
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastOwnShipMining")) BroadcastOwnShipMining();
             TestProjectionAllocationCapture?.Invoke("step:broadcastOwnShipMining", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
             allocationMark = GC.GetAllocatedBytesForCurrentThread();
-            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastOwnShipKillBonus")) BroadcastOwnShipKillBonus();
-            TestProjectionAllocationCapture?.Invoke("step:broadcastOwnShipKillBonus", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
-            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastMissileTrackWarning")) BroadcastMissileTrackWarning();
             TestProjectionAllocationCapture?.Invoke("step:broadcastMissileTrackWarning", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
             allocationMark = GC.GetAllocatedBytesForCurrentThread();

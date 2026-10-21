@@ -184,15 +184,6 @@ public sealed partial class Server
         return packet;
     }
 
-    private BroadcastPacket PackKillBonus(Ship ship)
-    {
-        if (!ReuseBroadcastBuffers) return PackBroadcast(Message(OwnShipKillBonusUpdate.FromShip(ship)));
-        var packet = SmallPacket(OwnShipKillBonusUpdate.Fmid, OwnShipKillBonusUpdate.FixedSize);
-        BinaryPrimitives.WriteSingleLittleEndian(packet.Buffer.Slice(4), ship.KillBonusPercent);
-        BinaryPrimitives.WriteInt16LittleEndian(packet.Buffer.Slice(8), (short)ship.KillBonus);
-        return packet;
-    }
-
     private BroadcastPacket PackMissileTrack(bool tracked, float bestLock)
     {
         if (!ReuseBroadcastBuffers) return PackBroadcast(Message(MissileTrackWarningUpdate.From(tracked, bestLock)));

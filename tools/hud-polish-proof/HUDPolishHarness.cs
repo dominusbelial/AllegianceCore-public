@@ -165,7 +165,7 @@ public sealed class HUDPolishHarness : Game
         EnergyFraction: 0f, Power: 1f, Speed: 999f, Throttle: throttle,
         AfterburnerActive: false, Firing: false, GroupFire: true, SelectedMount: 0,
         Flashing: false, WarpFlash: 0f, Mining: false, Cloaked: false,
-        KillBonusPercent: 0f, KillBonusStreak: 0, RollDegrees: 0f,
+        KillBonusPercent: 0f, RollDegrees: 0f,
         WeaponSystems: Array.Empty<WeaponStatusRow>(), IsAdriftLifepod: false,
         OxygenSecondsRemaining: 0);
 
@@ -251,7 +251,7 @@ public sealed class HUDPolishHarness : Game
             FuelFraction: 0.9f, EnergyFraction: 0.9f, Power: 1f, Speed: 360f,
             Throttle: 0.3f, AfterburnerActive: false, Firing: false, GroupFire: true,
             SelectedMount: 0, Flashing: false, WarpFlash: 0f, Mining: false,
-            Cloaked: false, KillBonusPercent: 0f, KillBonusStreak: 0, RollDegrees: 0f,
+            Cloaked: false, KillBonusPercent: 0f, RollDegrees: 0f,
             WeaponSystems: Array.Empty<WeaponStatusRow>(), IsAdriftLifepod: false,
             OxygenSecondsRemaining: 0);
         var leader = new LeaderBotCommand(42, false, cmdTxt);
