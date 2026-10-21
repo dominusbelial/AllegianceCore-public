@@ -566,6 +566,11 @@ public sealed partial class Game1
         // when a station type's art is missing.
         _nativeStationRenderer = new Rendering.NativeStationRenderer(GraphicsDevice, _assets, _hdMaterials);
 
+        // HUD-21 — the target-model-preview renderer: one 256×256 RT created on
+        // first use; renders the eligible target's native mesh each frame.
+        _targetModelPreviewRenderer = new Rendering.TargetModelPreviewRenderer(
+            GraphicsDevice, _nativeShipRenderer, _nativeStationRenderer, _nativeAsteroidRenderer);
+
         // P227 — the shared procedural warp funnel mesh (the P218 pattern,
         // different shape). Generated once here (no content-pipeline asset)
         // and drawn per-instance, scaled by each warp's real Radius and

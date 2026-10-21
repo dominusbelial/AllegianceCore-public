@@ -808,6 +808,12 @@ public sealed partial class Game1 : Game
     // P564 — the GPU native per-station-type renderer (parses each station's own
     // .mdl station model + native texture), replacing the procedural placeholder.
     private NativeStationRenderer _nativeStationRenderer = null!;
+    // HUD-21 — the GPU target-model-preview renderer (owns one 256×256 RT;
+    // renders the eligible target's native mesh each frame before the scene).
+    private Rendering.TargetModelPreviewRenderer _targetModelPreviewRenderer = null!;
+    // HUD-21 — this frame's preview texture fed to the HUD (the renderer's RT
+    // when a model rendered, else null → the pane's empty fallback).
+    private Texture2D? _hudTargetModelPreview;
     // P566 — per-ship resolved NATIVE model stem + texture stem + native scale,
     // collected under the same Gate lock as _shipModelById so the Draw loop reads
     // it lock-free. Null → this ship's native art failed to decode → Meshy fallback.
@@ -1851,6 +1857,7 @@ public sealed partial class Game1 : Game
         _nativeAsteroidRenderer?.Dispose();   // P567 — native per-rock .mdl meshes + textures
         _nativeStationRenderer?.Dispose();    // P564 — native per-station-type .mdl meshes + textures
         _nativeShipRenderer?.Dispose();       // P646 — was never disposed (own GPU buffers/textures/effects)
+        _targetModelPreviewRenderer?.Dispose(); // HUD-21 — the 256×256 preview RT
         _shipLodSpriteRenderer?.Dispose();    // P628 — far-tier sprite batcher
         _nativeTreasureRenderer?.Dispose();   // P646 — was never disposed (own GPU buffers/textures/effects)
         if (_asteroidTextures != null)

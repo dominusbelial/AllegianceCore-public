@@ -101,6 +101,21 @@ public class HudRenderer
     /// (default off = native). See <see cref="HudSettings.GaugePercentage"/>.</summary>
     private readonly bool _gaugePercentage;
 
+    /// <summary>
+    /// HUD-21 — the 3-D target-model preview render target for this frame,
+    /// set by the game (Game1) right before <see cref="Draw"/> when an
+    /// eligible target rendered a model, else null (the pane then looks
+    /// exactly as it does today — the empty fallback). Drawn into
+    /// <see cref="TargetModelPreview.PaneRect"/> before the oval/word art, so
+    /// the native child order (model painted after the gauges, before the oval)
+    /// holds.
+    /// </summary>
+    public Texture2D? TargetModelPreview { get; set; }
+
+    /// <summary>HUD-21 — pure guard: whether a model preview is present to draw
+    /// this frame (null input → the pane draws nothing, the empty fallback).</summary>
+    public bool PreviewWillDraw => TargetModelPreview is not null;
+
     public HudRenderer(
         SpriteBatch spriteBatch,
         Texture2D whitePixel,
@@ -2178,6 +2193,11 @@ public class HudRenderer
         float y0 = TargetPaneLayout.OriginY(w, h);
         var side = From(tp.SideColor);
 
+        // HUD-21 — the 3-D model preview, painted under the oval/word art
+        // (native GroupImage child order: model after the gauges, before the
+        // oval, dialog.mdl:4218-4242; empty fallback when the input is null).
+        DrawTargetModelPreview(x0, y0, s);
+
         // Decorative oval/word art (native white art; the oval colour layer is
         // side-tinted, dialog.mdl:4165-4191).
         DrawPaneTexture(_targetPaneTextures?.Oval, x0 + 192f * s, y0 + 75f * s, s, Color.White);
@@ -2250,6 +2270,23 @@ public class HudRenderer
         var dst = new Rectangle((int)MathF.Round(leftX), (int)MathF.Round(bottomY - tex.Height * scale),
             (int)MathF.Round(tex.Width * scale), (int)MathF.Round(tex.Height * scale));
         _sb.Draw(tex, dst, tint);
+    }
+
+    /// <summary>
+    /// HUD-21 — draw the 3-D target-model preview into its 96·s pane rect
+    /// (<c>TargetModelPreview.PaneRect</c>, native y-up lower-left (270,9)),
+    /// alpha-blended with a white tint. When <see cref="TargetModelPreview"/>
+    /// is null nothing is drawn (the native empty fallback — the pane looks
+    /// exactly as before). Painted BEFORE the oval/word art so the native
+    /// <c>GroupImage::Render</c> child order (model under the oval,
+    /// <c>image.cpp:954-972</c>, <c>dialog.mdl:4218-4242</c>) holds.
+    /// </summary>
+    protected virtual void DrawTargetModelPreview(float x0, float y0, float s)
+    {
+        if (TargetModelPreview is null) return;
+        var dst = global::Allegiance.ClientCore.MonoGame.Rendering.TargetModelPreview.PaneRect(x0, y0, s);
+        _sb.Draw(TargetModelPreview, dst, Color.White);
+        ElementDrawn("Target model preview");
     }
 
     protected void DrawTargetGauge(Texture2D? tex, Rectangle srcFull, float fraction,

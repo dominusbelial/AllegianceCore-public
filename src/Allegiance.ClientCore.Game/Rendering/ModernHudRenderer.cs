@@ -275,6 +275,10 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         var side = tp.SideColor is { } sc ? new Color(sc.R, sc.G, sc.B, sc.A) : new Color(224, 231, 235);
         if (_settings.ColorBlindSafe) side = HudPalette.Side(side);
 
+        // HUD-21 — the 3-D model preview, same native under-the-oval placement
+        // as the classic skin (empty fallback when the input is null).
+        DrawTargetModelPreview(x0, y0, s);
+
         // Name + type (same native anchor as classic, dialog.mdl:4043-4050).
         string nameLine = (tp.Name ?? "unknown") + (tp.TypeDescription is { } td ? ": " + td : "");
         var nameSize = PaneTextSize(_small, nameLine);

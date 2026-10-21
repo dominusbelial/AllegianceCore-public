@@ -40,6 +40,7 @@ public class RendererDisposalGuardTests
         "_navStrobeRenderer",         // P646 — was never disposed
         "_motionTrailRenderer",       // P646 — was never disposed
         "_alephGlimpseRenderer",      // P646 — was never disposed
+        "_targetModelPreviewRenderer", // HUD-21 — the 256×256 target-model preview RT
         "_warpRenderer",
         "_projectileRenderer",
         "_projectileSpriteRenderer",
