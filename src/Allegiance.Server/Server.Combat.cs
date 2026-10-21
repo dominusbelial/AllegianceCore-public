@@ -1814,11 +1814,11 @@ public sealed partial class Server
             {
                 Console.WriteLine($"[lifepod] ship {victim.Id} has no owning peer (bot/non-player) — no respawn, stays dead");
                 FinalizeDeadShip(victim);   // P323 M6 — really leave the sector & mark dead (native deletes the drone, FedSrv.CPP:12084)
-                // HUD-20 — the drone is gone for good (native deletes it,
-                // FedSrv.CPP:12084): free its one-shot PLAYERINFO seed latches so
-                // the set does not grow with every dead drone and a later ship
-                // that reuses the id (AllocateShipId wraps) is seeded afresh.
-                if (victim.IsNpc) _missionPlayerInfoSent.RemoveWhere(e => e.ShipId == victim.Id);
+                // HUD-20/P775 — the drone is gone for good (native deletes it,
+                // FedSrv.CPP:12084): free its one-shot PLAYERINFO latch so the
+                // set does not grow with every dead drone and a later ship that
+                // reuses the id (AllocateShipId wraps) is announced afresh.
+                if (victim.IsNpc) _playerInfoSent.RemoveWhere(e => e.ShipId == victim.Id);
                 return;
             }
 

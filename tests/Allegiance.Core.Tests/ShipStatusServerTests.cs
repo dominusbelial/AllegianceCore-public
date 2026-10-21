@@ -382,24 +382,30 @@ public class ShipStatusServerTests
     /// <c>SHIP_STATUS(90)</c> about the same subject. This is the message that
     /// attaches a non-null native <c>PlayerInfo</c> to the teammate ship object
     /// (<c>appmsg.cpp:2279</c> → <c>SetPrivateData</c>), so the commander's
-    /// <c>p.GetPlayerInfo().LastSeenState()</c> stops dereferencing a null/garbage
-    /// private-data pointer (the silent-AccessViolation described in
-    /// <c>Server.cs</c>'s P63 comment block). Two bots forced onto the same side
-    /// via <c>ShipSpawner</c> (like P58's dock test), deterministic. Asserts:
+/// <summary>P58/P63 — the subject ship's identity lands on a same-side
+    /// observer's client in native's order. P775 — the teammate's PLAYERINFO is
+    /// NO LONGER a per-pair lazy send at the first EXPORT/sighting: it is sent
+    /// ONCE at the native join moment (AddPlayerToMission announces the joiner
+    /// to the whole mission BEFORE its TryJoinSide, fsmission.cpp:408-411, with
+    /// iSide = SIDE_TEAMLOBBY (-2) so no client announces yet — the JOIN_SIDE
+    /// that follows is the one announcement, appmsg.cpp:2286-2290/:2909-2915),
+    /// through the single one-shot (recipient, ship) latch. Two bots forced
+    /// onto the same side via <c>ShipSpawner</c> (like P58's dock test),
+    /// deterministic. Asserts:
     ///   • the observer receives a <c>PlayerInfo</c> naming the subject's real
     ///     ShipId (NOT -1/NA), its real logon CharacterName, Money=0, and ISide =
-    ///     the subject's own side;
-    ///   • ordering: EXPORT → PLAYERINFO → first SHIP_STATUS for that subject
-    ///     (polled so the first subject status is never observed without its
-    ///     export AND its playerinfo already present);
+    ///     SIDE_TEAMLOBBY (-2) — the pre-seat announce carrier;
+    ///   • ordering: the PLAYERINFO precedes the subject's JOIN_SIDE and its
+    ///     first SHIP_STATUS (native: PLAYERINFO before JOIN_SIDE, or the
+    ///     client's AddPlayerToSide dereferences null, appmsg.cpp:2912-2914);
     ///   • the PLAYERINFO is sent EXACTLY ONCE per (recipient, subject) pair
-    ///     across many ticks past the first refresh (separate one-shot gate from
-    ///     P62's export set);
-    ///   • the existing own-player PLAYERINFO send (Server.cs:946-954, the join
-    ///     burst) is UNCHANGED — still ShipId = the peer's own real id, once.</summary>
+    ///     across many ticks past the first refresh (no per-sighting resend);
+    ///   • the existing own-player PLAYERINFO send (F, the join burst) is
+    ///     UNCHANGED — still ShipId = the peer's own real id, once, with the
+    ///     real side.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Teammate_ship_playerinfo_is_broadcast_once_after_export_before_status()
+    public void Teammate_ship_playerinfo_is_sent_once_at_the_native_join_moment()
     {
         Require.Artwork();
         using var server = new Srv();
@@ -448,40 +454,43 @@ public class ShipStatusServerTests
             Assert.NotNull(chosenSide);
             Assert.Equal(obsSide, subjSide);          // guard: really same-side (premise of the broadcast)
 
-            // Ordering: walk in small steps; the moment the first subject
-            // SHIP_STATUS lands, both its EXPORT (P62) and PLAYERINFO (P63) must
-            // already be in the observer's decode buffers.
-            int sawSubjectStatusAtPlayerInfoCount = -1;
+            // Ordering: walk in small steps; the moment the subject's
+            // JOIN_SIDE lands, its PLAYERINFO must already be in the observer's
+            // decode buffers (native fsmission.cpp:408-411 → :621-624), and the
+            // first subject SHIP_STATUS comes later still.
+            int sawJoinSideAtPlayerInfoCount = -1;
             int ticks = 0;
             const int StepTicks = 3;
             while (ticks < 4000)
             {
                 _ = PumpUntil(server, () => false, StepTicks);   // advance StepTicks, drain
                 ticks += StepTicks;
-                bool subjectStatusPresent = observer.ShipStatuses.Any(s => s.ShipId == subjId);
-                if (subjectStatusPresent)
+                bool joinSidePresent = observer.JoinSides.Any(j => j.ShipId == subjId);
+                if (joinSidePresent)
                 {
-                    sawSubjectStatusAtPlayerInfoCount = observer.PlayerInfos.Count(i => i.ShipId == subjId);
+                    sawJoinSideAtPlayerInfoCount = observer.PlayerInfos.Count(i => i.ShipId == subjId);
                     break;
                 }
             }
-            Assert.True(sawSubjectStatusAtPlayerInfoCount >= 1,
-                $"first subject SHIP_STATUS arrived but subject PLAYERINFO was not already present; ordering violated");
-            // And the subject EXPORT preceded its first status too (re-assert
-            // P62's constraint now that a third message sits between them).
+            Assert.True(sawJoinSideAtPlayerInfoCount >= 1,
+                "the subject's JOIN_SIDE arrived but its PLAYERINFO was not already present; native ordering violated (appmsg.cpp:2912-2914)");
             Assert.True(observer.Exports.Any(e => e.ShipId == subjId),
-                "subject EXPORT must be present by the first subject status");
+                "subject EXPORT must be present by the subject's JOIN_SIDE");
 
-            // Well-formed teammate PLAYERINFO at the wire level.
+            // Well-formed teammate PLAYERINFO at the wire level — the pre-seat
+            // announce carries SIDE_TEAMLOBBY (fsmission.cpp:408), and the
+            // JOIN_SIDE that follows sets the real side.
             var info = observer.PlayerInfos.Single(i => i.ShipId == subjId);
             Assert.Equal(subjId, info.ShipId);               // real id, NOT -1/NA
             Assert.True(info.ShipId > 0, "real assigned ship id, not NA");
             Assert.Equal(subjName, info.CharacterName);      // subject's real logon name
             Assert.Equal(0, info.Money);                     // flat 0 — AddPlayerToSide asserts GetMoney()==0
-            Assert.Equal(subjSide, info.ISide);              // subject's own side (== observer's, same-side only)
+            Assert.Equal(-2, info.ISide);                    // SIDE_TEAMLOBBY — announced before seating (P775)
             Assert.Equal(PlayerInfo.PilotTypePlayer, info.PilotType);
+            Assert.Contains(observer.JoinSides, j => j.ShipId == subjId && j.SideId == subjSide);
 
-            // Exactly once per (recipient, subject) pair — the one-shot set held.
+            // Exactly once per (recipient, subject) pair — the one-shot latch
+            // held; no per-sighting resend.
             for (int i = 0; i < 350; i++) { server.TickSim(); Thread.Sleep(1); }
             Assert.Equal(1, observer.PlayerInfos.Count(i => i.ShipId == subjId));
 

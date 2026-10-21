@@ -8,8 +8,11 @@
 //   (d) the target pane's native kill-bonus art/number on an enemy ship, and
 //       the same pane on a station with no readout
 //       (dialog.mdl:4192-4214,4232, consoledata.cpp:831-843).
-// The enemy's experience is the live PLAYERINFO seed: the server sends the
-// ship's KillBonus with that pair's first cross-side EXPORT (SeedMissionPlayerInfo).
+// The enemy's experience is the live PLAYERINFO seed: P775 sends PLAYERINFO
+// only at the native moments — the proof's dummy contacts are announced to
+// the whole mission at creation via Server.AnnounceNewShip (native moment (3),
+// FedSrv.CPP:2269; the join-burst loop fsmission.cpp:3958-3968), never on
+// first sighting.
 // Run once per HUD skin:
 //   dotnet run --project tools/hud20-proof -c Release -- --style Classic --out <dir>
 //   dotnet run --project tools/hud20-proof -c Release -- --style Modern  --out <dir>
@@ -146,10 +149,19 @@ sealed class Hud20Proof(Game1 game, Srv server, Mission mission, string output) 
         _enemy = Spawn(enemySide, Ahead(260f));
         _friendly = Spawn(mySide, Ahead(320f));
         // A real kill streak: 3 cross-side kills = experience 3, the value the
-        // PLAYERINFO seed (sent with the first cross-side EXPORT) carries on the client (FedSrv.CPP:2084).
+        // PLAYERINFO announce carries on the client (FedSrv.CPP:2084). P775 —
+        // the dummies bypass join and SpawnNpcShip, so announce them explicitly
+        // (the native drone-creation moment, FedSrv.CPP:2269) AFTER the kill
+        // bonuses, so the seed carries the real experience. Without this the
+        // client would never learn them: the per-sighting PLAYERINFO seed is
+        // gone with P775.
         _enemy.AddKillBonus();
         _enemy.AddKillBonus();
         _enemy.AddKillBonus();
+        // Reflection like the rest of this tool (Server internals are not
+        // InternalsVisibleTo'd to the proof exes).
+        ServerCall("AnnounceNewShip", _enemy);
+        ServerCall("AnnounceNewShip", _friendly);
         Console.WriteLine($"[hud20] enemy {_enemy.Id} side {enemySide} hull '{hull.Name}' experience {_enemy.KillBonus}; friendly {_friendly.Id}");
     }
 
@@ -222,6 +234,10 @@ sealed class Hud20Proof(Game1 game, Srv server, Mission mission, string output) 
                     };
                     mission.PlaceShip(observer, boardSector);
                     observer.StationId = boardStation;
+                    // P775 — the observer dummy bypasses join; announce it like
+                    // any newly created player (FedSrv.CPP:2269) so the client
+                    // keeps a PlayerInfo for it.
+                    ServerCall("AnnounceNewShip", observer);
                     bool boarded = (bool)ServerCall("PerformBoard", observer, _own)!;
                     _observerId = observer.Id;
                     Console.WriteLine($"[hud20] observer {observer.Id} board -> {boarded} (turret {(observer.TurretId?.ToString() ?? "NA")}, station {boardStation})");

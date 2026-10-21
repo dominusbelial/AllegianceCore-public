@@ -39,9 +39,8 @@ internal sealed partial class BotManager
             var cs = group.First().Cs!;
             lock (cs.Gate)
                 foreach (var ship in cs.World.Ships.Values)
-                    if (ship.Player is { PilotType: Allegiance.Core.Wire.PlayerInfo.PilotTypePlayer } && ship.SideId >= 0 && !ship.IsDead
-                        && BotLodPolicy.IsHumanName(ship.CharacterName))
-                        humanSectors.Add(ship.SectorId);
+                    if (BotLodPolicy.HumanSector(ship) is { } humanSector)
+                        humanSectors.Add(humanSector);
         }
         var due = new bool[bots.Length];
         for (int i = 0; i < bots.Length; i++)
@@ -64,6 +63,18 @@ internal static class BotLodPolicy
     internal static bool IsHumanName(string name) =>
         !name.StartsWith("mcp-", StringComparison.OrdinalIgnoreCase)
         && !name.StartsWith("research-cmd", StringComparison.OrdinalIgnoreCase);
+    /// <summary>The sector a live human pilot is known to be in, or null. P775
+    /// review: since P775 every client holds a PLAYERINFO-only entity for every
+    /// human in the mission, whose <c>SectorId</c> is the C# default 0 (a real
+    /// cluster id) until real telemetry lands — so a human is counted only once
+    /// the ship has a pose (<see cref="ShipEntity.Latest"/>) and a real sector
+    /// (<see cref="ShipEntity.StatusSectorKnown"/>). An unseen human would
+    /// otherwise keep every bot in cluster 0 at full decision rate.</summary>
+    internal static short? HumanSector(ShipEntity ship) =>
+        ship.Player is { PilotType: Allegiance.Core.Wire.PlayerInfo.PilotTypePlayer } && ship.SideId >= 0 && !ship.IsDead
+        && ship.Latest is not null && ship.StatusSectorKnown
+        && IsHumanName(ship.CharacterName)
+            ? ship.SectorId : null;
     internal static double ReadInterval(string? hz) => double.TryParse(hz, System.Globalization.NumberStyles.Float,
         System.Globalization.CultureInfo.InvariantCulture, out double rate) && double.IsFinite(rate) && rate is >= .5 and <= 20 ? 1 / rate : .5;
     internal static bool Due(bool enabled, bool nearHuman, double now, double previous, double distantInterval) =>

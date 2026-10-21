@@ -3,7 +3,6 @@ using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
 using Allegiance.Core.Wire;
-using Allegiance.Server;
 using Allegiance.TestInfra;
 using Srv = global::Allegiance.Server.Server;
 
@@ -13,11 +12,13 @@ namespace Allegiance.Core.Tests;
 /// HUD-20 — native seeds every client with a PLAYERINFO(10) for every mission
 /// ship, enemies and drones included (<c>FedSrv/FedSrv.CPP:2129-2134</c>,
 /// <c>FedSrv/fsmission.cpp:3958-3968</c>; a new drone, <c>FedSrv.CPP:2269</c>),
-/// carrying the ship's live experience (<c>FedSrv.CPP:2084</c>). The port seeds
-/// the enemy / drone legs at the moment each (peer, ship) EXPORT latch is first
-/// set (<c>SeedMissionPlayerInfo</c>); teammates keep the inline P63 send.
-/// These tests drive the REAL export paths (cross-side sweep, same-side NPC
-/// export in BroadcastShipStates serial + parallel) through the broadcast seams.
+/// carrying the ship's live experience (<c>FedSrv.CPP:2084</c>).
+/// P775 — the seed moments are exactly native's three SendPlayerInfo call
+/// sites (mission join joiner→mission / mission→joiner, drone creation), so
+/// the lazy per-sighting sends are gone: the <c>crossSideExports</c> sweep and
+/// both <c>BroadcastShipStates</c> modes emit NO PLAYERINFO at all, and the
+/// wire content checks (FExperience / DtidDrone / ISide / PilotType) live on
+/// the new creation and join sends.
 /// </summary>
 [Collection("LiveNetwork")]
 public sealed class Hud20PlayerInfoSeedTests
@@ -61,135 +62,131 @@ public sealed class Hud20PlayerInfoSeedTests
         return list;
     }
 
-    [SkippableFact]
+    /// <summary>P775 — the EXPORT sweeps never carry PLAYERINFO anymore:
+    /// native's SendPlayerInfo has exactly three call sites (mission join ×2
+    /// and drone creation, FedSrv.CPP:2056-2135), none of them a sighting.
+    /// Driven through the broadcast seams in both broadcast modes.</summary>
+    [SkippableTheory]
     [Trait("Requires", "Artwork")]
-    public void Enemy_and_enemy_drone_playerinfo_follows_their_first_cross_side_export_once()
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Cross_side_exports_and_both_broadcast_modes_emit_no_playerinfo(bool parallel)
     {
         Require.Artwork();
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
         server.Boot(UpdateCadenceTests.Config());
         var mission = server.TestMission!;
         var sector = server.TestSectors[0];
+        mission.Stage = MissionStage.Started;
 
         var own = ShipAt(mission, sector, 20001, 0);
         var enemy = ShipAt(mission, sector, 20002, 1);
-        enemy.AddKillBonus();
-        enemy.AddKillBonus();
-        enemy.AddKillBonus();                       // experience 3 -> 50*3/7 = 21.43%
         var drone = ShipAt(mission, sector, 20003, 1, npc: true, droneType: 40);
-
         server.TestSeedPeers([(Recipient, own, sector)]);
 
-        // Not Started: the cross-side sweep (and so the seed) does not run.
-        var notStarted = Decode(server.TestCollectBroadcast(1, parallel: false, step: "crossSideExports"), Recipient);
-        Assert.DoesNotContain(notStarted, m => m.Fmid == PlayerInfo.Fmid);
-
-        mission.Stage = MissionStage.Started;
-        var first = Decode(server.TestCollectBroadcast(2, parallel: false, step: "crossSideExports"), Recipient);
-
-        foreach (var id in new[] { enemy.Id, drone.Id })
+        for (uint t = 1; t <= 24; t++)
         {
-            int export = first.FindIndex(m => m.Fmid == ExportShip.Fmid && m.ShipId == id);
-            int info = first.FindIndex(m => m.Fmid == PlayerInfo.Fmid && m.ShipId == id);
-            Assert.True(export >= 0, $"ship {id}: no cross-side EXPORT");
-            Assert.True(info > export, $"ship {id}: PLAYERINFO must follow its EXPORT (native order)");
+            var fromShipStates = Decode(server.TestCollectBroadcast(t, parallel, step: "shipStates"), Recipient);
+            var fromSweep = Decode(server.TestCollectBroadcast(t, parallel, step: "crossSideExports"), Recipient);
+            Assert.DoesNotContain(fromShipStates, m => m.Fmid == PlayerInfo.Fmid);
+            Assert.DoesNotContain(fromSweep, m => m.Fmid == PlayerInfo.Fmid);
         }
-
-        var enemyInfo = Assert.Single(first, m => m.Fmid == PlayerInfo.Fmid && m.ShipId == enemy.Id).Info!;
-        // Native fExperience = GetExperience() (FedSrv.CPP:2084) — the raw streak.
-        Assert.Equal(3f, enemyInfo.FExperience);
-        Assert.Equal((short)1, enemyInfo.ISide);            // the enemy's own side
-        Assert.Equal(PlayerInfo.NA, enemyInfo.DtidDrone);   // a human
-        Assert.Equal(Allegiance.Core.Sim.Ship.PilotTypePlayer, enemyInfo.PilotType);
-
-        var droneInfo = Assert.Single(first, m => m.Fmid == PlayerInfo.Fmid && m.ShipId == drone.Id).Info!;
-        Assert.Equal((short)1, droneInfo.ISide);
-        Assert.Equal((short)40, droneInfo.DtidDrone);       // FedSrv.CPP:2088-2091
-        Assert.Equal(Allegiance.Core.Sim.Ship.PilotTypeMiner, droneInfo.PilotType);
-        Assert.Equal(0f, droneInfo.FExperience);
-
-        Assert.DoesNotContain(first, m => m.Fmid == PlayerInfo.Fmid && m.ShipId == own.Id);   // the join-burst send owns it
-
-        // One shot per (recipient, ship), also across the P369 identity re-export:
-        // native never re-sends experience after the seed (appmsg.cpp:2918-2928).
-        for (uint t = 3; t < 3 + 64; t++)
-            Assert.DoesNotContain(Decode(server.TestCollectBroadcast(t, parallel: false, step: "crossSideExports"), Recipient),
-                m => m.Fmid == PlayerInfo.Fmid);
     }
 
-    [SkippableTheory]
+    /// <summary>P775 — the join burst (native moment (2),
+    /// fsmission.cpp:3958-3968) carries the enemy human's real content:
+    /// fExperience = the raw kill streak (FedSrv.CPP:2084), ISide the enemy's
+    /// own side, dtidDrone NA (a human, :2088-2090), pilotType player.</summary>
     [Trait("Requires", "Artwork")]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Same_side_drone_playerinfo_follows_its_npc_export_once(bool parallel)
+    [SkippableFact]
+    public void Join_burst_playerinfo_carries_enemy_human_content()
+    {
+        Require.Artwork();
+        using var server = new Srv { SpawnInitialMinersAtBoot = false };
+        server.Boot(UpdateCadenceTests.Config());
+        server.Missions[0].Stage = MissionStage.Started;
+
+        LogonRequest Req(string name) => new()
+        {
+            CharacterName = name, ZoneTicket = [0x01, 0x02, 0x03, 0x04],
+            CDKey = "ABCDEFGHIJKL", MissionPassword = "pw",
+            FedsrvVer = LogonRequest.MsgVer, Time = 919u, DwCookie = 0x919u,
+            CrcFileList = -1, SteamAuthTicket = new byte[16], SteamAuthTicketLength = 0,
+            SteamID = 9100000000000000000ul, DrmHash = "p775hud20",
+        };
+        var enemyBot = new global::Allegiance.Bot.Bot();
+        enemyBot.Connect(server.BoundPort, "Foe");
+        enemyBot.SendLogonRequest(Req("Foe"));
+        int pump = 0;
+        while (enemyBot.ShipAssignment is null && pump++ < 6000) { server.TickSim(); Thread.Sleep(1); }
+        Assert.True(pump < 6000, "enemy bot must seat");
+        var enemyShip = server.Ships.First(s => s.Ship.Id == enemyBot.ShipAssignment!.Ship.ShipId);
+        short enemySide = enemyShip.Ship.SideId!.Value;      // whatever side the auto-select seated it on
+        enemyShip.Ship.AddKillBonus();
+        enemyShip.Ship.AddKillBonus();
+        enemyShip.Ship.AddKillBonus();                       // experience 3 -> 50*3/7 = 21.43% once derived
+
+        var joinerBot = new global::Allegiance.Bot.Bot();
+        joinerBot.Connect(server.BoundPort, "Late");
+        joinerBot.SendLogonRequest(Req("Late"));
+        joinerBot.SendPositionReq(server.Missions[0].Sides[0].Id);
+        while (joinerBot.ShipAssignment is null && pump++ < 6000) { server.TickSim(); Thread.Sleep(1); }
+        Assert.True(pump < 6000, "joiner bot must seat");
+
+        // The join burst's tail (G after SET_CLUSTER) may still be in flight
+        // when ShipAssignment lands — wait for the decode to catch up.
+        while (joinerBot.PlayerInfos.All(p => p.ShipId != enemyShip.Ship.Id) && pump++ < 6000)
+        { server.TickSim(); Thread.Sleep(1); }
+        var all = joinerBot.PlayerInfos.ToList();
+        Console.WriteLine($"HUD20DBG after wait: total={all.Count} ships=[{string.Join(",", all.Select(p => p.ShipId))}] enemy={enemyShip.Ship.Id} pump={pump}");
+        var infos = joinerBot.PlayerInfos.Where(p => p.ShipId == enemyShip.Ship.Id).ToList();
+        var info = Assert.Single(infos);                     // exactly one (the join burst; no sighting resend)
+        Assert.Equal(3f, info.FExperience);                  // native fExperience = GetExperience() (FedSrv.CPP:2084)
+        Assert.Equal(enemySide, info.ISide);                 // the enemy's own side
+        Assert.Equal(PlayerInfo.NA, info.DtidDrone);         // a human
+        Assert.Equal(Allegiance.Core.Sim.Ship.PilotTypePlayer, info.PilotType);
+        joinerBot.Dispose();
+        enemyBot.Dispose();
+    }
+
+    /// <summary>P775 — the creation announce (native moment (3),
+    /// FedSrv.CPP:2269) carries the drone's content: dtidDrone the drone type's
+    /// object id (:2088-2091), pilotType the drone type's pilot, ISide the
+    /// drone's side, fExperience 0 (a drone starts unranked).</summary>
+    [SkippableFact]
+    [Trait("Requires", "Artwork")]
+    public void Creation_announce_playerinfo_carries_drone_content()
     {
         Require.Artwork();
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
         server.Boot(UpdateCadenceTests.Config());
         var mission = server.TestMission!;
-        var sector = server.TestSectors[0];
         mission.Stage = MissionStage.Started;
+        var sector = server.TestSectors[0];
+        short droneType = mission.Core.DroneTypes.Keys.First();
 
         var own = ShipAt(mission, sector, 20011, 0);
-        var drone = ShipAt(mission, sector, 20012, 0, npc: true, droneType: 41);
         server.TestSeedPeers([(Recipient, own, sector)]);
+        // The viewer holds a real peer slot, so the creation announce reaches it.
+        server._testSendCapture = (conn, pkt) => { };
 
-        var first = Decode(server.TestCollectBroadcast(1, parallel, step: "shipStates"), Recipient);
-        int export = first.FindIndex(m => m.Fmid == ExportShip.Fmid && m.ShipId == drone.Id);
-        int info = first.FindIndex(m => m.Fmid == PlayerInfo.Fmid && m.ShipId == drone.Id);
-        Assert.True(export >= 0, "no same-side NPC EXPORT");
-        Assert.True(info > export, "the drone's PLAYERINFO must follow its EXPORT");
-        var droneInfo = first[info].Info!;
-        Assert.Equal((short)0, droneInfo.ISide);
-        Assert.Equal((short)41, droneInfo.DtidDrone);
-
-        for (uint t = 2; t < 10; t++)
-            Assert.DoesNotContain(Decode(server.TestCollectBroadcast(t, parallel, step: "both"), Recipient),
-                m => m.Fmid == PlayerInfo.Fmid);
-    }
-
-    /// <summary>HUD-20 review (MAJOR) — two same-side peers in a STARTED mission
-    /// each get exactly ONE PLAYERINFO about the other: the inline P63 teammate
-    /// send owns teammates, and the mission-wide seed must never add a second
-    /// (which would re-run the native client's CreateObject). Driven over many
-    /// ticks of the real shipStates + cross-side export steps, serial and
-    /// parallel.</summary>
-    [SkippableTheory]
-    [Trait("Requires", "Artwork")]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Two_same_side_peers_in_a_started_mission_get_exactly_one_playerinfo_each(bool parallel)
-    {
-        Require.Artwork();
-        using var server = new Srv { SpawnInitialMinersAtBoot = false };
-        server.Boot(UpdateCadenceTests.Config());
-        var mission = server.TestMission!;
-        var sector = server.TestSectors[0];
-        mission.Stage = MissionStage.Started;
-
-        var a = ShipAt(mission, sector, 20021, 0);
-        var b = ShipAt(mission, sector, 20022, 0);
-        var enemy = ShipAt(mission, sector, 20023, 1);   // keeps the cross-side seed path live
-        ConnectionId ca = new(711), cb = new(712), ce = new(713);
-        server.TestSeedPeers([(ca, a, sector), (cb, b, sector), (ce, enemy, sector)]);
-
-        var infos = new Dictionary<ConnectionId, List<short>> { [ca] = new(), [cb] = new(), [ce] = new() };
-        for (uint t = 1; t <= 40; t++)
+        var infos = new List<PlayerInfo>();
+        server._testSendCapture = (conn, pkt) =>
         {
-            foreach (var step in new[] { "crossSideExports", "shipStates" })
-            {
-                var packets = server.TestCollectBroadcast(t, parallel, step);
-                foreach (var conn in infos.Keys)
-                    infos[conn].AddRange(Decode(packets, conn).Where(m => m.Fmid == PlayerInfo.Fmid).Select(m => m.ShipId));
-            }
-        }
+            if (conn != Recipient) return;
+            foreach (var message in FedPacket.Unpack(pkt))
+                if (message.Length >= 4 && BitConverter.ToUInt16(message, 2) == PlayerInfo.Fmid)
+                    lock (infos) infos.Add(PlayerInfo.Decode(message));
+        };
+        var drone = server.SpawnNpcShip(mission, sector, 0, new Vector3(5, 0, 0), droneType);
+        server._testSendCapture = null;
 
-        Assert.Equal(1, infos[ca].Count(id => id == b.Id));
-        Assert.Equal(1, infos[cb].Count(id => id == a.Id));
-        Assert.Equal(1, infos[ca].Count(id => id == enemy.Id));
-        Assert.Equal(1, infos[cb].Count(id => id == enemy.Id));
-        Assert.Equal(1, infos[ce].Count(id => id == a.Id));
-        Assert.Equal(1, infos[ce].Count(id => id == b.Id));
+        var info = Assert.Single(infos);
+        Assert.Equal(drone.Id, info.ShipId);
+        Assert.Equal((short)0, info.ISide);                  // the drone's own side
+        Assert.Equal(droneType, info.DtidDrone);             // FedSrv.CPP:2088-2091
+        Assert.Equal(mission.Core.DroneTypes[droneType].PilotType, info.PilotType);   // the drone type's real pilot
+        Assert.Equal(0f, info.FExperience);
     }
 }
 

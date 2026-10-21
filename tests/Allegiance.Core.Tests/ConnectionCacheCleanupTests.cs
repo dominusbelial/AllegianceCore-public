@@ -24,7 +24,7 @@ public class ConnectionCacheCleanupTests
     private static readonly string ArtRoot = TestArtRoot.Value;
 
     // Teams=1 so BOTH peers land on the same side → the teammate caches
-    // (_teammateExportSent / _teammatePlayerInfoSent / _teammateLoadoutVersionSent
+    // (_teammateExportSent / _playerInfoSent / _teammateLoadoutVersionSent
     // / _teammateLoadoutCache / _lastTeammateStatusTick) actually populate.
     private static Cfg Config() => new()
     {
@@ -62,7 +62,7 @@ public class ConnectionCacheCleanupTests
         return c.PendingSideSelect == 0 && c.PeerNames == 0 && c.PlayerReady == 0
             && c.LastStatusSector == 0 && c.LastStatusTick == 0
             && c.LastClusterInfoTick == 0 && c.LastPingQuery == 0
-            && c.TeammateExportSent == 0 && c.TeammatePlayerInfoSent == 0
+            && c.TeammateExportSent == 0 && c.PlayerInfoSent == 0
             && c.TeammateLoadoutVersionSent == 0 && c.TeammateLoadoutCache == 0
             && c.CrossSideExportSent == 0
             && c.LastTeammateStatusTick == 0
@@ -104,7 +104,7 @@ public class ConnectionCacheCleanupTests
                     $"cycle {cycle}: status caches never populated ({before})");
                 Assert.True(before.NextTeammateRefreshTick >= 1,
                     $"cycle {cycle}: per-recipient teammate-refresh phase never populated ({before})");
-                Assert.True(before.TeammateExportSent >= 1 && before.TeammatePlayerInfoSent >= 1,
+                Assert.True(before.TeammateExportSent >= 1 && before.PlayerInfoSent >= 1,
                     $"cycle {cycle}: teammate caches never populated ({before})");
                 Assert.True(before.TeammateLoadoutVersionSent >= 1 || before.TeammateLoadoutCache >= 1,
                     $"cycle {cycle}: teammate loadout caches never populated ({before})");
@@ -116,7 +116,7 @@ public class ConnectionCacheCleanupTests
                     $"cycle {cycle}: caches did not drain to zero after disconnect: {server.ConnectionScopedCacheCounts()}");
 
                 Console.WriteLine($"M1-LIVE: cycle {cycle} populated " +
-                                  $"{before.TeammateExportSent} export / {before.TeammatePlayerInfoSent} playerinfo / " +
+                                  $"{before.TeammateExportSent} export / {before.PlayerInfoSent} playerinfo / " +
                                   $"{before.TeammateLoadoutVersionSent} loadout-version / {before.TeammateLoadoutCache} loadout-cache / " +
                                   $"{before.LastStatusSector} status entries, all drained to zero after disconnect");
             }

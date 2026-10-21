@@ -1996,21 +1996,7 @@ public sealed partial class Game1
                 var ships = _session.World.Ships;
                 var briefs = new Dictionary<string, Rendering.TeamPaneLayout.ShipBrief>();
                 foreach (var ent in ships.Values)
-                    briefs[ent.CharacterName] = new Rendering.TeamPaneLayout.ShipBrief(
-                        ent.HullId, ent.SectorId, ent.StationId, ent.IsDead, ent.IsGone,
-                        _session.World.TeamLeaderShipIdFor(ent.SideId) == ent.ShipId,
-                        _session.World.Roster.ReadyByShipId.TryGetValue(ent.ShipId, out var ready) ? ready : null,
-                        ent.SideId == _session.World.MySideId ? ent.WingId : null, ShipId: ent.ShipId,
-                        // P761 — the name/credits sort comparators need native's
-                        // IsHuman (PilotTypePlayer) and GetMoney (PLAYERINFO money).
-                        IsHuman: ent.Player is { PilotType: Allegiance.Core.Wire.PlayerInfo.PilotTypePlayer },
-                        Money: ent.Player?.Money ?? 0,
-                        // P761b — the three STRING sort keys the native
-                        // comparators compare (teampane.cpp:1504-1534): the hull
-                        // NAME, the sector NAME and the accepted-command text.
-                        ShipName: HullNameForSort(ent.HullId),
-                        SectorName: _session.World.Clusters.TryGetValue(ent.SectorId, out var sec) ? sec.Name : "unknown",
-                        Objective: _session.World.AcceptedCommandText(ent.ShipId));
+                    briefs[ent.CharacterName] = Rendering.TeamPaneLayout.BriefOf(_session.World, ent, HullNameForSort);
                 // P752 — the pane's selection cursor and the leader's join
                 // requests feed the same roster the controls act on.
                 var rosterRows = _teamPaneControls.BuildRoster(_session.World, HullNameForSort);
@@ -2716,14 +2702,8 @@ public sealed partial class Game1
     {
         foreach (var (shipId, ent) in world.Ships)
         {
+            if (!TryTransit(_lastShipSector, shipId, ent, out short prev)) continue;
             short cur = ent.SectorId;
-            if (!_lastShipSector.TryGetValue(shipId, out short prev))
-            {
-                _lastShipSector[shipId] = cur;   // first sight: baseline, no swell
-                continue;
-            }
-            if (cur == prev) continue;
-            _lastShipSector[shipId] = cur;
 
             // A real transit: swell the arrival aleph (in the new sector) whose
             // partner warp is in the old sector the ship left.
@@ -2747,6 +2727,29 @@ public sealed partial class Game1
                 }
             }
         }
+    }
+
+    /// <summary>P562/P775 review — the per-ship sector-change edge behind
+    /// <see cref="DetectTransitSwells"/>: true (with the previous sector) only
+    /// when a ship whose sector is KNOWN moved from one known sector to another.
+    /// A ship known only from PLAYERINFO (P775: every enemy and drone, every
+    /// sector) still holds the C# default <c>SectorId = 0</c> — a real cluster
+    /// id — so it records no baseline until real sector telemetry lands
+    /// (<see cref="ShipEntity.StatusSectorKnown"/>); otherwise its first status
+    /// would read as a "transit" out of cluster 0. Allocation-free.</summary>
+    internal static bool TryTransit(Dictionary<short, short> lastShipSector, short shipId, ShipEntity ent, out short prev)
+    {
+        prev = -1;
+        if (!ent.StatusSectorKnown) return false;   // never-posed: no baseline yet
+        short cur = ent.SectorId;
+        if (!lastShipSector.TryGetValue(shipId, out prev))
+        {
+            lastShipSector[shipId] = cur;   // first sight: baseline, no swell
+            return false;
+        }
+        if (cur == prev) return false;
+        lastShipSector[shipId] = cur;
+        return true;
     }
 
     /// <summary>

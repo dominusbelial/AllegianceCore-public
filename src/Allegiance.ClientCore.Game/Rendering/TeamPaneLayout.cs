@@ -52,10 +52,58 @@ public static class TeamPaneLayout
     /// teampane.cpp:1504-1510/1586-1621), <see cref="SectorName"/>
     /// (SectorName(), :1512-1518/1577-1583) and <see cref="Objective"/>
     /// (CurrentCommandText(), :1528-1534/1660-1676).</summary>
+    /// <para>P775 review — <see cref="StatusKnown"/> is false for a ship the
+    /// client knows only from PLAYERINFO (every enemy and drone in every sector
+    /// since P775): its <see cref="SectorId"/>/<see cref="StationId"/> are the C#
+    /// defaults 0, not telemetry (0 is a real cluster id, and StationId 0 would
+    /// read DOCKED). Native's PlayerInfo status is reset in AddPlayerToSide
+    /// (<c>clintlib.cpp:4139</c>, <c>clintlib.h:411-421</c>) until a ship status
+    /// lands, so the team pane draws <c>SectorName(LastSeenSector())</c> =
+    /// "unknown" for it (<c>teampane.cpp:1577-1583, 1901-1905</c>) and only a
+    /// <c>c_ssDocked</c> last-seen state draws as docked (<c>:1828</c>).</para>
     public readonly record struct ShipBrief(short HullId, short SectorId, short StationId, bool Dead, bool Gone,
         bool IsLeader = false, bool? Ready = null, short? WingId = null, short ShipId = -1,
         bool IsHuman = true, int Money = 0,
-        string ShipName = "", string SectorName = "", string Objective = "");
+        string ShipName = "", string SectorName = "", string Objective = "",
+        bool StatusKnown = true);
+
+    /// <summary>SectorName() for an unknown / NULL cluster
+    /// (<c>teampane.cpp:1577-1583</c>).</summary>
+    public const string UnknownSector = "unknown";
+
+    /// <summary>P775 review — flatten one live <see cref="ShipEntity"/> into the
+    /// pane's <see cref="ShipBrief"/> (the construction Game1 used inline). A
+    /// ship whose status never landed (<see cref="ShipEntity.StatusSectorKnown"/>
+    /// false — e.g. created by PLAYERINFO alone) reports sector -1 / station -1
+    /// and the "unknown" sector name instead of its C# defaults.</summary>
+    public static ShipBrief BriefOf(ClientWorld world, ShipEntity ent, Func<short, string> hullNameForSort)
+    {
+        bool known = ent.StatusSectorKnown;
+        return new ShipBrief(
+            ent.HullId, known ? ent.SectorId : (short)-1, known ? ent.StationId : (short)-1, ent.IsDead, ent.IsGone,
+            world.TeamLeaderShipIdFor(ent.SideId) == ent.ShipId,
+            world.Roster.ReadyByShipId.TryGetValue(ent.ShipId, out var ready) ? ready : null,
+            ent.SideId == world.MySideId ? ent.WingId : null, ShipId: ent.ShipId,
+            // P761 — the name/credits sort comparators need native's
+            // IsHuman (PilotTypePlayer) and GetMoney (PLAYERINFO money).
+            IsHuman: ent.Player is { PilotType: PlayerInfo.PilotTypePlayer },
+            Money: ent.Player?.Money ?? 0,
+            // P761b — the three STRING sort keys the native comparators
+            // compare (teampane.cpp:1504-1534): the hull NAME, the sector NAME
+            // and the accepted-command text.
+            ShipName: hullNameForSort(ent.HullId),
+            SectorName: SectorNameOf(world, ent),
+            Objective: world.AcceptedCommandText(ent.ShipId),
+            StatusKnown: known);
+    }
+
+    /// <summary>SectorName(LastSeenSector()) (<c>teampane.cpp:1577-1583</c>):
+    /// the cluster name, or "unknown" when the cluster is NULL — which is also
+    /// the case before any status landed (P775 review: never cluster 0 by
+    /// default).</summary>
+    public static string SectorNameOf(ClientWorld world, ShipEntity ent)
+        => ent.StatusSectorKnown && world.Clusters.TryGetValue(ent.SectorId, out var cluster)
+            ? cluster.Name : UnknownSector;
 
     public enum LineKind { Blank, Title, SideHeader, Pilot, Money, Ballot, Note, Hint }
 
@@ -229,9 +277,9 @@ public static class TeamPaneLayout
     {
         var ent = world.Ships.Values.FirstOrDefault(s =>
             s.SideId == e.SideId && s.CharacterName == e.CharacterName);
-        string sectorName = "unknown";   // SectorName(): a NULL cluster reads "unknown" (:1580-1583)
-        if (ent is not null && world.Clusters.TryGetValue(ent.SectorId, out var cluster))
-            sectorName = cluster.Name;
+        // SectorName(): a NULL cluster reads "unknown" (:1580-1583); so does a
+        // ship whose status never landed (P775 review).
+        string sectorName = ent is null ? UnknownSector : SectorNameOf(world, ent);
         return new TeamPaneSort.Row(
             e.CharacterName,
             ent is null || ent.Player is { PilotType: Allegiance.Core.Wire.PlayerInfo.PilotTypePlayer },
@@ -239,7 +287,7 @@ public static class TeamPaneLayout
             e.Rank,
             e.Kills,
             ent?.Player?.Money ?? 0,
-            ent?.SectorId ?? -1,
+            ent is { StatusSectorKnown: true } ? ent.SectorId : (short)-1,
             ent?.HullId ?? -1,
             ent?.WingId ?? -1,
             ent is null ? "" : ResolveHullName(hullName, ent.HullId),
@@ -267,6 +315,10 @@ public static class TeamPaneLayout
     {
         if (!ships.TryGetValue(name, out var sb)) return "?";
         if (sb.Dead || sb.Gone) return "DEAD";
+        // P775 review — no status ever landed (a PLAYERINFO-only ship): native
+        // draws SectorName(NA) = "unknown" (teampane.cpp:1577-1583, 1901-1905),
+        // never DOCKED (that needs a c_ssDocked last-seen state, :1828).
+        if (!sb.StatusKnown) return UnknownSector;
         if (sb.StationId != -1) return "DOCKED";
         // P761c — the same sector NAME the SECTOR sort compares (SectorName(),
         // teampane.cpp:1512-1518, 1577-1583), never the raw sector id.

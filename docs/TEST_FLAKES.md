@@ -2631,3 +2631,21 @@ the same full-run-only allocation-sampling effect as the P661/P670 entries
 above (`BytesAllocated` under a busy shared machine), unrelated to the HUD-15
 command-icon work: that test only exercises `ChatLineTruncationCache.Fit`, which
 HUD-15 does not touch. Recorded as a load flake per the 3/3-alone rule.
+
+## P775 validation environment (2026-10-21)
+
+P775's single fast-tier run recorded one failure outside the task's surface:
+`Allegiance.ClientCore.MonoGame.Tests.Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state`
+("formatted HUD readouts allocated 3624 B over 10,000 frames"). It passed
+**3/3 exact-class isolated invocations** immediately after (14/14 each run) —
+the same full-run-only allocation-sampling effect documented above (P661/P670,
+HUD-15): `BytesAllocated` sampled while the shared machine is busy running the
+other fast-tier projects. P775 touches no HUD/formatting/allocation path.
+Recorded as a load flake per the 3/3-alone rule.
+
+The same run also recorded one failure in
+`Allegiance.ClientCore.Tests.RetriedConnectLiveTests.RepeatedConnects_LeaveNoAccumulatedSocketsOrThreads`
+("Expected: 10 Actual: 9" sockets/threads after repeated connects). It passed
+**3/3 exact-class isolated invocations** immediately after (2/2 each run) — a
+thread/socket-count race on a busy box, in code P775 does not touch (no
+connection/cleanup change). Recorded as a load flake per the 3/3-alone rule.

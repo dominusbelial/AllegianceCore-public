@@ -8,7 +8,7 @@ OBJECT_SPOTTED,6,S,—,neither (codec only),Real client does NOT consume (candid
 SET_CLUSTER,7,S,"ServerHost, Server.Broadcast",ConnectionSession (real client),Sets MyShipId + own ship entity; the join/spawn assignment,appmsg.cpp:991,done
 DEV_COMPLETED,8,S,Server.Economy,ConnectionSession (real client),Dev-completed chime; world records event (P267),appmsg.cpp:3318,done
 SET_BRIEFING_TEXT,9,S,Server.Lobby,ConnectionSession (real client),Briefing text stored; dismissible briefing popup (P271),appmsg.cpp:3330,done
-PLAYERINFO,10,S,"Server.Lifecycle, Server.Broadcast",ConnectionSession (real client),PlayerInfo roster applied to world; seeds the scoreboard kills/deaths/ejections and rank (P774),appmsg.cpp:2217,done
+PLAYERINFO,10,S,"Server.Lobby, Server (SpawnNpcShip)",ConnectionSession (real client),"PlayerInfo roster applied to world; seeds the scoreboard kills/deaths/ejections and rank (P774); sent only at native moments: mission join (joiner→mission, mission→joiner) and drone creation, never on sighting or side change (P775; fsmission.cpp:408-411,3958-3968; FedSrv.CPP:2269)",appmsg.cpp:2217,done
 STATIC_MAP_INFO,11,S,—,neither (codec only),na — STATIC_MAP_INFO deliberately not built (dead-in-native),appmsg.cpp:3353,na
 PROJECTILE_INSTANCE,12,CS,"Server.Lifecycle, Server.Combat",ConnectionSession (real client),Projectile entity appended to render bolts/streaks (P231),—,done
 RANK_INFO,13,S,"Server.Lifecycle, Server.Lobby",ConnectionSession (real client),Rank-name table stored on world (P639); char sheet/scoreboard/team pane resolve Rank id → name,appmsg.cpp:3372,done

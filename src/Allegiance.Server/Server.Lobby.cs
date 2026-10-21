@@ -798,6 +798,13 @@ public sealed partial class Server
             for (int i = 0; i < slice; i++)
             {
                 var p = tail.Ordered[tail.ReseatCursor++];
+                // P775 — native moment (1) for the fresh mission: announce the
+                // migrant to the whole fresh mission BEFORE its reseat (the
+                // ship is registered in _peerShips and its name resolves), with
+                // iSide = SIDE_TEAMLOBBY so no client announces yet — the
+                // JOIN_SIDE that TryJoinSide broadcasts is the one announcement
+                // (fsmission.cpp:408-411 then :621-624).
+                AnnounceFreshShip(p.NewLive.Ship, -2 /* SIDE_TEAMLOBBY */, p.Req.CharacterName);
                 if (TryJoinSide(p.NewLive.Ship, p.SideId))
                     Console.WriteLine($"[reseat] peer {p.Conn} -> fresh mission side {p.SideId} (ship {p.NewShipId})");
                 else
@@ -892,8 +899,7 @@ public sealed partial class Server
         RetireViewerUpdateCadence(conn);
         _teammateExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         _stationIdentitySent.RemoveWhere(e => e.Recipient == conn);
-        _teammatePlayerInfoSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
-        _missionPlayerInfoSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
+        _playerInfoSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         _crossSideExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         _crossSideMineExportSent.RemoveWhere(e => e.Recipient == conn);
         _sameSideNpcExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
@@ -3196,6 +3202,19 @@ private void CompleteStartCountdown(Mission mission, double now)
         // correct sector, so no relocation is needed.
         LiveShip live = AssignShip(pend.Request, pend.ShipId,
             autoSelection && ShipSpawner is not null ? null : requestedSideId);
+        // P775 — native moment (1): announce the joiner to the whole mission
+        // BEFORE it is seated (AddPlayerToMission puts the player on
+        // SIDE_TEAMLOBBY then SendPlayerInfo's it to the mission,
+        // fsmission.cpp:408-411), so every peer holds the joiner's PlayerInfo
+        // before the JOIN_SIDE that follows (appmsg.cpp:2912-2914 needs it).
+        // iSide = SIDE_TEAMLOBBY (-2): the client announces nothing yet
+        // (appmsg.cpp:2286-2290 skips the lobby side) — the JOIN_SIDE is the
+        // one announcement. A side SWITCH must never re-announce: this call
+        // site only seats a NEW ship, and the latch makes the later catch-all
+        // (CompleteJoinAndLaunch) a no-op for a seated joiner. It is a NEW
+        // ship id, so its stale latch entries are dropped first
+        // (AnnounceFreshShip).
+        AnnounceFreshShip(live.Ship, -2 /* SIDE_TEAMLOBBY */, pend.Request.CharacterName);
         if (!autoSelection)
         {
             TryJoinSide(live.Ship, requestedSideId);
@@ -3314,6 +3333,17 @@ private void CompleteStartCountdown(Mission mission, double now)
     {
         _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position, LastBroadcastForward = live.Ship.Orientation.GetForward(), LastBroadcastUp = live.Ship.Orientation.GetUp() };
         _peerNames[from] = req.CharacterName ?? "";   // P62: remember past logon for teammate EXPORT name
+        // P775 — the catch-all of native moment (1): a joiner that is never
+        // seated (SideId still null at launch) is announced here with its own
+        // (non-)side, exactly native's AddPlayerToMission announce for a
+        // player in the team lobby (fsmission.cpp:408-411; the catch-all's
+        // iSide mirrors G's `SideId ?? -2`). For a seated joiner this sends
+        // NOTHING — every (peer, joiner) pair was latched by the side-select
+        // announce before TryJoinSide, and this plain form never clears
+        // latches (only AnnounceFreshShip does, at the genuinely-new-ship
+        // sites). Also covers rotation phase-3 bursts (the phase-2 announce
+        // already latched every pair).
+        AnnouncePlayerToMission(live.Ship, live.Ship.SideId ?? -2, req.CharacterName);
         // P612 — a newly seated peer must learn the current sim time scale so its
         // remote-ship dead-reckoning extrapolates in scaled sim time (no rubber-
         // banding under a slow-motion server).
@@ -3626,14 +3656,40 @@ private void CompleteStartCountdown(Mission mission, double now)
         // AddPlayerToSide assert at :4107 sees SideID()==-2 and
         // should pass — no two-message dance needed). Whether that
         // assert holds on the live client is P31b's empirical job.
-        SendPeer(from, FedPacket.Pack(new[]
+        //
+        // P775 — G (the mission→joiner PLAYERINFOs, one per ship already in
+        // the mission) rides the SAME packet and goes FIRST. Native sends them
+        // in SendLobbyMissionInfo (fsmission.cpp:406, the loop at :3958-3968)
+        // while the joiner's own side is still unset, BEFORE the joiner's own
+        // PLAYERINFO (:408-411); so a native joiner announces none of the
+        // humans already present (clintlib.cpp:4142-4160 needs the client's
+        // own GetSide()/SideID()). Sending them after this own-side carrier
+        // would make every existing human an "X has joined" announcement.
+        var joinInfos = new List<byte[]>();
+        if (live.Ship.Mission is { } infoMission)
         {
-            // HUD-20 — the shared native-shape builder fills fExperience,
-            // pilotType and dtidDrone too (FedSrv.CPP:2084,2088-2091).
-            BuildPlayerInfo(live.Ship, live.Ship.SideId ?? -1, req.CharacterName ?? "",
-                live.PlayerScore.Kills, live.PlayerScore.Deaths,
-                live.PlayerScore.Ejections, live.PlayerScore.Rank).Encode(),
-        }));
+            // Native's ship loop is over pMission->GetShips() — EVERY ship,
+            // drones included, in every sector, with no visibility test
+            // (fsmission.cpp:3958-3968). Each (joiner, ship) pair goes through
+            // the one-shot _playerInfoSent latch like every other native
+            // moment, so a ship the joiner already learned is never sent twice.
+            foreach (var (peer, player) in _peerShips)
+                if (player.Ship.Mission == infoMission && player.Ship.Id != shipId)
+                    AppendPlayerInfoForRecipient(from, player.Ship, player.Ship.SideId ?? -2,
+                        _peerNames.TryGetValue(peer, out var name) ? name : "", joinInfos);
+            // Every NPC of the mission, every sector (the IsShipIdLive
+            // enumeration, Server.Docking.cs) — GetShips() has no human filter.
+            foreach (var sector in infoMission.Sectors)
+                foreach (var model in sector.Models)
+                    if (model is Ship { IsNpc: true } npc)
+                        AppendPlayerInfoForRecipient(from, npc, npc.SideId ?? -2, null, joinInfos);
+        }
+        // HUD-20 — the shared native-shape builder fills fExperience,
+        // pilotType and dtidDrone too (FedSrv.CPP:2084,2088-2091).
+        joinInfos.Add(BuildPlayerInfo(live.Ship, live.Ship.SideId ?? -1, req.CharacterName ?? "",
+            live.PlayerScore.Kills, live.PlayerScore.Deaths,
+            live.PlayerScore.Ejections, live.PlayerScore.Rank).Encode());
+        SendPeer(from, FedPacket.Pack(joinInfos));
         Console.WriteLine($"[playerinfo] peer {from} '{req.CharacterName}' -> PLAYERINFO(10) ship {shipId} iSide {live.Ship.SideId?.ToString() ?? "(none)"} (side assignment for the direct-connect ship)");
 
         // FM_S_SET_MONEY(115): tell the joining/syncing player THEIR OWN money
@@ -3930,13 +3986,10 @@ private void CompleteStartCountdown(Mission mission, double now)
             var lobbyState = new List<byte[]>();
             // Native SendLobbyMissionInfo sends every player's PLAYERINFO
             // before role-change handlers can dereference them (appmsg.cpp:
-            // 2934-2944,2976-2986). No hull or tactical position is disclosed.
-            foreach (var (peer, player) in _peerShips)
-                if (player.Ship.Mission == lobbyMission && player.Ship.Id != shipId)
-                    lobbyState.Add(BuildPlayerInfo(player.Ship, player.Ship.SideId ?? -2,
-                        _peerNames.TryGetValue(peer, out var name) ? name : "",
-                        player.PlayerScore.Kills, player.PlayerScore.Deaths,
-                        player.PlayerScore.Ejections, player.PlayerScore.Rank).Encode());
+            // 2934-2944,2976-2986). P775 — those PLAYERINFOs (every ship of
+            // the mission, fsmission.cpp:3958-3968) now go out ahead of the
+            // joiner's own PLAYERINFO above, in the same packet, so this
+            // snapshot carries only the role/ready state.
             foreach (var side in lobbyMission.Sides)
             {
                 if (side.LeaderShipId is { } leader)

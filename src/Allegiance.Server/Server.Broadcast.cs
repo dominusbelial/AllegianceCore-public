@@ -878,7 +878,7 @@ public sealed partial class Server
                     short teammateId = tv.Value.Ship.Id;
 
                     // P62: one-shot real ExportShip(26) about this teammate's
-                    // ship, sent to the recipient BEFORE any SHIP_STATUS about
+                    // ship, sent to the recipient before any SHIP_STATUS about
                     // the same subject. This is what makes the client's object
                     // model learn a teammate ship exists at all: FM_S_EXPORT is
                     // the object-CREATION message (appmsg.cpp:80-105 →
@@ -901,6 +901,20 @@ public sealed partial class Server
                     // can realize a teammate's already-mounted loadout from this
                     // same EXPORT, closing the gap `BuyLoadoutAck` (owner-only,
                     // Server.cs ApplyLoadout) leaves for everyone else.
+                    //
+                    // P62 used to be followed here by an inline P63 PLAYERINFO
+                    // about the same teammate, and claimed the EXPORT-before-
+                    // PLAYERINFO order mattered (a second CreateObject on the
+                    // same id taking the else-branch, appmsg.cpp:2276-2279).
+                    // That ordering was an AllegianceInterop concern; the port
+                    // client upserts either way (ClientWorld.Apply(PlayerInfo)
+                    // Upserts), and NATIVE never EXPORTs OT_ship to other
+                    // clients at all (grep ExportObj( FedSrv: only static
+                    // types/sides/stations) — native creates the ship FROM
+                    // PLAYERINFO (appmsg.cpp:2264). P775 removed the P63 send:
+                    // PLAYERINFO goes only at the three native moments (mission
+                    // join joiner→mission / mission→joiner, drone creation),
+                    // never on first sight.
                     if (!_teammateExportSent.Contains((kv.Key, teammateId)) &&
                         _peerNames.TryGetValue(tv.Key, out var peerName))
                     {
@@ -919,54 +933,6 @@ public sealed partial class Server
                         if (ConsoleLog.Verbose) ConsoleLog.Write($"[teamexport] peer {kv.Key} <- ship {teammateId} '{peerName}' hull {teamExport.HullId} nParts {initialParts.Count}");   // P619c: per-pair one-shot, gated (join-burst volume)
                         _teammateExportSent.Add((kv.Key, teammateId));
                         _teammateLoadoutVersionSent[(kv.Key, teammateId)] = tv.Value.Ship.LoadoutVersion;
-                    }
-
-                    // P63: one-shot real PLAYERINFO(10) about this same teammate's
-                    // ship — sent immediately after that pair's EXPORT (P62) and
-                    // BEFORE any SHIP_STATUS about the same subject, extending P62's
-                    // gating chain rather than building a competing one. Rationale
-                    // (native source, not guessed): a ship's "private data" — the
-                    // pointer IshipIGCWrapper::GetPlayerInfo()
-                    // (AllegianceInterop/igcWrapper.cpp:1980-1982) dereferences — is
-                    // set in EXACTLY one place, the FM_S_PLAYERINFO(10) handler's
-                    // pPlayerInfo->SetShip(pship) (appmsg.cpp:2279), via
-                    // pship->SetPrivateData((DWORD)this) (clintlib.h:311-314). Without
-                    // this message a same-side ship gets an EXPORT object (P62) but
-                    // never a PlayerInfo, so GetPlayerInfo() returns a wrapper built
-                    // around a null/garbage native pointer, and
-                    // UndockMinersAndStartMining's p.GetPlayerInfo().LastSeenState()
-                    // (CommanderResearchAndExpand.cs:1558) dereferences it: an
-                    // AccessViolationException, silently swallowed by OnAppMessage's
-                    // blanket SEH handler (NativeClient.cpp:29-45) — no C# exception,
-                    // pump keeps working, diagnostic never prints.
-                    //
-                    // Ordering: placed after the EXPORT (P62) above and before the
-                    // STATUS below. When PLAYERINFO's handler runs, CreateObject
-                    // (appmsg.cpp:2264) FAILS because the id exists (from EXPORT) and
-                    // it takes the else branch — GetShip(shipID) (appmsg.cpp:2276),
-                    // resolving the REAL ship EXPORT created, and calling
-                    // SetShip on it (:2279). If PLAYERINFO came first it would create
-                    // its own separate throwaway ship and attach to THAT — silently
-                    // wrong, hence worth getting right, not something a test catches
-                    // by accident. Fields match the existing own-player send
-                    // (Server.cs:946-954) exactly except ShipId = the teammate's real
-                    // id (NOT the -1/NA own-ship trick — that NA is a deliberate,
-                    // documented dummy adoption specific to the self-referential own
-                    // ship; there is no dummy for a teammate, so a real, separate
-                    // object must be created). Money stays 0 (codec docstring: the
-                    // native client asserts GetMoney()==0 in AddPlayerToSide,
-                    // clintlib.cpp:4109). ISide = the teammate's own SideId (==
-                    // recipient's, same-side only); CharacterName from `_peerNames`.
-                    if (_teammateExportSent.Contains((kv.Key, teammateId)) &&
-                        !_teammatePlayerInfoSent.Contains((kv.Key, teammateId)) &&
-                        _peerNames.TryGetValue(tv.Key, out var teammateName))
-                    {
-                        var teamInfo = BuildPlayerInfo(tv.Value.Ship, recipientSide,
-                            teammateName, tv.Value.PlayerScore.Kills, tv.Value.PlayerScore.Deaths,
-                            tv.Value.PlayerScore.Ejections, tv.Value.PlayerScore.Rank);
-                        SendPeer(kv.Key, PackBroadcast(Message(teamInfo)));
-                        if (ConsoleLog.Verbose) ConsoleLog.Write($"[teamplayerinfo] peer {kv.Key} <- ship {teammateId} '{teammateName}' side {recipientSide}");   // P619c: per-pair one-shot, gated (join-burst volume)
-                        _teammatePlayerInfoSent.Add((kv.Key, teammateId));
                     }
 
                     // P58 teammate STATUS broadcast — gated so it only proceeds
@@ -1141,9 +1107,6 @@ public sealed partial class Server
                             };
                             SendPeer(kv.Key, PackBroadcast(Message(npcExport)));
                             if (ConsoleLog.Verbose) ConsoleLog.Write($"[samestidenpc] peer {kv.Key} <- NPC ship {npc.Id} side {npcSide}");   // P619c: per-pair one-shot, gated
-                            // HUD-20 — the drone's PLAYERINFO seed follows its EXPORT
-                            // (native announces a new drone to the mission, FedSrv.CPP:2269).
-                            SeedMissionPlayerInfo(kv.Key, npc, npcSide, 0, 0, 0, 0);
                         }
 
                         long lastNpcTick = _lastSameSideNpcStatusTick.TryGetValue((kv.Key, npc.Id), out var nt0) ? nt0 : -1;
@@ -1363,10 +1326,8 @@ public sealed partial class Server
         public bool SetStatus; public short StatusSector; public long StatusTick;
         public bool SetClusterInfo; public long ClusterInfoTick;
         public readonly HashSet<short> ExportSent = new();       // -> _teammateExportSent
-        public readonly HashSet<short> PlayerInfoSent = new();   // -> _teammatePlayerInfoSent
         public readonly HashSet<short> PositionSent = new();     // -> _teammatePositionSent
         public readonly HashSet<short> NpcExportSent = new();    // -> _sameSideNpcExportSent
-        public HashSet<short>? MissionPlayerInfoSent;              // -> _missionPlayerInfoSent (HUD-20; lazy, rare)
         public readonly Dictionary<short, long> TeammateStatusTick = new(); // -> _lastTeammateStatusTick
         public readonly Dictionary<short, long> LoadoutVersionSet = new(); // -> _teammateLoadoutVersionSent
         public readonly Dictionary<short, long> NpcStatusTick = new();     // -> _lastSameSideNpcStatusTick
@@ -1388,11 +1349,8 @@ public sealed partial class Server
         if (r.SetStatus) { _lastStatusSector[conn] = r.StatusSector; _lastStatusTick[conn] = r.StatusTick; }
         if (r.SetClusterInfo) _lastClusterInfoTick[conn] = r.ClusterInfoTick;
         foreach (var mate in r.ExportSent) _teammateExportSent.Add((conn, mate));
-        foreach (var mate in r.PlayerInfoSent) _teammatePlayerInfoSent.Add((conn, mate));
         foreach (var mate in r.PositionSent) _teammatePositionSent.Add((conn, mate));
         foreach (var npc in r.NpcExportSent) _sameSideNpcExportSent.Add((conn, npc));
-        if (r.MissionPlayerInfoSent is { } seeded)
-            foreach (var npc in seeded) _missionPlayerInfoSent.Add((conn, npc));
         foreach (var (mate, t) in r.TeammateStatusTick) _lastTeammateStatusTick[(conn, mate)] = t;
         foreach (var (mate, v) in r.LoadoutVersionSet) _teammateLoadoutVersionSent[(conn, mate)] = v;
         foreach (var (npc, t) in r.NpcStatusTick) _lastSameSideNpcStatusTick[(conn, npc)] = t;
@@ -1423,7 +1381,6 @@ public sealed partial class Server
         // Local overlays: a peer's own adds, consulted alongside the shared sets
         // so this peer sees its writes the way serial's inline latches do.
         var localExportSent = new HashSet<short>();
-        var localPlayerInfoSent = new HashSet<short>();
         var localPositionSent = new HashSet<short>();
 
         var fwd = ship.Orientation.GetForward();
@@ -1515,21 +1472,6 @@ public sealed partial class Server
                     localExportSent.Add(teammateId);
                     r.ExportSent.Add(teammateId);
                     r.LoadoutVersionSet[teammateId] = tv.Value.Ship.LoadoutVersion;
-                }
-
-                // P63 teamplayerinfo (immediately after its pair's export)
-                if ((_teammateExportSent.Contains((conn, teammateId)) || localExportSent.Contains(teammateId))
-                    && !_teammatePlayerInfoSent.Contains((conn, teammateId))
-                    && !localPlayerInfoSent.Contains(teammateId)
-                    && _peerNames.TryGetValue(tv.Key, out var teammateName))
-                {
-                    var teamInfo = BuildPlayerInfo(tv.Value.Ship, recipientSide,
-                        teammateName, tv.Value.PlayerScore.Kills, tv.Value.PlayerScore.Deaths,
-                        tv.Value.PlayerScore.Ejections, tv.Value.PlayerScore.Rank);
-                    r.Packets.Add((PackBroadcast(Message(teamInfo)), 0, false));
-                    if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamplayerinfo] peer {conn} <- ship {teammateId} '{teammateName}' side {recipientSide}");   // P619c: gated
-                    localPlayerInfoSent.Add(teammateId);
-                    r.PlayerInfoSent.Add(teammateId);
                 }
 
                 if (_teammateExportSent.Contains((conn, teammateId)) || localExportSent.Contains(teammateId))
@@ -1627,15 +1569,6 @@ public sealed partial class Server
                         if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[samestidenpc] peer {conn} <- NPC ship {npc.Id} side {npcSide}");   // P619c: gated
                         localNpcExportSent.Add(npc.Id);
                         r.NpcExportSent.Add(npc.Id);
-                        // HUD-20 — mirror of serial SeedMissionPlayerInfo: the shared
-                        // latches are read-only here; the pair is recorded in
-                        // r.MissionPlayerInfoSent and applied serially.
-                        if (!_teammatePlayerInfoSent.Contains((conn, npc.Id))
-                            && !_missionPlayerInfoSent.Contains((conn, npc.Id)))
-                        {
-                            r.Packets.Add((PackBroadcast(Message(BuildPlayerInfo(npc, npcSide, null))), 0, false));
-                            (r.MissionPlayerInfoSent ??= new()).Add(npc.Id);
-                        }
                     }
 
                     long lastNpcTick = _lastSameSideNpcStatusTick.TryGetValue((conn, npc.Id), out var nt0) ? nt0 : -1;
@@ -1849,7 +1782,6 @@ public sealed partial class Server
                     if (_crossSideExportPackets.TryGetValue(ship.Id, out var cached) && cached.Ship == ship)
                         cached.Generation = _crossSideExportGeneration;
                     short? ownSide = ship.SideId;
-                    (int Kills, int Deaths, int Ejections, short Rank)? score = null;   // HUD-20: resolved lazily, once per ship
                     foreach (var (sideId, e) in bySide)
                     {
                         if (ownSide == sideId) continue;          // own side — the same-side [teamexport] path
@@ -1878,14 +1810,9 @@ public sealed partial class Server
                             if (_crossSideExportSent.Add((conn, ship.Id)))
                             {
                                 SendCrossSideExport(conn, ship, sideId);
-                                // HUD-20 — the enemy's PLAYERINFO seed follows its
-                                // first EXPORT to this peer (FedSrv.CPP:2129-2134).
-                                if (ownSide is { } seedSide && !_missionPlayerInfoSent.Contains((conn, ship.Id)))
-                                {
-                                    score ??= ShipMissionScore(ship, peers);
-                                    SeedMissionPlayerInfo(conn, ship, seedSide,
-                                        score.Value.Kills, score.Value.Deaths, score.Value.Ejections, score.Value.Rank);
-                                }
+                                // P775 — no PLAYERINFO here: native never sends one
+                                // on sighting (SendPlayerInfo's three call sites are
+                                // mission join ×2 and drone creation, FedSrv.CPP:2056-2135).
                             }
                             // P369 — self-heal: on the slow refresh cadence,
                             // re-send an identity we already sent once (still
@@ -1949,42 +1876,79 @@ public sealed partial class Server
         PersistScores = [new(0f, 0f, ship.IsNpc ? (short)0 : rank, PlayerInfo.NA)],
     };
 
-    /// <summary>HUD-20 — seed ONE PLAYERINFO(10) for <paramref name="ship"/> to
-    /// <paramref name="conn"/>, called at the moment that (peer, ship) pair's
-    /// EXPORT latch is first set (cross-side export in
-    /// <see cref="SweepCrossSideExports"/>, same-side NPC export in
-    /// BroadcastShipStates serial + parallel). This gives every seated peer one
-    /// PLAYERINFO for every mission ship, enemies and drones included — the
-    /// native <c>GetGroupMission()</c> audience (<c>FedSrv/FedSrv.CPP:2129-2134</c>,
-    /// <c>FedSrv/fsmission.cpp:3958-3968</c>; a new drone, <c>FedSrv.CPP:2269</c>)
-    /// — in native's EXPORT-before-PLAYERINFO order, with no per-tick sweep:
-    /// steady-state cost is zero, the work is O(new pairs). Teammates are owned
-    /// by the inline P63 send (<c>_teammatePlayerInfoSent</c>) and skipped here,
-    /// so a teammate never gets two. One shot per pair (<c>_missionPlayerInfoSent</c>):
-    /// a re-export (P369 self-heal, hull-change relaunch) does not re-seed, as
-    /// native never re-sends experience after the seed (<c>FM_S_SET_EXPERIENCE</c>
-    /// is a commented-out handler, <c>appmsg.cpp:2918-2928</c>) and a second
-    /// PLAYERINFO would re-run the client's CreateObject.</summary>
-    private void SeedMissionPlayerInfo(ConnectionId conn, Ship ship, short shipSide, int kills, int deaths,
-        int ejections, short rank)
+    /// <summary>P775 — announce ONE subject ship to its whole mission at the
+    /// native moment, the exact port counterpart of native's whole-mission
+    /// SendPlayerInfo audience <c>GetGroupMission()</c>
+    /// (<c>FedSrv.CPP:2129-2131</c>): every connection in the mission, regardless
+    /// of sector or visibility. Builds the PLAYERINFO <b>once</b> (kills/deaths/
+    /// ejections/rank from the owning <see cref="LiveShip"/>.PlayerScore when the
+    /// ship is a peer, otherwise 0 — native GetKills()/GetDeaths()/GetEjections(),
+    /// <c>FedSrv.CPP:2085-2087</c>, and the NA persist entry <c>:952</c>), packs it
+    /// <b>once</b>, and sends that packet to every <c>_peerShips</c> entry whose
+    /// Ship.Mission is the ship's mission — skipping the ship's own connection
+    /// (the joiner's own side carrier is the dedicated F send,
+    /// <c>Server.Lobby.cs</c>) and any (recipient, ship) pair already in
+    /// <c>_playerInfoSent</c>, adding each pair it sends. It never clears
+    /// latches itself: a genuinely new ship goes through
+    /// <see cref="AnnounceFreshShip"/>, and the <c>CompleteJoinAndLaunch</c>
+    /// catch-all must stay a no-op for an already-announced joiner. All sends
+    /// stay on the sim thread, so the P774 Fix 6 ordering (PLAYERINFO never
+    /// overtakes its KILL_SHIP) holds by construction.</summary>
+    private void AnnouncePlayerToMission(Ship ship, short isSide, string? characterName = null)
     {
-        if (_teammatePlayerInfoSent.Contains((conn, ship.Id))) return;   // inline P63 send owns teammates
-        if (!_missionPlayerInfoSent.Add((conn, ship.Id))) return;
-        SendPeer(conn, PackBroadcast(Message(BuildPlayerInfo(ship, shipSide, null, kills, deaths, ejections, rank))));
-        if (ConsoleLog.Verbose) ConsoleLog.Write($"[missionplayerinfo] peer {conn} <- ship {ship.Id} side {shipSide} exp {ship.KillBonus:0.##}");
+        if (ship.Mission is null) return;
+        var (kills, deaths, ejections, rank) = MissionScoreOf(ship);
+        var packet = PackBroadcast(Message(BuildPlayerInfo(ship, isSide, characterName,
+            kills, deaths, ejections, rank)));
+        foreach (var (conn, live) in _peerShips)
+        {
+            if (ReferenceEquals(live.Ship, ship)) continue;                 // the subject's own connection
+            if (!ReferenceEquals(live.Ship.Mission, ship.Mission)) continue;
+            if (!_playerInfoSent.Add((conn, ship.Id))) continue;
+            SendPeer(conn, packet);
+            if (ConsoleLog.Verbose) ConsoleLog.Write($"[playerinfo-announce] peer {conn} <- ship {ship.Id} side {isSide}");
+        }
     }
 
-    /// <summary>HUD-20 — the mission kills/deaths/ejections/rank native puts in
-    /// a human ship's PLAYERINFO (<c>FedSrv.CPP:2085-2087,952</c>): the owning
-    /// peer's score, 0 for a drone. O(peers); called at most once per ship per
-    /// sweep, and only when that ship has a new (peer, ship) pair to seed.</summary>
-    private (int Kills, int Deaths, int Ejections, short Rank) ShipMissionScore(Ship ship, KeyValuePair<ConnectionId, LiveShip>[] peers)
+    /// <summary>P775 — announce a genuinely NEW ship (a freshly allocated id:
+    /// <c>SpawnNpcShip</c>/<c>TrainingHost.CreateDrone</c> via
+    /// <see cref="AnnounceNewShip"/>, the side-select join and the rotation
+    /// reseat). <c>AllocateShipId</c> reuses ids once a ship is gone, and a
+    /// removal path may leave (recipient, id) entries behind (e.g. a
+    /// constructor that became a station), so the id's stale entries are
+    /// dropped first — otherwise the new ship would silently reach nobody who
+    /// had latched the old one. O(latch size), once per new ship; never on the
+    /// per-tick path.</summary>
+    private void AnnounceFreshShip(Ship ship, short isSide, string? characterName = null)
+    {
+        _playerInfoSent.RemoveWhere(e => e.ShipId == ship.Id);
+        AnnouncePlayerToMission(ship, isSide, characterName);
+    }
+
+    /// <summary>P775 — the mission→joiner form (native moment (2),
+    /// <c>fsmission.cpp:3958-3968</c>): latch-gate ONE (recipient, ship) pair and
+    /// append the PLAYERINFO to the caller's message list so the whole join
+    /// burst rides ONE packet. Returns false when the pair was already latched
+    /// (nothing appended).</summary>
+    private bool AppendPlayerInfoForRecipient(ConnectionId recipient, Ship ship, short isSide,
+        string? characterName, List<byte[]> sink)
+    {
+        if (!_playerInfoSent.Add((recipient, ship.Id))) return false;
+        var (kills, deaths, ejections, rank) = MissionScoreOf(ship);
+        sink.Add(BuildPlayerInfo(ship, isSide, characterName, kills, deaths, ejections, rank).Encode());
+        return true;
+    }
+
+    /// <summary>P775 — the mission kills/deaths/ejections/rank native puts in a
+    /// human ship's PLAYERINFO (<c>FedSrv.CPP:2085-2087,952</c>): the owning
+    /// peer's score, 0 for a drone.</summary>
+    private (int Kills, int Deaths, int Ejections, short Rank) MissionScoreOf(Ship ship)
     {
         if (ship.IsNpc) return (0, 0, 0, 0);
-        for (int i = 0; i < peers.Length; i++)
-            if (ReferenceEquals(peers[i].Value.Ship, ship))
-                return (peers[i].Value.PlayerScore.Kills, peers[i].Value.PlayerScore.Deaths,
-                    peers[i].Value.PlayerScore.Ejections, peers[i].Value.PlayerScore.Rank);
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship, ship))
+                return (kv.Value.PlayerScore.Kills, kv.Value.PlayerScore.Deaths,
+                    kv.Value.PlayerScore.Ejections, kv.Value.PlayerScore.Rank);
         return (0, 0, 0, 0);
     }
 

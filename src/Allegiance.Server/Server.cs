@@ -432,25 +432,28 @@ public sealed partial class Server : IDisposable
     private readonly HashSet<(ConnectionId Recipient, short ShipId)> _sameSideNpcExportSent = new();
     private readonly Dictionary<(ConnectionId Recipient, short ShipId), long> _lastSameSideNpcStatusTick = new();
 
-    // One-shot tracking for the P63 teammate-ship PLAYERINFO(10) broadcast:
-    // set once the first time a (recipient, subject-ship) pair's real
-    // PlayerInfo has been sent. Kept separate from `_teammateExportSent` —
-    // these are two different messages with two different one-time gates, even
-    // though they fire back-to-back for a given pair (EXPORT then PLAYERINFO).
-    // Same reasoning as `_teammateExportSent`: a second PLAYERINFO would hit
-    // CreateObject again on the same id, so a repeat is wrong, not merely
-    // wasteful. Sim-thread only, like the siblings.
-    private readonly HashSet<(ConnectionId Recipient, short ShipId)> _teammatePlayerInfoSent = new();
-
-    // HUD-20 — one-shot tracking for the native "every ship's PLAYERINFO goes to
-    // the whole mission" seed (FedSrv.CPP:2129-2134, fsmission.cpp:3958-3968):
-    // set once per (recipient, mission ship) by SeedMissionPlayerInfo at the
-    // moment that pair's EXPORT latch is first set, covering same-side NPCs and
-    // cross-side enemies (teammates keep their inline P63 send and are skipped
-    // via _teammatePlayerInfoSent). Pruned with the peer (ReleasePeer,
-    // ClearPeerJoinLatches on rotation) and when a drone dies. Sim-thread
-    // only, like the siblings.
-    private readonly HashSet<(ConnectionId Recipient, short ShipId)> _missionPlayerInfoSent = new();
+    // P775 — the ONE one-shot tracking set for PLAYERINFO(10), keyed
+    // (recipient, subject ship). Native sends PLAYERINFO from exactly three
+    // call sites of SendPlayerInfo (FedSrv/FedSrv.CPP:2056-2135): (1) a player
+    // joins the mission → the whole mission (fsmission.cpp:408-411, iSide =
+    // SIDE_TEAMLOBBY so the client announces nothing yet, appmsg.cpp:2286-2290);
+    // (2) the joiner gets one PLAYERINFO per ship already in the mission —
+    // every ship, drones included, every sector (fsmission.cpp:3958-3968);
+    // (3) a drone is created → the whole mission (FedSrv.CPP:2269). Nothing is
+    // sent per sighting, per rank change or on a side switch. This single
+    // latch guarantees no (recipient, ship) pair ever receives two PLAYERINFOs
+    // in one mission (a second would re-run the client's CreateObject,
+    // appmsg.cpp:2264). Replaces the former P63 teammate latch and the HUD-20
+    // mission-seed latch (two sets), whose lazy sends (first sighting, first
+    // same-side NPC EXPORT) produced native announcements minutes late.
+    // Pruned with the peer (ReleasePeer, ClearPeerJoinLatches on rotation) and
+    // when a drone dies; a genuinely NEW ship's id has its stale entries
+    // dropped explicitly before its announce (AnnounceFreshShip — called only
+    // where a new ship is created: SpawnNpcShip, TrainingHost.CreateDrone, the
+    // side-select join and the rotation reseat), because AllocateShipId reuses
+    // ids and a removal path may not prune (e.g. a constructor that became a
+    // station). Sim-thread only, like the siblings.
+    private readonly HashSet<(ConnectionId Recipient, short ShipId)> _playerInfoSent = new();
 
     // P332 — one-shot tracking for the P85 teammate-ship SINGLE_SHIP_UPDATE
     // position broadcast: set once a (recipient, subject-ship) pair's real
@@ -703,14 +706,14 @@ public sealed partial class Server : IDisposable
     /// a sim-thread-owned collection; the sizes are best-effort snapshots.</summary>
     internal (int PendingSideSelect, int PeerNames, int PlayerReady,
               int LastStatusSector, int LastStatusTick, int LastClusterInfoTick,
-              int LastPingQuery, int TeammateExportSent, int TeammatePlayerInfoSent,
+              int LastPingQuery, int TeammateExportSent, int PlayerInfoSent,
               int TeammateLoadoutVersionSent, int TeammateLoadoutCache,
               int CrossSideExportSent, int CrossSideMineExportSent, int LastTeammateStatusTick,
               int NextTeammateRefreshTick) ConnectionScopedCacheCounts()
         => (
             _pendingSideSelect.Count, _peerNames.Count, _playerReady.Count,
             _lastStatusSector.Count, _lastStatusTick.Count, _lastClusterInfoTick.Count,
-            _lastPingQuery.Count, _teammateExportSent.Count, _teammatePlayerInfoSent.Count,
+            _lastPingQuery.Count, _teammateExportSent.Count, _playerInfoSent.Count,
             _teammateLoadoutVersionSent.Count, _teammateLoadoutCache.Count,
             _crossSideExportSent.Count, _crossSideMineExportSent.Count, _lastTeammateStatusTick.Count,
             _nextTeammateRefreshTick.Count);
@@ -1045,9 +1048,27 @@ public sealed partial class Server : IDisposable
         ship.SideId = sideId;                               // drones are side-owned in native
         ship.LifepodEnduranceOverrideSeconds = _lifepodEnduranceOverrideSeconds;   // P378: consistent live-settings override
         mission.PlaceShip(ship, sector);                    // no _peerShips entry is created
+        // P775 — native announces a new drone to the whole mission at creation
+        // (SendPlayerInfo in CreateStockDrone, FedSrv.CPP:2269; training does
+        // the same when it creates the drone's player info,
+        // trainingmission.cpp:620-623). With no peers (boot, rotation miner
+        // spawn, most tests) this sends nothing — later joiners learn the
+        // drone through the join burst (fsmission.cpp:3958-3968) instead.
+        AnnounceNewShip(ship);
         Console.WriteLine($"[npc] spawned ownerless NPC ship {shipId} side {sideId} at {position} (pilotType {pilotType})");
         return ship;
     }
+
+    /// <summary>P775 — announce a NEWLY CREATED ship (drone or joiner) to its
+    /// whole mission: native moment (1)/(3), the whole-mission audience
+    /// <c>GetGroupMission()</c> (<c>FedSrv.CPP:2129-2131</c>), regardless of
+    /// sector or visibility. Internal so <see
+    /// cref="Allegiance.SinglePlayer.Training.TrainingHost"/> can announce its
+    /// training drones exactly like native training does
+    /// (<c>trainingmission.cpp:620-623</c>). All sends stay on the sim thread
+    /// (P774 Fix 6 ordering — PLAYERINFO never overtakes its KILL_SHIP — holds
+    /// by construction).</summary>
+    internal void AnnounceNewShip(Ship ship) => AnnounceFreshShip(ship, ship.SideId ?? -2);
 
     /// <summary>Legacy name for <see cref="SendSectorWide"/> retained by the
     /// ripcord call sites; delegates to the canonical generic helper.</summary>

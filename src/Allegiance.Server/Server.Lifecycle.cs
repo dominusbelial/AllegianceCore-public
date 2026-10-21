@@ -1821,8 +1821,7 @@ public sealed partial class Server
         short departedShipId = live.Ship.Id;
         _teammateExportSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
         _stationIdentitySent.RemoveWhere(e => e.Recipient == id);
-        _teammatePlayerInfoSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
-        _missionPlayerInfoSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
+        _playerInfoSent.RemoveWhere(e => e.Recipient == id || e.ShipId == departedShipId);
         // P349 — the cross-side export latch gets the exact same treatment: free
         // every entry where the departing peer was the recipient OR the departing
         // ship was the subject, else it grows monotonically with connection churn.

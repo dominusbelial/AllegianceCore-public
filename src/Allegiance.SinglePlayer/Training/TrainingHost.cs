@@ -368,6 +368,11 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
             SideId = (short)sideId, IsNpc = true, PilotType = (byte)pilotType,
         };
         Mission.PlaceShip(ship, Mission.Sectors[0]);
+        // P775 — native training creates the drone's player info when it
+        // creates the drone (trainingmission.cpp:620-623): announce the new
+        // drone to the whole mission, exactly like CreateStockDrone
+        // (FedSrv.CPP:2269).
+        _server.AnnounceNewShip(ship);
         _drones[id] = ship;
         _droneBehaviours[id] = behaviour;      // c_wbbm* mask (createdroneaction.cpp:91-198 host intake)
         _droneStationTypes[id] = stationType;  // constructor station type (NA=-1)
