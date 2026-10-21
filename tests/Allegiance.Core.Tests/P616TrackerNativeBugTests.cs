@@ -241,11 +241,11 @@ public class P616TrackerNativeBugTests
             var wpos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
             float[] f = warp.Warp.Forward is { Length: 3 } v && (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) > 0f
                 ? v : [1f, 0f, 0f];
-            var dir = new Vector3(f[0], f[1], f[2]).Normalize();
-            float shipRadius = 0.5f * hull.Length;
-            float radius = warp.Warp.Radius + shipRadius;
-            var spawn = wpos + dir * (0.9f * radius);
-            var ship = new Ship(shipId, hull, spawn, -dir * 20f, Orientation.Identity);
+            // P776 — the aleph volume is native's cone, which lies behind the
+            // base disc (modelIGC.cpp:127-130), so enter on its backward axis.
+            var backward = AlephConeHitTest.Backward(new Vector3(f[0], f[1], f[2]));
+            var spawn = wpos + backward * (0.9f * warp.Warp.Radius);
+            var ship = new Ship(shipId, hull, spawn, -backward * 20f, Orientation.Identity);
             ship.SetFuel(partial);
             // One fuel pack riding in cargo — the warp must not consume it.
             var fp = new DataPartTypeIGC(Price: 0, TimeToBuild: 0, ModelName: "", IconName: "",

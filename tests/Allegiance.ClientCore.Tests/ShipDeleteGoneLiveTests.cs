@@ -171,16 +171,15 @@ public sealed class ShipDeleteGoneLiveTests
         Assert.True(learned < 3000, "watcher learned the departer before transit");
         Assert.False(SessionView.Of(watcher).Ents[depMe].IsNotVisible);
 
-        // Drop the warper just INSIDE the warp's collision volume, moving toward
-        // its centre — ResolveWarpCollisions fires on ANY overlap, so it transits
-        // on the next tick (the same arrangement WarpTransitServerTests uses;
-        // a plain velocity fling from outside stalls on drag). It was already
-        // visible to the watcher while parked outside, so the deletion is real.
+        // Drop the warper just INSIDE the warp's cone (P776: native's aleph
+        // volume is a base disc plus a 45° cone BEHIND it, modelIGC.cpp:127-130),
+        // moving toward its centre — ResolveWarpCollisions fires on the overlap,
+        // so it transits on the next tick. It was already visible to the watcher
+        // while parked outside, so the deletion is real.
         lock (server)
         {
-            float r = warpRadius + 0.5f * hullLen;
-            warper!.Position = warpCenter + outDir * (0.9f * r);
-            warper.Velocity = -outDir * 20f;
+            warper!.Position = warpCenter - outDir * (0.5f * warpRadius);
+            warper.Velocity = outDir * 20f;
         }
         int transited = PumpUntil(server,
             () => ServerShip(server, depMe)?.Sector?.Id != sec0!.Id, 4000);
@@ -207,8 +206,8 @@ public sealed class ShipDeleteGoneLiveTests
         var rdir = new Vector3(rfw[0], rfw[1], rfw[2]).Normalize();
         lock (server)
         {
-            warper!.Position = rc + rdir * (0.9f * (returnWarp.Warp.Radius + 0.5f * hullLen));
-            warper.Velocity = -rdir * 20f;
+            warper!.Position = rc - rdir * (0.5f * returnWarp.Warp.Radius);
+            warper.Velocity = rdir * 20f;
         }
         int backSector = PumpUntil(server,
             () => ServerShip(server, depMe)?.Sector?.Id == sec0!.Id, 4000);
@@ -283,14 +282,14 @@ public sealed class ShipDeleteGoneLiveTests
             () => Ent(SessionView.Of(alpha), bravoId, out var e) && !e.IsGone, 3000);
         Assert.True(learned < 3000, "cross-side watcher learned the departer before transit");
 
-        // Drop the bravo ship just INSIDE the warp's collision volume (any
-        // overlap transits it on the next tick), so the alpha watcher sees it
-        // disappear. Already visible via P369 identity + telemetry before.
+        // Drop the bravo ship just INSIDE the warp's cone (P776:
+        // modelIGC.cpp:127-130 — the solid is behind the base disc), so the
+        // alpha watcher sees it disappear. Already visible via P369 identity +
+        // telemetry before.
         lock (server)
         {
-            float r = warpRadius + 0.5f * hullLen;
-            warper!.Position = warpCenter + outDir * (0.9f * r);
-            warper.Velocity = -outDir * 20f;
+            warper!.Position = warpCenter - outDir * (0.5f * warpRadius);
+            warper.Velocity = outDir * 20f;
         }
         int transited = PumpUntil(server,
             () => ServerShip(server, bravoId)?.Sector?.Id != sec0!.Id, 4000);

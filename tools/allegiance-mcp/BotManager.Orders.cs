@@ -8,8 +8,10 @@ namespace Allegiance.Tools.McpSpawner;
 internal sealed partial class BotManager
 {
     // SC7 — goto hold-law constants. An aleph must be approached and HELD
-    // short of its transit sphere (warp.Radius + ship.Radius, ~110 u), never
-    // flown through (FlyWarpLeg) — the group bunches on our side of the border.
+    // short of its body (P776: native's cone, modelIGC.cpp:127-130; the old
+    // warp.Radius + ship.Radius sphere, ~110 u, is kept as a conservative
+    // standoff), never flown through (FlyWarpLeg) — the group bunches on our
+    // side of the border.
     private const float GotoWarpHoldArrival = 750f;
     private const float GotoWarpHoldBrake = 1100f;
     private const float GotoObjectHoldArrival = 550f;
@@ -126,8 +128,10 @@ internal sealed partial class BotManager
             {
                 case IgcObjectType.Warp:
                     // Aleph rally: fly to the mouth and hold JUST short of the
-                    // transit sphere (threshold = warp.Radius + ship.Radius, ~110 u)
-                    // so the group bunches on OUR side of the aleph, not crossing.
+                    // body (P776: the trigger is native's cone; the old
+                    // warp.Radius + ship.Radius sphere, ~110 u, stays a
+                    // conservative standoff) so the group bunches on OUR side
+                    // of the aleph, not crossing.
                     CombatFlyTo(bot, point, GotoWarpHoldArrival, GotoWarpHoldBrake, 0);
                     break;
                 case IgcObjectType.Ship:

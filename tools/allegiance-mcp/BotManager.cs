@@ -2531,14 +2531,14 @@ bool isThreat =
     }
 
     /// <summary>P496 — the warp-hop approach law: a warp has NO "arrival" short
-    /// of its transit sphere (the aleph transit fires at
-    /// <c>|ship−warp| ≤ warp.Radius + ship.Radius</c>; the sector pass at
-    /// <c>Sector.ResolveWarpCollisions</c> builds that threshold from the raw
-    /// wire radius — P484 measured ≈110 u here). So a bot heading for a warp
-    /// must FLY THROUGH the aleph, never be commanded to stop before it. Returns
-    /// the (arrival, brake) pair for <see cref="CombatFlyTo"/> that places the
-    /// throttle ramp INSIDE the transit sphere: the bot is still thrusting
-    /// FORWARD when it crosses the boundary and only eases off at the centre —
+    /// of its body. Native's aleph hit test is a cone — a base disc through the
+    /// centre plus a 45° cone behind it (modelIGC.cpp:127-130;
+    /// HitTest.cpp:254-283; P776) — so a bot heading for a warp must FLY THROUGH
+    /// the aleph, never be commanded to stop before it. Returns the (arrival,
+    /// brake) pair for <see cref="CombatFlyTo"/> that places the throttle ramp
+    /// INSIDE the old raw-radius sphere (<c>warp.Radius + ship.Radius</c>, the
+    /// P484 ≈110 u figure, kept as a conservative standoff): the bot is still
+    /// thrusting FORWARD when it crosses the rim and only eases off at the centre —
     /// which is exactly what a slow board hull (Hvy Troop Transport id 26,
     /// accel 15.0) needs to enter the volume instead of parking 90 u outside it
     /// (P490's "park at the aleph", blamed there on hull maneuverability but

@@ -22,19 +22,27 @@ internal sealed record GeneratedWarpEntry(
             var forward = new Vector3(f[0], f[1], f[2]);
             if (forward.LengthSquared() == 0) forward = new Vector3(1, 0, 0);
             forward = forward.Normalize();
-            Vector3[] directions = [forward, -forward, new(1, 0, 0), new(-1, 0, 0),
-                new(0, 1, 0), new(0, -1, 0), new(0, 0, 1), new(0, 0, -1)];
-            foreach (var direction in directions)
+            // P776 — the aleph volume is native's cone (modelIGC.cpp:127-130;
+            // HitTest.cpp:254-283): a base disc through the centre plus a 45°
+            // cone BEHIND it. A clear entry pose must sit inside that cone, so
+            // walk the backward axis (z = 0..R), never the front side.
+            var backward = AlephConeHitTest.Backward(forward);
+            var holding = center + backward * (warp.Warp.Radius + 500f);
+            // Three points on the cone axis: middle, near the disc, near the apex.
+            Vector3[] entries =
+            [
+                center + backward * (.5f * warp.Warp.Radius),
+                center + backward * (.25f * warp.Warp.Radius),
+                center + backward * (.75f * warp.Warp.Radius),
+            ];
+            foreach (var entry in entries)
             {
-                float radius = warp.Warp.Radius + shipRadius;
-                var entry = center + direction * (.75f * radius);
-                var holding = center + direction * (radius + 500f);
                 // Include the short forward sweep used by the first transit tick.
-                if (!Clear(sector, entry, shipRadius) || !Clear(sector, entry - direction * 4f, shipRadius)
+                if (!Clear(sector, entry, shipRadius) || !Clear(sector, entry - backward * 4f, shipRadius)
                     || !Clear(sector, holding, shipRadius)) continue;
                 if (sector.Warps.Any(w => Near(holding, w, shipRadius)
                     || (!ReferenceEquals(w, warp) && Near(entry, w, shipRadius)))) continue;
-                return new(sector, warp, holding, entry, -direction * 20f);
+                return new(sector, warp, holding, entry, -backward * 20f);
             }
         }
         throw new InvalidOperationException("generated map has no unobstructed warp entry for the transit fixture");

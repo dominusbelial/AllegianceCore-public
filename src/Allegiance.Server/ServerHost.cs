@@ -1558,13 +1558,17 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         //    Sector.WarpVisualScale·Radius term (added by P238 to land the exit
         //    outside a visually-scaled destination collision sphere) is a leftover
         //    whose rationale is gone: P244 reverted the real transit trigger to the
-        //    raw warp.Radius + shipRadius (Sector.cs:2729) and P247 shrank the
-        //    render funnel to 2.5×, so nothing scales the destination sphere
-        //    anymore. Native likewise exits only shipRadius+5 — which actually sits
-        //    INSIDE the destination warp's own raw collision sphere — and the
-        //    re-trigger ping-pong P238 feared is prevented by the 2 s
-        //    LastWarpTime / WarpCooldownSeconds debounce (Sector.cs:2716,
-        //    native m_warpState, fsship.cpp:74,1185-1191), not by exit distance.
+        //    raw warp.Radius (Sector.cs ResolveWarpCollisions) and P247 shrank the
+        //    render funnel to 2.5×. P776 corrected the rest of the picture: the
+        //    aleph trigger is native's c_htsCone (modelIGC.cpp:127-130;
+        //    HitTest.cpp:254-283) — a base disc through the centre plus a 45° cone
+        //    behind it — so this exit point (centre shipRadius+5 IN FRONT of the
+        //    disc) lies OUTSIDE the destination aleph's collision volume, not
+        //    inside a sphere. The old port comment claimed native exits inside its
+        //    raw collision sphere and is protected only by the 2 s debounce; that
+        //    was wrong. No re-trigger here, and the 2 s window
+        //    (LastWarpTime / WarpCooldownSeconds) is native's player re-arm
+        //    (fsship.cpp:1185-1191), not the re-entry protection.
         float upOff = (float)_rand.Next(20, 51) / 10f;      // 2.0..5.0
         float rightOff = (float)_rand.Next(20, 51) / 10f;   // 2.0..5.0
         var destPos = partner.Warp.Position is { Length: 3 } p

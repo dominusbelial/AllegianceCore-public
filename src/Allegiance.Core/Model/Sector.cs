@@ -947,7 +947,7 @@ public sealed class Sector : IClusterIgc
         // Warp-transit proximity pass — a stationary-object test (ship vs the
         // sector's warps), deliberately separate from the moving-object combat
         // collider above. See ResolveWarpCollisions for the spec and scope.
-        { using (TickProfiler.Enter("sim.warp")) ResolveWarpCollisions(timeUpdate); }
+        { using (TickProfiler.Enter("sim.warp")) ResolveWarpCollisions(timeUpdate, (float)dt); }
 
         // Warp-bomb (missile vs warp) trigger pass + its scheduled-detonation
         // half. A real missile reaching a warp arms a WARP_BOMB(188) broadcast
@@ -1774,32 +1774,40 @@ public sealed class Sector : IClusterIgc
     }
 
     /// <summary>
-    /// The warp-transit debounce window, in seconds — the port of the C++
-    /// <c>CFSShip::m_warpState</c> re-arm fudge (<c>fsship.cpp:1188</c>:
-    /// <c>m_timeNextWarp = g.timeNow + 2.0f</c>). A ship that crosses an aleph
-    /// cannot cross again until this much sim-time elapses, mirroring native's
-    /// <c>warpNoUpdate → warpWaiting → warpReady</c> cycle collapsed to a single
-    /// threshold. Compared against <see cref="Ship.LastWarpTime"/>.
+    /// The warp-transit debounce window, in seconds — native's <b>player</b>
+    /// re-arm (<c>CFSShip::m_warpState</c>, <c>fsship.cpp:1185-1191</c>:
+    /// <c>m_timeNextWarp = g.timeNow + 2.0f</c> after the first accepted update
+    /// following a jump). A ship that crosses an aleph cannot cross again until
+    /// this much sim-time elapses, collapsing native's <c>warpNoUpdate →
+    /// warpWaiting → warpReady</c> cycle into one threshold. Compared against
+    /// <see cref="Ship.LastWarpTime"/>.
+    /// <para>P776: this window is <b>not</b> what prevents re-entry — native's
+    /// geometry does (the exit places the ship 5&nbsp;u in front of the
+    /// destination disc, outside the aleph's cone; <c>fsship.cpp:129-132</c>,
+    /// <see cref="AlephConeHitTest"/>). Native drones never leave
+    /// <c>warpReady</c> (<c>fsship.cpp:79-82</c>) and have no cooldown at all;
+    /// the NPC use of this constant is <b>port-only</b> and is left in place
+    /// (removing it is out of P776's scope).</para>
     /// </summary>
     public const double WarpCooldownSeconds = 2.0;
 
     /// <summary>
     /// P591c — the P591b warp re-entry guard is a <b>non-native safety net</b>,
-    /// not a faithful port of anything in native: native only has the flat
-    /// <c>m_warpState</c> timer (<c>fsship.cpp:1185-1191</c>) and no arrival-warp
-    /// memory — a native drone simply never turns back toward the aleph it just
-    /// came through (its <c>GotoPlan</c> aims at the next waypoint and the exit
-    /// push carries it clear). The guard was added in P591b to stop a real,
-    /// measured bounce caused by a routing bug this port had; once that root
-    /// cause is fixed (P591c) the guard should fire ≈0 times and acts purely as
-    /// insurance. It is therefore <b>OPT-IN and OFF by default</b> (native needs
-    /// no such rule): opt in via the server config flag
-    /// <c>ServerConfig.WarpReEntryGuard</c> (a.k.a. <c>--warpReEntryGuard</c>)
-    /// or by setting this static directly (the <b>test seam</b> that lets tests
-    /// and the live proof switch the guard for demonstration). The guard's code
-    /// and the <c>Ship.NumWarpReEntryBlocks</c> counter remain in place so
-    /// opting in is a one-line switch and a regression that reintroduces
-    /// re-entry still surfaces as a non-zero block counter.</summary>
+    /// not a faithful port of anything in native: native has the player re-arm
+    /// timer (<c>fsship.cpp:1185-1191</c>), no cooldown at all for drones
+    /// (<c>fsship.cpp:79-82</c>), and no arrival-warp memory — a native ship
+    /// simply does not re-trigger because the exit geometry leaves it clear of
+    /// the aleph's cone (<c>fsship.cpp:129-132</c>; <see cref="AlephConeHitTest"/>,
+    /// P776). The guard was added in P591b to stop a real, measured bounce caused
+    /// by a routing bug this port had; once that root cause is fixed (P591c) the
+    /// guard should fire ≈0 times and acts purely as insurance. It is therefore
+    /// <b>OPT-IN and OFF by default</b> (native needs no such rule): opt in via
+    /// the server config flag <c>ServerConfig.WarpReEntryGuard</c> (a.k.a.
+    /// <c>--warpReEntryGuard</c>) or by setting this static directly (the
+    /// <b>test seam</b> that lets tests and the live proof switch the guard for
+    /// demonstration). The guard's code and the <c>Ship.NumWarpReEntryBlocks</c>
+    /// counter remain in place so opting in is a one-line switch and a regression
+    /// that reintroduces re-entry still surfaces as a non-zero block counter.</summary>
     public static bool WarpReEntryGuardEnabled { get; set; } = false;
 
     /// <summary>Native default (missionigc.cpp:2777), retained for existing
@@ -3796,51 +3804,66 @@ public sealed class Sector : IClusterIgc
     /// The <b>warp-transit trigger</b> pass, run once per sector tick after the
     /// combat pass. This is the C# analogue of the warp half of
     /// <c>CshipIGC::HandleCollision</c> (<c>shipIGC.cpp:629-636</c>): a ship
-    /// whose position lies within a warp's collision volume is considered to
+    /// whose bounding sphere touches a warp's hit-test shape is considered to
     /// have hit the aleph, and the host's <see cref="IIgcSite.HitWarpEvent"/>
     /// is raised so the seam can perform the actual transit (position /
     /// orientation / velocity change + sector reassignment,
     /// <c>CFSShip::HitWarp</c>, <c>fsship.cpp:71-137</c>).
     /// </summary>
     /// <remarks>
-    /// <para><b>Deliberately simpler than <see cref=\"ResolveCombatCollisions\"/>.</b>
-    /// A warp is stationary — there is no moving-object swept collision to
-    /// resolve, just a point-in-sphere test each tick: <c>|ship − warp| ≤
-    /// warp.Radius + ship.Radius</c>. No <see cref=\"CollisionDetector\"/> is
-    /// needed. This matches the task's own guidance (a warp is not a ship; the
-    /// symmetric solver is overkill for a fixed trigger volume).</para>
-    /// <para><b>Trigger radius (P244).</b> The transit fires at the warp's real
-    /// raw <c>warp.Radius</c> plus the ship radius — a tight physics collision
-    /// mirroring native's real trigger at <c>GetRadius()</c>
-    /// (<c>shipIGC.cpp:629-636</c>), with <em>no</em>
-    /// <see cref=\"WarpVisualScale\"/> multiplier. P238 had widened this to
+    /// <para><b>Native shape: a cone, not a sphere (P776).</b> Native loads an
+    /// aleph's hit test with <c>c_htsCone</c> (<c>Igc/modelIGC.cpp:127-130</c>);
+    /// <c>BoundingCone::GetExtreme</c> (<c>_Utility/HitTest.cpp:254-283</c>) is
+    /// the support function of a base disc of radius <c>warp.Radius</c> through
+    /// the centre (perpendicular to forward) plus a 45° cone behind it whose
+    /// apex is at <c>centre + Radius·backward</c> (<c>_Utility/HitTest.cpp:878-879</c>;
+    /// <c>zlib/orientation.h:83-92</c> — local +z is backward). Nothing of the
+    /// solid lies in front of the disc. The trigger here is the ship bounding
+    /// sphere vs that cone, via <see cref="AlephConeHitTest"/>; the old
+    /// point-in-sphere test (<c>|ship − warp| ≤ warp.Radius + shipRadius</c>)
+    /// was a ~110&nbsp;u ball on BOTH sides of the disc, so a native-exact exit —
+    /// centre <c>shipRadius+5</c> in front of the destination disc
+    /// (<c>fsship.cpp:129-132</c>) — was inside it and re-triggered as soon as
+    /// the re-arm fired (the measured 1.9–2.0&nbsp;s Tellus↔Omega bounce).</para>
+    /// <para><b>Swept per chunk.</b> Native's test is continuous over the tick
+    /// interval (<c>_Utility/HitTest.cpp:114-207</c>, <c>HullCollide</c>); a
+    /// single end-of-chunk sample can tunnel through the cone's thin rim. The
+    /// trigger therefore samples the segment the ship swept this chunk
+    /// (<c>Position − CollisionVelocity·dt</c> to <c>Position</c>, the same
+    /// pattern as <see cref="ResolveTreasurePickups"/>) at a spacing of at most
+    /// the ship radius (capped at 16 samples) and fires on the first sample that
+    /// touches. A cheap broad phase — <c>|ship − warp| ≤ Radius + shipRadius +
+    /// |v|·dt</c> — skips the cone math when even the sweep cannot reach.</para>
+    /// <para><b>No closing-velocity gate.</b> Native produces a collision even
+    /// while the objects separate (<c>_Utility/HitTest.cpp:166-185</c>); the
+    /// "not closing: ignore / hit the back: bounce" branch is commented out
+    /// (<c>Igc/shipIGC.cpp:638-715</c>) and <c>HitWarpEvent</c> fires
+    /// unconditionally (<c>Igc/shipIGC.cpp:629-636</c>). A ship parked at the
+    /// centre warps; no velocity test is applied here either.</para>
+    /// <para><b>Trigger radius (P244 / P776).</b> The warp's real raw
+    /// <c>warp.Radius</c> plus the ship radius, with <em>no</em>
+    /// <see cref="WarpVisualScale"/> multiplier. P238 had widened this to
     /// <c>WarpVisualScale·warp.Radius + shipRadius</c> (~950&nbsp;units for a
-    /// 100-unit warp) so the whole visible funnel rim was crossable — which made
-    /// transit fire while the player was still at the funnel's outer edge and the
-    /// aleph vanish mid-approach (the "it disappears as you approach it" bug this
-    /// stage fixes). The render funnel stays at
-    /// <see cref=\"WarpVisualScale\"/> (9.5&times;) but the trigger is decoupled:
-    /// a ship must actually reach the warp's real body, so the aleph is deeply
-    /// enveloping/large-in-frame at the moment it stops rendering.</para>
-    /// <para><b>Debounce</b> (native <c>m_warpState</c>,
-    /// <c>fsship.cpp:74,1185-1191</c>): a ship that crossed <em>must not</em>
-    /// re-trigger every tick while it lingers inside the volume. The transit
-    /// repositions the ship away from the source warp and reassigns its
-    /// <see cref=\"Ship.Sector\"/>, so the natural geometry largely debounces
-    /// it; the <see cref=\"Ship.LastWarpTime\"/> /
-    /// <see cref=\"WarpCooldownSeconds\"/> window is the belt-and-braces that
-    /// collapses native's <c>warpNoUpdate → warpWaiting → warpReady</c> state
-    /// machine into one threshold, kept on the ship so it survives the sector
-    /// transfer (the destination sector's own warp must not swallow the ship
-    /// right back). The window is set by the host transit on the sim thread,
-    /// mirroring native's "only re-arm after a client update + 2 s".</para>
+    /// 100-unit warp), which fired transit while the player was still at the
+    /// funnel's outer edge (the "it disappears as you approach it" bug). P244
+    /// reverted to the raw radius; P776 replaced the sphere with native's cone.</para>
+    /// <para><b>Debounce</b> (native player re-arm,
+    /// <c>fsship.cpp:74,1185-1191</c>): a player that crossed goes
+    /// <c>warpNoUpdate → warpWaiting → warpReady</c> after an accepted update and
+    /// another ~2&nbsp;s. The <see cref="Ship.LastWarpTime"/> /
+    /// <see cref="WarpCooldownSeconds"/> window stands in for that handshake and
+    /// is kept on the ship so it survives the sector transfer. It is <b>not</b>
+    /// what prevents re-entry: geometry does (the native exit sits 5&nbsp;u in
+    /// front of the disc, clear of the cone). Native drones never leave
+    /// <c>warpReady</c> (<c>fsship.cpp:79-82</c>) and have no cooldown at all; the
+    /// NPC cooldown here is port-only (see <see cref="WarpCooldownSeconds"/>).</para>
     /// <para><b>Scope.</b> Single-ship, per-sector: only ships physically in
-    /// this sector (<see cref=\"_models\"/>) are tested, and each fires at most
+    /// this sector (<see cref="_models"/>) are tested, and each fires at most
     /// one warp per tick (the <c>break</c>), matching the C++ single-owner
-    /// collision event. A dangling warp (<see cref=\"ResolvedWarp.Destination\"/>
+    /// collision event. A dangling warp (<see cref="ResolvedWarp.Destination"/>
     /// null) or one lacking a position is skipped, never fabricated.</para>
     /// </remarks>
-    private void ResolveWarpCollisions(double now)
+    private void ResolveWarpCollisions(double now, float dt)
     {
         if (_warps.Count == 0) return;              // no alephs to hit
         foreach (var model in _models.ToArray())    // snapshot survives self-transit (remove from this sector)
@@ -3902,15 +3925,15 @@ public sealed class Sector : IClusterIgc
                 // WarpReEntryGuardEnabled): a ship must not immediately
                 // bounce back out through the SAME aleph it just arrived via
                 // while still inside its transit volume. Native never needs such
-                // a rule (its GotoPlan flies through the warp at speed and the
-                // exit push clears the arrival aleph within the ~2 s m_warpState
-                // re-arm); the flat LastWarpTime cooldown alone lets a slow
-                // ship linger and flip back — the measured mine-layer ping-pong
-                // the P591c routing fix removes at the source. The latch is
-                // released above the moment the ship clears the volume. The
-                // P591c routing fix makes the guard fire ≈0 times in practice;
-                // it is therefore OPT-IN and OFF by default (P594), armed only
-                // when the operator enables WarpReEntryGuard.
+                // a rule: the exit geometry leaves the ship 5 u in front of the
+                // destination disc, clear of the cone (fsship.cpp:129-132; P776
+                // AlephConeHitTest), and the player re-arm timer
+                // (fsship.cpp:1185-1191) merely re-arms — it is not what
+                // prevents re-entry. This guard predates that geometry fix; the
+                // P591c routing fix makes it fire ≈0 times in practice, so it is
+                // OPT-IN and OFF by default (P594), armed only when the operator
+                // enables WarpReEntryGuard. The latch is released above the
+                // moment the ship clears the volume.
                 if (Sector.WarpReEntryGuardEnabled && ship.LastArrivalWarpId == warp.Warp.WarpId
                     && ship.IntendedNextWarpId != warp.Warp.WarpId)
                 {
@@ -3933,11 +3956,38 @@ public sealed class Sector : IClusterIgc
                     continue;
                 }
                 var wpos = new Vector3(p[0], p[1], p[2]);
-                float dx = ship.Position.X - wpos.X;
-                float dy = ship.Position.Y - wpos.Y;
-                float dz = ship.Position.Z - wpos.Z;
-                float threshold = warp.Warp.Radius + shipRadius;  // P244: raw collision radius (no WarpVisualScale); see remarks
-                if (dx * dx + dy * dy + dz * dz <= threshold * threshold)
+                var wfwd = warp.Warp.Forward is { Length: 3 } wf
+                    ? new Vector3(wf[0], wf[1], wf[2])
+                    : new Vector3(0f, 0f, -1f);
+                float warpRadius = warp.Warp.Radius;            // P244: raw radius, no WarpVisualScale
+
+                // P776 — swept ship sphere vs the aleph cone. Native's
+                // HullCollide is continuous over the tick interval
+                // (HitTest.cpp:114-207), so walk the segment this chunk's
+                // motion swept (Position − CollisionVelocity·dt → Position, the
+                // ResolveTreasurePickups pattern) and fire on the first
+                // contact; an end-of-chunk sample alone can tunnel through the
+                // cone's thin rim.
+                var end = ship.Position;
+                var travelVec = ship.CollisionVelocity * dt;
+                var start = end - travelVec;
+                float travel = travelVec.Length();
+                // Cheap broad phase: no cone point is farther than
+                // Radius+shipRadius from the centre, so a sweep that never gets
+                // within that plus its own travel cannot touch.
+                if ((end - wpos).Length() > warpRadius + shipRadius + travel) continue;
+                int steps = Math.Clamp((int)MathF.Ceiling(travel / MathF.Max(shipRadius, 1f)), 1, 16);
+                bool touched = false;
+                for (int i = 0; i <= steps; i++)
+                {
+                    var sample = start + travelVec * (i / (float)steps);
+                    if (AlephConeHitTest.Touches(wpos, wfwd, warpRadius, sample, shipRadius))
+                    {
+                        touched = true;
+                        break;
+                    }
+                }
+                if (touched)
                 {
                     ship.Mission.Site.HitWarpEvent(ship, warp);
                     break;                          // one warp per tick per ship
@@ -3952,11 +4002,13 @@ public sealed class Sector : IClusterIgc
     /// trigger <c>CmissileIGC::HandleCollision</c> (<c>missileigc.cpp:459-467</c>):
     /// a missile that has the warp-bomb capability and collides with a warp
     /// (instead of a ship) raises <c>IIgcSite.WarpBombEvent</c> rather than
-    /// dealing damage. It mirrors <see cref="ResolveWarpCollisions"/>'s shape
-    /// (a warp is stationary — a point-in-sphere test each tick:
-    /// <c>|missile − warp| ≤ warp.Radius + missile.Radius</c>, the same
-    /// target-radius-plus-source-radius convention the mine/warp/mining passes
-    /// use) but is a <b>dedicated pass</b>, not a parameterized variant of
+    /// dealing damage. Unlike <see cref="ResolveWarpCollisions"/> (which since
+    /// P776 uses native's cone, <see cref="AlephConeHitTest"/>), this pass is
+    /// still a point-in-sphere test each tick:
+    /// <c>|missile − warp| ≤ warp.Radius + missile.Radius</c>, the target-radius-
+    /// plus-source-radius convention the mine/warp/mining passes use. Native's
+    /// warp hit test is the same cone for missiles (P776 follow-up candidate).
+    /// This is a <b>dedicated pass</b>, not a parameterized variant of
     /// <see cref="ResolveWarpCollisions"/>: the two share only the outer
     /// <c>for each model × for each warp</c> loop, and the body is wholly
     /// different (ship debounce/transit vs. missile consumption + scheduling +

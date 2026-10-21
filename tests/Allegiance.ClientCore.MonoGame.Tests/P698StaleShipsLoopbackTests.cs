@@ -136,8 +136,11 @@ public class P698StaleShipsLoopbackTests
         Assert.NotEmpty(particles.Engines.Enumerate());
         if (scenario == "warp-and-die")
         {
-            subject.Position = centre + direction * (.9f * (warp!.Warp.Radius + subject.HullType.Length / 2));
-            subject.Velocity = -direction * 20;
+            // P776 — native's aleph volume is a cone BEHIND the base disc
+            // (modelIGC.cpp:127-130), so enter on its backward axis; the ship
+            // then flies forward through the disc.
+            subject.Position = centre - direction * (.5f * warp!.Warp.Radius);
+            subject.Velocity = direction * 20;
             Pump(server, () => subject.Sector != origin, "subject really warped");
             subject.Mission!.Site.KillShipEvent(0, subject, null, -1, subject.Position, Vector3.Zero);
         }

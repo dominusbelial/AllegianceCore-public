@@ -11,12 +11,15 @@ namespace Allegiance.Core.Tests;
 /// of the P41 warp-transit slice. <see cref="Sector.ResolveWarpCollisions"/>
 /// (the C# analogue of the warp arm of <c>CshipIGC::HandleCollision</c>,
 /// <c>shipIGC.cpp:629-636</c>) must raise the site's
-/// <see cref="IIgcSite.HitWarpEvent"/> exactly when a ship's position lies
-/// within a warp's collision volume — <c>|ship − warp| ≤ warp.Radius +
-/// ship.Radius</c> — and must stay silent outside it. The actual transit is the
-/// host's job (<see cref="ServerHost.HitWarpEvent"/>), exercised separately by
-/// the loopback test; here a <see cref="RecordingIgcSite"/> witnesses only the
-/// trigger, so the geometry is proven independent of the network host.
+/// <see cref="IIgcSite.HitWarpEvent"/> exactly when the ship's bounding sphere
+/// touches the warp's native hit-test shape — <b>P776: a cone</b>, a base disc
+/// of radius <c>warp.Radius</c> through the centre plus a 45° cone behind it
+/// (<c>Igc/modelIGC.cpp:127-130</c>; <c>_Utility/HitTest.cpp:254-283</c>;
+/// <see cref="AlephConeHitTest"/>) — and must stay silent outside it. The actual
+/// transit is the host's job (<see cref="ServerHost.HitWarpEvent"/>), exercised
+/// separately by the loopback test; here a <see cref="RecordingIgcSite"/>
+/// witnesses only the trigger, so the geometry is proven independent of the
+/// network host.
 /// </summary>
 public class WarpProximityTests
 {
@@ -65,6 +68,23 @@ public class WarpProximityTests
     private static ResolvedWarp EntryWarp(Sector sector) =>
         sector.Warps.First(w => w.Destination is not null && w.Warp.Position is { Length: 3 });
 
+    private static Vector3 WarpPosition(ResolvedWarp warp) =>
+        new(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
+
+    private static Vector3 WarpForward(ResolvedWarp warp) =>
+        warp.Warp.Forward is { Length: 3 } f ? new Vector3(f[0], f[1], f[2]) : new Vector3(0f, 0f, -1f);
+
+    /// <summary>The cone's local +z axis (native orientation backward row).</summary>
+    private static Vector3 WarpBackward(ResolvedWarp warp) => AlephConeHitTest.Backward(WarpForward(warp));
+
+    /// <summary>A unit vector on the base disc (perpendicular to forward).</summary>
+    private static Vector3 WarpSide(ResolvedWarp warp)
+    {
+        var side = Vector3.CrossProduct(WarpForward(warp), new Vector3(0f, 1f, 0f));
+        if (side.LengthSquared() < 1e-6f) side = Vector3.CrossProduct(WarpForward(warp), new Vector3(1f, 0f, 0f));
+        return side.Normalize();
+    }
+
     private static Ship NewShip(short id, DataHullTypeIGC hull, Vector3 position) =>
         new(id, hull, position, Vector3.Zero, Orientation.Identity);
 
@@ -86,14 +106,14 @@ public class WarpProximityTests
         Require.Artwork();
         var sector = NewStartedSector(out var mission, out var site);
         var warp = EntryWarp(sector);
-        var warpPos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
+        var warpPos = WarpPosition(warp);
         var hull = Core.Value.HullTypes.Values.OrderBy(h => h.HullId).First();
         float shipRadius = 0.5f * hull.Length;
 
-        // Centre the ship a comfortable distance inside the volume (well under
-        // radius+shipR), not at the exact edge where float rounding could flip it.
-        var inward = new Vector3(0f, 1f, 0f);   // an arbitrary non-parallel offset
-        var pos = warpPos + inward * Math.Max(1f, 0.3f * warp.Warp.Radius);
+        // P776 — the trigger is the cone, so sit ON its axis behind the disc (a
+        // point in front of the disc is outside native's shape). Comfortably
+        // inside, not at the exact edge where float rounding could flip it.
+        var pos = warpPos + WarpBackward(warp) * Math.Max(1f, 0.3f * warp.Warp.Radius);
 
         var ship = NewShip(8101, hull, pos);
         mission.PlaceShip(ship, sector);
@@ -103,13 +123,13 @@ public class WarpProximityTests
         Assert.True(HitWarpEvents(site) >= 1, "a ship inside a warp's radius must trigger HitWarpEvent");
     }
 
-    /// <summary>⭐ A ship placed just INSIDE the tight raw collision radius
-    /// (<c>0.9 · (warp.Radius + shipRadius)</c>) triggers — the trigger engages
-    /// near the boundary, not only dead-centre, so a ship that actually reaches
-    /// the warp's real body reliably crosses (the anti-regression half of P244:
-    /// transit must still fire). Together with
-    /// <see cref="ShipOutsideWarpRadius_NeverTriggersHitWarpEvent"/> this
-    /// brackets the P244 trigger onto <c>warp.Radius + shipRadius</c>.</summary>
+    /// <summary>⭐ A ship placed on the base disc just INSIDE the rim
+    /// (<c>rho = 0.9 · warp.Radius</c>, <c>z = 0</c>) triggers — the trigger
+    /// engages near the cone's boundary, not only dead-centre, so a ship that
+    /// actually reaches the warp's real body reliably crosses. P776: the old
+    /// sphere probe sat at <c>0.9 · (warp.Radius + shipRadius)</c> on an
+    /// arbitrary axis, which the cone owns only if it happens to be behind the
+    /// disc; the placement moved onto the base disc.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void ShipJustInsideRawRadius_TriggersHitWarpEvent()
@@ -117,16 +137,17 @@ public class WarpProximityTests
         Require.Artwork();
         var sector = NewStartedSector(out var mission, out var site);
         var warp = EntryWarp(sector);
-        var warpPos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
+        var warpPos = WarpPosition(warp);
         var hull = Core.Value.HullTypes.Values.OrderBy(h => h.HullId).First();
         float shipRadius = 0.5f * hull.Length;
 
-        // Comfortably inside the raw threshold (10% margin off the boundary —
-        // enough that float rounding can't flip it), on an off-axis offset so
-        // it is unambiguously a 3-D sphere test.
+        // On the base disc, 10% inside the rim: inside the triangle in
+        // (rho, z), and 10% of the radius off the boundary so float rounding
+        // cannot flip it.
         float rawThreshold = warp.Warp.Radius + shipRadius;
-        var inward = new Vector3(1f, 1f, 0f).Normalize();
-        var pos = warpPos + inward * (0.9f * rawThreshold);
+        float rho = 0.9f * warp.Warp.Radius;
+        Assert.True(rho < rawThreshold, "precondition: the probe sits inside the old raw sphere");
+        var pos = warpPos + WarpSide(warp) * rho;
 
         var ship = NewShip(8105, hull, pos);
         mission.PlaceShip(ship, sector);
@@ -134,14 +155,14 @@ public class WarpProximityTests
         TickN(mission, 5);
 
         Assert.True(HitWarpEvents(site) >= 1,
-            $"a ship at 0.9·({rawThreshold:F1}) = {0.9f * rawThreshold:F1} from the warp centre must trigger HitWarpEvent");
+            $"a ship on the disc at rho = 0.9·R ({rho:F1}) must trigger HitWarpEvent (native cone, P776)");
     }
 
-    /// <summary>⭐ A ship placed just OUTSIDE the real raw warp collision radius
-    /// (<c>warp.Radius + shipRadius</c> — P244's tight native-faithful trigger)
-    /// never triggers, even after several ticks of dwell. This pins the UPPER
-    /// bound of the trigger: it is the raw collision sphere, not the P238-scaled
-    /// <c>WarpVisualScale·radius</c> one.</summary>
+    /// <summary>⭐ A ship placed just OUTSIDE the cone along the only axis it
+    /// extends (its backward axis, past the apex) never triggers, even after
+    /// several ticks of dwell. Together with the inside cases this pins the
+    /// cone's extent; the P238 <c>WarpVisualScale·radius</c> volume is still
+    /// far larger and never triggers.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void ShipOutsideWarpRadius_NeverTriggersHitWarpEvent()
@@ -149,17 +170,15 @@ public class WarpProximityTests
         Require.Artwork();
         var sector = NewStartedSector(out var mission, out var site);
         var warp = EntryWarp(sector);
-        var warpPos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
+        var warpPos = WarpPosition(warp);
         var hull = Core.Value.HullTypes.Values.OrderBy(h => h.HullId).First();
         float shipRadius = 0.5f * hull.Length;
 
-        // A slim margin just beyond the RAW collision radius (warp.Radius +
-        // shipRadius + 5% of radius) on a diagonal, so it is unambiguous that
-        // the ship is outside the tight P244 trigger sphere yet would be deep
-        // inside the P238-scaled ~9.5x volume.
+        // Just beyond the apex along the cone's own axis: radius + shipRadius
+        // (+ a margin) is beyond the furthest cone point, so this is outside
+        // native's shape while still deep inside the P238-scaled ~9.5x volume.
         float gap = warp.Warp.Radius + shipRadius + MathF.Max(10f, 0.05f * warp.Warp.Radius);
-        var outward = new Vector3(1f, 1f, 1f).Normalize();
-        var pos = warpPos + outward * gap;
+        var pos = warpPos + WarpBackward(warp) * gap;
 
         var ship = NewShip(8102, hull, pos);
         mission.PlaceShip(ship, sector);
@@ -186,13 +205,14 @@ public class WarpProximityTests
         Require.Artwork();
         var sector = NewStartedSector(out var mission, out var site);
         var warp = EntryWarp(sector);
-        var warpPos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
+        var warpPos = WarpPosition(warp);
         var hull = Core.Value.HullTypes.Values.OrderBy(h => h.HullId).First();
         float shipRadius = 0.5f * hull.Length;
 
         float rawThreshold = warp.Warp.Radius + shipRadius;                        // P244 (tight, native-faithful) trigger
         float visualThreshold = Sector.WarpVisualScale * warp.Warp.Radius + shipRadius; // the P238-widened volume (visual-matched)
-        // Halfway between the two: INSIDE the old P238 volume, OUTSIDE the raw one.
+        // Halfway between the two: INSIDE the old P238 volume, OUTSIDE the raw
+        // one — and, since it is beyond the apex, outside native's cone too.
         float dist = 0.5f * (rawThreshold + visualThreshold);
 
         Assert.True(dist > rawThreshold,
@@ -200,13 +220,44 @@ public class WarpProximityTests
         Assert.True(dist < visualThreshold,
             "precondition: the probe must sit strictly inside the P238 visual-matched volume");
 
-        var ship = NewShip(8104, hull, warpPos + new Vector3(0f, 1f, 0f) * dist);
+        var ship = NewShip(8104, hull, warpPos + WarpBackward(warp) * dist);
         mission.PlaceShip(ship, sector);
 
         TickN(mission, 5);
 
         Assert.True(HitWarpEvents(site) == 0,
             $"a ship at dist {dist:F1} (between raw {rawThreshold:F1} and visual {visualThreshold:F1}) must NOT trigger under P244's decoupled raw trigger");
+    }
+
+    /// <summary>⭐ P776 — a ship in FRONT of the disc, inside the old ~110 u
+    /// raw sphere, is outside native's cone and must NOT trigger. This is the
+    /// exact spot the host's native-faithful exit places a ship (centre
+    /// <c>shipRadius+5</c> in front of the disc, <c>fsship.cpp:129-132</c>), and
+    /// the reason the batch-16 rig bounced every 2 s. Fails on the unfixed
+    /// sphere code; passes on the cone.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Ship_in_front_of_the_disc_inside_the_old_sphere_does_not_trigger()
+    {
+        Require.Artwork();
+        var sector = NewStartedSector(out var mission, out var site);
+        var warp = EntryWarp(sector);
+        var warpPos = WarpPosition(warp);
+        var hull = Core.Value.HullTypes.Values.OrderBy(h => h.HullId).First();
+        float shipRadius = 0.5f * hull.Length;
+
+        // Half the old sphere radius in front of the disc: well inside the old
+        // sphere (so it fired before P776) but with z well below zero, outside
+        // the cone.
+        float distance = 0.5f * (warp.Warp.Radius + shipRadius);
+        var pos = warpPos + WarpForward(warp).Normalize() * distance;
+
+        var ship = NewShip(8106, hull, pos);
+        mission.PlaceShip(ship, sector);
+
+        TickN(mission, 5);
+
+        Assert.Equal(0, HitWarpEvents(site));
     }
 
     /// <summary>⭐ The debounce window (native <c>m_warpState</c>,
@@ -221,10 +272,11 @@ public class WarpProximityTests
         Require.Artwork();
         var sector = NewStartedSector(out var mission, out var site);
         var warp = EntryWarp(sector);
-        var warpPos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
+        var warpPos = WarpPosition(warp);
         var hull = Core.Value.HullTypes.Values.OrderBy(h => h.HullId).First();
 
-        var ship = NewShip(8103, hull, warpPos + new Vector3(0f, 1f, 0f) * Math.Max(1f, 0.3f * warp.Warp.Radius));
+        // P776: inside the cone (behind the disc), where the trigger would fire.
+        var ship = NewShip(8103, hull, warpPos + WarpBackward(warp) * Math.Max(1f, 0.3f * warp.Warp.Radius));
         mission.PlaceShip(ship, sector);
 
         // Mark it as having just warped this sim-instant (the host does this on

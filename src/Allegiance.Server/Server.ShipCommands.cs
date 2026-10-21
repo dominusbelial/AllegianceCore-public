@@ -2015,15 +2015,17 @@ public sealed partial class Server
         var f = w.Warp.Forward;
         Vector3 forward = f is { Length: 3 } ? new Vector3(f[0], f[1], f[2]) : new Vector3(0f, 0f, 1f);
         if (forward.LengthSquared() < 1e-6f) forward = new Vector3(0f, 0f, 1f);
-        // P591 — the lay point must CLEAR the warp's transit volume, or the drone
+        // P591 — the lay point must CLEAR the warp's body, or the drone
         // approaching its lay point flies into the aleph and warps through it
         // forever (measured live: the layer ping-ponged Omega(1053)<->Alderan(1052)
         // via the very warp it was ordered to lay at, never reaching the field).
-        // The transit fires at warp.Radius + shipRadius (Sector.cs:3249-3251,
-        // shipIGC.cpp:629-636), so the field is placed a full mine-radius BEYOND
-        // that — the drone then lays before it can enter the transit volume (its
-        // 2×AutopilotArrivalRadius reach keeps it well clear), and the field still
-        // sits "at the aleph" inside the mine's blast radius of the transit path.
+        // P776: the trigger is native's cone (modelIGC.cpp:127-130;
+        // HitTest.cpp:254-283; Sector.ResolveWarpCollisions/AlephConeHitTest),
+        // but warp.Radius + shipRadius remains a conservative standoff enclosing
+        // it, so the field is placed a full mine-radius BEYOND that — the drone
+        // then lays before it can enter the volume (its 2×AutopilotArrivalRadius
+        // reach keeps it well clear), and the field still sits "at the aleph"
+        // inside the mine's blast radius of the transit path.
         float shipRadius = 0.5f * drone.HullType.Length;
         float transitRadius = w.Warp.Radius + shipRadius;
         float offset = 0f;

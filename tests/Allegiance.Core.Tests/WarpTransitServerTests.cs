@@ -84,20 +84,21 @@ public class WarpTransitServerTests
             var sector = mission.Sectors.First(s => s.Warps.Contains(warp));
             var wpos = new Vector3(warp.Warp.Position![0], warp.Warp.Position[1], warp.Warp.Position[2]);
 
-            // A unit approach direction — prefer the warp's own facing (the
-            // axis a real ship flies in on), fall back to a cardinal.
+            // P776 — native's aleph volume is a cone (modelIGC.cpp:127-130;
+            // HitTest.cpp:254-283): a base disc through the centre plus a 45°
+            // cone BEHIND it. A "just inside" pose must therefore sit on the
+            // backward axis, not in front of the disc (the old sphere test
+            // accepted either side).
             float[] f = warp.Warp.Forward is { Length: 3 } v && (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) > 0f
                 ? v : [1f, 0f, 0f];
-            var dir = new Vector3(f[0], f[1], f[2]).Normalize();
+            var backward = AlephConeHitTest.Backward(new Vector3(f[0], f[1], f[2]));
 
             float shipRadius = 0.5f * hull.Length;
-            float radius = warp.Warp.Radius + shipRadius;
-            // Just inside the volume (the native trigger fires on ANY overlap —
-            // fsship.cpp:74 ff. — it does not require approaching from outside),
-            // with a velocity pointing at the warp centre so the ship is
-            // genuinely crossing. Transit teleports it out on the first tick.
-            var spawn = wpos + dir * (0.9f * radius);
-            var ship = new Ship(shipId, hull, spawn, -dir * 20f, Orientation.Identity);
+            // Just inside the raw radius, on the cone axis; the ship then flies
+            // forward through the disc, so it is genuinely crossing. Transit
+            // teleports it out on the first tick.
+            var spawn = wpos + backward * (0.9f * warp.Warp.Radius);
+            var ship = new Ship(shipId, hull, spawn, -backward * 20f, Orientation.Identity);
             mission.PlaceShip(ship, sector);
             return (ship, sector);
         };

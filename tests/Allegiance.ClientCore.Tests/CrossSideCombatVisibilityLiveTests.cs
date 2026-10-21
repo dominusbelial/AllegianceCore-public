@@ -368,12 +368,12 @@ public sealed class CrossSideCombatVisibilityLiveTests
                   && e.SectorId == sec0!.Id, 20000);
         Assert.True(learned < 20000, "watcher learned the cross-side ship with SectorId == sector 0");
 
-        // Warp Bravo out.
+        // Warp Bravo out. P776 — enter on the cone's backward axis
+        // (modelIGC.cpp:127-130); the ship then flies forward through the disc.
         lock (server)
         {
-            float r = warpRadius + 0.5f * hullLen;
-            bravo!.Position = warpCenter + outDir * (0.9f * r);
-            bravo.Velocity = -outDir * 20f;
+            bravo!.Position = warpCenter - outDir * (0.5f * warpRadius);
+            bravo.Velocity = outDir * 20f;
         }
         int transited = PumpUntil(server, () => ServerShip(server, bravoId)?.Sector?.Id != sec0!.Id, 20000);
         Assert.True(transited < 20000, "bravo transited to another sector");
@@ -390,8 +390,8 @@ public sealed class CrossSideCombatVisibilityLiveTests
         var rdir = new Vector3(rfw[0], rfw[1], rfw[2]).Normalize();
         lock (server)
         {
-            bravo!.Position = rc + rdir * (0.9f * (returnWarp.Warp.Radius + 0.5f * hullLen));
-            bravo.Velocity = -rdir * 20f;
+            bravo!.Position = rc - rdir * (0.5f * returnWarp.Warp.Radius);
+            bravo.Velocity = rdir * 20f;
         }
         int backSector = PumpUntil(server, () => ServerShip(server, bravoId)?.Sector?.Id == sec0!.Id, 20000);
         Assert.True(backSector < 20000, "bravo warped back into the watcher's sector");
