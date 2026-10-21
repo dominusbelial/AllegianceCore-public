@@ -56,6 +56,15 @@ public class P625bActionMapGuardTests
         ("Game1.FlightInput.cs", "HandleChatCompose", "XnaKeys.Back"),     // chat-delete backspace (text entry; P757 extracted from UpdateFlying)
         ("Game1.Session.cs", "UpdateLobby", "XnaKeys.Back"),                  // lobby filter backspace (text entry)
         ("Game1.KeyBind.cs", "*", "*"),                                       // rebind popup's own capture
+        // P764 — the custom-loadout digit MODIFIERS (load.cpp:2228/2236): native
+        // reads them as raw vk flags (ks.bControl/bShift/bAlt) too — they are
+        // hardware state, not rebindable game commands.
+        ("Game1.Panes.cs", "HandleCustomLoadoutKeys", "Microsoft.Xna.Framework.Input.Keys.LeftControl"),
+        ("Game1.Panes.cs", "HandleCustomLoadoutKeys", "Microsoft.Xna.Framework.Input.Keys.RightControl"),
+        ("Game1.Panes.cs", "HandleCustomLoadoutKeys", "Microsoft.Xna.Framework.Input.Keys.LeftShift"),
+        ("Game1.Panes.cs", "HandleCustomLoadoutKeys", "Microsoft.Xna.Framework.Input.Keys.RightShift"),
+        ("Game1.Panes.cs", "HandleCustomLoadoutKeys", "Microsoft.Xna.Framework.Input.Keys.LeftAlt"),
+        ("Game1.Panes.cs", "HandleCustomLoadoutKeys", "Microsoft.Xna.Framework.Input.Keys.RightAlt"),
     };
 
     private static readonly Regex RawLiteral = new(

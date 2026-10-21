@@ -25,7 +25,7 @@ public static class StarmapHover
 {
     /// <summary>
     /// Apply native's per-pointer-move rule and return the resulting
-    /// (<c>selected</c>, <c>mouseOver</c>) pair.
+    /// (<c>selected</c>, <c>mouseOver</c>, <c>hoverCue</c>) triple.
     /// <list type="bullet">
     /// <item>Pointer inside the map over a cluster: the cluster is selected AND
     /// is the mouse-over cluster (the info pane follows the pointer).</item>
@@ -36,14 +36,20 @@ public static class StarmapHover
     /// <item>Pointer outside the map: nothing changes except the mouse-over
     /// cluster, which is null (native fires no MouseMove there).</item>
     /// </list>
+    /// <para><b>P764 — <paramref name="hoverCue"/></b> mirrors native
+    /// <c>if (m_pClusterSel != pClusterFound) trekClient.PlaySoundEffect(mouseoverSound)</c>
+    /// (sectormap.cpp:1440-1443): true exactly when the pointer is inside the
+    /// map over a cluster that is NOT the current selection — a NEW cluster is
+    /// being hovered. Hovering the same cluster again, empty map space and
+    /// off-map moves never cue.</para>
     /// </summary>
-    public static (short? Selected, short? MouseOver) Move(
+    public static (short? Selected, short? MouseOver, bool HoverCue) Move(
         bool pointerInsideMap, short? hitCluster, short? chatCluster, short? currentSelected)
     {
         if (!pointerInsideMap)
-            return (currentSelected, null);
+            return (currentSelected, null, false);
         if (hitCluster is { } hit)
-            return (hit, hit);
-        return (chatCluster ?? currentSelected, null);
+            return (hit, hit, hit != currentSelected);
+        return (chatCluster ?? currentSelected, null, false);
     }
 }

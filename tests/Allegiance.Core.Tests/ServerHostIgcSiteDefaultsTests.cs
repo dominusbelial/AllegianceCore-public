@@ -197,8 +197,10 @@ public sealed class ServerHostIgcSiteDefaultsTests
         Assert.Null(host.GetRipcordCluster(incapable));
     }
 
-    /// <summary>⭐ <see cref="IIgcSite.Reload"/> returns false — native default
-    /// (igc.h:4923). The port's reload path uses <see cref="IIgcSite.AutoReloadTriggered"/>.</summary>
+    /// <summary>P764 — <see cref="IIgcSite.Reload"/> on a packless ship still
+    /// returns <c>false</c> — the native depletion block turns that into
+    /// "Ammo depleted." (shipIGC.h:611-612; the concrete host now runs the real
+    /// cargo drain, P764ReloadSiteTests — SIM-0233).</summary>
     [SkippableFact]
     public void Reload_returns_false()
     {

@@ -79,7 +79,7 @@ public sealed class ShopModel
     /// (<c>BuyHull</c> → <c>RefreshLoadout(customLoadouts[0], phullType)</c>,
     /// load.cpp:1478-1486), which is the behaviour this row pins.
     /// </summary>
-    private readonly Dictionary<short, List<ExpandedPartData>> _customLoadouts = new();
+    private readonly Dictionary<(short HullId, int Slot), List<ExpandedPartData>> _customLoadouts = new();
 
     /// <summary>P434/P435 — the real launcher/dispenser offers (missile + mine +
     /// chaff + probe), normalized to empty so a null Launchers is safe.</summary>
@@ -625,7 +625,7 @@ public sealed class ShopModel
         // loadout slot 0 for that hull when one exists, else its native default
         // (RefreshLoadout(customLoadouts[0], phullType), load.cpp:1478-1486).
         IReadOnlyList<ExpandedPartData> seed =
-            _customLoadouts.TryGetValue(eff.HullId, out var saved)
+            _customLoadouts.TryGetValue((eff.HullId, 0), out var saved)
                 ? saved
                 : DefaultLoadoutFor(eff);
         foreach (var p in seed)
@@ -644,7 +644,49 @@ public sealed class ShopModel
     /// </summary>
     public void SaveCustomLoadout()
     {
-        _customLoadouts[EffectiveHullId] = new List<ExpandedPartData>(_chosenParts);
+        SaveCustomLoadoutToSlot(0);
+    }
+
+    /// <summary>
+    /// P764 — save the pending loadout into custom-loadout slot
+    /// <paramref name="slot"/> for the effective hull (native
+    /// <c>SaveCustomLoadout(m_pship, num)</c>, load.cpp:2232 +
+    /// clintlib.h:1425-1432; <c>MAX_CUSTOM_LOADOUTS = 10</c>, clintlib.h:825).
+    /// Native then persists the slot file (<c>SaveCustomLoadoutFile</c>) and
+    /// cues only on success — the port's store is in-memory, so a save always
+    /// succeeds and Game1 always cues (SIM-0325).
+    /// </summary>
+    public void SaveCustomLoadoutToSlot(int slot)
+    {
+        _customLoadouts[(EffectiveHullId, slot)] = new List<ExpandedPartData>(_chosenParts);
+    }
+
+    /// <summary>
+    /// P764 — restore custom-loadout slot <paramref name="slot"/> as the
+    /// pending loadout (native load.cpp:2236-2247:
+    /// <c>RefreshLoadout(m_customLoadouts[num], GetBaseHullType())</c> +
+    /// <c>UpdateHullType()</c>): the saved part list replaces the pending
+    /// loadout wholesale.
+    /// <b>P764b</b> — a slot that has never been saved restores the hull's
+    /// DEFAULT loadout, not an empty hold: <c>RefreshLoadout</c> terminates
+    /// every current part (load.cpp:1453-1466) and then hands the (possibly
+    /// empty) cached list to <c>ReplaceLoadout</c>, which buys the hull's
+    /// default loadout when there is no cached loadout link for that hull
+    /// (clintlib.h:1796-1800 — <c>else BuyDefaultLoadout(...)</c>). Only a
+    /// slot the player actually saved EMPTY restores empty. Game1 cues
+    /// <c>mountSound</c> unconditionally afterwards (load.cpp:2247, SIM-0326).
+    /// </summary>
+    public void RestoreCustomLoadout(int slot)
+    {
+        _chosenParts.Clear();
+        if (_customLoadouts.TryGetValue((EffectiveHullId, slot), out var saved))
+            foreach (var p in saved)
+                _chosenParts.Add(p);
+        else if (EffectiveHull is { } eff)   // P764b — no cached loadout for the hull → the default (clintlib.h:1796-1800)
+            foreach (var p in DefaultLoadoutFor(eff))
+                _chosenParts.Add(p);
+        NormalizeWeaponMounts();
+        BlockReason = null;
     }
 
     /// <summary>

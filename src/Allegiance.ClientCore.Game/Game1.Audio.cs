@@ -396,7 +396,15 @@ public sealed partial class Game1
     private void UpdateSoundEvents()
     {
         var world = _session.World;
-        if (_sound is not { } snd) return;
+        // P764 — a test-only UI-sink override must also be able to drain events
+        // (the headless noTurrets pin), so the guard admits either source.
+        // P764b — the guard no longer implies _sound is present: with only the
+        // sink override set (a headless test) and a non-sink event queued, the
+        // per-case `snd?.` calls are silent no-ops instead of throwing on the
+        // null-forgiving local.
+        if (_sound is null && _uiSoundOverride is null) return;
+        var snd = _sound;
+        var uiSounds = UiSounds;
 
         List<ClientSoundEvent> events;
         lock (_session.Gate)
@@ -407,240 +415,242 @@ public sealed partial class Game1
             switch (ev.Kind)
             {
                 case ClientSoundEventKind.LastEnemyBase:
-                    if (!LocalSpectating && !SpectatorCameraActive) snd.PlayVoice("vo_player_foundenemybase");
+                    if (!LocalSpectating && !SpectatorCameraActive) snd?.PlayVoice("vo_player_foundenemybase");
                     break;
                 case ClientSoundEventKind.ChatVoiceOver:
-                    if (ev.Voice is { } voice) snd.PlayVoice(voice);
+                    if (ev.Voice is { } voice) snd?.PlayVoice(voice);
                     break;
                 case ClientSoundEventKind.StationDestroyed:
                 case ClientSoundEventKind.StationEnemyDestroyed:
                 case ClientSoundEventKind.StationCaptured:
                 case ClientSoundEventKind.StationEnemyCaptured:
-                    snd.PlayStationEvent(ev, _shopCatalog?.StationTypes);
+                    snd?.PlayStationEvent(ev, _shopCatalog?.StationTypes);
                     Console.WriteLine($"[monogame] audio: {ev.Kind} (station {ev.Id}, type {ev.StationTypeId})");
                     break;
                 case ClientSoundEventKind.DevCompleted:
-                    snd.PlayDevComplete();
+                    snd?.PlayDevComplete();
                     Console.WriteLine($"[monogame] audio: development complete chime (dev {ev.Id})");
                     break;
                 case ClientSoundEventKind.RipcordAborted:
                     // P414 — the local player's own ripcord countdown was
                     // cancelled; play the single "ripcord aborted" VO cue.
-                    snd.PlayRipcordAborted();
+                    snd?.PlayRipcordAborted();
                     Console.WriteLine($"[monogame] audio: ripcord aborted (ship {ev.Id})");
                     break;
                 case ClientSoundEventKind.SectorHighlighted:
-                    snd.PlayCommandMessage();
+                    snd?.PlayCommandMessage();
                     break;
                 case ClientSoundEventKind.PlayerWaiting:
-                    snd.PlayVoice(Rendering.LobbyStatusLayout.PlayerWaitingWave);
+                    snd?.PlayVoice(Rendering.LobbyStatusLayout.PlayerWaitingWave);
                     break;
                 case ClientSoundEventKind.TeleportArrived:
                     // P638 — our teleport dock request was accepted; native
                     // plays the personalJumpSound (appmsg.cpp:1901), mapped to
                     // the jumpin one-shot (native jumpSound, SoundManager.PlayJump).
-                    snd.PlayJump();
+                    snd?.PlayJump();
                     Console.WriteLine($"[monogame] audio: teleport arrived (station {ev.Id})");
                     break;
                 case ClientSoundEventKind.BoardRefusedTurretsFull:
                     // P757 — the board request lost the turret race: native's
                     // noTurretsSound (teleportpane.cpp:285; sounds.h: vo_sal_noturrets).
-                    snd.PlayVoice(NoTurretsWave);
+                    // P764 — routed through the UI sink so the headless test can
+                    // pin the call (the raw-stem voice is not on the sink otherwise).
+                    uiSounds?.PlayVoice(NoTurretsWave);
                     Console.WriteLine($"[monogame] audio: board refused - no turrets open (ship {ev.Id})");
                     break;
                 // ── P710 — wealth announcements (clintlib/appmsg.cpp) ──────
                 case ClientSoundEventKind.PaydayReceived:
-                    snd.PlayPayday();
+                    snd?.PlayPayday();
                     Console.WriteLine("[monogame] audio: payday");
                     break;
                 case ClientSoundEventKind.PickupPowerup:
-                    snd.PlayPickupPowerup();
+                    snd?.PlayPickupPowerup();
                     Console.WriteLine("[monogame] audio: powerup pickup");
                     break;
                 case ClientSoundEventKind.PickupDevelopment:
-                    snd.PlayPickupDevelopment();
+                    snd?.PlayPickupDevelopment();
                     Console.WriteLine("[monogame] audio: development pickup");
                     break;
                 case ClientSoundEventKind.PickupCash:
-                    snd.PlayPickupCash();
+                    snd?.PlayPickupCash();
                     Console.WriteLine("[monogame] audio: cash pickup");
                     break;
                 case ClientSoundEventKind.PickupPart:
                     // P735 — SIM-0268: part pickup (native pickUpPartSound,
                     // shipIGC.h:1307; wave hoover, sounddef.mdl:278).
-                    snd.PlayPickupPart();
+                    snd?.PlayPickupPart();
                     Console.WriteLine("[monogame] audio: part pickup");
                     break;
                 // ── P710 — incoming-message notification cues
                 // (trekigc.cpp:4536-4560) ───────────────────────────────────
                 case ClientSoundEventKind.ChatCommand:
-                    snd.PlayChatCommand();
+                    snd?.PlayChatCommand();
                     break;
                 case ClientSoundEventKind.ChatCommander:
-                    snd.PlayChatCommander();
+                    snd?.PlayChatCommander();
                     break;
                 case ClientSoundEventKind.ChatPersonal:
-                    snd.PlayChatPersonal();
+                    snd?.PlayChatPersonal();
                     break;
                 case ClientSoundEventKind.ChatRegular:
-                    snd.PlayChatRegular();
+                    snd?.PlayChatRegular();
                     break;
                 case ClientSoundEventKind.ChatOffline:
-                    snd.PlayChatRegular(offline: true);
+                    snd?.PlayChatRegular(offline: true);
                     break;
                 // ── P711 — ship low-status / combat feedback one-shots ──────
                 case ClientSoundEventKind.HullLow:
-                    snd.PlayHullLow();
+                    snd?.PlayHullLow();
                     Console.WriteLine("[monogame] audio: hull low");
                     break;
                 case ClientSoundEventKind.AmmoLow:
-                    snd.PlayAmmoLow();
+                    snd?.PlayAmmoLow();
                     Console.WriteLine("[monogame] audio: ammo low");
                     break;
                 case ClientSoundEventKind.FuelLow:
-                    snd.PlayFuelLow();
+                    snd?.PlayFuelLow();
                     Console.WriteLine("[monogame] audio: fuel low");
                     break;
                 case ClientSoundEventKind.EnergyLow:
-                    snd.PlayEnergyLow();
+                    snd?.PlayEnergyLow();
                     Console.WriteLine("[monogame] audio: energy low");
                     break;
                 case ClientSoundEventKind.NoAmmo:
-                    snd.PlayNoAmmo();
+                    snd?.PlayNoAmmo();
                     Console.WriteLine("[monogame] audio: no ammo attempt");
                     break;
                 case ClientSoundEventKind.NoFuel:
-                    snd.PlayNoFuel();
+                    snd?.PlayNoFuel();
                     Console.WriteLine("[monogame] audio: no fuel attempt");
                     break;
                 case ClientSoundEventKind.RipcordDenied:
-                    snd.PlayNoRipcord();
+                    snd?.PlayNoRipcord();
                     Console.WriteLine("[monogame] audio: ripcord denied (ship {ev.Id})");
                     break;
                 case ClientSoundEventKind.CommanderElected:
-                    snd.PlayMadeCommander();
+                    snd?.PlayMadeCommander();
                     Console.WriteLine("[monogame] audio: you became team leader");
                     break;
                 case ClientSoundEventKind.InvestorReceived:
-                    snd.PlayMadeInvestor();
+                    snd?.PlayMadeInvestor();
                     Console.WriteLine("[monogame] audio: first investor");
                     break;
                 case ClientSoundEventKind.EnemyFlagStolen:
-                    snd.PlayStolenEnemyFlag();
+                    snd?.PlayStolenEnemyFlag();
                     Console.WriteLine("[monogame] audio: enemy flag stolen");
                     break;
                 case ClientSoundEventKind.ArtifactFound:
-                    snd.PlayArtifactFound();
+                    snd?.PlayArtifactFound();
                     Console.WriteLine("[monogame] audio: artifact found");
                     break;
                 case ClientSoundEventKind.OurFlagStolen:
-                    snd.PlayStolenFlag();
+                    snd?.PlayStolenFlag();
                     Console.WriteLine("[monogame] audio: our flag stolen");
                     break;
                 case ClientSoundEventKind.SectorJump:
                     // P716 — the own ship crossed a warp; native's jumpSound
                     // (trekigc.cpp:3998,4415) is the same wavein as the teleport
                     // cue, so it rides SoundManager.PlayJump.
-                    snd.PlayJump();
+                    snd?.PlayJump();
                     Console.WriteLine($"[monogame] audio: sector jump (ship {ev.Id})");
                     break;
                 case ClientSoundEventKind.MineDeployed:
                     // P717 — the own ship deployed a mine (native deployMineSound,
                     // clintlib.cpp:3253; wave dropmine, sounddef.mdl:368).
-                    snd.PlayMineDeploy();
+                    snd?.PlayMineDeploy();
                     break;
                 case ClientSoundEventKind.DeployChaff:
                     // P755 — the own ship deployed chaff (native deployChaffSound,
                     // clintlib.cpp:3249; wave dropobject, sounddef.mdl:367).
-                    snd.PlayChaffDeploy();
+                    snd?.PlayChaffDeploy();
                     Console.WriteLine($"[monogame] audio: chaff deploy (ship {ev.Id})");
                     break;
                 case ClientSoundEventKind.ShieldsOffline:
                     // P717 — the own shield was knocked offline (native
                     // salShieldsOfflineSound, shieldIGC.cpp:186; vo_sal_shieldsoffline).
-                    snd.PlayShieldsOffline();
+                    snd?.PlayShieldsOffline();
                     break;
                 case ClientSoundEventKind.ShieldActivate:
                     // P741 — the own shield powered back up past 5% (native
                     // m_typeData->activateSound, shieldIGC.cpp:94; shieldup).
-                    snd.PlayShieldActivate();
+                    snd?.PlayShieldActivate();
                     Console.WriteLine("[monogame] audio: shield power up");
                     break;
                 case ClientSoundEventKind.ShieldDeactivate:
                     // P741 — the own shield went down to overload damage (native
                     // m_typeData->deactivateSound, shieldIGC.cpp:185; noshld),
                     // alongside the shields-offline VO.
-                    snd.PlayShieldDeactivate();
+                    snd?.PlayShieldDeactivate();
                     Console.WriteLine("[monogame] audio: shield power down");
                     break;
                 case ClientSoundEventKind.CloakEngaged:
                     // P735 — the own ship's cloak engaged (native
                     // salCloakEngageSound, shipIGC.cpp:1608; vo_sal_cloakengage,
                     // sounddef.mdl:807).
-                    snd.PlayCloakEngage();
+                    snd?.PlayCloakEngage();
                     Console.WriteLine($"[monogame] audio: cloak engage (ship {ev.Id})");
                     break;
                 // ── P719 — station/economy + loadout one-shots ─────────────
                 case ClientSoundEventKind.Docked:
-                    snd.PlayDocked();
+                    snd?.PlayDocked();
                     Console.WriteLine("[monogame] audio: docked");
                     break;
                 case ClientSoundEventKind.WelcomeHome:
-                    snd.PlayWelcomeHome();
+                    snd?.PlayWelcomeHome();
                     Console.WriteLine("[monogame] audio: welcome home");
                     break;
                 case ClientSoundEventKind.Boarded:
-                    snd.PlayBoarded();
+                    snd?.PlayBoarded();
                     Console.WriteLine($"[monogame] audio: player boarded your ship (ship {ev.Id})");
                     break;
                 // ── P736 — presence / side-change salutations ───────────────
                 case ClientSoundEventKind.SalQuit:
-                    snd.PlaySalQuit();
+                    snd?.PlaySalQuit();
                     Console.WriteLine($"[monogame] audio: teammate quit (ship {ev.Id})");
                     break;
                 case ClientSoundEventKind.SalChangeSides:
-                    snd.PlaySalChangeSides();
+                    snd?.PlaySalChangeSides();
                     Console.WriteLine($"[monogame] audio: teammate switching sides (ship {ev.Id})");
                     break;
                 case ClientSoundEventKind.SalMia:
-                    snd.PlaySalMia();
+                    snd?.PlaySalMia();
                     Console.WriteLine($"[monogame] audio: teammate MIA (ship {ev.Id})");
                     break;
                 case ClientSoundEventKind.SalEnemyLeaves:
-                    snd.PlaySalEnemyLeaves();
+                    snd?.PlaySalEnemyLeaves();
                     Console.WriteLine($"[monogame] audio: enemy leaves (ship {ev.Id})");
                     break;
                 case ClientSoundEventKind.SalRecruitsArrived:
-                    snd.PlaySalRecruitsArrived();
+                    snd?.PlaySalRecruitsArrived();
                     Console.WriteLine($"[monogame] audio: recruit joined your team (ship {ev.Id})");
                     break;
                 case ClientSoundEventKind.SalEnemyJoiners:
-                    snd.PlaySalEnemyJoiners();
+                    snd?.PlaySalEnemyJoiners();
                     Console.WriteLine($"[monogame] audio: enemy joined (ship {ev.Id})");
                     break;
                 // ── P737 — own-ship reload / loadout feedback ───────────────
                 case ClientSoundEventKind.SalReloadingAmmo:
-                    snd.PlaySalReloadingAmmo();
+                    snd?.PlaySalReloadingAmmo();
                     Console.WriteLine("[monogame] audio: reloading ammo");
                     break;
                 case ClientSoundEventKind.SalReloadingFuel:
-                    snd.PlaySalReloadingFuel();
+                    snd?.PlaySalReloadingFuel();
                     Console.WriteLine("[monogame] audio: reloading fuel");
                     break;
                 case ClientSoundEventKind.SalReloadingMissiles:
-                    snd.PlaySalReloadingMissiles();
+                    snd?.PlaySalReloadingMissiles();
                     Console.WriteLine("[monogame] audio: reloading missiles");
                     break;
                 case ClientSoundEventKind.SalReloadingChaff:
-                    snd.PlaySalReloadingChaff();
+                    snd?.PlaySalReloadingChaff();
                     Console.WriteLine("[monogame] audio: reloading chaff");
                     break;
                 case ClientSoundEventKind.SalReloadingDispenser:
-                    snd.PlaySalReloadingDispenser();
+                    snd?.PlaySalReloadingDispenser();
                     Console.WriteLine("[monogame] audio: reloading dispenser");
                     break;
                 case ClientSoundEventKind.StartReload:
-                    snd.PlayStartReload();
+                    snd?.PlayStartReload();
                     Console.WriteLine("[monogame] audio: reload started");
                     break;
             }

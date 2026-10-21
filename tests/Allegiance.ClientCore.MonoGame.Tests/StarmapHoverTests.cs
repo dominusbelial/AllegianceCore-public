@@ -16,10 +16,18 @@ public class StarmapHoverTests
     [Fact]
     public void HoveringACluster_SelectsIt_AndMarksItAsMouseOver()
     {
-        var (selected, mouseOver) = StarmapHover.Move(
+        var (selected, mouseOver, hoverCue) = StarmapHover.Move(
             pointerInsideMap: true, hitCluster: 12, chatCluster: 3, currentSelected: 3);
         Assert.Equal((short?)12, selected);
         Assert.Equal((short?)12, mouseOver);
+
+        // P764 / SIM-0330 — native plays mouseoverSound only when the hovered
+        // cluster differs from the current selection (sectormap.cpp:1440-1443):
+        // hovering a NEW cluster cues, hovering the SAME cluster does not.
+        Assert.True(hoverCue);
+        var (_, _, repeatCue) = StarmapHover.Move(
+            pointerInsideMap: true, hitCluster: 12, chatCluster: 3, currentSelected: 12);
+        Assert.False(repeatCue);
     }
 
     [Fact]
@@ -28,33 +36,37 @@ public class StarmapHoverTests
         // The chat cluster (e.g. the docked command view's viewed sector) can
         // differ from the own ship's status sector; native reverts to the chat
         // cluster (GetChatCluster, sectormap.cpp:1446).
-        var (selected, mouseOver) = StarmapHover.Move(
+        var (selected, mouseOver, hoverCue) = StarmapHover.Move(
             pointerInsideMap: true, hitCluster: null, chatCluster: 7, currentSelected: 12);
         Assert.Equal((short?)7, selected);
         Assert.Null(mouseOver);
+        Assert.False(hoverCue);   // no cluster hovered → no mouseoverSound
     }
 
     [Fact]
     public void HoveringEmptyMap_WithUnknownChatCluster_KeepsTheCurrentSelection()
     {
-        var (selected, mouseOver) = StarmapHover.Move(
+        var (selected, mouseOver, hoverCue) = StarmapHover.Move(
             pointerInsideMap: true, hitCluster: null, chatCluster: null, currentSelected: 12);
         Assert.Equal((short?)12, selected);
         Assert.Null(mouseOver);
+        Assert.False(hoverCue);
     }
 
     [Fact]
     public void PointerOutsideTheMap_ChangesNothingExceptTheMouseOver()
     {
-        var (selected, mouseOver) = StarmapHover.Move(
+        var (selected, mouseOver, hoverCue) = StarmapHover.Move(
             pointerInsideMap: false, hitCluster: null, chatCluster: 3, currentSelected: 12);
         Assert.Equal((short?)12, selected);
         Assert.Null(mouseOver);
+        Assert.False(hoverCue);
         // A hit cluster reported while outside the map is ignored entirely.
-        var (selected2, mouseOver2) = StarmapHover.Move(
+        var (selected2, mouseOver2, hoverCue2) = StarmapHover.Move(
             pointerInsideMap: false, hitCluster: 9, chatCluster: 3, currentSelected: 12);
         Assert.Equal((short?)12, selected2);
         Assert.Null(mouseOver2);
+        Assert.False(hoverCue2);
     }
 }
 

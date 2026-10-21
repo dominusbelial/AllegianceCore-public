@@ -433,8 +433,11 @@ public sealed partial class Ship : Model, IShipIgc
         // Zero-transition block (shipIGC.h:636-650): arm the debounce then try
         // to reload from a fuel pack. Mirrors the Ammo pattern (TryAutoReloadAmmo
         // checks the debounce itself), so SetFuel just fires it on the >0→0 edge.
+        // P764 — the ask routes through the IIgcSite seam exactly like native
+        // (shipIGC.h:643: pigc->Reload(this, NULL, ET_Afterburner)); see
+        // SiteReload. SIM-0233.
         if (newVal == 0.0f && oldFuel > 0.0f)
-            TryAutoReloadFuel(LastUpdate);
+            SiteReload(EquipmentType.Afterburner, LastUpdate);
     }
 
     /// <summary>
@@ -3332,6 +3335,66 @@ public sealed partial class Ship : Model, IShipIgc
     // for the structurally-identical fuel case — which this port deliberately
     // does not realise (no runtime fuel pool; see the MountPart/reload notes),
     // so only the ammo path has a live trigger below.
+    /// <summary>
+    /// P764 / SIM-0233 — route a depletion reload through the
+    /// <see cref="IIgcSite.Reload"/> seam, exactly like native's
+    /// <c>CshipIGC::SetAmmo</c>/<c>SetFuel</c> zero-transition blocks
+    /// (<c>shipIGC.h:603-616 / 636-650</c>: <c>pigc-&gt;Reload(this, NULL,
+    /// ET_Weapon|ET_Afterburner)</c>). The concrete host's
+    /// <c>ServerHost.Reload</c> performs the real cargo drain (it calls back
+    /// into <see cref="TryAutoReloadAmmo"/>/<see cref="TryAutoReloadFuel"/>,
+    /// the P361/P412 machinery) and its return value decides; a DEFAULT site
+    /// (native igc.h:4923 — <c>false</c>, e.g. headless missions) falls back to
+    /// the direct attempt so the auto-reload behavior is unchanged there.
+    /// Either way exactly one attempt fires per zero-transition.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>P764b — the fallback no longer rides the debounce.</b> The
+    /// direct attempt below must fire only when the site made NO reload
+    /// attempt of its own — not whenever the site answers <c>false</c>. When
+    /// <see cref="Mission"/>'s site is the concrete host, its
+    /// <c>Reload</c> already ran the P361/P412 machinery (and, on failure,
+    /// raised <c>AutoReloadTriggered(success: false)</c>), so falling back on
+    /// its <c>false</c> would re-enter <see cref="TryAutoReloadAmmo"/> — kept
+    /// from firing a second <c>AutoReloadTriggered</c> only by the freshly
+    /// re-armed <c>_timeReloadAmmo</c>/<c>_timeReloadFuel</c> debounce, an
+    /// accident of the current implementation rather than the contract. So the
+    /// deadlines are snapshotted before the ask and the fallback fires only
+    /// when the deadline did NOT move (the site never attempted): a DEFAULT
+    /// site (igc.h:4923 <c>false</c>) leaves them untouched and keeps the
+    /// direct attempt; the host site, which arms the deadline inside the ask,
+    /// suppresses it.</para>
+    /// </remarks>
+    public bool SiteReload(EquipmentType type, double now)
+    {
+        var site = Mission?.Site;
+        if (site is not null)
+        {
+            // P764b — snapshot the debounce deadlines before the ask (native
+            // arms m_timeReloadAmmo/m_timeReloadFuel inside the zero-transition
+            // block BEFORE the ask, shipIGC.h:608/638, so a moved deadline is
+            // exactly "the site attempted").
+            double ammoDeadlineBefore = _timeReloadAmmo;
+            double fuelDeadlineBefore = _timeReloadFuel;
+            if (site.Reload(this, null!, type)) return true;
+
+            bool siteAttempted = type switch
+            {
+                EquipmentType.Weapon => _timeReloadAmmo != ammoDeadlineBefore,
+                EquipmentType.Afterburner => _timeReloadFuel != fuelDeadlineBefore,
+                _ => false,
+            };
+            if (siteAttempted) return false;   // the site already answered — no second attempt
+        }
+
+        return type switch
+        {
+            EquipmentType.Weapon => TryAutoReloadAmmo(now) == AutoReloadOutcome.Reloaded,
+            EquipmentType.Afterburner => TryAutoReloadFuel(now) == AutoReloadOutcome.Reloaded,
+            _ => false,
+        };
+    }
+
     /// <summary>The P361 debounce deadline (<c>GetMyLastUpdate()</c> at or past
     /// which the next auto-reload attempt may fire) — the port of native
     /// <c>CshipIGC::m_timeReloadAmmo</c> (<c>shipIGC.h:2608</c>). Armed inside

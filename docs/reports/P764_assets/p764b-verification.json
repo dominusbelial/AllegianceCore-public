@@ -1,0 +1,54 @@
+{
+ "task": "P764b (review-fix round on P764)",
+ "merge": "git merge master (P760b/P765/P766) \u2014 clean, no conflicts",
+ "build": {
+  "config": "Debug",
+  "warnings": 0,
+  "errors": 0
+ },
+ "aot_publish": {
+  "project": "src/Allegiance.Server",
+  "rid": "linux-x64",
+  "PublishAot": true,
+  "il_warnings": 0,
+  "il_errors": 0,
+  "result": "PASS"
+ },
+ "fail_first_verification": {
+  "fix1_SiteReload": "SiteReload_WithoutAPack_RaisesExactlyOneDepletedTrigger FAILED with the pre-fix fallback, PASSES with the fix",
+  "fix2_SIM0332": "RightClickClusterMark_PlaysNoCue FAILED with the pre-fix unconditional PlayMapClick",
+  "fix3_loadout": "SaveRestoreRoundTrip_NeverSavedSlotRestoresTheDefault + CtrlDigit FAILED with the pre-fix empty restore",
+  "fix4_teleport": "TeleportIntoAClusterWhoseStationLacksRestart FAILED without the c_sabmRestart filter; TeleportFromATurret_DisembarksFirst FAILED without the turret branch",
+  "fix5_depth": "FiveClusterRing FAILED with the depth+1/depth>=3 threading removed (original two cases still passed), restored after",
+  "fix7_drain": "SoundEventDrain_WithOnlyTheSinkOverride FAILED (NRE) with var snd = _sound!"
+ },
+ "tests_3x_alone": {
+  "P764ReloadSiteTests+P764TerritoryChainTests+P361/P412 auto-reload+ServerHostIgcSiteDefaults": "37/37 x3",
+  "P764UiSoundSeamTests+P764CustomLoadoutSlotTests+TurretTeleportWireTests+StarmapHoverTests": "26/26 x3",
+  "SoundAssetManifestTests": "1/1 x3",
+  "P661EgressAccountingTests (fast-tier load flake)": "6/6 x3 alone"
+ },
+ "showcase_never_parks_5x": {
+  "passed": 5,
+  "failed": 0,
+  "durations_s": [
+   109,
+   110,
+   101,
+   111,
+   110
+  ]
+ },
+ "fast_tier": {
+  "command": "tools/run-tests.sh --tier fast",
+  "tests": 9393,
+  "duration_s": 271.8,
+  "result": "1 failed: Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events (expected 0 allocated, observed 7608)",
+  "flake_disposition": "documented load flake (docs/TEST_FLAKES.md:211, observed 7,720 there); passes 3/3 alone; not touched by P764b",
+  "log": "/home/domingo/allegiance-evidence/P764b/logs/fast-tier.log"
+ },
+ "csv": {
+  "file": "docs/parity/sim-rules-matrix.csv",
+  "parse": "python3 csv.reader -> {16} columns for every row"
+ }
+}

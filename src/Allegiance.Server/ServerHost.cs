@@ -1943,12 +1943,32 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         return ship.HullType.HasCapability(habm) ? ship.Sector : null;
     }
 
-    /// <summary>P751 — production override of <see cref="IIgcSite.Reload"/>
-    /// (igc.h:4923). Native default always returns <c>false</c>; the concrete
-    /// host matches it. The port's auto-reload and manual RELOAD(129) wire path
-    /// use <see cref="AutoReloadTriggered"/> and <see cref="Server.HandleReload"/>
-    /// instead of this legacy seam, so the callback exists for parity only.</summary>
-    public bool Reload(IShipIgc pship, ILauncherIgc plauncher, EquipmentType type) => false;
+    /// <summary>P764 / SIM-0233 — production override of
+    /// <see cref="IIgcSite.Reload"/> (igc.h:4923) with REAL logic: the
+    /// depletion callers (<c>Ship.SiteReload</c>, routed from the
+    /// weapon-fire/fuel zero-transition blocks, shipIGC.h:603-616/636-650) ask
+    /// the site to reload from cargo, and this host answers by running the
+    /// P361/P412 pack-drain machinery (<see cref="Ship.TryAutoReloadAmmo"/> /
+    /// <see cref="Ship.TryAutoReloadFuel"/>) — the port of native
+    /// <c>BaseClient::Reload</c>'s ET_Weapon/ET_Afterburner cargo scan
+    /// (clintlib.cpp:3438-3556), which is the only reloader with a real
+    /// implementation in the native tree (FedSrv inherits the
+    /// <c>false</c> default; the client one reloads from packs). The success
+    /// outcome rides <see cref="AutoReloadTriggered"/> →
+    /// <c>Server.HandleReload</c> as before ("Reloading ammo..." vs "Ammo
+    /// depleted."). Magazine/dispenser/chaff-launcher reloads (native
+    /// clintlib.cpp:3557-3650) have no port-side depletion caller, so they keep
+    /// the native default <c>false</c>.</summary>
+    public bool Reload(IShipIgc pship, ILauncherIgc plauncher, EquipmentType type)
+    {
+        if (pship is not Ship ship) return false;
+        return type switch
+        {
+            EquipmentType.Weapon => ship.TryAutoReloadAmmo(ship.LastUpdate) == AutoReloadOutcome.Reloaded,
+            EquipmentType.Afterburner => ship.TryAutoReloadFuel(ship.LastUpdate) == AutoReloadOutcome.Reloaded,
+            _ => false,
+        };
+    }
 
     // ── ITransportSite ──────────────────────────────────────────────────────
     // Transport callbacks publish lifecycle events and reserved receives.

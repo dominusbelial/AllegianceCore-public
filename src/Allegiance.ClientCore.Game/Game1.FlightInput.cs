@@ -486,11 +486,7 @@ public sealed partial class Game1
         // keyboard delivers.
         bool helpKey = ActionDown(ks, "Help");
         if (helpKey && !_helpKeyWasDown && !_chatActive && !_qcMenuOpen)
-        {
-            _helpVisible = !_helpVisible;
-            if (_helpVisible) _helpManual = new Rendering.HelpManualModel();   // hlpStart on open
-            Console.WriteLine($"[monogame] help {( _helpVisible ? "ON" : "OFF" )}");
-        }
+            ToggleHelpOverlay();
         _helpKeyWasDown = helpKey;
 
         // P757 — while the help overlay is open it owns the keyboard like the
@@ -645,6 +641,20 @@ public sealed partial class Game1
         UpdateMusic(ks, gameTime);
 
         base.Update(gameTime);
+    }
+
+    /// <summary>
+    /// P764 — the help-overlay toggle, extracted from the flight-input edge
+    /// branch so the headless test can pin the cue: native <c>OnHelp</c> plays
+    /// <c>positiveButtonClickSound</c> on EVERY toggle, open and close
+    /// (WinTrek.cpp:9267-9269) — SIM-0285.
+    /// </summary>
+    private void ToggleHelpOverlay()
+    {
+        _helpVisible = !_helpVisible;
+        if (_helpVisible) _helpManual = new Rendering.HelpManualModel();   // hlpStart on open
+        UiSounds?.PlayPositiveClick();
+        Console.WriteLine($"[monogame] help {( _helpVisible ? "ON" : "OFF" )}");
     }
 
     /// <summary>

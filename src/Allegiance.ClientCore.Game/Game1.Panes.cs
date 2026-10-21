@@ -249,6 +249,8 @@ public sealed partial class Game1
                 _dockSpaceWasDown = space || enter; _dockLWasDown = lKey; _dockUWasDown = uKey;
                 _dockTabWasDown = tabKey || nav.LeftShoulder || nav.RightShoulder;
                 _dockQWasDown = qKey; _dockEWasDown = eKey; _dockBWasDown = bKey; _dockEnterWasDown = enter;
+
+                HandleCustomLoadoutKeys(shop, ks);
             }
             else if (_launchSent)
             {
@@ -271,6 +273,57 @@ public sealed partial class Game1
             Console.WriteLine("[monogame] undocked: leaving hangar");
         }
         return HandleInvestmentScreen(ks, composing);
+    }
+
+    /// <summary>P764 — the custom-loadout digit keys, the port of native
+    /// load.cpp:2219-2250: with the loadout screen active, Ctrl+0..9 saves the
+    /// pending loadout into slot N ("Saved &lt;hull&gt; loadout N", and
+    /// native plays <c>positiveButtonClickSound</c> only when the file save
+    /// succeeds — the port's store is always in-memory, so a save always
+    /// "succeeds", SIM-0325); plain 0..9 restores slot N ("Loaded &lt;hull&gt;
+    /// loadout N" + <c>mountSound</c>, load.cpp:2236-2247, SIM-0326). Native's
+    /// guards (not in a turret, no keystroke capture) map to the docked shop
+    /// being open and the chat composer closed — the handler only runs inside
+    /// the docked shop key block, and <c>composing</c> gates it upstream.
+    /// Top-row digits only (native <c>ks.vk - 48</c>).</summary>
+    private void HandleCustomLoadoutKeys(Rendering.ShopModel shop, Microsoft.Xna.Framework.Input.KeyboardState ks)
+    {
+        bool control = ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftControl)
+            || ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.RightControl);
+        bool shift = ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftShift)
+            || ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.RightShift);
+        bool alt = ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.LeftAlt)
+            || ks.IsKeyDown(Microsoft.Xna.Framework.Input.Keys.RightAlt);
+
+        for (int d = 0; d < 10; d++)
+        {
+            var key = Microsoft.Xna.Framework.Input.Keys.D0 + d;
+            bool down = ks.IsKeyDown(key);
+            bool edge = down && !_loadoutDigitWasDown[d];
+            _loadoutDigitWasDown[d] = down;
+            if (!edge) continue;
+
+            string hull = shop.EffectiveHull?.Name ?? "hull";
+            if (control)
+            {
+                shop.SaveCustomLoadoutToSlot(d);
+                // Native load.cpp:2233-2235 — post the save line, then cue only
+                // on save success (always true for the in-memory store).
+                _session.World.PostSystemLine($"Saved {hull} loadout {d}");
+                UiSounds?.PlayPositiveClick();
+                Console.WriteLine($"[monogame] custom loadout {d} saved for hull {shop.EffectiveHullId} (positiveButtonClickSound)");
+            }
+            else if (!shift && !alt)
+            {
+                // Native load.cpp:2236-2247 — restore (an empty slot restores an
+                // empty pending loadout, exactly like RefreshLoadout) and cue
+                // mountSound unconditionally.
+                shop.RestoreCustomLoadout(d);
+                _session.World.PostSystemLine($"Loaded {hull} loadout {d}");
+                UiSounds?.PlayMountPart();
+                Console.WriteLine($"[monogame] custom loadout {d} restored for hull {shop.EffectiveHullId} (mountSound)");
+            }
+        }
     }
 
     private Allegiance.Core.Model.TechTreeBitMask? _dockOfferTechs;
@@ -324,8 +377,20 @@ public sealed partial class Game1
             ballot = _session.World.ActiveBallot is not null;
             r = _teamPaneControls.Step(ks, Rendering.KeyBindingStore.Instance.Map, _session.World, active, ballot);
         }
+        // P764 — native OnPlayerClicked plays mouseclickSound on a player-list
+        // selection change, toggling the highlight on a second click
+        // (teamscreen.cpp:2434-2437). The pane's selection cycle is the port's
+        // player-list selection, so the same cue rides SelectionChanged
+        // (SIM-0336).
+        if (r.SelectionChanged)
+            UiSounds?.PlayMapClick();
         if (r.Gift is { } gift)
         {
+            // P764 — native plays positiveButtonClickSound for a money gift with
+            // a selected other player and money > 0 BEFORE sending (teampane.cpp:
+            // 1173-1176); the TeamPaneControls gift intent encodes exactly those
+            // conditions, so the cue rides the intent (SIM-0333).
+            UiSounds?.PlayPositiveClick();
             _session.SendPlayerDonation(gift);
             // Native posts the cross-side gift feedback line (teampane.cpp:1152-1158,
             // 1181-1188): "You now have $" is money MINUS the gift, never the old
@@ -1260,8 +1325,7 @@ public sealed partial class Game1
         {
             int sel = _sideSelectIndex % count;
             short sideId = selectable[sel];
-            Console.WriteLine($"[monogame] side-select: requesting side {sideId}");
-            _session.SendPositionReq(sideId);
+            RequestSideSelectSide(sideId);
         }
         _ssEnterWasDown = enter;
         _ssSpaceWasDown = space;
@@ -1286,11 +1350,26 @@ public sealed partial class Game1
                 if (idx < 0) continue;
                 _sideSelectIndex = idx;
                 short sideId = selectable[idx % count];
-                Console.WriteLine($"[monogame] side-select: tapped side {sideId}");
-                _session.SendPositionReq(sideId);
+                RequestSideSelectSide(sideId);
                 return;
             }
         }
+    }
+
+    /// <summary>
+    /// P764 — one team-row activation on the pre-game team screen: native's
+    /// <c>OnTeamClicked</c> / <c>OnTeamDoubleClicked</c> play
+    /// <c>mouseclickSound</c> when a team row is clicked, and the double-click
+    /// joins the team (<c>OnButtonJoin</c>, teamscreen.cpp:2206-2222). The
+    /// port's side-select row confirm is the team-row click (its join is the
+    /// POSITIONREQ the screen sends), so the same cue rides the request
+    /// (SIM-0334/0335).
+    /// </summary>
+    private void RequestSideSelectSide(short sideId)
+    {
+        UiSounds?.PlayMapClick();   // native mouseclickSound, teamscreen.cpp:2209/2217
+        Console.WriteLine($"[monogame] side-select: requesting side {sideId}");
+        _session.SendPositionReq(sideId);
     }
 
     /// <summary>Render the post-connect side-select overlay from the current

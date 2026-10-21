@@ -51,7 +51,7 @@ namespace Allegiance.ClientCore.MonoGame.Audio;
 /// equivalent is only needed for positioned world sounds (remote ships), which
 /// are out of the POC's scope.</para>
 /// </remarks>
-public sealed class SoundManager : IDisposable
+public sealed class SoundManager : IDisposable, IUiSoundSink
 {
     private readonly ContentManager _content;
     private readonly SerializedVoiceQueue _serializedVoices = new();
@@ -342,6 +342,8 @@ public sealed class SoundManager : IDisposable
     private SoundEffect _mount = null!;           // mount — mountSound (:286)
     private SoundEffect _unmount = null!;         // unmount — unmountSound (:288)
     private SoundEffect _mapClick = null!;        // P755 — mousedown — mouseclickSound (sounddef.mdl:321)
+    private SoundEffect _error = null!;           // P764 — ef03 — errorSound (sounddef.mdl:272)
+    private SoundEffect _positiveClick = null!;   // P764 — accept — positiveButtonClickSound (sounddef.mdl:313)
     private SoundEffect _cargoFull = null!;       // vo_sal_cargofull — salCargoFullSound (:810)
     // P736 — presence / side-change salutation one-shots (parity wave 23).
     // Waves from sounddef.mdl:825-831 (vo_sal_recruitsarrived / vo_sal_mia /
@@ -848,6 +850,8 @@ public sealed class SoundManager : IDisposable
             _mount = LoadSound("Sounds/mount");
             _unmount = LoadSound("Sounds/unmount");
             _mapClick = LoadSound("Sounds/mousedown");      // P755 — mouseclickSound (sounddef.mdl:321)
+            _error = LoadSound("Sounds/ef03");              // P764 — errorSound (sounddef.mdl:272)
+            _positiveClick = LoadSound("Sounds/accept");    // P764 — positiveButtonClickSound (sounddef.mdl:313)
             _cargoFull = LoadSound("Sounds/vo_sal_cargofull");
             // P736 — presence / side-change salutation one-shots. Waves
             // sounddef.mdl:825-831 (recruitsarrived / mia / quit / traitor /
@@ -1032,6 +1036,15 @@ public sealed class SoundManager : IDisposable
     /// <summary>P752c — native <c>mouseoverSound</c> (sectormap.cpp:1442): the
     /// starmap hover cue when the pointer lands on a new cluster. One-shot.</summary>
     public void PlayMouseOver() => PlayWarnOneShot(_mouseover);
+
+    /// <summary>P764 — native <c>errorSound</c> (sounddef.mdl:272), the sector
+    /// map's invalid teleport-target feedback (sectormap.cpp:1362/1367).</summary>
+    public void PlayError() => PlayWarnOneShot(_error);
+
+    /// <summary>P764 — native <c>positiveButtonClickSound</c> (sounddef.mdl:313),
+    /// the affirmative UI action cue (WinTrek.cpp:9269, teampane.cpp:1177,
+    /// load.cpp:2235).</summary>
+    public void PlayPositiveClick() => PlayWarnOneShot(_positiveClick);
 
     /// <summary>HUD-10 — native <c>chatKeySound</c> (<c>text</c> wave,
     /// sounddef.mdl:324): the chat-compose key click. Native plays it from

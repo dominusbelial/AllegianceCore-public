@@ -531,6 +531,17 @@ public sealed partial class Game1 : Game
     // if the host has no usable audio device (see SoundManager remarks).
     private Audio.SoundManager? _sound;
 
+    /// <summary>P764 — test-only UI-sound sink override. Production resolves
+    /// every UI one-shot cue through <see cref="Audio.IUiSoundSink"/>; the
+    /// headless tests set this to a recording sink to pin the CALL at each
+    /// trigger site. Null in production (the sink is then <c>_sound</c>).</summary>
+    internal Audio.IUiSoundSink? _uiSoundOverride;
+
+    /// <summary>P764 — the UI one-shot sink the trigger sites play through:
+    /// the test override when installed, else the real <see cref="_sound"/>.
+    /// Null when the host has no audio device and no test override.</summary>
+    private Audio.IUiSoundSink? UiSounds => _uiSoundOverride ?? _sound;
+
     // P304 — background music. The MonoGame wrapper owns the two looping beds
     // (flightmusic / stationmusic) and applies the pure MusicPlanner's
     // directives; the planner holds the toggle/volume/track state and is what
@@ -865,6 +876,10 @@ public sealed partial class Game1 : Game
     private bool _dockUpWasDown, _dockDownWasDown, _dockSpaceWasDown, _dockLWasDown, _dockUWasDown;
     // P519 — latches for the tab/cycle/back/enter keys of the reworked docked shop.
     private bool _dockTabWasDown, _dockQWasDown, _dockEWasDown, _dockBWasDown, _dockEnterWasDown;
+
+    // P764 — per-digit edge latches for the custom-loadout keys (load.cpp:2219).
+    private readonly bool[] _loadoutDigitWasDown = new bool[10];
+
     // P519/P526 — the hull-preview spin angle (radians), advanced per-frame at
     // native loadout motion (WinTrek/load.cpp:877-887 — 1 rad/s about the ship's
     // UP with a fixed π/8 X tilt applied after the spin) behind the docked

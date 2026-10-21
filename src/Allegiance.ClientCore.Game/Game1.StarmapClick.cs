@@ -1,4 +1,5 @@
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.Core;
 using Microsoft.Xna.Framework.Input;
 using NumericsVec2 = System.Numerics.Vector2;
 
@@ -91,16 +92,35 @@ public sealed partial class Game1
                     chatCluster = _session.World.ViewedClusterId ?? own.SectorId;
             }
         }
-        var (selected, mouseOver) = Rendering.StarmapHover.Move(inside, hit, chatCluster, _selectedSectorId);
+        // P764b — the post-hit-test hover half lives in RunStarmapHover so the
+        // headless tests can drive the PlayMouseOver call site itself (SIM-0330)
+        // without a graphics device — not only the pure StarmapHover.Move rule.
+        RunStarmapHover(inside, hit, chatCluster);
+        return false;
+    }
+
+    /// <summary>P764b — the post-hit-test half of the starmap hover, split from
+    /// <see cref="HandleStarmapHoverAndExpandClick"/> (which needs the mouse
+    /// and the graphics viewport) so a headless test can drive the
+    /// <c>UiSounds?.PlayMouseOver()</c> call at its trigger — native
+    /// <c>SectorMapPane::MouseMove</c>'s
+    /// <c>trekClient.PlaySoundEffect(mouseoverSound)</c>
+    /// (sectormap.cpp:1440-1443) — and pin the call, not only the pure rule.
+    /// Applies <see cref="Rendering.StarmapHover.Move"/> and updates the
+    /// selected / mouse-over cluster state exactly as the live path does.
+    /// </summary>
+    private void RunStarmapHover(bool inside, short? hit, short? chatCluster)
+    {
+        var (selected, mouseOver, hoverCue) = Rendering.StarmapHover.Move(inside, hit, chatCluster, _selectedSectorId);
         if (_selectedSectorId != selected)
             Console.WriteLine($"[monogame] starmap hover: selected sector {selected ?? -1}");
         // Native plays mouseoverSound when the hovered cluster differs from the
-        // current selection (sectormap.cpp:1440-1443).
-        if (mouseOver is { } hovered && hovered != _selectedSectorId)
-            _sound?.PlayMouseOver();
+        // current selection (sectormap.cpp:1440-1443); the pure rule returns the
+        // cue so the headless test can pin it (SIM-0330).
+        if (hoverCue)
+            UiSounds?.PlayMouseOver();
         _selectedSectorId = selected;
         _starmapHoverSector = mouseOver;
-        return false;
     }
 
     /// <summary>Build the expanded starmap layout with the same maths
@@ -183,18 +203,32 @@ public sealed partial class Game1
             return;
 
         short cluster = StarmapHitTest.HitTest(layout, cursor);
+        RunStarmapClick(cluster, mark);
+    }
+
+    /// <summary>
+    /// P764 — the post-hit-test half of the starmap click, split from
+    /// <see cref="ExecuteStarmapClick"/> (which needs the graphics viewport to
+    /// build the layout) so the headless tests can drive the click branches —
+    /// and pin the sound calls at the trigger — without a graphics device.
+    /// </summary>
+    private void RunStarmapClick(short cluster, bool mark)
+    {
         if (cluster < 0)
         {
             Console.WriteLine("[monogame] starmap click: empty map (no cluster) — nothing");
             return;
         }
 
+        // P764b — SIM-0332 correction: the port's `mark` path is the
+        // Ctrl+RIGHT-click highlight (native sectormap.cpp:1491-1510), which
+        // plays NO sound. Native's mouseclickSound on a right-button cluster
+        // hit (sectormap.cpp:1583-1587) belongs to the plain right-click
+        // console PickCluster — a path this port does not implement. Only the
+        // LEFT-click cluster hit cues, before the branch routing
+        // (sectormap.cpp:1523).
         if (!mark)
-        {
-            // P755 — native plays mouseclickSound for a left click that lands on
-            // a cluster, before the action branches (sectormap.cpp:1523).
-            _sound?.PlayMapClick();
-        }
+            UiSounds?.PlayMapClick();
 
         if (mark)
         {
@@ -237,12 +271,11 @@ public sealed partial class Game1
                 break;
 
             case StarmapClick.Action.Teleport:
-                // native AttemptTeleportTo(cluster) needs the teleport pane open
-                // (sectormap.cpp:1531-1536). In this port the teleport pane is part
-                // of the DOCKED screen, which overlays/hides the starmap, so a real
-                // in-flight teleport-pane click is unreachable (documented scope
-                // boundary); the routing is still pinned by the unit test.
-                Console.WriteLine("[monogame] starmap click: teleport pane — no in-flight teleport-to-station (docked teleport pane overlay hides the map); nothing");
+                // native AttemptTeleportTo(cluster) (sectormap.cpp:1355-1390):
+                // the teleport-pane overlay is up, so the click is a teleport
+                // request. P764 — the port implements the native error branches
+                // (already-in-cluster / no-appropriate-station) with errorSound.
+                AttemptTeleportTo(cluster);
                 break;
 
             case StarmapClick.Action.ViewCluster:
@@ -265,6 +298,78 @@ public sealed partial class Game1
                 if (isCurrent)
                     Console.WriteLine($"[monogame] starmap click: own sector {cluster} — nothing (native: users find anything else confusing)");
                 break;
+        }
+    }
+
+    /// <summary>
+    /// P764 — the port of native <c>SectorMapPane::AttemptTeleportTo</c>
+    /// (WinTrek/sectormap.cpp:1355-1390): a cluster click while the teleport
+    /// pane is open. The branch decision (and the native feedback lines) are
+    /// pure — <see cref="Rendering.StarmapTeleport.Decide"/> — so the headless
+    /// tests can pin both error branches (SIM-0328/0329) and the errorSound
+    /// call this method makes for them.
+    /// </summary>
+    private void AttemptTeleportTo(short cluster)
+    {
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own))
+                return;
+
+            short stationId = own.StationId;
+            short stationCluster = -1;
+            if (stationId >= 0 && world.Stations.TryGetValue(stationId, out var docked))
+                stationCluster = docked.ClusterId;
+
+            // Native FindFriendlyStation(pcluster, GetSide()) (sectormap.cpp:872-891):
+            // the first own-side station in the clicked cluster that is of a
+            // RESTART-capable station type (sectormap.cpp:881:
+            // pstation->GetStationType()->HasCapability(c_sabmRestart) — the
+            // check TeleportPaneModel.cs already applies for the pane list).
+            // A station type the client cannot resolve is not appropriate,
+            // matching the pane's keep-only-known-restart-types rule.
+            var stationTypes = _shopCatalog?.StationTypes;
+            short friendlyStation = -1;
+            foreach (var s in world.Stations.Values)
+            {
+                if (s.ClusterId != cluster || s.SideId != own.SideId) continue;
+                if (stationTypes?.TryGetValue(s.StationTypeId, out var stype) != true
+                    || !stype.HasCapability(DataStationTypeIGC.SabmRestart)) continue;
+                friendlyStation = s.StationId;
+                break;
+            }
+
+            var outcome = Rendering.StarmapTeleport.Decide(stationId, stationCluster, cluster, friendlyStation);
+            if (outcome.PlaysError)
+            {
+                world.PostSystemLine(outcome.Message!);
+                UiSounds?.PlayError();   // native trekClient.PlaySoundEffect(errorSound)
+                Console.WriteLine($"[monogame] starmap teleport refused: {outcome.Message} (errorSound)");
+                return;
+            }
+            if (outcome.Kind != Rendering.StarmapTeleport.OutcomeKind.DockRequest)
+                return;   // native race-condition branch: not docked — nothing
+
+            // Native sectormap.cpp:1372-1388: the DOCKED fm for the target
+            // station, with the teleport lockdown line. Same wire send (and
+            // latch discipline) as the teleport pane's own station branch
+            // (ActivateTeleport, Game1.Panes.cs).
+            // P764b — the turret branch (native sectormap.cpp:1369-1374): a
+            // ship with a ParentShip disembarks first — SendBoardShip(NA)
+            // before the DOCKED fm, exactly like ActivateTeleport's
+            // DisembarkAndTeleport leg (Game1.Panes.cs) — native's
+            // DisembarkAndTeleport(pstation).
+            if (own.ParentId != -1)
+            {
+                _session.SendBoardShip(Rendering.TeleportPaneModel.Na);
+                Console.WriteLine("[monogame] starmap teleport: leave current ship (DisembarkAndTeleport)");
+            }
+            _session.SendDocked(friendlyStation);
+            _teleportActive = false;
+            _launchSent = true;
+            _teleportBoardFailure = world.BoardFailureRevision;
+            Console.WriteLine($"[monogame] starmap teleport: to station {friendlyStation} -> DOCKED(stationID)");
         }
     }
 }
