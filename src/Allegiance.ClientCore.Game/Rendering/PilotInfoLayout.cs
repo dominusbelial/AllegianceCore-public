@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Allegiance.ClientCore.State;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
@@ -7,7 +8,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <summary>
 /// P639 — pure (MonoGame-free) layout of the CHARACTER SHEET (the upgraded
 /// Pilot Info screen): the local player's <b>own</b> live session stats pulled
-/// from the periodic <c>ScoreRosterUpdate(209)</c> snapshot in
+/// from the derived roster (P774: PLAYERINFO + KILL_SHIP) in
 /// <c>ClientWorld.ScoreRoster</c>, plus their rank name resolved from the
 /// <c>RANK_INFO(13)</c> table (<c>ClientWorld.RankTable</c>), turned into
 /// aligned label/value rows the <see cref="PilotInfoOverlayRenderer"/> draws.

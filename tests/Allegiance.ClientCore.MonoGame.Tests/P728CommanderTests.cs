@@ -126,10 +126,44 @@ public class P728CommanderTests
         var w = new ClientWorld();
         w.Apply(new SetCluster { SectorId = 1, Ship = ServerShipUpdate.FromValues(10, 0, default, 0, Vector3.Zero, Orientation.Identity, Vector3.Zero, [0, 0, 0], 1, 1, 1, 1, 1, 0, 1) });
         foreach (short id in new short[] { 10, 11, 12 }) w.Apply(new ExportShip { ShipId = id, SideId = id == 12 ? (short)1 : (short)0, CharacterName = $"p{id}" });
-        w.Apply(new ScoreRosterUpdate { Entries = [new("p10", 0, 0, 0, 0, 0, 0), new("p11", 0, 0, 0, 0, 0, 0), new("p12", 1, 0, 0, 0, 0, 0)] });
+        // P774 — funding recipients come from the ships' own PLAYERINFO(10)
+        // humans (`s.Player is { IsHuman: true }`, the native IsHuman()
+        // clintlib.h:343), not from the retired score-roster snapshot (209).
+        w.Apply(new PlayerInfo { ShipId = 10, ISide = 0, CharacterName = "p10" });
+        w.Apply(new PlayerInfo { ShipId = 11, ISide = 0, CharacterName = "p11" });
+        w.Apply(new PlayerInfo { ShipId = 12, ISide = 1, CharacterName = "p12" });
         w.Apply(new ExportShip { ShipId = -1, SideId = 0 });
         w.Apply(new SetMoney { ShipId = 10, Money = 250 });
         return w;
+    }
+
+    /// <summary>P774 — a same-side DRONE (its PLAYERINFO carries a real
+    /// dtidDrone, native FedSrv.CPP:2088-2090; IsHuman() is dtidDrone == NA,
+    /// clintlib.h:343) is never a gift/auto-donate recipient, while the human
+    /// teammate with a PLAYERINFO is.</summary>
+    [Fact]
+    public void Funding_recipients_are_PLAYERINFO_humans_not_drones()
+    {
+        var w = FundingWorld();
+        // The drone's ship id (5) sorts BEFORE every human, so a missing drone
+        // filter would make it pilots[0] — the first recipient.
+        w.Apply(new ExportShip { ShipId = 5, SideId = 0, CharacterName = "drone5" });
+        w.Apply(new PlayerInfo { ShipId = 5, ISide = 0, CharacterName = "drone5", DtidDrone = 4 });
+        var input = new InvestmentFundingInput();
+        var map = new ActionMap(InputActionCatalog.Definitions);
+        // The recipient list initialises to pilots[0] on the first Step: p11
+        // (ship 11) — never the drone (5) nor the enemy-side p12.
+        input.Step(default, map, w, true);
+        Assert.Equal((short)11, input.Recipient);
+        // Walk the whole cycle (InvestNextPilot, TAB): the drone never appears.
+        var seen = new HashSet<short>();
+        for (int i = 0; i < 6; i++)
+        {
+            input.Step(new(Keys.Tab), map, w, true);
+            input.Step(default, map, w, true);
+            seen.Add(input.Recipient!.Value);
+        }
+        Assert.Equal(new HashSet<short> { 11 }, seen);
     }
 
     [Fact]

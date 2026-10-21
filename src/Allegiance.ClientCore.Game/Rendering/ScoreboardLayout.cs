@@ -1,14 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Allegiance.ClientCore.State;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
 /// P639 — pure (MonoGame-free) layout of the LEADERBOARD screen, the upgraded
-/// in-mission scoreboard. Turns the wire <c>ScoreRosterEntry</c> list from
-/// <c>ClientWorld.ScoreRoster</c> plus the <c>RANK_INFO(13)</c> rank-name table
+/// in-mission scoreboard. Turns the derived <c>ScoreRosterEntry</c> list from
+/// <c>ClientWorld.ScoreRoster</c> (P774: built from PLAYERINFO + KILL_SHIP) plus
+/// the <c>RANK_INFO(13)</c> rank-name table
 /// (<c>ClientWorld.RankTable</c>) into aligned, pure-ASCII table cells that the
 /// <see cref="ScoreboardOverlayRenderer"/> draws.
 ///

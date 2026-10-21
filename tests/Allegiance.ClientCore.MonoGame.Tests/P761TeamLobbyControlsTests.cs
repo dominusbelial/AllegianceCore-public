@@ -30,7 +30,8 @@ public class P761TeamLobbyControlsTests
         // The server's dummy own-ship EXPORT (ShipId = NA) is the wire source of
         // MySideId (ClientWorld's export handler) — the leader/owner checks need it.
         w.Apply(new ExportShip { ShipId = -1, SideId = 0 });
-        w.Apply(new ScoreRosterUpdate { Entries = [new("comm", 0, 0, 0, 0, 0, 0)] });
+        // P774 — PLAYERINFO(10) seeds the roster (the retired 209 is gone).
+        w.Apply(new PlayerInfo { ShipId = 10, ISide = 0, CharacterName = "comm" });
         w.Apply(new SetTeamLeader { SideId = 0, ShipId = 10 });
         w.Apply(new SetMissionOwner { SideId = 0, ShipId = 10 });
         w.Apply(new MissionDef

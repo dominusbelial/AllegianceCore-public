@@ -44,6 +44,7 @@ public sealed partial class ClientWorld
         own.SideId = -1;
         own.CharacterName = "<error>";
         own.Player = new PlayerInfo { ShipId = message.ShipId, ISide = -1, CharacterName = "<error>" };
+        _scoreRosterDirty = true;   // P774 — a writer of ShipEntity.Player; the ISide = -1 stub stays out of the roster
         _roster.Clear();
         MyAcceptedCommand = null;
         MyCurrentCommand = null;

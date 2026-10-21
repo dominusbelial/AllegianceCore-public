@@ -9,8 +9,8 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// P639 — draws the LEADERBOARD screen (the upgraded in-mission scoreboard): a
 /// translucent panel listing every real-side player's in-side position, name,
 /// side, rank name, overall rating, combat rating, kills, deaths, base kills
-/// and base captures — from the periodic owner-only <c>ScoreRosterUpdate(209)</c>
-/// snapshot in <c>ClientWorld.ScoreRoster</c> + the <c>RANK_INFO(13)</c> rank
+/// and base captures — from the derived roster (P774: PLAYERINFO + KILL_SHIP)
+/// in <c>ClientWorld.ScoreRoster</c> + the <c>RANK_INFO(13)</c> rank
 /// table (<c>ClientWorld.RankTable</c>). See <see cref="ScoreboardLayout"/> for
 /// the ordering (side asc, score desc), the in-side position numbering and the
 /// native (leaderboardscreen.cpp:54-67) column mapping; the career-ladder

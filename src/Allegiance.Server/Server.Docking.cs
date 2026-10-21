@@ -662,8 +662,9 @@ public sealed partial class Server
     /// <para><b>Score / Steam — N/A, skipped.</b> Native awards rescue
     /// achievements before the wire (<c>AddRescue</c>/<c>AwardPodPickup</c>/
     /// <c>AwardGetRescued</c>, <c>FedSrv.CPP:13039-13051</c>). This port has
-    /// <b>no score system</b> (<c>PlayerInfo.cs:207</c> throws on non-empty
-    /// <c>rgPersistPlayerScores</c> — "score history not supported") and no
+    /// <b>no persisted score</b> (since P774 the PLAYERINFO codec carries the
+    /// persist list, but only as the rank-only NA entry — no persisted score
+    /// history, see <c>PlayerInfo.cs</c>) and no
     /// Steam integration anywhere, so both are intentionally skipped, the same
     /// precedent every score/Steam-adjacent gap this arc has already hit
     /// (P104's trigger deferral named the same absence).</para>

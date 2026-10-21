@@ -67,17 +67,21 @@ try
     }
     server.Missions[0].Stage = MissionStage.Started;
     for (int i = 0; i < 10; i++) Tick();
-    // No application traffic: prove periodic rosters do not elicit bot replies.
+    // No application traffic: prove periodic traffic does not elicit bot replies.
     long idleStart = host.PacketsReceived;
     long idleTick = server.LoopIterations;
     Console.WriteLine($"[receive-proof] phase=idle-rosters startTick={idleTick}");
     for (int i = 0; i < 100; i++) PacedTick();
-    if (bots.Any(b => b.ScoreRosterBroadcasts.LastOrDefault()?.Entries.Length != count))
-        throw new Exception("crowded proof requires the complete real-side roster at every peer");
+    // P774 — the port-only score-roster snapshot (209) and patch (219) are
+    // retired; the roster is derived from PLAYERINFO(10) seeds + KILL_SHIP(105).
+    // The crowded-proof precondition is therefore: every peer holds a
+    // PLAYERINFO for every mission ship (HUD-20, FedSrv.CPP:2129-2134).
+    if (bots.Any(b => b.PlayerInfos.Select(p => p.ShipId).Distinct().Count() < count))
+        throw new Exception("requires PLAYERINFO for every mission ship");
     observations.Add(new { phase = "idle-rosters", startTick = idleTick, endTick = server.LoopIterations,
-        packets = host.PacketsReceived - idleStart, rostersPerPeer = bots.Select(b => b.ScoreRosterBroadcasts.Count).ToArray(),
-        latestRosterEntries = bots[0].ScoreRosterBroadcasts.Last().Entries.Length,
-        latestRosterBytes = bots[0].ScoreRosterBroadcasts.Last().Encode().Length });
+        packets = host.PacketsReceived - idleStart,
+        playerInfosPerPeer = bots.Select(b => b.PlayerInfos.Count).ToArray(),
+        distinctPlayerInfoShips = bots[0].PlayerInfos.Select(p => p.ShipId).Distinct().Count() });
 
     // Match the bot manager's aligned decision sends, here at client 150ms cadence.
     var control = FedPacket.Pack(new ShipUpdate { Payload = ClientShipUpdate.FromControls(0, 0, new ControlData(.1f, 0, 0, 0)) }.Encode());

@@ -8,7 +8,7 @@ OBJECT_SPOTTED,6,S,—,neither (codec only),Real client does NOT consume (candid
 SET_CLUSTER,7,S,"ServerHost, Server.Broadcast",ConnectionSession (real client),Sets MyShipId + own ship entity; the join/spawn assignment,appmsg.cpp:991,done
 DEV_COMPLETED,8,S,Server.Economy,ConnectionSession (real client),Dev-completed chime; world records event (P267),appmsg.cpp:3318,done
 SET_BRIEFING_TEXT,9,S,Server.Lobby,ConnectionSession (real client),Briefing text stored; dismissible briefing popup (P271),appmsg.cpp:3330,done
-PLAYERINFO,10,S,"Server.Lifecycle, Server.Broadcast",ConnectionSession (real client),PlayerInfo roster applied to world,appmsg.cpp:2217,done
+PLAYERINFO,10,S,"Server.Lifecycle, Server.Broadcast",ConnectionSession (real client),PlayerInfo roster applied to world; seeds the scoreboard kills/deaths/ejections and rank (P774),appmsg.cpp:2217,done
 STATIC_MAP_INFO,11,S,—,neither (codec only),na — STATIC_MAP_INFO deliberately not built (dead-in-native),appmsg.cpp:3353,na
 PROJECTILE_INSTANCE,12,CS,"Server.Lifecycle, Server.Combat",ConnectionSession (real client),Projectile entity appended to render bolts/streaks (P231),—,done
 RANK_INFO,13,S,"Server.Lifecycle, Server.Lobby",ConnectionSession (real client),Rank-name table stored on world (P639); char sheet/scoreboard/team pane resolve Rank id → name,appmsg.cpp:3372,done
@@ -80,7 +80,7 @@ INACTIVE_TURRET_UPDATE,100,C,(C) server handler: Server.Dispatch,client→server
 TELEPORT_ACK,102,S,Server.Docking,ConnectionSession (real client),accepted->jump sound (appmsg.cpp:1901); denied->'Teleport failed' line,appmsg.cpp:1856,done
 BOARD_SHIP,103,C,"(C) server handler: Server.Docking, Server.Dispatch",client→server (sender),Client sends BOARD_SHIP (SendBoardShip),—,done
 VIEW_CLUSTER,104,C,"(C) server handler: Server.Dispatch, Server.ShipCommands",client→server (sender),Client sends VIEW_CLUSTER (SendViewClusterRequest),appmsg.cpp:443,done
-KILL_SHIP,105,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),KillShip death processed (P105/P370),appmsg.cpp:2747,done
+KILL_SHIP,105,S,"ServerHost, Server.Lifecycle",ConnectionSession (real client),KillShip death processed (P105/P370); kills/deaths/ejections of the PlayerInfo roster (P774),appmsg.cpp:2747,done
 SET_WINGID,106,CS,"Server.Dispatch, Server.ShipCommands",ConnectionSession (real client),P718: Same-team known-member wing; commanded-self critical assignment notice; live team-pane wing name (fills remaining P675 gap),Inc/Messages.h:705-709; clintlib/appmsg.cpp:2129-2147; Igc/common.cpp:23-35,done
 ICQ_CHAT_ACK,107,S,—,neither (codec only),na — ICQ_CHAT_ACK deliberately not built,—,na
 CHATBUOY,108,CS,"Server.Dispatch, Server.ShipCommands",ConnectionSession (real client),ChatBuoy order applied (CHATBUOY_RELAY P67),appmsg.cpp:2660,done
@@ -135,4 +135,3 @@ CHANGE_ALLIANCES,197,S,Server.Lobby,ConnectionSession (real client),P642: six al
 ASTEROID_MINED,198,S,Server.Combat,ConnectionSession (real client),updates asteroid live ore fraction (appmsg.cpp:1733),appmsg.cpp:1733,done
 HIGHLIGHT_CLUSTER,199,CS,Server.Dispatch,ConnectionSession (real client),Per-sector commander mark on full map/mini-map/HUD; receivedobjective on activation (P640),appmsg.cpp:1749,done
 CLUSTERINFO,200,S,"Server.Lifecycle, Server.Broadcast",ConnectionSession (real client),ClusterInfo map graph applied (P225),—,done
-ScoreRosterDelta,219,S,Server.Broadcast,ConnectionSession (real client),Sparse ordered scoreboard patch; full 209 heals gaps,port-specific (P672),done

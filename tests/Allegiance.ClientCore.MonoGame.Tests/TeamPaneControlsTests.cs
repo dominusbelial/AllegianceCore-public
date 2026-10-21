@@ -27,21 +27,17 @@ public class TeamPaneControlsTests
         // enemy 12 (side 1, sector 2). All seated on the score roster.
         foreach (short id in new short[] { 10, 11, 12 })
             w.Apply(new ExportShip { ShipId = id, SideId = id == 12 ? (short)1 : (short)0, CharacterName = $"p{id}" });
-        w.Apply(new ScoreRosterUpdate
-        {
-            Entries =
-            [
-                new("p10", 0, 0, 0, 0, 0, 0),
-                new("p11", 0, 0, 0, 0, 0, 0),
-                new("p12", 1, 0, 0, 0, 0, 0),
-            ]
-        });
+        // P774 — PLAYERINFO(10) seeds the roster (the retired 209 is gone).
+        w.Apply(new PlayerInfo { ShipId = 10, ISide = 0, CharacterName = "p10" });
+        w.Apply(new PlayerInfo { ShipId = 11, ISide = 0, CharacterName = "p11" });
+        w.Apply(new PlayerInfo { ShipId = 12, ISide = 1, CharacterName = "p12" });
         w.Apply(new ExportShip { ShipId = -1, SideId = 0 });
         w.Apply(new SetMoney { ShipId = 10, Money = 250 });
         // Sector positions for the take-me-to gate.
         w.Apply(new ShipStatusMessage { ShipId = 10, SectorId = 1, StationId = -1, ParentId = -1, State = ShipStatusMessage.StateFlying });
         w.Apply(new ShipStatusMessage { ShipId = 11, SectorId = 1, StationId = -1, ParentId = -1, State = ShipStatusMessage.StateFlying });
         w.Apply(new ShipStatusMessage { ShipId = 12, SectorId = 2, StationId = -1, ParentId = -1, State = ShipStatusMessage.StateFlying });
+        w.MarkApplied();   // P774 — end of the received batch: the derived roster rebuilds here
         return w;
     }
 

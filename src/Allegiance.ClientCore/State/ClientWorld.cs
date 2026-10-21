@@ -201,7 +201,13 @@ public sealed partial class ClientWorld
     /// after applying a batch of messages; a decision-time reader subtracts it from
     /// "now" to measure DECODE LAG — how stale the newest applied update is.
     /// </summary>
-    public void MarkApplied() => System.Threading.Volatile.Write(ref _lastAppliedTick64, (long)(NowSeconds() * 1000));
+    /// <remarks>P774 — also the one place the derived score roster is rebuilt
+    /// (once per batch, only when an input changed; see <see cref="ScoreRoster"/>).</remarks>
+    public void MarkApplied()
+    {
+        if (_scoreRosterDirty) RebuildScoreRoster();
+        System.Threading.Volatile.Write(ref _lastAppliedTick64, (long)(NowSeconds() * 1000));
+    }
 
     /// <summary>P636d — the wall-clock stamp (ms) of the newest applied update.</summary>
     public long LastAppliedTick64 => System.Threading.Volatile.Read(ref _lastAppliedTick64);
@@ -504,10 +510,22 @@ public sealed partial class ClientWorld
     private const int MaxClusterWarningCues = 64;
 
     public ShipWarningState ShipWarnings { get; } = new();
-    // P265 — the latest in-mission scoreboard snapshot (name/side/kills/deaths
-    // per real-side player) streamed by the periodic owner-only
-    // ScoreRosterUpdate(209) snapshots plus ordered ScoreRosterDelta(219) patches.
+    // P774 — the in-mission scoreboard roster is DERIVED, as native, from the
+    // per-ship PlayerInfo objects the world already keeps: PLAYERINFO(10)
+    // seeds them (FedSrv.CPP:2056-2135, fsmission.cpp:3958-3968) and KILL_SHIP
+    // keeps the counters current (clintlib/appmsg.cpp:2766-2773,2805-2808).
+    // There is no roster message: the port-only score-roster
+    // snapshot (209) + patch (219) pair was retired. An Apply that changes an
+    // input only sets _scoreRosterDirty; the array is rebuilt ONCE per applied
+    // batch in MarkApplied (never on read — readers on the game thread must not
+    // mutate world state), so two reads with no rebuild in between return the
+    // same instance. Per-Apply rebuilds were ~N^3 work per PLAYERINFO burst
+    // across a bot process's hundreds of worlds.
     private ScoreRosterEntry[] _scoreRoster = [];
+    private bool _scoreRosterDirty;
+    private long _scoreRosterRebuilds;
+    private readonly List<ShipEntity> _scoreRosterBuffer = [];
+    private static readonly Comparison<ShipEntity> ScoreRosterOrder = static (a, b) => a.ShipId.CompareTo(b.ShipId);
     // P639 — the rank-name table from RANK_INFO(13), the server's per-player
     // rank-name sync sent once right after LOGONACK on the valid-connect path
     // (Server.Lobby.cs:3344; native appmsg.cpp:3372-3382). Each receive replaces
@@ -1519,11 +1537,21 @@ public sealed partial class ClientWorld
     /// null during normal deactivation).</summary>
     public bool? AllowEmptyTeams { get; private set; }
 
-    /// <summary>P265 — the latest in-mission scoreboard snapshot (name / side /
-    /// kills / deaths per real-side player), streamed by the periodic owner-only
-    /// ScoreRosterUpdate(209) plus ScoreRosterDelta(219); empty until
-    /// the first snapshot lands.</summary>
+    /// <summary>P774 — the derived in-mission roster (name / side / kills /
+    /// deaths / ejections / rank per human ship on a real side), built from the
+    /// per-ship <see cref="PlayerInfo"/> objects exactly as native's client
+    /// keeps them (<c>clintlib.h:343-361</c>): PLAYERINFO(10) seeds, KILL_SHIP
+    /// updates. Empty until the first PLAYERINFO lands. Rebuilt once per
+    /// applied batch (in <see cref="MarkApplied"/>) when an input changed; two
+    /// reads with no rebuild in between return the same instance. Score/combat rating/rescues/base kills/base captures/
+    /// artifacts/flags read 0 until P774b (they have no native in-mission
+    /// source either).</summary>
     public IReadOnlyList<ScoreRosterEntry> ScoreRoster => _scoreRoster;
+
+    /// <summary>P774 — how many times the derived score roster was rebuilt
+    /// (diagnostic / test seam: a burst of N PLAYERINFOs in one batch is ONE
+    /// rebuild).</summary>
+    public long ScoreRosterRebuilds => _scoreRosterRebuilds;
 
     /// <summary>P639 — the rank-name table from RANK_INFO(13). Empty until the
     /// server's post-logon rank sync arrives; see <see cref="RankNameLookup"/>
@@ -1856,7 +1884,6 @@ public sealed partial class ClientWorld
         _mission = null;
         _gameOver = null;
         _gameOverPlayers = [];
-        _scoreRoster = [];
         _briefingText = "";
         _briefingFGenerateCivBriefing = false;
         _missionBriefingInfo = null;
@@ -1871,6 +1898,8 @@ public sealed partial class ClientWorld
         ClearRipcord();                  // P414 — drop any ripcord state on reconnect
 
         _ships.Clear();
+        _scoreRoster = [];               // P774 — the ship table was cleared: no rows
+        _scoreRosterDirty = false;
         _clusters.Clear();
         _stations.Clear();
         _warps.Clear();
@@ -2223,12 +2252,6 @@ public sealed partial class ClientWorld
                 break;
             case MissileTrackWarningUpdate missileTrack:
                 Apply(missileTrack);
-                break;
-            case ScoreRosterDelta scoreDelta:
-                _scoreRoster = scoreDelta.ApplyTo(_scoreRoster);
-                break;
-            case ScoreRosterUpdate scoreRoster:
-                Apply(scoreRoster);
                 break;
             case GameOverPlayers gameOverPlayers:
                 // P583 — the per-player endgame roster for the game-over screen.
@@ -3740,11 +3763,48 @@ public sealed partial class ClientWorld
             ConfirmBotSide();
         }
         if (string.IsNullOrEmpty(e.CharacterName) || e.CharacterName == "<error>") e.CharacterName = info.CharacterName;
+        _scoreRosterDirty = true;   // P774 — rebuilt once per batch in MarkApplied
     }
 
-    private void Apply(ScoreRosterUpdate m) =>
-        // P265 — replace the whole scoreboard snapshot on each periodic receive.
-        _scoreRoster = m.Entries;
+    /// <summary>P774 — rebuild the derived roster from the per-ship PlayerInfo
+    /// objects (the native client's one-PlayerInfo-per-ship model,
+    /// clintlib.h:343-361): one row per ship whose Player is a HUMAN (native
+    /// IsHuman(), dtidDrone == NA, clintlib.h:343) seated on a real side
+    /// (ISide &gt;= 0 — the same population the retired 209 carried: peers with
+    /// a real side; drones stay out, as they always did). Ordered by ship id.
+    /// Kills/deaths/ejections come from the counters PLAYERINFO seeds and
+    /// KILL_SHIP updates; rank from the NA persist entry (clintlib.cpp:1042-1051,
+    /// teampane.cpp:1866). Every Apply that
+    /// changes an input marks it dirty; it runs once per batch from
+    /// MarkApplied, never on read. Native's team pane also lists drones
+    /// (teampane.cpp:500-512 IsAllyOrHumanOrSpotted) — out of P774 scope.</summary>
+    private void RebuildScoreRoster()
+    {
+        _scoreRosterDirty = false;
+        _scoreRosterRebuilds++;
+        var buf = _scoreRosterBuffer;
+        buf.Clear();
+        foreach (var s in _ships.Values)
+            if (s.Player is { } p && p.IsHuman && p.ISide >= 0) buf.Add(s);
+        if (buf.Count == 0) { _scoreRoster = []; return; }
+        buf.Sort(ScoreRosterOrder);
+        var rows = new ScoreRosterEntry[buf.Count];
+        for (int i = 0; i < rows.Length; i++)
+        {
+            var p = buf[i].Player!;
+            rows[i] = new ScoreRosterEntry(
+                CharacterName: p.CharacterName,
+                SideId: p.ISide,
+                Kills: p.NKills,
+                Deaths: p.NDeaths,
+                Rank: p.Rank,
+                Score: 0f,
+                CombatRating: 0f,
+                Ejections: p.NEjections);
+        }
+        buf.Clear();
+        _scoreRoster = rows;
+    }
 
     private void Apply(ClusterInfo info) =>
         // One-shot: capture the graph verbatim; a repeat CLUSTERINFO (unusual)
@@ -4242,6 +4302,15 @@ public sealed partial class ClientWorld
             if (_ships.ContainsKey(m.ShipId))
                 RecordTargetKilled(IgcObjectType.Ship, m.ShipId);
         }
+        // P774 — native counts an EJECTION on the same KILL_SHIP when the server
+        // granted no death credit (bDeathCredit = false → AddEjection,
+        // appmsg.cpp:2770-2771; the server only sets bDeathCredit for a real
+        // death, FedSrv.CPP:11797-11798). The ejecting pod survives, so this
+        // must not run the death branch above.
+        else
+        {
+            e.Player?.AddEjection();
+        }
 
         // P578 — produce the eject/kill HUD feedback line for this receiver's
         // perspective (appmsg.cpp:2797-2844) and queue the "gloat camera" swing
@@ -4272,6 +4341,7 @@ public sealed partial class ClientWorld
             if (_cameraOverrideRequests.Count > MaxCameraOverrideRequests)
                 _cameraOverrideRequests.RemoveAt(0);
         }
+        _scoreRosterDirty = true;   // P774 — kills/deaths/ejections feed the derived roster
         ChangeGameState();
     }
 
@@ -4692,7 +4762,6 @@ public sealed partial class ClientWorld
         CountdownStartLocalMs = null;
         _countdownTargetMs = null;
         _missionTimeStartMs = null;
-        _scoreRoster = [];
         _briefingText = "";
         _briefingFGenerateCivBriefing = false;
         _missionBriefingInfo = null;
@@ -4707,6 +4776,8 @@ public sealed partial class ClientWorld
         ClearRipcord();
 
         _ships.Clear();
+        _scoreRoster = [];               // P774 — the ship table was cleared: no rows
+        _scoreRosterDirty = false;
         _clusters.Clear();
         _stations.Clear();
         _warps.Clear();
@@ -4997,6 +5068,7 @@ public sealed partial class ClientWorld
         // (so it goes stale after the local player's own side switch too).
         if (join.ShipId == (JoinedShipId ?? MyShipId))
             MySideId = join.SideId;
+        _scoreRosterDirty = true;   // P774 — the side change moves/inserts a roster row
 
         // P736 — SIM-0464/0465: the presence salutation when a HUMAN player
         // joins a side (native BaseClient::AddPlayerToSide,

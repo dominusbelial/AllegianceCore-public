@@ -1,5 +1,6 @@
 using System.Linq;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.State;
 using Allegiance.Core.Wire;
 using Xunit;
 
@@ -72,7 +73,7 @@ public class PilotInfoLayoutTests
     }
 
     /// <summary>Returns null when the local player isn't in the roster yet (pre-
-    /// join / no ScoreRosterUpdate received) — the renderer draws nothing rather
+    /// join / no roster row received) — the renderer draws nothing rather
     /// than a placeholder.</summary>
     [Fact]
     public void Build_returns_null_when_self_not_yet_in_roster()

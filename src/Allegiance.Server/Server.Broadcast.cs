@@ -459,11 +459,12 @@ public sealed partial class Server
         // "this missile's target is me" explicitly (see the codec doc for the
         // A-vs-B decision).
         Step("broadcastMissileTrackWarning", () => BroadcastMissileTrackWarning());
-        // P265 — periodic, owner-only ScoreRosterUpdate(209) of the real
-        // in-mission player roster (name/side/kills/deaths from P193 PlayerScore),
-        // throttled to ~2 s so the MonoGame client's scoreboard overlay shows real
-        // live-updated numbers (see BroadcastScoreRoster).
-        Step("broadcastScoreRoster", () => BroadcastScoreRoster());
+        // P774 — the port-only periodic score-roster snapshot (209) /
+        // patch (219) stream was removed: native has no
+        // roster message. The client derives the roster from PLAYERINFO(10)
+        // seeds (HUD-20: every mission ship to every mission peer,
+        // FedSrv.CPP:2129-2134) plus KILL_SHIP(105) counter updates
+        // (appmsg.cpp:2766-2773,2805-2808), exactly as native's client does.
         // P266 — per-tick, OWNER-ONLY LeadIndicatorUpdate(210) of the local
         // ship's predictive lead-aim point (where to fire to hit a selected moving
         // target), computed from the real solveForLead physics (Ship.SolveLead) and
@@ -961,7 +962,8 @@ public sealed partial class Server
                         _peerNames.TryGetValue(tv.Key, out var teammateName))
                     {
                         var teamInfo = BuildPlayerInfo(tv.Value.Ship, recipientSide,
-                            teammateName, tv.Value.PlayerScore.Kills, tv.Value.PlayerScore.Deaths);
+                            teammateName, tv.Value.PlayerScore.Kills, tv.Value.PlayerScore.Deaths,
+                            tv.Value.PlayerScore.Ejections, tv.Value.PlayerScore.Rank);
                         SendPeer(kv.Key, PackBroadcast(Message(teamInfo)));
                         if (ConsoleLog.Verbose) ConsoleLog.Write($"[teamplayerinfo] peer {kv.Key} <- ship {teammateId} '{teammateName}' side {recipientSide}");   // P619c: per-pair one-shot, gated (join-burst volume)
                         _teammatePlayerInfoSent.Add((kv.Key, teammateId));
@@ -1141,7 +1143,7 @@ public sealed partial class Server
                             if (ConsoleLog.Verbose) ConsoleLog.Write($"[samestidenpc] peer {kv.Key} <- NPC ship {npc.Id} side {npcSide}");   // P619c: per-pair one-shot, gated
                             // HUD-20 — the drone's PLAYERINFO seed follows its EXPORT
                             // (native announces a new drone to the mission, FedSrv.CPP:2269).
-                            SeedMissionPlayerInfo(kv.Key, npc, npcSide, 0, 0);
+                            SeedMissionPlayerInfo(kv.Key, npc, npcSide, 0, 0, 0, 0);
                         }
 
                         long lastNpcTick = _lastSameSideNpcStatusTick.TryGetValue((kv.Key, npc.Id), out var nt0) ? nt0 : -1;
@@ -1522,7 +1524,8 @@ public sealed partial class Server
                     && _peerNames.TryGetValue(tv.Key, out var teammateName))
                 {
                     var teamInfo = BuildPlayerInfo(tv.Value.Ship, recipientSide,
-                        teammateName, tv.Value.PlayerScore.Kills, tv.Value.PlayerScore.Deaths);
+                        teammateName, tv.Value.PlayerScore.Kills, tv.Value.PlayerScore.Deaths,
+                        tv.Value.PlayerScore.Ejections, tv.Value.PlayerScore.Rank);
                     r.Packets.Add((PackBroadcast(Message(teamInfo)), 0, false));
                     if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamplayerinfo] peer {conn} <- ship {teammateId} '{teammateName}' side {recipientSide}");   // P619c: gated
                     localPlayerInfoSent.Add(teammateId);
@@ -1846,7 +1849,7 @@ public sealed partial class Server
                     if (_crossSideExportPackets.TryGetValue(ship.Id, out var cached) && cached.Ship == ship)
                         cached.Generation = _crossSideExportGeneration;
                     short? ownSide = ship.SideId;
-                    (int Kills, int Deaths)? score = null;   // HUD-20: resolved lazily, once per ship
+                    (int Kills, int Deaths, int Ejections, short Rank)? score = null;   // HUD-20: resolved lazily, once per ship
                     foreach (var (sideId, e) in bySide)
                     {
                         if (ownSide == sideId) continue;          // own side — the same-side [teamexport] path
@@ -1880,7 +1883,8 @@ public sealed partial class Server
                                 if (ownSide is { } seedSide && !_missionPlayerInfoSent.Contains((conn, ship.Id)))
                                 {
                                     score ??= ShipMissionScore(ship, peers);
-                                    SeedMissionPlayerInfo(conn, ship, seedSide, score.Value.Kills, score.Value.Deaths);
+                                    SeedMissionPlayerInfo(conn, ship, seedSide,
+                                        score.Value.Kills, score.Value.Deaths, score.Value.Ejections, score.Value.Rank);
                                 }
                             }
                             // P369 — self-heal: on the slow refresh cadence,
@@ -1912,11 +1916,16 @@ public sealed partial class Server
     /// and <c>dtidDrone</c> NA for a human / the drone type id for a drone
     /// (<c>:2088-2091</c>). Money stays 0: the native client asserts
     /// <c>GetMoney()==0</c> in <c>AddPlayerToSide</c> (<c>clintlib.cpp:4109</c>).
-    /// <paramref name="kills"/>/<paramref name="deaths"/> are the player's
-    /// mission score where one exists (native <c>GetKills()/GetDeaths()</c>,
-    /// <c>:2085-2086</c>), 0 for a drone.</summary>
+    /// <paramref name="kills"/>/<paramref name="deaths"/>/<paramref name="ejections"/>
+    /// are the player's mission score where one exists (native
+    /// <c>GetKills()/GetDeaths()/GetEjections()</c>, <c>:2085-2087</c>), 0 for a
+    /// drone. P774 — the persist list rides along the way native fills it
+    /// (FedSrv.CPP:2060-2077): one NA entry carrying the player's rank
+    /// (<c>:952</c>), rank 0 for a drone whose persist is reset
+    /// (<c>:2073-2077</c>, igc.h:5449-5455). Score/combat rating stay 0 — no
+    /// stats DB (documented simplification).</summary>
     private PlayerInfo BuildPlayerInfo(Ship ship, short isSide, string? characterName,
-        int kills = 0, int deaths = 0) => new()
+        int kills = 0, int deaths = 0, int ejections = 0, short rank = 0) => new()
     {
         CharacterName = characterName ?? PeerName(ship) ?? $"Ship {ship.Id}",
         Money = 0,
@@ -1932,6 +1941,12 @@ public sealed partial class Server
         FExperience = ship.KillBonus,
         NKills = (short)Math.Clamp(kills, short.MinValue, short.MaxValue),
         NDeaths = (short)Math.Clamp(deaths, short.MinValue, short.MaxValue),
+        NEjections = (short)Math.Clamp(ejections, short.MinValue, short.MaxValue),
+        // P774 — the NA persist entry (native FedSrv.CPP:952 for a player;
+        // a drone's persist is reset, :2073-2077 + igc.h:5449-5455). The port
+        // sends ONLY the NA entry of native's NA-plus-per-civ list: every
+        // native client rank reader uses NA (teampane.cpp:308,1866).
+        PersistScores = [new(0f, 0f, ship.IsNpc ? (short)0 : rank, PlayerInfo.NA)],
     };
 
     /// <summary>HUD-20 — seed ONE PLAYERINFO(10) for <paramref name="ship"/> to
@@ -1950,25 +1965,27 @@ public sealed partial class Server
     /// native never re-sends experience after the seed (<c>FM_S_SET_EXPERIENCE</c>
     /// is a commented-out handler, <c>appmsg.cpp:2918-2928</c>) and a second
     /// PLAYERINFO would re-run the client's CreateObject.</summary>
-    private void SeedMissionPlayerInfo(ConnectionId conn, Ship ship, short shipSide, int kills, int deaths)
+    private void SeedMissionPlayerInfo(ConnectionId conn, Ship ship, short shipSide, int kills, int deaths,
+        int ejections, short rank)
     {
         if (_teammatePlayerInfoSent.Contains((conn, ship.Id))) return;   // inline P63 send owns teammates
         if (!_missionPlayerInfoSent.Add((conn, ship.Id))) return;
-        SendPeer(conn, PackBroadcast(Message(BuildPlayerInfo(ship, shipSide, null, kills, deaths))));
+        SendPeer(conn, PackBroadcast(Message(BuildPlayerInfo(ship, shipSide, null, kills, deaths, ejections, rank))));
         if (ConsoleLog.Verbose) ConsoleLog.Write($"[missionplayerinfo] peer {conn} <- ship {ship.Id} side {shipSide} exp {ship.KillBonus:0.##}");
     }
 
-    /// <summary>HUD-20 — the mission kills/deaths native puts in a human ship's
-    /// PLAYERINFO (<c>FedSrv.CPP:2085-2086</c>): the owning peer's score, 0 for a
-    /// drone. O(peers); called at most once per ship per sweep, and only when
-    /// that ship has a new (peer, ship) pair to seed.</summary>
-    private (int Kills, int Deaths) ShipMissionScore(Ship ship, KeyValuePair<ConnectionId, LiveShip>[] peers)
+    /// <summary>HUD-20 — the mission kills/deaths/ejections/rank native puts in
+    /// a human ship's PLAYERINFO (<c>FedSrv.CPP:2085-2087,952</c>): the owning
+    /// peer's score, 0 for a drone. O(peers); called at most once per ship per
+    /// sweep, and only when that ship has a new (peer, ship) pair to seed.</summary>
+    private (int Kills, int Deaths, int Ejections, short Rank) ShipMissionScore(Ship ship, KeyValuePair<ConnectionId, LiveShip>[] peers)
     {
-        if (ship.IsNpc) return (0, 0);
+        if (ship.IsNpc) return (0, 0, 0, 0);
         for (int i = 0; i < peers.Length; i++)
             if (ReferenceEquals(peers[i].Value.Ship, ship))
-                return (peers[i].Value.PlayerScore.Kills, peers[i].Value.PlayerScore.Deaths);
-        return (0, 0);
+                return (peers[i].Value.PlayerScore.Kills, peers[i].Value.PlayerScore.Deaths,
+                    peers[i].Value.PlayerScore.Ejections, peers[i].Value.PlayerScore.Rank);
+        return (0, 0, 0, 0);
     }
 
     /// <summary>P349 — send ONE cross-side <c>EXPORT(26)</c> about
@@ -2337,107 +2354,6 @@ public sealed partial class Server
             Console.WriteLine($"[overrun] tick cost {cost * 1000:0.##} ms exceeded period {_period * 1000:0.##} ms " +
                               $"by {(cost - _period) * 1000:0.##} ms (sim continues at full rate)");
         }
-    }
-
-    private bool ScoreRosterWorkDue(long tick)
-    {
-        foreach (var (conn, live) in _peerShips)
-        {
-            if (_peerNames.TryGetValue(conn, out var name)
-                && name.StartsWith(HarnessPrefix, StringComparison.Ordinal)) continue;
-            if (live.Ship.Mission is not { } mission) continue;
-            if (!_scoreRosterStates.TryGetValue(mission, out var state)
-                || state.Stage != mission.Stage
-                || _simNow - state.LastFullTime >= ScoreRosterFullRefreshSeconds
-                || tick - state.LastTick >= ScoreRosterRefreshTicks
-                || !state.Recipients.Contains(conn)) return true;
-        }
-        // Also clean baselines when their last human leaves or becomes a
-        // harness recipient, even if no remaining mission needs a send.
-        foreach (var (mission, state) in _scoreRosterStates)
-            foreach (var conn in state.Recipients)
-                if (!_peerShips.TryGetValue(conn, out var live) || live.Ship.Mission != mission
-                    || (_peerNames.TryGetValue(conn, out var name)
-                        && name.StartsWith(HarnessPrefix, StringComparison.Ordinal))) return true;
-        return false;
-    }
-
-    /// <summary>P672 — reliable mission deltas at the old score cadence, full snapshots
-    /// on join/rejoin, stage transitions, and every 30 sim seconds. MCP harness
-    /// metrics/finale consume KILL_SHIP events, so those peers need no roster.</summary>
-    private void BroadcastScoreRoster()
-    {
-        long tickIndex = TickIndex;
-        // P684 — retain P672's immediate recipient/stage refreshes without
-        // allocating its grouping/sets on every quiet P679 pipeline tick.
-        if (!ScoreRosterWorkDue(tickIndex)) return;
-        var activeMissions = new HashSet<Mission>();
-        foreach (var missionGroup in _peerShips.GroupBy(kv => kv.Value.Ship.Mission))
-        {
-            var mission = missionGroup.Key;
-            if (mission is null) continue;
-            activeMissions.Add(mission);
-            var targets = missionGroup.Where(kv => !_peerNames.TryGetValue(kv.Key, out var name)
-                || !name.StartsWith(HarnessPrefix, StringComparison.Ordinal)).Select(kv => kv.Key).ToHashSet();
-            if (targets.Count == 0) { _scoreRosterStates.Remove(mission); continue; }
-            bool first = !_scoreRosterStates.TryGetValue(mission, out var state);
-            state ??= new ScoreRosterState();
-            bool full = first || state.Stage != mission.Stage
-                || _simNow - state.LastFullTime >= ScoreRosterFullRefreshSeconds;
-            var newcomers = targets.Except(state.Recipients).ToHashSet();
-            state.Recipients.IntersectWith(targets);
-            if (!full && newcomers.Count == 0 && tickIndex - state.LastTick < ScoreRosterRefreshTicks)
-                continue;
-
-            var entries = new List<ScoreRosterEntry>();
-            foreach (var kv in missionGroup)
-            {
-                var live = kv.Value;
-                if (live.Ship.SideId is not { } sid)
-                    continue;                              // no real side → team-lobby analogue
-                string name = _peerNames.TryGetValue(kv.Key, out var n) ? n : $"Ship {live.Ship.Id}";
-                entries.Add(new ScoreRosterEntry(
-                    CharacterName: name,
-                    SideId: sid,
-                    Kills: (short)Math.Clamp(live.PlayerScore.Kills, short.MinValue, short.MaxValue),
-                    Deaths: (short)Math.Clamp(live.PlayerScore.Deaths, short.MinValue, short.MaxValue),
-                    Rank: live.PlayerScore.Rank,
-                    Score: live.PlayerScore.Score,
-                    CombatRating: live.PlayerScore.CombatRating,
-                    Ejections: (short)Math.Clamp(live.PlayerScore.Ejections, short.MinValue, short.MaxValue),
-                    Rescues: (short)Math.Clamp(live.PlayerScore.Rescues, short.MinValue, short.MaxValue),
-                    BaseKills: (short)Math.Clamp((int)live.PlayerScore.BaseKills, short.MinValue, short.MaxValue),
-                    BaseCaptures: (short)Math.Clamp((int)live.PlayerScore.BaseCaptures, short.MinValue, short.MaxValue),
-                    Artifacts: (short)Math.Clamp(live.PlayerScore.Artifacts, short.MinValue, short.MaxValue),
-                    Flags: (short)Math.Clamp(live.PlayerScore.Flags, short.MinValue, short.MaxValue)));
-            }
-
-            var current = entries.ToArray();
-            var delta = ScoreRosterDelta.Between(state.Entries, current);
-            bool changed = delta.Changes.Length != 0 || delta.BaseCount != delta.ResultCount;
-            byte[]? snapshot = full || newcomers.Count != 0
-                ? FedPacket.Pack(new ScoreRosterUpdate { Entries = current }.Encode()) : null;
-            // Dense churn is cheaper as a full snapshot. Both messages use the
-            // guaranteed ordered lane: patches must never be coalesced or shed.
-            bool dense = ScoreRosterDelta.FixedSize + delta.Changes.Length * ScoreRosterDelta.ChangeSize
-                >= ScoreRosterUpdate.FixedSize + current.Length * ScoreRosterEntry.Size;
-            byte[]? patch = !full && changed
-                ? (dense ? snapshot ?? FedPacket.Pack(new ScoreRosterUpdate { Entries = current }.Encode())
-                    : FedPacket.Pack(delta.Encode())) : null;
-            foreach (var target in targets)
-            {
-                if (full || newcomers.Contains(target)) SendPeer(target, snapshot!);
-                else if (patch is not null) SendPeer(target, patch);
-            }
-            state.Entries = current;
-            state.Recipients = targets;
-            state.Stage = mission.Stage;
-            state.LastTick = tickIndex;
-            if (full) state.LastFullTime = _simNow;
-            _scoreRosterStates[mission] = state;
-        }
-        foreach (var mission in _scoreRosterStates.Keys.Where(m => !activeMissions.Contains(m)).ToArray())
-            _scoreRosterStates.Remove(mission);
     }
 
     /// <summary>

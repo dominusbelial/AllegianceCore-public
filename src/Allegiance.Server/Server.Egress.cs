@@ -81,8 +81,8 @@ public sealed partial class Server
         26 => "FM_S_EXPORT", 38 => "FM_S_MISSIONDEF", 65 => "FM_S_BUCKET_STATUS",
         57 => "FM_S_STATIONS_UPDATE", 78 => "FM_S_SINGLE_SHIP_UPDATE", 90 => "FM_S_SHIP_STATUS",
         92 => "FM_S_PROBES_UPDATE", 95 => "FM_S_JOINED_MISSION", 175 => "FM_S_LIGHT_SHIPS_UPDATE",
-        176 => "FM_S_HEAVY_SHIPS_UPDATE", 179 => "FM_S_ASTEROIDS_UPDATE", 209 => "ScoreRosterUpdate", 210 => "LeadIndicatorUpdate",
-        219 => "ScoreRosterDelta", 211 => "SideRoster", 214 => "ClusterWarningUpdate", 853 => "MineStrength", 991 => "TimescaleUpdate",
+        176 => "FM_S_HEAVY_SHIPS_UPDATE", 179 => "FM_S_ASTEROIDS_UPDATE", 210 => "LeadIndicatorUpdate",
+        211 => "SideRoster", 214 => "ClusterWarningUpdate", 853 => "MineStrength", 991 => "TimescaleUpdate",
         _ => "fmid",
     };
 

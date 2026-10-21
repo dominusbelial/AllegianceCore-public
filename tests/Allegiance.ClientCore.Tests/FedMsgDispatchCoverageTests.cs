@@ -21,7 +21,7 @@ namespace Allegiance.ClientCore.Tests;
 ///
 ///  1. It encodes every server-sent message the real client is supposed to
 ///     consume (the <see cref="ExpectedConsumedServerSent"/> registry — all 91
-///     native S/CS messages the client dispatches, plus the 16 port-added
+///     native S/CS messages the client dispatches, plus the 14 port-added
 ///     server-sent messages), feeds the real bytes through the real dispatch
 ///     (no sockets — <see cref="ITransportSite.OnReceive"/> is invoked
 ///     directly), and asserts the fmid was consumed, i.e. did NOT land in
@@ -85,7 +85,9 @@ public class FedMsgDispatchCoverageTests
         (43, "LockLobby"), (44, "LockSides"), (52, "AutoAccept"),
         // port-added server-sent messages the real client also dispatches:
         (204, "MissileLockUpdate"), (205, "MissileUpdate"), (206, "OwnShipMiningUpdate"),
-        (207, "ExplosionEvent"), (208, "MissileTrackWarningUpdate"), (209, "ScoreRosterUpdate"), (219, "ScoreRosterDelta"),
+        (207, "ExplosionEvent"), (208, "MissileTrackWarningUpdate"),
+        // P774 — the port-only score roster (209/219) was retired; the client
+        // derives the roster from PLAYERINFO(10) + KILL_SHIP(105) as native.
         (210, "LeadIndicatorUpdate"), (211, "SideRoster"),
         (213, "ProjectileHullHit"), (214, "ClusterWarningUpdate"), (215, "QueuedCommandUpdate"),
         (216, "CollisionEvent"), (217, "VictimDamaged"), (853, "MineStrength"), (991, "TimescaleUpdate"),
@@ -276,10 +278,10 @@ public class FedMsgDispatchCoverageTests
         Assert.Equal(ExpectedConsumedServerSent.Length, consumed.Count);
         Assert.Equal(KnownUnconsumedServerSent.Length, unconsumed.Count);
         Assert.Equal(99, consumed.Count(f => supportedNativeServerSent.Contains(f)));
-        Assert.Equal(16, consumed.Count(f => !supportedNativeServerSent.Contains(f)));
+        Assert.Equal(14, consumed.Count(f => !supportedNativeServerSent.Contains(f)));
 
         // Sanity: the executable counts match the audited numbers.
-        Assert.Equal(115, ExpectedConsumedServerSent.Length);
+        Assert.Equal(113, ExpectedConsumedServerSent.Length);
         Assert.Equal(3, KnownUnconsumedServerSent.Length);
         Assert.Equal(102, supportedNativeServerSent.Length);
     }

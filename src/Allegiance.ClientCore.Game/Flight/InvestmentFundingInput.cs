@@ -20,8 +20,10 @@ internal sealed class InvestmentFundingInput
         bool Edge(string action) => _edges.Observe(action, map.IsDownMostSpecific(keys, action), !active);
         bool next = Edge(Actions[0]), small = Edge(Actions[1]), large = Edge(Actions[2]),
             auto = Edge(Actions[3]), toggle = Edge(Actions[4]), keep = Edge(Actions[5]);
+        // P774 — native's recipient list is the ship's own IsHuman() on its
+        // PlayerInfo (clintlib.h:343: dtidDrone == NA), with no roster lookup.
         var pilots = world.Ships.Values.Where(s => s.SideId == world.MySideId && s.ShipId != world.MyShipId
-            && !world.ResearchProduction.ContainsKey(s.ShipId) && world.ScoreRoster.Any(p => p.CharacterName == s.CharacterName))
+            && !world.ResearchProduction.ContainsKey(s.ShipId) && s.Player is { IsHuman: true })
             .OrderBy(s => s.ShipId).ToArray();
         int index = Array.FindIndex(pilots, s => s.ShipId == _recipient);
         if (next) index = (index + 1) % Math.Max(1, pilots.Length);

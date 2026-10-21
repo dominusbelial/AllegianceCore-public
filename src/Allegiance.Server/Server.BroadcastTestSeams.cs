@@ -247,9 +247,6 @@ public sealed partial class Server
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastMissileTrackWarning")) BroadcastMissileTrackWarning();
             TestProjectionAllocationCapture?.Invoke("step:broadcastMissileTrackWarning", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
             allocationMark = GC.GetAllocatedBytesForCurrentThread();
-            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastScoreRoster")) BroadcastScoreRoster();
-            TestProjectionAllocationCapture?.Invoke("step:broadcastScoreRoster", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
-            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastLeadIndicator")) BroadcastLeadIndicator();
             TestProjectionAllocationCapture?.Invoke("step:broadcastLeadIndicator", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
         }
@@ -271,7 +268,6 @@ public sealed partial class Server
         _shipDetected.Clear();
         _shipDetectedChanged.Clear();
         _lastSectorAssetMaskBySide.Clear();
-        _scoreRosterStates.Clear();
         _objectSyncDirtySides.Clear();
     }
 }

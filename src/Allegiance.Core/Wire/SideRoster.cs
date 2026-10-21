@@ -14,8 +14,9 @@ namespace Allegiance.Core.Wire;
 /// civ ids in <c>misparms.rgCivID[]</c>; Messages.h:294-318), but this port's
 /// <see cref="MissionDef"/> deliberately decodes only the join-flow fields and
 /// the native client-side of side-select is out of scope. A single compact
-/// roster message mirrors the established <c>ScoreRosterUpdate(209)</c>
-/// snapshot precedent rather than widening the huge MISSIONDEF struct.
+/// roster message mirrors the established one-shot identity-seed precedent
+/// (the per-(peer, ship) PLAYERINFO(10)/EXPORT(26) pair, HUD-20) rather than
+/// widening the huge MISSIONDEF struct.
 ///
 /// Layout (variable-length; one 46-byte record per side):
 /// <code>

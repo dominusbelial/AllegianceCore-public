@@ -132,8 +132,6 @@ public sealed class Bot : ITransportSite, IDisposable
     private readonly List<GameState> _gameStates = new();
     private readonly List<GameOver> _gameOvers = new();
     private readonly List<GameOverPlayers> _gameOverPlayers = new();
-    private readonly List<ScoreRosterUpdate> _scoreRosters = new();
-    private ScoreRosterEntry[] _scoreRoster = [];
     private readonly List<ClusterWarningUpdate> _clusterWarningUpdates = new();   // P374 — per-side sector-threat changes
     private readonly List<LeadIndicatorUpdate> _leadIndicatorUpdates = new();   // P266
     private readonly List<StationsUpdate> _stationsUpdates = new();   // P133
@@ -872,16 +870,6 @@ public sealed class Bot : ITransportSite, IDisposable
     public IReadOnlyList<GameOverPlayers> GameOverPlayerBroadcasts { get { lock (_gate) return _gameOverPlayers.ToArray(); } }
     public void ResetGameOverPlayerBroadcasts() { lock (_gate) _gameOverPlayers.Clear(); }
 
-    /// <summary>The <c>ScoreRosterUpdate(209)</c> broadcasts this bot has seen
-    /// (P672) — a reconstructed full snapshot per received full or delta
-    /// message, appended on the receiver thread under <see cref="_gate"/> like
-    /// <see cref="GameOverPlayerBroadcasts"/>. Each carries the real in-mission
-    /// roster (name/side/kills/deaths) for the bot's mission. Named differently
-    /// from the <see cref="Wire.ScoreRosterUpdate"/> type it holds so the
-    /// property doesn't shadow the type (the P186 shadowing pitfall). Cleared by
-    /// <see cref="ResetScoreRosterBroadcasts"/>.</summary>
-    public IReadOnlyList<ScoreRosterUpdate> ScoreRosterBroadcasts { get { lock (_gate) return _scoreRosters.ToArray(); } }
-    public void ResetScoreRosterBroadcasts() { lock (_gate) _scoreRosters.Clear(); }
     /// <summary>The <c>ClusterWarningUpdate(214)</c> broadcasts this bot has seen
     /// (P374) — a <see cref="Wire.ClusterWarningUpdate"/> per received per-side
     /// sector-threat change (warning level and/or secured/lost transitions),
@@ -1683,7 +1671,6 @@ public sealed class Bot : ITransportSite, IDisposable
     /// the identical fix/rationale on ConnectionSession.Connect, 2026-09-15).</summary>
     public void Connect(ushort port, string playerName, string host = "127.0.0.1")
     {
-        lock (_gate) { _scoreRoster = []; _scoreRosters.Clear(); }
         _transport = new TcpTransport(this);
         _transport.Join(host, port, playerName);
         StartKeepAlive();
@@ -2020,15 +2007,9 @@ public sealed class Bot : ITransportSite, IDisposable
                     case GameOverPlayers.Fmid:
                         _gameOverPlayers.Add(GameOverPlayers.Decode(m));
                         break;
-                    case ScoreRosterDelta.Fmid:
-                        _scoreRoster = ScoreRosterDelta.Decode(m).ApplyTo(_scoreRoster);
-                        _scoreRosters.Add(new ScoreRosterUpdate { Entries = _scoreRoster });
-                        break;
-                    case ScoreRosterUpdate.Fmid:
-                        var roster = ScoreRosterUpdate.Decode(m);
-                        _scoreRoster = roster.Entries;
-                        _scoreRosters.Add(roster);
-                        break;
+                    // P774 — the port-only score-roster (209/219) dispatch
+                    // cases are gone; the server no longer sends them and the
+                    // bot's kill metrics read KILL_SHIP events directly.
                     case ClusterWarningUpdate.Fmid:
                         _clusterWarningUpdates.Add(ClusterWarningUpdate.Decode(m));
                         break;

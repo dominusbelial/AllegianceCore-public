@@ -519,14 +519,13 @@ public sealed partial class Server
 
         // Clear the old mission's per-mission state so nothing keyed by the
         // discarded Mission leaks into (or keeps alive) the old world: the
-        // start-countdown deadline, pending ballots, the MapGen tag and the
-        // score-roster throttle.
+        // start-countdown deadline, pending ballots and the MapGen tag.
+        // (P774 — the score-roster throttle state is gone with fmid 209/219.)
         _startCountdownDeadline.Remove(mission);
         _autoRestartDeadline.Remove(mission);
         _restartWarnings.Remove(mission);
         _ballots.Remove(mission);
         _mapGenMissions.Remove(mission);
-        _scoreRosterStates.Remove(mission);
         // HUD-17: NPC detection entries are never pruned per ship (ids only grow);
         // drop them all with the old world. A missing entry reads as false.
         _shipDetected.Clear();
@@ -3632,7 +3631,8 @@ private void CompleteStartCountdown(Mission mission, double now)
             // HUD-20 — the shared native-shape builder fills fExperience,
             // pilotType and dtidDrone too (FedSrv.CPP:2084,2088-2091).
             BuildPlayerInfo(live.Ship, live.Ship.SideId ?? -1, req.CharacterName ?? "",
-                live.PlayerScore.Kills, live.PlayerScore.Deaths).Encode(),
+                live.PlayerScore.Kills, live.PlayerScore.Deaths,
+                live.PlayerScore.Ejections, live.PlayerScore.Rank).Encode(),
         }));
         Console.WriteLine($"[playerinfo] peer {from} '{req.CharacterName}' -> PLAYERINFO(10) ship {shipId} iSide {live.Ship.SideId?.ToString() ?? "(none)"} (side assignment for the direct-connect ship)");
 
@@ -3935,7 +3935,8 @@ private void CompleteStartCountdown(Mission mission, double now)
                 if (player.Ship.Mission == lobbyMission && player.Ship.Id != shipId)
                     lobbyState.Add(BuildPlayerInfo(player.Ship, player.Ship.SideId ?? -2,
                         _peerNames.TryGetValue(peer, out var name) ? name : "",
-                        player.PlayerScore.Kills, player.PlayerScore.Deaths).Encode());
+                        player.PlayerScore.Kills, player.PlayerScore.Deaths,
+                        player.PlayerScore.Ejections, player.PlayerScore.Rank).Encode());
             foreach (var side in lobbyMission.Sides)
             {
                 if (side.LeaderShipId is { } leader)

@@ -125,6 +125,7 @@ public sealed partial class ClientWorld
             if (suffix is not null) PostSystemLine(ship.CharacterName + suffix);
         }
         LastDeparture = new(message.ShipId, message.Reason, message.Message, false);
+        _scoreRosterDirty = true;   // P774 — the row leaves the real-side roster (ISide = -2)
         MarkSnapshotDirty();
     }
 
@@ -184,6 +185,7 @@ public sealed partial class ClientWorld
             _moneyByShipId.Remove(message.ShipId);
             _autoDonateTargetByShipId.Remove(message.ShipId);
             _positionRequests.RemoveWhere(r => r.ShipId == message.ShipId);
+            _scoreRosterDirty = true;   // P774 — the departed ship's row goes
             MarkSnapshotDirty();
         }
         LastDeparture = new(message.ShipId, message.Reason, message.Message, true);

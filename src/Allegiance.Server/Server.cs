@@ -536,17 +536,6 @@ public sealed partial class Server : IDisposable
     private readonly Dictionary<short, bool> _shipDetected = new();
     private readonly HashSet<short> _shipDetectedChanged = new();
 
-    // P672 — mission baseline, eligible recipients, and refresh deadlines. Sim-thread only.
-    private sealed class ScoreRosterState
-    {
-        public ScoreRosterEntry[] Entries = [];
-        public HashSet<ConnectionId> Recipients = [];
-        public long LastTick;
-        public double LastFullTime;
-        public MissionStage Stage;
-    }
-    private readonly Dictionary<Mission, ScoreRosterState> _scoreRosterStates = new();
-
     // P200 — last successful full-roster REQPINGDATA(195) request, in sim
     // seconds (_simNow), per requester connection. Implements native's
     // 5-second debounce (messagecore.h:217-223, CFMConnection::PingQuery): a
@@ -766,10 +755,6 @@ public sealed partial class Server : IDisposable
     /// the primary trigger, native's ShowObject/HideObject cadence —
     /// fsship.cpp ShipStatusSpotted/ShipStatusHidden). 100 ticks @ 20 upd/s = 5 s.</summary>
     private const int CrossSideStatusRefreshTicks = 100;
-
-    // Retain the existing maximum two-second score latency; full recovery every 30 sim seconds.
-    private const int ScoreRosterRefreshTicks = 40;
-    private const double ScoreRosterFullRefreshSeconds = 30;
 
     /// <summary>P369 — cadence (ticks) of the slow periodic identity REFRESH for
     /// cross-side ships: re-send the one-shot <c>EXPORT(26)</c> of an already-

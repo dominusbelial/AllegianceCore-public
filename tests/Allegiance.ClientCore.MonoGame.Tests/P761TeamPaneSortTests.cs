@@ -199,10 +199,11 @@ public class P761TeamPaneSortTests
         });
         foreach (short id in new short[] { 10, 11 })
             w.Apply(new ExportShip { ShipId = id, SideId = 0, CharacterName = $"p{id}" });
-        w.Apply(new ScoreRosterUpdate
-        {
-            Entries = [new("p10", 0, 0, 0, 0, 0, 0), new("p11", 0, 0, 0, 0, 0, 0)],
-        });
+        // P774 — the roster is derived from PLAYERINFO(10) (the native seed),
+        // not from the retired score-roster snapshot (209).
+        w.Apply(new PlayerInfo { ShipId = 10, ISide = 0, CharacterName = "p10" });
+        w.Apply(new PlayerInfo { ShipId = 11, ISide = 0, CharacterName = "p11" });
+        w.MarkApplied();   // P774 — end of the received batch: the derived roster rebuilds here
         var c = new TeamPaneControls();
         var map = new ActionMap(InputActionCatalog.Definitions);
 
@@ -269,10 +270,10 @@ public class P761TeamPaneSortTests
             w.Apply(new ExportShip { ShipId = id, SideId = side, CharacterName = $"p{id}", HullId = hull });
             w.Apply(new ShipStatusMessage { ShipId = id, HullId = hull, SectorId = sector, StationId = -1, ParentId = -1 });
         }
-        w.Apply(new ScoreRosterUpdate
-        {
-            Entries = [new("p10", 0, 0, 0, 0, 0, 0), new("p11", 0, 0, 0, 0, 0, 0)],
-        });
+        // P774 — PLAYERINFO(10) seeds the roster (the retired 209 is gone).
+        w.Apply(new PlayerInfo { ShipId = 10, ISide = 0, CharacterName = "p10" });
+        w.Apply(new PlayerInfo { ShipId = 11, ISide = 0, CharacterName = "p11" });
+        w.MarkApplied();   // P774 — end of the received batch: the derived roster rebuilds here
         return w;
     }
 

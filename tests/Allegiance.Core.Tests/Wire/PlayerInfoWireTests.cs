@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Text;
 using Allegiance.Core.Wire;
 using Xunit;
@@ -79,7 +80,7 @@ public class PlayerInfoWireTests
         i16(0);                             // iSide @52
         i16(8103);                          // shipID @54 (0x1FA7 → A7 1F)
         i16(0);                             // rankID @56
-        i16(0);                             // dtidDrone @58
+        i16(-1);                            // dtidDrone @58 — NA (human) by default (P774: clintlib.h:343)
         exp[p++] = 10;                      // pilotType @60
         pad(1);                             // → abmOrders @62
         i16(0);                             // abmOrders @62
@@ -129,13 +130,73 @@ public class PlayerInfoWireTests
         for (int i = 8; i < b.Length; i++)   // after header+var-item (ib legitimately holds 68)
         {
             if (i >= nameStart && i < nameEnd) continue;          // name (nonzero text + NUL + pad)
-            if (i >= 52 && i < 56) continue;                      // iSide @52, shipID @54
+            if (i >= 52 && i < 60) continue;                      // iSide @52, shipID @54, dtidDrone @58 = NA (P774)
             if (i >= 60 && i < 61) continue;                      // pilotType @60
             if (i >= 64 && i < 66) continue;                      // baseObjectID @64 = NA (-1, P78), not zero
             Assert.True(b[i] == 0, $"offset {i} non-zero ({b[i]:X2})");
         }
     }
 
+    /// <summary>P774 — the persist entry rides the var item (native
+    /// FedSrv.CPP:2060-2077): one 12-byte PersistPlayerScore entry, ib=68,
+    /// cb=12; NEjections is native nEjections (FedSrv.CPP:2087); dtidDrone
+    /// defaults to NA so every PLAYERINFO the port builds for a player is
+    /// native-human (clintlib.h:343).</summary>
+    [Fact]
+    public void PlayerInfo_round_trips_one_persist_entry_ejections_and_human_dtid()
+    {
+        var msg = new PlayerInfo
+        {
+            CharacterName = "ace",
+            ISide = 2,
+            ShipId = 700,
+            NEjections = 2,
+            PersistScores = [new PlayerInfo.PersistPlayerScore(0f, 0f, 7, -1)],
+        };
+        var bytes = msg.Encode();
+        Assert.Equal(80, bytes.Length);                      // 68 fixed + 12×1
+
+        var vi = VarItem.Read(bytes.AsSpan(4));
+        Assert.Equal(68, vi.Ib);
+        Assert.Equal(12, vi.Cb);
+
+        // dtidDrone @58 = 0xFFFF (NA) — the field, not the old literal 0.
+        Assert.Equal(0xFF, bytes[58]);
+        Assert.Equal(0xFF, bytes[59]);
+        // nEjections @44 = 2.
+        Assert.Equal(2, BitConverter.ToInt16(bytes.AsSpan(44)));
+        // Persist entry @68: score f32 @68, combat f32 @72, rank i16 @76, civ i16 @78.
+        Assert.Equal(0f, BitConverter.ToSingle(bytes.AsSpan(68)));
+        Assert.Equal(0f, BitConverter.ToSingle(bytes.AsSpan(72)));
+        Assert.Equal(7, BitConverter.ToInt16(bytes.AsSpan(76)));
+        Assert.Equal(-1, BitConverter.ToInt16(bytes.AsSpan(78)));
+
+        var d = PlayerInfo.Decode(bytes);
+        Assert.Equal(2, d.NEjections);
+        Assert.Equal((short)7, d.Rank);
+        Assert.True(d.IsHuman);
+        Assert.Equal(PlayerInfo.NA, d.DtidDrone);
+        var entry = Assert.Single(d.PersistScores);
+        Assert.Equal((short)7, entry.Rank);
+        Assert.Equal((short)-1, entry.CivId);
+        Assert.Equal(0f, entry.Score);
+        Assert.Equal(0f, entry.CombatRating);
+    }
+
+    [Fact]
+    public void PlayerInfo_no_persist_entry_decodes_and_reads_rank_0()
+    {
+        var d = PlayerInfo.Decode(new PlayerInfo { ShipId = 5 }.Encode());
+        Assert.Empty(d.PersistScores);
+        Assert.Equal((short)0, d.Rank);                      // clintlib.cpp:1042-1051 default
+        Assert.True(d.IsHuman);                              // NA default
+        Assert.Equal(68, new PlayerInfo().Encode().Length);  // MessageSize stays the FIXED width
+    }
+
+    /// <summary>P774 — the decoder accepts 0..20 12-byte persist entries
+    /// (cCivsMax = 20, FedSrv.CPP:2058) and still throws on anything else:
+    /// a stride that is not a multiple of 12, a wrong ib, a trailing byte,
+    /// a wrong fmid, or a truncated buffer.</summary>
     [Fact]
     public void PlayerInfo_RejectsWrongFmid_NonZeroScoreBlob_AndWrongLength()
     {
@@ -145,12 +206,57 @@ public class PlayerInfoWireTests
         badFmid[2] = 95;
         Assert.Throws<ArgumentException>(() => PlayerInfo.Decode(badFmid));
 
-        Assert.Throws<ArgumentException>(() => PlayerInfo.Decode(bytes.AsSpan(0, 67)));  // short
-        Assert.Throws<ArgumentException>(() => PlayerInfo.Decode(new byte[70]));         // long (length gate)
+        Assert.Throws<ArgumentException>(() => PlayerInfo.Decode(bytes.AsSpan(0, 67)));  // short of the fixed region
+        Assert.Throws<ArgumentException>(() => PlayerInfo.Decode(new byte[70]));         // trailing bytes (cbmsg/length mismatch)
 
-        // rgPersistPlayerScores cb sits at message offset 6 (VarItem cb = [4..5]=ib,[6..7]=cb).
-        var withScores = (byte[])bytes.Clone();
-        withScores[6] = 1;
-        Assert.Throws<ArgumentException>(() => PlayerInfo.Decode(withScores));
+        // cb = 12 decodes (P774).
+        var withEntry = new PlayerInfo { ShipId = 8011, PersistScores = [new(0f, 0f, 0, -1)] }.Encode();
+        Assert.Equal(80, withEntry.Length);
+        Assert.Single(PlayerInfo.Decode(withEntry).PersistScores);
+
+        // A stride that is not a multiple of 12 throws — isolated: cb = 13 and
+        // the buffer really is 68 + 13 bytes with a matching cbmsg, so ONLY the
+        // `cb % 12` rule can reject it.
+        var badStride = new byte[withEntry.Length + 1];
+        withEntry.CopyTo(badStride, 0);
+        BinaryPrimitives.WriteUInt16LittleEndian(badStride.AsSpan(0), (ushort)badStride.Length); // cbmsg = 81
+        BinaryPrimitives.WriteUInt16LittleEndian(badStride.AsSpan(6), 13);                       // cb = 13
+        var strideEx = Assert.Throws<ArgumentException>(() => PlayerInfo.Decode(badStride));
+        Assert.Contains("rgPersistPlayerScores invalid", strideEx.Message);
+
+        // A wrong ib throws (the blob must start right after the fixed region).
+        var badIb = (byte[])withEntry.Clone();
+        badIb[4] = 67;                                       // ib = 67
+        Assert.Throws<ArgumentException>(() => PlayerInfo.Decode(badIb));
+
+        // A trailing byte beyond the declared blob throws.
+        var trailing = new byte[withEntry.Length + 1];
+        withEntry.CopyTo(trailing, 0);
+        Assert.Throws<ArgumentException>(() => PlayerInfo.Decode(trailing));
+
+        // More than 20 entries exceeds cCivsMax (FedSrv.CPP:2058).
+        var tooMany = new PlayerInfo { ShipId = 1, PersistScores = Enumerable.Range(0, 21)
+            .Select(_ => new PlayerInfo.PersistPlayerScore(0f, 0f, 0, -1)).ToArray() };
+        Assert.Throws<ArgumentException>(() => tooMany.Encode());
+    }
+
+    /// <summary>P774 — the DECODER's cCivsMax bound (FedSrv.CPP:2058): 20
+    /// entries decode; a well-formed 21-entry frame (ib/cb/cbmsg/length all
+    /// consistent, stride a multiple of 12) is rejected by the `&gt; 20` rule
+    /// alone.</summary>
+    [Fact]
+    public void PlayerInfo_Decode_accepts_20_persist_entries_and_rejects_21()
+    {
+        var twenty = new PlayerInfo { ShipId = 1, PersistScores = Enumerable.Range(0, 20)
+            .Select(i => new PlayerInfo.PersistPlayerScore(0f, 0f, (short)i, (short)i)).ToArray() }.Encode();
+        Assert.Equal(68 + 20 * 12, twenty.Length);
+        Assert.Equal(20, PlayerInfo.Decode(twenty).PersistScores.Length);
+
+        var twentyOne = new byte[twenty.Length + 12];
+        twenty.CopyTo(twentyOne, 0);
+        BinaryPrimitives.WriteUInt16LittleEndian(twentyOne.AsSpan(0), (ushort)twentyOne.Length); // cbmsg = 320
+        BinaryPrimitives.WriteUInt16LittleEndian(twentyOne.AsSpan(6), 21 * 12);                  // cb = 252
+        var ex = Assert.Throws<ArgumentException>(() => PlayerInfo.Decode(twentyOne));
+        Assert.Contains("rgPersistPlayerScores invalid", ex.Message);
     }
 }

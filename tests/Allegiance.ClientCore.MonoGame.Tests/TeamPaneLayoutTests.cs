@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.State;
 using Allegiance.Core.Wire;
 using Xunit;
 

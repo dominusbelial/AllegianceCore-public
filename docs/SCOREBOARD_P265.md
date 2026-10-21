@@ -1,3 +1,4 @@
+Superseded by P774: fmids 209/219 retired; the roster is derived from PLAYERINFO + KILL_SHIP.
 # P265 — In-mission scoreboard / player roster (real kills/deaths)
 
 Feature: a toggleable in-mission scoreboard overlay in the MonoGame client

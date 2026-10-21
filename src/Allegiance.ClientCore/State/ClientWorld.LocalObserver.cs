@@ -10,6 +10,7 @@ public sealed partial class ClientWorld
     {
         if (MyShipId is not null) throw new InvalidOperationException("A seated pilot cannot consume observer snapshots");
         _ships.Clear();
+        _scoreRosterDirty = true;   // P774 — the observer frame replaces the ship table; MarkApplied rebuilds
         _probes.Clear();
         _mines.Clear();
         _missiles.Clear();

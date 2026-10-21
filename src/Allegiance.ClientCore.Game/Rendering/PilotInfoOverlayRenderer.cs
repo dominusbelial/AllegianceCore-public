@@ -9,7 +9,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// translucent panel showing the local player's <b>own</b> live session stats
 /// (kills, deaths, ejections, rescues, base kills, base captures, artifacts,
 /// flags, combat rating, score) and their resolved rank name, from the local
-/// player's row of the periodic <c>ScoreRosterUpdate(209)</c> snapshot
+/// player's row of the derived roster (P774: PLAYERINFO + KILL_SHIP)
 /// (<c>ClientWorld.ScoreRoster</c>) + the <c>RANK_INFO(13)</c> rank table
 /// (<c>ClientWorld.RankTable</c>). See <see cref="PilotInfoLayout"/> for the
 /// field mapping and the native CharInfoScreen fidelity notes (career

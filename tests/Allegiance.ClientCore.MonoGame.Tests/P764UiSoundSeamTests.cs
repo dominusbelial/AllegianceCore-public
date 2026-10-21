@@ -372,14 +372,16 @@ public sealed class P764UiSoundSeamTests
             Orientation.Identity, Vector3.Zero, [0, 0, 0], 1, 1, 1, 1, 1, 0, 1) });
         foreach (short id in new short[] { 10, 11 })
             w.Apply(new ExportShip { ShipId = id, SideId = 0, CharacterName = $"p{id}" });
-        w.Apply(new ScoreRosterUpdate { Entries =
-            [new("p10", 0, 0, 0, 0, 0, 0), new("p11", 0, 0, 0, 0, 0, 0)] });
+        // P774 — PLAYERINFO(10) seeds the roster (the retired 209 is gone).
+        w.Apply(new PlayerInfo { ShipId = 10, ISide = 0, CharacterName = "p10" });
+        w.Apply(new PlayerInfo { ShipId = 11, ISide = 0, CharacterName = "p11" });
         w.Apply(new ExportShip { ShipId = -1, SideId = 0 });
         w.Apply(new SetMoney { ShipId = 10, Money = 250 });
         w.Apply(new ShipStatusMessage { ShipId = 10, SectorId = 1, StationId = -1, ParentId = -1,
             State = ShipStatusMessage.StateFlying });
         w.Apply(new ShipStatusMessage { ShipId = 11, SectorId = 1, StationId = -1, ParentId = -1,
             State = ShipStatusMessage.StateFlying });
+        w.MarkApplied();   // P774 — end of the received batch: the derived roster rebuilds here
         world = w;
         return s;
     }

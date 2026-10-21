@@ -10,7 +10,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// P639 — pure (MonoGame-free) layout of the TEAM PANE: the full-roster screen
 /// showing every side's pilots with their rank name, ship status, kills and
 /// deaths, plus a footer with the local commander's money and any active
-/// ballot. Data is the periodic <c>ScoreRosterUpdate(209)</c> snapshot
+/// ballot. Data is the derived roster (P774: PLAYERINFO + KILL_SHIP)
 /// (<c>ClientWorld.ScoreRoster</c>), the <c>RANK_INFO(13)</c> rank table
 /// (<c>ClientWorld.RankTable</c>), and the live ship entity table
 /// (<c>ClientWorld.Ships</c>, flattened to <see cref="ShipBrief"/> by the
