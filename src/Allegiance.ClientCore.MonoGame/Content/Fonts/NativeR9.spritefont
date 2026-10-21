@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  FONT-1: NativeR9 — bundled DejaVu Sans baked at
+  MonoGame Size 9 (points) = 12.00 em px (MonoGame <Size> is points; em =
+  Size * 96/72 = Size * 1.3333, verified empirically). Substitute for the native
+  proportional HUD font at this pixel size . ASCII 32-126 only.
+-->
+<XnaContent xmlns:Graphics="Microsoft.Xna.Framework.Content.Pipeline.Graphics">
+  <Asset Type="Graphics:FontDescription">
+    <FontName>DejaVuSans.ttf</FontName>
+    <Size>9</Size>
+    <Spacing>0</Spacing>
+    <UseKerning>true</UseKerning>
+    <Style>Regular</Style>
+    <CharacterRegions>
+      <CharacterRegion>
+        <Start>&#32;</Start>
+        <End>&#126;</End>
+      </CharacterRegion>
+    </CharacterRegions>
+  </Asset>
+</XnaContent>

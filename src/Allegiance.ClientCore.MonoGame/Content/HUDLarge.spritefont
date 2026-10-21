@@ -4,10 +4,11 @@
   Same face as HUD.spritefont so the numerals share the small font's DNA at
   higher legibility; only digits plus a couple of separators really matter here,
   but the full ASCII printable range is baked so any string can use it.
+  FONT-1: the .ttf is the repo-bundled copy (Content/Fonts/DejaVuSansMono.ttf).
 -->
 <XnaContent xmlns:Graphics="Microsoft.Xna.Framework.Content.Pipeline.Graphics">
   <Asset Type="Graphics:FontDescription">
-    <FontName>DejaVu Sans Mono</FontName>
+    <FontName>Fonts/DejaVuSansMono.ttf</FontName>
     <Size>30</Size>
     <Spacing>0</Spacing>
     <UseKerning>true</UseKerning>

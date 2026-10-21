@@ -23,6 +23,13 @@ repository (MIT, "Copyright (c) 2017 FreeAllegiance"; notice in `NOTICE`):
 | 460 game sounds (`.ogg`) | `src/Allegiance.ClientCore.MonoGame/Content/Sounds/` |
 | `sounddef.mdl`, `quickchat.mdl` (sound and quick-chat definitions) | `src/Allegiance.ClientCore.MonoGame/Content/` |
 
+**Bundled DejaVu fonts (Bitstream Vera / DejaVu licence).** The client ships the
+DejaVu Sans, DejaVu Sans Bold and DejaVu Sans Mono faces (`.ttf`, in
+`src/Allegiance.ClientCore.MonoGame/Content/Fonts/`) as the substitutes for the
+classic HUD text (the native Win32 Verdana fonts are not redistributable).
+They are redistributed under the Bitstream Vera / DejaVu licence; the full text
+sits next to the fonts in `Content/Fonts/LICENSE-DejaVu.txt`.
+
 Renders of original ship models (reference images used to generate the Meshy
 models below) are in `docs/meshy_hints/`, and many screenshots in
 `docs/reports/` show original game art.

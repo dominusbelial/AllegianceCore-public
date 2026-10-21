@@ -55,6 +55,12 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     protected override bool DeferWarpFlash => true;
     protected override bool UsesModernGauges => true;
     protected override float TextScale => _scale;
+    // FONT-1 — Modern deliberately keeps its own SDF small/big fonts for every
+    // native identity (mapping lgBoldVerdana to _big, everything else to _small)
+    // at its own TextScale, so its rendering is unchanged by the classic skin's
+    // native-font switch.
+    protected override (SpriteFont Font, float Scale) HudFont(NativeFont id, float paneScale)
+        => (id == NativeFont.LgBoldVerdana ? _big : _small, TextScale);
     protected override void RenderText(SpriteFont font, string text, Vector2 position, Color color, float scale)
         => (font == _big ? _bigSdf : _smallSdf).Draw(_sb, text, position, color, scale);
     protected override void PrepareLayout(HudModel model, Viewport viewport)
@@ -420,7 +426,7 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             bool hasRightColumn = row.OutOfAmmo || row.StatsText is not null || row.ReadyState is 1 or 2;
             float nameMax = Math.Max(0f, ((hasRightColumn ? InventoryPaneLayout.StatsX : InventoryPaneLayout.LineWidth)
                 - InventoryPaneLayout.NameX - (hasRightColumn ? 2f : 3f)) * s);
-            RenderText(_small, FitText(row.Name, nameMax, _scale),
+            RenderText(_small, FitText(_small, row.Name, nameMax, _scale),
                 new(left + InventoryPaneLayout.NameX * s, textY), nameColor, _scale);
         }
 

@@ -33,6 +33,27 @@ namespace Allegiance.ClientCore.MonoGame;
 public sealed partial class Game1
 {
 
+    /// <summary>FONT-1 — load the bundled native-classic-HUD font bakes (one 1× +
+    /// 2× SpriteFont per native identity) and wrap them in the registry the
+    /// classic HUD/chat renderers consult. Identities that share a (face, Size)
+    /// bake (medVerdana/smallFont, medBoldVerdana/promptFont) load it once.</summary>
+    private Rendering.NativeFonts LoadNativeFonts()
+    {
+        var loaded = new Dictionary<string, SpriteFont>();
+        SpriteFont Load(string asset)
+        {
+            if (!loaded.TryGetValue(asset, out var font))
+                font = loaded[asset] = Content.Load<SpriteFont>(asset);
+            return font;
+        }
+        var map = new Dictionary<Rendering.NativeFont, (SpriteFont One, SpriteFont Two)>();
+        foreach (var id in Enum.GetValues<Rendering.NativeFont>())
+        {
+            var spec = Rendering.NativeFontCatalog.Spec(id);
+            map[id] = (Load(spec.Asset1x), Load(spec.Asset2x));
+        }
+        return new Rendering.NativeFonts(map);
+    }
 
     protected override void LoadContent()
     {
@@ -283,15 +304,19 @@ public sealed partial class Game1
         // HUD-7 — the native classic inventory-pane art (top/line/bottom
         // backgrounds, icons, mounting/arming bar fills). Graceful fallback.
         _inventoryTextures = Rendering.InventoryPaneTextures.Load(GraphicsDevice, _assets);
+        // FONT-1 — the bundled native-classic-HUD font bakes (DejaVu Sans /
+        // DejaVu Sans Bold at the native pixel sizes), one 1× + 2× pair per
+        // native identity, passed to the classic HUD and classic chat renderers.
+        var nativeFonts = LoadNativeFonts();
         _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, gauges, lockTextures,
             _statusTextures, indicatorTextures, targetPaneTextures, _inventoryTextures,
             damageWash: _hudSettings.DamageWash, nativeHudTextures: _hudNativeTextures,
-            gaugePercentage: _hudSettings.GaugePercentage);
+            gaugePercentage: _hudSettings.GaugePercentage, nativeFonts: nativeFonts);
 
         // P214 — in-flight chat overlay (same SpriteBatch/font plumbing as the HUD).
         _modernHudRenderer = new ModernHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings,
             Content.Load<SpriteFont>("HUDModern"), nativeArt: _statusTextures, nativeHudTextures: _hudNativeTextures);
-        _chatRenderer = new ChatRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudNativeTextures);
+        _chatRenderer = new ChatRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudNativeTextures, nativeFonts);
 
         // P217 — the quick-chat voice-macro data, parsed once at runtime from
         // verbatim copies of the original's real .mdl files shipped as Content

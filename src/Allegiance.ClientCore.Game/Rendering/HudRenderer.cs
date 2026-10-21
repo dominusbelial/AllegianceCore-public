@@ -55,6 +55,7 @@ public class HudRenderer
     protected readonly Texture2D _white;
     protected readonly SpriteFont _small;
     protected readonly SpriteFont _big;
+    private readonly NativeFonts? _nativeFonts;
     private readonly GaugeTextures? _gauges;
     private readonly LockTextures? _lockTextures;
     private readonly StatusTextures? _status;
@@ -81,12 +82,14 @@ public class HudRenderer
         InventoryPaneTextures? inventoryTextures = null,
         bool damageWash = true,
         HudNativeTextures? nativeHudTextures = null,
-        bool gaugePercentage = false)
+        bool gaugePercentage = false,
+        NativeFonts? nativeFonts = null)
     {
         _sb = spriteBatch;
         _white = whitePixel;
         _small = small;
         _big = big;
+        _nativeFonts = nativeFonts;
         _gauges = gauges;
         _lockTextures = lockTextures;
         _status = statusTextures;
@@ -142,8 +145,9 @@ public class HudRenderer
             // when the caller supplies the line (env ALLEGIANCE_LOD_OVERLAY=1).
             if (lodOverlay is { Length: > 0 })
             {
-                var sz = _small.MeasureString(lodOverlay);
-                DrawText(_small, lodOverlay, new Vector2(w - sz.X - 12f, 12f), Color.White);
+                var lodFont = NativeFontAt(NativeFont.MedVerdana);
+                var sz = lodFont.MeasureString(lodOverlay);
+                DrawText(lodFont, lodOverlay, new Vector2(w - sz.X - 12f, 12f), Color.White);
             }
             // P228 — damage flash: a full-viewport translucent-red wash while the
             // local player's ship is mid flash-window (hull took a hit). Drawn
@@ -252,10 +256,11 @@ public class HudRenderer
                 for (int i = 0; i < objectives.Count; i++)
                 {
                     var objective = objectives[i];
-                    var size = _small.MeasureString(objective.Text);
+                    var objFont = NativeFontAt(NativeFont.MedVerdana);
+                    var size = objFont.MeasureString(objective.Text);
                     var origin = new Vector2(w / 2f - size.X / 2f, 162f + i * 26f);
                     FillRect(origin.X - 8, origin.Y - 3, size.X + 16, size.Y + 6, Color.Black * 0.7f);
-                    DrawText(_small, objective.Text, origin, BonusGold);
+                    DrawText(objFont, objective.Text, origin, BonusGold);
                     if (objective.Bracket is { } bracket) DrawTargetSelectionBracket(bracket);
                     if (objective.Bearing is { } bearing)
                         DrawTargetBearingArrow(bearing, viewport, 190 + i * 110, objective.BearingLabel, bottomInset: 330);
@@ -271,7 +276,7 @@ public class HudRenderer
             // label that was false. The names mirror native's view modes
             // (Treki.h:108-126): cmExternalTurret and cmExternalMissile.
             string modeLabel = model.CameraLabel;
-            DrawText(_small, modeLabel, new Vector2(16f, h - 26f),
+            DrawText(NativeFontAt(NativeFont.MedVerdana), modeLabel, new Vector2(16f, h - 26f),
                 mode == CameraMode.Cockpit ? Accent : TextDim);
 
             // P366 — the leader-only bot dock/launch prompt: drawn whenever the
@@ -427,11 +432,34 @@ public class HudRenderer
     // formatted lines (no per-frame string/array allocation at 107v107).
     private readonly RadarLabelCache _radarLabels = new();
     protected virtual float TextScale => 1;
+    /// <summary>
+    /// FONT-1 — the font+scale a classic-HUD text site uses for a native font
+    /// identity at the pane's own position scale (<paramref name="paneScale"/>,
+    /// floored at 1 by the registry). Class passes through to the bundled native
+    /// bakes; Modern overrides it to keep its own SDF small/big fonts, so Modern
+    /// renders exactly as before. Every measurement at a site uses the SAME
+    /// returned (font, scale) as its draw.
+    /// </summary>
+    protected virtual (SpriteFont Font, float Scale) HudFont(NativeFont id, float paneScale)
+    {
+        if (_nativeFonts is { } native)
+            return native.Get(id, paneScale);
+        // Fallback (renderer tests that supply only the mono fonts): keep the
+        // historic small/big split at TextScale.
+        return (id == NativeFont.LgBoldVerdana ? _big : _small, TextScale);
+    }
+
+    /// <summary>FONT-1 — resolve a native font at the console/TextScale pane
+    /// scale (paneScale == TextScale for the console and port-only widgets),
+    /// returning just the font. Pane-scaled sites call
+    /// <see cref="HudFont"/> directly to also get the residual scale.</summary>
+    protected SpriteFont NativeFontAt(NativeFont id) => HudFont(id, TextScale).Font;
+
     /// <summary>HUD-11 — the rendered height of one HUD text line. Native
     /// dialogs translate labels by raw 14 px because native promptFont is 14 px
     /// high (dialog.mdl:1473-1485); the port's substitute font is taller, so
     /// stacked console lines use this measured height instead.</summary>
-    protected virtual float TextLineHeight => _small.LineSpacing * TextScale;
+    protected virtual float TextLineHeight => NativeFontAt(NativeFont.MedVerdana).LineSpacing * TextScale;
 
     /// <summary>HUD-11 — the native top-centre chat pane owns x =
     /// [centre-160, centre+195] (CommPane, dialog.mdl:5394; 355 px wide,
@@ -452,8 +480,8 @@ public class HudRenderer
     /// <see cref="DrawMeasuredText"/>, without its background fill or collision
     /// placement). The full value stays in the model; only the glyphs clip.
     /// </summary>
-    protected string FitText(string text, float maxWidth, float scale)
-        => HudFormat.FitToWidth(text, t => _small.MeasureString(t).X * scale, Math.Max(0f, maxWidth));
+    protected string FitText(SpriteFont font, string text, float maxWidth, float scale)
+        => HudFormat.FitToWidth(text, t => font.MeasureString(t).X * scale, Math.Max(0f, maxWidth));
 
     protected virtual void PrepareLayout(HudModel model, Viewport viewport)
     {
@@ -572,13 +600,14 @@ public class HudRenderer
 
     private void ReserveAnchor(string text, float anchorX, float top, bool centered)
     {
-        var size = _small.MeasureString(text) * TextScale;
+        var size = NativeFontAt(NativeFont.MedVerdana).MeasureString(text) * TextScale;
         float left = centered ? anchorX - size.X / 2f : anchorX;
         Layout.Reserve(new Rectangle((int)left, (int)top, (int)MathF.Ceiling(size.X), (int)MathF.Ceiling(size.Y)));
     }
-    public Rectangle DrawOverlayText(string text, Vector2 position, Color color) => DrawMeasuredText(_small, text, position, color);
-    protected void DrawText(SpriteFont font, string text, Vector2 position, Color color)
-        => DrawMeasuredText(font, text, position, color);
+    public Rectangle DrawOverlayText(string text, Vector2 position, Color color)
+        => DrawMeasuredText(NativeFontAt(NativeFont.MedVerdana), text, position, color);
+    protected void DrawText(SpriteFont font, string text, Vector2 position, Color color, float? drawScale = null)
+        => DrawMeasuredText(font, text, position, color, drawScale: drawScale);
 
     /// <summary>
     /// HUD-5 — radar name/range/stat labels stacked beside each projected or
@@ -651,12 +680,15 @@ public class HudRenderer
             + (rangeLine is not null ? 1 : 0);
         if (lineCount == 0 && barCount == 0) return;
 
-        float lineHeight = _small.LineSpacing * scale;
+        // FONT-1 — native radar labels use smallFont (WinTrek/radarimage.cpp:1189);
+        // label tiers and placement are unchanged (font switch only).
+        var radarFont = NativeFontAt(NativeFont.SmallFont);
+        float lineHeight = radarFont.LineSpacing * scale;
         float maxText = 0f;
         if (nameLine is not null)
-            maxText = MathF.Max(maxText, _small.MeasureString(HudFormat.Printable(nameLine)).X * scale);
+            maxText = MathF.Max(maxText, radarFont.MeasureString(HudFormat.Printable(nameLine)).X * scale);
         if (rangeLine is not null)
-            maxText = MathF.Max(maxText, _small.MeasureString(rangeLine).X * scale);
+            maxText = MathF.Max(maxText, radarFont.MeasureString(rangeLine).X * scale);
         float barRow = barCount > 0 ? 5f * scale : 0f;
         float blockWidth = MathF.Max(maxText + iconSize + iconGap, barCount * (24f + 4f) * scale) + 8f * scale;
         float blockHeight = lineCount * lineHeight + barRow + 6f * scale;
@@ -686,12 +718,12 @@ public class HudRenderer
         }
         if (nameLine is not null)
         {
-            RenderText(_small, HudFormat.Printable(nameLine), new Vector2(placed.X + iconSize + iconGap, y), color, scale);
+            RenderText(radarFont, HudFormat.Printable(nameLine), new Vector2(placed.X + iconSize + iconGap, y), color, scale);
             y += lineHeight;
         }
         if (rangeLine is not null)
         {
-            RenderText(_small, rangeLine, new Vector2(placed.X, y), color, scale);
+            RenderText(radarFont, rangeLine, new Vector2(placed.X, y), color, scale);
             y += lineHeight;
         }
         if (barCount > 0)
@@ -725,13 +757,15 @@ public class HudRenderer
         return new Color(0.88f, 0.96f, 0.95f);
     }
 
-    public Rectangle DrawMeasuredText(SpriteFont font, string text, Vector2 position, Color color, bool instrument = false, bool centerAtScale = true, float? maxWidth = null, bool background = true, bool fixedAnchor = false)
+    public Rectangle DrawMeasuredText(SpriteFont font, string text, Vector2 position, Color color, bool instrument = false, bool centerAtScale = true, float? maxWidth = null, bool background = true, bool fixedAnchor = false, float? drawScale = null)
     {
         // Long dynamic names and chat are fitted by measured width, never by a
         // character-count estimate. Retain the full value in the model.
         text = HudFormat.Printable(text);
         var measured = font.MeasureString(text);
-        float scale = TextScale;
+        // FONT-1 — pane-scaled sites pass the same scale the pane uses for its
+        // positions (via the HudFont hook); console sites default to TextScale.
+        float scale = drawScale ?? TextScale;
         float limit = Math.Min(_viewportWidth - 16, maxWidth ?? float.MaxValue);
         if (measured.X * scale > limit)
         {
@@ -756,10 +790,11 @@ public class HudRenderer
 
     private void DrawWarnings(IReadOnlyList<string> warnings, float w, float h)
     {
+        var warnFont = NativeFontAt(NativeFont.MedVerdana);
         for (int i = 0; i < warnings.Count; i++)
         {
-            var size = _small.MeasureString(warnings[i]);
-            DrawText(_small, warnings[i], new Vector2((w - size.X) / 2f, h * 0.19f + i * _small.LineSpacing), Warning);
+            var size = warnFont.MeasureString(warnings[i]);
+            DrawText(warnFont, warnings[i], new Vector2((w - size.X) / 2f, h * 0.19f + i * warnFont.LineSpacing), Warning);
         }
     }
 
@@ -788,10 +823,12 @@ public class HudRenderer
         {
             float labelTop = HudConsoleFormat.SectorLabelTop * scale;
             float nameTop = HudConsoleFormat.NameBelowLabel(labelTop, lineHeight);
-            var psz = _small.MeasureString("Current location:");
-            var nsz = _small.MeasureString(sector);
-            DrawMeasuredText(_small, "Current location:", new(cxRight - psz.X / 2, labelTop), yellow, fixedAnchor: true);
-            DrawMeasuredText(_small, sector, new(cxRight - nsz.X / 2, nameTop), cortText, fixedAnchor: true);
+            var promptFont = NativeFontAt(NativeFont.PromptFont);
+            var medVerdana = NativeFontAt(NativeFont.MedVerdana);
+            var psz = promptFont.MeasureString("Current location:");
+            var nsz = medVerdana.MeasureString(sector);
+            DrawMeasuredText(promptFont, "Current location:", new(cxRight - psz.X / 2, labelTop), yellow, fixedAnchor: true);
+            DrawMeasuredText(medVerdana, sector, new(cxRight - nsz.X / 2, nameTop), cortText, fixedAnchor: true);
             ElementDrawn("Sector location");
         }
 
@@ -802,10 +839,12 @@ public class HudRenderer
         {
             float labelTop = HudConsoleFormat.TurretLabelTop * scale;
             float nameTop = HudConsoleFormat.NameBelowLabel(labelTop, lineHeight);
-            var hsz = _small.MeasureString("Turret of:");
-            var nsz = _small.MeasureString(carrier);
-            DrawMeasuredText(_small, "Turret of:", new(cxRight - hsz.X / 2, labelTop), yellow, fixedAnchor: true);
-            DrawMeasuredText(_small, carrier, new(cxRight - nsz.X / 2, nameTop), red, fixedAnchor: true);
+            var promptFont = NativeFontAt(NativeFont.PromptFont);
+            var medVerdana = NativeFontAt(NativeFont.MedVerdana);
+            var hsz = promptFont.MeasureString("Turret of:");
+            var nsz = medVerdana.MeasureString(carrier);
+            DrawMeasuredText(promptFont, "Turret of:", new(cxRight - hsz.X / 2, labelTop), yellow, fixedAnchor: true);
+            DrawMeasuredText(medVerdana, carrier, new(cxRight - nsz.X / 2, nameTop), red, fixedAnchor: true);
             ElementDrawn("Turret carrier identity");
         }
 
@@ -817,17 +856,19 @@ public class HudRenderer
         if (console.AcceptedOrder is not null || console.QueuedOrder is not null)
         {
             float labelTop = HudConsoleFormat.OrderLabelTop * scale;
-            DrawMeasuredText(_small, "Current orders:", new(HudConsoleFormat.OrderLabelX * scale, labelTop), yellow, fixedAnchor: true, centerAtScale: false);
+            var promptFont = NativeFontAt(NativeFont.PromptFont);
+            var medVerdana = NativeFontAt(NativeFont.MedVerdana);
+            DrawMeasuredText(promptFont, "Current orders:", new(HudConsoleFormat.OrderLabelX * scale, labelTop), yellow, fixedAnchor: true, centerAtScale: false);
             if (console.QueuedOrder is { } q)
             {
                 DrawOrderLineGlyph(accepted: false, scale, red);
-                DrawMeasuredText(_small, q, new(HudConsoleFormat.OrderTextX * scale, HudConsoleFormat.OrderQueuedTop(labelTop, lineHeight)), red, fixedAnchor: true, centerAtScale: false);
+                DrawMeasuredText(medVerdana, q, new(HudConsoleFormat.OrderTextX * scale, HudConsoleFormat.OrderQueuedTop(labelTop, lineHeight)), red, fixedAnchor: true, centerAtScale: false);
                 ElementDrawn("Queued order text");
             }
             if (console.AcceptedOrder is { } a)
             {
                 DrawOrderLineGlyph(accepted: true, scale, yellow);
-                DrawMeasuredText(_small, a, new(HudConsoleFormat.OrderTextX * scale, HudConsoleFormat.OrderAcceptedTop(labelTop, lineHeight)), cortText, fixedAnchor: true, centerAtScale: false);
+                DrawMeasuredText(medVerdana, a, new(HudConsoleFormat.OrderTextX * scale, HudConsoleFormat.OrderAcceptedTop(labelTop, lineHeight)), cortText, fixedAnchor: true, centerAtScale: false);
                 ElementDrawn("Accepted order text");
             }
         }
@@ -837,8 +878,9 @@ public class HudRenderer
         // the top edge.
         if (console.VoteText is { } vote)
         {
-            var vsz = _small.MeasureString(vote);
-            DrawMeasuredText(_small, vote, new(w / 2f - vsz.X / 2, HudConsoleFormat.VoteTop(chatLines)), Color.White, fixedAnchor: true);
+            var voteFont = NativeFontAt(NativeFont.MedBoldVerdana);
+            var vsz = voteFont.MeasureString(vote);
+            DrawMeasuredText(voteFont, vote, new(w / 2f - vsz.X / 2, HudConsoleFormat.VoteTop(chatLines)), Color.White, fixedAnchor: true);
             ElementDrawn("Vote banner");
         }
 
@@ -846,22 +888,26 @@ public class HudRenderer
         // :5341; CriticalTipImage dialog.mdl:2039-2078). Slot 0 (newest) is at
         // 50 + 12·NumChatLines from the top; older slots stack 14 px above it.
         int criticalCount = console.CriticalTips.Count;
+        var criticalFont = NativeFontAt(NativeFont.MedBoldVerdana);
         for (int slot = 0; slot < criticalCount; slot++)
         {
             var tip = console.CriticalTips[criticalCount - 1 - slot];
-            var tsz = _small.MeasureString(tip.Text);
-            DrawMeasuredText(_small, tip.Text, new(w / 2f - tsz.X / 2, HudConsoleFormat.CriticalTipTop(chatLines, slot)), red, fixedAnchor: true);
+            var tsz = criticalFont.MeasureString(tip.Text);
+            DrawMeasuredText(criticalFont, tip.Text, new(w / 2f - tsz.X / 2, HudConsoleFormat.CriticalTipTop(chatLines, slot)), red, fixedAnchor: true);
         }
         if (criticalCount > 0) ElementDrawn("Critical tip text lines");
 
         // Ordinary tips — SideBottom(-300,14/25/34), side colour, retained
-        // (dialog.mdl:5347-5349; TipTextImage dialog.mdl:2006-2033).
+        // (dialog.mdl:5347-5349; TipTextImage dialog.mdl:2006-2033). FONT-1 —
+        // native TipTextImage slots: slot 0 medBoldVerdana, slot 1 medVerdana,
+        // slot 2 smVerdana (dialog.mdl:2006-2031).
         int ordinary = 0;
         foreach (var tip in console.OrdinaryTips)
         {
-            var tsz = _small.MeasureString(tip);
+            var tipFont = NativeFontAt(ordinary switch { 0 => NativeFont.MedBoldVerdana, 1 => NativeFont.MedVerdana, _ => NativeFont.SmVerdana });
+            var tsz = tipFont.MeasureString(tip);
             float fromBottom = 14f + ordinary * 11f;
-            DrawMeasuredText(_small, tip, new(w / 2f - tsz.X / 2, h - fromBottom - tsz.Y), side);
+            DrawMeasuredText(tipFont, tip, new(w / 2f - tsz.X / 2, h - fromBottom - tsz.Y), side);
             ordinary++;
         }
         if (ordinary > 0) ElementDrawn("Tip text lines");
@@ -872,7 +918,8 @@ public class HudRenderer
         // ripcord start time is known.
         if (model.FlightVisible && model.Context.Ripcord is { } ripcord)
         {
-            DrawMeasuredText(_small, ripcord, new(w / 2f - HudConsoleFormat.RipcordLeft, h / 2f - HudConsoleFormat.RipcordTop), TextMain, fixedAnchor: true, centerAtScale: false);
+            var ripcordFont = NativeFontAt(NativeFont.LgBoldVerdana);
+            DrawMeasuredText(ripcordFont, ripcord, new(w / 2f - HudConsoleFormat.RipcordLeft, h / 2f - HudConsoleFormat.RipcordTop), TextMain, fixedAnchor: true, centerAtScale: false);
             ElementDrawn("Ripcord countdown");
         }
     }
@@ -904,13 +951,14 @@ public class HudRenderer
         BeginBatch();
         try
         {
+            var dockFont = NativeFontAt(NativeFont.MedVerdana);
             for (int i = 0; i < lines.Count; i++)
             {
-                var size = _small.MeasureString(lines[i]);
+                var size = dockFont.MeasureString(lines[i]);
                 var origin = new Vector2(viewport.Width / 2f - size.X / 2f,
                     viewport.Height - 150f - (lines.Count - 1 - i) * 26f);
                 FillRect(origin.X - 8, origin.Y - 3, size.X + 16, size.Y + 6, Color.Black * 0.7f);
-                DrawText(_small, lines[i], origin, BonusGold);
+                DrawText(dockFont, lines[i], origin, BonusGold);
             }
         }
         finally { _sb.End(); }
@@ -949,8 +997,9 @@ public class HudRenderer
             float y = panelTop + i * rowHeight;
             // Label.
             var label = rows[i].label;
-            var sz = _small.MeasureString(label);
-            DrawText(_small, label, new Vector2(panelX, y + barH / 2f - sz.Y / 2f), TextDim);
+            var statusFont = NativeFontAt(NativeFont.MedVerdana);
+            var sz = statusFont.MeasureString(label);
+            DrawText(statusFont, label, new Vector2(panelX, y + barH / 2f - sz.Y / 2f), TextDim);
 
             DrawBar(rows[i].frac, panelX + labelW + 16f, y, barW, barH);
 
@@ -960,9 +1009,9 @@ public class HudRenderer
             if (f.IsAdriftLifepod && i == 3)
             {
                 var t = FormatCountdown(f.OxygenSecondsRemaining);
-                var tsz = _small.MeasureString(t);
+                var tsz = statusFont.MeasureString(t);
                 Color c = f.OxygenSecondsRemaining <= 30 ? Warning : Accent;
-                DrawText(_small, t, new Vector2(panelX + labelW + 16f + barW + 12f, y + barH / 2f - tsz.Y / 2f), c);
+                DrawText(statusFont, t, new Vector2(panelX + labelW + 16f + barW + 12f, y + barH / 2f - tsz.Y / 2f), c);
             }
         }
     }
@@ -1042,13 +1091,14 @@ public class HudRenderer
     private void DrawClassicGauge(HudGauge gauge, ClassicGaugeSpec spec, Vector2 anchor, float scale)
     {
         var fill = _gauges?.Fill(gauge.Kind);
+        var gaugeFont = NativeFontAt(NativeFont.SmVerdana);   // native smVerdana labels
         if (fill is null)
         {
             // Degraded slot: a compact procedural bar keeps the gauge legible.
             const float bw = 96f, bh = 12f;
             DrawBar(gauge.Fraction, anchor.X - bw / 2f, anchor.Y - bh / 2f, bw, bh);
-            var lbl = _small.MeasureString(gauge.Label);
-            DrawText(_small, gauge.Label, new Vector2(anchor.X - lbl.X / 2f, anchor.Y + bh / 2f + 4f), TextDim);
+            var lbl = gaugeFont.MeasureString(gauge.Label);
+            DrawText(gaugeFont, gauge.Label, new Vector2(anchor.X - lbl.X / 2f, anchor.Y + bh / 2f + 4f), TextDim);
             return;
         }
 
@@ -1069,10 +1119,10 @@ public class HudRenderer
         if (_gaugePercentage)
         {
             string pct = HudFormat.FormatPercent(gauge.Fraction) + "%";
-            var psz = _small.MeasureString(pct);
+            var psz = gaugeFont.MeasureString(pct);
             float top = ClassicGaugeLayout.LayerTopY(anchor, spec.FillPoint, spec.SourceRect.Height, scale)
                 + (spec.SourceRect.Height + 12f) * scale;
-            DrawMeasuredText(_small, pct, new Vector2(anchor.X - psz.X / 2f, top),
+            DrawMeasuredText(gaugeFont, pct, new Vector2(anchor.X - psz.X / 2f, top),
                 From(gauge.Color), true);
         }
     }
@@ -1154,13 +1204,14 @@ public class HudRenderer
         // top sits at anchor.Y − LabelPoint.Y·scale (fonts are out of scope, so
         // the exact baseline/box-height term is not modelled).
         float posY = anchor.Y - spec.LabelPoint.Y * scale;
-        var size = _small.MeasureString(label);
+        var gaugeFont = NativeFontAt(NativeFont.SmVerdana);   // native smVerdana (dialog.mdl:2204-2467)
+        var size = gaugeFont.MeasureString(label);
         // Native StringImage box is 100 wide (dialog.mdl); JustifyRight means
         // the text's right edge meets the box's right edge at Point.X+100.
         float x = spec.LabelRightAlign
             ? ClassicGaugeLayout.LayerLeftX(anchor, spec.LabelPoint, scale) + 100f * scale - size.X * TextScale
             : ClassicGaugeLayout.LayerLeftX(anchor, spec.LabelPoint, scale);
-        RenderText(_small, label, new Vector2(x, posY), HUDLabelTint, TextScale);
+        RenderText(gaugeFont, label, new Vector2(x, posY), HUDLabelTint, TextScale);
     }
 
     /// <summary>
@@ -1191,10 +1242,12 @@ public class HudRenderer
         DrawStatusIcon("Carried flag", status.CarriedFlag, _status?.Flag, viewport);
         DrawStatusIcon("Carried artifact", status.CarriedArtifact, _status?.Artifact, viewport);
 
+        float spread = OwnStatusLayout.Spread(viewport.Height);   // FONT-1 own-status pane scale
         if (status.KillBonusPercent is { } kb)
         {
             var pos = OwnStatusLayout.ScreenPos("Kill bonus", viewport.Width, viewport.Height);
             var tex = _status?.KillCounter;
+            var (killFont, killFs) = HudFont(NativeFont.MedBoldVerdana, spread);   // native medBoldVerdana (dialog.mdl:2556)
             if (tex is not null)
             {
                 float scale = 0.72f;
@@ -1206,11 +1259,11 @@ public class HudRenderer
                 // Native draws the integer in black in a centred 80-wide box at
                 // the group-relative Point(0,5) (dialog.mdl:2561-2566).
                 var numberBox = pos + OwnStatusLayout.KillCounterNumberOffset(viewport.Height);
-                DrawCenteredInNativeBox(_small, HudStringCache.KillBonusNumber(kb), numberBox, viewport.Height, Color.Black);
+                DrawCenteredInNativeBox(killFont, HudStringCache.KillBonusNumber(kb), numberBox, viewport.Height, Color.Black, killFs);
             }
             else
             {
-                DrawMeasuredText(_small, HudStringCache.KillBonusBadge(kb), pos, BonusGold, true);
+                DrawMeasuredText(killFont, HudStringCache.KillBonusBadge(kb), pos, BonusGold, true, drawScale: killFs);
             }
             ElementDrawn("Kill bonus");
         }
@@ -1222,7 +1275,8 @@ public class HudRenderer
             // Native SignatureImage is StringImage(JustifyCenter, 80, …) whose
             // TranslateImage anchor is the box's top-left (dialog.mdl:2595-2602,
             // :2621), so the text centres inside the 80-point box.
-            DrawCenteredInNativeBox(_small, text, pos, viewport.Height, TextMain);
+            var (sigFont, sigFs) = HudFont(NativeFont.MedVerdana, spread);   // native medVerdana (dialog.mdl:2595)
+            DrawCenteredInNativeBox(sigFont, text, pos, viewport.Height, TextMain, sigFs);
             ElementDrawn("Signature percentage");
         }
 
@@ -1237,7 +1291,8 @@ public class HudRenderer
             && HudStringCache.CloakStatusText(status.CloakDrained, status.CloakStrengthPercent) is { } cloakText)
         {
             var pos = OwnStatusLayout.ScreenPos("Cloak strength and drained state", viewport.Width, viewport.Height);
-            DrawMeasuredText(_small, cloakText, pos, status.CloakDrained ? Warning : TextMain, true);
+            var (cloakFont, cloakFs) = HudFont(NativeFont.MedVerdana, spread);   // port addition (native uses CortUI glass)
+            DrawMeasuredText(cloakFont, cloakText, pos, status.CloakDrained ? Warning : TextMain, true, drawScale: cloakFs);
             ElementDrawn("Cloak strength and drained state");
         }
     }
@@ -1272,12 +1327,15 @@ public class HudRenderer
         float artHeight = art?.Height ?? 34f;
         if (art is not null)
             _sb.Draw(art, new Vector2(x, top), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
-        var size = _small.MeasureString(text) * TextScale;
+        // FONT-1 — native lives/kills badges use medBoldVerdana (dialog.mdl:5070-5128)
+        // at the own-status pane scale.
+        var (font, fs) = HudFont(NativeFont.MedBoldVerdana, OwnStatusLayout.Spread(_viewportHeight));
+        var size = font.MeasureString(text) * fs;
         float boxWidth = 80f * TextScale;
         float boxLeft = x + textOffsetX * TextScale;
         float boxBottom = top + artHeight - 20f * TextScale;
         FillRect(boxLeft - 2, boxBottom - size.Y - 1, boxWidth + 4, size.Y + 2, Color.Black * .58f);
-        RenderText(_small, text, new(boxLeft + (boxWidth - size.X) / 2f, boxBottom - size.Y), Color.White, TextScale);
+        RenderText(font, text, new(boxLeft + (boxWidth - size.X) / 2f, boxBottom - size.Y), Color.White, fs);
     }
 
     /// <summary>HUD-12 — the native command-view ship summary
@@ -1304,13 +1362,19 @@ public class HudRenderer
         // Native rows are 12 px apart in medVerdana; the port's HUD spritefont
         // is taller, so advance by its measured line height to keep the rows
         // readable (the native GROUP ORDER is preserved).
-        float line = _small.LineSpacing * TextScale + 1f;
+        float line = NativeFontAt(NativeFont.MedVerdana).LineSpacing * TextScale + 1f;
+        // FONT-1 — native command summary labels/values use medVerdana
+        // (dialog.mdl:4726-4910), ship type / station name medBoldVerdana
+        // (dialog.mdl:4717-4721, :4988-4992), at the own-status pane scale.
+        float spread = OwnStatusLayout.Spread(_viewportHeight);
+        var (summaryFont, summaryFs) = HudFont(NativeFont.MedVerdana, spread);
+        var (summaryBold, summaryBoldFs) = HudFont(NativeFont.MedBoldVerdana, spread);
         var soft = _nativeHud?.SoftGauge;
         Color side = model.Context.TargetPane?.SideColor is { } sc
             ? new Color(sc.R, sc.G, sc.B) : Accent;
 
         string type = model.Telemetry?.ShipTypeName ?? "ship";
-        DrawSummaryText(HudStringCache.ShipSummary(type), new Vector2(x, y + 3f), side);
+        DrawSummaryText(summaryBold, summaryBoldFs, HudStringCache.ShipSummary(type), new Vector2(x, y + 3f), side);
         y += 20f;
         DrawCommandGauge("Shields:", f.ShieldFraction, ref y, x, soft, line);
         DrawCommandGauge("Hull:", f.HullFraction, ref y, x, soft, line);
@@ -1319,47 +1383,48 @@ public class HudRenderer
         DrawCommandGauge("Fuel:", f.FuelFraction, ref y, x, soft, line);
         DrawCommandGauge("Thrust:", (f.Throttle + 1f) * 0.5f, ref y, x, soft, line);
         y += 4f;
-        DrawSummaryText(HudStringCache.Speed(f.Speed, model.SpeedUnit), new Vector2(x, y), TextMain);
+        DrawSummaryText(summaryFont, summaryFs, HudStringCache.Speed(f.Speed, model.SpeedUnit), new Vector2(x, y), TextMain);
         y += line;
         if (f.SignaturePercent is { } sig)
         {
-            DrawSummaryText(HudStringCache.Signature(sig), new Vector2(x, y), TextMain);
+            DrawSummaryText(summaryFont, summaryFs, HudStringCache.Signature(sig), new Vector2(x, y), TextMain);
             y += line;
         }
         if (f.KillBonusPercent > 0f || f.KillBonusStreak > 0)
         {
-            DrawSummaryText(HudStringCache.KillBonusLine(f.KillBonusPercent), new Vector2(x, y), BonusGold);
+            DrawSummaryText(summaryFont, summaryFs, HudStringCache.KillBonusLine(f.KillBonusPercent), new Vector2(x, y), BonusGold);
             y += line;
         }
         // Money / autopilot / radar mode are the console's other per-frame
         // readouts (console.cpp:791-793); native draws them in their own HUD
         // slots, so the command summary echoes them here in one compact line.
-        DrawSummaryText(HudStringCache.SummaryLine(f.Money, f.AutopilotEngaged, model.Context.RadarMode),
+        DrawSummaryText(summaryFont, summaryFs, HudStringCache.SummaryLine(f.Money, f.AutopilotEngaged, model.Context.RadarMode),
             new Vector2(x, y), TextDim);
         y += line + 4f;
         string? target = model.Context.Target?.Name ?? model.Context.TargetPane?.Name;
         if (target is { Length: > 0 })
-            DrawSummaryText(HudStringCache.TargetSummary(target), new Vector2(x, y), TextMain);
+            DrawSummaryText(summaryFont, summaryFs, HudStringCache.TargetSummary(target), new Vector2(x, y), TextMain);
         ElementDrawn("Command view ship summary");
     }
 
     /// <summary>Draw a command-summary line at its OWN fixed native anchor (the
     /// pane lays its rows out itself; the shared collision layout must not
     /// relocate them, or the native vertical order breaks).</summary>
-    private void DrawSummaryText(string text, Vector2 position, Color color) =>
-        DrawMeasuredText(_small, text, position, color, instrument: true,
-            background: false, fixedAnchor: true);
+    private void DrawSummaryText(SpriteFont font, float scale, string text, Vector2 position, Color color) =>
+        DrawMeasuredText(font, text, position, color, instrument: true,
+            background: false, fixedAnchor: true, drawScale: scale);
 
     private void DrawCommandGauge(string label, float fraction, ref float y, float x,
         Texture2D? art, float line)
     {
         fraction = HudFormat.Clamp01(fraction);
-        DrawSummaryText(label, new Vector2(x, y), TextDim);
+        float spread = OwnStatusLayout.Spread(_viewportHeight);
+        var (font, fs) = HudFont(NativeFont.MedVerdana, spread);
+        DrawSummaryText(font, fs, label, new Vector2(x, y), TextDim);
         // Native softgaugebmp is 52x4 pixels (its real GaugeImage size); keep that
         // aspect instead of stretching it, revealing the left fraction (native
         // GaugeImage JustifyLeft). Scale with the HUD cluster's spread so the
         // summary matches the other centre gauges.
-        float spread = OwnStatusLayout.Spread(_viewportHeight);
         float bx = x + 66f * spread, by = y + 2f;
         float gw = (art?.Width ?? 52f) * spread, gh = MathF.Max(3f, (art?.Height ?? 4f) * spread);
         if (art is not null)
@@ -1373,7 +1438,7 @@ public class HudRenderer
             FillRect(bx, by, gw, gh, new Color(0f, 0f, 0f, .45f));
             FillRect(bx, by, gw * fraction, gh, Accent);
         }
-        DrawSummaryText(HudStringCache.Percent(fraction), new Vector2(bx + gw + 6f, y), TextMain);
+        DrawSummaryText(font, fs, HudStringCache.Percent(fraction), new Vector2(bx + gw + 6f, y), TextMain);
         y += line;
     }
 
@@ -1404,7 +1469,8 @@ public class HudRenderer
                 "Carried artifact" => "ARTIFACT",
                 _ => id,
             };
-            DrawMeasuredText(_small, label, pos, TextMain, true);
+            var (font, fs) = HudFont(NativeFont.MedVerdana, OwnStatusLayout.Spread(viewport.Height));
+            DrawMeasuredText(font, label, pos, TextMain, true, drawScale: fs);
         }
         ElementDrawn(id);
     }
@@ -1413,23 +1479,31 @@ public class HudRenderer
     /// box top-left is the TranslateImage anchor and the text is centred inside
     /// the 80-point box (dialog.mdl:2595-2602; Artwork/dialog.mdl:2561-2566).</summary>
     private void DrawCenteredInNativeBox(SpriteFont font, string text, Vector2 boxTopLeft,
-        int viewportHeight, Color color)
+        int viewportHeight, Color color, float? scale = null)
     {
-        var size = font.MeasureString(text) * TextScale;
+        float textScale = scale ?? TextScale;
+        var size = font.MeasureString(text) * textScale;
         float boxWidth = OwnStatusLayout.NativeTextWidth * OwnStatusLayout.Spread(viewportHeight);
-        RenderText(font, text, new(boxTopLeft.X + (boxWidth - size.X) / 2f, boxTopLeft.Y), color, TextScale);
+        RenderText(font, text, new(boxTopLeft.X + (boxWidth - size.X) / 2f, boxTopLeft.Y), color, textScale);
     }
 
-    /// <summary>Bottom-center speed readout: large accent numeral + unit label.</summary>
+    /// <summary>Bottom-center speed readout: large accent numeral + unit label.
+    /// FONT-1 — native SpeedImage uses lgBoldVerdana with
+    /// <c>NumberString(speed) + " mps"</c> (dialog.mdl:2546-2551); the port's
+    /// model carries the numeral and unit separately, so the numeral stays
+    /// lgBoldVerdana and the unit line uses smVerdana (position still differs —
+    /// the Speed row stays partial).</summary>
     private void DrawSpeed(float speed, string unit, float w, float cy)
     {
         string txt = HudFormat.FormatSpeed(speed);
-        var sz = _big.MeasureString(txt);
+        var bigFont = NativeFontAt(NativeFont.LgBoldVerdana);
+        var sz = bigFont.MeasureString(txt);
         float cx = w / 2f;
-        DrawText(_big, txt, new Vector2(cx - sz.X / 2f, cy), Accent);
+        DrawText(bigFont, txt, new Vector2(cx - sz.X / 2f, cy), Accent);
 
-        var usz = _small.MeasureString(unit);
-        DrawText(_small, unit, new Vector2(cx - usz.X / 2f, cy + sz.Y + 2f), TextDim);
+        var unitFont = NativeFontAt(NativeFont.SmVerdana);
+        var usz = unitFont.MeasureString(unit);
+        DrawText(unitFont, unit, new Vector2(cx - usz.X / 2f, cy + sz.Y + 2f), TextDim);
     }
 
     /// <summary>Right-side vertical throttle gauge: -1 (idle) at the bottom,
@@ -1454,8 +1528,9 @@ public class HudRenderer
         FillRect(gx - 14f, markY - 1.5f, 28f, 3f, Accent);
 
         string lbl = "THR";
-        var sz = _small.MeasureString(lbl);
-        DrawText(_small, lbl, new Vector2(gx - sz.X / 2f, bottom + 14f), TextDim);
+        var throttleFont = NativeFontAt(NativeFont.MedVerdana);
+        var sz = throttleFont.MeasureString(lbl);
+        DrawText(throttleFont, lbl, new Vector2(gx - sz.X / 2f, bottom + 14f), TextDim);
     }
 
     /// <summary>Top-center afterburner status + reactor power readout.</summary>
@@ -1463,13 +1538,14 @@ public class HudRenderer
     {
         string ab = active ? "AFTERBURNER ACTIVE" : "AFTERBURNER";
         var color = active ? Accent : TextDim;
-        var sz = _small.MeasureString(ab);
+        var abFont = NativeFontAt(NativeFont.MedVerdana);
+        var sz = abFont.MeasureString(ab);
         float cx = TopStatusCenterX(w);
-        DrawText(_small, ab, new Vector2(cx - sz.X / 2f, 20f), color);
+        DrawText(abFont, ab, new Vector2(cx - sz.X / 2f, 20f), color);
 
         string pwr = "PWR " + HudFormat.FormatPercent(power) + "%";
-        var psz = _small.MeasureString(pwr);
-        DrawText(_small, pwr, new Vector2(cx - psz.X / 2f, 20f + sz.Y + 2f), TextDim);
+        var psz = abFont.MeasureString(pwr);
+        DrawText(abFont, pwr, new Vector2(cx - psz.X / 2f, 20f + sz.Y + 2f), TextDim);
     }
 
     /// <summary>
@@ -1486,9 +1562,10 @@ public class HudRenderer
             : $"WEAPONS: MOUNT {f.SelectedMount}";
         // Highlight the non-default single-weapon mode (accent), dim the default.
         var color = f.GroupFire ? TextDim : Accent;
-        var sz = _small.MeasureString(mode);
+        var modeFont = NativeFontAt(NativeFont.MedVerdana);
+        var sz = modeFont.MeasureString(mode);
         float cx = TopStatusCenterX(w);
-        DrawText(_small, mode, new Vector2(cx - sz.X / 2f, 58f), color);
+        DrawText(modeFont, mode, new Vector2(cx - sz.X / 2f, 58f), color);
     }
 
     /// <summary>P255 — the "MINING" tag: the word centred just beneath the
@@ -1498,9 +1575,10 @@ public class HudRenderer
     {
         const string tag = "MINING";
         var color = new Color(0.98f, 0.74f, 0.24f);   // warm amber — activity, not alarm
-        var sz = _small.MeasureString(tag);
+        var miningFont = NativeFontAt(NativeFont.MedVerdana);
+        var sz = miningFont.MeasureString(tag);
         float cx = TopStatusCenterX(w);
-        DrawText(_small, tag, new Vector2(cx - sz.X / 2f, 82f), color);
+        DrawText(miningFont, tag, new Vector2(cx - sz.X / 2f, 82f), color);
     }
 
     /// <summary>
@@ -1517,9 +1595,10 @@ public class HudRenderer
         int pct = (int)Math.Round(percent);
         string label = pct >= 100 ? "TIME DILATION 100%" : $"TIME DILATION {pct}%";
         var color = new Color(0.98f, 0.66f, 0.20f);   // warm amber — performance/system condition
-        var sz = _small.MeasureString(label);
+        var tidiFont = NativeFontAt(NativeFont.MedVerdana);
+        var sz = tidiFont.MeasureString(label);
         float cx = TopStatusCenterX(w);
-        DrawText(_small, label, new Vector2(cx - sz.X / 2f, 16f), color);
+        DrawText(tidiFont, label, new Vector2(cx - sz.X / 2f, 16f), color);
     }
 
     /// <summary>
@@ -1530,11 +1609,12 @@ public class HudRenderer
     /// for a non-leader, so this simply never draws for them.</summary>
     private void DrawLeaderCommand(string label, float w, float cy)
     {
-        var sz = _small.MeasureString(label);
+        var leaderFont = NativeFontAt(NativeFont.MedVerdana);
+        var sz = leaderFont.MeasureString(label);
         float cx = w / 2f;
         // P409 — raised above the bottom-centre speed numeral so the
         // leader-command prompt never overprints it.
-        DrawText(_small, label, new Vector2(cx - sz.X / 2f, cy), Accent);
+        DrawText(leaderFont, label, new Vector2(cx - sz.X / 2f, cy), Accent);
     }
 
     /// <summary>
@@ -1546,10 +1626,11 @@ public class HudRenderer
     /// (Game1's <c>commandeeLabel</c> is null otherwise).</summary>
     private void DrawCommandee(string label, float w, float cy)
     {
-        var sz = _small.MeasureString(label);
+        var cmdFont = NativeFontAt(NativeFont.MedVerdana);
+        var sz = cmdFont.MeasureString(label);
         float cx = w / 2f;
         var mint = new Color(0.55f, 0.95f, 0.65f);   // mint — distinct from the leader cyan accent
-        DrawText(_small, label, new Vector2(cx - sz.X / 2f, cy), mint);
+        DrawText(cmdFont, label, new Vector2(cx - sz.X / 2f, cy), mint);
     }
 
     /// <summary>
@@ -1565,10 +1646,11 @@ public class HudRenderer
         const float x = 24f;
         const float y = 18f;
         string val = HudFormat.FormatMoney(money);
-        var vsz = _small.MeasureString(val);
+        var moneyFont = NativeFontAt(NativeFont.MedVerdana);
+        var vsz = moneyFont.MeasureString(val);
         // Value in the teal accent; a dim "MONEY" caption above it.
-        DrawText(_small, "MONEY", new Vector2(x, y), TextDim);
-        DrawText(_small, val, new Vector2(x, y + vsz.Y + 2f), Accent);
+        DrawText(moneyFont, "MONEY", new Vector2(x, y), TextDim);
+        DrawText(moneyFont, val, new Vector2(x, y + vsz.Y + 2f), Accent);
     }
 
     /// <summary>
@@ -1593,8 +1675,9 @@ public class HudRenderer
         // Numeric readout centred above the dial (pure ASCII — the HUD font
         // bakes only 32..126, no degree glyph, so spell it out).
         string txt = $"{(int)MathF.Round(rollDegrees):+000;-000;+000}deg";
-        var sz = _small.MeasureString(txt);
-        DrawText(_small, txt, new Vector2(cx - sz.X / 2f, top), Accent);
+        var rollFont = NativeFontAt(NativeFont.MedVerdana);
+        var sz = rollFont.MeasureString(txt);
+        DrawText(rollFont, txt, new Vector2(cx - sz.X / 2f, top), Accent);
 
         // Horizontal dial track with a centre tick (0° = level).
         float barY = top + sz.Y + 8f;
@@ -1611,8 +1694,8 @@ public class HudRenderer
 
         // Caption under the dial.
         string lbl = "ROLL";
-        var lsz = _small.MeasureString(lbl);
-        DrawText(_small, lbl, new Vector2(cx - lsz.X / 2f, barY + barH + 5f), TextDim);
+        var lsz = rollFont.MeasureString(lbl);
+        DrawText(rollFont, lbl, new Vector2(cx - lsz.X / 2f, barY + barH + 5f), TextDim);
     }
 
     /// <summary>
@@ -1633,21 +1716,22 @@ public class HudRenderer
     private void DrawWeaponStatusList(IReadOnlyList<WeaponStatusRow> rows, Viewport viewport)
     {
         float scale = TextScale;
-        float line = _small.LineSpacing * scale + 5;
+        var wsFont = NativeFontAt(NativeFont.MedVerdana);
+        float line = wsFont.LineSpacing * scale + 5;
         float panelW = Math.Min(viewport.Width * .34f, 380 * Math.Max(1, scale));
         float x = viewport.Width - panelW - 18;
         float y = Math.Max(150, line * 4);
         FillRect(x, y, panelW, line * (1 + rows.Count * 3), PanelBg);
-        DrawMeasuredText(_small, "SYSTEMS", new(x + 8, y), TextDim, centerAtScale: false);
+        DrawMeasuredText(wsFont, "SYSTEMS", new(x + 8, y), TextDim, centerAtScale: false);
         y += line;
         foreach (var r in rows)
         {
-            DrawMeasuredText(_small, r.Name, new(x + 8, y), TextMain, centerAtScale: false);
+            DrawMeasuredText(wsFont, r.Name, new(x + 8, y), TextMain, centerAtScale: false);
             y += line;
             var (tag, col) = StatusTag(r.Status);
             string ammo = r.ConsumesAmmo ? $"{r.Ammo}/{r.CapacityAmmo}" : "--";
             // One measured string keeps NOT READY and the magazine distinct.
-            DrawMeasuredText(_small, $"{ammo}  |  {tag}", new(x + 8, y), col, centerAtScale: false);
+            DrawMeasuredText(wsFont, $"{ammo}  |  {tag}", new(x + 8, y), col, centerAtScale: false);
             y += line;
             DrawBar(r.CapacityAmmo > 0 ? (float)r.Ammo / r.CapacityAmmo : 0, x + 8, y, panelW - 16, 3);
             y += line;
@@ -1671,6 +1755,7 @@ public class HudRenderer
     protected virtual void DrawCrosshair(Vector2 c, bool firing, bool turret)
     {
         var accent = firing ? Warning : Accent;
+        var crossFont = NativeFontAt(NativeFont.MedVerdana);   // port FIRING/TURRET tag
         const int segments = 36;
         float radius = turret ? 34f : 26f;
 
@@ -1685,8 +1770,8 @@ public class HudRenderer
             if (firing)
             {
                 string lbl = "FIRING";
-                var sz = _small.MeasureString(lbl);
-                DrawText(_small, lbl, new Vector2(c.X - sz.X / 2f, c.Y + radius + 18f), Warning);
+                var sz = crossFont.MeasureString(lbl);
+                DrawText(crossFont, lbl, new Vector2(c.X - sz.X / 2f, c.Y + radius + 18f), Warning);
             }
             return;
         }
@@ -1728,8 +1813,8 @@ public class HudRenderer
             if (firing)
             {
                 string lbl = "TURRET";
-                var sz = _small.MeasureString(lbl);
-                DrawText(_small, lbl, new Vector2(c.X - sz.X / 2f, c.Y + radius + 20f), Warning);
+                var sz = crossFont.MeasureString(lbl);
+                DrawText(crossFont, lbl, new Vector2(c.X - sz.X / 2f, c.Y + radius + 20f), Warning);
             }
             return;
         }
@@ -1757,8 +1842,8 @@ public class HudRenderer
         if (firing)
         {
             string lbl = "FIRING";
-            var sz = _small.MeasureString(lbl);
-            DrawText(_small, lbl, new Vector2(c.X - sz.X / 2f, c.Y + radius + 18f), Warning);
+            var sz = crossFont.MeasureString(lbl);
+            DrawText(crossFont, lbl, new Vector2(c.X - sz.X / 2f, c.Y + radius + 18f), Warning);
         }
     }
 
@@ -1887,17 +1972,18 @@ public class HudRenderer
         float barW = 72f, barH = 5f;
         float barX = c.X - barW / 2f;
         float y = c.Y + TargetSelectionStyle.HalfSize + 8f;
+        var bracketFont = NativeFontAt(NativeFont.MedVerdana);   // port readout text
         if (v.CharacterName is { } pilotName)
         {
-            var nsz = _small.MeasureString(pilotName);
-            var nameBox = DrawMeasuredText(_small, pilotName,
+            var nsz = bracketFont.MeasureString(pilotName);
+            var nameBox = DrawMeasuredText(bracketFont, pilotName,
                 new Vector2(c.X - nsz.X / 2f, y), TextMain);
             y = nameBox.Bottom + 3f;
         }
         if (v.Distance is { } distance)
         {
             string range = $"{distance:0} m";
-            var rangeBox = DrawMeasuredText(_small, range, new(c.X - _small.MeasureString(range).X / 2, y), TextDim);
+            var rangeBox = DrawMeasuredText(bracketFont, range, new(c.X - bracketFont.MeasureString(range).X / 2, y), TextDim);
             y = rangeBox.Bottom + 4;
         }
         if (v.HullFraction is { } hullFrac)
@@ -1916,8 +2002,8 @@ public class HudRenderer
             // OT_asteroid-gated). A labelled bar so the "level of He3" is legible;
             // the bar itself is the same DrawBar primitive for visual consistency.
             string lbl = "ORE " + HudFormat.FormatPercent(oreFrac) + "%";
-            var lsz = _small.MeasureString(lbl);
-            DrawText(_small, lbl, new Vector2(c.X - lsz.X / 2f, y), TextMain);
+            var lsz = bracketFont.MeasureString(lbl);
+            DrawText(bracketFont, lbl, new Vector2(c.X - lsz.X / 2f, y), TextMain);
             y += lsz.Y + 2f;
             DrawBar(oreFrac, barX, y, barW, barH);
         }
@@ -1949,12 +2035,17 @@ public class HudRenderer
         DrawPaneTexture(_targetPaneTextures?.OvalWord2, x0 + 320f * s, y0 - 8f * s, s, Color.White);
 
         // Name + type (native GetName(Target) ": " GetModelTypeDesc(Target),
-        // dialog.mdl:4043-4050), centred at the pane centre.
+        // dialog.mdl:4043-4050), centred at the pane centre. FONT-1 — native
+        // TargetName uses medVerdana; range/speed smVerdana; ARMOR/SHIELD
+        // medVerdana — at the pane scale s (so the text grows with its pane).
+        var (nameFont, nameFs) = HudFont(NativeFont.MedVerdana, s);
+        var (rangeFont, rangeFs) = HudFont(NativeFont.SmVerdana, s);
+        var (armorFont, armorFs) = HudFont(NativeFont.MedVerdana, s);
         string nameLine = (tp.Name ?? "unknown") + (tp.TypeDescription is { } td ? ": " + td : "");
-        var nameSize = PaneTextSize(_small, nameLine);
-        DrawRawText(_small, nameLine,
+        var nameSize = PaneTextSize(nameFont, nameLine, nameFs);
+        DrawRawText(nameFont, nameLine,
             new(x0 + TargetPaneLayout.LocalCenterX * s - nameSize.X / 2f,
-                y0 - TargetPaneLayout.LocalNameBottom * s - nameSize.Y), side);
+                y0 - TargetPaneLayout.LocalNameBottom * s - nameSize.Y), side, nameFs);
 
         // Range (left) and speed (right), native local y=33. Both use native
         // NumberString ((int)(v+0.5), engine/modeler.cpp:2008) so the unseen
@@ -1962,19 +2053,19 @@ public class HudRenderer
         if (tp.Distance is { } distance)
         {
             string range = string.Concat("RANGE: ", HudFormat.FormatNativeNumber(distance));
-            DrawRawText(_small, range, new(x0 + 400f * s, y0 - 33f * s - PaneTextSize(_small, range).Y), side);
+            DrawRawText(rangeFont, range, new(x0 + 400f * s, y0 - 33f * s - PaneTextSize(rangeFont, range, rangeFs).Y), side, rangeFs);
         }
         if (tp.Speed is { } speed)
         {
             string text = string.Concat("SPEED: ", HudFormat.FormatNativeNumber(speed));
-            var size = PaneTextSize(_small, text);
-            DrawRawText(_small, text, new(x0 + 242f * s - size.X, y0 - 33f * s - size.Y), side);
+            var size = PaneTextSize(rangeFont, text, rangeFs);
+            DrawRawText(rangeFont, text, new(x0 + 242f * s - size.X, y0 - 33f * s - size.Y), side, rangeFs);
         }
 
         // ARMOR / SHIELD labels (native medVerdana; port reuses the HUD font).
-        var armorSize = PaneTextSize(_small, "ARMOR");
-        DrawRawText(_small, "ARMOR", new(x0 + 228f * s - armorSize.X, y0 - 73f * s - armorSize.Y), side);
-        DrawRawText(_small, "SHIELD", new(x0 + 410f * s, y0 - 73f * s - PaneTextSize(_small, "SHIELD").Y), side);
+        var armorSize = PaneTextSize(armorFont, "ARMOR", armorFs);
+        DrawRawText(armorFont, "ARMOR", new(x0 + 228f * s - armorSize.X, y0 - 73f * s - armorSize.Y), side, armorFs);
+        DrawRawText(armorFont, "SHIELD", new(x0 + 410f * s, y0 - 73f * s - PaneTextSize(armorFont, "SHIELD", armorFs).Y), side, armorFs);
 
         // Dedicated target hull/shield gauges (dialog.mdl:4123-4135), bottom-up
         // reveal of the real native gauge art.
@@ -1993,12 +2084,14 @@ public class HudRenderer
 
     /// <summary>Pane strings are sanitised once by
     /// <see cref="TargetPaneModel"/> (or are ASCII literals/numbers here), so
-    /// the draw path measures and draws them verbatim — no per-frame LINQ.</summary>
-    protected Vector2 PaneTextSize(SpriteFont font, string text) =>
-        font.MeasureString(text) * TextScale;
+    /// the draw path measures and draws them verbatim — no per-frame LINQ.
+    /// FONT-1: <paramref name="scale"/> is the pane's own position scale (the
+    /// same one <see cref="HudFont"/> returned), so text grows with its pane.</summary>
+    protected Vector2 PaneTextSize(SpriteFont font, string text, float? scale = null) =>
+        font.MeasureString(text) * (scale ?? TextScale);
 
-    protected void DrawRawText(SpriteFont font, string text, Vector2 topLeft, Color color)
-        => RenderText(font, text, topLeft, color, TextScale);
+    protected void DrawRawText(SpriteFont font, string text, Vector2 topLeft, Color color, float? scale = null)
+        => RenderText(font, text, topLeft, color, scale ?? TextScale);
 
     protected void DrawPaneTexture(Texture2D? tex, float leftX, float bottomY, float scale, Color tint)
     {
@@ -2059,8 +2152,9 @@ public class HudRenderer
         // "TGT" caption beneath the pivot (pure ASCII — the spritefont bakes only
         // 32..126, same constraint as the other HUD labels).
         string lbl = label;
-        var lsz = _small.MeasureString(lbl);
-        DrawText(_small, lbl,
+        var tgtFont = NativeFontAt(NativeFont.MedVerdana);
+        var lsz = tgtFont.MeasureString(lbl);
+        DrawText(tgtFont, lbl,
             new Vector2(anchor.X - lsz.X / 2f, anchor.Y + len + 6f), TextDim);
     }
 
@@ -2341,7 +2435,7 @@ public class HudRenderer
 
         // Caption: deadzone % + curve mode, so the settings are legible on screen.
         string mode = v.LinearControls ? "LIN" : "QUAD";
-        DrawText(_small, $"MOUSE DZ {(int)(v.Deadzone * 100f)}% {mode}",
+        DrawText(NativeFontAt(NativeFont.MedVerdana), $"MOUSE DZ {(int)(v.Deadzone * 100f)}% {mode}",
             new Vector2(cx - 58f, cy + R + 6f), TextDim);
     }
 
@@ -2385,11 +2479,13 @@ public class HudRenderer
         }
 
         // Own-ship name header (native ShipNameImage, dialog.mdl:1803-1807).
+        // FONT-1 — native inventory own-ship name uses smallBoldFont.
         if (pane.ShipName.Length > 0)
         {
-            var name = _small.MeasureString(pane.ShipName);
+            var (shipNameFont, shipNameFs) = HudFont(NativeFont.SmallBoldFont, scale);
+            var name = shipNameFont.MeasureString(pane.ShipName) * shipNameFs;
             float nx = left + MathF.Max(0f, (lineW - name.X) / 2f);
-            _sb.DrawString(_small, pane.ShipName, new Vector2(nx, top + capH * 0.5f - name.Y * 0.5f), TextMain);
+            RenderText(shipNameFont, pane.ShipName, new Vector2(nx, top + capH * 0.5f - name.Y * 0.5f), TextMain, shipNameFs);
         }
 
         float rowTop = top + capH;
@@ -2415,6 +2511,10 @@ public class HudRenderer
         var white = new Color(1f, 1f, 1f);
         var grey = new Color(0.75f, 0.75f, 0.75f);
         var yellow = new Color(1f, 1f, 0f);
+        // FONT-1 — native inventory row strings (StringPane default
+        // TrekResources::SmallFont(), WinTrek/trekmdl.cpp:390) use smallFont at
+        // the pane scale.
+        var (rowFont, rowFs) = HudFont(NativeFont.SmallFont, scale);
 
         // Icon (native inv*.mdl Point(5,5)).
         Texture2D? icon = row.Kind switch
@@ -2429,7 +2529,7 @@ public class HudRenderer
         // Key (native Point(23,5)); yellow when active, grey for empty slots.
         Color keyColor = row.Active ? yellow : row.IsEmpty ? grey : white;
         if (row.Key.Length > 0)
-            _sb.DrawString(_small, row.Key, new Vector2(left + InventoryPaneLayout.KeyX * scale, textY), keyColor);
+            RenderText(rowFont, row.Key, new Vector2(left + InventoryPaneLayout.KeyX * scale, textY), keyColor, rowFs);
 
         // Name (native Point(35,5)); white when selected, dim grey otherwise.
         // Fit to the gap before the stats column (a small margin keeps the two
@@ -2438,18 +2538,18 @@ public class HudRenderer
         if (row.Name.Length > 0)
         {
             // HUD-11 — a row with no ammo/stats has no right-hand columns, so its
-            // name may use the whole line (native <c><cargo mount></c> fits at
+            // name may use the whole line (native <cargo mount> fits at
             // 1080p instead of clipping to "<cargo moun…").
             bool hasRightColumn = row.OutOfAmmo || row.StatsText is not null || row.ReadyState is 1 or 2;
             float nameMax = Math.Max(0f, ((hasRightColumn ? InventoryPaneLayout.StatsX : InventoryPaneLayout.LineWidth)
                 - InventoryPaneLayout.NameX - (hasRightColumn ? 2f : 3f)) * scale);
-            _sb.DrawString(_small, FitText(row.Name, nameMax, TextScale),
-                new Vector2(left + InventoryPaneLayout.NameX * scale, textY), nameColor);
+            RenderText(rowFont, FitText(rowFont, row.Name, nameMax, rowFs),
+                new Vector2(left + InventoryPaneLayout.NameX * scale, textY), nameColor, rowFs);
         }
 
         // Out-of-ammo red "A" (native Point(110,5), invsweapon.mdl:90).
         if (row.OutOfAmmo)
-            _sb.DrawString(_small, "A", new Vector2(left + InventoryPaneLayout.AmmoX * scale, textY), Warning);
+            RenderText(rowFont, "A", new Vector2(left + InventoryPaneLayout.AmmoX * scale, textY), Warning, rowFs);
 
         // Ready stats or mounting/arming progress (native Point(130,5)).
         if (row.ReadyState is 1 or 2)
@@ -2491,9 +2591,9 @@ public class HudRenderer
             // reading. Scale the stats glyphs into the native stats slot instead
             // (HudFormat.FitToWidth is the tested width contract).
             float statsMax = Math.Max(0f, (InventoryPaneLayout.LineWidth - InventoryPaneLayout.StatsX - 3f) * scale);
-            float statsScale = InventoryPaneLayout.FitFontScale(stats, statsMax, _small);
-            _sb.DrawString(_small, stats, new Vector2(left + InventoryPaneLayout.StatsX * scale, textY),
-                white, 0f, Vector2.Zero, statsScale, SpriteEffects.None, 0f);
+            float statsScale = InventoryPaneLayout.FitFontScale(stats, statsMax, rowFont, rowFs);
+            RenderText(rowFont, stats, new Vector2(left + InventoryPaneLayout.StatsX * scale, textY),
+                white, rowFs * statsScale);
         }
     }
 }

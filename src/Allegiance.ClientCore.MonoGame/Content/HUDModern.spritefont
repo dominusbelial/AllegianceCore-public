@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- HUD-2: high-resolution outline source for the runtime distance atlas. -->
+<!-- FONT-1: the .ttf is the repo-bundled copy (Content/Fonts/DejaVuSans.ttf). -->
 <XnaContent xmlns:Graphics="Microsoft.Xna.Framework.Content.Pipeline.Graphics">
   <Asset Type="Graphics:FontDescription">
-    <FontName>DejaVu Sans</FontName>
+    <FontName>Fonts/DejaVuSans.ttf</FontName>
     <Size>56</Size>
     <Spacing>0</Spacing>
     <UseKerning>true</UseKerning>

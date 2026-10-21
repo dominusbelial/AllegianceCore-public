@@ -28,15 +28,25 @@ public sealed class ChatRenderer
     private readonly Texture2D _white;
     private readonly SpriteFont _font;
     private readonly HudNativeTextures? _art;
+    private readonly NativeFonts? _native;
 
     public ChatRenderer(SpriteBatch spriteBatch, Texture2D whitePixel, SpriteFont font,
-        HudNativeTextures? art = null)
+        HudNativeTextures? art = null, NativeFonts? nativeFonts = null)
     {
         _sb = spriteBatch;
         _white = whitePixel;
         _font = font;
         _art = art;
+        _native = nativeFonts;
     }
+
+    // FONT-1 — classic chat: history lines use the native largeFont (and would
+    // use largeBoldFont for leader lines, chatpane.cpp:34 — the port's chat
+    // model carries no per-line "from leader" flag, so all lines use largeFont,
+    // a recorded gap), compose text uses the native smallFont. When no registry
+    // is supplied (isolated renderer tests) the historic mono font is used.
+    private SpriteFont HistoryFont => _native is { } n ? n.Get(NativeFont.LargeFont, 1f).Font : _font;
+    private SpriteFont ComposeFont => _native is { } n ? n.Get(NativeFont.SmallFont, 1f).Font : _font;
 
     /// <summary>
     /// Draw the chat log + (optionally) the active input line. Self-contained —
@@ -66,9 +76,11 @@ public sealed class ChatRenderer
             int paneHeight = ChatPaneLayout.Height(ChatPaneLayout.ConfiguredLines(paneLines));
             // HUD-11 — native largeFont at ChatFontSize 2 is 14 px high
             // (chatpane.cpp:374-380); the port spritefont is taller, so scale
-            // each line into its native item slot. Rows no longer overlap and
-            // the pane stops bleeding over the top-centre readouts.
-            float textScale = ChatPaneLayout.TextScale(_font.LineSpacing);
+            // each line into its native item slot. FONT-1: the native largeFont
+            // bake is exactly 14 px tall, so ChatPaneLayout.TextScale returns 1
+            // and the shrink drops away (rows no longer overlap).
+            SpriteFont historyFont = HistoryFont;
+            float textScale = ChatPaneLayout.TextScale(historyFont.LineSpacing);
 
             if (take > 0)
             {
@@ -79,15 +91,15 @@ public sealed class ChatRenderer
                 FillRect(paneLeft, paneTop, 2f, paneHeight, BorderDim);
 
                 if (scrolled)
-                    _sb.DrawString(_font, "(OLDER - PgDn to newest)",
-                        new Vector2(paneLeft + 3f, paneTop - _font.LineSpacing * textScale), OlderHint, 0f,
+                    _sb.DrawString(historyFont, "(OLDER - PgDn to newest)",
+                        new Vector2(paneLeft + 3f, paneTop - historyFont.LineSpacing * textScale), OlderHint, 0f,
                         Vector2.Zero, textScale, SpriteEffects.None, 0f);
 
                 if (filterLabel is not null)
                 {
                     string label = $"[{filterLabel}]";
-                    float lx = paneLeft + ChatPaneLayout.Width - _font.MeasureString(label).X * textScale - 8f;
-                    _sb.DrawString(_font, label, new Vector2(Math.Max(paneLeft, lx), paneTop - _font.LineSpacing * textScale),
+                    float lx = paneLeft + ChatPaneLayout.Width - historyFont.MeasureString(label).X * textScale - 8f;
+                    _sb.DrawString(historyFont, label, new Vector2(Math.Max(paneLeft, lx), paneTop - historyFont.LineSpacing * textScale),
                         OlderHint, 0f, Vector2.Zero, textScale, SpriteEffects.None, 0f);
                 }
 
@@ -98,13 +110,13 @@ public sealed class ChatRenderer
                 for (int i = 0; i < take; i++)
                 {
                     string line = lines[i];
-                    if (_font.MeasureString(line).X * textScale > ChatPaneLayout.Width - 6f)
-                        line = TruncateToWidth(line, (ChatPaneLayout.Width - 6f) / textScale);
+                    if (historyFont.MeasureString(line).X * textScale > ChatPaneLayout.Width - 6f)
+                        line = TruncateToWidth(historyFont, line, (ChatPaneLayout.Width - 6f) / textScale);
                     int y = paneTop + 3 + i * ChatPaneLayout.NativeFontHeight;
                     if (y + ChatPaneLayout.NativeFontHeight > paneTop + paneHeight) break;
                     Color color = lineColors is not null && i < lineColors.Count && lineColors[i] is { } lc
                         ? From(lc) : TextMain;
-                    _sb.DrawString(_font, line, new Vector2(paneLeft + 3f, y), color, 0f,
+                    _sb.DrawString(historyFont, line, new Vector2(paneLeft + 3f, y), color, 0f,
                         Vector2.Zero, textScale, SpriteEffects.None, 0f);
                 }
             }
@@ -137,12 +149,13 @@ public sealed class ChatRenderer
         }
 
         Color colour = sideColor is { } sc ? From(sc) : TextMain;
+        SpriteFont composeFont = ComposeFont;
         // A 1 px dark edge keeps the native yellow/white glyphs legible over the
         // bright command bar art (the port font is not the native smallFont).
         if (variant.HasRecipient)
         {
             string recipient = targetLabel.Trim();
-            DrawBoxedCentered(recipient, panel.X + variant.RecipientLeft, panel.Y + variant.RecipientTop,
+            DrawBoxedCentered(composeFont, recipient, panel.X + variant.RecipientLeft, panel.Y + variant.RecipientTop,
                 variant.RecipientWidth, variant.RecipientHeight, colour);
         }
 
@@ -160,9 +173,9 @@ public sealed class ChatRenderer
                 ? inputLine
                 : inputLine + "|";
             string fit = text;
-            if (_font.MeasureString(fit).X > variant.TextWidth)
-                fit = TruncateToWidth(fit, variant.TextWidth);
-            _sb.DrawString(_font, fit,
+            if (composeFont.MeasureString(fit).X > variant.TextWidth)
+                fit = TruncateToWidth(composeFont, fit, variant.TextWidth);
+            _sb.DrawString(composeFont, fit,
                 new Vector2(panel.X + variant.TextLeft, panel.Y + variant.TextTop), colour);
         }
     }
@@ -188,14 +201,14 @@ public sealed class ChatRenderer
         };
     }
 
-    private void DrawBoxedCentered(string text, int x, int y, int width, int height, Color color)
+    private void DrawBoxedCentered(SpriteFont font, string text, int x, int y, int width, int height, Color color)
     {
         if (width <= 0 || text.Length == 0) return;
-        float measured = _font.MeasureString(text).X;
+        float measured = font.MeasureString(text).X;
         if (measured > width)
-            text = TruncateToWidth(text, width);
-        _sb.DrawString(_font, text,
-            new Vector2(x + (width - _font.MeasureString(text).X) / 2f, y), color);
+            text = TruncateToWidth(font, text, width);
+        _sb.DrawString(font, text,
+            new Vector2(x + (width - font.MeasureString(text).X) / 2f, y), color);
     }
 
     /// <summary>Classic chat presentation of the shared HUD frame.</summary>
@@ -207,10 +220,10 @@ public sealed class ChatRenderer
             chat.LineColors, chat.SideColor, chat.PaneLines);
     }
 
-    private string TruncateToWidth(string s, float maxWidth)
+    private string TruncateToWidth(SpriteFont font, string s, float maxWidth)
     {
         string t = s;
-        while (t.Length > 0 && _font.MeasureString(t).X > maxWidth)
+        while (t.Length > 0 && font.MeasureString(t).X > maxWidth)
             t = t.Substring(0, t.Length - 1);
         return t + "...";
     }

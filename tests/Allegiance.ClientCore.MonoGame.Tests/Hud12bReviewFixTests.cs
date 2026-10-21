@@ -441,7 +441,7 @@ public class Hud12bReviewFixTests
     {
         string hud = ReadSource("src/Allegiance.ClientCore.Game/Rendering/HudRenderer.cs");
         Assert.DoesNotContain("FitFontScale(stats, statsMax, t =>", hud);
-        Assert.Contains("FitFontScale(stats, statsMax, _small", hud);
+        Assert.Contains("FitFontScale(stats, statsMax, rowFont, rowFs", hud);   // FONT-1 — SmallFont bake, no closure
 
         string modern = ReadSource("src/Allegiance.ClientCore.Game/Rendering/ModernHudRenderer.cs");
         Assert.DoesNotContain("t => _small.MeasureString(t).X", modern);

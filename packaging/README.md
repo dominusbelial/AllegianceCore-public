@@ -1,7 +1,9 @@
 # Player bundle maintenance
 
-Use Python 3.11+, git and .NET SDK 10.0.400. On Linux install DejaVu Sans Mono
-(`fonts-dejavu-core`) and FreeType for MGCB's two fonts. DesktopGL Content is
+Use Python 3.11+, git and .NET SDK 10.0.400. On Linux install FreeType for MGCB
+(the fonts themselves are bundled in the repo, so no system font package is
+needed — see `src/Allegiance.ClientCore.MonoGame/Content/Fonts/`). DesktopGL
+Content is
 platform-independent, so CI cross-publishes all three RIDs on Ubuntu and executes
 the Windows apphost on Windows and the arm64 app on macos-latest. No MonoGame
 graphics/audio objects are constructed by the self-check. P727 adds a 60-second

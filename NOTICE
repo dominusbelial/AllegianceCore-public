@@ -59,6 +59,12 @@ SOFTWARE.
 
 Third-party images and other art are credited in CREDITS.md.
 
+The bundled DejaVu fonts (DejaVu Sans, DejaVu Sans Bold, DejaVu Sans Mono) in
+src/Allegiance.ClientCore.MonoGame/Content/Fonts/ are redistributed under the
+Bitstream Vera / DejaVu licence (Copyright (c) 2003 by Bitstream, Inc.; DejaVu
+changes in the public domain). The full licence text is archived next to the
+fonts in Content/Fonts/LICENSE-DejaVu.txt and reproduced in CREDITS.md.
+
 
 AMD FidelityFX Super Resolution 1 (FSR1)
 https://github.com/GPUOpen-Effects/FidelityFX-FSR
