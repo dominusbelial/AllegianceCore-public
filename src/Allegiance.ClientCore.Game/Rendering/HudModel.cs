@@ -56,7 +56,11 @@ public readonly record struct HudOwnStatus(
     bool VectorLockEngaged,
     bool CarriedFlag,
     bool CarriedArtifact,
-    bool Visible);
+    bool Visible,
+    // HUD-12 — native cloak strength percentage 100·(1−GetCloaking())
+    // (consoledata.cpp:480-489); null until the owner-only stream delivers the
+    // continuous fraction.
+    float? CloakStrengthPercent = null);
 
 public enum HudContactKind { Ship, Station, Warp, Asteroid, Missile, Probe, Mine, Treasure, Tech }
 /// <summary>One radar contact plus its overlay/label payload. The radar
@@ -311,9 +315,14 @@ public sealed class HudModel
         // no scanning system yet), so this gate is unreachable and the row stays
         // partial; it is retained to match the native binding if detection lands.
         bool eye = visible && !own.Detected;
-        // Native IsCloaked = GetCloaking() < 1 (WinTrek/consoledata.cpp:563-575);
-        // the port's CloakActive StateM bit is the engaged-cloak analogue.
-        bool cloak = visible && own.Cloaked;
+        // Native IsCloaked = GetCloaking() < 1 (WinTrek/consoledata.cpp:563-575):
+        // the icon persists through the DECLOAK ramp, until the visible fraction
+        // reaches 1. With the HUD-12 continuous stream that is exactly
+        // strength > 0; before the first message the engaged StateM bit is the
+        // fallback.
+        bool cloak = visible && (own.CloakStrengthPercent is { } strength
+            ? strength > 0f
+            : own.Cloaked);
         // Native GlassHUD drained icon at energy <= .2 (dialog.mdl:651-656).
         bool drained = cloak && own.EnergyFraction <= 0.2f;
         return new(
@@ -326,7 +335,8 @@ public sealed class HudModel
             visible && own.VectorLockEngaged,
             visible && own.CarriedFlag,
             visible && own.CarriedArtifact,
-            visible);
+            visible,
+            visible ? own.CloakStrengthPercent : null);
     }
 
     public static HudModel Create(HudFrame? telemetry, HudContext? context = null, HudSnapshotBuffers? buffers = null)

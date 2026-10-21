@@ -47,6 +47,7 @@ public sealed partial class Server
     private const int CoalesceOwnMining    = 9;   // FM_S_OWN_SHIP_MINING_UPDATE(206) owner-only
     private const int CoalesceOwnKillBonus = 10;  // FM_S_OWN_SHIP_KILL_BONUS_UPDATE(212) owner-only
     private const int CoalesceLeadIndicator = 11; // FM_S_LEAD_INDICATOR_UPDATE(210) owner-only
+    private const int CoalesceOwnCloak     = 13; // FM_S_OWN_SHIP_CLOAK_UPDATE(220) owner-only (HUD-12)
     // P608 — the OWNER's own-ship SingleShipUpdate(78) position stream, on its
     // OWN coalesce key, deliberately DISTINCT from CoalesceShipStates (=1, which
     // carries the per-tick teammate position batch). These are sent back-to-back
@@ -420,6 +421,13 @@ public sealed partial class Server
         // no replica, so the server streams it — see OwnShipKillBonusUpdate's
         // doc for the P230/P255/P266 owner-only-extension precedent.
         Step("broadcastOwnShipKillBonus", () => BroadcastOwnShipKillBonus());
+        // HUD-12 — per-tick, OWNER-ONLY OwnShipCloakUpdate(220) carrying the
+        // own ship's continuous GetCloaking() visible fraction, so the HUD can
+        // show the native cloak strength (100·(1−Cloaking), consoledata.cpp:480-489)
+        // and keep the cloak icon lit through the decloak ramp
+        // (IsCloaked = Cloaking < 1, consoledata.cpp:563-575). Native's client
+        // simulated this locally; this renderer-only client cannot.
+        Step("broadcastOwnShipCloak", () => BroadcastOwnShipCloak());
         // P264 — per-tick, OWNER-ONLY MissileTrackWarningUpdate(208) telling each
         // peer whether an in-sector ENEMY missile's target is its own ship (plus
         // the best lock among them), so the MonoGame client can play the incoming-
@@ -933,6 +941,10 @@ public sealed partial class Server
                             ISide = recipientSide,           // the teammate's own side (== recipient's, same-side only)
                             ShipId = teammateId,             // REAL id — the ship the EXPORT created
                             PilotType = PlayerInfo.PilotTypePlayer,
+                            // HUD-12 — real mission kills/deaths (native
+                            // FedSrv.CPP:2085-2086; clintlib.h:346-347).
+                            NKills = (short)Math.Clamp(tv.Value.PlayerScore.Kills, short.MinValue, short.MaxValue),
+                            NDeaths = (short)Math.Clamp(tv.Value.PlayerScore.Deaths, short.MinValue, short.MaxValue),
                         };
                         SendPeer(kv.Key, PackBroadcast(Message(teamInfo)));
                         if (ConsoleLog.Verbose) ConsoleLog.Write($"[teamplayerinfo] peer {kv.Key} <- ship {teammateId} '{teammateName}' side {recipientSide}");   // P619c: per-pair one-shot, gated (join-burst volume)
@@ -1490,6 +1502,8 @@ public sealed partial class Server
                         ISide = recipientSide,
                         ShipId = teammateId,
                         PilotType = PlayerInfo.PilotTypePlayer,
+                        NKills = (short)Math.Clamp(tv.Value.PlayerScore.Kills, short.MinValue, short.MaxValue),
+                        NDeaths = (short)Math.Clamp(tv.Value.PlayerScore.Deaths, short.MinValue, short.MaxValue),
                     };
                     r.Packets.Add((PackBroadcast(Message(teamInfo)), 0, false));
                     if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamplayerinfo] peer {conn} <- ship {teammateId} '{teammateName}' side {recipientSide}");   // P619c: gated
@@ -3117,6 +3131,31 @@ public sealed partial class Server
             SendPeerCoalescing(kv.Key, PackKillBonus(kv.Value.Ship), CoalesceOwnKillBonus);
         }
     }
+
+    /// <summary>
+    /// HUD-12 — per-tick, OWNER-ONLY cloak stream: for each seated peer, send
+    /// <c>OwnShipCloakUpdate(220)</c> with its own ship's live
+    /// <see cref="Ship.Cloaking"/> (the native <c>GetCloaking()</c> visible
+    /// fraction, <c>Igc/cloakigc.cpp:121</c>). Sent every tick like the Kill
+    /// Bonus stream (8 bytes per peer per tick); the client derives the native
+    /// strength percentage and <c>IsCloaked</c> from it
+    /// (<c>WinTrek/consoledata.cpp:480-489,563-575</c>).
+    /// </summary>
+    private void BroadcastOwnShipCloak()
+    {
+        foreach (var kv in _peerShips)
+        {
+            SendPeerCoalescing(kv.Key, PackCloak(kv.Value.Ship), CoalesceOwnCloak);
+        }
+    }
+
+    /// <summary>HUD-12b — the cloak fraction the owner's HUD reads. Native
+    /// <c>ModelData::GetCloaking()</c> uses <c>GetShip()</c>, which is
+    /// <c>GetSourceShip()</c> (<c>WinTrek/consoledata.h:144-146</c>), and its
+    /// visibility gate accepts the own ship's parent as well
+    /// (<c>consoledata.cpp:480-489</c>). A turret gunner's own ship is the child,
+    /// so the ramp that matters is the parent carrier's.</summary>
+    internal static float OwnShipCloaking(Ship ship) => ship.ParentShip?.Cloaking ?? ship.Cloaking;
 
     /// <summary>
     /// P266 — per-tick, OWNER-ONLY predictive lead-aim stream: for each seated

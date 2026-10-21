@@ -17,6 +17,10 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     private long _previous;
     private float _dt, _scale = 1;
     private readonly HashSet<string> _drawn = new(StringComparer.Ordinal);
+    // HUD-12b — per-source-string chat clip cache: the old per-character loop
+    // allocated a new rowText + "..." string for every removed glyph, every line,
+    // every frame.
+    private readonly ChatLineTruncationCache _chatTruncations = new();
     public IReadOnlySet<string> DrawnElements => _drawn;
     private static readonly Color Accent = new(83, 225, 219);
     private static readonly Color Muted = new(162, 189, 201);
@@ -24,13 +28,15 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     private static readonly Color CloakViolet = new(158, 140, 250);
     private static readonly Color CarryGold = new(255, 213, 94);
 
-    public ModernHudRenderer(SpriteBatch batch, Texture2D white, SpriteFont small, SpriteFont big, HudSettings settings, SpriteFont? outlineSource = null)
-        : base(batch, white, outlineSource is null ? small : Metrics(outlineSource, .25f), outlineSource is null ? big : Metrics(outlineSource, 30f / 56))
+    public ModernHudRenderer(SpriteBatch batch, Texture2D white, SpriteFont small, SpriteFont big, HudSettings settings,
+        SpriteFont? outlineSource = null, StatusTextures? nativeArt = null, HudNativeTextures? nativeHudTextures = null)
+        : base(batch, white, outlineSource is null ? small : Metrics(outlineSource, .25f), outlineSource is null ? big : Metrics(outlineSource, 30f / 56),
+            nativeHudTextures: nativeHudTextures)
     {
         _settings = settings;
         _smallSdf = new(white.GraphicsDevice, _small, outlineSource is null ? 1 : .25f);
         _bigSdf = new(white.GraphicsDevice, _big, outlineSource is null ? 1 : 30f / 56);
-        _radar = new(batch, white);
+        _radar = new(batch, white, nativeArt);
     }
     private static SpriteFont Metrics(SpriteFont source, float scale)
     {
@@ -63,6 +69,7 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             Layout.Reserve(new((int)(x - 56 * _scale), (int)(y - 40 * _scale), (int)(112 * _scale), (int)(112 * _scale)));
         }
         ReserveTargetPane(model, viewport);
+        ReserveCommandSummary(model, viewport);
         ReserveConsoleAnchors(model, viewport);
     }
     public override void Draw(HudModel model, Viewport viewport)
@@ -104,7 +111,7 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             Arc(center, radius, -MathF.PI * 1.22f, MathF.PI * 1.44f, Muted * .22f, 2 * _scale);
             Arc(center, radius, -MathF.PI * 1.22f, MathF.PI * 1.44f * current, color * .13f, 6 * _scale);
             Arc(center, radius, -MathF.PI * 1.22f, MathF.PI * 1.44f * current, color, 2 * _scale);
-            string percent = HudFormat.FormatPercent(gauge.Fraction) + "%";
+            string percent = HudStringCache.Percent(gauge.Fraction);
             var size = _small.MeasureString(percent);
             DrawMeasuredText(_small, percent, center - size / 2, color, true);
             size = _small.MeasureString(gauge.Label);
@@ -134,11 +141,15 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         DrawStatusText("Carried artifact", status.CarriedArtifact, "ARTIFACT", CarryGold, viewport);
 
         if (status.KillBonusPercent is { } kb)
-            DrawStatusText("Kill bonus", true, $"KB {kb:0}%", CarryGold, viewport);
+            DrawStatusText("Kill bonus", true, HudStringCache.KillBonusBadge(kb), CarryGold, viewport);
         if (status.SignaturePercent is { } sig)
-            DrawStatusText("Signature percentage", true, $"SIG: {sig:0}%", Accent, viewport);
-        if (status.CloakDrained)
-            DrawStatusText("Cloak strength and drained state", true, "CLOAK DRAINED", Alert, viewport);
+            DrawStatusText("Signature percentage", true, HudStringCache.Signature(sig), Accent, viewport);
+        // HUD-12b — unknown strength (before the first 220) falls back to the
+        // legacy CLOAK DRAINED label instead of dropping the row.
+        if (status.CloakActive
+            && HudStringCache.CloakStatusText(status.CloakDrained, status.CloakStrengthPercent) is { } cloakText)
+            DrawStatusText("Cloak strength and drained state", true, cloakText,
+                status.CloakDrained ? Alert : CloakViolet, viewport);
     }
 
     private void DrawStatusText(string id, bool shown, string text, Color color, Viewport viewport)
@@ -428,7 +439,7 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             // HUD-11 — scale the native StatsBar reading into its 81-native-px
             // slot instead of clipping it (invsweapon.mdl Point(130,5)).
             float statsMax = Math.Max(0f, (InventoryPaneLayout.LineWidth - InventoryPaneLayout.StatsX - 3f) * s);
-            float fit = InventoryPaneLayout.FitFontScale(stats, statsMax, t => _small.MeasureString(t).X * _scale);
+            float fit = InventoryPaneLayout.FitFontScale(stats, statsMax, _small, _scale);
             RenderText(_small, stats, new(left + InventoryPaneLayout.StatsX * s, textY), white, _scale * fit);
         }
     }
@@ -468,12 +479,11 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
                 Color colour = chat.LineColors is { } colors && i < colors.Count && colors[i] is { } lc
                     ? new Color(lc.R, lc.G, lc.B, lc.A) : Color.White;
                 string rowText = chat.Lines[i];
-                if (_small.MeasureString(rowText).X * textScale > maxWidth - 6f)
-                {
-                    while (rowText.Length > 0 && _small.MeasureString(rowText + "...").X * textScale > maxWidth - 6f)
-                        rowText = rowText[..^1];
-                    rowText += "...";
-                }
+                // HUD-12b — the clip is cached per source string/width instead of
+                // allocating rowText + "..." once per removed character per frame.
+                float chatWidth = maxWidth - 6f;
+                if (_small.MeasureString(rowText).X * textScale > chatWidth)
+                    rowText = _chatTruncations.Fit(rowText, chatWidth, _small, textScale);
                 _smallSdf.Draw(_sb, rowText, new(paneLeft + 3, paneTop + 3 + i * row), colour, textScale);
             }
             if (take > 0) Mark("Chat history");

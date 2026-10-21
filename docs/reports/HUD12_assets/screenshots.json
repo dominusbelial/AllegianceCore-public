@@ -1,0 +1,65 @@
+{
+  "task": "HUD-12",
+  "client": "Allegiance.ClientCore.MonoGame Release, real 1920x1080 window",
+  "server": "real local Allegiance.Server, m2scatter.igc, 2 sides, HUD12 pilot",
+  "captured_by": "tools/hud12-proof (real Game1 over TCP; autoshot backbuffer)",
+  "raw_copies": "~/allegiance-evidence/HUD12/raw/",
+  "screenshots": [
+    {
+      "asset": "docs/reports/HUD12_assets/radar-native-markers.webp",
+      "sha256": "faee3342499d541f8a6445aea7bb25f51f6419653a8488f80d2468c57b44ceb2",
+      "source_png": "~/allegiance-evidence/HUD12/raw/radar-native-markers-1920x1080.png",
+      "source_sha256": "1990440f91f02010ecb0235c27a2dbd426d2f492d910e2434819b711c3529b51",
+      "bytes": 117562,
+      "visible": "Command view, no chat composing: native hasflagbmp/hasartifactbmp/ripiconbmp bracket surfaces on ships 8097/8098/8099 (8099 also shows the friendly ripcord '29s')."
+    },
+    {
+      "asset": "docs/reports/HUD12_assets/radar-subjects.webp",
+      "sha256": "69e294a7e80059437c5cc6ae1c32da095a4ff58ebbadbda2b1dcdcf7789e11b1",
+      "source_png": "~/allegiance-evidence/HUD12/raw/radar-subjects-1920x1080.png",
+      "source_sha256": "77664f83d04ab7d5cf39adca009022dfa0ddee4f333553b3610893ccb5b4745a",
+      "bytes": 118226,
+      "visible": "Same command view with a composing [TEAM] chat: the console subject list marks all three friendly ships with subjectbmp (large native quadrant frames)."
+    },
+    {
+      "asset": "docs/reports/HUD12_assets/radar-threat-flash-2.webp",
+      "sha256": "3433eedeedf73b1bfc75aee5dc8a8e5591668c3769864c6922ad199193125eb3",
+      "source_png": "~/allegiance-evidence/HUD12/raw/radar-threat-flash-2-1920x1080.png",
+      "source_sha256": "ec5902ec67d6f0ade858b2b67d95265435f45f6896261a8524a93e61d1accc08",
+      "bytes": 84106,
+      "visible": "Cockpit frame 50 ms after a real VICTIM_DAMAGED(217) from enemy ship 8100: its contact/label/range turn red and lastfiredbmp is drawn; the HUD damage wash is lit."
+    },
+    {
+      "asset": "docs/reports/HUD12_assets/lives-kills-badges.webp",
+      "sha256": "c9f3e40e5efcb6d7fe5dcdb08b1dd581857f00c1fe9e66accab13646703056de",
+      "source_png": "~/allegiance-evidence/HUD12/raw/lives-kills-badges-1920x1080.png",
+      "source_sha256": "26e90d05aa8094813cd819c924c36969d5888fdb2aa5c8a6c403ec99ee231fe4",
+      "bytes": 48174,
+      "visible": "Deathmatch with Mission.Lives=5: native livesbmp '5 lives' and hudKillsbmp '4 kills' badges after four real credited KILL_SHIP kills."
+    },
+    {
+      "asset": "docs/reports/HUD12_assets/cloak-strength.webp",
+      "sha256": "826a077b1fa8837adc091dff1cbf11924c7643f1afeee88b392e60f201760606",
+      "source_png": "~/allegiance-evidence/HUD12/raw/cloak-strength-1920x1080.png",
+      "source_sha256": "12a0132d3ec2cc8e6c039746badf85f4b371d8497874bbb8c0dbface2fa8d190",
+      "bytes": 51252,
+      "visible": "Cloak engaged on the real server ship: 'CLOAK 99%' from OwnShipCloakUpdate and SIG 0%."
+    },
+    {
+      "asset": "docs/reports/HUD12_assets/cloak-decloak-tail-4.webp",
+      "sha256": "fdeef8d8a172038b69a6b5cc0e2b45cc983b3109b96f7fa4f2ded2700530c2eb",
+      "source_png": "~/allegiance-evidence/HUD12/raw/cloak-decloak-tail-4-1920x1080.png",
+      "source_sha256": "0b665e424611df757f33a4ac931245291b864cd6d987a7192ec8ef7ae70e7040",
+      "bytes": 53770,
+      "visible": "0.15 s after the cloak state bit dropped: server GetCloaking()=0.781, client shows 'CLOAK 22%' and the native concloakbmp icon is still lit (decloak tail)."
+    },
+    {
+      "asset": "docs/reports/HUD12_assets/command-ship-summary.webp",
+      "sha256": "26ef2447dfba6a5172030fb7d3775703245113f9916c55d6c06b365bae914f39",
+      "source_png": "~/allegiance-evidence/HUD12/raw/command-ship-summary-1920x1080.png",
+      "source_sha256": "0f7a079f4e6fae6bb64a79b8a5dbdad8a55e66a16df486f872b4ea0e6fa55ce8",
+      "bytes": 119658,
+      "visible": "Command view cortCommandModeInfo summary at the SideLeft anchor: Ship Adv Scout, shields/hull/energy/ammo/fuel/thrust softgaugebmp bars, speed, SIG, kill bonus, money/AP/radar line."
+    }
+  ]
+}

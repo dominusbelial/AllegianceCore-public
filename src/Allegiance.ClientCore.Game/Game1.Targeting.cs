@@ -45,8 +45,19 @@ public sealed partial class Game1
 
     /// <summary>A selected autopilot target: enough to re-resolve its live
     /// position each frame from <see cref="ClientWorld"/> (ships may move),
-    /// plus a display name for the console / window-title readout.</summary>
-    internal readonly record struct AutopilotTarget(TargetKind Kind, short Id, string Name, short CommandId = OrderChange.CidNone);
+    /// plus a display name for the console / window-title readout.
+    /// <para><b>HUD-12b — <see cref="UseDefault"/>.</b> Native only resolves a
+    /// <c>c_cidDefault</c> command through <c>GetDefaultOrder</c>; every other id
+    /// (including <c>c_cidNone</c>) is written unchanged
+    /// (<c>WinTrek/WinTrek.cpp:8827-8833</c>). A plain T / click / cycle pick
+    /// constructs a target with the default id and therefore resolves; the
+    /// explicit <c>c_cidNone</c> callers — <c>TK_TargetSelf</c>
+    /// (<c>WinTrek.cpp:10442</c>) and <c>TK_TargetCommand</c>
+    /// (<c>WinTrek.cpp:10410</c>) — set <see cref="UseDefault"/> false so the
+    /// native no-command payload survives.</para></summary>
+    internal readonly record struct AutopilotTarget(
+        TargetKind Kind, short Id, string Name, short CommandId = OrderChange.CidNone,
+        bool UseDefault = true);
 
     /// <summary>
     /// Soft-lock target candidates (P212, cycling added live 2026-09-14; P256
@@ -1371,7 +1382,10 @@ public sealed partial class Game1
                 !string.IsNullOrEmpty(ent.CharacterName))
                 name = ent.CharacterName;
         }
-        CommitTargetForPlayer(new AutopilotTarget(TargetKind.Ship, myId, name));
+        // HUD-12b — native TK_TargetSelf is SetTarget(GetShip(), c_cidNone)
+        // (WinTrek.cpp:10440-10443): c_cidNone is NOT c_cidDefault, so native
+        // never resolves a default order here. Keep the no-command payload.
+        CommitTargetForPlayer(new AutopilotTarget(TargetKind.Ship, myId, name, UseDefault: false));
         Console.WriteLine($"[monogame] target: self ({name} #{myId})");
         RefreshWindowTitle();
     }
@@ -1451,6 +1465,19 @@ public sealed partial class Game1
         /// <summary>per-attacker: epoch → accumulated damage (only epochs within
         /// the last SlotCount-1 rotations are retained).</summary>
         private readonly Dictionary<short, Dictionary<long, float>> _byAttacker = new();
+        // HUD-12 — per-attacker DamageBucket flash anchor (native
+        // m_timeLastDamage, igc.h:5050-5057,5100). The native flash is a
+        // 250 ms bright / 250 ms dim cycle while damage keeps arriving.
+        private readonly Dictionary<short, long> _flashAnchor = new();
+        // HUD-12b — reused scratch for Prune: Threat() runs per radar contact per
+        // frame, and the old LINQ ToList() allocated a list (plus its iterator)
+        // every call. The stale-epoch list is grown once and cleared in place.
+        private readonly List<long> _staleEpochs = new();
+
+        /// <summary>HUD-12b test/diagnostic view: how many attackers still own a
+        /// flash anchor. Prune must drop the anchor with the empty bucket, or a
+        /// HUD-12 leak kept one entry per attacker forever.</summary>
+        internal int FlashAnchorCount => _flashAnchor.Count;
 
         /// <summary>Record <paramref name="damage"/> dealt to the local ship by
         /// <paramref name="attackerId"/> at server time <paramref name="nowMs"/>.
@@ -1467,6 +1494,15 @@ public sealed partial class Game1
             }
             slots[epoch] = slots.GetValueOrDefault(epoch) + damage;
             Prune(attackerId, epoch);
+            // DamageBucket::ApplyDamage (igc.h:5024-5044): if we are not already
+            // in the bright phase, push the anchor to now (first hit in a while)
+            // or to the next full cycle (damage during the dim phase).
+            long anchor = _flashAnchor.GetValueOrDefault(attackerId);
+            if (nowMs >= anchor + FlashIntervalMs)
+            {
+                long timeReset = anchor + 2 * FlashIntervalMs;
+                _flashAnchor[attackerId] = nowMs > timeReset ? nowMs : timeReset;
+            }
         }
 
         /// <summary>Drop slots older than the rolling window for one attacker
@@ -1477,9 +1513,43 @@ public sealed partial class Game1
         {
             if (!_byAttacker.TryGetValue(attackerId, out var slots)) return;
             long cutoff = curEpoch - (SlotCount - 1);
-            var stale = slots.Keys.Where(e => e < cutoff).ToList();
-            foreach (var e in stale) slots.Remove(e);
-            if (slots.Count == 0) _byAttacker.Remove(attackerId);
+            _staleEpochs.Clear();
+            foreach (var epoch in slots.Keys)
+                if (epoch < cutoff) _staleEpochs.Add(epoch);
+            foreach (var epoch in _staleEpochs) slots.Remove(epoch);
+            if (slots.Count == 0)
+            {
+                _byAttacker.Remove(attackerId);
+                // HUD-12b — the bucket is gone, so its flash anchor must go too
+                // (native deletes the DamageBucket and with it m_timeLastDamage,
+                // common.cpp:2572-2589 / igc.h:5050-5057).
+                _flashAnchor.Remove(attackerId);
+            }
+        }
+
+        /// <summary>Native <c>c_dwFlashInterval = 250</c> ms (igc.h:4926): the
+        /// bright half of a DamageBucket's flash cycle.</summary>
+        public const long FlashIntervalMs = 250;
+
+        /// <summary>HUD-12 — native <c>pmodel-&gt;GetDamageBuckets()</c> presence
+        /// (<c>radarimage.cpp:660-670</c>): a bucket exists while the model's
+        /// in-window damage total is at least 0.5 (native deletes the bucket when
+        /// <c>totalDamage() &lt; 0.5</c> after a slot rotation,
+        /// <c>common.cpp:2572-2589</c>).</summary>
+        public bool Threat(short attackerId, long nowMs)
+        {
+            Prune(attackerId, nowMs / SlotMillis);
+            return Total(attackerId) >= 0.5f;
+        }
+
+        /// <summary>HUD-12 — native <c>DamageBucket::flash(now)</c>
+        /// (<c>igc.h:5010-5014</c>): the bright 250 ms half of the bucket's
+        /// cycle, driven by <see cref="_flashAnchor"/> exactly like
+        /// <c>ApplyDamage</c>'s <c>m_timeLastDamage</c> update.</summary>
+        public bool Flash(short attackerId, long nowMs)
+        {
+            long anchor = _flashAnchor.GetValueOrDefault(attackerId);
+            return nowMs >= anchor && nowMs < anchor + FlashIntervalMs;
         }
 
         /// <summary>Total damage in the current window from <paramref name="attackerId"/>

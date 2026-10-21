@@ -138,4 +138,15 @@ public readonly record struct HudFrame(
     // indicator.cpp:154-177) after keyboard/mouse/joystick/gamepad resolution.
     // Feeds the joystick turning indicator in both skins.
     float TurnYaw = 0f,
-    float TurnPitch = 0f);
+    float TurnPitch = 0f,
+    // HUD-12 — native cloak strength, 100·(1 − pship->GetCloaking())
+    // (WinTrek/consoledata.cpp:480-489), from the owner-only
+    // OwnShipCloakUpdate(220). Null until the first message (the HUD then uses
+    // the engaged-bit presentation only). Drives the continuous strength readout
+    // and the decloak-tail CloakActive gate (consoledata.cpp:563-575).
+    float? CloakStrengthPercent = null,
+    // HUD-12 — the own source ship's hull type display name (native
+    // GetModelTypeDesc(Me), dialog.mdl:4717-4733), used by the command-view ship
+    // summary (cortCommandModeInfo, dialog.mdl:4997-5027). Null while the hull
+    // is not resolved.
+    string? ShipTypeName = null);

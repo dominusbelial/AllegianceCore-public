@@ -1,4 +1,5 @@
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
@@ -62,9 +63,21 @@ public static class InventoryPaneLayout
     public static float FitFontScale(string text, float maxWidth, Func<string, float> measure)
     {
         if (text.Length == 0 || maxWidth <= 0f) return 1f;
-        float width = measure(text);
-        return width <= maxWidth ? 1f : maxWidth / width;
+        return FitScale(measure(text), maxWidth);
     }
+
+    /// <summary>HUD-12b — the renderer overload: measure the real sprite font
+    /// directly instead of allocating a <c>t =&gt; _small.MeasureString(t).X</c>
+    /// closure per inventory row per frame. Same native-stats-slot fit.</summary>
+    public static float FitFontScale(string text, float maxWidth, SpriteFont font, float scale = 1f)
+    {
+        if (text.Length == 0 || maxWidth <= 0f) return 1f;
+        return FitScale(font.MeasureString(text).X * scale, maxWidth);
+    }
+
+    /// <summary>The pure width → scale rule shared by both overloads.</summary>
+    public static float FitScale(float textWidth, float maxWidth)
+        => textWidth <= maxWidth || textWidth <= 0f ? 1f : maxWidth / textWidth;
 
     /// <summary>The on-screen rectangle the pane occupies, for text-layout
     /// reservation.</summary>

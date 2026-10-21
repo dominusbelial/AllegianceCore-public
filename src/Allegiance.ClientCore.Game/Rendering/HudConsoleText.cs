@@ -48,13 +48,21 @@ public sealed record HudConsoleText
     /// <see cref="HudNotice.Opacity"/> is 1 while active (native has no fade).</summary>
     public IReadOnlyList<HudNotice> CriticalTips { get; init; } = Array.Empty<HudNotice>();
 
-    /// <summary>Mission lives remaining (<c>console.cpp:812-818</c>). Null: the
-    /// mission lives / mission-deaths counters are not on the client wire.</summary>
+    /// <summary>Mission lives remaining — native
+    /// <c>iLives − ppi-&gt;MissionDeaths()</c> (<c>console.cpp:812-818</c>), from
+    /// MISSIONDEF's iLives and the PLAYERINFO/KILL_SHIP mission-death counter.
+    /// Null while either reading is unknown.</summary>
     public int? Lives { get; init; }
 
-    /// <summary>Mission kills (<c>console.cpp:813-820</c>). Null: no mission-kill
-    /// counter is streamed to the client.</summary>
+    /// <summary>Mission kills — native <c>ppi-&gt;MissionKills()</c>
+    /// (<c>console.cpp:813,818-821</c>), from PLAYERINFO's nKills and kept
+    /// current from KILL_SHIP. Null while unknown.</summary>
     public int? MissionKills { get; init; }
+
+    /// <summary>Native <c>MissionParams::IsDeathMatchGame()</c>
+    /// (<c>igc.h:1521-1523</c>): the kills badge is drawn only in a deathmatch
+    /// (<c>console.cpp:818-821</c>).</summary>
+    public bool Deathmatch { get; init; }
 
     /// <summary>Own side colour (native <c>mySideColor</c>, dialog.mdl:2006/2018/
     /// 2027) for ordinary tips and the accepted order line; null while unknown.</summary>
@@ -64,6 +72,21 @@ public sealed record HudConsoleText
 /// <summary>Pure formatting for the console-text rows; no MonoGame types.</summary>
 public static class HudConsoleFormat
 {
+    /// <summary>HUD-12 — the lives badge is drawn only while the remaining count
+    /// is below 10 (native <c>m_pnumberLivesOn</c>, <c>console.cpp:814-817</c>).</summary>
+    public static bool LivesVisible(int? lives) => lives is { } n && n < 10;
+
+    /// <summary>HUD-12 — the kills badge is drawn only in a deathmatch
+    /// (native <c>m_pnumberKillsOn</c>, <c>console.cpp:818-821</c>).</summary>
+    public static bool KillsVisible(bool deathmatch, int? kills) => deathmatch && kills is not null;
+
+    /// <summary>HUD-12 — native remaining-lives arithmetic:
+    /// <c>iLives − ppi-&gt;MissionDeaths()</c> (<c>console.cpp:812</c>). Null when
+    /// either reading is unknown; the unlimited sentinel (0x7fff) is a real
+    /// value and yields a large count (badge hidden by <see cref="LivesVisible"/>).</summary>
+    public static int? RemainingLives(short missionLives, short missionDeaths) =>
+        missionLives - missionDeaths;
+
     /// <summary>Native critical-tip lifetime for non-training missions
     /// (<c>fTipTextDuration = Training ? 30.0f : 7.5f</c>, <c>console.cpp:913</c>).</summary>
     public const double CriticalTipDurationSeconds = 7.5;

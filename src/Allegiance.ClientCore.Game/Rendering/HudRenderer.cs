@@ -51,6 +51,7 @@ public class HudRenderer
     private readonly IndicatorTextures? _indicators;
     private readonly TargetPaneTextures? _targetPaneTextures;
     private readonly InventoryPaneTextures? _inventoryTextures;
+    private readonly HudNativeTextures? _nativeHud;
     private readonly bool _damageWash;
 
     public HudRenderer(
@@ -64,7 +65,8 @@ public class HudRenderer
         IndicatorTextures? indicators = null,
         TargetPaneTextures? targetPaneTextures = null,
         InventoryPaneTextures? inventoryTextures = null,
-        bool damageWash = true)
+        bool damageWash = true,
+        HudNativeTextures? nativeHudTextures = null)
     {
         _sb = spriteBatch;
         _white = whitePixel;
@@ -76,6 +78,7 @@ public class HudRenderer
         _indicators = indicators;
         _targetPaneTextures = targetPaneTextures;
         _inventoryTextures = inventoryTextures;
+        _nativeHud = nativeHudTextures;
         _damageWash = damageWash;
     }
 
@@ -275,6 +278,7 @@ public class HudRenderer
             DrawWarnings(model.Warnings, w, h);
             if (model.Warnings.Count > 0) ElementDrawn("Boundary and crowd warnings");
             DrawConsoleText(model, viewport);
+            DrawLivesKillsBadges(model, viewport);
 
             // HUD-3 — the native bottom target pane (dialog.mdl:5402, shown in
             // cockpit/chase). Present for a selected target even when the
@@ -288,6 +292,14 @@ public class HudRenderer
             if (model.FlightVisible && (context.InventoryVisible || context.InventorySlide > 0f)
                 && context.InventoryPane is { } pane)
                 DrawInventoryPane(pane, model, viewport);
+
+            // HUD-12 — the native command-view ship summary (cortCommandModeInfo,
+            // dialog.mdl:4997-5027) at its SideLeft anchor. Drawn BEFORE the
+            // instruments gate: command view intentionally hides the centre
+            // gauges (InstrumentsVisible false) but this summary is the
+            // ofInFlightCommand replacement (dialog.mdl:5412).
+            if (model.Context.CommandView && model.FlightVisible)
+                DrawCommandShipSummary(model, viewport);
 
             if (frame is not { } f)
                 return;   // no ship yet — gauges/readouts have nothing to show
@@ -423,7 +435,29 @@ public class HudRenderer
             Layout.Reserve(new Rectangle((int)p.X - 55, (int)p.Y - 50, 110, 150));
         }
         ReserveTargetPane(model, viewport);
+        ReserveCommandSummary(model, viewport);
         ReserveConsoleAnchors(model, viewport);
+    }
+
+    /// <summary>HUD-12b merge fix — the command-view ship summary draws at its
+    /// own fixed native anchor (<c>SideLeft(-200,120)-&gt;(36,120)</c>,
+    /// dialog.mdl:5412) and deliberately does not move, so the measured radar
+    /// labels must yield to it. HUD-11's label placement and HUD-12's new
+    /// summary otherwise collided in command view (hud2-proof's 1920 overlay).
+    /// </summary>
+    protected void ReserveCommandSummary(HudModel model, Viewport viewport)
+    {
+        if (!model.Context.CommandView || !model.FlightVisible || model.Telemetry is not { } f) return;
+        float spread = Math.Clamp(viewport.Height / 680f, 1.15f, 2.1f);
+        float line = TextLineHeight + 1f;
+        float top = viewport.Height / 2f - 120f;
+        float bottom = top + 20f + 8f * line;   // ship row + six gauges + speed
+        if (f.SignaturePercent is not null) bottom += line;
+        if (f.KillBonusPercent > 0f || f.KillBonusStreak > 0) bottom += line;
+        bottom += 2f * line + 4f;                // money/AP/radar + target rows
+        float right = 36f + 118f * spread + 90f * TextScale;   // gauge + percent column
+        Layout.Reserve(new Rectangle(20, (int)(top - 8f),
+            Math.Max(1, (int)(right - 20f)), Math.Max(1, (int)(bottom - top + 24f))));
     }
 
     /// <summary>Reserve the native bottom target pane so measured text (radar
@@ -1019,12 +1053,11 @@ public class HudRenderer
                 // Native draws the integer in black in a centred 80-wide box at
                 // the group-relative Point(0,5) (dialog.mdl:2561-2566).
                 var numberBox = pos + OwnStatusLayout.KillCounterNumberOffset(viewport.Height);
-                DrawCenteredInNativeBox(_small, $"{kb:0}", numberBox, viewport.Height, Color.Black);
+                DrawCenteredInNativeBox(_small, HudStringCache.KillBonusNumber(kb), numberBox, viewport.Height, Color.Black);
             }
             else
             {
-                string text = $"KB {kb:0}%";
-                DrawMeasuredText(_small, text, pos, BonusGold, true);
+                DrawMeasuredText(_small, HudStringCache.KillBonusBadge(kb), pos, BonusGold, true);
             }
             ElementDrawn("Kill bonus");
         }
@@ -1032,7 +1065,7 @@ public class HudRenderer
         if (status.SignaturePercent is { } sig)
         {
             var pos = OwnStatusLayout.ScreenPos("Signature percentage", viewport.Width, viewport.Height);
-            string text = $"SIG: {sig:0}%";
+            string text = HudStringCache.Signature(sig);
             // Native SignatureImage is StringImage(JustifyCenter, 80, …) whose
             // TranslateImage anchor is the box's top-left (dialog.mdl:2595-2602,
             // :2621), so the text centres inside the 80-point box.
@@ -1040,12 +1073,155 @@ public class HudRenderer
             ElementDrawn("Signature percentage");
         }
 
-        if (status.CloakDrained)
+        // HUD-12 — continuous native cloak strength, 100·(1−GetCloaking())
+        // (consoledata.cpp:480-489). Native's CortUI glass gauge draws this as a
+        // swept glass shape (dialog.mdl:570-597); the port's HUD shows the same
+        // value as a compact bar + percentage, with the native drained marker at
+        // energy <= .2 (dialog.mdl:651-656). HUD-12b — before the first
+        // OwnShipCloakUpdate(220) the strength is unknown, so the legacy
+        // "CLOAK DRAINED" label must still appear from the state-bit fallback.
+        if (status.CloakActive
+            && HudStringCache.CloakStatusText(status.CloakDrained, status.CloakStrengthPercent) is { } cloakText)
         {
             var pos = OwnStatusLayout.ScreenPos("Cloak strength and drained state", viewport.Width, viewport.Height);
-            DrawMeasuredText(_small, "CLOAK DRAINED", pos, Warning, true);
+            DrawMeasuredText(_small, cloakText, pos, status.CloakDrained ? Warning : TextMain, true);
             ElementDrawn("Cloak strength and drained state");
         }
+    }
+
+    /// <summary>HUD-12 — the native lives/kills badge group (dialog.mdl:5056-5128,
+    /// SideTopLeft anchors at dialog.mdl:5441-5445). Lives show only below 10
+    /// (<c>console.cpp:814-817</c>); kills only in a deathmatch
+    /// (<c>console.cpp:818-821</c>). The badge art is <c>livesbmp</c> /
+    /// <c>hudKillsbmp</c>; the native centred 80-wide text box sits at the group
+    /// offsets (18,20) / (15,20) (dialog.mdl:5070-5080,5107-5120).
+    /// </summary>
+    private void DrawLivesKillsBadges(HudModel model, Viewport viewport)
+    {
+        if (!model.FlightVisible || model.Context.Console is not { } console) return;
+        if (HudConsoleFormat.LivesVisible(console.Lives) && console.Lives is { } lives)
+        {
+            DrawConsoleBadge(_status?.LivesBadge, HudStringCache.Lives(lives), 45f, 97f, 18f);
+            ElementDrawn("Lives remaining");
+        }
+        if (HudConsoleFormat.KillsVisible(console.Deathmatch, console.MissionKills)
+            && console.MissionKills is { } kills)
+        {
+            DrawConsoleBadge(_status?.KillsBadge, HudStringCache.Kills(kills), 45f, 177f, 15f);
+            ElementDrawn("Mission kills");
+        }
+    }
+
+    /// <summary>Draw one native badge group: the bitmap at the native anchor and
+    /// the centred 80-wide text box 20 px above its lower edge (dialog.mdl:5070-5080).</summary>
+    private void DrawConsoleBadge(Texture2D? art, string text, float x, float top, float textOffsetX)
+    {
+        float artHeight = art?.Height ?? 34f;
+        if (art is not null)
+            _sb.Draw(art, new Vector2(x, top), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
+        var size = _small.MeasureString(text) * TextScale;
+        float boxWidth = 80f * TextScale;
+        float boxLeft = x + textOffsetX * TextScale;
+        float boxBottom = top + artHeight - 20f * TextScale;
+        FillRect(boxLeft - 2, boxBottom - size.Y - 1, boxWidth + 4, size.Y + 2, Color.Black * .58f);
+        RenderText(_small, text, new(boxLeft + (boxWidth - size.X) / 2f, boxBottom - size.Y), Color.White, TextScale);
+    }
+
+    /// <summary>HUD-12 — the native command-view ship summary
+    /// (<c>cortCommandModeInfo</c>, <c>Artwork/dialog.mdl:4997-5027</c>), shown
+    /// under <c>ofInFlightCommand</c> at <c>SideLeft(-200,120)→(36,120)</c>
+    /// (dialog.mdl:5412). It reads the same console data native feeds every frame
+    /// (<c>WinTrek/console.cpp:778-800</c>): the source ship
+    /// (<c>m_pmodelDataMe</c>), its shields/hull, the energy/ammo/fuel displays,
+    /// thrust/speed/signature/kill bonus, and the selected target — plus the
+    /// console's money, autopilot and radar-mode readouts. The native group uses
+    /// <c>softgaugebmp</c> for every gauge (dialog.mdl:4735-4840); the port draws
+    /// the same bars when the art is loaded and plain bars otherwise. Typography
+    /// and exact row metrics are an approximation of the native medVerdana font.
+    /// </summary>
+    protected virtual void DrawCommandShipSummary(HudModel model, Viewport viewport)
+    {
+        if (model.Telemetry is not { } f) return;
+        float w = viewport.Width, h = viewport.Height;
+        // Native SideLeft anchor: x = left + 36; the group's lower-left edge is
+        // 120 px above the vertical centre in y-up, i.e. screen y = h/2 - 120,
+        // and its rows run downward (negative y translations).
+        float x = 36f;
+        float y = h / 2f - 120f;
+        // Native rows are 12 px apart in medVerdana; the port's HUD spritefont
+        // is taller, so advance by its measured line height to keep the rows
+        // readable (the native GROUP ORDER is preserved).
+        float line = _small.LineSpacing * TextScale + 1f;
+        var soft = _nativeHud?.SoftGauge;
+        Color side = model.Context.TargetPane?.SideColor is { } sc
+            ? new Color(sc.R, sc.G, sc.B) : Accent;
+
+        string type = model.Telemetry?.ShipTypeName ?? "ship";
+        DrawSummaryText(HudStringCache.ShipSummary(type), new Vector2(x, y + 3f), side);
+        y += 20f;
+        DrawCommandGauge("Shields:", f.ShieldFraction, ref y, x, soft, line);
+        DrawCommandGauge("Hull:", f.HullFraction, ref y, x, soft, line);
+        DrawCommandGauge("Energy:", f.EnergyFraction, ref y, x, soft, line);
+        DrawCommandGauge("Ammo:", f.AmmoFraction, ref y, x, soft, line);
+        DrawCommandGauge("Fuel:", f.FuelFraction, ref y, x, soft, line);
+        DrawCommandGauge("Thrust:", (f.Throttle + 1f) * 0.5f, ref y, x, soft, line);
+        y += 4f;
+        DrawSummaryText(HudStringCache.Speed(f.Speed, model.SpeedUnit), new Vector2(x, y), TextMain);
+        y += line;
+        if (f.SignaturePercent is { } sig)
+        {
+            DrawSummaryText(HudStringCache.Signature(sig), new Vector2(x, y), TextMain);
+            y += line;
+        }
+        if (f.KillBonusPercent > 0f || f.KillBonusStreak > 0)
+        {
+            DrawSummaryText(HudStringCache.KillBonusLine(f.KillBonusPercent), new Vector2(x, y), BonusGold);
+            y += line;
+        }
+        // Money / autopilot / radar mode are the console's other per-frame
+        // readouts (console.cpp:791-793); native draws them in their own HUD
+        // slots, so the command summary echoes them here in one compact line.
+        DrawSummaryText(HudStringCache.SummaryLine(f.Money, f.AutopilotEngaged, model.Context.RadarMode),
+            new Vector2(x, y), TextDim);
+        y += line + 4f;
+        string? target = model.Context.Target?.Name ?? model.Context.TargetPane?.Name;
+        if (target is { Length: > 0 })
+            DrawSummaryText(HudStringCache.TargetSummary(target), new Vector2(x, y), TextMain);
+        ElementDrawn("Command view ship summary");
+    }
+
+    /// <summary>Draw a command-summary line at its OWN fixed native anchor (the
+    /// pane lays its rows out itself; the shared collision layout must not
+    /// relocate them, or the native vertical order breaks).</summary>
+    private void DrawSummaryText(string text, Vector2 position, Color color) =>
+        DrawMeasuredText(_small, text, position, color, instrument: true,
+            background: false, fixedAnchor: true);
+
+    private void DrawCommandGauge(string label, float fraction, ref float y, float x,
+        Texture2D? art, float line)
+    {
+        fraction = HudFormat.Clamp01(fraction);
+        DrawSummaryText(label, new Vector2(x, y), TextDim);
+        // Native softgaugebmp is 52x4 pixels (its real GaugeImage size); keep that
+        // aspect instead of stretching it, revealing the left fraction (native
+        // GaugeImage JustifyLeft). Scale with the HUD cluster's spread so the
+        // summary matches the other centre gauges.
+        float spread = OwnStatusLayout.Spread(_viewportHeight);
+        float bx = x + 66f * spread, by = y + 2f;
+        float gw = (art?.Width ?? 52f) * spread, gh = MathF.Max(3f, (art?.Height ?? 4f) * spread);
+        if (art is not null)
+        {
+            int srcW = Math.Max(1, (int)MathF.Round(art.Width * fraction));
+            _sb.Draw(art, new Rectangle((int)bx, (int)by, (int)MathF.Round(srcW * spread), (int)gh),
+                new Rectangle(0, 0, srcW, art.Height), Color.White);
+        }
+        else
+        {
+            FillRect(bx, by, gw, gh, new Color(0f, 0f, 0f, .45f));
+            FillRect(bx, by, gw * fraction, gh, Accent);
+        }
+        DrawSummaryText(HudStringCache.Percent(fraction), new Vector2(bx + gw + 6f, y), TextMain);
+        y += line;
     }
 
     private void DrawStatusIcon(string id, bool shown, Texture2D? tex, Viewport viewport)
@@ -2146,7 +2322,7 @@ public class HudRenderer
             // reading. Scale the stats glyphs into the native stats slot instead
             // (HudFormat.FitToWidth is the tested width contract).
             float statsMax = Math.Max(0f, (InventoryPaneLayout.LineWidth - InventoryPaneLayout.StatsX - 3f) * scale);
-            float statsScale = InventoryPaneLayout.FitFontScale(stats, statsMax, t => _small.MeasureString(t).X);
+            float statsScale = InventoryPaneLayout.FitFontScale(stats, statsMax, _small);
             _sb.DrawString(_small, stats, new Vector2(left + InventoryPaneLayout.StatsX * scale, textY),
                 white, 0f, Vector2.Zero, statsScale, SpriteEffects.None, 0f);
         }

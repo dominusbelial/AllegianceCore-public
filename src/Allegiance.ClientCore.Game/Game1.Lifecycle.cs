@@ -285,10 +285,11 @@ public sealed partial class Game1
         _inventoryTextures = Rendering.InventoryPaneTextures.Load(GraphicsDevice, _assets);
         _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, gauges, lockTextures,
             _statusTextures, indicatorTextures, targetPaneTextures, _inventoryTextures,
-            damageWash: _hudSettings.DamageWash);
+            damageWash: _hudSettings.DamageWash, nativeHudTextures: _hudNativeTextures);
 
         // P214 — in-flight chat overlay (same SpriteBatch/font plumbing as the HUD).
-        _modernHudRenderer = new ModernHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings, Content.Load<SpriteFont>("HUDModern"));
+        _modernHudRenderer = new ModernHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings,
+            Content.Load<SpriteFont>("HUDModern"), nativeArt: _statusTextures, nativeHudTextures: _hudNativeTextures);
         _chatRenderer = new ChatRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudNativeTextures);
 
         // P217 — the quick-chat voice-macro data, parsed once at runtime from
@@ -414,7 +415,7 @@ public sealed partial class Game1
 
         // P250 — local current-sector tactical radar: nearby ships/stations/
         // warps as on-screen or edge-clamped icons (same SpriteBatch plumbing).
-        _radarRenderer = new RadarBracketRenderer(_spriteBatch, _whitePixel);
+        _radarRenderer = new RadarBracketRenderer(_spriteBatch, _whitePixel, _statusTextures);
         // P372 — the per-side in-world ship "team tags" (side-coloured chevron
         // above each visible ship's hull), same SpriteBatch plumbing.
         _shipTagRenderer = new Rendering.ShipSideTagRenderer(_spriteBatch, _whitePixel);

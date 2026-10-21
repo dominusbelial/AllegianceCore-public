@@ -46,6 +46,27 @@ public sealed class StatusTextures : IDisposable
     /// <summary>Real CortUI/common/convectorlock.png vector-lock icon, or null.</summary>
     public Texture2D? VectorLock { get; private set; }
 
+    // HUD-12 — the radar overlay bracket surfaces native draws with
+    // DrawExpandedBlip (radarimage.cpp:219-230,343-357; artwork names in
+    // WinTrek/artwork.h:73-76). Each is a flat 2-D bitmap, decoded exactly like
+    // the status icons above.
+    /// <summary>Real <c>hasflagbmp.mdl</c> carried-flag bracket art, or null.</summary>
+    public Texture2D? RadarFlag { get; private set; }
+    /// <summary>Real <c>hasartifactbmp.mdl</c> carried-artifact bracket art, or null.</summary>
+    public Texture2D? RadarArtifact { get; private set; }
+    /// <summary>Real <c>subjectbmp.mdl</c> command-subject bracket art, or null.</summary>
+    public Texture2D? RadarSubject { get; private set; }
+    /// <summary>Real <c>ripiconbmp.mdl</c> (PNG-backed) ripcord bracket art, or null.</summary>
+    public Texture2D? RadarRipcord { get; private set; }
+    /// <summary>Real <c>lastfiredbmp.mdl</c> threat bracket art, or null.</summary>
+    public Texture2D? RadarThreat { get; private set; }
+
+    // HUD-12 — the two native console badges (dialog.mdl:5056,5107).
+    /// <summary>Real <c>livesbmp.mdl</c> lives badge, or null.</summary>
+    public Texture2D? LivesBadge { get; private set; }
+    /// <summary>Real <c>hudKillsbmp.mdl</c> kills badge, or null.</summary>
+    public Texture2D? KillsBadge { get; private set; }
+
     /// <summary>Every status icon decoded successfully.</summary>
     public bool AllLoaded =>
         Eye is not null && Cloak is not null && KillCounter is not null &&
@@ -70,6 +91,17 @@ public sealed class StatusTextures : IDisposable
         result.Artifact = TryDecodeMdl(gd, assets, "captureflagLbmp");
         result.Autopilot = TryDecodePng(gd, assets, "CortUI/common/conautopilot.png");
         result.VectorLock = TryDecodePng(gd, assets, "CortUI/common/convectorlock.png");
+        // HUD-12 — the radar bracket + console badge art (flat 2-D bitmaps).
+        result.RadarFlag = TryDecodeMdl(gd, assets, "hasflagbmp");
+        result.RadarArtifact = TryDecodeMdl(gd, assets, "hasartifactbmp");
+        result.RadarSubject = TryDecodeMdl(gd, assets, "subjectbmp");
+        // ripiconbmp.mdl is an ImportImageFromFile("ripicon.png", true) script,
+        // not a binary RGB565 surface; load the PNG it names directly (the native
+        // AWF_FLIGHT_RIP_ICON stem is still the source of truth, artwork.h:76).
+        result.RadarRipcord = TryDecodePng(gd, assets, "ripicon.png");
+        result.RadarThreat = TryDecodeMdl(gd, assets, "lastfiredbmp");
+        result.LivesBadge = TryDecodeMdl(gd, assets, "livesbmp");
+        result.KillsBadge = TryDecodeMdl(gd, assets, "hudKillsbmp");
         return result;
     }
 
@@ -134,6 +166,10 @@ public sealed class StatusTextures : IDisposable
         _disposed = true;
         Eye?.Dispose(); Cloak?.Dispose(); KillCounter?.Dispose();
         Flag?.Dispose(); Artifact?.Dispose(); Autopilot?.Dispose(); VectorLock?.Dispose();
+        RadarFlag?.Dispose(); RadarArtifact?.Dispose(); RadarSubject?.Dispose();
+        RadarRipcord?.Dispose(); RadarThreat?.Dispose(); LivesBadge?.Dispose(); KillsBadge?.Dispose();
         Eye = Cloak = KillCounter = Flag = Artifact = Autopilot = VectorLock = null;
+        RadarFlag = RadarArtifact = RadarSubject = RadarRipcord = RadarThreat = null;
+        LivesBadge = KillsBadge = null;
     }
 }

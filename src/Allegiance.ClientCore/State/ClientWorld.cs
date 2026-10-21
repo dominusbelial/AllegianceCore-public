@@ -617,6 +617,20 @@ public sealed partial class ClientWorld
     private float _killBonusPercent = 0f;
     private short _killBonusStreak = 0;
 
+    // HUD-12 — the LOCAL player's own ship's continuous cloak visible fraction
+    // (native GetCloaking(), 1 = fully visible), streamed by the owner-only
+    // OwnShipCloakUpdate(220). Null until the first message (the HUD then falls
+    // back to the CloakActive state bit, the pre-HUD-12 presentation).
+    private float? _myCloaking;
+
+    // HUD-12 — remote ships' ripcord activations, from RIPCORD_ACTIVATE(185)
+    // (sector-wide on a first activation; FedSrv.CPP:13356-13369). Native's
+    // client seeds each remote ship's local countdown on that message
+    // (appmsg.cpp:953-970: pship->SetRipcordModel(pship); ResetRipcordTimeLeft())
+    // and the radar reads GetRipcordTimeLeft()+1 (radarimage.cpp:1015-1030).
+    // Value = local monotonic start instant (ms) of the countdown.
+    private readonly Dictionary<short, long> _remoteRipcords = new();
+
     // P264 — whether an in-sector ENEMY missile's target is the local ship, plus
     // the best lock fraction among them, streamed by the owner-only
     // MissileTrackWarningUpdate(208). Drives the incoming-missile warning loop.
@@ -1661,6 +1675,45 @@ public sealed partial class ClientWorld
     /// gauge's kill tally. Streamed on the same <c>OwnShipKillBonusUpdate(212)</c>.</summary>
     public short KillBonusStreak => _killBonusStreak;
 
+    /// <summary>HUD-12 — the LOCAL ship's native <c>GetCloaking()</c> visible
+    /// fraction (1 = fully visible; 0 = fully cloaked), from the owner-only
+    /// <c>OwnShipCloakUpdate(220)</c>. Null until the first message; the HUD
+    /// derives <c>strength = 100·(1−Cloaking)</c> and
+    /// <c>IsCloaked = Cloaking &lt; 1</c> (<c>consoledata.cpp:480-489,563-575</c>).</summary>
+    public float? MyCloaking => _myCloaking;
+
+    /// <summary>HUD-12 — the local monotonic start instant (ms) of a REMOTE
+    /// ship's ripcord, recorded from the sector-wide <c>RIPCORD_ACTIVATE(185)</c>
+    /// exactly like native's remote handler (<c>appmsg.cpp:953-970</c>). The
+    /// radar derives the countdown with the ship's own hull <c>RipcordSpeed</c>,
+    /// which is what the native client's <c>ResetRipcordTimeLeft()</c> does.
+    /// False for the own ship (its state lives in
+    /// <see cref="RipcordActiveSinceLocalMs"/>) and for ships with no active
+    /// ripcord.</summary>
+    public bool TryGetRemoteRipcord(short shipId, out long startedLocalMs) =>
+        _remoteRipcords.TryGetValue(shipId, out startedLocalMs);
+
+    /// <summary>HUD-12 — the native <c>MissionParams::iLives</c> from
+    /// <c>MISSIONDEF(38)</c>, or the unlimited sentinel until it arrives.</summary>
+    public short MissionLives => _mission?.ILives ?? Allegiance.Core.Wire.MissionDef.UnlimitedLives;
+
+    /// <summary>HUD-12 — the LOCAL player's mission kills/deaths, the native
+    /// <c>PlayerInfo::MissionKills()/MissionDeaths()</c> pair
+    /// (<c>clintlib.h:346-347</c>). Seeded from <c>PLAYERINFO(10)</c>
+    /// (<c>appmsg.cpp:2254-2256</c>) and kept current from <c>KILL_SHIP(105)</c>
+    /// (<c>appmsg.cpp:2766-2773,2807-2810</c>). False until the own ship's
+    /// PlayerInfo is known.</summary>
+    public bool TryGetOwnMissionStats(out short kills, out short deaths)
+    {
+        kills = 0;
+        deaths = 0;
+        if (MyShipId is not { } me || !_ships.TryGetValue(me, out var own) || own.Player is not { } info)
+            return false;
+        kills = info.NKills;
+        deaths = info.NDeaths;
+        return true;
+    }
+
     /// <summary>P266 — the local ship's predictive lead-aim point, streamed on the
     /// owner-only <c>LeadIndicatorUpdate(210)</c> (server-computed from the real
     /// <c>solveForLead</c> physics, <see cref="Wire.LeadIndicatorUpdate"/>). The
@@ -1809,6 +1862,8 @@ public sealed partial class ClientWorld
         _miningAsteroidId = -1;
         _killBonusPercent = 0f;
         _killBonusStreak = 0;
+        _myCloaking = null;              // HUD-12 — no stale cloak fraction across missions
+        _remoteRipcords.Clear();         // HUD-12 — remote ripcords do not survive a reset
         ClearRipcord();                  // P414 — drop any ripcord state on reconnect
 
         _ships.Clear();
@@ -2161,6 +2216,9 @@ public sealed partial class ClientWorld
                 break;
             case OwnShipKillBonusUpdate killBonus:
                 Apply(killBonus);
+                break;
+            case OwnShipCloakUpdate cloak:
+                Apply(cloak);
                 break;
             case MissileTrackWarningUpdate missileTrack:
                 Apply(missileTrack);
@@ -2582,7 +2640,15 @@ public sealed partial class ClientWorld
             RipcordActive = true;
             RipcordTargetSectorId = m.SidRipcord;
             RipcordActiveSinceLocalMs = (long)(NowSeconds() * 1000);
+            return;
         }
+        // HUD-12 — a REMOTE ship's ripcord. Native's else-branch seeds that
+        // ship's local countdown (appmsg.cpp:953-970:
+        // SetRipcordModel(pship); ResetRipcordTimeLeft()), which the radar then
+        // reads as (int)GetRipcordTimeLeft()+1 (radarimage.cpp:1015-1030).
+        // First activations are sector-wide, so this reaches every observer.
+        if (m.ShipidRipcord >= 0)
+            _remoteRipcords[m.ShipidRipcord] = (long)(NowSeconds() * 1000);
     }
 
     /// <summary>P414/P711 — <c>FM_S_RIPCORD_DENIED(186)</c>: the server refused our
@@ -2607,6 +2673,10 @@ public sealed partial class ClientWorld
     /// sounddef.mdl:351) for Game1 to play.</summary>
     private void Apply(RipcordAborted m)
     {
+        // HUD-12 — a remote ship's countdown ended without teleporting; native
+        // clears that ship's ripcord model (appmsg.cpp:973-984), so the radar
+        // stops drawing its marker/seconds.
+        _remoteRipcords.Remove(m.ShipidRipcord);
         if (m.ShipidRipcord != MyShipId) return;
         ClearRipcord();
         RecordSoundEvent(ClientSoundEventKind.RipcordAborted, m.ShipidRipcord);
@@ -4115,8 +4185,19 @@ public sealed partial class ClientWorld
         // dead/gone and vanish. (Previously the port suppressed KILL_SHIP on
         // eject entirely, so Apply(KillShip) could assume death.)
         var e = Upsert(m.ShipId);
+        // A killed (or ejected) ship's ripcord is over whether or not the server
+        // credited a death; the countdown belongs to the model that just died.
+        _remoteRipcords.Remove(m.ShipId);
         if (m.BDeathCredit)
         {
+            // HUD-12 — native's KILL_SHIP handler credits the victim's
+            // PlayerInfo death and the killer's PlayerInfo kill
+            // (appmsg.cpp:2766-2773,2807-2810, PlayerInfo::AddDeath/AddKill at
+            // clintlib.h:346-347). Those are the counters the console's lives /
+            // kills badges read (console.cpp:812-821), so keep them current
+            // from the same events native does; PLAYERINFO(10) seeds them at
+            // join (appmsg.cpp:2254-2256, FedSrv.CPP:2085-2086).
+            e.Player?.AddDeath();
             // The victim stays in the entity table (that's the point of keying by
             // id — "did ship X die" stays answerable) but gains the death flag.
             e.IsDead = true;
@@ -4139,6 +4220,13 @@ public sealed partial class ClientWorld
         // perspective (appmsg.cpp:2797-2844) and queue the "gloat camera" swing
         // to the killer when this receiver's own ship was hit (appmsg.cpp:2900-2902,
         // clintlib.cpp:3063, trekigc.cpp:3101-3105).
+        // HUD-12 — the credited killer's kill (native only when the killer's
+        // PlayerInfo exists: a launcher that is a ship with player data,
+        // appmsg.cpp:2807-2810; NPCs have no PlayerInfo here).
+        if (m.BKillCredit && m.TypeCredit == (short)IgcObjectType.Ship && m.IdCredit >= 0
+            && _ships.TryGetValue(m.IdCredit, out var killerEnt))
+            killerEnt.Player?.AddKill();
+
         short me = MyShipId ?? -1;
         var line = EjectFeedback.ForKillShip(m, me, DisplayNameFor(m.ShipId), KillerNameFor(m));
         _feedbackLines.Add(line with { AtSeconds = NowSeconds() });
@@ -4385,6 +4473,11 @@ public sealed partial class ClientWorld
         if (m.Sdr is ShipDelete.SdrKilled or ShipDelete.SdrTerminate)
             _retiredResearchProduction.Add(m.ShipId);
         if (m.ShipId == MyShipId) ShipWarnings.Reset();
+        // HUD-12b — a deleted ship no longer has a live ripcord countdown, whatever
+        // the reason (native removes/moves the ship model on SHIP_DELETE,
+        // appmsg.cpp:455-495); pruning here also covers a departure that already
+        // dropped it from the visible ship table.
+        _remoteRipcords.Remove(m.ShipId);
         if (!_ships.TryGetValue(m.ShipId, out var e)) return;
         if (_botWorld is not null && m.Sdr == ShipDelete.SdrLeftSector
             && MyShipId is { } viewer && _ships.TryGetValue(viewer, out var own)
@@ -4463,6 +4556,7 @@ public sealed partial class ClientWorld
             StaticCoreVersion = def.VerIgcCore,
             Cookie = def.DwCookie,
             GameLengthSeconds = def.GameLengthSeconds,
+            ILives = def.ILives,
             SideMissionOwner = def.ISideMissionOwner,
             Stage = def.Stage,
         };
@@ -4495,6 +4589,7 @@ public sealed partial class ClientWorld
             StaticCoreVersion = _mission?.StaticCoreVersion ?? 0,
             Cookie = _mission?.Cookie ?? 0,
             GameLengthSeconds = _mission?.GameLengthSeconds ?? 0,
+            ILives = _mission?.ILives ?? Allegiance.Core.Wire.MissionDef.UnlimitedLives,
             SideMissionOwner = _mission?.SideMissionOwner ?? 0,
             Stage = stage.Stage,
         };
@@ -4570,6 +4665,8 @@ public sealed partial class ClientWorld
         _miningAsteroidId = -1;
         _killBonusPercent = 0f;
         _killBonusStreak = 0;
+        _myCloaking = null;              // HUD-12
+        _remoteRipcords.Clear();         // HUD-12
         ClearRipcord();
 
         _ships.Clear();
@@ -5048,6 +5145,12 @@ public sealed partial class ClientWorld
         _killBonusPercent = m.KillBonusPercent;
         _killBonusStreak = m.Streak;
     }
+
+    /// <summary>HUD-12 — <c>OWN_SHIP_CLOAK_UPDATE(220)</c>: the owner-only
+    /// continuous <c>GetCloaking()</c> visible fraction (the port's answer to
+    /// native's locally-simulated <c>CcloakIGC</c> ramp, <c>cloakigc.cpp:85-122</c>).
+    /// Overwrites <see cref="MyCloaking"/> wholesale each tick.</summary>
+    private void Apply(OwnShipCloakUpdate m) => _myCloaking = m.Cloaking;
 
     /// <summary>FM_S_MISSILE_TRACK_WARNING(208) — the owner-only P264 snapshot of
     /// "an enemy missile's target is the local ship". Overwrites

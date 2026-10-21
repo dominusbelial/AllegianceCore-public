@@ -172,6 +172,15 @@ public sealed partial class Server
         return packet;
     }
 
+    private BroadcastPacket PackCloak(Ship ship)
+    {
+        if (!ReuseBroadcastBuffers)
+            return PackBroadcast(Message(new OwnShipCloakUpdate { Cloaking = OwnShipCloaking(ship) }));
+        var packet = SmallPacket(OwnShipCloakUpdate.Fmid, OwnShipCloakUpdate.FixedSize);
+        BinaryPrimitives.WriteSingleLittleEndian(packet.Buffer.Slice(4), OwnShipCloaking(ship));
+        return packet;
+    }
+
     private BroadcastPacket PackKillBonus(Ship ship)
     {
         if (!ReuseBroadcastBuffers) return PackBroadcast(Message(OwnShipKillBonusUpdate.FromShip(ship)));

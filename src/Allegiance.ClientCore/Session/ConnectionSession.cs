@@ -1592,6 +1592,14 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // client never saw its live kill bonus.
                         _world.Apply(OwnShipKillBonusUpdate.Decode(m));
                         break;
+                    case OwnShipCloakUpdate.Fmid:
+                        // HUD-12 — OWN_SHIP_CLOAK_UPDATE(220): the owner-only
+                        // continuous GetCloaking() fraction (Server.Broadcast.cs).
+                        // Native's client simulated this locally; this renderer-only
+                        // client needs the stream for the cloak strength readout and
+                        // the decloak-tail icon (consoledata.cpp:480-489,563-575).
+                        _world.Apply(OwnShipCloakUpdate.Decode(m));
+                        break;
                     case TeleportAck.Fmid:
                         // P638 — FM_S_TELEPORT_ACK(102): accepted/denied teleport
                         // reply (appmsg.cpp:1856). Previously unconsumed, so the

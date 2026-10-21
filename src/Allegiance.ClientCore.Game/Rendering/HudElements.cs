@@ -208,7 +208,7 @@ public static class HudElements
                     case "Signature percentage": Set(status.SignaturePercent, instrument && status.SignaturePercent is not null); break;
                     case "Detection eye": Set(status.DetectionEyeVisible ? 1 : 0, instrument && status.DetectionEyeVisible); break;
                     case "Cloak active": Set(status.CloakActive ? 1 : 0, instrument && status.CloakActive); break;
-                    case "Cloak strength and drained state": Set(status.CloakDrained ? 1 : 0, instrument && status.CloakDrained); break;
+                    case "Cloak strength and drained state": Set(status.CloakStrengthPercent ?? (status.CloakDrained ? 1 : 0), instrument && (status.CloakActive && status.CloakStrengthPercent is not null || status.CloakDrained)); break;
                     case "Autopilot status": Set(status.AutopilotEngaged ? 1 : 0, instrument && status.AutopilotEngaged); break;
                     case "Vector lock status": Set(status.VectorLockEngaged ? 1 : 0, instrument && status.VectorLockEngaged); break;
                     case "Carried flag": Set(status.CarriedFlag ? 1 : 0, instrument && status.CarriedFlag); break;

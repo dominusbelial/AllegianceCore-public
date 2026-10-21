@@ -3395,6 +3395,9 @@ private void CompleteStartCountdown(Mission mission, double now)
                 // server now fills it from the configured game length so the
                 // client's game-state clock can show countdown remaining.
                 GameLengthSeconds = (float)(_missions[0].CountdownDuration ?? 0d),
+                // HUD-12 — MissionParams::iLives (igc.h:1185), sent so the lives
+                // badge can compute iLives − MissionDeaths (console.cpp:812-817).
+                ILives = _missions[0].Lives,
             }.Encode(),
             new JoinedMission
             {
@@ -3468,6 +3471,9 @@ private void CompleteStartCountdown(Mission mission, double now)
                 ISideMissionOwner = -1,
                 RgShipIdLeaders = [-1, -1, -1, -1, -1, -1],
                 GameLengthSeconds = (float)(_missions[0].CountdownDuration ?? 0d),
+                // HUD-12 — MissionParams::iLives (igc.h:1185), sent so the lives
+                // badge can compute iLives − MissionDeaths (console.cpp:812-817).
+                ILives = _missions[0].Lives,
             }.Encode(),
         }));
         Console.WriteLine($"[sides] peer {from} '{req.CharacterName}' -> MISSIONDEF(38) nTeams {mdSides.Count} civIds [{string.Join(", ", mdSides.Select(s => s.Civilization.CivilizationId))}] (create SIDE_TEAMLOBBY + real sides via UpdateSides)");
@@ -3623,6 +3629,11 @@ private void CompleteStartCountdown(Mission mission, double now)
                 ISide = live.Ship.SideId ?? -1,
                 ShipId = shipId,
                 PilotType = PlayerInfo.PilotTypePlayer,
+                // HUD-12 — native sends the player's real mission kills/deaths
+                // here (FedSrv.CPP:2085-2086); the client seeds MissionKills/
+                // MissionDeaths from it (appmsg.cpp:2254-2256, clintlib.h:346-347).
+                NKills = (short)Math.Clamp(live.PlayerScore.Kills, short.MinValue, short.MaxValue),
+                NDeaths = (short)Math.Clamp(live.PlayerScore.Deaths, short.MinValue, short.MaxValue),
             }.Encode(),
         }));
         Console.WriteLine($"[playerinfo] peer {from} '{req.CharacterName}' -> PLAYERINFO(10) ship {shipId} iSide {live.Ship.SideId?.ToString() ?? "(none)"} (side assignment for the direct-connect ship)");
@@ -3927,7 +3938,9 @@ private void CompleteStartCountdown(Mission mission, double now)
                     lobbyState.Add(new PlayerInfo { ShipId = player.Ship.Id,
                         ISide = player.Ship.SideId ?? -2, Money = 0,
                         CharacterName = _peerNames.TryGetValue(peer, out var name) ? name : "",
-                        PilotType = PlayerInfo.PilotTypePlayer }.Encode());
+                        PilotType = PlayerInfo.PilotTypePlayer,
+                        NKills = (short)Math.Clamp(player.PlayerScore.Kills, short.MinValue, short.MaxValue),
+                        NDeaths = (short)Math.Clamp(player.PlayerScore.Deaths, short.MinValue, short.MaxValue) }.Encode());
             foreach (var side in lobbyMission.Sides)
             {
                 if (side.LeaderShipId is { } leader)

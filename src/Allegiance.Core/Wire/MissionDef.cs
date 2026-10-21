@@ -65,6 +65,7 @@ public sealed class MissionDef : IFedMessage
     private const int VerIgcCoreOffset = MisparmsOffset + 120;     // + offsetof(MissionParams, verIGCcore)
     private const int GameLengthOffset = MisparmsOffset + 132;    // igc.h:1159-1162: version, two rates, duration
     private const int TimeStartOffset = MisparmsOffset + 156;     // P29 MSVC probe; igc.h:1169
+    private const int LivesOffset = MisparmsOffset + 204;          // HUD-12 — offsetof(MissionParams, iLives), igc.h:1185
     private const int RgCivIdOffset = MisparmsOffset + 168;        // + offsetof(MissionParams, rgCivID)   (P29 probe)
     private const int NTemsOffset = MisparmsOffset + 218;          // + offsetof(MissionParams, nTeams)    (P29 probe)
     private const int DwCookieOffset = 460;
@@ -100,6 +101,20 @@ public sealed class MissionDef : IFedMessage
     /// <summary>MissionParams.timeStart, server-clock milliseconds (igc.h:1169).
     /// Also replaced by SET_START_TIME (clintlib/appmsg.cpp:2702-2711).</summary>
     public uint TimeStart;
+
+    /// <summary><c>MissionParams.iLives</c> — the native per-player life budget
+    /// (<c>igc.h:1185</c>): "Player must die more than this number of times to
+    /// exit"; <c>c_cUnlimitedLives = 0x7fff</c> (<c>igc.h:1007</c>, the default
+    /// at <c>igc.h:1291</c>). The native HUD reads it as
+    /// <c>iLives − ppi-&gt;MissionDeaths()</c> (<c>WinTrek/console.cpp:812-817</c>).
+    /// Offset 208 = misparms(4) + 204, derived from the native struct: after
+    /// <c>fStartingMoney</c> at params offset 200 (<c>igc.h:1183</c>), iLives
+    /// is the next short. The message already had this slot; HUD-12 exposes it.</summary>
+    public short ILives = MissionDef.UnlimitedLives;
+
+    /// <summary><c>c_cUnlimitedLives = 0x7fff</c> (<c>src/Igc/igc.h:1007</c>), the
+    /// <c>MissionParams::Reset</c> default (<c>igc.h:1291</c>).</summary>
+    public const short UnlimitedLives = 0x7fff;
 
     /// <summary><c>MissionParams.nTeams</c> — number of sides; drives the client's
     /// <c>UpdateSides</c> loop (missionigc.cpp:3749) that creates the real sides
@@ -146,10 +161,14 @@ public sealed class MissionDef : IFedMessage
         w.WriteU32(TimeStart);
         // rgCivID (short[6]) at 172; nTeams (short) at 222. Skip the gap, write
         // the civ ids, then the team count, then finish the MissionParams block.
-        w.Advance(RgCivIdOffset - w.Position);      // 124 -> 172
+        w.Advance(RgCivIdOffset - w.Position);      // 160 -> 172
         for (int i = 0; i < 6; i++)                 // rgCivID[c_cSidesMax] = short[6]
             w.WriteI16(i < RgCivId.Length ? RgCivId[i] : (short)0);
-        w.Advance(NTemsOffset - w.Position);        // 184 -> 222
+        // HUD-12 — iLives (short) at absolute 208 (params offset 204), the native
+        // MissionParams slot the lives badge reads (console.cpp:812-817).
+        w.Advance(LivesOffset - w.Position);        // 184 -> 208
+        w.WriteI16(ILives);
+        w.Advance(NTemsOffset - w.Position);        // 210 -> 222
         w.WriteI16(NTems);                          // nTeams (short) at 222
         w.Advance(MissionParamsSize - (NTemsOffset - MisparmsOffset) - 2); // finish MissionParams: 224..252 gap minus the 2 we wrote
         // ------------------------- MISSIONDEF fixed fields ------------------
@@ -179,6 +198,8 @@ public sealed class MissionDef : IFedMessage
             throw new InvalidOperationException("MISSIONDEF szIGCStaticFile mispositioned");
         if (BitConverter.ToInt32(buf, VerIgcCoreOffset) != VerIgcCore)
             throw new InvalidOperationException("MISSIONDEF verIGCcore mispositioned");
+        if (BitConverter.ToInt16(buf, LivesOffset) != ILives)
+            throw new InvalidOperationException("MISSIONDEF iLives mispositioned");
         return buf;
     }
 
@@ -215,6 +236,7 @@ public sealed class MissionDef : IFedMessage
             Stage = stage,
             GameLengthSeconds = BitConverter.ToSingle(buf.Slice(GameLengthOffset)),
             TimeStart = BitConverter.ToUInt32(buf.Slice(TimeStartOffset)),
+            ILives = BitConverter.ToInt16(buf.Slice(LivesOffset)),
             NTems = nTems,
             RgCivId = rgCivId,
             RgShipIdLeaders = leaders,

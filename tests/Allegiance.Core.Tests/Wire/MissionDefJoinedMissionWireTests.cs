@@ -78,10 +78,28 @@ public class MissionDefJoinedMissionWireTests
             bool isPopulated =
                 (i >= 69 && i < 82) ||     // szIGCStaticFile
                 (i >= 124 && i < 128) ||   // verIGCcore
+                (i >= 208 && i < 210) ||   // HUD-12 iLives (default unlimited 0x7fff)
                 (i >= 460 && i < 464);     // dwCookie
             if (!isPopulated)
                 Assert.True(b[i] == 0, $"offset {i} non-zero ({b[i]:X2})");
         }
+    }
+
+    [Fact]
+    public void MissionDef_Carries_MissionParams_ILives_At_Offset_208()
+    {
+        // HUD-12 — MissionParams::iLives (igc.h:1185) is params offset 204,
+        // absolute 4 + 204 = 208, the slot the lives badge reads through
+        // console.cpp:812-817. Native's default is c_cUnlimitedLives = 0x7fff.
+        var def = new MissionDef { SzIGCStaticFile = "PCore001" };
+        Assert.Equal(MissionDef.UnlimitedLives, def.ILives);
+        var b = def.Encode();
+        Assert.Equal(new byte[] { 0xFF, 0x7F }, b.Skip(208).Take(2).ToArray());
+        Assert.Equal(MissionDef.UnlimitedLives, MissionDef.Decode(b).ILives);
+
+        var finite = new MissionDef { SzIGCStaticFile = "PCore001", ILives = 5 }.Encode();
+        Assert.Equal(new byte[] { 0x05, 0x00 }, finite.Skip(208).Take(2).ToArray());
+        Assert.Equal((short)5, MissionDef.Decode(finite).ILives);
     }
 
     [Fact]

@@ -142,10 +142,23 @@ public sealed class PlayerInfo : IFedMessage
     public int Money;            // zero → satisfies AddPlayerToSide's GetMoney()==0 assert (clintlib.cpp:4109)
 
     // Remaining fixed-region fields captured faithfully on decode for
-    // round-trip completeness. Not populated by the server (all zeroed on
-    // encode); the client's join/side path does not consume them.
+    // round-trip completeness. HUD-12 now FILLS nKills/nDeaths from the live
+    // PlayerScore (native FedSrv.CPP:2085-2086 sends GetKills()/GetDeaths()),
+    // so the client's MissionKills()/MissionDeaths() equivalents
+    // (clintlib.h:346-347) have a real initial value; the native client then
+    // keeps them current from KILL_SHIP (appmsg.cpp:2766-2773,2807-2810).
     public short NKills, NEjections, NDeaths;
     public float FExperience;
+
+    /// <summary>Native <c>PlayerInfo::AddKill()</c> (<c>clintlib.h:346-347</c>;
+    /// incremented from KILL_SHIP, <c>appmsg.cpp:2807-2810</c>). Saturates at
+    /// <see cref="short.MaxValue"/> rather than wrapping.</summary>
+    public void AddKill() => NKills = NKills == short.MaxValue ? NKills : (short)(NKills + 1);
+
+    /// <summary>Native <c>PlayerInfo::AddDeath()</c> (<c>clintlib.h:346-347</c>;
+    /// incremented from KILL_SHIP's <c>bDeathCredit</c> branch,
+    /// <c>appmsg.cpp:2766-2773</c>). Saturates at <see cref="short.MaxValue"/>.</summary>
+    public void AddDeath() => NDeaths = NDeaths == short.MaxValue ? NDeaths : (short)(NDeaths + 1);
     public short RankId;
     public short DtidDrone;
     public short AbmOrders;
@@ -177,7 +190,7 @@ public sealed class PlayerInfo : IFedMessage
         w.Advance(FlagsOffset - w.Position);         // → flags @40
         w.WriteByte(0);                              // 3×bool:1 = 0
         w.Advance(NKillsOffset - w.Position);        // → nKills @42
-        w.WriteI16(0); w.WriteI16(0); w.WriteI16(0); // nKills, nEjections, nDeaths @42/44/46
+        w.WriteI16(NKills); w.WriteI16(NEjections); w.WriteI16(NDeaths); // nKills, nEjections, nDeaths @42/44/46
         w.WriteI32(BitConverter.SingleToInt32Bits(0f)); // fExperience @48 (float 0)
         w.WriteI16(ISide);                           // iSide @52  ← THE FIELD
         w.WriteI16(ShipId);                          // shipID @54

@@ -93,6 +93,10 @@ public sealed class RadarBracketRenderer
 
     private readonly SpriteBatch _sb;
     private readonly Texture2D _white;
+    // HUD-12 — the native radar bracket surfaces (radarimage.cpp:219-230,343-357;
+    // WinTrek/artwork.h:73-76). Null when the artwork is absent; the procedural
+    // frames below then remain the fallback.
+    private Texture2D? _artFlag, _artArtifact, _artSubject, _artRipcord, _artThreat;
 
     // Icon palette — the teal HUD accent family for ships (the familiar "other
     // craft" colour), warm gold for stations (infrastructure), violet for warps
@@ -142,10 +146,54 @@ public sealed class RadarBracketRenderer
     public static readonly Color ThreatMarkerColour = new(1.00f, 0.10f, 0.05f);
     public static readonly Color HighlightMarkerColour = new(1.00f, 1.00f, 1.00f);
 
-    public RadarBracketRenderer(SpriteBatch spriteBatch, Texture2D whitePixel)
+    public RadarBracketRenderer(SpriteBatch spriteBatch, Texture2D whitePixel,
+        StatusTextures? nativeArt = null)
     {
         _sb = spriteBatch;
         _white = whitePixel;
+        SetNativeArt(nativeArt);
+    }
+
+    /// <summary>HUD-12 — attach the decoded native bracket bitmaps. Safe to call
+    /// before/after construction; a null argument leaves every overlay on its
+    /// procedural fallback.</summary>
+    public void SetNativeArt(StatusTextures? art)
+    {
+        _artFlag = art?.RadarFlag;
+        _artArtifact = art?.RadarArtifact;
+        _artSubject = art?.RadarSubject;
+        _artRipcord = art?.RadarRipcord;
+        _artThreat = art?.RadarThreat;
+    }
+
+    /// <summary>HUD-12 — the native <c>DrawExpandedBlip</c> quadrant geometry
+    /// (radarimage.cpp:255-277): <c>delta = radius/√2</c>, floored at
+    /// <c>m = (xsize/2)/2 = xsize/4</c> (the native code only uses the
+    /// horizontal midpoint), each quarter of the bitmap drawn from the contact
+    /// centre with the offset below. Pure and GPU-free so the rule is testable
+    /// without a graphics device.</summary>
+    public static float ExpandedBlipDelta(int textureWidth, int textureHeight, float bracketRadius)
+    {
+        float delta = bracketRadius / MathF.Sqrt(2f);
+        float minimum = textureWidth / 4f;
+        return delta < minimum ? minimum : delta;
+    }
+
+    /// <summary>HUD-12 — source rectangle of native DrawExpandedBlip quadrant
+    /// <paramref name="quadrant"/> (0=top-left, 1=top-right, 2=bottom-right,
+    /// 3=bottom-left) for a <paramref name="width"/>×<paramref name="height"/>
+    /// surface. Pure.</summary>
+    public static Rectangle ExpandedBlipQuadrant(int quadrant, int width, int height)
+    {
+        int halfW = width / 2, halfH = height / 2;
+        return quadrant switch
+        {
+            0 => new Rectangle(0, 0, halfW, halfH),
+            1 => new Rectangle(halfW, 0, width - halfW, halfH),
+            2 => new Rectangle(halfW, halfH, width - halfW, height - halfH),
+            3 => new Rectangle(0, halfH, halfW, height - halfH),
+            _ => throw new ArgumentOutOfRangeException(nameof(quadrant)),
+        };
     }
 
     /// <summary>Draw every contact's icon (or edge-bracket) for this frame.
@@ -326,7 +374,7 @@ public sealed class RadarBracketRenderer
         // and queued orders have no native bracket — they change the label and
         // the bracket brightness only (radarimage.cpp:1094-1096), so they are
         // deliberately absent here.
-        DrawOverlayBrackets(c, pt, a);
+        DrawOverlayBrackets(c, pt, a, colour);
         // P436 — the player's own selected target: draw the bright highlight
         // AFTER the base icon so it dominates, whether the contact is on-screen
         // or edge-clamped off-screen (the edge case is the exact reported gap).
@@ -350,24 +398,74 @@ public sealed class RadarBracketRenderer
         => c.NearestEnemy || c.Subject || c.CarriedFlag || c.CarriedArtifact
            || c.Ripcord || c.Threat || c.Highlight;
 
-    private void DrawOverlayBrackets(RadarContact c, Vector2 pt, float a)
+    private void DrawOverlayBrackets(RadarContact c, Vector2 pt, float a, Color colour)
     {
         if (!HasOverlayBracket(c)) return;
         // Native draws every bracket in colorOther, the brightness-dimmed side
         // colour (radarimage.cpp:1094-1096): ×1.0 for the important masks,
-        // ×0.75 for a queued order, ×0.5 otherwise.
+        // ×0.75 for a queued order, ×0.5 otherwise. c_maskRip is the exception:
+        // it is drawn in colorIcon, the undimmed side colour (radarimage.cpp:350).
         float brightness = RadarLabelModel.BracketBrightness(
             importantMask: c.IsSelectedTarget || c.AcceptedOrder || c.Threat || c.ThreatFlash
                 || c.Highlight || c.CarriedFlag || c.CarriedArtifact,
             queued: c.QueuedOrder);
         float ba = Math.Max(a, .9f) * brightness;
+        float iconAlpha = Math.Max(a, .9f);
+        // HUD-12 — native surfaces first (DrawExpandedBlip, radarimage.cpp:343-357);
+        // procedural frames only while the artwork is unavailable.
+        const float bracketRadius = 15f;
         if (c.NearestEnemy) DrawDiamond(pt, 15f, EnemyBracketColour, ba);
-        if (c.Subject) DrawOpenCorners(pt, 13f, 1.6f, SubjectBracketColour, ba);
-        if (c.CarriedFlag) DrawPennant(pt, 16f, FlagMarkerColour, ba);
-        if (c.CarriedArtifact) DrawPennant(pt, 16f, ArtifactMarkerColour, ba);
-        if (c.Ripcord) DrawRing(pt, 13f, 2f, RipcordMarkerColour, ba);
-        if (c.Threat) DrawThreatTicks(pt, ThreatMarkerColour, ba);
+        if (c.Subject)
+        {
+            if (_artSubject is { } art) DrawExpandedBlip(art, pt, colour, ba, bracketRadius);
+            else DrawOpenCorners(pt, 13f, 1.6f, SubjectBracketColour, ba);
+        }
+        if (c.CarriedFlag)
+        {
+            if (_artFlag is { } art) DrawExpandedBlip(art, pt, colour, ba, bracketRadius);
+            else DrawPennant(pt, 16f, FlagMarkerColour, ba);
+        }
+        if (c.CarriedArtifact)
+        {
+            if (_artArtifact is { } art) DrawExpandedBlip(art, pt, colour, ba, bracketRadius);
+            else DrawPennant(pt, 16f, ArtifactMarkerColour, ba);
+        }
+        if (c.Ripcord)
+        {
+            if (_artRipcord is { } art) DrawExpandedBlip(art, pt, colour, iconAlpha, bracketRadius);
+            else DrawRing(pt, 13f, 2f, RipcordMarkerColour, ba);
+        }
+        if (c.Threat)
+        {
+            if (_artThreat is { } art) DrawExpandedBlip(art, pt, colour, ba, bracketRadius);
+            else DrawThreatTicks(pt, ThreatMarkerColour, ba);
+        }
         if (c.Highlight) DrawRing(pt, 17f, 1.6f, HighlightMarkerColour, ba);
+    }
+
+    /// <summary>HUD-12 — draw a native radar bracket surface exactly the way
+    /// <c>DrawExpandedBlip</c> does (<c>radarimage.cpp:255-277</c>): the bitmap's
+    /// four quadrants are exploded outward around the contact by
+    /// <see cref="ExpandedBlipDelta"/>, tinted with the native colour. The
+    /// bracket radius is the port's fixed overlay radius (native derives it from
+    /// <c>pts-&gt;GetScreenRadius()</c>, which this projected-snapshot renderer
+    /// does not keep per contact).</summary>
+    private void DrawExpandedBlip(Texture2D art, Vector2 centre, Color colour, float alpha, float bracketRadius)
+    {
+        float delta = ExpandedBlipDelta(art.Width, art.Height, bracketRadius);
+        var tint = colour * Math.Clamp(alpha, 0f, 1f);
+        for (int q = 0; q < 4; q++)
+        {
+            var src = ExpandedBlipQuadrant(q, art.Width, art.Height);
+            var offset = q switch
+            {
+                0 => new Vector2(-delta, -delta),
+                1 => new Vector2(delta, -delta),
+                2 => new Vector2(delta, delta),
+                _ => new Vector2(-delta, delta),
+            };
+            _sb.Draw(art, centre + offset, src, tint);
+        }
     }
 
     private void DrawOpenCorners(Vector2 c, float half, float thickness, Color colour, float a)

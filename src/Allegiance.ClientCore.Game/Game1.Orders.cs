@@ -112,7 +112,10 @@ public sealed partial class Game1
             IgcObjectType.Asteroid => TargetKind.Asteroid, IgcObjectType.Warp => TargetKind.Warp,
             IgcObjectType.Probe => TargetKind.Probe, IgcObjectType.Treasure => TargetKind.Treasure, _ => null,
         };
-        return kind is { } k ? new AutopilotTarget(k, c.TargetId, name, c.CommandId) : null;
+        // HUD-12b — native TK_TargetCommand copies the ACCEPTED slot's id
+        // verbatim into c_cmdCurrent (WinTrek.cpp:10408-10412), including
+        // c_cidNone; only c_cidDefault resolves through GetDefaultOrder.
+        return kind is { } k ? new AutopilotTarget(k, c.TargetId, name, c.CommandId, UseDefault: false) : null;
     }
 
     // HUD-8b — the reverse mapping for the native c_cmdCurrent slot: a selected
@@ -161,7 +164,14 @@ public sealed partial class Game1
         if (target is not { } t) return null;
         var type = ObjectTypeFor(t.Kind);
         if (type is null) return null;
-        if (t.CommandId != OrderChange.CidNone) return new(t.CommandId, type.Value, t.Id);
+        // HUD-12b — only a real c_cidDefault resolves; plain picks carry
+        // c_cidNone + UseDefault as the port's c_cidDefault marker, while
+        // TK_TargetSelf / TK_TargetCommand carry c_cidNone + UseDefault false and
+        // are sent with the model and the no-command id, exactly native SetTarget
+        // (WinTrek.cpp:8827-8854).
+        bool resolveDefault = t.CommandId == OrderChange.CidDefault
+            || (t.CommandId == OrderChange.CidNone && t.UseDefault);
+        if (!resolveDefault) return new(t.CommandId, type.Value, t.Id);
         var order = CommandOrderResolver.ResolveDefaultOrder(ownRoleBits, ownIsLayer, ownHasParent, profile);
         return order is { } o
             ? new(o.CommandId, o.ObjectType, o.ObjectId)
@@ -198,12 +208,27 @@ public sealed partial class Game1
         }
         if (me is not { } myId) return;
         // HUD-11 — native SetTarget resolves c_cidDefault through
-        // GetDefaultOrder(pmodel); send that concrete default id instead of the
-        // port's former c_cidNone (WinTrek.cpp:8830-8833, shipIGC.h:2071-2161).
-        if (CurrentCommandSetFor(target, ownRoles, ownIsLayer, ownHasParent, profile) is { } cmd
-            && cmd.CommandId != OrderChange.CidNone)
-            _session.SendOrderChange(myId, cmd.CommandId, OrderChange.CmdCurrent, cmd.ObjectType, cmd.ObjectId);
+        // GetDefaultOrder(pmodel); HUD-12b keeps the concrete id for default
+        // picks and sends c_cidNone WITH the model for TK_TargetSelf /
+        // TK_TargetCommand (WinTrek.cpp:8827-8854,10410,10442).
+        SendCurrentCommand(myId, target, ownRoles, ownIsLayer, ownHasParent, profile,
+            (shipId, commandId, command, objectType, objectId) =>
+                _session.SendOrderChange(shipId, commandId, command, objectType, objectId));
+    }
+
+    /// <summary>HUD-12b — the send half of <c>SetTarget</c>, split out so a test
+    /// can drive the exact payload through a recording sink. Native sends the
+    /// model whenever one is selected, even with <c>c_cidNone</c>; only a null
+    /// (or non-model cluster) target becomes <c>OT_invalid/NA</c>
+    /// (<c>WinTrek.cpp:8846-8854</c>).</summary>
+    internal static void SendCurrentCommand(
+        short myId, AutopilotTarget? target, short ownRoles, bool ownIsLayer, bool ownHasParent,
+        in CommandTargetProfile profile,
+        Action<short, short, short, IgcObjectType, short> send)
+    {
+        if (CurrentCommandSetFor(target, ownRoles, ownIsLayer, ownHasParent, profile) is { } cmd)
+            send(myId, cmd.CommandId, OrderChange.CmdCurrent, cmd.ObjectType, cmd.ObjectId);
         else
-            _session.SendOrderChange(myId, OrderChange.CidNone, OrderChange.CmdCurrent, (IgcObjectType)(-1), -1);
+            send(myId, OrderChange.CidNone, OrderChange.CmdCurrent, (IgcObjectType)(-1), -1);
     }
 }

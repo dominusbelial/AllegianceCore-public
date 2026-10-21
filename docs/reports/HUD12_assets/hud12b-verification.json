@@ -1,0 +1,96 @@
+{
+  "task": "HUD-12b",
+  "branch": "pi/hud12b",
+  "merge": "16a07c22 (merge master 339db913 into pi/hud12 0b9b3543)",
+  "date": "2026-10-21",
+  "build": {
+    "command": "dotnet build AllegianceCore.slnx -c Release",
+    "warnings": 0,
+    "errors": 0
+  },
+  "aot_publish": {
+    "command": "dotnet publish src/Allegiance.Server/Allegiance.Server.csproj -c Release -r linux-x64 --self-contained -p:PublishAot=true -o .scratch/aot",
+    "exit": 0,
+    "il2026": 0,
+    "il3050": 0,
+    "log": "~/allegiance-evidence/HUD12b/aot.log"
+  },
+  "tests_3x_alone": [
+    {
+      "filter": "Hud11*|Hud12*|Hud8b*",
+      "project": "Allegiance.ClientCore.MonoGame.Tests",
+      "runs": [
+        47,
+        47,
+        47
+      ],
+      "failed": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "filter": "Hud11*|Hud12*|Hud8b*",
+      "project": "Allegiance.ClientCore.Tests",
+      "runs": [
+        2,
+        2,
+        2
+      ],
+      "failed": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "fast_tier": {
+    "tests": 9409,
+    "seconds": 274.2,
+    "failed": 5,
+    "failures": [
+      "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+      "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault (Artwork)",
+      "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault (NativeSource)",
+      "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory"
+    ],
+    "note": "Known local.env baseline (5 of the 9 PlayerBundlePathsTests cases), identical to the HUD-12 report on this workstation. No HUD or other test failed.",
+    "summary": "docs/reports/HUD12_assets/hud12b-fast-summary.json",
+    "raw": "~/allegiance-evidence/HUD12b/fast.log",
+    "rerun": {
+      "tests": 9409,
+      "seconds": 272.4,
+      "failed": 6,
+      "failures": [
+        "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository",
+        "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault (Artwork)",
+        "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault (NativeSource)",
+        "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+        "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+        "Allegiance.ClientCore.MonoGame.Tests.ChatTargetComposeLiveTests.ComposeDefault_Team_SendsToTeammate_NotEnemy (once; 3/3 passes alone, documented load flake in docs/TEST_FLAKES.md:1196)"
+      ],
+      "note": "Repeat after the final c_cidDefault tweak: the same 5 PlayerBundlePaths baseline failures plus one documented seating-order flake. Nothing HUD-related failed; the flake passes 3/3 alone.",
+      "summary": "docs/reports/HUD12_assets/hud12b-fast-rerun-summary.json",
+      "raw": "~/allegiance-evidence/HUD12b/fast-rerun.log"
+    }
+  },
+  "parity_scorecard": {
+    "hud": "13/108 complete (12.04%)",
+    "command": "python3 scripts/parity-scorecard.py",
+    "note": "Was 15/108 in HUD-12; HUD-12b correctly moved the carried-flag and carried-artifact radar markers to partial (fixed bracket radius instead of the native per-contact screen radius)."
+  },
+  "screenshots": {
+    "new": 0,
+    "reopened": [
+      "docs/reports/HUD12_assets/radar-native-markers.webp"
+    ]
+  },
+  "allocation_test": {
+    "listed_paths_steady_state_bytes": 0,
+    "headless_frame_bytes_at_4_contacts": 896,
+    "headless_frame_bytes_at_400_contacts": 896,
+    "note": "The review-listed per-contact/per-readout paths allocate 0 B. HudModel.Create still has a constant ~896 B/frame (gauge/warning lists + AsReadOnly wrappers) and some unlisted strings still format; see the report's Unfinished section."
+  }
+}

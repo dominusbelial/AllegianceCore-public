@@ -23,6 +23,12 @@ public sealed class MissionInfo
     /// <summary>Native dtGameLength; zero means no timed-game countdown.</summary>
     public float GameLengthSeconds { get; init; }
 
+    /// <summary>HUD-12 — native <c>MissionParams::iLives</c>
+    /// (<c>src/Igc/igc.h:1185</c>; unlimited = 0x7fff). The lives badge shows
+    /// <c>ILives − mission deaths</c> only while that is below 10
+    /// (<c>WinTrek/console.cpp:812-817</c>).</summary>
+    public short ILives { get; init; } = Allegiance.Core.Wire.MissionDef.UnlimitedLives;
+
     /// <summary>The lobby team-leader side (<c>MissionDef.ISideMissionOwner</c>).</summary>
     public short SideMissionOwner { get; init; }
 

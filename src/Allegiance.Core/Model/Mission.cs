@@ -257,6 +257,18 @@ public sealed partial class Mission : IMissionIgc
     public short FlagsWinGoal { get; set; }
 
     /// <summary>
+    /// HUD-12 — the native <c>MissionParams::iLives</c> per-player life budget
+    /// (<c>src/Igc/igc.h:1185</c>, "Player must die more than this number of
+    /// times to exit"; <c>c_cUnlimitedLives = 0x7fff</c>, <c>igc.h:1007,1291</c>).
+    /// The native HUD shows <c>iLives − ppi-&gt;MissionDeaths()</c> and only draws
+    /// the lives badge while that is below 10 (<c>WinTrek/console.cpp:812-817</c>).
+    /// The port does not enforce elimination (this is a presentation parameter,
+    /// sent to the client in <c>MISSIONDEF(38)</c>); the default is native's
+    /// unlimited sentinel, so ordinary port missions never show the badge.
+    /// </summary>
+    public short Lives { get; set; } = Allegiance.Core.Wire.MissionDef.UnlimitedLives;
+
+    /// <summary>
     /// P303 — flag enabling the <b>kills</b> (deathmatch) win condition for this
     /// mission: a side wins once it has scored at least
     /// <see cref="KillsWinGoal"/> kills (<see cref="Side.Kills"/>) — the port of

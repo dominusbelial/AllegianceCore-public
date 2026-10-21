@@ -2621,6 +2621,17 @@ public sealed partial class Game1
                 bool firing = (up.StateM & (Allegiance.Core.Sim.ShipControlState.AllWeapons | Allegiance.Core.Sim.ShipControlState.OneWeapon)) != 0;
                 bool afterburnerActive = (up.StateM & Allegiance.Core.Sim.ShipControlState.AfterburnerButton) != 0;
                 bool cloakActive = (up.StateM & Allegiance.Core.Sim.ShipControlState.CloakActive) != 0;
+                // HUD-12 — the continuous native GetCloaking() fraction from the
+                // owner-only OwnShipCloakUpdate(220). Strength is native's
+                // 100·(1−Cloaking) (consoledata.cpp:480-489); IsCloaked is
+                // Cloaking < 1 (consoledata.cpp:563-575), so the icon persists
+                // through the decloak ramp.
+                float? cloakStrength = world.MyCloaking is { } cloaking
+                    ? Allegiance.Core.Wire.OwnShipCloakUpdate.StrengthPercent(cloaking)
+                    : null;
+                bool cloaked = world.MyCloaking is { } cv
+                    ? Allegiance.Core.Wire.OwnShipCloakUpdate.IsCloaked(cv)
+                    : cloakActive;
                 var ownStatus = OwnStatusData.FromClientState(entity, world.Ships, _autoPilotEngaged, up.StateM);
                 // P228 — feed the local ship's hull AND shield fractions into the
                 // damage-flash tracker and read whether the HUD should be flashing
@@ -2750,9 +2761,11 @@ public sealed partial class Game1
                     // P255 — true while the server says our own ship is actively
                     // mining (the owner-only 206 stream; id != NA).
                     Mining: world.MiningAsteroidId != -1,
-                    // P270 — true while OUR OWN ship is cloaked (the CloakActive
-                    // bit on the own-ship update) — drives the CLOAKED HUD tag.
-                    Cloaked: cloakActive,
+                    // P270/HUD-12 — true while OUR OWN ship is cloaked. Native
+                    // IsCloaked = GetCloaking() < 1, so this is true through the
+                    // decloak ramp too (consoledata.cpp:563-575); the state bit
+                    // remains the fallback before the first 220 message.
+                    Cloaked: cloaked,
                     // P298 — the local ship's live Kill Bonus (streamed owner-only
                     // on OwnShipKillBonusUpdate(212); the renderer-only client has
                     // no server-side Ship object to read it from directly).
@@ -2797,7 +2810,18 @@ public sealed partial class Game1
                     // HUD-8 — the live turn control vector this frame actually sent
                     // (jsValues[c_axisYaw]/[c_axisPitch] equivalent).
                     TurnYaw: _lastSentControls.Yaw,
-                    TurnPitch: _lastSentControls.Pitch);
+                    TurnPitch: _lastSentControls.Pitch,
+                    // HUD-12 — continuous cloak strength (native
+                    // 100·(1−GetCloaking()), consoledata.cpp:480-489).
+                    CloakStrengthPercent: cloakStrength,
+                    // HUD-12 — own source-ship type name for the command-view
+                    // summary (native GetModelTypeDesc(Me), dialog.mdl:4717-4733).
+                    // HUD-12b — the turret suffix comes from the value-keyed
+                    // cache instead of concatenating a new string every frame.
+                    ShipTypeName: (_hullById.TryGetValue(ownStatus.SourceShip.HullId, out var ownHullType)
+                        ? ownHullType.Name : null) is { Length: > 0 } typeName
+                            ? (IsTurretGunner() ? HudStringCache.TurretShipType(typeName) : typeName)
+                            : null);
             }
         }
         var model = HudModelAdapter.Create(frame, _cameraMode, _lockBracket, _leadIndicator,
@@ -2903,6 +2927,8 @@ public sealed partial class Game1
         var world = _session.World;
         string? sector = null, carrier = null, accepted = null, queued = null, vote = null;
         int boardState = 0;
+        int? lives = null, missionKills = null;
+        bool deathmatch = false;
         lock (_session.Gate)
         {
             if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own))
@@ -2927,6 +2953,17 @@ public sealed partial class Game1
             queued = ResolveOrderText(world, world.MyQueuedCommand);
             if (world.ActiveBallot is { } ballot && ballot.BallotText is { Length: > 0 } ballotText)
                 vote = ballotText;
+            // HUD-12 — native console lives/kills (console.cpp:812-821):
+            // iLives − MissionDeaths() and MissionKills(), plus the deathmatch
+            // gate for the kills badge. All three readings are real client state:
+            // MISSIONDEF's iLives, and the own PlayerInfo counters seeded by
+            // PLAYERINFO and maintained from KILL_SHIP (native appmsg.cpp).
+            if (world.TryGetOwnMissionStats(out short kills, out short deaths))
+            {
+                lives = HudConsoleFormat.RemainingLives(world.MissionLives, deaths);
+                missionKills = kills;
+            }
+            deathmatch = world.MissionBriefing?.Deathmatch == true;
         }
         HudColor? sideColor = null;
         lock (_session.Gate)
@@ -2943,6 +2980,9 @@ public sealed partial class Game1
             OrdinaryTips = _ordinaryTips.Where(t => !string.IsNullOrEmpty(t)).ToArray(),
             CriticalTips = _criticalTips.Where(t => _nowSeconds < t.ExpiresAt)
                 .Select(t => new HudNotice(t.Text, true, 1)).ToArray(),
+            Lives = lives,
+            MissionKills = missionKills,
+            Deathmatch = deathmatch,
             SideColor = sideColor
         };
     }
@@ -3016,20 +3056,27 @@ public sealed partial class Game1
     /// GA[c_gaRipcordTime]</c> (<c>shipIGC.cpp:4665</c>).</summary>
     private float RipcordDurationSeconds(ClientWorld world)
     {
+        if (RenderShipId(world) is not { } me || !world.Ships.TryGetValue(me, out var ent)) return 0f;
+        return RipcordDurationSecondsFor(world, ent);
+    }
+
+    /// <summary>HUD-12 — a ship's ripcord countdown duration in seconds, the
+    /// native <c>GetRipcordSpeed()</c>: the hull's <c>RipcordSpeed</c> divided by
+    /// the owning side's <c>c_gaRipcordTime</c> (<c>Igc/shipIGC.cpp:4665</c>).
+    /// Native's remote-ripcord handler resets each observing client's copy of the
+    /// countdown with exactly this value (<c>clintlib/appmsg.cpp:966-969</c>), so
+    /// the radar's per-ship seconds match the native source. Returns 0 when the
+    /// hull or catalogue is unknown (the caller then omits the seconds).</summary>
+    private float RipcordDurationSecondsFor(ClientWorld world, ShipEntity ent)
+    {
         if (_shopCatalog is not { } catalog) return 0f;
-        if (RenderShipId(world) is { } me && world.Ships.TryGetValue(me, out var ent))
-        {
-            float ripcordSpeed = 0f;
-            foreach (var h in catalog.Hulls)
-                if (h.HullId == ent.HullId) { ripcordSpeed = h.RipcordSpeed; break; }
-            if (ripcordSpeed > 0f && world.MySideId is { } sideId)
-            {
-                float ga = world.GlobalAttributesFor(sideId).Get(Allegiance.Core.Model.GlobalAttributeSet.RipcordTime);
-                if (ga > 0f) ripcordSpeed /= ga;   // shipIGC.cpp:4665 — c_gaRipcordTime divides GetRipcordSpeed()
-            }
-            return ripcordSpeed;
-        }
-        return 0f;
+        float ripcordSpeed = 0f;
+        foreach (var h in catalog.Hulls)
+            if (h.HullId == ent.HullId) { ripcordSpeed = h.RipcordSpeed; break; }
+        if (ripcordSpeed <= 0f) return 0f;
+        float ga = world.GlobalAttributesFor(ent.SideId)
+            .Get(Allegiance.Core.Model.GlobalAttributeSet.RipcordTime);
+        return ga > 0f ? ripcordSpeed / ga : ripcordSpeed;
     }
 
     /// <summary>
@@ -3282,6 +3329,14 @@ public sealed partial class Game1
             var accepted = world.MyAcceptedCommand;
             var queued = world.MyQueuedCommand;
             float ownRadius = HullLength(ownEnt.HullId) * 0.5f;
+            // HUD-12 — native c_maskSubject source: the console's chat-subject
+            // list, non-null only while a chat is being composed
+            // (console.cpp:2327-2334). The port's composer state drives the same
+            // gate; the subject set itself is RadarOverlayRules.IsSubject.
+            bool subjectComposing = _chatActive || _qcMenuOpen;
+            var subjectTarget = _chatTarget;
+            short myWingId = ownEnt.WingId;
+            long radarNowMs = (long)(_nowSeconds * 1000);
 
             Color? SideColor(short side)
                 => world.TryGetSideColor(side, out float r, out float g, out float b) ? new Color(r, g, b) : null;
@@ -3379,9 +3434,34 @@ public sealed partial class Game1
                 // colour is known yet (TryGetSideColor returns false).
                 Color? sideCol = SideColor(ship.SideId);
                 var shipCommand = CommandFor(IgcObjectType.Ship, id);
-                bool carriedFlag = ship.CarriedFlagSideId != -1 && ship.CarriedFlagSideId != -2;
-                bool carriedArtifact = ship.CarriedFlagSideId == -2;
+                bool carriedFlag = RadarOverlayRules.CarriedFlag(ship.CarriedFlagSideId);
+                bool carriedArtifact = RadarOverlayRules.CarriedArtifact(ship.CarriedFlagSideId);
                 float separation = (ownSimPos - shipPos).Length();
+                // HUD-12 — native radar overlays that had no data source before:
+                // command-chat subjects (radarimage.cpp:572-574,651), threat
+                // damage buckets (radarimage.cpp:660-671), drone ripcord
+                // (radarimage.cpp:999-1005) and friendly ripcord seconds
+                // (radarimage.cpp:1015-1030).
+                bool sameSide = ship.SideId == mySide;
+                bool subject = RadarOverlayRules.SubjectsApply(commandCamera, subjectComposing)
+                    && RadarOverlayRules.IsSubject(
+                        subjectTarget, subjectComposing, sameSide, sameSector: true,
+                        ship.WingId, myWingId);
+                bool threat = _hostileTracker.Threat(id, radarNowMs);
+                bool threatFlash = threat && _hostileTracker.Flash(id, radarNowMs);
+                byte pilotType = RadarOverlayRules.PilotTypeOf(ship.Player);
+                bool droneRip = RadarOverlayRules.DroneRipcord(
+                    ship.Latest?.StateM ?? 0, sameSide, pilotType);
+                // Remote ripcord start times are stamped with the world's wall
+                // clock (ClientWorld.NowSeconds); the HUD's _nowSeconds is a
+                // different base, so read the ripcord countdown on the world
+                // clock (native measures GetRipcordTimeLeft, not a HUD frame).
+                long worldNowMs = (long)(world.NowSeconds() * 1000);
+                int? ripSeconds = world.TryGetRemoteRipcord(id, out long ripStart)
+                    ? RadarOverlayRules.FriendlyRipcordSeconds(
+                        isSelf: false, sameSide, active: true, ripStart, worldNowMs,
+                        RipcordDurationSecondsFor(world, ship))
+                    : null;
                 _drawRadarContacts.Add(new HudContact(
                     HudContactKind.Ship,
                     new HudPoint(site.Point.X, site.Point.Y),
@@ -3391,10 +3471,12 @@ public sealed partial class Game1
                     Hull: ship.Latest?.HullFraction,
                     Shield: ship.Latest?.ShieldFraction,
                     Fill: ship.SideId == mySide ? ship.Latest?.OreFraction : null,
-                    IsEnemy: isEnemy, IsSameSide: ship.SideId == mySide,
+                    IsEnemy: isEnemy, IsSameSide: sameSide,
                     AcceptedOrder: shipCommand.CommandAccepted, QueuedOrder: shipCommand.CommandId is not null && !shipCommand.CommandAccepted,
-                    Subject: commandCamera && _commandee is { Kind: TargetKind.Ship } commandee && commandee.Id == id,
+                    Threat: threat, ThreatFlash: threatFlash,
+                    Subject: subject,
                     CarriedFlag: carriedFlag, CarriedArtifact: carriedArtifact,
+                    Ripcord: droneRip, RipcordSeconds: ripSeconds,
                     NearestEnemy: nearestEnemyId == id,
                     CommandId: shipCommand.CommandId, CommandAccepted: shipCommand.CommandAccepted,
                     // Native shows the eye only for another SAME-SIDE PLAYER-piloted
