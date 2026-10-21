@@ -39,6 +39,7 @@ public sealed class P764UiSoundSeamTests
         public void PlayPositiveClick() => Calls.Add("positive");
         public void PlayMountPart() => Calls.Add("mount");
         public void PlayVoice(string assetStem) => Calls.Add($"voice:{assetStem}");
+        public void PlayPersonalJump() => Calls.Add("personaljump");
     }
 
     private static void Set(Game1 game, string name, object value) =>
@@ -239,6 +240,126 @@ public sealed class P764UiSoundSeamTests
         Call(game, "RunStarmapClick", (short)2, false);   // own sector → native "nothing"
 
         Assert.Equal(["mouseclick"], sink.Calls);
+    }
+
+    // ── P772 / SIM-0331 — the cue fires on an action branch too, and not on
+    //    a no-cluster hit ──────────────────────────────────────────────────
+
+    [Fact]
+    public void LeftClickCluster_PlaysTheCue_OnAViewClusterBranch()
+    {
+        // native sectormap.cpp:1520-1524: on a left-button press with a cluster
+        // hit, the cue plays FIRST, then SelectCluster and the branch — so it
+        // fires on branches WITH an action, not only on the no-op branch. Here
+        // the ship is docked (station 42) with the teleport pane closed, so
+        // StarmapClick.Decide returns ViewCluster (native :1539-1545); the
+        // click selects the viewed sector AND cues.
+        var sink = new RecordingUiSink();
+        using var session = DockedWorld(out _);
+        var game = Headless(session, sink);
+
+        Call(game, "RunStarmapClick", (short)2, false);   // docked, not teleportOpen → ViewCluster
+
+        Assert.Equal(["mouseclick"], sink.Calls);
+        Assert.Equal((short)2, Get<short?>(game, "_selectedSectorId"));
+    }
+
+    [Fact]
+    public void NoClusterHit_PlaysNoCue_AtAll()
+    {
+        // native sectormap.cpp:1522: the cue is inside `if (pClusterFound)` —
+        // a press over no cluster plays nothing and does nothing.
+        var sink = new RecordingUiSink();
+        using var session = DockedWorld(out _);
+        var game = Headless(session, sink);
+
+        Call(game, "RunStarmapClick", (short)-1, false);   // hit-test missed every cluster
+
+        Assert.Empty(sink.Calls);
+    }
+
+    // ── P772 / SIM-0338 — the teleport pane's board-a-ship cue rides the seam
+
+    /// <summary>A synthetic boardable hull with a real turret slot (the
+    /// constructor shape of EnergyRechargeTests' synthetic hull): TurretSlots =
+    /// MaxWeapons(2) − MaxFixedWeapons(1) = 1, so the CanBoard gate passes.</summary>
+    private static DataHullTypeIGC BoardableHull() => new(
+        Price: 0, TimeToBuild: 0, ModelName: "p772hull", IconName: "p772hull",
+        Name: "P772 Hull", Description: "test", GroupId: 0,
+        TtbmRequired: Array.Empty<byte>(), TtbmEffects: Array.Empty<byte>(),
+        Mass: 100f, Signature: 100f, Speed: 100f,
+        MaxTurnRates: [1f, 1f, 1f], TurnTorques: [1f, 1f, 1f],
+        Thrust: 1000f, SideMultiplier: 1f, BackMultiplier: 1f,
+        ScannerRange: 100f, MaxFuel: 100f, Ecm: 0f, Length: 20f,
+        MaxEnergy: 100f, RechargeRate: 1f, RipcordSpeed: 0f, RipcordCost: 0f,
+        MaxAmmo: 100, HullId: 447, SuccessorHullId: -1,
+        MaxWeapons: (byte)2, MaxFixedWeapons: (byte)1, HitPoints: 100f, HardpointOffset: 0,
+        DefenseType: (byte)0, CapacityMagazine: 0, CapacityDispenser: 0,
+        CapacityChaffLauncher: 0, PreferredPartsTypes: Array.Empty<short>(),
+        HabmCapabilities: 0, TextureName: "p772hull",
+        PmEquipment: new short[8], InteriorSound: -1, ExteriorSound: -1,
+        MainThrusterInteriorSound: -1, MainThrusterExteriorSound: -1,
+        ManuveringThrusterInteriorSound: -1, ManuveringThrusterExteriorSound: -1,
+        Hardpoints: Array.Empty<DataHullTypeIGC.Hardpoint>());
+
+    /// <summary>The teleport pane for the ActivateTeleport pins: ship 11 (own
+    /// side, docked at station 42, a turret-slot hull) plus restart-capable
+    /// station 43. Ships sort before stations, so cursor 0 = the ship row.</summary>
+    private static Rendering.TeleportPaneModel P772TeleportPane()
+    {
+        var hull = BoardableHull();
+        return Rendering.TeleportPaneModel.Build(
+            10, 0, 42,
+            [new ShipView(11, 0, 42, HullId: 447)],
+            [new StationView(43, 0, 1, "P764-43")],
+            id => id == 447 ? hull : null,
+            _ => null);
+    }
+
+    [Fact]
+    public void BoardShipActivate_PlaysPersonalJump_ThroughTheSink()
+    {
+        // native teleportpane.cpp:296-320 OnButtonTeleport: the OT_ship branch
+        // boards (DisembarkAndBoard/BoardShip) and THEN plays
+        // personalJumpSound (:319-320). The port plays the cue through the
+        // P764 IUiSoundSink seam (UiSounds), after SendBoardShip — pinned here
+        // at the ActivateTeleport call site.
+        var sink = new RecordingUiSink();
+        using var session = DockedWorld(out var world);
+        world.Apply(new ExportShip { ShipId = 11, SideId = 0 });
+        world.Apply(new ShipStatusMessage { ShipId = 11, SectorId = 1, StationId = 42, ParentId = -1,
+            State = ShipStatusMessage.StateDocked });
+        var game = Headless(session, sink);
+        var tel = P772TeleportPane();
+        var mySe = world.Ships[10];
+
+        Call(game, "ActivateTeleport", tel, mySe);
+
+        Assert.Equal(["personaljump"], sink.Calls);
+        Assert.False(Get<bool>(game, "_teleportActive"));
+        Assert.True(Get<bool>(game, "_launchSent"));
+    }
+
+    [Fact]
+    public void TeleportToStationActivate_PlaysNoCue()
+    {
+        // native teleportpane.cpp:322-352: the station branch of
+        // OnButtonTeleport plays NO sound — only the ship branch cues.
+        var sink = new RecordingUiSink();
+        using var session = DockedWorld(out var world);
+        world.Apply(new ExportShip { ShipId = 11, SideId = 0 });
+        world.Apply(new ShipStatusMessage { ShipId = 11, SectorId = 1, StationId = 42, ParentId = -1,
+            State = ShipStatusMessage.StateDocked });
+        var game = Headless(session, sink);
+        var tel = P772TeleportPane();
+        tel.MoveCursor(+1);   // off the ship row onto station 43
+        var mySe = world.Ships[10];
+
+        Call(game, "ActivateTeleport", tel, mySe);
+
+        Assert.Empty(sink.Calls);
+        Assert.False(Get<bool>(game, "_teleportActive"));
+        Assert.True(Get<bool>(game, "_launchSent"));
     }
 
     // ── SIM-0333 / SIM-0336 — team pane gift + selection ───────────────────

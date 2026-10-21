@@ -38,4 +38,10 @@ public interface IUiSoundSink
     /// <summary>A raw wave-stem one-shot (the P757 <c>noTurretsSound</c> drain
     /// uses it with <c>vo_sal_noturrets</c>, teleportpane.cpp:285).</summary>
     void PlayVoice(string assetStem);
+
+    /// <summary>Native <c>personalJumpSound</c> (wave <c>jumpin</c>,
+    /// sounddef.mdl:274) — the teleport pane's board-a-ship branch of
+    /// <c>OnButtonTeleport</c> (teleportpane.cpp:319-320); the station branch
+    /// plays nothing (teleportpane.cpp:325-352).</summary>
+    void PlayPersonalJump();
 }

@@ -978,11 +978,14 @@ public sealed partial class Game1
             case Rendering.TeleportPaneModel.ActionKind.BoardShip:
                 // P755 — native OnButtonTeleport plays personalJumpSound when the
                 // destination is a ship (teleportpane.cpp:319-320); the station
-                // branch plays nothing (teleportpane.cpp:325-352).
-                _sound?.PlayPersonalJump();
+                // branch plays nothing (teleportpane.cpp:325-352). P772 — the cue
+                // rides the P764 IUiSoundSink seam (was _sound directly) and plays
+                // AFTER the board send(s), matching native's order (board at
+                // :311-319, then the sound at :319-320).
                 if (onboard) { _session.SendBoardShip(Rendering.TeleportPaneModel.Na); Console.WriteLine("[monogame] teleport: leave current ship (DisembarkAndBoard)"); }
                 _session.SendBoardShip(action.TargetId);
                 Console.WriteLine($"[monogame] teleport: board ship {action.TargetId} as gunner -> BOARD_SHIP");
+                UiSounds?.PlayPersonalJump();
                 break;
 
             case Rendering.TeleportPaneModel.ActionKind.TeleportToStation:

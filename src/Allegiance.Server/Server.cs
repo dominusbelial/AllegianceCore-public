@@ -1107,21 +1107,24 @@ public sealed partial class Server : IDisposable
         float ripcordSpeed = ship.RipcordSpeed;     // GetRipcordSpeed(), shipIGC.cpp:3796
 
         // Goal position for the friendly-probe nearness pick (shipIGC.cpp:3775-3790):
-        // the command target (c_cmdCurrent, falling back to c_cmdAccepted) if it is
-        // in the target sector.
+        // the command target (c_cmdCurrent, falling back to c_cmdAccepted) — used
+        // ONLY when the goal model is visible and its cluster (resolved through
+        // the IIgcSite override, igc.h:4909-4913) is the ripcord target sector
+        // (shipIGC.cpp:3784-3785). Native also conjuncts
+        // pmodelGoal->SeenBySide(pside); ServerHost.GetCluster's CanSee (own side
+        // OR SeenBySide OR in scanner range, shipIGC.h:380-388) is a superset,
+        // and the P132 sweep marks own-side models seen (Sector.cs:4618-4621) as
+        // well as in-range ones — but an EquipmentTarget wrapper's own
+        // SideVisibility is never swept (EquipmentTarget.CanSee reads the body),
+        // so a raw goalModel.SeenBySide(side) would wrongly reject station goals.
+        // Bonus over the raw Probe/Ship switch this replaces: goal models of type
+        // EquipmentTarget/Mine/Missile/Treasure now resolve their cluster through
+        // the site's ClusterOf instead of being dropped (_ => null).
         Vector3? goal = null;
         var goalModel = ship.CommandTarget ?? ship.AcceptedShipTarget;
-        if (goalModel is not null)
-        {
-            short? goalSector = goalModel switch
-            {
-                Probe p => p.OwnerSector.Id,
-                Ship s => s.Sector?.Id,
-                _ => null,
-            };
-            if (goalSector == target.Id)
-                goal = goalModel.Position;
-        }
+        if (goalModel is not null &&
+            _host.GetCluster(ship, goalModel) is Sector goalSector && goalSector.Id == target.Id)
+            goal = goalModel.Position;
 
         // Tier 1: command-target probe (shipIGC.cpp:3803-3814). If the ripper's
         // command target is a same-side probe in the target sector that can be

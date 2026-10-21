@@ -420,6 +420,114 @@ public class LiveTeleportProbeRipcordTests
         Console.WriteLine($"PROBE-RIPCORD-LIVE: ship {rid} two teleport probes ({p1.Id}@{p1.DeployTime:F2}, {p2.Id}@{p2.DeployTime:F2}) -> anchored on most-recent {p2.Id}");
     }
 
+    /// <summary>An enemy ship (the ripper's own hull, side 1, kill-throttle)
+    /// placed in the deploy sector at the given position — the command-target
+    /// goal model for the P772 visibility tests.</summary>
+    private static Ship PlaceEnemyCommandTarget(Ctx ctx, Vector3 position, short shipId)
+    {
+        var enemy = new Ship(shipId, ctx.Ripper.HullType, position, Vector3.Zero, Orientation.Identity) { SideId = 1 };
+        enemy.Controls = new ControlData(0f, 0f, 0f, -1f);   // kill-throttle: hold position
+        ctx.Mission.PlaceShip(enemy, ctx.Deploy);
+        return enemy;
+    }
+
+    /// <summary>⭐ P772 / SIM-0231: an enemy command target the side has NEVER
+    /// seen must not seed the friendly-probe goal. Native gates the goal pick
+    /// on `pmodelGoal->SeenBySide(pside) && pigc->GetCluster(this,
+    /// pmodelGoal) == pcluster` (shipIGC.cpp:3784-3785); the port resolves the
+    /// goal cluster through ServerHost.GetCluster. With visibility cleared and
+    /// no tick in between (so the sweep cannot re-mark the enemy seen), the
+    /// goal is dropped and the MOST RECENT probe (p2) wins — not the probe
+    /// nearest the unseen enemy (p1). Must-fail pre-P772: the raw Probe/Ship
+    /// sector switch took the enemy's sector unconditionally.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Unseen_enemy_command_target_does_not_seed_the_probe_goal()
+    {
+        Require.Artwork();
+        var (server, bot, ctx) = Setup(out short rid);
+        ResetRipcord(bot);
+        var core = ctx.Mission.Core;
+        var tele = TeleportType(core);
+
+        // Two teleport probes: p1 (older, near the enemy) and p2 (newer, far).
+        var p1 = DeployViaWire(server, bot, ctx.Ripper, ctx.Deploy, core, tele);
+        MountProbeLauncher(ctx.Ripper, core, tele, amount: 3);
+        bot.SendFireExpendable(EquipmentType.Dispenser);
+        int seen = PumpUntil(server,
+            () => ctx.Deploy.Models.OfType<Probe>().Count(p => p.ProbeType.ExpendableTypeId == tele.ExpendableTypeId) >= 2, 8000);
+        Assert.True(seen < 8000, "second probe never deployed");
+        var p2 = ctx.Deploy.Models.OfType<Probe>()
+            .Where(p => p.ProbeType.ExpendableTypeId == tele.ExpendableTypeId)
+            .OrderBy(p => p.DeployTime).Last();
+        Assert.NotEqual(p1.Id, p2.Id);
+        Assert.True(p2.DeployTime > p1.DeployTime);
+        p1.Position = new Vector3(-3000f, 0f, 0f);
+        p2.Position = new Vector3(3000f, 0f, 0f);
+
+        // The enemy command target sits 100 units from p1 — if the unseen
+        // goal were used, the nearness pick would anchor on p1.
+        var enemy = PlaceEnemyCommandTarget(ctx, new Vector3(-2900f, 0f, 0f), 998);
+        ctx.Ripper.CommandTarget = enemy;
+
+        MoveRipperToWait(server, ctx.Ripper, ctx.Mission, ctx.Deploy, ctx.Wait);
+        PumpPastActivationDelay(server, p2);
+
+        // Clear the side-0 visibility the activation pump just granted and
+        // invoke FindRipcordModel DIRECTLY (no tick — the sweep would re-mark
+        // the enemy seen by the side-0 probes).
+        enemy.SideVisibility.SetSideVisibility(0, false);
+        var method = typeof(Srv).GetMethod("FindRipcordModel", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var result = Assert.IsType<Ship.RipcordTarget>(method.Invoke(server, new object[] { ctx.Ripper, ctx.Deploy }));
+
+        Assert.Equal(new Ship.RipcordTarget((short)IgcObjectType.Probe, p2.Id, DeploySector), result);
+
+        Console.WriteLine($"PROBE-RIPCORD-LIVE: ship {rid} unseen enemy command target {enemy.Id} near p1 {p1.Id} -> no goal, most-recent probe {p2.Id} wins");
+    }
+
+    /// <summary>⭐ P772 / SIM-0231 (the guard against over-blocking): the SAME
+    /// enemy command target with side-0 visibility ON still seeds the goal —
+    /// the nearness pick anchors on p1 (100 from the goal, p2 5900 away).
+    /// Passes before and after the P772 change.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Seen_enemy_command_target_seeds_the_probe_goal()
+    {
+        Require.Artwork();
+        var (server, bot, ctx) = Setup(out short rid);
+        ResetRipcord(bot);
+        var core = ctx.Mission.Core;
+        var tele = TeleportType(core);
+
+        var p1 = DeployViaWire(server, bot, ctx.Ripper, ctx.Deploy, core, tele);
+        MountProbeLauncher(ctx.Ripper, core, tele, amount: 3);
+        bot.SendFireExpendable(EquipmentType.Dispenser);
+        int seen = PumpUntil(server,
+            () => ctx.Deploy.Models.OfType<Probe>().Count(p => p.ProbeType.ExpendableTypeId == tele.ExpendableTypeId) >= 2, 8000);
+        Assert.True(seen < 8000, "second probe never deployed");
+        var p2 = ctx.Deploy.Models.OfType<Probe>()
+            .Where(p => p.ProbeType.ExpendableTypeId == tele.ExpendableTypeId)
+            .OrderBy(p => p.DeployTime).Last();
+        Assert.NotEqual(p1.Id, p2.Id);
+        Assert.True(p2.DeployTime > p1.DeployTime);
+        p1.Position = new Vector3(-3000f, 0f, 0f);
+        p2.Position = new Vector3(3000f, 0f, 0f);
+
+        var enemy = PlaceEnemyCommandTarget(ctx, new Vector3(-2900f, 0f, 0f), 997);
+        ctx.Ripper.CommandTarget = enemy;
+
+        MoveRipperToWait(server, ctx.Ripper, ctx.Mission, ctx.Deploy, ctx.Wait);
+        PumpPastActivationDelay(server, p2);
+
+        enemy.SideVisibility.SetSideVisibility(0, true);   // seen → the goal stands
+        var method = typeof(Srv).GetMethod("FindRipcordModel", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var result = Assert.IsType<Ship.RipcordTarget>(method.Invoke(server, new object[] { ctx.Ripper, ctx.Deploy }));
+
+        Assert.Equal(new Ship.RipcordTarget((short)IgcObjectType.Probe, p1.Id, DeploySector), result);
+
+        Console.WriteLine($"PROBE-RIPCORD-LIVE: ship {rid} SEEN enemy command target {enemy.Id} near p1 -> goal seeds the pick, nearest probe {p1.Id} wins");
+    }
+
     /// <summary>⭐ A probe that vanishes mid-countdown (destroyed or expired —
     /// both remove it from the sector) aborts the ripcord: RIPCORD_ABORTED,
     /// state cleared, no teleport.</summary>
