@@ -1,0 +1,58 @@
+{
+  "task": "SC-9",
+  "base_commit": "0fab95a54dcc03189e4663b3c7425943187ef382",
+  "branch": "pi/sc9",
+  "scope": ["tools/allegiance-mcp", "tests/Allegiance.ClientCore.Tests"],
+  "src_changed": false,
+  "red_run": {
+    "phase": "phase-1 additive API, today's behaviour (role-only strike flag, launched-count quorum, no escorts, no re-pick)",
+    "log": "~/allegiance-evidence/SC9/red-sc9.log",
+    "total": 30,
+    "sc8_passed": 17,
+    "sc9_failed": 11,
+    "sc9_passed": ["A_roster_of_one_still_commits_its_lone_pilot_after_the_timeout", "Per_tick_cost_with_107_pilots_and_300_targets_stays_within_the_base"],
+    "note": "The two passes are the SC8 one-pilot case restated against the roster and the wall-time perf guard; the other 11 SC9 tests failed at runtime."
+  },
+  "focused_red_rerun": {
+    "reason": "the damaged-preference test was rewritten to drive the whole observation->pick path after the first red run",
+    "rule_reverted": "ObserveTacticalTargets marked damaged from hull only and emitted no Hull/Shield",
+    "log": "~/allegiance-evidence/SC9/red-damage.log",
+    "failed": ["Observed_station_health_marks_a_shield_damaged_station_damaged", "A_shield_damaged_station_is_preferred_over_an_undamaged_one"],
+    "messages": ["Assert.True() Failure", "Assert.True() Failure"]
+  },
+  "green": {
+    "log": "~/allegiance-evidence/SC9/green-final-sc9.log",
+    "sc8_plus_sc9": {"total": 30, "passed": 30},
+    "sc9_suite": {"total": 14, "passed": 14, "log": "~/allegiance-evidence/SC9/sc9-after-damage-rewrite.log"}
+  },
+  "affected_3x": {
+    "filter": "SC6CommanderOrdersTests | SC7CommanderOrdersTests | SC8StrikeWaveTests | SC9StrikeWaveTests | OrderAcceptTranslateTests | P728OrderPolicyTests | SC6_Observed_targets_exclude_hidden_dead_docked_and_pod_ships",
+    "runs": [56, 56, 56],
+    "failed": [0, 0, 0],
+    "logs": [
+      "~/allegiance-evidence/SC9/affected-postrewrite-1.log",
+      "~/allegiance-evidence/SC9/affected-postrewrite-2.log",
+      "~/allegiance-evidence/SC9/affected-postrewrite-3.log"
+    ]
+  },
+  "per_tick_cost_1000_ticks_107_pilots_300_targets_ms": [
+    {"base_no_enemy_station": 988.6, "cached_100_stations": 700.1, "repick_every_tick_100_stations": 713.9},
+    {"base_no_enemy_station": 985.3, "cached_100_stations": 700.3, "repick_every_tick_100_stations": 704.7},
+    {"base_no_enemy_station": 970.2, "cached_100_stations": 684.7, "repick_every_tick_100_stations": 697.2}
+  ],
+  "build": {"warnings": 0, "errors": 0, "log": "~/allegiance-evidence/SC9/build-final2.log"},
+  "fast_tier": {
+    "attempts": [
+      {"result": "FAIL", "reason": "SC9 per-tick test 10.061s over the 10s Fast limit; tagged Tier=Live", "log": "~/allegiance-evidence/SC9/fast-tier.log"},
+      {"result": "PASS", "tests": 9656, "seconds": 272.1, "log": "~/allegiance-evidence/SC9/fast-tier-2.log"},
+      {"result": "PASS", "tests": 9656, "seconds": 271.0, "log": "~/allegiance-evidence/SC9/fast-tier-final.log"}
+    ]
+  },
+  "showcase_never_parks_5x": {
+    "runs": 5,
+    "passed": 5,
+    "longest_idle_with_target_seconds": [null, 2.019, 2.004, 2.014, 1.904],
+    "note": "run 1 was captured at normal verbosity and has no summary line; all five P700 tests passed. commander/strike lines in all five logs: 0/0 (the 150s showcase never reaches research strikes).",
+    "logs": ["~/allegiance-evidence/SC9/showcase-1.log", "~/allegiance-evidence/SC9/showcase-2.log", "~/allegiance-evidence/SC9/showcase-3.log", "~/allegiance-evidence/SC9/showcase-4.log", "~/allegiance-evidence/SC9/showcase-5.log"]
+  }
+}

@@ -161,10 +161,12 @@ public sealed class SC8StrikeWaveTests
     {
         var tactics = new ResearchTactics();
         ResearchTactics.Pilot[] one = [Strike(1, 1, 1000)];
-        var first = tactics.Tick(0, true, one, Targets);
+        // SC9 — the quorum is stated against the whole strike roster, not the
+        // launched pilots, so a one-bomber roster is what permits a wave of one.
+        var first = tactics.Tick(0, true, one, Targets, strikeRoster: 1);
         Assert.Contains(first, o => o.Command == OrderChange.CidGoto && o.Target == 300);
 
-        var timeout = tactics.Tick(ResearchTactics.RallyTimeoutSeconds + 1, true, one, Targets);
+        var timeout = tactics.Tick(ResearchTactics.RallyTimeoutSeconds + 1, true, one, Targets, strikeRoster: 1);
         var order = Assert.Single(timeout);
         Assert.Equal(OrderChange.CidAttack, order.Command);
         Assert.Equal((short)100, order.Target);
@@ -284,9 +286,11 @@ public sealed class SC8StrikeWaveTests
     [Fact]
     public void Strike_wave_log_lines_match_the_rig_format()
     {
-        Assert.Equal("[strike] side=1 wave=2 commit members=3 atRally=3 target=station#100 sector=2 reason=full",
+        // SC9 — both edges now carry the escort count and the observed station health
+        // (-1 = unknown); the end edge adds members/arrived/peakOnTarget/dur.
+        Assert.Equal("[strike] side=1 wave=2 commit members=3 atRally=3 target=station#100 sector=2 escorts=0 stationHull=-1 stationShield=-1 reason=full",
             BotManager.StrikeLogLine(1, new(ResearchTactics.StrikeEventKind.Commit, 2, 3, 3, 100, 2, "full")));
-        Assert.Equal("[strike] side=0 wave=2 end reason=no-members-in-target",
+        Assert.Equal("[strike] side=0 wave=2 end members=3 arrived=0 peakOnTarget=0 escorts=0 dur=-1s stationHull=-1 stationShield=-1 reason=no-members-in-target",
             BotManager.StrikeLogLine(0, new(ResearchTactics.StrikeEventKind.End, 2, 3, 0, 100, 2, "no-members-in-target")));
     }
 

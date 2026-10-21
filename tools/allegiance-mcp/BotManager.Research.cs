@@ -113,7 +113,8 @@ internal sealed partial class BotManager
                                 var targets = ObserveTacticalTargets(peer.World, side).Concat(tactical.Targets)
                                     .DistinctBy(t => (t.Type, t.Id)).ToArray();
                                 foreach (var order in tactics.Policy.Tick(peer.World.SimulationTimeSeconds,
-                                    peer.World.Mission?.Stage == MissionStageMessage.StageStarted, tactical.Pilots, targets))
+                                    peer.World.Mission?.Stage == MissionStageMessage.StageStarted, tactical.Pilots, targets,
+                                    tactical.StrikeRoster))
                                 {
                                     peer.SendChat("", ChatTarget.Individual, oidRecipient: order.Recipient,
                                         commandId: order.Command, otTarget: (short)order.Type, oidTarget: order.Target);
@@ -150,11 +151,22 @@ internal sealed partial class BotManager
         }
     }
 
-    /// <summary>SC8 — the single rig-measurable line per strike-wave edge.</summary>
+    /// <summary>SC8/SC9 — the single rig-measurable line per strike-wave edge.
+    /// SC9 appends the wave's escorts and the observed station health to both edges
+    /// (fractions quoted to 3 decimals; -1 = unknown) and the end edge's arrival
+    /// record + duration.</summary>
     internal static string StrikeLogLine(short side, ResearchTactics.StrikeEvent wave)
-        => wave.Kind == ResearchTactics.StrikeEventKind.Commit
-            ? $"[strike] side={side} wave={wave.Wave} commit members={wave.Members} atRally={wave.AtRally} target=station#{wave.Target} sector={wave.Sector} reason={wave.Reason}"
-            : $"[strike] side={side} wave={wave.Wave} end reason={wave.Reason}";
+    {
+        static string Fraction(float value) => value < 0
+            ? "-1"
+            : value.ToString("F3", System.Globalization.CultureInfo.InvariantCulture);
+        static string Duration(double seconds) => double.IsNaN(seconds) || seconds < 0
+            ? "-1"
+            : seconds.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
+        return wave.Kind == ResearchTactics.StrikeEventKind.Commit
+            ? $"[strike] side={side} wave={wave.Wave} commit members={wave.Members} atRally={wave.AtRally} target=station#{wave.Target} sector={wave.Sector} escorts={wave.Escorts} stationHull={Fraction(wave.StationHull)} stationShield={Fraction(wave.StationShield)} reason={wave.Reason}"
+            : $"[strike] side={side} wave={wave.Wave} end members={wave.Members} arrived={wave.Arrived} peakOnTarget={wave.PeakOnTarget} escorts={wave.Escorts} dur={Duration(wave.DurationSeconds)}s stationHull={Fraction(wave.StationHull)} stationShield={Fraction(wave.StationShield)} reason={wave.Reason}";
+    }
 
     /// <summary>Ready fresh/rotated seats through PLAYER_READY, as the ordinary MCP probe
     /// does (native fsmission.cpp:5449-5471). A research-only manager has no combat loop.</summary>

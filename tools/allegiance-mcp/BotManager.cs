@@ -2217,8 +2217,12 @@ bool isThreat =
             // named ship, never "nearest enemy". A fresh one supersedes any prior
             // target and must be accepted; an already-accepted one is the ongoing
             // engagement (persisted — see the no-pending case above).
+            // SC9 — a CidDefend ship order names a FRIENDLY protectee: accept it but
+            // never adopt it as OrderedTargetId, or the P431 combat path would set
+            // TargetId to the friend and loiter. CidAttack (and the existing
+            // goto-to-enemy-ship case) still adopt the target.
             return isFresh
-                ? new OrderDecision(true, pq.CommandId == OrderChange.CidRepair ? null : pq.TargetId)
+                ? new OrderDecision(true, pq.CommandId is OrderChange.CidRepair or OrderChange.CidDefend ? null : pq.TargetId)
                 : new OrderDecision(false, currentOrderedTarget);
         }
 
