@@ -91,11 +91,16 @@ public sealed class GaugeTextures
     {
         get
         {
-            foreach (var kind in Enum.GetValues<GaugeKind>())
+            // HUD-14b — the kind list is cached once (this is called every frame
+            // from HudRenderer, so Enum.GetValues each call would allocate).
+            foreach (var kind in AllKinds)
                 if (!_fill.ContainsKey(kind)) return false;
             return true;
         }
     }
+
+    /// <summary>Cached once — never enumerate the enum per frame.</summary>
+    private static readonly GaugeKind[] AllKinds = Enum.GetValues<GaugeKind>();
 
     /// <summary>The number of fill layers successfully loaded (diagnostics).</summary>
     public int LoadedCount => _fill.Count;

@@ -105,19 +105,119 @@ public class Hud14ClassicGaugeTests
     }
 
     [Theory]
-    [InlineData(GaugeKind.Thrust, -159f, 6f)]   // (161,246)-(320,240)
-    [InlineData(GaugeKind.Fuel, 41f, 6f)]       // (361,246)
-    [InlineData(GaugeKind.Ammo, -173f, -135f)]  // (147,105)
-    [InlineData(GaugeKind.Energy, 52f, -135f)]  // (372,105)
-    [InlineData(GaugeKind.Hull, -105f, -60f)]   // ArmorImage (215,180)
-    [InlineData(GaugeKind.Shield, -20f, -60f)]  // ShieldImage (300,180)
-    public void Console_offsets_match_DefaultCenterHudOn_minus_320_240(GaugeKind kind, float x, float y)
+    [InlineData(GaugeKind.Thrust, -159f, -6f)]    // console (161,246): 240-246=-6 (y-up → y-down)
+    [InlineData(GaugeKind.Fuel, 41f, -6f)]        // (361,246)
+    [InlineData(GaugeKind.Ammo, -173f, 135f)]     // (147,105): 240-105=135
+    [InlineData(GaugeKind.Energy, 52f, 135f)]     // (372,105)
+    [InlineData(GaugeKind.Hull, -105f, 60f)]      // ArmorImage (215,180): 240-180=60
+    [InlineData(GaugeKind.Shield, -20f, 60f)]     // ShieldImage (300,180)
+    public void Console_offsets_match_DefaultCenterHudOn_centre_relative(GaugeKind kind, float x, float y)
     {
-        // The 640x480 pane's top-left is at centre-(320,240) (dialog.mdl:5397),
-        // so each DefaultCenterHudOn TranslateImage point minus (320,240) is the
-        // gauge's position relative to centre (dialog.mdl:2610-2615).
+        // HUD-14b — native places each gauge in the 640x480 DefaultCenterHudOn
+        // pane by a TranslateImage point measured in y-UP from the bottom-left
+        // (DrawImage3D lower-left origin, engine/context.cpp:552); the pane's
+        // top-left is at centre-(320,240) (dialog.mdl:5397). The centre-relative
+        // offset in screen y-DOWN is X = consoleX-320, Y = 240-consoleY — so the
+        // arc gauges sit ABOVE centre (y-up 246 > 240) and AMMO/ENERGY BELOW.
         var off = ClassicGaugeTable.Spec(kind).ConsoleOffset;
         Assert.Equal(new Vector2(x, y), off);
+    }
+
+    // ── 6. HUD-14b: y-up console → screen y-down placement ────────────────
+
+    [Theory]
+    [InlineData(GaugeKind.Thrust, true, false)]  // above centre, left of centre
+    [InlineData(GaugeKind.Fuel, true, true)]     // above centre, right of centre
+    [InlineData(GaugeKind.Ammo, false, false)]   // below centre, left of centre
+    [InlineData(GaugeKind.Energy, false, true)]  // below centre, right of centre
+    public void Arc_gauge_group_sits_in_its_native_quadrant(GaugeKind kind, bool above, bool right)
+    {
+        // HUD-14's y-down misreading put THRUST/FUEL below centre and
+        // AMMO/ENERGY above (the "X" splay). With the corrected y-up console
+        // offsets the groups land where native intends: THRUST/FUEL above the
+        // reticle, AMMO/ENERGY below, mirrored left/right.
+        var spec = ClassicGaugeTable.Spec(kind);
+        var centre = new Vector2(960f, 540f);
+        var anchor = ClassicGaugeLayout.Anchor(centre, spec, ClassicGaugeLayout.PaneScale);
+        Assert.True(above ? anchor.Y < centre.Y : anchor.Y > centre.Y,
+            $"{kind} should be {(above ? "above" : "below")} centre");
+        Assert.True(right ? anchor.X > centre.X : anchor.X < centre.X,
+            $"{kind} should be to the {(right ? "right" : "left")} of centre");
+    }
+
+    [Fact]
+    public void Each_arc_band_rings_the_reticle_in_its_quadrant()
+    {
+        // The six bands' centres must ring the view centre — not splay into an
+        // X. Compute each revealed band's on-screen centre (fraction 1).
+        var centre = new Vector2(1920f / 2f, 1080f / 2f);
+        var expected = new (GaugeKind kind, bool above, bool right)[]
+        {
+            (GaugeKind.Thrust, true, false),
+            (GaugeKind.Fuel, true, true),
+            (GaugeKind.Ammo, false, false),
+            (GaugeKind.Energy, false, true),
+        };
+        foreach (var (kind, above, right) in expected)
+        {
+            var spec = ClassicGaugeTable.Spec(kind);
+            var anchor = ClassicGaugeLayout.Anchor(centre, spec, ClassicGaugeLayout.PaneScale);
+            var band = ClassicGaugeLayout.RevealDest(spec, 1f, anchor, ClassicGaugeLayout.PaneScale);
+            var bc = new Vector2(band.Center.X, band.Center.Y);
+            Assert.True(above ? bc.Y < centre.Y : bc.Y > centre.Y,
+                $"{kind} band centre should be {(above ? "above" : "below")} centre");
+            Assert.True(right ? bc.X > centre.X : bc.X < centre.X,
+                $"{kind} band centre should be to the {(right ? "right" : "left")} of centre");
+        }
+    }
+
+    // ── 7. HUD-14b: arc back band aligns with the fill band ───────────────
+
+    [Fact]
+    public void Arc_back_band_origin_matches_fill_band_origin()
+    {
+        // HUD-14 drew the arc back as a full 128px texture at BackPoint, so it
+        // sat (15,10)·scale away from the fill band. Native draws the back as a
+        // GaugeImageRect band at value 1 sharing the fill's rect and point
+        // (thrustGaugeBack dialog.mdl:2175-2185 etc.), so at fraction 1 the back
+        // band must land exactly on the fill band.
+        var centre = new Vector2(960f, 540f);
+        foreach (var kind in new[] { GaugeKind.Thrust, GaugeKind.Fuel, GaugeKind.Ammo, GaugeKind.Energy })
+        {
+            var spec = ClassicGaugeTable.Spec(kind);
+            var anchor = ClassicGaugeLayout.Anchor(centre, spec, ClassicGaugeLayout.PaneScale);
+            var backBand = ClassicGaugeLayout.RevealDest(spec, 1f, anchor, ClassicGaugeLayout.PaneScale);
+            var fillBand = ClassicGaugeLayout.RevealDest(spec, 1f, anchor, ClassicGaugeLayout.PaneScale);
+            Assert.Equal(backBand, fillBand);
+            // Guard the HUD-14 regression itself: the back must be drawn as the
+            // native Rect band (width x band-height), NOT stamped as the whole
+            // 128px texture (which sat (15,10)·scale away and oversized the art).
+            Assert.Equal((int)MathF.Round(spec.SourceRect.Width * ClassicGaugeLayout.PaneScale), backBand.Width);
+            Assert.Equal((int)MathF.Round(spec.SourceRect.Height * ClassicGaugeLayout.PaneScale), backBand.Height);
+            // The band's origin is the native TranslateImage point, not the
+            // texture origin: it must be where the fill band begins.
+            float expectX = ClassicGaugeLayout.LayerLeftX(anchor, spec.FillPoint, ClassicGaugeLayout.PaneScale);
+            float expectTop = ClassicGaugeLayout.LayerTopY(anchor, spec.FillPoint, spec.SourceRect.Height, ClassicGaugeLayout.PaneScale);
+            Assert.Equal((int)MathF.Round(expectX), backBand.X);
+            Assert.Equal((int)MathF.Round(expectTop), backBand.Y);
+        }
+    }
+
+    // ── 8. HUD-14b: single pane scale for offsets and geometry ────────────
+
+    [Fact]
+    public void Console_offsets_and_layer_geometry_share_one_scale()
+    {
+        // HUD-14 scaled console offsets by spread (1.15-2.1) and geometry by
+        // 0.72, so the layers drifted apart. The layout helper exposes one
+        // PaneScale used for both.
+        Assert.Equal(ClassicGaugeLayout.PaneScale, 0.72f);
+        // Anchor and a child layer must both multiply by that same scale.
+        var spec = ClassicGaugeTable.Spec(GaugeKind.Thrust);
+        var centre = new Vector2(960f, 540f);
+        var anchor = ClassicGaugeLayout.Anchor(centre, spec, ClassicGaugeLayout.PaneScale);
+        Assert.Equal(centre.X + spec.ConsoleOffset.X * ClassicGaugeLayout.PaneScale, anchor.X);
+        Assert.Equal(centre.Y + spec.ConsoleOffset.Y * ClassicGaugeLayout.PaneScale, anchor.Y);
     }
 
     [Fact]
@@ -196,14 +296,57 @@ public class Hud14ClassicGaugeTests
         long before = System.GC.GetAllocatedBytesForCurrentThread();
         for (int i = 0; i < 200_000; i++)
         {
-            var kind = (GaugeKind)(i & 5);
+            var kind = (GaugeKind)(i % 6);           // HUD-14b — all SIX kinds
             var spec = ClassicGaugeTable.Spec(kind);
             _ = ClassicGaugeTable.RevealSource(spec.SourceRect, spec.Reveal, (i % 100) / 100f);
             _ = ClassicGaugeTable.UseRedFill((i & 1) != 0, spec);
+            _ = ClassicGaugeLayout.Anchor(new Vector2(960f, 540f), spec, ClassicGaugeLayout.PaneScale);
+            _ = ClassicGaugeLayout.RevealDest(spec, (i % 100) / 100f,
+                ClassicGaugeLayout.Anchor(new Vector2(960f, 540f), spec, ClassicGaugeLayout.PaneScale),
+                ClassicGaugeLayout.PaneScale);
         }
         long allocated = System.GC.GetAllocatedBytesForCurrentThread() - before;
-        // Spec/RevealSource/UseRedFill all return structs/bools — zero heap.
+        // Spec/RevealSource/UseRedFill/Anchor/RevealDest all return
+        // structs/bools — zero heap.
         Assert.True(allocated < 8192,
             $"per-frame classic gauge path allocated {allocated} B over 200k iterations");
+    }
+
+    [Fact]
+    public void GaugeTextures_AllLoaded_allocates_nothing()
+    {
+        // HUD-14b — AllLoaded is queried every frame from HudRenderer.Draw; it
+        // must not call Enum.GetValues (which allocates) each time.
+        var gauges = new GaugeTextures();          // no fill layers loaded → false
+        Assert.False(gauges.AllLoaded);
+        long before = System.GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 200_000; i++) _ = gauges.AllLoaded;
+        long allocated = System.GC.GetAllocatedBytesForCurrentThread() - before;
+        Assert.True(allocated < 8192,
+            $"AllLoaded allocated {allocated} B over 200k calls");
+    }
+
+    // ── 9. HUD-14b: the rendered label follows the gauge's own Label ──────
+
+    [Fact]
+    public void Renderer_draws_the_gauges_own_label_so_lifepod_OXY_shows()
+    {
+        // HUD-14 drew spec.Label and dropped the per-gauge override, so the
+        // lifepod's OXY label was lost even though the matrix claimed it.
+        // This is a RENDERER-level check (through HudRenderer.ResolveGaugeLabel,
+        // the string the label pass draws), not a grep of the model source: the
+        // model already labels the pod's fuel gauge "OXY" (HudModel.cs:279), and
+        // the renderer must draw that, not the spec's fixed "FUEL".
+        var renderer = (HudRenderer)System.Runtime.CompilerServices.RuntimeHelpers
+            .GetUninitializedObject(typeof(HudRenderer));
+        System.GC.SuppressFinalize(renderer);
+        var fuelSpec = ClassicGaugeTable.Spec(GaugeKind.Fuel);
+        Assert.NotEqual("OXY", fuelSpec.Label);          // spec still says FUEL…
+        var oxyGauge = new HudGauge(GaugeKind.Fuel, 0.9f, new HudPoint(0, 0), "OXY",
+            HudColor.TealAccent, false, true);
+        Assert.Equal("OXY", renderer.ResolveGaugeLabel(oxyGauge));   // …but the renderer draws OXY
+        var fuelGauge = new HudGauge(GaugeKind.Fuel, 0.9f, new HudPoint(0, 0), "FUEL",
+            HudColor.TealAccent, false, true);
+        Assert.Equal("FUEL", renderer.ResolveGaugeLabel(fuelGauge));
     }
 }

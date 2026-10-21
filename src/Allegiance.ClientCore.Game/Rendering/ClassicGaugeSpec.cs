@@ -44,9 +44,12 @@ public readonly record struct ClassicGaugeSpec(
     Vector2 LabelPoint,
     string Label,
     bool LabelRightAlign,    // native StringImage JustifyRight/Left
-    // Console assembly offset: DefaultCenterHudOn TranslateImage point minus
-    // (320,240) — the pane's top-left is at centre-(320,240) (dialog.mdl:5397),
-    // so this is the gauge's position relative to the viewport centre, +Y down.
+    // Console assembly offset, centre-relative, in SCREEN y-DOWN coords.
+    // Native places each gauge in the 640x480 DefaultCenterHudOn pane by a
+    // TranslateImage point measured in y-UP from the pane's bottom-left
+    // (Dialog DrawImage3D lower-left origin, engine/context.cpp:552). The pane's
+    // top-left is at centre-(320,240) (dialog.mdl:5397), so subtracting (320,240)
+    // and converting y-up to y-down gives X = consoleX-320 and Y = 240-consoleY.
     Vector2 ConsoleOffset,
     // The dialog.mdl line the gauge definition spans (for the report/citations).
     int MdlLine,
@@ -75,7 +78,8 @@ public static class ClassicGaugeTable
             new Rectangle(15, 10, 95, 108), GaugeReveal.Top,
             new Vector2(15, 10), new Vector2(15, 10), new Vector2(4, 2), Vector2.Zero,
             new Vector2(16, 135), "THRUST", LabelRightAlign: true,
-            new Vector2(-159, 6), /* dialog.mdl:2173-2223 */ 2173,
+            new Vector2(-159, -6), /* dialog.mdl:2173-2223; console (161,246): 240-246=-6 */
+            2173,
             "playerThrottle (GetFuel switch note :503)"),
         GaugeKind.Fuel => new(
             GaugeKind.Fuel,
@@ -83,7 +87,8 @@ public static class ClassicGaugeTable
             new Rectangle(17, 10, 96, 108), GaugeReveal.Top,
             new Vector2(17, 10), new Vector2(17, 10), new Vector2(-4, 2), Vector2.Zero,
             new Vector2(23, 135), "FUEL", LabelRightAlign: false,
-            new Vector2(41, 6), /* dialog.mdl:2226-2275 */ 2226,
+            new Vector2(41, -6), /* dialog.mdl:2226-2275; console (361,246): 240-246=-6 */
+            2226,
             "GetFuel(Me, OnEveryFrame)"),
         GaugeKind.Ammo => new(
             GaugeKind.Ammo,
@@ -91,7 +96,8 @@ public static class ClassicGaugeTable
             new Rectangle(29, 18, 69, 92), GaugeReveal.Bottom,
             new Vector2(29, 18), new Vector2(29, 18), new Vector2(5, -4), Vector2.Zero,
             new Vector2(0, 3), "AMMO", LabelRightAlign: true,
-            new Vector2(-173, -135), /* dialog.mdl:2278-2321 */ 2278,
+            new Vector2(-173, 135), /* dialog.mdl:2278-2321; console (147,105): 240-105=135 */
+            2278,
             "GetAmmo(Me, OnEveryFrame)"),
         GaugeKind.Energy => new(
             GaugeKind.Energy,
@@ -99,7 +105,8 @@ public static class ClassicGaugeTable
             new Rectangle(30, 18, 69, 92), GaugeReveal.Bottom,
             new Vector2(30, 18), new Vector2(30, 18), new Vector2(-5, -4), Vector2.Zero,
             new Vector2(24, 3), "ENERGY", LabelRightAlign: false,
-            new Vector2(52, -135), /* dialog.mdl:2331-2374 */ 2331,
+            new Vector2(52, 135), /* dialog.mdl:2331-2374; console (372,105): 240-105=135 */
+            2331,
             "GetPercentEnergy(Me, OnEveryFrame)"),
         GaugeKind.Hull => new(
             GaugeKind.Hull,
@@ -107,7 +114,8 @@ public static class ClassicGaugeTable
             new Rectangle(40, 23, 48, 82), GaugeReveal.Bottom,
             new Vector2(-13, 4), new Vector2(27, 27), Vector2.Zero, Vector2.Zero,
             new Vector2(-10, 63), "ARMOR", LabelRightAlign: false,
-            new Vector2(-105, -60), /* dialog.mdl:2404-2445 */ 2404,
+            new Vector2(-105, 60), /* dialog.mdl:2404-2445; console (215,180): 240-180=60 */
+            2404,
             "GetPercentHitPoints(Me, OnEveryFrame)"),
         GaugeKind.Shield => new(
             GaugeKind.Shield,
@@ -115,7 +123,8 @@ public static class ClassicGaugeTable
             new Rectangle(40, 23, 48, 82), GaugeReveal.Bottom,
             new Vector2(12, 5), new Vector2(52, 28), Vector2.Zero, Vector2.Zero,
             new Vector2(40, 63), "SHIELD", LabelRightAlign: true,
-            new Vector2(-20, -60), /* dialog.mdl:2474-2516 */ 2474,
+            new Vector2(-20, 60), /* dialog.mdl:2474-2516; console (300,180): 240-180=60 */
+            2474,
             "GetPercentShields(Me, OnEveryFrame)"),
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
@@ -156,4 +165,81 @@ public static class ClassicGaugeTable
     /// </summary>
     public static bool UseRedFill(bool damageFlash, ClassicGaugeSpec spec)
         => damageFlash && spec.RedStem is not null;
+}
+
+/// <summary>
+/// HUD-14b — the screen placement of the classic gauges. Native lays the whole
+/// <c>DefaultCenterHudOn</c> pane out in 640x480 space with y pointing UP from
+/// the bottom-left (Dialog <c>DrawImage3D</c> lower-left origin,
+/// engine/context.cpp:552; "Photoshop measures Y from the top, Alleg from the
+/// bottom", dialog.mdl:225/231/311/317). HUD-14 treated every y as pointing
+/// down, which stuck THRUST/FUEL below centre and AMMO/ENERGY above. This class
+/// converts each layer from native y-up console space to screen y-down with ONE
+/// pane scale applied to both the console offset and the layer geometry (native
+/// zooms the whole pane by a single factor; a mixed spread/0.72 made the layers
+/// drift apart).
+/// </summary>
+public static class ClassicGaugeLayout
+{
+    /// <summary>
+    /// The single pane scale for the classic gauge cluster, applied to BOTH the
+    /// console offsets and every layer's local geometry. HUD-14 scaled the
+    /// console offsets by <c>OwnStatusLayout.Spread</c> (1.15–2.1) but the layer
+    /// geometry by 0.72, so they drifted apart; native scales the whole pane by
+    /// one factor (dialog.mdl:5397 <c>.5</c> zoom), so the port uses one scale.
+    /// </summary>
+    public const float PaneScale = 0.72f;
+
+    /// <summary>
+    /// The gauge group's origin on screen. The centre-relative offset is
+    /// <see cref="ClassicGaugeSpec.ConsoleOffset"/> (already y-down:
+    /// <c>X = consoleX−320</c>, <c>Y = 240−consoleY</c>).
+    /// </summary>
+    public static Vector2 Anchor(Vector2 centre, ClassicGaugeSpec spec, float scale)
+        => new(centre.X + spec.ConsoleOffset.X * scale,
+               centre.Y + spec.ConsoleOffset.Y * scale);
+
+    /// <summary>
+    /// The screen Y of a layer's TOP edge, converting native y-up to screen
+    /// y-down. Derivation: the layer occupies <c>[cy, cy+layerH]</c> in the
+    /// group's y-UP local space; the group origin sits at pane-y-up = consoleY
+    /// (DefaultCenterHudOn TranslateImage, dialog.mdl:2610-2615); the pane's
+    /// vertical centre is 240 in the 640x480 pane (dialog.mdl:5397). Converting
+    /// to screen y-down relative to centre and scaling:
+    ///   screenY = centre.Y − ((consoleY − 240)·s + (cy + layerH)·s)
+    /// This is the exact form; <paramref name="anchor"/> is already
+    /// <c>centre.Y − (consoleY − 240)·s</c>, so equivalently
+    /// <c>screenY = anchor.Y − (cy + layerH)·s</c>.
+    /// </summary>
+    public static float LayerTopY(Vector2 anchor, Vector2 childPoint, float layerH, float scale)
+        => anchor.Y - (childPoint.Y + layerH) * scale;
+
+    /// <summary>The screen X of a layer's left edge (x is not flipped).</summary>
+    public static float LayerLeftX(Vector2 anchor, Vector2 childPoint, float scale)
+        => anchor.X + childPoint.X * scale;
+
+    /// <summary>
+    /// The screen destination rectangle of a revealed <c>GaugeImageRect</c> band
+    /// at <paramref name="fraction"/>. The band is placed in native y-up: the
+    /// fill's TranslateImage child point (<c>spec.FillPoint</c>) is the band's
+    /// lower-left and the band spans up to
+    /// <c>FillPoint.Y + SourceRect.Height</c>; in screen y-down the band bottom
+    /// is <c>anchor.Y − FillPoint.Y·scale</c>. JustifyTop anchors the reveal to
+    /// the band TOP (grows down); JustifyBottom anchors to the band BOTTOM
+    /// (grows up) — the native GaugeImageRect rule. Used by the renderer and the
+    /// headless tests so they cannot drift apart.
+    /// </summary>
+    public static Rectangle RevealDest(ClassicGaugeSpec spec, float fraction, Vector2 anchor, float scale)
+    {
+        var src = ClassicGaugeTable.RevealSource(spec.SourceRect, spec.Reveal, fraction);
+        float bandBottom = anchor.Y - spec.FillPoint.Y * scale;
+        float top = spec.Reveal == GaugeReveal.Top
+            ? bandBottom - spec.SourceRect.Height * scale
+            : bandBottom - src.Height * scale;
+        return new Rectangle(
+            (int)MathF.Round(LayerLeftX(anchor, spec.FillPoint, scale)),
+            (int)MathF.Round(top),
+            (int)MathF.Round(src.Width * scale),
+            (int)MathF.Round(src.Height * scale));
+    }
 }
