@@ -311,7 +311,8 @@ public sealed partial class Game1
         _hudRenderer = new HudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, gauges, lockTextures,
             _statusTextures, indicatorTextures, targetPaneTextures, _inventoryTextures,
             damageWash: _hudSettings.DamageWash, nativeHudTextures: _hudNativeTextures,
-            gaugePercentage: _hudSettings.GaugePercentage, nativeFonts: nativeFonts);
+            gaugePercentage: _hudSettings.GaugePercentage, nativeFonts: nativeFonts,
+            joystickMesh: Rendering.JoystickMeshTexture.Create(GraphicsDevice));
 
         // P214 — in-flight chat overlay (same SpriteBatch/font plumbing as the HUD).
         _modernHudRenderer = new ModernHudRenderer(_spriteBatch, _whitePixel, _hudSmall, _hudBig, _hudSettings,

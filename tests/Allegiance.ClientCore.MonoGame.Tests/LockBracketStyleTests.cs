@@ -5,90 +5,83 @@ using Xunit;
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
 /// <summary>
-/// Pure-logic tests for <see cref="LockBracketStyle"/> — the per-state sizing
-/// (and its pulse animation) behind the P230/P428 missile-lock indicator. No
-/// graphics device (same discipline as <see cref="RockMeshFactoryTests"/>).
-/// As of P428 the indicator's SHAPE is the real original sprite (see
-/// <see cref="LockTextures"/> / <see cref="LockTextureSourceTests"/>), so the
-/// style only contributes the on-screen scale and its gentle pulse; the old
-/// per-state tint (ColorFor) and acquisition spin (RotationFor) were removed
-/// because the real sprites carry their own fixed colours and are 4-fold
-/// symmetric (a spin would read as jitter, and native never rotates them).
+/// Pure-logic tests for <see cref="LockBracketStyle"/> — the native continuous
+/// lock sizing behind the P230/P428 missile-lock flower. No graphics device
+/// (same discipline as <see cref="RockMeshFactoryTests"/>). As of P428 the
+/// indicator's SHAPE is the real original sprite (see <see cref="LockTextures"/>
+/// / <see cref="LockTextureSourceTests"/>), and as of HUD-19 it is placed as
+/// four native DrawExpandedBlip quadrants (see <see cref="HudRenderer"/>), so
+/// the style only contributes the on-screen half-span radius. The old P230
+/// sinusoid pulse (<c>HalfSizeFor</c>), tint (ColorFor) and acquisition spin
+/// (RotationFor) are all dead and removed — native has no pulse (radarimage.cpp
+/// DrawExpandedBlip), only the continuous radiusBracket + 40·(1−lock) rule.
 /// </summary>
 public class LockBracketStyleTests
 {
     [Fact]
-    public void NoLock_HalfSize_IsStatic_AcrossTime()
+    public void NoLock_radius_is_zero_and_never_drawn()
     {
-        float t1 = LockBracketStyle.HalfSizeFor(MissileLockFeedback.LockState.None, 0.0);
-        float t2 = LockBracketStyle.HalfSizeFor(MissileLockFeedback.LockState.None, 3.7);
-        Assert.Equal(t1, t2);
-        Assert.Equal(LockBracketStyle.BaseHalfSize, t1);   // no pulse for no-lock
+        // native: if (lock != 0.0f) — a no-lock draws nothing (radarimage.cpp:330).
+        Assert.Equal(0f, LockBracketStyle.HalfSizeForFraction(
+            MissileLockFeedback.LockState.None, 0f, null, 1000f));
+        Assert.Equal(0f, LockBracketStyle.HalfSizeForFraction(
+            MissileLockFeedback.LockState.None, 0.6f, 30f, 1000f));
     }
 
     [Fact]
-    public void PartialAndFull_HalfSize_Pulse_AndDiffer()
+    public void Full_lock_uses_the_projected_bracket_radius_times_1_05()
     {
-        float p0 = LockBracketStyle.HalfSizeFor(MissileLockFeedback.LockState.Partial, 0.0);
-        float p1 = LockBracketStyle.HalfSizeFor(MissileLockFeedback.LockState.Partial, 0.5);
-        // Pulses about the base within the ±5px amplitude band.
-        Assert.InRange(p0, LockBracketStyle.BaseHalfSize - 5f, LockBracketStyle.BaseHalfSize + 5f);
-        Assert.InRange(p1, LockBracketStyle.BaseHalfSize - 5f, LockBracketStyle.BaseHalfSize + 5f);
-        Assert.NotEqual(p0, p1);   // it is actually animating
-
-        float f0 = LockBracketStyle.HalfSizeFor(MissileLockFeedback.LockState.Full, 0.0);
-        float f1 = LockBracketStyle.HalfSizeFor(MissileLockFeedback.LockState.Full, 0.5);
-        Assert.InRange(f0, LockBracketStyle.BaseHalfSize - 9f, LockBracketStyle.BaseHalfSize + 9f);
-        Assert.NotEqual(f0, f1);
+        // radarimage.cpp:325-332 — full lock draws the locked surface at
+        // radiusBracket = 1.05 × radiusObject (radarimage.cpp:308-319).
+        float full = LockBracketStyle.HalfSizeForFraction(
+            MissileLockFeedback.LockState.Full, 1f, 34f, 1000f);
+        Assert.Equal(34f * 1.05f, full);
+        // Null screen radius falls back to the fixed base.
+        Assert.Equal(LockBracketStyle.BaseHalfSize,
+            LockBracketStyle.HalfSizeForFraction(MissileLockFeedback.LockState.Full, 1f, null, 1000f));
     }
 
     [Fact]
-    public void Full_PulseIsStrongerThanPartial()
+    public void Partial_lock_grows_with_distance_from_full_lock()
     {
-        // A full lock pulses harder (larger amplitude) than a partial one, so an
-        // acquired lock reads as hotter on the real sprite. Compare the PEAK
-        // deviations reached over a dense sample (a point-by-point comparison is
-        // unreliable — Full's sine dips through zero).
-        float MaxAbsDev(MissileLockFeedback.LockState st)
-        {
-            float max = 0f;
-            for (int i = 0; i < 400; i++)
-            {
-                double now = i * 0.007;
-                float dev = Math.Abs(LockBracketStyle.HalfSizeFor(st, now) - LockBracketStyle.BaseHalfSize);
-                if (dev > max) max = dev;
-            }
-            return max;
-        }
-
-        float partialPeak = MaxAbsDev(MissileLockFeedback.LockState.Partial);
-        float fullPeak = MaxAbsDev(MissileLockFeedback.LockState.Full);
-
-        // Partial peaks at ±5, Full at ±9.
-        Assert.InRange(partialPeak, 4.5f, 5.5f);
-        Assert.InRange(fullPeak, 8.5f, 9.5f);
-        Assert.True(fullPeak > partialPeak);
+        // Native: partial radius = radiusBracket + 40·(1−lock)
+        // (radarimage.cpp:327-333) — the flower shrinks as the lock builds.
+        float nearFull = LockBracketStyle.HalfSizeForFraction(
+            MissileLockFeedback.LockState.Partial, 0.9f, 34f, 1000f);
+        float halfway = LockBracketStyle.HalfSizeForFraction(
+            MissileLockFeedback.LockState.Partial, 0.5f, 34f, 1000f);
+        float far = LockBracketStyle.HalfSizeForFraction(
+            MissileLockFeedback.LockState.Partial, 0.0f, 34f, 1000f);
+        Assert.Equal(34f * 1.05f + 40f * 0.1f, nearFull);
+        Assert.Equal(34f * 1.05f + 40f * 0.5f, halfway);
+        Assert.Equal(34f * 1.05f + 40f * 1.0f, far);
+        Assert.True(far > halfway && halfway > nearFull);
     }
 
     [Fact]
-    public void AllStates_StayCloseToBaseHalfSize()
+    public void Partial_radius_uses_the_base_when_no_screen_radius()
     {
-        // The on-screen span never collapses or explodes — always a sane,
-        // readable indicator size around the target (native scales these blips
-        // by radiusBracket; this port fixes a readable 68px span + pulse).
-        for (int i = 0; i < 100; i++)
-        {
-            double now = i * 0.031;
-            foreach (var state in new[]
-            {
-                MissileLockFeedback.LockState.None,
-                MissileLockFeedback.LockState.Partial,
-                MissileLockFeedback.LockState.Full,
-            })
-            {
-                float h = LockBracketStyle.HalfSizeFor(state, now);
-                Assert.InRange(h, LockBracketStyle.BaseHalfSize - 9.5f, LockBracketStyle.BaseHalfSize + 9.5f);
-            }
-        }
+        Assert.Equal(LockBracketStyle.BaseHalfSize + 40f,
+            LockBracketStyle.HalfSizeForFraction(MissileLockFeedback.LockState.Partial, 0f, null, 1000f));
+    }
+
+    [Fact]
+    public void Radius_clips_to_the_screen_edge_gutter()
+    {
+        // Native c_flBorderSide gutter (radarimage.cpp:308-319): if the bracket
+        // would pass the edge it is clipped to distanceToEdge + BorderSide.
+        float clipped = LockBracketStyle.HalfSizeForFraction(
+            MissileLockFeedback.LockState.Full, 1f, 100f, 30f);
+        Assert.Equal(30f + LockBracketStyle.BorderSide, clipped);
+    }
+
+    [Fact]
+    public void No_sinusoid_exists_any_more()
+    {
+        // HUD-19 removed the dead HalfSizeFor pulse (native has none); the only
+        // sizing entry point is HalfSizeForFraction. Guard the removal so a
+        // future edit cannot quietly reintroduce a pulse the native lacks.
+        Assert.Null(typeof(LockBracketStyle).GetMethod("HalfSizeFor"));
+        Assert.NotNull(typeof(LockBracketStyle).GetMethod(nameof(LockBracketStyle.HalfSizeForFraction)));
     }
 }

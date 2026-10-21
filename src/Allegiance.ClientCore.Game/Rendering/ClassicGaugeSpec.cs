@@ -185,8 +185,14 @@ public static class ClassicGaugeLayout
     /// The single pane scale for the classic gauge cluster, applied to BOTH the
     /// console offsets and every layer's local geometry. HUD-14 scaled the
     /// console offsets by <c>OwnStatusLayout.Spread</c> (1.15–2.1) but the layer
-    /// geometry by 0.72, so they drifted apart; native scales the whole pane by
-    /// one factor (dialog.mdl:5397 <c>.5</c> zoom), so the port uses one scale.
+    /// geometry by 0.72, so they drifted apart.
+    /// HUD-14c — this 0.72 is a PORT DEVIATION, stated honestly: the `.5` at
+    /// dialog.mdl:5397 is the whole DefaultCenterHudOn group's OVERLAY
+    /// SLIDE-ANIMATION time (every row carries it with a hide point
+    /// (−2000,…)), not a zoom, so native has no per-pane scale factor. The port
+    /// picks one scale (0.72) to keep the cluster legible on a modern viewport;
+    /// the important fix is that a SINGLE factor drives both the console
+    /// offsets and the layer geometry so they cannot drift apart.
     /// </summary>
     public const float PaneScale = 0.72f;
 
@@ -217,6 +223,14 @@ public static class ClassicGaugeLayout
     /// <summary>The screen X of a layer's left edge (x is not flipped).</summary>
     public static float LayerLeftX(Vector2 anchor, Vector2 childPoint, float scale)
         => anchor.X + childPoint.X * scale;
+
+    /// <summary>HUD-14c — the screen TOP of a gauge label whose native y-up
+    /// <c>LabelPoint</c> is the text's LOWER-LEFT: the text's BOTTOM is
+    /// <c>anchor.Y − LabelPoint.Y·s</c>, so its TOP is that minus the text
+    /// height (the HUD-14/14b code used the point as the top, sitting the label
+    /// one text height too low). Pure so a headless test pins the correction.</summary>
+    public static float LabelTopY(Vector2 anchor, Vector2 labelPoint, float scale, float textHeight)
+        => anchor.Y - labelPoint.Y * scale - textHeight;
 
     /// <summary>
     /// The screen destination rectangle of a revealed <c>GaugeImageRect</c> band

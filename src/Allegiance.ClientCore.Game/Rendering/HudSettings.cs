@@ -30,6 +30,12 @@ public sealed class HudSettings
     /// height (native <c>NumChatLines</c>), not the number of lines currently
     /// shown: the vote/critical-tip banner offsets read it.</summary>
     public int ChatLines { get; set; } = 7;
+    /// <summary>HUD-19 — native ShowJoystickIndicator Graphics Option,
+    /// default ON in the ctor (m_bShowJoystickIndicator = true,
+    /// WinTrek.cpp:2739) and loaded with
+    /// LoadPreference("ShowJoystickIndicator", 1) (WinTrek.cpp:3059).
+    /// Gates <see cref="HudModel.JoystickIndicatorVisible"/>.</summary>
+    public bool ShowJoystickIndicator { get; set; } = true;
     public static string DefaultPath => Environment.GetEnvironmentVariable("ALLEGIANCE_HUD_SETTINGS")
         ?? Path.Combine(IntroPreferences.DirectoryPath, "hud.json");
     public void Normalize()

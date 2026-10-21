@@ -1,6 +1,6 @@
 # HUD-14 / HUD-14b — classic centre-console gauges on the native dialog.mdl layer model
 
-Base: master at dispatch (HUD-12 `193e8ea3`). Branch: **master**, committed directly (HUD-14 `4ace7b3b`, then HUD-14b `d1d71af5`, amended with the suite + docs). HUD-14 built the six own-ship centre gauges as a data-table native layer model; **HUD-14b** (this round) corrects Claude's review findings: the console was upside down, the arc backs were offset, the lifepod OXY label was lost, the matrix over-claimed, `AllLoaded` allocated per frame, the console offsets and layer geometry scaled differently, and the blend/tints were non-native.
+Base: master at dispatch (HUD-12 `193e8ea3`). Branch: **master**, committed directly (HUD-14 `4ace7b3b`, then HUD-14b `b60e216a`, amended with the suite + docs). HUD-14 built the six own-ship centre gauges as a data-table native layer model; **HUD-14b** (this round) corrects Claude's review findings: the console was upside down, the arc backs were offset, the lifepod OXY label was lost, the matrix over-claimed, `AllLoaded` allocated per frame, the console offsets and layer geometry scaled differently, and the blend/tints were non-native. **HUD-14c** (with HUD-19, below) fixes the remaining review findings: the additive blend state, the `hudColorshadows` misread, the label y-up anchor, and the weak tests/report claims.
 
 The six own-ship gauge rows in `docs/parity/parity-matrix.csv` (Hull integrity, Shield charge, Energy reserve, Fuel reserve, Ammunition reserve, Thrust setting) are `partial` with the note **"native layer model; smVerdana substituted"** plus the item-7 tint gaps (the label tint uses the port's accent rather than the live side colour). The `%` numeral is a HUD option behind `HudSettings.GaugePercentage` (default **off** = native).
 
@@ -50,10 +50,51 @@ HUD-14 flipped all six gauge rows to `done`, but they use a substitute font for 
 `AllLoaded` called `Enum.GetValues<GaugeKind>()` every frame (`GaugeTextures.cs`, called from `HudRenderer.cs:~315`). The kind array is now cached in a static field. The allocation test now covers `AllLoaded` and all **six** kinds (HUD-14's `(GaugeKind)(i & 5)` hit only four) plus the `DrawGauges` path pieces (`Spec`/`RevealSource`/`UseRedFill`/`Anchor`/`RevealDest`).
 
 ### 6. Scale drift — one pane scale
-HUD-14 scaled console offsets by `OwnStatusLayout.Spread` (1.15–2.1) but layer geometry by 0.72, so the layers drifted apart. Native zooms the whole pane by one factor (`dialog.mdl:5397` `.5`). `ClassicGaugeLayout.PaneScale = 0.72` is now applied to **both** the console offsets and every layer's geometry (no deviation kept).
+HUD-14 scaled console offsets by `OwnStatusLayout.Spread` (1.15–2.1) but layer geometry by 0.72, so the layers drifted apart. `ClassicGaugeLayout.PaneScale = 0.72` is now applied to **both** the console offsets and every layer's geometry. (HUD-14c correction: the `.5` at `dialog.mdl:5397` is the overlay slide-animation time, not a zoom, so 0.72 is a **port deviation**, not a native scale — see the HUD-14c section, item 3.)
 
 ### 7. Blend / colour gaps — additive pass + tints
-Native composes the whole console additively (`hudBlendMode = BlendModeAdd`, `dialog.mdl:34`); HUD-14 used AlphaBlend, White and TextDim. The gauge layers now draw in a **separate additive SpriteBatch pass** (`BlendState.Additive`). Hull/shield backs are tinted `hudColorshadows` = `Color(45,36,59)·0.65` (`WinTrek/WinTrek.cpp:8688`), and the labels are tinted `hudColor` — native's `pside->GetColor()·g_hudBright` (`WinTrek/WinTrek.cpp:8681`). **Recorded gap:** the port substitutes its HUD accent for the live side colour (the own side colour is not threaded into the label pass), noted in the matrix.
+Native composes the whole console additively (`hudBlendMode = BlendModeAdd`, `dialog.mdl:34`); HUD-14 used AlphaBlend, White and TextDim. The gauge layers now draw in a **separate additive SpriteBatch pass** (`BlendState.Additive`). Hull/shield backs are tinted `hudColorshadows` = `Color(45,36,59)·0.65` (`WinTrek/WinTrek.cpp:8688`), and the labels are tinted `hudColor` — native's `pside->GetColor()·g_hudBright` (`WinTrek/WinTrek.cpp:8681`). **Recorded gap:** the port substitutes its HUD accent for the live side colour (the own side colour is not threaded into the label pass), noted in the matrix. (HUD-14c correction: the labels in fact render in the port's **teal accent** (`HudLabelTint`), not the live side `hudColor` — see the HUD-14c section.)
+
+## HUD-14c fix round (with HUD-19)
+
+Claude's review of HUD-14b found five remaining code/report issues. Fixed here.
+
+1. **Wrong additive BlendState for the gauges.** `HudRenderer.cs:~335` used
+   `BlendState.Additive` (SrcAlpha/One) on the **premultiplied** gauge textures
+   and SpriteFont glyphs, applying alpha a second time. Native `BlendModeAdd`
+   is SRCALPHA/ONE on **straight-alpha** textures (`engine/RasterD3D9.cpp:295-302`),
+   which equals **One/One on premultiplied**. A shared static
+   `HudRenderer.AdditiveOneOne` (`Color/Alpha SourceBlend = One`,
+   `Color/Alpha DestinationBlend = One`) is now used by the gauge pass and by
+   HUD-19's reticle/crosshair pass. Test pins both passes reference that state.
+2. **`hudColorshadows` misread.** Native `Color(45,36,59)` passes 0..1 FLOATS
+   (`zlib/color.h:33`), so 45/36/59 are out of range, and `MakeD3DCOLOR` packs
+   `MakeInt(255·c)` without clamping (`engine/context.h:327`). Simulating the
+   truncation/bit-spill yields ARGB(157, 111, 55, 51) — a dim muddy
+   (0.435,0.216,0.200) at alpha ~0.62. That is a **BUG**, so per the standing
+   rule the port uses the **evident intent** — a dim shadow tint at the
+   designer's **alpha 0.55** (the alpha HUD-14b dropped) — keeping the
+   native-actual hue so the hull/shield backs stay visible; the near-black
+   `/255` reading of 45,36,59 is never used. Divergence recorded in code + report.
+3. **Scale deviation stated honestly.** The `.5` at `dialog.mdl:5397` is the
+   overlay slide-animation time (every row has it with hide point `(−2000,…)`),
+   not a zoom. `PaneScale = 0.72` (`ClassicGaugeSpec.cs:~191`) is therefore a
+   **port deviation** (stated in the code comment): native has no per-pane
+   scale factor; the fix is that ONE scale drives both offsets and geometry so
+   the layers cannot drift.
+4. **Label Y off by about one text height.** The native y-up `LabelPoint` is
+   the text's LOWER-LEFT, so the screen top is `anchor.Y − LabelPoint.Y·s −
+   textHeight` (`ClassicGaugeLayout.LabelTopY`); HUD-14/14b used the point as
+   the top. Added a headless test.
+5. **Weak tests.** The back-band test compared `RevealDest` with itself; it now
+   routes through `HudRenderer.BackDestination` (the back-draw path) and
+   asserts it equals the fill band computed independently. The OXY test now
+   builds a real lifepod-state `HudModel` and asserts the renderer's Fuel label
+   is "OXY".
+6. **Report corrections.** Commit hash `b60e216a` (not `d1d71af5`); the
+   "1920×1080" assets are 900×760 crops; the band/quadrant "failing-first"
+   claim was false (only the offset test was failing-first); item 7's "gauges
+   render in hudColor" corrected to the teal accent they actually use.
 
 ## Visual proof — REAL client backbuffer (1920×1080)
 
@@ -65,7 +106,7 @@ Taken from real windowed `Allegiance.ClientCore.MonoGame` clients against a real
 | Modern (staged levels, no regression) | [`hud14b-modern-1920x1080.webp`](HUD14_assets/hud14b-modern-1920x1080.webp) |
 | Classic lifepod — the upper-right gauge reads **OXY** | [`hud14b-lifepod-1920x1080.webp`](HUD14_assets/hud14b-lifepod-1920x1080.webp) |
 
-Raw PNG originals remain under `~/allegiance-scratch/HUD14b/` (outside the repo); the three webp assets total ~27 KB (well under the 2 MB cap).
+Raw PNG originals remain under `~/allegiance-scratch/HUD14b/` (outside the repo); the three webp assets total ~27 KB (well under the 2 MB cap). (HUD-14c correction: although captioned "1920×1080", the three published webp assets are **900×760 centre crops** of the real backbuffer, not full-frame 1920×1080 captures.)
 
 **Looking at the classic 1920×1080 shot (via vision):** the six gauges ring the central reticle correctly. THRUST and FUEL sit **above** centre (left and right), each arc revealing ~mostly-full; AMMO and ENERGY sit **below** centre (left and right); ARMOR and SHIELD flank the reticle at the centre line with their bottom-up fills and frame art. All six labels are legible in the additive cyan tint; the arcs ring the reticle instead of splaying into an X. No overlap or cut-off gauges.
 
@@ -76,7 +117,7 @@ Raw PNG originals remain under `~/allegiance-scratch/HUD14b/` (outside the repo)
 ## Verification
 
 - **Whole-solution Release build**: 0 warnings / 0 errors (twice — before and after the proof-worktree aid, which was uncommitted and removed).
-- **Failing-first**: the HUD-14b console-offset test was written against the corrected native-derived values (`Y = 240−consoleY`) and fails against HUD-14's sign (`Hull`/`Shield` were pinned at `-60`, actual `+60`; THRUST/FUEL above centre and AMMO/ENERGY below fail with HUD-14's inverted offsets). The band/quadrant tests likewise fail on HUD-14's data.
+- **Failing-first**: the HUD-14b console-offset test was written against the corrected native-derived values (`Y = 240−consoleY`) and fails against HUD-14's sign (`Hull`/`Shield` were pinned at `-60`, actual `+60`; THRUST/FUEL above centre and AMMO/ENERGY below fail with HUD-14's inverted offsets). (HUD-14c correction: the earlier claim that the "band/quadrant tests likewise fail on HUD-14's data" is **false** — `ClassicGaugeLayout`/the quadrant tests did not exist on HUD-14, and `back == fill` at value 1 could never have failed; only the console-offset test was genuinely failing-first.)
 - **`Hud14ClassicGaugeTests`** now 36 tests: reveal source rect 0/0.5/1 + native truncation, reveal direction, corrected console offsets, arc quadrant/ring placement, back band == fill band (band size, not whole texture), single pane scale, red/flash switch, `%` flag off by default, `AllLoaded` + all-6-kinds allocation, and the renderer OXY label.
 - **Affected suites run 3× alone** (`Hud14*`, Lifepod, HudModel, Hud11/12/13/15, Radar): 219/219 pass ×3.
 - **`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`** 5× alone: pass (1m48–1m50s each).

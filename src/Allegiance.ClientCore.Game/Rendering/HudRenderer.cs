@@ -41,15 +41,46 @@ public class HudRenderer
     // Depleted (Warning red) — mirrors the MINING tag's amber family.
     private static readonly Color ReloadAmber = new(0.98f, 0.74f, 0.24f);
 
-    // HUD-14b — native classic-console tints, used under the additive blend.
-    // hudColorshadows = Color(45,36,59) * 0.65 (WinTrek/WinTrek.cpp:8688) tints
-    // the hull/shield backs (hullGaugeBack/shieldGaugeBack, dialog.mdl:2432/2515);
-    // hudColor = pside->GetColor() * g_hudBright (WinTrek/WinTrek.cpp:8681)
+    // HUD-14b/HUD-14c — native classic-console tints, used under the additive
+    // blend. hudColor = pside->GetColor() * g_hudBright (WinTrek/WinTrek.cpp:8681)
     // tints the labels (StringImage hudColor, dialog.mdl:2210 etc.) — the port
     // substitutes its HUD accent (fonts/colours are not the fix round's focus).
-    private static readonly Color HUDShadowTint = From(new HudColor(
-        45f / 255f * 0.65f, 36f / 255f * 0.65f, 59f / 255f * 0.65f));
     private static readonly Color HUDLabelTint = Accent;
+
+    // HUD-14c — hudColorshadows = Color(45,36,59) * 0.65, alpha 0.55
+    // (WinTrek/WinTrek.cpp:8684-8687). Native Color takes 0..1 FLOATS
+    // (zlib/color.h:33), so 45/36/59 are wildly out of range, and MakeD3DCOLOR
+    // packs MakeInt(255·c) WITHOUT clamping (engine/context.h:327). Simulating
+    // the truncation/bit-spill (MakeInt = (int), zlib/zmath.h:287): red=
+    // 255·(45·0.65)=7458, green=255·(36·0.65)=5967, blue=255·(59·0.65)=9779,
+    // alpha=255·0.55=140; the 8-bit packed bytes collide (45->bits spill) into
+    // ARGB(157, 111, 55, 51) — i.e. a dim muddy (0.435, 0.216, 0.200) at
+    // alpha ~0.62. That is a BUG (out-of-range floats, no clamp), not a
+    // designed colour. Per the standing rule the port uses the EVIDENT INTENT —
+    // a dim shadow tint at the designer's alpha 0.55 (the alpha HUD-14b
+    // dropped) — keeping the native-actual hue so the hull/shield backs stay
+    // visible; the near-black /255 reading of 45,36,59 is never used.
+    private static readonly Color HUDShadowTint = new(0.435f, 0.216f, 0.200f, 0.55f);
+
+    // HUD-14c/HUD-19 — native BlendModeAdd is SRCALPHA/ONE on STRAIGHT-alpha
+    // textures (engine/RasterD3D9.cpp:295-302), which equals One/One on the
+    // PREMULTIPLIED textures the port decodes (MdlTextureDecoder.ToPremultipliedRgba).
+    // Because the tint is multiplied into an already-premultiplied texel, a
+    // One/One pass must pre-scale the tint's rgb by its own alpha
+    // (native: src.rgb·src.a; premultiplied One/One: tex.rgb_premul·tint.rgb →
+    // tint.rgb := native.rgb·native.a). Shared by the classic gauge pass
+    // (HUD-14b) and the additive centre-indicator pass (HUD-19).
+    internal static readonly BlendState AdditiveOneOne = new()
+    {
+        ColorSourceBlend = Blend.One, AlphaSourceBlend = Blend.One,
+        ColorDestinationBlend = Blend.One, AlphaDestinationBlend = Blend.One,
+    };
+
+    /// <summary>HUD-19 — the One/One additive tint for a native BlendModeAdd
+    /// colour: rgb pre-scaled by alpha (see <see cref="AdditiveOneOne"/>).
+    /// Pure so tests pin the pre-scale without a graphics device.</summary>
+    internal static Color AdditiveTint(float r, float g, float b, float a) =>
+        new(r * a, g * a, b * a, 1f);
 
     protected readonly SpriteBatch _sb;
     protected readonly Texture2D _white;
@@ -60,6 +91,7 @@ public class HudRenderer
     private readonly LockTextures? _lockTextures;
     private readonly StatusTextures? _status;
     private readonly IndicatorTextures? _indicators;
+    private readonly Texture2D? _joystickMesh;
     private readonly TargetPaneTextures? _targetPaneTextures;
     private readonly InventoryPaneTextures? _inventoryTextures;
     private readonly HudNativeTextures? _nativeHud;
@@ -83,7 +115,8 @@ public class HudRenderer
         bool damageWash = true,
         HudNativeTextures? nativeHudTextures = null,
         bool gaugePercentage = false,
-        NativeFonts? nativeFonts = null)
+        NativeFonts? nativeFonts = null,
+        Texture2D? joystickMesh = null)
     {
         _sb = spriteBatch;
         _white = whitePixel;
@@ -94,6 +127,7 @@ public class HudRenderer
         _lockTextures = lockTextures;
         _status = statusTextures;
         _indicators = indicators;
+        _joystickMesh = joystickMesh;
         _targetPaneTextures = targetPaneTextures;
         _inventoryTextures = inventoryTextures;
         _nativeHud = nativeHudTextures;
@@ -109,9 +143,9 @@ public class HudRenderer
     /// <paramref name="frame"/> is null (i.e. before the client owns a ship yet);
     /// the telemetry widgets need a frame, so they are skipped until one exists.
     /// </summary>
-    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null, Vector2? targetBearing = null, LeaderBotCommand? leaderCommand = null, string? ripcordStatus = null, string? commandeeLabel = null, bool turretView = false, string? lodOverlay = null, IReadOnlyList<LastBaseHudView>? lastBaseObjectives = null)
+    public void Draw(HudFrame? frame, CameraMode mode, Viewport viewport, LockBracketView? lockBracket = null, LeadIndicatorView? leadIndicator = null, string? modeLabelOverride = null, TargetSelectionView? targetSelection = null, Vector2? targetBearing = null, LeaderBotCommand? leaderCommand = null, string? ripcordStatus = null, string? commandeeLabel = null, bool turretView = false, string? lodOverlay = null, IReadOnlyList<LastBaseHudView>? lastBaseObjectives = null, bool showJoystickIndicator = true)
         => Draw(HudModelAdapter.Create(frame, mode, lockBracket, leadIndicator, modeLabelOverride,
-            targetSelection, targetBearing, leaderCommand, ripcordStatus, commandeeLabel, turretView, lodOverlay, lastBaseObjectives: lastBaseObjectives), viewport);
+            targetSelection, targetBearing, leaderCommand, ripcordStatus, commandeeLabel, turretView, lodOverlay, lastBaseObjectives: lastBaseObjectives, showJoystickIndicator: showJoystickIndicator), viewport);
 
     /// <summary>Draw the classic skin from a resolved, graphics-independent model.</summary>
     public virtual void Draw(HudModel model, Viewport viewport)
@@ -166,6 +200,12 @@ public class HudRenderer
             // even without a ship) can reflect it; the tag just stays inert
             // until a frame exists.
             bool firing = frame is { } ff && ff.Firing;
+            // HUD-19 — the native-ADDITIVE centre indicators (the directioninbmp
+            // reticle and every centeroutbmp aim crosshair) draw in their own
+            // One/One additive pass (indicator.cpp:149-150, 268-276, 361-362,
+            // 399-400; engine/RasterD3D9.cpp:295-302). The procedural fallbacks
+            // (no artwork) and the Modern skin stay on the alpha batch below.
+            DrawCentreIndicatorsAdditive(model, viewport, firing, turretView);
             if (model.ReticleVisible)
                 {
                     DrawCrosshair(new Vector2(w / 2f, h / 2f), firing, turretView);
@@ -337,7 +377,12 @@ public class HudRenderer
             if (classicGaugesLoaded)
             {
                 _sb.End();
-                _sb.Begin(SpriteSortMode.Deferred, BlendState.Additive);
+                // HUD-14c — gauge textures are premultiplied (GaugeTextures.cs
+                // ToPremultipliedRgba) and so are the SpriteFont glyphs, so
+                // BlendState.Additive (SrcAlpha/One) would apply alpha twice;
+                // native BlendModeAdd SRCALPHA/ONE on straight-alpha == One/One
+                // here (engine/RasterD3D9.cpp:295-302).
+                _sb.Begin(SpriteSortMode.Deferred, AdditiveOneOne);
                 DrawGauges(model, viewport);
                 _sb.End();
                 _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
@@ -1146,6 +1191,26 @@ public class HudRenderer
             DrawPlain(back, spec.BackPoint, anchor, scale, HUDShadowTint);
     }
 
+    /// <summary>HUD-14c — the screen destination the back layer is drawn into
+    /// for <paramref name=\"spec\"/> (the exact rect <see cref=\"DrawBack\"/>
+    /// produces): for the arc gauges that is the <c>GaugeImageRect</c> band at
+    /// value 1 (identical to the fill band at fraction 1 — <see cref=\"DrawBack\"/>
+    /// routes the arc back through <see cref=\"DrawRevealed\"/>, which uses
+    /// <see cref=\"ClassicGaugeLayout.RevealDest\"/>); hull/shield backs are the
+    /// full-bleed plain rect at <see cref=\"ClassicGaugeSpec.BackPoint\"/>. Pure
+    /// so a renderer-level test can pin back==fill origin without a device.</summary>
+    internal Rectangle BackDestination(ClassicGaugeSpec spec, Vector2 anchor, float scale)
+    {
+        if (spec.Kind is GaugeKind.Thrust or GaugeKind.Fuel or GaugeKind.Ammo or GaugeKind.Energy)
+            return ClassicGaugeLayout.RevealDest(spec, 1f, anchor, scale);
+        var back = _gauges?.Back(spec.Kind);
+        float w = back?.Width ?? 0f, h = back?.Height ?? 0f;
+        return new Rectangle(
+            (int)MathF.Round(ClassicGaugeLayout.LayerLeftX(anchor, spec.BackPoint, scale)),
+            (int)MathF.Round(ClassicGaugeLayout.LayerTopY(anchor, spec.BackPoint, h, scale)),
+            (int)MathF.Round(w * scale), (int)MathF.Round(h * scale));
+    }
+
     /// <summary>
     /// Draw a full native layer (frame/spine/hull&shield back) at its group
     /// TranslateImage point (engine/image.cpp TranslateImage = child origin).
@@ -1200,12 +1265,14 @@ public class HudRenderer
     private void DrawGaugeLabel(HudGauge gauge, ClassicGaugeSpec spec, Vector2 anchor, float scale)
     {
         string label = ResolveGaugeLabel(gauge);
-        // LabelPoint is the native y-up child point; in screen y-down the text's
-        // top sits at anchor.Y − LabelPoint.Y·scale (fonts are out of scope, so
-        // the exact baseline/box-height term is not modelled).
-        float posY = anchor.Y - spec.LabelPoint.Y * scale;
+        // LabelPoint is the text's LOWER-LEFT in native y-up; in screen y-down
+        // the text's BOTTOM is anchor.Y − LabelPoint.Y·s, so its TOP is
+        // anchor.Y − LabelPoint.Y·s − textHeight (HUD-14c: the y-up anchor is
+        // the baseline/lower-left, not the top — the old code sat the label one
+        // text height too low).
         var gaugeFont = NativeFontAt(NativeFont.SmVerdana);   // native smVerdana (dialog.mdl:2204-2467)
         var size = gaugeFont.MeasureString(label);
+        float posY = ClassicGaugeLayout.LabelTopY(anchor, spec.LabelPoint, scale, size.Y * TextScale);
         // Native StringImage box is 100 wide (dialog.mdl); JustifyRight means
         // the text's right edge meets the box's right edge at Point.X+100.
         float x = spec.LabelRightAlign
@@ -1747,11 +1814,69 @@ public class HudRenderer
         _ => ("READY", TextDim),
     };
 
-    /// <summary>Center reticle: a thin circular ring (drawn as short line
-    /// segments), four cardinal tick notches, and a centre dot. Drawn in every
-    /// chase view too. When <paramref name="firing"/> (group-fire engaged) the
-    /// ring/ticks/dot render in the weapons-hot warning colour and a FIRING
-    /// tag appears beneath the ring.</summary>
+    /// <summary>
+    /// HUD-19 — draw the native-additive centre indicators through one One/One
+    /// pass (<see cref="AdditiveOneOne"/>): the cockpit <c>directioninbmp</c>
+    /// reticle and every <c>centeroutbmp</c> draw (cockpit aim predictor,
+    /// chase/missile aim point, chase aim with no target). Only the REAL
+    /// artwork participates here; the procedural fallbacks and the Modern skin
+    /// stay on the alpha batch. Begins/ends its own additive SpriteBatch
+    /// session inside the outer alpha batch (same pattern as the gauge pass).
+    /// </summary>
+    private void DrawCentreIndicatorsAdditive(HudModel model, Viewport viewport, bool firing, bool turretView)
+    {
+        // Native BlendModeAdd draws only when the artwork decoded (indicator.cpp
+        // falls back to a 2-D DrawImage for no art, which inherits the context
+        // blend — the port keeps those fallbacks on alpha).
+        bool hasReticle = !turretView && _indicators?.Reticle is not null;
+        bool hasAim = model.AimPredictorVisible && _indicators?.CrosshairOut is not null;
+        bool hasChase = model.ChaseAimVisible && _indicators?.CrosshairOut is not null;
+        if (!hasReticle && !hasAim && !hasChase) return;
+
+        _sb.End();
+        _sb.Begin(SpriteSortMode.Deferred, AdditiveOneOne);
+        try
+        {
+            if (hasReticle)
+            {
+                // Native directioninbmp reticle at view centre,
+                // Color(0.4,0.4,0.4,0.4) BlendModeAdd (indicator.cpp:149-150).
+                // One/One on the premultiplied texture ⇒ tint rgb = 0.4·0.4.
+                DrawCentered(_indicators!.Reticle!,
+                    new Vector2(viewport.Width / 2f, viewport.Height / 2f),
+                    AdditiveTint(0.4f, 0.4f, 0.4f, 0.4f));
+            }
+            if (hasAim)
+            {
+                var aim = model.Context.Lead!.Value;
+                Vector2 center = model.Context.Camera == CameraMode.Cockpit
+                    ? new Vector2(viewport.Width / 2f, viewport.Height / 2f)
+                    : new Vector2(aim.Center.X, aim.Center.Y);
+                // Native centeroutbmp (1-g,g,0) in range / (0.33,0.33,0.33,0.5)
+                // out of range, BlendModeAdd (indicator.cpp:361-362; chase/missile
+                // aim point indicator.cpp:268-276).
+                Color tint = aim.InRange
+                    ? AdditiveTint(1f - aim.Green, aim.Green, 0f, 1f)
+                    : AdditiveTint(0.33f, 0.33f, 0.33f, 0.5f);
+                DrawCentered(_indicators!.CrosshairOut!, center, tint);
+            }
+            if (hasChase)
+            {
+                var chase = model.Context.ChaseAim!.Value;
+                // Native centeroutbmp (0.33,0.33,0.33,0.5) BlendModeAdd
+                // (indicator.cpp:399-400).
+                DrawCentered(_indicators!.CrosshairOut!,
+                    new Vector2(chase.X, chase.Y),
+                    AdditiveTint(0.33f, 0.33f, 0.33f, 0.5f));
+            }
+        }
+        finally
+        {
+            _sb.End();
+            _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        }
+    }
+
     protected virtual void DrawCrosshair(Vector2 c, bool firing, bool turret)
     {
         var accent = firing ? Warning : Accent;
@@ -1759,14 +1884,14 @@ public class HudRenderer
         const int segments = 36;
         float radius = turret ? 34f : 26f;
 
-        // Native directioninbmp reticle at the exact view centre with native's
-        // (0.4,0.4,0.4,0.4) additive grey (indicator.cpp:149-150). Additive
-        // blending is approximated with alpha blend in this single-batch HUD;
-        // the firing-colour override below is a retained port extension.
-        if (!turret && _indicators?.Reticle is { } reticle)
+        // HUD-19 — the native directioninbmp reticle itself is now drawn
+        // additively in DrawCentreIndicatorsAdditive (indicator.cpp:149-150);
+        // here, when that artwork is present, only the port's FIRING tag
+        // remains (the reticle's grey/additive tint never touches the alpha
+        // batch). With no artwork the procedural ring fallback below runs.
+        bool nativeReticle = !turret && _indicators?.Reticle is not null;
+        if (nativeReticle)
         {
-            _sb.Draw(reticle, c, null, new Color(0.4f, 0.4f, 0.4f, 0.4f), 0f,
-                new Vector2(reticle.Width / 2f, reticle.Height / 2f), 1f, SpriteEffects.None, 0f);
             if (firing)
             {
                 string lbl = "FIRING";
@@ -1876,21 +2001,47 @@ public class HudRenderer
         // the native 1.05× radiusBracket clipped to the screen edge (308-319).
         float toEdge = MathF.Min(MathF.Min(v.Center.X, v.Center.Y),
             MathF.Min(_viewportWidth - v.Center.X, _viewportHeight - v.Center.Y));
-        float s = LockBracketStyle.HalfSizeForFraction(v.State, v.Fraction, v.ScreenRadius, toEdge);
+        float radius = LockBracketStyle.HalfSizeForFraction(v.State, v.Fraction, v.ScreenRadius, toEdge);
 
         Texture2D? tex = _lockTextures?.For(v.State);
         if (tex is { } t)
         {
-            // Scale the 64px real sprite so its on-screen span is 2*s px,
-            // centred on the target, preserving its real colours (White tint).
-            float scale = (2f * s) / t.Width;
-            _sb.Draw(t, v.Center, null, Color.White, 0f,
-                new Vector2(t.Width / 2f, t.Height / 2f), scale, SpriteEffects.None, 0f);
+            // HUD-19 — native draws the lock surface as four CENTRED
+            // quarter-bitmaps at (±delta, ±delta) (radarimage.cpp:255-277):
+            // the quarters keep their native pixel size and MOVE APART as the
+            // radius grows — they never scale (the old code squashed the whole
+            // 64px sprite to a 2·s span). White, alpha blend (native forces
+            // BlendModeSourceAlpha, radarimage.cpp:271).
+            float delta = RadarBracketRenderer.ExpandedBlipDelta(t.Width, t.Height, radius);
+            for (int q = 0; q < 4; q++)
+            {
+                _sb.Draw(t, ExpandedBlipQuadrantDest(q, t.Width, t.Height, v.Center, delta),
+                    RadarBracketRenderer.ExpandedBlipQuadrant(q, t.Width, t.Height), Color.White);
+            }
             return;
         }
 
         // Real sprite unavailable → procedural corner-L bracket fallback.
-        DrawLockBracketProcedural(v, s);
+        DrawLockBracketProcedural(v, radius);
+    }
+
+    /// <summary>HUD-19 — the screen destination of native DrawExpandedBlip
+    /// quadrant <paramref name="quadrant"/> (0=TL, 1=TR, 2=BR, 3=BL) for a
+    /// <c>w×h</c> surface: each QUARTER bitmap is drawn CENTRED (bCentered,
+    /// radarimage.cpp:272-275) at (±delta, ±delta) from <paramref name="center"/>,
+    /// so its top-left is <c>center + (±delta, ±delta) − (hw, hh)</c>. Pure and
+    /// GPU-free so the native quadrant placement is unit-testable.</summary>
+    internal static Rectangle ExpandedBlipQuadrantDest(int quadrant, int w, int h, Vector2 center, float delta)
+    {
+        // Each QUARTER (w/2 × h/2) is drawn centred at (±delta, ±delta)
+        // (radarimage.cpp:272-275), so its top-left is offset − (quarterW/2, quarterH/2).
+        int qw = w / 2, qh = h / 2;
+        float dx = quadrant is 1 or 2 ? delta : -delta;
+        float dy = quadrant is 2 or 3 ? delta : -delta;
+        return new Rectangle(
+            (int)MathF.Round(center.X + dx - qw / 2f),
+            (int)MathF.Round(center.Y + dy - qh / 2f),
+            qw, qh);
     }
 
     /// <summary>
@@ -2234,11 +2385,11 @@ public class HudRenderer
             ? new Color(1f - v.Green, v.Green, 0f)
             : new Color(0.33f, 0.33f, 0.33f, 0.5f);
 
-        if (_indicators?.CrosshairOut is { } crosshair)
-        {
-            DrawCentered(crosshair, center, col);
+        // HUD-19 — with the real centeroutbmp art the crosshair is drawn
+        // ADDITIVELY in DrawCentreIndicatorsAdditive; here only the no-art
+        // procedural fallback (alpha) runs.
+        if (_indicators?.CrosshairOut is not null)
             return;
-        }
 
         DrawCircleOutline(center.X, center.Y, 12f, col);
         FillRect(center.X - 2f, center.Y - 2f, 4f, 4f, col);
@@ -2260,28 +2411,43 @@ public class HudRenderer
     }
 
     /// <summary>
-    /// HUD-8 — native joystick turning indicator (indicator.cpp:154-177): a
-    /// pointer translated to centre − 100·(yaw,pitch), rotated by
-    /// atan2(pitch,yaw)+π/2 with the yaw-sign correction, scaled
-    /// 0.5+0.5·|control|, and alpha = |control|. Flat glyph approximation of the
-    /// native 3-D <c>joystickindicator</c> geometry.
+    /// HUD-8/HUD-19 — native joystick turning indicator (indicator.cpp:154-177):
+    /// translated to centre − 100·(yaw,pitch) in y-UP image space (screen:
+    /// centre − 100·yaw horizontally, centre + 100·pitch vertically), rotated by
+    /// atan2(pitch,yaw)+π/2 (+π if yaw<0), scaled |control|/2 + 0.5, alpha
+    /// 0.70 (texture) × |control|. HUD-19 renders the REAL native 6-vertex
+    /// <c>joystickindicator.mdl</c> chevron (baked once at load,
+    /// <see cref="JoystickMeshRasterizer"/>) instead of stroked lines, and
+    /// fixes the y-mirrored position/rotation (image space is y-up, so the
+    /// pitch term is +100·pitch on screen, not −).
     /// </summary>
     protected virtual void DrawJoystickIndicator(Vector2 center, float yaw, float pitch)
     {
-        float magnitude = MathF.Min(1f, MathF.Sqrt(yaw * yaw + pitch * pitch));
-        float angle = MathF.Atan2(pitch, yaw) + MathF.PI / 2f;
-        if (yaw < 0f) angle += MathF.PI;
-        var position = center - new Vector2(100f * yaw, 100f * pitch);
-        float scale = 0.5f + 0.5f * magnitude;
-        var colour = Color.White * magnitude;
+        float magnitude = JoystickLayout.Magnitude(yaw, pitch);
+        if (magnitude <= 0f) return;   // |control| = 0 → native alpha 0 (invisible)
+        var position = JoystickLayout.Position(center, yaw, pitch);
+        float scale = JoystickLayout.Scale(yaw, pitch);
 
-        var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+        if (_joystickMesh is { } mesh)
+        {
+            float rotation = JoystickLayout.Rotation(JoystickLayout.ApexDirection(yaw, pitch));
+            // Premultiplied white bake (alpha 0.70); tint by |control| so the
+            // combined alpha is 0.70·|control| (indicator.cpp:172 diffuse alpha).
+            _sb.Draw(mesh, position, null, Color.White * magnitude, rotation,
+                new Vector2(mesh.Width / 2f, mesh.Height / 2f), scale, SpriteEffects.None, 0f);
+            return;
+        }
+
+        // No baked mesh (test/reduced construction) — stroked-chevron fallback
+        // using the same native layout.
+        var apex = JoystickLayout.ApexDirection(yaw, pitch);
+        var side = new Vector2(-apex.Y, apex.X);
         float length = 14f * scale;
-        var tip = position + direction * length;
-        var back = position - direction * length;
-        var side = new Vector2(-direction.Y, direction.X) * (6f * scale);
-        DrawLine(back + side, tip, 2f, colour);
-        DrawLine(back - side, tip, 2f, colour);
+        var tip = position + apex * length;
+        var back = position - apex * length;
+        var colour = Color.White * magnitude;
+        DrawLine(back + side * (6f * scale), tip, 2f, colour);
+        DrawLine(back - side * (6f * scale), tip, 2f, colour);
         DrawLine(back, position, 1.5f, colour * 0.6f);
     }
 
@@ -2292,11 +2458,11 @@ public class HudRenderer
     protected virtual void DrawChaseAim(Vector2 position)
     {
         var grey = new Color(0.33f, 0.33f, 0.33f, 0.5f);
-        if (_indicators?.CrosshairOut is { } crosshair)
-        {
-            DrawCentered(crosshair, position, grey);
+        // HUD-19 — with the real centeroutbmp art the marker is drawn
+        // ADDITIVELY in DrawCentreIndicatorsAdditive; here only the no-art
+        // procedural fallback (alpha) runs.
+        if (_indicators?.CrosshairOut is not null)
             return;
-        }
         const float half = 10f;
         var corners = new[]
         {

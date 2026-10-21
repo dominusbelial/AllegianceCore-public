@@ -116,8 +116,8 @@ public sealed partial class Game1
         _flightGc.SetFlying(false);
         bool Press(Keys k) => ks.IsKeyDown(k) && !_graphicsPrevious.IsKeyDown(k);
         if (Press(Keys.Escape)) _graphicsSettingsVisible = false;
-        if (Press(Keys.Down)) _graphicsRow = (_graphicsRow + 1) % 12;
-        if (Press(Keys.Up)) _graphicsRow = (_graphicsRow + 11) % 12;
+        if (Press(Keys.Down)) _graphicsRow = (_graphicsRow + 1) % 13;
+        if (Press(Keys.Up)) _graphicsRow = (_graphicsRow + 12) % 13;
         int direction = Press(Keys.Right) ? 1 : Press(Keys.Left) ? -1 : 0;
         bool changed = direction != 0;
         if (changed)
@@ -129,6 +129,9 @@ public sealed partial class Game1
                 case 7: _hudSettings.Size = Math.Clamp(_hudSettings.Size + direction * .05f, .75f, 1.5f); break;
                 case 8: _hudSettings.ColorBlindSafe = !_hudSettings.ColorBlindSafe; break;
                 case 11: _hudSettings.RoundRadar = !_hudSettings.RoundRadar; break;
+                // HUD-19 — native Graphics Options "Joystick Indicator: On/Off"
+                // (WinTrek.cpp:4507,4526), toggled/saved at WinTrek.cpp:5222-5238.
+                case 12: _hudSettings.ShowJoystickIndicator = !_hudSettings.ShowJoystickIndicator; break;
                 case 0: _upscaling.Upscaling = _upscaling.Upscaling == UpscalingMode.Off ? UpscalingMode.FSR1 : UpscalingMode.Off; break;
                 case 1: _upscaling.Preset = (FsrPreset)(((int)_upscaling.Preset + direction + 4) % 4); break;
                 case 2: _upscaling.Sharpness = Math.Clamp(_upscaling.Sharpness + direction * .05f, 0, 1); break;
@@ -184,7 +187,8 @@ public sealed partial class Game1
                 $"Colour-blind safe palette: {(_hudSettings.ColorBlindSafe ? "On" : "Off")}",
                 $"Effects quality: {_upscaling.Effects}",
                 $"HD lighting (PBR, experimental): {(_upscaling.HdPbr ? "On" : "Off")}",
-                $"Round radar border: {(_hudSettings.RoundRadar ? "On" : "Off")}" };
+                $"Round radar border: {(_hudSettings.RoundRadar ? "On" : "Off")}",
+                $"Joystick indicator: {(_hudSettings.ShowJoystickIndicator ? "On" : "Off")}" };
             for (int i = 0; i < rows.Length; i++)
                 _spriteBatch.DrawString(_hudSmall, (_graphicsRow == i ? "> " : "  ") + rows[i], new Vector2(48, 78 + i * 46), _graphicsRow == i ? Color.Yellow : Color.White);
             _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, 300, 8), Color.Gray);

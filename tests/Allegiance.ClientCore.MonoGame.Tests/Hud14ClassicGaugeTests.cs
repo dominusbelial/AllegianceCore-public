@@ -181,14 +181,21 @@ public class Hud14ClassicGaugeTests
         // GaugeImageRect band at value 1 sharing the fill's rect and point
         // (thrustGaugeBack dialog.mdl:2175-2185 etc.), so at fraction 1 the back
         // band must land exactly on the fill band.
+        // HUD-14c — the back's destination comes from the BACK-DRAW PATH
+        // (HudRenderer.BackDestination, which DrawBack routes through), asserted
+        // against the fill band computed independently via RevealDest — not
+        // RevealDest compared with itself.
+        var renderer = (HudRenderer)System.Runtime.CompilerServices.RuntimeHelpers
+            .GetUninitializedObject(typeof(HudRenderer));
+        System.GC.SuppressFinalize(renderer);
         var centre = new Vector2(960f, 540f);
         foreach (var kind in new[] { GaugeKind.Thrust, GaugeKind.Fuel, GaugeKind.Ammo, GaugeKind.Energy })
         {
             var spec = ClassicGaugeTable.Spec(kind);
             var anchor = ClassicGaugeLayout.Anchor(centre, spec, ClassicGaugeLayout.PaneScale);
-            var backBand = ClassicGaugeLayout.RevealDest(spec, 1f, anchor, ClassicGaugeLayout.PaneScale);
+            var backBand = renderer.BackDestination(spec, anchor, ClassicGaugeLayout.PaneScale);
             var fillBand = ClassicGaugeLayout.RevealDest(spec, 1f, anchor, ClassicGaugeLayout.PaneScale);
-            Assert.Equal(backBand, fillBand);
+            Assert.Equal(fillBand, backBand);
             // Guard the HUD-14 regression itself: the back must be drawn as the
             // native Rect band (width x band-height), NOT stamped as the whole
             // 128px texture (which sat (15,10)·scale away and oversized the art).
@@ -348,5 +355,38 @@ public class Hud14ClassicGaugeTests
         var fuelGauge = new HudGauge(GaugeKind.Fuel, 0.9f, new HudPoint(0, 0), "FUEL",
             HudColor.TealAccent, false, true);
         Assert.Equal("FUEL", renderer.ResolveGaugeLabel(fuelGauge));
+    }
+
+    // ── 10. HUD-14c: lifepod model → OXY through the renderer; label y-up anchor ──
+
+    [Fact]
+    public void Lifepod_model_gives_the_fuel_gauge_the_OXY_label()
+    {
+        // HUD-14c — build a real lifepod-state HudModel and assert the Fuel
+        // gauge the renderer uses is labelled OXY (the old test only checked
+        // ResolveGaugeLabel on a hand-built gauge, never the model's pod state).
+        var lifepod = HudModel.Create(Frame with { IsAdriftLifepod = true });
+        var fuel = lifepod.Gauges.Single(g => g.Kind == GaugeKind.Fuel);
+        Assert.Equal("OXY", fuel.Label);
+        var renderer = (HudRenderer)System.Runtime.CompilerServices.RuntimeHelpers
+            .GetUninitializedObject(typeof(HudRenderer));
+        System.GC.SuppressFinalize(renderer);
+        Assert.Equal("OXY", renderer.ResolveGaugeLabel(fuel));
+    }
+
+    [Fact]
+    public void Label_top_is_lower_left_minus_text_height()
+    {
+        // HUD-14c — the native y-up LabelPoint is the text's LOWER-LEFT, so the
+        // screen TOP = anchor.Y − LabelPoint.Y·s − textHeight (the HUD-14/14b
+        // code used the point as the top, sitting the label one line too low).
+        var anchor = new Vector2(960f, 840f);
+        var labelPoint = new Vector2(16f, 135f);
+        const float scale = ClassicGaugeLayout.PaneScale;
+        const float textHeight = 20f;
+        float top = ClassicGaugeLayout.LabelTopY(anchor, labelPoint, scale, textHeight);
+        Assert.Equal(anchor.Y - labelPoint.Y * scale - textHeight, top);
+        // Sanity: the old (wrong) reading used the point directly as the top.
+        Assert.Equal(anchor.Y - labelPoint.Y * scale, top + textHeight);
     }
 }

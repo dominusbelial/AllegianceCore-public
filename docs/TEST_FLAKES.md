@@ -23,6 +23,16 @@ Both are classified **load flakes**, not regressions. The runner FAILs are
 preserved. See [P761b](reports/P761_PARITY_WAVE_UI10.md) and
 `~/allegiance-evidence/P761b/fast-tier.log`.
 
+## HUD-19 (2026-10-21)
+
+The single fast-tier run recorded one failure in untouched `Allegiance.Core`:
+`Allegiance.Core.Tests.P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate`
+(the log shows `conn-drop`/`GreetTimeout`/`ProtocolError`, i.e. a live-network
+greet timeout). The whole `P761bCommandRelayTests` class passed **3/3 exact-
+class isolated invocations** (5/5 each) unchanged, so it is recorded as a
+live-network load flake. HUD-19 touches only `Allegiance.ClientCore.Game`
+rendering/settings (no server, transport or relay code).
+
 ## P747 environment observation (2026-10-19)
 
 The one fast-tier run had **8,826 pass / 5 fail / 3 existing private-asset skips**;

@@ -24,11 +24,13 @@ public static class HudModelAdapter
         Vector2? velocityMarker = null, Vector2? chaseAim = null, HudOrderArrows? orderArrows = null,
         HudInventoryPane? inventoryPane = null,
         HudTargetPane? targetPane = null, bool roundRadar = false, float inventorySlide = 0f,
-        HudSnapshotBuffers? buffers = null)
+        HudSnapshotBuffers? buffers = null,
+        bool showJoystickIndicator = true)
         => HudModel.Create(frame, new HudContext
         {
             PodReturnInstruction = podReturnInstruction, HitConfirmation = hitConfirmation, Camera = mode, CameraLabel = cameraLabel, Hidden = hidden,
             Docked = docked, Dead = dead, CommandView = commandView, Turret = turret, RoundRadar = roundRadar,
+            ShowJoystickIndicator = showJoystickIndicator,
             VelocityMarker = velocityMarker is { } velocity ? Point(velocity) : null,
             ChaseAim = chaseAim is { } aimPoint ? Point(aimPoint) : null,
             OrderArrows = orderArrows,

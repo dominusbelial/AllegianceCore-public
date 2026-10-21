@@ -2868,6 +2868,7 @@ public sealed partial class Game1
             console: BuildConsoleText(),
             podReturnInstruction: $"{KeyOf("TargetFriendlyBaseNearest").Label} / {KeyOf("ToggleAutopilot").Label} AUTOPILOT TO BASE",
             roundRadar: _hudSettings.RoundRadar,
+            showJoystickIndicator: _hudSettings.ShowJoystickIndicator,
             buffers: _hudSnapshotBuffers);
         if (_hudSettings.Style == HudStyle.Classic) _radarRenderer.Draw(model, GraphicsDevice.Viewport);
         if (model.FlightVisible && model.Context.Contacts.Count > 0)
