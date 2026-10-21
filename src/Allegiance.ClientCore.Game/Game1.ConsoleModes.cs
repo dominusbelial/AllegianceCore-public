@@ -22,6 +22,13 @@ public sealed partial class Game1
     private ConsoleOverlayMask _lastOverlayMask;
     private bool _overlayMaskInitialized;
     private NativeComposeState _composeVisualState = NativeComposeState.NotComposing;
+    // P770 review: the live compose state for sound decisions. _composeVisualState
+    // only updates in UpdateConsoleOverlay and lags a frame (and stays Chat while the
+    // pane slides out), so it is not native's m_csComposeState.
+    private NativeComposeState LiveComposeState =>
+        _chatActive ? NativeComposeState.Chat
+        : _qcMenuOpen ? NativeComposeState.Quick
+        : NativeComposeState.NotComposing;
     private readonly ActionPressEdges _playerPingsPressEdges = new();
     private readonly FlightCameraZoom _flightZoom = new();
     private static readonly string[] ConsoleActions = ["ConModeCombat", "ConModeGameState", "ConModeNav",

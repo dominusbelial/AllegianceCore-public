@@ -1021,9 +1021,10 @@ public sealed partial class Game1
             else if (_chatActive) SendChatLine();
             else
             {
-                // HUD-10 — native StartChat() plays chatKeySound before it opens
-                // the composer (console.cpp:2422-2424; sounddef.mdl:324 text wave).
-                _sound?.PlayChatKey();
+                // SIM-0319 — native StartChat() plays chatKeySound before it
+                // opens the composer (console.cpp:2423; sounddef.mdl:324 text wave).
+                if (ChatKeySound.OnStartChat())
+                    _sound?.PlayChatKey();
                 _chatActive = true;
                 _chatBuffer.Clear();
             }

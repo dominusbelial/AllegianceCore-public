@@ -359,9 +359,10 @@ public sealed partial class Game1
         int verb = Rendering.CommandBarLayout.VerbColumn(x, y);
         if (verb >= 0)
         {
-            // Native OnVerbButton: play chatKeySound away from the shell state
-            // and arm the selected command (console.cpp:1264-1278).
-            _sound?.PlayChatKey();
+            // SIM-0317 — native OnVerbButton plays chatKeySound only away from
+            // the shell state (console.cpp:1266), then arms the selected verb.
+            if (ChatKeySound.OnVerb(LiveComposeState))
+                _sound?.PlayChatKey();
             _commandVerb = Rendering.CommandBarLayout.VerbCommandId(verb);
             Console.WriteLine($"[monogame] command verb -> {OrderLabel(_commandVerb)}");
             return true;

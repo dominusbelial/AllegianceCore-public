@@ -1186,10 +1186,11 @@ public sealed partial class Game1
             if (_chatBuffer.Length < MaxChatLen)
             {
                 _chatBuffer.Append(c);
-                // HUD-10 — native OnChar plays chatKeySound for every printable
-                // key while composing past the mouse-command state
-                // (console.cpp:2335-2339; sounddef.mdl:324 text wave).
-                _sound?.PlayChatKey();
+                // SIM-0318 — native OnChar plays chatKeySound for every
+                // printable key while composing past the mouse-command state
+                // (console.cpp:2337; sounddef.mdl:324 text wave).
+                if (ChatKeySound.OnChar(LiveComposeState))
+                    _sound?.PlayChatKey();
             }
             return;
         }

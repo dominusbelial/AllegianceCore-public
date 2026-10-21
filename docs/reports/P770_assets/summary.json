@@ -1,0 +1,30 @@
+{
+  "task": "P770",
+  "base_commit": "e96b994322b0edadb5b688289c49c416ac15a750",
+  "rows": ["SIM-0317", "SIM-0318", "SIM-0319"],
+  "native_rule": {
+    "on_verb": "m_csComposeState != c_csComposeShell (WinTrek/console.cpp:1266)",
+    "on_char": "m_csComposeState > c_csComposeMouseCommand (WinTrek/console.cpp:2337)",
+    "start_chat": "unconditional (WinTrek/console.cpp:2423)"
+  },
+  "port_decisions": {
+    "ChatKeySound.OnVerb": "state != NativeComposeState.Shell (ChatKeySound.cs:17)",
+    "ChatKeySound.OnChar": "state > NativeComposeState.MouseCommand (ChatKeySound.cs:27)",
+    "ChatKeySound.OnStartChat": "returns true (ChatKeySound.cs:34)"
+  },
+  "production_sites": {
+    "SIM-0317": "Game1.Commanding.cs:364 TryCommandBarPick",
+    "SIM-0318": "Game1.Session.cs:1192 OnTextInput",
+    "SIM-0319": "Game1.FlightInput.cs:1026 HandleChatCompose"
+  },
+  "test_counts": {
+    "P770ChatKeySoundTests": 16,
+    "decision_states_covered": 6
+  },
+  "verification": {
+    "solution_build": "0 warnings, 0 errors",
+    "fast_tier": "9594 tests PASS (276.5s)",
+    "new_tests_3x": "16/16 PASS each run"
+  },
+  "unreachable_states": "Shell and MouseCommand are never assigned to _composeVisualState in this port (only Chat/Quick/NotComposing), but the gates are kept to match native semantics."
+}
