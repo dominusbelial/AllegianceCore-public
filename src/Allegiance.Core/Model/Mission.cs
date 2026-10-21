@@ -97,6 +97,20 @@ public sealed partial class Mission : IMissionIgc
     /// <summary>FedSrv/FedSrv.CPP:13387-13417: permit allied ripcord anchors.</summary>
     public bool AllowAlliedRip { get; set; }
 
+    /// <summary>
+    /// P767 / SIM-0100 — the gate for the NPC wingman "getting ammo" resupply
+    /// latch. Native's trigger lives in <c>BaseClient::Reload</c>'s
+    /// <c>!m_fm.IsConnected()</c> branch (clintlib.cpp:3697-3717) — the offline
+    /// client that runs the sim itself — while FedSrv inherits
+    /// <c>IgcSite::Reload</c>'s <c>false</c> default (Igc/igc.h:4923), so native
+    /// MULTIPLAYER wingmen never do this. This port runs the sim on the server
+    /// for both modes, so the port gate stands in for the "offline" condition:
+    /// default <c>false</c> (native multiplayer semantics), set <c>true</c> by
+    /// <c>SkirmishOptions.CreateConfig</c> for single-player/skirmish games
+    /// (<c>GameConfig.NpcWingmanAmmoResupply</c>, the per-mission option).
+    /// </summary>
+    public bool NpcWingmanAmmoResupply { get; set; }
+
     /// <summary>Native bAllowAlliedViz (probeigc.cpp:459), firing reveal only.</summary>
     public bool AllowAlliedViz { get; set; }
 

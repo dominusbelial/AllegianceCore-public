@@ -3566,6 +3566,15 @@ public sealed partial class Ship : Model, IShipIgc
         // success (the manual round-trip's relay leg) — and to any host/P362
         // observer that wants the success/depleted distinction.
         Mission?.Site.AutoReloadTriggered(this, entries, anyApplied);
+
+        // P767 / SIM-0100 — native's wingman resupply trigger rides exactly
+        // this failure: BaseClient::Reload's ET_Weapon branch, when the cargo
+        // scan found nothing (nReloads <= 0) and the ship is a wingman
+        // (clintlib.cpp:3700-3717). Fires only on a REAL depleted attempt —
+        // debounced → NotAttempted never reaches it, and the IsGettingAmmo
+        // latch inside makes it exactly-once per depletion (the P361 debounce
+        // spacing applies as in native).
+        if (outcome == AutoReloadOutcome.Depleted) TryStartAmmoResupply(now);
         return outcome;
     }
 
@@ -5667,6 +5676,23 @@ public sealed partial class Ship : Model, IShipIgc
                 goalIsWarp = goal is not null;
             }
         }
+        // P767 / SIM-0100 — the carrier leg of the wingman resupply trip
+        // (clintlib.cpp:3706-3709): a c_habmLandOnCarrier wingman whose latch
+        // is set flies to the friendly c_habmCarrier ship it picked, through
+        // the SAME same-sector / ripcord / cross-cluster-warp resolution the
+        // P652 repair-retreat branch above uses. Landing resupplies through
+        // the existing P117 carrier-land core (PerformRelaunch refills the
+        // ammo pool, Server.Docking.cs:1236-1238) and the next undocked
+        // pre-plot clears the latch (shipIGC.cpp:1713-1720).
+        else if (_isGettingAmmo && _gettingAmmoCarrier is { Dead: false, Sector: { } ammoSector } ammoCarrier)
+        {
+            if (sector == ammoSector) goal = ammoCarrier.Position;
+            else if (!TryRipcordOrDefer(ammoSector.Id, now, $"resupply at carrier {ammoCarrier.Id}"))
+            {
+                goal = CrossClusterWarpGoal(ammoSector.Id, $"resupply at carrier {ammoCarrier.Id}");
+                goalIsWarp = goal is not null;
+            }
+        }
         else if (GotoWaypoint is { } gw)
         {
             if (sector.Id == gw.ClusterId)
@@ -5904,6 +5930,15 @@ public sealed partial class Ship : Model, IShipIgc
         // SteerToward above is untouched).
         if (rangeThrottle is { } rt)
             Controls = Controls with { Throttle = rt };
+
+        // P767 / SIM-0100 — the resupply goto burns the afterburner (native
+        // shipIGC.cpp:2752-2754 sets bWingmanUseAfterburner for
+        // m_bRunningAway || m_bGettingAmmo on a c_cidGoto plan, applied after
+        // the move at :2830-2833 when the throttle is 1 — full send). The
+        // running-away half is the P652 retreat's business and stays untouched;
+        // this adds only the getting-ammo half.
+        if (_isGettingAmmo && Controls.Throttle >= 1f)
+            StateM |= ShipControlState.AfterburnerButton;
     }
 
     /// <summary>
@@ -7424,6 +7459,38 @@ public sealed partial class Ship : Model, IShipIgc
     private bool _droneClockInitialized;
     public bool IsRunningAway { get; private set; }
 
+    private bool _isGettingAmmo;
+    /// <summary>P767 / SIM-0100 — the wingman "getting ammo" latch, the port
+    /// of native <c>CshipIGC::m_bGettingAmmo</c> (shipIGC.h:2604; set by
+    /// <c>SetGettingAmmo(true)</c> from <c>BaseClient::Reload</c>'s wingman
+    /// branch, clintlib.cpp:3716). Set when a depleted NPC wingman plans a
+    /// goto to the nearest friendly reload-capable station (or a landable
+    /// carrier), cleared when ammo arrives in the pre-plot
+    /// (shipIGC.cpp:1713-1720) and on any new plan (shipIGC.h:761). While it
+    /// holds, the resupply goto burns the afterburner (shipIGC.cpp:2752-2754
+    /// → :2830-2833) and the in-range target scan is skipped.</summary>
+    public bool IsGettingAmmo => _isGettingAmmo;
+
+    /// <summary>P767 test seam — the carrier leg's target, when the trip is to
+    /// a carrier rather than a station (InternalsVisibleTo).</summary>
+    internal Ship? GettingAmmoCarrier => _gettingAmmoCarrier;
+
+    /// <summary>P767 — the friendly carrier a c_habmLandOnCarrier wingman is
+    /// flying to for resupply (native's <c>c_ttShip</c> branch of the same
+    /// FindTarget, clintlib.cpp:3706-3709 with the OT_ship ability
+    /// interpretation c_sabmReload → c_habmCarrier, common.cpp:541-551). The
+    /// port's plan slot for stations (<see cref="PlanTarget"/>) is
+    /// station-typed, so the carrier target rides its own slot consumed by
+    /// <see cref="ApplyNpcAutopilot"/> like the P652 repair-retreat ship.</summary>
+    private Ship? _gettingAmmoCarrier;
+
+    /// <summary>P767 / SIM-0100 — salNoAmmoSound, the voice-over the native
+    /// wingman resupply chat carries (clintlib.cpp:3713-3714, commented
+    /// "//salNoAmmoSound"). The port's generated catalog binds the
+    /// "salNoAmmoSound" definition to SoundID 1409
+    /// (NativeVoiceCatalog.Generated.cs:187,976).</summary>
+    private const short SalNoAmmoSound = 1409;
+
     private Asteroid? _builderAsteroidTarget;
     /// <summary>The accepted constructor build target while traveling, before
     /// drilling begins (shipIGC.cpp:1756-1777,2810-2827).</summary>
@@ -7475,6 +7542,161 @@ public sealed partial class Ship : Model, IShipIgc
         IsRunningAway = false;
         _orderBeforeRetreat = null;
         _retreatRepairShip = null;
+        // P767 / SIM-0100 — a new plan clears the getting-ammo latch (native
+        // SetCommand(c_cmdPlan) for a pilot below c_ptPlayer resets
+        // m_bGettingAmmo alongside m_bRunningAway, shipIGC.h:755-762).
+        _isGettingAmmo = false;
+        _gettingAmmoCarrier = null;
+    }
+
+    /// <summary>
+    /// P767 / SIM-0100 — the NPC wingman resupply trigger, the port of
+    /// native <c>BaseClient::Reload</c>'s wingman branch
+    /// (clintlib.cpp:3700-3717): a FAILED weapon reload (no pack in the cargo
+    /// hold, <c>nReloads &lt;= 0</c>) on a <c>c_ptWingman</c> ship finds the
+    /// nearest friendly reload target — a station whose type carries
+    /// <c>c_sabmReload</c>, or, when the wingman's hull can land on one, a
+    /// friendly carrier whose base hull carries <c>c_habmCarrier</c>
+    /// (common.cpp:541-551 interprets <c>c_sabmReload</c> on OT_ship) — sets
+    /// the plan to goto it, sends the team chat "Out of ammo, I'm getting
+    /// resupplies." (salNoAmmoSound) and latches
+    /// <see cref="IsGettingAmmo"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Gate.</b> Native only reaches this in the OFFLINE branch of
+    /// <c>BaseClient::Reload</c> (<c>!m_fm.IsConnected()</c>, clintlib.cpp:3697;
+    /// the else at ~3697 that continues past the cargo scan) — FedSrv inherits
+    /// <c>IgcSite::Reload</c>'s <c>false</c> default (igc.h:4923), so native
+    /// multiplayer wingmen never resupply-travel. This port runs the sim
+    /// server-side in both modes, so the gate is the explicit
+    /// <see cref="Model.Mission.NpcWingmanAmmoResupply"/> option (default
+    /// false = native multiplayer; <c>SkirmishHost</c> turns it on for
+    /// single-player games).</para>
+    /// <para><b>Exactly once per depletion.</b> Called only from
+    /// <see cref="TryAutoReloadAmmo"/>'s Depleted outcome — itself debounced by
+    /// the P361 rate limit — and the latch inside suppresses repeats once a
+    /// target has been picked (native re-runs the branch only on the next
+    /// failed <c>Reload</c> ask, i.e. the next zero-transition).
+    /// <see cref="FindResupplyTarget"/> returning null (no qualifying station
+    /// or carrier reachable) leaves the latch unset and stays quiet, exactly
+    /// like native's <c>if (pmodel)</c> guard (clintlib.cpp:3711).</para>
+    /// <para><b>Order matters</b>: the plan writes run FIRST and
+    /// <c>SetGettingAmmo(true)</c> comes after, the same order as native
+    /// (clintlib.cpp:3711-3716). The plan writes run under the
+    /// <c>_changingRetreatPlan</c> guard (the same pattern as the
+    /// damage-retreat writes, <see cref="UpdateDamageRetreat"/>), so the
+    /// <see cref="PlanTarget"/> setter neither forgets the accepted wingman
+    /// attack order (native writes ONLY the plan slot here — the accepted slot
+    /// is untouched and the post-trip "check for running" logic resumes it,
+    /// shipIGC.cpp:1936-1939) nor resets the still-unset latch. Because the
+    /// guard makes <see cref="DronePlanChanged"/> return early, that method's
+    /// new-plan resets (running-away ends, shipIGC.h:758-760) are done by hand.</para>
+    /// </remarks>
+    private void TryStartAmmoResupply(double now)
+    {
+        if (_isGettingAmmo || !IsNpc || PilotType != PilotTypeWingman || Dead ||
+            StationId is not null || ParentShip is not null ||
+            Mission?.NpcWingmanAmmoResupply != true) return;
+
+        var (station, carrier) = FindResupplyTarget();
+        if (station is null && carrier is null) return;   // clintlib.cpp:3711 — no target: no plan, no chat, no latch
+
+        // Native writes ONLY the plan slot (SetCommand(c_cmdPlan, pmodel,
+        // c_cidGoto), clintlib.cpp:3711-3712); the accepted slot is untouched,
+        // and after the trip the "check for running" plan logic resumes the
+        // accepted order (shipIGC.cpp:1936-1939). The PlanTarget setter's
+        // accepted-attack forget is a plan-write side effect, so it is
+        // suppressed with the same _changingRetreatPlan guard the retreat
+        // writes use (Ship.cs:8155) — the accepted order survives the trip.
+        _changingRetreatPlan = true;
+        try
+        {
+            if (station is { } st)
+            {
+                PlanTarget = st;                          // SetCommand(c_cmdPlan, pmodel, c_cidGoto) — station leg
+                PlanCommandId = OrderChange.CidGoto;
+            }
+            else
+            {
+                // Carrier leg (clintlib.cpp:3706-3709): the plan slot still gets
+                // its write — goto with no station target — so a stale PlanTarget
+                // cannot outrank the carrier branch in ApplyNpcAutopilot and the
+                // SIM-0110 recovery cannot promote the accepted order over the
+                // trip; the carrier itself rides <see cref="_gettingAmmoCarrier"/>.
+                PlanTarget = null;
+                PlanCommandId = OrderChange.CidGoto;
+            }
+            // The guard makes DronePlanChanged return early, so its new-plan
+            // resets run here by hand (native SetCommand(c_cmdPlan) for a
+            // sub-player pilot ends running-away, shipIGC.h:758-760).
+            IsRunningAway = false;
+            _orderBeforeRetreat = null;
+            _retreatRepairShip = null;
+            // P767c — the remaining SetCommand(c_cmdPlan) sub-player resets
+            // (shipIGC.h:758-763), mirrored from DronePlanChanged:
+            // m_fractionLastOrder, m_timeRanAway, m_targetFirstNotSeen and
+            // m_checkCooldown.
+            _fractionLastOrder = Fraction;
+            _timeRanAway = LastUpdate;
+            _targetFirstNotSeen = null;
+            _wingmanCheckCooldown = 0;
+        }
+        finally
+        {
+            _changingRetreatPlan = false;
+        }
+        _gettingAmmoCarrier = carrier;                    // carrier leg — consumed by ApplyNpcAutopilot (station leg: null)
+        _isGettingAmmo = true;                            // SetGettingAmmo(true) — AFTER the plan writes (clintlib.cpp:3716)
+        SendDroneChat(SalNoAmmoSound, "Out of ammo, I'm getting resupplies.");
+    }
+
+    /// <summary>P767 — the resupply-target search: nearest friendly
+    /// <c>c_sabmReload</c> station or (when this hull can land on a carrier)
+    /// friendly <c>c_habmCarrier</c> ship, own sector first by squared
+    /// distance (common.cpp:575-578 strict-&lt;), then the established
+    /// cross-cluster BFS widening over stations
+    /// (<see cref="FindNearestFriendlyStationAnyCluster"/>).
+    /// <para><b>Stated reduction</b>: carrier candidates are searched in the
+    /// ship's OWN sector only — native's single FindTarget with
+    /// <c>c_ttAnyCluster</c> widens to remote clusters for ships too
+    /// (common.cpp:648-700), but the port's carrier leg has no cross-cluster
+    /// BFS of its own; a cross-cluster station is found instead, which native
+    /// would only pick if it were nearer by its own comparator. Never silent:
+    /// documented here and in the P767 report.</para></summary>
+    private (DataStationIGC? Station, Ship? Carrier) FindResupplyTarget()
+    {
+        if (Sector is not { } sector || SideId is not { } sideId) return (null, null);
+
+        DataStationIGC? bestStation = null;
+        Ship? bestCarrier = null;
+        float bestDistanceSquared = float.MaxValue;
+
+        foreach (var st in sector.Stations)
+        {
+            if (st.SideId != sideId && !IsFriendlySide(st.SideId)) continue;   // c_ttFriendly (common.cpp:269-321)
+            if (Mission?.Core.StationTypes.TryGetValue(st.StationTypeId, out var type) != true ||
+                !type.HasCapability(DataStationTypeIGC.SabmReload)) continue;   // c_sabmReload (common.cpp:321)
+            if (st.Position is not { Length: 3 } p) continue;
+            float d2 = (new Vector3(p[0], p[1], p[2]) - Position).LengthSquared();
+            if (d2 < bestDistanceSquared) { bestDistanceSquared = d2; bestStation = st; bestCarrier = null; }
+        }
+
+        // The c_ttShip arm only exists when the wingman's hull can land on a
+        // carrier (clintlib.cpp:3706-3709); the ability it filters ships by is
+        // c_habmCarrier (common.cpp:541-551).
+        if (HullType.HasCapability(DataHullTypeIGC.HabmLandOnCarrier))
+        {
+            foreach (var ship in sector.GetShipUpdateCandidates())
+            {
+                if (ship == this || ship.Dead || ship.SideId != sideId ||
+                    !ship.HullType.HasCapability(DataHullTypeIGC.HabmCarrier)) continue;
+                float d2 = (ship.Position - Position).LengthSquared();
+                if (d2 < bestDistanceSquared) { bestDistanceSquared = d2; bestCarrier = ship; bestStation = null; }
+            }
+        }
+
+        if (bestStation is not null || bestCarrier is not null) return (bestStation, bestCarrier);
+        return (FindNearestFriendlyStationAnyCluster(DataStationTypeIGC.SabmReload), null);
     }
 
     /// <summary>Native SetRunawayCheckCooldown (shipIGC.h:1737-1739), used
@@ -8403,6 +8625,35 @@ public sealed partial class Ship : Model, IShipIgc
         TryTeleportUnload();
         TryStartBuilderBuild(now);
 
+        // P767 / SIM-0100 — the port of CshipIGC::PreplotShipMove's
+        // getting-ammo clear (shipIGC.cpp:1713-1720): autopilot on (every
+        // plotted NPC here is), no parent ship, not building, and the ammo has
+        // arrived (GetAmmo() > 0) → drop the latch and the resupply plan
+        // (SetCommand(c_cmdPlan, NULL, c_cidNone)) so the accepted order or
+        // the default decision resumes. Docked ships returned at the top of
+        // OnUpdate, so the latch survives a docked mid-resupply and clears on
+        // the first UNDOCKED pre-plot — undock happens first (a station-dock
+        // restock refills the pool while docked; see ServerHost's
+        // DockWithStationEvent resupply refill). A dead resupply carrier also
+        // drops the latch: there is nothing left to fly to.
+        if (_isGettingAmmo && ParentShip is null && !IsBuilding)
+        {
+            // An unreachable carrier (dead, gone from space, or changed side)
+            // makes native's plan illegal; SetCommand then clears the latch.
+            if (_gettingAmmoCarrier is { } gc && (gc.Dead || gc.Sector is null || gc.SideId != SideId))
+            {
+                _gettingAmmoCarrier = null;
+                _isGettingAmmo = false;
+            }
+            else if (Ammo > 0)
+            {
+                _isGettingAmmo = false;                 // m_bGettingAmmo = false (shipIGC.cpp:1717)
+                _gettingAmmoCarrier = null;
+                PlanTarget = null;                      // SetCommand(c_cmdPlan, NULL, c_cidNone) (shipIGC.cpp:1718)
+                PlanCommandId = OrderChange.CidNone;
+            }
+        }
+
         // P155 — compute Controls for IsNpc ships with a reachable PlanTarget
         // BEFORE the flight model reads them (ExecuteMove derives all motion
         // from Controls). Real player ships (IsNpc false) are never touched.
@@ -8439,10 +8690,19 @@ public sealed partial class Ship : Model, IShipIgc
         // one aims at the new threat).
         if (IsNpc && (PilotType == PilotTypeWingman || PilotType == PilotTypeCheatPlayer) && !IsRunningAway)
         {
-            if (DefendTarget is not null)
-                UpdateWingmanDefend();
-            if (HasRepairOrder) UpdateWingmanRepair(now, (float)dt);
-            else UpdateWingmanCombat((float)dt);
+            // P767 / SIM-0100 — a getting-ammo wingman is on a goto plan and
+            // skips the in-range target scan (native shipIGC.cpp:2752-2762:
+            // the c_cidGoto plan branch with m_bGettingAmmo only burns the
+            // afterburner); the combat plot would also wipe the
+            // AfterburnerButton this tick's autopilot just set. The rest of
+            // the tick (ExecuteMove, parts) still runs.
+            if (!_isGettingAmmo)
+            {
+                if (DefendTarget is not null)
+                    UpdateWingmanDefend();
+                if (HasRepairOrder) UpdateWingmanRepair(now, (float)dt);
+                else UpdateWingmanCombat((float)dt);
+            }
         }
 
         ExecuteMove(now - dt, now);   // flight kinematics for exactly this chunk
@@ -8582,13 +8842,32 @@ public sealed partial class Ship : Model, IShipIgc
                 PlanCommandId = OrderChange.CidNone;
             }
 
-            if (PlanTarget is null && AcceptedTarget is { } accepted &&
+            // P767b — the accepted-order promotion is skipped while the
+            // getting-ammo latch holds: the resupply trip owns the plan slot
+            // (native's wingman branch writes c_cmdPlan ONLY, clintlib.cpp:3711
+            // — the accepted slot resumes AFTER the trip, shipIGC.cpp:1936-1939).
+            // Promoting it mid-trip would call DronePlanChanged and clear the
+            // latch + carrier on the next tick.
+            if (PlanTarget is null && !_isGettingAmmo && AcceptedTarget is { } accepted &&
                 IsLegalCommand(AcceptedCommandId, accepted))       // LegalCommand(Accepted), shipIGC.cpp:1936
             {
                 PlanTarget = accepted;
                 PlanCommandId = AcceptedCommandId;                 // SetCommand(c_cmdPlan, target, cid), shipIGC.cpp:1939
             }
-            else if (PlanTarget is null)
+            // P767c — the default-order decision is skipped while the
+            // getting-ammo latch holds too. Native only enters this recovery
+            // when the plan slot is ILLEGAL (shipIGC.cpp:1934:
+            // !LegalCommand(m_commandIDs[c_cmdPlan], …)); while getting ammo
+            // the plan IS the resupply goto — the carrier ship or the reload
+            // station (clintlib.cpp:3711-3712) — so neither the accepted-order
+            // promotion (shipIGC.cpp:1936-1939) nor PickDefaultOrder (:1943)
+            // runs mid-trip. The port's carrier leg carries its goto in
+            // PlanCommandId with a null PlanTarget, which reads as "no plan"
+            // here, so this latch guard is what preserves native's shape: a
+            // visible enemy must not pull the wingman off the trip
+            // (DecideWingmanDefaultOrder → SetWingmanAttackOrder →
+            // DronePlanChanged would clear the latch and the carrier).
+            else if (PlanTarget is null && !_isGettingAmmo)
             {
                 // P160 — the mining/selling/contention machinery is
                 // Miner-specific. Only a ship whose drone-type pilot type is

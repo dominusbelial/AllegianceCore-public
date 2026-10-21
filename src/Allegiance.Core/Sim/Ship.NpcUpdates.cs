@@ -116,6 +116,11 @@ public sealed partial class Ship
     // becomes a cluster buoy; goto periodically reacquires or attacks priority.
     private void UpdateWingmanTravel(double now)
     {
+        // P767 / SIM-0100 — a getting-ammo wingman keeps its resupply goto and
+        // skips the periodic in-range target scan / interrupted-goto restore
+        // (native shipIGC.cpp:2752-2762: the c_cidGoto plan branch with
+        // m_bGettingAmmo does nothing but set bWingmanUseAfterburner).
+        if (_isGettingAmmo) return;
         if (ActiveWingmanTarget is Ship target && target.Sector != Sector)
         {
             bool follow = false;

@@ -104,7 +104,11 @@ public sealed record SkirmishOptions
                 SideNames = [Civilizations.First(c => c.Id == PlayerCiv).Name, Civilizations.First(c => c.Id == EnemyCiv).Name],
                 // Worker probes and the research commander may occupy additional seats.
                 MaxPlayersPerTeam = TeamSize + 10, MaxTeamImbalance = 0x7fff,
-                ResearchPlans = new() { [0] = "auto", [1] = "auto" }
+                ResearchPlans = new() { [0] = "auto", [1] = "auto" },
+                // P767 / SIM-0100 — a skirmish embeds the offline case: native's
+                // wingman resupply latch only fires when the client runs the sim
+                // (!m_fm.IsConnected(), clintlib.cpp:3697-3717).
+                NpcWingmanAmmoResupply = true
             }]
         };
     }

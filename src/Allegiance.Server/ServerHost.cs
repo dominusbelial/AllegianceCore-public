@@ -1177,6 +1177,18 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
         sh.StationId = ds.Station.StationId;
 
+        // P767c — decide the resupply BEFORE the plan clear below: the
+        // PlanTarget/PlanCommandId setters call DronePlanChanged(), which
+        // clears the getting-ammo latch (Ship.DronePlanChanged, Ship.cs:7548).
+        // The previous gate read sh.IsGettingAmmo AFTER that clear, so it was
+        // always false — a latched wingman docked, undocked with 0 ammo and
+        // re-tripped forever. Same gate condition as before: the docked
+        // station's type must carry the reload ability (c_sabmReload).
+        bool resupply = sh.IsNpc && sh.IsGettingAmmo &&
+            sh.Sector?.StationRuntimes.FirstOrDefault(s => s.StationId == ds.Station.StationId)
+                is { } resupplyStation &&
+            resupplyStation.Type.HasCapability(DataStationTypeIGC.SabmReload);
+
         // P386 — an NPC's return-to-sell PlanTarget is never cleared anywhere
         // else in the codebase (grepped: zero `PlanTarget = null` outside
         // Ship.cs, and even those are decision-cycle locals, never an
@@ -1214,6 +1226,32 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             var pcNote = $"[npc] ship {sh.Id} arrived at station {ds.Station.StationId} — {(sh.IsRunningAway ? "repair retreat order retained" : "PlanTarget/AcceptedTarget cleared, ready to re-decide next tick")}";
             Console.WriteLine(pcNote);
             ReportNotable(pcNote);                 // spectator event feed (same text as dockNote)
+        }
+
+        // P767 / SIM-0100 — the resupply EFFECT of the wingman getting-ammo
+        // trip: a latched NPC wingman docking at a c_sabmReload station gets
+        // its ammo pool refilled, so the trip actually ends resupplied.
+        // Native timing: the offline client (the only mode that latches,
+        // igc.h:4923) refills at dock — WinTrekClient::DockWithStationEvent ->
+        // CstationIGC::RepairAndRefuel (trekigc.cpp:4124-4128,
+        // stationIGC.cpp:480-497, c_sabmReload). The port's launch already
+        // refills via ChangeStation -> RepairAndRefuel (FedSrv.CPP:13189,
+        // ServerHost.cs ChangeStation, P760); this dock-time ammo set mirrors
+        // the offline timing (ammo only, not fuel/packs).
+        // Latch clear: the P386 plan clear above already ran
+        // DronePlanChanged, which drops the latch + carrier slot — the same
+        // effect as native's SetCommand(c_cmdPlan, NULL, c_cidNone) clearing
+        // m_bGettingAmmo for a sub-player pilot (shipIGC.h:758-763). If the
+        // dock lands while running away (the clear branch above is skipped),
+        // the latch survives and the undocked clear-on-ammo pre-plot drops it
+        // (shipIGC.cpp:1713-1720, Ship.OnUpdate). Either way the refill leaves
+        // Ammo = MaxAmmo, so no Depleted zero-transition — no re-trip on the
+        // next ticks; the P381 auto-launch undocks the wingman ~10 s later and
+        // the normal decision loop then resumes its default order.
+        if (resupply)
+        {
+            sh.Ammo = sh.HullType.MaxAmmo;
+            Console.WriteLine($"[npc] ship {sh.Id} resupplied at reload station {ds.Station.StationId} — ammo {sh.Ammo}/{sh.HullType.MaxAmmo} (SIM-0100 getting-ammo trip)");
         }
 
         // P551: sell any carried ore at the dock transition — the port of the

@@ -41,6 +41,20 @@ public sealed class GameConfig
 {
     /// <summary>Native bAllowDevelopments, FedSrv/fsmission.cpp:2520.</summary>
     public bool AllowDevelopments { get; set; } = true;
+
+    /// <summary>
+    /// P767 / SIM-0100 — enables the NPC wingman "getting ammo" resupply
+    /// latch (mission option <c>Mission.NpcWingmanAmmoResupply</c>). Native's
+    /// trigger lives only in the offline client (<c>BaseClient::Reload</c>'s
+    /// <c>!m_fm.IsConnected()</c> branch, clintlib.cpp:3697-3717); FedSrv
+    /// inherits <c>IgcSite::Reload</c>'s <c>false</c> default (Igc/igc.h:4923),
+    /// so native MULTIPLAYER wingmen never resupply-travel. Default
+    /// <c>false</c> = that native multiplayer behaviour; single-player/skirmish
+    /// (<c>SkirmishOptions.CreateConfig</c>) sets it <c>true</c>, mirroring the
+    /// offline client where the wingman latches, flies to the nearest
+    /// <c>c_sabmReload</c> station (or a landable carrier) and chats "Out of
+    /// ammo, I'm getting resupplies."</summary>
+    public bool NpcWingmanAmmoResupply { get; set; }
     public bool AllowShipyardPath { get; set; } = true;
     public bool AllowExpansionPath { get; set; } = true;
     public bool AllowTacticalPath { get; set; } = true;

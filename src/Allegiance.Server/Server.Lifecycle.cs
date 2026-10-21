@@ -1209,6 +1209,7 @@ public sealed partial class Server
         mission.ShowcaseIncomeMultiplier = _config.Showcase.IncomeMultiplier;
         mission.AllowDevelopments = g.AllowDevelopments;
         mission.AllowAlliedRip = g.AllowAlliedRip;
+        mission.NpcWingmanAmmoResupply = g.NpcWingmanAmmoResupply;   // P767 / SIM-0100
         mission.CrowdingPenaltyEnabled = _config.Sim.CrowdingEnabled;
         g.Treasure.Validate();
         mission.TreasureParameters = g.Treasure;
