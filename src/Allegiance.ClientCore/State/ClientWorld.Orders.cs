@@ -139,8 +139,61 @@ public sealed partial class ClientWorld
         return true;
     }
 
+    /// <summary>P761b — the ship's accepted-command text, the native
+    /// <c>CurrentCommandText(pship)</c> (<c>WinTrek/teampane.cpp:1660-1676</c>):
+    /// <c>szVerb</c> plus " " + the target's model name, or just the verb when
+    /// the slot has no target. Empty when the slot is unset (<c>c_cidNone</c>) or
+    /// carries an id outside native's <c>[0, c_cidMax)</c> verb table
+    /// (<c>Igc/common.cpp:41-52</c>) — the same empty string native returns from
+    /// its <c>!LegalCommand</c> guard.</summary>
+    public string AcceptedCommandText(short shipId)
+    {
+        // P761c — the OWN ship's accepted text comes from the client-local
+        // MyAcceptedCommand, exactly like native (the server never echoes an
+        // ORDER_CHANGE back to the commanded ship; appmsg.cpp:1838). The other
+        // ships' text comes from the relayed entity slot.
+        if (shipId == MyShipId)
+            return MyAcceptedCommand is { } mine
+                ? OrderChange.AcceptedCommandText(mine.CommandId,
+                    mine.TargetId == Na ? null : TargetNameFor((short)mine.TargetType, mine.TargetId))
+                : "";
+        return _ships.TryGetValue(shipId, out var ship)
+            ? OrderChange.AcceptedCommandText(ship.AcceptedCommandId,
+                ship.AcceptedTargetType is { } type
+                    ? TargetNameFor(type, ship.AcceptedTargetId)
+                    : null)
+            : "";
+    }
+
+    /// <summary>The model name of a command target, or null when the id does not
+    /// resolve in this client's tables (native <c>GetModelName(NULL)</c> → the
+    /// bare-verb branch). Reuses <see cref="TryCommandTarget"/>'s per-type name
+    /// resolution.</summary>
+    public string? TargetNameFor(short objectType, short objectId)
+        => TryCommandTarget(
+                new QueuedCommandState(OrderChange.CidNone, (IgcObjectType)objectType, objectId),
+                out _, out string name)
+            ? name
+            : null;
+
     private void Apply(OrderChange order)
     {
+        // P761b — native applies ORDER_CHANGE to ANY ship in the client core
+        // (clintlib/appmsg.cpp:1831-1855: `if (pship != m_ship)
+        // pship->SetCommand(...)`); the server forwards every accepted-command
+        // change to the whole side (FedSrv/FedSrv.CPP:13695-13732). Storing the
+        // slot on the ship entity is what lets the team pane's OBJECTIVE column
+        // sort by command text (CurrentCommandText, WinTrek/teampane.cpp:1660-1676).
+        // P761c — NEVER write the entity slot for the OWN ship: native's client
+        // skips `pship == m_ship` (appmsg.cpp:1838), and an echo would wipe a
+        // station order's locally-set target. Own text reads MyAcceptedCommand.
+        if (order.Command == OrderChange.CmdAccepted && order.ShipID != MyShipId
+            && _ships.TryGetValue(order.ShipID, out var commanded))
+        {
+            commanded.AcceptedCommandId = order.CommandId;
+            commanded.AcceptedTargetType = order.ObjectID == Na ? null : (short)order.ObjectType;
+            commanded.AcceptedTargetId = order.ObjectID;
+        }
         if (order.ShipID != MyShipId) return;
         if (order.Command == OrderChange.CmdAccepted)
         {

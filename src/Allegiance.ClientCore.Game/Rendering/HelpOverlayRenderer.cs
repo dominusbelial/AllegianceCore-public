@@ -67,7 +67,10 @@ public sealed class HelpOverlayRenderer
         // A large, near-full-screen reference panel (unlike the starmap's
         // compact pane): the player consults this briefly and closes it.
         float panelW = w * 0.982f;
-        float panelH = h * 0.90f;
+        // P761 — 0.92 (was 0.90): the catalogue grew past the 90% panel's
+        // usable band (the CAMERA / VIEW group alone now needs 1264 px at
+        // 1440p — 32px title + 56 rows); 92% still leaves a visible border.
+        float panelH = h * 0.92f;
         float panelX = (w - panelW) / 2f;
         float panelY = (h - panelH) / 2f;
         const float padding = HelpOverlayLayout.Padding;

@@ -59,15 +59,17 @@ public sealed class LobbyHeartbeatTests
         => new() { Url = baseAddress.AbsoluteUri, DisplayName = displayName, PublicAddress = "1.2.3.4" };
 
     /// <summary>Build a heartbeat wired to the in-memory test server via its handler.</summary>
-    private static (Lhb Heartbeat, HttpClient Http) MakeHeartbeat(LobbyHarness app, Lc cfg, Func<int> count)
+    private static (Lhb Heartbeat, HttpClient Http) MakeHeartbeat(LobbyHarness app, Lc cfg, Func<int> count,
+        Func<System.Collections.Generic.IReadOnlyList<string>>? names = null, bool publishNames = false)
     {
+        if (publishNames) cfg.PublishPlayerNames = true;
         var http = new HttpClient(app.Server.CreateHandler())
         {
             BaseAddress = app.ClientOptions.BaseAddress,
             Timeout = TimeSpan.FromSeconds(5),
         };
         // ownsHttp=false: the heartbeat does not own the injected client; the test disposes it.
-        return (new Lhb(http, cfg, count, "Wing War", "PCore001.igc", "0.1.0", 5333), http);
+        return (new Lhb(http, cfg, count, "Wing War", "PCore001.igc", "0.1.0", 5333, clock: null, names), http);
     }
 
     [Trait("Requires", "Artwork")]
@@ -174,13 +176,16 @@ public sealed class LobbyHeartbeatTests
     {
         Require.Artwork();
         var req = new global::Allegiance.Server.LobbyRegisterRequest(
-            "Srv", "1.2.3.4", 5333, 7, 0, "Wing War", "PCore001.igc", "0.1.0", null);
+            "Srv", "1.2.3.4", 5333, 7, 0, "Wing War", "PCore001.igc", "0.1.0", null,
+            PublishPlayers: false, Token: null);
         string viaContext = JsonSerializer.Serialize(req,
             global::Allegiance.Server.ServerJsonContext.Default.LobbyRegisterRequest);
 
         // Exactly what the old anonymous type emitted under Web defaults.
         var anon = new { Name = "Srv", Address = "1.2.3.4", Port = 5333, PlayerCount = (int?)7,
-            MaxPlayers = 0, MissionName = "Wing War", CoreFile = "PCore001.igc", Version = "0.1.0", Token = (string?)null };
+            MaxPlayers = 0, MissionName = "Wing War", CoreFile = "PCore001.igc", Version = "0.1.0",
+            Players = (System.Collections.Generic.IReadOnlyList<string>?)null,
+            PublishPlayers = false, Token = (string?)null };
         string viaWebDefaults = JsonSerializer.Serialize(anon, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
         Assert.Equal(viaWebDefaults, viaContext);           // byte-identical wire shape
@@ -199,6 +204,56 @@ public sealed class LobbyHeartbeatTests
         string json = JsonSerializer.Serialize(resp, ctx.LobbyRegisterResponse);
         Assert.Equal("{\"id\":\"id-7\",\"token\":\"tok-9\"}", json);
         Assert.Equal(resp, JsonSerializer.Deserialize(json, ctx.LobbyRegisterResponse));
+    }
+
+    /// <summary>P761/P761b — a server that opts in to publishing its pilot names
+    /// has them answer the per-name find-player query; the PUBLIC listing still
+    /// carries none (privacy fix).</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public async Task Heartbeat_publishes_the_player_list_to_the_directory()
+    {
+        Require.Artwork();
+        using var app = new LobbyHarness();
+        using var client = app.CreateClient();
+        var (hb, http) = MakeHeartbeat(app, Cfg(app.ClientOptions.BaseAddress), () => 2,
+            names: () => ["PilotOne", "PilotTwo"], publishNames: true);
+        using var _ = hb;
+
+        await hb.PumpAsync();
+
+        // /api/servers: the count only — the roster is NOT published.
+        var raw = await client.GetStringAsync("/api/servers");
+        Assert.DoesNotContain("PilotOne", raw);
+        Assert.DoesNotContain("PlayerNames", raw);
+        var servers = await client.GetFromJsonAsync<List<global::Allegiance.Lobby.ServerListingDto>>("/api/servers");
+        Assert.Equal(2, Assert.Single(servers!).PlayerCount);
+
+        // The per-name query locates the game the named pilot sits in.
+        var hit = await client.GetFromJsonAsync<List<global::Allegiance.Lobby.FindPlayerResultDto>>(
+            "/api/servers/findplayer?name=pilotone");
+        Assert.Equal("Wing War", Assert.Single(hit!).MissionName);
+    }
+
+    /// <summary>P761b — a server that does NOT opt in leaks nothing: no names on
+    /// the listing and no find-player hit, exactly the default.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public async Task Heartbeat_without_the_opt_in_publishes_no_pilot_names()
+    {
+        Require.Artwork();
+        using var app = new LobbyHarness();
+        using var client = app.CreateClient();
+        var (hb, http) = MakeHeartbeat(app, Cfg(app.ClientOptions.BaseAddress), () => 2,
+            names: () => ["PilotOne", "PilotTwo"]);
+        using var _ = hb;
+
+        await hb.PumpAsync();
+        var raw = await client.GetStringAsync("/api/servers");
+        Assert.DoesNotContain("PilotOne", raw);
+        var hit = await client.GetFromJsonAsync<List<global::Allegiance.Lobby.FindPlayerResultDto>>(
+            "/api/servers/findplayer?name=PilotOne");
+        Assert.Empty(hit!);
     }
 }
 
@@ -259,6 +314,30 @@ public sealed class LivePlayerCountTests
             botB.SendLogonRequest(Request("p176_count_b"));
             PumpUntil(server, () => botB.ShipAssignment is not null);
             Assert.Equal(2, server.LivePlayerCount);
+        }
+        finally { server.Shutdown(); }
+    }
+
+    /// <summary>P761 — the pilot-name snapshot paired with the count: joined
+    /// peers appear in <see cref="Srv.LivePlayerNames"/> (the data the
+    /// heartbeat publishes for the directory's player lists — the client's
+    /// find-player search, native gamescreen.cpp:1348-1352).</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void LivePlayerNames_tracks_joined_peers()
+    {
+        Require.Artwork();
+        var server = new Srv();
+        server.Boot(Config());
+        try
+        {
+            Assert.Empty(server.LivePlayerNames);
+
+            using var bot = new FltBot();
+            bot.Connect(server.BoundPort, "p761_names_a");
+            bot.SendLogonRequest(Request("p761_names_a"));
+            PumpUntil(server, () => server.LivePlayerNames.Contains("p761_names_a"));
+            Assert.Contains("p761_names_a", server.LivePlayerNames);
         }
         finally { server.Shutdown(); }
     }

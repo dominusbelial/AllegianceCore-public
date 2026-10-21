@@ -68,6 +68,15 @@ public sealed class MissionDef : IFedMessage
     private const int LivesOffset = MisparmsOffset + 204;          // HUD-12 — offsetof(MissionParams, iLives), igc.h:1185
     private const int RgCivIdOffset = MisparmsOffset + 168;        // + offsetof(MissionParams, rgCivID)   (P29 probe)
     private const int NTemsOffset = MisparmsOffset + 218;          // + offsetof(MissionParams, nTeams)    (P29 probe)
+    // P761 — MissionParams.bLockGameOpen (igc.h:1139, "Prevent players from
+    // limiting the size of the game"): the 19th of the bool:1 bitfields that
+    // pack at MissionParams offset 108 (after strGamePassword[17] ends there —
+    // see the encode block below); MSVC packs bool:1 units LSB-first, so bit 18
+    // is byte 108+2, bit 2. The gates that read it: Auto-Accept and Lock Lobby
+    // are ENABLED only while it is false (teamscreen.cpp:1563-1569).
+    private const int BitfieldsOffset = MisparmsOffset + 108;
+    private const int BLockGameOpenByte = BitfieldsOffset + 18 / 8;
+    private const int BLockGameOpenMask = 1 << (18 % 8);
     private const int DwCookieOffset = 460;
     private const int ISideMissionOwnerOffset = 464;
     private const int StageOffset = 468;
@@ -132,6 +141,13 @@ public sealed class MissionDef : IFedMessage
     /// empty side; zero-filled unspecified entries retain the legacy codec default.</summary>
     public short[] RgShipIdLeaders = Array.Empty<short>();
 
+    /// <summary><c>MissionParams.bLockGameOpen</c> (igc.h:1139) — the mission
+    /// was created with the game-open lock on; gates Auto-Accept and Lock Lobby
+    /// OFF in the team screen (teamscreen.cpp:1563-1569). Decode-only: the
+    /// port's own MISSIONDEF encoder zeroes the bitfield (the port's server
+    /// config has no such flag yet), so it reads false from our own servers.</summary>
+    public bool BLockGameOpen;
+
     public ushort GetFmid() => Fmid;
 
     public byte[] Encode()
@@ -186,6 +202,10 @@ public sealed class MissionDef : IFedMessage
 
         // pad to exact total first, then stamp cbmsg = the full 864 (a message
         // length is the whole thing, not just the fields we happened to write).
+        // P761 — stamp bLockGameOpen (bit 18 of the bitfield block; decode-only
+        // field, zero for the port's own servers, but the codec round-trips it).
+        if (BLockGameOpen) buf[BLockGameOpenByte] |= BLockGameOpenMask;
+
         if (w.Position < FixedSize) w.Advance(FixedSize - w.Position);
         if (w.Position != FixedSize)
             throw new InvalidOperationException($"MISSIONDEF internal layout drift: {w.Position} != {FixedSize}");
@@ -226,6 +246,7 @@ public sealed class MissionDef : IFedMessage
         var leaders = new short[6];
         for (int i = 0; i < leaders.Length; i++)
             leaders[i] = BitConverter.ToInt16(buf.Slice(LeadersOffset + i * 2));
+        bool lockGameOpen = (buf[BLockGameOpenByte] & BLockGameOpenMask) != 0;
 
         return new MissionDef
         {
@@ -240,6 +261,7 @@ public sealed class MissionDef : IFedMessage
             NTems = nTems,
             RgCivId = rgCivId,
             RgShipIdLeaders = leaders,
+            BLockGameOpen = lockGameOpen,
         };
     }
 

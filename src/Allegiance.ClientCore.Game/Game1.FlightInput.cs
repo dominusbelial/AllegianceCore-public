@@ -431,7 +431,14 @@ public sealed partial class Game1
                 _cameraMode == CameraMode.ExternalOverride || _state == ClientState.Connecting || _session.World.GameOverResult is not null,
                 investment: investmentOpen, teleport: teleportOpen, loadout: loadoutOpen,
                 mainMenuOpen: _mainMenuVisible, playerPings: _playerPingsVisible);
-            if (cancel == EscapeUiAction.None && _state == ClientState.Lobby && _filterActive) ClearFilter();
+            if (cancel == EscapeUiAction.None && _state == ClientState.Lobby)
+            {
+                // P761 — the server browser's popups back out before the filter:
+                // the find-player popup, then the details panel, then the filter.
+                if (_findPlayerActive) { _findPlayerActive = false; _findBuffer.Clear(); }
+                else if (_detailsActive) _detailsActive = false;
+                else if (_filterActive) ClearFilter();
+            }
             switch (cancel)
             {
                 case EscapeUiAction.Briefing: DismissBriefing(); break;
@@ -457,6 +464,11 @@ public sealed partial class Game1
                 case EscapeUiAction.ToggleMainMenu:
                     if (_state == ClientState.Lobby && _filterActive) { ClearFilter(); break; }
                     ToggleMainMenu();
+                    break;
+                case EscapeUiAction.None:
+                    // P761 — Esc cancels a pending profile edit (native's Apply
+                    // is the only commit; backing out leaves the stored text).
+                    if (_pilotProfile.Editing) _pilotProfile.Cancel();
                     break;
             }
         }
@@ -572,9 +584,39 @@ public sealed partial class Game1
         if (pilotKey && !_pilotInfoKeyWasDown && !_chatActive && !_qcMenuOpen)
         {
             _pilotInfoVisible = !_pilotInfoVisible;
+            if (!_pilotInfoVisible) _pilotProfile.Cancel();   // closing the sheet aborts a pending edit
             Console.WriteLine($"[monogame] pilotinfo {( _pilotInfoVisible ? "ON" : "OFF" )}");
         }
         _pilotInfoKeyWasDown = pilotKey;
+
+        // P761 — the character sheet's profile editor (native CharInfoScreen's
+        // Edit/Apply pair, CharInfoScreen.cpp:837-880): Ctrl+P toggles edit→
+        // apply; while editing, Enter applies and Esc cancels (both handled in
+        // UpdateFlying / the Escape chain), typing goes through OnTextInput.
+        // Gated on the sheet being visible and no modal owning the keys — a
+        // disabled Apply does nothing natively either.
+        bool profileKey = ActionDown(ks, "PilotProfileEdit");
+        if (profileKey && !_pilotProfileKeyWasDown && _pilotInfoVisible && !_chatActive && !_qcMenuOpen
+            && !_keyBindVisible && !_mainMenuVisible && !_menuConsumedFrame)
+        {
+            if (_pilotProfile.Editing)
+            {
+                string? applied = _pilotProfile.Apply();
+                if (applied is not null)
+                {
+                    var prefs = IntroPreferences.Load();
+                    prefs.PilotDescription = applied;
+                    prefs.Save();
+                }
+                Console.WriteLine($"[monogame] pilot profile applied ({applied?.Length ?? 0} chars)");
+            }
+            else
+            {
+                _pilotProfile.BeginEdit();
+                Console.WriteLine("[monogame] pilot profile editing");
+            }
+        }
+        _pilotProfileKeyWasDown = profileKey;
 
         // P572 — live-proof automation: feed world observations + drain the
         // machine's due actions into the pending slots the handlers below
@@ -907,6 +949,15 @@ public sealed partial class Game1
         _music.Update(docked);
     }
 
+    /// <summary>P761 — the compose gate the flight-input build applies: while a
+    /// modal surface (chat compose, quick-chat menu, main menu, ...) is up the
+    /// keyboard flight state is fully neutral — only the persistent throttle
+    /// carries through — so typing a word can never also thrust/pitch/yaw the
+    /// ship. Extracted from <see cref="UpdateFlying"/>'s inline ternary so the
+    /// handler-level test pins it.</summary>
+    internal static FlightInputState GateCompose(bool composing, FlightInputState live)
+        => composing ? new FlightInputState { Throttle = live.Throttle } : live;
+
     /// <summary>
     /// P757 — the chat compose/send/focus flow, extracted from
     /// <see cref="UpdateFlying"/> as the production seam the interface tests
@@ -920,11 +971,50 @@ public sealed partial class Game1
     /// <c>ConsoleImage::OnTab</c>, console.cpp:2747-2755). Text itself arrives
     /// through Window.TextInput (<see cref="OnTextInput"/>). Enter is ignored
     /// while the quick-chat menu is open (its keys are navigation).
+    /// <para>P761 — the same handler also drives the character-sheet profile
+    /// editor's Enter (apply) / Backspace (delete) edges, and both surfaces are
+    /// composing gates, so neither typing a chat line nor typing a description
+    /// can fly the ship.</para>
     /// </summary>
     private void HandleChatCompose(KeyboardState ks)
     {
+        // P761 — the character-sheet profile editor owns Enter (apply) and
+        // Backspace (delete) while it is up: run its edges before the chat
+        // machine could act on the same keys, and the chat path below is gated
+        // off while it is editing. The gate reads the FRAME-START state: an
+        // Apply on this very Enter press must not let the same press through to
+        // chat (which would open the composer behind the now-closed editor).
+        bool profileWasEditing = _pilotProfile.Editing;
+        if (profileWasEditing)
+        {
+            bool pEnter = ActionDown(ks, "StartChat");
+            if (pEnter && !_pilotProfileEnterWasDown)
+            {
+                string? applied = _pilotProfile.Apply();
+                if (applied is not null)
+                {
+                    var prefs = IntroPreferences.Load();
+                    prefs.PilotDescription = applied;
+                    prefs.Save();
+                }
+                Console.WriteLine($"[monogame] pilot profile applied ({applied?.Length ?? 0} chars)");
+            }
+            _pilotProfileEnterWasDown = pEnter;
+
+            // TEXT ENTRY: Backspace edits the draft (the same allow-listed raw
+            // key the chat line uses).
+            bool pBack = ks.IsKeyDown(XnaKeys.Back);
+            if (pBack && !_pilotProfileBackWasDown) _pilotProfile.Backspace();
+            _pilotProfileBackWasDown = pBack;
+        }
+        else
+        {
+            _pilotProfileEnterWasDown = false;
+            _pilotProfileBackWasDown = false;
+        }
+
         bool enter = ActionDown(ks, "StartChat");
-        if (!_mainMenuVisible && !_menuConsumedFrame && !_keyBindVisible && !_qcMenuOpen && enter && !_enterWasDown)
+        if (!_mainMenuVisible && !_menuConsumedFrame && !_keyBindVisible && !_qcMenuOpen && !profileWasEditing && enter && !_enterWasDown)
         {
             if (IsBriefingVisible(out _))
                 DismissBriefing();   // P271 — Enter closes the briefing popup, doesn't open chat
@@ -1058,8 +1148,9 @@ public sealed partial class Game1
         // menu both neutralise flight input / toggles / autopilot-steering, so
         // navigating or typing never also thrusts/turns the ship. P757 — the
         // help overlay joins them while open (the native help pane owns the
-        // keyboard, effect/help.cpp).
-        bool composing = _chatActive || _qcMenuOpen || _keyBindVisible || _mainMenuVisible || _menuConsumedFrame || _playerPingsVisible || _helpVisible;
+        // keyboard, effect/help.cpp). P761 — the character-sheet profile editor
+        // is a composing surface too (typing the description must not fly).
+        bool composing = _chatActive || _qcMenuOpen || _keyBindVisible || _mainMenuVisible || _menuConsumedFrame || _playerPingsVisible || _helpVisible || _pilotProfile.Editing;
         // Investment is modal in flight and command view; ordinary docked
         // command acceptance below must still run when this overlay is closed.
         if ((_investActive || ActionDown(ks, "ToggleInvestmentPane")) && HandleInvestmentScreen(ks, composing)) return;
@@ -1659,10 +1750,9 @@ public sealed partial class Game1
         }
 
         // While composing chat, keyboard flight input is fully neutral — typing a
-        // word must never also thrust/pitch/yaw the ship.
-        var input = composing
-            ? new FlightInputState { Throttle = _throttle }
-            : new FlightInputState(
+        // word must never also thrust/pitch/yaw the ship. (P761 — the gate itself
+        // is the internal static FlightInput.GateCompose, pinned by test.)
+        var input = GateCompose(composing, new FlightInputState(
             ThrottleForward: ActionDown(ks, "ThrustForward"),
             ThrottleBack:    ActionDown(ks, "ThrustBackward"),
             StrafeLeft:      ActionDown(ks, "ThrustLeft"),
@@ -1678,6 +1768,10 @@ public sealed partial class Game1
             YawRight:        _cameraMode != CameraMode.External && ActionDown(ks, "YawRight"),
             RollLeft:        _cameraMode != CameraMode.External && ActionDown(ks, "RollLeft"),
             RollRight:       _cameraMode != CameraMode.External && ActionDown(ks, "RollRight"),
+            // P761 — TK_RollModifier: while held, FlightInput.Translate routes the
+            // yaw-axis contribution to roll (and zeroes yaw); the mouse block
+            // below routes the mouse X deflection the same way.
+            RollModifier:    _cameraMode != CameraMode.External && ActionDown(ks, "RollModifier"),
             // P220 — afterburner (TK_FireBooster): held, continuous (not
             // edge-triggered), reading either Shift key. Mirrors native's
             // IsTrekKeyDown(TK_FireBooster) sense (WinTrek.cpp:8270-8271);
@@ -1711,7 +1805,7 @@ public sealed partial class Game1
             // P445 — the client-owned persistent throttle axis, stepped by the
             // = / - keys and the mouse wheel above, sent verbatim as
             // ControlData.Throttle (idle -1 → full +1 cruise).
-            Throttle:        _throttle);
+            Throttle:        _throttle));
         var cmd = FlightInput.Translate(input);
 
         // Raw mouse delta this frame, captured for BOTH the virtual-joystick
@@ -1742,9 +1836,18 @@ public sealed partial class Game1
             // MapJoystick deadzone/rescale; see MouseFlightController.MapResponse.
             var (outYaw, outPitch) = MouseFlightController.MapResponse(
                 defl, _mouseFlight.Deadzone, _mouseFlight.LinearControls);
+            // P761 — TK_RollModifier (WinTrek.cpp:10828-10834): while held the
+            // mouse X deflection feeds ROLL and yaw is 0; released, X → yaw and
+            // roll stays with the roll keys.
+            bool rollMod = ActionDown(ks, "RollModifier");
             cmd = cmd with
             {
-                Controls = cmd.Controls with { Yaw = outYaw, Pitch = outPitch },
+                Controls = cmd.Controls with
+                {
+                    Yaw = rollMod ? 0f : outYaw,
+                    Pitch = outPitch,
+                    Roll = rollMod ? outYaw : cmd.Controls.Roll,
+                },
             };
 
             Mouse.SetPosition(centerX, centerY);

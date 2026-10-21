@@ -96,7 +96,10 @@ public sealed class ServerRegistry
                 Sanitize(req.MissionName, NameMax),
                 Sanitize(req.CoreFile, CoreFileMax),
                 Sanitize(req.Version, VersionMax),
-                now, now);
+                now, now,
+                // P761b — names are kept ONLY for an opted-in server.
+                req.PublishPlayers ? SanitizePlayers(req.Players) : Array.Empty<string>(),
+                req.PublishPlayers);
 
             if (!_entries.TryAdd(id, listing))
                 return null; // id collision is effectively impossible; treat as a transient refusal
@@ -120,6 +123,8 @@ public sealed class ServerRegistry
             CoreFile = Sanitize(req.CoreFile, CoreFileMax),
             Version = Sanitize(req.Version, VersionMax),
             LastSeenUtc = now,
+            Players = req.PublishPlayers ? SanitizePlayers(req.Players) : Array.Empty<string>(),
+            PublishPlayers = req.PublishPlayers,
         };
 
         _entries[target.Id] = refreshed;
@@ -168,6 +173,32 @@ public sealed class ServerRegistry
     }
 
     /// <summary>
+    /// P761b — the per-name find-player query: every non-expired listing whose
+    /// (opt-in) pilot list carries <paramref name="name"/>, matched
+    /// case-insensitively and EXACTLY — native's FIND_PLAYER asks the lobby about
+    /// one character name and the lobby answers which game that pilot is in
+    /// (<c>WinTrek/gamescreen.cpp:1348-1352</c> → <c>FM_C_FIND_PLAYER</c>).
+    ///
+    /// <para>The answer names the server(s) only. No other pilot's name leaves the
+    /// directory, and a server that did not opt in
+    /// (<see cref="ServerListing.PublishPlayers"/>) is never searched — its list is
+    /// empty, so it can never match.</para>
+    /// </summary>
+    public IReadOnlyList<FindPlayerResultDto> FindPlayer(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return Array.Empty<FindPlayerResultDto>();
+        string wanted = name.Trim();
+        var cutoff = _time.GetUtcNow() - _maxAge;
+        return _entries.Values
+            .Where(e => e.PublishPlayers && e.LastSeenUtc >= cutoff)
+            .Where(e => e.Players.Any(p => string.Equals(p, wanted, StringComparison.OrdinalIgnoreCase)))
+            .Select(e => new FindPlayerResultDto(
+                e.Id, e.Name, e.Address, e.Port, e.MaxPlayers,
+                e.MissionName, e.CoreFile, e.Version))
+            .ToList();
+    }
+
+    /// <summary>
     /// Removes every entry whose <c>LastSeenUtc</c> is older than <paramref name="maxAge"/>
     /// relative to the injected <see cref="TimeProvider"/>'s current time.
     /// </summary>
@@ -212,6 +243,24 @@ public sealed class ServerRegistry
         _ => port,
     };
 
+    /// <summary>P761 — per-player hygiene for the FIND_PLAYER directory data:
+    /// the same control-character/length guard as every string field, capped
+    /// per listing (PLAYERINFO names are 24 chars; allow generous room).</summary>
+    private const int PlayerNameMax = 32;
+    private const int MaxPlayersListed = 64;
+    private static IReadOnlyList<string> SanitizePlayers(List<string>? players)
+    {
+        if (players is null || players.Count == 0) return Array.Empty<string>();
+        return players
+            .Select(p => Sanitize(p, PlayerNameMax))
+            .Where(p => p.Length > 0)
+            .Distinct(StringComparer.Ordinal)
+            .Take(MaxPlayersListed)
+            .ToList();
+    }
+
+    /// <summary>P761b — the public projection: the listing WITHOUT its pilot names
+    /// (privacy fix; the names survive only for <see cref="FindPlayer"/>).</summary>
     private static ServerListingDto ToDto(ServerListing l) => new(
         l.Id, l.Name, l.Address, l.Port, l.PlayerCount, l.MaxPlayers,
         l.MissionName, l.CoreFile, l.Version, l.RegisteredUtc, l.LastSeenUtc);

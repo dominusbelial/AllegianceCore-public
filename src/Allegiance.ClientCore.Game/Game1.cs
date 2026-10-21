@@ -831,6 +831,8 @@ public sealed partial class Game1 : Game
     private Rendering.ReadyCheckOverlayRenderer _readyCheckRenderer = null!;
     private bool _ownReady;
     private bool _rcYWasDown, _rcOWasDown;
+    // P761 — the team lobby configuration controls' edge flags.
+    private bool _aaKeyWasDown, _llKeyWasDown, _lsKeyWasDown;
     // P598 — the ship id this client last sent PLAYER_READY(true) for. The
     // server re-seats a migrated peer after a game-over rotation with a FRESH
     // ship id (new SET_CLUSTER), so a non-null mismatch here means the mission
@@ -1160,6 +1162,10 @@ public sealed partial class Game1 : Game
     private Rendering.PilotInfoOverlayRenderer _pilotInfoRenderer = null!;
     private bool _pilotInfoVisible;
     private bool _pilotInfoKeyWasDown; // edge-detect P so holding it doesn't re-fire
+    // P761 — the character sheet's profile editor (native CharInfoScreen's
+    // Edit/Apply pair, CharInfoScreen.cpp:837-880) and its edge flags.
+    private readonly Rendering.PilotInfoLayout.ProfileEditor _pilotProfile = new();
+    private bool _pilotProfileKeyWasDown, _pilotProfileEnterWasDown, _pilotProfileBackWasDown;
     // P639 — the Team Pane (full roster; Ctrl+T toggles, rebindable). Same
     // independent-flag / edge-detect discipline as the scoreboard/pilot toggles.
     private Rendering.TeamPaneRenderer _teamPaneRenderer = null!;
@@ -1240,6 +1246,35 @@ public sealed partial class Game1 : Game
     private readonly List<int> _visibleRows = new();   // indices into _servers
     private const int MaxFilterLen = 64;
     private bool _fWasDown;                            // edge-detect the F toggle
+
+    // P761 — the server list's sort-header stack + game filters + find-player
+    // and details popups (native gamescreen.cpp:858-898 OnButtonBarGames,
+    // :900-927 ResetFilters, :1308-1326 details, :1348-1352 find player). The
+    // pure models live in LobbyGameSort / LobbyGameFilters /
+    // ServerDirectorySearch; the fields below are the UI state only.
+    private readonly LobbyGameSort _lobbySort = new();
+    private readonly LobbyGameFilters _gameFilters = new();
+    private bool _lobbyResetWasDown;
+    private bool _headerLeftWasDown, _headerRightWasDown, _headerClickWasDown;
+    private bool _findPlayerActive;                    // the find-player popup
+    private readonly StringBuilder _findBuffer = new();
+    private bool _findPWasDown, _findBackWasDown, _findEnterWasDown;
+    // P761b — the find-player query is a lobby round trip now (the open listing
+    // carries no rosters): its result is staged off the network thread exactly
+    // like the server fetch (native's FM_C_FIND_PLAYER reply, gamescreen.cpp:
+    // 1348-1352).
+    private volatile bool _findPlayerResultPending;
+    private string? _findPlayerMatchId;       // the answering listing's id, null = nobody
+    // P761c — the worker stages the asked NAME here; _findPlayerQuery is written
+    // only by the main thread (it was a two-writer race: QueryFindPlayerAsync
+    // and UpdateLobby both assigned it). Staged before the volatile flag, like
+    // the fetch payload above.
+    private string? _findPlayerQueryStaged;
+    private string? _findPlayerQuery;         // main thread only: the name to show in the popup line
+    private string? _findPlayerError;
+    private bool _findPlayerBusy;             // main-thread: a query is in flight
+    private bool _detailsActive;                       // the details popup
+    private bool _detailsIWasDown;
 
     private int _selectedIndex;
     private string? _lobbyError;
@@ -1552,7 +1587,14 @@ public sealed partial class Game1 : Game
 
         _lobbyUrl = opts.LobbyUrl;
         _connectStore = opts.ConnectStore;
+        // P761 — the character sheet's persisted profile description (applied
+        // edits go to the same file; native would send them to the club server).
+        _pilotProfile.Description = IntroPreferences.Load().PilotDescription;
         _textPrompt = opts.TextPrompt ?? new KeyboardTextPrompt();
+        // P761 — native's browser boots through ResetFilters
+        // (gamescreen.cpp:708-710 → :900-927): default sort is players
+        // REVERSED (the big numbers on top).
+        _lobbySort.ResetFilters();
 
         if (_connectStore is not null)
         {

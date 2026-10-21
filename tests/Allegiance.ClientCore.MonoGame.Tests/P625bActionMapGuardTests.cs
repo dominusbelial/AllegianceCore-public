@@ -53,7 +53,7 @@ public class P625bActionMapGuardTests
     private static readonly (string File, string Method, string Key)[] AllowList =
     {
         ("Game1.FlightInput.cs", "PrimeInFlightKeyLatches", "XnaKeys.Back"), // chat-delete backspace prime (text entry)
-        ("Game1.FlightInput.cs", "HandleChatCompose", "XnaKeys.Back"),     // chat-delete backspace (text entry; P757 extracted from UpdateFlying)
+        ("Game1.FlightInput.cs", "HandleChatCompose", "XnaKeys.Back"),     // chat-delete backspace (text entry; P757 extracted from UpdateFlying; P761's profile editor reuses it)
         ("Game1.Session.cs", "UpdateLobby", "XnaKeys.Back"),                  // lobby filter backspace (text entry)
         ("Game1.KeyBind.cs", "*", "*"),                                       // rebind popup's own capture
         // P764 — the custom-loadout digit MODIFIERS (load.cpp:2228/2236): native

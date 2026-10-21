@@ -287,7 +287,9 @@ public class HelpOverlayTests
         // of any group exceeds the panel.
         var groups = KeyBindingTable.All;
         const float panelY = 22f;
-        const float panelH = 1440f * 0.90f - 2f * HelpOverlayLayout.Padding;
+        // P761 — the renderer's panel grew to 92% of the backbuffer (the
+        // CAMERA / VIEW group's 56 rows no longer fit the 90% band).
+        const float panelH = 1440f * 0.92f - 2f * HelpOverlayLayout.Padding;
         var sections = HelpOverlayLayout.LayoutSections(
             groups.Select(g => g.Entries.Count).ToArray(), panelY, panelH);
 

@@ -7,6 +7,7 @@ using Allegiance.Core.Profiling;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
 using Allegiance.Core.Wire;
+using System.Collections.Generic;
 // Disambiguate the LoadoutChange KIND enum (Sim) from the Allegiance.Core.Wire.LoadoutChange
 // codec — both are in scope here; the enum is the natural meaning in the
 // gameplay broadcast handler, the wire codec is reached as Allegiance.Core.Wire.LoadoutChange.
@@ -180,7 +181,15 @@ public sealed partial class Server
         // tick if it already has every vote (e.g. an initiator-only side).
         Step("ballots", () => { foreach (var m in _missions) ResolveBallots(m, now); });
         Step("periodicRules", () => AdvancePeriodicRules(now));
-        lock (_statsLock) { _loopIterations++; _liveShipCount = _peerShips.Count; }
+        lock (_statsLock)
+        {
+            _loopIterations++;
+            _liveShipCount = _peerShips.Count;
+            // P761 — refresh the pilot-name snapshot alongside the count (both
+            // read off-thread by the lobby heartbeat; never enumerate
+            // _peerNames outside this lock). Same keys as _peerShips.
+            _liveShipNames = new List<string>(_peerNames.Values);
+        }
         // P112 — broadcast ripcord aborts raised during this tick's per-tick
         // revalidation pass (Sector.ResolveRipcordCountdowns). The sim cleared
         // each ripper's ripcord state; here the host emits RIPCORD_ABORTED(187)
@@ -333,6 +342,12 @@ public sealed partial class Server
         // sent only when a side's visibility of a ship CHANGES (plus a slow
         // catch-up refresh), never every tick the ship stays visible.
         Step("crossSideShipStatusSweep", SweepCrossSideShipStatuses);
+        // P761b — relay every ship's changed c_cmdAccepted slot to its side
+        // group (native FedSrvSiteBase::CommandChangedEvent,
+        // FedSrv.CPP:13695-13732). The client stores it on the ship entity, which
+        // is what the team pane's OBJECTIVE column sorts by
+        // (CurrentCommandText, WinTrek/teampane.cpp:1528-1534, 1660-1676).
+        Step("acceptedCommandSweep", SweepAcceptedCommands);
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.

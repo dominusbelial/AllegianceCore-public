@@ -2477,9 +2477,16 @@ public sealed partial class Server
         var packet = FedPacket.Pack(new[] { oc.Encode() });
         if (guaranteed)
         {
-            // c_cmdAccepted: ship's side group.
+            // c_cmdAccepted: ship's side group. P761c — never echo back to the
+            // commanded ship's own connection: native's client drops ORDER_CHANGE
+            // for its own ship (clintlib/appmsg.cpp:1838 `if (pship != m_ship)`),
+            // and the port's own accepted text comes from MyAcceptedCommand.
+            // Latch what was relayed so the per-tick sweep (SweepAcceptedCommands)
+            // doesn't see the same change next tick and send it twice.
+            _lastRelayedAcceptedCommand[ship] = AcceptedCommandOf(ship);
             foreach (var kv in _peerShips)
             {
+                if (ReferenceEquals(kv.Value.Ship, ship)) continue;
                 if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
                 if (kv.Value.Ship.SideId != ship.SideId) continue;
                 SendPeer(kv.Key, packet);
@@ -2487,10 +2494,12 @@ public sealed partial class Server
         }
         else
         {
-            // c_cmdCurrent: sector-flying group.
+            // c_cmdCurrent: sector-flying group. P761c — same own-ship skip as
+            // the accepted arm (appmsg.cpp:1838; the own current slot is local).
             if (sector is null) return;
             foreach (var kv in _peerShips)
             {
+                if (ReferenceEquals(kv.Value.Ship, ship)) continue;
                 if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
                 if (!ReferenceEquals(kv.Value.Ship.Sector, sector)) continue;
                 if (kv.Value.Ship.StationId is not null) continue;

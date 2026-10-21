@@ -69,7 +69,15 @@ public readonly record struct FlightInputState(
     // like GroupFire/SelectedMount and sent verbatim as ControlData.Throttle —
     // NOT derived from any keystroke here. Defaults to -1 (idle) so the struct
     // alone, without an explicit value, reproduces the old hard-coded idle.
-    float Throttle = -1f)
+    float Throttle = -1f,
+    // P761 — TK_RollModifier (igc.h:434, name "Roll Modifier", trekinput.cpp:183):
+    // the WHILE-HELD modifier that repurposes the yaw axis as roll. Native
+    // SenseJoystick (WinTrek.cpp:10825-10840): held → yaw axis 0, the X axis
+    // feeds c_axisRoll; not held → X feeds yaw and axis 2 feeds roll. The
+    // internal-camera key block (WinTrek.cpp:10895-10903) does the same for the
+    // TK_YawLeft/TK_YawRight keys: with the modifier down they drive roll and
+    // yaw stays 0.
+    bool RollModifier = false)
 {
     /// <summary>All-neutral input (no key held, throttle idled to stop -1).
     /// NOTE: the plain parameterless <c>new()</c> would give Throttle the raw
@@ -123,6 +131,19 @@ public static class FlightInput
         // mapping above, and coincides with yaw's now that yaw is likewise
         // right = -1.
         float roll  = (input.RollRight  ? -1f : 0f) + (input.RollLeft  ?  1f : 0f);
+
+        // P761 — TK_RollModifier (igc.h:434): while held the yaw axis IS the roll
+        // axis and yaw is 0 (WinTrek.cpp:10828-10834 joystick block: modifier →
+        // jsValues[c_axisYaw]=0, c_axisRoll=MapJoystick(GetAxis(0)); the key
+        // block at :10895-10903 routes TK_YawLeft/Right to c_axisRoll the same
+        // way). The yaw contribution (opposing keys already cancelled above)
+        // moves to roll; the existing roll keys keep contributing (native's
+        // else-if overwrite is order-equivalent for the single-key common case).
+        if (input.RollModifier)
+        {
+            roll += yaw;
+            yaw = 0f;
+        }
 
         int stateM = 0;
         if (input.ThrottleForward) stateM |= ShipControlState.ForwardButton;

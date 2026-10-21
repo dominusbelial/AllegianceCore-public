@@ -4559,6 +4559,7 @@ public sealed partial class ClientWorld
             ILives = def.ILives,
             SideMissionOwner = def.ISideMissionOwner,
             Stage = def.Stage,
+            LockGameOpen = def.BLockGameOpen,
         };
         _missionTimeStartMs = def.TimeStart;
     }

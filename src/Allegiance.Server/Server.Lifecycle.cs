@@ -271,7 +271,11 @@ public sealed partial class Server
             firstGame?.Name ?? "",
             _config.StaticCore,
             core.Version.ToString(),
-            _config.Port);
+            _config.Port,
+            // P761 — the directory's player lists (native FIND_PLAYER's data,
+            // gamescreen.cpp:1348-1352): the cross-thread-safe pilot-name
+            // snapshot paired with LivePlayerCount.
+            () => LivePlayerNames);
         Console.WriteLine($"[lobby] heartbeat enabled -> {_config.Lobby.Url}, every {_config.Lobby.HeartbeatIntervalSeconds}s");
     }
 

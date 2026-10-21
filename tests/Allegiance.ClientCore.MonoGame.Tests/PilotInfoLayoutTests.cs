@@ -90,6 +90,31 @@ public class PilotInfoLayoutTests
         Assert.Null(PilotInfoLayout.Build([], "Me", Ranks));
     }
 
+    /// <summary>P761c — a stat value is right-aligned to the panel's INNER edge
+    /// (the content width the panel was measured from); it must never run over
+    /// the border the way the "0.0" combat rating did.</summary>
+    [Fact]
+    public void StatValue_RightAlignsInsideTheInnerPanelWidth()
+    {
+        const float textLeft = 10f, innerRight = 110f;
+        float x = PilotInfoOverlayRenderer.ValueLeft(textLeft, innerRight, valueWidth: 20f);
+        Assert.Equal(90f, x);
+        Assert.True(x + 20f <= innerRight);
+        // A value too wide for the content column is clamped to its left edge
+        // (the renderer fits the string first).
+        Assert.Equal(textLeft, PilotInfoOverlayRenderer.ValueLeft(textLeft, innerRight, valueWidth: 200f));
+    }
+
+    /// <summary>P761c — native's team pane / character sheet are opaque screens;
+    /// the port draws them over the HUD, so their panels are near-opaque (the
+    /// old 0.92 sheet let the gauges print through).</summary>
+    [Fact]
+    public void TeamPaneAndCharacterSheetPanels_AreNearOpaque()
+    {
+        Assert.True(TeamPaneRenderer.PanelAlpha >= 0.99f, $"team pane alpha {TeamPaneRenderer.PanelAlpha}");
+        Assert.True(PilotInfoOverlayRenderer.PanelAlpha >= 0.99f, $"sheet alpha {PilotInfoOverlayRenderer.PanelAlpha}");
+    }
+
     /// <summary>A non-ASCII name is scrubbed to printable ASCII so the spritefonts
     /// never throw on a mangled/hostile name (same P214/p217 lesson).</summary>
     [Fact]

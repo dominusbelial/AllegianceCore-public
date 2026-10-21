@@ -162,6 +162,26 @@ public sealed class ShipEntity
 
     // ── SHIP_STATUS(90) fields, attached incrementally by that message ──────
 
+    /// <summary>P761b — the ship's <c>c_cmdAccepted</c> command slot as relayed by
+    /// <c>ORDER_CHANGE(93)</c>: the action id (<c>CommandID</c>, native
+    /// <c>m_commandIDs[c_cmdAccepted]</c>) and the target model it acts on. Native
+    /// applies ORDER_CHANGE to ANY ship in the client core
+    /// (<c>clintlib/appmsg.cpp:1831-1855</c>), and the server forwards every
+    /// accepted-command change to the whole side
+    /// (<c>FedSrv/FedSrv.CPP:13695-13732</c>), which is how the team pane's
+    /// OBJECTIVE column sorts by command text (<c>CurrentCommandText</c>,
+    /// <c>WinTrek/teampane.cpp:1660-1676</c>).</summary>
+    public short AcceptedCommandId { get; internal set; } = OrderChange.CidNone;
+
+    /// <summary>The <see cref="AcceptedCommandId"/> target's
+    /// <c>ObjectType</c> (<c>IgcObjectType</c>), or null when the slot has no
+    /// target (<c>OT_invalid</c>/<c>NA</c> on the wire).</summary>
+    public short? AcceptedTargetType { get; internal set; }
+
+    /// <summary>The <see cref="AcceptedCommandId"/> target's object id
+    /// (native <c>m_commandTargets[c_cmdAccepted]</c>'s id).</summary>
+    public short AcceptedTargetId { get; internal set; } = -1;
+
     /// <summary>Status.GetHullID().</summary>
     public short HullId { get; internal set; }
 

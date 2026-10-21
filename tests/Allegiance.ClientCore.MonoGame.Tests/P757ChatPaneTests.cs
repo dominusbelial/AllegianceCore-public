@@ -143,6 +143,9 @@ public sealed class P757ChatPaneTests
         Set(game, "_chatPane", new ChatPaneModel());
         Set(game, "_chatBuffer", new System.Text.StringBuilder());
         Set(game, "_chatTarget", ChatTargetLogic.DefaultTarget);
+        // P761b — the handler now also drives the character-sheet profile
+        // editor's Enter/Backspace edges, so its model must exist too.
+        Set(game, "_pilotProfile", new Rendering.PilotInfoLayout.ProfileEditor());
         var state = typeof(Game1).GetField("_state", Hidden)!;
         state.SetValue(game, Enum.Parse(state.FieldType, "Flying"));
         return game;

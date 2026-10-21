@@ -405,6 +405,42 @@ public sealed partial class Game1
             _lobbyResultError = null;
         }
 
+        // P761b — a completed find-player query (staged on the worker thread;
+        // native's lobby reply, gamescreen.cpp:1348-1352): select the listing the
+        // queried pilot is on and close the popup, or report that nobody has it.
+        if (_findPlayerResultPending)
+        {
+            _findPlayerResultPending = false;
+            _findPlayerBusy = false;
+            // P761c — consume the WORKER's staged name on the main thread; the
+            // query field itself is main-thread-only now (no two-writer race).
+            _findPlayerQuery = _findPlayerQueryStaged;
+            _findPlayerQueryStaged = null;
+            string asked = _findPlayerQuery ?? "";
+            if (_findPlayerError is { } findError)
+            {
+                Console.WriteLine($"[monogame] find player: lobby query failed ({findError})");
+                _findPlayerError = null;
+            }
+            int hit = ServerDirectorySearch.IndexOfListing(_displayServers, _findPlayerMatchId);
+            int hitRow = hit >= 0 ? _visibleRows.IndexOf(hit) : -1;
+            if (hitRow >= 0)
+            {
+                _selectedIndex = hitRow;
+                Console.WriteLine($"[monogame] find player: '{asked}' -> {_displayServers[hit].FormatRow()}");
+                _findPlayerActive = false;
+                _findBuffer.Clear();
+            }
+            else
+            {
+                Console.WriteLine($"[monogame] find player: no directory game carries '{asked}'");
+            }
+            _findPlayerMatchId = null;
+            // A hit closes the popup and forgets the name; a miss KEEPS it so the
+            // popup line can say what was asked about.
+            if (hitRow >= 0) _findPlayerQuery = null;
+        }
+
         // Periodic fetch (fire-and-forget; _lobbyFetchInFlight prevents overlap).
         // P500 — only when a lobby URL is configured (221 runs no lobby, so the
         // Android head leaves it blank and polls nothing).
@@ -427,6 +463,96 @@ public sealed partial class Game1
         if (down && !_downWasDown && _visibleRows.Count > 0)
             _selectedIndex = (_selectedIndex + 1) % _visibleRows.Count;
         _downWasDown = down;
+
+        // P761 — the sort-header bar (native OnButtonBarGames,
+        // gamescreen.cpp:858-898): Left/Right move the header cursor, Space
+        // "clicks" it — the column becomes the LAST stack criterion (an earlier
+        // entry for it is removed) and its direction toggles when it was
+        // already the top entry. Suppressed while a text popup owns the keys.
+        if (!_filterActive && !_findPlayerActive)
+        {
+            bool left = ActionDown(ks, "LobbyHeaderLeft");
+            if (left && !_headerLeftWasDown) _lobbySort.MoveCursor(-1);
+            _headerLeftWasDown = left;
+            bool right = ActionDown(ks, "LobbyHeaderRight");
+            if (right && !_headerRightWasDown) _lobbySort.MoveCursor(1);
+            _headerRightWasDown = right;
+            bool click = ActionDown(ks, "LobbyHeaderClick");
+            if (click && !_headerClickWasDown)
+            {
+                _lobbySort.Click(_lobbySort.CursorColumn);
+                RebuildVisibleRows();   // UpdateGameList — the list re-sorts live
+                Console.WriteLine($"[monogame] lobby sort: {_lobbySort.Label()}");
+            }
+            _headerClickWasDown = click;
+        }
+
+        // P761 — ResetFilters (gamescreen.cpp:900-927): every filter DontCare,
+        // the name substring cleared, the sort back to players reversed.
+        bool resetKey = ActionDown(ks, "LobbyResetFilters");
+        if (resetKey && !_lobbyResetWasDown)
+        {
+            _gameFilters.Reset();
+            _lobbySort.ResetFilters();
+            _filterActive = false;
+            _filterBuffer.Clear();
+            RebuildVisibleRows();
+            Console.WriteLine("[monogame] lobby: filters reset, sort -> players reversed");
+        }
+        _lobbyResetWasDown = resetKey;
+
+        // P761 — the find-player popup (native OnButtonFindPlayer /
+        // FindDialogPopup, gamescreen.cpp:1348-1352, 531-628): P opens it, the
+        // buffer takes typed text, Enter searches the directory's player lists
+        // and selects the game the pilot sits in, Esc closes it (Escape chain).
+        bool findWasActive = _findPlayerActive;   // frame-start state (see the join gate below)
+        bool pKey = ActionDown(ks, "LobbyFindPlayer");
+        if (pKey && !_findPWasDown)
+        {
+            _findPlayerActive = !_findPlayerActive;
+            if (!_findPlayerActive) _findBuffer.Clear();
+            else { _detailsActive = false; _findPlayerQuery = null; }
+            Console.WriteLine($"[monogame] find player {( _findPlayerActive ? "OPEN" : "closed" )}");
+        }
+        _findPWasDown = pKey;
+
+        if (_findPlayerActive)
+        {
+            bool fback = ks.IsKeyDown(XnaKeys.Back);
+            if (fback && !_findBackWasDown && _findBuffer.Length > 0)
+                _findBuffer.Length -= 1;
+            _findBackWasDown = fback;
+
+            // Enter (LobbyJoin shares the physical key): ASK THE LOBBY about this
+            // one pilot (native OnButtonFindPlayer → FM_C_FIND_PLAYER,
+            // gamescreen.cpp:1348-1352). The directory answers with the server the
+            // pilot is on — it does NOT publish rosters on the open listing — and
+            // the reply is consumed at the top of this method.
+            bool fenter = ActionDown(ks, "LobbyJoin");
+            if (fenter && !_findEnterWasDown && !_findPlayerBusy)
+            {
+                if (ServerDirectorySearch.FindPlayerRequestPath(_findBuffer.ToString()) is { } path)
+                {
+                    _findPlayerBusy = true;
+                    _ = QueryFindPlayerAsync(_findBuffer.ToString(), path);
+                }
+                else
+                {
+                    Console.WriteLine("[monogame] find player: type a pilot name first");
+                }
+            }
+            _findEnterWasDown = fenter;
+        }
+
+        // P761 — the details popup (native OnButtonDetails, gamescreen.cpp:
+        // 1308-1326): I toggles the panel for the selected game.
+        bool iKey = ActionDown(ks, "LobbyDetails");
+        if (iKey && !_detailsIWasDown && !_findPlayerActive && _visibleRows.Count > 0)
+        {
+            _detailsActive = !_detailsActive;
+            if (_detailsActive) Console.WriteLine("[monogame] details popup OPEN");
+        }
+        _detailsIWasDown = iKey;
 
         // Manual retry: R forces an immediate refetch (helps an unreachable lobby).
         bool rRetry = ActionDown(ks, "LobbyRefresh");
@@ -472,7 +598,10 @@ public sealed partial class Game1
         // the gamepad A button via TryJoinSelected). On join failure we revert
         // to the lobby with a message rather than exiting.
         bool enter = ActionDown(ks, "LobbyJoin");
-        if (enter && !_enterWasDown)
+        // P761 — while the find-player popup is up (at frame start OR still up
+        // after this frame's search), Enter runs the search — never a join in
+        // the same keystroke.
+        if (enter && !_enterWasDown && !findWasActive && !_findPlayerActive)
             TryJoinSelected();
         _enterWasDown = enter;
 
@@ -495,10 +624,20 @@ public sealed partial class Game1
     private void RebuildVisibleRows()
     {
         string needle = _filterActive ? _filterBuffer.ToString() : string.Empty;
+        // P761 — the substring feeds the native-shaped filter model (the only
+        // filter the port's server records can evaluate — see LobbyGameFilters).
+        _gameFilters.NameSubstring = needle;
         _visibleRows.Clear();
         for (int i = 0; i < _displayServers.Count; i++)
-            if (_displayServers[i].Matches(needle))
+            if (_gameFilters.Apply(_displayServers[i]))
                 _visibleRows.Add(i);
+        // P761 — apply the sort stack (UpdateGameList, gamescreen.cpp:1185-1238:
+        // one stable ordered pass per criterion in stack order, so the LAST
+        // criterion is the primary key and earlier ones break its ties).
+        var sorted = _lobbySort.Apply(_visibleRows, (idx, column) =>
+            LobbyGameSort.ListingKey(_displayServers[idx], column));
+        _visibleRows.Clear();
+        _visibleRows.AddRange(sorted);
         _selectedIndex = _visibleRows.Count > 0
             ? Math.Clamp(_selectedIndex, 0, _visibleRows.Count - 1)
             : 0;
@@ -512,6 +651,34 @@ public sealed partial class Game1
         _filterBuffer.Clear();
         RebuildVisibleRows();
         Console.WriteLine("[monogame] lobby filter cleared");
+    }
+
+    /// <summary>P761b — the lobby find-player round trip: ask the directory about
+    /// exactly one pilot (<c>GET /api/servers/findplayer?name=</c>) and stage the
+    /// answering listing's id for the main thread. Never throws; a failure is
+    /// logged and treated as "no answer".</summary>
+    private async Task QueryFindPlayerAsync(string name, string path)
+    {
+        string? matchId = null;
+        string? error = null;
+        try
+        {
+            var hits = await _http.GetFromJsonAsync<List<FindPlayerResult>>(path,
+                ServerListing.JsonOptions).ConfigureAwait(false);
+            matchId = hits is { Count: > 0 } ? hits[0].Id : null;
+        }
+        catch (Exception ex)
+        {
+            error = $"{_lobbyUrl}: {ex.Message}";
+        }
+        // Volatile write AFTER staging the fields (same pairing as the fetch).
+        // P761c — stage the name in the worker-only field; the main thread copies
+        // it to _findPlayerQuery when it consumes the reply. Never write the
+        // main thread's field from here.
+        _findPlayerMatchId = matchId;
+        _findPlayerQueryStaged = name;
+        _findPlayerError = error;
+        _findPlayerResultPending = true;
     }
 
     /// <summary>HTTP GET the lobby's <c>/api/servers</c> and stage the result for
@@ -554,6 +721,9 @@ public sealed partial class Game1
         float h = vp.Height;
         bool connect = _connectStore is not null;
         bool polling = _lobbyUrl.Length > 0;
+        // P761 — the sort-header bar text (composed in DrawLobby; the pure
+        // stack state lives in LobbyGameSort).
+        string headerText = _lobbySort.HeaderText();
 
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         try
@@ -563,43 +733,44 @@ public sealed partial class Game1
             var textCol = new Color(0.88f, 0.96f, 0.95f);
             var savedCol = new Color(0.70f, 0.95f, 0.75f);
 
+            // P761b — a fixed one-line-each band above the list, so nothing
+            // overprints: title (20) / polling state (52) / player line (74,
+            // connect only) / sort-header bar (98) / filter-or-find line (122) /
+            // banner (146). Rows start at ConnectScreenLayout.ListTop (150).
             var title = "SERVER BROWSER";
             var tsz = _hudBig.MeasureString(title);
-            _spriteBatch.DrawString(_hudBig, title, new Vector2((w - tsz.X) / 2f, 28f), titleCol);
+            _spriteBatch.DrawString(_hudBig, title, new Vector2((w - tsz.X) / 2f, 16f), titleCol);
 
             string sub = polling ? $"Polling {_lobbyUrl}/api/servers" : "Manual connect (no lobby)";
             var ssz = _hudSmall.MeasureString(sub);
-            _spriteBatch.DrawString(_hudSmall, sub, new Vector2((w - ssz.X) / 2f, 82f), dimCol);
+            _spriteBatch.DrawString(_hudSmall, sub, new Vector2((w - ssz.X) / 2f, 52f), dimCol);
 
             if (connect)
             {
                 string nameLine = $"Player: {_playerName}   (tap NAME to change)";
-                _spriteBatch.DrawString(_hudSmall, nameLine, new Vector2(60f, 112f), textCol);
+                _spriteBatch.DrawString(_hudSmall, nameLine, new Vector2(60f, 74f), textCol);
             }
 
-            // Banner (error / empty).
+            // Banner (error / empty) — one line, so it cannot collide with the
+            // sort header above it or the first row below.
+            string? banner = null;
+            Color bannerCol = dimCol;
             if (_lobbyError is { } err)
             {
-                _spriteBatch.DrawString(_hudSmall, err, new Vector2(60f, ConnectScreenLayout.ListTop - 26f),
-                    new Color(1f, 0.45f, 0.35f));
-                if (polling)
-                    _spriteBatch.DrawString(_hudSmall, "Press R to retry now.", new Vector2(60f, ConnectScreenLayout.ListTop - 2f), dimCol);
+                banner = polling ? err + "  (R retries now)" : err;
+                bannerCol = new Color(1f, 0.45f, 0.35f);
             }
             else if (connect && _savedServers.Count == 0 && !polling)
-            {
-                _spriteBatch.DrawString(_hudSmall, "No saved servers yet - tap ADD to create one.",
-                    new Vector2(60f, ConnectScreenLayout.ListTop - 26f), dimCol);
-            }
+                banner = "No saved servers yet - tap ADD to create one.";
             else if (polling && _displayServers.Count == 0)
-            {
-                _spriteBatch.DrawString(_hudSmall, "No servers found yet - waiting for registrations...",
-                    new Vector2(60f, ConnectScreenLayout.ListTop - 26f), dimCol);
-            }
+                banner = "No servers found yet - waiting for registrations...";
             else if (_filterActive && _visibleRows.Count == 0)
             {
-                _spriteBatch.DrawString(_hudSmall, $"No servers match '{_filterBuffer}'.",
-                    new Vector2(60f, ConnectScreenLayout.ListTop - 26f), new Color(1f, 0.6f, 0.4f));
+                banner = $"No servers match '{_filterBuffer}'.";
+                bannerCol = new Color(1f, 0.6f, 0.4f);
             }
+            if (banner is not null)
+                _spriteBatch.DrawString(_hudSmall, banner, new Vector2(60f, 146f), bannerCol);
 
             // P274 — the live filter/edit line. Drawn above the list so the
             // narrowed selection is read against it. '_' is a blinking cursor
@@ -608,10 +779,51 @@ public sealed partial class Game1
             {
                 string prompt = "Filter: " + _filterBuffer.ToString() + "_";
                 var psz = _hudSmall.MeasureString(prompt);
-                _spriteBatch.DrawString(_hudSmall, prompt, new Vector2(60f, ConnectScreenLayout.ListTop - 52f),
+                _spriteBatch.DrawString(_hudSmall, prompt, new Vector2(60f, 122f),
                     new Color(0.98f, 1.0f, 0.65f));
                 string cnt = $"{_visibleRows.Count}/{_displayServers.Count}";
-                _spriteBatch.DrawString(_hudSmall, cnt, new Vector2(60f + psz.X + 24f, ConnectScreenLayout.ListTop - 49f), dimCol);
+                _spriteBatch.DrawString(_hudSmall, cnt, new Vector2(60f + psz.X + 24f, 125f), dimCol);
+            }
+
+            // P761 — the sort-header bar (native's clickable game-list header,
+            // gamescreen.cpp:858-898): one cursor cell, stack membership and
+            // direction shown per column. Only while no popup owns the keys.
+            if (polling)
+            {
+                _spriteBatch.DrawString(_hudSmall, headerText, new Vector2(56f, 98f),
+                    new Color(0.55f, 0.85f, 0.82f));
+            }
+
+            // P761 — the find-player popup line (native's FindDialogPopup edit
+            // box): typed player name, Enter searches the directory's games.
+            // Shares the filter-line slot (never both active at once).
+            if (_findPlayerActive)
+            {
+                string state = _findPlayerBusy ? "  (searching the lobby...)"
+                    : _findPlayerQuery is { } asked
+                        ? $"  (no listed game carries '{ScoreboardLayout.AsciiSafe(asked)}')"
+                        : "  (ENTER asks the lobby, ESC close)";
+                string fp = "Find player: " + _findBuffer.ToString() + "_" + state;
+                _spriteBatch.DrawString(_hudSmall, fp, new Vector2(60f, 122f),
+                    new Color(0.98f, 0.85f, 1.0f));
+            }
+
+            // P761 — the details popup (native OnButtonDetails' popup): the
+            // selected game's genuine directory fields. P761b — sized and
+            // positioned FIRST so the list can end short of it: the panel sits in
+            // its own right-hand column and the rows/highlight stop at its edge,
+            // so it can never cover the selected row. Drawn after the rows.
+            Rectangle detailsPanel = default;
+            float rowRight = 50f + w * ConnectScreenLayout.RowWidthFactor;
+            if (_detailsActive && _visibleRows.Count > 0)
+            {
+                var sel = _displayServers[_visibleRows[Math.Clamp(_selectedIndex, 0, _visibleRows.Count - 1)]];
+                var lines = ServerDirectorySearch.DetailsLines(sel);
+                float bh = 30f + lines.Count * _hudSmall.LineSpacing + 12f;
+                float bw = MathF.Min(400f, w * 0.34f);
+                float bx = w - bw - 40f;
+                detailsPanel = new Rectangle((int)bx, (int)ConnectScreenLayout.ListTop, (int)bw, (int)bh);
+                rowRight = MathF.Min(rowRight, bx - 12f);
             }
 
             // Combined rows (saved servers first, then lobby listings).
@@ -622,7 +834,7 @@ public sealed partial class Game1
                 float y = ConnectScreenLayout.ListTop + i * ConnectScreenLayout.RowH;
                 bool sel = i == _selectedIndex;
                 bool isSaved = di < _savedServers.Count;
-                _spriteBatch.Draw(_whitePixel, new Rectangle(50, (int)y, (int)(w * 0.7f), (int)(ConnectScreenLayout.RowH - 6f)),
+                _spriteBatch.Draw(_whitePixel, new Rectangle(50, (int)y, (int)(rowRight - 50f), (int)(ConnectScreenLayout.RowH - 6f)),
                     sel ? new Color(0.08f, 0.35f, 0.33f, 0.55f) : new Color(0f, 0f, 0f, 0f));
 
                 string prefix = isSaved ? "[S] " : "";
@@ -630,8 +842,27 @@ public sealed partial class Game1
                 if (isSaved && _lastUsedKey is { } lk && _savedServers[di].HostPort == lk)
                     suffix = "  (last used)";
                 string line = prefix + RowText(s) + suffix;
+                // P761b — fit the row to the band so a long name never runs
+                // under (or past) the details panel.
+                line = Rendering.TeamPaneRenderer.Fit(line, _hudSmall, rowRight - 56f);
                 _spriteBatch.DrawString(_hudSmall, line, new Vector2(56f, y + 2f),
                     sel ? titleCol : (isSaved ? savedCol : textCol));
+            }
+
+            // P761 — the details popup itself, drawn ON TOP of the (shortened)
+            // row band: native OnButtonDetails' panel, gamescreen.cpp:1308-1326.
+            if (detailsPanel != default)
+            {
+                var sel = _displayServers[_visibleRows[Math.Clamp(_selectedIndex, 0, _visibleRows.Count - 1)]];
+                var lines = ServerDirectorySearch.DetailsLines(sel);
+                _spriteBatch.Draw(_whitePixel, detailsPanel, new Color(0.014f, 0.020f, 0.029f, 0.96f));
+                _spriteBatch.Draw(_whitePixel, new Rectangle(detailsPanel.X, detailsPanel.Y, detailsPanel.Width, 2),
+                    new Color(0.42f, 0.72f, 0.95f));
+                _spriteBatch.DrawString(_hudSmall, "GAME DETAILS  (I close)",
+                    new Vector2(detailsPanel.X + 14f, detailsPanel.Y + 8f), titleCol);
+                for (int li = 0; li < lines.Count; li++)
+                    _spriteBatch.DrawString(_hudSmall, lines[li],
+                        new Vector2(detailsPanel.X + 14f, detailsPanel.Y + 32f + li * _hudSmall.LineSpacing), textCol);
             }
 
             // P500 — bottom action buttons (connect store only).
@@ -654,7 +885,9 @@ public sealed partial class Game1
                 ? "TAP a row or BUTTON   A/CONNECT join   Y ADD   X EDIT   B back"
                 : (_filterActive
                     ? "TYPE to filter   BACKSPACE delete   UP/DOWN select   ENTER join   ESC clear"
-                    : "UP/DOWN select   ENTER join   F find   R refresh   ESC quit");
+                    // P761b — kept inside the viewport: the old wording ran off
+                    // both edges at 1280 wide.
+                    : "UP/DOWN select   ENTER join   F find   P player   I details   C reset   <-/->+SPACE sort   R refresh   ESC quit");
             var fsz = _hudSmall.MeasureString(footer);
             // P500 — on the connect screen the footer anchors above the bottom
             // safe-area inset (Android clips the bottom ~6%); the desktop path
@@ -930,6 +1163,15 @@ public sealed partial class Game1
             return;
         }
 
+        // P761 — the find-player popup's edit box (native FindDialogPopup: the
+        // edit pane owns typed text until Enter submits the search).
+        if (_state == ClientState.Lobby && _findPlayerActive)
+        {
+            if (_findBuffer.Length < MaxFilterLen)
+                _findBuffer.Append(c);
+            return;
+        }
+
         if (_state == ClientState.Intro)
         {
             if (_introView == IntroView.Main && _introEditingPilot && _pilotBuf.Length < 24)
@@ -949,6 +1191,15 @@ public sealed partial class Game1
                 // (console.cpp:2335-2339; sounddef.mdl:324 text wave).
                 _sound?.PlayChatKey();
             }
+            return;
+        }
+
+        // P761 — the character sheet's profile editor draft (native's edit pane
+        // owns typed text until Apply).
+        if (_state == ClientState.Flying && _pilotProfile.Editing)
+        {
+            _pilotProfile.Append(c);
+            return;
         }
     }
 

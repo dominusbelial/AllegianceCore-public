@@ -84,4 +84,82 @@ public sealed record ServerListing(
             || (!string.IsNullOrEmpty(MissionName) && MissionName.Contains(needle, cmp))
             || (!string.IsNullOrEmpty(Address) && Address.Contains(needle, cmp));
     }
+
+}
+
+/// <summary>
+/// P761b — one hit of the lobby's per-name find-player query
+/// (<c>GET /api/servers/findplayer?name=</c>), the client mirror of the lobby's
+/// <c>FindPlayerResultDto</c>. It names the SERVER the queried pilot is on and
+/// nothing about any other pilot: the directory no longer publishes rosters
+/// (privacy fix — native's FIND_PLAYER asked the lobby about exactly one name,
+/// <c>WinTrek/gamescreen.cpp:1348-1352</c> → <c>FM_C_FIND_PLAYER</c>).
+/// </summary>
+public sealed record FindPlayerResult(
+    string Id,
+    string Name,
+    string Address,
+    int Port,
+    int MaxPlayers,
+    string MissionName,
+    string CoreFile,
+    string Version);
+
+/// <summary>
+/// P761/P761b — pure logic for the SERVER LIST's find-player popup and details
+/// panel (native FindDialogPopup, gamescreen.cpp:531-628 + OnButtonFindPlayer
+/// :1348-1352, and OnButtonDetails :1308-1326).
+/// <para>Native sends <c>FM_C_FIND_PLAYER</c> to the lobby and the lobby replies
+/// locating the game. This port's directory IS the lobby: the popup's Enter asks
+/// it about ONE name (<see cref="FindPlayerRequestPath"/> →
+/// <c>GET /api/servers/findplayer?name=</c>), and the answer names the server
+/// that pilot is on. The open listing deliberately carries no rosters (P761b
+/// privacy fix), so the search CANNOT run over the fetched list; only servers
+/// that opted in to publishing are searchable at all. The details panel mirrors
+/// native's purpose — show the selected game's details — with the fields the
+/// directory genuinely carries (a player COUNT, never names).</para>
+/// </summary>
+public static class ServerDirectorySearch
+{
+    /// <summary>P761b — the lobby query path for a find-player search
+    /// (<c>findplayer?name=</c>), URL-escaped. Null/blank names produce null:
+    /// native does not ask the lobby about an empty name.</summary>
+    public static string? FindPlayerRequestPath(string? name)
+        => string.IsNullOrWhiteSpace(name)
+            ? null
+            : "/api/servers/findplayer?name=" + Uri.EscapeDataString(name.Trim());
+
+    /// <summary>The index in <paramref name="listings"/> of the listing with
+    /// <paramref name="id"/>, or -1 (the find-player answer names the server by
+    /// id, and the browser selects that row).</summary>
+    public static int IndexOfListing(IReadOnlyList<ServerListing> listings, string? id)
+    {
+        if (string.IsNullOrEmpty(id)) return -1;
+        for (int i = 0; i < listings.Count; i++)
+            if (string.Equals(listings[i].Id, id, StringComparison.Ordinal))
+                return i;
+        return -1;
+    }
+
+    /// <summary>The details-panel lines for the selected game (the port's
+    /// stand-in for native's details flow, gamescreen.cpp:1308-1326 — native
+    /// downloads mission details files; this port shows the directory's genuine
+    /// per-listing fields). The player COUNT is shown; pilot NAMES are not part
+    /// of the public listing (P761b privacy fix). Pure ASCII, one line per
+    /// field.</summary>
+    public static IReadOnlyList<string> DetailsLines(ServerListing l)
+    {
+        string addr = (string.IsNullOrWhiteSpace(l.Address) ? "?" : l.Address)
+            + ":" + (l.Port > 0 ? l.Port.ToString(System.Globalization.CultureInfo.InvariantCulture) : "?");
+        var lines = new List<string>
+        {
+            "GAME:    " + (string.IsNullOrWhiteSpace(l.MissionName) ? "-" : l.MissionName),
+            "SERVER:  " + (string.IsNullOrWhiteSpace(l.Name) ? "(unnamed)" : l.Name),
+            "ADDRESS: " + addr,
+            "CORE:    " + (string.IsNullOrWhiteSpace(l.CoreFile) ? "-" : l.CoreFile),
+            "VERSION: " + (string.IsNullOrWhiteSpace(l.Version) ? "-" : l.Version),
+            "PLAYERS: " + l.PlayerCount + (l.MaxPlayers > 0 ? "/" + l.MaxPlayers : ""),
+        };
+        return lines;
+    }
 }

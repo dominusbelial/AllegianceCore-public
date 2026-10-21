@@ -16,6 +16,12 @@ public static class RateLimiting
     /// <summary>Named policy applied to <c>POST /api/servers/register</c> (fresh + heartbeat).</summary>
     public const string RegisterPolicy = "register";
 
+    /// <summary>P761b — named policy for the per-name find-player query
+    /// (<c>GET /api/servers/findplayer</c>). The endpoint answers "is pilot X on
+    /// any listed server", so unthrottled it would be a directory-wide roster
+    /// oracle; the same per-IP fixed window as registration bounds it.</summary>
+    public const string FindPlayerPolicy = "findplayer";
+
     /// <summary>Permitted register/heartbeat calls per IP per window.</summary>
     private const int RegisterPermitLimit = 30;
 
@@ -34,6 +40,17 @@ public static class RateLimiting
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                 RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                     _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = RegisterWindow, QueueLimit = 0, AutoReplenishment = true }));
+
+            options.AddPolicy(FindPlayerPolicy, context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = RegisterPermitLimit,
+                        Window = RegisterWindow,
+                        AutoReplenishment = true,
+                        QueueLimit = 0,
+                    }));
 
             options.AddPolicy(RegisterPolicy, context =>
                 RateLimitPartition.GetFixedWindowLimiter(

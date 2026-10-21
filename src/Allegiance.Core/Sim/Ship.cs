@@ -1583,6 +1583,12 @@ public sealed partial class Ship : Model, IShipIgc
             var oldCid = AcceptedShipCommandId;
             AcceptedShipTarget = target;
             AcceptedShipCommandId = cid;
+            // P761c — keep the wire triple native's SetCommand receives. A Model
+            // target's type comes from EquipmentTarget.TypeOf (a Ship, a Probe or
+            // an EquipmentTarget wrapping a station/asteroid/warp); null clears
+            // it, exactly like OT_invalid + NA.
+            AcceptedShipWireType = EquipmentTarget.TypeOf(target);
+            AcceptedShipWireId = target?.Id ?? -1;
             if (oldCid != cid || !SameCommandTarget(oldTarget, target))
                 Mission?.Site.CommandChangedEvent(command, this, target, cid);
         }
@@ -1659,6 +1665,20 @@ public sealed partial class Ship : Model, IShipIgc
     /// (<c>c_cidNone = -1</c>) — an unset slot carries no command id.</summary>
     public short AcceptedShipCommandId { get; set; } = OrderChange.CidNone;
 
+    /// <summary>P761c — the accepted slot's ORIGINAL wire object type/ID, kept
+    /// beside <see cref="AcceptedShipTarget"/> because some accepted targets
+    /// (a station, asteroid or warp) are not <see cref="Model"/> objects in this
+    /// port. Native relays <code>pfmOC->objectType/objectID</code> from the
+    /// order it received (FedSrv/FedSrv.CPP:13699-13732); the queued-order
+    /// promotion carries this triple forward so a station order still relays
+    /// <code>(goTo, OT_station, id)</code> instead of losing the target
+    /// (WinTrek/teampane.cpp:1660-1676). OT_invalid (-1) + NA = no target.</summary>
+    public IgcObjectType AcceptedShipWireType { get; set; } = (IgcObjectType)(-1);
+
+    /// <summary>The accepted slot's wire object ID (see
+    /// <see cref="AcceptedShipWireType"/>). -1 (NA) = no target.</summary>
+    public short AcceptedShipWireId { get; set; } = -1;
+
     /// <summary>
     /// P150 — the <c>c_cmdQueued</c> command slot's target
     /// (<c>m_commandTargets[c_cmdQueued]</c>, <c>shipIGC.h:2631</c>). The
@@ -1690,6 +1710,17 @@ public sealed partial class Ship : Model, IShipIgc
     /// (an order need not carry a target — promotion then sets
     /// <see cref="AcceptedShipCommandId"/> with a null accepted target).</summary>
     public Model? QueuedShipTarget { get; set; }
+
+    /// <summary>P761c — the queued order's ORIGINAL wire target type/ID
+    /// (<code>pfmOC->objectType/objectID</code>), stored beside
+    /// <see cref="QueuedShipTarget"/> so a non-Model target (station/asteroid/
+    /// warp) survives the queued → accepted promotion (WinTrek.cpp:10668-10681,
+    /// FedSrv.CPP:13699-13732). OT_invalid (-1) + NA = no target.</summary>
+    public IgcObjectType QueuedShipWireType { get; set; } = (IgcObjectType)(-1);
+
+    /// <summary>The queued slot's wire object ID (see
+    /// <see cref="QueuedShipWireType"/>). -1 (NA) = no target.</summary>
+    public short QueuedShipWireId { get; set; } = -1;
 
     /// <summary>
     /// P424 — the sim-time (<c>Mission.LastUpdate</c>) at which

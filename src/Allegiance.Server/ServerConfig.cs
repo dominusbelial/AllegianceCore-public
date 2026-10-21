@@ -208,6 +208,15 @@ public sealed class LobbyConfig
     /// <summary>Seconds between heartbeats. Registry default expiry is 90s, so the
     /// default 25s tolerates ~3 missed beats before a live server flaps off the list.</summary>
     public int HeartbeatIntervalSeconds { get; set; } = 25;
+
+    /// <summary>P761b — opt in to publishing this server's connected pilot names to
+    /// the lobby directory, so a player's FIND_PLAYER query can locate the game
+    /// they are in (native WinTrek/gamescreen.cpp:1348-1352 → FM_C_FIND_PLAYER).
+    /// <b>Default <c>false</c></b>: nothing about the roster leaves the server
+    /// unless its owner turns this on. Even when on, the names answer the
+    /// per-name query only — the public <c>/api/servers</c> listing never carries
+    /// them.</summary>
+    public bool PublishPlayerNames { get; set; }
 }
 
 /// <summary>P660 dedicated-server rotation policy. Uses native bAutoRestart's

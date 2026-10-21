@@ -44,9 +44,18 @@ public static class TeamPaneLayout
     }
     /// <summary>The flattened per-pilot ship state the caller extracts from
     /// <c>ClientWorld.Ships</c> (kept MonoGame/ClientCore-free so this layout is
-    /// headless-testable).</summary>
+    /// headless-testable). P761 adds <see cref="IsHuman"/> (native's
+    /// IsHuman(), the name-sort humans-before-drones rule, teampane.cpp:1490)
+    /// and <see cref="Money"/> (GetMoney(), the credits column,
+    /// teampane.cpp:1520). P761b adds the three STRING sort keys the native
+    /// comparators actually compare: <see cref="ShipName"/> (ShipName(),
+    /// teampane.cpp:1504-1510/1586-1621), <see cref="SectorName"/>
+    /// (SectorName(), :1512-1518/1577-1583) and <see cref="Objective"/>
+    /// (CurrentCommandText(), :1528-1534/1660-1676).</summary>
     public readonly record struct ShipBrief(short HullId, short SectorId, short StationId, bool Dead, bool Gone,
-        bool IsLeader = false, bool? Ready = null, short? WingId = null, short ShipId = -1);
+        bool IsLeader = false, bool? Ready = null, short? WingId = null, short ShipId = -1,
+        bool IsHuman = true, int Money = 0,
+        string ShipName = "", string SectorName = "", string Objective = "");
 
     public enum LineKind { Blank, Title, SideHeader, Pilot, Money, Ballot, Note, Hint }
 
@@ -54,13 +63,13 @@ public static class TeamPaneLayout
     /// local player's own row.</summary>
     public readonly record struct Line(LineKind Kind, string Text, bool Highlight = false);
 
-    /// <summary>
-    /// Build the ordered, ASCII-safe team-pane lines. Sides are grouped in id
-    /// order; pilots within a side are sorted by name. The local player (matched
-    /// by <paramref name="selfName"/>) is highlighted. <paramref name="ships"/>
-    /// maps a character name to its <see cref="ShipBrief"/> for the status
-    /// column (absent names fall back to "?" — a pilot with no ship entity yet).
-    /// <para>P752 — <paramref name="selectedName"/> additionally marks the team
+    /// <summary>P761 — the pane's radio sort-header bar (native
+    /// TeamPane::OnButtonBarImpl, teampane.cpp:1395-1456). The checked column IS
+    /// the sort key; <see cref="TeamPaneSort.Key.Leader"/> (the default) is
+    /// native's no-header-clicked sortLeader order. Rows within each side are
+    /// ordered by <see cref="TeamPaneSort.Ordered"/>'s stable sort — native's
+    /// comparators with their tie-breaks (see TeamPaneSort's remarks).
+    /// <paramref name="selectedName"/> additionally marks the team
     /// pane's selected row (the selection cursor the pane's controls act on;
     /// native's list selection, teampane.cpp:1104), and
     /// <paramref name="joinRequests"/> appends the own side's pending join
@@ -78,10 +87,14 @@ public static class TeamPaneLayout
         string? selfName,
         string? controlsHint = null,
         string? selectedName = null,
-        IReadOnlyList<string>? joinRequests = null)
+        IReadOnlyList<string>? joinRequests = null,
+        TeamPaneSort.Key sortKey = TeamPaneSort.Key.Leader)
     {
         var lines = new List<Line>();
         lines.Add(new Line(LineKind.Title, "TEAM PANE"));
+        // P761 — the radio sort-header bar: one checked column, chosen with the
+        // TeamPaneSort action (native's clickable header, teampane.cpp:1395-1456).
+        lines.Add(new Line(LineKind.Hint, TeamPaneSort.HeaderText(sortKey)));
 
         foreach (var g in entries.GroupBy(e => e.SideId).OrderBy(g => g.Key))
         {
@@ -89,24 +102,55 @@ public static class TeamPaneLayout
             lines.Add(new Line(LineKind.SideHeader,
                 destroyed ? $"SIDE {g.Key}  (DESTROYED)" : $"SIDE {g.Key}  (players: {g.Count()})"));
 
-            foreach (var e in g.OrderBy(e => e.CharacterName, StringComparer.Ordinal))
+            // P761 — the side's rows in the pane's sort order (native's sorted
+            // member list, teampane.cpp:997-1047): the sort comparators read the
+            // roster counters plus the live ship state.
+            var sideRows = g.Select(e =>
+            {
+                ships.TryGetValue(e.CharacterName, out var sb);
+                return new TeamPaneSort.Row(
+                    e.CharacterName,
+                    sb.IsHuman,
+                    sb.IsLeader,
+                    e.Rank,
+                    e.Kills,
+                    sb.Money,
+                    sb.SectorId,
+                    sb.HullId,
+                    sb.WingId ?? -1,
+                    sb.ShipName,
+                    sb.SectorName,
+                    sb.Objective);
+            });
+            foreach (var e in TeamPaneSort.Ordered(sideRows, sortKey).Select(r => r.Name)
+                         .Select(name => g.First(x => x.CharacterName == name)))
             {
                 bool self = selfName != null && string.Equals(e.CharacterName, selfName, StringComparison.Ordinal);
                 bool selected = selectedName != null && string.Equals(e.CharacterName, selectedName, StringComparison.Ordinal);
                 string rankName = RankNameLookup.Lookup(rankTable, e.Rank);
                 string status = StatusFor(ships, e.CharacterName);
                 bool hasShip = ships.TryGetValue(e.CharacterName, out var sb);
-                string hull = hasShip && sb.HullId > 0 ? $" HLD{sb.HullId}" : "";
-                string id = hasShip && sb.ShipId >= 0 ? $" ID:{sb.ShipId}" : "";
+                // P761c — draw the SAME resolved strings the sort compares
+                // (sector NAME, hull NAME, CurrentCommandText), not sector/hull
+                // ids: native draws SectorName() (teampane.cpp:1901-1907) and the
+                // hull/objective from the model, and P761b's "SEC 1053 HLD13"
+                // showed ids while sorting by names. A hull missing from the
+                // core reads "<none>" (ShipName(), teampane.cpp:1586-1621);
+                // without a core the id text is the honest fallback.
+                string hull = hasShip ? DisplayHullName(sb) : "";
                 // teamscreen.cpp:452-477,497-505: leader and AFK are roster
                 // state, independent of a pilot's current ship location.
                 string role = sb.IsLeader ? " [COMMANDER]" : "";
                 if (sb.Ready == false) role += " [AFK]";
-                role += $" WING:{(sb.WingId is { } wing ? WingNames.For(wing) : "?")}";
+                string objective = hasShip ? sb.Objective : "";
                 string cursor = selected ? ">   " : "    ";
+                // Compact columns: the role/wing tail must not push the
+                // objective text past the renderer's fit (P761c re-shoot).
                 string text = $"{cursor}{ScoreboardLayout.AsciiSafe(e.CharacterName),-18}  " +
-                              $"{ScoreboardLayout.AsciiSafe(rankName),-14}  " +
-                              $"{status,-10}{hull}  K:{e.Kills}  D:{e.Deaths}{role}{id}";
+                              $"{ScoreboardLayout.AsciiSafe(rankName),-12}  " +
+                              $"{ScoreboardLayout.AsciiSafe(status),-14}  " +
+                              $"{ScoreboardLayout.AsciiSafe(hull),-10}  " +
+                              $"K:{e.Kills}  D:{e.Deaths}  OBJ:{ScoreboardLayout.AsciiSafe(objective)}{role} WING:{(sb.WingId is { } wing2 ? WingNames.For(wing2) : "?")}";
                 lines.Add(new Line(LineKind.Pilot, text, self || selected));
             }
         }
@@ -130,17 +174,102 @@ public static class TeamPaneLayout
         if (isLeader && !string.IsNullOrWhiteSpace(activeBallot))
             lines.Add(new Line(LineKind.Ballot, $"ACTIVE BALLOT: {ScoreboardLayout.AsciiSafe(activeBallot)}"));
 
-        lines.Add(new Line(LineKind.Hint, controlsHint ?? "Ctrl + T TOGGLE  |  B LEADERBOARD  |  P CHARACTER SHEET"));
+        // P761b — the controls hint is long; wrap it so the pane stays a panel
+        // instead of a screen-wide strip (the renderer additionally truncates as
+        // a hard guarantee — a line can never overflow).
+        lines.AddRange(Wrapped(LineKind.Hint,
+            controlsHint ?? "Ctrl + T TOGGLE  |  B LEADERBOARD  |  P CHARACTER SHEET"));
 
         return lines;
     }
+
+    /// <summary>P761b — wrap one long line at word boundaries into lines of at
+    /// most <see cref="HintWrapColumns"/> characters (a hard cap; the renderer
+    /// truncates anything still too wide for its font).</summary>
+    public const int HintWrapColumns = 96;
+
+    public static IEnumerable<Line> Wrapped(LineKind kind, string text)
+    {
+        foreach (var part in Wrap(text, HintWrapColumns)) yield return new Line(kind, part);
+    }
+
+    /// <summary>Split <paramref name="text"/> into word-wrapped chunks of at most
+    /// <paramref name="max"/> characters, breaking on spaces and prefixing the
+    /// continuation lines with two spaces (a hanging indent).</summary>
+    public static IReadOnlyList<string> Wrap(string text, int max = HintWrapColumns)
+    {
+        if (max <= 0 || text.Length <= max) return [text];
+        var parts = new List<string>();
+        var line = new System.Text.StringBuilder();
+        foreach (var word in text.Split(' '))
+        {
+            string candidate = line.Length == 0 ? word : line + " " + word;
+            if (candidate.Length > max && line.Length > 0)
+            {
+                parts.Add(line.ToString());
+                line.Clear().Append("  ").Append(word);
+            }
+            else line.Clear().Append(candidate);
+        }
+        if (line.Length > 0) parts.Add(line.ToString());
+        return parts;
+    }
+
+    /// <summary>P761b — one roster row's sort keys, resolved from the live world
+    /// exactly as the native comparators resolve them. Shared by this layout's
+    /// caller and by <c>TeamPaneControls</c> so the drawn order and the
+    /// selection order can never diverge.</summary>
+    /// <param name="hullName">Resolves a hull id to the hull's name (native
+    /// <c>GetHullType(id)-&gt;GetName()</c>; the caller owns the parsed core, so
+    /// it supplies the lookup). A resolver that cannot find the hull returns
+    /// "<none>" (native ShipName(), teampane.cpp:1586-1621); a NULL resolver
+    /// (no shop catalog) falls back to the hull id text so the sort still works.</param>
+    public static TeamPaneSort.Row SortRow(ClientWorld world, ScoreRosterEntry e,
+        Func<short, string>? hullName)
+    {
+        var ent = world.Ships.Values.FirstOrDefault(s =>
+            s.SideId == e.SideId && s.CharacterName == e.CharacterName);
+        string sectorName = "unknown";   // SectorName(): a NULL cluster reads "unknown" (:1580-1583)
+        if (ent is not null && world.Clusters.TryGetValue(ent.SectorId, out var cluster))
+            sectorName = cluster.Name;
+        return new TeamPaneSort.Row(
+            e.CharacterName,
+            ent is null || ent.Player is { PilotType: Allegiance.Core.Wire.PlayerInfo.PilotTypePlayer },
+            ent is not null && world.TeamLeaderShipIdFor(e.SideId) == ent.ShipId,
+            e.Rank,
+            e.Kills,
+            ent?.Player?.Money ?? 0,
+            ent?.SectorId ?? -1,
+            ent?.HullId ?? -1,
+            ent?.WingId ?? -1,
+            ent is null ? "" : ResolveHullName(hullName, ent.HullId),
+            sectorName,
+            ent is null ? "" : world.AcceptedCommandText(ent.ShipId));
+    }
+
+    /// <summary>P761c — the one hull-name rule for both the sort and the drawn
+    /// cell: a named hull is its name; a hull the core does not know reads
+    /// "<none>" (native ShipName(), teampane.cpp:1586-1621); with no core the
+    /// hull id text keeps the sort meaningful.</summary>
+    public static string ResolveHullName(Func<short, string>? hullName, short hullId)
+    {
+        if (hullName is null) return $"HLD{hullId}";
+        string? resolved = hullName(hullId);
+        return string.IsNullOrEmpty(resolved) ? "<none>" : resolved;
+    }
+
+    /// <summary>The hull cell for an already-resolved brief: the name the sort
+    /// uses, or the id text when the caller had no catalog.</summary>
+    private static string DisplayHullName(ShipBrief sb)
+        => sb.ShipName.Length > 0 ? sb.ShipName : $"HLD{sb.HullId}";
 
     private static string StatusFor(IReadOnlyDictionary<string, ShipBrief> ships, string name)
     {
         if (!ships.TryGetValue(name, out var sb)) return "?";
         if (sb.Dead || sb.Gone) return "DEAD";
         if (sb.StationId != -1) return "DOCKED";
-        if (sb.SectorId > 0) return $"SEC {sb.SectorId}";
-        return "?";
+        // P761c — the same sector NAME the SECTOR sort compares (SectorName(),
+        // teampane.cpp:1512-1518, 1577-1583), never the raw sector id.
+        return sb.SectorName.Length > 0 ? sb.SectorName : "?";
     }
 }

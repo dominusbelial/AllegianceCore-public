@@ -20,7 +20,14 @@ public sealed class TeamPaneRenderer
     private readonly SpriteFont _small;
     private readonly SpriteFont _big;
 
-    private static readonly Color PanelBg = new(0.012f, 0.024f, 0.032f, 0.94f);
+    /// <summary>P761b/P761c — native's team pane is an opaque full-screen
+    /// surface; this port draws it as an overlay, so the panel has to be
+    /// near-opaque or the flight HUD behind it (the ENERGY/ARMOR gauge labels
+    /// sit right under the sort header) bleeds through the text. 0.995 hides the
+    /// HUD while keeping the panel's dark-blue cast (was 0.985, still faintly
+    /// visible).</summary>
+    internal const float PanelAlpha = 0.995f;
+    private static readonly Color PanelBg = new(0.012f, 0.024f, 0.032f, PanelAlpha);
     private static readonly Color PanelBorder = new(0.55f, 0.78f, 0.60f);
     private static readonly Color TitleColor = new(0.95f, 0.96f, 0.80f);
     private static readonly Color SideHeaderColor = new(0.75f, 0.85f, 0.60f);
@@ -80,7 +87,10 @@ public sealed class TeamPaneRenderer
                 bool isTitle = ln.Kind == TeamPaneLayout.LineKind.Title;
                 var f = isTitle ? _big : _small;
                 var c = ColorFor(ln);
-                _sb.DrawString(f, ln.Text, new Vector2(panelX + Padding, y), c, 0f,
+                // P761b — never draw past the panel: a long line (the controls
+                // hint is the widest) used to run off the right edge of both the
+                // panel and the screen. Fitted to the panel's inner width.
+                _sb.DrawString(f, Fit(ln.Text, f, panelW - 2f * Padding), new Vector2(panelX + Padding, y), c, 0f,
                     Vector2.Zero, 1f, SpriteEffects.None, 0f);
                 y += f.LineSpacing + LineGap;
             }
@@ -89,6 +99,25 @@ public sealed class TeamPaneRenderer
         {
             _sb.End();
         }
+    }
+
+    /// <summary>P761b — truncate <paramref name="text"/> to
+    /// <paramref name="maxWidth"/> with a trailing "..." so no line can overflow
+    /// the panel. Binary search over prefixes: O(log n) measurements.</summary>
+    internal static string Fit(string text, SpriteFont font, float maxWidth)
+    {
+        if (maxWidth <= 0f || text.Length == 0) return text;
+        if (font.MeasureString(text).X <= maxWidth) return text;
+        const string Ellipsis = "...";
+        float ell = font.MeasureString(Ellipsis).X;
+        int lo = 0, hi = text.Length;
+        while (lo < hi)
+        {
+            int mid = (lo + hi + 1) / 2;
+            if (font.MeasureString(text[..mid]).X + ell <= maxWidth) lo = mid;
+            else hi = mid - 1;
+        }
+        return text[..lo].TrimEnd() + Ellipsis;
     }
 
     private static Color ColorFor(TeamPaneLayout.Line l) => l.Kind switch

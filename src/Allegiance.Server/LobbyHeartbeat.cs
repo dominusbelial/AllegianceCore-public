@@ -30,6 +30,12 @@ public sealed class LobbyHeartbeat : IDisposable
     private readonly string _publicAddress;
     private readonly int _port;
     private readonly Func<int> _livePlayerCount;
+    /// <summary>P761 — snapshot of the connected pilots' names, sent with every
+    /// register so the directory can answer the client's find-player query
+    /// (native FIND_PLAYER, gamescreen.cpp:1348-1352). Optional: older hosts keep
+    /// the count-only payload. P761b — only sent when the server opted in
+    /// (<see cref="LobbyConfig.PublishPlayerNames"/>); otherwise null.</summary>
+    private readonly Func<IReadOnlyList<string>>? _livePlayerNames;
     private readonly string _missionName;
     private readonly string _coreFile;
     private readonly string _version;
@@ -53,8 +59,9 @@ public sealed class LobbyHeartbeat : IDisposable
     /// disposed on <see cref="Dispose"/>.
     /// </summary>
     public LobbyHeartbeat(LobbyConfig config, Func<int> livePlayerCount,
-        string missionName, string coreFile, string version, int port)
-        : this(BuildClient(config.Url), ownsHttp: true, config, livePlayerCount, missionName, coreFile, version, port)
+        string missionName, string coreFile, string version, int port,
+        Func<IReadOnlyList<string>>? livePlayerNames = null)
+        : this(BuildClient(config.Url), ownsHttp: true, config, livePlayerCount, missionName, coreFile, version, port, clock: null, livePlayerNames)
     {
     }
 
@@ -64,13 +71,15 @@ public sealed class LobbyHeartbeat : IDisposable
     /// not own it (disposal of the injected client is the caller's responsibility).
     /// </summary>
     internal LobbyHeartbeat(HttpClient http, LobbyConfig config, Func<int> livePlayerCount,
-        string missionName, string coreFile, string version, int port, TimeProvider? clock = null)
-        : this(http, ownsHttp: false, config, livePlayerCount, missionName, coreFile, version, port, clock)
+        string missionName, string coreFile, string version, int port, TimeProvider? clock = null,
+        Func<IReadOnlyList<string>>? livePlayerNames = null)
+        : this(http, ownsHttp: false, config, livePlayerCount, missionName, coreFile, version, port, clock, livePlayerNames)
     {
     }
 
     private LobbyHeartbeat(HttpClient http, bool ownsHttp, LobbyConfig config, Func<int> livePlayerCount,
-        string missionName, string coreFile, string version, int port, TimeProvider? clock = null)
+        string missionName, string coreFile, string version, int port, TimeProvider? clock = null,
+        Func<IReadOnlyList<string>>? livePlayerNames = null)
     {
         _clock = clock ?? TimeProvider.System;
         _http = http;
@@ -79,6 +88,10 @@ public sealed class LobbyHeartbeat : IDisposable
         _publicAddress = config.PublicAddress;
         _port = port;
         _livePlayerCount = livePlayerCount;
+        // P761b — privacy: the roster leaves this server ONLY on an explicit
+        // opt-in; the directory's default is "names withheld".
+        _livePlayerNames = config.PublishPlayerNames ? livePlayerNames : null;
+        _publishPlayers = config.PublishPlayerNames;
         _missionName = missionName;
         _coreFile = coreFile;
         _version = version;
@@ -138,6 +151,8 @@ public sealed class LobbyHeartbeat : IDisposable
                 _missionName,
                 _coreFile,
                 _version,
+                _livePlayerNames?.Invoke(),     // P761 — find-player data (opt-in only, P761b)
+                _publishPlayers,                // P761b — the per-server opt-in the directory honours
                 _token);                        // null on the first tick, or after a 409 forced a fresh re-register
 
             HttpResponseMessage resp;
@@ -233,6 +248,7 @@ public sealed class LobbyHeartbeat : IDisposable
         // must still be able to Release after the timer has been disposed.
     }
 
+    private readonly bool _publishPlayers;
     private readonly bool _ownsHttp;
 }
 
@@ -261,4 +277,8 @@ internal sealed record LobbyRegisterRequest(
     string MissionName,
     string CoreFile,
     string Version,
+    IReadOnlyList<string>? Players,
+    // P761b — the directory stores/answers the pilot names ONLY for a server that
+    // opts in (default off: the lobby cannot authenticate a self-hosted server).
+    bool PublishPlayers,
     string? Token);

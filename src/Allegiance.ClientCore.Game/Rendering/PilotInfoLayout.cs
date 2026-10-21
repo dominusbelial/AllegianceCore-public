@@ -85,4 +85,102 @@ public static class PilotInfoLayout
                 new Stat("SCORE", s.Score.ToString("F0")),
             ]);
     }
+
+    /// <summary>
+    /// P761 — the character sheet's profile-description editor, the port of
+    /// native <c>CharInfoScreen</c>'s Edit/Apply button pair
+    /// (<c>WinTrek/CharInfoScreen.cpp:837-880</c>):
+    /// <list type="bullet">
+    /// <item><b>Edit</b> (OnButtonEdit, :875-880): the description pane becomes
+    /// editable and focused; Edit hides/disables, Apply shows/enables, and the
+    /// read-only display string clears (the draft starts empty).</item>
+    /// <item><b>Apply</b> (OnButtonApply, :839-858): the pane turns read-only
+    /// again, the edited text is copied into the display, and the buttons swap
+    /// back. Native then sends <c>CHARACTER_INFO_EDIT_DESCRIPTION</c> to the
+    /// club server — a channel this port does not have — so the applied text is
+    /// persisted LOCALLY in the client's <c>player.json</c> preferences
+    /// (<c>IntroPreferences.PilotDescription</c>). The parity row stays
+    /// <c>partial</c> for exactly that reason: no other player can see it.</item>
+    /// </list>
+    /// Pure state machine: keyboard edges in, state out; Game1 performs the
+    /// preference write. Headless-testable (the state toggles are the pinned
+    /// behaviour).
+    /// </summary>
+    public sealed class ProfileEditor
+    {
+        public const int MaxDescriptionLen = 200;
+
+        private readonly System.Text.StringBuilder _draft = new();
+
+        /// <summary>Whether the description is being edited (native's edit pane
+        /// not read-only and not hidden).</summary>
+        public bool Editing { get; private set; }
+
+        /// <summary>The applied (read-only) description — what the display
+        /// string shows when not editing.</summary>
+        public string Description { get; set; } = "";
+
+        /// <summary>The live draft while editing; empty when read-only.</summary>
+        public string Draft => _draft.ToString();
+
+        /// <summary>Native's per-toggle button/pane flags (the state the tests
+        /// pin): ReadOnly mirrors <c>SetReadOnly</c>, the two button pairs
+        /// mirror <c>SetEnabled</c>/<c>SetHidden</c> for Edit and Apply.</summary>
+        public readonly record struct State(
+            bool Editing, bool ReadOnly, bool EditVisible, bool EditEnabled,
+            bool ApplyVisible, bool ApplyEnabled);
+
+        public State Snapshot => new(
+            Editing: Editing,
+            ReadOnly: !Editing,
+            EditVisible: !Editing,
+            EditEnabled: !Editing,
+            ApplyVisible: Editing,
+            ApplyEnabled: Editing);
+
+        /// <summary>OnButtonEdit: enter edit mode — editable + focused (the
+        /// port's compose-style text entry), Edit hidden, Apply shown; the
+        /// display string clears (native SetValue("")), i.e. the draft starts
+        /// EMPTY, not from the stored text.</summary>
+        public void BeginEdit()
+        {
+            if (Editing) return;
+            Editing = true;
+            _draft.Clear();
+        }
+
+        /// <summary>OnButtonApply: leave edit mode read-only, copy the draft
+        /// into the display text, swap the buttons back. Returns the applied
+        /// text for the caller to persist (null when not editing — no-op, like
+        /// native's disabled Apply).</summary>
+        public string? Apply()
+        {
+            if (!Editing) return null;
+            Description = _draft.ToString();
+            Editing = false;
+            _draft.Clear();
+            return Description;
+        }
+
+        /// <summary>Cancel an edit (the port's Esc path — native cancels by not
+        /// pressing Apply): nothing is copied, buttons swap back.</summary>
+        public void Cancel()
+        {
+            Editing = false;
+            _draft.Clear();
+        }
+
+        /// <summary>Typed text into the draft (the edit pane's OnChar), only
+        /// while editing, capped.</summary>
+        public void Append(char c)
+        {
+            if (Editing && _draft.Length < MaxDescriptionLen) _draft.Append(c);
+        }
+
+        /// <summary>Backspace into the draft, only while editing.</summary>
+        public void Backspace()
+        {
+            if (Editing && _draft.Length > 0) _draft.Length -= 1;
+        }
+    }
 }

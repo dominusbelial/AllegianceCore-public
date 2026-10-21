@@ -151,6 +151,42 @@ public sealed class OrderChange : IFedMessage
     /// when deciding whether a relayed chat carries a real order to queue.</summary>
     public const short CidMax = 10;
 
+    /// <summary>P761b — the command-action VERBS, index-aligned with the native
+    /// <c>c_cdAllCommands[c_cidMax]</c> table (<c>Igc/common.cpp:41-52</c>):
+    /// goto, attack, capture, defend, pickup, goto, repair, join, mine, build.
+    /// These are the <c>szVerb</c> strings native's team-pane OBJECTIVE sort and
+    /// its <c>CurrentCommandText</c> compose (<c>WinTrek/teampane.cpp:1660-1676</c>:<br/>
+    /// <c>szVerb</c> alone with no target, <c>szVerb + " " + modelName</c> with
+    /// one). Two entries read "goto" because native reuses that verb for both
+    /// <c>c_cidDefault</c>(0) and <c>c_cidGoto</c>(5).</summary>
+    private static readonly string[] CommandVerbs =
+    {
+        "goto",     // c_cidDefault = 0
+        "attack",   // c_cidAttack = 1
+        "capture",  // c_cidCapture = 2
+        "defend",   // c_cidDefend = 3
+        "pickup",   // c_cidPickup = 4
+        "goto",     // c_cidGoto = 5
+        "repair",   // c_cidRepair = 6
+        "join",     // c_cidJoin = 7
+        "mine",     // c_cidMine = 8
+        "build",    // c_cidBuild = 9
+    };
+
+    /// <summary>P761b — the native <c>c_cdAllCommands[cid].szVerb</c> lookup
+    /// (<c>Igc/common.cpp:41-52</c>). False for an unset slot
+    /// (<see cref="CidNone"/>) or any id outside <c>[0, c_cidMax)</c>.</summary>
+    public static bool TryCommandVerb(short commandId, out string verb)
+    {
+        if (commandId < 0 || commandId >= CommandVerbs.Length)
+        {
+            verb = "";
+            return false;
+        }
+        verb = CommandVerbs[commandId];
+        return true;
+    }
+
     /// <summary>Native command-slot selector <c>c_cmdQueued = 0</c>
     /// (<c>Igc/igc.h:848</c>, <c>Wopr/Wopr/Constants/CommandType.cs:11</c>) —
     /// the slot <see cref="Command"/> names. Server/AI-internal; never sent by
@@ -174,6 +210,18 @@ public sealed class OrderChange : IFedMessage
     /// the commanding player's own side (<c>FedSrv.CPP:7275-7278</c>); an
     /// unresolvable id leaves the target as the sender's own ship.</summary>
     public short ShipID;
+
+    /// <summary>P761b — the accepted-command text native's team pane sorts the
+    /// OBJECTIVE column by (<c>CurrentCommandText</c>, <c>WinTrek/teampane.cpp:1660-1676</c>):
+    /// the command verb, followed by " " + the target model's name when the
+    /// slot names a target. Empty for an unset slot. The caller resolves
+    /// <paramref name="targetName"/> from its own model tables (the native
+    /// <c>GetModelName(pmodelTarget)</c>); a null name yields the bare verb, the
+    /// native no-target branch.</summary>
+    public static string AcceptedCommandText(short commandId, string? targetName)
+        => TryCommandVerb(commandId, out var verb)
+            ? string.IsNullOrEmpty(targetName) ? verb : verb + " " + targetName
+            : "";
 
     /// <summary>The id of the target model the generic fallback would command
     /// (e.g. a station/asteroid to mine/goto). Not read by the P148 stay-docked

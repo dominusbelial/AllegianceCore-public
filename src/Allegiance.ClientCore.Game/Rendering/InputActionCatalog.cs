@@ -76,6 +76,15 @@ public static class InputActionCatalog
         new("YawRight", "MOVEMENT", "Yaw right [TK_YawRight]", K(Keys.Right)),
         new("RollLeft", "MOVEMENT", "Roll left [TK_RollLeft]", K(Keys.A), K(Keys.Q)),
         new("RollRight", "MOVEMENT", "Roll right [TK_RollRight]", K(Keys.D), K(Keys.E)),
+        // P761 — TK_RollModifier (igc.h:434, name "Roll Modifier",
+        // trekinput.cpp:183): while held, the steering X axis (mouse deflection
+        // or the TK_YawLeft/TK_YawRight keys) drives ROLL and yaw is 0; released,
+        // X → yaw and the roll keys drive roll (WinTrek.cpp:10825-10840,
+        // :10895-10903). This checkout ships no defaultinputmap.mdl, so native's
+        // default binding (if any) cannot be copied — like MouseWheel the action
+        // starts UNBOUND (fully rebindable via F6 Controls; tests bind it
+        // explicitly via ActionMap.SetBinding).
+        new("RollModifier", "MOVEMENT", "Roll modifier (hold): steering X drives roll [TK_RollModifier]", U(), null),
         new("FireBooster", "MOVEMENT", "Afterburner boost (hold) [TK_FireBooster]", K(Keys.LeftShift), K(Keys.Space)),
 
         // -- CRUISE THROTTLE (native bindings already, defaultinputmap.mdl:25-32) --
@@ -364,6 +373,11 @@ public static class InputActionCatalog
         new("MouseSensitivityUp", "CAMERA / VIEW", "Mouse flight: sensitivity up", C(Keys.D8), null),
         new("Scoreboard", "CAMERA / VIEW", "In-mission scoreboard (kills / deaths)", K(Keys.B), null),
         new("PilotInfo", "CAMERA / VIEW", "Pilot info (your own live stats)", K(Keys.P), null),
+        // P761 — the character sheet's profile editor (native CharInfoScreen's
+        // Edit/Apply button pair, CharInfoScreen.cpp:837-880): Ctrl+P starts the
+        // edit and applies it (Enter also applies, Esc cancels). A sheet-scope
+        // chord — plain P stays the sheet toggle.
+        new("PilotProfileEdit", "CAMERA / VIEW", "Character sheet: edit / apply the profile description", C(Keys.P), null),
         // P639 — TeamPane: the full-roster team screen (every side's pilots,
         // rank, ship status, kills/deaths). Native TK identity is TK_ConModeTeam
         // (igc.h:295); its native default is F6 (defaultinputmap.mdl keycode
@@ -379,6 +393,11 @@ public static class InputActionCatalog
         // pending ballot keeps Y for the vote). Both are rebindable.
         new("TeamPaneNextPilot", "CAMERA / VIEW", "Team pane: select next pilot", K(Keys.PageDown), null),
         new("TeamPaneAct", "CAMERA / VIEW", "Team pane: take me to selected pilot / accept join request", K(Keys.Y), null),
+        // P761 — the team pane's radio sort-header bar (native's clickable
+        // column headers, teampane.cpp:1395-1456): one checked column, each is a
+        // sort key. The keyboard idiom cycles the radio (Ctrl+S — a free chord;
+        // the pane-scope key only fires while the pane is up).
+        new("TeamPaneSort", "CAMERA / VIEW", "Team pane: cycle the sort column (radio header)", C(Keys.S), null),
         new("Help", "CAMERA / VIEW", "Toggle this help (you are here)", K(Keys.F1), K(Keys.F1)),
         new("OpenGraphicsSettings", "CAMERA / VIEW", "Graphics / FSR1 settings [P643]", C(Keys.F6), null),
         new("OpenKeyBindings", "CAMERA / VIEW", "Open Controls (rebind keys) [P625]", K(Keys.F6), null),
@@ -423,10 +442,28 @@ public static class InputActionCatalog
         new("LobbyFilter", "LOBBY (SERVER BROWSER)", "Find / filter servers by name", K(Keys.F), null),
         new("LobbyRefresh", "LOBBY (SERVER BROWSER)", "Refresh server list", K(Keys.R), null),
         new("LobbyClearFilter", "LOBBY (SERVER BROWSER)", "Clear filter", K(Keys.Escape), null),
+        // P761 — the browser's sort-header bar, find-player and details popups
+        // (native gamescreen.cpp:858-898 OnButtonBarGames, :900-927
+        // ResetFilters, :1348-1352 find player, :1308-1326 details). Native
+        // clicks header buttons; the keyboard idiom is LEFT/RIGHT cursor + SPACE
+        // click, C reset, P find-player, I details.
+        new("LobbyHeaderLeft", "LOBBY (SERVER BROWSER)", "Sort-header cursor left", K(Keys.Left), null),
+        new("LobbyHeaderRight", "LOBBY (SERVER BROWSER)", "Sort-header cursor right", K(Keys.Right), null),
+        new("LobbyHeaderClick", "LOBBY (SERVER BROWSER)", "Sort by the selected column (stack criterion)", K(Keys.Space), null),
+        new("LobbyResetFilters", "LOBBY (SERVER BROWSER)", "Reset all game filters + sort to players reversed", K(Keys.C), null),
+        new("LobbyFindPlayer", "LOBBY (SERVER BROWSER)", "Find player in the directory's games", K(Keys.P), null),
+        new("LobbyDetails", "LOBBY (SERVER BROWSER)", "Show the selected game's details", K(Keys.I), null),
 
         // -- READY CHECK (PRE-FLIGHT) --
         new("ReadyToggle", "READY CHECK (PRE-FLIGHT)", "Toggle your ready (PLAYER_READY)", K(Keys.Y), null),
         new("ForceReady", "READY CHECK (PRE-FLIGHT)", "Force your side ready (mission owner)", K(Keys.O), null),
+        // P761 — the team lobby's configuration controls (native's button row,
+        // teamscreen.cpp:1554-1573, 2773-2815): commander toggle AUTO_ACCEPT,
+        // mission-owner LOCK_LOBBY and LOCK_SIDES. Ready-check-scope keys (the
+        // flight bindings on the same keys do not fire in this context).
+        new("AutoAcceptToggle", "READY CHECK (PRE-FLIGHT)", "Commander: toggle auto-accept join requests", K(Keys.U), null),
+        new("LockLobbyToggle", "READY CHECK (PRE-FLIGHT)", "Mission owner: lock the lobby against joiners", K(Keys.N), null),
+        new("LockSidesToggle", "READY CHECK (PRE-FLIGHT)", "Mission owner: lock side switching", K(Keys.H), null),
 
         // -- PANES / MENUS (docked shop / teleport / invest, side-select) --
         // Generic navigation verbs shared across the docked sub-panes and the

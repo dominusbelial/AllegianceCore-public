@@ -358,6 +358,17 @@ public sealed partial class Game1
     private readonly Flight.TeamPaneControls _teamPaneControls = new();
     private int _investGroup;
     private readonly Flight.InvestmentTabsInput _investmentTabs = new();
+
+    /// <summary>P761b — hull id → hull NAME, the native team-pane SHIP sort key
+    /// (<c>tekClient.GetCore()-&gt;GetHullType(id)-&gt;GetName()</c>,
+    /// teampane.cpp:1504-1510, 1586-1621). Resolved from the parsed static core
+    /// the client already owns. P761c — a hull the core does not know reads
+    /// "&lt;none&gt;" (native ShipName(), teampane.cpp:1612); with NO catalog the
+    /// id text keeps the sort and the cell meaningful instead of empty.</summary>
+    private string HullNameForSort(short hullId)
+        => _shopCatalog is null
+            ? $"HLD{hullId}"
+            : _shopCatalog.Hulls.Where(h => h.HullId == hullId).Select(h => h.Name).FirstOrDefault() ?? "<none>";
     /// <summary>P752 — the team pane's selected-player controls, one input step
     /// while the pane is the active in-flight overlay. Routes the funding verbs
     /// (<c>InvestDonate</c> $100 / <c>InvestDonateLarge</c> $500 /
@@ -375,7 +386,8 @@ public sealed partial class Game1
         lock (_session.Gate)
         {
             ballot = _session.World.ActiveBallot is not null;
-            r = _teamPaneControls.Step(ks, Rendering.KeyBindingStore.Instance.Map, _session.World, active, ballot);
+            r = _teamPaneControls.Step(ks, Rendering.KeyBindingStore.Instance.Map, _session.World, active, ballot,
+                HullNameForSort);
         }
         // P764 — native OnPlayerClicked plays mouseclickSound on a player-list
         // selection change, toggling the highlight on a second click
@@ -1496,6 +1508,49 @@ public sealed partial class Game1
         if (o && !_rcOWasDown) ToggleTeamReady();
         _rcOWasDown = o;
 
+        // P761 — the team lobby's configuration controls (native's button row,
+        // teamscreen.cpp:1554-1573): the visibility/enable matrix in
+        // LobbyScreenState.BuildTeamControls decides whether the key fires at
+        // all (a hidden/disabled control does nothing, exactly like native's
+        // SetHidden/SetEnabled), and the toggle sends the same message native's
+        // button posts (teamscreen.cpp:2795-2815).
+        var controls = State.LobbyScreenState.BuildTeamControls(world, world.MySideId);
+        bool aaKey = ActionDown(ks, "AutoAcceptToggle");
+        if (aaKey && !_aaKeyWasDown)
+        {
+            if (controls.AutoAccept.Visible && controls.AutoAccept.Enabled && world.MySideId is { } aaSide)
+            {
+                bool enable = !controls.AutoAccept.Checked;
+                _session.SendAutoAccept(aaSide, enable);
+                Console.WriteLine($"[monogame] ready-check: AUTO_ACCEPT fAutoAccept={enable} iSide={aaSide}");
+            }
+        }
+        _aaKeyWasDown = aaKey;
+
+        bool llKey = ActionDown(ks, "LockLobbyToggle");
+        if (llKey && !_llKeyWasDown)
+        {
+            if (controls.LockLobby.Visible && controls.LockLobby.Enabled)
+            {
+                bool fLock = !world.LobbyLocked;
+                _session.SendLockLobby(fLock);
+                Console.WriteLine($"[monogame] ready-check: LOCK_LOBBY fLock={fLock}");
+            }
+        }
+        _llKeyWasDown = llKey;
+
+        bool lsKey = ActionDown(ks, "LockSidesToggle");
+        if (lsKey && !_lsKeyWasDown)
+        {
+            if (controls.LockSides.Visible && controls.LockSides.Enabled)
+            {
+                bool fLock = !world.SidesLocked;
+                _session.SendLockSides(fLock);
+                Console.WriteLine($"[monogame] ready-check: LOCK_SIDES fLock={fLock}");
+            }
+        }
+        _lsKeyWasDown = lsKey;
+
         // P501 — touch: tap the big READY/UNREADY button to toggle; the commander taps
         // FORCE READY to toggle their team-ready flag.
         if (TouchAvailable())
@@ -1565,8 +1620,17 @@ public sealed partial class Game1
         var rows = Rendering.ReadyCheckLayout.Build(
             sideName, _ownReady, players, agg, forced, canForce, launchCountdown);
         lock (_session.Gate)
+        {
             rows = rows.Concat(Rendering.LobbyStatusLayout.Build(world)
-                .Select(text => new Rendering.ReadyCheckLayout.Row(Rendering.ReadyCheckLayout.Kind.Info, text))).ToArray();
+                .Select(text => new Rendering.ReadyCheckLayout.Row(Rendering.ReadyCheckLayout.Kind.Info, text))).ToList();
+            // P761 — the team lobby's configuration controls (native's button
+            // row, teamscreen.cpp:1554-1573): one line per VISIBLE control with
+            // its checked/enable state (hidden controls are omitted entirely,
+            // exactly like native's SetHidden).
+            var controls = State.LobbyScreenState.BuildTeamControls(world, world.MySideId);
+            rows = rows.Concat(controls.DisplayLines()
+                .Select(text => new Rendering.ReadyCheckLayout.Row(Rendering.ReadyCheckLayout.Kind.Info, text))).ToList();
+        }
         _readyCheckRenderer.Draw(GraphicsDevice.Viewport, rows);
     }
 

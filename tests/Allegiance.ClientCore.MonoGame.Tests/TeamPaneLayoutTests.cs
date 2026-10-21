@@ -19,15 +19,21 @@ public class TeamPaneLayoutTests
     {
         var ships = new Dictionary<string, TeamPaneLayout.ShipBrief>
         {
-            ["Amy"] = new(301, 1, -1, false, false, IsLeader: true, Ready: false, WingId: 3, ShipId: 42),
-            ["Bob"] = new(301, 1, 9, false, false, Ready: true),
+            ["Amy"] = new(301, 1, -1, false, false, IsLeader: true, Ready: false, WingId: 3, ShipId: 42,
+                ShipName: "Titan", SectorName: "Ceto", Objective: "defend Bob"),
+            ["Bob"] = new(301, 1, 9, false, false, Ready: true, ShipName: "Scout", SectorName: "Ceto"),
         };
         var lines = TeamPaneLayout.Build([E("Amy", 0), E("Bob", 0)], Ranks, ships, null, null, null, false, "Amy");
         var commander = lines.Single(l => l.Kind == TeamPaneLayout.LineKind.Pilot && l.Highlight);
         Assert.Contains("[COMMANDER] [AFK]", commander.Text);
-        Assert.Contains("SEC 1", commander.Text);
+        // P761c — the row draws the resolved sector/hull names + objective, not ids
+        Assert.Contains("Ceto", commander.Text);
+        Assert.Contains("Titan", commander.Text);
+        Assert.Contains("OBJ:defend Bob", commander.Text);
         Assert.Contains("WING:escort", commander.Text);
-        Assert.Contains("ID:42", commander.Text);
+        Assert.DoesNotContain("SEC 1", commander.Text);
+        Assert.DoesNotContain("HLD301", commander.Text);
+        Assert.DoesNotContain("ID:42", commander.Text);
         var pilot = lines.Single(l => l.Kind == TeamPaneLayout.LineKind.Pilot && !l.Highlight);
         Assert.Contains("DOCKED", pilot.Text);
         Assert.DoesNotContain("[COMMANDER]", pilot.Text);
@@ -44,7 +50,8 @@ public class TeamPaneLayoutTests
     private static readonly RankInfoEntry[] Ranks = { R(0, "Newbie"), R(15, "Veteran 1") };
 
     private static TeamPaneLayout.ShipBrief Fly(string sector) =>
-        new(HullId: 301, SectorId: short.Parse(sector), StationId: -1, Dead: false, Gone: false);
+        new(HullId: 301, SectorId: short.Parse(sector), StationId: -1, Dead: false, Gone: false,
+            ShipName: "Titan", SectorName: "Ceto");
     private static TeamPaneLayout.ShipBrief Dock(short station = 901) =>
         new(HullId: 910, SectorId: 1, StationId: station, Dead: false, Gone: false);
     private static readonly TeamPaneLayout.ShipBrief Dead =
@@ -55,11 +62,14 @@ public class TeamPaneLayoutTests
     [Fact]
     public void Build_groups_by_side_and_sorts_pilots_by_name()
     {
+        // P761 — the pane's radio sort header: this pins the NAME column
+        // explicitly (the default no-header sort is native's sortLeader, see
+        // P761TeamPaneSortTests).
         var lines = TeamPaneLayout.Build(
             new[] { E("Zed", 1), E("Amy", 0), E("Bob", 0), E("Cal", 1) },
             Ranks,
             new Dictionary<string, TeamPaneLayout.ShipBrief>(),
-            null, null, null, false, null);
+            null, null, null, false, null, sortKey: TeamPaneSort.Key.Name);
 
         var sideHeaders = lines.Where(l => l.Kind == TeamPaneLayout.LineKind.SideHeader)
             .Select(l => l.Text).ToArray();
@@ -92,7 +102,7 @@ public class TeamPaneLayoutTests
         var byName = lines.Where(l => l.Kind == TeamPaneLayout.LineKind.Pilot)
             .ToDictionary(l => l.Text.Substring(4).Trim().Split("  ")[0].Trim(), l => l.Text);
 
-        Assert.Contains("SEC 3", byName["Fighter"]);
+        Assert.Contains("Ceto", byName["Fighter"]);   // P761c — sector NAME, not its id
         Assert.Contains("DOCKED", byName["Docker"]);
         Assert.Contains("DEAD", byName["KIA"]);
         Assert.Contains("?", byName["NoShip"]);

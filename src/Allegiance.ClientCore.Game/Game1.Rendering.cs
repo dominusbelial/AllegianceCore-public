@@ -1847,7 +1847,9 @@ public sealed partial class Game1
             var info = Rendering.PilotInfoLayout.Build(_session.World.ScoreRoster,
                 _session.World.Ships.TryGetValue(_session.World.MyShipId ?? -1, out var pe) ? pe.CharacterName : null,
                 _session.World.RankTable);
-            _pilotInfoRenderer.Draw(GraphicsDevice.Viewport, info);
+            // P761 — the profile-description section rides the same panel (the
+            // applied text / live draft + apply hint).
+            _pilotInfoRenderer.Draw(GraphicsDevice.Viewport, info, _pilotProfile);
         }
 
         // P271 — mission-briefing popup (pre-launch): the dismissible briefing
@@ -1859,7 +1861,16 @@ public sealed partial class Game1
         // location string with FGenerateCivBriefing=true, so there is no separate
         // mission-title field to draw). Dismissed by Enter/Esc or auto-closed
         // when the countdown expires (IsBriefingVisible).
-        if (_state == ClientState.Flying && !gameOverUp && IsBriefingVisible(out int? brRemaining))
+        // P761b — the briefing yields to the two screens that replace the whole
+        // view in native: the character sheet (CharInfoScreen) and the team pane
+        // (teampane). The port draws those as overlays, so an armed briefing
+        // would show through them (and cover the sheet). Hidden, not dismissed:
+        // the briefing state and its countdown are untouched and it reappears
+        // when the pane closes, exactly as native's pre-launch briefing survives
+        // a trip through a full-screen pane.
+        bool paneReplacesBriefing = _pilotInfoVisible || _teamPaneVisible;
+        if (_state == ClientState.Flying && !gameOverUp && !paneReplacesBriefing
+            && IsBriefingVisible(out int? brRemaining))
         {
             // P759b — when the join-sync carried MISSION_BRIEFING_INFO(996), build
             // the native briefing from the artwork's missionbrief.mdl civ strings
@@ -1969,10 +1980,20 @@ public sealed partial class Game1
                         ent.HullId, ent.SectorId, ent.StationId, ent.IsDead, ent.IsGone,
                         _session.World.TeamLeaderShipIdFor(ent.SideId) == ent.ShipId,
                         _session.World.Roster.ReadyByShipId.TryGetValue(ent.ShipId, out var ready) ? ready : null,
-                        ent.SideId == _session.World.MySideId ? ent.WingId : null, ShipId: ent.ShipId);
+                        ent.SideId == _session.World.MySideId ? ent.WingId : null, ShipId: ent.ShipId,
+                        // P761 — the name/credits sort comparators need native's
+                        // IsHuman (PilotTypePlayer) and GetMoney (PLAYERINFO money).
+                        IsHuman: ent.Player is { PilotType: Allegiance.Core.Wire.PlayerInfo.PilotTypePlayer },
+                        Money: ent.Player?.Money ?? 0,
+                        // P761b — the three STRING sort keys the native
+                        // comparators compare (teampane.cpp:1504-1534): the hull
+                        // NAME, the sector NAME and the accepted-command text.
+                        ShipName: HullNameForSort(ent.HullId),
+                        SectorName: _session.World.Clusters.TryGetValue(ent.SectorId, out var sec) ? sec.Name : "unknown",
+                        Objective: _session.World.AcceptedCommandText(ent.ShipId));
                 // P752 — the pane's selection cursor and the leader's join
                 // requests feed the same roster the controls act on.
-                var rosterRows = Flight.TeamPaneControls.BuildRoster(_session.World);
+                var rosterRows = _teamPaneControls.BuildRoster(_session.World, HullNameForSort);
                 int sel = _teamPaneControls.Selection;
                 string? selectedName = sel >= 0 && sel < rosterRows.Count ? rosterRows[sel].Name : null;
                 var joinRequests = rosterRows.Where(r => r.IsJoinRequest).Select(r => r.Name).ToArray();
@@ -1983,9 +2004,10 @@ public sealed partial class Game1
                     activeBallotText,
                     _session.World.IsTeamLeader,
                     ships.TryGetValue(_session.World.MyShipId ?? -1, out var tpe) ? tpe.CharacterName : null,
-                    $"{KeyOf("TeamPane").Label} TOGGLE | {KeyOf("TeamPaneNextPilot").Label} SELECT | D $100 / E $500 / A AUTO / X STOP | {KeyOf("TeamPaneAct").Label} GOTO/ACCEPT | {KeyOf("Scoreboard").Label} LEADERBOARD | {KeyOf("PilotInfo").Label} SHEET",
+                    $"{KeyOf("TeamPane").Label} TOGGLE | {KeyOf("TeamPaneNextPilot").Label} SELECT | {KeyOf("TeamPaneSort").Label} SORT | D $100 / E $500 / A AUTO / X STOP | {KeyOf("TeamPaneAct").Label} GOTO/ACCEPT | {KeyOf("Scoreboard").Label} LEADERBOARD | {KeyOf("PilotInfo").Label} SHEET",
                     selectedName,
-                    joinRequests);
+                    joinRequests,
+                    sortKey: _teamPaneControls.SortKey);
                 lines = lines.Append(new TeamPaneLayout.Line(TeamPaneLayout.LineKind.Hint, ModerationModel.Hint))
                     .Append(new TeamPaneLayout.Line(TeamPaneLayout.LineKind.Note, _moderation.Notice ?? "Steam moderator bans unavailable."))
                     .ToArray();

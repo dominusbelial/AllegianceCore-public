@@ -37,4 +37,10 @@ public sealed class MissionInfo
     /// <c>MISSIONDEF</c> or <c>MISSION_STAGE</c> arrived last sets it (see the
     /// comment in <see cref="ClientWorld.Apply(MissionDef)"/>).</summary>
     public int Stage { get; init; }
+
+    /// <summary>P761 — <c>MissionParams.bLockGameOpen</c> (igc.h:1139), decoded
+    /// from MISSIONDEF's parameter bitfields. Gates Auto-Accept and Lock Lobby
+    /// OFF in the team lobby (native: enabled only while the game-open lock is
+    /// off, teamscreen.cpp:1563-1569).</summary>
+    public bool LockGameOpen { get; init; }
 }

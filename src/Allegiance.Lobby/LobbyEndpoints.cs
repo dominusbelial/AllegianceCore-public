@@ -40,8 +40,21 @@ public static class LobbyEndpoints
                 : Results.NotFound();
         });
 
-        // Public read — no auth.
+        // Public read — no auth. P761b: a player COUNT only; no pilot names
+        // (the roster is not published — see ServerListingDto's remarks).
         app.MapGet("/api/servers", (ServerRegistry registry) => Results.Ok(registry.List()));
+
+        // P761b — FIND_PLAYER: the lobby is asked about exactly ONE pilot and
+        // answers which server(s) that pilot sits on (native
+        // WinTrek/gamescreen.cpp:1348-1352 → FM_C_FIND_PLAYER). Only servers that
+        // opted in to publishing their player list are searched, and the answer
+        // carries no other pilot's name. Rate-limited: an exact-name endpoint is
+        // otherwise a cheap roster oracle.
+        app.MapGet("/api/servers/findplayer", ([FromQuery] string? name, ServerRegistry registry) =>
+            string.IsNullOrWhiteSpace(name)
+                ? Results.BadRequest("name is required")
+                : Results.Ok(registry.FindPlayer(name)))
+            .RequireRateLimiting(RateLimiting.FindPlayerPolicy);
 
         app.MapGet("/api/servers/{id}", (string id, ServerRegistry registry) =>
         {

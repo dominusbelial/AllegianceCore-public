@@ -49,20 +49,41 @@ internal sealed class TeamPaneControls
         short? TakeMeToShipId = null,
         short? TakeMeToSectorId = null,
         short? AcceptShipId = null,
-        bool SelectionChanged = false);
+        bool SelectionChanged = false,
+        bool SortAdvanced = false);
 
     internal int Selection => _selection;
 
+    /// <summary>P761 — the pane's current radio sort column (native's
+    /// <c>m_sortPlayers</c>, teampane.cpp:1395-1456): the pane's display order
+    /// AND this selection cursor walk the same order. Default
+    /// <see cref="TeamPaneSort.Key.Leader"/> (native's constructor default,
+    /// teampane.cpp:547); the <c>TeamPaneSort</c> action cycles it.</summary>
+    internal TeamPaneSort.Key SortKey { get; private set; } = TeamPaneSort.Key.Leader;
+
     /// <summary>The selectable roster, in the pane's display order: every
-    /// side's players grouped by side id then name (the order
-    /// <c>TeamPaneLayout.Build</c> draws), then — for the leader — the own
-    /// side's pending join requests (native teampane.cpp:987-995).</summary>
-    internal static IReadOnlyList<RosterRow> BuildRoster(ClientWorld world)
+    /// side's players grouped by side id, each side's rows in the pane's
+    /// <see cref="SortKey"/> order (the order <c>TeamPaneLayout.Build</c>
+    /// draws; native's sorted member list, teampane.cpp:997-1047), then — for
+    /// the leader — the own side's pending join requests (native
+    /// teampane.cpp:987-995).</summary>
+    /// <param name="hullName">P761b — resolves a hull id to its name for the
+    /// SHIP column's name sort (native <c>GetHullType(id)-&gt;GetName()</c>,
+    /// teampane.cpp:1504-1510); the caller owns the parsed core. Omitting it
+    /// sorts those rows under an empty ship name, which is exactly what the
+    /// layout shows for an unresolved hull.</param>
+    internal IReadOnlyList<RosterRow> BuildRoster(ClientWorld world, Func<short, string>? hullName = null)
     {
         var rows = new List<RosterRow>();
         foreach (var g in world.ScoreRoster.GroupBy(e => e.SideId).OrderBy(g => g.Key))
         {
-            foreach (var e in g.OrderBy(e => e.CharacterName, StringComparer.Ordinal))
+            // P761 — the same TeamPaneSort order the layout draws (native's
+            // comparators + tie-breaks, see TeamPaneSort's remarks). P761b — the
+            // row (and therefore every sort key) comes from the ONE shared
+            // resolver the layout uses, so the selection cursor and the drawn
+            // list cannot disagree.
+            var sortRows = g.Select(e => TeamPaneLayout.SortRow(world, e, hullName));
+            foreach (var r in TeamPaneSort.Ordered(sortRows, SortKey))
             {
                 // Resolve the live ship entity for the id/sector (a roster name
                 // without a live ship keeps a -1 id and an unknown sector).
@@ -70,14 +91,14 @@ internal sealed class TeamPaneControls
                 short? sector = null;
                 foreach (var s in world.Ships.Values)
                 {
-                    if (s.SideId == g.Key && s.CharacterName == e.CharacterName)
+                    if (s.SideId == g.Key && s.CharacterName == r.Name)
                     {
                         shipId = s.ShipId;
                         sector = s.SectorId;
                         break;
                     }
                 }
-                rows.Add(new RosterRow(e.CharacterName, g.Key, shipId, sector, IsJoinRequest: false));
+                rows.Add(new RosterRow(r.Name, g.Key, shipId, sector, IsJoinRequest: false));
             }
         }
         if (world.IsTeamLeader && world.MySideId is { } mySide)
@@ -121,8 +142,16 @@ internal sealed class TeamPaneControls
     /// (PageDown) cycles the selection and <c>TeamPaneAct</c> (Y) is take-me-to on
     /// a player row / accept on a join-request row (a pending ballot keeps Y
     /// for the vote, mirroring the ready-check's shared-key convention).
+    /// P761 — <c>TeamPaneSort</c> (Ctrl+S) cycles the radio sort-header bar
+    /// (native's clickable headers, teampane.cpp:1395-1456); the roster AND the
+    /// selection cursor re-order together (native refreshes the list via
+    /// OnTeamCombo).
     /// </summary>
-    internal Result Step(KeyboardState keys, ActionMap map, ClientWorld world, bool active, bool ballotActive)
+    /// <param name="hullName">P761b — the hull-name resolver the SHIP sort needs
+    /// (see <see cref="BuildRoster"/>); the roster this step walks and the list
+    /// the pane draws are ordered identically.</param>
+    internal Result Step(KeyboardState keys, ActionMap map, ClientWorld world, bool active, bool ballotActive,
+        Func<short, string>? hullName = null)
     {
         bool Edge(string action) => _edges.Observe(action, map.IsDownMostSpecific(keys, action), !active);
         bool next = Edge("TeamPaneNextPilot");
@@ -131,8 +160,18 @@ internal sealed class TeamPaneControls
         bool large = Edge("InvestDonateLarge");
         bool auto = Edge("InvestAutoDonate");
         bool toggle = Edge("InvestToggleDonate");
+        // P761 — the radio sort-header cycle (native's clickable header bar,
+        // teampane.cpp:1395-1456); only meaningful while the pane is active.
+        bool sortKey = Edge("TeamPaneSort");
+        if (sortKey)
+        {
+            SortKey = TeamPaneSort.Next(SortKey);
+            var reordered = BuildRoster(world, hullName);
+            _selection = ClampSelection(_selection, reordered.Count);
+            return new Result(SelectionChanged: true, SortAdvanced: true);
+        }
 
-        var rows = BuildRoster(world);
+        var rows = BuildRoster(world, hullName);
         _selection = ClampSelection(_selection, rows.Count);
         if (next)
         {

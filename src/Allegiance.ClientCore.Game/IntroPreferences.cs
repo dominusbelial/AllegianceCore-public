@@ -46,6 +46,13 @@ public sealed class IntroPreferences
     /// default, since its chat log is also the console surface).</summary>
     public bool ChatFilterPlayersOnly { get; set; }
 
+    /// <summary>P761 — the pilot's profile description, edited on the character
+    /// sheet (native CharInfoScreen OnButtonApply sends
+    /// CHARACTER_INFO_EDIT_DESCRIPTION to the club server; this port has no
+    /// club channel, so the applied text is stored LOCALLY here — the parity
+    /// row stays partial for exactly that reason).</summary>
+    public string PilotDescription { get; set; } = "";
+
     public const int MaxRecent = 8;
 
     public static string DirectoryPath => Path.Combine(

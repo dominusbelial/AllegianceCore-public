@@ -4,6 +4,25 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P761b timing observations (2026-10-20)
+
+Two fast-tier sweeps under heavy concurrent load (other agents' suites on the same
+machine) both had **9,317 tests and 0 failed tests**, but each tripped the runner's
+calibrated 10 s fast-limit guard on a different UNRELATED test:
+
+- `Allegiance.Core.Tests.P750NativeAsteroidTypesTests.Research_showcase_rocks_carry_native_models_and_no_rock_names`
+  at **10.311 s** — passes **3/3 exact-method isolated invocations in ~1 s each**.
+- `Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return`
+  at **25.301 s** (quarantine set; the runner's own retry passed it) — passes
+  **3/3 exact-method isolated invocations in ~1 s each**.
+
+Neither test's source, budget or limit changed; nothing in P761b touches asteroid
+research or cross-side visibility, and the second test already has an entry in this
+ledger ("Initial warp-out setup timed out; existing LiveTiming case", 3/3 pass).
+Both are classified **load flakes**, not regressions. The runner FAILs are
+preserved. See [P761b](reports/P761_PARITY_WAVE_UI10.md) and
+`~/allegiance-evidence/P761b/fast-tier.log`.
+
 ## P747 environment observation (2026-10-19)
 
 The one fast-tier run had **8,826 pass / 5 fail / 3 existing private-asset skips**;

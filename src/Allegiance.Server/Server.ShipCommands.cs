@@ -1307,6 +1307,12 @@ public sealed partial class Server
                     }
                     target.AcceptedShipCommandId = target.QueuedCommandId;
                     target.AcceptedShipTarget = target.QueuedShipTarget;   // SetTarget+SetAccepted move the target too (WinTrek.cpp:10668-10681)
+                    // P761c — carry the queued WIRE triple into the accepted slot
+                    // too, so a station/asteroid/warp target is not lost (the
+                    // relay sends the last non-Model target it was given,
+                    // FedSrv.CPP:13699-13732).
+                    target.AcceptedShipWireType = target.QueuedShipWireType;
+                    target.AcceptedShipWireId = target.QueuedShipWireId;
                     // SC-1 counts accepted commands. Player-protocol pilots
                     // accept asynchronously; NPCs record in CommandToDrone.
                     RecordCommanderOrder(target, target.AcceptedShipCommandId);
@@ -1402,6 +1408,8 @@ public sealed partial class Server
     {
         target.QueuedCommandId = OrderChange.CidNone;
         target.QueuedShipTarget = null;
+        target.QueuedShipWireType = (IgcObjectType)(-1);
+        target.QueuedShipWireId = -1;
         target.QueuedAt = 0;
 
         if (ConnOf(target) is { } conn)
@@ -1474,7 +1482,10 @@ public sealed partial class Server
         short targetId;
         if (targetModel is not null)
         {
-            targetType = targetModel is Ship ? IgcObjectType.Ship : (IgcObjectType)(-1);
+            // P761c — derive the wire type from the model itself (a Ship, a
+            // Probe, or an EquipmentTarget wrapping a station/asteroid/warp),
+            // never assume Ship (EquipmentTarget.TypeOf, the relay's rule).
+            targetType = EquipmentTarget.TypeOf(targetModel);
             targetId = targetModel.Id;
         }
         else
@@ -1482,6 +1493,11 @@ public sealed partial class Server
             targetType = wireOtTarget;
             targetId = wireOidTarget;
         }
+        // P761c — keep the queued wire triple on the ship. The promotion below
+        // moves it into the accepted slot, so the relay can still name a
+        // station/asteroid/warp target (which has no Model here).
+        target.QueuedShipWireType = targetType;
+        target.QueuedShipWireId = targetId;
         var upd = new QueuedCommandUpdate
         {
             CommandId = commandId,

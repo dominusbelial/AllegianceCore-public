@@ -56,18 +56,18 @@ public class TeamPaneControlsTests
     public void Roster_ListsEverySideThenOwnJoinRequestsForTheLeader()
     {
         var w = World();
-        var rows = TeamPaneControls.BuildRoster(w);
+        var rows = new TeamPaneControls().BuildRoster(w);
         // All sides' players, side id then name order (the pane's display order).
         Assert.Equal(["p10", "p11", "p12"], rows.Select(r => r.Name));
         Assert.False(rows[0].IsJoinRequest);
 
         // A pending join request on the OWN side appears for the leader only
         // (native ConcatinatedList(members, requests), teampane.cpp:987-995).
-        Assert.DoesNotContain(TeamPaneControls.BuildRoster(w), r => r.IsJoinRequest);
+        Assert.DoesNotContain(new TeamPaneControls().BuildRoster(w), r => r.IsJoinRequest);
         w.Apply(new SetTeamLeader { SideId = 0, ShipId = 10 });
         w.Apply(new PositionReqBroadcast { SideId = 0, ShipId = 55 });
         w.Apply(new ExportShip { ShipId = 55, SideId = -1, CharacterName = "p55" });
-        rows = TeamPaneControls.BuildRoster(w);
+        rows = new TeamPaneControls().BuildRoster(w);
         var req = Assert.Single(rows, r => r.IsJoinRequest);
         Assert.Equal("p55", req.Name);
         Assert.Equal(55, req.ShipId);

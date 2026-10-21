@@ -78,6 +78,11 @@ public sealed partial class Server : IDisposable
     // instead of killing the process.
     private long _simPassStageFailures;
     private int _liveShipCount;
+    // P761 — the connected pilots' names (the directory's player lists, the
+    // data native's FIND_PLAYER searches), snapshotted alongside
+    // _liveShipCount each tick under _statsLock so the lobby heartbeat can
+    // publish them without touching the sim-thread-owned _peerShips map.
+    private IReadOnlyList<string> _liveShipNames = Array.Empty<string>();
     private readonly List<short> _bucketCompletions = new();
     private readonly object _statsLock = new();
 
@@ -649,6 +654,13 @@ public sealed partial class Server : IDisposable
     /// thread (see <see cref="Ships"/>). P176.
     /// </summary>
     public int LivePlayerCount { get { lock (_statsLock) return _liveShipCount; } }
+
+    /// <summary>P761 — snapshot of the connected pilots' names (captured once
+    /// per tick under <c>_statsLock</c>, the same pairing as
+    /// <see cref="LivePlayerCount"/>), in seat order. The lobby heartbeat
+    /// publishes them so the client's find-player search can locate the game a
+    /// pilot is in (native FIND_PLAYER, gamescreen.cpp:1348-1352).</summary>
+    public IReadOnlyList<string> LivePlayerNames { get { lock (_statsLock) return _liveShipNames; } }
 
     /// <summary>Bucket ids that have become fully funded AND fully
     /// time-invested (the P119 completion-detection seam), in completion order,
