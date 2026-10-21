@@ -90,7 +90,7 @@ public sealed class NativeShipRenderer : IDisposable
             }
             var file = MdlFile.Parse(AssetSources.ReadAllBytes(_assets, modelStem + ".mdl"));
             _parsed[modelStem] = file;
-            var geo = NativeShipGeometry.Build(_gd, file.Meshes);
+            var geo = NativeShipGeometry.Build(_gd, file.Meshes, file.LodLevels);
             _models[modelStem] = geo;
             return geo;
         }
@@ -370,11 +370,23 @@ public sealed class NativeShipRenderer : IDisposable
             return _pbrVertices;
         }
 
-        /// <summary>Merged-bounding-sphere radius of the raw native mesh — native
-        /// <c>m_radiusMesh</c>, the denominator of <c>m_scale</c>.</summary>
+        /// <summary>Merged-bounding-sphere radius of the raw native mesh — the
+        /// scene-side hull proxy (larger than native's <c>m_radiusMesh</c>).</summary>
         public required float MeshRadius { get; init; }
 
-        public static NativeShipGeometry Build(GraphicsDevice gd, IReadOnlyList<MdlMesh> meshes)
+        /// <summary>HUD-21b — native <c>m_radiusMesh</c>: the maximum vertex
+        /// distance from the model origin, computed ONCE here at load
+        /// (<see cref="NativeShipResolver.MaxVertexRadius"/>,
+        /// <c>engine/geometry.cpp:408-418</c>, <c>effect/thinggeo.cpp:1053</c>).
+        /// The target-pane preview normalises by this so the farthest vertex
+        /// lands on radius 1 (<c>thinggeo.cpp:373-381</c>).</summary>
+        public required float MaxVertexRadius { get; init; }
+
+        /// <param name="lods">The file's LOD levels (optional): native
+        /// <c>m_radiusMesh</c> is the max over the whole LODGeo, so they feed
+        /// <see cref="MaxVertexRadius"/> only (the buffers stay the base mesh).</param>
+        public static NativeShipGeometry Build(GraphicsDevice gd, IReadOnlyList<MdlMesh> meshes,
+            IReadOnlyList<MdlLodLevel>? lods = null)
         {
             Merge(meshes, out var verts, out var indices);
             var vbuf = new VertexBuffer(gd, typeof(VertexPositionNormalTexture), verts.Length, BufferUsage.WriteOnly);
@@ -389,6 +401,7 @@ public sealed class NativeShipRenderer : IDisposable
                 Indices = ibuf,
                 TriangleCount = indices.Length / 3,
                 MeshRadius = NativeShipResolver.MergedRadius(meshes),
+                MaxVertexRadius = NativeShipResolver.MaxVertexRadius(meshes, lods),
             };
         }
 

@@ -812,8 +812,21 @@ public sealed partial class Game1 : Game
     // renders the eligible target's native mesh each frame before the scene).
     private Rendering.TargetModelPreviewRenderer _targetModelPreviewRenderer = null!;
     // HUD-21 — this frame's preview texture fed to the HUD (the renderer's RT
-    // when a model rendered, else null → the pane's empty fallback).
+    // when a model rendered, else null → the pane's empty fallback). Cleared at
+    // the top of the Flying branch (HUD-21b) so a failed scene reference can
+    // never leave the previous target's RT on screen.
     private Texture2D? _hudTargetModelPreview;
+    // HUD-21b — the resolved preview art cached per TargetPreviewKey (kind,
+    // target id, hull/model). The resolve path allocates (NativeShipRef, the
+    // TextureStemFor closure + string concat) and is refreshed only when the
+    // key changes, so the steady per-frame path stays allocation-free.
+    // Claude review: the key/cache/gate step lives in the headless-testable
+    // TargetPreviewCache (a no-mesh resolution is cached too); built lazily on
+    // the first preview frame (it binds ResolvePreviewArt).
+    private Rendering.TargetPreviewCache<PreviewArt>? _previewCache;
+    // HUD-21b — ONE reusable Orientation for station/asteroid previews
+    // (Orientation is a class; HUD-21 allocated one per frame).
+    private readonly Orientation _previewOri = new();
     // P566 — per-ship resolved NATIVE model stem + texture stem + native scale,
     // collected under the same Gate lock as _shipModelById so the Draw loop reads
     // it lock-free. Null → this ship's native art failed to decode → Meshy fallback.

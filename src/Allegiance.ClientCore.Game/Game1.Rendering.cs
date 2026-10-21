@@ -378,6 +378,11 @@ public sealed partial class Game1
         }
         else // Flying
         {
+            // HUD-21b — the preview is null until this frame actually renders an
+            // eligible target. Without this, a frame that fails TrySceneReference
+            // or the sector-generation gate composited the LAST target's RT again
+            // (a stale model in the pane).
+            _hudTargetModelPreview = null;
             var world = _session.World;
             if (TrySceneReference(world, out short me, out var myPose)
                 && _flightEffects.Generation == world.SectorGeneration)
@@ -566,15 +571,14 @@ public sealed partial class Game1
                 // HUD-21 — render the selected target's 3-D model preview into
                 // its own render target HERE, before the colour target is bound,
                 // so the RT excursion is lossless (nothing has been drawn to the
-                // colour target yet; the frame cleared it at :317). Feed the RT
-                // to the HUD this frame when a model rendered, else null.
-                _hudTargetModelPreview = RenderTargetModelPreview(me)
+                // colour target yet; the frame cleared it at :317). The preview
+                // renderer RESTORES this exact colour target itself, so the
+                // caller keeps exactly one rebind (HUD-21b — HUD-21 rebound here
+                // a second time). Feed the RT to the HUD this frame when a model
+                // rendered, else null.
+                RenderTarget2D? colourTarget = sceneTarget ? sceneRt : (capThis ? _capTarget : null);
+                _hudTargetModelPreview = RenderTargetModelPreview(me, cameraEye, view, colourTarget)
                     ? _targetModelPreviewRenderer.Target : null;
-                // Rebind the frame's colour target (the same selection the opaque
-                // pass uses, :593) and re-clear it black: the excursion may have
-                // discarded its contents, and nothing has been drawn to it yet —
-                // so the clear is lossless.
-                GraphicsDevice.SetRenderTarget(sceneTarget ? sceneRt : (capThis ? _capTarget : (RenderTarget2D?)null));
                 GraphicsDevice.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1f, 0);
                 GraphicsDevice.BlendState = BlendState.Opaque;
                 GraphicsDevice.DepthStencilState = DepthStencilState.Default;
@@ -2472,19 +2476,36 @@ public sealed partial class Game1
     /// (<see cref="TargetModelPreview"/>). Returns true when a model was
     /// rendered (so the caller can feed the RT to the HUD); false → empty
     /// fallback (the pane looks as it does today).
+    /// <para><b>HUD-21b.</b> The gate takes its REAL inputs (own-source climb vs
+    /// the target's source ship, same cluster, visible, resolved mesh —
+    /// <c>WinTrek.cpp:8783-8818</c>); the camera pose is the ACTIVE camera's
+    /// (<c>m_orientation</c>/<c>m_position</c>, <c>WinTrek.cpp:384,436-437</c>),
+    /// not the ship's; the radius-1 scale uses native's max-vertex radius
+    /// (<see cref="NativeShipRenderer.NativeShipGeometry.MaxVertexRadius"/>); and
+    /// the resolved art is cached per <see cref="TargetPreviewKey"/> so the
+    /// steady path performs no lookups that allocate. Exactly one rebind of the
+    /// caller's colour target (<paramref name="restoreTo"/>).</para>
     /// </summary>
-    private bool RenderTargetModelPreview(short me)
+    /// <param name="me">The local ship id.</param>
+    /// <param name="cameraEye">The frame's camera position (native m_position).</param>
+    /// <param name="view">The frame's view matrix — a CreateLookAt view; its COLUMNS hold the
+    /// camera basis (read by TargetModelPreview.CameraBasis).</param>
+    /// <param name="restoreTo">The colour target the frame will draw into
+    /// (null = backbuffer) — restored once by the preview renderer.</param>
+    private bool RenderTargetModelPreview(short me, Vector3 cameraEye, in Matrix view, RenderTarget2D? restoreTo)
     {
         var world = _session.World;
-        TargetPreviewKind? drawKind = null;
-        NativeShipRenderer.NativeShipGeometry? shipGeo = null;
-        NativeStationRenderer.NativeStationGeometry? stationGeo = null;
-        Texture2D? tex = null;
+        TargetPreviewKind kind;
+        int targetId;
+        int targetSourceId;
+        int ownSourceId;
+        int hullId = -1;
+        string? modelStem = null;
+        string? textureHint = null;
+        bool sameCluster;
+        bool visible;
+        var targetPos = Vector3.Zero;
         var worldMat = Matrix.Identity;
-        float nativeScale = 0f;
-        var dp = Vector3.Zero;
-        var ownUp = Vector3.Up;
-        var ownFwd = Vector3.Forward;
 
         lock (_session.Gate)
         {
@@ -2492,104 +2513,191 @@ public sealed partial class Game1
             if (!world.Ships.TryGetValue(me, out var ownEnt) || ownEnt.Latest is not { } ownUpd) return false;
             if (ownEnt.SectorId < 0) return false;
             short ownSector = ownEnt.SectorId;
-            var ownPos = PoseConverter.ToXna(ownUpd.Position);
-            var ownOri = ownUpd.Orientation;
-            ownUp = PoseConverter.ToXna(ownOri.GetUp());
-            ownFwd = PoseConverter.ToXna(ownOri.GetForward());
+            // Native compares SOURCE ships (WinTrek.cpp:8796-8797): climb the
+            // port's ParentId link (turret/drone/gunner → carrier) on BOTH sides.
+            ownSourceId = SourceShipId(world, ownEnt);
 
+            targetId = t.Id;
             switch (t.Kind)
             {
                 case TargetKind.Ship:
                 {
-                    // Native SetTargetGeo: ships are replaced by GetSourceShip
-                    // first (WinTrek.cpp:8783-8818) — climb the port's parent
-                    // (source-ship) link so a turret/drone previews its carrier.
-                    if (!world.Ships.TryGetValue(t.Id, out var target) || target.ShipId == me) return false;
-                    var src = target;
+                    if (!world.Ships.TryGetValue(t.Id, out var ship)) return false;
+                    var src = ship;
                     int guard = 0;
                     while (src.ParentId >= 0 && world.Ships.TryGetValue(src.ParentId, out var parent)
                         && parent.ShipId != src.ShipId && guard++ < 8)
                         src = parent;
-                    if (src.SectorId != ownSector) return false;   // other cluster
-                    if (src.IsNotVisible) return false;            // cannot see
                     if (src.Latest is not { } srcUp) return false;
-                    var nref = ResolveNativeShip(src.HullId);
-                    if (nref is null) return false;                // no native mesh
-                    var geo = _nativeShipRenderer.MeshFor(nref.ModelStem!);
-                    if (geo is null) return false;
-                    shipGeo = geo;
-                    tex = nref.TextureStem is null ? null : _nativeShipRenderer.TextureFor(nref.TextureStem);
-                    nativeScale = 1f / geo.MeshRadius;             // radius-1 framing
+                    targetSourceId = src.ShipId;
+                    sameCluster = src.SectorId == ownSector;   // other cluster
+                    visible = !src.IsNotVisible;                // cannot see
+                    kind = TargetPreviewKind.Ship;
+                    hullId = src.HullId;
+                    targetPos = PoseConverter.ToXna(srcUp.Position);
                     worldMat = PoseConverter.ToXnaRotation(srcUp.Orientation);
-                    dp = PoseConverter.ToXna(srcUp.Position) - ownPos;
-                    drawKind = TargetPreviewKind.Ship;
                     break;
                 }
                 case TargetKind.Station:
                 {
                     if (!world.Stations.TryGetValue(t.Id, out var st)) return false;
-                    if (st.ClusterId != ownSector) return false;   // other cluster
                     var (mStem, mTex) = ResolveStationModel(st);
                     if (string.IsNullOrEmpty(mStem)) return false;
-                    var geo = _nativeStationRenderer.MeshFor(mStem);
-                    if (geo is null) return false;
-                    stationGeo = geo;
-                    var tStem = _nativeStationRenderer.TextureStemFor(mStem, mTex);
-                    tex = tStem is null ? null : _nativeStationRenderer.TextureFor(tStem);
-                    nativeScale = 1f / geo.MeshRadius;
-                    var o = new Orientation();
-                    o.Set(Vec(st.Forward), Vec(st.Up));
-                    worldMat = PoseConverter.ToXnaRotation(o);
-                    dp = PoseConverter.ToXna(Vec(st.Position)) - ownPos;
-                    drawKind = TargetPreviewKind.Station;
+                    targetSourceId = -1;                       // a station is no ship
+                    sameCluster = st.ClusterId == ownSector;    // other cluster
+                    visible = true;
+                    kind = TargetPreviewKind.Station;
+                    modelStem = mStem;
+                    textureHint = mTex;
+                    targetPos = PoseConverter.ToXna(Vec(st.Position));
+                    // One reusable Orientation (HUD-21 allocated one per frame).
+                    _previewOri.Set(Vec(st.Forward), Vec(st.Up));
+                    worldMat = PoseConverter.ToXnaRotation(_previewOri);
                     break;
                 }
                 case TargetKind.Asteroid:
                 {
                     if (!world.Asteroids.TryGetValue(t.Id, out var ast)) return false;
-                    if (ast.ClusterId != ownSector) return false;   // other cluster
-                    var geo = _nativeAsteroidRenderer.GeometryFor(ast.ModelName);
-                    if (geo is null) return false;
-                    shipGeo = geo;
-                    var tStem = _nativeAsteroidRenderer.TextureStemFor(ast.ModelName, ast.TextureName);
-                    tex = tStem is null ? null : _nativeAsteroidRenderer.TextureFor(tStem);
-                    nativeScale = 1f / geo.MeshRadius;
-                    var o = new Orientation();
-                    o.Set(Vec(ast.Forward), Vec(ast.Up));
-                    var rot = PoseConverter.ToXnaRotation(o);
+                    targetSourceId = -1;                        // an asteroid is no ship
+                    sameCluster = ast.ClusterId == ownSector;    // other cluster
+                    visible = true;
+                    kind = TargetPreviewKind.Asteroid;
+                    modelStem = ast.ModelName;
+                    textureHint = ast.TextureName;
+                    targetPos = PoseConverter.ToXna(Vec(ast.Position));
+                    _previewOri.Set(Vec(ast.Forward), Vec(ast.Up));
+                    var rot = PoseConverter.ToXnaRotation(_previewOri);
+                    // The preview shows the target's CURRENT orientation, so the
+                    // client-side spin (P252) is part of it.
                     if (_asteroidSpins.TryGetValue(t.Id, out var spin))
                         rot *= Matrix.CreateFromAxisAngle(new Vector3(spin.Axis.X, spin.Axis.Y, spin.Axis.Z), spin.Angle);
                     worldMat = rot;
-                    dp = PoseConverter.ToXna(Vec(ast.Position)) - ownPos;
-                    drawKind = TargetPreviewKind.Asteroid;
                     break;
                 }
                 default:
                     return false;   // warp/probe/mine/treasure → empty fallback
             }
-
-            if (!TargetModelPreview.Eligible(drawKind!.Value,
-                isOwnShip: false, sameCluster: true, visible: true, hasMesh: true))
-                return false;
         }
 
+        // Key → cache → gate (HUD-21b; Claude review moved it into the
+        // headless-testable TargetPreviewCache). The art resolve allocates
+        // (NativeShipRef, the TextureStemFor closure + string concat), so it runs
+        // only when the selected target OR its hull/model identity changes; a
+        // target with NO native mesh is cached as a null resolution (resolved
+        // once, not every frame) and the gate sees the real mesh-present state.
+        var key = new TargetPreviewKey(kind, targetId, hullId, modelStem, textureHint);
+        _previewCache ??= new TargetPreviewCache<PreviewArt>(ResolvePreviewArt);
+        if (_previewCache.Step(key, targetSourceId, ownSourceId, sameCluster: sameCluster, visible: visible)
+            is not { } art)
+            return false;
+
+        // The native camera pose (WinTrek.cpp:384,436-437): the CAMERA
+        // orientation's up (m_orientation) and m_position for dp. Every flight
+        // view is Matrix.CreateLookAt, whose basis is stored in the COLUMNS —
+        // TargetModelPreview.CameraBasis reads them (HUD-21b read the rows, the
+        // transposed basis). Deviation: native's TurnTo uses m_orientation
+        // WITHOUT the head-look (viewOrientation = m_orientationHead ·
+        // m_orientation, WinTrek.cpp:426 vs :438); the port's view includes the P624
+        // head yaw. The yaw is about the ship's own up, so camUp is unaffected
+        // and only the near-vertical ±forward fallback can differ.
+        TargetModelPreview.CameraBasis(view, out var camUp, out var camFwd);
+        var dp = targetPos - cameraEye;
+
         // GPU draw outside the gate.
-        var view = TargetModelPreview.View(dp, ownUp, ownFwd);
+        var previewView = TargetModelPreview.View(dp, camUp, camFwd);
         var proj = TargetModelPreview.Projection();
         var lighting = TargetModelPreview.Lighting(dp);
-        switch (drawKind!.Value)
+        switch (kind)
         {
             case TargetPreviewKind.Station:
-                _targetModelPreviewRenderer.RenderStation(stationGeo!, tex, worldMat, view, proj, nativeScale, lighting);
+                _targetModelPreviewRenderer.RenderStation(art.StationGeo!, art.Texture,
+                    worldMat, previewView, proj, art.NativeScale, lighting, restoreTo);
                 break;
             case TargetPreviewKind.Asteroid:
-                _targetModelPreviewRenderer.RenderAsteroid(shipGeo!, tex, worldMat, view, proj, nativeScale, lighting);
+                _targetModelPreviewRenderer.RenderAsteroid(art.ShipGeo!, art.Texture,
+                    worldMat, previewView, proj, art.NativeScale, lighting, restoreTo);
                 break;
             default:
-                _targetModelPreviewRenderer.RenderShip(shipGeo!, tex, worldMat, view, proj, nativeScale, lighting);
+                _targetModelPreviewRenderer.RenderShip(art.ShipGeo!, art.Texture,
+                    worldMat, previewView, proj, art.NativeScale, lighting, restoreTo);
                 break;
         }
         return true;
+    }
+
+    /// <summary>HUD-21b — one target's resolved preview art (geometry, texture,
+    /// radius-1 scale), cached by <see cref="TargetPreviewCache{TArt}"/>.</summary>
+    private sealed class PreviewArt
+    {
+        public NativeShipRenderer.NativeShipGeometry? ShipGeo;
+        public NativeStationRenderer.NativeStationGeometry? StationGeo;
+        public Texture2D? Texture;
+        public float NativeScale = 1f;
+    }
+
+    /// <summary>HUD-21b — the allocating art resolve, run by the preview cache
+    /// only on a key change. Null = no native mesh (cached; the gate then shows
+    /// the native empty fallback).</summary>
+    private PreviewArt? ResolvePreviewArt(TargetPreviewKey key)
+    {
+        switch (key.Kind)
+        {
+            case TargetPreviewKind.Ship:
+            {
+                var nref = ResolveNativeShip((short)key.HullId);
+                var geo = nref?.ModelStem is null ? null : _nativeShipRenderer.MeshFor(nref.ModelStem);
+                if (geo is null) return null;
+                return new PreviewArt
+                {
+                    ShipGeo = geo,
+                    Texture = nref!.TextureStem is null ? null : _nativeShipRenderer.TextureFor(nref.TextureStem),
+                    NativeScale = TargetModelPreview.ScaleForMaxVertexRadius(geo.MaxVertexRadius),
+                };
+            }
+            case TargetPreviewKind.Station:
+            {
+                if (key.ModelStem is null) return null;
+                var geo = _nativeStationRenderer.MeshFor(key.ModelStem);
+                if (geo is null) return null;
+                var tStem = _nativeStationRenderer.TextureStemFor(key.ModelStem, key.TextureHint);
+                return new PreviewArt
+                {
+                    StationGeo = geo,
+                    Texture = tStem is null ? null : _nativeStationRenderer.TextureFor(tStem),
+                    NativeScale = TargetModelPreview.ScaleForMaxVertexRadius(geo.MaxVertexRadius),
+                };
+            }
+            case TargetPreviewKind.Asteroid:
+            {
+                if (key.ModelStem is null) return null;
+                var geo = _nativeAsteroidRenderer.GeometryFor(key.ModelStem);
+                if (geo is null) return null;
+                var tStem = _nativeAsteroidRenderer.TextureStemFor(key.ModelStem, key.TextureHint);
+                return new PreviewArt
+                {
+                    ShipGeo = geo,
+                    Texture = tStem is null ? null : _nativeAsteroidRenderer.TextureFor(tStem),
+                    NativeScale = TargetModelPreview.ScaleForMaxVertexRadius(geo.MaxVertexRadius),
+                };
+            }
+            default:
+                return null;
+        }
+    }
+
+    /// <summary>
+    /// HUD-21b — native <c>GetSourceShip()</c>: climb the port's <c>ParentId</c>
+    /// link (a turret/drone/gunner's carrier) to the root source ship
+    /// (<c>WinTrek.cpp:8796-8797</c>). Cycles are guarded (8 hops) so a bad wire
+    /// parent can never hang the frame.
+    /// </summary>
+    internal static short SourceShipId(ClientWorld world, ShipEntity ship)
+    {
+        int guard = 0;
+        while (ship.ParentId >= 0 && world.Ships.TryGetValue(ship.ParentId, out var parent)
+            && parent.ShipId != ship.ShipId && guard++ < 8)
+            ship = parent;
+        return ship.ShipId;
     }
 
     /// <summary>

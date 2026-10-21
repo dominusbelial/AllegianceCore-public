@@ -190,13 +190,13 @@ public sealed class AutoProofMachine
             _gotoEmitted = true;
             _due.Enqueue(new AutoAction(AutoActionKind.GotoSector, StrArg: _plan.GotoSector));
         }
-        if (_plan.Target != AutoTargetKind.None && !_targetEmitted)
+        if (_plan.Target != AutoTargetKind.None && !_targetEmitted && t >= _plan.TargetDelaySeconds)
         {
             _targetEmitted = true;
             _due.Enqueue(new AutoAction(AutoActionKind.SelectTarget, IntArg: (int)_plan.Target));
         }
         // P623 — emit the class-filtered target selection once airborne.
-        if (_plan.AutoTargetClass.Length > 0 && !_targetClassEmitted)
+        if (_plan.AutoTargetClass.Length > 0 && !_targetClassEmitted && t >= _plan.TargetDelaySeconds)
         {
             _targetClassEmitted = true;
             _due.Enqueue(new AutoAction(AutoActionKind.TargetClass, StrArg: _plan.AutoTargetClass));

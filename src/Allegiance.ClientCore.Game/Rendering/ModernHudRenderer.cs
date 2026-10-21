@@ -281,9 +281,10 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         var side = tp.SideColor is { } sc ? new Color(sc.R, sc.G, sc.B, sc.A) : new Color(224, 231, 235);
         if (_settings.ColorBlindSafe) side = HudPalette.Side(side);
 
-        // HUD-21 — the 3-D model preview, same native under-the-oval placement
-        // as the classic skin (empty fallback when the input is null).
-        DrawTargetModelPreview(x0, y0, s);
+        // HUD-21b — the 3-D model preview is painted AFTER the arcs below so the
+        // modern skin's geometric gauges never cover the model (a modern-skin
+        // choice; the classic skin follows native's paint order, where the
+        // gauges are on top — see HudRenderer.DrawTargetPaneDecor).
 
         // Name + type (same native anchor as classic, dialog.mdl:4043-4050).
         string nameLine = (tp.Name ?? "unknown") + (tp.TypeDescription is { } td ? ": " + td : "");
@@ -320,6 +321,10 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         float arcRadius = 16f * s;
         DrawModernTargetGauge(new(hullX, gaugeY), tp.HullFraction ?? 0f, side, s);
         DrawModernTargetGauge(new(shieldX, gaugeY), tp.ShieldFraction ?? 0f, side, s);
+
+        // HUD-21/21b — the target's 3-D model preview (after the arcs; empty
+        // fallback when the input is null).
+        DrawTargetModelPreview(x0, y0, s);
 
         // ARMOR/SHIELD flank their arcs (native puts them beside the gauges,
         // dialog.mdl:4220-4222) so the labels never sit on the arc stroke.

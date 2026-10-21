@@ -20,11 +20,11 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// (the 2.1 clamp of <see cref="TargetPaneLayout.Scale"/>), with
 /// <see cref="DepthFormat.Depth24"/> and a <see cref="SurfaceFormat.Color"/>
 /// alpha channel (the pane composites it with alpha blend over the HUD). Each
-/// frame with an eligible target: save targets, set the RT, clear transparent
-/// with depth 1, draw the model with the native renderer's own blend/depth
-/// state, restore the saved targets and reset blend/depth to opaque/default.
-/// The saved-target array is cached across frames (the pre-scene binding is
-/// constant) so the steady-state path allocates nothing per frame.
+/// frame with an eligible target: set the RT, clear transparent with depth 1,
+/// draw the model with the native renderer's own blend/depth state, then restore
+/// the CALLER's colour target (passed in — HUD-21b removed the
+/// <c>GetRenderTargets()</c> snapshot, which allocates a new array every call
+/// and whose cached copy went stale). The caller keeps exactly one rebind.
 /// </remarks>
 public sealed class TargetModelPreviewRenderer : IDisposable
 {
@@ -36,7 +36,6 @@ public sealed class TargetModelPreviewRenderer : IDisposable
     private readonly NativeStationRenderer _station;
     private readonly NativeAsteroidRenderer _asteroid;
     private RenderTarget2D? _rt;
-    private RenderTargetBinding[]? _saved;
 
     public TargetModelPreviewRenderer(
         GraphicsDevice gd,
@@ -63,48 +62,52 @@ public sealed class TargetModelPreviewRenderer : IDisposable
     private void Begin()
     {
         var gd = _gd;
-        var current = gd.GetRenderTargets();
-        if (_saved is null || _saved.Length != current.Length)
-            _saved = current;               // pre-scene binding is constant → cached
         gd.SetRenderTarget(EnsureTarget());
         gd.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Transparent, 1f, 0);
         gd.BlendState = BlendState.Opaque;
         gd.DepthStencilState = DepthStencilState.Default;
     }
 
-    private void End()
+    /// <summary>Restore the frame's colour target — exactly the one the caller
+    /// will draw the scene into (<c>null</c> = the backbuffer). No
+    /// <c>GetRenderTargets()</c> here: the steady path allocates nothing.</summary>
+    private void End(RenderTarget2D? restoreTo)
     {
         var gd = _gd;
-        gd.SetRenderTargets(_saved!);
-        // P582b trip-wire: verify the pre-scene excursion restored the exact
-        // binding (nothing is lost; the caller re-clears the colour target).
-        RenderTargetGuard.AssertColourTargetRestored(gd, _saved!, "HUD-21 target model preview");
+        gd.SetRenderTarget(restoreTo);
+        // P582b trip-wire: verify the excursion restored the colour target
+        // (DEBUG-only, compiled out in Release). Nothing is lost — the caller
+        // re-clears the colour target before its first draw.
+        RenderTargetGuard.AssertColourTargetRestored(gd, restoreTo, "HUD-21 target model preview");
         gd.BlendState = BlendState.Opaque;
         gd.DepthStencilState = DepthStencilState.Default;
     }
 
     public void RenderShip(NativeShipRenderer.NativeShipGeometry geo, Texture2D? texture,
-        in Matrix world, in Matrix view, in Matrix proj, float nativeScale, SectorLighting lighting)
+        in Matrix world, in Matrix view, in Matrix proj, float nativeScale, SectorLighting lighting,
+        RenderTarget2D? restoreTo)
     {
         Begin();
         _ship.Draw(geo, texture, world, view, proj, 1f, nativeScale, lighting);
-        End();
+        End(restoreTo);
     }
 
     public void RenderStation(NativeStationRenderer.NativeStationGeometry geo, Texture2D? texture,
-        in Matrix world, in Matrix view, in Matrix proj, float nativeScale, SectorLighting lighting)
+        in Matrix world, in Matrix view, in Matrix proj, float nativeScale, SectorLighting lighting,
+        RenderTarget2D? restoreTo)
     {
         Begin();
         _station.Draw(geo, texture, world, view, proj, nativeScale, lighting);
-        End();
+        End(restoreTo);
     }
 
     public void RenderAsteroid(NativeShipRenderer.NativeShipGeometry geo, Texture2D? texture,
-        in Matrix world, in Matrix view, in Matrix proj, float nativeScale, SectorLighting lighting)
+        in Matrix world, in Matrix view, in Matrix proj, float nativeScale, SectorLighting lighting,
+        RenderTarget2D? restoreTo)
     {
         Begin();
         _asteroid.Draw(geo, texture, world, view, proj, nativeScale, lighting);
-        End();
+        End(restoreTo);
     }
 
     public void Dispose()

@@ -80,6 +80,25 @@ public class P572AutoProofTests
     }
 
     [Fact]
+    public void Parse_asteroid_target_kind_for_the_target_pane_preview_shot()
+    {
+        // HUD-21b — the target-pane model preview's real-window proof needs an
+        // asteroid target; the automation grammar carries it like the other kinds.
+        var plan = AutoProofPlan.Parse(new[] { "--auto-target=asteroid" }, out _);
+        Assert.Equal(AutoTargetKind.Asteroid, plan.Target);
+        Assert.Equal(AutoTargetKind.Asteroid, AutoProofPlan.Parse(new[] { "--auto-target", "asteroid" }, out _).Target);
+    }
+
+    [Fact]
+    public void Parse_target_after_delays_the_selection()
+    {
+        // HUD-21b — wait for later-staged bots before framing a target.
+        Assert.Equal(14.5, AutoProofPlan.Parse(new[] { "--auto-target=enemy", "--auto-target-after=14.5" }, out _).TargetDelaySeconds, 3);
+        Assert.Equal(9, AutoProofPlan.Parse(new[] { "--auto-target", "enemy", "--auto-target-after", "9" }, out _).TargetDelaySeconds, 3);
+        Assert.Equal(0, AutoProofPlan.Parse(new[] { "--auto-target=enemy" }, out _).TargetDelaySeconds);
+    }
+
+    [Fact]
     public void Parse_NoFlags_IsInertAndPreservesPositionalArgs()
     {
         var plan = AutoProofPlan.Parse(new[] { "10.0.0.5", "2326", "someone" }, out var rest);

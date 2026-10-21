@@ -221,6 +221,13 @@ public sealed class NativeStationRenderer : IDisposable
         /// <c>m_radiusMesh</c>, the denominator of <c>m_scale</c>.</summary>
         public required float MeshRadius { get; init; }
 
+        /// <summary>HUD-21b — native <c>m_radiusMesh</c> (max vertex distance,
+        /// computed once at load). For stations this equals <see cref="MeshRadius"/>
+        /// because <see cref="NativeStationResolver.MeshRadius"/> already uses the
+        /// native max-vertex rule; it is exposed under the same name the ship and
+        /// asteroid geometries use so the preview rule is uniform.</summary>
+        public required float MaxVertexRadius { get; init; }
+
         public static NativeStationGeometry Build(GraphicsDevice gd, IReadOnlyList<MdlMesh> meshes,
             IReadOnlyList<MdlLodLevel>? lods = null)
         {
@@ -260,6 +267,7 @@ public sealed class NativeStationRenderer : IDisposable
                 TriangleCount = indices.Length / 3,
                 Parts = parts,
                 MeshRadius = NativeStationResolver.MeshRadius(meshes, lods),
+                MaxVertexRadius = NativeStationResolver.MeshRadius(meshes, lods),
             };
         }
 

@@ -85,4 +85,32 @@ public static class RenderTargetGuard
         }
 #endif
     }
+
+    /// <summary>
+    /// HUD-21b — trip-wire overload for a caller that KNOWS the colour target it
+    /// is restoring (<c>null</c> = the backbuffer). Same losslessness rule, but it
+    /// does not require the caller to snapshot <c>GetRenderTargets()</c> (a fresh
+    /// array per call) on the steady, per-frame path. The verification read is
+    /// DEBUG-only, exactly like the array overload (compiled out in Release).
+    /// </summary>
+    public static void AssertColourTargetRestored(
+        GraphicsDevice gd, RenderTarget2D? expected, string ctx)
+    {
+#if DEBUG
+        var restored = gd.GetRenderTargets();
+        bool equal = expected is null
+            ? restored.Length == 0
+            : restored.Length == 1 && ReferenceEquals(restored[0].RenderTarget, expected);
+        bool preserve = BindingPreservesContents(gd, restored);
+        if (!RestoreIsLossless(equal, preserve))
+        {
+            var msg = $"[RenderTargetGuard] {ctx}: volatile colour-target excursion NOT lossless " +
+                      $"(reboundIdentical={equal} preservesContents={preserve}; expected=" +
+                      (expected is null ? "backbuffer" : expected.Name) +
+                      $", restored={restored.Length} target(s)). Opaque scene MAY have been wiped.";
+            System.Console.WriteLine(msg);
+            System.Diagnostics.Debug.WriteLine(msg);
+        }
+#endif
+    }
 }

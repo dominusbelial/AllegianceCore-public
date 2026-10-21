@@ -90,10 +90,47 @@ public static class NativeShipResolver
     public static ushort[] RenderIndices(ushort[] indices) => indices;
 
     /// <summary>
-    /// The merged bounding-sphere radius of a set of <c>.mdl</c> meshes — native's
-    /// <c>m_radiusMesh</c> (<c>m_pgeoMesh-&gt;GetRadius(identity)</c>,
-    /// thinggeo.cpp:1053). Same merge technique as <see cref="ShipRenderScale.RenderRadius"/>,
-    /// applied to the RAW native coordinates (no bone bake — native draws them at identity).
+    /// HUD-21b — the maximum vertex distance from the model origin over a set of
+    /// <c>.mdl</c> meshes: native's <c>TMeshGeo::GetRadius</c>
+    /// (<c>engine/geometry.cpp:408-418</c>), which is what
+    /// <c>m_radiusMesh = m_pgeoMesh-&gt;GetRadius(identity)</c> stores
+    /// (<c>effect/thinggeo.cpp:1053</c>) and what <c>TargetGeo::Render</c>
+    /// normalises a preview by (<c>thinggeo.cpp:373-381</c>). This is NOT
+    /// <see cref="MergedRadius"/> (the bounding-box-sphere merge the in-scene
+    /// hull proxy uses) — for a round rock the merge over-estimates by up to
+    /// √3, which made the HUD-21 preview draw at ~58 % of the pane.
+    /// </summary>
+    /// <remarks>Claude review: a native LOD model is an <c>LODGeo</c> whose
+    /// <c>GetRadius</c> is the max over ALL its children, the base mesh AND every
+    /// LOD level (<c>engine/geometry.cpp:1748-1758</c>), so the optional
+    /// <paramref name="lods"/> are included (they are parsed with the file).</remarks>
+    public static float MaxVertexRadius(IReadOnlyList<MdlMesh> meshes, IReadOnlyList<MdlLodLevel>? lods = null)
+    {
+        float radiusSquared = Include(0f, meshes);
+        if (lods is not null)
+            foreach (var lod in lods) radiusSquared = Include(radiusSquared, lod.Meshes);
+        return MathF.Sqrt(radiusSquared);
+
+        static float Include(float r2, IReadOnlyList<MdlMesh> group)
+        {
+            foreach (var m in group)
+            {
+                var p = m.Positions;
+                for (int i = 0; i < p.Length; i += 3)
+                    r2 = MathF.Max(r2, p[i] * p[i] + p[i + 1] * p[i + 1] + p[i + 2] * p[i + 2]);
+            }
+            return r2;
+        }
+    }
+
+    /// <summary>
+    /// The merged bounding-sphere radius of a set of <c>.mdl</c> meshes — the
+    /// bounding-box sphere merge used for the in-scene hull proxy (same
+    /// technique as <see cref="ShipRenderScale.RenderRadius"/>), applied to the
+    /// RAW native coordinates (no bone bake — native draws them at identity).
+    /// Native's own <c>m_radiusMesh</c> is <see cref="MaxVertexRadius"/>
+    /// (<c>engine/geometry.cpp:408-418</c>); this merge is larger and is only
+    /// the port's scene-side stand-in (HUD-21b measured the difference).
     /// </summary>
     public static float MergedRadius(IReadOnlyList<MdlMesh> meshes)
     {

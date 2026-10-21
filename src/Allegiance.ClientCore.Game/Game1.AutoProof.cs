@@ -458,6 +458,7 @@ public sealed partial class Game1
                 LiveProof.AutoTargetKind.Friendly => o.Kind == TargetKind.Ship && o.SideId == mySide,
                 LiveProof.AutoTargetKind.Station => o.Kind == TargetKind.Station,
                 LiveProof.AutoTargetKind.Aleph => o.Kind == TargetKind.Warp,
+                LiveProof.AutoTargetKind.Asteroid => o.Kind == TargetKind.Asteroid,
                 _ => false,
             };
             if (!kindOk) continue;
@@ -474,7 +475,10 @@ public sealed partial class Game1
             // c_cmdCurrent so the server's Ship.CommandTarget drives the lead
             // predictor and the red order arrow reads the current target command.
             SendCurrentCommandToServer(_autoTarget.Value);
-            EngageAutopilotToward(_autoTarget.Value, "autoproof: frame target");
+            // An asteroid is a static rock and a collision hazard: select it (the
+            // pane needs no framing) but do not fly into it.
+            if (kind != LiveProof.AutoTargetKind.Asteroid)
+                EngageAutopilotToward(_autoTarget.Value, "autoproof: frame target");
             Console.WriteLine($"[autoproof] auto-target {kind} -> {b.Name} (kind {b.Kind})");
         }
         else

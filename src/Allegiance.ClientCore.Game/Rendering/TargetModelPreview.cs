@@ -47,17 +47,106 @@ public enum TargetPreviewKind
 }
 
 /// <summary>
-/// HUD-21 — the target pane's decorative child paint order (native
-/// <c>DefaultNormalTargetDisplay</c>, <c>dialog.mdl:4218-4242</c>, rendered
-/// first-to-last by <c>GroupImage::Render</c> at <c>engine/image.cpp:954-972</c>).
-/// The model preview is a <c>GeoImage</c> child that paints AFTER the two target
-/// gauges and BEFORE <c>TargetOval</c>/<c>TargetOvalColor</c> and the words, so
-/// the oval art sits on top of the model. <see cref="DrawTargetPane"/> paints in
-/// exactly this order (the model helper runs before the oval art calls); the
-/// static list is the documented, testable source of truth for that order (the
-/// per-frame path draws directly, never allocating a list).
+/// HUD-21b — the resolved-preview cache key: what the preview art depends on.
+/// The native preview re-resolves the target's <c>ThingGeo</c> every frame, but
+/// the PORT's lookup path (<c>ResolveNativeShip</c>'s <c>NativeShipRef</c>, the
+/// per-renderer <c>TextureStemFor</c> closure + string concat, the mesh dictionary
+/// probes) allocates, so the GPU path caches the resolved (geometry, texture,
+/// scale) and refreshes only when this key changes: the selected target, or the
+/// target's hull/model identity (<c>WinTrek.cpp:8783-8818</c> resolves the mesh
+/// from the model, and a hull or asteroid/station model swap is the only thing
+/// that changes the art). A readonly struct of ints + string REFERENCES, so
+/// building and comparing it is allocation-free. <see cref="Matches"/> is
+/// pure and headless-testable.
 /// </summary>
-public enum PaneDecorKind { Model, Oval, OvalColor, OvalWord1, OvalWord2 }
+public readonly struct TargetPreviewKey
+{
+    public readonly TargetPreviewKind Kind;
+    public readonly int TargetId;
+    public readonly int HullId;
+    public readonly string? ModelStem;
+    public readonly string? TextureHint;
+
+    public TargetPreviewKey(TargetPreviewKind kind, int targetId, int hullId,
+        string? modelStem, string? textureHint)
+    {
+        Kind = kind;
+        TargetId = targetId;
+        HullId = hullId;
+        ModelStem = modelStem;
+        TextureHint = textureHint;
+    }
+
+    /// <summary>True when this key identifies the same target AND the same
+    /// hull/model/texture — i.e. the cached (geo, tex, scale) is still valid.
+    /// Ordinal string compares (reference/contents, no allocation).</summary>
+    public bool Matches(in TargetPreviewKey other) =>
+        Kind == other.Kind
+        && TargetId == other.TargetId
+        && HullId == other.HullId
+        && string.Equals(ModelStem, other.ModelStem, StringComparison.Ordinal)
+        && string.Equals(TextureHint, other.TextureHint, StringComparison.Ordinal);
+}
+
+/// <summary>
+/// HUD-21b (Claude review) — the preview's key → cache → gate step, pulled out
+/// of <c>Game1.RenderTargetModelPreview</c> so it is headless-testable (no
+/// <c>GraphicsDevice</c>): production calls <see cref="Step"/> once per frame
+/// with the target facts it read under the session gate, and the allocating
+/// art resolve (<c>ResolveNativeShip</c>'s <c>NativeShipRef</c>, the
+/// <c>TextureStemFor</c> closure + concat) runs only when the
+/// <see cref="TargetPreviewKey"/> changes. A target whose model has NO native
+/// mesh is cached too (a null resolution), so it is resolved once, not every
+/// frame; the gate then sees the real geometry-present state.
+/// </summary>
+/// <typeparam name="TArt">The resolved art (the GPU geometry/texture/scale
+/// bundle in production; any reference type in tests).</typeparam>
+public sealed class TargetPreviewCache<TArt> where TArt : class
+{
+    private readonly Func<TargetPreviewKey, TArt?> _resolve;
+    private TargetPreviewKey _key;
+    private bool _resolved;
+    private TArt? _art;
+
+    /// <param name="resolve">Resolves a key to its art, or null when the target
+    /// has no native mesh. Called only on a key change.</param>
+    public TargetPreviewCache(Func<TargetPreviewKey, TArt?> resolve) => _resolve = resolve;
+
+    /// <summary>How many times the resolver ran (tests/diagnostics).</summary>
+    public int ResolveCount { get; private set; }
+
+    /// <summary>The cached resolution (null = unresolved or no mesh).</summary>
+    public TArt? Art => _art;
+
+    /// <summary>Forget the cached resolution (next <see cref="Step"/> re-resolves).</summary>
+    public void Invalidate()
+    {
+        _resolved = false;
+        _art = null;
+    }
+
+    /// <summary>
+    /// One frame: re-resolve only when <paramref name="key"/> differs from the
+    /// cached key (a null — no-mesh — result is cached as well), then apply the
+    /// native <c>SetTargetGeo</c> gate (<see cref="TargetModelPreview.Eligible"/>,
+    /// <c>WinTrek.cpp:8783-8818</c>) with <c>hasMesh</c> = the real resolution.
+    /// Returns the art to draw, or null for the empty fallback. Allocation-free
+    /// when the key is unchanged.
+    /// </summary>
+    public TArt? Step(in TargetPreviewKey key, int targetSourceShipId, int ownSourceShipId,
+        bool sameCluster, bool visible)
+    {
+        if (!_resolved || !_key.Matches(key))
+        {
+            _art = _resolve(key);
+            _key = key;
+            _resolved = true;
+            ResolveCount++;
+        }
+        return TargetModelPreview.Eligible(key.Kind, targetSourceShipId, ownSourceShipId,
+            sameCluster: sameCluster, visible: visible, hasMesh: _art is not null) ? _art : null;
+    }
+}
 
 /// <summary>See <see cref="TargetModelPreview"/>.</summary>
 public static class TargetModelPreview
@@ -77,29 +166,34 @@ public static class TargetModelPreview
     /// <c>image.cpp:1164-1165</c>).</summary>
     public const float ViewportUnits = 2f;
 
-    /// <summary>The |cos| threshold above which <c>TurnTo</c> drops the player's
-    /// up for ±forward (<c>orientation.cpp:220-231</c>).</summary>
-    public const float NearParallelCos = 0.99f;
+    /// <summary>Native's <c>TurnTo</c> near-parallel threshold applies to the
+    /// SIGNED cos², not cos (<c>Orientation::TurnTo</c> calls
+    /// <c>CosUp2(target)</c> and compares ±0.99, <c>zlib/orientation.cpp:220-231</c>;
+    /// <c>cosX2</c> returns <c>±dot²/l²</c>, <c>orientation.cpp:395-414</c>). On
+    /// cos² this means |cos| &gt; √0.99 ≈ 0.99499, so e.g. cos 0.992 keeps the
+    /// player's up (HUD-21 compared raw cos and wrongly flipped at 0.99).</summary>
+    public const float NearParallelCos2 = 0.99f;
 
     /// <summary>Native default dp when |dp|² &lt; 1 (<c>WinTrek.cpp:438-440</c>).</summary>
     public static readonly Vector3 DefaultDp = new(0f, 1f, 5f);
 
-    /// <summary>The documented target-pane decorative paint order (see
-    /// <see cref="PaneDecorKind"/>). Static — built once, never per-frame.</summary>
-    public static readonly PaneDecorKind[] DecorOrder =
-        [PaneDecorKind.Model, PaneDecorKind.Oval, PaneDecorKind.OvalColor,
-         PaneDecorKind.OvalWord1, PaneDecorKind.OvalWord2];
-
     /// <summary>
-    /// The native <c>SetTargetGeo</c> gate (<c>WinTrek.cpp:8783-8818</c>): a
-    /// model preview is shown only for a ship/station/asteroid that is not the
-    /// player's own ship, is in the player's cluster, is visible (CanSee) and
-    /// resolves to a native mesh. Warp/probe/mine/missile/treasure (scope item 6)
-    /// and no-mesh fall back to the empty viewport.
+    /// The native <c>SetTargetGeo</c> gate (<c>WinTrek.cpp:8783-8818</c>): a model
+    /// preview is shown only for a ship/station/asteroid whose SOURCE ship is not
+    /// the player's own source ship, that is in the player's cluster, is visible
+    /// (CanSee) and resolves to a native mesh. Warp/probe/mine/missile/treasure
+    /// (scope item 6) and no-mesh fall back to the empty viewport.
+    /// <para>The own-ship test is the native one: it compares the target's
+    /// <c>GetSourceShip()</c> with <c>trekClient.GetShip()-&gt;GetSourceShip()</c>
+    /// (<c>WinTrek.cpp:8796-8797</c>), so the caller climbs BOTH sides' parent
+    /// chain first (a gunner's own carrier, or one's own turret, shows nothing).
+    /// HUD-21 passed a hard-coded <c>false</c> here; HUD-21b makes these the real
+    /// per-frame inputs.</para>
     /// </summary>
     public static bool Eligible(
-        TargetPreviewKind kind, bool isOwnShip, bool sameCluster, bool visible, bool hasMesh)
-        => !isOwnShip && sameCluster && visible && hasMesh
+        TargetPreviewKind kind, int targetSourceShipId, int ownSourceShipId,
+        bool sameCluster, bool visible, bool hasMesh)
+        => targetSourceShipId != ownSourceShipId && sameCluster && visible && hasMesh
            && kind is TargetPreviewKind.Ship or TargetPreviewKind.Station or TargetPreviewKind.Asteroid;
 
     /// <summary>Native dp = target−player; the constant <c>(0,1,5)</c> replaces
@@ -110,15 +204,34 @@ public static class TargetModelPreview
     /// <summary>
     /// The camera up after <c>Orientation::TurnTo</c> (<c>orientation.cpp:220-231</c>):
     /// the player's up, except when the view direction is near-parallel to it
-    /// (|cos| &gt; 0.99) where it falls back to ±forward (∓forward), exactly the
-    /// native singular-avoidance rule.
+    /// where it falls back to ±forward (∓forward) — the native singular-avoidance
+    /// rule. The comparison uses <c>CosUp2</c>'s SIGNED cos²
+    /// (<c>orientation.cpp:395-414,431-434</c>), so the effective |cos| threshold
+    /// is √0.99 ≈ 0.99499.
     /// </summary>
     public static Vector3 ViewUp(in Vector3 dirNorm, in Vector3 ownUp, in Vector3 ownForward)
     {
         float dot = Vector3.Dot(dirNorm, ownUp);
-        if (dot < -NearParallelCos) return ownForward;   // dot < -0.99 → +forward
-        if (dot > NearParallelCos) return -ownForward;   // dot > +0.99 → −forward
+        float c2 = dot * MathF.Abs(dot);          // CosUp2: signed cos² (dot²/l²)
+        if (c2 < -NearParallelCos2) return ownForward;   // c2 < -0.99 → +forward
+        if (c2 > NearParallelCos2) return -ownForward;   // c2 > +0.99 → −forward
         return ownUp;
+    }
+
+    /// <summary>
+    /// HUD-21b (Claude review) — the camera's world up and forward from a flight
+    /// view matrix. Every flight view is <c>Matrix.CreateLookAt</c>
+    /// (<c>CockpitCamera.cs</c>, <c>Director.cs</c>, <c>FreeCam.cs</c>,
+    /// <c>ExternalCameras.cs</c>, <c>CommandCamera.cs</c>), which stores the
+    /// camera basis in the matrix COLUMNS: right = (M11,M21,M31), up =
+    /// (M12,M22,M32), backward = (M13,M23,M33) (same reading as
+    /// <c>Game1.VolumetricProof.cs</c>). HUD-21b read the rows, i.e. the
+    /// transposed basis, which is only right for an identity/axis-aligned camera.
+    /// </summary>
+    public static void CameraBasis(in Matrix view, out Vector3 up, out Vector3 forward)
+    {
+        up = new Vector3(view.M12, view.M22, view.M32);
+        forward = new Vector3(-view.M13, -view.M23, -view.M33);
     }
 
     /// <summary>
@@ -142,6 +255,18 @@ public static class TargetModelPreview
     /// (<c>image.cpp:1164-1165</c>).</summary>
     public static Matrix Projection()
         => Matrix.CreateOrthographic(ViewportUnits, ViewportUnits, ZNear, ZFar);
+
+    /// <summary>
+    /// The radius-1 preview scale: <c>1 / MaxVertexRadius</c>, the net of
+    /// <c>TargetGeo::Render</c>'s <c>Scale3(1/m_radius)</c>
+    /// (<c>effect/thinggeo.cpp:373-381</c>) and <c>RenderTargetGeo</c>'s
+    /// <c>m_scale = radius/m_radiusMesh</c> (<c>thinggeo.cpp:1185-1193,1482-1573</c>)
+    /// — where native <c>m_radiusMesh</c> is the MAXIMUM VERTEX DISTANCE
+    /// (<c>engine/geometry.cpp:408-418</c>, <c>thinggeo.cpp:1053</c>), not a
+    /// bounding-box sphere. A zero/absent radius keeps scale 1 (never NaN).
+    /// </summary>
+    public static float ScaleForMaxVertexRadius(float maxVertexRadius)
+        => maxVertexRadius > 0f ? 1f / maxVertexRadius : 1f;
 
     /// <summary>
     /// The 96×96 pane-local preview rect, y-up lower-left at (270,9)

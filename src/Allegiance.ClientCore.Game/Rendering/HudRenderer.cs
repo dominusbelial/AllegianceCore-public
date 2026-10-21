@@ -2277,18 +2277,14 @@ public class HudRenderer
         float y0 = TargetPaneLayout.OriginY(w, h);
         var side = From(tp.SideColor);
 
-        // HUD-21 — the 3-D model preview, painted under the oval/word art
-        // (native GroupImage child order: model after the gauges, before the
-        // oval, dialog.mdl:4218-4242; empty fallback when the input is null).
-        DrawTargetModelPreview(x0, y0, s);
-
-        // Decorative oval/word art (native white art; the oval colour layer is
-        // side-tinted, dialog.mdl:4165-4191).
-        DrawPaneTexture(_targetPaneTextures?.Oval, x0 + 192f * s, y0 + 75f * s, s, Color.White);
-        DrawPaneTexture(_targetPaneTextures?.OvalColor, x0 + 256f * s, y0 + 2f * s, s, side);
-        DrawPaneTexture(_targetPaneTextures?.OvalWord1, x0 + 193f * s, y0 - 8f * s, s, Color.White);
-        DrawPaneTexture(_targetPaneTextures?.OvalWord2, x0 + 320f * s, y0 - 8f * s, s, Color.White);
-
+        // Native paint order (Claude review of HUD-21b): GroupImage::AddImage
+        // PUSHES FRONT (engine/image.cpp:918-921, called in mdl list order by
+        // GroupImageFactory, engine/modeler.cpp:1544-1561; ReadList keeps source
+        // order, engine/mdl.cpp:803-813) and GroupImage::Render walks the list
+        // front→back (image.cpp:954-972) — so the LAST child of
+        // DefaultNormalTargetDisplay (dialog.mdl:4217-4242) paints FIRST and the
+        // FIRST child paints on TOP. The text/range children (4237-4241) are the
+        // bottom layer, so they paint first here and the decor stack goes last.
         // Name + type (native GetName(Target) ": " GetModelTypeDesc(Target),
         // dialog.mdl:4043-4050), centred at the pane centre. FONT-1 — native
         // TargetName uses medVerdana; range/speed smVerdana; ARMOR/SHIELD
@@ -2331,39 +2327,14 @@ public class HudRenderer
         DrawRawText(armorFont, "ARMOR", new(x0 + 228f * s - armorSize.X, y0 - 73f * s - armorSize.Y), side, armorFs);
         DrawRawText(armorFont, "SHIELD", new(x0 + 410f * s, y0 - 73f * s - PaneTextSize(armorFont, "SHIELD", armorFs).Y), side, armorFs);
 
-        // Dedicated target hull/shield gauges (dialog.mdl:4123-4135), bottom-up
-        // reveal of the real native gauge art.
-        DrawTargetGauge(_targetPaneTextures?.Hull, TargetPaneTextures.HullRect, tp.HullFraction ?? 0f,
-            x0 + 235f * s, y0 - 33f * s, s);
-        DrawTargetGauge(_targetPaneTextures?.Shield, TargetPaneTextures.ShieldRect, tp.ShieldFraction ?? 0f,
-            x0 + 367f * s, y0 - 33f * s, s);
-
         // Native turret-range icon (dialog.mdl:4073-4081), only when in range.
         if (tp.InRange)
             DrawPaneTexture(_targetPaneTextures?.Range, x0 + 200f * s, y0 - 90f * s, s, Color.White);
 
-        // HUD-20 — native TargetExperienceImage: the targetexperiencebmp with its
-        // lower-left at pane-local (280+25, 110−21) and a black medBoldVerdana
-        // number centred in the 80-wide box whose StringImage origin is (280,110)
-        // — the TOP of the text, since a StringImage hangs below its origin
-        // (engine/image.cpp:336-388). The native switch hides it for every
-        // non-ship (dialog.mdl:4192-4206,4208-4214,4232). FONT-1 — the number
-        // uses the native medBoldVerdana at the pane scale, so the native anchor
-        // places it on the medal with no substitute-font centring.
-        if (tp.IsShip && tp.KillBonusPercent is { } killBonus)
-        {
-            var (artLeft, artBottom) = TargetPaneLayout.ExperienceArtBottomLeft(x0, y0, s);
-            DrawPaneTexture(_targetPaneTextures?.TargetExperience, artLeft, artBottom, s, Color.White);
-            var (expFont, expFs) = HudFont(NativeFont.MedBoldVerdana, s);
-            string number = HudStringCache.KillBonusNumber(killBonus);
-            var (numberLeft, numberTop) = TargetPaneLayout.ExperienceNumberTopLeft(x0, y0, s,
-                PaneTextSize(expFont, number, expFs).X);
-            DrawRawText(expFont, number, new(numberLeft, numberTop), Color.Black, expFs);
-            ElementDrawn("Target kill bonus");
-        }
-
         ElementDrawn("Target name", "Target type description", "Target side identity",
-            "Target hull", "Target shield", "Target range or sector", "Target speed", "Target in weapon range");
+            "Target range or sector", "Target speed", "Target in weapon range");
+
+        DrawTargetPaneDecor(tp, x0, y0, s, side);
     }
 
     /// <summary>Pane strings are sanitised once by
@@ -2390,9 +2361,10 @@ public class HudRenderer
     /// (<c>TargetModelPreview.PaneRect</c>, native y-up lower-left (270,9)),
     /// alpha-blended with a white tint. When <see cref="TargetModelPreview"/>
     /// is null nothing is drawn (the native empty fallback — the pane looks
-    /// exactly as before). Painted BEFORE the oval/word art so the native
-    /// <c>GroupImage::Render</c> child order (model under the oval,
-    /// <c>image.cpp:954-972</c>, <c>dialog.mdl:4218-4242</c>) holds.
+    /// exactly as before). HUD-21b paints it as stage 2 of
+    /// <see cref="DrawTargetPaneDecor"/> — after the two gauges, before the
+    /// oval/word art — the native <c>GroupImage::Render</c> child order
+    /// (<c>image.cpp:954-972</c>, <c>dialog.mdl:4221-4238</c>).
     /// </summary>
     protected virtual void DrawTargetModelPreview(float x0, float y0, float s)
     {
@@ -2400,6 +2372,129 @@ public class HudRenderer
         var dst = global::Allegiance.ClientCore.MonoGame.Rendering.TargetModelPreview.PaneRect(x0, y0, s);
         _sb.Draw(TargetModelPreview, dst, Color.White);
         ElementDrawn("Target model preview");
+    }
+
+    /// <summary>
+    /// HUD-21b — open the current native BlendModeAdd pass (<see cref="AdditiveOneOne"/>)
+    /// in the HUD's SpriteBatch. Native composes the classic target-pane oval /
+    /// word art additively (<c>hudBlendMode = BlendModeAdd</c>,
+    /// <c>Artwork/dialog.mdl:34</c>), exactly like the HUD-14b classic gauges.
+    /// Overridable so the headless paint-order harness can observe the pass
+    /// without a SpriteBatch.
+    /// </summary>
+    protected virtual void BeginAdditiveSpritePass()
+    {
+        _sb.End();
+        _sb.Begin(SpriteSortMode.Deferred, AdditiveOneOne);
+    }
+
+    /// <summary>Restore the HUD's normal alpha-blend batch after an additive
+    /// stretch (counterpart of <see cref="BeginAdditiveSpritePass"/>).</summary>
+    protected virtual void EndAdditiveSpritePass()
+    {
+        _sb.End();
+        _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+    }
+
+    /// <summary>
+    /// HUD-21b — the decorative stages of the native target pane in the native
+    /// PAINT order (bottom → top). <c>DefaultNormalTargetDisplay</c>
+    /// (<c>dialog.mdl:4217-4242</c>) lists ShieldGauge, HullGauge, the model
+    /// GeoImage, TargetExperienceImage, Word1, Word2, Oval, OvalColor, …; but
+    /// <c>GroupImage::AddImage</c> pushes each child to the FRONT of its list
+    /// (<c>engine/image.cpp:918-921</c>) and <c>Render</c> walks front→back
+    /// (<c>image.cpp:954-972</c>), so the mdl list paints in REVERSE: the first
+    /// child is on top (cf. <c>TargetExperienceOnImage</c>, dialog.mdl:4192-4206,
+    /// whose black number is listed before — and must sit on top of — its medal).
+    /// <list type="number">
+    /// <item>the oval colour, then the additive oval/word art (Word2 before Word1)
+    /// (<c>dialog.mdl:4233-4236</c>);</item>
+    /// <item>the HUD-20 kill-bonus image (<c>dialog.mdl:4232</c>);</item>
+    /// <item>the model preview <c>GeoImage(targetGeo, 96×96, targetCamera)</c>
+    /// (<c>dialog.mdl:4224-4231</c>) — OVER the oval art;</item>
+    /// <item>the hull then shield gauges (<c>dialog.mdl:4221-4222</c>) — on top.</item>
+    /// </list>
+    /// The stage hooks are overridable so the HUD-14 recording harness can
+    /// assert the real paint order.
+    /// </summary>
+    protected virtual void DrawTargetPaneDecor(HudTargetPane tp, float x0, float y0, float s, Color side)
+    {
+        DrawTargetPaneOvalArt(x0, y0, s, side);
+        DrawTargetExperience(tp, x0, y0, s);
+        DrawTargetModelPreview(x0, y0, s);
+        DrawTargetPaneGauges(tp, x0, y0, s);
+    }
+
+    /// <summary>Native top stage — the dedicated hull/shield gauges
+    /// (<c>dialog.mdl:4123-4135</c>, <c>4221-4222</c>; Shield is listed first so
+    /// it paints last), bottom-up reveal of the real native gauge art.</summary>
+    protected virtual void DrawTargetPaneGauges(HudTargetPane tp, float x0, float y0, float s)
+    {
+        DrawTargetGauge(_targetPaneTextures?.Hull, TargetPaneTextures.HullRect, tp.HullFraction ?? 0f,
+            x0 + 235f * s, y0 - 33f * s, s);
+        DrawTargetGauge(_targetPaneTextures?.Shield, TargetPaneTextures.ShieldRect, tp.ShieldFraction ?? 0f,
+            x0 + 367f * s, y0 - 33f * s, s);
+        ElementDrawn("Target hull", "Target shield");
+    }
+
+    /// <summary>HUD-20 — the native kill-bonus image (position/fonts unchanged
+    /// from HUD-20), now painted at its native layer: over the oval art, under
+    /// the model (<c>dialog.mdl:4232</c>).</summary>
+    protected virtual void DrawTargetExperience(HudTargetPane tp, float x0, float y0, float s)
+    {
+        // HUD-20 — native TargetExperienceImage: the targetexperiencebmp with its
+        // lower-left at pane-local (280+25, 110−21) and a black medBoldVerdana
+        // number centred in the 80-wide box whose StringImage origin is (280,110)
+        // — the TOP of the text, since a StringImage hangs below its origin
+        // (engine/image.cpp:336-388). The native switch hides it for every
+        // non-ship (dialog.mdl:4192-4206,4208-4214,4232). FONT-1 — the number
+        // uses the native medBoldVerdana at the pane scale, so the native anchor
+        // places it on the medal with no substitute-font centring.
+        if (tp.IsShip && tp.KillBonusPercent is { } killBonus)
+        {
+            var (artLeft, artBottom) = TargetPaneLayout.ExperienceArtBottomLeft(x0, y0, s);
+            DrawPaneTexture(_targetPaneTextures?.TargetExperience, artLeft, artBottom, s, Color.White);
+            var (expFont, expFs) = HudFont(NativeFont.MedBoldVerdana, s);
+            string number = HudStringCache.KillBonusNumber(killBonus);
+            var (numberLeft, numberTop) = TargetPaneLayout.ExperienceNumberTopLeft(x0, y0, s,
+                PaneTextSize(expFont, number, expFs).X);
+            DrawRawText(expFont, number, new(numberLeft, numberTop), Color.Black, expFs);
+            ElementDrawn("Target kill bonus");
+        }
+    }
+
+    /// <summary>Native bottom decor stage — the oval art (<c>dialog.mdl:4233-4236</c>
+    /// paint order: OvalColor, Oval, Word2, Word1).
+    /// <para><c>TargetOvalColor</c> is a PLAIN <c>ImportImage3D</c> tinted by
+    /// <c>targetHudColor</c> (<c>dialog.mdl:4161</c>) — no BlendImage — whose
+    /// value is the side colour × g_hudBright with alpha 0.5
+    /// (<c>WinTrek.cpp:8785-8786,8813-8816</c>), so it is drawn with normal
+    /// (premultiplied) alpha blending, tint premultiplied by its alpha.</para>
+    /// <para>TargetOval / TargetOvalWord1/2 are <c>BlendImage(ImportImage3D(…,
+    /// white, true), hudBlendMode)</c> with <c>hudBlendMode = BlendModeAdd</c>
+    /// (<c>Artwork/dialog.mdl:34,4154-4174</c>), encoded as
+    /// <see cref="AdditiveOneOne"/> like the HUD-14b classic gauges (native
+    /// SRCALPHA/ONE == One/One on these colour-keyed premultiplied textures,
+    /// engine/RasterD3D9.cpp:295-302).</para>
+    /// </summary>
+    protected virtual void DrawTargetPaneOvalArt(float x0, float y0, float s, Color side)
+    {
+        DrawPaneTexture(_targetPaneTextures?.OvalColor, x0 + 256f * s, y0 + 2f * s, s, PremultipliedTint(side));
+        ElementDrawn("Target oval colour");
+        BeginAdditiveSpritePass();
+        DrawPaneTexture(_targetPaneTextures?.Oval, x0 + 192f * s, y0 + 75f * s, s, Color.White);
+        DrawPaneTexture(_targetPaneTextures?.OvalWord2, x0 + 320f * s, y0 - 8f * s, s, Color.White);
+        DrawPaneTexture(_targetPaneTextures?.OvalWord1, x0 + 193f * s, y0 - 8f * s, s, Color.White);
+        EndAdditiveSpritePass();
+        ElementDrawn("Target oval art");
+    }
+
+    /// <summary>The premultiplied form of a straight-alpha tint (rgb·a, a) for
+    /// the HUD's premultiplied <c>BlendState.AlphaBlend</c> batch. Pure.</summary>
+    internal static Color PremultipliedTint(Color c)
+    {
+        float a = c.A / 255f;
+        return new Color(c.R / 255f * a, c.G / 255f * a, c.B / 255f * a, a);
     }
 
     protected void DrawTargetGauge(Texture2D? tex, Rectangle srcFull, float fraction,

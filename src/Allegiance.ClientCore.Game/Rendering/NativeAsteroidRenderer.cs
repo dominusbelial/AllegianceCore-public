@@ -79,7 +79,7 @@ public sealed class NativeAsteroidRenderer : IDisposable
             }
             var file = MdlFile.Parse(AssetSources.ReadAllBytes(_assets, modelStem + ".mdl"));
             _parsed[modelStem] = file;
-            var geo = NativeShipRenderer.NativeShipGeometry.Build(_gd, file.Meshes);
+            var geo = NativeShipRenderer.NativeShipGeometry.Build(_gd, file.Meshes, file.LodLevels);
             _models[modelStem] = geo;
             return geo;
         }

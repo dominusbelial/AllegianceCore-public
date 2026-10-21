@@ -15,6 +15,9 @@ public enum AutoTargetKind
     Friendly,
     Station,
     Aleph,
+    // HUD-21b — the third target kind with a native ThingGeo preview target:
+    // an asteroid (used only by real-window proof shots of the target pane).
+    Asteroid,
 }
 
 /// <summary>P639 — which screen overlay a real-window autoshot should have open
@@ -89,6 +92,13 @@ public sealed class AutoProofPlan
     /// real-window autoshot can prove the class bracket. Pure client-side.</summary>
     public string AutoTargetClass = "";
 
+    /// <summary>HUD-21b — seconds after launch to wait before emitting the
+    /// <c>--auto-target</c>/<c>--auto-target-class</c> selection
+    /// (<c>--auto-target-after</c>). 0 = immediately (the P572 behaviour). Needed
+    /// when the thing to frame is staged AFTER the client is already flying
+    /// (e.g. MCP bots spawned into the pilot's sector while the client runs).</summary>
+    public double TargetDelaySeconds;
+
     /// <summary>Initial camera mode (<c>--camera mode</c>): cockpit | chase |
     /// flyby | flybytarget | orbit | target | base | station | override.</summary>
     public string Camera = "cockpit";
@@ -158,6 +168,7 @@ public sealed class AutoProofPlan
         ["friendly"] = AutoTargetKind.Friendly,
         ["station"] = AutoTargetKind.Station,
         ["aleph"] = AutoTargetKind.Aleph,
+        ["asteroid"] = AutoTargetKind.Asteroid,
         ["none"] = AutoTargetKind.None,
         ["off"] = AutoTargetKind.None,
     };
@@ -243,6 +254,14 @@ public sealed class AutoProofPlan
             else if (a.StartsWith("--auto-target-class=", StringComparison.Ordinal))
             {
                 plan.AutoTargetClass = a.Substring("--auto-target-class=".Length);
+            }
+            else if (a == "--auto-target-after")
+            {
+                if (i + 1 < args.Count && TryParseSeconds(args[i + 1], out var d3)) { plan.TargetDelaySeconds = d3; i++; }
+            }
+            else if (a.StartsWith("--auto-target-after=", StringComparison.Ordinal))
+            {
+                if (TryParseSeconds(a.Substring("--auto-target-after=".Length), out var d4)) plan.TargetDelaySeconds = d4;
             }
             else if (a == "--auto-parity-commands") plan.AutoParityCommands = true;
             else if (a == "--auto-flight-parts") plan.AutoFlightParts = true;
@@ -368,7 +387,7 @@ public sealed class AutoProofPlan
     {
         if (TargetKinds.TryGetValue(s.Trim(), out var kind))
             return kind;
-        Console.Error.WriteLine($"[monogame] --auto-target: unknown kind '{s}' (enemy|friendly|station|aleph|none) - ignoring");
+        Console.Error.WriteLine($"[monogame] --auto-target: unknown kind '{s}' (enemy|friendly|station|aleph|asteroid|none) - ignoring");
         return AutoTargetKind.None;
     }
 
