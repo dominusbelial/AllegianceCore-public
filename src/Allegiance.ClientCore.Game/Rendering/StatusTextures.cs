@@ -60,6 +60,13 @@ public sealed class StatusTextures : IDisposable
     public Texture2D? RadarRipcord { get; private set; }
     /// <summary>Real <c>lastfiredbmp.mdl</c> threat bracket art, or null.</summary>
     public Texture2D? RadarThreat { get; private set; }
+    // HUD-13 — the nearest-enemy and selected-target bracket surfaces
+    // (radarimage.cpp:219-220,334,352; AWF_FLIGHT_ENEMY_ICON /
+    // AWF_FLIGHT_TARGETED_ICON, WinTrek/artwork.h:68,70).
+    /// <summary>Real <c>enemybmp.mdl</c> nearest-enemy bracket art, or null.</summary>
+    public Texture2D? RadarEnemy { get; private set; }
+    /// <summary>Real <c>targetedbmp.mdl</c> selected-target bracket art, or null.</summary>
+    public Texture2D? RadarTargeted { get; private set; }
 
     // HUD-12 — the two native console badges (dialog.mdl:5056,5107).
     /// <summary>Real <c>livesbmp.mdl</c> lives badge, or null.</summary>
@@ -100,9 +107,30 @@ public sealed class StatusTextures : IDisposable
         // AWF_FLIGHT_RIP_ICON stem is still the source of truth, artwork.h:76).
         result.RadarRipcord = TryDecodePng(gd, assets, "ripicon.png");
         result.RadarThreat = TryDecodeMdl(gd, assets, "lastfiredbmp");
+        // HUD-13 — the nearest-enemy and selected-target radar brackets
+        // (radarimage.cpp:334,352). The artwork tree ships this one file as
+        // 'Targetedbmp.mdl' (capital T) while native's stem is lowercase
+        // (artwork.h:70) and Windows loaded it case-insensitively, so try the
+        // native spelling first and the on-disk spelling second.
+        result.RadarEnemy = TryDecodeMdl(gd, assets, "enemybmp");
+        result.RadarTargeted = TryDecodeMdl(gd, assets, "targetedbmp")
+            ?? TryDecodeMdl(gd, assets, "Targetedbmp");
         result.LivesBadge = TryDecodeMdl(gd, assets, "livesbmp");
         result.KillsBadge = TryDecodeMdl(gd, assets, "hudKillsbmp");
         return result;
+    }
+
+    /// <summary>HUD-13 — true when a decoded surface carries no visible pixel at
+    /// all. The artwork tree in this checkout ships <c>enemybmp.mdl</c> as a
+    /// 32×32 all-black (colour-keyed to alpha 0) surface, so drawing it would
+    /// silently show nothing; treating it as absent keeps the renderer's
+    /// procedural diamond fallback — the same result as a missing file. Pure so
+    /// the rule is unit-testable without a graphics device.</summary>
+    public static bool IsFullyTransparent(ReadOnlySpan<Microsoft.Xna.Framework.Color> pixels)
+    {
+        foreach (var p in pixels)
+            if (p.A != 0) return false;
+        return true;
     }
 
     private static Texture2D? TryDecodeMdl(GraphicsDevice gd, IAssetSource assets, string stem)
@@ -126,6 +154,11 @@ public sealed class StatusTextures : IDisposable
             {
                 int b = c * 4;
                 colors[c] = new Microsoft.Xna.Framework.Color(rgba[b], rgba[b + 1], rgba[b + 2], rgba[b + 3]);
+            }
+            if (IsFullyTransparent(colors))
+            {
+                Console.WriteLine($"[monogame] status art '{stem}' is fully transparent ('{rel}') — procedural fallback");
+                return null;
             }
             var surface = new Texture2D(gd, tex.Width, tex.Height);
             surface.SetData(colors);

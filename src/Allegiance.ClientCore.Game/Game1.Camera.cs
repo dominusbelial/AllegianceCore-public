@@ -211,14 +211,19 @@ public sealed partial class Game1
 
     /// <summary>HUD-4 — project a world-space radius to screen pixels at the
     /// object's depth (vertical-FOV scale from the projection matrix), then cap
-    /// it at native's sqrt2×80 px (radarimage.cpp:302-306).</summary>
+    /// it at native's sqrt2×80 px (radarimage.cpp:302-306). HUD-13 — the math
+    /// itself lives in <see cref="RadarScreenRadius.Project"/> so the radar
+    /// contacts' <c>GetScreenRadius()</c> (radarimage.cpp:307-319) and these
+    /// lock/selection brackets are guaranteed to use the SAME projection;
+    /// that helper also applies native's <c>CmdViewMaxIconScreenSize</c> 7 px
+    /// floor (WinTrek/WinTrek.cpp:7931-7941), which changes nothing here
+    /// because every caller already floors its bracket at 8 px.</summary>
     private float? ProjectedRadius(Vector3 worldCenter, float worldRadius, Matrix proj, Vector3 cameraEye)
     {
         float distance = (worldCenter - cameraEye).Length();
         if (distance <= 0.001f || worldRadius <= 0f || MathF.Abs(proj.M22) < 1e-6f) return null;
-        float pxPerWorld = GraphicsDevice.Viewport.Height * 0.5f * proj.M22 / distance;
-        float radiusPx = worldRadius * MathF.Abs(pxPerWorld);
-        return MathF.Min(radiusPx, MathF.Sqrt(2f) * 80f);
+        return RadarScreenRadius.Project(
+            worldRadius, distance, GraphicsDevice.Viewport.Height, proj.M22);
     }
 
     /// <summary>

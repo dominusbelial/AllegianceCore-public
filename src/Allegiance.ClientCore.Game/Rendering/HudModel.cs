@@ -82,7 +82,13 @@ public readonly record struct HudContact(
     int? RipcordSeconds = null, bool DetectionEye = false,
     // HUD-4 treasure contact that resolves to the native tech icon
     // (radarimage.cpp:506-511).
-    bool IsTech = false);
+    bool IsTech = false,
+    // HUD-13 — the native bracket-sizing inputs for this contact
+    // (radarimage.cpp:307-319): <c>GetScreenRadius()</c> (projected px, capped and
+    // floored by <see cref="RadarScreenRadius"/>) and <c>GetDistanceToEdge()</c>
+    // (px from the placed point to the nearest viewport edge).
+    float? ScreenRadius = null,
+    float? DistanceToEdge = null);
 public sealed record HudChat(IReadOnlyList<string> Lines, int Offset, string Input,
     bool Composing, double NowSeconds, string Recipient, string? FilterLabel = null,
     NativeComposeState ComposeState = NativeComposeState.NotComposing,

@@ -1,0 +1,23 @@
+{
+  "task": "HUD-13",
+  "base": "master 193e8ea3",
+  "model": "DeepSeek V4.1 Flash (pi lane)",
+  "build": { "command": "dotnet build AllegianceCore.slnx", "warnings": 0, "errors": 0 },
+  "aot_publish": "not run — src/Allegiance.Server and src/Allegiance.Core are untouched (light-gate rule)",
+  "affected_tests_3x_alone": {
+    "filter": "FullyQualifiedName~Hud|FullyQualifiedName~Radar",
+    "project": "tests/Allegiance.ClientCore.MonoGame.Tests",
+    "runs": [
+      { "failed": 0, "passed": 313, "skipped": 0 },
+      { "failed": 0, "passed": 313, "skipped": 0 },
+      { "failed": 0, "passed": 313, "skipped": 0 }
+    ]
+  },
+  "new_tests": "tests/Allegiance.ClientCore.MonoGame.Tests/Hud13RadarBracketTests.cs (8 tests)",
+  "fast_tier": [
+    { "run": 1, "note": "pre-hoist tree", "result": "PASS", "tests": 9467, "seconds": 277.3, "log": "~/allegiance-evidence/HUD13/fast-tier.log" },
+    { "run": 2, "note": "final tree; failed only Transport.P661EgressAccountingTests.Hot_path_allocates_zero_bytes_for_all_events (Expected 0, Actual 6672) — documented load flake docs/TEST_FLAKES.md:211, passed 3/3 alone)", "result": "FAIL (load flake)", "tests": 9467, "seconds": 271.9 },
+    { "run": 3, "note": "final tree clean rerun", "result": "PASS", "tests": 9467, "seconds": 272.2, "log": "~/allegiance-evidence/HUD13/fast-tier-final.log" }
+  ],
+  "parity_scorecard": { "hud": "16/108 complete (was 11/108 by status; 5 rows flipped to done)", "validation": "parity-matrix.csv validated 665 rows, every row 6 columns" }
+}

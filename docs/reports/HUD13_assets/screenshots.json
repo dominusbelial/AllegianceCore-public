@@ -1,0 +1,34 @@
+{
+  "task": "HUD-13",
+  "client": "Allegiance.ClientCore.MonoGame Release, real 1920x1080 window, HUD style per capture",
+  "server": "real local Allegiance.Server, m2scatter.igc, 2 sides, HUD13 pilot",
+  "captured_by": "tools/hud13-proof (real Game1 over TCP; production autoshot backbuffer path)",
+  "scenario": "three enemy miners placed 210 m / 928 m / 2145 m ahead of the own ship; the near and far ones carry a real GAIN_FLAG, the mid one is the player selection (targetedbmp). Frame log line: contacts=7 ships=3 enemies=3 nearestEnemy=8097; screenRadius 108.5 / 23.69 / 10.17 px, distanceToEdge 195.64 / 422.48 / 423.41 px (classic run).",
+  "raw_copies": "~/allegiance-evidence/HUD13/raw/",
+  "run_logs": [
+    "~/allegiance-evidence/HUD13/hud13-classic-run.log",
+    "~/allegiance-evidence/HUD13/hud13-modern-run.log"
+  ],
+  "screenshots": [
+    {
+      "asset": "docs/reports/HUD13_assets/radar-bracket-radius-classic.webp",
+      "style": "classic",
+      "sha256": "3da28f0e1162410de96b702ba6b3e824772df13c1b15e9a6499d1a030056443e",
+      "bytes": 63884,
+      "source_png": "/home/domingo/allegiance-evidence/HUD13/raw/radar-bracket-radius-classic-1920x1080.png",
+      "source_sha256": "f9b29e3707c60586a71a89a0aaf6da90c967d321d4a55f9bcd0736aaa0ce6ab7"
+    },
+    {
+      "asset": "docs/reports/HUD13_assets/radar-bracket-radius-modern.webp",
+      "style": "modern",
+      "sha256": "f34d58366a17209c40301fa127257de0b396420399180692b5da57fec79da8f4",
+      "bytes": 67322,
+      "source_png": "/home/domingo/allegiance-evidence/HUD13/raw/radar-bracket-radius-modern-1920x1080.png",
+      "source_sha256": "e9886ee39793e9b31e277a7107fc634521b62789f7db511b95454ef26a2eacb7"
+    }
+  ],
+  "visible": {
+    "classic": "Cockpit view, classic HUD. Ship 8097 (212 m, nearest enemy) upper-left: a large red diamond bracket (half-diagonal ~114 px, the nearest-enemy fallback because this checkout's enemybmp.mdl decodes fully transparent) plus four blue-tinted hasflagbmp quadrant glyphs spread ~81 px from the contact. Ship 8098 (929 m, player's selection) on the right: the native targetedbmp bracket as a bright blue square frame around the blue contact square, with the white name/range label and shield/hull bars. Ship 8099 (2144 m) upper-middle: the same hasflagbmp quadrants collapsed to a tiny ~16 px-offset cluster just above its label. Centre cockpit gauges (AMMO/ENERGY/ARMOR/SHIELD/THRUST/FUEL) and the bottom target pane 'Ship 8098: Adv Miner ... RANGE: 928' are present.",
+    "modern": "Same scene in the modern HUD skin: Ship 8097 upper-left inside the large red diamond with the blue flag quadrants at its corners; Ship 8098 on the right with the native targetedbmp blue square frame and the modern 'Ship 8098 928 m HULL 100% SHLD 0%' readout; Ship 8099 upper-middle with the tiny flag quadrant cluster; modern circular percentage gauges fill the centre."
+  }
+}
