@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>
-/// Resolves which real original-game <c>.mdl</c> gauge artwork backs each
+/// Resolves which real original-game <c>.mdl</c> artwork backs each
 /// <see cref="GaugeKind"/>, and where that artwork lives. Mirrors the port's
 /// established runtime-asset convention (see
 /// <see cref="MissileModelSource.ResolveArtworkDir"/>): real <c>.mdl</c> files
@@ -16,9 +16,7 @@ public static class GaugeTextureSource
 {
     /// <summary>The root-level <c>.mdl</c> gauge stem for each kind — the
     /// authentic original-game segmented-arc gauge art (decoded via
-    /// <see cref="MdlTextureDecoder"/>), chosen over the community CortUI skins
-    /// because these ARE the retro "Casio-watch" segmented meters the pilot
-    /// asked for.</summary>
+    /// <see cref="MdlTextureDecoder"/>).</summary>
     public static string MdlStemFor(GaugeKind kind) => kind switch
     {
         GaugeKind.Hull => "HullGaugebmp",
@@ -56,62 +54,84 @@ public static class GaugeTextureSource
 }
 
 /// <summary>
-/// The six real gauge <see cref="Texture2D"/>s decoded from the original
-/// <c>.mdl</c> artwork, plus their premultiplied transparent-surround form.
+/// HUD-14 — the real native classic-gauge layer <see cref="Texture2D"/>s,
+/// decoded from the original <c>.mdl</c> artwork. Native composes each gauge
+/// as a <c>GroupImage</c> of separate back / fill (revealed through a
+/// <c>GaugeImageRect</c>) / spine / frame layers (dialog.mdl:2173-2516); this
+/// type loads each layer under the stems in <see cref="ClassicGaugeTable"/>.
 /// Built in <c>Game1.LoadContent</c> (needs a <see cref="GraphicsDevice"/>);
-/// handed to <see cref="HudRenderer"/> which draws them with a bottom-up
-/// clipped reveal driven by live telemetry.
+/// handed to <see cref="HudRenderer"/> which draws them with the native
+/// reveal. Any missing layer degrades gracefully (the renderer falls back to a
+/// procedural bar for a fully-missing gauge).
 /// </summary>
 public sealed class GaugeTextures
 {
-    private readonly Dictionary<GaugeKind, Texture2D> _byKind = [];
-    private readonly Dictionary<GaugeKind, Texture2D> _damage = [];
+    private readonly Dictionary<GaugeKind, Texture2D> _back = [];
+    private readonly Dictionary<GaugeKind, Texture2D> _fill = [];
+    private readonly Dictionary<GaugeKind, Texture2D> _red = [];
+    private readonly Dictionary<GaugeKind, Texture2D> _spine = [];
+    private readonly Dictionary<GaugeKind, Texture2D> _frame = [];
 
-    /// <summary>True when every one of the six gauges decoded and loaded.</summary>
-    public bool AllLoaded => _byKind.Count == 6;
+    /// <summary>The native faint back layer for a kind, or null if missing.</summary>
+    public Texture2D? Back(GaugeKind kind) => _back.TryGetValue(kind, out var t) ? t : null;
+    /// <summary>The native fill layer (green for hull/shield, bright arc for
+    /// the others) revealed through the source rect, or null if missing.</summary>
+    public Texture2D? Fill(GaugeKind kind) => _fill.TryGetValue(kind, out var t) ? t : null;
+    /// <summary>The native red damage-flash fill variant (hull/shield only),
+    /// or null if missing or not applicable.</summary>
+    public Texture2D? Red(GaugeKind kind) => _red.TryGetValue(kind, out var t) ? t : null;
+    /// <summary>The native spine art (thrust/fuel/ammo/energy), or null.</summary>
+    public Texture2D? Spine(GaugeKind kind) => _spine.TryGetValue(kind, out var t) ? t : null;
+    /// <summary>The native CenterHudLeft/Right frame (hull/shield), or null.</summary>
+    public Texture2D? Frame(GaugeKind kind) => _frame.TryGetValue(kind, out var t) ? t : null;
 
-    /// <summary>The loaded texture for a kind, or null if that file failed to
-    /// decode (the renderer falls back to procedural bars for a missing kind).</summary>
-    public Texture2D? For(GaugeKind kind) =>
-        _byKind.TryGetValue(kind, out var tex) ? tex : null;
+    /// <summary>True when every one of the six gauges decoded its FILL layer
+    /// (without which a gauge has nothing to reveal).</summary>
+    public bool AllLoaded
+    {
+        get
+        {
+            foreach (var kind in Enum.GetValues<GaugeKind>())
+                if (!_fill.ContainsKey(kind)) return false;
+            return true;
+        }
+    }
 
-    /// <summary>Native red damage artwork (dialog.mdl:2416-2506). Fall back
-    /// to the normal gauge when a reduced artwork pack lacks the variant.</summary>
-    public Texture2D? For(GaugeKind kind, bool damageFlash) =>
-        damageFlash && _damage.TryGetValue(kind, out var tex) ? tex : For(kind);
-
-    /// <summary>Count of gauges successfully loaded (diagnostics).</summary>
-    public int LoadedCount => _byKind.Count;
+    /// <summary>The number of fill layers successfully loaded (diagnostics).</summary>
+    public int LoadedCount => _fill.Count;
 
     /// <summary>Back-compat convenience: load from an on-disk artwork directory.</summary>
     public static GaugeTextures Load(GraphicsDevice gd, string artworkDir) =>
         Load(gd, new DirectoryAssetSource(artworkDir));
 
     /// <summary>
-    /// Load all six gauges from <paramref name="assets"/>. Missing/undecodable
-    /// files are skipped with a logged warning — the HUD degrades gracefully to
-    /// procedural bars rather than refusing to start, mirroring the port's
-    /// "graceful degradation" audio/client convention.
+    /// Load every native gauge layer from <paramref name="assets"/> per
+    /// <see cref="ClassicGaugeTable"/> (the art stems and citations live
+    /// there). Missing/undecodable files are skipped with a logged warning —
+    /// the HUD degrades gracefully rather than refusing to start.
     /// </summary>
     public static GaugeTextures Load(GraphicsDevice gd, IAssetSource assets)
     {
         var result = new GaugeTextures();
-        foreach (GaugeKind kind in Enum.GetValues<GaugeKind>())
+        foreach (var spec in ClassicGaugeTable.All)
         {
-            Load(kind, GaugeTextureSource.MdlStemFor(kind), false);
+            Load(result._back, spec.Kind, spec.BackStem, assets, gd);
+            Load(result._fill, spec.Kind, spec.FillStem, assets, gd);
+            if (spec.RedStem is { } red) Load(result._red, spec.Kind, red, assets, gd);
+            if (spec.SpineStem is { } spine) Load(result._spine, spec.Kind, spine, assets, gd);
+            if (spec.FrameStem is { } frame) Load(result._frame, spec.Kind, frame, assets, gd);
         }
-        Load(GaugeKind.Hull, "hullgaugeredbmp", true);
-        Load(GaugeKind.Shield, "shieldgaugeredbmp", true);
         return result;
 
-        void Load(GaugeKind kind, string stem, bool damage)
+        static void Load(Dictionary<GaugeKind, Texture2D> into, GaugeKind kind, string stem,
+            IAssetSource assets, GraphicsDevice gd)
         {
             string rel = stem + ".mdl";
             try
             {
                 if (!assets.Exists(rel))
                 {
-                    Console.WriteLine($"[monogame] gauge '{kind}' missing ({rel}) — procedural fallback");
+                    Console.WriteLine($"[monogame] gauge '{kind}' layer '{stem}' missing ({rel}) — fallback");
                     return;
                 }
                 var tex = MdlTextureDecoder.Decode(
@@ -128,11 +148,11 @@ public sealed class GaugeTextures
                     colors[i] = new Color(rgba[b], rgba[b + 1], rgba[b + 2], rgba[b + 3]);
                 }
                 surface.SetData(colors);
-                (damage ? result._damage : result._byKind)[kind] = surface;
+                into[kind] = surface;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[monogame] gauge '{kind}' failed to decode: {ex.Message} — procedural fallback");
+                Console.WriteLine($"[monogame] gauge '{kind}' layer '{stem}' failed to decode: {ex.Message} — fallback");
             }
         }
     }

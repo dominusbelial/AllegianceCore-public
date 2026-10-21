@@ -20,6 +20,10 @@ public sealed class HudSettings
     /// extension (native flashes only the hull/shield gauge art, dialog.mdl:2403-2506).
     /// Default on to preserve existing behaviour; set false for native-only flash.</summary>
     public bool DamageWash { get; set; } = true;
+    /// <summary>HUD-14 — native classic gauges carry no percentage numeral; the
+    /// port's % readout is an extension gated behind this HUD option.
+    /// Default OFF = native.</summary>
+    public bool GaugePercentage { get; set; }
     /// <summary>HUD-11 — native <c>ChatLines</c> preference
     /// (<c>LoadPreference("ChatLines", 7)</c>, WinTrek.cpp:3317, range 1-10
     /// SetChatLines WinTrek.cpp:5262-5280). This is the CONFIGURED chat-pane

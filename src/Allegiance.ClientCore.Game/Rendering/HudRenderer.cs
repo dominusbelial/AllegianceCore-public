@@ -53,6 +53,10 @@ public class HudRenderer
     private readonly InventoryPaneTextures? _inventoryTextures;
     private readonly HudNativeTextures? _nativeHud;
     private readonly bool _damageWash;
+    /// <summary>HUD-14 — native has no percentage numeral on the classic
+    /// gauges; the port's % readout is an extension gated by this HUD option
+    /// (default off = native). See <see cref="HudSettings.GaugePercentage"/>.</summary>
+    private readonly bool _gaugePercentage;
 
     public HudRenderer(
         SpriteBatch spriteBatch,
@@ -66,7 +70,8 @@ public class HudRenderer
         TargetPaneTextures? targetPaneTextures = null,
         InventoryPaneTextures? inventoryTextures = null,
         bool damageWash = true,
-        HudNativeTextures? nativeHudTextures = null)
+        HudNativeTextures? nativeHudTextures = null,
+        bool gaugePercentage = false)
     {
         _sb = spriteBatch;
         _white = whitePixel;
@@ -80,6 +85,7 @@ public class HudRenderer
         _inventoryTextures = inventoryTextures;
         _nativeHud = nativeHudTextures;
         _damageWash = damageWash;
+        _gaugePercentage = gaugePercentage;
     }
 
     /// <summary>
@@ -935,87 +941,119 @@ public class HudRenderer
     /// </summary>
     protected virtual void DrawGauges(HudModel model, Viewport viewport)
     {
-        float w = viewport.Width;
-        float h = viewport.Height;
-        var center = new Vector2(w / 2f, h / 2f);
-
-        // Viewport-relative spread of the native offsets, and on-screen size of
-        // each 128px gauge texture. Tunings live together here (not scattered).
-        float spread = Math.Clamp(h / 680f, 1.15f, 2.1f);
-        const float gaugeScale = 0.72f;
-
+        if (!model.InstrumentsVisible) return;
+        var center = new Vector2(viewport.Width / 2f, viewport.Height / 2f);
+        float spread = OwnStatusLayout.Spread(viewport.Height);
         foreach (var gauge in model.Gauges)
         {
             if (!gauge.Visible) continue;
-            var anchor = center + new Vector2(gauge.NativeOffset.X, gauge.NativeOffset.Y) * spread;
-            DrawGauge(gauge.Kind, gauge.Fraction, anchor, gaugeScale, gauge.Label, gauge.Color, gauge.DamageFlash);
+            var spec = ClassicGaugeTable.Spec(gauge.Kind);
+            // The gauge's group origin: native DefaultCenterHudOn console point
+            // (dialog.mdl:2604-2623) relative to centre, scaled by the classic
+            // cluster spread like the rest of the classic console.
+            var anchor = center + spec.ConsoleOffset * spread;
+            DrawClassicGauge(gauge, spec, anchor, GaugeScale);
         }
     }
 
-    /// <summary>Map the throttle axis -1..+1 to the 0..1 fraction a fill
-    /// consumes: idle (reverse) is empty, full-forward is full.</summary>
-    private static float ThrottleFraction(float throttle) =>
-        HudFormat.Clamp01((throttle + 1f) / 2f);
+    /// <summary>Uniform scale applied to each classic gauge's local native
+    /// geometry and its 128px artwork (the classic console's art scale).</summary>
+    private const float GaugeScale = 0.72f;
 
     /// <summary>
-    /// Draw one real gauge at <paramref name="anchor"/> (its on-screen centre)
-    /// filled to <paramref name="fraction"/> via the bottom-up clipped reveal,
-    /// with a short label and percentage beneath. If the texture for this kind
-    /// is missing, draws a small procedural bar instead so the slot never
-    /// collapses.
+    /// Draw one native classic gauge from its spec-table record at
+    /// <paramref name="anchor"/> (its group origin on screen). Native composes
+    /// each gauge as a GroupImage: frame, back, revealed fill, spine, label
+    /// (dialog.mdl:2173-2516); the fill is revealed through the exact
+    /// GaugeImageRect source rect with the native justification
+    /// (engine/image.cpp GaugeImage::Render) and switches to the red variant on
+    /// the damage flash (dialog.mdl:2404-2506). Only the % numeral is a port
+    /// extension, gated behind HudSettings.GaugePercentage (default off).
     /// </summary>
-    private void DrawGauge(GaugeKind kind, float fraction, Vector2 anchor, float gaugeScale, string? labelOverride = null, HudColor? valueColor = null, bool damageFlash = false)
+    private void DrawClassicGauge(HudGauge gauge, ClassicGaugeSpec spec, Vector2 anchor, float scale)
     {
-        Texture2D? tex = _gauges?.For(kind, damageFlash);
-        float frac = HudFormat.Clamp01(fraction);
-        // P377 — a caller may relabel the slot (e.g. FUEL → OXY for a lifepod).
-        string label = labelOverride ?? GaugeTextureSource.LabelFor(kind);
-
-        if (tex is null)
+        var fill = _gauges?.Fill(gauge.Kind);
+        if (fill is null)
         {
             // Degraded slot: a compact procedural bar keeps the gauge legible.
             const float bw = 96f, bh = 12f;
-            DrawBar(frac, anchor.X - bw / 2f, anchor.Y - bh / 2f, bw, bh);
-            var lbl = _small.MeasureString(label);
-            DrawText(_small, label, new Vector2(anchor.X - lbl.X / 2f, anchor.Y + bh / 2f + 4f), TextDim);
+            DrawBar(gauge.Fraction, anchor.X - bw / 2f, anchor.Y - bh / 2f, bw, bh);
+            var lbl = _small.MeasureString(spec.Label);
+            DrawText(_small, spec.Label, new Vector2(anchor.X - lbl.X / 2f, anchor.Y + bh / 2f + 4f), TextDim);
             return;
         }
 
-        float gw = tex.Width * gaugeScale;
-        float gh = tex.Height * gaugeScale;
+        // Red damage-flash variant: native SwitchImage(Flash, Green, [(1,Red)])
+        // for hull/shield (dialog.mdl:2418-2440, :2498-2510).
+        Texture2D reveal = ClassicGaugeTable.UseRedFill(gauge.DamageFlash, spec)
+            && _gauges?.Red(gauge.Kind) is { } red
+            ? red : fill;
 
-        // Bottom-up reveal of the segment arc: draw only the bottom `frac`
-        // fraction of the texture, aligned so its bottom edge sits at the
-        // gauge's full-height bottom (native GaugeImage JustifyBottom).
-        // Native thrust/fuel use JustifyTop instead (dialog.mdl:2173,2226), so
-        // those reveal from the top edge down.
-        bool revealFromTop = kind is GaugeKind.Thrust or GaugeKind.Fuel;
-        int srcH = (int)MathF.Round(tex.Height * frac);
-        if (srcH > 0)
+        // Layer order mirrors the native GroupImage (back-to-front).
+        if (_gauges?.Frame(spec.Kind) is { } frame) DrawPlain(frame, spec.FramePoint, anchor, scale);
+        if (_gauges?.Back(spec.Kind) is { } back) DrawPlain(back, spec.BackPoint, anchor, scale);
+        DrawRevealed(reveal, spec, gauge.Fraction, anchor, scale);
+        if (_gauges?.Spine(spec.Kind) is { } spine) DrawPlain(spine, spec.SpinePoint, anchor, scale);
+        DrawGaugeLabel(spec, anchor, scale);
+
+        // The port % numeral is an extension native has none of (default off).
+        if (_gaugePercentage)
         {
-            var src = revealFromTop
-                ? new Rectangle(0, 0, tex.Width, srcH)
-                : new Rectangle(0, tex.Height - srcH, tex.Width, srcH);
-            var dst = new Rectangle(
-                (int)MathF.Round(anchor.X - gw / 2f),
-                (int)MathF.Round(anchor.Y - gh / 2f + (revealFromTop ? 0f : gh - srcH * gaugeScale)),
-                (int)MathF.Round(gw),
-                (int)MathF.Round(srcH * gaugeScale));
-            _sb.Draw(tex, dst, src, Color.White);
+            string pct = HudFormat.FormatPercent(gauge.Fraction) + "%";
+            var psz = _small.MeasureString(pct);
+            float top = anchor.Y + (spec.FillPoint.Y + spec.SourceRect.Height) * scale + 6f;
+            DrawMeasuredText(_small, pct, new Vector2(anchor.X - psz.X / 2f, top),
+                From(gauge.Color), true);
         }
+    }
 
-        // Label + percentage underneath.
-        string pct = HudFormat.FormatPercent(frac) + "%";
-        var lsz = _small.MeasureString(label);
-        var psz = _small.MeasureString(pct);
-        float ty = anchor.Y + gh / 2f + 4f;
-        DrawMeasuredText(_small, label, new Vector2(anchor.X - lsz.X / 2f, ty), TextDim, true);
-        // P409 — the warning ramp (low = bad) is only meaningful for genuinely
-        // depletable resources (hull/shield/energy/fuel/ammo). The Thrust gauge
-        // is an AXIS position (idle throttle = 0%), not a consumable, so an
-        // idle throttle must never read "0% WARNING" — always show its accent.
-        DrawMeasuredText(_small, pct, new Vector2(anchor.X - psz.X / 2f, ty + lsz.Y + 1f),
-            valueColor is { } color ? From(color) : Accent, true);
+    /// <summary>Draw a full-bleed native layer (frame/back/spine) at its group
+    /// TranslateImage point (engine/image.cpp TranslateImage = child origin).</summary>
+    private void DrawPlain(Texture2D tex, Vector2 point, Vector2 anchor, float scale)
+        => _sb.Draw(tex, anchor + point * scale, null, Color.White, 0f,
+            Vector2.Zero, scale, SpriteEffects.None, 0f);
+
+    /// <summary>
+    /// Draw the native <c>GaugeImageRect</c> reveal: the source rect comes from
+    /// <see cref="ClassicGaugeTable.RevealSource"/> (the native rule — only
+    /// <c>yoffset</c> rows of the band, from the justified edge), placed
+    /// anchored to the gauge's band top (JustifyTop) or bottom (JustifyBottom).
+    /// The band begins at the native FillPoint; width is restricted to the
+    /// native rect's X span (whole-bitmap clipping is gone).
+    /// </summary>
+    private void DrawRevealed(Texture2D tex, ClassicGaugeSpec spec, float fraction, Vector2 anchor, float scale)
+    {
+        float frac = HudFormat.Clamp01(fraction);
+        int yoff = (int)(spec.SourceRect.Height * frac);
+        if (yoff <= 0) return;
+        var src = ClassicGaugeTable.RevealSource(spec.SourceRect, spec.Reveal, frac);
+        var fillScreen = anchor + spec.FillPoint * scale;
+        float bandBottom = fillScreen.Y + spec.SourceRect.Height * scale;
+        float dstTop = spec.Reveal == GaugeReveal.Top
+            ? fillScreen.Y
+            : bandBottom - src.Height * scale;
+        var dst = new Rectangle(
+            (int)MathF.Round(fillScreen.X),
+            (int)MathF.Round(dstTop),
+            (int)MathF.Round(src.Width * scale),
+            (int)MathF.Round(src.Height * scale));
+        _sb.Draw(tex, dst, src, Color.White);
+    }
+
+    /// <summary>Draw the native StringImage label at its group point with the
+    /// native justification (right-aligned for THRUST/AMMO/SHIELD, left for
+    /// FUEL/ENERGY/ARMOR, dialog.mdl cited per gauge). The substitute HUD font
+    /// stays in place of native smVerdana (fonts are out of HUD-14 scope).</summary>
+    private void DrawGaugeLabel(ClassicGaugeSpec spec, Vector2 anchor, float scale)
+    {
+        var pos = anchor + spec.LabelPoint * scale;
+        var size = _small.MeasureString(spec.Label);
+        // Native StringImage box is 100 wide (dialog.mdl); JustifyRight means
+        // the text's right edge meets the box's right edge at Point.X+100.
+        float x = spec.LabelRightAlign
+            ? pos.X + 100f * scale - size.X * TextScale
+            : pos.X;
+        RenderText(_small, spec.Label, new Vector2(x, pos.Y), TextDim, TextScale);
     }
 
     /// <summary>
