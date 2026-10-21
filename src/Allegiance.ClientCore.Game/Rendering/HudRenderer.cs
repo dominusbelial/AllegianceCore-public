@@ -729,14 +729,28 @@ public class HudRenderer
             ? _nativeHud?.RadarCommandIcon((short)labelCommand, label.CommandAccepted)
             : null;
         if (!RadarCommandIcons.UseIcon(label.CommandId, commandIcon is not null)) commandIcon = null;
+        // HUD-17 — the native friendly detection eye (AWF_FLIGHT_EYE_ICON =
+        // "eyebmp", WinTrek/artwork.h:85; loaded once at radarimage.cpp:226).
+        // It shares the command icon's left column, drawn BELOW it when both are
+        // present (:1333-1352), tinted data.m_color (the full side colour, never
+        // the dimmed colorOther). Missing art keeps the legacy '*' fallback in
+        // the name line.
+        Texture2D? eyeIcon = label.Eye ? _nativeHud?.RadarEyeIcon : null;
         float iconSize = commandIcon is not null ? 16f * scale : 0f;
-        float iconGap = commandIcon is not null ? 2f * scale : 0f;
-        string? nameLine = commandIcon is not null ? view.IconNameLine : view.NameLine;
+        float eyeSize = eyeIcon is not null ? 16f * scale : 0f;
+        float iconGap = 2f * scale;
+        // Native stacks the eye directly under the command icon, no gap
+        // (radarimage.cpp:1322-1326, 1342-1344).
+        var left = RadarLabelLayout.LeftColumn(commandIcon is not null, iconSize,
+            eyeIcon is not null, eyeSize, gap: 0f);
+        float textLeft = left.Width + (left.AddsLine ? iconGap : 0f);
+        string? nameLine = RadarLabelCache.SelectNameLine(view,
+            commandArt: commandIcon is not null, eyeArt: eyeIcon is not null);
         var color = RadarLabelColor(contact) * RadarLabelModel.BracketBrightness(contact);
         string? rangeLine = view.RangeLine;
         int barCount = (label.Fill is not null ? 1 : 0) + (label.Shield is not null ? 1 : 0)
             + (label.Hull is not null ? 1 : 0);
-        int lineCount = ((nameLine is not null || commandIcon is not null) ? 1 : 0)
+        int lineCount = ((nameLine is not null || left.AddsLine) ? 1 : 0)
             + (rangeLine is not null ? 1 : 0);
         if (lineCount == 0 && barCount == 0) return;
 
@@ -750,8 +764,8 @@ public class HudRenderer
         if (rangeLine is not null)
             maxText = MathF.Max(maxText, radarFont.MeasureString(rangeLine).X * scale);
         float barRow = barCount > 0 ? 5f * scale : 0f;
-        float blockWidth = MathF.Max(maxText + iconSize + iconGap, barCount * (24f + 4f) * scale) + 8f * scale;
-        float blockHeight = lineCount * lineHeight + barRow + 6f * scale;
+        float blockWidth = MathF.Max(maxText + textLeft, barCount * (24f + 4f) * scale + textLeft) + 8f * scale;
+        float blockHeight = MathF.Max(lineCount * lineHeight, left.Height) + barRow + 6f * scale;
 
         // Native stacks labels along the object→centre direction; a contact is
         // kept clear by nudging the block outward from the view centre.
@@ -776,19 +790,36 @@ public class HudRenderer
                 (int)MathF.Round(y + (lineHeight - iconSize) / 2f), side, side),
                 RadarLabelColor(contact));
         }
+        if (eyeIcon is not null)
+        {
+            // HUD-17 — below the command icon in the same left column
+            // (radarimage.cpp:1333-1352). The texture was decoded to a
+            // luminance-alpha mask at load (HudNativeTextures.TryDecode), so this
+            // normal alpha-blended draw reproduces native's BlendModeAdd result:
+            // black texels add nothing, bright strokes multiply by the full side
+            // colour and light up. Same full-colour tint rule as the command icon.
+            int side = Math.Max(1, (int)MathF.Round(eyeSize));
+            _sb.Draw(eyeIcon, new Rectangle((int)MathF.Round(placed.X),
+                (int)MathF.Round(y + left.EyeTop + (lineHeight - eyeSize) / 2f), side, side),
+                RadarLabelColor(contact));
+        }
         if (nameLine is not null)
         {
-            RenderText(radarFont, HudFormat.Printable(nameLine), new Vector2(placed.X + iconSize + iconGap, y), color, scale);
+            RenderText(radarFont, HudFormat.Printable(nameLine), new Vector2(placed.X + textLeft, y), color, scale);
+            y += lineHeight;
+        }
+        else if (left.AddsLine)
+        {
             y += lineHeight;
         }
         if (rangeLine is not null)
         {
-            RenderText(radarFont, rangeLine, new Vector2(placed.X, y), color, scale);
+            RenderText(radarFont, rangeLine, new Vector2(placed.X + textLeft, y), color, scale);
             y += lineHeight;
         }
         if (barCount > 0)
         {
-            float bx = placed.X, by = y + 2f * scale;
+            float bx = placed.X + textLeft, by = y + 2f * scale;
             if (label.Fill is { } fill)
             {
                 FillRect(bx, by, 24f * scale * Math.Clamp(fill, 0f, 1f), 2f * scale, new Color(0.70f, 0.78f, 0.86f));

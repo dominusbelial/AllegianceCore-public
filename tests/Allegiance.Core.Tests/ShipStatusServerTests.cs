@@ -96,11 +96,12 @@ public class ShipStatusServerTests
         Assert.Equal(probeShipId, status.ShipId);
         Assert.Equal(bot.ShipAssignment!.SectorId, status.SectorId);
 
-        // Sanity: the decoded status is a healthy flying scout-less frame per the
-        // established simplification (State=Flying, detected, not unknown).
+        // HUD-17: the status carries the real own-side Detected bit. Nobody on
+        // the other side sees this lone probe, so it is false (not the old
+        // unconditional true).
         Assert.Equal(ShipStatusMessage.StateFlying, status.State);
         Assert.False(status.Unknown);
-        Assert.True(status.Detected);
+        Assert.False(status.Detected);
         Assert.Equal(-1, status.StationId);   // NA — flying, not docked
         Assert.Equal(-1, status.ParentId);
 

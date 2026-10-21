@@ -122,8 +122,13 @@ public readonly record struct HudFrame(
     // Signature percentage: native 100*signature/side c_gaSignature
     // (WinTrek/console.cpp:865-866). Null when the value cannot be derived.
     float? SignaturePercent = null,
-    // Raw ship status Detected bit (WinTrek/console.cpp:811). The native eye
-    // icon is INVERTED: shown when this is false (dialog.mdl:206-207, 2527-2533).
+    // Raw ship status Detected bit (bit 7 of the own-side ShipStatus,
+    // FedSrv/fsship.cpp:237-335). Native's own-ship eye is NOT inverted at the
+    // wire: console.cpp:811 feeds `ppi->GetDetected()`, which is the NEGATION
+    // of the raw bit (clintlib/clintlib.h:438), into a SwitchPane whose only
+    // visible branch is value 0 (Artwork/dialog.mdl:2526-2534), so radonbmp
+    // shows exactly when the RAW bit is true (dialog.mdl:206-207: "since
+    // 'Detected' = 0 when eyed"). True ⇔ an enemy sees us ⇔ eye visible.
     bool Detected = false,
     // trekClient.autoPilot() (WinTrek/console.cpp:793), client-local state.
     bool AutopilotEngaged = false,

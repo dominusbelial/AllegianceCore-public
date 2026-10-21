@@ -194,9 +194,12 @@ public class HudModelTests
     }
 
     [Fact]
-    public void Own_status_inverts_the_detection_eye_and_switches_carried_objects()
+    public void Own_status_shows_the_detection_eye_on_the_raw_detected_bit()
     {
-        var model = HudModel.Create(Frame with { Detected = false, CarriedFlag = true, CarriedArtifact = false });
+        // Native own-ship eye visible ⇔ RAW ShipStatus.Detected == true
+        // (console.cpp:811 shows RadOn for the inverted PlayerInfo binding 0;
+        // clintlib.h:438 is that inversion; dialog.mdl:206-207,2526-2534).
+        var model = HudModel.Create(Frame with { Detected = true, CarriedFlag = true, CarriedArtifact = false });
         Assert.True(model.Status.DetectionEyeVisible);
         Assert.True(model.Status.CarriedFlag);
         Assert.False(model.Status.CarriedArtifact);
@@ -204,7 +207,7 @@ public class HudModelTests
         Assert.True(model.Elements.Single(e => e.Id == "Carried flag").Visible);
         Assert.False(model.Elements.Single(e => e.Id == "Carried artifact").Visible);
 
-        var detected = HudModel.Create(Frame with { Detected = true, CarriedFlag = false, CarriedArtifact = true });
+        var detected = HudModel.Create(Frame with { Detected = false, CarriedFlag = false, CarriedArtifact = true });
         Assert.False(detected.Status.DetectionEyeVisible);
         Assert.True(detected.Status.CarriedArtifact);
         Assert.False(detected.Status.CarriedFlag);

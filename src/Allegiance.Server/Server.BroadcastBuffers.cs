@@ -135,7 +135,10 @@ public sealed partial class Server
         byte state = ship.ParentShip is not null
             ? ship.TurretId is null ? ShipStatusMessage.StateObserver : ShipStatusMessage.StateTurret
             : ship.StationId is not null ? ShipStatusMessage.StateDocked : ShipStatusMessage.StateFlying;
-        bytes[16] = (byte)(state | 0x80);
+        // HUD-17 — the pooled fast path must produce byte-identical packets to
+        // the non-pooled MakeOwnShipStatus path above, so the own-side Detected
+        // bit comes from the same native rule (ShipDetection.IsDetectedByEnemy).
+        bytes[16] = (byte)(state | (ShipDetection.IsDetectedByEnemy(ship) ? 0x80 : 0));
         return packet;
     }
 

@@ -1,4 +1,5 @@
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.Core.Wire;
 using NumericsVec2 = System.Numerics.Vector2;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
@@ -47,22 +48,54 @@ public class Hud5bReviewFixTests
     }
 
     [Fact]
-    public void Detection_eye_stays_off_while_detection_is_not_simulated()
+    public void Detection_eye_follows_the_applied_teammate_status_bit()
     {
-        // The server hard-codes Detected = true for every teammate
-        // (Server.Broadcast.cs:1654,1667,1700). The client has no scanner, so the
-        // reading is unknown (null) and the eye must NOT light up from that
-        // constant — HUD-5 shipped a permanent '*' before this fix.
-        Assert.False(RadarLabelModel.ShowDetectionEye(
-            isSelf: false, sameSide: true, playerPiloted: true, detected: null));
+        // HUD-17 — the teammate's raw SHIP_STATUS Detected bit now reaches the
+        // contact gate. radarimage.cpp:1006-1019 reads ss.GetDetected() directly
+        // (no inversion), for another same-side PLAYER-piloted ship.
+        var world = new Allegiance.ClientCore.State.ClientWorld();
+        world.Apply(new PlayerInfo
+        {
+            CharacterName = "Wingman", ISide = 0, ShipId = 7,
+            PilotType = PlayerInfo.PilotTypePlayer,
+        });
+        world.Apply(new ShipStatusMessage
+        {
+            ShipId = 7, HullId = 15, SectorId = 1, StationId = -1, ParentId = -1,
+            State = ShipStatusMessage.StateFlying, Detected = true,
+        });
+        var eyed = world.Ships[7];
+        Assert.True(eyed.Detected);
+        Assert.True(RadarLabelModel.ShowDetectionEyeFor(eyed, mySide: 0, isSelf: false));
+        Assert.False(RadarLabelModel.ShowDetectionEyeFor(eyed, mySide: 0, isSelf: true));     // own ship
+        Assert.False(RadarLabelModel.ShowDetectionEyeFor(eyed, mySide: 1, isSelf: false));    // enemy ship
 
-        // A contact built the way the production radar snapshot does it carries
-        // no eye, so the resolved label has none either.
-        var contact = Ship(eye: false);
+        // A contact built from that gate lights the eye, and the resolved label
+        // carries Eye=true. The cached no-eye name line has no '*' once the
+        // native eyebmp art draws (HUD-17).
+        var contact = Ship(eye: RadarLabelModel.ShowDetectionEyeFor(eyed, mySide: 0, isSelf: false));
         var label = RadarLabelModel.Resolve(contact, RadarMode.Default, commandCamera: false);
         Assert.NotNull(label);
-        Assert.False(label!.Value.Eye);
-        Assert.DoesNotContain('*', RadarLabelCache.FormatNameLine(label.Value) ?? string.Empty);
+        Assert.True(label!.Value.Eye);
+        var view = new RadarLabelCache().Resolve(0, contact, RadarMode.Default, commandCamera: false);
+        Assert.Equal("Scout", view.IconNoEyeNameLine);
+        Assert.DoesNotContain('*', view.IconNoEyeNameLine ?? string.Empty);
+        Assert.Contains('*', view.NameLine ?? string.Empty);      // missing-art fallback keeps the legacy mark
+
+        // The next SHIP_STATUS clears the bit and the eye with it.
+        world.Apply(new ShipStatusMessage
+        {
+            ShipId = 7, HullId = 15, SectorId = 1, StationId = -1, ParentId = -1,
+            State = ShipStatusMessage.StateFlying, Detected = false,
+        });
+        var clear = world.Ships[7];
+        Assert.False(clear.Detected);
+        Assert.False(RadarLabelModel.ShowDetectionEyeFor(clear, mySide: 0, isSelf: false));
+        var plain = RadarLabelModel.Resolve(Ship(eye: RadarLabelModel.ShowDetectionEyeFor(clear, 0, false)),
+            RadarMode.Default, commandCamera: false);
+        Assert.NotNull(plain);
+        Assert.False(plain!.Value.Eye);
+        Assert.DoesNotContain('*', RadarLabelCache.FormatNameLine(plain.Value) ?? string.Empty);
     }
 
     // ── 2. Accepted/queued order brackets ───────────────────────────────────

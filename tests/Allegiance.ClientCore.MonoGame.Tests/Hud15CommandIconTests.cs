@@ -194,7 +194,7 @@ public class Hud15CommandIconTests
         var hud = Src(Path.Combine("Rendering", "HudRenderer.cs"));
         Assert.Contains("_nativeHud?.RadarCommandIcon((short)labelCommand, label.CommandAccepted)", hud);
         Assert.Contains("RadarCommandIcons.UseIcon(label.CommandId, commandIcon is not null)", hud);
-        Assert.Contains("view.IconNameLine", hud);
+        Assert.Contains("RadarLabelCache.SelectNameLine(view,", hud);
         // Console order lines: both skins draw the accepted/queued glyphs.
         Assert.Contains("DrawOrderLineGlyph(accepted: false, scale, red)", hud);
         Assert.Contains("DrawOrderLineGlyph(accepted: true, scale, yellow)", hud);

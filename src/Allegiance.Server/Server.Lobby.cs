@@ -527,6 +527,9 @@ public sealed partial class Server
         _ballots.Remove(mission);
         _mapGenMissions.Remove(mission);
         _scoreRosterStates.Remove(mission);
+        // HUD-17: NPC detection entries are never pruned per ship (ids only grow);
+        // drop them all with the old world. A missing entry reads as false.
+        _shipDetected.Clear();
         RetireBroadcastProjectionCaches();
         // Clients discard the old warning state on Over. An unchanged station
         // layout must be announced again in the new world (trekigc.cpp:327-383
@@ -921,6 +924,9 @@ public sealed partial class Server
                      .Where(kv => kv.Key.ShipId == oldShipId)
                      .Select(kv => kv.Key).ToList())
             _crossSideShipStatusSeen.Remove(k);
+        // HUD-17 — same reset for the own-side Detected baseline on a re-login
+        // (the old ship id is being retired/reseated).
+        _shipDetected.Remove(oldShipId);
         _lastStatusSector.Remove(conn);
         _lastStatusTick.Remove(conn);
         _lastClusterInfoTick.Remove(conn);
@@ -4027,13 +4033,15 @@ private void CompleteStartCountdown(Mission mission, double now)
         // GetCluster()==null, ScoutExploreMap.cs:96-97), which this
         // is: SET_CLUSTER already launched it into live.Sector.
         //
-        // Simplifications (this repo's honesty-about-simplifications
-        // style): no scouting/visibility system exists, so
-        // Unknown=false and Detected=true always — there is no
-        // scanning state to make them meaningful yet (matching the
-        // simplified server's "no detection system" stance). State
-        // is c_ssFlying with StationID/ParentID NA because this
-        // server has no docking — ships are born flying in a sector.
+        // HUD-17: the status carries the real own-side bits now —
+        // Unknown=false (this port never hides a ship from its own side) and
+        // Detected = ShipDetection.IsDetectedByEnemy(ship), i.e. true only
+        // while a non-own, non-allied side has the ship in its scanner net
+        // (FedSrv/fsship.cpp:237-335). A fresh join before any enemy sees the
+        // ship therefore sends Detected=false; the shipDetection sweep re-sends
+        // the status on the change the moment an enemy spots it. State is
+        // c_ssFlying with StationID/ParentID NA for a launched ship
+        // (docked spawns carry their station).
         SendPeer(from, FedPacket.Pack(new[]
         {
             MakeOwnShipStatus(shipId, live).Encode(),

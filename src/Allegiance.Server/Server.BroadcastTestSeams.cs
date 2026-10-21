@@ -46,6 +46,9 @@ public sealed partial class Server
         _nextTeammateRefreshTick.Clear();
         _sameSideNpcExportSent.Clear();
         _lastSameSideNpcStatusTick.Clear();
+        // HUD-17 — the own-side Detected-bit baseline and its per-tick change set.
+        _shipDetected.Clear();
+        _shipDetectedChanged.Clear();
         _teammateLoadoutCache.Clear();
         RetireBroadcastProjectionCaches();
         _viewerPoseCadence.Clear();
@@ -203,6 +206,9 @@ public sealed partial class Server
             SweepCrossSideShipStatuses();
             TestProjectionAllocationCapture?.Invoke("SweepCrossSideShipStatuses", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
             allocationMark = GC.GetAllocatedBytesForCurrentThread();
+            SweepShipDetection();
+            TestProjectionAllocationCapture?.Invoke("shipDetection", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
+            allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastShipStates")) BroadcastShipStates(tick);
             TestProjectionAllocationCapture?.Invoke("step:broadcastShipStates", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
             allocationMark = GC.GetAllocatedBytesForCurrentThread();
@@ -261,6 +267,8 @@ public sealed partial class Server
         _crossSideMineExportSent.Clear();
         _crossSideShipStatusSeen.Clear();
         _crossSideShipStatusTick.Clear();
+        _shipDetected.Clear();
+        _shipDetectedChanged.Clear();
         _lastSectorAssetMaskBySide.Clear();
         _scoreRosterStates.Clear();
         _objectSyncDirtySides.Clear();

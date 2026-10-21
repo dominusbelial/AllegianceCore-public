@@ -3682,18 +3682,14 @@ public sealed partial class Game1
                     Ripcord: droneRip, RipcordSeconds: ripSeconds,
                     NearestEnemy: nearestEnemyId == id,
                     CommandId: shipCommand.CommandId, CommandAccepted: shipCommand.CommandAccepted,
-                    // Native shows the eye only for another SAME-SIDE PLAYER-piloted
-                    // ship with ShipStatus.GetDetected() set (radarimage.cpp:1006-1019).
-                    // The port has no scanner simulation and the server hard-codes
-                    // Detected=true for every teammate (Server.Broadcast.cs:1654,1667,1700),
-                    // so the detection reading is unknown here (null) — the eye stays
-                    // off instead of lighting up for the whole team.
-                    DetectionEye: RadarLabelModel.ShowDetectionEye(
-                        isSelf: false,
-                        sameSide: ship.SideId == mySide,
-                        playerPiloted: ship.Player is { } pilot
-                            && pilot.PilotType >= Allegiance.Core.Wire.PlayerInfo.PilotTypePlayer,
-                        detected: null),
+                    // HUD-17 — native friendly detection eye: another SAME-SIDE
+                    // PLAYER-piloted ship whose own-side ShipStatus carries the
+                    // raw Detected bit (radarimage.cpp:1006-1019). The server now
+                    // sends that bit for same-side player ships (the ship's own
+                    // side's copy), so `ship.Detected` is real data, not a
+                    // constant. The gate itself is RadarLabelModel's pure native
+                    // port (ShowDetectionEyeFor), unit-pinned.
+                    DetectionEye: RadarLabelModel.ShowDetectionEyeFor(ship, mySide, isSelf: false),
                     ScreenRadius: shipBracket.ScreenRadius,
                     DistanceToEdge: shipBracket.DistanceToEdge,
                     IconStem: iconNames?.Ship(ship.HullId)));

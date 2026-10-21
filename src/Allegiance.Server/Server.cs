@@ -515,6 +515,17 @@ public sealed partial class Server : IDisposable
     // enemy's last-known sector within one interval. Sim-thread only.
     private readonly Dictionary<(ConnectionId, short), long> _crossSideShipStatusTick = new();
 
+    // HUD-17 — the per-ship own-side Detected bit last written into the
+    // own/teammate/SHIP_STATUS frames, and the ships whose value CHANGED this
+    // tick. SweepShipDetection recomputes the native rule
+    // (ShipDetection.IsDetectedByEnemy) for every own-side ship and fills the
+    // change set; BroadcastShipStates then re-sends a status on the change,
+    // the port's equivalent of native's per-frame status delta
+    // (FedSrv/FedSrv.CPP:3693-3700). Both are cleared/reused in place so the
+    // per-tick sweep allocates nothing. Sim-thread only.
+    private readonly Dictionary<short, bool> _shipDetected = new();
+    private readonly HashSet<short> _shipDetectedChanged = new();
+
     // P672 — mission baseline, eligible recipients, and refresh deadlines. Sim-thread only.
     private sealed class ScoreRosterState
     {

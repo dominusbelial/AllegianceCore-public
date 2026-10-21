@@ -1,0 +1,72 @@
+{
+  "task": "HUD-17",
+  "client": "Allegiance.ClientCore.MonoGame Release real 1920x1080 window (Classic and Modern)",
+  "server": "local Allegiance.Server m2scatter.igc, 2 sides, side-0 bot teammate + passive side-1 bot scanner",
+  "captured_by": "tools/hud17-proof",
+  "screenshots": [
+    {
+      "asset": "docs/reports/HUD17_assets/own-eyed-classic.webp",
+      "sha256": "174f7df3e4ca8d4ca0a0550240102f5063c815293050c442389345c2bada80a9",
+      "bytes": 34352,
+      "source_png": "/home/domingo/allegiance-evidence/HUD17/raw/classic/own-eyed-1920x1080.png",
+      "source_sha256": "e1bafbabca3e93e3a183abc916c8f0e22849bc7671a2dc96d23cf7cc005f20d1",
+      "skin": "classic"
+    },
+    {
+      "asset": "docs/reports/HUD17_assets/own-not-eyed-classic.webp",
+      "sha256": "c5c8a8926969973a96486b6fdf18e6b48e494db10e6c97c2959edfc36a5598fc",
+      "bytes": 34050,
+      "source_png": "/home/domingo/allegiance-evidence/HUD17/raw/classic/own-not-eyed-1920x1080.png",
+      "source_sha256": "cfb07cb2c2dc24f0af5bfd4e73b14bab09611a8e6d9bb479fc9971475290e9d6",
+      "skin": "classic"
+    },
+    {
+      "asset": "docs/reports/HUD17_assets/radar-teammate-eye-classic.webp",
+      "sha256": "715408cc3ff3eb649add676ec9d0a1b2532c91d0bfb9f54db64bedf25a61f372",
+      "bytes": 34082,
+      "source_png": "/home/domingo/allegiance-evidence/HUD17/raw/classic/radar-teammate-eye-1920x1080.png",
+      "source_sha256": "eafa3bf296f193e3f7ba603ed330be076570198b2d062fa32ed6c157bba91cc5",
+      "skin": "classic"
+    },
+    {
+      "asset": "docs/reports/HUD17_assets/radar-teammate-no-eye-classic.webp",
+      "sha256": "4504c80fc50339048b5e88fb3a0e422c0e058d3faddaba471b5b6c05191d56b0",
+      "bytes": 33908,
+      "source_png": "/home/domingo/allegiance-evidence/HUD17/raw/classic/radar-teammate-no-eye-1920x1080.png",
+      "source_sha256": "99a1640e5324afc2281933be447bce9d9f67c5423bcb045f5deffaaf872e6b26",
+      "skin": "classic"
+    },
+    {
+      "asset": "docs/reports/HUD17_assets/own-eyed-modern.webp",
+      "sha256": "0ad82b5ce2338fee63b9c06246f002db98a397a5545cb7376636cc8dc6c38f71",
+      "bytes": 39642,
+      "source_png": "/home/domingo/allegiance-evidence/HUD17/raw/modern/own-eyed-1920x1080.png",
+      "source_sha256": "544b6a67e4b1b8720ab0e83ca8183d6bb097915ffcbb073a1ed55e70618928e3",
+      "skin": "modern"
+    },
+    {
+      "asset": "docs/reports/HUD17_assets/own-not-eyed-modern.webp",
+      "sha256": "fe2e429e2d616c4448481d5a2870e4fbe48798313dc3af384baa4f53d59e171c",
+      "bytes": 39166,
+      "source_png": "/home/domingo/allegiance-evidence/HUD17/raw/modern/own-not-eyed-1920x1080.png",
+      "source_sha256": "501afe3d18f8de7e13141172054126daec516c0c0139a17b1a818de285208428",
+      "skin": "modern"
+    },
+    {
+      "asset": "docs/reports/HUD17_assets/radar-teammate-eye-modern.webp",
+      "sha256": "c28e341cc87eae40cdd12b1c61d2fa3873a254ad8b6ce9cfcad81b4d32e2e380",
+      "bytes": 40324,
+      "source_png": "/home/domingo/allegiance-evidence/HUD17/raw/modern/radar-teammate-eye-1920x1080.png",
+      "source_sha256": "6d28a4062606c4867c12f5e32106622faeb0c0f093ddc8a756b382694e7cf1e7",
+      "skin": "modern"
+    },
+    {
+      "asset": "docs/reports/HUD17_assets/radar-teammate-no-eye-modern.webp",
+      "sha256": "5bfc2157107da84e9d2adfd7ed08c476ac2d48f936278cd371fa3e99092085dc",
+      "bytes": 39170,
+      "source_png": "/home/domingo/allegiance-evidence/HUD17/raw/modern/radar-teammate-no-eye-1920x1080.png",
+      "source_sha256": "f7b0bc308be9f4cd003f1ce9993be62e323babf34b23d8a6564f490e259a08fe",
+      "skin": "modern"
+    }
+  ]
+}

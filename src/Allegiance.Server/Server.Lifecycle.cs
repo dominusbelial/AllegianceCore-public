@@ -1866,6 +1866,10 @@ public sealed partial class Server
                      .Where(kv => kv.Key.ShipId == departedShipId)
                      .Select(kv => kv.Key).ToList())
             _crossSideShipStatusSeen.Remove(k);
+        // HUD-17 — free the departing ship's own-side Detected baseline (keyed by
+        // subject ship id, so a departing peer's ship entry would otherwise leak
+        // across connection churn / mission rotation id reuse).
+        _shipDetected.Remove(departedShipId);
 
         RetireShipOnDisconnect(live);
 

@@ -348,6 +348,15 @@ public sealed partial class Server
         // is what the team pane's OBJECTIVE column sorts by
         // (CurrentCommandText, WinTrek/teampane.cpp:1528-1534, 1660-1676).
         Step("acceptedCommandSweep", SweepAcceptedCommands);
+        // HUD-17 — recompute each own-side ship's Detected bit from the native
+        // rule (ShipDetection.IsDetectedByEnemy: an enemy, i.e. non-own,
+        // non-allied, side's known SeenBySide status) and mark the ships whose
+        // bit changed this tick. BroadcastShipStates consumes the mark and
+        // re-sends that ship's status immediately, mirroring native's
+        // per-frame status delta (FedSrv/FedSrv.CPP:3663-3700: on odd frames,
+        // only a CHANGED ShipStatus is sent). Runs before broadcastShipStates,
+        // after Mission.Update, so SeenBySide reflects this tick's sweep.
+        Step("shipDetection", SweepShipDetection);
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.
@@ -781,8 +790,12 @@ public sealed partial class Server
             long lastTick = _lastStatusTick.TryGetValue(kv.Key, out var t0) ? t0 : -1;
             bool sectorChanged = live.Sector.Id != sentSector;
             bool refreshDue = lastTick < 0 || (long)tickIndex - lastTick >= StatusRefreshTicks;
-            if (sectorChanged || refreshDue)
+            if (sectorChanged || refreshDue || _shipDetectedChanged.Contains(ship.Id))
             {
+                // HUD-17 — the third term is native's changed-status delta
+                // (FedSrv/FedSrv.CPP:3693-3700): the ship swept a new Detected
+                // bit this tick, so its own-side status goes out immediately
+                // instead of waiting for the periodic refresh.
                 SendPeer(kv.Key, PackStatus(ship.Id, live));
                 if (ConsoleLog.Verbose) ConsoleLog.Write($"[shipstatus] peer {kv.Key} " +
                     (sectorChanged ? $"sector change {sentSector} -> {live.Sector.Id}" : $"refresh (sector {live.Sector.Id})"));
@@ -980,8 +993,12 @@ public sealed partial class Server
                         // or on the pair's very first send (lastTeammateTick<0,
                         // a just-exported new mate, caught up immediately).
                         long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((kv.Key, teammateId), out var tt0) ? tt0 : -1;
-                        if (lastTeammateTick < 0 || recipientRefreshDue)
+                        if (lastTeammateTick < 0 || recipientRefreshDue || _shipDetectedChanged.Contains(teammateId))
                         {
+                            // HUD-17 — a Detected-bit change re-sends the
+                            // teammate status on the spot (native's per-frame
+                            // delta, FedSrv/FedSrv.CPP:3693-3700), not after up
+                            // to TeammateStatusRefreshTicks.
                             SendPeer(kv.Key, PackStatus(teammateId, tv.Value));
                             if (ConsoleLog.Verbose) ConsoleLog.Write($"[teamshipstatus] peer {kv.Key} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
                                 (tv.Value.Ship.StationId is not null ? $" DOCKED@{tv.Value.Ship.StationId}" : " flying"));
@@ -1142,7 +1159,7 @@ public sealed partial class Server
                         // the teammate refresh, so it rides the same per-recipient
                         // phase to never burst fleet-wide (first send still
                         // immediate via lastNpcTick<0).
-                        if (lastNpcTick < 0 || recipientRefreshDue)
+                        if (lastNpcTick < 0 || recipientRefreshDue || _shipDetectedChanged.Contains(npc.Id))
                         {
                             SendPeer(kv.Key, PackBroadcast(Message(MakeNpcShipStatus(npc))));
                             ConsoleLog.Write($"[samestidenpcstatus] peer {kv.Key} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
@@ -1446,7 +1463,7 @@ public sealed partial class Server
         long lastTick = _lastStatusTick.TryGetValue(conn, out var t0) ? t0 : -1;
         bool sectorChanged = live.Sector.Id != sentSector;
         bool refreshDue = lastTick < 0 || (long)tickIndex - lastTick >= StatusRefreshTicks;
-        if (sectorChanged || refreshDue)
+        if (sectorChanged || refreshDue || _shipDetectedChanged.Contains(ship.Id))
         {
             r.Packets.Add((PackStatus(ship.Id, live), 0, false));
             if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[shipstatus] peer {conn} " +
@@ -1529,7 +1546,7 @@ public sealed partial class Server
                 if (_teammateExportSent.Contains((conn, teammateId)) || localExportSent.Contains(teammateId))
                 {
                     long lastTeammateTick = _lastTeammateStatusTick.TryGetValue((conn, teammateId), out var tt0) ? tt0 : -1;
-                    if (lastTeammateTick < 0 || recipientRefreshDue)
+                    if (lastTeammateTick < 0 || recipientRefreshDue || _shipDetectedChanged.Contains(teammateId))
                     {
                         r.Packets.Add((PackStatus(teammateId, tv.Value), 0, false));
                         if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[teamshipstatus] peer {conn} <- ship {teammateId} sector {tv.Value.Sector.Id}" +
@@ -1625,7 +1642,7 @@ public sealed partial class Server
 
                     long lastNpcTick = _lastSameSideNpcStatusTick.TryGetValue((conn, npc.Id), out var nt0) ? nt0 : -1;
                     // P604b — gate on the recipient's phase (mirror of serial).
-                    if (lastNpcTick < 0 || recipientRefreshDue)
+                    if (lastNpcTick < 0 || recipientRefreshDue || _shipDetectedChanged.Contains(npc.Id))
                     {
                         r.Packets.Add((PackBroadcast(Message(MakeNpcShipStatus(npc))), 0, false));
                         if (ConsoleLog.Verbose) r.VerboseLogs.Add($"[samestidenpcstatus] peer {conn} <- NPC ship {npc.Id} sector {npc.Sector?.Id}" +
@@ -1651,8 +1668,14 @@ public sealed partial class Server
 
     /// <summary>Build a peer's own-ship SHIP_STATUS(90) from its live record:
     /// docked (carrying the real StationId + State=c_ssDocked) when the ship is
-    /// docked, else flying free with StationID/ParentID NA; detected/unknown
-    /// fixed per the simplification documented at the join-burst send site.
+    /// docked, else flying free with StationID/ParentID NA. HUD-17: the
+    /// detected/unknown bits are the real native values — <c>Unknown=false</c>
+    /// (this port never marks a ship's own-side copy unknown) and
+    /// <c>Detected = ShipDetection.IsDetectedByEnemy(ship)</c>, the ship's own
+    /// side's copy of native <c>ShipStatus::GetDetected()</c> (<c>FedSrv/
+    /// fsship.cpp:237-335</c>; the same value for its own ship and for every
+    /// teammate that receives it — native's per-side status is per SUBJECT, not
+    /// per recipient).
     /// P108: a <b>boarded</b> ship (ParentShip set) overrides with
     /// State=c_ssTurret/c_ssObserver, ParentID = the carrier's id, and
     /// HullID = NA (riding inside another hull — the native
@@ -1665,6 +1688,7 @@ public sealed partial class Server
     {
         var ship = live.Ship;
         bool docked = ship.StationId is not null;
+        bool detected = ShipDetection.IsDetectedByEnemy(ship);
         if (ship.ParentShip is { } parent)
         {
             // Boarded — riding inside the carrier's hull (occupancy only; the
@@ -1680,7 +1704,7 @@ public sealed partial class Server
                     ? ShipStatusMessage.StateObserver            // c_ssObserver (igc.h:4393)
                     : ShipStatusMessage.StateTurret,             // c_ssTurret   (igc.h:4395)
                 Unknown = false,
-                Detected = true,
+                Detected = detected,                              // own side's copy (fsship.cpp:318/321-334)
                 StateTime = 0,
             };
         }
@@ -1692,8 +1716,8 @@ public sealed partial class Server
             StationId = docked ? ship.StationId!.Value : (short)-1,  // NA when flying free
             ParentId = -1,                          // NA — no docked/turreted children (ShipStatusDocked sets ParentID=NA, fsship.cpp:376)
             State = docked ? ShipStatusMessage.StateDocked : ShipStatusMessage.StateFlying,  // c_ssDocked/c_ssFlying (igc.h:4390,4394)
-            Unknown = false,                 // no scanning system yet
-            Detected = true,                 // no scanning system yet
+            Unknown = false,                 // this port never hides a ship from its own side
+            Detected = detected,             // HUD-17: real own-side bit (fsship.cpp:237-335)
             StateTime = 0,                   // sim clock unused (no dTime source here)
         };
     }
@@ -1713,7 +1737,9 @@ public sealed partial class Server
     /// <see cref="MakeOwnShipStatus"/>'s flying/docked branch, but built
     /// directly from a <see cref="Ship"/> + its own <c>Sector</c> (an NPC has no
     /// <c>LiveShip</c> record). Boarded state is not modelled for NPCs (no turret
-    /// binding), matching the port's single-<c>IsNpc</c>-bool simplification.</summary>
+    /// binding), matching the port's single-<c>IsNpc</c>-bool simplification.
+    /// HUD-17: <c>Detected</c> is the same real own-side bit
+    /// (<see cref="ShipDetection.IsDetectedByEnemy"/>).</summary>
     private static ShipStatusMessage MakeNpcShipStatus(Ship ship)
     {
         bool docked = ship.StationId is not null;
@@ -1726,7 +1752,7 @@ public sealed partial class Server
             ParentId = -1,
             State = docked ? ShipStatusMessage.StateDocked : ShipStatusMessage.StateFlying,
             Unknown = false,
-            Detected = true,
+            Detected = ShipDetection.IsDetectedByEnemy(ship),          // HUD-17: real own-side bit
             StateTime = 0,
         };
     }
@@ -1973,6 +1999,75 @@ public sealed partial class Server
             EnsureEmissionPose(conn, layer, mine.OwnerSector);
         SendPeer(conn, PackBroadcast(new[] { Message(exp) }));
         if (ConsoleLog.Verbose) ConsoleLog.Write($"[xexport] side {seeingSide} <- peer {conn} mine {mine.Id} (type {mine.MineType.ExpendableTypeId}) @ {mine.Position}");   // P619c: gated
+    }
+
+    /// <summary>HUD-17 — recompute every own-side ship's <c>Detected</c> bit for
+    /// the current tick and record which ships changed, so the status broadcast
+    /// can re-send exactly those (native's changed-status delta,
+    /// <c>FedSrv/FedSrv.CPP:3663-3700</c>: even frames send nothing, odd frames
+    /// send every side's changed <c>ShipStatus</c>).
+    /// <para><b>Coverage.</b> The two ship populations the own-side status paths
+    /// serve: every peer ship (<c>_peerShips</c>, regardless of mission stage —
+    /// its own status is refreshed from the join burst on) and every same-side
+    /// NPC the teammate path serves (an <see cref="Ship.IsNpc"/> ship of a
+    /// Started/Starting mission, the same scan <c>BroadcastShipStates</c> builds
+    /// its per-(mission, side) NPC grouping from).</para>
+    /// <para><b>Cost.</b> One <see cref="ShipDetection.IsDetectedByEnemy"/> call
+    /// per covered ship (one indexed <see cref="Mission.Sides"/> loop with a
+    /// dictionary lookup per side) plus one dictionary compare per ship. The
+    /// change set is cleared in place, never reallocated; both collections are
+    /// permanent fields. Bounded locally: at 400 ships and 2 sides about 800
+    /// lookups per tick and no allocation.</para>
+    /// </summary>
+    private void SweepShipDetection()
+    {
+        _shipDetectedChanged.Clear();
+
+        // Peer ships: the own-ship and teammate status paths both source these.
+        foreach (var kv in _peerShips)
+            UpdateShipDetection(kv.Value.Ship);
+
+        // Same-side NPCs: the P366 path's population. Scanned exactly like
+        // BroadcastShipStates' sameSideNpcBySide builder (in-flight missions
+        // only), but walked in place so the sweep allocates nothing.
+        for (int mi = 0; mi < _missions.Count; mi++)
+        {
+            var m = _missions[mi];
+            if (m.Stage != MissionStage.Started && m.Stage != MissionStage.Starting) continue;
+            // Index loops, not foreach: Sectors/Models are IReadOnlyList<T>, whose
+            // enumerator is boxed by foreach (80 B/sector/tick) — the same
+            // no-enumerator-boxing rule the side loop follows.
+            var sectors = m.Sectors;
+            for (int si = 0; si < sectors.Count; si++)
+            {
+                var models = sectors[si].Models;
+                for (int i = 0; i < models.Count; i++)
+                    if (models[i] is Ship { IsNpc: true } npc)
+                        UpdateShipDetection(npc);
+            }
+        }
+    }
+
+    /// <summary>HUD-17 — one ship's detection compare/update: recompute the
+    /// native rule, store it, and mark the id when it differs from the last
+    /// value written to a status frame. A missing entry reads as
+    /// <c>false</c> (the fresh native <c>ShipStatus</c> default and today's
+    /// pre-first-sweep state), so a ship whose very first value is <c>false</c>
+    /// is not treated as a spurious change.</summary>
+    private void UpdateShipDetection(Ship ship)
+    {
+        bool detected = ShipDetection.IsDetectedByEnemy(ship);
+        if (_shipDetected.TryGetValue(ship.Id, out var previous))
+        {
+            if (previous == detected) return;
+        }
+        else if (!detected)
+        {
+            _shipDetected[ship.Id] = false;
+            return;
+        }
+        _shipDetected[ship.Id] = detected;
+        _shipDetectedChanged.Add(ship.Id);
     }
 
     /// <summary>P493 — per-tick edge sweep that delivers an enemy ship's

@@ -328,12 +328,15 @@ public sealed class HudModel
             return new(null, null, false, false, false, false, false, false, false, false);
 
         bool visible = instrumentsVisible;
-        // Native eye shows when the Detected binding is 0, i.e. NOT detected
-        // (WinTrek/console.cpp:811; dialog.mdl:2527-2533). HUD-6b: the port's
-        // own-ship SHIP_STATUS always carries Detected=true (Server.Broadcast.cs:1667,
-        // no scanning system yet), so this gate is unreachable and the row stays
-        // partial; it is retained to match the native binding if detection lands.
-        bool eye = visible && !own.Detected;
+        // Native eye visible ⇔ RAW Detected == true. console.cpp:811 does
+        // `SetValue((ppi && !ppi->GetDetected()) ? 0 : 1)`, and
+        // PlayerInfo::GetDetected() is itself the negation of the raw bit
+        // (clintlib.h:438), so the binding is 0 exactly when the raw bit is
+        // true; dialog.mdl:2526-2534 shows RadOn only for binding 0, and
+        // dialog.mdl:206-207 states "since 'Detected' = 0 when eyed".
+        // HUD-17: the server now sends the real own-side bit
+        // (ShipDetection.IsDetectedByEnemy), so this matches native in play.
+        bool eye = visible && own.Detected;
         // Native IsCloaked = GetCloaking() < 1 (WinTrek/consoledata.cpp:563-575):
         // the icon persists through the DECLOAK ramp, until the visible fraction
         // reaches 1. With the HUD-12 continuous stream that is exactly

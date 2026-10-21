@@ -41,15 +41,25 @@ namespace Allegiance.Core.Wire;
 /// <c>fsship.cpp:417</c>'s <c>&gt;= c_ssFlying</c> comparison relies on that
 /// ordering (confirmed by reading igc.h, not guessed).
 ///
-/// Simplifications, matching this repo's honesty-about-simplifications style:
-/// this server has no scouting/visibility/detection system, so every status is
-/// sent with <c>Unknown=false</c> and <c>Detected=true</c> unconditionally —
-/// there is no scanning state to make them meaningful yet. This is scoped to
-/// each peer's OWN ship only (the client's <c>FindPlayer(shipID)</c> gate,
-/// <c>appmsg.cpp:2719</c>, only succeeds for a ship the client already has a
-/// <c>PLAYERINFO(10)</c> record for, which this server sends only for a peer's
-/// own ship); mutual multi-bot visibility (broadcasting other players'
-/// <c>PLAYERINFO</c>) is a separate, larger feature.
+/// <b>Detected/Unknown semantics.</b> These are real, not constants (HUD-17).
+/// <c>Unknown=false</c> for every status this server sends about a ship's own
+/// side (the port never hides a ship from its own side), and
+/// <c>Detected</c> is the ship's own-side copy of native
+/// <c>ShipStatus::GetDetected()</c>: true while at least one side that is
+/// neither the ship's own side nor allied with it has a known (spotted) status
+/// for it (<c>FedSrv/fsship.cpp:237-335</c>; computed by
+/// <c>Allegiance.Core.Sim.ShipDetection.IsDetectedByEnemy</c>). A docked ship
+/// reads false (docking leaves the cluster, <c>Igc/shipIGC.h:421-457</c>) and a
+/// boarded child copies its carrier's value (<c>fsship.cpp:268-284,321-334</c>).
+/// <b>Polarity:</b> the raw bit is true when the ship is eyed; the client's
+/// own-HUD eye shows on the raw true (<c>WinTrek/console.cpp:811</c> +
+/// <c>Artwork/dialog.mdl:206-207,2526-2534</c>) while
+/// <c>PlayerInfo::GetDetected()</c> is the negation (<c>clintlib/clintlib.h:438</c>)
+/// and the radar friendly eye reads the raw bit unchanged
+/// (<c>WinTrek/radarimage.cpp:1006-1019</c>).
+/// This is scoped to each peer's OWN side's copies: the peer's own ship status
+/// and the same-side/teammate statuses. Cross-side (enemy-copy) statuses are a
+/// separate concern (P493) and keep <c>Detected=false</c>.
 /// </summary>
 public sealed class ShipStatusMessage : IFedMessage
 {
@@ -71,8 +81,8 @@ public sealed class ShipStatusMessage : IFedMessage
     public short StationId;       // status.GetStationID() (NA/-1 when flying free)
     public short ParentId;        // status.GetParentID() (NA/-1 when not docked/turreted)
     public byte State = StateFlying;   // bits0-5 — the ShipState enum
-    public bool Unknown;          // bit6 — always false (no scanning system)
-    public bool Detected = true;  // bit7 — always true (no scanning system)
+    public bool Unknown;          // bit6 — false for every own-side status this server sends
+    public bool Detected;  // bit7 (default false: every own-side builder sets it) — the ship's own-side Detected bit (ShipDetection.IsDetectedByEnemy)
     public uint StateTime;        // status.GetStateTime() — the server's sim clock at the moment of the status
 
     public ushort GetFmid() => Fmid;

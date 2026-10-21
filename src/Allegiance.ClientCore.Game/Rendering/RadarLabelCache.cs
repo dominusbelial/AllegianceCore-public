@@ -8,6 +8,8 @@ public readonly record struct RadarLabelView(
     RadarLabel? Label,
     string? NameLine,
     string? IconNameLine,
+    string? NoEyeNameLine,
+    string? IconNoEyeNameLine,
     string? RangeLine,
     string BlockKey,
     string[] Drawn);
@@ -97,31 +99,48 @@ public sealed class RadarLabelCache
     {
         var label = RadarLabelModel.Resolve(contact, mode, commandCamera);
         if (label is not { } l)
-            return new RadarLabelView(null, null, null, null, "radar:none", Array.Empty<string>());
-        // HUD-15 — two name lines: the historical A<id>/Q<id> prefix (fallback
-        // when the native command icon is missing) and the bare name + eye/rip
-        // suffix used once the icon art draws. Both are cached, so switching
-        // between them per frame costs no string.
-        string? prefixed = FormatNameLine(l);
+            return new RadarLabelView(null, null, null, null, null, null, "radar:none", Array.Empty<string>());
+        // HUD-15/HUD-17 — four name-line variants, all cached so switching per
+        // frame costs no string: the historical A<id>/Q<id> prefix (fallback when
+        // the native command icon is missing) and the bare name used once the
+        // icon art draws, each with and without the legacy '*' eye fallback (the
+        // '*' stays only when the native eyebmp art is missing).
+        var prefixed = FormatNameLine(l);
         return new RadarLabelView(
             l,
             prefixed,
             l.CommandId is null ? prefixed : FormatNameLine(l, includeCommand: false),
+            FormatNameLine(l, includeCommand: true, includeEye: false),
+            FormatNameLine(l, includeCommand: false, includeEye: false),
             contact.Range is > 0 ? RadarLabelModel.RangeLineText(contact.Range.Value) : null,
             "radar:" + (l.Name ?? l.RangeText ?? "label"),
             DrawnIds(l));
     }
 
+    /// <summary>HUD-17 — pick the cached name line for the art that actually
+    /// drew this frame: the native command icon replaces the A/Q prefix and the
+    /// native eye replaces the '*' fallback (radarimage.cpp:1199-1208,1333-1352).
+    /// Pure so the four-way choice is unit-pinnable.</summary>
+    public static string? SelectNameLine(in RadarLabelView view, bool commandArt, bool eyeArt)
+        => (commandArt, eyeArt) switch
+        {
+            (true, true) => view.IconNoEyeNameLine,
+            (true, false) => view.IconNameLine,
+            (false, true) => view.NoEyeNameLine,
+            _ => view.NameLine,
+        };
+
     /// <summary>Native label line order: accepted/queued command icon, then the
     /// detection eye, then the name, then the friendly ripcord seconds
     /// (radarimage.cpp:1234-1310,1199-1208,1021-1034). The port's fallback for
-    /// missing command art is an A/Q prefix (<paramref name="includeCommand"/>);
-    /// once the native icon draws (HUD-15) the caller uses the bare line.</summary>
-    public static string? FormatNameLine(RadarLabel label, bool includeCommand = true)
+    /// missing command art is an A/Q prefix and for missing eye art a '*' mark
+    /// (<paramref name="includeCommand"/>/<paramref name="includeEye"/>); once
+    /// the native art draws the caller uses the bare line.</summary>
+    public static string? FormatNameLine(RadarLabel label, bool includeCommand = true, bool includeEye = true)
     {
         string prefix = includeCommand && label.CommandId is { } cid
             ? (label.CommandAccepted ? "A" : "Q") + cid + " " : "";
-        string eye = label.Eye ? "*" : "";
+        string eye = includeEye && label.Eye ? "*" : "";
         string rip = label.RipcordSeconds is { } seconds ? $" {seconds}s" : "";
         if (label.Name is { Length: > 0 } name) return prefix + eye + name + rip;
         if (prefix.Length == 0 && eye.Length == 0 && rip.Length == 0) return null;

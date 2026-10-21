@@ -1,3 +1,5 @@
+using Allegiance.ClientCore.State;
+
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
 /// <summary>Resolved radar label block for one contact. Every field is already
@@ -70,13 +72,28 @@ public static class RadarLabelModel
     /// <summary>Native friendly detection eye (radarimage.cpp:1006-1019): shown
     /// only for a different SHIP of exactly the same side whose pilot is a real
     /// player (<c>GetPilotType() &gt;= c_ptPlayer</c>) and whose ShipStatus
-    /// reports <c>GetDetected()</c>. <paramref name="detected"/> is the
-    /// per-player ShipStatus reading; null means "not known to this client"
-    /// (the port has no scanner simulation), which must NOT light the eye —
-    /// HUD-5b removed the fake always-on eye that came from the server's
-    /// constant <c>Detected = true</c> for teammates.</summary>
-    public static bool ShowDetectionEye(bool isSelf, bool sameSide, bool playerPiloted, bool? detected)
-        => !isSelf && sameSide && playerPiloted && detected == true;
+    /// reports <c>GetDetected() == true</c>. <paramref name="detected"/> is that
+    /// RAW per-ship ShipStatus bit (no inversion — this radar path reads
+    /// <c>ss.GetDetected()</c> directly, unlike the own-ship console path).
+    /// HUD-17: the server now populates the bit for same-side player ships
+    /// (own-side copy), so the gate is fed real data.</summary>
+    public static bool ShowDetectionEye(bool isSelf, bool sameSide, bool playerPiloted, bool detected)
+        => !isSelf && sameSide && playerPiloted && detected;
+
+    /// <summary>HUD-17 — the production radar call-site gate for one teammate
+    /// entity, extracted so the whole native rule (same side, player-piloted,
+    /// different ship, raw Detected bit) is unit-pinnable without a Game1
+    /// render pass. <paramref name="mySide"/> is the local player's side;
+    /// <paramref name="isSelf"/> excludes the player's own ship (native
+    /// <c>pship != pshipSource</c>; we already know when we are eyed).</summary>
+    public static bool ShowDetectionEyeFor(ShipEntity? ship, short mySide, bool isSelf)
+        => ship is { } other
+           && ShowDetectionEye(
+               isSelf: isSelf,
+               sameSide: other.SideId == mySide,
+               playerPiloted: other.Player is { } pilot
+                   && pilot.PilotType >= Allegiance.Core.Wire.PlayerInfo.PilotTypePlayer,
+               detected: other.Detected);
 
     /// <summary>One candidate for the native nearest-enemy search
     /// (<c>FindTarget(pship, c_ttShip | c_ttEnemy | c_ttNearest)</c>,
