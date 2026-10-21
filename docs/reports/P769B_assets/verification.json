@@ -1,0 +1,23 @@
+{
+  "task": "P769b review fixes",
+  "date": "2026-10-21",
+  "build": {"solution": "0 warnings / 0 errors", "aot_publish": "clean, no IL2026/IL3050"},
+  "unfixed_baseline": {
+    "description": "60/200/400 build Theory run on the P769 code before the fix",
+    "radius_60": "built (latch deep inside)",
+    "radius_200": "never built in 400 s (parked at the pole, off-axis, drilling=False)",
+    "radius_400": "never built in 400 s (parked at the pole, off-axis, drilling=False)",
+    "raw": "~/allegiance-evidence/P769B/p769b-baseline-unfixed-theory.txt"
+  },
+  "fixed": {
+    "build_theory_60_200_400": "PASS (all radii build through the drilling collision; latch <= 5 units inside the surface)",
+    "build_theory_extra_runs": "5 consecutive standalone runs PASS",
+    "core_affected_3x": "122/122 x3 (P652 P762 P766 P769 P769b ShipDodgeLaw P674ParityScorecard)",
+    "monogame_affected_3x": "10/10 x3 (P769 P760)",
+    "clientcore_affected_3x": "8/8 x3 (P760 P762 ClientAutopilotDodge)",
+    "fast_tier": "9718 tests PASS (272.8 s)",
+    "showcase_never_parks": "5/5 PASS",
+    "parity_scorecard": "both matrices validate; P674ParityScorecardTests 8/8 x3"
+  },
+  "raw_logs": "~/allegiance-evidence/P769B/"
+}

@@ -37,6 +37,18 @@ public sealed class P762DroneRuleTests
         catch (TargetInvocationException e) { ExceptionDispatchInfo.Capture(e.InnerException!).Throw(); throw; }
     }
 
+    /// <summary>An orientation whose nose faces <paramref name="dir"/> — the
+    /// native charge gate (common.cpp:1302-1311) needs the builder facing the
+    /// rock centre for the completion stand-in to latch.</summary>
+    private static Orientation Facing(Vector3 dir)
+    {
+        var o = Orientation.Identity;
+        o.SetForward(dir);
+        o.SetUp(MathF.Abs(dir.Y) > 0.9f ? new Vector3(0, 0, 1) : new Vector3(0, 1, 0));
+        o.Renormalize();
+        return o;
+    }
+
     private static Mission EmptyMission(RecordingIgcSite site) =>
         Mission.Assemble(Core(), Map(), [new SideSpec(0, "Alpha", 1), new SideSpec(1, "Bravo", 3)], site, 0);
 
@@ -160,7 +172,7 @@ public sealed class P762DroneRuleTests
         var rockPos = new Vector3(100, 0, 0);
         var rock = Rock(mission, sector, 7621, rockPos);       // rotation axis (0,1,0)
         var builder = new Ship(7622, Hull(mission.Core) with { Length = 10 }, rockPos + new Vector3(0, 50, 0),
-            Vector3.Zero, Orientation.Identity)
+            Vector3.Zero, Facing(new Vector3(0, -1, 0)))
         { IsNpc = true, PilotType = Ship.PilotTypeBuilder, SideId = 0, BuilderAsteroidTarget = rock };
         mission.PlaceShip(builder, sector);
         builder.InitClock(1);
@@ -193,22 +205,30 @@ public sealed class P762DroneRuleTests
         var type = mission.Core.StationTypes.Values.First(t => t.AabmBuild != 0);
         var rockPos = new Vector3(200, 0, 0);
         var rock = Rock(mission, sector, 7630, rockPos, type.AabmBuild);
-        var builder = new Ship(7631, Hull(mission.Core) with { Length = 10 }, rockPos,
-            new Vector3(200, 0, 0), Orientation.Identity)
+        // On the rock's spin axis inside the drill sphere: the builder arrives
+        // (the stopped/slow latch, shipIGC.cpp:2810-2817) and the drilling
+        // COLLISION then registers the build. P769 — the collision branch is
+        // drill-gated (native shipIGC.cpp:874): a fast fly-through never
+        // builds, so the scenario is the native one — latch first, contact
+        // second. The drill-gate itself keeps TryStartBuilderBuild (which
+        // skips valid-axis rocks, SIM-0109c) out of the way.
+        var builder = new Ship(7631, Hull(mission.Core) with { Length = 10 }, rockPos + new Vector3(0, 50, 0),
+            Vector3.Zero, Facing(new Vector3(0, -1, 0)))
         {
             IsNpc = true, PilotType = Ship.PilotTypeBuilder, SideId = 0,
             BuilderAsteroidTarget = rock, BuilderStationType = type,
-            // High velocity keeps TryStartBuilderBuild's "stopped" proximity
-            // trigger out of the way so the collision branch is the one proven.
         };
         mission.PlaceShip(builder, sector);
         builder.InitClock(1);
 
-        sector.Update(1.05);
+        builder.Update(1.05);
+        Assert.True(builder.IsDrilling);   // the latch the collision branch is gated on
+
+        sector.Update(1.10);
         Assert.Single(sector.BuildingEffects);
         Assert.Contains(site.Calls, c => c.StartsWith("HullHitEvent("));
 
-        sector.Update(1.10);
+        sector.Update(1.15);
         Assert.Single(sector.BuildingEffects);
         Console.WriteLine("P762-DRILL-EFFECT: one effect and drilling debris from the asteroid collision");
     }

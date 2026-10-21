@@ -2657,23 +2657,44 @@ public sealed class Sector : IClusterIgc
             && ship.IsNpc && ship.PilotType == Ship.PilotTypeBuilder
             && ship.Mission is { } builderMission)
         {
-            if (ast.BuildingEffect is null)
+            // P769/SIM-0109 (a) — native gates the whole drill branch on the
+            // drilling state mask (shipIGC.cpp:874,
+            // `(m_stateM & drillingMaskIGC) != 0`): ONLY a builder latched into
+            // drilling creates the building effect (m_bAutopilot && no effect
+            // yet, :876-878) and raises the drilling debris (:888-890). A
+            // builder that is not drilling (still flying its approach) gets
+            // neither — but it is still exempt from the bounce (the port's
+            // approach exemption below, kept as-is per P652c/P762). Once
+            // latched, the ship pushes in with the drilling hold
+            // (Ship.ApplyBuilderDrillingControls, shipIGC.cpp:2280-2296) and
+            // the contact happens here — the only effect-creation path.
+            if (ship.IsDrilling)
             {
-                builderMission.Site.CreateBuildingEffect(now, ast, ship);
-                if (ast.BuildingEffect is null && ship.BuilderStationType is { } stationType)
-                    StartBuildingEffect(ship, ast, stationType, now);
-                if (ast.BuildingEffect is not null)
-                    ship.BuilderAsteroidTarget = null;   // effect registered: building state takes over
+                if (ast.BuildingEffect is null)
+                {
+                    builderMission.Site.CreateBuildingEffect(now, ast, ship);
+                    if (ast.BuildingEffect is null && ship.BuilderStationType is { } stationType)
+                        StartBuildingEffect(ship, ast, stationType, now);
+                    if (ast.BuildingEffect is not null)
+                        ship.BuilderAsteroidTarget = null;   // effect registered: building state takes over
+                }
+
+                // Drilling debris: AddHullHit at the ship's nose on the rock surface,
+                // normal = the ship's backward vector (shipIGC.cpp:888-890). Native
+                // offsets by GetRadius(), the hit-test radius set to
+                // 0.5 * hull length at construction (shipIGC.cpp:1419, 888-890);
+                // Ship.Radius is that value (P762b).
+                Vector3 backward = ship.Orientation.GetBackward();
+                Vector3 impact = ship.Position - backward * ship.Radius - apos;
+                builderMission.Site.HullHitEvent(ast, impact, backward);
             }
 
-            // Drilling debris: AddHullHit at the ship's nose on the rock surface,
-            // normal = the ship's backward vector (shipIGC.cpp:888-890). Native
-            // offsets by GetRadius(), the hit-test radius set to
-            // 0.5 * hull length at construction (shipIGC.cpp:1419, 888-890);
-            // Ship.Radius is that value (P762b).
-            Vector3 backward = ship.Orientation.GetBackward();
-            Vector3 impact = ship.Position - backward * ship.Radius - apos;
-            builderMission.Site.HullHitEvent(ast, impact, backward);
+            // Approach exemption (P652c/P762): a builder colliding with the
+            // rock it is ordered to build on is NEVER bounced off it — native
+            // `break`s out of the OT_asteroid case for a drilling builder
+            // (shipIGC.cpp:891) and the port keeps that for the not-yet-
+            // drilling flying approach too, so the ship can reach the rock
+            // and latch instead of being ejected on first contact.
             return;
         }
 

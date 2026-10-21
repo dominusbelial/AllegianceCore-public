@@ -5789,6 +5789,22 @@ public sealed partial class Ship : Model, IShipIgc
         {
             if (sector.Id == rock.Data.ClusterId)
             {
+                // SIM-0109 (b) — native BUILD approach (a constructor's c_cidBuild
+                // plan is Waypoint::c_oEnter, shipIGC.cpp:4014-4016): the goal is
+                // NOT the centre — DoApproach flies the ship down the rock's
+                // SPIN AXIS (the ±axis strips, common.cpp:1390-1402) to a rest
+                // point at r_rock + r_ship + 10 (common.cpp:1187), coasts onto
+                // the line and charges in; the drill latch + collision then own
+                // the build (shipIGC.cpp:871-893, 2810-2822). The old centre
+                // approach stopped 25 units outside contact, off the axis: the
+                // latch could never fire and the stopped-sphere substitute
+                // (TryStartBuilderBuild) built instead. Miners keep the centre
+                // approach: native mines from any bearing (c_oGoto,
+                // shipIGC.cpp:4014-4016; readiness is radius-only,
+                // shipIGC.cpp:1957-1964).
+                if (ReferenceEquals(rock, BuilderAsteroidTarget) && PilotType == PilotTypeBuilder &&
+                    TryBuilderRockApproach(rock))
+                    return;   // the axis approach owns the tick, like TryDockApproach
                 goal = new Vector3(rp[0], rp[1], rp[2]);      // same-cluster — direct flight
                 goalIsWarp = false;
                 // Native mines only while stopped inside radius sum +30
@@ -5942,6 +5958,112 @@ public sealed partial class Ship : Model, IShipIgc
     }
 
     /// <summary>
+    /// SIM-0109 (b, P769b) — the NPC constructor's BUILD approach, native
+    /// <c>Waypoint::c_oEnter</c> (<c>shipIGC.cpp:4014-4016</c>) →
+    /// <c>Waypoint::DoApproach</c> over the rock's SPIN-AXIS strips
+    /// (<c>Igc/common.cpp:1385-1429</c>): the goal is NOT the centre — native
+    /// flies the strip rest point on the ±axis line at r_rock + r_ship + 10
+    /// (<c>common.cpp:1170,1187</c>; the ±axis strip directions,
+    /// common.cpp:1399-1400, with the per-ship unique centre offsets
+    /// common.cpp:1392-1398), coasts onto the line, pivots to face the centre
+    /// and charges (<c>common.cpp:1281-1318</c>); the charge completes the plan
+    /// and gotoplan completion latches the drilling mask
+    /// (<c>shipIGC.cpp:2810-2817</c>) — from there
+    /// <see cref="ApplyBuilderDrillingControls"/> (which runs right after this
+    /// in the tick, like native's PlotShipMove builder block,
+    /// shipIGC.cpp:2272-2300) holds yaw 0 / pitch 0 / roll 1 / throttle 0 (50%
+    /// thrust) on the axis and the contact collision creates the building
+    /// effect (<c>shipIGC.cpp:871-893</c>, drill-masked at :874).
+    /// </summary>
+    /// <para>
+    /// The port re-expresses the same state machine with its own primitives
+    /// (stated simplification): phase 1 (off the on-track band, offset² ≥ 50,
+    /// shipIGC.cpp:2293) seeks the STRIP REST POINT — the ±axis pole at the
+    /// rest radius contact + 10 (native DoApproach goal, common.cpp:1202-1219);
+    /// native picks the
+    /// strip by rest-error and never seeks the bare projection (its best-strip
+    /// tie order, common.cpp:1239-1249, resolves to the first ±axis pole for
+    /// off-line ships), so the port seeks the pole on the ship's side of the
+    /// axis (first-strip preference for the equatorial tie). The managed
+    /// creep (<c>SteerToward</c> with the d/T ramp) settles the ship ON the
+    /// line at the rest point, which native's velocity-managed braking does.
+    /// Phase 2 (on the line, inside the drill band distance² &lt;
+    /// (contact + 25)², shipIGC.cpp:2288-2296): pivot — kill throttle and turn
+    /// the nose onto the centre (native's on-line facing,
+    /// common.cpp:1294-1296). The charge/completion (native gates it on
+    /// alignment AND turn rates, common.cpp:1302-1311) is the drill block's
+    /// aligned+stopped latch — the port gates on alignment and rest velocity
+    /// because its proportional face law wobbles around the facing instead of
+    /// settling the turn rates to native's rateMax — the same
+    /// "on track, right way, not turning" intent, stated not silent. The
+    /// latch is POSITIONAL (on the line within radius + 25, ≈ the rest point,
+    /// plus the native alignment), never on speed alone.
+    /// </para>
+    /// <para>Returns false (plain centre-approach fallback in the caller) when
+    /// the rock has no usable spin axis — real art rocks always rotate (native
+    /// asserts the axis, common.cpp:1178); axis-less rocks keep the
+    /// P652-era stopped-sphere start.</para>
+    /// <remarks>The seek time constant (seconds). Must exceed the flight model's
+    /// thrust time constant (mass·maxSpeed/thrust — ≈7 s for the constructor
+    /// hull at cruise) so the commanded speed is trackable and the approach
+    /// overshoots nothing.</remarks>
+    private const float BuilderApproachSeekTime = 8f;
+
+    private bool TryBuilderRockApproach(Asteroid rock)
+    {
+        if (rock.Data.Position is not { Length: 3 } rp ||
+            rock.Data.Rotation is not { Length: >= 3 } rot) return false;
+        var axis = new Vector3(rot[0], rot[1], rot[2]);
+        if (axis.LengthSquared() <= 0.25f) return false;
+        axis /= axis.Length();
+        var center = new Vector3(rp[0], rp[1], rp[2]);
+        float contact = rock.Radius + 0.5f * HullType.Length;   // touching distance (ship radius = 0.5·length, shipIGC.cpp:1419)
+
+        Vector3 dp = Position - center;
+        float along = axis * dp;
+        float offset2 = dp.LengthSquared() - along * along;
+        float band2 = (contact + 25f) * (contact + 25f);        // drill band, shipIGC.cpp:2288-2296
+        // The strip rest point: the ±axis pole at the rest radius contact + 10
+        // (native DoApproach goal, common.cpp:1170,1187,1202-1219) — the pole on
+        // the ship's side of the axis (native's first ±axis strip wins the
+        // off-line tie, common.cpp:1239-1249,1399-1400).
+        var pole = center + axis * MathF.Sign(along == 0f ? 1f : along) * (contact + 10f);
+
+        if (offset2 < 50f && dp.LengthSquared() < band2)
+        {
+            // On the line, inside the drill sphere — native's on-line branch
+            // (common.cpp:1294-1311): pivot — kill throttle and turn the nose
+            // onto the centre. The latch itself is the drill block's
+            // aligned+stopped stand-in for the gotoplan completion
+            // (ApplyBuilderDrillingControls, native common.cpp:1302-1311 →
+            // shipIGC.cpp:2810-2817), which runs right after this steer and
+            // takes over the controls the tick the nose is on the centre.
+            var facing = center - Position;
+            var forward = Orientation.GetForward();
+            float d = facing.Length();
+            if (d > 1e-3f)
+            {
+                var dir = facing / d;
+                var body = Orientation.TimesInverse(Vector3.CrossProduct(forward, dir));
+                if (forward * dir < 0f && body.LengthSquared() < 1e-4f)
+                    body = new Vector3(0f, 1f, 0f);   // dead-behind tie-break (Ship.SteerToward)
+                Controls = Controls with
+                {
+                    Yaw = Math.Clamp(AutopilotTurnGain * body.Y, -1f, 1f),
+                    Pitch = Math.Clamp(AutopilotTurnGain * -body.X, -1f, 1f),
+                    Roll = 0f,
+                    Throttle = -1f,
+                };
+            }
+            return true;
+        }
+
+        // Off the line or outside the drill band: seek the strip rest point.
+        SteerToward(pole, 0f, BuilderApproachSeekTime * EffectiveMaxSpeed());
+        return true;
+    }
+
+    /// <summary>
     /// P575 — the shared native dock-approach for a same-cluster DOCKABLE station
     /// target (<see cref="PlanTarget"/>): choose the best landing bay, stage on
     /// its approach line, face and enter via <see cref="DockApproach"/>, exactly
@@ -6092,6 +6214,24 @@ public sealed partial class Ship : Model, IShipIgc
         goal = default;
         if (Sector is not { } sector) return false;
 
+        // P769b/SIM-0109 — native's BUILD-approach dodge masks
+        // (Waypoint::Execute's OT_asteroid case, common.cpp:1385-1429, with
+        // DoApproach's masks at common.cpp:1250-1318): the strip seek and coast
+        // phases carry at most c_gpmDodgeShips, and the on-line pivot and the
+        // charge are c_gpmPivot | c_gpmNoDodge / c_gpmEnter | c_gpmNoDodge — a
+        // constructor flying its BUILD approach never dodges rocks or
+        // stations, and not at all once on the approach line. (The build-target
+        // rock itself is already pmodelSkip, common.cpp:2003.) The port's dodge
+        // runs before the goal chain, so the same exclusion lives here: without
+        // it a constructor resting inside any map rock's bounding sphere
+        // dodge-jitters forever and never reaches its rest point (observed,
+        // P769b radius-60 flight). Builders not in the build approach are
+        // untouched.
+        Asteroid? buildRock = PilotType == PilotTypeBuilder ? BuilderAsteroidTarget : null;
+        bool buildApproach = buildRock is { } approachRock && approachRock.Data.ClusterId == sector.Id;
+        if (buildApproach && BuildApproachOnLine(buildRock!))
+            return false;   // c_gpmNoDodge on the line (common.cpp:1302-1318)
+
         // P489 — the dodge LAW is the pure shared module <see cref="ShipDodgeLaw"/>
         // (a faithful port of native Dodge, common.cpp:1692-1790). This method is
         // now a thin adapter that (a) resolves the mover's own inputs the way the
@@ -6105,8 +6245,26 @@ public sealed partial class Ship : Model, IShipIgc
         float accel = Mass > 0f ? EffectiveThrust() / Mass : 0f; // Thrust/Mass (common.cpp:1707 — GetHullType()->GetThrust(), GA-scaled)
 
         var mover = new ShipDodgeLaw.Mover(Position, Velocity, myRadius, accel);
-        return ShipDodgeLaw.TryComputeDodgeGoal(mover, EnumerateDodgeObstacles(sector),
+        return ShipDodgeLaw.TryComputeDodgeGoal(mover, EnumerateDodgeObstacles(sector, shipsOnly: buildApproach),
             DodgeGoalDistance, DodgeFallbackTMax, out goal);
+    }
+
+    /// <summary>P769b — whether the ship is ON its build approach line inside
+    /// the drill band (the same geometry <see cref="TryBuilderRockApproach"/>
+    /// steers by): offset² &lt; 50 and distance² &lt; (r_ship + r_rock + 25)²
+    /// (<c>shipIGC.cpp:2288-2296</c>).</summary>
+    private bool BuildApproachOnLine(Asteroid rock)
+    {
+        if (rock.Data.Position is not { Length: 3 } rp ||
+            rock.Data.Rotation is not { Length: >= 3 } rot) return false;
+        var axis = new Vector3(rot[0], rot[1], rot[2]);
+        if (axis.LengthSquared() <= 0.25f) return false;
+        axis /= axis.Length();
+        var dp = Position - new Vector3(rp[0], rp[1], rp[2]);
+        float along = axis * dp;
+        float offset2 = dp.LengthSquared() - along * along;
+        float band = 0.5f * HullType.Length + rock.Radius + 25f;
+        return offset2 < 50f && dp.LengthSquared() < band * band;
     }
 
     /// <summary>P489 — the candidate obstacles for <see cref="TryComputeDodgeGoal"/>,
@@ -6115,7 +6273,7 @@ public sealed partial class Ship : Model, IShipIgc
     /// server behaviour. Each category applies the same skip predicate the inline
     /// P168/P170 scan used (navigation-goal / self exclusion, the same-side-only
     /// enemy rule, dead-object guard), folded into <see cref="ShipDodgeLaw.Obstacle.Ignore"/>.</summary>
-    private IEnumerable<ShipDodgeLaw.Obstacle> EnumerateDodgeObstacles(Sector sector)
+    private IEnumerable<ShipDodgeLaw.Obstacle> EnumerateDodgeObstacles(Sector sector, bool shipsOnly = false)
     {
         // Candidates the ship is deliberately heading toward must not count as
         // obstacles (native pmodelSkip, common.cpp:2003); also never self.
@@ -6148,6 +6306,10 @@ public sealed partial class Ship : Model, IShipIgc
         // (2) Asteroids (sector.Mineable — every runtime rock, all static so
         // deltaV is just −our velocity). Dead rocks are removed anyway, but
         // belt-and-suspenders like the rescue pass.
+        // P769b — skipped entirely for a builder flying its BUILD approach:
+        // native's seek/coast masks carry at most c_gpmDodgeShips
+        // (common.cpp:1262-1264, 1281-1291).
+        if (!shipsOnly)
         foreach (var rock in sector.Mineable)
         {
             if (ignoreAsteroid(rock) || rock.Dead) continue;
@@ -6162,6 +6324,9 @@ public sealed partial class Ship : Model, IShipIgc
         // every pickable model in the cluster — stations included; the ships-only
         // narrowing (c_gpmDodgeShips) is tied to GotoPlan's phased waypoints this
         // flat steering has no equivalent for, so "dodge everything" is faithful.
+        // P769b — skipped for the BUILD approach like the rocks above
+        // (c_gpmDodgeShips at most, common.cpp:1262-1264, 1281-1291).
+        if (!shipsOnly)
         foreach (var station in sector.StationRuntimes)
         {
             if (ignoreStation(station) || station.Dead) continue;
@@ -6345,7 +6510,17 @@ public sealed partial class Ship : Model, IShipIgc
         // (Yaw(+rate·dT), Pitch(−rate·dT), Ship.cs:1806-1808; this port's
         // left-handed frame, Orientation.cs:16-35).
         Vector3 dir = toTarget / distance;
-        Vector3 body = Orientation.TimesInverse(Vector3.CrossProduct(Orientation.GetForward(), dir));
+        Vector3 forward = Orientation.GetForward();
+        Vector3 body = Orientation.TimesInverse(Vector3.CrossProduct(forward, dir));
+        // P769b — degenerate tie-break ONLY: when the goal is (numerically)
+        // exactly dead-behind (forward·dir < 0) the cross-product signal
+        // collapses to noise around the anti-parallel axis and a stopped ship
+        // dithers there forever. Everything else keeps the signed proportional
+        // turn: forcing a fixed +yaw whenever the goal is anywhere in the rear
+        // hemisphere turned NPCs up to 270° with pitch zeroed (the P769b
+        // review finding) — the broad form was reverted.
+        if (forward * dir < 0f && body.LengthSquared() < 1e-4f)
+            body = new Vector3(0f, 1f, 0f);
         float yaw = Math.Clamp(AutopilotTurnGain * body.Y, -1f, 1f);
         float pitch = Math.Clamp(AutopilotTurnGain * -body.X, -1f, 1f);
 
@@ -8014,13 +8189,11 @@ public sealed partial class Ship : Model, IShipIgc
     /// does here.
     /// <para>P766: drilling is gated on the <see cref="IsDrilling"/> latch
     /// (the port's drillingMaskIGC, shipIGC.h:755-757/igc.h:819), which is SET
-    /// only on arrival at the build approach — the port's arrival idiom
-    /// (stopped, velocity² &lt; 1, the same stopped test
-    /// <c>TryStartBuilderBuild</c>/<c>IsReadyToMine</c> use) combined with the
-    /// on-track test, the role native's gotoplan completion plays at
-    /// shipIGC.cpp:2810-2817 — and CLEARED on any new plan
-    /// (<see cref="BuilderAsteroidTarget"/> setter), off-track, and when the
-    /// building effect registers (buildingeffectigc.h:66).</para>
+    /// on gotoplan COMPLETION — native shipIGC.cpp:2810-2817; the port's
+    /// completion stand-in is the stopped on-track arrival with the nose ON
+    /// the rock (native's charge gate, common.cpp:1302-1311) — and CLEARED on
+    /// any new plan (<see cref="BuilderAsteroidTarget"/> setter), off-track,
+    /// and when the building effect registers (buildingeffectigc.h:66).</para>
     /// </summary>
     internal void ApplyBuilderDrillingControls()
     {
@@ -8031,10 +8204,14 @@ public sealed partial class Ship : Model, IShipIgc
             Controls = Controls with { Yaw = 0f, Pitch = 0f, Roll = 1f, Throttle = -0.8f };
             return;
         }
-        // P766: no drilling before arrival — a builder still flying its
-        // approach (not yet stopped on-track inside the drill sphere) gets no
-        // drilling hold; native latches the mask on gotoplan arrival
-        // (shipIGC.cpp:2810-2817), never mid-flight.
+        // P766 — no drilling before arrival — a builder still FLYING its
+        // approach gets no drilling hold from THIS stand-in: native latches the
+        // mask on gotoplan completion (shipIGC.cpp:2810-2817), which for the
+        // c_oEnter build plan fires when DoApproach's charge branch runs
+        // (common.cpp:1302-1311). The port's completion stand-in below is the
+        // stopped on-track arrival with the nose aligned (the charge gate);
+        // the flying alignment+settling is owned by the build approach's
+        // on-line pivot (Ship.TryBuilderRockApproach, common.cpp:1294-1311).
         // Merge fixup: another builder's effect already claimed this rock
         // (TryStartBuilderBuild backs off). Drop the target instead of
         // latching drilling, which would refuse every later order forever.
@@ -8056,6 +8233,37 @@ public sealed partial class Ship : Model, IShipIgc
         float radius = 0.5f * HullType.Length + rock.Radius + 25f;
         if (offset2 < 50f && distance2 < radius * radius)
         {
+            // P769b — native latches drilling only on gotoplan completion, and
+            // the completion's charge fires with the nose ON the centre
+            // (common.cpp:1302-1311); a STOPPED but misaligned builder on the
+            // line PIVOTS first (common.cpp:1312-1318). The stopped stand-in
+            // therefore latches only when the nose faces the rock; otherwise
+            // it turns the ship (throttle killed) — latching nose-away would
+            // thrust the drill hold straight out of the band.
+            if (!_isDrilling)
+            {
+                var facing = new Vector3(rp[0], rp[1], rp[2]) - Position;
+                if (DockApproach.CosForward2(Orientation, facing) <= 0.999f * 0.999f)
+                {
+                    float d = facing.Length();
+                    if (d > 1e-3f)
+                    {
+                        var dir = facing / d;
+                        var forward = Orientation.GetForward();
+                        var body = Orientation.TimesInverse(Vector3.CrossProduct(forward, dir));
+                        if (forward * dir < 0f && body.LengthSquared() < 1e-4f)
+                            body = new Vector3(0f, 1f, 0f);   // dead-behind tie-break (Ship.SteerToward)
+                        Controls = Controls with
+                        {
+                            Yaw = Math.Clamp(AutopilotTurnGain * body.Y, -1f, 1f),
+                            Pitch = Math.Clamp(AutopilotTurnGain * -body.X, -1f, 1f),
+                            Roll = 0f,
+                            Throttle = -1f,
+                        };
+                    }
+                    return;
+                }
+            }
             _isDrilling = true;   // P766: arrival at the build approach latches drilling (shipIGC.cpp:2817)
             Controls = Controls with { Yaw = 0f, Pitch = 0f, Roll = 1f, Throttle = 0f };
         }
@@ -8070,20 +8278,39 @@ public sealed partial class Ship : Model, IShipIgc
 
     private void TryStartBuilderBuild(double now)
     {
-        // P766 — documented FALLBACK, not the primary path. Native creates the
-        // building effect from the COLLISION of a drilling builder with its
-        // rock (shipIGC.cpp:875-885, m_bAutopilot && no effect yet), and the
-        // port's collision branch (Sector.ResolveShipAsteroidCollision) does
-        // exactly that. This stopped-within-(r_rock + half-length + 30) test
-        // remains for builders that are already at their rock without a
-        // collision this tick — the P652 reservation flow where the
-        // constructor is ordered onto a rock it is parked next to (spawned at
-        // contact distance minus 20, never overlapping, so no collision event
-        // ever fires) — see P652ConstructorBuildTests.
+        // P769/SIM-0109 (c) — REDUCED to the documented P652 parked-reservation
+        // case (see P652ConstructorBuildTests.Arrived_constructor_starts_build_on_
+        // rock_contested_by_enemy_miners). Native creates the building effect
+        // ONLY from the collision of a DRILLING builder with its rock
+        // (shipIGC.cpp:871-893, drill-masked at :874), and since P766 the port
+        // does too: the build approach (ApplyNpcAutopilot's build branch) now
+        // lines the ship up on the rock's spin axis and the drilling latch
+        // (ApplyBuilderDrillingControls) pushes it into contact. So a builder
+        // that is ON the drill track — the offset/inside-sphere predicate of
+        // ApplyBuilderDrillingControls (shipIGC.cpp:2288-2296) — is owned by
+        // that path and this substitute must NOT fire first (it runs earlier
+        // in the tick and would register the effect without the collision).
+        // What remains is the constructor PARKED beside its rock where the
+        // drill latch can never fire: spawned at contact + 20, off-axis, often
+        // with no thrust (P652) — it could never fly to the axis approach —
+        // plus rocks without a usable spin axis (no approach to line up on).
         if (!IsNpc || PilotType != PilotTypeBuilder || IsRunningAway || IsBuilding || StationId is not null ||
             PlanTarget is not null || GotoWaypoint is not null || BuilderAsteroidTarget is not { } rock ||
             BuilderStationType is not { } type || Sector is not { } sector ||
             rock.Data.ClusterId != sector.Id || !sector.Mineable.Contains(rock)) return;
+        // SIM-0109 (c) — the axis build approach (TryBuilderRockApproach) owns
+        // EVERY phase of a build on a rock with a usable spin axis (real art
+        // rocks always rotate; native asserts the axis, common.cpp:1178): the
+        // approach lines the ship up on the axis, the stopped latch
+        // (ApplyBuilderDrillingControls) fires and the collision registers the
+        // build — this earlier-in-the-tick substitute must never pre-empt it.
+        // What remains is rocks WITHOUT a usable spin axis (the P652 test rocks
+        // use zero rotation — see P769BuilderCollisionBuildTests'
+        // parked-reservation case): the drill latch can never fire for them, so
+        // the stopped-sphere start stays as their only build path.
+        if (rock.Data.Rotation is { Length: >= 3 } rot0 &&
+            new Vector3(rot0[0], rot0[1], rot0[2]).LengthSquared() > 0.25f)
+            return;
         var p = rock.Data.Position;
         float radius = rock.Radius + 0.5f * HullType.Length + 30f;
         if ((Position - new Vector3(p[0], p[1], p[2])).LengthSquared() >= radius * radius ||

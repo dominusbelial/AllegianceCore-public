@@ -38,6 +38,18 @@ public sealed class P766SimDrillSpinTests
         catch (TargetInvocationException e) { ExceptionDispatchInfo.Capture(e.InnerException!).Throw(); throw; }
     }
 
+    /// <summary>An orientation whose nose faces <paramref name="dir"/> — the
+    /// native charge gate (common.cpp:1302-1311) needs the builder facing the
+    /// rock centre for the completion stand-in to latch.</summary>
+    private static Orientation Facing(Vector3 dir)
+    {
+        var o = Orientation.Identity;
+        o.SetForward(dir);
+        o.SetUp(MathF.Abs(dir.Y) > 0.9f ? new Vector3(0, 0, 1) : new Vector3(0, 1, 0));
+        o.Renormalize();
+        return o;
+    }
+
     private static Mission EmptyMission(RecordingIgcSite site) =>
         Mission.Assemble(Core(), Map(), [new SideSpec(0, "Alpha", 1), new SideSpec(1, "Bravo", 3)], site, 0);
 
@@ -47,9 +59,12 @@ public sealed class P766SimDrillSpinTests
     /// The drilling latch: a builder flying its approach (not yet stopped
     /// inside the drill sphere) has NO drilling latch and gets no hold
     /// (native sets drillingMaskIGC only on gotoplan arrival,
-    /// <c>shipIGC.cpp:2810-2817</c>); once arrived — stopped and on-track —
-    /// the latch is set and the axis hold applies
-    /// (<c>shipIGC.cpp:2274-2296</c>).
+    /// <c>shipIGC.cpp:2810-2817</c>); once arrived — stopped, on-track and
+    /// facing the rock (the native charge gate, common.cpp:1302-1311) — the
+    /// latch is set and the axis hold applies (<c>shipIGC.cpp:2274-2296</c>).
+    /// A stopped but MISALIGNED builder pivots first (common.cpp:1312-1318)
+    /// instead of latching — P769b: latching nose-away would thrust the drill
+    /// hold out of the band.
     /// </summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
@@ -62,7 +77,7 @@ public sealed class P766SimDrillSpinTests
         // rotation (0,1,0,0): axis +Y, so a ship offset (0,50,0) is on-track
         var rock = Rock(mission, sector, 7661, rockPos, [0, 1, 0, 0]);
         var builder = new Ship(7662, Hull(mission.Core) with { Length = 10 }, rockPos + new Vector3(0, 50, 0),
-            Vector3.Zero, Orientation.Identity)
+            Vector3.Zero, Facing(new Vector3(0, -1, 0)))
         { IsNpc = true, PilotType = Ship.PilotTypeBuilder, SideId = 0, BuilderAsteroidTarget = rock };
         mission.PlaceShip(builder, sector);
 
@@ -78,9 +93,10 @@ public sealed class P766SimDrillSpinTests
         Assert.Equal(.13f, builder.Controls.Roll);
         Assert.Equal(.77f, builder.Controls.Throttle);
 
-        // Arrival: the same on-track spot, stopped (velocity² < 1) — the
-        // port's gotoplan-completion stand-in — latches drilling and holds
-        // yaw 0 / pitch 0 / roll 1 / throttle 0 (shipIGC.cpp:2285-2293).
+        // Arrival: the same on-track spot, stopped (velocity² < 1) and facing
+        // the rock — the port's gotoplan-completion stand-in (native's charge
+        // gate, common.cpp:1302-1311) — latches drilling and holds yaw 0 /
+        // pitch 0 / roll 1 / throttle 0 (shipIGC.cpp:2285-2293).
         builder.Velocity = Vector3.Zero;
         Invoke(builder, "ApplyBuilderDrillingControls");
         Assert.True(builder.IsDrilling);
@@ -88,6 +104,19 @@ public sealed class P766SimDrillSpinTests
         Assert.Equal(0f, builder.Controls.Pitch);
         Assert.Equal(1f, builder.Controls.Roll);
         Assert.Equal(0f, builder.Controls.Throttle);
+
+        // P769b — stopped but MISALIGNED (nose away from the rock): native
+        // pivots to face the centre before charging (common.cpp:1312-1318) —
+        // the stand-in turns the ship with the throttle killed and does NOT
+        // latch.
+        var misaligned = new Ship(7672, Hull(mission.Core) with { Length = 10 }, rockPos + new Vector3(0, 50, 0),
+            Vector3.Zero, Facing(new Vector3(0, 1, 0)))
+        { IsNpc = true, PilotType = Ship.PilotTypeBuilder, SideId = 0, BuilderAsteroidTarget = rock };
+        mission.PlaceShip(misaligned, sector);
+        Invoke(misaligned, "ApplyBuilderDrillingControls");   // stopped, on-track, nose +Y (away)
+        Assert.False(misaligned.IsDrilling);
+        Assert.Equal(-1f, misaligned.Controls.Throttle);      // the pivot kills the throttle
+        Assert.NotEqual(0f, misaligned.Controls.Yaw);         // and turns onto the centre
     }
 
     /// <summary>
@@ -106,7 +135,7 @@ public sealed class P766SimDrillSpinTests
         var rockPos = new Vector3(100, 0, 0);
         var rock = Rock(mission, sector, 7663, rockPos, [0, 1, 0, 0]);
         var builder = new Ship(7664, Hull(mission.Core) with { Length = 10 }, rockPos + new Vector3(0, 50, 0),
-            Vector3.Zero, Orientation.Identity)
+            Vector3.Zero, Facing(new Vector3(0, -1, 0)))
         { IsNpc = true, PilotType = Ship.PilotTypeBuilder, SideId = 0, BuilderAsteroidTarget = rock };
         mission.PlaceShip(builder, sector);
         Invoke(builder, "ApplyBuilderDrillingControls");   // arrival: latch + hold
