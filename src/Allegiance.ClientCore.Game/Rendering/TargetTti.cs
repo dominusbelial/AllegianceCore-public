@@ -88,14 +88,20 @@ public static class TargetTti
         int minuteText = (int)(minutes + 0.5f);   // NumberString(GHTTI_Minutes)
         int secondText = (int)(seconds + 0.5f);   // NumberString(GHTTI_Seconds)
         var key = (minuteText, secondText, padZero, parenthesised);
-        if (_cache.TryGetValue(key, out var cached))
-            return cached;
+        // The cache is process-wide; a lock keeps concurrent callers (parallel
+        // test classes, a second client instance) from corrupting the
+        // Dictionary during a resize. Uncontended on the render thread.
+        lock (_cache)
+        {
+            if (_cache.TryGetValue(key, out var cached))
+                return cached;
 
-        string body = minuteText.ToString(CultureInfo.InvariantCulture)
-            + ":" + (padZero ? "0" : "")
-            + secondText.ToString(CultureInfo.InvariantCulture);
-        string text = parenthesised ? "(" + body + ")" : body;
-        _cache[key] = text;
-        return text;
+            string body = minuteText.ToString(CultureInfo.InvariantCulture)
+                + ":" + (padZero ? "0" : "")
+                + secondText.ToString(CultureInfo.InvariantCulture);
+            string text = parenthesised ? "(" + body + ")" : body;
+            _cache[key] = text;
+            return text;
+        }
     }
 }
