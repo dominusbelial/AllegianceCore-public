@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.400'
-      - run: sudo apt-get update && sudo apt-get install -y fonts-dejavu-core libfreetype6
+      - run: sudo apt-get update && sudo apt-get install -y libfreetype6
       - run: dotnet tool restore
       - run: dotnet build AllegianceCore.slnx -m:1 -p:AutoRestoreMGCBTool=false
       - name: Existing CI test gate
@@ -41,7 +41,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.400'
-      - run: sudo apt-get update && sudo apt-get install -y fonts-dejavu-core libfreetype6
+      - run: sudo apt-get update && sudo apt-get install -y libfreetype6
       - run: dotnet tool restore
       - name: Fetch pinned AppImage tools
         if: matrix.rid == 'linux-x64'

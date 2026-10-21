@@ -55,6 +55,16 @@ public class Hud12bSourceGuardTests
     }
 
     [Fact]
+    public void Command_summary_gauge_bar_keeps_the_modern_spread_base()
+    {
+        // FONT-1c fix 7 — Modern inherits DrawCommandShipSummary, so its gauge
+        // inset/bar size must stay on the own-status Spread base; classic keeps
+        // FONT-1b's native 1:1 TextScale.
+        var body = Method(Src(Path.Combine("Rendering", "HudRenderer.cs")), "void DrawCommandGauge(");
+        Assert.Contains("float paneScale = UsesModernGauges ? OwnStatusLayout.Spread(_viewportHeight) : TextScale;", body);
+    }
+
+    [Fact]
     public void Self_target_and_command_selection_do_not_resolve_a_default_order()
     {
         Assert.Contains("new AutopilotTarget(TargetKind.Ship, myId, name, UseDefault: false)", Src("Game1.Targeting.cs"));

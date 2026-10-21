@@ -86,8 +86,11 @@ sealed class Proof : Game
                         if (scenario == "combat")
                         {
                             RequireBox(boxes, "Current orders:", 37);
-                            RequireBox(boxes, "attack Enemy fighter", 59);
-                            RequireBox(boxes, "defend Garrison", 81);
+                            // FONT-1c fix 4 — the order rows are the native
+                            // Point(0,-20)/(0,-40) = +20/+40 px below the label
+                            // (dialog.mdl:1641-1652), not a measured line height.
+                            RequireBox(boxes, "attack Enemy fighter", 57);
+                            RequireBox(boxes, "defend Garrison", 77);
                         }
                         // HUD-11 — critical-tip offset uses configured NumChatLines (7): 50+12*7.
                         RequireBox(boxes, "Reloading ammo...", 134);
@@ -95,7 +98,11 @@ sealed class Proof : Game
                             // HUD-11 — configured NumChatLines (7) drives the vote
                             // offset even though only two lines are shown.
                             RequireBox(boxes, "Vote: Mutiny against the commander? (Y/N)", 169);
-                        RequireBox(boxes, "Ripcord in: 9", 525, 885);
+                        // FONT-1c fix 5 — JustifyCenter inside the 150-wide box
+                        // (dialog.mdl:5145-5151,5430): top stays 15 px above
+                        // centre; the measured glyph box is centred on x=960
+                        // (left = 960 - width/2), not left-aligned at 885.
+                        RequireCentredBox(boxes, "Ripcord in: 9", 525, width / 2f);
                     }
                     float renderScale = renderer == modern ? Math.Clamp(height / 1080f * settings.Size, .5f, 4) : 1f;
                     RequireInventoryColumnsFit(model, renderer == modern ? modernSmall : small, width, height, renderScale);
@@ -136,6 +143,16 @@ sealed class Proof : Game
         else
             Require(matches.Any(b => Math.Abs(b.Bounds.Top - top) <= 2),
                 $"{text} top mismatch: " + string.Join(", ", matches.Select(b => b.Bounds.Top)));
+    }
+
+    static void RequireCentredBox(IReadOnlyList<HudTextBox> boxes, string text, float top, float centreX)
+    {
+        var matches = boxes.Where(b => b.Text == text).ToArray();
+        Require(matches.Length > 0, $"missing '{text}'");
+        Require(matches.Any(b => Math.Abs(b.Bounds.Top - top) <= 2
+                && Math.Abs(b.Bounds.Left - (centreX - b.Bounds.Width / 2f)) <= 2
+                && Math.Abs(b.Bounds.Left - (centreX - HudConsoleFormat.RipcordLeft)) > 2),
+            $"{text} top/centred-left mismatch: " + string.Join(", ", matches.Select(b => $"{b.Bounds.Top}/{b.Bounds.Left}/{b.Bounds.Width}")));
     }
 
     /// <summary>The same sprite-font metric scaling ModernHudRenderer applies to

@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Microsoft.Xna.Framework.Graphics;
 using Xunit;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
@@ -12,11 +15,14 @@ namespace Allegiance.ClientCore.MonoGame.Tests;
 /// FONT-1 — native HUD fonts (bundled DejaVu Sans / DejaVu Sans Bold at the
 /// native pixel sizes). Guards: (a) the registry maps every classic-HUD native
 /// font identity to a (face, px, bold) pair with both density assets built; the
-/// density selector; (b) no classic-HUD text site in HudRenderer/ChatRenderer
-/// passes the mono small/big fonts to a draw/measure call; (c) every
-/// .spritefont points at a bundled .ttf that exists, and nothing names Verdana;
-/// (d) Modern's HudFont override returns its own small/big fonts for every id;
-/// (e) the DejaVu licence sits next to the bundled .ttfs.
+/// density selector; (a2) every id's 1x/@2x .spritefont face, Size, Style and
+/// double-density Size match a font.mdl-derived expected table; (b) no
+/// classic-HUD text site in HudRenderer/ChatRenderer passes the mono small/big
+/// fonts to a draw/measure call (exact-line whitelist); (c) every .spritefont
+/// points at a bundled .ttf that exists, and nothing names Verdana; (d) a
+/// behaviour test of Modern's HudFont override (its own small/big fonts for
+/// every id at its own TextScale, no GraphicsDevice); (e) the DejaVu licence
+/// sits next to the bundled .ttfs.
 /// </summary>
 public class Font1NativeFontTests
 {
@@ -73,7 +79,73 @@ public class Font1NativeFontTests
         var s6 = NativeFonts.Select(2.118f); Assert.True(s6.UseTwoX);  Assert.Equal(1.059f, s6.Residual, 3);
     }
 
+    // ── (a2) per-id spritefont contents (font.mdl is the expected table) ──
+    /// <summary>What every native identity must bake, measured from
+    /// <c>~/Development/Artwork/font.mdl</c>: each <c>ImportFont</c>'s header is
+    /// DWORD height, DWORD width, DWORD dataSize followed by
+    /// <c>CharData m_data[256]</c> (12 bytes: WinPoint m_size + int m_offset,
+    /// <c>engine/font.cpp:29-50</c>), read in symbol order by
+    /// <c>engine/font.cpp:353-366</c>; the cell height below is that header's
+    /// <c>m_size.y</c>. The Size/em columns are FONT-1's measured fit (MonoGame
+    /// &lt;Size&gt; is points; em = Size*96/72) with FONT-1b's medBoldVerdana
+    /// change to Size 9 (measured ASCII width error -62 at 8 vs +16 at 9; its
+    /// native cell is 13 px, promptFont's is 12, so they must not share a bake).</summary>
+    private static readonly (NativeFont Id, string Symbol, int Size, bool Bold, float NativeCell)[] FontMdl =
+    [
+        (NativeFont.SmVerdana,      "smVerdana",      6, false, 10f),
+        (NativeFont.MedVerdana,     "medVerdana",     8, false, 12f),
+        (NativeFont.MedBoldVerdana, "medBoldVerdana", 9, true,  13f),
+        (NativeFont.LgBoldVerdana,  "lgBoldVerdana", 10, true,  16f),
+        (NativeFont.SmallFont,      "smallFont",      8, false, 12f),
+        (NativeFont.SmallBoldFont,  "smallBoldFont",  7, true,  12f),
+        (NativeFont.LargeFont,      "largeFont",      9, false, 14f),
+        (NativeFont.LargeBoldFont,  "largeBoldFont",  9, true,  14f),
+        (NativeFont.PromptFont,     "promptFont",     8, true,  12f),
+    ];
+
+    [Fact]
+    public void Every_native_id_bakes_the_expected_face_size_and_style_at_one_and_two_x()
+    {
+        Assert.Equal(Enum.GetValues<NativeFont>().OrderBy(v => v), FontMdl.Select(r => r.Id).OrderBy(v => v));
+        var sizeRe = new Regex(@"<Size>\s*(\d+(?:\.\d+)?)\s*</Size>");
+        var styleRe = new Regex(@"<Style>\s*(\w+)\s*</Style>");
+        var nameRe = new Regex(@"<FontName>\s*(.*?)\s*</FontName>");
+        foreach (var (id, symbol, expectedSize, expectedBold, expectedCell) in FontMdl)
+        {
+            // The registry must agree with the font.mdl-derived table.
+            Assert.True(NativeFontCatalog.Size[id] == expectedSize, $"{symbol}: Size {NativeFontCatalog.Size[id]} != {expectedSize}");
+            Assert.True(NativeFontCatalog.Spec(id).Bold == expectedBold, $"{symbol}: bold mismatch");
+            Assert.True(NativeFontCatalog.NativeCellHeight[id] == expectedCell,
+                $"{symbol}: cell {NativeFontCatalog.NativeCellHeight[id]} != font.mdl {expectedCell}");
+
+            var spec = NativeFontCatalog.Spec(id);
+            string ttf = expectedBold ? "DejaVuSans-Bold.ttf" : "DejaVuSans.ttf";
+            string style = expectedBold ? "Bold" : "Regular";
+            foreach (var (asset, multiply) in new[] { (spec.Asset1x, 1), (spec.Asset2x, 2) })
+            {
+                string rel = Path.Combine("src", "Allegiance.ClientCore.MonoGame", "Content", asset + ".spritefont");
+                string text = Read(rel);
+                Assert.Equal(ttf, nameRe.Match(text).Groups[1].Value);
+                Assert.Equal(style, styleRe.Match(text).Groups[1].Value);
+                Assert.Equal(expectedSize * multiply, int.Parse(sizeRe.Match(text).Groups[1].Value));
+            }
+        }
+    }
+
     // ── (b) source guard: classic sites never pass the mono fonts ─────────
+    // FONT-1b — an exact-line whitelist instead of "any line containing
+    // '_big : _small'": only the HudRenderer.HudFont FALLBACK may combine the two
+    // mono fonts (renderer tests that supply no NativeFonts); every other use in
+    // the classic files would be a leaked mono font at a native-font site.
+    private static readonly HashSet<string> AllowedMonoFontLines = new(StringComparer.Ordinal)
+    {
+        "protected readonly SpriteFont _small;",
+        "protected readonly SpriteFont _big;",
+        "_small = small;",
+        "_big = big;",
+        "return (id == NativeFont.LgBoldVerdana ? _big : _small, TextScale);",   // HudFont fallback only
+    };
+
     [Fact]
     public void Classic_hud_sites_never_pass_the_mono_small_big_fonts_to_a_draw_or_measure()
     {
@@ -83,11 +155,8 @@ public class Font1NativeFontTests
             foreach (var line in src.Split('\n'))
             {
                 if (!line.Contains("_small") && !line.Contains("_big")) continue;
-                bool allowed =
-                    line.Contains("readonly SpriteFont _small") || line.Contains("readonly SpriteFont _big")
-                    || line.Contains("_small = small") || line.Contains("_big = big")
-                    || line.Contains("_big : _small") || line.Contains("_small : _big");   // HudFont fallback
-                Assert.True(allowed, $"{file}: mono font leaked into draw/measure: {line.Trim()}");
+                Assert.True(AllowedMonoFontLines.Contains(line.Trim()),
+                    $"{file}: mono font leaked into draw/measure: {line.Trim()}");
             }
         }
     }
@@ -119,13 +188,33 @@ public class Font1NativeFontTests
                 Assert.DoesNotContain("verdana", File.ReadAllText(f), StringComparison.OrdinalIgnoreCase);
     }
 
-    // ── (d) Modern unchanged ──────────────────────────────────────────────
+    // ── (d) Modern unchanged — behaviour, not source text ─────────────────
+    /// <summary>FONT-1b — call ModernHudRenderer's real HudFont override on an
+    /// uninitialised instance whose _small/_big/_scale are populated by
+    /// reflection, so no GraphicsDevice is needed. Every native identity must
+    /// resolve to Modern's own small font except lgBoldVerdana (the big one), at
+    /// Modern's own TextScale — never at the pane scale the caller passes.</summary>
     [Fact]
     public void Modern_overrides_HudFont_to_return_its_own_small_big_for_every_id()
     {
-        string src = Read("src", "Allegiance.ClientCore.Game", "Rendering", "ModernHudRenderer.cs");
-        Assert.Contains("HudFont(NativeFont id, float paneScale)", src);
-        Assert.Contains("id == NativeFont.LgBoldVerdana ? _big : _small", src);
+        var small = (SpriteFont)RuntimeHelpers.GetUninitializedObject(typeof(SpriteFont));
+        var big = (SpriteFont)RuntimeHelpers.GetUninitializedObject(typeof(SpriteFont));
+        var modern = (ModernHudRenderer)RuntimeHelpers.GetUninitializedObject(typeof(ModernHudRenderer));
+        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        typeof(HudRenderer).GetField("_small", flags)!.SetValue(modern, small);
+        typeof(HudRenderer).GetField("_big", flags)!.SetValue(modern, big);
+        typeof(ModernHudRenderer).GetField("_scale", flags)!.SetValue(modern, 1.734f);
+        var hudFont = typeof(ModernHudRenderer).GetMethod("HudFont", flags)
+            ?? throw new MissingMethodException("ModernHudRenderer.HudFont");
+
+        foreach (var id in Enum.GetValues<NativeFont>())
+        {
+            // The pane scale must be ignored: Modern keeps its own TextScale.
+            var (font, scale) = ((SpriteFont Font, float Scale))hudFont.Invoke(modern, [id, 4.25f])!;
+            Assert.True(ReferenceEquals(id == NativeFont.LgBoldVerdana ? big : small, font),
+                $"{id} did not resolve to Modern's own {(id == NativeFont.LgBoldVerdana ? "big" : "small")} font");
+            Assert.Equal(1.734f, scale);
+        }
     }
 
     // ── (e) licence + bundled ttfs ────────────────────────────────────────

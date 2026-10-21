@@ -656,15 +656,25 @@ public class HudRenderer
             ReserveAnchor("Current orders:", HudConsoleFormat.OrderLabelX * scale, labelTop, centered: false);
             if (console.QueuedOrder is { } queued)
                 ReserveAnchor(queued, HudConsoleFormat.OrderTextX * scale,
-                    HudConsoleFormat.OrderQueuedTop(labelTop, lineHeight), centered: false);
+                    HudConsoleFormat.OrderQueuedTop(labelTop, scale), centered: false);
             if (console.AcceptedOrder is { } accepted)
                 ReserveAnchor(accepted, HudConsoleFormat.OrderTextX * scale,
-                    HudConsoleFormat.OrderAcceptedTop(labelTop, lineHeight), centered: false);
+                    HudConsoleFormat.OrderAcceptedTop(labelTop, scale), centered: false);
         }
 
-        if (model.FlightVisible && model.Context.Ripcord is { } ripcord)
-            ReserveAnchor(ripcord, w / 2f - HudConsoleFormat.RipcordLeft * scale,
-                viewport.Height / 2f - HudConsoleFormat.RipcordTop * scale, centered: false);
+        // FONT-1c fix 5 — the ripcord text is JustifyCenter inside the native
+        // 150-wide box (dialog.mdl:5145-5151,5429), so reserve the whole box,
+        // not just the left-aligned text run; otherwise a measured radar label
+        // can slide into the centred glyphs (Modern at >1× scale).
+        if (model.FlightVisible && model.Context.Ripcord is not null)
+        {
+            float ripcordTop = viewport.Height / 2f - HudConsoleFormat.RipcordTop * scale;
+            Layout.Reserve(new Rectangle(
+                (int)MathF.Floor(w / 2f - HudConsoleFormat.RipcordLeft * scale),
+                (int)MathF.Floor(ripcordTop),
+                (int)MathF.Ceiling(HudConsoleFormat.RipcordWidth * scale),
+                (int)MathF.Ceiling(NativeFontAt(NativeFont.LgBoldVerdana).LineSpacing * scale)));
+        }
         int criticalCount = console.CriticalTips.Count;
         for (int slot = 0; slot < criticalCount; slot++)
         {
@@ -991,13 +1001,13 @@ public class HudRenderer
             if (console.QueuedOrder is { } q)
             {
                 DrawOrderLineGlyph(accepted: false, scale, red);
-                DrawMeasuredText(medVerdana, q, new(HudConsoleFormat.OrderTextX * scale, HudConsoleFormat.OrderQueuedTop(labelTop, lineHeight)), red, fixedAnchor: true, centerAtScale: false);
+                DrawMeasuredText(medVerdana, q, new(HudConsoleFormat.OrderTextX * scale, HudConsoleFormat.OrderQueuedTop(labelTop, scale)), red, fixedAnchor: true, centerAtScale: false);
                 ElementDrawn("Queued order text");
             }
             if (console.AcceptedOrder is { } a)
             {
                 DrawOrderLineGlyph(accepted: true, scale, yellow);
-                DrawMeasuredText(medVerdana, a, new(HudConsoleFormat.OrderTextX * scale, HudConsoleFormat.OrderAcceptedTop(labelTop, lineHeight)), cortText, fixedAnchor: true, centerAtScale: false);
+                DrawMeasuredText(medVerdana, a, new(HudConsoleFormat.OrderTextX * scale, HudConsoleFormat.OrderAcceptedTop(labelTop, scale)), cortText, fixedAnchor: true, centerAtScale: false);
                 ElementDrawn("Accepted order text");
             }
         }
@@ -1041,14 +1051,21 @@ public class HudRenderer
         }
         if (ordinary > 0) ElementDrawn("Tip text lines");
 
-        // Ripcord countdown — SideCenter(-75,15): the text's left edge sits at
-        // centre-x − 75 and its top 15 px above centre (dialog.mdl:5150-5163,
-        // :5429-5430). No centering; Game1 only supplies a label when the
-        // ripcord start time is known.
+        // Ripcord countdown — native RipcordCountdownImage is a
+        // StringImage(JustifyCenter, 150, lgBoldVerdana, softText, …)
+        // (dialog.mdl:5145-5151, softText Color(0.586,0.578,0.680) at :3517) in
+        // a SideCenter pane at Point(-75,15) (dialog.mdl:5429). The box's
+        // top-left is centre-x − 75, its top is 15 px ABOVE centre (y-up), and
+        // the text is centred inside the 150-wide box — so the glyphs centre on
+        // the viewport centre line, not at cx−75. Game1 only supplies a label
+        // when the ripcord start time is known.
         if (model.FlightVisible && model.Context.Ripcord is { } ripcord)
         {
             var ripcordFont = NativeFontAt(NativeFont.LgBoldVerdana);
-            DrawMeasuredText(ripcordFont, ripcord, new(w / 2f - HudConsoleFormat.RipcordLeft, h / 2f - HudConsoleFormat.RipcordTop), TextMain, fixedAnchor: true, centerAtScale: false);
+            var rsz = ripcordFont.MeasureString(ripcord) * scale;
+            DrawMeasuredText(ripcordFont, ripcord,
+                new(HudConsoleFormat.RipcordTextLeft(w, rsz.X, scale), h / 2f - HudConsoleFormat.RipcordTop * scale),
+                cortText, fixedAnchor: true, centerAtScale: false);
             ElementDrawn("Ripcord countdown");
         }
     }
@@ -1402,25 +1419,39 @@ public class HudRenderer
         float spread = OwnStatusLayout.Spread(viewport.Height);   // FONT-1 own-status pane scale
         if (status.KillBonusPercent is { } kb)
         {
-            var pos = OwnStatusLayout.ScreenPos("Kill bonus", viewport.Width, viewport.Height);
+            var anchor = OwnStatusLayout.ScreenPos("Kill bonus", viewport.Width, viewport.Height);
             var tex = _status?.KillCounter;
-            var (killFont, killFs) = HudFont(NativeFont.MedBoldVerdana, spread);   // native medBoldVerdana (dialog.mdl:2556)
+            // FONT-1c — native ExperienceImage draws the number and the
+            // killcounterbmp bitmap as one group at ONE scale g
+            // (dialog.mdl:2556-2566; console.cpp:830). The port draws the art at
+            // the native 0.72 base, so the bitmap's native lower-left offset
+            // AND the integer's offset use that same g. The bitmap's native
+            // lower-left Point(-23,-65) is y-up, so its screen top is
+            // 65-H: with the 128-tall killcounterbmp that is 63 above the
+            // group anchor (OwnStatusLayout.KillCounterBitmapOffset).
+            // FONT-1c review — the number and SIG are 80-wide JustifyCenter
+            // boxes at the same native x=281 (dialog.mdl:2617,2621), so the
+            // group is centred on the SIG box centre (anchor + 40·spread), and
+            // the number uses the floored-at-1 registry scale (killFs) like
+            // every other FONT-1 text site, not 0.72·killFs (~8.6 px).
+            float artScale = 0.72f;
+            var pos = OwnStatusLayout.KillBonusGroupOrigin(anchor, spread, artScale);
+            var (killFont, killFs) = HudFont(NativeFont.MedBoldVerdana, artScale);   // native medBoldVerdana (dialog.mdl:2559)
             if (tex is not null)
             {
-                float scale = 0.72f;
-                // Native ExperienceImage group: the bitmap member is translated
-                // (-23,-65) from the group anchor (dialog.mdl:2563-2567).
-                var bitmapPos = pos + OwnStatusLayout.KillCounterBitmapOffset(viewport.Height);
+                var bitmapPos = pos + OwnStatusLayout.KillCounterBitmapOffset(artScale, tex.Height);
                 _sb.Draw(tex, bitmapPos, null, Color.White, 0f,
-                    Vector2.Zero, scale, SpriteEffects.None, 0f);
-                // Native draws the integer in black in a centred 80-wide box at
-                // the group-relative Point(0,5) (dialog.mdl:2561-2566).
-                var numberBox = pos + OwnStatusLayout.KillCounterNumberOffset(viewport.Height);
-                DrawCenteredInNativeBox(killFont, HudStringCache.KillBonusNumber(kb), numberBox, viewport.Height, Color.Black, killFs);
+                    Vector2.Zero, artScale, SpriteEffects.None, 0f);
+                // Native draws the black integer in a centred 80-wide box whose
+                // y-up top is Point(0,5); from the bitmap's top-left that is
+                // (23, H−70)·g (dialog.mdl:2559-2566), i.e. on the medal disc.
+                var numberBox = bitmapPos + OwnStatusLayout.KillCounterNumberFromBitmap(artScale, tex.Height);
+                DrawCenteredInNativeBox(killFont, HudStringCache.KillBonusNumber(kb), numberBox,
+                    viewport.Height, Color.Black, killFs, boxScale: artScale);
             }
             else
             {
-                DrawMeasuredText(killFont, HudStringCache.KillBonusBadge(kb), pos, BonusGold, true, drawScale: killFs);
+                DrawMeasuredText(killFont, HudStringCache.KillBonusBadge(kb), anchor, BonusGold, true, drawScale: killFs);
             }
             ElementDrawn("Kill bonus");
         }
@@ -1466,33 +1497,41 @@ public class HudRenderer
         if (!model.FlightVisible || model.Context.Console is not { } console) return;
         if (HudConsoleFormat.LivesVisible(console.Lives) && console.Lives is { } lives)
         {
-            DrawConsoleBadge(_status?.LivesBadge, HudStringCache.Lives(lives), 45f, 97f, 18f);
+            DrawConsoleBadge(_status?.LivesBadge, HudStringCache.Lives(lives), HudConsoleFormat.LivesBadgeAnchor, 18f);
             ElementDrawn("Lives remaining");
         }
         if (HudConsoleFormat.KillsVisible(console.Deathmatch, console.MissionKills)
             && console.MissionKills is { } kills)
         {
-            DrawConsoleBadge(_status?.KillsBadge, HudStringCache.Kills(kills), 45f, 177f, 15f);
+            DrawConsoleBadge(_status?.KillsBadge, HudStringCache.Kills(kills), HudConsoleFormat.KillsBadgeAnchor, 15f);
             ElementDrawn("Mission kills");
         }
     }
 
-    /// <summary>Draw one native badge group: the bitmap at the native anchor and
-    /// the centred 80-wide text box 20 px above its lower edge (dialog.mdl:5070-5080).</summary>
-    private void DrawConsoleBadge(Texture2D? art, string text, float x, float top, float textOffsetX)
+    /// <summary>Draw one native badge group: the bitmap with its LOWER-left on
+    /// the native <c>SideTopLeft(40, -anchorY)</c> point (dialog.mdl:5441-5445,
+    /// trekctrls.cpp:1015-1028) and the centred 80-wide text box whose TOP is
+    /// 20 px above the art's lower edge (dialog.mdl:5070-5080, 5107-5120).</summary>
+    private void DrawConsoleBadge(Texture2D? art, string text, float anchorY, float textOffsetX)
     {
+        float x = HudConsoleFormat.BadgeLeft;
         float artHeight = art?.Height ?? 34f;
+        float top = HudConsoleFormat.BadgeArtTop(anchorY, artHeight);
         if (art is not null)
             _sb.Draw(art, new Vector2(x, top), null, Color.White, 0f, Vector2.Zero, 1f, SpriteEffects.None, 0f);
-        // FONT-1 — native lives/kills badges use medBoldVerdana (dialog.mdl:5070-5128)
-        // at the own-status pane scale.
-        var (font, fs) = HudFont(NativeFont.MedBoldVerdana, OwnStatusLayout.Spread(_viewportHeight));
+        // FONT-1c — native LivesOnImage/KillsOnImage translate the StringImage by
+        // Point(18/20) or Point(15/20) (dialog.mdl:5070-5080, 5107-5120) in
+        // y-UP: that point is the text's TOP, 20 px above the art's LOWER edge,
+        // not the text's bottom (FONT-1b treated it as the bottom, so the glyphs
+        // sat above the 22/25 px badge art). JustifyCenter over the 80-wide box
+        // keeps the horizontal centring.
+        var (font, fs) = HudFont(NativeFont.MedBoldVerdana, TextScale);
         var size = font.MeasureString(text) * fs;
         float boxWidth = 80f * TextScale;
         float boxLeft = x + textOffsetX * TextScale;
-        float boxBottom = top + artHeight - 20f * TextScale;
-        FillRect(boxLeft - 2, boxBottom - size.Y - 1, boxWidth + 4, size.Y + 2, Color.Black * .58f);
-        RenderText(font, text, new(boxLeft + (boxWidth - size.X) / 2f, boxBottom - size.Y), Color.White, fs);
+        float textTop = HudConsoleFormat.BadgeTextTop(top, artHeight, TextScale);
+        FillRect(boxLeft - 2, textTop - 1, boxWidth + 4, size.Y + 2, Color.Black * .58f);
+        RenderText(font, text, new(boxLeft + (boxWidth - size.X) / 2f, textTop), Color.White, fs);
     }
 
     /// <summary>HUD-12 — the native command-view ship summary
@@ -1520,12 +1559,14 @@ public class HudRenderer
         // is taller, so advance by its measured line height to keep the rows
         // readable (the native GROUP ORDER is preserved).
         float line = NativeFontAt(NativeFont.MedVerdana).LineSpacing * TextScale + 1f;
-        // FONT-1 — native command summary labels/values use medVerdana
-        // (dialog.mdl:4726-4910), ship type / station name medBoldVerdana
-        // (dialog.mdl:4717-4721, :4988-4992), at the own-status pane scale.
-        float spread = OwnStatusLayout.Spread(_viewportHeight);
-        var (summaryFont, summaryFs) = HudFont(NativeFont.MedVerdana, spread);
-        var (summaryBold, summaryBoldFs) = HudFont(NativeFont.MedBoldVerdana, spread);
+        // FONT-1b — the command summary pane is placed in native pixels (the
+        // (36, h/2-120) anchor above is not spread-scaled), so its text is
+        // native 1:1 too: TextScale, the same base the rows' pitch uses.
+        // Native fonts: medVerdana for labels/values (dialog.mdl:4726-4910),
+        // medBoldVerdana for ship type / station name (dialog.mdl:4717-4721,
+        // :4988-4992).
+        var (summaryFont, summaryFs) = HudFont(NativeFont.MedVerdana, TextScale);
+        var (summaryBold, summaryBoldFs) = HudFont(NativeFont.MedBoldVerdana, TextScale);
         var soft = _nativeHud?.SoftGauge;
         Color side = model.Context.TargetPane?.SideColor is { } sc
             ? new Color(sc.R, sc.G, sc.B) : Accent;
@@ -1575,19 +1616,21 @@ public class HudRenderer
         Texture2D? art, float line)
     {
         fraction = HudFormat.Clamp01(fraction);
-        float spread = OwnStatusLayout.Spread(_viewportHeight);
-        var (font, fs) = HudFont(NativeFont.MedVerdana, spread);
+        // FONT-1c — classic keeps the FONT-1b native 1:1 TextScale; Modern does
+        // not override DrawCommandShipSummary, so its gauge inset/art size must
+        // stay on the own-status Spread base it had before FONT-1b.
+        float paneScale = UsesModernGauges ? OwnStatusLayout.Spread(_viewportHeight) : TextScale;
+        var (font, fs) = HudFont(NativeFont.MedVerdana, paneScale);
         DrawSummaryText(font, fs, label, new Vector2(x, y), TextDim);
         // Native softgaugebmp is 52x4 pixels (its real GaugeImage size); keep that
         // aspect instead of stretching it, revealing the left fraction (native
-        // GaugeImage JustifyLeft). Scale with the HUD cluster's spread so the
-        // summary matches the other centre gauges.
-        float bx = x + 66f * spread, by = y + 2f;
-        float gw = (art?.Width ?? 52f) * spread, gh = MathF.Max(3f, (art?.Height ?? 4f) * spread);
+        // GaugeImage JustifyLeft).
+        float bx = x + 66f * paneScale, by = y + 2f;
+        float gw = (art?.Width ?? 52f) * paneScale, gh = MathF.Max(3f, (art?.Height ?? 4f) * paneScale);
         if (art is not null)
         {
             int srcW = Math.Max(1, (int)MathF.Round(art.Width * fraction));
-            _sb.Draw(art, new Rectangle((int)bx, (int)by, (int)MathF.Round(srcW * spread), (int)gh),
+            _sb.Draw(art, new Rectangle((int)bx, (int)by, (int)MathF.Round(srcW * paneScale), (int)gh),
                 new Rectangle(0, 0, srcW, art.Height), Color.White);
         }
         else
@@ -1608,10 +1651,13 @@ public class HudRenderer
             // The PNG icons (autopilot/vector lock) are full-bleed 32px glyphs;
             // the MDL icons are large canvases with a small centred glyph, drawn
             // at the same 0.72 scale the six gauges use. The native
-            // TranslateImage anchor is the image CORNER (engine/image.cpp:834-845),
-            // so draw from the top-left without centring or nudging.
-            float scale = tex.Width <= 64 ? 1f : 0.72f;
-            _sb.Draw(tex, pos, null, Color.White, 0f,
+            // TranslateImage point is the bitmap's LOWER-left corner in y-up
+            // (bounds Rect(Point(0,0),size), engine/image.cpp:184-190,
+            // engine/paneimage.cpp:91-97), so the art rises ABOVE the anchor.
+            float scale = OwnStatusLayout.StatusIconScale(tex.Width);
+            var topLeft = OwnStatusLayout.StatusIconTopLeft(id, tex.Width, tex.Height,
+                viewport.Width, viewport.Height);
+            _sb.Draw(tex, topLeft, null, Color.White, 0f,
                 Vector2.Zero, scale, SpriteEffects.None, 0f);
         }
         else
@@ -1636,11 +1682,11 @@ public class HudRenderer
     /// box top-left is the TranslateImage anchor and the text is centred inside
     /// the 80-point box (dialog.mdl:2595-2602; Artwork/dialog.mdl:2561-2566).</summary>
     private void DrawCenteredInNativeBox(SpriteFont font, string text, Vector2 boxTopLeft,
-        int viewportHeight, Color color, float? scale = null)
+        int viewportHeight, Color color, float? scale = null, float? boxScale = null)
     {
         float textScale = scale ?? TextScale;
         var size = font.MeasureString(text) * textScale;
-        float boxWidth = OwnStatusLayout.NativeTextWidth * OwnStatusLayout.Spread(viewportHeight);
+        float boxWidth = OwnStatusLayout.NativeTextWidth * (boxScale ?? OwnStatusLayout.Spread(viewportHeight));
         RenderText(font, text, new(boxTopLeft.X + (boxWidth - size.X) / 2f, boxTopLeft.Y), color, textScale);
     }
 

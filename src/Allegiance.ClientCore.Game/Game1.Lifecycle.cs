@@ -36,7 +36,9 @@ public sealed partial class Game1
     /// <summary>FONT-1 — load the bundled native-classic-HUD font bakes (one 1× +
     /// 2× SpriteFont per native identity) and wrap them in the registry the
     /// classic HUD/chat renderers consult. Identities that share a (face, Size)
-    /// bake (medVerdana/smallFont, medBoldVerdana/promptFont) load it once.</summary>
+    /// bake (medVerdana/smallFont) load it once. FONT-1b moved medBoldVerdana to
+    /// Size 9, so it no longer shares promptFont's B8 bake; the registry memo
+    /// here is keyed by asset name and keeps working for any future overlap.</summary>
     private Rendering.NativeFonts LoadNativeFonts()
     {
         var loaded = new Dictionary<string, SpriteFont>();

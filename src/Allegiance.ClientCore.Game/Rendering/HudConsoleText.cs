@@ -154,9 +154,9 @@ public static class HudConsoleFormat
     public const float TurretLabelTop = 75f;         // dialog.mdl:5425 (-75)
     public const float OrderLabelTop = 37f;          // dialog.mdl:5451 (-37)
     public const float OrderLabelX = 37f;            // dialog.mdl:1647 (label at -13 from the 50 pane)
-    public const float OrderTextX = 57f;             // dialog.mdl:1648-1649 (text at 7 from the 50 pane)
-    public const float OrderQueuedBelowLabel = 20f;  // dialog.mdl:1648
-    public const float OrderAcceptedBelowLabel = 40f;// dialog.mdl:1649
+    public const float OrderTextX = 57f;             // dialog.mdl:1647-1648 (text at 7 from the 50 pane)
+    public const float OrderQueuedBelowLabel = 20f;  // dialog.mdl:1647
+    public const float OrderAcceptedBelowLabel = 40f;// dialog.mdl:1648
 
     // HUD-15 — the native order-line glyphs. LastOrderImage's queued/accepted
     // groups translate ImportImage3D("comqueuedbmp"/"comacceptbmp", …) by
@@ -169,8 +169,9 @@ public static class HudConsoleFormat
     public const float OrderIconSize = 16f;
     public const float OrderIconLeft = OrderTextX - 21f;   // 36
     public const float OrderIconBelowLine = 13f;           // TranslateImage Point(0,-13)
-    public const float RipcordLeft = 75f;            // dialog.mdl:5430 (-75 from centre-x)
-    public const float RipcordTop = 15f;             // dialog.mdl:5430 (15 above centre-y)
+    public const float RipcordLeft = 75f;            // dialog.mdl:5429 (-75 from centre-x)
+    public const float RipcordTop = 15f;             // dialog.mdl:5429 (15 above centre-y)
+    public const float RipcordWidth = 150f;          // StringImage(JustifyCenter, 150, …) dialog.mdl:5146
     public const float CriticalTipTopBase = 50f;     // dialog.mdl:5173 (-50)
     public const float CriticalTipSpacing = 14f;     // dialog.mdl:2075-2077
     public const float VoteTopBase = 85f;            // dialog.mdl:5174 (-85)
@@ -193,6 +194,44 @@ public static class HudConsoleFormat
     /// like native VoteTextImageYOffset (dialog.mdl:5174).</summary>
     public static float VoteTop(int chatLines) => VoteTopBase + ChatLineYStep * chatLines;
 
+    /// <summary>FONT-1c — native lives/kills badge text top. LivesOnImage /
+    /// KillsOnImage translate a JustifyCenter 80-wide StringImage by
+    /// Point(18,20) / Point(15,20) in y-up from the badge art's LOWER-left
+    /// (dialog.mdl:5070-5080, 5107-5120). The y-up origin is the text TOP, so in
+    /// screen y-down the text top is <c>artTop + artHeight - 20·scale</c> — it
+    /// hangs DOWN from 20 px above the art's bottom edge, inside a 22/25 px
+    /// badge. FONT-1b treated the point as the text's bottom, which put the
+    /// glyphs above the art.</summary>
+    public static float BadgeTextTop(float artTop, float artHeight, float scale)
+        => artTop + artHeight - 20f * scale;
+
+    /// <summary>FONT-1c review — native badge x: <c>SideTopLeft</c> end point
+    /// <c>Point(40, …)</c> (dialog.mdl:5441-5445). A shown overlay animates to
+    /// its END point (<c>Show(true)</c> → <c>MoveEnd()</c>, console.cpp:3089-3096;
+    /// trekctrls.cpp:994-998, 1043-1050); the 45 is the START point it returns
+    /// to when hidden.</summary>
+    public const float BadgeLeft = 40f;
+    /// <summary>Native lives / kills badge anchors, px below the viewport top
+    /// (<c>SideTopLeft</c> <c>Point(40,-97)</c> / <c>Point(40,-177)</c>,
+    /// dialog.mdl:5441-5445; <c>GetSidePoint(ATTopLeft) = (xmin, ymax)</c>,
+    /// trekctrls.cpp:1015-1028).</summary>
+    public const float LivesBadgeAnchor = 97f, KillsBadgeAnchor = 177f;
+
+    /// <summary>FONT-1c review — the badge art's screen top. The badge group's
+    /// <c>ImportImage</c> member is untranslated, so its y-up bounds
+    /// <c>Rect(Point(0,0), size)</c> (engine/image.cpp:184-190) put the art's
+    /// LOWER-left on the anchor: the art spans <c>[anchor − H, anchor]</c> in
+    /// screen y-down, and its text (<see cref="BadgeTextTop"/>) hangs from 20 px
+    /// above the anchor.</summary>
+    public static float BadgeArtTop(float anchorY, float artHeight) => anchorY - artHeight;
+
+    /// <summary>FONT-1c review — left edge of the centred ripcord countdown
+    /// text: native <c>StringImage(JustifyCenter, 150, …)</c> whose box
+    /// top-left is <c>SideCenter(-75,15)</c> (dialog.mdl:5145-5151, 5429), so
+    /// the glyphs centre on the viewport centre line.</summary>
+    public static float RipcordTextLeft(float viewportWidth, float textWidth, float scale)
+        => viewportWidth / 2f - RipcordLeft * scale + (RipcordWidth * scale - textWidth) / 2f;
+
     /// <summary>HUD-11 — native <c>NumChatLines</c> for the banner offsets is the
     /// CONFIGURED pane height (<see cref="HudChat.PaneLines"/>, the
     /// <c>ChatLines</c> preference), not the number of lines currently shown
@@ -208,14 +247,18 @@ public static class HudConsoleFormat
     /// </summary>
     public static float NameBelowLabel(float labelTop, float lineHeight) => labelTop + lineHeight;
 
-    /// <summary>HUD-11 — the current-order red queued line one rendered line
-    /// below the label (native Point(0,-20), dialog.mdl:1648-1649, is the same
-    /// raw-pixel assumption; the port font needs a full line).</summary>
-    public static float OrderQueuedTop(float labelTop, float lineHeight) => labelTop + lineHeight;
+    /// <summary>FONT-1c — the current-order red queued line's TOP is the native
+    /// Point(0,-20) translation (dialog.mdl:1647-1648) below the label origin:
+    /// 20 native px in y-down screen space, scaled with the pane. The glyph row
+    /// already uses the same 20 px (OrderIconTopLeft), so the arrow/check and
+    /// its text share one row (FONT-1c fix 4; the old measured-line-height
+    /// value was ~13 px at 1080p and the glyph floated ~7 px off its text).</summary>
+    public static float OrderQueuedTop(float labelTop, float scale) => labelTop + OrderQueuedBelowLabel * scale;
 
-    /// <summary>HUD-11 — the accepted (cortText) order line two rendered lines
-    /// below the label (native Point(0,-40), dialog.mdl:1649).</summary>
-    public static float OrderAcceptedTop(float labelTop, float lineHeight) => labelTop + 2f * lineHeight;
+    /// <summary>FONT-1c — the accepted (cortText) order line's TOP is the native
+    /// Point(0,-40) translation (dialog.mdl:1648), 40 native px below the label
+    /// origin, scaled with the pane.</summary>
+    public static float OrderAcceptedTop(float labelTop, float scale) => labelTop + OrderAcceptedBelowLabel * scale;
 
     /// <summary>Native ripcord HUD label (<c>dialog.mdl:5139-5154</c>,
     /// <c>consoledata.cpp:521-532</c>): null when inactive or the start time is

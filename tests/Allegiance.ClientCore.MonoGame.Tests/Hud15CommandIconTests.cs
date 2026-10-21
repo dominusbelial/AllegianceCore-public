@@ -1,3 +1,4 @@
+using System.Linq;
 using System;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -138,10 +139,55 @@ public class Hud15CommandIconTests
         Assert.Equal(HudConsoleFormat.OrderLabelTop - 3f + HudConsoleFormat.OrderQueuedBelowLabel, queued.Y);
         Assert.Equal(HudConsoleFormat.OrderLabelTop - 3f + HudConsoleFormat.OrderAcceptedBelowLabel, accepted.Y);
 
-        // Skins scale the glyph with the substituted font like every other
-        // native px offset (Modern TextScale > 1).
+        // FONT-1c fix 4 — the TEXT rows use the same native +20/+40 px
+        // (dialog.mdl:1647-1648), so each glyph's top stays exactly 3 px above
+        // its own line's text top; the old measured line-height (~13/25 px)
+        // left the arrow/check floating off the text.
+        float labelTop = HudConsoleFormat.OrderLabelTop;
+        float queuedText = HudConsoleFormat.OrderQueuedTop(labelTop, 1f);
+        float acceptedText = HudConsoleFormat.OrderAcceptedTop(labelTop, 1f);
+        Assert.Equal(labelTop + 20f, queuedText);
+        Assert.Equal(labelTop + 40f, acceptedText);
+        Assert.Equal(queuedText - 3f, queued.Y);
+        Assert.Equal(acceptedText - 3f, accepted.Y);
+        // The same offsets scale with the pane, like the glyphs.
         Assert.Equal((72f, 108f), HudConsoleFormat.OrderIconTopLeft(accepted: false, scale: 2f));
         Assert.Equal((72f, 148f), HudConsoleFormat.OrderIconTopLeft(accepted: true, scale: 2f));
+        Assert.Equal(HudConsoleFormat.OrderQueuedTop(HudConsoleFormat.OrderLabelTop * 2f, 2f) - 3f * 2f,
+            HudConsoleFormat.OrderIconTopLeft(accepted: false, scale: 2f).Y);
+    }
+
+    [Fact]
+    public void Ripcord_box_is_the_native_150_wide_justify_center_string()
+    {
+        // Native RipcordCountdownImage = StringImage(JustifyCenter, 150, ...)
+        // at SideCenter(-75,15) (dialog.mdl:5145-5151, 5429): the box's top-left
+        // is centre-75 and its centre is the viewport centre line.
+        Assert.Equal(150f, HudConsoleFormat.RipcordWidth);
+        Assert.Equal(75f, HudConsoleFormat.RipcordLeft);
+        Assert.Equal(15f, HudConsoleFormat.RipcordTop);
+    }
+
+    [Theory]
+    [InlineData(1920, 1f)]
+    [InlineData(2560, 1.5f)]
+    public void Ripcord_text_is_centred_on_the_viewport_centre_line(int width, float scale)
+    {
+        // A real SpriteFont measurement (no GraphicsDevice): 11 px advance per
+        // glyph, so "Ripcord in: 9" measures 13*11 = 143 px at scale 1.
+        var chars = Enumerable.Range(32, 95).Select(c => (char)c).ToList();
+        var font = new Microsoft.Xna.Framework.Graphics.SpriteFont(null!,
+            chars.Select(_ => new Microsoft.Xna.Framework.Rectangle(0, 0, 11, 23)).ToList(),
+            chars.Select(_ => new Microsoft.Xna.Framework.Rectangle(0, 0, 11, 23)).ToList(), chars,
+            23, 0f, chars.Select(_ => new Microsoft.Xna.Framework.Vector3(0, 11, 0)).ToList(), '?');
+        float textWidth = font.MeasureString("Ripcord in: 9").X * scale;
+        Assert.Equal(143f * scale, textWidth, 3);
+        float left = HudConsoleFormat.RipcordTextLeft(width, textWidth, scale);
+        // JustifyCenter: (150*s - text)/2 inside the box at centre-75*s.
+        Assert.Equal(width / 2f - 71.5f * scale, left, 3);
+        Assert.Equal(width / 2f, left + textWidth / 2f, 3);
+        // Not the pre-FONT-1c left-aligned box edge.
+        Assert.NotEqual(width / 2f - HudConsoleFormat.RipcordLeft * scale, left);
     }
 
     // ── Real artwork (skips on a clean clone without the art tree) ──────────

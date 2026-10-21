@@ -208,6 +208,10 @@ Port changes:
   spans local 97..110, inside the 32×32 medal (89..121). With FONT-1's `medBoldVerdana`
   the port now uses exactly that anchor (`TargetPaneLayout.ExperienceNumberTopLeft`);
   the first round's substitute-font centring workaround is gone (review fixup 4).
+  *Note (FONT-1c, 2026-10-21):* the "13-px cell" above is the NATIVE medBoldVerdana cell.
+  FONT-1b later moved the DejaVu substitute from Size 8 to Size 9 (achieved em 12.0 px,
+  ≈14 px line cell), which still fits inside the medal's local 89..121 span; this note
+  records the change instead of rewriting the original measurement.
 
 ## Item 5 — the rig bot driver (required by item 4)
 
@@ -384,6 +388,10 @@ replacing the "not on the wire" claim). No other row touched.
    reservation like the in-flight one.
 4. **Kill-bonus placement.** The number uses the native anchor and FONT-1
    `medBoldVerdana`; see the "Anchor" note under item 4. FONT-1 sizes are unchanged.
+   *Note (FONT-1c, 2026-10-21):* "unchanged" was true at this merge, but FONT-1b then moved
+   `medBoldVerdana` from Size 8 to Size 9 (em 12.0, ≈14 px cell) for the measured +16 px
+   width fit; it is still inside the 89..121 medal span. The target-pane anchor and number
+   box were not changed by FONT-1b/FONT-1c.
 5. **Source-text tests.** These were replaced with behaviour tests on pure seams:
    `DockedLookingAt`, `TargetPaneLayout.ExperienceArtBottomLeft`/`ExperienceNumberTopLeft`,
    and an Artwork-gated decode of `TargetExperiencebmp.mdl` (32×32). Fonts and the actual

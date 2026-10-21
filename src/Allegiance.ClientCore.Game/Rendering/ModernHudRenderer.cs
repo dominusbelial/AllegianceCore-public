@@ -668,13 +668,13 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
                 // modern skin (16x16 white masks tinted per skin), drawn at the
                 // native offsets before their lines.
                 DrawOrderLineGlyph(accepted: false, _scale, red);
-                DrawMeasuredText(_small, q, new(HudConsoleFormat.OrderTextX * _scale, HudConsoleFormat.OrderQueuedTop(labelTop, lineHeight)), red, fixedAnchor: true, centerAtScale: false);
+                DrawMeasuredText(_small, q, new(HudConsoleFormat.OrderTextX * _scale, HudConsoleFormat.OrderQueuedTop(labelTop, _scale)), red, fixedAnchor: true, centerAtScale: false);
                 Mark("Queued order text");
             }
             if (console.AcceptedOrder is { } a)
             {
                 DrawOrderLineGlyph(accepted: true, _scale, yellow);
-                DrawMeasuredText(_small, a, new(HudConsoleFormat.OrderTextX * _scale, HudConsoleFormat.OrderAcceptedTop(labelTop, lineHeight)), cortText, fixedAnchor: true, centerAtScale: false);
+                DrawMeasuredText(_small, a, new(HudConsoleFormat.OrderTextX * _scale, HudConsoleFormat.OrderAcceptedTop(labelTop, _scale)), cortText, fixedAnchor: true, centerAtScale: false);
                 Mark("Accepted order text");
             }
         }
@@ -703,7 +703,13 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         if (ordinary > 0) Mark("Tip text lines");
         if (model.FlightVisible && model.Context.Ripcord is { } ripcord)
         {
-            DrawMeasuredText(_small, ripcord, new(w / 2f - HudConsoleFormat.RipcordLeft * _scale, h / 2f - HudConsoleFormat.RipcordTop * _scale), Accent, fixedAnchor: true, centerAtScale: false);
+            // FONT-1c — native RipcordCountdownImage is JustifyCenter over a
+            // 150-wide box at SideCenter(-75,15) (dialog.mdl:5145-5151,5429),
+            // so the glyphs centre on the viewport centre line and use softText.
+            var rsz = _small.MeasureString(ripcord) * _scale;
+            DrawMeasuredText(_small, ripcord,
+                new(HudConsoleFormat.RipcordTextLeft(w, rsz.X, _scale), h / 2f - HudConsoleFormat.RipcordTop * _scale),
+                cortText, fixedAnchor: true, centerAtScale: false);
             Mark("Ripcord countdown");
         }
     }

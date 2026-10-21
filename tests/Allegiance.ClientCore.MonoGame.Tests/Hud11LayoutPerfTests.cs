@@ -125,12 +125,16 @@ public class Hud11LayoutPerfTests
         // the port substitute font is taller, so the gap is the line height.
         Assert.True(sectorName - sectorLabel > HudConsoleFormat.SectorNameBelowLabel);
 
-        float orderLabel = HudConsoleFormat.OrderLabelTop;
-        float queued = HudConsoleFormat.OrderQueuedTop(orderLabel, lineHeight);
-        float accepted = HudConsoleFormat.OrderAcceptedTop(orderLabel, lineHeight);
+        // FONT-1c fix 4 — the order lines are native Point(0,-20)/(0,-40)
+        // (dialog.mdl:1647-1648), so their text tops are +20/+40 native px from
+        // the label origin, scaled with the pane. The glyph rows use the same
+        // values (OrderIconTopLeft), so arrow/check and text share a row.
+        float orderLabel = HudConsoleFormat.OrderLabelTop * 2f;
+        float queued = HudConsoleFormat.OrderQueuedTop(orderLabel, 2f);
+        float accepted = HudConsoleFormat.OrderAcceptedTop(orderLabel, 2f);
         Assert.True(orderLabel < queued && queued < accepted, "current-order block must stay in native label/queued/accepted order");
-        Assert.Equal(lineHeight, queued - orderLabel);
-        Assert.Equal(2f * lineHeight, accepted - orderLabel);
+        Assert.Equal(20f * 2f, queued - orderLabel);
+        Assert.Equal(40f * 2f, accepted - orderLabel);
     }
 
     [Fact]
@@ -138,7 +142,7 @@ public class Hud11LayoutPerfTests
     {
         var layout = new HudTextLayout();
         layout.Reset(1920, 1080);
-        // The native top-left LastOrderImage block (dialog.mdl:5451/1605-1649):
+        // The native top-left LastOrderImage block (dialog.mdl:5451/1605-1648):
         // "Current orders:" plus the queued/accepted lines.
         var orderBlock = new Rectangle(37, 37, 240, 3 * 23);
         layout.Reserve(orderBlock);

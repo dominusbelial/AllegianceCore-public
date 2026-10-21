@@ -54,8 +54,8 @@ public static class NativeFontCatalog
             [NativeFont.SmallFont] = 8,        // Regular, em 10.67 (shares with medVerdana)
             [NativeFont.LargeFont] = 9,        // Regular, em 12.00
             [NativeFont.SmallBoldFont] = 7,    // Bold,    em 9.33
-            [NativeFont.MedBoldVerdana] = 8,   // Bold,    em 10.67
-            [NativeFont.PromptFont] = 8,       // Bold,    em 10.67 (shares with medBoldVerdana)
+            [NativeFont.MedBoldVerdana] = 9,   // Bold,    em 12.00 (measured width fit, see FONT-1b)
+            [NativeFont.PromptFont] = 8,       // Bold,    em 10.67
             [NativeFont.LargeBoldFont] = 9,    // Bold,    em 12.00
             [NativeFont.LgBoldVerdana] = 10,   // Bold,    em 13.33
         };
