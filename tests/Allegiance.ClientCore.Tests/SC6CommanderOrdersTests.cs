@@ -53,9 +53,15 @@ public sealed class SC6CommanderOrdersTests
         Assert.Equal(new short[] {3, 4}, tactics.Tick(.25, true, pilots, targets).Select(o => o.Recipient));
         Assert.Equal((short)5, Assert.Single(tactics.Tick(.5, true, pilots, targets)).Recipient);
         Assert.Empty(tactics.Tick(1, true, pilots, targets));
-        Assert.Equal(2, tactics.Tick(15, true, pilots, targets).Length);
-        Assert.Empty(tactics.Tick(16, true, [], targets));
-        Assert.Equal(2, tactics.Tick(16, true, pilots, targets).Length);
+        // SC8 — no identical re-send on a 15 s timer: an unchanged attack order stays
+        // silent while the pilot is inside the 60 s (no-)progress window...
+        Assert.Empty(tactics.Tick(15, true, pilots, targets));
+        Assert.Empty(tactics.Tick(59, true, pilots, targets));
+        // ...and goes out again only when 60 s pass with the pilot still outside the
+        // target's sector and in the same sector (no progress).
+        Assert.Equal(2, tactics.Tick(ResearchTactics.ProgressWindowSeconds + .5, true, pilots, targets).Length);
+        Assert.Empty(tactics.Tick(61, true, [], targets));
+        Assert.Equal(2, tactics.Tick(62, true, pilots, targets).Length);
     }
 
     [Fact]

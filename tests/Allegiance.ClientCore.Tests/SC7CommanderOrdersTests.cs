@@ -56,9 +56,13 @@ public sealed class SC7CommanderOrdersTests
             new(102, IgcObjectType.Station, 2, new(10000, 0, 0), false, true)];
         Assert.Contains(new ResearchTactics.Order(1, OrderChange.CidAttack, IgcObjectType.Station, 102),
             tactics.Tick(0, true, one, targets));
-        // Stability: the shared target does not flick across ticks.
+        // SC8 — stability, not a 15 s repeat: the identical order is not re-sent while
+        // the pilot is inside the 60 s progress window; it is re-sent once the pilot
+        // has spent 60 s out of the target sector without changing sector.
+        Assert.DoesNotContain(tactics.Tick(16, true, one, targets),
+            o => o == new ResearchTactics.Order(1, OrderChange.CidAttack, IgcObjectType.Station, 102));
         Assert.Contains(new ResearchTactics.Order(1, OrderChange.CidAttack, IgcObjectType.Station, 102),
-            tactics.Tick(16, true, one, targets));
+            tactics.Tick(ResearchTactics.ProgressWindowSeconds + 1, true, one, targets));
 
         // No damaged: non-Garrison by distance wins over the Garrison.
         var t2 = new ResearchTactics();

@@ -119,6 +119,10 @@ internal sealed partial class BotManager
                                         commandId: order.Command, otTarget: (short)order.Type, oidTarget: order.Target);
                                     Console.WriteLine($"[commander] side={side} sender={peer.World.MyShipId} recipient={order.Recipient} command={order.Command} target={order.Type}#{order.Target}");
                                 }
+                                // SC8 — one summary line per strike-wave commit/end, where
+                                // the other commander telemetry is printed (not per tick).
+                                foreach (var wave in tactics.Policy.TakeStrikeEvents())
+                                    Console.WriteLine(StrikeLogLine(side, wave));
                             }
                         }
                     }
@@ -145,6 +149,12 @@ internal sealed partial class BotManager
             _loopCts.Token.WaitHandle.WaitOne(250);
         }
     }
+
+    /// <summary>SC8 — the single rig-measurable line per strike-wave edge.</summary>
+    internal static string StrikeLogLine(short side, ResearchTactics.StrikeEvent wave)
+        => wave.Kind == ResearchTactics.StrikeEventKind.Commit
+            ? $"[strike] side={side} wave={wave.Wave} commit members={wave.Members} atRally={wave.AtRally} target=station#{wave.Target} sector={wave.Sector} reason={wave.Reason}"
+            : $"[strike] side={side} wave={wave.Wave} end reason={wave.Reason}";
 
     /// <summary>Ready fresh/rotated seats through PLAYER_READY, as the ordinary MCP probe
     /// does (native fsmission.cpp:5449-5471). A research-only manager has no combat loop.</summary>

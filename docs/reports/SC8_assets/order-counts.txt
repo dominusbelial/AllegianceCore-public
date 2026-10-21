@@ -1,0 +1,35 @@
+SC-8 before/after order counts — deterministic policy replay
+============================================================
+
+Method: a temporary xUnit driver (policy-replay-harness.cs) replays the SAME
+scripted pilot telemetry at 0.5 s steps for 600 simulated seconds through
+ResearchTactics.Tick. Only the production policy differs between runs; the
+telemetry (positions, sectors, disappearances) is a fixed function of time.
+"1" = OrderChange.CidAttack, "5" = OrderChange.CidGoto.
+
+Strike scenario: 6 pure bombers. Three at the rally aleph from t=0, ordered into
+the target sector at t=50 and docked (removed from the snapshot) at t=300. Three
+latecomers fly from 9 km to the rally by t=30, wait there, and enter the target
+sector at t=330.
+
+Fighter scenario: 30 fighters and 30 enemy ships in the same sector for 600 s
+(the second, non-strike order loop).
+
+BEFORE (master be1d36fd policy: 15 s identical-order re-sends, everyone attacks
+on commit):
+  strike_scenario  1=180 5=2
+  fighter_scenario 1=1202
+
+AFTER (SC-8 policy: wave membership + no-progress re-sends):
+  strike_scenario  1=6 5=3
+  fighter_scenario 1=30
+
+So the scripted strike load drops 180 -> 6 attack orders and the fighter loop
+1202 -> 30 attack orders, with no loss of coverage: the three latecomers still
+get the rally goto (the third goto is the third latecomer) and both strike waves
+still commit to station 100.
+
+The harness was run against old production code by `git stash`ing only the
+production/test changes and compiling the same harness, then restored. It is not
+part of the committed test suite (it is evidence, not a regression test); the
+permanent SC8 tests pin the same rules directly.

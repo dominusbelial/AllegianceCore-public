@@ -13,7 +13,21 @@ internal sealed class ResearchTactics
         bool Friendly, bool Damaged = false, bool Bomber = false,
         bool Garrison = false, short DestinationSector = -1);
     internal sealed record Order(short Recipient, short Command, IgcObjectType Type, short Target);
-    private readonly Dictionary<short, (Order Order, double Time)> _sent = new();
+
+    /// <summary>SC8 — one summary line per strike-wave edge (commit/end) for the rig.
+    /// The side is added by the caller that owns the socket (BotManager), so the
+    /// policy stays free of side/transport concepts.</summary>
+    internal enum StrikeEventKind { Commit, End }
+    internal sealed record StrikeEvent(StrikeEventKind Kind, int Wave, int Members, int AtRally,
+        short Target, short Sector, string Reason);
+
+    /// <summary>Per-pilot order bookkeeping. <see cref="Order"/>/<see cref="Time"/> are
+    /// the last sent order and when it went out; the Mark* fields reset the
+    /// no-progress window (SC8): distance to the goto point, and the sector the
+    /// pilot was in, as observed when the window last showed progress.</summary>
+    private sealed record Sent(Order Order, double Time, double MarkTime, float MarkDistance, short MarkSector);
+
+    private readonly Dictionary<short, Sent> _sent = new();
 
     /// <summary>SC7 — the strike-wave quorum: this many strike pilots must gather at
     /// the rally point before the wave commits to the shared station target. A human
@@ -41,21 +55,52 @@ internal sealed class ResearchTactics
 
     /// <summary>SC7 review — a side short on launched bombers must not park them at
     /// the rally forever: after this long rallying, whoever has gathered commits
-    /// (with fewer than <see cref="StrikeGroupSize"/> pilots too).</summary>
+    /// (SC8: at least two, or every strike pilot when the side has fewer than two).</summary>
     internal const double RallyTimeoutSeconds = 90;
 
     /// <summary>At most this many orders per tick across both loops, so a large fleet
     /// cannot flood chat.</summary>
     internal const int MaxOrdersPerTick = 2;
 
-    // SC7 — strike-wave state. One shared station target + rally point for the whole
-    // group, kept stable across ticks (a human commander commits, doesn't flick).
+    /// <summary>SC8 — shortest gap between two orders to the same pilot, changed or
+    /// not. An identical order is otherwise not re-sent until it stops making
+    /// progress (below); a changed order may go out after this floor.</summary>
+    internal const double ChangedOrderFloorSeconds = 2;
+
+    /// <summary>SC8 — how long a pilot may show no progress on an identical order
+    /// before the commander re-sends it. The SC7 policy re-sent every identical
+    /// order every 15 s by design (rig: the same goto to the same aleph every
+    /// ~15.5 s, 195–458 gotos/side), which is a team-chat order plus a queued server
+    /// command per pilot per repeat.</summary>
+    internal const double ProgressWindowSeconds = 60;
+
+    /// <summary>SC8 — a goto counts as progressing when the distance to its
+    /// destination has fallen to this fraction of the distance at the start of the
+    /// window (~10% closed).</summary>
+    internal const float GotoProgressFraction = 0.9f;
+
+    // SC7/SC8 — strike-wave state. One shared station target + rally point for the
+    // whole group, kept stable across ticks (a human commander commits, doesn't flick).
+    // SC8 adds the wave itself: the ids that committed together, kept until the
+    // station dies or no member is left alive and undocked in its sector.
     private short? _strikeTarget;
     private short _strikeSector = -1;
     private Target? _rally;
-    private bool _gathered;
     private double _rallySince = double.NaN;
     private double _committedAt = double.NaN;
+    private readonly HashSet<short> _waveMembers = new();
+    private int _waveNumber;
+    private readonly List<StrikeEvent> _events = new();
+
+    /// <summary>SC8 — hand the caller the strike-wave edges produced since the last
+    /// call so it can print one summary line each (never one line per tick).</summary>
+    internal StrikeEvent[] TakeStrikeEvents()
+    {
+        if (_events.Count == 0) return [];
+        var events = _events.ToArray();
+        _events.Clear();
+        return events;
+    }
 
     internal Order[] Tick(double time, bool started, Pilot[] pilots, Target[] targets)
     {
@@ -67,13 +112,25 @@ internal sealed class ResearchTactics
         // Strike pilots: pure bombers (never support). Support/bombers keep their repair duty.
         var strikePilots = pilots.Where(p => p.Strike && !p.Support).ToArray();
 
-        // ---- SC7 strike wave: rally with goto, then focus ONE shared station ----
-        if (strikePilots.Length == 0) { _gathered = false; _rally = null; _rallySince = double.NaN; }
+        // ---- SC7/SC8 strike wave: rally with goto, then focus ONE shared station ----
+        if (strikePilots.Length == 0)
+        {
+            EndWave(time, "no-strike-pilots");
+            // Keep the chosen rally: bomber crews dock to reload all the time, and
+            // the next launch must re-form at the same aleph (SC8). Only the timeout
+            // restarts, so returning pilots rally afresh.
+            _rallySince = double.NaN;
+        }
         if (strikePilots.Length > 0)
         {
             // Validate the shared station: it must still exist as an enemy station.
             if (_strikeTarget is { } cur && enemyStations.All(s => s.Id != cur))
-            { _strikeTarget = null; _gathered = false; _rally = null; _rallySince = double.NaN; }
+            {
+                EndWave(time, "station-gone");
+                _strikeTarget = null;
+                _rally = null;
+                _rallySince = double.NaN;
+            }
             if (_strikeTarget is null)
             {
                 var picked = PickStrikeStation(enemyStations, strikePilots);
@@ -81,7 +138,6 @@ internal sealed class ResearchTactics
                 {
                     _strikeTarget = picked.Id;
                     _strikeSector = picked.Sector;
-                    _gathered = false;
                     _rally = ChooseRally(friendlyStations, targets, _strikeSector);
                     _rallySince = time;
                 }
@@ -90,41 +146,68 @@ internal sealed class ResearchTactics
             {
                 // Positions are per-sector coordinates: only a pilot in the same
                 // sector can be near the rally or the station.
-                int atRally = _rally is { } rp
-                    ? strikePilots.Count(p => p.Sector == rp.Sector
-                        && (p.Position - rp.Position).LengthSquared() <= RallyGatherRadius * RallyGatherRadius)
-                    : strikePilots.Length;
+                var atRallyCover = _rally is { } rr
+                    ? strikePilots.Where(p => p.Sector == rr.Sector
+                        && (p.Position - rr.Position).LengthSquared() <= RallyGatherRadius * RallyGatherRadius).ToArray()
+                    : strikePilots;
+                int atRally = atRallyCover.Length;
                 if (double.IsNaN(_rallySince)) _rallySince = time;
+
+                // Re-form after the committed group is gone from the target sector
+                // (dead, docked or flown off), allowing RallyTimeoutSeconds for the
+                // trip from the rally to the station. Ending restarts the rally clock,
+                // so the next pair waits its own timeout (a full group can still
+                // commit immediately below).
+                if (_waveMembers.Count > 0)
+                {
+                    // A member that left the snapshot (docked to reload, or died) is
+                    // out of the wave: relaunching under the same ship id must send it
+                    // to the rally, not back to the station alone.
+                    if (_waveMembers.All(id => !strikePilots.Any(p => p.Id == id)))
+                        EndWave(time, "members-gone");
+                    else
+                        _waveMembers.RemoveWhere(id => !strikePilots.Any(p => p.Id == id));
+                }
+                if (_waveMembers.Count > 0)
+                {
+                    bool anyMemberInTarget = strikePilots.Any(p => _waveMembers.Contains(p.Id) && p.Sector == station.Sector);
+                    if (!anyMemberInTarget && time - _committedAt >= RallyTimeoutSeconds)
+                        EndWave(time, "no-members-in-target");
+                    else if (time - _committedAt >= 3 * RallyTimeoutSeconds)
+                        EndWave(time, "timeout");   // one straggler must not hold the next group forever
+                }
                 bool timedOut = time - _rallySince >= RallyTimeoutSeconds;
-                // Commit when a full group has gathered, or after the rally timeout
-                // with whoever made it (a short side still attacks).
-                if (!_gathered && ((strikePilots.Length >= StrikeGroupSize && atRally >= StrikeGroupSize)
-                                   || (timedOut && atRally > 0)
-                                   || time - _rallySince >= 2 * RallyTimeoutSeconds))
-                { _gathered = true; _committedAt = time; }
-                // Re-form after the committed group is gone from the target sector,
-                // so reinforcements don't trickle in solo.
-                // (Allow the committed group RallyTimeoutSeconds to reach the target.)
-                if (_gathered && _rally is not null && !strikePilots.Any(p => p.Sector == station.Sector)
-                    && time - _committedAt >= RallyTimeoutSeconds)
-                { _gathered = false; _rallySince = time; _committedAt = double.NaN; }
+                // SC8 — no more "commit with nobody": after the timeout commit two
+                // gathered pilots, or every strike pilot when the side has fewer than
+                // two. Before the timeout only a full group commits. A wave of one is
+                // never committed while two or more strike pilots exist.
+                int timeoutQuorum = Math.Min(2, strikePilots.Length);
+                bool fullGroup = strikePilots.Length >= StrikeGroupSize && atRally >= StrikeGroupSize;
+                bool commit = fullGroup || (timedOut && atRally >= timeoutQuorum);
+                if (_waveMembers.Count == 0 && commit)
+                    CommitWave(time, atRallyCover, stationId, station.Sector, fullGroup ? "full" : "timeout");
 
                 foreach (var pilot in strikePilots
                     .OrderBy(p => _sent.TryGetValue(p.Id, out var sent) ? sent.Time : double.NegativeInfinity).ThenBy(p => p.Id))
                 {
-                    // Commit together: everyone attacks the same station, or everyone
-                    // routes to the rally first. A pilot already on the target attacks
-                    // even while latecomers still rally.
+                    // Commit together: only the wave's members attack the shared
+                    // station; a latecomer keeps (or gets) the rally goto and joins the
+                    // next wave. A pilot already on the target attacks immediately.
                     bool alreadyOn = pilot.Sector == station.Sector
                         && (pilot.Position - station.Position).LengthSquared() <= StrikeOnTargetRadius * StrikeOnTargetRadius;
-                    Order order = (_gathered || alreadyOn)
+                    bool attack = _waveMembers.Contains(pilot.Id) || alreadyOn;
+                    Order order = attack
                         ? new Order(pilot.Id, OrderChange.CidAttack, IgcObjectType.Station, stationId)
                         : (_rally is { } r
                             ? new Order(pilot.Id, OrderChange.CidGoto, r.Type, r.Id)
                             : new Order(pilot.Id, OrderChange.CidAttack, IgcObjectType.Station, stationId));
-                    if (_sent.TryGetValue(pilot.Id, out var previous)
-                        && time - previous.Time < (previous.Order == order ? 15 : 2)) continue;
-                    _sent[pilot.Id] = (order, time);
+                    // Positions are per-sector: in another sector the distance means
+                    // nothing, so only a sector change counts as progress there.
+                    float distance = order.Command == OrderChange.CidGoto && _rally is { } rallyPoint
+                        ? (pilot.Sector == rallyPoint.Sector ? (pilot.Position - rallyPoint.Position).Length() : float.MaxValue)
+                        : 0;
+                    if (!ShouldSend(pilot, order, time, distance, station.Sector)) continue;
+                    RecordSend(pilot, order, time, distance);
                     result.Add(order);
                     if (result.Count >= MaxOrdersPerTick) break;
                 }
@@ -156,14 +239,69 @@ internal sealed class ResearchTactics
             }
             if (target is null) continue;
             var order = new Order(pilot.Id, pilot.Support ? OrderChange.CidRepair : OrderChange.CidAttack, target.Type, target.Id);
-            if (_sent.TryGetValue(pilot.Id, out var previous)
-                && time - previous.Time < (previous.Order == order ? 15 : 2)) continue;
-            _sent[pilot.Id] = (order, time);
+            // SC8 — same no-progress rule as the strike loop. An attack or repair
+            // counts as progressing while the pilot is in the target's sector.
+            if (!ShouldSend(pilot, order, time, 0, target.Sector)) continue;
+            RecordSend(pilot, order, time, 0);
             result.Add(order);
             if (result.Count >= MaxOrdersPerTick) break;
         }
         return result.ToArray();
     }
+
+    /// <summary>SC8 — one commit of a strike wave: record exactly the pilots that were
+    /// at the rally so only they get the attack order; everyone else keeps rallying
+    /// for the next wave. Emits one summary event for the rig log.</summary>
+    private void CommitWave(double time, Pilot[] atRally, short stationId, short sector, string reason)
+    {
+        _waveNumber++;
+        _waveMembers.Clear();
+        foreach (var pilot in atRally) _waveMembers.Add(pilot.Id);
+        _committedAt = time;
+        _events.Add(new(StrikeEventKind.Commit, _waveNumber, _waveMembers.Count, atRally.Length, stationId, sector, reason));
+    }
+
+    /// <summary>SC8 — close the current wave (station gone, or no member left alive
+    /// and undocked in the target sector) and restart the rally timeout so the next
+    /// group forms from whoever is at the rally.</summary>
+    private void EndWave(double time, string reason)
+    {
+        if (_waveMembers.Count == 0) return;
+        _events.Add(new(StrikeEventKind.End, _waveNumber, _waveMembers.Count, 0, _strikeTarget ?? -1, _strikeSector, reason));
+        _waveMembers.Clear();
+        _committedAt = double.NaN;
+        _rallySince = time;
+    }
+
+    /// <summary>SC8 — decide whether an order needs to go out. A changed order waits
+    /// only for <see cref="ChangedOrderFloorSeconds"/>. An identical order is re-sent
+    /// only when the pilot has made no progress for <see cref="ProgressWindowSeconds"/>:
+    /// a goto that has closed &lt;10% of the distance to its destination, or an
+    /// attack/repair whose pilot is not in the target's sector. Changing sector is
+    /// itself progress and resets the window at the tick it is observed (so the
+    /// "no sector change for 60 s" rule is measured from the last change, not from
+    /// the last send). Arrival or a 10% closure only moves the baseline; never sends.</summary>
+    private bool ShouldSend(Pilot pilot, Order order, double time, float distance, short targetSector)
+    {
+        if (!_sent.TryGetValue(pilot.Id, out var previous)) return true;
+        if (previous.Order != order) return time - previous.Time >= ChangedOrderFloorSeconds;
+        if (time - previous.Time < ChangedOrderFloorSeconds) return false;
+        if (pilot.Sector != previous.MarkSector)
+        {
+            _sent[pilot.Id] = previous with { MarkTime = time, MarkDistance = distance, MarkSector = pilot.Sector };
+            return false;
+        }
+        if (time - previous.MarkTime < ProgressWindowSeconds) return false;
+        bool progress = order.Command == OrderChange.CidGoto
+            ? distance <= RallyGatherRadius || distance <= previous.MarkDistance * GotoProgressFraction
+            : pilot.Sector == targetSector;
+        if (!progress) return true;
+        _sent[pilot.Id] = previous with { MarkTime = time, MarkDistance = distance, MarkSector = pilot.Sector };
+        return false;
+    }
+
+    private void RecordSend(Pilot pilot, Order order, double time, float distance)
+        => _sent[pilot.Id] = new Sent(order, time, time, distance, pilot.Sector);
 
     /// <summary>SC7 — pick the one enemy station the whole strike wave commits to.
     /// Preference order (race-agnostic, applied to the observed enemy stations):
