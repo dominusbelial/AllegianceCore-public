@@ -417,6 +417,15 @@ public sealed partial class Game1
         // P250 — local current-sector tactical radar: nearby ships/stations/
         // warps as on-screen or edge-clamped icons (same SpriteBatch plumbing).
         _radarRenderer = new RadarBracketRenderer(_spriteBatch, _whitePixel, _statusTextures);
+        // HUD-16 — the native per-contact radar icon surfaces: resolve every
+        // contact kind's IGC iconName from the static core once (hull/station/
+        // missile/probe/mine type id → '<iconName>bmp') and decode each surface
+        // once, exactly like native's LoadRadarIcon at model creation
+        // (trekigc.cpp:2731-2744). Missing/blank art keeps the procedural shape.
+        _radarIconNames = new Rendering.RadarIconNameCache(_shopCatalog, _hullById);
+        _radarIconTextures = Rendering.RadarIconTextures.Load(GraphicsDevice, _assets, _radarIconNames);
+        _radarRenderer.SetRadarIcons(_radarIconTextures);
+        _modernHudRenderer.SetRadarIcons(_radarIconTextures);
         // P372 — the per-side in-world ship "team tags" (side-coloured chevron
         // above each visible ship's hull), same SpriteBatch plumbing.
         _shipTagRenderer = new Rendering.ShipSideTagRenderer(_spriteBatch, _whitePixel);

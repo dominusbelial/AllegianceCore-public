@@ -96,9 +96,16 @@ public sealed class RadarBracketRenderer
         // pre-HUD-13 fixed overlay radius (FallbackBracketRadius) for callers
         // that do not build a full radar snapshot.
         float? ScreenRadius = null,
-        float? DistanceToEdge = null);
+        float? DistanceToEdge = null,
+        // HUD-16 — the native contact icon surface for this contact
+        // (native pmodel->GetIcon(), radarimage.cpp:591-593): the
+        // '<iconName>bmp' stem resolved by RadarIconNameCache. Null keeps the
+        // procedural shape (missing/blank art, or a kind with no native icon).
+        string? IconStem = null);
 
     private readonly SpriteBatch _sb;
+    // Round-radar mode for the native icon offset (radarimage.cpp:363-365); set per HUD frame.
+    private bool _roundRadarIcons;
     private readonly Texture2D _white;
     // HUD-12 — the native radar bracket surfaces (radarimage.cpp:219-230,343-357;
     // WinTrek/artwork.h:73-76). Null when the artwork is absent; the procedural
@@ -108,6 +115,10 @@ public sealed class RadarBracketRenderer
     // (artwork.h:68,70; drawn at radarimage.cpp:334,352). Null → procedural
     // diamond / P436 highlight fallback.
     private Texture2D? _artEnemy, _artTargeted;
+    // HUD-16 — the native per-contact icon surfaces (pmodel->GetIcon(),
+    // radarimage.cpp:591-593,417-420). Null → every contact keeps its
+    // procedural shape.
+    private RadarIconTextures? _icons;
 
     // Icon palette — the teal HUD accent family for ships (the familiar "other
     // craft" colour), warm gold for stations (infrastructure), violet for warps
@@ -177,6 +188,21 @@ public sealed class RadarBracketRenderer
         _artThreat = art?.RadarThreat;
         _artEnemy = art?.RadarEnemy;
         _artTargeted = art?.RadarTargeted;
+    }
+
+    /// <summary>HUD-16 — attach the decoded native contact-icon surfaces
+    /// (<see cref="RadarIconTextures"/>). Safe to call after construction; null
+    /// leaves every contact on the procedural fallback.</summary>
+    public void SetRadarIcons(RadarIconTextures? icons) => _icons = icons;
+
+    /// <summary>HUD-16 — the colour native tints a contact's icon with
+    /// (<c>radarimage.cpp:678-685</c>): <c>colorIcon</c> is the side colour, red
+    /// while the damage flash is lit, and the neutral constant (white,
+    /// <c>radarimage.cpp:1471</c>) for an object without a side. Pure.</summary>
+    public static Color NativeIconColour(Color? sideColour, bool threatFlash)
+    {
+        if (sideColour is { } side) return threatFlash ? Color.Red : side;
+        return Color.White;
     }
 
     /// <summary>HUD-13 — native <c>DrawBlip</c>'s bracket radius
@@ -254,18 +280,23 @@ public sealed class RadarBracketRenderer
         try
         {
             foreach (var c in contacts)
-                DrawContact(c, highlightPulse);
+                DrawContact(c, viewport, highlightPulse);
         }
         finally
         {
             _sb.End();
         }
+        // HUD-16 — native draws the model icon AFTER the brackets, additively
+        // (radarimage.cpp:417-420); a second additive pass keeps that blend mode
+        // and layering without disturbing the shared alpha batch above.
+        DrawNativeIcons(contacts, viewport);
     }
 
     /// <summary>Classic radar skin for the shared HUD snapshot.</summary>
     public void Draw(HudModel model, Viewport viewport, bool colorBlindSafe = false)
     {
         if (!model.FlightVisible) return;
+        _roundRadarIcons = model.Context.RoundRadar;
         if (model.Context.RoundRadar)
             DrawRoundBorder(viewport);
         Draw(model.Context.Contacts, viewport, model.Context.RadarPulse, colorBlindSafe);
@@ -295,13 +326,17 @@ public sealed class RadarBracketRenderer
                     c.Selected, c.BuildSpot,
                     c.IsEnemy, c.IsSelf, c.AcceptedOrder, c.QueuedOrder, c.Threat, c.ThreatFlash,
                     c.Subject, c.CarriedFlag, c.CarriedArtifact, c.Ripcord, c.Highlight, c.NearestEnemy,
-                    c.IsTech, c.ScreenRadius, c.DistanceToEdge), highlightPulse);
+                    c.IsTech, c.ScreenRadius, c.DistanceToEdge, c.IconStem), viewport, highlightPulse);
             }
         }
         finally
         {
             _sb.End();
         }
+        // HUD-16 — the additive native-icon pass (radarimage.cpp:417-420).
+        // Reuse the mapped contact array view: DrawNativeIcons maps the same
+        // struct on the stack, so there is no per-frame copy.
+        DrawNativeIcons(contacts, viewport, colorBlindSafe);
     }
 
     /// <summary>HUD-4 — native optional round radar border (radarimage.cpp:1130-1177):
@@ -352,7 +387,7 @@ public sealed class RadarBracketRenderer
         };
     }
 
-    private void DrawContact(RadarContact c, float highlightPulse)
+    private void DrawContact(RadarContact c, Viewport viewport, float highlightPulse)
     {
         var pt = new Vector2(c.ScreenPoint.X, c.ScreenPoint.Y);
         float a = Math.Clamp(c.Opacity, 0f, 1f);
@@ -361,57 +396,65 @@ public sealed class RadarBracketRenderer
         // keep their neutral white.
         var colour = c.ThreatFlash && c.SideColour is not null
             ? Color.Red : ContactColour(c.Type, c.SideColour);
-        switch (c.Type)
-        {
-            case RadarContactType.Ship:
-                // Small filled square, coloured by the contact's REAL side
-                // (P372 — native colours every side-bearing blip by
-                // pside->GetColor(), radarimage.cpp:682-685), falling back to
-                // the type-based teal only when no roster colour is known yet.
-                DrawFilledSquare(pt, 8f, colour, a);
-                break;
-            case RadarContactType.Station:
-                // Larger dot + outer ring (a station is bigger/heavier than a ship).
-                DrawRing(pt, 7f, 1.6f, colour, a);
-                DrawFilledDot(pt, 3.2f, colour, a);
-                break;
-            case RadarContactType.Warp:
-                // Two concentric rings suggesting the swirling vortex mouth.
-                DrawRing(pt, 7f, 1.5f, colour, a);
-                DrawRing(pt, 4f, 1.2f, colour, a);
-                break;
-            case RadarContactType.Asteroid:
-                // P495 — a build-spot rock silhouette: a small stroked hexagon
-                // in muted stone grey. These contacts exist ONLY while a
-                // station-type investment is hovered and only for the matching
-                // rocks, so the highlight below is the meaning-carrying part.
-                DrawHexagon(pt, 5f, colour, a);
-                break;
-            case RadarContactType.Missile:
-                // HUD-4 — a small rotated-square outline (a fast, armed dart).
-                DrawDiamond(pt, 6f, colour, a);
-                break;
-            case RadarContactType.Probe:
-                // HUD-4 — a hollow sensor ring + centre pip.
-                DrawRing(pt, 5f, 1.4f, colour, a);
-                DrawFilledDot(pt, 1.6f, colour, a);
-                break;
-            case RadarContactType.Mine:
-                // HUD-4 — a filled dot with four short cross ticks (a mine).
-                DrawFilledDot(pt, 2.6f, colour, a);
-                DrawMineCross(pt, 6f, colour, a);
-                break;
-            case RadarContactType.Treasure:
-                // HUD-4 — a hollow square crate outline.
-                DrawHollowSquare(pt, 6f, colour, a);
-                break;
-            case RadarContactType.Tech:
-                // HUD-4 — a triangle outline (research/tech).
-                DrawTriangle(pt, 7f, colour, a);
-                break;
-        }
+        // HUD-16 — when this contact's native icon surface decoded, the
+        // additive icon pass draws it and the procedural shape below is the
+        // fallback only (native has no shape at all, radarimage.cpp:417-420).
+        bool hasIcon = _icons?.Peek(c.IconStem) is not null;
+        if (!hasIcon)
+            switch (c.Type)
+            {
+                case RadarContactType.Ship:
+                    // Small filled square, coloured by the contact's REAL side
+                    // (P372 — native colours every side-bearing blip by
+                    // pside->GetColor(), radarimage.cpp:682-685), falling back to
+                    // the type-based teal only when no roster colour is known yet.
+                    DrawFilledSquare(pt, 8f, colour, a);
+                    break;
+                case RadarContactType.Station:
+                    // Larger dot + outer ring (a station is bigger/heavier than a ship).
+                    DrawRing(pt, 7f, 1.6f, colour, a);
+                    DrawFilledDot(pt, 3.2f, colour, a);
+                    break;
+                case RadarContactType.Warp:
+                    // Two concentric rings suggesting the swirling vortex mouth.
+                    DrawRing(pt, 7f, 1.5f, colour, a);
+                    DrawRing(pt, 4f, 1.2f, colour, a);
+                    break;
+                case RadarContactType.Asteroid:
+                    // P495 — a build-spot rock silhouette: a small stroked hexagon
+                    // in muted stone grey. These contacts exist ONLY while a
+                    // station-type investment is hovered and only for the matching
+                    // rocks, so the highlight below is the meaning-carrying part.
+                    DrawHexagon(pt, 5f, colour, a);
+                    break;
+                case RadarContactType.Missile:
+                    // HUD-4 — a small rotated-square outline (a fast, armed dart).
+                    DrawDiamond(pt, 6f, colour, a);
+                    break;
+                case RadarContactType.Probe:
+                    // HUD-4 — a hollow sensor ring + centre pip.
+                    DrawRing(pt, 5f, 1.4f, colour, a);
+                    DrawFilledDot(pt, 1.6f, colour, a);
+                    break;
+                case RadarContactType.Mine:
+                    // HUD-4 — a filled dot with four short cross ticks (a mine).
+                    DrawFilledDot(pt, 2.6f, colour, a);
+                    DrawMineCross(pt, 6f, colour, a);
+                    break;
+                case RadarContactType.Treasure:
+                    // HUD-4 — a hollow square crate outline.
+                    DrawHollowSquare(pt, 6f, colour, a);
+                    break;
+                case RadarContactType.Tech:
+                    // HUD-4 — a triangle outline (research/tech).
+                    DrawTriangle(pt, 7f, colour, a);
+                    break;
+            }
         // HUD-4 — native c_maskMe own-ship marker (radarimage.cpp:733-735): a
         // distinct hollow square around the own ship's square icon.
+        // (HUD-16: when the ship icon art decodes the base shape above is
+        // replaced by the icon; the own-ship marker is a separate native
+        // bracket surface and stays procedural as before, see HUD-13.)
         if (c.IsSelf)
             DrawHollowSquare(pt, 11f, colour, a);
         // HUD-5 — native overlay brackets (radarimage.cpp:334-357), drawn over
@@ -430,6 +473,96 @@ public sealed class RadarBracketRenderer
         // top so the matched rocks read clearly against the scene.
         if (c.IsInvestBuildSpot)
             DrawBuildSpotHighlight(pt, a, highlightPulse);
+    }
+
+    /// <summary>HUD-16 — draw every contact's native model icon in the additive
+    /// pass native uses (<c>radarimage.cpp:417-420</c>): 1:1 pixel size, centred
+    /// on <c>positionObject + positionIcon</c> (<see cref="RadarIconPlacement"/>),
+    /// tinted with <c>colorIcon</c> (<see cref="NativeIconColour"/>). Contacts
+    /// whose art is absent are skipped here and keep their procedural shape from
+    /// the alpha pass.</summary>
+    private void DrawNativeIcons(IReadOnlyList<RadarContact> contacts, Viewport viewport)
+    {
+        var icons = _icons;
+        if (icons is null) return;
+        // Resolve every surface BEFORE the batch begins: the first sight of a
+        // per-instance icon (a warp's map icon) decodes it here, once.
+        bool any = false;
+        for (int i = 0; i < contacts.Count; i++)
+        {
+            var c = contacts[i];
+            if (icons.EnsureLoaded(c.IconStem) is not null) any = true;
+        }
+        if (!any) return;
+        _sb.Begin(SpriteSortMode.Deferred, BlendState.Additive);
+        try
+        {
+            for (int i = 0; i < contacts.Count; i++)
+                DrawNativeIcon(contacts[i], viewport, icons);
+        }
+        finally
+        {
+            _sb.End();
+        }
+    }
+
+    /// <summary>HUD-16 — the HudContact view of <see cref="DrawNativeIcons"/>,
+    /// mapping the colour-blind-safe side colour on the stack (no copy).</summary>
+    private void DrawNativeIcons(IReadOnlyList<HudContact> contacts, Viewport viewport, bool colorBlindSafe)
+    {
+        var icons = _icons;
+        if (icons is null) return;
+        bool any = false;
+        for (int i = 0; i < contacts.Count; i++)
+        {
+            var c = contacts[i];
+            if (icons.EnsureLoaded(c.IconStem) is not null) any = true;
+        }
+        if (!any) return;
+        _sb.Begin(SpriteSortMode.Deferred, BlendState.Additive);
+        try
+        {
+            for (int i = 0; i < contacts.Count; i++)
+            {
+                var c = contacts[i];
+                Color? side = c.SideColor is { } color
+                    ? (colorBlindSafe
+                        ? HudPalette.Side(new Color(color.R, color.G, color.B, color.A))
+                        : new Color(color.R, color.G, color.B, color.A))
+                    : null;
+                DrawNativeIcon(new RadarContact((RadarContactType)c.Kind,
+                    new(c.Position.X, c.Position.Y), c.OnScreen, c.Opacity, side,
+                    c.Selected, c.BuildSpot,
+                    c.IsEnemy, c.IsSelf, c.AcceptedOrder, c.QueuedOrder, c.Threat, c.ThreatFlash,
+                    c.Subject, c.CarriedFlag, c.CarriedArtifact, c.Ripcord, c.Highlight, c.NearestEnemy,
+                    c.IsTech, c.ScreenRadius, c.DistanceToEdge, c.IconStem), viewport, icons);
+            }
+        }
+        finally
+        {
+            _sb.End();
+        }
+    }
+
+    private void DrawNativeIcon(in RadarContact c, Viewport viewport, RadarIconTextures icons)
+    {
+        if (icons.Peek(c.IconStem) is not { } texture) return;
+        // Native draws the icon at positionObject + positionIcon
+        // (radarimage.cpp:382-420). Only the on-screen-large state offsets it.
+        float bracketRadius = BracketRadiusFor(c);
+        float distanceToEdge = c.DistanceToEdge
+            ?? RadarScreenRadius.DistanceToEdge(c.ScreenPoint.X, c.ScreenPoint.Y,
+                viewport.Width, viewport.Height);
+        var offset = RadarIconPlacement.Offset(c.OnScreen, c.ScreenPoint.X, c.ScreenPoint.Y,
+            viewport.Width, viewport.Height, distanceToEdge, bracketRadius, _roundRadarIcons);
+        var position = new Vector2(c.ScreenPoint.X, c.ScreenPoint.Y) + offset;
+        // Scale RGB only: the Additive blend already multiplies by source alpha,
+        // so scaling alpha too would dim the icon by opacity squared.
+        var tint = NativeIconColour(c.SideColour, c.ThreatFlash);
+        float opacity = Math.Clamp(c.Opacity, 0f, 1f);
+        tint = new Color((byte)(tint.R * opacity), (byte)(tint.G * opacity), (byte)(tint.B * opacity), tint.A);
+        _sb.Draw(texture, position, null, tint, 0f,
+            new Vector2(texture.Width * 0.5f, texture.Height * 0.5f), 1f, SpriteEffects.None, 0f);
     }
 
     /// <summary>HUD-5b — whether native draws any overlay bracket at all for

@@ -1,0 +1,23 @@
+{
+  "task": "HUD-16",
+  "base": "e96b9943",
+  "build": {"command": "dotnet build AllegianceCore.slnx -c Release", "warnings": 0, "errors": 0},
+  "new_tests": {
+    "class": "Hud16RadarIconTests",
+    "count": 13,
+    "runs_alone": 3,
+    "result": "13/13 passed each run",
+    "allocation_1000_frames_bytes": 0
+  },
+  "fast_tier": {"command": "tools/run-tests.sh --tier fast", "tests": 9591, "result": "PASS", "seconds": 273.6},
+  "aot_publish": "not required (no src/Allegiance.Server or src/Allegiance.Core change)",
+  "artwork": {"loaded_surfaces": 117, "blank": 0, "missing": 0,
+              "note": "all core-resolvable contact icons decode non-blank; dericon drone hull icons are 8x8, everything else 16x16"},
+  "screenshots": {
+    "tool": "tools/hud16-proof",
+    "resolution": "1920x1080",
+    "skins": ["Classic", "Modern"],
+    "frames": ["ships", "probe", "treasure", "missile", "station", "aleph"],
+    "raw": "~/allegiance-evidence/HUD16/raw-classic/, ~/allegiance-evidence/HUD16/raw-modern/"
+  }
+}

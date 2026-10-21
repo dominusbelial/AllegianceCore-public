@@ -516,6 +516,10 @@ public sealed partial class Game1 : Game
     private ModernHudRenderer _modernHudRenderer = null!;
     private StarmapRenderer _starmapRenderer = null!;
     private RadarBracketRenderer _radarRenderer = null!;
+    // HUD-16 — the native per-contact radar icon surfaces and their
+    // type-id → surface-stem resolution cache (built once from the core).
+    private Rendering.RadarIconNameCache? _radarIconNames;
+    private Rendering.RadarIconTextures? _radarIconTextures;
     private Rendering.ShipSideTagRenderer _shipTagRenderer = null!;
     private Rendering.HelpOverlayRenderer _helpOverlayRenderer = null!;
     // P577 — the in-game Credits/Licences screen (F12), the visible-attribution
@@ -1858,6 +1862,7 @@ public sealed partial class Game1 : Game
         _feedbackTextures?.Dispose();   // P578 — release the eject-pod panel / death banner art
         _hudNativeTextures?.Dispose();  // HUD-10 — release compose/money/command/endurance art
         _statusTextures?.Dispose();   // HUD-6 — release the own-ship status icons
+        _radarIconTextures?.Dispose();   // HUD-16 — release the native radar contact icons
         _inventoryTextures?.Dispose();   // HUD-7 — release the inventory-pane art
         _warpRenderer?.Dispose();
         _projectileRenderer?.Dispose();

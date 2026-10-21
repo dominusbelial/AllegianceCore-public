@@ -3388,6 +3388,12 @@ public sealed partial class Game1
                     objectRadius, (worldPos - cameraEye).Length(), w, h, proj.M22,
                     site.Point.X, site.Point.Y);
 
+            // HUD-16 — the native radar icon surface for each contact
+            // (pmodel->GetIcon(), radarimage.cpp:591-593), resolved from the
+            // core's per-type iconName through the once-built cache, exactly
+            // like native's LoadRadarIcon(name) (trekigc.cpp:2731-2744).
+            var iconNames = _radarIconNames;
+
             // P527 — the radar EYE uses the own-ship RENDER pose (P508 local
             // sim), not the raw 20 Hz ServerShipUpdate pose, so every contact's
             // projection shares the frame's own position. Falls back to the raw
@@ -3449,7 +3455,8 @@ public sealed partial class Game1
                         IsSelf: true, IsSameSide: true,
                         Range: rangeLabels ? 0 : null,
                         ScreenRadius: ownBracket.ScreenRadius,
-                        DistanceToEdge: ownBracket.DistanceToEdge));
+                        DistanceToEdge: ownBracket.DistanceToEdge,
+                        IconStem: iconNames?.Ship(ownEnt.HullId)));
                 }
             }
 
@@ -3539,7 +3546,8 @@ public sealed partial class Game1
                             && pilot.PilotType >= Allegiance.Core.Wire.PlayerInfo.PilotTypePlayer,
                         detected: null),
                     ScreenRadius: shipBracket.ScreenRadius,
-                    DistanceToEdge: shipBracket.DistanceToEdge));
+                    DistanceToEdge: shipBracket.DistanceToEdge,
+                    IconStem: iconNames?.Ship(ship.HullId)));
                 // P372 — the in-world hull "team tag": drawn only for ON-SCREEN
                 // ships (an off-screen ship's edge-clamped bracket already
                 // carries its side colour), always in the contact's real side
@@ -3583,7 +3591,8 @@ public sealed partial class Game1
                     AcceptedOrder: stationCommand.CommandAccepted, QueuedOrder: stationCommand.CommandId is not null && !stationCommand.CommandAccepted,
                     CommandId: stationCommand.CommandId, CommandAccepted: stationCommand.CommandAccepted,
                     ScreenRadius: stationBracket.ScreenRadius,
-                    DistanceToEdge: stationBracket.DistanceToEdge));
+                    DistanceToEdge: stationBracket.DistanceToEdge,
+                    IconStem: iconNames?.Station(st.StationTypeId)));
             }
 
             // Warps in my sector.
@@ -3609,7 +3618,10 @@ public sealed partial class Game1
                     AcceptedOrder: warpCommand.CommandAccepted, QueuedOrder: warpCommand.CommandId is not null && !warpCommand.CommandAccepted,
                     CommandId: warpCommand.CommandId, CommandAccepted: warpCommand.CommandAccepted,
                     ScreenRadius: warpBracket.ScreenRadius,
-                    DistanceToEdge: warpBracket.DistanceToEdge));
+                    DistanceToEdge: warpBracket.DistanceToEdge,
+                    // Native warp icon = the map's warpDef.iconName, which the
+                    // wire's DataWarpIGC carries (warpIGC.cpp:34).
+                    IconStem: iconNames?.Warp(wp.IconName)));
             }
 
             // Missiles — outside All only missiles aimed at the player's own side
@@ -3641,7 +3653,10 @@ public sealed partial class Game1
                     sideCol is { } c ? new HudColor(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f) : null,
                     false, false,
                     ScreenRadius: missileBracket.ScreenRadius,
-                    DistanceToEdge: missileBracket.DistanceToEdge));
+                    DistanceToEdge: missileBracket.DistanceToEdge,
+                    // Native missile icon = dataMissileType->iconName
+                    // (missileigc.cpp:50,60), keyed by the wire's type id.
+                    IconStem: iconNames?.Missile(ms.TypeId)));
             }
 
             // Probes in my sector.
@@ -3665,7 +3680,8 @@ public sealed partial class Game1
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
                     SideHud(pb.SideId), isSel, false,
                     ScreenRadius: probeBracket.ScreenRadius,
-                    DistanceToEdge: probeBracket.DistanceToEdge));
+                    DistanceToEdge: probeBracket.DistanceToEdge,
+                    IconStem: iconNames?.Probe(pb.ProbetypeId)));
             }
 
             // Mines in my sector.
@@ -3686,7 +3702,8 @@ public sealed partial class Game1
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
                     SideHud(mine.SideId), false, false,
                     ScreenRadius: mineBracket.ScreenRadius,
-                    DistanceToEdge: mineBracket.DistanceToEdge));
+                    DistanceToEdge: mineBracket.DistanceToEdge,
+                    IconStem: iconNames?.Mine(mine.MinetypeId)));
             }
 
             // HUD-4b — resolve the own loadout/hull once per frame so every
@@ -3747,7 +3764,10 @@ public sealed partial class Game1
                     Range: rangeLabels ? (int)(centre + 0.5f) : null,
                     IsSelf: false, IsTech: isTech,
                     ScreenRadius: treasureBracket.ScreenRadius,
-                    DistanceToEdge: treasureBracket.DistanceToEdge));
+                    DistanceToEdge: treasureBracket.DistanceToEdge,
+                    // Native treasure icon = the treasure model's own icon, with
+                    // the useful-tech override to icontechbmp (radarimage.cpp:719,890).
+                    IconStem: iconNames?.Treasure(te.Code, te.PayloadId, isTech)));
             }
 
             // Asteroids — native ordinary-rock LOD (radarimage.cpp:903-930) plus
@@ -3784,7 +3804,10 @@ public sealed partial class Game1
                     AcceptedOrder: asteroidCommand.CommandAccepted, QueuedOrder: asteroidCommand.CommandId is not null && !asteroidCommand.CommandAccepted,
                     CommandId: asteroidCommand.CommandId, CommandAccepted: asteroidCommand.CommandAccepted,
                     ScreenRadius: asteroidBracket.ScreenRadius,
-                    DistanceToEdge: asteroidBracket.DistanceToEdge));
+                    DistanceToEdge: asteroidBracket.DistanceToEdge,
+                    // Native asteroid icon = AsteroidDef.iconName, carried by the
+                    // wire's DataAsteroidIGC.IconName (asteroidigc.cpp:35).
+                    IconStem: iconNames?.Asteroid(ast.IconName)));
             }
 
             // HUD-5b — opt-in evidence line for the frame (see _radarProofEnabled).

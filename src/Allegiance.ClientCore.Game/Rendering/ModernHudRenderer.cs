@@ -29,7 +29,8 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     private static readonly Color CarryGold = new(255, 213, 94);
 
     public ModernHudRenderer(SpriteBatch batch, Texture2D white, SpriteFont small, SpriteFont big, HudSettings settings,
-        SpriteFont? outlineSource = null, StatusTextures? nativeArt = null, HudNativeTextures? nativeHudTextures = null)
+        SpriteFont? outlineSource = null, StatusTextures? nativeArt = null, HudNativeTextures? nativeHudTextures = null,
+        RadarIconTextures? radarIcons = null)
         : base(batch, white, outlineSource is null ? small : Metrics(outlineSource, .25f), outlineSource is null ? big : Metrics(outlineSource, 30f / 56),
             nativeHudTextures: nativeHudTextures)
     {
@@ -37,7 +38,12 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         _smallSdf = new(white.GraphicsDevice, _small, outlineSource is null ? 1 : .25f);
         _bigSdf = new(white.GraphicsDevice, _big, outlineSource is null ? 1 : 30f / 56);
         _radar = new(batch, white, nativeArt);
+        _radar.SetRadarIcons(radarIcons);
     }
+
+    /// <summary>HUD-16 — attach the native contact-icon surfaces once the core
+    /// (and therefore the icon name tables) has loaded.</summary>
+    public void SetRadarIcons(RadarIconTextures? icons) => _radar.SetRadarIcons(icons);
     private static SpriteFont Metrics(SpriteFont source, float scale)
     {
         var glyphs = source.GetGlyphs().Values.OrderBy(g => g.Character).ToArray();

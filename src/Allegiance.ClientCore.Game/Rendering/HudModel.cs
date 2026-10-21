@@ -88,7 +88,12 @@ public readonly record struct HudContact(
     // floored by <see cref="RadarScreenRadius"/>) and <c>GetDistanceToEdge()</c>
     // (px from the placed point to the nearest viewport edge).
     float? ScreenRadius = null,
-    float? DistanceToEdge = null);
+    float? DistanceToEdge = null,
+    // HUD-16 — the native radar icon surface for this contact (native
+    // <c>pmodel-&gt;GetIcon()</c>, radarimage.cpp:591-593), resolved once per
+    // contact kind by <see cref="RadarIconNameCache"/>: the '&lt;iconName&gt;bmp'
+    // stem from the contact's core type data. Null keeps the procedural shape.
+    string? IconStem = null);
 public sealed record HudChat(IReadOnlyList<string> Lines, int Offset, string Input,
     bool Composing, double NowSeconds, string Recipient, string? FilterLabel = null,
     NativeComposeState ComposeState = NativeComposeState.NotComposing,
