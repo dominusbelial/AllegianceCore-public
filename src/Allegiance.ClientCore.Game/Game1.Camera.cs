@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using Allegiance.Core;
+using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.Session;
@@ -227,15 +228,15 @@ public sealed partial class Game1
     }
 
     /// <summary>
-    /// HUD-3 — resolve the native bottom target-pane snapshot from the player's
-    /// own T/G selection, independent of whether the target projects into the
-    /// current view. Values follow <c>WinTrek/consoledata.cpp:40-199</c>:
-    /// visible type (or "unknown" — the port has no native last-seen hull/sector
-    /// wire fields), side name + actual side colour, damageable hull/shield
-    /// fractions (0 when not visible/live), same-cluster range (-1 → the
-    /// sector-name fallback the port leaves unavailable), target speed (0 static,
-    /// -1 unseen dynamic), asteroid-only ore, and the lead predictor's in-range
-    /// flag (<c>WinTrek/indicator.cpp:405</c>).
+    /// HUD-3/HUD-18 — resolve the native bottom target-pane snapshot from the
+    /// player's own T/G selection, independent of whether the target projects
+    /// into the current view. Values follow <c>WinTrek/consoledata.cpp:40-199</c>:
+    /// visible type (or "unknown" — the port has no native last-seen hull), side
+    /// name + actual side colour, damageable hull/shield fractions (0 when not
+    /// visible/live), same-cluster range (else the native LOCATION: sector
+    /// fallback, HUD-18), target speed (0 static, -1 unseen dynamic),
+    /// asteroid-only ore, the native GlassHUD TTI (HUD-18), and the
+    /// client-computed in-range flag (<c>WinTrek/indicator.cpp:405</c>, HUD-18).
     /// </summary>
     private HudTargetPane? ComputeTargetPane()
     {
@@ -252,8 +253,197 @@ public sealed partial class Game1
                 TargetKind.Cluster => IgcObjectType.Cluster,
                 _ => IgcObjectType.Treasure,
             };
-            return TargetPaneModel.Build(_session.World, kind, t.Id, t.Name, _hullById, _shopCatalog?.StationTypes);
+            // HUD-18 — the TTI's GetSpeed(Me) is exactly HudFrame.Speed: the
+            // local sim's |velocity| while prediction renders, else the server's.
+            float? ownSpeed = null;
+            if (_session.World.MyShipId is { } me && _session.World.Ships.TryGetValue(me, out var mine)
+                && mine.Latest is { } mineUp)
+                ownSpeed = _ownShipPrediction && _ownSim.HaveHull
+                    ? _ownSim.Velocity.Length()
+                    : mineUp.Velocity.Length();
+            return TargetPaneModel.Build(_session.World, kind, t.Id, t.Name, _hullById,
+                _shopCatalog?.StationTypes, ComputeTargetInRange(kind, t.Id), ownSpeed);
         }
+    }
+
+    /// <summary>
+    /// HUD-18 — the selected mount's weapon, resolved once per (catalogue, hull,
+    /// loadout, selected mount) so the per-frame target-pane path does no
+    /// catalogue scan and allocates nothing. This is native
+    /// <c>trekClient.GetWeapon()</c> = <c>m_ship-&gt;GetMountedPart(ET_Weapon,
+    /// m_selectedWeapon)</c> (<c>clintlib/clintlib.cpp:1585-1588</c>), not the
+    /// first weapon in the loadout.
+    /// </summary>
+    private readonly record struct SelectedWeaponSpec(
+        bool Found,
+        bool AmmoPerShot,
+        bool EnergyWeapon,
+        float ProjectileSpeed,
+        float ProjectileLifespan,
+        float Power,
+        bool AbsoluteF,
+        SimVec MuzzleOffset);
+
+    private SelectedWeaponSpec? _rangeWeaponSpec;
+    private Rendering.ShopCatalog? _rangeWeaponCatalog;
+    private short _rangeWeaponHullId = -1;
+    private IReadOnlyList<ExpandedPartData>? _rangeWeaponLoadout;
+    private int _rangeWeaponMount = -1;
+
+    /// <summary>
+    /// HUD-18 — native's in-range flag for the current command target
+    /// (<c>WinTrek/indicator.cpp:183-228</c>), computed locally on the client
+    /// exactly as native does and independent of the server lead message and of
+    /// any <c>c_habmLeadIndicator</c>/relay capability. The decision itself is
+    /// <see cref="TargetWeaponRange.IsInRange"/>; this method only gathers the
+    /// native inputs:
+    /// <list type="bullet">
+    /// <item>shooter = the own ship (a boarded gunner returns false: native
+    /// solves with the parent's <c>GetTurretID()</c> part, which the client does
+    /// not store yet — HUD-18b);</item>
+    /// <item>weapon = the selected mount's catalogue weapon;</item>
+    /// <item>own pose/orientation = the own-shot echo's pose (<c>_poses[me]</c>),
+    /// own velocity = the server update's velocity, exactly as
+    /// <see cref="EmitOwnShots"/> uses them;</item>
+    /// <item>target pose/velocity/radius for the four kinds
+    /// <see cref="TargetPaneModel"/> resolves.</item>
+    /// </list>
+    /// </summary>
+    private bool ComputeTargetInRange(IgcObjectType kind, short id)
+    {
+        var world = _session.World;
+        if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var mine)
+            || mine.Latest is not { } mineUp)
+            return false;
+        // Out of scope (HUD-18b): a gunner's weapon is the parent's turret mount
+        // (indicator.cpp:196-204), and the client keeps only ParentId today.
+        if (mine.ParentId >= 0) return false;
+        if (kind is not (IgcObjectType.Ship or IgcObjectType.Station
+            or IgcObjectType.Asteroid or IgcObjectType.Warp))
+            return false;
+
+        var spec = ResolveSelectedWeapon(mine);
+        if (!spec.Found) return false;
+        if (!TargetPaneModel.TryTargetPose(world, kind, id, out var targetPos, out var targetVelocity))
+            return false;
+
+        var pose = _poses.TryGetValue(me, out var posed)
+            ? posed
+            : new Flight.PredictedPose(mineUp.Position, mineUp.Orientation);
+
+        short ownSide = world.MySideId ?? mine.SideId;
+        short? targetSide = kind switch
+        {
+            IgcObjectType.Ship => world.Ships.TryGetValue(id, out var targetShip) && targetShip.HasRealIdentity
+                ? targetShip.SideId : null,
+            IgcObjectType.Station => world.Stations.TryGetValue(id, out var targetStation)
+                ? targetStation.SideId : null,
+            _ => null,   // asteroid / aleph have no side (indicator.cpp:217)
+        };
+        bool friendly = targetSide is { } side && (side == ownSide || world.AreAllied(side, ownSide));
+
+        var ga = world.GlobalAttributesFor(ownSide);
+        // The port's CanSee stand-in: same cluster + visible (see
+        // TargetPaneModel.SameCluster).
+        bool sameCluster = TargetPaneModel.SameCluster(world, kind, id);
+        var input = new TargetWeaponRangeInput(
+            SameCluster: sameCluster,
+            CanSee: sameCluster,
+            HasWeapon: true,
+            ChaseCamera: _cameraMode is Rendering.CameraMode.Chase or Rendering.CameraMode.ExternalMissile,
+            FriendlyOrAllied: friendly,
+            ProjectilePower: spec.Power,
+            AbsoluteF: spec.AbsoluteF,
+            AmmoPerShot: spec.AmmoPerShot,
+            EnergyWeapon: spec.EnergyWeapon,
+            ProjectileSpeed: spec.ProjectileSpeed,
+            ProjectileLifespan: spec.ProjectileLifespan,
+            SpeedAmmoGa: ga.Get(GlobalAttributeSet.SpeedAmmo),
+            LifespanEnergyGa: ga.Get(GlobalAttributeSet.LifespanEnergy),
+            MyPosition: pose.Position,
+            MyOrientation: pose.Orientation,
+            MyVelocity: mineUp.Velocity,
+            MountPosition: spec.MuzzleOffset,
+            TargetRadius: TargetRadius(kind, id),
+            TargetPosition: targetPos,
+            TargetVelocity: targetVelocity);
+        return TargetWeaponRange.IsInRange(input);
+    }
+
+    /// <summary>HUD-18 — the target's contact radius: 0.5 × hull Length for a
+    /// ship (<c>Game1.FlightInput.cs</c> own/remote radius rule), the static
+    /// model's exported Radius for a station/asteroid/aleph.</summary>
+    private float TargetRadius(IgcObjectType kind, short id)
+    {
+        var world = _session.World;
+        switch (kind)
+        {
+            case IgcObjectType.Ship:
+                return world.Ships.TryGetValue(id, out var ship)
+                    ? 0.5f * MathF.Max(0f, HullLength(ship.HullId)) : 0f;
+            case IgcObjectType.Station:
+                return world.Stations.TryGetValue(id, out var station)
+                    && _shopCatalog?.StationTypes is { } stations
+                    && stations.TryGetValue(station.StationTypeId, out var stationType)
+                    ? stationType.Radius : 0f;
+            case IgcObjectType.Asteroid:
+                return world.Asteroids.TryGetValue(id, out var asteroid) ? asteroid.Radius : 0f;
+            case IgcObjectType.Warp:
+                return world.Warps.TryGetValue(id, out var warp) ? warp.Radius : 0f;
+            default:
+                return 0f;
+        }
+    }
+
+    private SelectedWeaponSpec ResolveSelectedWeapon(ShipEntity mine)
+    {
+        if (_rangeWeaponSpec is { } cached
+            && ReferenceEquals(_rangeWeaponCatalog, _shopCatalog)
+            && _rangeWeaponHullId == mine.HullId
+            && ReferenceEquals(_rangeWeaponLoadout, mine.Loadout)
+            && _rangeWeaponMount == _selectedMount)
+            return cached;
+
+        var spec = ResolveSelectedWeaponUncached(mine);
+        _rangeWeaponSpec = spec;
+        _rangeWeaponCatalog = _shopCatalog;
+        _rangeWeaponHullId = mine.HullId;
+        _rangeWeaponLoadout = mine.Loadout;
+        _rangeWeaponMount = _selectedMount;
+        return spec;
+    }
+
+    private SelectedWeaponSpec ResolveSelectedWeaponUncached(ShipEntity mine)
+    {
+        var miss = new SelectedWeaponSpec(false, false, false, 0f, 0f, 0f, false, default);
+        var catalog = _shopCatalog;
+        if (catalog?.ProjectileTypes is not { } projectiles || mine.Loadout is not { } loadout)
+            return miss;
+
+        // GetMountedPart(ET_Weapon, m_selectedWeapon): the weapon on the
+        // SELECTED fixed mount, not the first weapon in the loadout.
+        if (Rendering.SelectedMountWeapon.Resolve(loadout, catalog.Parts, _selectedMount) is not { } resolved
+            || !projectiles.TryGetValue(resolved.ProjectileTypeId, out var projectile))
+            return miss;
+
+        // w->GetPosition(): the hardpoint muzzle in the ship's local frame; a
+        // missing hull/cvh degrades to the ship centre (zero offset), exactly
+        // like the own-shot echo (Game1.FlightInput.MuzzleOffsetsFor).
+        SimVec muzzle = default;
+        if (_hullById.TryGetValue(mine.HullId, out var hull) && hull.Hardpoints.Length > 0
+            && MuzzleOffsetsFor(hull) is { } muzzles
+            && (uint)_selectedMount < (uint)muzzles.Length)
+            muzzle = muzzles[_selectedMount];
+
+        return new SelectedWeaponSpec(
+            Found: true,
+            AmmoPerShot: resolved.CAmmoPerShot != 0,
+            EnergyWeapon: resolved.EnergyPerShot != 0f,
+            ProjectileSpeed: projectile.Speed,
+            ProjectileLifespan: projectile.Lifespan,
+            Power: projectile.Power,
+            AbsoluteF: projectile.AbsoluteF,
+            MuzzleOffset: muzzle);
     }
 
     /// <summary>

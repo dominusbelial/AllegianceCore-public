@@ -47,6 +47,7 @@ public sealed partial class ClientWorld
         promoted.Loadout = parent.Loadout;
         promoted.Cargo = parent.Cargo;
         promoted.SectorId = parent.SectorId;
+        promoted.StatusSectorKnown = parent.StatusSectorKnown;   // HUD-18
         promoted.StationId = parent.StationId;
         promoted.State = parent.State;
         promoted.IsDead = false;

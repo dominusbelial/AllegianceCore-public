@@ -30,7 +30,14 @@ public static class TargetPaneModel
         short id,
         string? fallbackName = null,
         IReadOnlyDictionary<short, DataHullTypeIGC>? hullTypes = null,
-        IReadOnlyDictionary<short, DataStationTypeIGC>? stationTypes = null)
+        IReadOnlyDictionary<short, DataStationTypeIGC>? stationTypes = null,
+        // HUD-18 — the client-side in-range flag from TargetWeaponRange
+        // (indicator.cpp:405). Game1.ComputeTargetPane supplies the local solve;
+        // the server lead message is NOT used here any more.
+        bool inRange = false,
+        // HUD-18 — the own |velocity| the HUD frame presents (HudFrame.Speed),
+        // used only by the TTI readout. Null derives it from the own pose.
+        float? ownSpeed = null)
     {
         string? name = Safe(fallbackName);
         string type = "unknown";
@@ -42,31 +49,13 @@ public static class TargetPaneModel
         // Native GetRange (consoledata.cpp:182-199) needs the target in the
         // player's cluster; GetPercentHitPoints (202-212) and station shields
         // (272-276) reuse that same test, plus the docked-station exception.
-        bool sameCluster = false;
-        bool dockedStation = false;
+        bool sameCluster = SameCluster(world, kind, id, out bool dockedStation);
         float? distance = null;
-        if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own))
-        {
-            dockedStation = kind == IgcObjectType.Station && own.StationId >= 0 && own.StationId == id;
-            if (own.SectorId >= 0)
-            {
-                short ownSector = own.SectorId;
-                sameCluster = kind switch
-                {
-                    IgcObjectType.Ship => world.Ships.TryGetValue(id, out var rShip)
-                        && !rShip.IsNotVisible && rShip.SectorId == ownSector,
-                    IgcObjectType.Station => world.Stations.TryGetValue(id, out var rSt)
-                        && rSt.ClusterId == ownSector,
-                    IgcObjectType.Asteroid => world.Asteroids.TryGetValue(id, out var rAst)
-                        && rAst.ClusterId == ownSector,
-                    IgcObjectType.Warp => world.Warps.TryGetValue(id, out var rWarp)
-                        && rWarp.ClusterId == ownSector,
-                    _ => false,
-                };
-                if (sameCluster && own.Latest is { } ownUp && TryPosition(world, kind, id, out var targetPos))
-                    distance = (targetPos - ownUp.Position).Length();
-            }
-        }
+        if (sameCluster
+            && world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own)
+            && own.Latest is { } ownUp
+            && TryTargetPose(world, kind, id, out var targetPos, out _))
+            distance = (targetPos - ownUp.Position).Length();
 
         switch (kind)
         {
@@ -162,7 +151,29 @@ public static class TargetPaneModel
                 break;
         }
 
-        var lead = world.LeadIndicator;
+        // HUD-18 — LOCATION: fallback. Native's TargetRangeString switches to
+        // "LOCATION:" + GetSectorName(Target) exactly when GetRange returned -1
+        // (dialog.mdl:4053-4060), so the sector name is only resolved then.
+        string? sectorName = distance is null ? ResolveSectorName(world, kind, id) : null;
+
+        // HUD-18 — GHLargeTargetTTI (dialog.mdl:1280-1355). Native hides the
+        // whole group while docked: SwitchImage(GetPercentHitPoints(MyStation),
+        // emptyImage, [(0, ...)]) at :1327-1330. A valid MyStation is the
+        // player's docked station, the port's ShipEntity.StationId >= 0.
+        string? timeToIntercept = null;
+        if (world.MyShipId is { } ownId && world.Ships.TryGetValue(ownId, out var ownEntity)
+            && ownEntity.StationId < 0)
+        {
+            // Native feeds GetRange straight in, including the -1 no-range
+            // sentinel, and GetSpeed(Me)/GetSpeed(Target) as scalar lengths
+            // (consoledata.cpp:136-199). The pane Speed already carries the
+            // native 0/-1 sentinels for static/unseen targets.
+            timeToIntercept = TargetTti.Text(
+                distance ?? -1f,
+                ownSpeed ?? ownEntity.Latest?.Velocity.Length() ?? 0f,
+                speed ?? 0f);
+        }
+
         return new HudTargetPane(
             Present: true,
             Name: name,
@@ -175,8 +186,78 @@ public static class TargetPaneModel
             Speed: speed,
             OreFraction: ore,
             KillBonusPercent: null,   // per-target experience is not on the client wire
-            InRange: lead.HasLead && lead.InRange,
-            IsShip: isShip);
+            // HUD-18 — the client-side in-range flag (indicator.cpp:405,407),
+            // supplied by Game1.ComputeTargetPane; never the lead message.
+            InRange: inRange,
+            IsShip: isShip,
+            SectorName: sectorName,
+            TimeToIntercept: timeToIntercept);
+    }
+
+    /// <summary>
+    /// HUD-18 — <c>ModelData::GetSectorName</c> (<c>WinTrek/consoledata.cpp:70-87</c>):
+    /// the target's cluster name when it can be seen, else a ship's last-known
+    /// status sector, else "unknown". The port's <c>CanSee</c> stand-in is the
+    /// same-cluster/visibility test <see cref="SameCluster"/>; a static model in
+    /// another cluster is resolved from the cluster it was exported in
+    /// (<c>DataStationIGC.ClusterId</c>/<c>DataAsteroidIGC.ClusterId</c>/
+    /// <c>DataWarpIGC.ClusterId</c>) — native's <c>CanSee</c> is true for a
+    /// friendly/known station, and this keeps the sector name available where
+    /// native's null-cluster branch would only say "unknown".
+    /// </summary>
+    private static string? ResolveSectorName(ClientWorld world, IgcObjectType kind, short id)
+    {
+        short? clusterId = kind switch
+        {
+            // A ship's cluster is only trustworthy once a SHIP_STATUS or
+            // SET_CLUSTER established a real sector (StatusSectorKnown): a new
+            // ShipEntity defaults SectorId to 0, which may be a real cluster id.
+            IgcObjectType.Ship => world.Ships.TryGetValue(id, out var ship)
+                && ship.StatusSectorKnown && ship.SectorId >= 0 ? ship.SectorId : null,
+            IgcObjectType.Station => world.Stations.TryGetValue(id, out var st) ? st.ClusterId : null,
+            IgcObjectType.Asteroid => world.Asteroids.TryGetValue(id, out var ast) ? ast.ClusterId : null,
+            IgcObjectType.Warp => world.Warps.TryGetValue(id, out var warp) ? warp.ClusterId : null,
+            _ => null,
+        };
+        if (clusterId is { } cid
+            && world.Clusters.TryGetValue(cid, out var cluster)
+            && Safe(cluster.Name) is { } clusterName)
+            return clusterName;
+        return "unknown";
+    }
+
+    /// <summary>
+    /// HUD-18 — the port's same-cluster/visible test, native
+    /// <c>targetModel-&gt;GetCluster() == pcluster &amp;&amp; CanSee(targetModel)</c>
+    /// (<c>WinTrek/indicator.cpp:188-192</c>, <c>consoledata.cpp:182-199</c>).
+    /// A ship must be in the own sector and not hidden/dead; a static model is
+    /// in range of the sector test alone. The per-target scanner-range part of
+    /// native <c>CanSee</c> (<c>Igc/shipIGC.h:380-389</c>) is not modelled by the
+    /// port and is approximated by this cluster/visibility test, the same
+    /// stand-in the pane's hull/shield/range rules already use.
+    /// </summary>
+    public static bool SameCluster(ClientWorld world, IgcObjectType kind, short id) =>
+        SameCluster(world, kind, id, out _);
+
+    private static bool SameCluster(ClientWorld world, IgcObjectType kind, short id, out bool dockedStation)
+    {
+        dockedStation = false;
+        if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)) return false;
+        dockedStation = kind == IgcObjectType.Station && own.StationId >= 0 && own.StationId == id;
+        if (own.SectorId < 0) return false;
+        short ownSector = own.SectorId;
+        return kind switch
+        {
+            IgcObjectType.Ship => world.Ships.TryGetValue(id, out var rShip)
+                && !rShip.IsNotVisible && rShip.SectorId == ownSector,
+            IgcObjectType.Station => world.Stations.TryGetValue(id, out var rSt)
+                && rSt.ClusterId == ownSector,
+            IgcObjectType.Asteroid => world.Asteroids.TryGetValue(id, out var rAst)
+                && rAst.ClusterId == ownSector,
+            IgcObjectType.Warp => world.Warps.TryGetValue(id, out var rWarp)
+                && rWarp.ClusterId == ownSector,
+            _ => false,
+        };
     }
 
     /// <summary>Printable-ASCII sanitisation (spritefont range 32..126), but
@@ -200,13 +281,18 @@ public static class TargetPaneModel
         return Neutral;
     }
 
-    private static bool TryPosition(ClientWorld world, IgcObjectType kind, short id, out SimVec position)
+    /// <summary>HUD-18 — the target's live position and velocity for the local
+    /// in-range solve: a ship's last <c>ServerShipUpdate</c> pose/velocity, the
+    /// exported static position with zero velocity for station/asteroid/warp.</summary>
+    public static bool TryTargetPose(ClientWorld world, IgcObjectType kind, short id,
+        out SimVec position, out SimVec velocity)
     {
+        velocity = default;
         switch (kind)
         {
             case IgcObjectType.Ship:
                 if (world.Ships.TryGetValue(id, out var ship) && ship.Latest is { } up)
-                { position = up.Position; return true; }
+                { position = up.Position; velocity = up.Velocity; return true; }
                 break;
             case IgcObjectType.Station:
                 if (world.Stations.TryGetValue(id, out var st))

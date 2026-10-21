@@ -35,6 +35,8 @@ public static class HudStringCache
     private static readonly Dictionary<string, string> _shipSummary = new(StringComparer.Ordinal);
     private static readonly Dictionary<string, string> _targetSummary = new(StringComparer.Ordinal);
     private static readonly Dictionary<string, string> _turretType = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, string> _location = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, string> _tti = new(StringComparer.Ordinal);
 
     /// <summary>Native whole-number formatting (<c>"0"</c>): round half away
     /// from zero, like <c>string.Format</c>.</summary>
@@ -126,6 +128,19 @@ public static class HudStringCache
     /// <summary>Command-summary selected-target row.</summary>
     public static string TargetSummary(string name) =>
         Get(_targetSummary, name, static n => $"Target: {n}");
+
+    /// <summary>HUD-18 — native <c>TargetRangeString</c>'s sector fallback
+    /// (<c>"LOCATION:" + GetSectorName(Target)</c>, <c>Artwork/dialog.mdl:4053-4060</c>;
+    /// note native has NO space after the colon). Cached by the sector name so
+    /// the per-frame draw path reuses one instance.</summary>
+    public static string Location(string sectorName) =>
+        Get(_location, sectorName, static n => "LOCATION:" + n);
+
+    /// <summary>HUD-18 — the Modern pane's <c>"TTI: " + GHTTI</c> line
+    /// (<c>Artwork/dialog.mdl:1348-1353</c>). <paramref name="value"/> is the
+    /// already-cached m:ss/infinite string from <see cref="TargetTti.Text"/>.</summary>
+    public static string Tti(string value) =>
+        Get(_tti, value, static v => "TTI: " + v);
 
     /// <summary>HUD-12b — the turret suffix on the source-ship type
     /// (<c>&lt;type&gt; (turret)</c>). Cached by the hull name so the

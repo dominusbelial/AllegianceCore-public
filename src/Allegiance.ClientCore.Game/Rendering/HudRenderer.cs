@@ -2226,6 +2226,15 @@ public class HudRenderer
             string range = string.Concat("RANGE: ", HudFormat.FormatNativeNumber(distance));
             DrawRawText(rangeFont, range, new(x0 + 400f * s, y0 - 33f * s - PaneTextSize(rangeFont, range, rangeFs).Y), side, rangeFs);
         }
+        else if (tp.SectorName is { } sectorName)
+        {
+            // HUD-18 — native TargetRangeString's other branch:
+            // "LOCATION:" + GetSectorName(Target), no trailing space
+            // (dialog.mdl:4053-4060). Drawn at the same native Point(400,33)
+            // anchor and cached per sector name (no per-frame concat).
+            string location = HudStringCache.Location(sectorName);
+            DrawRawText(rangeFont, location, new(x0 + 400f * s, y0 - 33f * s - PaneTextSize(rangeFont, location, rangeFs).Y), side, rangeFs);
+        }
         if (tp.Speed is { } speed)
         {
             string text = string.Concat("SPEED: ", HudFormat.FormatNativeNumber(speed));

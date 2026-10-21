@@ -113,9 +113,9 @@ public class TargetPaneModelTests
         Assert.NotNull(same.Distance);
         Assert.Equal(300.0, same.Distance!.Value, 1);
 
-        // The port has no native last-seen sector, so the -1 → LOCATION:
-        // sector fallback stays unavailable (Distance stays null); the pane
-        // still resolves the target's name.
+        // Out of the own cluster GetRange is -1, so the native LOCATION:
+        // fallback applies (HUD-18) and Distance stays null; the pane still
+        // resolves the target's name and the sector it was exported in.
         var other = TargetPaneModel.Build(w, IgcObjectType.Station, 101);
         Assert.Null(other.Distance);
         Assert.Equal("station 101", other.Name);

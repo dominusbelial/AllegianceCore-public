@@ -74,6 +74,7 @@ public sealed partial class ClientWorld
         ship.StationId = -1;
         ship.State = ShipStatusMessage.StateFlying;
         ship.SectorId = carrier.SectorId;
+        ship.StatusSectorKnown = carrier.StatusSectorKnown;   // HUD-18 — carrier's real sector
         ship.PoseSectorId = carrier.PoseSectorId ?? (carrier.SectorId >= 0 ? carrier.SectorId : null);
         ship.Unknown = false;
         var pose = ServerShipUpdate.FromValues(message.ShipId, previous?.StateM ?? 0,

@@ -47,7 +47,7 @@ public static class HudElements
         ("Target kill bonus", new(HudAnchor.Bottom, -40f, 135f, true)),
         ("Target in weapon range", new(HudAnchor.Bottom, -120f, 115f, true)),
         ("Target model preview", new(HudAnchor.Bottom, 270f, 9f, true)),
-        ("Target time to intercept", null),
+        ("Target time to intercept", new(HudAnchor.Bottom, 242f, 10f, true)),
         ("Cockpit centre reticle", new(HudAnchor.Center, 0f, 0f, true)),
         ("Velocity direction marker", new(HudAnchor.Projected, 0f, 0f, true)),
         ("Joystick turning indicator", null),
@@ -217,11 +217,21 @@ public static class HudElements
                     case "Target type description": Pane(c.TargetPane?.TypeDescription); break;
                     case "Target side identity": Pane(c.TargetPane?.SideName, color: c.TargetPane?.SideColor); break;
                     case "Target hull": Pane(null, c.TargetPane?.HullFraction); break;
-                    case "Target range or sector": Pane(null, c.TargetPane?.Distance); break;
+                    // HUD-18 — RANGE:n when a distance resolved, else the native
+                    // LOCATION:<sector> fallback (dialog.mdl:4053-4060); the row is
+                    // present when either text is available.
+                    case "Target range or sector":
+                        Pane(c.TargetPane is { Distance: null, SectorName: { } sector }
+                            ? HudStringCache.Location(sector) : null,
+                            c.TargetPane?.Distance);
+                        break;
                     case "Target shield": Pane(null, c.TargetPane?.ShieldFraction); break;
                     case "Target speed": Pane(null, c.TargetPane?.Speed); break;
                     case "Target kill bonus": Pane(null, c.TargetPane?.KillBonusPercent); break;
                     case "Target in weapon range": Pane(null, c.TargetPane is { } tp ? (tp.InRange ? 1 : 0) : null); break;
+                    case "Target time to intercept":
+                        Pane(c.TargetPane?.TimeToIntercept is { } tti ? HudStringCache.Tti(tti) : null);
+                        break;
                     case "Target ore": Target(null, c.Target?.OreFraction); break;
                     case "Cockpit centre reticle": element = element with { Available = true, Visible = model.ReticleVisible }; break;
                     case "Velocity direction marker":

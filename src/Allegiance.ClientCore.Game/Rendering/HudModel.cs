@@ -40,7 +40,15 @@ public readonly record struct HudTargetPane(
     float? OreFraction,
     float? KillBonusPercent,
     bool InRange,
-    bool IsShip);
+    bool IsShip,
+    // HUD-18 — native TargetRangeString's LOCATION: fallback when GetRange is
+    // -1 (Artwork/dialog.mdl:4053-4060; WinTrek/consoledata.cpp:70-87). Null
+    // when a RANGE distance is present.
+    string? SectorName = null,
+    // HUD-18 — native GHTTI (Artwork/dialog.mdl:1280-1355), GlassHUD-only;
+    // the port draws it in the Modern (alternate-layout) pane. Null when
+    // docked (:1327-1330).
+    string? TimeToIntercept = null);
 public readonly record struct HudNotice(string Text, bool Critical, float Opacity);
 
 /// <summary>HUD-6 resolved own-ship centre-HUD status (the

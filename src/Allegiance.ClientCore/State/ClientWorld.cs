@@ -2407,6 +2407,7 @@ public sealed partial class ClientWorld
         // before the seat below overwrites SectorId.
         bool ownSectorChanged = e.SectorId != set.SectorId && set.Ship.ShipId == (MyShipId ?? set.Ship.ShipId);
         e.SectorId = set.SectorId;   // top-level SET_CLUSTER sectorID
+        e.StatusSectorKnown = true;   // HUD-18 — a real sector, never the 0 default
         e.PoseSectorId = set.SectorId;
         e.Unknown = false;
         e.State = ShipStatusMessage.StateFlying;
@@ -2735,6 +2736,7 @@ public sealed partial class ClientWorld
         if (_botWorld is not null && e.StateTime > status.StateTime) return;
         e.HullId = status.HullId;
         e.SectorId = status.SectorId;
+        e.StatusSectorKnown = true;   // HUD-18 — last-known sector is now real (consoledata.cpp:76-85)
         e.StationId = status.StationId;
         e.ParentId = status.ParentId;
         e.State = status.State;
@@ -2808,6 +2810,7 @@ public sealed partial class ClientWorld
             bool wasGone = e.IsGone;
             bool hadPose = e.Latest is not null;
             e.SectorId = ownSector;   // P375 — every 176 entry is in our own cluster (see above)
+            e.StatusSectorKnown = true;   // HUD-18 — in-cluster telemetry is a real sector
             e.PoseSectorId = ownSector;
             // The explicitly authorized local benchmark observer receives all ships
             // in its requested sector; scanner-hidden status belongs to ordinary play.

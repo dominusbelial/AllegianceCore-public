@@ -188,6 +188,17 @@ public sealed class ShipEntity
     /// <summary>Status.GetSectorID() — the sector the ship is currently in.</summary>
     public short SectorId { get; internal set; }
 
+    /// <summary>HUD-18 — true once <see cref="SectorId"/> came from real sector
+    /// telemetry (<c>SHIP_STATUS</c>'s <c>Status.GetSectorID()</c>,
+    /// <c>SET_CLUSTER</c>, an in-cluster <c>HEAVY_SHIPS_UPDATE</c>, a relaunch at
+    /// its carrier or a promoted turret seat). A brand-new <see cref="ShipEntity"/>
+    /// keeps the C# default <c>SectorId = 0</c> — and 0 is a real cluster id in
+    /// some missions — so a ship known only from <c>EXPORT(26)</c> must not be
+    /// reported as being in sector 0. Native's <c>PlayerInfo::LastSeenSector()</c>
+    /// equivalent (<c>WinTrek/consoledata.cpp:76-85</c>) only exists after a
+    /// status, and this flag is the port's "a status has landed" marker.</summary>
+    public bool StatusSectorKnown { get; internal set; }
+
     /// <summary>Status.GetStationID() (NA/-1 when flying free).</summary>
     public short StationId { get; internal set; }
 

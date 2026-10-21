@@ -27,6 +27,9 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     private static readonly Color Alert = new(255, 121, 74);
     private static readonly Color CloakViolet = new(158, 140, 250);
     private static readonly Color CarryGold = new(255, 213, 94);
+    // HUD-18 — the four in-range diamond diagonals, a static array so the draw
+    // path no longer allocates a new int[] every frame.
+    private static readonly (int X, int Y)[] DiamondCorners = [(-1, -1), (-1, 1), (1, -1), (1, 1)];
 
     public ModernHudRenderer(SpriteBatch batch, Texture2D white, SpriteFont small, SpriteFont big, HudSettings settings,
         SpriteFont? outlineSource = null, StatusTextures? nativeArt = null, HudNativeTextures? nativeHudTextures = null,
@@ -291,6 +294,13 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             string range = string.Concat("RANGE: ", HudFormat.FormatNativeNumber(distance));
             DrawRawText(_small, range, new(x0 + 400f * s, y0 - 33f * s - PaneTextSize(_small, range).Y), Muted);
         }
+        else if (tp.SectorName is { } sectorName)
+        {
+            // HUD-18 — native TargetRangeString's LOCATION: fallback
+            // (dialog.mdl:4053-4060), same native anchor as RANGE.
+            string location = HudStringCache.Location(sectorName);
+            DrawRawText(_small, location, new(x0 + 400f * s, y0 - 33f * s - PaneTextSize(_small, location).Y), Muted);
+        }
         if (tp.Speed is { } speed)
         {
             string text = string.Concat("SPEED: ", HudFormat.FormatNativeNumber(speed));
@@ -315,16 +325,27 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         DrawRawText(_small, "ARMOR", new(hullX - arcRadius - 8f * s - armorSize.X, gaugeY - armorSize.Y / 2f), Muted);
         DrawRawText(_small, "SHIELD", new(shieldX + arcRadius + 8f * s, gaugeY - shieldSize.Y / 2f), Muted);
 
+        // HUD-18 — the native GlassHUD-only TTI line (dialog.mdl:1280-1355).
+        // Under the SPEED line, right-aligned to the same x; the string is the
+        // cached TargetTti.Text (this method must not allocate per frame).
+        if (tp.TimeToIntercept is { } tti)
+        {
+            string text = HudStringCache.Tti(tti);
+            var size = PaneTextSize(_small, text);
+            DrawRawText(_small, text, new(x0 + 242f * s - size.X, y0 - 10f * s - size.Y), Muted);
+        }
+
         // Native turret-range flag (dialog.mdl:4073-4081), modern diamond.
         if (tp.InRange)
         {
             var c = new Vector2(x0 + 200f * s, y0 - 90f * s);
-            foreach (int x in new[] { -1, 1 }) foreach (int y in new[] { -1, 1 })
+            foreach (var (x, y) in DiamondCorners)
                 DrawLine(c, c + new Vector2(x * 7, y * 7) * _scale, _scale, side);
         }
 
         ElementDrawn("Target name", "Target type description", "Target side identity",
-            "Target hull", "Target shield", "Target range or sector", "Target speed", "Target in weapon range");
+            "Target hull", "Target shield", "Target range or sector", "Target speed",
+            "Target in weapon range", "Target time to intercept");
     }
 
     private void DrawModernTargetGauge(Vector2 center, float fraction, Color color, float scale)
