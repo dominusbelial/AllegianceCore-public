@@ -48,7 +48,56 @@ internal static class MissileIntercept
         }
         double late = guess;
         if (late < inflection) late = inflection + 1;
-        while (Slope(late) > epsilon) late += 1;
-        return (float)Newton(a, b, c, d, late);
+        // Native missileigc.cpp:339-341 steps `t += 1.0` until the slope is
+        // sufficiently negative — uncapped, it runs ~|dv|*sqrt(2)/acceleration
+        // times and never terminates once t passes 2^53 (the MSL-1 / batch-16
+        // 482 s sector stall). MSL-1 NON-NATIVE bound: keep the literal unit
+        // stepping for the first LateStepCap steps (so every normal-case result
+        // stays bit-identical), then jump straight to the slope root.
+        int steps = 0;
+        while (Slope(late) > epsilon)
+        {
+            if (++steps > LateStepCap) { late = LateSlopeRoot(b, c, d, epsilon, late); break; }
+            late += 1;
+        }
+        float t = (float)Newton(a, b, c, d, late);
+        // MSL-1 non-native: at absurd |dv| the bounded Newton can overflow
+        // t^4 to NaN (or past float range); fall back to the (finite) late start instead of
+        // propagating NaN into the heading. Never taken for finite results.
+        return float.IsFinite(t) ? t : (float)late;
+    }
+
+    /// <summary>MSL-1 — unit steps of the native late-root search taken before
+    /// the analytic jump (<see cref="LateSlopeRoot"/>).</summary>
+    internal const int LateStepCap = 10_000;
+
+    /// <summary>
+    /// MSL-1 (non-native) — the first <c>late + k</c> (integer k) at which
+    /// <c>S(t) = b + 2ct - 4dt³ &lt;= epsilon</c>, i.e. where native's unit
+    /// stepping would stop, found in O(1) iterations. Beyond the slope maximum
+    /// (<c>t &gt; sqrt(c/6d)</c>, guaranteed here since late &gt; inflection)
+    /// S is concave and decreasing, so Newton started right of the root
+    /// descends monotonically onto it.
+    /// </summary>
+    private static double LateSlopeRoot(double b, double c, double d, double epsilon, double late)
+    {
+        double S(double t) => b + 2 * c * t - 4 * d * t * t * t - epsilon;
+        double hi = Math.Max(late, 1);
+        for (int i = 0; i < 2100 && S(hi) > 0; i++) hi *= 2;   // bracket from the right
+        double t = hi;
+        for (int i = 0; i < 100; i++)
+        {
+            double slope = 2 * c - 12 * d * t * t;
+            if (!(slope < 0)) break;
+            double next = t - S(t) / slope;
+            if (!(next < t) || next < late) break;
+            t = next;
+        }
+        if (!double.IsFinite(t) || t <= late) return late;
+        double k = Math.Ceiling(t - late);
+        double result = late + k;
+        // Round-off at the root: step at most a few units, as native would.
+        for (int i = 0; i < 4 && S(result) > 0; i++) result += 1;
+        return result;
     }
 }

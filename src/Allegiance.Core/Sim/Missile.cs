@@ -14,6 +14,11 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
     private readonly double _timeReady;
     private float _impactTime;
     private bool _terminated;
+    // MSL-1 — the missile's attitude, as native keeps one per model
+    // (missileigc.cpp:78-81 `Orientation o(dataMissile->forward)`; steered at
+    // :366,389-391 via Orientation::TurnTo). Forward is derived from it, so it
+    // is always the unit forward row of a renormalized basis.
+    private readonly Orientation _orientation = new();
 
     /// <summary>Captured warp detonation time, in simulation seconds.</summary>
     public double? WarpBombTime { get; internal set; }
@@ -41,7 +46,7 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
         _sector = sector ?? throw new ArgumentNullException(nameof(sector));
         MissileType = missileType;
         Velocity = velocity;
-        Forward = forward.Normalize();
+        _orientation.Set(forward);                      // missileigc.cpp:79 Orientation o(dataMissile->forward)
         Launcher = launcher;
         Target = target;
         LockFraction = lockFraction;
@@ -72,11 +77,11 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
     /// <c>InitialSpeed</c>.</summary>
     public Vector3 Velocity { get; private set; }
 
-    /// <summary>The normalised heading this missile flies along. Mutable since
-    /// P179: a homing missile re-orients it each tick toward its lead point
-    /// (seeded at construction with the launch facing; used to seed its
-    /// orientation / collider facing).</summary>
-    public Vector3 Forward { get; private set; }
+    /// <summary>The unit heading this missile flies along — the forward row
+    /// of its native-style orientation (MSL-1), which a homing missile turns
+    /// each tick toward its lead point via <see cref="Orientation.TurnTo(Vector3, float)"/>
+    /// (seeded at construction from the launch facing, missileigc.cpp:79).</summary>
+    public Vector3 Forward => _orientation.GetForward();
 
     /// <summary>The model this missile is hunting (<c>m_target</c>,
     /// <c>missileigc.cpp:381</c>). Settable privately because homing can clear
@@ -208,8 +213,13 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
                 var dv = target.CollisionVelocity * LockFraction - Velocity;
                 _impactTime = MissileIntercept.Solve(dp, dv, MissileType.Acceleration, _impactTime);
                 var direction = dp + _impactTime * dv;
+                // MSL-1 — native o.TurnTo(dP + tImpact*dV, turnRate*dt*GA)
+                // (missileigc.cpp:389). The previous port slerp exploded
+                // when the lead point was ~directly behind (sin(angle)->0) and
+                // never renormalized; TurnTo yaws by maxTurn there
+                // (orientation.cpp:258-265) and always renormalizes (:303).
                 if (direction.LengthSquared() > 0)
-                    Forward = RotateToward(Forward, direction.Normalize(),
+                    _orientation.TurnTo(direction,
                         MissileType.TurnRate * activeDt * GaFactor(GlobalAttributeSet.TurnRateMissile));
             }
             var deltaV = Forward * (MissileType.Acceleration * activeDt);
@@ -219,7 +229,23 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
             _impactTime -= activeDt;
         }
         Position += Velocity * (float)dt;
+
+        // MSL-1 — NON-NATIVE defensive guard. Native has no such check; a
+        // non-finite kinematic state can only come from a numeric fault
+        // (the batch-16 482 s stall started from one), and every later
+        // consumer (intercept solve, collision broadphase, wire) would
+        // amplify it. Expire the missile now — the same removal path as a
+        // lifespan expiry, but without a blast at a meaningless position.
+        if (!IsFinite(Velocity) || !IsFinite(Position) || !float.IsFinite(_impactTime))
+        {
+            _terminated = true;
+            _sector.Terminate(this);
+            (_sector.Mission ?? (Launcher as Ship)?.Mission)?.Site.MissileDestroyedEvent(this);
+        }
     }
+
+    private static bool IsFinite(Vector3 v) =>
+        float.IsFinite(v.X) && float.IsFinite(v.Y) && float.IsFinite(v.Z);
 
     /// <summary>
     /// P467 — the missile's side-global-attribute factor for <paramref name="index"/>:
@@ -229,29 +255,4 @@ public sealed class Missile : Model, IOrdnance, IMissileIgc
     /// launcher reads identity (1.0).
     /// </summary>
     private float GaFactor(int index) => (Launcher as Ship)?.GlobalAttributeFactor(index) ?? 1f;
-
-    /// <summary>
-    /// P179 — the turn-rate limiter: rotate unit <paramref name="current"/>
-    /// toward unit <paramref name="target"/> along the shortest arc by at most
-    /// <paramref name="maxRadians"/>, returning the resulting unit heading.
-    /// A dedicated helper (not a <see cref="Ship.SteerToward"/> reuse) because
-    /// that Ship method writes a ship's throttle/<see cref="Controls"/> model
-    /// a missile does not have — a missile just re-orients its Forward and
-    /// re-thrusts directly (missileigc.cpp:389-397). Implemented as a spherical
-    /// interpolation of the shortest arc clamped to <c>maxRadians</c>: the exact
-    /// per-tick reorientation <c>Orientation::TurnTo(..., TurnRate·dt)</c>
-    /// expresses (missileigc.cpp:389).
-    /// </summary>
-    private static Vector3 RotateToward(Vector3 current, Vector3 target, float maxRadians)
-    {
-        float dot = Math.Clamp(current * target, -1f, 1f);   // operator* is the dot product (Vector3.cs:44)
-        float angle = MathF.Acos(dot);
-        if (angle <= maxRadians || angle <= 1e-6f)
-            return target;
-        float sin = MathF.Sin(angle);
-        float t = maxRadians / angle;                        // rotate the full remaining arc by this fraction
-        float s0 = MathF.Sin((1f - t) * angle) / sin;        // slerp weights on the shortest arc
-        float s1 = MathF.Sin(t * angle) / sin;
-        return current * s0 + target * s1;
-    }
 }

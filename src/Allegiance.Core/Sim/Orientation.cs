@@ -291,6 +291,104 @@ public sealed class Orientation
         Renormalize();
     }
 
+    // orientation.cpp:392-415 cosX / cosX2: cosine (or signed squared cosine)
+    // between a unit axis and an arbitrary-length vector; zero vector -> 0.
+    private static float CosX(Vector3 axis, Vector3 xyz)
+    {
+        float dot = axis * xyz;
+        float l2 = xyz.LengthSquared();
+        return l2 != 0f ? dot / MathF.Sqrt(l2) : 0f;
+    }
+
+    private static float CosX2(Vector3 axis, Vector3 xyz)
+    {
+        float dot = axis * xyz;
+        float l2 = xyz.LengthSquared();
+        if (l2 == 0f) return 0f;
+        return dot >= 0f ? dot * dot / l2 : -dot * dot / l2;
+    }
+
+    /// <summary><c>Orientation::CosUp</c> (orientation.cpp:416).</summary>
+    public float CosUp(Vector3 v) => CosX(GetUp(), v);
+    /// <summary><c>Orientation::CosRight</c> (orientation.cpp:421).</summary>
+    public float CosRight(Vector3 v) => CosX(GetRight(), v);
+    /// <summary><c>Orientation::CosUp2</c> (orientation.cpp:431).</summary>
+    public float CosUp2(Vector3 v) => CosX2(GetUp(), v);
+    /// <summary><c>Orientation::CosForward2</c> (orientation.cpp:441) — note the
+    /// negation of the backward row.</summary>
+    public float CosForward2(Vector3 v) => -CosX2(GetBackward(), v);
+
+    /// <summary>
+    /// MSL-1 — <c>Orientation::TurnTo(const Vector&amp; target)</c>
+    /// (orientation.cpp:220-231): snap forward onto <paramref name="target"/>,
+    /// keeping the current up unless the target is (anti-)parallel to it.
+    /// </summary>
+    public void TurnTo(Vector3 target)
+    {
+        float dot = CosUp2(target);
+        Vector3 up = dot < -0.99f ? GetForward()
+                   : dot > 0.99f ? -GetForward()
+                   : GetUp();
+        Set(target, up);
+    }
+
+    /// <summary>
+    /// MSL-1 — <c>Orientation::TurnTo(const Vector&amp; target, float maxTurn)</c>
+    /// (orientation.cpp:233-304): turn the forward axis toward
+    /// <paramref name="target"/> (any length) by at most <paramref name="maxTurn"/>
+    /// radians and return the remaining angle. Three native regimes:
+    /// <list type="bullet">
+    /// <item>target more than ~11.5° off the nose (cos² &lt; 0.96): if within
+    /// <paramref name="maxTurn"/> snap (<see cref="TurnTo(Vector3)"/>); else if almost
+    /// directly behind (dcos &lt; -0.999, :258-265) a plain <see cref="Yaw"/> by
+    /// maxTurn — the cross-product axis is undefined there; otherwise
+    /// <see cref="PostRotate"/> about <c>-(backward × target)</c> (:272-278);</item>
+    /// <item>target near the nose: yaw/pitch from the right/up cosines, scaled
+    /// to maxTurn (:283-300).</item>
+    /// </list>
+    /// Always ends with <see cref="Renormalize"/> (:303), so the basis stays
+    /// orthonormal and <see cref="GetForward"/> stays unit length.
+    /// </summary>
+    public float TurnTo(Vector3 target, float maxTurn)
+    {
+        float remaining;
+        float cosTurn2 = CosForward2(target);
+        if (cosTurn2 < 0.96f)
+        {
+            double dcos = cosTurn2 < 0f ? -Math.Sqrt(-cosTurn2) : Math.Sqrt(cosTurn2);
+            float angle = dcos <= -1.0 ? MathF.PI
+                        : dcos >= 1.0 ? 0f
+                        : (float)Math.Acos(dcos);
+            if (angle <= maxTurn)
+            {
+                TurnTo(target);
+                return 0f;
+            }
+            remaining = angle - maxTurn;
+            if (dcos < -0.999)
+                Yaw(maxTurn);
+            else
+                PostRotate(-Vector3.CrossProduct(GetBackward(), target), maxTurn);
+        }
+        else
+        {
+            float yaw = MathF.Acos(CosRight(target)) - 0.5f * MathF.PI;
+            float pitch = 0.5f * MathF.PI - MathF.Acos(CosUp(target));
+            float angle = MathF.Sqrt(yaw * yaw + pitch * pitch);
+            if (angle <= maxTurn)
+            {
+                TurnTo(target);
+                return 0f;
+            }
+            remaining = angle - maxTurn;
+            float f = maxTurn / angle;
+            Yaw(yaw * f);
+            Pitch(pitch * f);
+        }
+        Renormalize();
+        return remaining;
+    }
+
     /// <summary><c>Orientation::Roll(theta)</c> (<c>orientation.cpp:562</c>) — pre-multiplied rotation about +z.</summary>
     public void Roll(float theta)
     {
