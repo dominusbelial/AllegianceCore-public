@@ -53,7 +53,7 @@ HUD-14 flipped all six gauge rows to `done`, but they use a substitute font for 
 HUD-14 scaled console offsets by `OwnStatusLayout.Spread` (1.15–2.1) but layer geometry by 0.72, so the layers drifted apart. `ClassicGaugeLayout.PaneScale = 0.72` is now applied to **both** the console offsets and every layer's geometry. (HUD-14c correction: the `.5` at `dialog.mdl:5397` is the overlay slide-animation time, not a zoom, so 0.72 is a **port deviation**, not a native scale — see the HUD-14c section, item 3.)
 
 ### 7. Blend / colour gaps — additive pass + tints
-Native composes the whole console additively (`hudBlendMode = BlendModeAdd`, `dialog.mdl:34`); HUD-14 used AlphaBlend, White and TextDim. The gauge layers now draw in a **separate additive SpriteBatch pass** (`BlendState.Additive`). Hull/shield backs are tinted `hudColorshadows` = `Color(45,36,59)·0.65` (`WinTrek/WinTrek.cpp:8688`), and the labels are tinted `hudColor` — native's `pside->GetColor()·g_hudBright` (`WinTrek/WinTrek.cpp:8681`). **Recorded gap:** the port substitutes its HUD accent for the live side colour (the own side colour is not threaded into the label pass), noted in the matrix. (HUD-14c correction: the labels in fact render in the port's **teal accent** (`HudLabelTint`), not the live side `hudColor` — see the HUD-14c section.)
+Native composes the whole console additively (`hudBlendMode = BlendModeAdd`, `dialog.mdl:34`); HUD-14 used AlphaBlend, White and TextDim. The gauge layers now draw in a **separate additive SpriteBatch pass** (`BlendState.Additive`). *(Correction, HUD-14c/HUD-19c: `BlendState.Additive` (SrcAlpha/One) was wrong on the premultiplied gauge textures; the pass now uses the shared One/One `HudRenderer.AdditiveOneOne` — see HUD-14c item 1.)* Hull/shield backs are tinted `hudColorshadows` = `Color(45,36,59)·0.65` (`WinTrek/WinTrek.cpp:8688`), and the labels are tinted `hudColor` — native's `pside->GetColor()·g_hudBright` (`WinTrek/WinTrek.cpp:8681`). **Recorded gap:** the port substitutes its HUD accent for the live side colour (the own side colour is not threaded into the label pass), noted in the matrix. (HUD-14c correction: the labels in fact render in the port's **teal accent** (`HudLabelTint`), not the live side `hudColor` — see the HUD-14c section.)
 
 ## HUD-14c fix round (with HUD-19)
 
@@ -69,26 +69,46 @@ Claude's review of HUD-14b found five remaining code/report issues. Fixed here.
    HUD-19's reticle/crosshair pass. Test pins both passes reference that state.
 2. **`hudColorshadows` misread.** Native `Color(45,36,59)` passes 0..1 FLOATS
    (`zlib/color.h:33`), so 45/36/59 are out of range, and `MakeD3DCOLOR` packs
-   `MakeInt(255·c)` without clamping (`engine/context.h:327`). Simulating the
-   truncation/bit-spill yields ARGB(157, 111, 55, 51) — a dim muddy
-   (0.435,0.216,0.200) at alpha ~0.62. That is a **BUG**, so per the standing
-   rule the port uses the **evident intent** — a dim shadow tint at the
-   designer's **alpha 0.55** (the alpha HUD-14b dropped) — keeping the
-   native-actual hue so the hull/shield backs stay visible; the near-black
-   `/255` reading of 45,36,59 is never used. Divergence recorded in code + report.
+   `(MakeInt(255·a)<<24)|(MakeInt(255·r)<<16)|(MakeInt(255·g)<<8)|MakeInt(255·b)`
+   without clamping or masking (`engine/context.h:327-333`). With int
+   truncation r=7458 (0x1D22), g=5967 (0x174F), b=9779 (0x2633), a=140 (0x8C),
+   and the overflowing fields OR into their neighbours: **ARGB(157, 55, 111,
+   51)** — a dim **green** (0.216, 0.435, 0.200) at alpha ~0.62.
+   *(HUD-19c correction: HUD-14c originally wrote ARGB(157, 111, 55, 51) /
+   "muddy (0.435,0.216,0.200)" — R and G were swapped.)* Classification
+   unchanged: a **BUG** (overflow), so per the standing rule the port keeps
+   the **evident intent** — a dim shadow tint at the designer's **alpha 0.55**
+   — with the native-actual hue so the hull/shield backs stay visible; the
+   near-black `/255` reading of 45,36,59 is never used. *(HUD-19c: the backs
+   draw in the One/One additive gauge pass, which ignores alpha, so the
+   alpha 0.55 is now pre-multiplied into the rgb via
+   `AdditiveTint(0.216, 0.435, 0.200, 0.55)`; HUD-14c's straight alpha had no
+   effect.)* Divergence recorded in code + report.
 3. **Scale deviation stated honestly.** The `.5` at `dialog.mdl:5397` is the
    overlay slide-animation time (every row has it with hide point `(−2000,…)`),
    not a zoom. `PaneScale = 0.72` (`ClassicGaugeSpec.cs:~191`) is therefore a
    **port deviation** (stated in the code comment): native has no per-pane
    scale factor; the fix is that ONE scale drives both offsets and geometry so
    the layers cannot drift.
-4. **Label Y off by about one text height.** The native y-up `LabelPoint` is
-   the text's LOWER-LEFT, so the screen top is `anchor.Y − LabelPoint.Y·s −
-   textHeight` (`ClassicGaugeLayout.LabelTopY`); HUD-14/14b used the point as
-   the top. Added a headless test.
+4. **Label Y — HUD-19c: the HUD-14c change was WRONG and is reverted.**
+   HUD-14c treated the native y-up `LabelPoint` as the text's LOWER-LEFT and
+   moved the label up by one text height (`anchor.Y − LabelPoint.Y·s −
+   textHeight`). The original fixup request was mistaken: native
+   `StringImage::Render` (`engine/image.cpp:384-393`) does `y -= size.Y()`
+   **before** `DrawString`, and the image bounds are `Rect(0, −ysize, w, 0)`
+   (`engine/image.cpp:353`), so the text hangs **below** the TranslateImage
+   point — the point is the text's **upper-left**. HUD-19c restores the
+   HUD-14b behaviour, screen top = `anchor.Y − LabelPoint.Y·s`
+   (`ClassicGaugeLayout.LabelTopY`), and the test
+   `Label_point_is_text_upper_left_per_native_StringImage` cites that native
+   code instead of restating the formula.
 5. **Weak tests.** The back-band test compared `RevealDest` with itself; it now
    routes through `HudRenderer.BackDestination` (the back-draw path) and
-   asserts it equals the fill band computed independently. The OXY test now
+   asserts it equals the fill band computed independently. *(HUD-19c: HUD-14c's
+   `DrawBack` did not actually call `BackDestination` — it went through
+   `DrawRevealed`/`DrawPlain` — so the test was still near-tautological and the
+   comment false. `DrawBack` now draws into `BackDestination(...)`, and the
+   test also guards that wiring.)* The OXY test now
    builds a real lifepod-state `HudModel` and asserts the renderer's Fuel label
    is "OXY".
 6. **Report corrections.** Commit hash `b60e216a` (not `d1d71af5`); the

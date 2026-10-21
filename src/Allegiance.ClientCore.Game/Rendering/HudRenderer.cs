@@ -47,20 +47,26 @@ public class HudRenderer
     // substitutes its HUD accent (fonts/colours are not the fix round's focus).
     private static readonly Color HUDLabelTint = Accent;
 
-    // HUD-14c — hudColorshadows = Color(45,36,59) * 0.65, alpha 0.55
-    // (WinTrek/WinTrek.cpp:8684-8687). Native Color takes 0..1 FLOATS
-    // (zlib/color.h:33), so 45/36/59 are wildly out of range, and MakeD3DCOLOR
-    // packs MakeInt(255·c) WITHOUT clamping (engine/context.h:327). Simulating
-    // the truncation/bit-spill (MakeInt = (int), zlib/zmath.h:287): red=
-    // 255·(45·0.65)=7458, green=255·(36·0.65)=5967, blue=255·(59·0.65)=9779,
-    // alpha=255·0.55=140; the 8-bit packed bytes collide (45->bits spill) into
-    // ARGB(157, 111, 55, 51) — i.e. a dim muddy (0.435, 0.216, 0.200) at
-    // alpha ~0.62. That is a BUG (out-of-range floats, no clamp), not a
-    // designed colour. Per the standing rule the port uses the EVIDENT INTENT —
-    // a dim shadow tint at the designer's alpha 0.55 (the alpha HUD-14b
-    // dropped) — keeping the native-actual hue so the hull/shield backs stay
-    // visible; the near-black /255 reading of 45,36,59 is never used.
-    private static readonly Color HUDShadowTint = new(0.435f, 0.216f, 0.200f, 0.55f);
+    // HUD-14c/HUD-19c — hudColorshadows = Color(45,36,59) * 0.65, alpha 0.55
+    // (WinTrek/WinTrek.cpp:8684-8687; Color*float leaves alpha alone,
+    // zlib/color.h:101-109). Native Color takes 0..1 FLOATS (zlib/color.h:33),
+    // so 45/36/59 are wildly out of range, and MakeD3DCOLOR packs
+    // (MakeInt(255·a)<<24)|(MakeInt(255·r)<<16)|(MakeInt(255·g)<<8)|MakeInt(255·b)
+    // with NO clamp or mask (engine/context.h:327-333; MakeInt = int(),
+    // zlib/zmath.h:283-296 — the FLOATASM fistp path rounds, same bytes here).
+    // r=int(255·29.25)=7458=0x1D22, g=int(255·23.4)=5967=0x174F,
+    // b=int(255·38.35)=9779=0x2633, a=int(255·0.55)=140=0x8C. OR-ing the
+    // overflowing fields: B byte = 0x33|0 = 51; G byte = 0x4F|(b>>8=0x26) = 0x6F
+    // = 111; R byte = 0x22|(g>>8=0x17) = 0x37 = 55; A byte = 0x8C|(r>>8=0x1D) =
+    // 0x9D = 157 — i.e. ARGB(157, 55, 111, 51), a dim GREEN (0.216, 0.435,
+    // 0.200) at alpha ~0.62. (HUD-14c had R/G swapped.) That is a BUG
+    // (out-of-range floats, OR overflow), not a designed colour. Per the
+    // standing rule the port keeps the EVIDENT INTENT — a dim shadow tint at
+    // the designer's alpha 0.55 — with the native-actual hue so the
+    // hull/shield backs stay visible; the near-black /255 reading of 45,36,59
+    // is never used. The backs draw in the One/One additive gauge pass, which
+    // ignores alpha, so the rgb is pre-scaled by 0.55 (AdditiveTint).
+    private static readonly Color HUDShadowTint = AdditiveTint(0.216f, 0.435f, 0.200f, 0.55f);
 
     // HUD-14c/HUD-19 — native BlendModeAdd is SRCALPHA/ONE on STRAIGHT-alpha
     // textures (engine/RasterD3D9.cpp:295-302), which equals One/One on the
@@ -1231,23 +1237,29 @@ public class HudRenderer
     private void DrawBack(ClassicGaugeSpec spec, Vector2 anchor, float scale)
     {
         if (_gauges?.Back(spec.Kind) is not { } back) return;
-        if (spec.Kind is GaugeKind.Thrust or GaugeKind.Fuel or GaugeKind.Ammo or GaugeKind.Energy)
-            DrawRevealed(back, spec, 1f, anchor, scale);
+        // HUD-19c — the destination comes from BackDestination (the same rect
+        // the back==fill test pins), so the test exercises the drawn path.
+        var dst = BackDestination(spec, anchor, scale);
+        if (IsArcGauge(spec.Kind))
+            _sb.Draw(back, dst, ClassicGaugeTable.RevealSource(spec.SourceRect, spec.Reveal, 1f), Color.White);
         else
-            DrawPlain(back, spec.BackPoint, anchor, scale, HUDShadowTint);
+            _sb.Draw(back, dst, null, HUDShadowTint);
     }
 
-    /// <summary>HUD-14c — the screen destination the back layer is drawn into
-    /// for <paramref name=\"spec\"/> (the exact rect <see cref=\"DrawBack\"/>
-    /// produces): for the arc gauges that is the <c>GaugeImageRect</c> band at
-    /// value 1 (identical to the fill band at fraction 1 — <see cref=\"DrawBack\"/>
-    /// routes the arc back through <see cref=\"DrawRevealed\"/>, which uses
-    /// <see cref=\"ClassicGaugeLayout.RevealDest\"/>); hull/shield backs are the
-    /// full-bleed plain rect at <see cref=\"ClassicGaugeSpec.BackPoint\"/>. Pure
-    /// so a renderer-level test can pin back==fill origin without a device.</summary>
+    private static bool IsArcGauge(GaugeKind kind)
+        => kind is GaugeKind.Thrust or GaugeKind.Fuel or GaugeKind.Ammo or GaugeKind.Energy;
+
+    /// <summary>HUD-14c/HUD-19c — the screen destination the back layer is
+    /// drawn into for <paramref name="spec"/>; <see cref="DrawBack"/> draws into
+    /// exactly this rect. For the arc gauges that is the <c>GaugeImageRect</c>
+    /// band at value 1 (<see cref="ClassicGaugeLayout.RevealDest"/> at fraction
+    /// 1, the same helper the fill's <see cref="DrawRevealed"/> uses);
+    /// hull/shield backs are the full-bleed plain rect at
+    /// <see cref="ClassicGaugeSpec.BackPoint"/>. Device-free so a renderer-level
+    /// test can pin back==fill origin.</summary>
     internal Rectangle BackDestination(ClassicGaugeSpec spec, Vector2 anchor, float scale)
     {
-        if (spec.Kind is GaugeKind.Thrust or GaugeKind.Fuel or GaugeKind.Ammo or GaugeKind.Energy)
+        if (IsArcGauge(spec.Kind))
             return ClassicGaugeLayout.RevealDest(spec, 1f, anchor, scale);
         var back = _gauges?.Back(spec.Kind);
         float w = back?.Width ?? 0f, h = back?.Height ?? 0f;
@@ -1311,14 +1323,14 @@ public class HudRenderer
     private void DrawGaugeLabel(HudGauge gauge, ClassicGaugeSpec spec, Vector2 anchor, float scale)
     {
         string label = ResolveGaugeLabel(gauge);
-        // LabelPoint is the text's LOWER-LEFT in native y-up; in screen y-down
-        // the text's BOTTOM is anchor.Y − LabelPoint.Y·s, so its TOP is
-        // anchor.Y − LabelPoint.Y·s − textHeight (HUD-14c: the y-up anchor is
-        // the baseline/lower-left, not the top — the old code sat the label one
-        // text height too low).
+        // LabelPoint is the text's UPPER-LEFT: native StringImage::Render does
+        // y -= size.Y() before DrawString (engine/image.cpp:384-393; bounds
+        // Rect(0,-ysize,w,0), :353), so the text hangs below the point in y-up
+        // and its screen top is anchor.Y − LabelPoint.Y·s (HUD-19c: reverts the
+        // HUD-14c "minus text height" change).
         var gaugeFont = NativeFontAt(NativeFont.SmVerdana);   // native smVerdana (dialog.mdl:2204-2467)
         var size = gaugeFont.MeasureString(label);
-        float posY = ClassicGaugeLayout.LabelTopY(anchor, spec.LabelPoint, scale, size.Y * TextScale);
+        float posY = ClassicGaugeLayout.LabelTopY(anchor, spec.LabelPoint, scale);
         // Native StringImage box is 100 wide (dialog.mdl); JustifyRight means
         // the text's right edge meets the box's right edge at Point.X+100.
         float x = spec.LabelRightAlign
@@ -1874,7 +1886,7 @@ public class HudRenderer
         // Native BlendModeAdd draws only when the artwork decoded (indicator.cpp
         // falls back to a 2-D DrawImage for no art, which inherits the context
         // blend — the port keeps those fallbacks on alpha).
-        bool hasReticle = !turretView && _indicators?.Reticle is not null;
+        bool hasReticle = DrawsAdditiveReticle(model, turretView, _indicators?.Reticle is not null);
         bool hasAim = model.AimPredictorVisible && _indicators?.CrosshairOut is not null;
         bool hasChase = model.ChaseAimVisible && _indicators?.CrosshairOut is not null;
         if (!hasReticle && !hasAim && !hasChase) return;
@@ -1922,6 +1934,15 @@ public class HudRenderer
             _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
         }
     }
+
+    /// <summary>HUD-19c — whether the additive directioninbmp reticle draws.
+    /// Native draws it only inside <c>if (GetCameraMode() == cmCockpit)</c>
+    /// (WinTrek/indicator.cpp:132, :149-150), which the port models as
+    /// <see cref="HudModel.ReticleVisible"/>; the turret view and missing
+    /// artwork also suppress it. Pure so a headless test pins the cockpit gate
+    /// (HUD-19 dropped it, drawing the reticle in chase/external views).</summary>
+    internal static bool DrawsAdditiveReticle(HudModel model, bool turretView, bool hasArtwork)
+        => model.ReticleVisible && !turretView && hasArtwork;
 
     protected virtual void DrawCrosshair(Vector2 c, bool firing, bool turret)
     {
@@ -2491,7 +2512,8 @@ public class HudRenderer
     /// HUD-8/HUD-19 — native joystick turning indicator (indicator.cpp:154-177):
     /// translated to centre − 100·(yaw,pitch) in y-UP image space (screen:
     /// centre − 100·yaw horizontally, centre + 100·pitch vertically), rotated by
-    /// atan2(pitch,yaw)+π/2 (+π if yaw<0), scaled |control|/2 + 0.5, alpha
+    /// atan(pitch/yaw)+π/2 (+π if yaw&lt;0; HUD-19c native form, see
+    /// <see cref="JoystickLayout.Angle"/>), scaled |control|/2 + 0.5, alpha
     /// 0.70 (texture) × |control|. HUD-19 renders the REAL native 6-vertex
     /// <c>joystickindicator.mdl</c> chevron (baked once at load,
     /// <see cref="JoystickMeshRasterizer"/>) instead of stroked lines, and

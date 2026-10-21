@@ -216,13 +216,16 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     }
     protected override void DrawJoystickIndicator(Vector2 center, float yaw, float pitch)
     {
-        float magnitude = MathF.Min(1f, MathF.Sqrt(yaw * yaw + pitch * pitch));
-        float angle = MathF.Atan2(pitch, yaw) + MathF.PI / 2f;
-        if (yaw < 0f) angle += MathF.PI;
-        var position = center - new Vector2(100f * yaw, 100f * pitch);
+        // HUD-19c — same native y-up placement/pointing as the classic skin
+        // (JoystickLayout: screen centre.X − 100·yaw, centre.Y + 100·pitch;
+        // apex from the native atan(pitch/yaw) angle, WinTrek/indicator.cpp:159-167).
+        // HUD-19 left Modern on −100·pitch, mirroring it vertically vs classic.
+        // Only the glyph look (stroked chevron, brightness ramp) is Modern's own.
+        float magnitude = JoystickLayout.Magnitude(yaw, pitch);
+        var position = JoystickLayout.Position(center, yaw, pitch);
         var color = Color.White * (.35f + .65f * magnitude);
         float length = 12f * _scale * (0.5f + 0.5f * magnitude);
-        var direction = new Vector2(MathF.Cos(angle), MathF.Sin(angle));
+        var direction = JoystickLayout.ApexDirection(yaw, pitch);
         var tip = position + direction * length;
         var back = position - direction * length;
         var side = new Vector2(-direction.Y, direction.X) * (5f * _scale);

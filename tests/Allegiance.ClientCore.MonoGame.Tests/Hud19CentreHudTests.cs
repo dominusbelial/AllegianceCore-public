@@ -80,10 +80,11 @@ public class Hud19CentreHudTests
     {
         string dir = Path.Combine(Path.GetTempPath(), "hud19-settings-" + Guid.NewGuid());
         string path = Path.Combine(dir, "hud.json");
-        string? old = Environment.GetEnvironmentVariable("ALLEGIANCE_HUD_SETTINGS");
+        // HUD-19c — explicit-path Save/Load seam only; the process-global
+        // ALLEGIANCE_HUD_SETTINGS env var is NOT touched (it raced other
+        // parallel test classes that read HudSettings.DefaultPath).
         try
         {
-            Environment.SetEnvironmentVariable("ALLEGIANCE_HUD_SETTINGS", path);
             var s = new HudSettings { ShowJoystickIndicator = false };
             s.Save(path);
             var restored = HudSettings.Load(path, true);
@@ -92,7 +93,6 @@ public class Hud19CentreHudTests
         }
         finally
         {
-            Environment.SetEnvironmentVariable("ALLEGIANCE_HUD_SETTINGS", old);
             if (Directory.Exists(dir)) Directory.Delete(dir, true);
         }
     }
@@ -160,6 +160,76 @@ public class Hud19CentreHudTests
         var left = JoystickLayout.ApexDirection(0.5f, 0f);
         Assert.Equal(-1f, left.X, 3);
         Assert.Equal(0f, left.Y, 3);       // pointing left on screen
+    }
+
+    [Theory]
+    // Native indicator.cpp:159-162: angle = atan(pitch/yaw) + π/2; if (yaw<0) angle += π.
+    [InlineData(-0.5f, 0f, 3f * MathF.PI / 2f)]                    // atan(-0)=0 → π/2+π
+    [InlineData(-0.5f, 0.25f, 4.2487414f)]                          // atan(-0.5)+π/2+π
+    [InlineData(0.5f, 0.25f, 2.0344439f)]                           // atan(0.5)+π/2
+    [InlineData(0f, 0.5f, MathF.PI)]                                // atan(+∞)=π/2 → π
+    [InlineData(0f, -0.5f, 0f)]                                     // atan(−∞)=−π/2 → 0
+    public void Joystick_angle_is_the_native_atan_form(float yaw, float pitch, float expected)
+    {
+        Assert.Equal(expected, JoystickLayout.Angle(yaw, pitch), 4);
+    }
+
+    [Fact]
+    public void Joystick_apex_for_negative_yaw_points_right()
+    {
+        // yaw<0 (stick right of centre in the native translate centre − 100·yaw):
+        // the chevron sits RIGHT of centre and, at angle 3π/2, its apex points
+        // RIGHT on screen — the HUD-19 double π correction pointed it LEFT.
+        var centre = new Vector2(960f, 540f);
+        Assert.Equal(960f + 50f, JoystickLayout.Position(centre, -0.5f, 0f).X, 3);
+        var apex = JoystickLayout.ApexDirection(-0.5f, 0f);
+        Assert.Equal(1f, apex.X, 3);
+        Assert.Equal(0f, apex.Y, 3);
+    }
+
+    [Fact]
+    public void Modern_joystick_uses_the_classic_native_layout()
+    {
+        // HUD-19c — the Modern glyph's position/pointing come from the same
+        // JoystickLayout as classic (screen y = centre.Y + 100·pitch), so the
+        // parity matrix "both skins" claim holds; it is not mirrored.
+        var modern = Method(Src(Path.Combine("Rendering", "ModernHudRenderer.cs")),
+            "protected override void DrawJoystickIndicator(Vector2 center, float yaw, float pitch)");
+        Assert.Contains("JoystickLayout.Position(center, yaw, pitch)", modern);
+        Assert.Contains("JoystickLayout.ApexDirection(yaw, pitch)", modern);
+        Assert.DoesNotContain("100f * pitch", modern);
+        Assert.DoesNotContain("Atan2", modern);
+    }
+
+    [Fact]
+    public void Additive_reticle_is_not_drawn_outside_the_cockpit()
+    {
+        // HUD-19c — native draws directioninbmp only under cmCockpit
+        // (WinTrek/indicator.cpp:132, :149-150) ⇒ HudModel.ReticleVisible.
+        var cockpit = HudModelAdapter.Create(Frame(), CameraMode.Cockpit, showJoystickIndicator: true);
+        var chase = HudModelAdapter.Create(Frame(), CameraMode.Chase, showJoystickIndicator: true);
+        Assert.True(cockpit.ReticleVisible);
+        Assert.False(chase.ReticleVisible);
+        Assert.True(HudRenderer.DrawsAdditiveReticle(cockpit, turretView: false, hasArtwork: true));
+        Assert.False(HudRenderer.DrawsAdditiveReticle(chase, turretView: false, hasArtwork: true));
+        Assert.False(HudRenderer.DrawsAdditiveReticle(cockpit, turretView: true, hasArtwork: true));
+        Assert.False(HudRenderer.DrawsAdditiveReticle(cockpit, turretView: false, hasArtwork: false));
+        // The additive pass actually uses the gate.
+        var helper = Method(Src(Path.Combine("Rendering", "HudRenderer.cs")),
+            "private void DrawCentreIndicatorsAdditive(");
+        Assert.Contains("bool hasReticle = DrawsAdditiveReticle(model, turretView, _indicators?.Reticle is not null);", helper);
+    }
+
+    [Fact]
+    public void Shadow_tint_is_the_native_overflowed_green_pre_scaled_for_one_one()
+    {
+        // HUD-19c — MakeD3DCOLOR OR-overflow of Color(45,36,59)*0.65 gives
+        // ARGB(157,55,111,51) (engine/context.h:327-333); intent alpha 0.55 is
+        // pre-multiplied into rgb because the gauge pass is One/One.
+        var tint = (Color)typeof(HudRenderer).GetField("HUDShadowTint",
+            BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
+        Assert.Equal(HudRenderer.AdditiveTint(55f / 255f, 111f / 255f, 51f / 255f, 0.55f), tint);
+        Assert.True(tint.G > tint.R && tint.G > tint.B);   // green-dominant, not red
     }
 
     [Fact]

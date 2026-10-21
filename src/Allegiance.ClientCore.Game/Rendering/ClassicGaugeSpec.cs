@@ -224,13 +224,16 @@ public static class ClassicGaugeLayout
     public static float LayerLeftX(Vector2 anchor, Vector2 childPoint, float scale)
         => anchor.X + childPoint.X * scale;
 
-    /// <summary>HUD-14c — the screen TOP of a gauge label whose native y-up
-    /// <c>LabelPoint</c> is the text's LOWER-LEFT: the text's BOTTOM is
-    /// <c>anchor.Y − LabelPoint.Y·s</c>, so its TOP is that minus the text
-    /// height (the HUD-14/14b code used the point as the top, sitting the label
-    /// one text height too low). Pure so a headless test pins the correction.</summary>
-    public static float LabelTopY(Vector2 anchor, Vector2 labelPoint, float scale, float textHeight)
-        => anchor.Y - labelPoint.Y * scale - textHeight;
+    /// <summary>HUD-19c — the screen TOP of a gauge label: <c>anchor.Y −
+    /// LabelPoint.Y·s</c> (the HUD-14b behaviour; the HUD-14c "minus text
+    /// height" change was wrong and is reverted). Native
+    /// <c>StringImage::Render</c> (engine/image.cpp:384-393) does
+    /// <c>y -= size.Y()</c> BEFORE <c>DrawString</c>, and its bounds are
+    /// <c>Rect(0, −ysize, w, 0)</c> (engine/image.cpp:353): in y-up the text
+    /// hangs BELOW the TranslateImage point, so that point is the text's
+    /// UPPER-left, i.e. its screen top. Pure so a headless test pins it.</summary>
+    public static float LabelTopY(Vector2 anchor, Vector2 labelPoint, float scale)
+        => anchor.Y - labelPoint.Y * scale;
 
     /// <summary>
     /// The screen destination rectangle of a revealed <c>GaugeImageRect</c> band

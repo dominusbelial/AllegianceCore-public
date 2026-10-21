@@ -89,6 +89,18 @@ equivalent)", `Game1.Rendering.cs:2832-2834`), so the screen position is
 `cy+50`, and `(+0.5,0)` → left at `cx−50`). The Modern skin's glyph is
 unchanged.
 
+*(HUD-19c corrections: (a) `JoystickLayout.Angle` used `atan2(pitch, yaw) +
+π/2` AND the native `+π for yaw<0`, double-correcting every yaw<0 input (apex
+pointed the wrong way); it now ports `indicator.cpp:159-162` exactly —
+`atan(pitch/yaw) + π/2; if (yaw < 0) angle += π` (yaw==0 guarded as
+`atan(±∞) = ±π/2`) — pinned for yaw<0 (`(−0.5,0)` → 3π/2, `(−0.5,0.25)` →
+4.249 rad) and yaw==0. (b) The Modern skin's glyph was NOT on the same layout:
+it kept `centre − 100·pitch` (mirrored vs classic) and its own angle mapping.
+It now takes position and pointing from `JoystickLayout` (only the stroked
+glyph look is Modern's), so the "both skins" matrix claim holds. (c) The
+additive reticle had lost its cockpit gate (`model.ReticleVisible`, native
+`indicator.cpp:132`) and drew in chase views; restored and tested.)*
+
 ### 4. Lock flower via native DrawExpandedBlip quadrants
 
 Native draws the lock surface as **four centred** quarter-bitmaps at
@@ -165,10 +177,13 @@ collision is noted here and in the matrix row.
 - `python3 scripts/parity-scorecard.py`: runs clean; CSV `{6}` columns, LF only.
 - Failing-first: the joystick y-up layout and lock-quadrant tests were written
   against the corrected native-derived values and fail on the pre-change code.
+  *(HUD-19c correction: that "failing-first" was a **compile** failure —
+  `JoystickLayout` / the quadrant helpers did not exist on the pre-change code —
+  not a behavioural red→green against the old values.)*
 
 ## Screenshots (real client, 1920×1080, classic skin)
 
-**Not captured in this session.** The required proof is a capture of the REAL
+**Not captured — no real-client screenshots exist for HUD-19 (or HUD-19c).** The required proof is a capture of the REAL
 client backbuffer (the production `Allegiance.ClientCore.MonoGame` window via
 the `ALLEGIANCE_AUTOSHOT` path), staging a bright-background cockpit, a turning
 joystick, the toggle-off state, and a missile lock. Producing those requires

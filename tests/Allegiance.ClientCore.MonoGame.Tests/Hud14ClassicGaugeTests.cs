@@ -181,10 +181,14 @@ public class Hud14ClassicGaugeTests
         // GaugeImageRect band at value 1 sharing the fill's rect and point
         // (thrustGaugeBack dialog.mdl:2175-2185 etc.), so at fraction 1 the back
         // band must land exactly on the fill band.
-        // HUD-14c — the back's destination comes from the BACK-DRAW PATH
-        // (HudRenderer.BackDestination, which DrawBack routes through), asserted
-        // against the fill band computed independently via RevealDest — not
-        // RevealDest compared with itself.
+        // HUD-14c/HUD-19c — the back's destination comes from the BACK-DRAW
+        // PATH: DrawBack draws into HudRenderer.BackDestination (guarded below),
+        // asserted against the fill band and the fill's TranslateImage point.
+        var drawBack = MethodSource(SourceFile("Rendering", "HudRenderer.cs"),
+            "private void DrawBack(ClassicGaugeSpec spec, Vector2 anchor, float scale)");
+        Assert.Contains("var dst = BackDestination(spec, anchor, scale);", drawBack);
+        Assert.DoesNotContain("DrawRevealed(", drawBack);
+        Assert.DoesNotContain("DrawPlain(", drawBack);
         var renderer = (HudRenderer)System.Runtime.CompilerServices.RuntimeHelpers
             .GetUninitializedObject(typeof(HudRenderer));
         System.GC.SuppressFinalize(renderer);
@@ -375,18 +379,55 @@ public class Hud14ClassicGaugeTests
     }
 
     [Fact]
-    public void Label_top_is_lower_left_minus_text_height()
+    public void Label_point_is_text_upper_left_per_native_StringImage()
     {
-        // HUD-14c — the native y-up LabelPoint is the text's LOWER-LEFT, so the
-        // screen TOP = anchor.Y − LabelPoint.Y·s − textHeight (the HUD-14/14b
-        // code used the point as the top, sitting the label one line too low).
+        // HUD-19c — native StringImage::Render (engine/image.cpp:384-393) does
+        // `y -= size.Y();` BEFORE `DrawString(..., Point(x + indent, y), ...)`,
+        // and the image bounds are Rect(0, -ysize, fWidth, 0)
+        // (engine/image.cpp:353). In y-up image space the text therefore spans
+        // [-height, 0] below the TranslateImage point: the point is the text's
+        // UPPER-left, so on screen (y-down) the label TOP is anchor.Y −
+        // LabelPoint.Y·s with no text-height term (the HUD-14c "minus text
+        // height" reading is reverted). The text then extends DOWN from there.
         var anchor = new Vector2(960f, 840f);
         var labelPoint = new Vector2(16f, 135f);
         const float scale = ClassicGaugeLayout.PaneScale;
-        const float textHeight = 20f;
-        float top = ClassicGaugeLayout.LabelTopY(anchor, labelPoint, scale, textHeight);
-        Assert.Equal(anchor.Y - labelPoint.Y * scale - textHeight, top);
-        // Sanity: the old (wrong) reading used the point directly as the top.
-        Assert.Equal(anchor.Y - labelPoint.Y * scale, top + textHeight);
+        float top = ClassicGaugeLayout.LabelTopY(anchor, labelPoint, scale);
+        Assert.Equal(840f - 135f * scale, top, 3);
+        // Native y-up span of a 20px line hung below the point: [p.y − 20, p.y].
+        // Mapped to screen (y_screen = anchor.Y − y_up·s) the TOP is the image
+        // y = p.y edge — i.e. exactly LabelTopY.
+        const float nativeLineHeight = 20f;
+        float nativeTopUp = labelPoint.Y;                       // bounds top = 0 (relative)
+        float nativeBottomUp = labelPoint.Y - nativeLineHeight; // y -= size.Y()
+        Assert.Equal(anchor.Y - nativeTopUp * scale, top, 3);
+        Assert.True(anchor.Y - nativeBottomUp * scale > top);  // text hangs below on screen
+        // The renderer uses this helper with no text-height term.
+        var drawLabel = MethodSource(SourceFile("Rendering", "HudRenderer.cs"),
+            "private void DrawGaugeLabel(HudGauge gauge, ClassicGaugeSpec spec, Vector2 anchor, float scale)");
+        Assert.Contains("ClassicGaugeLayout.LabelTopY(anchor, spec.LabelPoint, scale);", drawLabel);
+    }
+
+    private static string SourceFile(params string[] relative)
+    {
+        string root = System.AppContext.BaseDirectory;
+        while (!System.IO.Directory.Exists(System.IO.Path.Combine(root, "src", "Allegiance.ClientCore.Game")))
+            root = System.IO.Path.GetDirectoryName(root) ?? throw new System.InvalidOperationException("Repository not found");
+        var parts = new System.Collections.Generic.List<string> { root, "src", "Allegiance.ClientCore.Game" };
+        parts.AddRange(relative);
+        return System.IO.File.ReadAllText(System.IO.Path.Combine(parts.ToArray()));
+    }
+
+    private static string MethodSource(string source, string signature)
+    {
+        int start = source.IndexOf(signature, System.StringComparison.Ordinal);
+        Assert.True(start >= 0, "missing " + signature);
+        int open = source.IndexOf('{', start), depth = 0;
+        for (int i = open; i < source.Length; i++)
+        {
+            if (source[i] == '{') depth++;
+            else if (source[i] == '}' && --depth == 0) return source[start..(i + 1)];
+        }
+        throw new System.InvalidOperationException("unterminated " + signature);
     }
 }

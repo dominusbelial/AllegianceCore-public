@@ -11,7 +11,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// <c>centre − 100·(yaw, pitch)</c> converts to screen y-down as
 /// <c>(centre.X − 100·yaw, centre.Y + 100·pitch)</c> (y is mirrored about the
 /// centre). The mesh apex points toward +y in image space; rotated by
-/// <c>angle = atan2(pitch, yaw) + π/2 (+ π if yaw&lt;0)</c>, its on-screen
+/// <c>angle = atan(pitch/yaw) + π/2 (+ π if yaw&lt;0)</c>, its on-screen
 /// direction is <c>(−sin angle, −cos angle)</c>. Pure and GPU-free so the
 /// placement/pointing is unit-testable without a graphics device.
 /// </summary>
@@ -25,11 +25,18 @@ public static class JoystickLayout
     public static Vector2 Position(Vector2 centre, float yaw, float pitch)
         => new(centre.X - TurnOffset * yaw, centre.Y + TurnOffset * pitch);
 
-    /// <summary>The native rotation angle in image y-up space
-    /// (<c>atan(pitch/yaw) + π/2</c>, +π if yaw&lt;0, indicator.cpp:161-165).</summary>
+    /// <summary>The native rotation angle in image y-up space, ported in the
+    /// native form exactly (WinTrek/indicator.cpp:159-162):
+    /// <c>angle = atan(pitch/yaw) + π/2; if (yaw &lt; 0) angle += π;</c>.
+    /// HUD-19c: the HUD-19 port used <c>atan2(pitch, yaw)</c> (already
+    /// quadrant-aware) AND the +π, double-correcting every yaw&lt;0 input.
+    /// Guard for yaw == 0: native's <c>pitch/0</c> is ±∞ and
+    /// <c>atan(±∞) = ±π/2</c>, which <c>atan2(pitch, 0)</c> reproduces without
+    /// the division (pitch == 0 too gives 0 instead of native's NaN; the
+    /// chevron is invisible there anyway, alpha = |control| = 0).</summary>
     public static float Angle(float yaw, float pitch)
     {
-        float angle = MathF.Atan2(pitch, yaw) + MathF.PI / 2f;
+        float angle = (yaw == 0f ? MathF.Atan2(pitch, 0f) : MathF.Atan(pitch / yaw)) + MathF.PI / 2f;
         if (yaw < 0f) angle += MathF.PI;
         return angle;
     }
