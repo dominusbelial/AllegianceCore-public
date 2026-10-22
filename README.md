@@ -44,8 +44,8 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
   a colour-blind safe palette.
 - Command view, minimap and starmap, order/command icons, investment,
   loadout and teleport panes, quick chat, and native UI and simulation sounds.
-- **Visuals**: optional HD sky pack, bloom and flash lighting, and an effects
-  quality setting. Native asteroid models, aleph exit wobble, the ripcord spark
+- **Visuals**: volumetric explosions, bloom and flash lighting, an effects
+  quality setting, and an optional HD sky pack. Native asteroid models, aleph exit wobble, the ripcord spark
   ramp.
 - Keyboard, mouse, joystick and gamepad, all rebindable (F6). F1 shows every key.
 - Crash-safe: a rolling log plus a crash log on every run, and missing
