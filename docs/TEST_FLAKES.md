@@ -6,6 +6,16 @@ at the end).
 
 ## CI gate observation (2026-10-21) — CleanCloneSkipGuardTests near the Fast limit
 
+> **Fixed by CI-2** (2026-10-22, master `43d11eb5`). The guard now parses the test tree in
+> parallel, walks each member once (facts + refs cached per node) and computes the
+> referenced-member closure once per type instead of a BFS per test method; its verdicts are
+> unchanged (byte-identical violation/member/facts dump, old vs new — see
+> [CI2](reports/CI2_SKIPGUARD_SPEED.md)). New numbers, same workstation/limits: isolated exact
+> method **686–764 ms** (was 3–4 s), full Fast tier **2.472 s** from
+> `fast/Allegiance.Core.Tests-main.trx` (was 8.13 s / 10.82 s FAIL), tier **9,946 tests, 0
+> failed, PASS**, clean-clone guard PASS. The limit (10 s), its calibration and the tier runner
+> were **not** changed, and the measurements below are kept as the pre-fix record.
+
 `Allegiance.Core.Tests.CleanCloneSkipGuardTests.Artwork_and_gpu_touching_tests_skip_on_a_clean_clone`
 parses every test file with Roslyn and its time grows with the suite and with concurrent load. Measured
 on the workstation (24 threads), master 7c79aefd–3466d3a8:
@@ -20,6 +30,10 @@ on the workstation (24 threads), master 7c79aefd–3466d3a8:
 Classified a **load flake** (timing only; no assertion failed). Headroom is ~1.5–2 s, so it will trip
 again as the test count grows. Real fix, not done here: parse once per file in parallel or cache the
 syntax trees, or move it to its own non-parallel collection — never raise the limit for it alone.
+
+**CI-2 did exactly the parallel-parse fix** (plus a single cached member walk and a per-type
+closure; no disk cache, no collection change, no limit change). The test's own cost is now ~5×
+smaller and its headroom under the 10 s Fast limit is ~7.5 s instead of ~0 s.
 
 ## P761b timing observations (2026-10-20)
 

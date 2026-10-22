@@ -1,0 +1,104 @@
+# CI-2 equivalence evidence (scratch dumps, not committed: 20,695 lines / 5.19 MB each).
+# Host: 24 threads, master 43d11eb5, 2026-10-21/22.
+
+## Sorted dump of every scanned type/member/test (Allowed filter OFF, CI2_DUMP hook)
+343ab8ca31cd0066236cac0d0fdac7fc158b64272ec3b647fa722425365845df  old.txt
+343ab8ca31cd0066236cac0d0fdac7fc158b64272ec3b647fa722425365845df  new.txt
+a3a17abb8e4eee515cb383a3ff4558513ed4e74ab6f4492bd12d2bceb8cd66f1  old_seeded.txt
+a3a17abb8e4eee515cb383a3ff4558513ed4e74ab6f4492bd12d2bceb8cd66f1  new_seeded.txt
+
+## Counts (identical in old and new)
+files_scanned 1114
+lines_scanned 233095
+bytes_scanned 11467141
+top_level_types 1174
+member_records 13212
+fact_or_theory_methods 6309
+violations_with_allowed_off 1
+
+## Seeded violations (scratch file tests/Allegiance.Core.Tests/CI2SeedTests.cs, old vs new)
+CTOR | Allegiance.Core.Tests/CI2SeedTests.cs:CI2SeedTests@136 | 0 | 0 | 
+MEMBER | Allegiance.Core.Tests/CI2SeedTests.cs:CI2SeedTests@136 | Helper | 1 | TestArtRoot,Value
+MEMBER | Allegiance.Core.Tests/CI2SeedTests.cs:CI2SeedTests@136 | HelperField | 0 | Helper
+MEMBER | Allegiance.Core.Tests/CI2SeedTests.cs:CI2SeedTests@136 | Seed1_plain_fact_calls_require_artwork | 20 | Artwork,Fact,Require
+MEMBER | Allegiance.Core.Tests/CI2SeedTests.cs:CI2SeedTests@136 | Seed2_skippable_reaches_artroot_through_field_helper | 0 | Assert,HelperField,NotNull,SkippableFact
+MEMBER | Allegiance.Core.Tests/CI2SeedTests.cs:CI2SeedTests@136 | Seed3_plain_fact_sets_sdl_videodriver | 2 | Environment,Fact,SetEnvironmentVariable
+TEST | Allegiance.Core.Tests/CI2SeedTests.cs:CI2SeedTests@136.Seed1_plain_fact_calls_require_artwork@293 | plain=True | skippable=False | fraw=20 | f=20 | allowed=False | requires=- | lane=- | viol=Allegiance.Core.Tests/CI2SeedTests.cs: CI2SeedTests.Seed1_plain_fact_calls_require_artwork calls Require.*()/Skip.If*() from a plain [Fact]/[Theory] — use [SkippableFact]/[SkippableTheory]
+TEST | Allegiance.Core.Tests/CI2SeedTests.cs:CI2SeedTests@136.Seed2_skippable_reaches_artroot_through_field_helper@401 | plain=False | skippable=True | fraw=1 | f=1 | allowed=False | requires= | lane= | viol=Allegiance.Core.Tests/CI2SeedTests.cs: CI2SeedTests.Seed2_skippable_reaches_artroot_through_field_helper reads the artwork corpus (TestArtRoot) but never calls Require.Artwork()
+TEST | Allegiance.Core.Tests/CI2SeedTests.cs:CI2SeedTests@136.Seed3_plain_fact_sets_sdl_videodriver@542 | plain=True | skippable=False | fraw=2 | f=2 | allowed=False | requires= | lane= | viol=Allegiance.Core.Tests/CI2SeedTests.cs: CI2SeedTests.Seed3_plain_fact_sets_sdl_videodriver creates a real GL device but is a plain [Fact]/[Theory]
+
+## Derived violation sets (old=allowed filter off, new=shipped code, seeds present)
+Allegiance.Core.Tests/CI2SeedTests.cs: CI2SeedTests.Seed1_plain_fact_calls_require_artwork calls Require.*()/Skip.If*() from a plain [Fact]/[Theory] — use [SkippableFact]/[SkippableTheory]
+Allegiance.Core.Tests/CI2SeedTests.cs: CI2SeedTests.Seed2_skippable_reaches_artroot_through_field_helper reads the artwork corpus (TestArtRoot) but never calls Require.Artwork()
+Allegiance.Core.Tests/CI2SeedTests.cs: CI2SeedTests.Seed3_plain_fact_sets_sdl_videodriver creates a real GL device but is a plain [Fact]/[Theory]
+Allegiance.Core.Tests/UpdateCadenceTests.cs: UpdateCadenceTests.Floor_configuration_defaults_to_two_and_rejects_invalid_values reads the artwork corpus (TestArtRoot) but is a plain [Fact]/[Theory]
+--- shipped-code failure message, seeds present (identical minus the Allowed entry) ---
+Allegiance.Core.Tests/CI2SeedTests.cs: CI2SeedTests.Seed1_plain_fact_calls_require_artwork calls Require.*()/Skip.If*() from a plain [Fact]/[Theory] — use [SkippableFact]/[SkippableTheory]
+Allegiance.Core.Tests/CI2SeedTests.cs: CI2SeedTests.Seed2_skippable_reaches_artroot_through_field_helper reads the artwork corpus (TestArtRoot) but never calls Require.Artwork()
+Allegiance.Core.Tests/CI2SeedTests.cs: CI2SeedTests.Seed3_plain_fact_sets_sdl_videodriver creates a real GL device but is a plain [Fact]/[Theory]
+
+## Profile, old (sequential) — /tmp/ci2/prof_old_*.txt
+-- prof_old_1.txt
+enumerate	5048.9
+read	52.2
+parse	1555.1
+check	3434.8
+add_walks	1340.3
+method_walks	689.2
+reach	92.8
+traits	51.0
+dump_lines	20695
+-- prof_old_2.txt
+enumerate	4086.5
+read	57.4
+parse	1803.1
+check	2219.0
+add_walks	918.3
+method_walks	423.9
+reach	80.0
+traits	85.6
+dump_lines	0
+-- prof_old_3.txt
+enumerate	4662.0
+read	62.4
+parse	1494.5
+check	3098.3
+add_walks	1181.2
+method_walks	619.4
+reach	146.2
+traits	98.5
+dump_lines	0
+
+## Profile, new (parallel; per-phase ms summed over worker threads, plus TRX duration)
+-- prof_new_1.txt
+read	254.5
+parse	6275.4
+check	8647.2
+member_walks	5731.0
+closure	19.3
+tests	284.2
+dump_lines	20695
+-- prof_new_2.txt
+read	180.1
+parse	5640.5
+check	8902.5
+member_walks	6346.5
+closure	25.4
+tests	215.8
+dump_lines	0
+-- prof_new_3.txt
+read	223.1
+parse	5548.7
+check	8868.2
+member_walks	6152.4
+closure	18.7
+tests	244.1
+dump_lines	0
+-- prof_new_seeded.txt
+read	187.1
+parse	6453.9
+check	9302.9
+member_walks	6452.7
+closure	19.3
+tests	300.2
+dump_lines	20704
