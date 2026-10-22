@@ -1,0 +1,60 @@
+# P777 — measured output (exit half)
+# Raw logs: ~/allegiance-evidence/P777/ (p777-tests.log, after-showcase-*.log, base-showcase-*.log, fast-tier.log, aot-publish.log)
+
+## P777WarpExitWobbleTests (final tree, 20,000 seeded draws per cell)
+P777-T6: 6 drones; first 60 s: transits=6 exitsTouchingCone=0 reWarpsWithin2.2s=0; full 600 s: transits=9 exitsTouchingCone=0 reWarpsWithin2.2s=0; laid=6/6
+ P777-T6 ship 8100 t=16.9s 1055->1053/2156 error=0.1250 (d/R=0.000) clear
+ P777-T6 ship 8101 t=17.0s 1053->1052/2152 error=0.1250 (d/R=0.000) clear
+ P777-T6 ship 8098 t=48.8s 1059->1052/2187 error=0.1250 (d/R=0.000) clear
+ P777-T6 ship 8099 t=49.5s 1059->1052/2187 error=0.1250 (d/R=0.000) clear
+ P777-T6 ship 8096 t=52.2s 1051->1062/2175 error=0.1250 (d/R=0.000) clear
+ P777-T6 ship 8097 t=53.3s 1051->1062/2175 error=0.1250 (d/R=0.000) clear
+ P777-T6 ship 8100 t=93.1s 1053->1052/2152 error=0.1250 (d/R=0.000) clear
+ P777-T6 ship 8097 t=173.1s 1062->1052/2189 error=0.1250 (d/R=0.000) clear
+ P777-T6 ship 8096 t=173.6s 1062->1052/2189 error=0.1250 (d/R=0.000) clear
+ P777-T6: 6 drones; first 60 s: transits=6 exitsTouchingCone=0 reWarpsWithin2.2s=0; full 600 s: transits=9 exitsTouchingCone=0 reWarpsWithin2.2s=0; laid=6/6
+ P777-T3 d/R=1.0 mass=100: e=1.125000 theta[-1.12496,1.12495] mean=-0.001392; phi[-1.12499,1.12490] mean=-0.003872; roll[1.76729,5.30101] mean=3.54462 (pi*e=3.53429); distinct up/right=19981/19984
+ P777-T3 d/R=1.0 mass=600: e=0.562500 theta[-0.56245,0.56248] mean=-0.001216; phi[-0.56248,0.56237] mean=-0.000202; roll[0.88363,2.65059] mean=1.76484 (pi*e=1.76715); distinct up/right=19984/19972
+ P777-T3 d/R=0.0 mass=100: e=0.125000 theta[-0.12499,0.12499] mean=0.000317; phi[-0.12500,0.12492] mean=-0.000335; roll[0.19640,0.58904] mean=0.39323 (pi*e=0.39270); distinct up/right=19976/19986
+ P777-T3 d/R=0.0 mass=600: e=0.062500 theta[-0.06250,0.06250] mean=0.000219; phi[-0.06249,0.06249] mean=0.000006; roll[0.09823,0.29451] mean=0.19544 (pi*e=0.19635); distinct up/right=19972/19979
+ P777-T3 d/R=0.5 mass=100: e=0.375000 theta[-0.37498,0.37500] mean=0.000093; phi[-0.37495,0.37499] mean=0.002002; roll[0.58911,1.76712] mean=1.17973 (pi*e=1.17810); distinct up/right=19976/19983
+ P777-T3 d/R=0.5 mass=600: e=0.187500 theta[-0.18744,0.18742] mean=-0.000389; phi[-0.18750,0.18744] mean=-0.000409; roll[0.29454,0.88356] mean=0.59074 (pi*e=0.58905); distinct up/right=19979/19977
+ P777-T1: error=0.3750 theta=-0.0757 phi=0.2969 rollDelta=0.9651 rollRange=[0.5890,1.7671]
+ P777-T4 centre r=5: touching=0/20000 minClearance=3.7619 (no wobble = 5.0)
+ P777-T4 centre r=10: touching=0/20000 minClearance=3.6340 (no wobble = 5.0)
+ P777-T4 centre r=25: touching=0/20000 minClearance=3.5176 (no wobble = 5.0)
+ P777-T4 centre r=50: touching=0/20000 minClearance=3.0975 (no wobble = 5.0)
+ P777-T4 rim d/R=1.0 r=5: touching=6659/20000 = 33.29%
+ P777-T4 rim d/R=1.0 r=10: touching=9557/20000 = 47.78%
+ P777-T4 rim d/R=1.0 r=25: touching=15360/20000 = 76.80%
+ P777-T4 rim d/R=1.0 r=50: touching=17550/20000 = 87.75%
+ P777-T5: post-exit roll rate=1.4212 rad/s
+ P777-T5 step 0: roll 1.4212 -> 0.9879 (delta 0.433286, limit 0.433286)
+ P777-T5 step 1: roll 0.9879 -> 0.5581 (delta 0.429817, limit 0.429817)
+ P777-T5 step 2: roll 0.5581 -> 0.1318 (delta 0.426312, limit 0.426312)
+ P777-T2: dest forward=Vector3 { X = 1, Y = -0.8108108, Z = 0.08760676 } nativeUp=Vector3 { X = 0, Y = 0.10742311, Z = 0.9942134 } oldWorldUpFrameUp=Vector3 { X = 0.6259513, Y = 0.77793175, Z = 0.05483757 }
+
+## Base-compatible failing-first demonstrations (unfixed HitWarpEvent, seeded _rand via reflection; harness deleted after the run)
+BASE-T1 theta=2.0721927E-08 phi=-2.2351742E-08 roll=0                 -> test 1 fails on base
+BASE-T2 up=(0.6259513,0.77793175,0.05483757) expectedUp=(0,0.10742311,0.9942134) -> test 2 fails on base
+BASE-T3 distinct quantised offsets = 31                              -> test 3 offset continuity fails on base
+BASE-T4 rim r=7: touching=0/2000                                     -> test 4 rim fails on base
+BASE-T4 centre clearance=5.0001                                      -> test 4 centre passes on base
+BASE-T5 post-exit roll rate=0                                        -> test 5 fails on base
+
+## Showcase never-parks (P700), 5 runs each side
+after:  P700 local 15v15: 110.5s, samples=1104, reached=28/30, longest speed<1 with target=2.004s, shots=3013, hits=1151, kills=8
+after:  P700 local 15v15: 109.4s, samples=1093, reached=26/30, longest speed<1 with target=2.006s, shots=4512, hits=1904, kills=16
+after:  P700 local 15v15: 108.8s, samples=1087, reached=29/30, longest speed<1 with target=1.919s, shots=2368, hits=975, kills=6
+after:  P700 local 15v15: 109.0s, samples=1089, reached=26/30, longest speed<1 with target=2.004s, shots=1963, hits=982, kills=9
+after:  P700 local 15v15: 108.9s, samples=1088, reached=29/30, longest speed<1 with target=1.604s, shots=2073, hits=1040, kills=9
+base:   P700 local 15v15: 109.9s, samples=1098, reached=29/30, longest speed<1 with target=2.014s, shots=2558, hits=1107, kills=11
+base:   P700 local 15v15: 109.5s, samples=1094, reached=29/30, longest speed<1 with target=2.006s, shots=2503, hits=892, kills=6
+base:   P700 local 15v15: 110.0s, samples=1099, reached=29/30, longest speed<1 with target=2.006s, shots=3378, hits=1439, kills=11
+base:   P700 local 15v15: 108.0s, samples=1079, reached=27/30, longest speed<1 with target=2.607s, shots=2699, hits=1035, kills=8
+base:   P700 local 15v15: 108.6s, samples=1085, reached=29/30, longest speed<1 with target=1.905s, shots=3288, hits=1495, kills=10
+
+## Fast tier
+fast: 9867 tests, 283.0s, PASS
+
+PASS: /home/domingo/allegiance-pi-p777/TestResults/tiers-20261021T233323.441977Z/summary.json

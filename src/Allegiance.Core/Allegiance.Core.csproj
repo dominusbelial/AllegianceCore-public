@@ -10,6 +10,10 @@
     <!-- P311: test seam for the transport's overflow/disconnect knob (mirrors
          the Server project's Properties/AssemblyInfo.cs convention). -->
     <InternalsVisibleTo Include="Allegiance.Core.Tests" />
+    <!-- P777: ServerHost.HitWarpEvent calls the internal AlephExit helper (the
+         native exit formula), exactly as tests do; mirrors the Server project's
+         Properties/AssemblyInfo.cs convention. -->
+    <InternalsVisibleTo Include="Allegiance.Server" />
   </ItemGroup>
 
 </Project>

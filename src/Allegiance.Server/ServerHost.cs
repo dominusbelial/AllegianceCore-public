@@ -1453,10 +1453,13 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         if (pship is Ship ship) MissileFired?.Invoke(ship, pTarget as Model, timeFired, lockFraction);
     }
 
-    /// <summary>Uniform source for the small exit-offset jitter, matching the
-    /// C++ <c>random(2.0f, 5.0f)</c> (<c>fsship.cpp:130-131</c>). Accessed only
-    /// on the simulation thread, so no synchronization is needed.</summary>
-    private readonly Random _rand = new();
+    /// <summary>P777 — the exit RNG (<see cref="Core.Model.AlephExit"/> draws
+    /// from it: pitch, yaw, roll, up offset, right offset, in native order).
+    /// Native uses the process-global <c>rand()</c>; this seam lets tests and
+    /// benchmark runs fix the seed (<c>ServerConfig.BenchmarkSeed</c>,
+    /// <c>Server.Lifecycle.cs</c>). Accessed only on the simulation thread, so
+    /// no synchronization is needed.</summary>
+    internal Random WarpExitRandom { get; set; } = new();
 
     private static double MissionTime(Mission? mission) => mission?.LastUpdate ?? 0.0;
 
@@ -1477,20 +1480,26 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// Faithfulness notes (this repo's honesty-about-simplifications style —
     /// every deviation is explicit):
     /// <list type="bullet">
-    /// <item><b>Zero wobble.</b> The C++ randomizes the exit orientation by a
-    /// small angle proportional to how far off-centre the ship hit the warp
-    /// (<c>fsship.cpp:96-122</c>) and spins the roll turn-rate. Simplified to
-    /// zero wobble: the exit orientation is exactly the destination warp's,
-    /// with no random pitch/yaw, so transit is deterministic. Allowed by the
-    /// task and documented here.</item>
-    /// <item><b>Orientation from Forward + world-up.</b> Native reads
-    /// <c>pwarpDest->GetOrientation()</c> (<c>fsship.cpp:90</c>) — the
-    /// destination warp's full rotation matrix. This port has no warp →
-    /// matrix conversion, so the destination warp's <c>Forward</c> vector
-    /// (decoded, <c>DataWarpIGC.Forward</c>) plus the world up (0,1,0) build
-    /// the exit orientation via <c>Orientation.Set</c>. The forward — hence the
-    /// exit velocity direction and the outward offset — matches native; only
-    /// roll about the forward axis is unspecified.</item>
+    /// <item><b>Native wobble.</b> P777 restored the C++ exit randomisation.
+    /// The exit frame starts as the destination warp's orientation
+    /// (<c>fsship.cpp:90</c>; <c>Orientation o(dataWarp->forward)</c>,
+    /// <c>warpIGC.cpp:44-46</c>), is pitched and yawed by
+    /// <c>random(−error, error)</c> each (<c>fsship.cpp:113-114</c>) where
+    /// <c>error = d/(r·r) + 0.125</c> over the <em>source</em> warp, scaled by
+    /// <c>300/mass</c> above 300 kg (<c>fsship.cpp:96-111</c>), and the roll
+    /// turn-rate is bumped by <c>random(π·0.5·error, π·1.5·error)</c>
+    /// (<c>fsship.cpp:116-118</c>). All of it lives in
+    /// <see cref="Core.Model.AlephExit"/>; a stationary ship
+    /// (<c>speed2 == 0</c>, <c>fsship.cpp:94</c>) keeps the exact frame and
+    /// gets no bump.</item>
+    /// <item><b>Orientation from Forward only.</b> Native reads
+    /// <c>pwarpDest->GetOrientation()</c> (<c>fsship.cpp:90</c>), built by the
+    /// single-argument <c>Orientation::Set(forward)</c>
+    /// (<c>orientation.cpp:314-356</c>). The port now does the same
+    /// (<see cref="Orientation.Set(Vector3)"/>); the earlier port-only
+    /// world-up roll is gone. Not modelled: native's aleph spin about
+    /// <c>dataWarp->rotation</c> (<c>warpIGC.cpp:47</c>,
+    /// <c>modelIGC.cpp:85-100</c>), so the base frame is the t = 0 one.</item>
     /// <item><b>Mass-limit gate.</b> Native blocks overweight ships
     /// (<c>fsship.cpp:77</c>, <c>pwarp->MassLimit()</c>). <c>DataWarpIGC</c>
     /// now carries a runtime <see cref="DataWarpIGC.MassLimit"/> defaulting to
@@ -1538,16 +1547,36 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             return;
         }
 
-        // 1. Exit orientation = the DESTINATION warp's facing, from its Forward
-        //    + world-up (zero wobble simplification; see remarks).
+        // 1-3. The native exit: base frame Orientation(destWarp.Forward)
+        //      (fsship.cpp:90; warpIGC.cpp:45), random pitch/yaw and roll bump
+        //      from the error over the SOURCE warp (fsship.cpp:96-118),
+        //      velocity along the perturbed backward (fsship.cpp:123-127) and
+        //      the up/right/backward position offset (fsship.cpp:129-132).
+        //      P777 extracted the formula into AlephExit; the orchestration
+        //      (gates, sector move, events) stays here.
         float[] fwdSrc = partner.Warp.Forward is { Length: 3 } f ? f : new[] { 0f, 0f, -1f };
-        sh.Orientation.Set(new Vector3(fwdSrc[0], fwdSrc[1], fwdSrc[2]), new Vector3(0f, 1f, 0f));
-        Vector3 backward = sh.Orientation.GetBackward();
+        var destForward = new Vector3(fwdSrc[0], fwdSrc[1], fwdSrc[2]);
+        var srcPos = rw.Warp.Position is { Length: 3 } sp
+            ? new Vector3(sp[0], sp[1], sp[2])
+            : Vector3.Zero;
+        var destPos = partner.Warp.Position is { Length: 3 } p
+            ? new Vector3(p[0], p[1], p[2])
+            : Vector3.Zero;
+        float shipRadius = 0.5f * sh.HullType.Length;
+        var exit = AlephExit.Apply(
+            sh.Orientation,
+            srcPos, rw.Warp.Radius,
+            destPos, destForward,
+            sh.Position, sh.Velocity, sh.Mass, shipRadius,
+            sh.Mission!.Core.Constants.FloatConstants[3], WarpExitRandom);
+        sh.Position = exit.Position;
+        sh.Velocity = exit.Velocity;
 
-        // 2. Reverse the velocity direction at entry speed + the exit bonus
-        //    (fsship.cpp:126-127).
-        float entrySpeed = sh.Velocity.Length();
-        sh.Velocity = backward * -(entrySpeed + sh.Mission!.Core.Constants.FloatConstants[3]);
+        // fsship.cpp:116-118 — roll rate only, added to the current rate. Not
+        // clamped here: the wire clamps to ±2π (CompactTurnRates,
+        // Wire/Compact/Quant.cs:43-53).
+        sh.SetTurnRate(ControlData.AxisRoll,
+                       sh.TurnRates[ControlData.AxisRoll] + exit.RollRateDelta);
 
         // P591b — record the warp the ship emerged at (the destination-side
         // partner) so the re-entry guard (Sector.ResolveWarpCollisions) refuses
@@ -1556,36 +1585,14 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         // mine-layer ping-pong; native fsship.cpp:71-137). Cleared by the guard.
         sh.LastArrivalWarpId = partner.Warp.WarpId;
 
-        // 3. Reposition at the destination warp, offset along up/right minus the
-        //    ship's own radius+5 along backward so it emerges right at the aleph,
-        //    mirroring native's exit exactly (fsship.cpp:129-132):
-        //    GetPosition() + up·rand(2,5) + right·rand(2,5) − (GetRadius()+5)·backward.
-        //    P406: the backward clearance is JUST shipRadius+5. The earlier
-        //    Sector.WarpVisualScale·Radius term (added by P238 to land the exit
-        //    outside a visually-scaled destination collision sphere) is a leftover
-        //    whose rationale is gone: P244 reverted the real transit trigger to the
-        //    raw warp.Radius (Sector.cs ResolveWarpCollisions) and P247 shrank the
-        //    render funnel to 2.5×. P776 corrected the rest of the picture: the
-        //    aleph trigger is native's c_htsCone (modelIGC.cpp:127-130;
-        //    HitTest.cpp:254-283) — a base disc through the centre plus a 45° cone
-        //    behind it — so this exit point (centre shipRadius+5 IN FRONT of the
-        //    disc) lies OUTSIDE the destination aleph's collision volume, not
-        //    inside a sphere. The old port comment claimed native exits inside its
-        //    raw collision sphere and is protected only by the 2 s debounce; that
-        //    was wrong. No re-trigger here, and the 2 s window
-        //    (LastWarpTime / WarpCooldownSeconds) is native's player re-arm
-        //    (fsship.cpp:1185-1191), not the re-entry protection.
-        float upOff = (float)_rand.Next(20, 51) / 10f;      // 2.0..5.0
-        float rightOff = (float)_rand.Next(20, 51) / 10f;   // 2.0..5.0
-        var destPos = partner.Warp.Position is { Length: 3 } p
-            ? new Vector3(p[0], p[1], p[2])
-            : Vector3.Zero;
-        float shipRadius = 0.5f * sh.HullType.Length;
-        float exitClearance = shipRadius + 5f;
-        sh.Position = destPos
-            + sh.Orientation.GetUp() * upOff
-            + sh.Orientation.GetRight() * rightOff
-            - sh.Orientation.GetBackward() * exitClearance;
+        // P406/P776/P777 — the exit is (shipRadius+5) behind the ship along the
+        // perturbed backward, plus up/right jitter (fsship.cpp:129-132). That
+        // lands it OUTSIDE the cone for NEAR-CENTRE hits (worst clearance ≈ 3.1 u
+        // at r = 50 to 3.8 u at r = 5, measured). Off-centre hits can leave the hull
+        // touching the cone — natively too (P777 measured; see the report).
+        // Players are covered by the NoUpdate handshake
+        // (fsship.cpp:79-82,1185-1191); port NPCs by the port-only cooldown
+        // (Sector.WarpCooldownSeconds).
 
         // 4. Sector reassignment — the whole point (C++ GetIGCShip()->SetCluster,
         //    fsship.cpp:134): move the model between the two sectors' lists and
@@ -1604,7 +1611,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
 
         var warpNote = $"[warp] ship {sh.Id} crossed from '{oldSector.Name}' ({oldSector.Id}) " +
                        $"to '{destSector.Name}' ({destSector.Id}) via warp {rw.Warp.WarpId}";
-        Console.WriteLine(warpNote);
+        Console.WriteLine($"{warpNote} t={MissionTime(sh.Mission):F3}");   // sim time: lets rig logs time aleph reversals
         ReportNotable(warpNote);                            // spectator event feed (same text)
         sh.Mission?.Skills?.Record(sh.SideId, ShowcaseSkill.Warp);
         ShipWarped?.Invoke(sh, oldSector, destSector);

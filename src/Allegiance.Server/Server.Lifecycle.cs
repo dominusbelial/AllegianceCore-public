@@ -775,6 +775,13 @@ public sealed partial class Server
             ReceiveDecouple = decouple,
             InboundTrace = _config.Receive?.Measure == true ? new InboundTrace() : null,
         };
+        // P777 — the warp-exit RNG (ServerHost.WarpExitRandom, native's
+        // random(2,5)/±error draws, fsship.cpp:96-132). Seeded separately from
+        // Server._rand (a different stream: 'WARP' in little-endian) so the
+        // benchmark seed makes exits reproducible without shifting any other
+        // seeded draw.
+        if (_config.BenchmarkSeed is { } warpSeed)
+            _host.WarpExitRandom = new Random(warpSeed ^ 0x57415250);
         Console.WriteLine($"[boot] receive.decouple = {decouple.ToString().ToLowerInvariant()} (receive-worker decode; tick-boundary apply)");
         _host.ShipKilled = BroadcastKillShip;   // wire the site's KillShipEvent to a broadcast
         _host.ShipWarped = OnShipWarped;        // wire the site's HitWarpEvent transit to per-peer routing
