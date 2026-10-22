@@ -129,6 +129,7 @@ public sealed partial class Game1
 
     private string? _pendingGotoSector;
     private LiveProof.AutoTargetKind? _pendingTarget;
+    private long _pendingTargetRetryAtMs;
     private string? _pendingTargetClass;   // P623 — "rel:cls[:dir]" class target spec
     private bool _pendingHeadToDock;
     private bool _pendingExit;
@@ -381,11 +382,17 @@ public sealed partial class Game1
                 Console.WriteLine($"[autoproof] auto-goto -> sector {sid}");
             }
         }
-        if (_pendingTarget is { } tk)
+        if (_pendingTarget is { } tk && Environment.TickCount64 >= _pendingTargetRetryAtMs)
         {
             _pendingTarget = null;
-            if (tk != LiveProof.AutoTargetKind.None)
-                AutoFrameTarget(tk);
+            // A ship target that is not in the sector yet (a fleet still on its
+            // way) is retried every 2 s instead of being dropped.
+            if (tk != LiveProof.AutoTargetKind.None && !AutoFrameTarget(tk)
+                && tk is LiveProof.AutoTargetKind.Enemy or LiveProof.AutoTargetKind.Friendly)
+            {
+                _pendingTarget = tk;
+                _pendingTargetRetryAtMs = Environment.TickCount64 + 2000;
+            }
         }
         if (_pendingTargetClass is { Length: > 0 } clsSpec)
         {
@@ -428,10 +435,10 @@ public sealed partial class Game1
     /// by reusing the client's own real candidate gather + relation filters
     /// (the same machines T/G use), then engage the autopilot toward it so it
     /// stays framed as the ship drifts.</summary>
-    private void AutoFrameTarget(LiveProof.AutoTargetKind kind)
+    private bool AutoFrameTarget(LiveProof.AutoTargetKind kind)
     {
         if (!TryOwnPose(out var pos, out var orient, out _))
-            return;
+            return false;
 
         List<CandidateObject> objs;
         lock (_session.Gate)
@@ -439,7 +446,7 @@ public sealed partial class Game1
             var world = _session.World;
             if (world.MyShipId is not { } me
                 || !world.Ships.TryGetValue(me, out var own))
-                return;
+                return false;
             objs = GatherSectorCandidates(world.Ships, world.Warps, world.Stations,
                                           world.Asteroids, me, own.SectorId,
                                           ShipRoleBits, StationRoleBits);
@@ -480,10 +487,12 @@ public sealed partial class Game1
             if (kind != LiveProof.AutoTargetKind.Asteroid)
                 EngageAutopilotToward(_autoTarget.Value, "autoproof: frame target");
             Console.WriteLine($"[autoproof] auto-target {kind} -> {b.Name} (kind {b.Kind})");
+            return true;
         }
         else
         {
             Console.WriteLine($"[autoproof] auto-target {kind}: none in sector — leaving default targeting");
+            return false;
         }
     }
 
