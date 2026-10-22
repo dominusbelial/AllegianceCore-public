@@ -35,21 +35,10 @@ jobs:
         run: dotnet build AllegianceCore.slnx
 
       - name: Build every tools/ project
-        # The solution references a subset of tools/; the many *-proof harnesses
-        # are standalone projects that must also compile (P602: proof tools were
-        # rotting against later API changes). Fail the job if any one breaks.
-        # Compile check only: each proof's bin/ is a ~340 MB copy of its dependencies (7.9 GB for
-        # all 70), which ran the runner out of disk (run 39719003509). Drop it after the build,
-        # except for projects in the solution or whose bin/ a test runs (benchmark, hd2-proof, ...).
-        run: |
-          set -euo pipefail
-          for f in tools/*/*.csproj; do
-            echo "Building $f"
-            dotnet build "$f"
-            d=$(dirname "$f")
-            grep -qF "\"$f\"" AllegianceCore.slnx || grep -rqF "$d/bin" tests .github || rm -rf "$d/bin"
-          done
-          df -h /
+        # The solution references a subset of tools/; the *-proof harnesses are standalone
+        # projects that must also compile (P602). --drop-bins deletes each unused bin/ after
+        # its build (~340 MB each; all 70 ran the runner out of disk, run 39719003509).
+        run: tools/build-tools.sh --drop-bins
 
       - name: Test Fast tier (non-corpus gate)
         env:

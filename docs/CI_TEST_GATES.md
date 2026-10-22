@@ -7,6 +7,7 @@ that needs one of those must SKIP there, never fail.
 | Workflow | Step | Command |
 |---|---|---|
 | `ci.yml` (push/PR to master) | Test Fast tier (non-corpus gate) | `tools/run-tests.sh --tier fast --no-build` with `TEST_FILTER="Requires!=Artwork&Requires!=NativeSource&Requires!=Gpu&Requires!=MeshyPack&Lane!=LiveTiming"` |
+| `ci.yml` | Build every tools/ project | `tools/build-tools.sh --drop-bins` — every `tools/*/*.csproj` on its own (the `*-proof` tools are outside the solution) |
 | `release.yml` (player release) | Existing CI test gate | `dotnet test AllegianceCore.slnx --no-build --filter "Requires!=Artwork&Requires!=NativeSource&Lane!=LiveTiming"` — **all tiers** (Fast, Live, Perf), and it does *not* filter `Requires=Gpu` |
 
 The release gate is the stricter one: Live/Perf tests that `ci.yml` never runs
@@ -76,3 +77,12 @@ on the mini runner and in `tools/run-ci-gate.sh` (without `--clean-clone`). It s
 on a clean clone and when the corpus is not checked out at the commit pinned in
 `packaging/sources.json`. Fix: `python3 packaging/generate-manifest.py --artwork
 <artwork>`, review the diff, commit both files.
+
+## Tool projects build (light gate)
+
+`tools/build-tools.sh` builds every `tools/*/*.csproj` by itself, exactly as `ci.yml`
+does. The light gate runs it right after the solution build: the solution covers only
+26 of the 70 tool projects, and a removed API (P773's `KillBonusStreak`, still used by
+`tools/font1c-proof`) broke `ci.yml` while every solution-only gate stayed green.
+`--drop-bins` is for CI only: it deletes each tool's ~340 MB `bin/` after its build
+unless the solution, `tests/` or `.github/` uses it.
