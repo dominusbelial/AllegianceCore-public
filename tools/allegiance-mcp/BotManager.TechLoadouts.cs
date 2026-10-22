@@ -60,9 +60,13 @@ internal sealed partial class BotManager
     }
 
     internal static TechLoadoutSelector.Selection? PickTechLoadout(LoadoutShop shop, Showcase.HullRole role,
-        DataStationTypeIGC? target = null, bool allowRoleFallback = true, bool support = false, bool defensiveMines = false)
+        DataStationTypeIGC? target = null, bool allowRoleFallback = true, bool support = false, bool defensiveMines = false,
+        bool medevacScout = false)
     {
         var core = Catalog.RepresentativeCore();
+        // P779b-1 — the medevac exception is scout-only: its Dispenser slot takes
+        // the side's best rescue-capable probe launcher instead of a scanner.
+        bool rescueProbe = medevacScout && role == Showcase.HullRole.Scout;
         if (defensiveMines && allowRoleFallback && !support)
         {
             var layer = TechLoadoutSelector.Select(core, shop.Civ, Showcase.HullRole.Scout, shop.Techs,
@@ -71,7 +75,8 @@ internal sealed partial class BotManager
                 return layer with { Reason = $"requested role={role}; defensive mine duty (one in three fighter slots); {layer.Reason}" };
         }
         var selected = support ? TechLoadoutSelector.SelectSupport(core, shop.Civ, shop.Techs, shop.DockType, shop.Budget)
-            : TechLoadoutSelector.Select(core, shop.Civ, role, shop.Techs, shop.DockType, target ?? shop.Target, shop.Budget);
+            : TechLoadoutSelector.Select(core, shop.Civ, role, shop.Techs, shop.DockType, target ?? shop.Target, shop.Budget,
+                rescueProbe: rescueProbe);
         if (support && selected is null) selected = TechLoadoutSelector.Select(core, shop.Civ, role, shop.Techs, shop.DockType, budget: shop.Budget);
         if (selected is not null || !allowRoleFallback) return selected;
         // Some roles do not exist until a branch station completes. Keep the
@@ -124,7 +129,7 @@ internal sealed partial class BotManager
                     target = Catalog.RepresentativeCore().StationTypes[plan.TargetTypeId];
                 if (!Enum.TryParse<Showcase.HullRole>(bot.Role, true, out var role)) role = Showcase.HullRole.Fighter;
                 selected = PickTechLoadout(shop, role, target, allowRoleFallback: !bot.FinaleBomberActive, support: IsSupport(bot),
-                    defensiveMines: bot.DefensiveMineDuty);
+                    defensiveMines: bot.DefensiveMineDuty, medevacScout: bot.MedevacScout);
                 if (selected is null && bot.FinaleBomberActive && target is { } station
                     && cs.World.ResearchBriefing?.TechMode == "research")
                 {

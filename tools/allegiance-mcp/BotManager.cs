@@ -172,6 +172,9 @@ internal sealed partial class BotManager : IDisposable
     public Func<short, short, Vector3, Vector3, bool>? Relocator;
     private readonly Thread _loopThread;
     private int _nameCounter;
+    /// <summary>P779b-1 — the stable per-bot roster id the medevac pick keys on
+    /// (ship ids are re-allocated on a reseat; a bot keeps this id for its life).</summary>
+    private int _botSeq;
     private bool _startedLoop;
 
     /// <summary>P430 — per-bot bounding cap on the rolling cadence sample list
@@ -535,6 +538,7 @@ internal sealed partial class BotManager : IDisposable
         }
 
         string name = NextName();
+        int botId = Interlocked.Increment(ref _botSeq);   // P779b-1 stable roster id
         using var ownership = new PendingOwnership(DisposePeer);
         ActiveBot bot = null!;
         ownership.OnFailure(() => { if (bot is not null) RemoveInactiveBot(bot, "spawn failed"); });
@@ -560,12 +564,16 @@ internal sealed partial class BotManager : IDisposable
                 }
             }
             var cs = ownership.Own(SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide, out granted, out grantWarning,
+                botId, role, out bool medevacScout, out bool canBuyRescueProbe,
                 techRole, selected => { hullId = selected.HullId; hullName = selected.HullName; finalParts = selected.Parts.ToList(); }, support: string.Equals(role, "support", StringComparison.OrdinalIgnoreCase), defensiveMines: defensiveMines));
             DiagnoseProbeLaunch(name, shipId, actualSide);
 
             bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed())
             {
                 Cs = cs,
+                BotId = botId,
+                MedevacScout = medevacScout,
+                CanBuyRescueProbe = canBuyRescueProbe,
                 Difficulty = _difficulty,
                 TechLoadouts = true,
                 DefensiveMineDuty = defensiveMines,
@@ -611,6 +619,7 @@ internal sealed partial class BotManager : IDisposable
             bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed())
             {
                 Bot = b,
+                BotId = botId,
                 Difficulty = _difficulty,
                 ShipId = shipId,
                 Launched = true,
@@ -685,7 +694,6 @@ internal sealed partial class BotManager : IDisposable
                 _loopThread.Start();
             }
         }
-
         // P554 — the arena relocation runs AFTER the bot is registered in
         // _bots, because the networked relocator looks the bot up by shipId to
         // send the 'relocate' cheat via the bot's OWN connection (ownership = a
@@ -724,6 +732,9 @@ internal sealed partial class BotManager : IDisposable
         if (!IsParticipating(bot))
             throw new InvalidOperationException($"spawn_bot: bot '{name}' disconnected before registration completed");
         bot.SpawnPending = false;
+        // P779b-1 — the new bot may be its side's lowest-id scout; settle the
+        // per-side medevac flag now that it is a full roster member.
+        RefreshMedevacScouts();
         ownership.Transfer();
         int count;
         lock (_gate) count = _bots.Count;
@@ -773,8 +784,10 @@ internal sealed partial class BotManager : IDisposable
     /// combat spawn can never silently fly a refused default ship.
     /// </summary>
     private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide, out LoadoutGrant granted, out string? warning,
+        int botId, string? roleName, out bool medevacScout, out bool canBuyRescueProbe,
         Showcase.HullRole? techRole = null, Action<TechLoadoutSelector.Selection>? onSelected = null, bool support = false, bool defensiveMines = false)
     {
+        bool pickedMedevac = false, pickedCanBuy = false;
         using var ownership = new PendingOwnership(DisposePeer);
         var cs = ownership.Own(new ConnectionSession(BotWorlds(side)));
         cs.World.CountOnlyProjectiles = true;
@@ -798,11 +811,36 @@ internal sealed partial class BotManager : IDisposable
         {
             short ownId = shipId, ownSide = actualSide;
             TechLoadoutSelector.Selection? selected = null;
+            bool medevacDecided = false;
             if (!WaitUntil(() =>
             {
-                lock (cs.Gate)
-                    if (CurrentLoadoutShop(cs, ownSide, ownId) is { } shop)
-                        selected = PickTechLoadout(shop, techRole ?? Showcase.HullRole.Fighter, support: support, defensiveMines: defensiveMines);
+                LoadoutShop? shop;
+                lock (cs.Gate) shop = CurrentLoadoutShop(cs, ownSide, ownId);
+                if (shop is not { } s) return false;
+                // P779b-1 — the per-side medevac pick is decided from core data:
+                // the side's techs must buy a rescue-capable probe launcher, and
+                // this bot must be the lowest stable bot id among the side's
+                // scout-role bots (current roster + this one). Decided once per
+                // spawn attempt, not on every budget retry.
+                pickedCanBuy = TechLoadoutSelector.PickRescueProbeLauncher(
+                    Catalog.RepresentativeCore(), s.Techs) is not null;
+                if (!medevacDecided)
+                {
+                    medevacDecided = true;
+                    if (techRole == Showcase.HullRole.Scout)
+                    {
+                        if (pickedCanBuy)
+                        {
+                            List<MedevacCandidate> candidates;
+                            lock (_gate) candidates = MedevacCandidates();
+                            candidates.Add(new MedevacCandidate(botId, ownSide, roleName ?? "scout", true));
+                            pickedMedevac = PickMedevacScouts(candidates).Contains(botId);
+                        }
+                        else LogNoMedevacScout(ownSide, s.Civ);
+                    }
+                }
+                selected = PickTechLoadout(s, techRole ?? Showcase.HullRole.Fighter, support: support,
+                    defensiveMines: defensiveMines, medevacScout: pickedMedevac);
                 return selected is not null;
             }, 15000)) throw new InvalidOperationException($"spawn_bot: '{name}' has no observed legal affordable loadout for role {techRole}");
             hullId = selected!.HullId; parts = selected.Parts;
@@ -814,6 +852,8 @@ internal sealed partial class BotManager : IDisposable
         granted = BuyAndConfirmLaunch(name, hullId, parts, () => cs.Connected && !cs.Lost, ownLaunched,
             () => cs.SendBuyLoadout(hullId, fLaunch: true, parts), () => cs.BuyLoadoutAcks, out warning);
         ownership.Transfer();
+        medevacScout = pickedMedevac;
+        canBuyRescueProbe = pickedCanBuy;
         return cs;
     }
 
@@ -1748,6 +1788,11 @@ internal sealed partial class BotManager : IDisposable
                 }
                 UpdateFinales(now);
                 UpdateDefense(snap, now);
+                if (now >= _nextMedevacRefresh)   // P779b-1: roster changes settle the per-side pick
+                {
+                    _nextMedevacRefresh = now + 1;
+                    RefreshMedevacScouts();
+                }
 
                 var decisionDue = DecisionDue(snap, now);
 
@@ -2266,10 +2311,13 @@ bool isThreat =
         var parts = bot.Parts ?? Catalog.DefaultParts();
         try
         {
-            var cs = SeatCombatClient(name, bot.Side, bot.HullId, parts, out short shipId, out short actualSide, out var upGranted, out var upWarning);
+            var cs = SeatCombatClient(name, bot.Side, bot.HullId, parts, out short shipId, out short actualSide, out var upGranted, out var upWarning,
+                bot.BotId, bot.Role, out bool upgradedMedevac, out bool upgradedCanBuyRescue);
             try { DisposePeer(old); } catch { }   // free the old plain-client peer now that the combat one is real
             bot.Bot = null;
             bot.Cs = cs;
+            bot.CanBuyRescueProbe = upgradedCanBuyRescue;
+            bot.MedevacScout = upgradedMedevac;
             bot.TechLoadouts = true;
             bot.PurchasePacer = _loadoutPurchasePacer;
             bot.ShipId = shipId;
@@ -3660,20 +3708,67 @@ bool isThreat =
         Func<short, bool> isRestartCapable,
         Func<short, short, int> routeHops)
     {
+        var pick = PickPodTarget(stations, [], mySide, mySector, myPos, isRestartCapable,
+            (a, b) => a == b, _ => (short)0, routeHops);
+        if (pick is not { IsProbe: false } station) return null;
+        return new PodHomePick(station.ObjectId, station.SectorId, station.Center);
+    }
+
+    /// <summary>
+    /// P779b-1 — the pod autopilot target: native's eject search
+    /// <c>FindTarget(pShip, c_ttStation | c_ttFriendly | c_ttAnyCluster | c_ttProbe,
+    /// …, c_sabmRescue | c_sabmRescueAny | c_sabmLand)</c>
+    /// (clintlib/appmsg.cpp:230-237; reused from the port's own client rule in
+    /// Game1.Eject.cs, P540). A FRIENDLY rescue-capable probe is therefore a
+    /// candidate NEXT TO the restart-capable friendly stations, and the P560
+    /// route-aware order is unchanged: fewest warp hops from the pod's current
+    /// sector, then Euclidean distance. "Friendly" = own side or allied
+    /// (<see cref="ClientWorld.AreAllied"/>) for a probe with
+    /// c_eabmRescue/c_eabmRescueAny (Igc/igc.h:781-782); an ENEMY-side
+    /// RescueAny probe is not a <c>c_ttFriendly</c> target and is ignored (it
+    /// would still rescue on touch server-side, P780). Pure over plain data so
+    /// the rule is unit-provable.
+    /// </summary>
+    internal static PodTargetPick? PickPodTarget(
+        IReadOnlyList<(short Id, short Side, short Sector, Vector3 Pos, short TypeId)> stations,
+        IReadOnlyList<(short Id, short Side, short Sector, Vector3 Pos, short TypeId)> probes,
+        short mySide, short mySector, Vector3 myPos,
+        Func<short, bool> isRestartCapable,
+        Func<short, short, bool> isFriendly,
+        Func<short, short> probeEabm,
+        Func<short, short, int> routeHops)
+    {
         short bestId = -1; short bestSector = -1; Vector3 bestCenter = default;
-        int bestHops = int.MaxValue; float bestDist = float.MaxValue;
+        int bestHops = int.MaxValue; float bestDist = float.MaxValue; bool bestIsProbe = false;
+        void Consider(short id, short side, short sector, Vector3 pos, bool probe)
+        {
+            int hops = routeHops(mySector, sector);     // route-distance (warp hops)
+            if (hops < 0) return;                       // unreachable pocket — skip
+            float d = (pos - myPos).LengthSquared();
+            if (hops > bestHops || (hops == bestHops && d >= bestDist)) return;
+            bestHops = hops; bestDist = d; bestId = id; bestSector = sector; bestCenter = pos; bestIsProbe = probe;
+        }
         foreach (var (id, side, sector, pos, tid) in stations)
         {
             if (side != mySide) continue;               // c_ttFriendly (FedSrv.CPP:12034)
             if (!isRestartCapable(tid)) continue;       // c_sabmRestart filter (P550)
-            int hops = routeHops(mySector, sector);     // route-distance (warp hops)
-            if (hops < 0) continue;                     // unreachable pocket — skip
-            float d = (pos - myPos).LengthSquared();
-            if (hops < bestHops || (hops == bestHops && d < bestDist))
-            { bestHops = hops; bestDist = d; bestId = id; bestSector = sector; bestCenter = pos; }
+            Consider(id, side, sector, pos, probe: false);
         }
-        return bestId < 0 ? null : new PodHomePick(bestId, bestSector, bestCenter);
+        foreach (var (id, side, sector, pos, tid) in probes)
+        {
+            if (!isFriendly(mySide, side)) continue;    // c_ttFriendly (own or allied)
+            if ((probeEabm(tid) & 0x6000) == 0) continue;   // c_eabmRescue|RescueAny
+            Consider(id, side, sector, pos, probe: true);
+        }
+        return bestId < 0 ? null : new PodTargetPick(bestId, bestSector, bestCenter, bestIsProbe,
+            bestHops, MathF.Sqrt(bestDist));
     }
+
+    /// <summary>P779b-1 — a pod autopilot target: a restart-capable friendly
+    /// station or a friendly rescue-capable probe, with the route-aware ordering
+    /// fields the [p779b] log line reports.</summary>
+    internal readonly record struct PodTargetPick(short ObjectId, short SectorId, Vector3 Center,
+        bool IsProbe, int Hops, float Distance);
 
     /// <summary>
     /// P560 — steer a cross-sector WARP LEG with P540b's
@@ -3812,56 +3907,47 @@ bool isThreat =
     /// fight) until docked. Once docked the server's normal dock/relaunch path
     /// takes over; when the bot relaunches into a fresh fighter
     /// (<see cref="UpdatePodState"/> clears <c>IsPod</c>) combat resumes.
+    /// <para>P779b-1 — the target may also be a friendly rescue-capable probe
+    /// (native eject search mask <c>c_ttStation | c_ttFriendly | c_ttAnyCluster |
+    /// c_ttProbe</c>, clintlib/appmsg.cpp:230-237); the pod then flies INTO it,
+    /// because a probe rescue is a touch (P780).</para>
     /// </summary>
     private void DrivePodHome(ActiveBot bot, ConnectionSession cs, double now)
     {
         if (bot.PodDocked) { RelaunchDockedPod(bot, cs, now); return; }
 
-        if (bot.PodStationId < 0)
-        {
-            // P560 — pick the pod's home the server's way (P550: nearest
-            // c_sabmRestart friendly station), made route-aware: shortest
-            // warp-route distance from the pod's CURRENT sector, tie-broken by
-            // Euclidean distance, only restart-capable friendly stations. The
-            // P539 straight-line nearest pick ignored sectors and could point a
-            // pod at a home in an unreachable pocket (then it would oscillate).
-            short curSec = CsSector(cs);
-            Vector3 myPos = Vector3.Zero;
-            var core = Catalog.RepresentativeCore();
-            var stations = new List<(short Id, short Side, short Sector, Vector3 Pos, short StationTypeId)>();
-            ClusterGraph? graph;
-            lock (cs.Gate)
-            {
-                if (cs.World.Ships.TryGetValue(bot.ShipId, out var me) && me.Latest is { } mu) myPos = mu.Position;
-                foreach (var st in cs.World.Stations.Values)
-                    if (st.Position is { Length: 3 } p)
-                        stations.Add((st.StationId, st.SideId, st.ClusterId,
-                            new Vector3(p[0], p[1], p[2]), st.StationTypeId));
-                graph = cs.World.Graph;
-            }
-            int Hops(short a, short b) => graph is null ? (a == b ? 0 : -1)
-                : graph.FindShortestPath(a, b) is { } path ? Math.Max(0, path.Count - 1) : -1;
-            var pick = PickPodHomeStation(stations, bot.Side, curSec, myPos,
-                tid => core.StationTypes.TryGetValue(tid, out var t) && t.HasCapability(DataStationTypeIGC.SabmRestart),
-                Hops);
-            if (pick is { } pk)
-            {
-                bot.PodStationId = pk.StationId;
-                bot.PodStationSector = pk.SectorId;
-                bot.PodStationCenter = pk.Center;
-            }
-            if (bot.PodStationId < 0)
-            {
-                LoiterCombat(bot, now);   // no reachable restart-capable friendly station — hold, retry next tick
-                return;
-            }
-            Console.WriteLine($"[p539] pod bot {bot.Name} (ship {bot.ShipId}) flying home to friendly restart-capable station {bot.PodStationId} in sector {bot.PodStationSector}");
-        }
-
+        // P779b-1 — (re)pick the pod's autopilot target: a restart-capable
+        // friendly station OR a friendly rescue-capable probe (native eject
+        // search, clintlib/appmsg.cpp:230-237), route-aware exactly as P560.
+        // Re-evaluated once per second while the pod flies so a probe that
+        // appears or expires is noticed (native removes expired/destroyed probes
+        // from the cluster, probeigc.cpp:133,335-338); an explicit support/siege
+        // destination was not picked here, so it is never replaced.
         short cur = CsSector(cs);
         if (cur < 0) return;
+        if ((bot.PodStationId < 0 && bot.PodProbeId < 0) || (bot.PodTargetAuto && now >= bot.PodRepickAt))
+        {
+            bot.PodRepickAt = now + 1;
+            RepickPodTarget(bot, cs, cur);
+        }
+        if (bot.PodStationId < 0 && bot.PodProbeId < 0)
+        {
+            LoiterCombat(bot, now);   // no reachable friendly rescue target — hold, retry next tick
+            return;
+        }
+
         if (cur == bot.PodStationSector)
         {
+            // P779b-1 — a probe target is STATIC and rescues on TOUCH (P780: swept
+            // sphere, pod 0.5*Length + probe Radius 6), so fly straight INTO its
+            // position; the station bay-approach planner is for stations only.
+            if (bot.PodProbeId >= 0)
+            {
+                if (TryCsPose(cs, bot.ShipId, out var probePos, out var probeOrient))
+                    cs.CommandControls(Allegiance.ClientCore.Flight.AutopilotSteering.Pursue(
+                        probePos, probeOrient, bot.PodStationCenter), 0);
+                return;
+            }
             // P575 — in the home sector, use the SHARED native bay-approach
             // planner (DockApproach — the same routine the player autopilot and
             // server NPCs use) to line up on the station's landing bay and enter,
@@ -3903,6 +3989,72 @@ bool isThreat =
             }
         if (warp is { } mouth) FlyWarpLeg(bot, Vec3(mouth.Position));
         else LoiterCombat(bot, now);
+    }
+
+    /// <summary>P779b-1 — re-evaluate the pod's autopilot target from its own
+    /// world: restart-capable friendly stations plus friendly rescue-capable
+    /// probes, route-aware (P560 ordering). Sets the probe/station target and
+    /// logs the probe choice once per target change. The roster's probes come
+    /// from <c>cs.World.Probes</c>, which drops entries on destruction/expiry —
+    /// the same data the client eject rule reads (Game1.Eject.cs, P540).</summary>
+    private void RepickPodTarget(ActiveBot bot, ConnectionSession cs, short curSec)
+    {
+        var core = Catalog.RepresentativeCore();
+        Vector3 myPos = Vector3.Zero;
+        var stations = new List<(short Id, short Side, short Sector, Vector3 Pos, short TypeId)>();
+        var probes = new List<(short Id, short Side, short Sector, Vector3 Pos, short TypeId)>();
+        ClusterGraph? graph;
+        lock (cs.Gate)
+        {
+            var world = cs.World;
+            if (world.Ships.TryGetValue(bot.ShipId, out var me) && me.Latest is { } mu) myPos = mu.Position;
+            foreach (var st in world.Stations.Values)
+                if (st.Position is { Length: 3 } p)
+                    stations.Add((st.StationId, st.SideId, st.ClusterId,
+                        new Vector3(p[0], p[1], p[2]), st.StationTypeId));
+            // Only a LIFEPOD may take a probe (appmsg.cpp:230-237 is the eject
+            // autopilot). Live ships reach DrivePodHome too (finale refit,
+            // Siege.cs; support refit) and must still dock at a station.
+            if (bot.IsPod)
+                foreach (var pb in world.Probes.Values)
+                    probes.Add((pb.ProbeId, pb.SideId, pb.ClusterId, pb.Position, pb.ProbetypeId));
+            graph = world.Graph;
+        }
+        int Hops(short a, short b) => graph is null ? (a == b ? 0 : -1)
+            : graph.FindShortestPath(a, b) is { } path ? Math.Max(0, path.Count - 1) : -1;
+        bool Friendly(short mine, short other)
+        {
+            if (mine == other) return true;
+            lock (cs.Gate) return cs.World.AreAllied(mine, other);   // c_ttFriendly (allies)
+        }
+        var pick = PickPodTarget(stations, probes, bot.Side, curSec, myPos,
+            tid => core.StationTypes.TryGetValue(tid, out var type) && type.HasCapability(DataStationTypeIGC.SabmRestart),
+            Friendly,
+            tid => core.ProbeTypes.TryGetValue(tid, out var probe) ? probe.EabmCapabilities : (short)0,
+            Hops);
+        bot.PodTargetAuto = true;   // this target is ours to re-evaluate
+        if (pick is not { } pk)
+        {
+            bot.PodStationId = -1;
+            bot.PodProbeId = -1;
+            return;
+        }
+        if (pk.IsProbe)
+        {
+            if (bot.PodProbeId == pk.ObjectId && bot.PodStationSector == pk.SectorId) return;
+            bot.PodProbeId = pk.ObjectId;
+            bot.PodStationId = -1;
+            bot.PodStationSector = pk.SectorId;
+            bot.PodStationCenter = pk.Center;
+            Console.WriteLine($"[p779b] pod bot {bot.Name} (ship {bot.ShipId}) -> rescue probe {pk.ObjectId} in sector {pk.SectorId} (hops {pk.Hops}, dist {pk.Distance:F0})");
+            return;
+        }
+        if (bot.PodProbeId < 0 && bot.PodStationId == pk.ObjectId && bot.PodStationSector == pk.SectorId) return;
+        bot.PodStationId = pk.ObjectId;
+        bot.PodProbeId = -1;
+        bot.PodStationSector = pk.SectorId;
+        bot.PodStationCenter = pk.Center;
+        Console.WriteLine($"[p539] pod bot {bot.Name} (ship {bot.ShipId}) flying home to friendly restart-capable station {bot.PodStationId} in sector {bot.PodStationSector}");
     }
 
     /// <summary>P557 — the first real MINE DISPENSER part id in a loadout (a
@@ -5853,6 +6005,14 @@ bool isThreat =
         public short PodStationId = -1;
         public short PodStationSector = -1;
         public Vector3 PodStationCenter;
+        // P779b-1 — a pod may also fly to a friendly RESCUE CAPABLE probe (native
+        // eject autopilot mask c_ttProbe + rescue bits, clintlib/appmsg.cpp:230-237).
+        // PodProbeId >= 0 = the current target is that probe; PodTargetAuto =
+        // this pod picked the target itself (so the once-per-second re-evaluation
+        // may replace it; an explicit support/siege destination is never repicked).
+        public short PodProbeId = -1;
+        public bool PodTargetAuto;
+        public double PodRepickAt = double.NegativeInfinity;
         public bool PodDocked;
         public short PodDockStationId = -1;
         // P539b — REAL combat stats, all attributed to THIS bot as the shooter:
@@ -5917,6 +6077,18 @@ bool isThreat =
         public bool DefensiveMineDuty;
         public double LastChaffAt = double.NegativeInfinity;
         public double LastProbeAt = double.NegativeInfinity;
+        // P779b-1 — medevac state: the stable bot id (ship ids are re-allocated on
+        // a reseat, so the per-side pick must not key on them), the per-side flag,
+        // the observed civ eligibility, the last rescue-probe drop, and the
+        // first-seen stamps of own-side lifepods (the recent-eject signal).
+        public int BotId;
+        public bool MedevacScout;
+        public bool CanBuyRescueProbe;
+        public double LastRescueProbeAt = double.NegativeInfinity;
+        /// <summary>P779b-1 — how many medevac rescue probes this bot has fired
+        /// (the measured drop count; the wire call is <c>SendFireExpendable</c>).</summary>
+        public int RescueProbesDropped;
+        public readonly Dictionary<short, (short Sector, double At)> MedevacPods = new();
         public short? TargetSector;                // rendezvous sector, or null to engage in place
         public List<short> Path = new();
         public short PathStart = -1;

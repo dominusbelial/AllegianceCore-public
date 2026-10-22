@@ -40,6 +40,7 @@ internal sealed partial class BotManager
             _removedBots.Add(new(bot.Name, bot.ShipId, reason));
             if (_removedBots.Count > 500) _removedBots.RemoveAt(0);
         }
+        RefreshMedevacScouts();   // P779b-1 — hand the side's medevac job to the next scout
         // Disposal can join a receive thread; never do it under the roster gate.
         try { DisposePeer(bot.Cs); } catch { }
         try { DisposePeer(bot.Bot); } catch { }
@@ -60,6 +61,9 @@ internal sealed partial class BotManager
         bot.FinaleRefitting = bot.FinaleRefitLaunchPending = false;
         bot.FinaleRefitCheckAt = double.NegativeInfinity;
         bot.PodStationId = bot.PodDockStationId = bot.PodStationSector = -1;
+        bot.PodProbeId = -1;
+        bot.PodTargetAuto = false;
+        bot.PodRepickAt = double.NegativeInfinity;
         bot.PodRouteSector = bot.PodRouteWarpId = -1;
         bot.PodRouteWarpCount = 0;
         bot.PodStationCenter = Vector3.Zero;
@@ -94,7 +98,8 @@ internal sealed partial class BotManager
         bot.RecentStationAttackers.Clear();
         EndDefense(bot);
         bot.LastAttackersPruneAt = bot.LastTargetAt = bot.LastFireAt = bot.LastMineAt = double.NegativeInfinity;
-        bot.LastChaffAt = bot.LastProbeAt = double.NegativeInfinity;
+        bot.LastChaffAt = bot.LastProbeAt = bot.LastRescueProbeAt = double.NegativeInfinity;
+        bot.MedevacPods.Clear();
         bot.LastBoostAt = double.NegativeInfinity;
         bot.CloakHeld = false;
         bot.AttackAfterburnerHeld = false;

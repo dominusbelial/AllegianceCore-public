@@ -18,11 +18,35 @@ internal static class TechLoadoutSelector
 
     internal static Selection? Select(StaticCore core, short civId, Showcase.HullRole role,
         TechTreeBitMask techs, short dockTypeId, DataStationTypeIGC? target = null, long budget = long.MaxValue,
-        bool preferMines = false)
+        bool preferMines = false, bool rescueProbe = false)
     {
         if (!core.StationTypes.TryGetValue(dockTypeId, out var dock)) return null;
         return Select(Create(core, civId, techs, dock.TtbmLocal, [dockTypeId], budget), role,
-            target ?? (role == Showcase.HullRole.Bomber ? dock : null), preferMines);
+            target ?? (role == Showcase.HullRole.Bomber ? dock : null), preferMines, rescueProbe);
+    }
+
+    /// <summary>P779b-1 — the rescue-probe launcher part a side can actually buy:
+    /// among the core's probe launchers whose <c>DataProbeTypeIGC</c> carries
+    /// <c>c_eabmRescue</c> or <c>c_eabmRescueAny</c> (igc.h:781-782) and whose
+    /// <c>LauncherTtbmRequired</c> is a subset of the side's techs, the longest
+    /// <c>Lifespan</c>, then the highest <c>HitPoints</c> (the P779b-1 medevac
+    /// ranking), ties by part id. null = this civ cannot buy a rescue probe
+    /// (Ga'Taraan in PCore001), so the side has no medevac scout. Reads only
+    /// core data — never a civ name or id.</summary>
+    internal static short? PickRescueProbeLauncher(StaticCore core, TechTreeBitMask techs)
+    {
+        short? best = null;
+        double bestScore = double.NegativeInfinity;
+        foreach (var launcher in core.Launchers.Values.OrderBy(l => l.PartId))
+        {
+            if (!core.ProbeTypes.TryGetValue(launcher.ExpendabletypeId, out var probe)) continue;
+            if ((probe.EabmCapabilities & 0x6000) == 0) continue;
+            if (!TechTreeBitMask.FromBytes(probe.LauncherTtbmRequired).IsSubsetOf(techs)) continue;
+            double score = probe.Lifespan * 1000 + Math.Min(999f, probe.HitPoints);
+            if (score <= bestScore) continue;
+            bestScore = score; best = launcher.PartId;
+        }
+        return best;
     }
 
     // Kept for existing socket-free finale catalogue queries with a local mask.
@@ -58,7 +82,8 @@ internal static class TechLoadoutSelector
         return Showcase.HullRole.Fighter;
     }
 
-    private static Selection? Select(Context c, Showcase.HullRole role, DataStationTypeIGC? target, bool preferMines = false)
+    private static Selection? Select(Context c, Showcase.HullRole role, DataStationTypeIGC? target,
+        bool preferMines = false, bool rescueProbe = false)
     {
         if (role == Showcase.HullRole.Bomber && target is { } station)
         {
@@ -102,8 +127,8 @@ internal static class TechLoadoutSelector
                         equipment is EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher ? short.MaxValue : 1)))
                     .Where(p => p.Amount > 0 && spent + PartPrice(p.Part, p.Amount) <= c.Budget)
                     .OrderByDescending(p => preferMines && p.Part.Type is DataPartTypeIGC.MineLauncher)
-                    .ThenByDescending(p => SupportScore(c.Core, p.Part, role, preferMines)).ThenBy(p => p.Part.PartId)
-                    .FirstOrDefault(p => SupportScore(c.Core, p.Part, role, preferMines) > 0);
+                    .ThenByDescending(p => SupportScore(c.Core, p.Part, role, preferMines, rescueProbe)).ThenBy(p => p.Part.PartId)
+                    .FirstOrDefault(p => SupportScore(c.Core, p.Part, role, preferMines, rescueProbe) > 0);
                 if (support.Part.Type is not null) Add(support.Part, 0, support.Amount);
             }
             options.Add(Describe(c, role, h.HullId, parts));
@@ -187,14 +212,22 @@ internal static class TechLoadoutSelector
         return role == Showcase.HullRole.Interceptor ? dps * Math.Sqrt(Math.Max(1, r.Speed * r.Lifespan)) : dps;
     }
 
-    private static double SupportScore(StaticCore core, DataPartTypeIGC p, Showcase.HullRole role, bool preferMines = false) => p.Type switch
+    // P779b-1 — `rescueProbe` is the medevac scout's exception: a rescue-capable
+    // probe launcher (c_eabmRescue/RescueAny) scores by the medevac ranking
+    // (Lifespan first, then HitPoints, encoded as Lifespan*1000+HP) instead of
+    // the 0 the scouting branch gives it; every other bot keeps the exclusion.
+    private static double SupportScore(StaticCore core, DataPartTypeIGC p, Showcase.HullRole role,
+        bool preferMines = false, bool rescueProbe = false) => p.Type switch
     {
         DataPartTypeIGC.Shield s => s.MaxStrength,
         DataPartTypeIGC.Afterburner a => a.MaxThrust,
         DataPartTypeIGC.Cloak c => c.MaxCloaking,
         DataPartTypeIGC.MissileLauncher m when core.MissileTypes.TryGetValue(m.ExpendableTypeId, out var t) => t.Power / Math.Max(.01f, t.ReadyTime + t.LockTime),
         DataPartTypeIGC.ProbeLauncher m when core.ProbeTypes.TryGetValue(m.ExpendableTypeId, out var t) =>
-            role == Showcase.HullRole.Scout && (t.EabmCapabilities & 0x6000) == 0 ? t.ScannerRange : 0,
+            role != Showcase.HullRole.Scout ? 0
+            : (t.EabmCapabilities & 0x6000) != 0
+                ? (rescueProbe ? t.Lifespan * 1000 + Math.Min(999f, t.HitPoints) : 0)
+                : (rescueProbe ? 0 : t.ScannerRange),
         DataPartTypeIGC.MineLauncher m when core.MineTypes.TryGetValue(m.ExpendableTypeId, out var t) => role == Showcase.HullRole.Scout && !preferMines ? 0 : t.Power,
         DataPartTypeIGC.ChaffLauncher m when core.ChaffTypes.TryGetValue(m.ExpendableTypeId, out var t) => t.Lifespan,
         _ => 0,

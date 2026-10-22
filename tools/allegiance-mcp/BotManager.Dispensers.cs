@@ -47,6 +47,18 @@ internal sealed partial class BotManager
             }
 
             if (Mounted(EquipmentType.Dispenser) is not { } dispenser) return;
+
+            // P779b-1 — a rescue-capable probe launcher (c_eabmRescue /
+            // c_eabmRescueAny, Igc/igc.h:781-782) is never a scouting probe; the
+            // medevac scout drops it at its own position when the forward-rescue
+            // gate holds (a design choice — native has no AI for this).
+            if (dispenser.Type is DataPartTypeIGC.ProbeLauncher rescueLauncher
+                && core.ProbeTypes.TryGetValue(rescueLauncher.ExpendableTypeId, out var rescueProbe)
+                && (rescueProbe.EabmCapabilities & 0x6000) != 0)
+            {
+                MaybeDropMedevacProbe(bot, cs, now, sector, position, rescueProbe);
+                return;
+            }
             bool home = world.Stations.Values.Any(s => s.SideId == bot.Side && s.ClusterId == sector);
             bool nearAleph = world.Warps.Values.Any(w => w.ClusterId == sector
                 && (Vec3(w.Position) - position).LengthSquared() < Showcase.WingmanMineRange * Showcase.WingmanMineRange);
