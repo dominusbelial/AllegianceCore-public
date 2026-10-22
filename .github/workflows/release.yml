@@ -105,6 +105,18 @@ jobs:
           path: dist
       - name: Windows extracted bundle smoke (native apphost)
         run: python packaging/smoke.py dist/Allegiance-win-x64.zip
+      - name: Clear the extracted smoke's per-user logs
+        # Every client start writes %APPDATA%\AllegianceCore\logs\client.log (P749 CrashLog);
+        # smoke-windows.ps1 needs a clean profile to prove install/uninstall keep player data.
+        # Only logs\ is expected here — anything else fails instead of being deleted.
+        run: |
+          $config = Join-Path ([Environment]::GetFolderPath('ApplicationData')) 'AllegianceCore'
+          if (Test-Path $config) {
+            Get-ChildItem -Recurse $config | ForEach-Object { $_.FullName }
+            $other = Get-ChildItem $config | Where-Object { $_.Name -ne 'logs' }
+            if ($other) { throw "Unexpected per-user data after the bundle smoke: $($other.Name -join ', ')" }
+            Remove-Item -Recurse -Force $config
+          }
       - name: Build Inno Setup installer from the verified portable payload
         env:
           RELEASE_REF: ${{ github.ref_name }}
