@@ -59,6 +59,9 @@ jobs:
           else
             python3 packaging/package.py --rid '${{ matrix.rid }}' --format portable --version "$version"
           fi
+      - name: Disk usage
+        if: always() && matrix.rid == 'linux-x64'
+        run: df -h / "$RUNNER_TEMP" && du -sh dist dist/* 2>/dev/null | sort -h | tail -8
       - name: Check full-source census against manifest
         if: matrix.rid == 'linux-x64'
         run: >-

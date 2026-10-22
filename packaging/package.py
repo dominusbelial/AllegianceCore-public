@@ -22,7 +22,9 @@ LIMIT = 2 * 1024**3
 def app_dir(bundle, destination):
     """Wrap the exact portable payload; keep its inventory byte-for-byte."""
     payload = destination / 'usr/lib/AllegianceCore'
-    shutil.copytree(bundle, payload)
+    # Hard links, not copies: the AppDir sits next to the bundle on the same disk,
+    # and a second 1.5 GB copy ran the GitHub runner out of space (run 39713861483).
+    shutil.copytree(bundle, payload, copy_function=os.link)
     shutil.copyfile(REPO / 'packaging/AppRun', destination / 'AppRun')
     (destination / 'AppRun').chmod(0o755)
     shutil.copyfile(REPO / 'packaging/allegiance-appimage.desktop', destination / 'allegiance.desktop')
