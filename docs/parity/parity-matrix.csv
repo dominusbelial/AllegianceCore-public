@@ -573,6 +573,8 @@ parts,c_eabmWarpBombDual,Igc/igc.h:772-774; Igc/warpIGC.h:58-73,done,src/Allegia
 parts,c_eabmRipcord,Igc equip ability,done,src/Allegiance.Core/Sim/Ship.cs ripcord + P111-113,4
 parts,c_eabmCapture,Igc/igc.h:771; Igc/missileigc.cpp:471-496; Inc/Messages.h:429-434; FedSrv/fsship.cpp:619-631,done,design; capture MISSILE ability (not probes): damage before downed-shield gate; reject same-side/pedestal; capture seam before re-side; suppress impact blast. src/Allegiance.Core/Model/Sector.cs:2104; P722InterfaceLoopbackTests.Capture_missile_uses_native_station_gates_and_exact_capture_bytes; docs/reports/P722_INTERFACE_WAVE.md,3
 parts,c_eabmQuickReady,Igc equip ability,done,src/Allegiance.Core/Sim/Probe.cs:128,3
+parts,c_eabmRescue,Igc/igc.h:781; Igc/shipIGC.cpp:897-909; FedSrv/FedSrv.CPP:13033-13076,done,"src/Allegiance.Core/Model/Sector.cs ResolveProbeRescueEvents; src/Allegiance.Server/Server.Docking.cs PerformStationRescue (null-station probe branch); P780PodRescueProbeTests",4
+parts,c_eabmRescueAny,Igc/igc.h:782; Igc/shipIGC.cpp:897-909; FedSrv/FedSrv.CPP:13033-13076,done,"src/Allegiance.Core/Model/Sector.cs ResolveProbeRescueEvents; src/Allegiance.Server/Server.Docking.cs PerformStationRescue (null-station probe branch); P780PodRescueProbeTests",4
 parts,Ripcord travel,Igc ripcord,done,src/Allegiance.Core/Sim/Ship.cs + RIP 111-113/P172,5
 parts,Rescue (pick up lifepods),Igc rescue,done,src/Allegiance.Core/Sim/Ship.cs + P115,4
 parts,Mining (collect He3),Igc mining,done,src/Allegiance.Core/Sim/Ship.cs + MINING P55/P477,5

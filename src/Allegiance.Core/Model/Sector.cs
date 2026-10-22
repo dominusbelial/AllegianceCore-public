@@ -217,8 +217,30 @@ public sealed class Sector : IClusterIgc
     /// <see cref="ResolveStationRescueEvents"/>: a drifting <c>c_habmLifepod</c>
     /// within proximity of a same-side station whose type carries
     /// <c>c_sabmRescue</c>), drained by <see cref="DrainStationRescues"/> on the
-    /// sim thread.</summary>
-    private readonly List<(Ship Rescuee, Station Station)> _pendingStationRescues = [];
+    /// sim thread. P780 adds the third producer: <see cref="ResolveProbeRescueEvents"/>
+    /// queues <c>(pod, Station: null)</c> for a lifepod that touched a rescue
+    /// probe — a <c>null</c> <c>Station</c> means "NULL-rescuer probe rescue
+    /// (native <c>RescueShipEvent(pod, NULL)</c>, shipIGC.cpp:907): the host
+    /// finds the destination itself (native's <c>FindTarget(... c_sabmRestart)</c>
+    /// search, ported as <c>Server.FindFriendlyStation</c>) instead of docking at
+    /// a touched station".</summary>
+    private readonly List<(Ship Rescuee, Station? Station)> _pendingStationRescues = [];
+
+    // P780 — the sector's live count of rescue-capable probes (a Probe whose
+    // type carries c_eabmRescue 0x2000 or c_eabmRescueAny 0x4000, igc.h:781-782).
+    // Maintained by Add/Remove so ResolveProbeRescueEvents can early-out O(1)
+    // on every sector that has none (the ordinary case — most sectors hold no
+    // rescue probe) with zero per-tick cost.
+    private int _rescueProbeCount;
+
+    /// <summary>P780 test seam (InternalsVisibleTo): the current rescue-probe
+    /// count — 0 for a sector with no rescue-capable probe, back to 0 after the
+    /// last one expires or is destroyed.</summary>
+    internal int RescueProbeCount => _rescueProbeCount;
+
+    // P780 — reusable probe gather buffer for ResolveProbeRescueEvents:
+    // cleared and refilled per tick, never re-allocated (no per-tick garbage).
+    private readonly List<Probe> _rescueProbes = [];
 
     // P116 — ship pairs whose carrier landing this tick's geometric pass
     // (ResolveCarrierLandings) found: every friendly same-side pair where one
@@ -402,11 +424,18 @@ public sealed class Sector : IClusterIgc
     public CollisionHullCache? CollisionHulls { get; set; }
 
 
-    /// <summary>Place a model in this sector (<c>CclusterIGC::AddModel</c>).</summary>
+    /// <summary>Place a model in this sector (<c>CclusterIGC::AddModel</c>).
+    /// P780 — also maintains <see cref="_rescueProbeCount"/>: a Probe whose
+    /// type carries a rescue capability bit (<c>c_eabmRescue</c> 0x2000 or
+    /// <c>c_eabmRescueAny</c> 0x4000, <c>Igc/igc.h:781-782</c>) is counted on
+    /// entry so the probe-rescue pass can early-out when there is none.</summary>
     public void Add(Model model)
     {
         ArgumentNullException.ThrowIfNull(model);
         _models.Add(model);
+        if (model is Probe { } addedProbe &&
+            (addedProbe.ProbeType.EabmCapabilities & (DataProbeTypeIGC.EabmRescue | DataProbeTypeIGC.EabmRescueAny)) != 0)
+            _rescueProbeCount++;
         _memberVersion++;                       // P324 (M3): invalidate the in-tick candidate cache
     }
 
@@ -420,7 +449,17 @@ public sealed class Sector : IClusterIgc
     public bool Remove(Model model)
     {
         if (!_models.Remove(model)) return false;
-        if (model is Probe probe) probe.OnRemoved();
+        if (model is Probe probe)
+        {
+            // P780 — mirror Add's counter maintenance: every probe removal path
+            // (expiry in Probe.OnUpdate, lethal damage in Probe.ReceiveDamage,
+            // ammo exhaustion in Probe.FireIfArmed — all via Terminate below —
+            // and manual removal) funnels through here, so the count returns to
+            // zero when the last rescue probe leaves the sector.
+            if ((probe.ProbeType.EabmCapabilities & (DataProbeTypeIGC.EabmRescue | DataProbeTypeIGC.EabmRescueAny)) != 0)
+                _rescueProbeCount--;
+            probe.OnRemoved();
+        }
         _memberVersion++;                       // P324 (M3): invalidate the in-tick candidate cache
         return true;
     }
@@ -814,8 +853,19 @@ public sealed class Sector : IClusterIgc
     {
         if (a == b) return true;
         if (Mission is null) return false;
-        var sideA = Mission.Sides.FirstOrDefault(s => s.Id == a);
-        return sideA?.AllyGroup is { } group && Mission.Sides.Any(s => s.Id == b && s.AllyGroup == group);
+        // P780: plain indexed scans, not LINQ/foreach — the probe-rescue pass
+        // calls this per pod × probe per tick, and a lambda closure + delegate
+        // (or the boxed struct enumerator a foreach over the IReadOnlyList
+        // interface produces) per call would make it allocate (the whole pass
+        // must be allocation-free).
+        var sides = Mission.Sides;
+        Side? sideA = null;
+        for (int i = 0; i < sides.Count; i++)
+            if (sides[i].Id == a) { sideA = sides[i]; break; }
+        if (sideA?.AllyGroup is not { } group) return false;
+        for (int i = 0; i < sides.Count; i++)
+            if (sides[i].Id == b && sides[i].AllyGroup == group) return true;
+        return false;
     }
 
     /// <summary>
@@ -995,6 +1045,16 @@ public sealed class Sector : IClusterIgc
         // half in Core. See ResolveStationRescueEvents for the spec.
         { using (TickProfiler.Enter("sim.rescue")) ResolveStationRescueEvents(); }
 
+        // P780 — rescue-probe pod rescue pass. A drifting lifepod that touches
+        // a probe whose type carries c_eabmRescue (own/allied pods) or
+        // c_eabmRescueAny (any pod) is rescued — native shipIGC.cpp:897-909,
+        // the OT_probe collision branch the port was missing. Queues a
+        // NULL-rescuer rescue (Station: null) through the same station-rescue
+        // drain; the host's probe branch (Server.PerformStationRescue) does the
+        // placement. O(1) early-out when the sector holds no rescue probe.
+        // See ResolveProbeRescueEvents for the spec.
+        { using (TickProfiler.Enter("sim.rescue")) ResolveProbeRescueEvents((float)dt); }
+
         // Carrier-landing geometric pass — P116. Every friendly same-side ship
         // pair where one carries c_habmCarrier and the other c_habmLandOnCarrier,
         // either direction, is tested against the carrier's real reconstructed
@@ -1144,7 +1204,7 @@ public sealed class Sector : IClusterIgc
     /// and clear the accumulation. Called by the host right after
     /// <c>Mission.Update</c> so the rescue (Server.PerformStationRescue) rides
     /// the sim thread exactly like the ripcord teleport and ship-rescue drains.</summary>
-    public IReadOnlyList<(Ship Rescuee, Station Station)> DrainStationRescues()
+    public IReadOnlyList<(Ship Rescuee, Station? Station)> DrainStationRescues()
     {
         var taken = _pendingStationRescues.ToArray();
         _pendingStationRescues.Clear();
@@ -1395,11 +1455,18 @@ public sealed class Sector : IClusterIgc
     /// then the pair can be re-detected, which is harmless (the host re-docks
     /// the already-docked pod idempotently).</para>
     /// </remarks>
+    // P780 — reusable "one rescue per ship per tick" latch for
+    // ResolveStationRescueEvents (was a new HashSet<Ship> per tick per sector
+    // with stations — Domingo's standing no-per-tick-allocation rule; cleared
+    // at entry, behaviour identical).
+    private readonly HashSet<Ship> _stationRescueDone = [];
+
     private void ResolveStationRescueEvents()
     {
         if (_stationRuntimes.Count == 0) return;
 
-        var done = new HashSet<Ship>();           // one rescue per ship per tick
+        var done = _stationRescueDone;
+        done.Clear();                             // one rescue per ship per tick
         foreach (var station in _stationRuntimes)
         {
             if (station.Dead) continue;
@@ -1438,6 +1505,154 @@ public sealed class Sector : IClusterIgc
                     _pendingStationRescues.Add((s, station));
                     done.Add(s);
                 }
+            }
+        }
+    }
+
+    /// <summary>
+    /// P780 — the per-tick rescue-PROBE pod-rescue pass, called from
+    /// <see cref="Update"/> right after <see cref="ResolveStationRescueEvents"/>
+    /// inside the same <c>sim.rescue</c> profiling bucket. The port of the
+    /// native OT_probe collision branch of <c>CshipIGC::HandleCollision</c>
+    /// (<c>Igc/shipIGC.cpp:897-909</c>), which the port was missing: a
+    /// <c>c_habmLifepod</c> ship that collides with a probe whose type carries
+    /// a rescue capability bit is rescued — <c>RescueShipEvent(pod, NULL)</c>.
+    /// Detected here, accumulated into <see cref="_pendingStationRescues"/>
+    /// (with a <c>null</c> <c>Station</c>, meaning "probe rescue — find the
+    /// destination"), drained by <see cref="DrainStationRescues"/> and
+    /// performed by the host's probe branch of <c>Server.PerformStationRescue</c>
+    /// — the Core side never sends wire.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Native trigger</b> — verbatim from <c>shipIGC.cpp:899-907</c>
+    /// (reached directly for OT_probe, or by fallthrough from station /
+    /// asteroid / building effect — the port models the direct probe contact;
+    /// the fallthrough legs are the other passes' business):
+    /// <c>if (m_myHullType.HasCapability(c_habmLifepod)) { eabm =
+    /// probe-&gt;GetProbeType()-&gt;GetCapabilities(); if ((eabm &amp; c_eabmRescueAny) ||
+    /// ((eabm &amp; c_eabmRescue) &amp;&amp; (GetSide() == pModel-&gt;GetSide() ||
+    /// IsideIGC::AlliedSides(GetSide(), pModel-&gt;GetSide()))))
+    /// if (GetIgcSite()-&gt;RescueShipEvent(this, NULL)) break; }</c></para>
+    /// <para><b>Bit gate</b> — <c>c_eabmRescue</c> (0x2000) rescues a pod whose
+    /// side is the probe's own or an ALLIED side (native uses
+    /// <c>AlliedSides</c>, shipIGC.cpp:905, so this pass uses the real
+    /// <see cref="IsAlliedSide"/> — same side included; the stale "no alliance
+    /// concept" remarks on the two older rescue passes do not apply here);
+    /// <c>c_eabmRescueAny</c> (0x4000) rescues ANY pod, including an enemy's.
+    /// A probe with a null side only counts for RescueAny (native compares
+    /// sides, and a sideless probe can never equal or ally with one).</para>
+    /// <para><b>No activation delay, not consumed</b> — native's probe
+    /// <c>m_time0</c> only gates ripcord use (<c>probeigc.h:248-254</c>), so a
+    /// probe rescues from the moment it is created, and rescuing changes
+    /// nothing on the probe: it keeps its hit points and lifespan and can
+    /// rescue again (each contact is independent).</para>
+    /// <para><b>Shape</b> — native loads the probe as
+    /// <c>c_mtDamagable | c_mtHitable | c_mtStatic</c> with
+    /// <c>SetRadius(dataProbeType-&gt;radius)</c> (<c>Igc/probeigc.cpp:112-118</c>)
+    /// and hits it continuously over the tick (<c>HitTest::Collide</c>), using
+    /// the probe's <c>.cvh</c> hull when the art ships one, else a sphere
+    /// (<c>_Utility/HitTest.cpp:827-863</c>). The port has no ship-vs-probe
+    /// collision system, so this pass approximates the probe with its decoded
+    /// <c>ProbeType.Radius</c> sphere — the same radius the combat pass already
+    /// uses as the probe's collision sphere — and sweeps
+    /// the POD over the chunk like <see cref="ResolveTreasurePickups"/> does
+    /// (closest point on the segment <c>Position − CollisionVelocity·dt →
+    /// Position</c>; the probe is static): real rescue probes have radius 6,
+    /// pods length 4–5 and max speed 50–60 (the Observer lifepod 160), so a
+    /// point sample would mostly work but a fast ejected pod could tunnel
+    /// past in one 50 ms chunk, and the segment test costs a few flops.</para>
+    /// <para><b>Site gate</b> — like both older rescue passes, the pass ASKS
+    /// the site first: <c>Mission?.Site.RescueShipEvent(s, null) ?? true</c>
+    /// (production: <c>ServerHost.RescueShipEvent</c> →
+    /// <c>RescueDestination</c> = <c>FindFriendlyStation(pod) is not null</c>,
+    /// P754b). A refusal mirrors native's fallthrough to the generic
+    /// probe-collision response (a bounce, shipIGC.cpp:911-1010 — which the
+    /// port does not model for any hull), so the pod simply keeps flying.</para>
+    /// <para><b>Latches</b> — eligibility matches the station pass exactly
+    /// (missioned, sided, alive, flying, lifepod hull), a pod already queued
+    /// this tick in <see cref="_pendingRescues"/> or
+    /// <see cref="_pendingStationRescues"/> is skipped (no double dock), and
+    /// one rescue per pod per tick (<c>break</c>, native shipIGC.cpp:907).</para>
+    /// <para><b>Cost model</b> — the pass is free unless the sector actually
+    /// holds a rescue probe: <see cref="_rescueProbeCount"/> (maintained by
+    /// <see cref="Add"/>/<see cref="Remove"/>) gives an O(1) early-out for the
+    /// ordinary sector, and the gather reuses the
+    /// <see cref="_rescueProbes"/> buffer (cleared, never re-allocated) so a
+    /// pass that runs allocates nothing. With K rescue probes and S ships the
+    /// body is O(S + S·K) with a linear scan of the small pending lists per
+    /// ship — all no-allocation.</para>
+    /// </remarks>
+    private void ResolveProbeRescueEvents(float dt)
+    {
+        if (_rescueProbeCount == 0) return;         // O(1) early-out: no rescue probe in this sector
+
+        ProbeRescuePass(dt);
+    }
+
+    /// <summary>P780 test seam (InternalsVisibleTo): runs the probe-rescue
+    /// gather+contact loop alone, bypassing the <see cref="_rescueProbeCount"/>
+    /// early-out, so the allocation test can measure THIS pass's garbage in
+    /// isolation rather than the whole tick's (other passes allocate).</summary>
+    internal void ProbeRescuePass(float dt)
+    {
+        _rescueProbes.Clear();                      // reusable buffer — no per-tick allocation
+        foreach (var m in _models)
+            if (m is Probe p && !p.Dead &&
+                (p.ProbeType.EabmCapabilities & (DataProbeTypeIGC.EabmRescue | DataProbeTypeIGC.EabmRescueAny)) != 0)
+                _rescueProbes.Add(p);
+        if (_rescueProbes.Count == 0) return;       // all rescue probes dead but not yet removed
+
+        foreach (var model in _models)
+        {
+            if (model is not Ship s) continue;
+            // Same eligibility as the station pass (shipIGC.cpp:899's
+            // c_habmLifepod conjunct + the flying/alive/sided/missioned gates).
+            if (s.Mission is null || s.SideId is null || s.Dead || s.StationId is not null) continue;
+            if (!s.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)) continue;
+            // A pod already queued this tick (ship-pickup or station pass) must
+            // not be docked twice — scan the small pending lists linearly.
+            bool queued = false;
+            foreach (var pr in _pendingRescues)
+                if (ReferenceEquals(pr.Rescuee, s)) { queued = true; break; }
+            if (!queued)
+                foreach (var sr in _pendingStationRescues)
+                    if (ReferenceEquals(sr.Rescuee, s)) { queued = true; break; }
+            if (queued) continue;
+
+            float shipR = 0.5f * s.HullType.Length;
+            foreach (var probe in _rescueProbes)
+            {
+                short eabm = probe.ProbeType.EabmCapabilities;
+                // Bit gate (shipIGC.cpp:903-905): RescueAny takes any pod;
+                // Rescue takes the probe's own or an ALLIED side (AlliedSides
+                // includes same side, hence IsAlliedSide). A sideless probe
+                // only counts for RescueAny.
+                if ((eabm & DataProbeTypeIGC.EabmRescueAny) == 0 &&
+                    !((eabm & DataProbeTypeIGC.EabmRescue) != 0 &&
+                      probe.SideId is { } ps && IsAlliedSide(s.SideId.Value, ps)))
+                    continue;
+
+                // Swept contact: pod sphere (0.5 × Length) vs the static
+                // probe's ProbeType.Radius sphere, over the chunk — the same
+                // segment test ResolveTreasurePickups uses,
+                // the port's stand-in for native's continuous HitTest::Collide.
+                var rel = s.Position - probe.Position;
+                var start = rel - s.CollisionVelocity * dt;
+                var travel = s.CollisionVelocity * dt;
+                float length2 = travel.LengthSquared();
+                float fraction = length2 == 0 ? 0 : Math.Clamp(-(start * travel) / length2, 0, 1);
+                float threshold = shipR + probe.ProbeType.Radius;
+                if ((start + travel * fraction).LengthSquared() > threshold * threshold) continue;
+
+                if (Mission?.Site.RescueShipEvent(s, null) ?? true)
+                {
+                    Console.WriteLine($"[rescue] lifepod ship {s.Id} touched rescue probe {probe.Id} (eabm 0x{eabm:X4}, probe side {probe.SideId ?? (short)-1}) -> queued NULL-rescuer rescue");
+                    _pendingStationRescues.Add((s, null));
+                    break;                              // one rescue per pod per tick (native break, shipIGC.cpp:907)
+                }
+                // Site refused: native falls through to the generic
+                // probe-collision bounce (shipIGC.cpp:911-1010), which the port
+                // does not model — the pod simply keeps flying.
             }
         }
     }

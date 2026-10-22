@@ -66,8 +66,13 @@ public sealed class ProbeCombatLiveTests
             .Where(mm => mm.InitialSpeed > 0f && mm.Power > 0f && mm.Lifespan >= 4f && mm.Lifespan <= 8f))
         {
             if (m.InitialSpeed * m.Lifespan < 90f) continue;
+            // P780: exclude rescue-capable probes (c_eabmRescue/c_eabmRescueAny,
+            // igc.h:781-782) — a lifepod-hulled ship parked on its own probe is
+            // now RESCUED by Sector.ResolveProbeRescueEvents (native
+            // shipIGC.cpp:899-907), which would move the deployer mid-test. A
+            // combat-math fixture must not deploy a rescue probe.
             foreach (var pt in core.ProbeTypes.Values
-                .Where(p => p.HitPoints > 0f && p.Lifespan >= 8f)
+                .Where(p => p.HitPoints > 0f && p.Lifespan >= 8f && (p.EabmCapabilities & 0x6000) == 0)
                 .OrderBy(p => p.HitPoints))
             {
                 float dtm = Dtm(core, m.DamageType, pt.DefenseType);
@@ -91,8 +96,9 @@ public sealed class ProbeCombatLiveTests
             .Where(mm => mm.InitialSpeed > 0f && mm.Power > 0f && mm.Lifespan >= 4f && mm.Lifespan <= 8f))
         {
             if (m.InitialSpeed * m.Lifespan < 90f) continue;
+            // P780: exclude rescue-capable probes — see the Nonlethal selector.
             foreach (var pt in core.ProbeTypes.Values
-                .Where(p => p.HitPoints > 0f && p.Lifespan >= 8f)
+                .Where(p => p.HitPoints > 0f && p.Lifespan >= 8f && (p.EabmCapabilities & 0x6000) == 0)
                 .OrderBy(p => p.HitPoints))
             {
                 float dtm = Dtm(core, m.DamageType, pt.DefenseType);

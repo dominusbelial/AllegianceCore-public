@@ -11,6 +11,12 @@ namespace Allegiance.Core;
 /// <c>allegiance-igc-file-format</c> §OT_probeType.
 /// </summary>
 /// <remarks>
+/// <para>Expendable-ability rescue bits (<c>src/Igc/igc.h:781-782</c>), named
+/// because P780 reads them server-side for the first time: <see cref="EabmRescue"/>
+/// rescues a lifepod that collides with the probe when the pod's side is the
+/// probe's own or an ally; <see cref="EabmRescueAny"/> rescues any lifepod
+/// regardless of side. Native aliases both straight from the station bits:
+/// <c>c_eabmRescue = c_sabmRescue</c> and <c>c_eabmRescueAny = c_sabmRescueAny</c>.</para>
 /// Same three alignment corrections as the missile type, computed the same
 /// way: 2 pad bytes after DataObjectIGC put <c>loadTime</c>@52; 2 after the
 /// embedded LauncherDef's DataBuyableIGC base put
@@ -56,6 +62,15 @@ public readonly record struct DataProbeTypeIGC(
     short AmbientSound,
     float DtRipcord)
 {
+    /// <summary><c>c_eabmRescue = c_sabmRescue = 0x2000</c> (<c>src/Igc/igc.h:781</c> —
+    /// &quot;Rescue lifepods that collide with it&quot;): own-side or allied pods only.
+    /// P780 is the first server-side reader.</summary>
+    public const short EabmRescue = 0x2000;
+
+    /// <summary><c>c_eabmRescueAny = c_sabmRescueAny = 0x4000</c> (<c>src/Igc/igc.h:782</c> —
+    /// &quot;Rescue any lifepod that collide with it&quot;): any pod, any side.</summary>
+    public const short EabmRescueAny = 0x4000;
+
     /// <summary>Exact payload size in bytes: <c>sizeof(DataProbeTypeIGC)</c>.</summary>
     public const int Size = 492;
 

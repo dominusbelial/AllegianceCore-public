@@ -1378,6 +1378,12 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// production rule allows and <c>Server.PerformRescue</c> performs them with
     /// the same search. Unwired (a standalone host) keeps the native interface
     /// default: accepted.
+    /// P780 — three callers now ask this: the P115 ship-pickup pass
+    /// (<c>Sector.ResolveRescueEvents</c>, with a SHIP rescuer), the P301
+    /// station pass (<c>ResolveStationRescueEvents</c>, NULL rescuer), and the
+    /// P780 rescue-probe pass (<c>ResolveProbeRescueEvents</c>, NULL rescuer —
+    /// a lifepod touching a c_eabmRescue/c_eabmRescueAny probe,
+    /// shipIGC.cpp:899-907). All three need the same restart-station answer.
     /// </summary>
     public Func<Ship, bool>? RescueDestination;
     public bool RescueShipEvent(IShipIgc shipRescued, IShipIgc? shipRescuer)
