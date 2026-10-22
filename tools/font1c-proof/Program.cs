@@ -177,7 +177,7 @@ sealed class Font1cProof(Game1 game, Mission mission, string output, int[] tickP
                   + $" parent={mine.ParentId} state={mine.State} sector={mine.SectorId}"
                 : "no own ship";
             Console.WriteLine($"[font1c] {tag}: {own} camera={Get<object>("_cameraMode")}"
-                + $" killBonus={world.KillBonusPercent:0.#}% streak={world.KillBonusStreak}"
+                + $" killBonus={world.KillBonusPercent:0.#}%"
                 + $" lives={world.MissionLives} dethmatch={world.MissionBriefing?.Deathmatch}"
                 + $" vote='{world.ActiveBallot?.BallotText}' ripcord={world.RipcordActive}"
                 + $" accepted='{world.MyAcceptedCommand?.CommandId}' queued='{world.MyQueuedCommand?.CommandId}'"
