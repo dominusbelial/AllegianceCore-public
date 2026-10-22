@@ -63,3 +63,16 @@ Rules 2–3 ignore tests the gates filter out by trait. The scan cannot see
 corpus use hidden inside product code (e.g. `ClientMissionCoreCache` behind a
 battle replay), so `tools/run-ci-gate.sh --clean-clone` remains the
 authoritative check before a release tag.
+
+## Packaging manifest guard
+
+`tests/Allegiance.Core.Tests/PackagingManifestTests.cs` (Fast tier, `Requires=Artwork`)
+runs `packaging/generate-manifest.py --check` — the same check the release workflow's
+package step runs — against the artwork corpus. Code that starts naming native art
+(HUD, lobby, icons, models) changes `packaging/artwork-roots.txt` /
+`artwork-manifest.txt`; when they are not regenerated, the release fails at
+packaging (run 39712953386). The test catches it at merge time in the light gate,
+on the mini runner and in `tools/run-ci-gate.sh` (without `--clean-clone`). It skips
+on a clean clone and when the corpus is not checked out at the commit pinned in
+`packaging/sources.json`. Fix: `python3 packaging/generate-manifest.py --artwork
+<artwork>`, review the diff, commit both files.
