@@ -38,14 +38,16 @@ jobs:
         # The solution references a subset of tools/; the many *-proof harnesses
         # are standalone projects that must also compile (P602: proof tools were
         # rotting against later API changes). Fail the job if any one breaks.
-        # Compile check only: each proof's bin/ is a ~340 MB self-contained copy (7.9 GB for
-        # all 70), which ran the runner out of disk (run 39719003509) — drop it after each build.
+        # Compile check only: each proof's bin/ is a ~340 MB copy of its dependencies (7.9 GB for
+        # all 70), which ran the runner out of disk (run 39719003509). Drop it after the build,
+        # except for projects in the solution or whose bin/ a test runs (benchmark, hd2-proof, ...).
         run: |
           set -euo pipefail
           for f in tools/*/*.csproj; do
             echo "Building $f"
             dotnet build "$f"
-            rm -rf "$(dirname "$f")/bin"
+            d=$(dirname "$f")
+            grep -qF "\"$f\"" AllegianceCore.slnx || grep -rqF "$d/bin" tests .github || rm -rf "$d/bin"
           done
           df -h /
 
