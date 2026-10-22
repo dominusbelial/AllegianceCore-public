@@ -140,7 +140,7 @@ public class DiscoveryTests
     public void Coordinator_merges_favorite_and_tailscale_and_dedupes()
     {
         using var responder = StartLoopbackResponder(gamePort: 2500);
-        using var engine = new DiscoveryEngine();
+        using var engine = new DiscoveryEngine(probeTimeoutMs: 30_000); // scheduling allowance, not a latency budget
         var coord = new DiscoveryCoordinator(engine);
 
         // Same host reachable as a favorite AND as a mocked Tailscale peer —
