@@ -9,8 +9,8 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 MATRICES = ("parity-matrix.csv", "sim-rules-matrix.csv")
-STATUSES = {"done", "implemented", "partial", "missing", "na", "n/a"}
-COMPLETE = {"done", "implemented"}
+STATUSES = {"done", "done-visual", "implemented", "partial", "missing", "na", "n/a"}
+COMPLETE = {"done", "done-visual", "implemented"}
 EXCLUDED = {"na", "n/a"}
 
 
@@ -34,6 +34,10 @@ def read_matrix(path):
                 row = dict(zip(header, fields))
                 if row["port_status"] not in STATUSES:
                     raise ValueError(f"{location}: invalid status {row['port_status']!r}")
+                if row["port_status"] == "done-visual":
+                    if not row["port_cite_or_reason"].startswith("VISUAL:"):
+                        raise ValueError(
+                            f"{location}: done-visual row must start its reason with 'VISUAL:'")
                 try:
                     weight = Decimal(row["weight"])
                 except InvalidOperation:
@@ -55,9 +59,11 @@ def read_matrix(path):
 def score(rows):
     eligible = [row for row in rows if row["port_status"] not in EXCLUDED]
     completed = [row for row in eligible if row["port_status"] in COMPLETE]
+    visual = [row for row in completed if row["port_status"] == "done-visual"]
     weight = sum((Decimal(row["weight"]) for row in eligible), Decimal(0))
     credit = sum((Decimal(row["weight"]) for row in completed), Decimal(0))
-    return len(completed), len(eligible), credit, weight
+    visual_weight = sum((Decimal(row["weight"]) for row in visual), Decimal(0))
+    return len(completed), len(eligible), credit, weight, visual_weight
 
 
 def scorecard(rows):
@@ -82,10 +88,10 @@ def main(argv=None):
         return 1
     for path, rows in matrices:
         print(f"{path.name}: validated {len(rows)} rows")
-        print("area | weighted (credit/weight) | unweighted (complete/eligible)")
-        for area, (done, count, credit, weight) in scorecard(rows):
+        print("area | weighted (credit/weight) | unweighted (complete/eligible) | visual-weight")
+        for area, (done, count, credit, weight, visual_weight) in scorecard(rows):
             print(f"{area} | {percentage(credit, weight)} ({credit}/{weight}) | "
-                  f"{percentage(done, count)} ({done}/{count})")
+                  f"{percentage(done, count)} ({done}/{count}) | visual {visual_weight}")
     return 0
 
 

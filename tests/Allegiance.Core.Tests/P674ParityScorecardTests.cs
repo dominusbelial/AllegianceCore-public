@@ -82,4 +82,37 @@ public class P674ParityScorecardTests
         }
         finally { File.Delete(path); }
     }
+
+    [Fact]
+    public void DoneVisual_rows_get_full_credit_and_appear_in_the_visual_column()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "area,native_item,native_cite,port_status,port_cite_or_reason,weight\n" +
+                "area,one,native,done,reason,2\n" +
+                "area,two,native,done-visual,\"VISUAL: font shade differs\",3\n" +
+                "area,three,native,partial,reason,5\n");
+            var result = Run(path);
+            Assert.True(result.ExitCode == 0, result.Output);
+            Assert.Contains("area | 50.00% (5/10) | 66.67% (2/3) | visual 3", result.Output);
+            Assert.Contains("TOTAL | 50.00% (5/10) | 66.67% (2/3) | visual 3", result.Output);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public void DoneVisual_without_VISUAL_prefix_is_rejected()
+    {
+        var path = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(path, "area,native_item,native_cite,port_status,port_cite_or_reason,weight\n" +
+                "area,one,native,done-visual,missing prefix,3\n");
+            var result = Run(path);
+            Assert.Equal(1, result.ExitCode);
+            Assert.Contains("must start its reason with 'VISUAL:'", result.Output);
+        }
+        finally { File.Delete(path); }
+    }
 }
