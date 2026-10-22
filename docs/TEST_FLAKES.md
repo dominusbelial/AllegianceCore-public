@@ -4,6 +4,23 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## CI gate observation (2026-10-21) — CleanCloneSkipGuardTests near the Fast limit
+
+`Allegiance.Core.Tests.CleanCloneSkipGuardTests.Artwork_and_gpu_touching_tests_skip_on_a_clean_clone`
+parses every test file with Roslyn and its time grows with the suite and with concurrent load. Measured
+on the workstation (24 threads), master 7c79aefd–3466d3a8:
+
+| Run | Duration |
+|---|---|
+| Exact-method isolated, 3x | ~3 s each |
+| Batch 19 gate, full Fast tier | 8.51 s |
+| Fast tier with the new `PackagingManifestTests` (run 1) | **10.82 s** — tripped the calibrated 10 s limit; 9,946 tests, 0 failed |
+| Same tree, Fast tier rerun | 8.13 s, PASS |
+
+Classified a **load flake** (timing only; no assertion failed). Headroom is ~1.5–2 s, so it will trip
+again as the test count grows. Real fix, not done here: parse once per file in parallel or cache the
+syntax trees, or move it to its own non-parallel collection — never raise the limit for it alone.
+
 ## P761b timing observations (2026-10-20)
 
 Two fast-tier sweeps under heavy concurrent load (other agents' suites on the same
