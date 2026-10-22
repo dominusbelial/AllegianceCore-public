@@ -120,6 +120,7 @@ Args: `<host> <port> <player name> [flags...]`.
 | Flag | Effect |
 |---|---|
 | `--window WxH` | Fixed initial window size (e.g. `2560x1440`); default 1280×720. |
+| `--borderless` | No window frame, placed at the screen's top-left — for full-height recordings (e.g. `--window 3840x2160` on a 2160-px screen). |
 | `--fx native` / `--fx volumetric` / `--fx displaced` | VFX renderer: default **enhanced**; `native` forces the native P545/P263 pipeline; `volumetric`/`displaced` choose the volumetric technique (P573). |
 | `--sky black` / `--sky native` / `--sky hd` | Sky tier: `black` (default, P588), `native`, or `hd`. `--sky-intensity F` sets global intensity (default 1.0); `--sky-lowres` picks the low-res asset set (Android). |
 | `--aleph-glimpse on` / `--aleph-glimpse off` | Aleph destination-glimpse + transit flare (default **on**, P607). `--aleph-glimpse off` disables the glimpse/flare extras; the native arrival-star swell for visible transits stays on either way. |

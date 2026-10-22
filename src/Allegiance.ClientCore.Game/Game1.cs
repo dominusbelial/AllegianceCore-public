@@ -1428,8 +1428,11 @@ public sealed partial class Game1 : Game
     private CapturePngSaver? _capSaver;   // background PNG writer (keeps encode off the render thread)
     private Color[]? _capPixels;          // reusable GPU-readback scratch buffer
 
+    private readonly bool _launchBorderless;
+
     public Game1(LaunchOptions opts)
     {
+        _launchBorderless = opts.Borderless;
         _graphics = new GraphicsDeviceManager(this)
         {
             PreferredBackBufferWidth = opts.WindowWidth ?? 1280,
@@ -1716,6 +1719,11 @@ public sealed partial class Game1 : Game
     protected override void Initialize()
     {
         base.Initialize();
+        if (_launchBorderless)
+        {
+            Window.IsBorderless = true;
+            Window.Position = Point.Zero;
+        }
 
         // Real text input for the chat line (MonoGame Window.TextInput — NOT a
         // manual Keyboard.GetState() scan, which misses shift/caps/punctuation).

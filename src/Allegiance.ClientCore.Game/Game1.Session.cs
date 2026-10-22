@@ -87,6 +87,9 @@ public sealed partial class Game1
         /// fixed-size recordings (e.g. 2560×1440 for YouTube); never sent on the wire.</summary>
         public int? WindowWidth;
         public int? WindowHeight;
+        /// <summary><c>--borderless</c>: no title bar/frame, window at the screen's top-left, so a
+        /// recording can use the full monitor height (e.g. 3840×2160 on a 2160-px-tall screen).</summary>
+        public bool Borderless;
 
         /// <summary>P448b — render REMOTE ships through the P448a dead-reckoner
         /// (replay the real flight model forward from each update to "now") instead

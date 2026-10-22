@@ -135,6 +135,7 @@ string? assetManifestPath = null;
 // Initial window size for fixed-size recordings: --window 2560x1440 (or
 // --window=2560x1440). Null keeps the 1280x720 default; client-only.
 int? windowWidth = null, windowHeight = null;
+bool borderless = false;   // --borderless: frameless window at the top-left (full-height recordings)
 static bool TryParseWindowSize(string v, out int w, out int h)
 {
     w = h = 0;
@@ -174,6 +175,10 @@ for (int i = 0; i < args.Length; i++)
                 System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture, out var fd2))
             debrisDensity = fd2;
+    }
+    else if (a == "--borderless")
+    {
+        borderless = true;
     }
     else if (a == "--window" || a.StartsWith("--window=", StringComparison.Ordinal))
     {
@@ -622,6 +627,7 @@ var opts = new Game1.LaunchOptions
     AutoProof = autoPlan.AnyActive ? autoPlan : null,
     WindowWidth = windowWidth,
     WindowHeight = windowHeight,
+    Borderless = borderless,
     // P498 — when --asset-manifest is given, the game reads artwork through the
     // recorder so the opened-file manifest is captured.
     AssetSource = (IAssetSource?)recorder ?? playerAssets,
