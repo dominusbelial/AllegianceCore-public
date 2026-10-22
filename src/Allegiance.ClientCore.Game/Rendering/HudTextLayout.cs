@@ -45,9 +45,10 @@ public sealed class HudTextLayout
                 return candidate;
             }
         }
-        // Overflow must be explicit: silently overlapping text defeats the HUD
-        // contract. Normal flight layouts reserve enough room even at 150%.
-        throw new InvalidOperationException($"HUD has no free text zone for '{text}' at {_width}x{_height}");
+        // Overflow (a crowded battle fills every free zone) falls back to the
+        // desired anchor, overlapping like native, which never de-overlaps HUD
+        // text (radarimage.cpp:1284-1311). Throwing here crashed the client.
+        return Overflow(text, x, y, width, height);
     }
 
     /// <summary>Place a pre-measured multi-line block (radar labels, which stack
@@ -76,7 +77,16 @@ public sealed class HudTextLayout
                 return candidate;
             }
         }
-        throw new InvalidOperationException($"HUD has no free block zone for '{text}' at {_width}x{_height}");
+        return Overflow(text, x, y, width, height);   // see Place
+    }
+
+    /// <summary>The no-free-zone fallback: the clamped desired box, recorded
+    /// (so <see cref="TextBoxes"/> stays complete) but not reserved.</summary>
+    private Rectangle Overflow(string text, int x, int y, int width, int height)
+    {
+        var box = new Rectangle(x, y, width, height);
+        _text.Add(new(text, box));
+        return box;
     }
     private static Rectangle Padded(Rectangle r) { r.Inflate(2, 2); return r; }
 }

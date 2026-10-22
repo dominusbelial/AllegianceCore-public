@@ -40,6 +40,21 @@ public sealed class ModernHudTests
         Assert.True(label.Intersects(energy)); Assert.False(label.Intersects(target)); Assert.False(label.Intersects(notice));
     }
     [Fact]
+    public void A_full_screen_of_radar_blocks_overflows_to_the_native_anchor_instead_of_throwing()
+    {
+        // Big-battle crash (2026-10-22): 'HUD has no free block zone for radar:…'.
+        // Native draws every radar label at its contact (radarimage.cpp:1284-1311)
+        // with no de-overlap, so overflow must land on the desired anchor.
+        var layout = new HudTextLayout(); layout.Reset(2560, 1440);
+        for (int i = 0; i < 2000; i++)
+            layout.PlaceBlock("radar:" + i, new Rectangle(i * 37 % 2400, i * 53 % 1300, 160, 60));
+        var desired = new Rectangle(1200, 700, 160, 60);
+        Assert.Equal(desired, layout.PlaceBlock("radar:overflow", desired));
+        var notice = layout.Place("NOTICE", new(300, 32), new(1100, 650));
+        Assert.Equal(new Rectangle(1100, 650, 300, 32), notice);
+        Assert.Contains(layout.TextBoxes, b => b.Text == "radar:overflow");
+    }
+    [Fact]
     public void Safe_palette_keeps_neutral_and_team_relationships_distinguishable()
     {
         Assert.NotEqual(HudPalette.Relationship(true), HudPalette.Relationship(false));
