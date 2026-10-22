@@ -75,11 +75,16 @@ internal static class PlayerBundleCheck
                         throw new FileNotFoundException("Sky pack is incomplete", required);
                 // Validate every packaged art/sky/Content file, including rarely
                 // selected sky layers, without requiring a graphics/audio device.
-                foreach (string line in File.ReadLines(Path.Combine(AppContext.BaseDirectory, "bundle-files.sha256")))
+                // Normalise the base exactly like each entry: on Windows GetFullPath expands 8.3
+                // short names (C:\Users\RUNNER~1\... from a short %TEMP%), which BaseDirectory
+                // keeps as launched, and the file system is case-insensitive.
+                string bundleRoot = Path.GetFullPath(AppContext.BaseDirectory);
+                var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+                foreach (string line in File.ReadLines(Path.Combine(bundleRoot, "bundle-files.sha256")))
                 {
                     string relative = line[66..];
-                    string path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, relative));
-                    if (!path.StartsWith(AppContext.BaseDirectory, StringComparison.Ordinal))
+                    string path = Path.GetFullPath(Path.Combine(bundleRoot, relative));
+                    if (!path.StartsWith(bundleRoot, comparison))
                         throw new InvalidDataException("Invalid bundle inventory path");
                     using var stream = File.OpenRead(path);
                     string hash = Convert.ToHexStringLower(SHA256.HashData(stream));
