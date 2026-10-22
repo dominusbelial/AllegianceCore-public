@@ -18,7 +18,7 @@ namespace Allegiance.Core.Tests;
 /// <see cref="IsNpc"/> ship given an explicitly test-authored cross-sector
 /// <see cref="Ship.PlanTarget"/> now gets THERE: the autopilot path-finds the
 /// next warp toward the target's sector and steers at it, the pre-existing
-/// <see cref="Model.Sector.ResolveWarpCollisions"/> transits the ship, and the
+/// <see cref="Model.Sector.ResolveAlephCollisions"/> transits the ship, and the
 /// autopilot (re-resolving its goal every tick) continues toward the station in
 /// the new sector. Zero new transit code — this task only decides which warp to
 /// fly at, exactly the task's scope.

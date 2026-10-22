@@ -91,6 +91,16 @@ public sealed class Sector : IClusterIgc
     private readonly Queue<Explosion> _pendingExplosions = new();
     private bool _resolvingExplosions;
 
+    // P777b — reusable per-tick buffers for the merged aleph pass
+    // (ResolveAlephCollisions): the model snapshot (no _models.ToArray per
+    // tick), plus the warps-with-a-position and their pre-computed cone
+    // Geometry, so the forward axis is normalised once per warp per tick
+    // instead of once per model × warp × sample. Cleared/refilled every tick
+    // (warps can be attached/removed); the arrays only ever grow.
+    private readonly List<Model> _alephModels = [];
+    private ResolvedWarp[] _alephWarps = [];
+    private AlephConeHitTest.Geometry[] _alephGeometry = [];
+
     /// <summary>The time of the most recent <see cref="Update"/>, or 0 before the first.</summary>
     public double LastUpdate { get; private set; }
 
@@ -351,7 +361,7 @@ public sealed class Sector : IClusterIgc
     /// contested sector's own list untouched). Every real consumer reads
     /// <see cref="Warps"/> directly — the CLUSTERINFO graph build, the
     /// per-peer warp export, warp-hit/warp-bomb collision
-    /// (<see cref="Sector.ResolveWarpCollisions"/>) and NPC pathfinding BFS
+    /// (<see cref="ResolveAlephCollisions"/>) and NPC pathfinding BFS
     /// (<see cref="FindPathToward"/>) — so removing the warp from this source
     /// list is sufficient on its own; nothing needs special-casing. Returns
     /// <c>true</c> if the warp was present and removed.</summary>
@@ -712,7 +722,7 @@ public sealed class Sector : IClusterIgc
     /// needs to steer a ship toward the next aleph; the return value maps 1:1
     /// onto that (a <see cref="ResolvedWarp"/>, this port's concrete realisation
     /// of native's <c>IwarpIGC*</c>, including the transit seam
-    /// <c>ResolveWarpCollisions</c> consumes).</para>
+    /// <c>ResolveAlephCollisions</c> consumes).</para>
     /// </summary>
     /// <remarks>
     /// <para><b>Plain unweighted BFS.</b> Native's frontier is
@@ -994,15 +1004,15 @@ public sealed class Sector : IClusterIgc
         // armor-then-shield sequencing.
         { using (TickProfiler.Enter("sim.station")) ResolveStationRegen((float)dt); }
 
-        // Warp-transit proximity pass — a stationary-object test (ship vs the
-        // sector's warps), deliberately separate from the moving-object combat
-        // collider above. See ResolveWarpCollisions for the spec and scope.
-        { using (TickProfiler.Enter("sim.warp")) ResolveWarpCollisions(timeUpdate, (float)dt); }
+        // The aleph pass — one swept test of every ship and missile against
+        // every warp's cone (ResolveAlephCollisions; before P777b this was the
+        // ship-only ResolveWarpCollisions plus a separate point-in-sphere
+        // warp-bomb trigger under "sim.combat").
+        { using (TickProfiler.Enter("sim.warp")) ResolveAlephCollisions(timeUpdate, (float)dt); }
 
-        // Warp-bomb (missile vs warp) trigger pass + its scheduled-detonation
-        // half. A real missile reaching a warp arms a WARP_BOMB(188) broadcast
-        // and a 15 s-delayed explosion at the aleph — see the two passes below.
-        { using (TickProfiler.Enter("sim.combat")) ResolveWarpBombTriggers(timeUpdate); }
+        // Scheduled warp-bomb detonation half. A real missile reaching a warp
+        // arms a WARP_BOMB(188) broadcast in the aleph pass above and a 15 s-
+        // delayed explosion at the aleph — popped here in deadline order.
         { using (TickProfiler.Enter("sim.combat")) ResolveWarpBombDetonations(timeUpdate); }
 
         // Dock proximity pass — ship vs the sector's stations. See
@@ -1996,13 +2006,16 @@ public sealed class Sector : IClusterIgc
     /// this much sim-time elapses, collapsing native's <c>warpNoUpdate →
     /// warpWaiting → warpReady</c> cycle into one threshold. Compared against
     /// <see cref="Ship.LastWarpTime"/>.
-    /// <para>P776: this window is <b>not</b> what prevents re-entry — native's
-    /// geometry does (the exit places the ship 5&nbsp;u in front of the
-    /// destination disc, outside the aleph's cone; <c>fsship.cpp:129-132</c>,
-    /// <see cref="AlephConeHitTest"/>). Native drones never leave
-    /// <c>warpReady</c> (<c>fsship.cpp:79-82</c>) and have no cooldown at all;
-    /// the NPC use of this constant is <b>port-only</b> and is left in place
-    /// (removing it is out of P776's scope).</para>
+    /// <para>P776: this window is <b>not</b> what prevents re-entry — geometry
+    /// does: for a near-centre hit the native exit is clear of the cone (worst
+    /// ≈ 3.3&nbsp;u with exit wobble, P777); an off-centre hit (error ≳ 0.35,
+    /// i.e. d/R ≳ 0.47 for r = 10) can leave the hull touching it, natively too.
+    /// Players are covered by the NoUpdate handshake
+    /// (<c>fsship.cpp:79-82,1185-1191</c>), port NPCs by this port-only cooldown
+    /// (<c>fsship.cpp:129-132</c>, <see cref="AlephConeHitTest"/>). Native drones
+    /// never leave <c>warpReady</c> (<c>fsship.cpp:79-82</c>) and have no cooldown
+    /// at all; the NPC use of this constant is <b>port-only</b> and is left in
+    /// place (removing it is out of P776's scope).</para>
     /// </summary>
     public const double WarpCooldownSeconds = 2.0;
 
@@ -2011,9 +2024,13 @@ public sealed class Sector : IClusterIgc
     /// not a faithful port of anything in native: native has the player re-arm
     /// timer (<c>fsship.cpp:1185-1191</c>), no cooldown at all for drones
     /// (<c>fsship.cpp:79-82</c>), and no arrival-warp memory — a native ship
-    /// simply does not re-trigger because the exit geometry leaves it clear of
-    /// the aleph's cone (<c>fsship.cpp:129-132</c>; <see cref="AlephConeHitTest"/>,
-    /// P776). The guard was added in P591b to stop a real, measured bounce caused
+    /// simply does not re-trigger because for a near-centre hit the native exit
+    /// is clear of the cone (worst ≈ 3.3&nbsp;u with exit wobble, P777); an
+    /// off-centre hit (error ≳ 0.35, i.e. d/R ≳ 0.47 for r = 10) can leave the
+    /// hull touching it, natively too. Players are covered by the NoUpdate
+    /// handshake (<c>fsship.cpp:79-82,1185-1191</c>), port NPCs by this port-only
+    /// cooldown (<c>fsship.cpp:129-132</c>; <see cref="AlephConeHitTest"/>, P776).
+    /// The guard was added in P591b to stop a real, measured bounce caused
     /// by a routing bug this port had; once that root cause is fixed (P591c) the
     /// guard should fire ≈0 times and acts purely as insurance. It is therefore
     /// <b>OPT-IN and OFF by default</b> (native needs no such rule): opt in via
@@ -2750,7 +2767,7 @@ public sealed class Sector : IClusterIgc
     /// exactly that; and (3) the mining regression below needs a place to consult
     /// <see cref="Ship.MiningAsteroid"/> that is independent of ordnance. The
     /// established per-tick-pass convention (<c>ResolveMining</c>,
-    /// <c>ResolveWarpCollisions</c>, <c>ResolveDockCollisions</c> — each its own
+    /// <c>ResolveAlephCollisions</c>, <c>ResolveDockCollisions</c> — each its own
     /// method called from <see cref="Update"/>) is therefore followed: this is a
     /// dedicated resolver that reuses the same
     /// <see cref="CollisionDetector"/>/<see cref="Collider"/> geometry the combat
@@ -4016,14 +4033,46 @@ public sealed class Sector : IClusterIgc
     }
 
     /// <summary>
-    /// The <b>warp-transit trigger</b> pass, run once per sector tick after the
-    /// combat pass. This is the C# analogue of the warp half of
+    /// The <b>aleph pass</b> — <b>one</b> swept pass over every model in the
+    /// sector against every warp's cone, ships and missiles together, run once
+    /// per sector tick under the <c>"sim.warp"</c> profiler bucket. (Before
+    /// P777b this was two passes: the ship-only <c>ResolveWarpCollisions</c>
+    /// under <c>"sim.warp"</c> and the missile-only
+    /// <c>ResolveWarpBombTriggers</c> under <c>"sim.combat"</c>. Native
+    /// has a single collision loop over all models
+    /// (<c>Igc/clusterIGC.cpp:266-300</c>); ships and missiles are independent
+    /// here, so merging changes no outcome — only the profiler bucket of the
+    /// missile trigger, which is now <c>"sim.warp"</c>.)
+    /// <para><b>Ships.</b> The C# analogue of the warp half of
     /// <c>CshipIGC::HandleCollision</c> (<c>shipIGC.cpp:629-636</c>): a ship
     /// whose bounding sphere touches a warp's hit-test shape is considered to
     /// have hit the aleph, and the host's <see cref="IIgcSite.HitWarpEvent"/>
     /// is raised so the seam can perform the actual transit (position /
     /// orientation / velocity change + sector reassignment,
-    /// <c>CFSShip::HitWarp</c>, <c>fsship.cpp:71-137</c>).
+    /// <c>CFSShip::HitWarp</c>, <c>fsship.cpp:71-137</c>).</para>
+    /// <para><b>Missiles (P777b).</b> Native missiles are cast-ray spheres of
+    /// <c>dataMissileType-&gt;radius</c> (<c>Igc/missileigc.cpp:50-51,64-66</c>)
+    /// tested against the same cone as ships (rule 1 of the P777b brief;
+    /// <c>Igc/modelIGC.cpp:127-130</c>, <c>_Utility/HitTest.cpp:197-201</c>).
+    /// An armed missile that touches an aleph therefore dies there:
+    /// <c>CmissileIGC::HandleCollision</c> takes the warp-bomb branch when the
+    /// type carries <c>c_eabmWarpBomb</c> (<c>missileigc.cpp:459-467</c>) and
+    /// otherwise falls through to the unconditional
+    /// <c>KillMissileEvent(this, position1)</c> (<c>missileigc.cpp:512</c>) at
+    /// <c>position1 = position + velocity·tCollision</c> — the contact point
+    /// (<c>missileigc.cpp:452</c>). Because a warp is not
+    /// <c>c_mtDamagable</c> (<c>warpIGC.cpp:33-35</c>) the damage branch
+    /// (<c>missileigc.cpp:468-498</c>) is skipped entirely, so a
+    /// capture-capable missile explodes here too — the port's combat-pass
+    /// capture exclusion does <b>not</b> apply to an aleph.
+    /// <c>KillMissileEvent</c> (<c>FedSrv.CPP:12512-12529</c>) broadcasts
+    /// <c>FM_S_MISSILE_DESTROYED</c> with that position and then calls
+    /// <c>Explode(position)</c> (<c>missileigc.cpp:516-530</c>): a real
+    /// <c>CreateExplosion(damageType, blastPower × side c_gaDamageMissiles,
+    /// blastRadius, …)</c> when <c>blastPower ≠ 0</c>, otherwise only the visual.
+    /// The port's old P549 comment here ("any other missile touching an aleph
+    /// does nothing") misread <c>missileigc.cpp:459-466</c>; it is fixed by this
+    /// pass.</para>
     /// </summary>
     /// <remarks>
     /// <para><b>Native shape: a cone, not a sphere (P776).</b> Native loads an
@@ -4040,15 +4089,28 @@ public sealed class Sector : IClusterIgc
     /// centre <c>shipRadius+5</c> in front of the destination disc
     /// (<c>fsship.cpp:129-132</c>) — was inside it and re-triggered as soon as
     /// the re-arm fired (the measured 1.9–2.0&nbsp;s Tellus↔Omega bounce).</para>
-    /// <para><b>Swept per chunk.</b> Native's test is continuous over the tick
-    /// interval (<c>_Utility/HitTest.cpp:114-207</c>, <c>HullCollide</c>); a
-    /// single end-of-chunk sample can tunnel through the cone's thin rim. The
-    /// trigger therefore samples the segment the ship swept this chunk
+    /// <para><b>Exact swept test (P777b).</b> Native's test is continuous over
+    /// the tick interval (<c>_Utility/HitTest.cpp:114-207</c>, <c>HullCollide</c>),
+    /// so both halves sweep the segment the model covered this chunk
     /// (<c>Position − CollisionVelocity·dt</c> to <c>Position</c>, the same
-    /// pattern as <see cref="ResolveTreasurePickups"/>) at a spacing of at most
-    /// the ship radius (capped at 16 samples) and fires on the first sample that
-    /// touches. A cheap broad phase — <c>|ship − warp| ≤ Radius + shipRadius +
-    /// |v|·dt</c> — skips the cone math when even the sweep cannot reach.</para>
+    /// pattern as <see cref="ResolveTreasurePickups"/>) — P776 sampled that
+    /// segment at up to 16 points, which is fine for a ship but too coarse for a
+    /// small, fast missile, and could be strict either way. P777b replaces the
+    /// sampling with <see cref="AlephConeHitTest.SweptFirstContact"/>: the
+    /// distance to the cone is convex along the segment, so a golden-section
+    /// search plus a bisection finds the <b>first</b> contact (a strict superset
+    /// of what the sampler caught). A missile uses the <b>earliest</b> contact
+    /// over all warps, as native processes its collisions in time order
+    /// (<c>Igc/clusterIGC.cpp:288</c>).</para>
+    /// <para><b>Cost (P777b).</b> Behaviour-neutral: the warp
+    /// <see cref="AlephConeHitTest.Geometry"/> is built once per warp per tick
+    /// into a reusable array, the model list is snapshotted into a reusable
+    /// <c>List&lt;Model&gt;</c> (no <c>ToArray</c>), the forward axis is
+    /// normalised once per warp instead of once per sample, and the rejects
+    /// (segment-to-centre &gt; <c>R + r</c>, the two <c>z</c> planes, and a
+    /// Lipschitz bound during the search) run before any cone maths. The whole
+    /// pass allocates <b>0 B</b> per tick (pinned by
+    /// <c>P777bAlephTriggerPerfTests</c>).</para>
     /// <para><b>No closing-velocity gate.</b> Native produces a collision even
     /// while the objects separate (<c>_Utility/HitTest.cpp:166-185</c>); the
     /// "not closing: ignore / hit the back: bounce" branch is commented out
@@ -4068,242 +4130,306 @@ public sealed class Sector : IClusterIgc
     /// another ~2&nbsp;s. The <see cref="Ship.LastWarpTime"/> /
     /// <see cref="WarpCooldownSeconds"/> window stands in for that handshake and
     /// is kept on the ship so it survives the sector transfer. It is <b>not</b>
-    /// what prevents re-entry: geometry does (the native exit sits 5&nbsp;u in
-    /// front of the disc, clear of the cone). Native drones never leave
+    /// what prevents re-entry: geometry does — for a near-centre hit the native
+    /// exit is clear of the cone (worst ≈ 3.3&nbsp;u with exit wobble, P777); an
+    /// off-centre hit (error ≳ 0.35, i.e. d/R ≳ 0.47 for r = 10) can leave the
+    /// hull touching it, natively too. Players are covered by the NoUpdate
+    /// handshake (<c>fsship.cpp:79-82,1185-1191</c>), port NPCs by this port-only
+    /// cooldown. Native drones never leave
     /// <c>warpReady</c> (<c>fsship.cpp:79-82</c>) and have no cooldown at all; the
     /// NPC cooldown here is port-only (see <see cref="WarpCooldownSeconds"/>).</para>
-    /// <para><b>Scope.</b> Single-ship, per-sector: only ships physically in
-    /// this sector (<see cref="_models"/>) are tested, and each fires at most
-    /// one warp per tick (the <c>break</c>), matching the C++ single-owner
-    /// collision event. A dangling warp (<see cref="ResolvedWarp.Destination"/>
-    /// null) or one lacking a position is skipped, never fabricated.</para>
+    /// <para><b>Scope.</b> Per-sector: only models physically in this sector
+    /// (<see cref="_models"/>) are tested; each ship fires at most one warp per
+    /// tick (the <c>break</c>), matching the C++ single-owner collision event,
+    /// and each missile dies on the first (earliest) warp it reaches. A
+    /// positionless warp is skipped everywhere (never fabricated); for ships a
+    /// dangling warp (<see cref="ResolvedWarp.Destination"/> null) is skipped
+    /// too.</para>
+    /// <para><b>Ordering (known, accepted deviation).</b> Native processes every
+    /// collision of a tick in time order (<c>Igc/clusterIGC.cpp:288</c>); this
+    /// port runs the combat pass before the aleph pass, so a missile that would
+    /// reach an aleph earlier in a tick than the ship it also crosses is an edge
+    /// case left as-is (P777b brief, native rule 4).</para>
     /// </remarks>
-    private void ResolveWarpCollisions(double now, float dt)
+    private void ResolveAlephCollisions(double now, float dt)
     {
-        if (_warps.Count == 0) return;              // no alephs to hit
-        foreach (var model in _models.ToArray())    // snapshot survives self-transit (remove from this sector)
+        if (_warps.Count == 0) return;              // no alephs to probe
+
+        // Cache each warp's cone once per tick (P777b): the forward normalise,
+        // the float[] → Vector3 parse and the radius are per-warp, not per
+        // model × warp × sample. The arrays are only ever grown.
+        int warpCount = 0;
+        for (int i = 0; i < _warps.Count; i++)
         {
-            if (model is not Ship ship) continue;
-            if (ship.Dead) continue;                 // the dead cannot warp
-            if (ship.Mission is null) continue;      // unplaced ship has no host to route to
-            // P760 — players use the native update handshake (WarpState); NPCs
-            // keep the existing LastWarpTime cooldown (fsship.cpp:79-82).
-            if (!ship.WarpReady) continue;
-            if (now - ship.LastWarpTime < WarpCooldownSeconds) continue;
-
-            // Ship radius is the half-length, exactly as the combat pass builds
-            // its sphere (Sector.cs:174, shipIGC.cpp:1419).
-            float shipRadius = 0.5f * ship.HullType.Length;
-
-            // P591b/P591c — release the re-entry latch once the ship has clearly left
-            // the vicinity of the aleph it arrived through (it may then
-            // legitimately re-cross it). The release threshold is a HEALTHY
-            // MARGIN (2× the transit volume radius), not the bare sphere edge:
-            // a drone emerging from an aleph often skirts the edge of its
-            // transit volume as it turns toward its next goal, and releasing
-            // the moment it crosses the bare edge lets it swing back and
-            // re-cross the very aleph it just came through (the Debug-geometry
-            // variant of the measured mine-layer ping-pong). Requiring it to
-            // move well clear first gives its steering time to commit to the
-            // onward route. The arrival warp lives in THIS sector (the
-            // destination); if absent (e.g. the ship moved on), release too.
-            // The guard is the P591c-documented NON-NATIVE safety net, gated by
-            // WarpReEntryGuardEnabled so tests/proof can show the routing fix
-            // holds on its own.
-            if (Sector.WarpReEntryGuardEnabled && ship.LastArrivalWarpId >= 0)
+            var warp = _warps[i];
+            if (warp.Warp.Position is not { Length: 3 }) continue;   // no position: can't test
+            if (warpCount == _alephWarps.Length)
             {
-                var aw = _warps.FirstOrDefault(w => w.Warp.WarpId == ship.LastArrivalWarpId);
-                bool cleared = true;
-                if (aw is not null && aw.Warp.Position is { Length: 3 } ap)
-                {
-                    var av = new Vector3(ap[0], ap[1], ap[2]);
-                    float adx = ship.Position.X - av.X, ady = ship.Position.Y - av.Y, adz = ship.Position.Z - av.Z;
-                    float clearDist = 2f * (aw.Warp.Radius + shipRadius);
-                    cleared = adx * adx + ady * ady + adz * adz > clearDist * clearDist;
-                }
-                if (cleared) ship.LastArrivalWarpId = -1;
+                int size = Math.Max(4, _alephWarps.Length * 2);
+                Array.Resize(ref _alephWarps, size);
+                Array.Resize(ref _alephGeometry, size);
             }
-            // P591 — a Layer drone that has ARRIVED at its lay target sector is
-            // deploying: it must fly to its lay point and LayExpendable without
-            // warping through the very aleph it was ordered to lay at (measured
-            // live: the layer ping-ponged Omega<->Alderan through its target
-            // warp, never laying). Suppress transit while it is in its lay
-            // target cluster — it still transits freely while travelling cross-
-            // sector to GET there, matching native where the drone lays at the
-            // buoy on arrival rather than being whisked away by the aleph.
-            if (ship.LayerBuildOrder is { } lb && ship.Sector?.Id == lb.ClusterId) continue;
-            foreach (var warp in _warps)
-            {
-                if (warp.Destination is null) continue;              // dangling edge: nothing to cross into
-                if (warp.Warp.Position is not { Length: 3 } p) continue;  // no position: can't test
-                // P591b/P591c — the re-entry guard (NON-NATIVE safety net, see
-                // WarpReEntryGuardEnabled): a ship must not immediately
-                // bounce back out through the SAME aleph it just arrived via
-                // while still inside its transit volume. Native never needs such
-                // a rule: the exit geometry leaves the ship 5 u in front of the
-                // destination disc, clear of the cone (fsship.cpp:129-132; P776
-                // AlephConeHitTest), and the player re-arm timer
-                // (fsship.cpp:1185-1191) merely re-arms — it is not what
-                // prevents re-entry. This guard predates that geometry fix; the
-                // P591c routing fix makes it fire ≈0 times in practice, so it is
-                // OPT-IN and OFF by default (P594), armed only when the operator
-                // enables WarpReEntryGuard. The latch is released above the
-                // moment the ship clears the volume.
-                if (Sector.WarpReEntryGuardEnabled && ship.LastArrivalWarpId == warp.Warp.WarpId
-                    && ship.IntendedNextWarpId != warp.Warp.WarpId)
-                {
-                    // Only hold the UNINTENTIONAL drift back through the arrival
-                    // aleph (the ship's routing goal is a DIFFERENT warp, or none
-                    // — it is not choosing to go back). An INTENTIONAL re-crossing
-                    // (ship.IntendedNextWarpId == this warp — e.g. a combat bot
-                    // pursuing an enemy back across the border it entered by, or a
-                    // return-home through the same door) is permitted: blocking it
-                    // would trap the ship at the arrival aleph forever, because its
-                    // goal lies THROUGH the warp so it can never clear the 2× volume
-                    // to release the latch. Native likewise lets a ship that chooses
-                    // to go back re-cross after the ~2 s re-arm.
-                    // Count (and log) each real block so a regression that
-                    // reintroduces re-entry shows up as a non-zero guard-block
-                    // count even while the guard itself is preventing the harm.
-                    ship.NumWarpReEntryBlocks++;
-                    ConsoleLog.Write($"[warp] P591b re-entry guard BLOCKED ship {ship.Id} (block #{ship.NumWarpReEntryBlocks}) " +
-                                     $"from re-crossing arrival warp {ship.LastArrivalWarpId} (not its route goal) — routing should have carried it clear (non-native safety net)");
-                    continue;
-                }
-                var wpos = new Vector3(p[0], p[1], p[2]);
-                var wfwd = warp.Warp.Forward is { Length: 3 } wf
-                    ? new Vector3(wf[0], wf[1], wf[2])
-                    : new Vector3(0f, 0f, -1f);
-                float warpRadius = warp.Warp.Radius;            // P244: raw radius, no WarpVisualScale
+            _alephWarps[warpCount] = warp;
+            _alephGeometry[warpCount] = AlephConeHitTest.Geometry.From(warp.Warp);
+            warpCount++;
+        }
+        if (warpCount == 0) return;
 
-                // P776 — swept ship sphere vs the aleph cone. Native's
-                // HullCollide is continuous over the tick interval
-                // (HitTest.cpp:114-207), so walk the segment this chunk's
-                // motion swept (Position − CollisionVelocity·dt → Position, the
-                // ResolveTreasurePickups pattern) and fire on the first
-                // contact; an end-of-chunk sample alone can tunnel through the
-                // cone's thin rim.
-                var end = ship.Position;
-                var travelVec = ship.CollisionVelocity * dt;
-                var start = end - travelVec;
-                float travel = travelVec.Length();
-                // Cheap broad phase: no cone point is farther than
-                // Radius+shipRadius from the centre, so a sweep that never gets
-                // within that plus its own travel cannot touch.
-                if ((end - wpos).Length() > warpRadius + shipRadius + travel) continue;
-                int steps = Math.Clamp((int)MathF.Ceiling(travel / MathF.Max(shipRadius, 1f)), 1, 16);
-                bool touched = false;
-                for (int i = 0; i <= steps; i++)
-                {
-                    var sample = start + travelVec * (i / (float)steps);
-                    if (AlephConeHitTest.Touches(wpos, wfwd, warpRadius, sample, shipRadius))
-                    {
-                        touched = true;
-                        break;
-                    }
-                }
-                if (touched)
-                {
-                    ship.Mission.Site.HitWarpEvent(ship, warp);
-                    break;                          // one warp per tick per ship
-                }
+        // Reusable snapshot: it must survive removals during the loop (a ship
+        // that transits leaves THIS sector, a missile dies here).
+        _alephModels.Clear();
+        for (int i = 0; i < _models.Count; i++) _alephModels.Add(_models[i]);
+
+        for (int i = 0; i < _alephModels.Count; i++)
+        {
+            switch (_alephModels[i])
+            {
+                case Ship ship: ResolveAlephShip(ship, warpCount, now, dt); break;
+                case Missile missile: ResolveAlephMissile(missile, warpCount, now, dt); break;
             }
         }
     }
 
     /// <summary>
-    /// The <b>warp-bomb trigger</b> pass — the missile half of a warp being
-    /// hit, run once per sector tick. This is the C# analogue of the native
-    /// trigger <c>CmissileIGC::HandleCollision</c> (<c>missileigc.cpp:459-467</c>):
-    /// a missile that has the warp-bomb capability and collides with a warp
-    /// (instead of a ship) raises <c>IIgcSite.WarpBombEvent</c> rather than
-    /// dealing damage. Unlike <see cref="ResolveWarpCollisions"/> (which since
-    /// P776 uses native's cone, <see cref="AlephConeHitTest"/>), this pass is
-    /// still a point-in-sphere test each tick:
-    /// <c>|missile − warp| ≤ warp.Radius + missile.Radius</c>, the target-radius-
-    /// plus-source-radius convention the mine/warp/mining passes use. Native's
-    /// warp hit test is the same cone for missiles (P776 follow-up candidate).
-    /// This is a <b>dedicated pass</b>, not a parameterized variant of
-    /// <see cref="ResolveWarpCollisions"/>: the two share only the outer
-    /// <c>for each model × for each warp</c> loop, and the body is wholly
-    /// different (ship debounce/transit vs. missile consumption + scheduling +
-    /// two site events), so parameterizing the target type would thread
-    /// disjoint branches through one method for no code savings.
+    /// The ship half of the aleph pass (see <see cref="ResolveAlephCollisions"/>):
+    /// ship bounding sphere vs the cone, swept over this tick's segment, with the
+    /// P591b/P591c port-only re-entry guard and the P591 layer suppression. The
+    /// gates and their order are unchanged; P777b only replaces the P776 sample
+    /// loop with the exact sweep.
     /// </summary>
-    /// <remarks>
-    /// <para><b>Trigger behaviour (scope P101).</b> On a live
-    /// <see cref="Missile"/> within a warp's collision volume: (1) compute
-    /// <c>timeExplosion = now + <see cref="EffectiveWarpBombDelay"/></c> and
-    /// schedule the real delayed detonation for the warp pair;
-    /// (2) <b>consume the missile</b> — remove it from the sector at trigger
-    /// time, not at <c>timeExplosion</c>, honoring the same terminate-on-hit
-    /// contract every other missile-impact path honors; (3) raise
-    /// <see cref="IIgcSite.WarpBombEvent"/> so the host can broadcast a real
-    /// <c>FM_S_WARP_BOMB(188)</c>; and (4) raise the missile's own
-    /// <see cref="IIgcSite.MissileDestroyedEvent"/>. The last is the native's
-    /// own behaviour: after <c>WarpBombEvent</c> returns, the missile collision
-    /// handler falls through to the unconditional <c>KillMissileEvent(this,…)</c>
-    /// (<c>missileigc.cpp:512</c>), so the <c>WARP_BOMB</c> and the missile-destroy
-    /// broadcast BOTH fire — <c>WARP_BOMB</c> alone does not cover the missile's
-    /// removal (the wire <c>FM_S_MISSILE_DESTROYED(83)</c> has no cause field,
-    /// same reasoning as the combat-pass destroy at <see cref="ResolveCombatCollisions"/>).</para>
-    /// <para><b>Whole-mission broadcast.</b> The <c>WARP_BOMB</c> goes to the
-    /// whole mission (<c>GetGroupRealSides()</c>, <c>FedSrv.CPP:12558</c>), not a
-    /// same-side gate — a genuine, verified departure from every prior ordnance
-    /// broadcast in this project (P88/P90/P94/P99 all same-side). The host bridge
-    /// (<c>ServerHost.WarpBombEvent</c>) implements that; the pass only raises the
-    /// event. The event route is the missile's launcher site, exactly like the
-    /// destroy event — a launcher-less missile raises nothing.</para>
-    /// <para>A dangling warp can consume a bomb, but supplies no fabricated
-    /// destination. Only a dual bomb can then explode at its source.</para>
-    /// </remarks>
-    private void ResolveWarpBombTriggers(double now)
+    private void ResolveAlephShip(Ship ship, int warpCount, double now, float dt)
     {
-        if (_warps.Count == 0) return;              // no alephs to bomb
-        foreach (var model in _models.ToArray())    // snapshot survives removal
+        if (ship.Dead) return;                   // the dead cannot warp
+        if (ship.Mission is null) return;        // unplaced ship has no host to route to
+        // P760 — players use the native update handshake (WarpState); NPCs
+        // keep the existing LastWarpTime cooldown (fsship.cpp:79-82).
+        if (!ship.WarpReady) return;
+        if (now - ship.LastWarpTime < WarpCooldownSeconds) return;
+
+        // Ship radius is the half-length, exactly as the combat pass builds
+        // its sphere (Sector.cs:174, shipIGC.cpp:1419).
+        float shipRadius = 0.5f * ship.HullType.Length;
+
+        // P591b/P591c — release the re-entry latch once the ship has clearly left
+        // the vicinity of the aleph it arrived through (it may then
+        // legitimately re-cross it). The release threshold is a HEALTHY
+        // MARGIN (2× the transit volume radius), not the bare sphere edge:
+        // a drone emerging from an aleph often skirts the edge of its
+        // transit volume as it turns toward its next goal, and releasing
+        // the moment it crosses the bare edge lets it swing back and
+        // re-cross the very aleph it just came through (the Debug-geometry
+        // variant of the measured mine-layer ping-pong). Requiring it to
+        // move well clear first gives its steering time to commit to the
+        // onward route. The arrival warp lives in THIS sector (the
+        // destination); if absent (e.g. the ship moved on), release too.
+        // The guard is the P591c-documented NON-NATIVE safety net, gated by
+        // WarpReEntryGuardEnabled so tests/proof can show the routing fix
+        // holds on its own. P777b: a plain loop instead of
+        // _warps.FirstOrDefault(lambda) — no closure on this per-ship path.
+        if (Sector.WarpReEntryGuardEnabled && ship.LastArrivalWarpId >= 0)
         {
-            if (model is not Missile missile) continue;
-            // P549 — only a missile whose type carries c_eabmWarpBomb may
-            // detonate an aleph (native missileigc.cpp:459-466: `if (eabm &
-            // c_eabmWarpBomb)`). Any other missile touching an aleph does
-            // nothing — it does not arm a delayed blast.
-            if (missile.IsDud || !missile.MissileType.HasWarpBombCapability) continue;
-
-            foreach (var warp in _warps)
+            ResolvedWarp? arrival = null;
+            for (int i = 0; i < _warps.Count; i++)
+                if (_warps[i].Warp.WarpId == ship.LastArrivalWarpId) { arrival = _warps[i]; break; }
+            bool cleared = true;
+            if (arrival is not null && arrival.Warp.Position is { Length: 3 } ap)
             {
-                if (warp.Warp.Position is not { Length: 3 } p) continue;  // no position: can't test
-                var wpos = new Vector3(p[0], p[1], p[2]);
-                float threshold = warp.Warp.Radius + missile.MissileType.Radius;  // P244: raw collision radius (no WarpVisualScale); see remarks
-                float dx = missile.Position.X - wpos.X;
-                float dy = missile.Position.Y - wpos.Y;
-                float dz = missile.Position.Z - wpos.Z;
-                if (dx * dx + dy * dy + dz * dz > threshold * threshold) continue;
+                var av = new Vector3(ap[0], ap[1], ap[2]);
+                float adx = ship.Position.X - av.X, ady = ship.Position.Y - av.Y, adz = ship.Position.Z - av.Z;
+                float clearDist = 2f * (arrival.Warp.Radius + shipRadius);
+                cleared = adx * adx + ady * ady + adz * adz > clearDist * clearDist;
+            }
+            if (cleared) ship.LastArrivalWarpId = -1;
+        }
+        // P591 — a Layer drone that has ARRIVED at its lay target sector is
+        // deploying: it must fly to its lay point and LayExpendable without
+        // warping through the very aleph it was ordered to lay at (measured
+        // live: the layer ping-ponged Omega<->Alderan through its target
+        // warp, never laying). Suppress transit while it is in its lay
+        // target cluster — it still transits freely while travelling cross-
+        // sector to GET there, matching native where the drone lays at the
+        // buoy on arrival rather than being whisked away by the aleph.
+        if (ship.LayerBuildOrder is { } lb && ship.Sector?.Id == lb.ClusterId) return;
 
-                // (1) schedule the pair's detonation using the loaded core delay.
-                double timeExplosion = now + EffectiveWarpBombDelay;
-                missile.WarpBombTime = timeExplosion;
-                ScheduleWarpBomb(timeExplosion, warp, missile.MissileType);
-
-                // (2) consume the missile NOW (at trigger, not at timeExplosion) —
-                // the same terminate-on-impact contract every other missile path
-                // honors (native falls through to KillMissileEvent, missileigc.cpp:512).
-                Terminate(missile);
-
-                // (3)+(4) raise the site events. Route through the launcher's
-                // mission site, exactly like the destroy path (Sector.cs:459-460);
-                // a launcher-less missile has no site and raises nothing.
-                if (missile.Launcher is Ship launcherShip)
-                {
-                    var site = launcherShip.Mission?.Site;
-                    if (site is not null)
-                    {
-                        site.WarpBombEvent(warp, missile);
-                        site.MissileDestroyedEvent(missile);
-                    }
-                }
-                break;                              // one warp per missile per tick
+        // The segment this chunk's motion swept (Position − CollisionVelocity·dt
+        // → Position, the ResolveTreasurePickups pattern): the cone can be
+        // tunnelled through by an end-of-chunk sample alone.
+        var end = ship.Position;
+        var start = end - ship.CollisionVelocity * dt;
+        for (int i = 0; i < warpCount; i++)
+        {
+            var warp = _alephWarps[i];
+            if (warp.Destination is null) continue;              // dangling edge: nothing to cross into
+            // P591b/P591c — the re-entry guard (NON-NATIVE safety net, see
+            // WarpReEntryGuardEnabled): a ship must not immediately
+            // bounce back out through the SAME aleph it just arrived via
+            // while still inside its transit volume. Native never needs such
+            // a rule: for a near-centre hit the native exit is clear of the
+            // cone (worst ≈ 3.3 u with exit wobble, P777); an off-centre hit
+            // (error ≳ 0.35, i.e. d/R ≳ 0.47 for r = 10) can leave the hull
+            // touching it, natively too. Players are covered by the NoUpdate
+            // handshake (fsship.cpp:79-82,1185-1191), port NPCs by this
+            // port-only cooldown. This guard predates the P776 geometry fix;
+            // the P591c routing fix makes it fire ≈0 times in practice, so it is
+            // OPT-IN and OFF by default (P594), armed only when the operator
+            // enables WarpReEntryGuard. The latch is released above the
+            // moment the ship clears the volume.
+            if (Sector.WarpReEntryGuardEnabled && ship.LastArrivalWarpId == warp.Warp.WarpId
+                && ship.IntendedNextWarpId != warp.Warp.WarpId)
+            {
+                // Only hold the UNINTENTIONAL drift back through the arrival
+                // aleph (the ship's routing goal is a DIFFERENT warp, or none
+                // — it is not choosing to go back). An INTENTIONAL re-crossing
+                // (ship.IntendedNextWarpId == this warp — e.g. a combat bot
+                // pursuing an enemy back across the border it entered by, or a
+                // return-home through the same door) is permitted: blocking it
+                // would trap the ship at the arrival aleph forever, because its
+                // goal lies THROUGH the warp so it can never clear the 2× volume
+                // to release the latch. Native likewise lets a ship that chooses
+                // to go back re-cross after the ~2 s re-arm.
+                // Count (and log) each real block so a regression that
+                // reintroduces re-entry shows up as a non-zero guard-block
+                // count even while the guard itself is preventing the harm.
+                ship.NumWarpReEntryBlocks++;
+                ConsoleLog.Write($"[warp] P591b re-entry guard BLOCKED ship {ship.Id} (block #{ship.NumWarpReEntryBlocks}) " +
+                                 $"from re-crossing arrival warp {ship.LastArrivalWarpId} (not its route goal) — routing should have carried it clear (non-native safety net)");
+                continue;
+            }
+            // P777b — the exact swept ship sphere vs the aleph cone (see
+            // AlephConeHitTest.SweptFirstContact: convex distance → golden
+            // section + bisection, a strict superset of the P776 samples).
+            // Native: continuous HullCollide over the tick (HitTest.cpp:114-207)
+            // and no closing-velocity gate (shipIGC.cpp:629-636).
+            if (AlephConeHitTest.SweptFirstContact(in _alephGeometry[i], start, end, shipRadius, out _))
+            {
+                ship.Mission.Site.HitWarpEvent(ship, warp);
+                break;                          // one warp per tick per ship
             }
         }
+    }
+
+    /// <summary>
+    /// The missile half of the aleph pass (see <see cref="ResolveAlephCollisions"/>)
+    /// — the C# analogue of the missile branch of
+    /// <c>CmissileIGC::HandleCollision</c> (<c>Igc/missileigc.cpp:423-513</c>).
+    /// A missile is a sphere of <c>MissileType.Radius</c> (native
+    /// <c>dataMissileType-&gt;radius</c>, <c>missileigc.cpp:50-51,64-66</c>) and it
+    /// hits the <b>same cone as a ship</b> (<c>missileigc.cpp:459-467</c>,
+    /// <c>modelIGC.cpp:127-130</c>, <c>_Utility/HitTest.cpp:197-201</c>); the sweep
+    /// and the earliest contact over all warps give native's time-ordered
+    /// collision (<c>clusterIGC.cpp:288</c>). Two outcomes:
+    /// <list type="bullet">
+    /// <item><b>Warp bomb</b> (<c>c_eabmWarpBomb</c>, rule 2 of the P777b brief):
+    /// <c>WarpBombEvent</c> (<c>missileigc.cpp:459-467</c>,
+    /// <c>FedSrv.CPP:12543-12562</c>) plus the unconditional
+    /// <c>KillMissileEvent</c> fall-through (<c>missileigc.cpp:512</c>).</item>
+    /// <item><b>Every other armed missile dies on the aleph</b> (rule 3): a warp
+    /// is not <c>c_mtDamagable</c> (<c>Igc/warpIGC.cpp:33-35</c>), so the damage
+    /// branch (<c>missileigc.cpp:468-498</c>) — capture included — is skipped and
+    /// control reaches <c>KillMissileEvent(this, position1)</c> with
+    /// <c>position1 = position + velocity·tCollision</c>, the contact point
+    /// (<c>missileigc.cpp:452,512</c>). That broadcast
+    /// <c>FM_S_MISSILE_DESTROYED</c> with the position and calls
+    /// <c>Explode(position)</c> (<c>FedSrv.CPP:12512-12529</c>): a real explosion
+    /// when <c>blastPower ≠ 0</c>, otherwise the visual only
+    /// (<c>missileigc.cpp:516-530</c>). The port's P549 comment ("any other
+    /// missile touching an aleph does nothing") misread <c>:459-466</c>.</item>
+    /// </list>
+    /// <para><b>Warp-bomb trigger behaviour (scope P101), unchanged.</b> (1)
+    /// <c>timeExplosion = now + <see cref="EffectiveWarpBombDelay"/></c>, scheduled
+    /// for the warp pair; (2) the missile is consumed at <b>trigger</b> time, not
+    /// at <c>timeExplosion</c>; (3) <see cref="IIgcSite.WarpBombEvent"/>; (4)
+    /// <see cref="IIgcSite.MissileDestroyedEvent"/> — native falls through to the
+    /// unconditional <c>KillMissileEvent</c> (<c>missileigc.cpp:512</c>), so BOTH
+    /// broadcast (the wire <c>FM_S_MISSILE_DESTROYED(83)</c> has no cause field).
+    /// The event route is the missile's launcher site, exactly like the destroy
+    /// event — a launcher-less missile raises nothing. A dangling warp can consume
+    /// a bomb, but supplies no fabricated destination; only a dual bomb can then
+    /// explode at its source. The <c>WARP_BOMB</c> itself goes to the whole
+    /// mission (<c>GetGroupRealSides()</c>, <c>FedSrv.CPP:12558</c>), not a
+    /// same-side gate — a genuine, verified departure from every prior ordnance
+    /// broadcast in this project (P88/P90/P94/P99 all same-side);
+    /// <c>ServerHost.WarpBombEvent</c> implements that and the pass only raises
+    /// the event.</para>
+    /// <para><b>Duds.</b> A disarmed missile ignores alephs, like every other
+    /// contact (native <c>m_bDisarmed</c>, <c>missileigc.cpp:427-428</c>; port
+    /// <see cref="Missile.IsDud"/>).</para>
+    /// </remarks>
+    private void ResolveAlephMissile(Missile missile, int warpCount, double now, float dt)
+    {
+        if (missile.IsDud) return;          // m_bDisarmed: no contact handling at all (missileigc.cpp:427)
+        // The pass iterates a snapshot: an earlier missile's aleph blast can
+        // already have killed this one (Missile.ReceiveDamage → Terminate).
+        if (missile.Dead || !_models.Contains(missile)) return;
+        float radius = missile.MissileType.Radius;
+
+        // Sweep the segment this tick's motion covered (Position − v·dt →
+        // Position), clamped to the missile's age so a missile launched this
+        // tick never sweeps from behind its launch point (launch time =
+        // TimeExpire − Lifespan, Missile.cs:54) — e.g. fired right after an
+        // aleph exit, it must not die on the disc it just left.
+        var end = missile.Position;
+        float age = (float)(now - (missile.TimeExpire - missile.MissileType.Lifespan));
+        var start = end - missile.CollisionVelocity * MathF.Min(dt, MathF.Max(0f, age));
+
+        // Native processes collisions in time order (clusterIGC.cpp:288): take
+        // the EARLIEST contact over all warps, not the first warp in list order.
+        int hitWarp = -1;
+        float hitT = float.PositiveInfinity;
+        for (int i = 0; i < warpCount; i++)
+        {
+            if (!AlephConeHitTest.SweptFirstContact(in _alephGeometry[i], start, end, radius, out float t)) continue;
+            if (t < hitT) { hitT = t; hitWarp = i; }
+        }
+        if (hitWarp < 0) return;
+        var warp = _alephWarps[hitWarp];
+        var contact = start + (end - start) * hitT;
+
+        if (missile.MissileType.HasWarpBombCapability)
+        {
+            // (1) schedule the pair's detonation using the loaded core delay.
+            double timeExplosion = now + EffectiveWarpBombDelay;
+            missile.WarpBombTime = timeExplosion;
+            ScheduleWarpBomb(timeExplosion, warp, missile.MissileType);
+
+            // (2) consume the missile NOW (at trigger, not at timeExplosion) —
+            // the same terminate-on-impact contract every other missile path
+            // honors (native falls through to KillMissileEvent, missileigc.cpp:512).
+            if (!Terminate(missile)) return;
+
+            // (3)+(4) raise the site events. Route through the launcher's
+            // mission site, exactly like the destroy path (Sector.cs:459-460);
+            // a launcher-less missile has no site and raises nothing.
+            if (missile.Launcher is Ship launcherShip)
+            {
+                var site = launcherShip.Mission?.Site;
+                if (site is not null)
+                {
+                    site.WarpBombEvent(warp, missile);
+                    site.MissileDestroyedEvent(missile);
+                }
+            }
+            return;
+        }
+
+        // ── Rule 3: any other armed missile dies on the aleph ────────────────
+        // missileigc.cpp:452 (contact point) → :512 KillMissileEvent(position1)
+        // → FedSrv.CPP:12512-12529 (broadcast with that position, then Explode).
+        missile.Position = contact;                 // the destroy broadcast sends this position
+        if (!Terminate(missile)) return;
+        if (missile.MissileType.BlastPower != 0f)
+        {
+            // missileigc.cpp:516-530: blastPower × the launcher side's
+            // c_gaDamageMissiles, exactly like the combat pass (gaMul,
+            // Sector.cs ResolveCombatCollisions; P467). No capture exclusion
+            // here: native's capture branch is inside the damagable branch a
+            // warp never reaches (missileigc.cpp:468-498).
+            float gaMul = (missile.Launcher as Ship)?.GlobalAttributeFactor(GlobalAttributeSet.DamageMissiles) ?? 1f;
+            ResolveExplosion(new Explosion(missile.MissileType.DamageType,
+                missile.MissileType.BlastPower * gaMul, missile.MissileType.BlastRadius,
+                now, contact, missile.Launcher), now);
+        }
+        if (missile.Launcher is Ship launcher) launcher.Mission?.Site.MissileDestroyedEvent(missile);
     }
 
     /// <summary>Native warpIGC.h:58-89: pop due bombs in time order. Power

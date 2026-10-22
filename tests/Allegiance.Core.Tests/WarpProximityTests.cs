@@ -8,7 +8,7 @@ namespace Allegiance.Core.Tests;
 
 /// <summary>
 /// Verification of the <b>warp proximity trigger geometry</b> — the first half
-/// of the P41 warp-transit slice. <see cref="Sector.ResolveWarpCollisions"/>
+/// of the P41 warp-transit slice. <see cref="Sector.ResolveAlephCollisions"/>
 /// (the C# analogue of the warp arm of <c>CshipIGC::HandleCollision</c>,
 /// <c>shipIGC.cpp:629-636</c>) must raise the site's
 /// <see cref="IIgcSite.HitWarpEvent"/> exactly when the ship's bounding sphere

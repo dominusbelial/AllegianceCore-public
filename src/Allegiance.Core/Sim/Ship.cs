@@ -656,7 +656,7 @@ public sealed partial class Ship : Model, IShipIgc
     /// P591b — the warp this ship most recently arrived <b>through</b> (the
     /// destination-side partner warp it emerged at), or <c>-1</c> once it has
     /// cleared that aleph's transit volume. The warp re-entry guard
-    /// (<c>Model.Sector.ResolveWarpCollisions</c>) refuses to re-transit this
+    /// (<c>Model.Sector.ResolveAlephCollisions</c>) refuses to re-transit this
     /// warp while the ship is still inside its transit volume, completing the
     /// native "don't re-enter the arrival aleph" behaviour (the emergent
     /// outward velocity + <c>m_warpState</c> cooldown, <c>fsship.cpp:71-137,
@@ -671,7 +671,7 @@ public sealed partial class Ship : Model, IShipIgc
     /// <summary>
     /// P591c — how many times the (non-native) warp re-entry guard has actually
     /// blocked a re-crossing of this ship's arrival aleph. Incremented by
-    /// <c>Sector.ResolveWarpCollisions</c> each time it refuses to re-transit
+    /// <c>Sector.ResolveAlephCollisions</c> each time it refuses to re-transit
     /// the arrival warp. After the P591c routing fix this must stay ≈0 over a
     /// showcase (a healthy native-like drone never tries to re-enter the aleph
     /// it just came through); a non-zero count is the diagnostic signal that
@@ -6977,7 +6977,7 @@ public sealed partial class Ship : Model, IShipIgc
     /// <see cref="Sector"/>, resolve the target's <see cref="Sector"/> and
     /// path-find (<see cref="Model.Sector.FindPathToward"/>) the next warp on
     /// the way, returning that warp's world position as the steering goal;
-    /// <see cref="Model.Sector.ResolveWarpCollisions"/> then transits the ship
+    /// <see cref="Model.Sector.ResolveAlephCollisions"/> then transits the ship
     /// through it automatically once it arrives (Sector.cs:1653) — no new
     /// transit code (the session's "mechanics already built" finding). Because
     /// the goal is re-resolved every tick, a ship that warps mid-journey

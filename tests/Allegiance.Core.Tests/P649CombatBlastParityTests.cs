@@ -442,7 +442,7 @@ public sealed class P649CombatBlastParityTests
         var victim = Ship(m, s, 1, 1, new Vector3(1030, 0, 0));
         s.Add(new Missile(2, s, MissileType with { EabmCapabilities = dual ? (short)2 : (short)4 },
             new Vector3(1000, 0, 0), Vector3.Zero, new Vector3(0, 0, 1), 0));
-        Pass(s, "ResolveWarpBombTriggers", 1);
+        AlephTrigger(s, 1);
         Pass(s, "ResolveWarpBombDetonations", 6);
         Assert.Equal(dual ? .775f : 1f, victim.Fraction, 5);
     }
@@ -456,11 +456,11 @@ public sealed class P649CombatBlastParityTests
         var pos = new Vector3(1000, 0, 0);
         source.Add(new Missile(2, source, MissileType with { EabmCapabilities = 4 }, pos,
             Vector3.Zero, new Vector3(0, 0, 1), 0));
-        Pass(source, "ResolveWarpBombTriggers", 1); // due at 11
+        AlephTrigger(source, 1); // due at 11
         m.Core.Constants.FloatConstants[32] = 5;
         source.Add(new Missile(3, source, MissileType with { EabmCapabilities = 4, Power = 10 }, pos,
             Vector3.Zero, new Vector3(0, 0, 1), 0));
-        Pass(source, "ResolveWarpBombTriggers", 2); // due at 7, ahead of older bomb
+        AlephTrigger(source, 2); // due at 7, ahead of older bomb
         Pass(source, "ResolveWarpBombDetonations", 6.999);
         Assert.Equal(1f, victim.Fraction);
         Pass(source, "ResolveWarpBombDetonations", 7);
@@ -473,6 +473,20 @@ public sealed class P649CombatBlastParityTests
 
     private static void Pass(Sector s, string method, double now) =>
         typeof(Sector).GetMethod(method, BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(s, [now]);
+
+    /// <summary>
+    /// P777b — run the sector's aleph trigger pass by reflection. Since P777b the
+    /// missile trigger is the merged <c>ResolveAlephCollisions(now, dt)</c>; on the
+    /// pre-P777b base it was the missile-only <c>ResolveWarpBombTriggers(now)</c>.
+    /// Both consume a missile whose sphere touches the warp; <c>dt = 0</c> keeps
+    /// the swept segment zero-length (the parked-missile case these tests use).
+    /// </summary>
+    private static void AlephTrigger(Sector s, double now)
+    {
+        var merged = typeof(Sector).GetMethod("ResolveAlephCollisions", BindingFlags.NonPublic | BindingFlags.Instance);
+        if (merged is not null) { merged.Invoke(s, [now, 0f]); return; }
+        Pass(s, "ResolveWarpBombTriggers", now);
+    }
 
     private static ResolvedWarp Warp(Sector source, Sector destination, short id, short partnerId, Vector3 pos)
     {
@@ -500,7 +514,7 @@ public sealed class P649CombatBlastParityTests
         var missile = new Missile(4, a, MissileType with { EabmCapabilities = capabilities }, sourcePos,
             Vector3.Zero, new Vector3(0, 0, 1), 0, launcher);
         a.Add(missile);
-        Pass(a, "ResolveWarpBombTriggers", 1);
+        AlephTrigger(a, 1);
         Assert.DoesNotContain(missile, a.Models);
         Assert.Equal(1, site.WarpBombs);
         Assert.Equal(1, site.MissileKills);

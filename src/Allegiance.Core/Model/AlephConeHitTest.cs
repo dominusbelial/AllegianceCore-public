@@ -77,6 +77,188 @@ internal static class AlephConeHitTest
     }
 
     /// <summary>
+    /// P777b — a warp's cone, pre-computed once per tick: its centre, its
+    /// <b>unit</b> backward axis and its radius. <see cref="Touches"/> normalises
+    /// the forward vector on every call (<see cref="Backward"/>); this struct
+    /// does it once, so the per-model × per-warp hot loop pays neither the
+    /// normalise nor the <c>float[]</c> parse. Same solid, same numbers.
+    /// </summary>
+    internal readonly struct Geometry
+    {
+        /// <summary>The aleph centre (the centre of the base disc, the origin of
+        /// the native <c>c_htsCone</c> in its local frame).</summary>
+        internal readonly Vector3 Centre;
+
+        /// <summary>The unit <b>backward</b> axis — the cone's axis of symmetry,
+        /// pointing from the base disc to the apex.</summary>
+        internal readonly Vector3 UnitBackward;
+
+        /// <summary>The warp's raw radius <c>R</c> (the base-disc radius and the
+        /// distance from the disc to the apex).</summary>
+        internal readonly float Radius;
+
+        internal Geometry(Vector3 centre, Vector3 unitBackward, float radius)
+        {
+            Centre = centre;
+            UnitBackward = unitBackward;
+            Radius = radius;
+        }
+
+        /// <summary>The geometry of a warp record. The forward axis is
+        /// normalised exactly once, here; a zero forward falls back to the same
+        /// identity-orientation backward <see cref="Backward"/> returns,
+        /// <c>(0,0,1)</c>.</summary>
+        internal static Geometry From(DataWarpIGC w)
+            => From(Vector(w.Position), Vector(w.Forward), w.Radius);
+
+        /// <summary>The geometry of a warp at <paramref name="centre"/> facing
+        /// <paramref name="forward"/>. See <see cref="Backward"/> for the zero-axis
+        /// fallback.</summary>
+        internal static Geometry From(Vector3 centre, Vector3 forward, float radius)
+            => new(centre, Backward(forward), radius);
+
+        private static Vector3 Vector(float[]? v) => v is { Length: 3 }
+            ? new Vector3(v[0], v[1], v[2])
+            : new Vector3(0f, 0f, -1f);
+    }
+
+    /// <summary>
+    /// The exact distance from <paramref name="p"/> to the cone — the same
+    /// number <see cref="Touches"/> compares against a radius, but with the
+    /// geometry already normalised. Zero when <paramref name="p"/> is inside the
+    /// solid, so <c>Distance(g, p) &lt;= r</c> is exactly
+    /// <c>Touches(g.Centre, forward, g.Radius, p, r)</c>.
+    /// </summary>
+    internal static float Distance(in Geometry g, Vector3 p)
+    {
+        Vector3 d = p - g.Centre;
+        float z = d * g.UnitBackward;                       // component along backward
+        float rho = (d - g.UnitBackward * z).Length();      // perpendicular distance from the axis
+        return DistanceToConeSection(rho, z, g.Radius);
+    }
+
+    /// <summary>
+    /// P777b — the <b>first</b> contact, within one tick, of a sphere of radius
+    /// <paramref name="r"/> travelling along the segment
+    /// <paramref name="start"/> → <paramref name="end"/> with the aleph cone.
+    /// <paramref name="t"/> is the contact time on <c>p(t) = start + t·(end − start)</c>,
+    /// <c>t ∈ [0, 1]</c>. This is the continuous test native runs: missiles are
+    /// <c>c_mtCastRay | c_mtHitable</c> spheres of <c>dataMissileType-&gt;radius</c>
+    /// (<c>Igc/missileigc.cpp:50-51,64-66</c>), they are tested against the static
+    /// KD tree (<c>Igc/clusterIGC.cpp:266-285</c>) holding the warps
+    /// (<c>Igc/warpIGC.cpp:33-35</c>, <c>Igc/clusterIGC.cpp:526-530</c>), and
+    /// sphere-vs-cone goes to <c>HullCollide</c>
+    /// (<c>_Utility/HitTest.cpp:197-201</c>; <c>c_htsCone = −1 &gt; c_htsSphere = −3</c>,
+    /// <c>_Utility/Utility.h:691-696</c>), which is continuous over the tick and
+    /// still collides while separating (<c>_Utility/HitTest.cpp:166-185</c>).
+    /// Ships use the same call with <c>r = 0.5·HullType.Length</c>.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Why an exact search works — convexity.</b> The cone solid is
+    /// convex (it is the convex hull of the base disc and the apex), the distance
+    /// to a convex set is a convex function of the point, and <c>p(t)</c> is
+    /// affine in <c>t</c>; so <c>f(t) = dist(p(t), cone)</c> is <b>convex</b> in
+    /// <c>t</c>. A convex <c>f</c> with <c>f(0) &gt; r</c> whose sublevel set
+    /// <c>{f ≤ r}</c> is non-empty is non-increasing on <c>[0, t_first]</c>, so:
+    /// (a) a golden-section search finds <c>min f</c> on <c>[0, 1]</c>;
+    /// (b) if <c>min f &gt; r</c> there is no contact;
+    /// (c) otherwise bisecting <c>f(t) = r</c> on <c>[0, t_min]</c> yields the
+    /// <b>first</b> contact. <see cref="DistanceToConeSection"/> is the exact 3-D
+    /// distance: the solid is a body of revolution, so the nearest point lies in
+    /// the same meridian half-plane and the 2-D triangle distance is the 3-D one.</para>
+    /// <para><b>Correctness of the rejects.</b> Every point of the solid is within
+    /// <c>R</c> of the centre (the solid is the hull of a radius-<c>R</c> disc and
+    /// the apex at distance <c>R</c>), so a segment whose closest approach to the
+    /// centre exceeds <c>R + r</c> cannot touch. Every point of the solid has
+    /// <c>z ∈ [0, R]</c> along backward, so a segment entirely at <c>z &lt; −r</c>
+    /// (natively: in front of the disc) or entirely at <c>z &gt; R + r</c>
+    /// (behind the apex) cannot touch either. The golden section also exits early
+    /// once the Lipschitz bound proves a miss: <c>f</c> changes by at most
+    /// <c>|end − start|</c> per unit <c>t</c>, so no unsampled point in the
+    /// bracket can be below <c>best − travel·(hi − lo)</c>.</para>
+    /// <para><b>Tolerance.</b> The bracket is driven to <c>1e-3</c> world units of
+    /// travel, then bisection to <c>1e-4</c> of the travel, both capped (40 and 30
+    /// iterations). A zero-length segment reduces to <see cref="Distance"/> ≤ r,
+    /// i.e. to <see cref="Touches"/>.</para>
+    /// </remarks>
+    internal static bool SweptFirstContact(in Geometry g, Vector3 start, Vector3 end,
+                                           float r, out float t)
+    {
+        t = 0f;
+        if (r < 0f) r = 0f;
+        Vector3 delta = end - start;
+        float travel = delta.Length();
+        if (travel <= 0f) return Distance(g, start) <= r;   // parked: the point test
+
+        // (a) cheap rejects, in world space.
+        float z0 = (start - g.Centre) * g.UnitBackward;
+        float z1 = (end - g.Centre) * g.UnitBackward;
+        if ((z0 < -r && z1 < -r) || (z0 > g.Radius + r && z1 > g.Radius + r)) return false;
+        float reach = g.Radius + r;
+        if (SegmentPointDistanceSquared(start, end, g.Centre) > reach * reach) return false;
+
+        // (b) already touching at the start of the tick.
+        if (Distance(g, start) <= r) { t = 0f; return true; }
+
+        // (c) golden-section search for min f on [0, 1] (convex f).
+        const float InvPhi = 0.6180339887f;
+        float lo = 0f, hi = 1f;
+        float x1 = hi - InvPhi * (hi - lo);
+        float x2 = lo + InvPhi * (hi - lo);
+        float f1 = Distance(g, start + delta * x1);
+        float f2 = Distance(g, start + delta * x2);
+        for (int i = 0; i < 40; i++)
+        {
+            float best = MathF.Min(f1, f2);
+            if (best <= r) break;                                  // (c) found a contact
+            if (best - travel * (hi - lo) > r) return false;        // (a) Lipschitz: no contact
+            if (travel * (hi - lo) <= 1e-3f) break;                 // converged
+            if (f1 < f2)
+            {
+                hi = x2; x2 = x1; f2 = f1;
+                x1 = hi - InvPhi * (hi - lo);
+                f1 = Distance(g, start + delta * x1);
+            }
+            else
+            {
+                lo = x1; x1 = x2; f1 = f2;
+                x2 = lo + InvPhi * (hi - lo);
+                f2 = Distance(g, start + delta * x2);
+            }
+        }
+
+        // The bracket's best sample is a real point of the segment: if it is
+        // not within r, no sampled point is, and the search above proved (or
+        // converged on) the minimum — no contact. Written as a negated `<=` so a
+        // non-finite position (NaN, a numeric fault) reports no contact instead
+        // of a phantom hit.
+        float bestT = f1 <= f2 ? x1 : x2;
+        if (!(MathF.Min(f1, f2) <= r)) return false;
+
+        // (d) bisect f(t) = r on [0, bestT]: f is convex, f(0) > r, f(bestT) ≤ r.
+        float a = 0f, b = bestT;
+        for (int i = 0; i < 30 && (b - a) * travel > 1e-4f; i++)
+        {
+            float mid = 0.5f * (a + b);
+            if (Distance(g, start + delta * mid) <= r) b = mid;
+            else a = mid;
+        }
+        t = b;
+        return true;
+    }
+
+    /// <summary>Squared distance from <paramref name="p"/> to the segment
+    /// <paramref name="a"/>-<paramref name="b"/> (the broad-phase reject).</summary>
+    private static float SegmentPointDistanceSquared(Vector3 a, Vector3 b, Vector3 p)
+    {
+        Vector3 ab = b - a, ap = p - a;
+        float len2 = ab.LengthSquared();
+        float u = len2 == 0f ? 0f : Math.Clamp((ap * ab) / len2, 0f, 1f);
+        Vector3 d = ap - ab * u;
+        return d.LengthSquared();
+    }
+
+    /// <summary>
     /// Distance in the <c>(rho, z)</c> half-plane from a point to the triangle
     /// <c>(0,0), (R,0), (0,R)</c>; zero when inside. The triangle is the cone's
     /// cross-section: the edge on <c>z = 0</c> is the base disc, the hypotenuse

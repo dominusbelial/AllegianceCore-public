@@ -21,7 +21,7 @@ namespace Allegiance.Core.Tests;
 /// MCP combat bot parked at the SECOND aleph. This test asks whether the
 /// server-side NPC autopilot (<see cref="Ship.CrossClusterWarpGoal"/> +
 /// <see cref="Model.Sector.FindPathToward"/> + the pre-existing
-/// <see cref="Model.Sector.ResolveWarpCollisions"/> transit) carries a real
+/// <see cref="Model.Sector.ResolveAlephCollisions"/> transit) carries a real
 /// NPC drone across BOTH warps to a station two hops away.
 ///
 /// Harness is the debug arena (m2xspiderw.igc + liveSettings.debugMode=true,

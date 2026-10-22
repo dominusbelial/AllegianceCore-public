@@ -537,12 +537,17 @@ public sealed class WarpBombTests
         return t;
     });
 
-    /// <summary>⭐ P549 — only a warp-bomb-CAPABLE missile may detonate an aleph
-    /// (native missileigc.cpp:459-466: `if (eabm & c_eabmWarpBomb)`). A
-    /// non-warp-bomb missile sitting dead inside a warp's radius must NOT arm a
-    /// delayed blast and is NOT consumed. Before P549 any missile touching an
-    /// aleph scheduled the 15 s warp-bomb explosion, so this fails on the
-    /// pre-fix code.</summary>
+    /// <summary>⭐ P549 / P777b — only a warp-bomb-CAPABLE missile may detonate an
+    /// aleph (native missileigc.cpp:459-466: `if (eabm & c_eabmWarpBomb)`), so a
+    /// non-warp-bomb missile at a warp's centre arms NO delayed blast. It is still
+    /// <b>consumed</b> and its destroy notice fires: native takes the
+    /// <c>c_eabmWarpBomb</c> branch only when the bit is set, otherwise the warp
+    /// (not <c>c_mtDamagable</c>, <c>warpIGC.cpp:33-35</c>) skips the damage
+    /// branch (missileigc.cpp:468-498) and control falls through to the
+    /// unconditional <c>KillMissileEvent(this, position1)</c> at the contact point
+    /// (missileigc.cpp:452,512; FedSrv.CPP:12512-12529). Before P549 any missile
+    /// touching an aleph scheduled the 15 s warp-bomb explosion; between P549 and
+    /// P777b it was not consumed at all (it flew through).</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Domain_non_warp_bomb_missile_in_warp_radius_arms_nothing()
@@ -566,8 +571,10 @@ public sealed class WarpBombTests
         for (int i = 0; i < 6; i++) { t += 0.05; mission.Update(t); }
 
         Assert.Equal(0, site.WarpBombs);                    // no bomb armed
-        Assert.Contains(missile, sector.Models);            // not consumed — the aleph did nothing
-        Console.WriteLine($"P549-NOWARPBOMB: non-warp-bomb missile at an aleph's centre armed {site.WarpBombs} bomb(s) and was NOT consumed.");
+        Assert.DoesNotContain(missile, sector.Models);      // P777b: consumed on the aleph (native rule 3)
+        Assert.Equal(1, site.MissileDestroys);              // ...and its destroy notice fired once
+        Console.WriteLine($"P549-NOWARPBOMB: non-warp-bomb missile at an aleph's centre armed {site.WarpBombs} bomb(s), " +
+                          $"was consumed={!sector.Models.Contains(missile)}, destroy events={site.MissileDestroys}.");
     }
 
     /// <summary>⭐ P549 — a warp-bomb-capable missile striking a SHIP deals NO
