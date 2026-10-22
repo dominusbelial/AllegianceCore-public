@@ -8,28 +8,77 @@ open source (MIT, July 2017). It reproduces the game's simulation, wire
 protocol and data formats in modern C#, with no Windows/DirectX/COM machinery
 to lean on.
 
-Today it ships a **playable MonoGame client** (Windows / Linux DesktopGL and
-Android), a **dedicated TCP server**, a **lobby**, **autonomous bots** and an
-**MCP bot driver** — a complete headless server + real client, cross-checked
-against the 445k-line native C++ source (`src/`) for byte-exact fidelity.
+Today it ships a **playable MonoGame client** (Windows, Linux, macOS Apple
+silicon and Android), **offline single player** (Skirmish, the native training
+missions, spectating), a **dedicated TCP server**, a **lobby**, **autonomous
+bots** and an **MCP bot driver**. Everything is cross-checked against the
+445k-line native C++ source (`src/`) for byte-exact fidelity.
 
 ## What works today
 
-- **MonoGame client** — flies, fights, docks, mines and warps against a real
-  server; cockpit / chase / turret cameras, HUD, radar, minimap/starmap,
-  target-picking and joystick input.
-- **Dedicated server** — boots a real core, instantiates missions, ticks the
-  simulation, and serves TCP logon clients; economy, docking, mining, shields,
-  combat, friendly fire, dying/death and autonomous NPCs.
-- **Wire protocol** — the FEDMSG framing and game messages (logon, chat, ship
-  updates, kill ship, loadout, exports…) reproduced round-trip- and
-  byte-exact against the native reference.
-- **Lobby** — HTTP heartbeat registration so clients can discover running
-  servers.
-- **Bots + MCP** — headless bots fly real missions; `tools/allegiance-mcp`
-  scripts spawns, scenarios and arenas.
-- **Verified against native** — every ported rule cites the original C++
-  `file:line`; the corpus-backed suite parses 210 real `.igc` maps exactly.
+**Playing**
+
+- **Single player, offline**: Skirmish against bot teams (both races, size,
+  technology, difficulty, game speed Normal/Fast/Showcase), with an AI
+  commander or **you** as commander. **Start as spectator** watches the whole
+  battle (free camera, ship/station orbit, "hottest fight" follow) and lets you
+  drop in. Pause with Ctrl+P.
+- **Training**: the native training set runs offline on an embedded host:
+  Basic Flight, Basic Weaponry, Enemy Engagement, Command View, Practice Arena,
+  Nanite and the Free Flight dev mission. Mission 1's slideshow isn't ported yet.
+- **Multiplayer**: lobby server discovery (sort/find), ready check and
+  briefing, scoreboard and pilot info. After game over a scoreboard
+  intermission runs, then the next match starts automatically.
+- **Benchmark**: an optional first-launch benchmark (skirmish sizes or a
+  recorded battle replay) suggests settings. Sharing results is opt-in and
+  anonymous.
+
+**Client**
+
+- Flies, fights, docks, mines, warps and ripcords against a real server.
+  Cameras: cockpit, chase, turret, missile and external.
+- **Native HUD**: the original's radar contacts and icons, brackets, target
+  pane with a live 3-D model preview, own-ship gauges, equipment pane, flight
+  indicators, console text, chat, warnings and damage flash. Fonts and anchors
+  follow the native layout. A **Modern HUD** skin offers scaling (75–150 %) and
+  a colour-blind safe palette.
+- Command view, minimap and starmap, order/command icons, investment,
+  loadout and teleport panes, quick chat, and native UI and simulation sounds.
+- **Visuals**: optional HD sky pack, bloom and flash lighting, and an effects
+  quality setting. Native asteroid models, aleph exit wobble, the ripcord spark
+  ramp.
+- Keyboard, mouse, joystick and gamepad, all rebindable (F6). F1 shows every key.
+- Crash-safe: a rolling log plus a crash log on every run, and missing
+  optional art never takes the game down.
+
+**Server and simulation**
+
+- Boots a real core, runs missions and ticks the full simulation: economy and
+  research, mining, construction (constructors build on real rock sizes),
+  docking, shields, combat, missiles, chaff, mines, probes, cloak, friendly
+  fire, ejection, lifepods and rescue probes. Also aleph warps with the native
+  trigger cone, ripcord, and the finale/last-base endgame.
+- Scales to **200v200**: the native prioritised ship-update budget, a pooled
+  transport, parallel per-player update builds, and EVE-style **time
+  dilation** under load. See *Recommended settings* below.
+- **Wire protocol**: the FEDMSG framing and game messages are reproduced
+  round-trip and byte-exact against the native reference. Port-only messages
+  are being retired in favour of native ones.
+
+**Bots**
+
+- Headless bots fly real missions through `tools/allegiance-mcp`, an MCP
+  server that spawns scenarios, arenas and full showcase matches.
+- A research commander picks tech and issues attack and repair orders. Bots
+  run strike waves on the softest enemy station with defend escorts, plus
+  cloak, nanite repair support, chaff/probes/mines, ammo trips and
+  medevac/rescue-probe drops. Skirmish uses the same bots.
+
+**Verified against native**
+
+- Every ported rule cites the original C++ `file:line`. The corpus-backed
+  suite parses 210 real `.igc` maps exactly. The fast test tier alone runs
+  ~10,000 tests, and CI builds every tool project and the player bundles.
 
 See **[`docs/GUIDE.md`](docs/GUIDE.md)** for the full guide: prerequisites,
 getting the original art, building/running everything, client flags, testing,
@@ -49,8 +98,7 @@ works offline. See the included `README-PLAYERS.txt` for installation, unsigned
 SmartScreen/Gatekeeper steps and multiplayer configuration. F1 shows help; F6
 rebinds keys. Verify downloads against the release's `SHA256SUMS.txt`.
 
-Release bundles become available after the first reviewed release workflow run.
-For local packaging and the release checklist, see
+The first public release, **v0.1.0**, is out. For local packaging and the release checklist, see
 [`packaging/README.md`](packaging/README.md).
 
 ## Quick start
