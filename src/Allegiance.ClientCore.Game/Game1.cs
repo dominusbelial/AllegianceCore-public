@@ -148,6 +148,28 @@ public sealed partial class Game1 : Game
     private (Allegiance.Core.Collision.Vector3 Position, Allegiance.Core.Collision.Vector3 Velocity,
         Allegiance.Core.Collision.Vector3 Forward, Allegiance.Core.Collision.Vector3 Right)? _pendingTeleportBurst;
 
+    // P781 — the lead-up spark emitters gathered under the Gate in the same pose
+    // pass that fills _poses (one per ship whose hull is drawn this frame: the
+    // own ship outside the cockpit, plus every visible remote), consumed by the
+    // 3D render pass. Preallocated and reused; no per-frame allocation.
+    private readonly Rendering.TeleportEmitter[] _teleportEmitters = new Rendering.TeleportEmitter[64];
+    private int _teleportEmitterCount;
+    // P781 — previous rendered positions for the per-ship frame velocity
+    // (native vecFrameVelocity, thinggeo.cpp:506-512). Reused dictionary,
+    // pruned on BeginView; first frame falls back to the wire velocity.
+    private readonly Dictionary<short, Allegiance.Core.Collision.Vector3> _lastSparkPose = new();
+    // P781 — the 60 Hz emission accumulator (native emits per rendered frame,
+    // which would scale the spray with fps; see WarpTransitParticles remarks).
+    private double _teleportEmitAccumulator;
+    // P781 — per-hull RipcordSpeed, cached so the per-frame pose pass never
+    // walks the shop catalogue per ship (the side GA is applied live).
+    private readonly Dictionary<short, float> _ripcordSpeedByHull = new();
+    // P781 — the view sector's aleph centres for the per-ship nearest-aleph ETA
+    // (native WinTrek.cpp:7783-7802), rebuilt only on a sector / warp-count change.
+    private readonly List<Allegiance.Core.Collision.Vector3> _viewWarpCentres = new();
+    private short _viewWarpSector = short.MinValue;
+    private int _viewWarpWorldCount = -1;
+
     // P297 — the continuous damage-debris smoke stream (native AddDamageParticles,
     // thinggeo.cpp:699-755). The pure shared pool + camera-facing billboard
     // renderer; each frame's 3D pass emits one puff per damage vent per damaged

@@ -35,10 +35,12 @@ public class WarpTransitParticlesTests
 
         pool.EmitBurst(Origin, ShipVelocity(), SimVec.Zero, SimVec.Zero, RADIUS, 0.06f, rng);
 
-        // Native transit-instant count = TELEPORT_SPARK_COUNT × s_iShowSmoke = 3.
-        Assert.Equal(WarpTransitParticles.TeleportSparkCount, pool.ActiveCount);
+        // Native transit-instant count = TELEPORT_SPARK_COUNT × s_iShowSmoke.
+        // P781 — ShowSmoke is the SHIPPED default 3 (WinTrek.cpp:3293), not the
+        // static initialiser 1 (thinggeo.cpp:1679), so one burst emits 9 sparks.
+        Assert.Equal(9, pool.ActiveCount);
         var views = pool.Enumerate().ToList();
-        Assert.Equal(3, views.Count);
+        Assert.Equal(9, views.Count);
         // Fresh sparks: full remaining lifetime (native m_fDuration = 0.5s).
         Assert.All(views, v => Assert.Equal(1f, v.RemainingFrac, 5));
     }
@@ -96,7 +98,7 @@ public class WarpTransitParticlesTests
         var rng = new FixedRandom();
 
         pool.EmitBurst(Origin, ShipVelocity(), SimVec.Zero, SimVec.Zero, RADIUS, 0.06f, rng);
-        Assert.Equal(3, pool.ActiveCount);
+        Assert.Equal(9, pool.ActiveCount);   // P781 — smoke 3 (WinTrek.cpp:3293)
 
         // Advance past m_fDuration = 0.5s in a few steps; everything must expire.
         for (int i = 0; i < 20 && pool.ActiveCount > 0; i++)
@@ -163,7 +165,7 @@ public class WarpTransitParticlesTests
         var rng = new FixedRandom();
 
         pool.EmitBurst(Origin, ShipVelocity(), SimVec.Zero, SimVec.Zero, RADIUS, 0.06f, rng);
-        Assert.Equal(3, pool.ActiveCount);
+        Assert.Equal(9, pool.ActiveCount);   // P781 — smoke 3 (WinTrek.cpp:3293)
 
         pool.Reset();
         Assert.Equal(0, pool.ActiveCount);

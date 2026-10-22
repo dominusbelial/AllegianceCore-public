@@ -68,9 +68,10 @@ public sealed partial class Game1
     /// <item>Apply a received <c>SHIP_RESET</c>: snap the simulation to the server's
     /// authoritative pose and adopt the new cookie (the server ignores further
     /// updates until we echo it).</item>
-    /// <item>Apply the hard-transition freeze/resume edges (dock, death, ripcord,
+    /// <item>Apply the hard-transition freeze/resume edges (dock, death,
     /// warp / sector change), seeding the sim to the server pose across each
-    /// discontinuity and holding it until it settles.</item>
+    /// discontinuity and holding it until it settles. (P781: a ripcord is no
+    /// longer a freeze — the ship flies the frozen flight model.)</item>
     /// </list>
     /// </summary>
     private void UpdateOwnShipSimulation(ClientWorld world, ShipEntity mine, ServerShipUpdate up)
@@ -140,11 +141,40 @@ public sealed partial class Game1
         bool sectorChanged = mine.SectorId != _ownSimLastSectorId;
         if (sectorChanged) _ownSimLastSectorId = mine.SectorId;   // latch the new sector
 
+        // P781 — native CshipIGC::SetCluster drops the ripcord model on every
+        // cluster move (SetRipcordModel(NULL), Igc/shipIGC.h:200-210). The port's
+        // ripcord teleport sends the owner no SET_CLUSTER (PerformRipcordTeleport
+        // only moves the ship; the client learns the new sector from SHIP_STATUS),
+        // so ClientWorld's own-SET_CLUSTER clear never fires for it: clear here on
+        // the own sector-change edge, or the landed ship would keep flying the
+        // frozen model (no stick) until the 2 s safety expiry.
+        if (sectorChanged && world.RipcordActive)
+        {
+            world.ClearRipcord();
+            Console.WriteLine("[sim] ripcord state cleared on own sector change (native SetCluster -> SetRipcordModel(NULL))");
+        }
+        // P781 — engage the native frozen flight model while a ripcord countdown
+        // runs (native sets the client-side ripcord model on ACTIVATE,
+        // appmsg.cpp:940-944, and every CshipIGC with a model runs the frozen
+        // ExecuteShipMove: turn rates pinned, drag-only, shipIGC.cpp:2885-3037).
+        // The ship keeps FLYING locally from its current state — no re-seed, no
+        // freeze at the activation edge (the client is the authority on its own
+        // pose; native does not snap) — and keeps sending SHIP_UPDATE (native
+        // SendUpdate gates only on flyingF(), clintlib.cpp:1815-1866). The
+        // teleport itself is still handled by the sectorChanged freeze/re-seed
+        // below and the SHIP_RESET path. RipcordActive survives the countdown's
+        // zero (native pins at 0 until the server moves the ship,
+        // shipIGC.cpp:286-294) into the port's 2 s safety window
+        // (RipcordLeadup.SafetyGraceSeconds) — see Game1.RipcordStatusLabel.
+        _ownSim.SetRipcording(world.RipcordActive);
+
         bool freeze =
             mine.StationId != -1        // docked (own ship off the flight stream; hangar screen)
             || mine.IsNotVisible        // dead / gone (pose meaningless until respawn)
-            || world.RipcordActive      // ripcord pins turn rates + moves the ship
             || sectorChanged;           // warp / sector change / teleport discontinuity
+        // (P781 — world.RipcordActive is deliberately NOT a freeze reason any
+        // more: a ripcording ship flies the frozen flight model above instead
+        // of holding still, exactly native's behaviour.)
 
         if (freeze)
         {
@@ -160,7 +190,6 @@ public sealed partial class Game1
                 Console.WriteLine("[sim] freeze: " +
                     (mine.StationId != -1 ? "docked"
                      : mine.IsNotVisible ? "dead"
-                     : world.RipcordActive ? "ripcord"
                      : "warp/sector-change/teleport"));
                 // P522 — dock/death are transitions, not damage; abandon the
                 // flash baseline (a docked ship's held fractions differ from
@@ -242,9 +271,11 @@ public sealed partial class Game1
     /// time, the current ship cookie, and the full pose (position / orientation /
     /// velocity / turn rates / power) plus the controls/stateM the sim is flying with.
     /// Runs after the pose gather (clock fed, cookie adopted, SHIP_RESET applied) on
-    /// the main thread. No-op while the ship is frozen (docked / dead / ripcord /
-    /// warp), not armed (turret gunner), unseeded, or before a server-clock estimate
+    /// the main thread. No-op while the ship is frozen (docked / dead /
+    /// warp) or not armed (turret gunner), unseeded, or before a server-clock estimate
     /// exists (pre-flight; controls flow via the mission start only once flying).
+    /// P781: a ripcording ship is NOT frozen — it flies the frozen flight model and
+    /// keeps sending (native SendUpdate gates only on flyingF(), clintlib.cpp:1815).
     /// Matches native: no send-on-control-change (<c>smSendUpdateNow</c> is commented
     /// out natively) — only the cadence, each emission carrying the controls in effect
     /// at that instant.
@@ -256,7 +287,7 @@ public sealed partial class Game1
         string? blockedReason = null;
         if (!_ownShipSendArmed) blockedReason = "not armed (turret gunner)";
         else if (!_ownSim.HaveHull) blockedReason = "no hull resolved yet";
-        else if (_ownSim.Frozen) blockedReason = "sim frozen (docked/dead/ripcord/warp)";
+        else if (_ownSim.Frozen) blockedReason = "sim frozen (docked/dead/warp)";
         else if (!_ownServerClock.Ready) blockedReason = "no server-clock estimate yet";
 
         bool eligible = blockedReason is null;

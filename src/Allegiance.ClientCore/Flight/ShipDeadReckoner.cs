@@ -31,11 +31,15 @@ namespace Allegiance.ClientCore.Flight;
 /// a ship arbitrarily far — matching native's ±1.5&nbsp;s acceptance window
 /// (<c>shipIGC.cpp:3113-3115</c>): beyond it native drops the update as
 /// <c>c_susOutOfDate</c>, and we hold the pose at the cap.</para>
-/// <para><b>Ripcord assumption.</b> <c>ServerShipUpdate</c> carries no ripcord
-/// state, so the replay assumes the ship is <em>not</em> ripcording
-/// (<c>Ripcording = false</c>). A remotely-ripcording ship therefore keeps
-/// maneuvering in the extrapolation until its next update corrects it — a
-/// documented limitation of the wire, not the integrator.</para>
+/// <para><b>Ripcord state (P781).</b> <c>ServerShipUpdate</c> carries no ripcord
+/// state, so the replay's <c>Ripcording</c> flag comes from the per-ship client
+/// state instead: the host sets <see cref="Ripcording"/> from the
+/// RIPCORD_ACTIVATE/ABORTED bookkeeping (native <c>appmsg.cpp:950-962</c> sets
+/// the model for any ripcording ship) so a remotely-ripcording ship dead-reckons
+/// with the frozen flight model — pinned turn rates, drag-only speed — exactly
+/// like the server is simulating it (native runs <c>ExecuteShipMove</c> with the
+/// model set on every client-side CshipIGC, shipIGC.cpp:2885-3037). Until set,
+/// the flag is false (the pre-P781 behaviour).</para>
 /// <para><b>Hull-stat source (item 3).</b> The caller resolves the
 /// <em>already-effective</em> hull stats — hull record × side global-attribute
 /// factors — the same way the client already resolves hulls from the shop
@@ -115,6 +119,7 @@ public sealed class ShipDeadReckoner
 
     private ShipKinematics.Inputs _inputs;
     private bool _seeded;
+    private bool _ripcording;   // P781 — settable per-ship frozen-flight flag (see class doc)
     private double _arrivalTime;
     private Vector3 _seedPosition;
     private Vector3 _seedVelocity;
@@ -128,6 +133,28 @@ public sealed class ShipDeadReckoner
 
     /// <summary>The local arrival time of the last seed (seconds).</summary>
     public double ArrivalTime => _arrivalTime;
+
+    /// <summary>
+    /// P781 — whether this ship is currently ripcording (the native client-side
+    /// ripcord model, appmsg.cpp:950-962). When true, <see cref="PoseAt"/>
+    /// replays the FROZEN flight model: turn rates stay at their seed values
+    /// (no ramp), thrust is skipped (drag-only decay), and an active afterburner
+    /// still boosts — the exact physics the server runs for a ripcording ship
+    /// (ShipKinematics.Step with <c>Ripcording: true</c>, shipIGC.cpp:2885-3037).
+    /// Applied to <see cref="_inputs"/> on change; survives re-seeds
+    /// (<see cref="Seed"/> adopts the flag, and only a real clear message
+    /// clears it). Default false.
+    /// </summary>
+    public bool Ripcording
+    {
+        get => _ripcording;
+        set
+        {
+            if (_ripcording == value) return;               // non-allocating no-op when unchanged
+            _ripcording = value;
+            if (_seeded) _inputs = _inputs with { Ripcording = value };
+        }
+    }
 
     /// <summary>
     /// Store the authoritative state from a received update, anchored at the
@@ -167,7 +194,7 @@ public sealed class ShipDeadReckoner
             TurnTorqueRoll: hull.TurnTorqueRoll,
             AfterburnerMaxThrust: afterburnerMaxThrust,
             AfterburnerPower: update.Power,
-            Ripcording: false);   // ServerShipUpdate carries no ripcord state (see class doc)
+            Ripcording: _ripcording);   // P781 — adopt the settable frozen-flight flag (survives re-seeds)
 
         _seeded = true;
     }

@@ -25,6 +25,10 @@ public sealed class WarpTransitParticleRenderer : IDisposable
 {
     private readonly NativeEffectTextures _native;
     private readonly ParticleBillboardBatcher _batcher;
+    // P781 — reused billboard list (clear + reuse), never re-allocated per
+    // frame: Draw used to `new` one every call, a steady GC churn in any scene
+    // with live sparks.
+    private readonly List<ParticleBillboard> _items = new();
 
     public WarpTransitParticleRenderer(GraphicsDevice gd, NativeEffectTextures native)
     {
@@ -40,9 +44,12 @@ public sealed class WarpTransitParticleRenderer : IDisposable
     {
         if (sparks.Count == 0) return;
 
-        var items = new List<ParticleBillboard>(sparks.Count);
-        foreach (var p in sparks)
+        var items = _items;
+        items.Clear();
+        if (items.Capacity < sparks.Count) items.Capacity = sparks.Count;
+        for (int i = 0; i < sparks.Count; i++)   // indexed: no boxed IReadOnlyList enumerator per frame
         {
+            var p = sparks[i];
             float rem = MathHelper.Clamp(p.RemainingFrac, 0f, 1f);
             var centre = new XnaVec(p.Position.X, p.Position.Y, p.Position.Z) - cameraEye;
             var sc = NativeParticleCurves.SparkColor(rem);

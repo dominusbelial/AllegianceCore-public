@@ -30,8 +30,12 @@ namespace Allegiance.ClientCore.Flight;
 /// <c>SHIP_RESET</c> (snap + resume), and after a hard transition settles
 /// (dock / undock / launch / warp / ripcord / death / respawn), so each
 /// discontinuity re-seeds the simulation from the server's authoritative pose.</item>
+/// <item><see cref="SetRipcording"/> for the ripcord countdown (P781): the ship
+/// KEEPS flying the frozen flight model (turn rates pinned, drag-only — native
+/// <c>ExecuteShipMove</c>, shipIGC.cpp:2885-3037) instead of freezing; a hard
+/// freeze is reserved for dock/death/sector-change transitions.</item>
 /// <item><see cref="Freeze"/> / <see cref="Resume"/> to hold the server pose across
-/// a hard transition (docked, dead, ripcording, warp), mirroring the predictor's
+/// a hard transition (docked, dead, warp / sector change), mirroring the predictor's
 /// freeze/resume edges; while frozen <see cref="Step"/> is inert and no native
 /// SHIP_UPDATE is sent.</item>
 /// </list></para>
@@ -144,12 +148,35 @@ public sealed class OwnShipSimulator
     /// Configure the own ship's already-effective hull stats + afterburner max thrust
     /// (the values <see cref="Step"/> integrates) and establish the hull.
     /// Call only when the hull / side GA / loadout changes (respawn, lifepod,
-    /// hull swap), not every frame.
+    /// hull swap), not every frame. Preserves the current ripcord state
+    /// (<see cref="SetRipcording"/>) — a hull swap mid-countdown keeps flying frozen.
     /// </summary>
     public void SetHull(in ShipDeadReckoner.HullStats hull, float afterburnerMaxThrust)
     {
-        _inputs = BuildInputs(in hull, afterburnerMaxThrust, 0f, Controls, StateM);
+        bool ripcording = _inputs.Ripcording;
+        _inputs = BuildInputs(in hull, afterburnerMaxThrust, 0f, Controls, StateM)
+            with { Ripcording = ripcording };
         _haveHull = true;
+    }
+
+    /// <summary>
+    /// P781 — engage / disengage the native frozen flight model for a ripcord
+    /// countdown: turn rates are pinned at their activation values (no ramp —
+    /// <c>shipIGC.cpp:2885-2910</c> is guarded by <c>if (!m_pmodelRipcord)</c>),
+    /// engine thrust is skipped (shipIGC.cpp:2961-2962) so the velocity decays
+    /// drag-only toward zero, while the orientation keeps integrating the frozen
+    /// rates (shipIGC.cpp:2912-2917). An active afterburner is NOT gated
+    /// (shipIGC.cpp:2939-2957 folds it into drag) and still accelerates forward.
+    /// While ripcording the sim is NOT frozen: the client keeps flying and keeps
+    /// sending native SHIP_UPDATEs (BaseClient::SendUpdate gates only on
+    /// flyingF(), clintlib.cpp:1815-1866). The client is the authority on its own
+    /// pose — native does not snap or re-seed at the activation edge
+    /// (appmsg.cpp:940-944 sets only the model + countdown).
+    /// </summary>
+    public void SetRipcording(bool ripcording)
+    {
+        if (_inputs.Ripcording == ripcording) return;   // non-allocating no-op when unchanged
+        _inputs = _inputs with { Ripcording = ripcording };
     }
 
     /// <summary>
@@ -217,5 +244,5 @@ public sealed class OwnShipSimulator
         TurnTorqueYaw: hull.TurnTorqueYaw, TurnTorquePitch: hull.TurnTorquePitch, TurnTorqueRoll: hull.TurnTorqueRoll,
         AfterburnerMaxThrust: afterburnerMaxThrust,
         AfterburnerPower: afterburnerPower,
-        Ripcording: false);   // never simulated while ripcording (a frozen state)
+        Ripcording: false);   // caller overrides via SetRipcording (P781: ripcording ships still fly — frozen flight model)
 }

@@ -94,15 +94,29 @@ public sealed class ParticleBillboardBatcher : IDisposable
     public static void BuildBillboardArrays(IReadOnlyList<ParticleBillboard> items, Matrix view,
         out VertexPositionColorTexture[] verts, out short[] indices)
     {
+        verts = new VertexPositionColorTexture[items.Count * 4];
+        indices = new short[items.Count * 6];
+        FillBillboardArrays(items, 0, items.Count, view, verts, indices);
+    }
+
+    /// <summary>
+    /// P781 — the non-allocating core of <see cref="BuildBillboardArrays"/>:
+    /// write quads <paramref name="start"/> … <paramref name="start"/> +
+    /// <paramref name="count"/> − 1 of <paramref name="items"/> into the
+    /// caller's (reused) arrays, from index 0. The arrays must hold at least
+    /// <c>count·4</c> vertices / <c>count·6</c> indices, and <paramref name="count"/>
+    /// must not exceed <see cref="MaxQuadsPerDraw"/> (16-bit indices).
+    /// </summary>
+    public static void FillBillboardArrays(IReadOnlyList<ParticleBillboard> items, int start, int count,
+        Matrix view, VertexPositionColorTexture[] verts, short[] indices)
+    {
         var camRight = new Vector3(view.M11, view.M12, view.M13);
         var camUp = new Vector3(view.M21, view.M22, view.M23);
 
-        verts = new VertexPositionColorTexture[items.Count * 4];
-        indices = new short[items.Count * 6];
-
         int v = 0, idxBase = 0;
-        foreach (var b in items)
+        for (int i = start; i < start + count; i++)   // indexed: no boxed IReadOnlyList enumerator
         {
+            var b = items[i];
             var centre = b.CentreEye;
             float half = b.Half;
 
@@ -134,6 +148,17 @@ public sealed class ParticleBillboardBatcher : IDisposable
         }
     }
 
+    /// <summary>P781 — the most quads one draw call carries: 16-bit indices
+    /// address at most 32 767 vertices, i.e. 8191 four-vertex quads. Larger
+    /// batches are split into several calls.</summary>
+    public const int MaxQuadsPerDraw = 8191;
+
+    // P781 — grow-only reused geometry buffers for Draw (one batcher per
+    // renderer, render thread only): the old per-frame `new` of both arrays was
+    // ~110 B per live particle per frame of GC churn.
+    private VertexPositionColorTexture[] _verts = Array.Empty<VertexPositionColorTexture>();
+    private short[] _indices = Array.Empty<short>();
+
     /// <summary>
     /// Draw every billboard in one batched call under <paramref name="tex"/>
     /// with additive blending (or <paramref name="blend"/> when supplied).
@@ -147,7 +172,12 @@ public sealed class ParticleBillboardBatcher : IDisposable
     {
         if (items.Count == 0) return;
 
-        BuildBillboardArrays(items, view, out var verts, out var indices);
+        int batch = Math.Min(items.Count, MaxQuadsPerDraw);
+        if (_verts.Length < batch * 4)
+        {
+            _verts = new VertexPositionColorTexture[batch * 4];
+            _indices = new short[batch * 6];
+        }
 
         _effect.Texture = tex;
         _effect.World = Matrix.Identity;
@@ -159,8 +189,13 @@ public sealed class ParticleBillboardBatcher : IDisposable
         gd.BlendState = blend ?? _additive;
         gd.RasterizerState = _cullNone;
         gd.DepthStencilState = DepthStencilState.DepthRead;   // test, never write (P339 B2)
-        gd.DrawUserIndexedPrimitives(
-            PrimitiveType.TriangleList, verts, 0, verts.Length, indices, 0, items.Count * 2);
+        for (int start = 0; start < items.Count; start += MaxQuadsPerDraw)
+        {
+            int n = Math.Min(MaxQuadsPerDraw, items.Count - start);
+            FillBillboardArrays(items, start, n, view, _verts, _indices);
+            gd.DrawUserIndexedPrimitives(
+                PrimitiveType.TriangleList, _verts, 0, n * 4, _indices, 0, n * 2);
+        }
 
         // Restore all three states we touched (P339 B2 — ExplosionRenderer pattern).
         gd.BlendState = BlendState.Opaque;

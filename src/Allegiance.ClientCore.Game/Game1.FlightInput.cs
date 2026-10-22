@@ -2368,6 +2368,7 @@ public sealed partial class Game1
     {
         var world = _session.World;
         _poses.Clear();
+        _teleportEmitterCount = 0;   // P781 — rebuilt every frame below (preallocated array)
         _damageEmitters.Clear();
         _engineTrailEmitters.Clear();
         _nozzleGlowEmitters.Clear();
@@ -2394,6 +2395,8 @@ public sealed partial class Game1
                 _warpRenderer?.ResetTransits();
                 _pendingTeleportBurst = null;
                 _pendingHullHits.Clear();
+                _lastSparkPose.Clear();          // P781 — frame-velocity history is per-view
+                _ripcordSpeedByHull.Clear();     // P781 — re-resolve hull ripcord speeds per view
             }
 
             // P373 — drain the one-shot "new contact" (first-sighting) cues
@@ -2437,6 +2440,26 @@ public sealed partial class Game1
                         poseOrientation = MiningFacing(ownOri, ownPos, rockAst.Position,
                             (float)gameTime.ElapsedGameTime.TotalSeconds);
                     _poses[me] = new Flight.PredictedPose(ownPos, poseOrientation);
+                    // P781 — the own ship sprays lead-up sparks too (native runs
+                    // AddTeleportParticles for every visible ship, own included,
+                    // thinggeo.cpp:503-528), but only while its hull is drawn:
+                    // native's render mask hides the own hull in the internal
+                    // cockpit view (SetVisible / SetVisibleShip,
+                    // trekigc.cpp:1646-1659; m_bVisibleShip gates
+                    // AddTeleportParticles, thinggeo.cpp:515-527), the same gate
+                    // the port already uses for the P297/P358/P365 own-ship
+                    // effects below.
+                    if (_cameraMode != CameraMode.Cockpit)
+                    {
+                        float ownRipT = world.RipcordActive
+                            ? Allegiance.ClientCore.Flight.RipcordLeadup.TimeUntilTeleport(world.RipcordActiveSinceLocalMs,
+                                ClientNowMilliseconds, RemoteRipcordDuration(world, mine), world.TimeScale)
+                            : -1f;
+                        GatherTeleportEmitter(world, me, ownPos,
+                            predActive ? _ownSim.Velocity : mineUp.Velocity, ownOri,
+                            _myRenderRadius > 0f ? _myRenderRadius : Rendering.WarpTransitParticles.ShipRadiusDefault,
+                            ownRipT, viewSector ?? -1, updateDt);
+                    }
                     // P462 — emit the local own-shot echo at the trigger frame,
                     // read through the renderer's own-ship pose (_poses[me] — the
                     // P447 prediction seam), and play one fire one-shot per round
@@ -2556,7 +2579,7 @@ public sealed partial class Game1
                 // kill switch is off or the reckoner isn't seeded (falls back to the
                 // raw last-known pose). Own-ship posing stays raw (P447); ships with
                 // no pose were already excluded above.
-                Flight.PredictedPose pose = RemoteShipPose(world, id, up);
+                Flight.PredictedPose pose = RemoteShipPose(world, id, up, ship);
                 _poses[id] = pose;
                 // P297 — any other visible damaged ship vents too (native's
                 // per-ship AddDamageParticles scope — not just the local hull).
@@ -2565,6 +2588,18 @@ public sealed partial class Game1
                 // fixed 50-unit stand-in.
                 float tl = HullLength(ship.HullId);
                 float radius = tl > 0f ? 0.5f * tl : 0f;
+                // P781 — lead-up sparks for every ripcording/closing remote ship
+                // whose hull is drawn (the CanDrawInSector guard above IS the
+                // model pass's hull-draw gate). The ripcord timer comes from the
+                // per-ship client state (see RemoteShipRipcording); the aleph
+                // timer is native's per-frame nearest-warp ETA (WinTrek.cpp:7783-7802).
+                float ripT = world.TryGetRemoteRipcord(id, out long ripStart)
+                    ? Allegiance.ClientCore.Flight.RipcordLeadup.TimeUntilTeleport(ripStart, ClientNowMilliseconds,
+                        RemoteRipcordDuration(world, ship), world.TimeScale)
+                    : -1f;
+                GatherTeleportEmitter(world, id, pose.Position, up.Velocity, pose.Orientation,
+                    radius > 0f ? radius : Rendering.WarpTransitParticles.ShipRadiusDefault,
+                    ripT, viewSector.Value, updateDt);
                 // P628 — capture the per-ship LOD inputs under the Gate so the
                 // Draw loop reads them lock-free: the rendered radius (the
                 // ProjectedPixelRadius metric) and the real side colour (the
@@ -2619,14 +2654,126 @@ public sealed partial class Game1
 
     }
 
-    private Flight.PredictedPose RemoteShipPose(ClientWorld world, short id, ServerShipUpdate up)
+    /// <summary>P781 — gather one drawn ship's lead-up spark emitter into the
+    /// preallocated array for this frame's render pass: select the teleport
+    /// timer (native thinggeo.cpp:620-625 — the ripcord timer, unless the aleph
+    /// crossing is sooner), derive the frame velocity from the previous
+    /// rendered pose (native vecFrameVelocity, thinggeo.cpp:506-512; falls back
+    /// to the wire velocity on the first frame), and record nothing when the
+    /// selected timer is negative (no sparks before the final 3 s). The pose
+    /// history is maintained even when no sparks emit, so a lead-up that starts
+    /// later already has a previous pose. Called under the world gate from the
+    /// pose pass; no allocation (the nearest-warp walk iterates the world's
+    /// dictionaries directly; <see cref="_lastSparkPose"/> is reused).
+    /// </summary>
+    private void GatherTeleportEmitter(ClientWorld world, short id,
+        SimVec position, SimVec velocity, Orientation orientation, float radius,
+        float ripcordTimeLeft, short viewSector, float frameDt)
     {
+        // Frame velocity first (also keeps the history warm for future lead-ups).
+        SimVec frameVelocity;
+        if (frameDt > 1e-5f && _lastSparkPose.TryGetValue(id, out var prev))
+            frameVelocity = (position - prev) / frameDt;
+        else
+            frameVelocity = velocity;   // first frame: the wire velocity stand-in
+        _lastSparkPose[id] = position;
+
+        // Native FindTarget(pship, c_ttWarp | c_ttNearest | c_ttAllSides)
+        // (WinTrek.cpp:7792): the nearest aleph in the ship's cluster by
+        // centre distance. The view sector's aleph centres are cached (static
+        // map data) so this walk never enumerates the world's
+        // IReadOnlyDictionary (a boxed enumerator per ship per frame).
+        RefreshViewWarpCache(world, viewSector);
+        float alephEta = -1f;
+        SimVec bestWarp = default;
+        float bestDsq = float.MaxValue;
+        for (int i = 0; i < _viewWarpCentres.Count; i++)
+        {
+            var wp = _viewWarpCentres[i];
+            float dx = wp.X - position.X, dy = wp.Y - position.Y, dz = wp.Z - position.Z;
+            float dsq = dx * dx + dy * dy + dz * dz;
+            if (dsq < bestDsq) { bestDsq = dsq; bestWarp = wp; }
+        }
+        if (bestDsq != float.MaxValue)
+            alephEta = Allegiance.ClientCore.Flight.RipcordLeadup.AlephEta(position, velocity, bestWarp);
+
+        float t = Allegiance.ClientCore.Flight.RipcordLeadup.SelectTeleportTime(ripcordTimeLeft, alephEta);
+        if (t < 0f) return;   // thinggeo.cpp:625 — nothing happens before the final 3 s
+        if (_teleportEmitterCount >= _teleportEmitters.Length) return;   // 64 emitters is far above any drawn-ship count
+
+        _teleportEmitters[_teleportEmitterCount++] = new Rendering.TeleportEmitter(
+            id, position, frameVelocity,
+            orientation.GetForward(), orientation.GetRight(), radius, t);
+    }
+
+    /// <summary>P781 — (re)build the view sector's aleph-centre cache when the
+    /// view sector or the world's warp count changes (alephs are static map
+    /// data; a count change covers a late cluster-info load). Allocation only
+    /// on those edges, never per frame.</summary>
+    private void RefreshViewWarpCache(ClientWorld world, short viewSector)
+    {
+        int count = world.Warps.Count;
+        if (viewSector == _viewWarpSector && count == _viewWarpWorldCount) return;
+        _viewWarpSector = viewSector;
+        _viewWarpWorldCount = count;
+        _viewWarpCentres.Clear();
+        foreach (var kv in world.Warps)
+            if (kv.Value.ClusterId == viewSector)
+                _viewWarpCentres.Add(new SimVec(kv.Value.Position[0], kv.Value.Position[1], kv.Value.Position[2]));
+    }
+
+    private Flight.PredictedPose RemoteShipPose(ClientWorld world, short id, ServerShipUpdate up, ShipEntity ship)
+    {
+        // P781 — a remote ship with live ripcord state dead-reckons with the
+        // native frozen flight model (pinned turn rates, drag-only): native sets
+        // the client-side ripcord model for ANY ripcording ship
+        // (appmsg.cpp:950-962) and runs the frozen ExecuteShipMove on it
+        // (shipIGC.cpp:2885-3037). Duration comes from the per-(hull, side)
+        // cache; the per-ship client state is cleared by ABORTED / KILL_SHIP /
+        // SHIP_DELETE / reset and expires through RipcordLeadup's safety grace.
+        bool ripcording = RemoteShipRipcording(world, id, ship);
         if (_remoteShipDeadReckoning &&
-            world.TryGetRenderPose(id, ClientNowMilliseconds / 1000.0, out var pos, out var ori))
+            world.TryGetRenderPose(id, ClientNowMilliseconds / 1000.0, out var pos, out var ori, ripcording))
         {
             return new Flight.PredictedPose(pos, ori.Copy());
         }
         return new Flight.PredictedPose(up.Position, up.Orientation);
+    }
+
+    /// <summary>P781 — whether a remote ship is currently inside a ripcord
+    /// countdown (per-ship client state + the shared TiDi rule). The wire's
+    /// <c>bIsRipcording</c> is deliberately NOT read: the server always sends
+    /// false today (Server.Broadcast.cs:1022,1256,1401) and honouring it would
+    /// wipe live state on every teammate SSU (P781b fixes both ends).</summary>
+    private bool RemoteShipRipcording(ClientWorld world, short id, ShipEntity ship)
+    {
+        if (!world.TryGetRemoteRipcord(id, out long start)) return false;
+        return Allegiance.ClientCore.Flight.RipcordLeadup.IsRipcording(start, ClientNowMilliseconds,
+            RemoteRipcordDuration(world, ship), world.TimeScale);
+    }
+
+    /// <summary>P781 — a ship's ripcord countdown duration, exactly
+    /// <see cref="RipcordDurationSecondsFor"/> (hull <c>RipcordSpeed</c> /
+    /// side <c>c_gaRipcordTime</c>, shipIGC.cpp:4665), but with the hull's
+    /// <c>RipcordSpeed</c> cached per hull id so the per-frame pose pass never
+    /// walks the shop catalogue per ship (a 50-ripper scene would re-scan it
+    /// 50x per frame). The side GA is read live every call (it can change with
+    /// research mid-view). Only resolved hulls are cached, so a not-yet-loaded
+    /// catalogue retries; cleared on BeginView.</summary>
+    private float RemoteRipcordDuration(ClientWorld world, ShipEntity ship)
+    {
+        if (!_ripcordSpeedByHull.TryGetValue(ship.HullId, out float ripcordSpeed))
+        {
+            if (_shopCatalog is not { } catalog) return 0f;
+            ripcordSpeed = 0f;
+            foreach (var h in catalog.Hulls)
+                if (h.HullId == ship.HullId) { ripcordSpeed = h.RipcordSpeed; break; }
+            if (ripcordSpeed <= 0f) return 0f;
+            _ripcordSpeedByHull[ship.HullId] = ripcordSpeed;
+        }
+        float ga = world.GlobalAttributesFor(ship.SideId)
+            .Get(Allegiance.Core.Model.GlobalAttributeSet.RipcordTime);
+        return ga > 0f ? ripcordSpeed / ga : ripcordSpeed;
     }
 
     /// <summary>

@@ -1475,7 +1475,6 @@ public sealed partial class Game1
                 // P546 — pass the sector light + near-fade so the ENHANCED smoke
                 // path tints/clears it (native path ignores both).
                 ReduceBenchmarkEffects(_drawTrailViews);
-                ReduceBenchmarkEffects(_drawSparkViews);
                 ReduceBenchmarkEffects(_drawDebrisViews);
                 ReduceBenchmarkEffects(_drawEngineTrailViews);
                 _trailRenderer.Draw(_drawTrailViews, cameraEye, view, proj, _sectorLighting, vfxNear, vfxFar, vfxOccluder, _softContext);
@@ -1498,10 +1497,21 @@ public sealed partial class Game1
                     _warpParticles.EmitBurst(
                         burst.Position, burst.Velocity, burst.Forward, burst.Right,
                         transitRadius,
-                        (float)dt, _trailRandom);
+                        Rendering.WarpTransitParticles.EmissionClockSeconds, _trailRandom);
                 }
+
+                // P781 — the lead-up spray (native AddTeleportParticles runs every
+                // frame for every visible ripcording / aleph-closing ship,
+                // thinggeo.cpp:619-696): emit from the emitters the gate-locked
+                // pose pass gathered (_teleportEmitters), paced by the fixed 60 Hz
+                // emission accumulator (native's per-rendered-frame clock would
+                // scale the spray with fps — see WarpTransitParticles remarks).
+                EmitTeleportLeadup((float)dt);
                 _drawSparkViews.Clear();
-                _drawSparkViews.AddRange(_warpParticles.Enumerate());
+                _warpParticles.CopyTo(_drawSparkViews);   // P781 — non-allocating gather (was AddRange(Enumerate()))
+                // P781 — the benchmark reducer now runs AFTER the gather (it used
+                // to trim the list before it was refilled, a no-op).
+                ReduceBenchmarkEffects(_drawSparkViews);
                 _warpParticleRenderer.Draw(_drawSparkViews, cameraEye, view, proj);
 
                 // P297 — the continuous damage-debris smoke stream (native
@@ -3309,13 +3319,63 @@ public sealed partial class Game1
         return $"CMD {cmd.Name} (#{cmd.Id})  [Insert]";
     }
 
+    /// <summary>
+    /// P781 — emit the lead-up teleport sparks for this frame from the emitters
+    /// the gate-locked pose pass gathered (<see cref="_teleportEmitters"/>).
+    /// Native calls <c>AddTeleportParticles</c> once per rendered frame per ship
+    /// (thinggeo.cpp:503-528), which scales the spray density with the frame
+    /// rate; here a fixed <see cref="Rendering.WarpTransitParticles.EmissionClockSeconds"/>
+    /// (60 Hz) accumulator gates the emission to at most one native call's worth
+    /// of sparks per 1/60 s — a deliberate deviation (see WarpTransitParticles
+    /// remarks and the P781 report). Runs on the render thread; the emitters are
+    /// a plain snapshot (no gate needed).
+    /// </summary>
+    private void EmitTeleportLeadup(float frameSeconds)
+    {
+        const float clock = Rendering.WarpTransitParticles.EmissionClockSeconds;
+        _teleportEmitAccumulator += frameSeconds;
+        // One native call's worth per elapsed 1/60 s: a 144 Hz client emits on
+        // ~every 2nd-3rd frame, a 30 Hz client twice per frame, so the spray
+        // density is the native 60 fps density at any frame rate. A hitch is
+        // capped at MaxEmissionsPerFrame (the excess is dropped, never a burst).
+        int ticks = 0;
+        while (_teleportEmitAccumulator >= clock && ticks < MaxTeleportEmissionsPerFrame)
+        {
+            _teleportEmitAccumulator -= clock;
+            ticks++;
+        }
+        if (_teleportEmitAccumulator >= clock) _teleportEmitAccumulator %= clock;
+        if (ticks == 0) return;
+
+        int count = _teleportEmitterCount;
+        for (int tick = 0; tick < ticks; tick++)
+            for (int i = 0; i < count; i++)
+            {
+                ref readonly var e = ref _teleportEmitters[i];
+                _warpParticles.EmitTeleport(e.Position, e.FrameVelocity, e.Forward, e.Right,
+                    e.Radius, e.TimeUntilTeleport, clock, _trailRandom);
+            }
+    }
+
+    /// <summary>P781 — the most 60 Hz emission ticks one rendered frame may
+    /// catch up (a 15 fps frame); a longer hitch drops the excess.</summary>
+    private const int MaxTeleportEmissionsPerFrame = 4;
+
     /// <summary>P414/HUD-9 — the native ripcord countdown label, "Ripcord in: n",
     /// resolved from the live world ripcord state under the gate lock. Native
     /// <c>GetRipcordTimeLeft</c> adds 0.5 s and <c>NumberString</c> adds another
     /// 0.5 s before truncating (consoledata.cpp:521-532; modeler.cpp:2008), so
     /// the displayed whole second is <c>(int)(left + 1.0)</c>. Null when no
-    /// ripcord is active. Also self-expires once the countdown's real duration
-    /// (the own hull's <c>RipcordSpeed</c>) has elapsed.</summary>
+    /// ripcord is active.
+    /// P781 — the label disappears once the countdown reaches 0 (native's
+    /// <c>m_dtRipcordCountdown = 0</c> pin), but the ripcord STATE survives:
+    /// native keeps the frozen model until the server moves the ship
+    /// (shipIGC.cpp:286-294), and the port's server teleport is silent toward
+    /// the owner on the wire, so the state is expired only after the port-only
+    /// 2 s safety grace (<see cref="Allegiance.ClientCore.Flight.RipcordLeadup.SafetyGraceSeconds"/>).
+    /// Through the 0 … −2 s window the ship keeps flying the frozen model and
+    /// sending SHIP_UPDATE, and the ripcord key still cancels (native
+    /// fRipcordActive is still true there).</summary>
     private string? RipcordStatusLabel()
     {
         var world = _session.World;
@@ -3332,7 +3392,17 @@ public sealed partial class Game1
                 world.RipcordActiveSinceLocalMs, ClientNowMilliseconds, dur, world.TimeScale);
             if (dur > 0f && left <= 0f)
             {
-                world.ClearRipcord();
+                // P781 — the label is gone at 0; the state itself is expired
+                // only once the countdown has overrun by the port-only safety
+                // grace (native pins at 0 until the server's move). The pure
+                // RipcordLeadup math is the same TiDi rule the audio cue
+                // integrates (shared, not forked — see RipcordLeadup remarks).
+                if (world.RipcordActiveSinceLocalMs is { } start
+                    && Allegiance.ClientCore.Flight.RipcordLeadup.OverrunSeconds(start, ClientNowMilliseconds, dur, world.TimeScale)
+                        <= -Allegiance.ClientCore.Flight.RipcordLeadup.SafetyGraceSeconds)
+                {
+                    world.ClearRipcord();
+                }
                 return null;
             }
             // Native double-0.5 rounding is in HudConsoleFormat.RipcordLabel

@@ -650,6 +650,13 @@ public sealed partial class ClientWorld
     // Value = local monotonic start instant (ms) of the countdown.
     private readonly Dictionary<short, long> _remoteRipcords = new();
 
+    /// <summary>P781 — the anchor (ot, oid) of the own ship's current ripcord,
+    /// native's <c>GetRipcordModel()</c> stand-in: a repeated ACTIVATE naming the
+    /// SAME anchor must NOT restart the countdown (appmsg.cpp:940-944 — only a
+    /// model CHANGE calls <c>ResetRipcordTimeLeft()</c>). Cleared with the rest
+    /// of the ripcord state in <see cref="ClearRipcord"/>.</summary>
+    private (short Ot, short Oid)? _ownRipcordAnchor;
+
     // P264 — whether an in-sector ENEMY missile's target is the local ship, plus
     // the best lock fraction among them, streamed by the owner-only
     // MissileTrackWarningUpdate(208). Drives the incoming-missile warning loop.
@@ -1102,11 +1109,18 @@ public sealed partial class ClientWorld
     /// <paramref name="orientation"/> is that reckoner's reusable scratch object,
     /// overwritten on the next call; callers must <c>Copy()</c> it if they retain it
     /// beyond the immediate use.</summary>
-    public bool TryGetRenderPose(int shipId, double now, out Vector3 position, out Orientation orientation)
+    /// <param name="ripcording">P781 — whether the ship is currently ripcording
+    /// (from the per-ship RIPCORD_ACTIVATE state): the extrapolation then runs
+    /// the native frozen flight model (pinned turn rates, drag-only) instead of
+    /// the last controls. Only consults the per-ship client state; the wire's
+    /// ripcord flag is not implemented on the server yet (P781b).</param>
+    public bool TryGetRenderPose(int shipId, double now, out Vector3 position, out Orientation orientation,
+        bool ripcording = false)
     {
         if (_remoteReckoners.TryGetValue((short)shipId, out var r) && r.Seeded)
         {
             r.TimeScale = TimeScale;      // P612 — extrapolate in scaled sim time
+            r.Ripcording = ripcording;    // P781 — frozen flight for a ripcording remote ship
             r.PoseAt(now, out position, out orientation);
             return true;
         }
@@ -1689,7 +1703,13 @@ public sealed partial class ClientWorld
     /// ship was the last ripcord edge; cleared on <c>RIPCORD_ABORTED(187)</c>,
     /// a re-target to nowhere, or our own <c>SET_CLUSTER</c> when the teleport
     /// lands). Drives the HUD's "RIPCORDING" tag; the Game1 key handler reads
-    /// it to decide initiate-vs-cancel.</summary>
+    /// it to decide initiate-vs-cancel.
+    /// P781 — this is native's client-side "ripcord model set" state: while true
+    /// the own ship flies the frozen flight model (pinned turn rates, drag-only)
+    /// and keeps sending SHIP_UPDATE, and it survives the countdown's zero (native
+    /// pins at 0 until the server moves the ship, shipIGC.cpp:286-294) into the
+    /// port-only 2 s safety grace (RipcordLeadup.SafetyGraceSeconds) that stands
+    /// in for the server's silent teleport.</summary>
     public bool RipcordActive { get; private set; }
 
     /// <summary>P414 — the requested target cluster of the ripcord named in the
@@ -1705,8 +1725,9 @@ public sealed partial class ClientWorld
     /// dedicated "ripcord completed" message (the teleport is silent on the
     /// wire), so the MonoGame client uses this + the own hull's
     /// <c>RipcordSpeed</c> (the real countdown duration) to self-expire the HUD
-    /// tag when the countdown would have completed. <c>null</c> when no ripcord
-    /// is active. Reset on abort / reconnect / completion.</summary>
+    /// tag — since P781 the label drops at 0 but the state itself is expired
+    /// only after the port-only 2 s safety grace (RipcordLeadup). <c>null</c>
+    /// when no ripcord is active. Reset on abort / reconnect / completion.</summary>
     public long? RipcordActiveSinceLocalMs { get; private set; }
 
     /// <summary>HUD-12 — the LOCAL ship's native <c>GetCloaking()</c> visible
@@ -2663,9 +2684,19 @@ public sealed partial class ClientWorld
     {
         if (m.ShipidRipcord == MyShipId)
         {
+            // P781 — native resets the countdown ONLY when the ripcord model
+            // changed (appmsg.cpp:940-944: `if (pmodelRipcord !=
+            // pshipSource->GetRipcordModel()) { SetRipcordModel; ResetRipcordTimeLeft; }`).
+            // A re-target naming the SAME anchor therefore keeps the running
+            // countdown (and its start time); the anchor (ot, oid) is the
+            // port's model identity.
+            var anchor = (m.OtRipcord, m.OidRipcord);
+            bool modelChanged = _ownRipcordAnchor != anchor;
+            _ownRipcordAnchor = anchor;
             RipcordActive = true;
             RipcordTargetSectorId = m.SidRipcord;
-            RipcordActiveSinceLocalMs = (long)(NowSeconds() * 1000);
+            if (modelChanged)
+                RipcordActiveSinceLocalMs = (long)(NowSeconds() * 1000);
             return;
         }
         // HUD-12 — a REMOTE ship's ripcord. Native's else-branch seeds that
@@ -2719,6 +2750,7 @@ public sealed partial class ClientWorld
         RipcordActive = false;
         RipcordTargetSectorId = null;
         RipcordActiveSinceLocalMs = null;
+        _ownRipcordAnchor = null;   // P781 — a fresh ACTIVATE is always a model change after a clear
     }
 
     private void Apply(SingleShipUpdate update)
