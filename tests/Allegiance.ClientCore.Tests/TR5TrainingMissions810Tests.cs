@@ -27,7 +27,8 @@ public sealed class TR5TrainingMissions810Tests
     // Mission 8 — Nanite
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     [Trait("Tier", "Live")]
     public void Mission8_RunsToCompletion_AgainstTheRealEmbeddedHost()
     {
@@ -112,7 +113,8 @@ public sealed class TR5TrainingMissions810Tests
     // Mission 10 — Free Flight
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     [Trait("Tier", "Live")]
     public void Mission10_RunsToCompletion_AgainstTheRealEmbeddedHost()
     {
@@ -155,7 +157,8 @@ public sealed class TR5TrainingMissions810Tests
     // Mission 8 nanite / repair / station seams land real effects on the host
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     [Trait("Tier", "Live")]
     public void Mission8_Seams_LandRealEffects_OnTheHost()
     {

@@ -25,7 +25,8 @@ public sealed class TR4TrainingMissions56Tests
     // Mission 5 — Command View
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     [Trait("Tier", "Live")]
     public void Mission5_RunsToCompletion_AgainstTheRealEmbeddedHost()
     {
@@ -123,7 +124,8 @@ public sealed class TR4TrainingMissions56Tests
     // Mission 6 — Practice Arena
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     [Trait("Tier", "Live")]
     public void Mission6_RunsToCompletion_AgainstTheRealEmbeddedHost()
     {
@@ -173,7 +175,8 @@ public sealed class TR4TrainingMissions56Tests
     // Mission 6 kill credit is the REAL kill credit, not a separate counter
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     [Trait("Tier", "Live")]
     public void Mission6_KillCredit_IsRealCredit_NotASeparateCounter()
     {
@@ -216,7 +219,8 @@ public sealed class TR4TrainingMissions56Tests
     // Mission 5/6 command-view seams land real effects on the host
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     [Trait("Tier", "Live")]
     public void Mission56_CommandViewSeams_LandRealEffects_OnTheHost()
     {

@@ -58,10 +58,12 @@ public sealed class TrainingHostMission2Tests
         return until();
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     [Trait("Tier", "Live")]
     public void Mission2_RunsToCompletion_AgainstTheRealEmbeddedHost()
     {
+        Require.Artwork();
         using var host = StartHost();
         var site = new TrainingHostSite(host);
         var mission = new Mission2(site);
@@ -133,10 +135,12 @@ public sealed class TrainingHostMission2Tests
         return dist <= 500f;
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     [Trait("Tier", "Live")]
     public void HostActions_LandRealEffects_OnTheMission()
     {
+        Require.Artwork();
         using var host = StartHost();
 
         // The training universe is real: player + commander are real Ship models in real sector 1010.

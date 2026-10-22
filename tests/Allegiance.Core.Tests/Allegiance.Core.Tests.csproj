@@ -16,6 +16,8 @@
     <!-- P597 — corpus-backed tests skip (with a reason) when the external
          artwork/native corpus is absent on a clean clone. -->
     <PackageReference Include="Xunit.SkippableFact" Version="1.5.85" />
+    <!-- CI-1 — CleanCloneSkipGuardTests parses tests/**/*.cs (syntax only). -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
   </ItemGroup>
 
   <ItemGroup>

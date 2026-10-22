@@ -60,7 +60,7 @@ public class P698StaleShipsLoopbackTests
         }
     }
 
-    [Theory]
+    [SkippableTheory]
     [InlineData("warp-and-die")]
     [InlineData("detection-loss")]
     [InlineData("teammate-pod-dock")]

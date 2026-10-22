@@ -57,9 +57,11 @@ public sealed class P753SimUpdateTests
         return server.SpawnNpcShip(mission, sector, 0, position, drone.DroneTypeId);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void IsLegalCommand_gates_pilot_type_and_target()
     {
+        Require.Artwork();
         using var server = new Srv();
         var mission = Mission(new RecordingIgcSite());
         Set(server, "_missions", new List<Mission> { mission });
@@ -108,9 +110,11 @@ public sealed class P753SimUpdateTests
         Assert.True(builder.IsLegalCommand(OrderChange.CidDoNothing, station));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Illegal_plan_gets_cleared_and_legal_accepted_is_promoted()
     {
+        Require.Artwork();
         using var server = new Srv();
         var mission = Mission(new RecordingIgcSite());
         Set(server, "_missions", new List<Mission> { mission });
@@ -129,9 +133,11 @@ public sealed class P753SimUpdateTests
         Assert.Equal(OrderChange.CidGoto, miner.PlanCommandId);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Miner_prefers_cowardly_unload_station()
     {
+        Require.Artwork();
         using var server = new Srv();
         var mission = Mission(new RecordingIgcSite());
         Set(server, "_missions", new List<Mission> { mission });
@@ -155,9 +161,11 @@ public sealed class P753SimUpdateTests
         Assert.NotNull(miner.MiningAsteroidTarget);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void IsFriendlyCluster_uses_territory_and_weighted_seen_ships()
     {
+        Require.Artwork();
         using var server = new Srv();
         var mission = Mission(new RecordingIgcSite());
         Set(server, "_missions", new List<Mission> { mission });
@@ -196,9 +204,11 @@ public sealed class P753SimUpdateTests
         Assert.True(home.IsFriendlyCluster(0));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Idle_npc_complaint_uses_backoff()
     {
+        Require.Artwork();
         using var server = new Srv();
         var site = new RecordingIgcSite();
         var mission = Mission(site);
@@ -226,9 +236,11 @@ public sealed class P753SimUpdateTests
         Assert.Equal(afterFirst * 2, site.Calls.Count(c => c.StartsWith("DroneChatEvent")));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Explosion_falloff_uses_mine_collision_radius()
     {
+        Require.Artwork();
         using var server = new Srv();
         var mission = Mission(new RecordingIgcSite());
         Set(server, "_missions", new List<Mission> { mission });
@@ -247,9 +259,11 @@ public sealed class P753SimUpdateTests
         Assert.True(mine.Fraction < initial);
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Docked_npc_launch_forced_by_goto_not_mine()
     {
+        Require.Artwork();
         using var server = new Srv();
         var mission = Mission(new RecordingIgcSite());
         Set(server, "_missions", new List<Mission> { mission });

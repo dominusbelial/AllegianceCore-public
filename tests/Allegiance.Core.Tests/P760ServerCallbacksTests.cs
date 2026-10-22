@@ -435,7 +435,7 @@ public sealed class P760ServerCallbacksTests
     /// <summary>⭐ P760b/SIM-0173 — the CHAT_SHIP recipient set never contains
     /// the sender (FedSrv.CPP:3488-3505): the source ship only when the sender
     /// is a gunner, and each child ship except the sender.</summary>
-    [Fact]
+    [SkippableFact]
     public void ShipChatRecipients_never_include_the_sender()
     {
         Require.Artwork();

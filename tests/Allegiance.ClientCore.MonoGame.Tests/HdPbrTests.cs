@@ -1,3 +1,4 @@
+using Allegiance.TestInfra;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using Allegiance.ClientCore.MonoGame.Rendering;
@@ -137,7 +138,8 @@ public sealed class HdPbrTests
         Assert.Equal(File.ReadAllText(Path.Combine(dir, "NativePbr.fx.sha256")).Trim(),
             Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(Path.Combine(Repo(), "src/Allegiance.ClientCore.Game/Shaders/NativePbr.fx")))));
     }
-    [Fact]
+    [Trait("Requires", "Gpu")]
+    [SkippableFact]
     public async Task Synthetic_material_renders_through_native_geometry_bloom_and_fsr_on_real_gl()
     {
         var start = new ProcessStartInfo("dotnet") { RedirectStandardOutput = true, RedirectStandardError = true };
@@ -150,11 +152,15 @@ public sealed class HdPbrTests
         try { await process.WaitForExitAsync(timeout.Token); }
         catch (OperationCanceledException) { process.Kill(true); Assert.Fail("HD2 GL render test timed out"); }
         string output = await stdout + await stderr;
+        Require.GraphicsDevice(output);
         Assert.True(process.ExitCode == 0, output); Assert.Contains("HD2_SELF_TEST_PASS", output);
     }
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [Trait("Requires", "Gpu")]
+    [SkippableFact]
     public async Task Classic_hd_uses_basecolor_with_native_lighting_and_falls_back_on_real_gl()
     {
+        Require.Artwork();   // hd2-proof --classic-test loads native models from the corpus
         var start = new ProcessStartInfo("dotnet") { RedirectStandardOutput = true, RedirectStandardError = true };
         start.ArgumentList.Add(Path.Combine(Repo(), "tools/hd2-proof/bin/Debug/net10.0/hd2-proof.dll"));
         start.ArgumentList.Add(Repo()); start.ArgumentList.Add("--classic-test");
@@ -165,6 +171,7 @@ public sealed class HdPbrTests
         try { await process.WaitForExitAsync(timeout.Token); }
         catch (OperationCanceledException) { process.Kill(true); Assert.Fail("HD5 classic GL render test timed out"); }
         string output = await stdout + await stderr;
+        Require.GraphicsDevice(output);
         Assert.True(process.ExitCode == 0, output);
         Assert.Contains("HD5_CLASSIC_PASS", output);
     }

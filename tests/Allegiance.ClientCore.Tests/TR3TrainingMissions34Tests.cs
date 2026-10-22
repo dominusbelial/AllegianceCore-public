@@ -28,7 +28,8 @@ public sealed class TR3TrainingMissions34Tests
     // Mission 3 — Basic Weaponry
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     [Trait("Tier", "Live")]
     public void Mission3_RunsToCompletion_AgainstTheRealEmbeddedHost()
     {
@@ -115,7 +116,8 @@ public sealed class TR3TrainingMissions34Tests
     // Mission 4 — Enemy Engagement
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     [Trait("Tier", "Live")]
     public void Mission4_RunsToCompletion_AgainstTheRealEmbeddedHost()
     {
@@ -248,7 +250,8 @@ public sealed class TR3TrainingMissions34Tests
     // Host-level: the new M3/M4 seams land real effects on the embedded host
     // ─────────────────────────────────────────────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     [Trait("Tier", "Live")]
     public void Mission34_Seams_LandRealEffects_OnTheHost()
     {

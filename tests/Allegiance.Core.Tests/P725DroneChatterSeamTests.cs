@@ -77,9 +77,11 @@ public sealed class P725DroneChatterSeamTests
     /// <c>SendChat</c> so the site recorded no
     /// <c>DroneChatEvent</c>.
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Crowded_miner_routes_droneTooCrowdedSound_1342_through_DroneChatEvent()
     {
+        Require.Artwork();
         var site = new RecordingIgcSite();
         var m = Domain(site);
         var s = Place(m, side: 0);
@@ -95,9 +97,11 @@ public sealed class P725DroneChatterSeamTests
     /// RecordingIgcSite observes the new seam directly (argument shape:
     /// ship-type, sideId, soundId, quoted text).
     /// </summary>
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void RecordingIgcSite_records_DroneChatEvent()
     {
+        Require.Artwork();
         var site = new RecordingIgcSite();
         var m = Domain();
         var s = Place(m, side: 1);

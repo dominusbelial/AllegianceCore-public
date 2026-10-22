@@ -1,3 +1,4 @@
+using Allegiance.TestInfra;
 using System.IO.Compression;
 using Allegiance.ClientCore.Replay;
 using Allegiance.ClientCore.Session;
@@ -101,9 +102,11 @@ public sealed class P729BenchmarkTests
         throw new FileNotFoundException("Bundled P729 battle missing");
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Two_real_battle_replays_have_identical_frame_state_hashes_without_network()
     {
+        Require.Artwork();
         string[] Play()
         {
             using var session = new ConnectionSession();

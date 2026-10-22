@@ -1,3 +1,4 @@
+using Allegiance.TestInfra;
 using System.Diagnostics;
 using System.Runtime;
 using System.Security.Cryptography;
@@ -135,7 +136,7 @@ public class P643GpuBudgetTests
             Assert.True(new FileInfo(Path.Combine(dir, stem + ".ogl.mgfxo")).Length > 100);
         }
     }
-    [Fact]
+    [SkippableFact]
     public async Task Both_shaders_load_and_render_through_real_gl_to_native_backbuffer()
     {
         var start = new ProcessStartInfo("dotnet") { RedirectStandardOutput = true, RedirectStandardError = true };
@@ -150,6 +151,7 @@ public class P643GpuBudgetTests
         try { await p.WaitForExitAsync(timeout.Token); }
         catch (OperationCanceledException) { p.Kill(entireProcessTree: true); Assert.Fail("FSR GL test timed out"); }
         string output = await stdout + await stderr;
+        Require.GraphicsDevice(output);
         Assert.True(p.ExitCode == 0, output); Assert.Contains("FSR_SELF_TEST_PASS", output);
     }
     private static string Repo()

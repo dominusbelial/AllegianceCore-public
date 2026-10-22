@@ -30,4 +30,26 @@ public static class Require
     /// tests: on a clean clone (no pack) they skip with a reason rather than fail,
     /// exactly like the P597 corpus tests.</summary>
     public static void MeshyPack() => Xunit.Skip.IfNot(MeshyPackAvailable, Allegiance.Core.MeshyPack.DescribeUnavailable());
+
+    /// <summary>Marker MonoGame prints when it cannot create a GL device (the
+    /// offscreen SDL/EGL context has no driver — e.g. a GPU-less CI runner).</summary>
+    public const string NoGraphicsDeviceMarker = "NoSuitableGraphicsDeviceException";
+
+    /// <summary>Set to <c>1</c> on a machine that HAS a GPU to turn the
+    /// <see cref="GraphicsDevice"/> skip back into a failure.</summary>
+    public const string RequireGpuEnvVar = "ALLEGIANCE_REQUIRE_GPU";
+
+    /// <summary>CI-1 — real-GL tests run a proof tool in a child process with
+    /// <c>SDL_VIDEODRIVER=offscreen</c>. Call this with the child's combined
+    /// output right after it exits (before asserting on it) from a
+    /// <c>[SkippableFact]</c>: if MonoGame could not create a graphics device at
+    /// all, the test SKIPS with the reason instead of failing. Any other failure
+    /// (wrong pixels, missing PASS marker, crash after device creation) still
+    /// fails, so nothing is weakened where a GPU is present.</summary>
+    public static void GraphicsDevice(string processOutput) => Xunit.Skip.If(
+        processOutput.Contains(NoGraphicsDeviceMarker, StringComparison.Ordinal)
+            && Environment.GetEnvironmentVariable(RequireGpuEnvVar) != "1",
+        "No usable GL graphics device (MonoGame " + NoGraphicsDeviceMarker + " from the offscreen " +
+        "SDL/EGL context — e.g. a clean CI runner without a GPU). Set " + RequireGpuEnvVar +
+        "=1 to make this a failure. See docs/CI_TEST_GATES.md.");
 }

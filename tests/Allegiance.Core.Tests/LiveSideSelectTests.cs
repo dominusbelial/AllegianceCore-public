@@ -199,7 +199,7 @@ public class LiveSideSelectTests
     /// zero or negative), a silent peer stays pending past the old 31 s mark,
     /// while a peer that does send POSITIONREQ is still seated.</summary>
     [Trait("Requires", "Artwork")]
-    [Theory]
+    [SkippableTheory]
     [InlineData(null)]
     [InlineData(0.0)]
     [InlineData(-1.0)]

@@ -1,3 +1,4 @@
+using Allegiance.TestInfra;
 using System.Diagnostics;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Microsoft.Xna.Framework;
@@ -45,7 +46,8 @@ public sealed class ModernHudTests
         Assert.NotEqual(HudPalette.Relationship(null), HudPalette.Relationship(false));
         Assert.NotEqual(HudPalette.Side(Color.Red), HudPalette.Side(Color.Blue));
     }
-    [Fact]
+    [Trait("Requires", "Gpu")]
+    [SkippableFact]
     [Trait("Tier", "Live")]   // renders every HUD-1 scenario in both skins (~11 s)
     public async Task Both_skins_render_Hud1_scenarios_without_overlapping_text_and_modern_draws_all_visible_elements()
     {
@@ -62,6 +64,7 @@ public sealed class ModernHudTests
         try { await process.WaitForExitAsync(timeout.Token); }
         catch (OperationCanceledException) { process.Kill(true); Assert.Fail("HUD2 GL render check timed out; evidence " + output); }
         string text = await stdout + await stderr;
+        Require.GraphicsDevice(text);
         Assert.True(process.ExitCode == 0, text + " Evidence " + output);
         Assert.Contains("HUD2_RENDER_PASS", text);
     }
