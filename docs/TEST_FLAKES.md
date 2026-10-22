@@ -2550,6 +2550,12 @@ Raw evidence: `/tmp/allegiance-evidence/SP5/supervisor-retry-{1,2,3}.trx` and `c
 **Fixed 2026-10-21** (it also failed release run 39716258737's test gate): a test race — the log was read
 before `ProcessWorker.Dispose` drained the async stderr copy (`tools/allegiance-mcp/WorkerRpc.cs` Dispose). The
 test now disposes the worker first; the assertion is unchanged. 3/3 class runs + 8/8 concurrent passes.
+**Reopened 2026-10-21:** it failed again in release run 39724573797 (on CI only; locally 48/48 under CPU stress and
+5/5 whole-project runs pinned to 4 CPUs all pass, on old and new code alike — not reproducible here). Code reading: the
+worker log `FileStream` was buffered (4 KB), so the text only reached the file when the copy hit EOF and disposed it, and
+`ProcessWorker.Dispose` waits for that copy at most 2 s, silently. Fix: unbuffered log (also keeps a crashed supervisor's
+worker stderr on disk) and the test waits up to 10 s for the text. **Not verified by a reproduction** — if it fails
+again, quarantine it instead of a third guess.
 
 SP-5's single Core sweep also hit the already documented
 `LiveRipcordTests.First_activation_broadcasts_to_everyone_flying_in_sector`

@@ -58,8 +58,10 @@ internal sealed class ProcessWorker : IWorker
         Index = index;
         info.RedirectStandardInput = info.RedirectStandardOutput = info.RedirectStandardError = true;
         info.UseShellExecute = false;
-        // Open first: a log-path error must not leak a started process.
-        var log = new FileStream(stderrPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+        // Open first: a log-path error must not leak a started process. Unbuffered
+        // (bufferSize 1): each copied chunk reaches the file at once, so a crashed or
+        // killed supervisor still leaves the worker's last stderr on disk.
+        var log = new FileStream(stderrPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize: 1);
         try { _process = Process.Start(info) ?? throw new IOException("worker failed to start"); }
         catch { log.Dispose(); throw; }
         Pid = _process.Id;

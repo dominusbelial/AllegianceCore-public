@@ -291,9 +291,13 @@ public sealed class P658SupervisorTests
             Assert.Equal("lost", lost.GetProperty("status").GetString());
             Assert.False(child.Alive);
             Assert.False((await supervisor.HandleAsync("list_hulls", null, CancellationToken.None)).IsError);
-            // The stderr copy is asynchronous; Dispose drains it (WorkerRpc.cs Dispose) before the log is read.
+            // The stderr copy is asynchronous and Dispose waits for it only 2 s; on a loaded CI
+            // runner the copy can land later (release runs 39716258737, 39724573797), so wait for it.
             child.Dispose();
-            Assert.Contains("child-error", await File.ReadAllTextAsync(log));
+            string text = "";
+            for (var sw = Stopwatch.StartNew(); sw.Elapsed < TimeSpan.FromSeconds(10); await Task.Delay(50))
+                if ((text = await File.ReadAllTextAsync(log)).Contains("child-error")) break;
+            Assert.Contains("child-error", text);
         }
         finally { File.Delete(log); }
     }
