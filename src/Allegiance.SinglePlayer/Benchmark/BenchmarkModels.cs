@@ -67,7 +67,20 @@ public sealed record BenchmarkRecommendation
 public sealed record TuneVerification(BenchmarkRecommendation Settings, BenchmarkRun Measurement, bool TargetMet);
 public sealed record BenchmarkResult
 {
-    public int SchemaVersion { get; init; } = 1;
+    // P789 — v2 adds the Showcase score (int?, null when the client could not
+    // measure it, e.g. headless runs) and the match kind. v1 files stay valid:
+    // both new fields are optional and the collector accepts 1 and 2.
+    public int SchemaVersion { get; init; } = 2;
+    /// <summary>P789 — the Showcase score from <see cref="ShowcaseScore.Compute"/>
+    /// (measured client frames only; null on headless runs).</summary>
+    public int? Score { get; init; }
+    /// <summary>P789 — "showcase-fixed" (the fixed seed/size/duration tune
+    /// Showcase — the only RANKED score), "showcase" (a player-started Showcase
+    /// battle) or "replay". Absent on v1 files.</summary>
+    public string? MatchKind { get; init; }
+    /// <summary>P789 — why a score is absent (e.g. headless runs do not render,
+    /// and the score only uses measured client inputs).</summary>
+    public string? ScoreNote { get; init; }
     public string Mode { get; init; } = "";
     public string Preset { get; init; } = "";
     public double DurationSeconds { get; init; }

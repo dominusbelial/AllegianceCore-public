@@ -1,0 +1,449 @@
+{
+  "SchemaVersion": 2,
+  "Score": null,
+  "MatchKind": "unranked",
+  "ScoreNote": "headless: not rendered; the score only uses measured client fps and time dilation",
+  "Mode": "skirmish",
+  "Preset": "Small",
+  "DurationSeconds": 5,
+  "ReplaySha256": null,
+  "Renderer": "Headless",
+  "Width": 0,
+  "Height": 0,
+  "TestedSettings": null,
+  "Seed": 729,
+  "Map": "m2xspiderw.igc",
+  "Civs": [
+    25,
+    3
+  ],
+  "Timestamp": "2026-10-23T01:48:23.4995783+00:00",
+  "Machine": "domingo-MS-02-Ultra",
+  "Os": "Ubuntu 26.04.1 LTS",
+  "LogicalCores": 24,
+  "Runs": [
+    {
+      "Repetition": 1,
+      "Rendered": false,
+      "WallSeconds": 5.0425101,
+      "FpsAverage": null,
+      "FpsOnePercentLow": null,
+      "FrameMs": null,
+      "CpuMs": null,
+      "GpuMs": null,
+      "ServerTickMs": {
+        "Count": 101,
+        "Mean": 1.090721782178218,
+        "P50": 0.9964,
+        "P95": 1.5049,
+        "P99": 3.7702,
+        "Worst": 4.6691
+      },
+      "BotCount": 9,
+      "PerBotCpu": [
+        {
+          "Name": "mcp-w1-b002-5318",
+          "DecisionCpuMs": 1.5649909999999991
+        },
+        {
+          "Name": "mcp-w1-b004-3698",
+          "DecisionCpuMs": 9.203374
+        },
+        {
+          "Name": "mcp-w1-b005-9384",
+          "DecisionCpuMs": 1.0665250000000013
+        },
+        {
+          "Name": "mcp-w1-b006-6230",
+          "DecisionCpuMs": 7.759092000000001
+        },
+        {
+          "Name": "mcp-w1-b007-3893",
+          "DecisionCpuMs": 0.567704
+        },
+        {
+          "Name": "mcp-w1-b008-5107",
+          "DecisionCpuMs": 5.010358000000002
+        },
+        {
+          "Name": "mcp-w1-b009-3730",
+          "DecisionCpuMs": 0.6006450000000001
+        },
+        {
+          "Name": "mcp-w1-b010-2958",
+          "DecisionCpuMs": 4.728447999999998
+        },
+        {
+          "Name": "mcp-w1-b011-5414",
+          "DecisionCpuMs": 0.567868
+        }
+      ],
+      "WorkerCount": 1,
+      "Workers": [
+        {
+          "Pid": 541682,
+          "CpuMs": 60.000099999999975,
+          "WorkingSetBytes": 86687744
+        },
+        {
+          "Pid": 541698,
+          "CpuMs": 330,
+          "WorkingSetBytes": 137003008
+        }
+      ],
+      "AmortizedCpuMsPerBotSecond": 8.593605879826486,
+      "BotCpuAttribution": "PerBotCpu measures each bot decision thread CPU; excludes shared receive/GC. Amortized CPU divides owned process CPU by bots and elapsed seconds, including process overhead.",
+      "WorkingSetBytes": 360669184,
+      "ManagedBytes": 15713640,
+      "AllocatedBytes": 18427912,
+      "GcCollections": [
+        1,
+        0,
+        0
+      ],
+      "GcPauseMs": 1.018,
+      "Shots": 0,
+      "Hits": 0,
+      "FrameCount": 0,
+      "FrameStateDigest": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Repetition": 2,
+      "Rendered": false,
+      "WallSeconds": 5.0452787,
+      "FpsAverage": null,
+      "FpsOnePercentLow": null,
+      "FrameMs": null,
+      "CpuMs": null,
+      "GpuMs": null,
+      "ServerTickMs": {
+        "Count": 102,
+        "Mean": 1.1092235294117645,
+        "P50": 1.0768,
+        "P95": 1.5539,
+        "P99": 1.8195,
+        "Worst": 2.3143000000000002
+      },
+      "BotCount": 9,
+      "PerBotCpu": [
+        {
+          "Name": "mcp-w1-b002-7713",
+          "DecisionCpuMs": 1.7253129999999999
+        },
+        {
+          "Name": "mcp-w1-b004-7354",
+          "DecisionCpuMs": 8.880605
+        },
+        {
+          "Name": "mcp-w1-b005-6964",
+          "DecisionCpuMs": 1.0598140000000003
+        },
+        {
+          "Name": "mcp-w1-b006-9422",
+          "DecisionCpuMs": 7.772466000000001
+        },
+        {
+          "Name": "mcp-w1-b007-5556",
+          "DecisionCpuMs": 0.5408690000000003
+        },
+        {
+          "Name": "mcp-w1-b008-9405",
+          "DecisionCpuMs": 4.826232000000001
+        },
+        {
+          "Name": "mcp-w1-b009-7502",
+          "DecisionCpuMs": 0.647025
+        },
+        {
+          "Name": "mcp-w1-b010-6871",
+          "DecisionCpuMs": 4.5488029999999995
+        },
+        {
+          "Name": "mcp-w1-b011-1513",
+          "DecisionCpuMs": 0.5329330000000001
+        }
+      ],
+      "WorkerCount": 1,
+      "Workers": [
+        {
+          "Pid": 541825,
+          "CpuMs": 70,
+          "WorkingSetBytes": 86855680
+        },
+        {
+          "Pid": 541840,
+          "CpuMs": 370,
+          "WorkingSetBytes": 136925184
+        }
+      ],
+      "AmortizedCpuMsPerBotSecond": 9.690027408969279,
+      "BotCpuAttribution": "PerBotCpu measures each bot decision thread CPU; excludes shared receive/GC. Amortized CPU divides owned process CPU by bots and elapsed seconds, including process overhead.",
+      "WorkingSetBytes": 373305344,
+      "ManagedBytes": 22758632,
+      "AllocatedBytes": 18592672,
+      "GcCollections": [
+        1,
+        0,
+        0
+      ],
+      "GcPauseMs": 0.789,
+      "Shots": 0,
+      "Hits": 0,
+      "FrameCount": 0,
+      "FrameStateDigest": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    },
+    {
+      "Repetition": 3,
+      "Rendered": false,
+      "WallSeconds": 5.0496302,
+      "FpsAverage": null,
+      "FpsOnePercentLow": null,
+      "FrameMs": null,
+      "CpuMs": null,
+      "GpuMs": null,
+      "ServerTickMs": {
+        "Count": 101,
+        "Mean": 1.1709198019801983,
+        "P50": 1.0443,
+        "P95": 2.0427,
+        "P99": 2.3233,
+        "Worst": 4.983300000000001
+      },
+      "BotCount": 9,
+      "PerBotCpu": [
+        {
+          "Name": "mcp-w1-b002-6923",
+          "DecisionCpuMs": 2.333069000000002
+        },
+        {
+          "Name": "mcp-w1-b004-8092",
+          "DecisionCpuMs": 10.682513999999998
+        },
+        {
+          "Name": "mcp-w1-b005-5541",
+          "DecisionCpuMs": 1.057022
+        },
+        {
+          "Name": "mcp-w1-b006-7909",
+          "DecisionCpuMs": 8.814468000000002
+        },
+        {
+          "Name": "mcp-w1-b007-8636",
+          "DecisionCpuMs": 0.7366519999999999
+        },
+        {
+          "Name": "mcp-w1-b008-4003",
+          "DecisionCpuMs": 5.4696169999999995
+        },
+        {
+          "Name": "mcp-w1-b009-1776",
+          "DecisionCpuMs": 0.8246880000000001
+        },
+        {
+          "Name": "mcp-w1-b010-4155",
+          "DecisionCpuMs": 5.117467999999999
+        },
+        {
+          "Name": "mcp-w1-b011-3890",
+          "DecisionCpuMs": 0.752294
+        }
+      ],
+      "WorkerCount": 1,
+      "Workers": [
+        {
+          "Pid": 541983,
+          "CpuMs": 60.000099999999975,
+          "WorkingSetBytes": 86740992
+        },
+        {
+          "Pid": 541998,
+          "CpuMs": 390,
+          "WorkingSetBytes": 139309056
+        }
+      ],
+      "AmortizedCpuMsPerBotSecond": 9.901717379445152,
+      "BotCpuAttribution": "PerBotCpu measures each bot decision thread CPU; excludes shared receive/GC. Amortized CPU divides owned process CPU by bots and elapsed seconds, including process overhead.",
+      "WorkingSetBytes": 385482752,
+      "ManagedBytes": 28146816,
+      "AllocatedBytes": 18407824,
+      "GcCollections": [
+        1,
+        1,
+        0
+      ],
+      "GcPauseMs": 3.817,
+      "Shots": 0,
+      "Hits": 0,
+      "FrameCount": 0,
+      "FrameStateDigest": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+    }
+  ],
+  "Median": {
+    "Repetition": 2,
+    "Rendered": false,
+    "WallSeconds": 5.0452787,
+    "FpsAverage": null,
+    "FpsOnePercentLow": null,
+    "FrameMs": null,
+    "CpuMs": null,
+    "GpuMs": null,
+    "ServerTickMs": {
+      "Count": 101,
+      "Mean": 1.1092235294117645,
+      "P50": 1.0443,
+      "P95": 1.5539,
+      "P99": 2.3233,
+      "Worst": 4.6691
+    },
+    "BotCount": 9,
+    "PerBotCpu": [
+      {
+        "Name": "mcp-w1-b002-7713",
+        "DecisionCpuMs": 1.7253129999999999
+      },
+      {
+        "Name": "mcp-w1-b004-7354",
+        "DecisionCpuMs": 8.880605
+      },
+      {
+        "Name": "mcp-w1-b005-6964",
+        "DecisionCpuMs": 1.0598140000000003
+      },
+      {
+        "Name": "mcp-w1-b006-9422",
+        "DecisionCpuMs": 7.772466000000001
+      },
+      {
+        "Name": "mcp-w1-b007-5556",
+        "DecisionCpuMs": 0.5408690000000003
+      },
+      {
+        "Name": "mcp-w1-b008-9405",
+        "DecisionCpuMs": 4.826232000000001
+      },
+      {
+        "Name": "mcp-w1-b009-7502",
+        "DecisionCpuMs": 0.647025
+      },
+      {
+        "Name": "mcp-w1-b010-6871",
+        "DecisionCpuMs": 4.5488029999999995
+      },
+      {
+        "Name": "mcp-w1-b011-1513",
+        "DecisionCpuMs": 0.5329330000000001
+      }
+    ],
+    "WorkerCount": 1,
+    "Workers": [
+      {
+        "Pid": 541825,
+        "CpuMs": 70,
+        "WorkingSetBytes": 86855680
+      },
+      {
+        "Pid": 541840,
+        "CpuMs": 370,
+        "WorkingSetBytes": 136925184
+      }
+    ],
+    "AmortizedCpuMsPerBotSecond": 9.690027408969279,
+    "BotCpuAttribution": "PerBotCpu measures each bot decision thread CPU; excludes shared receive/GC. Amortized CPU divides owned process CPU by bots and elapsed seconds, including process overhead.",
+    "WorkingSetBytes": 373305344,
+    "ManagedBytes": 22758632,
+    "AllocatedBytes": 18592672,
+    "GcCollections": [
+      1,
+      0,
+      0
+    ],
+    "GcPauseMs": 0.789,
+    "Shots": 0,
+    "Hits": 0,
+    "FrameCount": 0,
+    "FrameStateDigest": "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855"
+  },
+  "MedianRule": "Scalar timing/FPS metrics are medians of three runs; resource/identity snapshot comes from the middle run by frame p99, server p95, or processing wall time",
+  "Bottleneck": "Headless: graphics unmeasured",
+  "Recommendation": {
+    "BattleSize": 0,
+    "Difficulty": 1,
+    "ResearchSpeed": 1,
+    "Speed": 1,
+    "SpectatorDefault": true,
+    "Fsr": false,
+    "FsrPreset": 1,
+    "EffectsQuality": 1,
+    "Bloom": false,
+    "HdPbr": false,
+    "HdTextures": true,
+    "FrameCap": 60,
+    "Vsync": false,
+    "EffectsDensity": 1,
+    "ViewDistance": 6000,
+    "Reasons": [
+      {
+        "Setting": "Battle size",
+        "Value": "Small",
+        "Reason": "Measured server and bot budget; retain tested size"
+      },
+      {
+        "Setting": "Bot difficulty",
+        "Value": "Normal",
+        "Reason": "Normal preserves the tested combat policy"
+      },
+      {
+        "Setting": "Game speed",
+        "Value": "Fast",
+        "Reason": "Server tick p95 1.55 ms and bot budget have headroom; Fast paces income x8/research x4 for a ~20-30 min single-player match"
+      },
+      {
+        "Setting": "Spectator default",
+        "Value": "On",
+        "Reason": "Use the measured scripted spectator workload (SP-5 preference)"
+      },
+      {
+        "Setting": "Resolution / FSR",
+        "Value": "Native (100%)",
+        "Reason": "Measured CPU unavailable ms / GPU unavailable ms at 1280x720"
+      },
+      {
+        "Setting": "Bloom",
+        "Value": "Off",
+        "Reason": "Bloom requires measured GPU headroom and the frame target"
+      },
+      {
+        "Setting": "Effects quality",
+        "Value": "Medium",
+        "Reason": "Measured CPU unavailable ms / GPU unavailable ms at 1280x720"
+      },
+      {
+        "Setting": "HD PBR",
+        "Value": "Off",
+        "Reason": "Measured CPU unavailable ms / GPU unavailable ms at 1280x720"
+      },
+      {
+        "Setting": "Texture quality",
+        "Value": "HD",
+        "Reason": "Retain HD textures within measured budget"
+      },
+      {
+        "Setting": "Frame cap / vsync",
+        "Value": "60 / Off",
+        "Reason": "Target 60 FPS; avoid presentation wait hiding available headroom"
+      },
+      {
+        "Setting": "Effects density",
+        "Value": "1.0",
+        "Reason": "Measured CPU unavailable ms / GPU unavailable ms at 1280x720"
+      },
+      {
+        "Setting": "View distance",
+        "Value": "6000",
+        "Reason": "Retain tested 6000-unit view"
+      }
+    ]
+  },
+  "AutoTune": [],
+  "TargetStatus": "Headless: graphics target unverified; run rendered benchmark for auto-tune"
+}

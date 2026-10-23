@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.MonoGame.Diagnostics;
 using Allegiance.SinglePlayer;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -63,7 +64,12 @@ public sealed partial class Game1
 
     private void UpdateSkirmish(KeyboardState keys)
     {
-        if (!_observerAutoStarted && Environment.GetEnvironmentVariable("ALLEGIANCE_SP5_PROOF") is { Length: > 0 })
+        if (!_observerAutoStarted
+            && (Environment.GetEnvironmentVariable("ALLEGIANCE_SP5_PROOF") is { Length: > 0 }
+                // P789 — the recorder on/off A-B auto-starts an observer skirmish
+                // (size via ALLEGIANCE_SKIRMISH_SIZE) WITHOUT the SP-5 proof's
+                // self-exit, so the client stays up for a fixed measurement window.
+                || Environment.GetEnvironmentVariable("ALLEGIANCE_SKIRMISH_AUTO") is { Length: > 0 }))
         {
             _observerAutoStarted = true;
             _skirmishCancel = new();
@@ -71,6 +77,10 @@ public sealed partial class Game1
             var observerOptions = new SkirmishOptions { StartAsSpectator = true };
             if (Enum.TryParse<SkirmishSpeed>(Environment.GetEnvironmentVariable("ALLEGIANCE_SKIRMISH_SPEED"), ignoreCase: true, out var speed))
                 observerOptions = observerOptions with { Speed = speed };
+            // P789 — ALLEGIANCE_SKIRMISH_SIZE picks the battle size for the
+            // proof (e.g. Epic for the recorder on/off A-B measurement).
+            if (Enum.TryParse<SkirmishSize>(Environment.GetEnvironmentVariable("ALLEGIANCE_SKIRMISH_SIZE"), ignoreCase: true, out var proofSize))
+                observerOptions = observerOptions with { Size = proofSize };
             _skirmishStart = SkirmishHost.StartAsync(observerOptions, cancellationToken: _skirmishCancel.Token);
         }
         if (_skirmishStart is { IsCompleted: true } start)
@@ -82,6 +92,12 @@ public sealed partial class Game1
                 if (_skirmishCancel!.IsCancellationRequested) { StopSkirmish(); return; }
                 _skirmishSideRequested = false;
                 _humanCommanderSeat = (-1, -1);
+                // P789 — every skirmish records its performance; a Showcase-speed
+                // battle is a Showcase match, everything else a normal one. The
+                // benchmark flow starts its own recorder per measured run.
+                if (_benchmark is null)
+                    StartSessionRecording(_skirmish.Options.Speed == SkirmishSpeed.Showcase
+                        ? SessionMatchKind.Showcase : SessionMatchKind.Normal);
                 if (_benchmark is not null) _playerName = Allegiance.SinglePlayer.Benchmark.BenchmarkCommand.PilotName;
                 else if (_pilotBuf.Length > 0) _playerName = _pilotBuf.ToString();
                 var preferences = IntroPreferences.Load();
@@ -142,6 +158,9 @@ public sealed partial class Game1
 
     private void StopSkirmish()
     {
+        // P789 — leaving a Showcase (or any match) early still latches the
+        // recorder's summary once, off the frame path.
+        CaptureSessionPerformance();
         _skirmishCancel?.Cancel();
         _session.Dispose();
         _skirmish?.Dispose();

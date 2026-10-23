@@ -17,7 +17,7 @@ public sealed class SP5SpectatorTests
     {
         foreach (var size in Enum.GetValues<SkirmishSize>())
         {
-            Assert.Equal(size is SkirmishSize.Large or SkirmishSize.Epic, new SkirmishOptions { Size = size }.StartAsSpectator);
+            Assert.Equal(size is SkirmishSize.Large or SkirmishSize.Epic or SkirmishSize.Grand, new SkirmishOptions { Size = size }.StartAsSpectator);
             Assert.True(new SkirmishOptions { Size = size, StartAsSpectator = true }.StartAsSpectator);
             Assert.False(new SkirmishOptions { Size = size, StartAsSpectator = false }.StartAsSpectator);
             var options = new SkirmishOptions { Size = size };

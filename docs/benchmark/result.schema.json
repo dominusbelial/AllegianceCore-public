@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://allegiance.example/benchmark/schema-1.json",
-  "title": "Anonymous benchmark event, schema 1",
+  "$id": "https://allegiance.example/benchmark/schema-2.json",
+  "title": "Anonymous benchmark event, schema 1 or 2 (2 = P789 Showcase score fields)",
   "oneOf": [
     {
       "$ref": "#/definitions/result"
@@ -26,7 +26,10 @@
       ],
       "properties": {
         "schema": {
-          "const": 1
+          "enum": [
+            1,
+            2
+          ]
         },
         "eventId": {
           "type": "string",
@@ -195,7 +198,8 @@
                 "Small",
                 "Medium",
                 "Large",
-                "Epic"
+                "Epic",
+                "Grand"
               ]
             },
             "durationSeconds": {
@@ -213,6 +217,47 @@
                 "Within measured budget",
                 "Headless: graphics unmeasured"
               ]
+            },
+            "score": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 1000000000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "P789 schema 2 — the Showcase score (ships-in-view mean x smoothness x real-time x 10); null when the client could not measure it (headless)."
+            },
+            "matchKind": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "showcase-fixed",
+                    "showcase",
+                    "unranked",
+                    "replay"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "P789 schema 2 — only showcase-fixed (seed 729, Small, 150s) scores are ranked."
+            },
+            "scoreNote": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "P789 schema 2 — why a score is absent."
             },
             "runs": {
               "type": "array",
@@ -1132,7 +1177,10 @@
       ],
       "properties": {
         "schema": {
-          "const": 1
+          "enum": [
+            1,
+            2
+          ]
         },
         "eventId": {
           "type": "string",

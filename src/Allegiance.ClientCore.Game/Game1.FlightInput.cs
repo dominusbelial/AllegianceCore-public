@@ -252,6 +252,10 @@ public sealed partial class Game1
         using var frameUpdate = new Diagnostics.ClientFrameTelemetry.UpdateScope(_frameTelemetry);
         UpdateSkirmish(Keyboard.GetState());
         if (UpdateBenchmark(ref gameTime)) { base.Update(gameTime); return; }
+        // P789 — the always-on session recorder: one O(1), zero-allocation
+        // record per frame in every match (pilot and spectator). No locks, no
+        // I/O — see Game1.SessionPerformance.cs for the threading contract.
+        UpdateSessionPerformance();
         if (LocalSpectating)
         {
             UpdateLocalSpectator(gameTime, Keyboard.GetState());
@@ -265,8 +269,13 @@ public sealed partial class Game1
         _flightGc.SetFlying(_state == ClientState.Flying && !_dockedActive
             && !_graphicsSettingsVisible && !_keyBindVisible);
         // Also runs in dock/lobby/disconnect states, so the loop cannot linger.
+        // P789 — the throttled (≤10 Hz) ship-count sample rides this EXISTING
+        // per-frame lock; the recorder never takes _session.Gate itself.
         lock (_session.Gate)
+        {
             _sound?.UpdateShipWarnings(_session.World.ShipWarnings.Mask, _session.World.ShipWarnings.TakeRisingEdges());
+            SampleSessionPerformancePilotLocked(_session.World);
+        }
         _nowSeconds += gameTime.ElapsedGameTime.TotalSeconds;
         UpdateConsoleOverlay();   // HUD-10 — native overlay-mask change + pane slides
         // P618 — advance the sim-scaled game clock (wall × live server time
@@ -295,6 +304,10 @@ public sealed partial class Game1
             _missionCountdownSound.Reset();
             _gameOverCuePlayed = false;
             _ownReady = false;
+            // P789 — a rotated next match is a NEW match: mark the recorder
+            // restart so each match's numbers (and score) stay per-match. The
+            // restart itself waits until the game-over panel is gone.
+            if (_sessionRecording) _perfRestartPending = true;
         }
         // P660: the server holds flight through intermission and briefing.
         // Stay on the scoreboard during intermission, then show ReadyCheck's

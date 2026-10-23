@@ -2039,6 +2039,9 @@ public sealed partial class Game1
         if (_state is ClientState.Flying or ClientState.ReadyCheck
             && _session.World.GameOverResult is { } go)
         {
+            // P789 — latch the per-match performance summary once (game over,
+            // or leaving early via StopSkirmish/Back) before drawing the panel.
+            CaptureSessionPerformance();
             var info = Rendering.GameOverPanelInfo.From(go, _session.World.MySideId);
             // P752 — the two native result tables (side totals + players),
             // built from the live GAME_OVER(62) snapshot by the pure
@@ -2078,7 +2081,8 @@ public sealed partial class Game1
                     SideColors: sideColors);
             }
             _gameOverScreenRenderer.Draw(GraphicsDevice.Viewport, info, tables,
-                _session.World.IsIntermission ? _session.World.CountdownRemainingSeconds() : null);
+                _session.World.IsIntermission ? _session.World.CountdownRemainingSeconds() : null,
+                _perfPanelShown ? _perfPanel : null);
         }
 
         // P306 — end of frame: if this render was a capture frame, restore the

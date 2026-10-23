@@ -1,9 +1,18 @@
-# Anonymous benchmark events (schema 1)
+# Anonymous benchmark events (schema 1, P789 schema 2)
 
 The normative wire contract is [result.schema.json](result.schema.json), JSON Schema draft 7.
 It has two alternatives: benchmark results and a later settings follow-up. Every object rejects
 unknown properties. UTF-8 request bodies must be at most **32,768 bytes**, including whitespace.
 [example-result.json](example-result.json) is an actual source-generated client payload with synthetic hardware.
+
+P789 bumped the schema to **2**: result events may carry three optional fields — `score`
+(the Showcase score, `round(ships_in_view_mean × clamp(fps_1pct_low/60,0,1) ×
+clamp(tidi_time_weighted_mean/100,0,1) × 10)`), `matchKind` (`showcase-fixed` for the fixed
+seed-729/Small/150 s tune Showcase — the only RANKED score — `showcase`, `unranked` or `replay`)
+and `scoreNote` (why a score is absent, e.g. headless runs do not render). `schema: 1` events
+without these fields remain valid and accepted; `preset` also gained `Grand` (200v200). The
+collector's validator is generated from this same schema at build time, so both versions ingest
+unchanged. Consent rules are unchanged: nothing leaves the machine without the existing opt-in.
 
 Both events carry `schema: 1`, a random UUIDv4 `eventId` (idempotency key), the random UUIDv4
 `installId`, and an ISO-8601 UTC `timestamp`. Wire UUIDs use lowercase. Install ID is generated
@@ -14,7 +23,8 @@ a later opt-in creates a new ID. This ID is a deletion capability: keep it priva
 | --- | --- |
 | `hardware` | CPU model, physical cores, logical threads; GPU model, VRAM GiB, driver version; physical RAM GiB; OS family/kernel or OS version; benchmark display width/height in pixels |
 | `gameVersion`, `commit` | Build assembly version and source commit (`unknown` for builds without source metadata) |
-| `result.mode`, `preset`, `durationSeconds` | P729 workload: skirmish/replay and Small/Medium/Large/Epic |
+| `result.mode`, `preset`, `durationSeconds` | P729 workload: skirmish/replay and Small/Medium/Large/Epic/Grand |
+| `result.score`, `matchKind`, `scoreNote` | P789 schema 2 — the Showcase score and its ranking kind; optional, v1 events omit them |
 | `result.runs`, `median` | Three original runs and P729's selected/scalar-median measurement, with numbers copied without recalculation |
 | Run timing fields | `fpsAverage`, `fpsOnePercentLow`, `frameMs`, `cpuMs`, `gpuMs`, `serverTickMs`; distributions contain count, mean, p50, p95, p99, worst in milliseconds |
 | Bot fields | `botCount`, `botDecisionCpuMs` in original order, `amortizedCpuMsPerBotSecond`; bot names and worker PIDs are removed |

@@ -39,6 +39,11 @@ public sealed class IntroPreferences
     /// install (native's <c>false == HasTrained</c>).</summary>
     public bool ShowStartupTrainingSuggestion { get; set; } = true;
 
+    /// <summary>P789 — the user's game-over performance-panel toggle (the O key).
+    /// Null = never toggled → the default applies: shown for Showcase matches,
+    /// hidden for multiplayer/normal skirmish.</summary>
+    public bool? PerfPanelShown { get; set; }
+
     /// <summary>P757 — the in-flight chat pane's default channel filter (native
     /// Game Options "Chat/Mute/Filter" family, WinTrek.cpp:4568-4582): true =
     /// start the pane in the native player-chats-only mode (m_bPlayerChatsOnly,

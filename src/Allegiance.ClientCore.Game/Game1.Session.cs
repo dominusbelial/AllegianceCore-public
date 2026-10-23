@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using Allegiance.ClientCore.MonoGame.Diagnostics;
 using Allegiance.Core;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
@@ -982,6 +983,10 @@ public sealed partial class Game1
         // last-used memory both work regardless of entry path.
         _connectHost = host;
         _connectPort = port;
+        // P789 — remote matches record their performance too (no wire change:
+        // everything the recorder sees, the client already measures).
+        if (_skirmish is null && _benchmark is null && !_sessionRecording)
+            StartSessionRecording(SessionMatchKind.Normal);
         if (_skirmish is null && _connectStore is not null && !string.IsNullOrEmpty(host))
         {
             _lastUsedKey = $"{host}:{port}";

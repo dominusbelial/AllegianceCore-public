@@ -17,7 +17,7 @@ public sealed class SkirmishScreenModel
         {
             0 => Options with { PlayerCiv = Race(Options.PlayerCiv) },
             1 => Options with { EnemyCiv = Race(Options.EnemyCiv) },
-            2 => Options with { Size = (SkirmishSize)(((int)Options.Size + delta + 4) % 4) },
+            2 => Options with { Size = (SkirmishSize)(((int)Options.Size + delta + 5) % 5) },
             3 => Options with { TechMode = Options.TechMode == "research" ? "unlocked" : "research" },
             4 => Options with { Difficulty = (SkirmishDifficulty)(((int)Options.Difficulty + delta + 3) % 3) },
             5 => Options with { Commander = Options.Commander == SkirmishCommander.AI ? SkirmishCommander.You : SkirmishCommander.AI },

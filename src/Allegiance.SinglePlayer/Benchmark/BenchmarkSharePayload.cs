@@ -123,16 +123,21 @@ public sealed record ShareRun(int Repetition, bool Rendered, double WallSeconds,
 }
 public sealed record ShareTune(ShareSettings Settings, ShareRun Measurement, bool TargetMet);
 public sealed record ShareResult(string Mode, string Preset, double DurationSeconds, string Bottleneck,
-    ShareRun[] Runs, ShareRun Median, ShareSettings? SettingsUsed, ShareSettings SettingsSuggested, ShareTune[] AutoTune);
+    ShareRun[] Runs, ShareRun Median, ShareSettings? SettingsUsed, ShareSettings SettingsSuggested, ShareTune[] AutoTune,
+    // P789 — schema 2: the Showcase score and the match kind. Both optional so
+    // every v1 payload stays valid; the collector accepts 1 and 2.
+    int? Score = null, string? MatchKind = null, string? ScoreNote = null);
 public sealed record SharePayload(int Schema, Guid EventId, Guid? InstallId, DateTimeOffset Timestamp,
     string GameVersion, string Commit, ShareHardware Hardware, ShareResult Result)
 {
-    public static SharePayload From(BenchmarkResult r, ShareHardware hardware) => new(1, Guid.NewGuid(), null, r.Timestamp,
+    public const int CurrentSchema = 2;
+    public static SharePayload From(BenchmarkResult r, ShareHardware hardware) => new(CurrentSchema, Guid.NewGuid(), null, r.Timestamp,
         typeof(BenchmarkResult).Assembly.GetName().Version?.ToString() ?? "unknown",
         CommitFromInformationalVersion(typeof(BenchmarkResult).Assembly.GetCustomAttributesData()
             .FirstOrDefault(a => a.AttributeType == typeof(System.Reflection.AssemblyInformationalVersionAttribute))?.ConstructorArguments[0].Value?.ToString()),
         hardware, new(r.Mode, r.Preset, r.DurationSeconds, r.Bottleneck, r.Runs.Select(ShareRun.From).ToArray(), ShareRun.From(r.Median),
-            r.TestedSettings is null ? null : ShareSettings.From(r.TestedSettings), ShareSettings.From(r.Recommendation), r.AutoTune.Select(t => new ShareTune(ShareSettings.From(t.Settings), ShareRun.From(t.Measurement), t.TargetMet)).ToArray()));
+            r.TestedSettings is null ? null : ShareSettings.From(r.TestedSettings), ShareSettings.From(r.Recommendation), r.AutoTune.Select(t => new ShareTune(ShareSettings.From(t.Settings), ShareRun.From(t.Measurement), t.TargetMet)).ToArray(),
+            r.Score, r.MatchKind, r.ScoreNote));
     internal static string CommitFromInformationalVersion(string? version)
     {
         string? candidate = version?.Split('+').ElementAtOrDefault(1);

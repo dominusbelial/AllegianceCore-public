@@ -75,6 +75,9 @@ public sealed class P727SkirmishOptionsTests
         menu.Move(1); menu.Change(-1);
         Assert.Equal(2, menu.Options.EnemyCiv);
         menu.Move(1); menu.Change(-1);
+        // P789 — Grand joined the size cycle: two left steps from Small reach Epic.
+        Assert.Equal(SkirmishSize.Grand, menu.Options.Size);
+        menu.Change(-1);
         Assert.Equal(SkirmishSize.Epic, menu.Options.Size);
         menu.Move(1); menu.Change(1);
         Assert.Equal("unlocked", menu.Options.TechMode);

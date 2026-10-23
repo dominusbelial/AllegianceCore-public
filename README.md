@@ -29,9 +29,16 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
 - **Multiplayer**: lobby server discovery (sort/find), ready check and
   briefing, scoreboard and pilot info. After game over a scoreboard
   intermission runs, then the next match starts automatically.
-- **Benchmark**: an optional first-launch benchmark (skirmish sizes or a
-  recorded battle replay) suggests settings. Sharing results is opt-in and
-  anonymous.
+- **Multiplayer**: lobby server discovery (sort/find), ready check and
+  briefing, scoreboard and pilot info. After game over a scoreboard
+  intermission runs, then the next match starts automatically.
+- **Showcase**: the intro's Showcase entry launches big AI battles (Small
+  5v5 up to Grand 200v200 at Showcase pacing) plus the fixed-seed settings
+  tune (seed 729, 5v5, 150 s ×3) that suggests and applies graphics settings.
+  Every match ends with a performance panel beside the game-over tables —
+  fps/1 % low, frame-ms percentiles, time dilation, ships in view and the
+  one-number Showcase score (ranked only for the fixed tune) — with an
+  optional settings Apply. Sharing results is opt-in and anonymous.
 
 **Client**
 

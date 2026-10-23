@@ -58,6 +58,24 @@ test('schema validates source-generated client JSON and nullable headless metric
   for (const value of [Infinity, -1]) { event.result.median.gpuMs = value; assert.equal(validate(event), false); }
 });
 
+test('P789 schema 2 — Showcase score fields validate and schema 1 stays accepted', async () => {
+  // The checked-in example stays at schema 1 (no score fields) — proving v1 is still valid.
+  assert.equal(sample.schema, 1);
+  assert.equal(validate(sample), true, JSON.stringify(validate.errors));
+  const v2 = structuredClone(sample);
+  v2.schema = 2;
+  v2.result.score = 3720;
+  v2.result.matchKind = 'showcase-fixed';
+  v2.result.scoreNote = null;
+  assert.equal(validate(v2), true, JSON.stringify(validate.errors));
+  const unranked = structuredClone(v2); unranked.result.matchKind = 'unranked'; unranked.result.score = 512;
+  assert.equal(validate(unranked), true, JSON.stringify(validate.errors));
+  const bad = structuredClone(v2); bad.result.matchKind = 'bogus';
+  assert.equal(validate(bad), false);
+  const badScore = structuredClone(v2); badScore.result.score = -1;
+  assert.equal(validate(badScore), false);
+});
+
 test('real D1 ingestion is idempotent and the exact P729 metrics survive export', async () => {
   const { event, call, admin, db } = await setup();
   assert.equal((await call('/v1/results', 'POST', event)).status, 201);
@@ -72,13 +90,17 @@ test('real D1 ingestion is idempotent and the exact P729 metrics survive export'
 test('validation rejects unknown fields, invalid types, UUID aliases, kept mismatch and malformed JSON', async () => {
   const { event, call } = await setup();
   for (const mutate of [e => { e.machine = 'private'; }, e => { e.hardware.serial = 'private'; },
-    e => { e.result.median.player = 'private'; }, e => { e.schema = 2; }, e => { e.hardware.cpuThreads = '8'; },
+    e => { e.result.median.player = 'private'; }, e => { e.schema = 3; }, e => { e.hardware.cpuThreads = '8'; },
     e => { e.installId = e.installId.toUpperCase(); }, e => { e.result.settingsSuggested.battleSize = 999; }]) {
     const invalid = structuredClone(event); mutate(invalid);
     assert.equal((await call('/v1/results', 'POST', invalid)).status, 422);
   }
   assert.equal((await call('/v1/results', 'POST', '{broken')).status, 400);
   assert.equal((await call('/v1/results', 'POST', event, { 'Content-Type': 'text/plain' })).status, 400);
+  // P789 — a schema 2 event (score + match kind) ingests like v1.
+  const v2 = structuredClone(event); v2.schema = 2; v2.eventId = randomUUID();
+  v2.result.score = 3720; v2.result.matchKind = 'showcase-fixed'; v2.result.scoreNote = null;
+  assert.equal((await call('/v1/results', 'POST', v2)).status, 201);
   const badKept = { schema: 1, eventId: randomUUID(), installId: event.installId, resultId: event.eventId,
     timestamp: new Date().toISOString(), kept: true, changedSettings: ['bloom'] };
   assert.equal((await call('/v1/kept', 'POST', badKept)).status, 422);

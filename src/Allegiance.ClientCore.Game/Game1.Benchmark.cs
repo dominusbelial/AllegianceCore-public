@@ -4,6 +4,7 @@ using Allegiance.ClientCore.Session;
 using Allegiance.Core.Wire;
 using Allegiance.SinglePlayer;
 using Allegiance.SinglePlayer.Benchmark;
+using Allegiance.ClientCore.MonoGame.Diagnostics;
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -15,12 +16,22 @@ namespace Allegiance.ClientCore.MonoGame;
 public sealed partial class Game1
 {
     private int _benchMenuIndex;
-    private static readonly string[] BenchmarkMenuLabels = ["Skirmish Small (5v5)", "Skirmish Medium (15v15)", "Skirmish Large (30v30)", "Skirmish Epic (60v60)", "Replay recorded battle", "Skip / Back"];
+    // P789 — the intro's Benchmark item is now SHOWCASE: the entry point for a
+    // big AI battle (the size picker lands in the skirmish setup screen with
+    // Showcase speed pre-selected) plus the fixed-seed settings tune (the old
+    // benchmark, now ranked) and replay verification for CI/headless users.
+    private static readonly string[] BenchmarkMenuLabels =
+    [
+        "Watch a battle: Small (5v5)", "Medium (15v15)", "Large (30v30)", "Epic (60v60)", "Grand (200v200)",
+        "Settings tune (fixed, ranked)", "Replay recorded battle", "Skip / Back"
+    ];
+    private const int ShowcaseTuneRow = 5, ShowcaseReplayRow = 6;
     private void UpdateBenchmarkMenu(bool up, bool down, bool enter, bool esc)
     {
-        if (up && !_iUp) _benchMenuIndex = (_benchMenuIndex + 5) % 6;
-        if (down && !_iDown) _benchMenuIndex = (_benchMenuIndex + 1) % 6;
-        if ((esc && !_iEsc) || (enter && !_iEnter && _benchMenuIndex == 5))
+        int count = BenchmarkMenuLabels.Length;
+        if (up && !_iUp) _benchMenuIndex = (_benchMenuIndex + count - 1) % count;
+        if (down && !_iDown) _benchMenuIndex = (_benchMenuIndex + 1) % count;
+        if ((esc && !_iEsc) || (enter && !_iEnter && _benchMenuIndex == count - 1))
         {
             var prefs = BenchmarkPreferences.Load();
             (prefs with { OfferHandled = true }).Save();
@@ -29,17 +40,44 @@ public sealed partial class Game1
         if (enter && !_iEnter)
         {
             (BenchmarkPreferences.Load() with { OfferHandled = true }).Save();
-            BeginBenchmark(new(_benchMenuIndex == 4 ? "replay" : "skirmish", (SkirmishSize)Math.Min(3, _benchMenuIndex),
-                _benchMenuIndex == 4 ? BattleReplay.DefaultPath : null, 150,
-                Path.Combine(PlayerConfig.DirectoryPath, "benchmark-results.json"), false, null), true);
+            if (_introView == IntroView.BenchmarkOffer)
+            {
+                // P789 — the first-launch offer is "Run a short Showcase to tune
+                // settings?": Enter starts the FIXED seed-729 tune Showcase
+                // (the only ranked run) immediately, not the size picker.
+                BeginBenchmark(new("skirmish", SkirmishSize.Small, null, 150,
+                    Path.Combine(PlayerConfig.DirectoryPath, "benchmark-results.json"), false, null), true);
+            }
+            else if (_benchMenuIndex < ShowcaseTuneRow)
+            {
+                // A big AI Showcase battle at the picked size: pre-configure the
+                // skirmish setup screen (Showcase speed, spectator for the big
+                // sizes) and land there; Enter on Start launches the host.
+                var size = (SkirmishSize)_benchMenuIndex;
+                // Do not let UpdateSkirmishMenu's remembered-prefs apply overwrite
+                // the Showcase preselect when the setup screen was not visited yet.
+                _skirmishRememberedApplied = true;
+                _skirmishScreen.ApplyDefaults(new BenchmarkRecommendation
+                {
+                    BattleSize = size, Speed = SkirmishSpeed.Showcase,
+                    SpectatorDefault = size is SkirmishSize.Large or SkirmishSize.Epic or SkirmishSize.Grand
+                });
+                _introView = IntroView.SkirmishSetup;
+            }
+            else if (_benchMenuIndex == ShowcaseTuneRow)
+                BeginBenchmark(new("skirmish", SkirmishSize.Small, null, 150,
+                    Path.Combine(PlayerConfig.DirectoryPath, "benchmark-results.json"), false, null), true);
+            else
+                BeginBenchmark(new("replay", SkirmishSize.Small, BattleReplay.DefaultPath, 150,
+                    Path.Combine(PlayerConfig.DirectoryPath, "benchmark-results.json"), false, null), true);
         }
     }
     private void DrawBenchmarkMenu(float w, float h, Color title, Color dim, Color text)
     {
-        DrawIntroTitle(w, "Benchmark", _introView == IntroView.BenchmarkOffer ? "Find settings for this machine (optional)" : "Measure and auto-tune this machine", title, dim);
+        DrawIntroTitle(w, "Showcase", _introView == IntroView.BenchmarkOffer ? "Run a short Showcase to tune settings?" : "Big AI battles — and the one settings tune", title, dim);
         for (int i = 0; i < BenchmarkMenuLabels.Length; i++)
             _spriteBatch.DrawString(_hudSmall, (i == _benchMenuIndex ? "> " : "  ") + BenchmarkMenuLabels[i], new Vector2(w * .2f, 210 + i * 38), i == _benchMenuIndex ? Color.Yellow : Color.White);
-        _spriteBatch.DrawString(_hudSmall, "3 runs plus a short settings check. Skirmish: 150s/run; replay: clip length.\nArrows / Enter to select. Escape skips.", new Vector2(w * .12f, h - 78), dim);
+        _spriteBatch.DrawString(_hudSmall, "A Showcase is a big AI battle; every match shows its performance and score at game over.\nThe fixed tune (seed 729, 5v5, 150s ×3) is the only RANKED score. Arrows / Enter; Escape skips.", new Vector2(w * .12f, h - 78), dim);
     }
     private BenchmarkCommand? _benchmark;
     private BenchmarkResult? _benchResult;
@@ -188,6 +226,11 @@ public sealed partial class Game1
     private void StartBenchmarkMeasurement()
     {
         if (IsBriefingVisible(out _)) DismissBriefing();
+        // P789 — skirmish benchmarks are Showcases: the fixed tune run is the
+        // one ranked match. Replay verification records nothing (no client
+        // battle, no score — the score only uses measured client inputs).
+        if (_benchmark!.Mode == "skirmish")
+            StartSessionRecording(_benchmark.IsFixedShowcase ? SessionMatchKind.ShowcaseFixed : SessionMatchKind.Showcase);
         _benchMeasuring = true; _benchStart = Stopwatch.GetTimestamp();
         _benchFirstFrame = _frameTelemetry!.FrameId + 1;
         _benchReplayFrameStart = _benchReplay?.Frame ?? 0;
@@ -205,6 +248,10 @@ public sealed partial class Game1
         var keys = Keyboard.GetState();
         UpdateBenchmarkSharing();
         if (UpdateBenchmarkSharingPanel(keys)) return true;
+        // P789 — the session recorder covers exactly the measured benchmark
+        // window (started in StartBenchmarkMeasurement); same O(1) frame path
+        // as every match.
+        UpdateSessionPerformance();
         bool enter = keys.IsKeyDown(Keys.Enter), esc = keys.IsKeyDown(Keys.Escape);
         try
         {
@@ -244,6 +291,11 @@ public sealed partial class Game1
                 lock (_session.Gate)
                 {
                     var world = _session.World;
+                    // P789 — throttled ship-count sample rides this EXISTING
+                    // lock; the recorder never takes _session.Gate itself.
+                    if (_sessionRecording)
+                        SampleSessionPerformanceWorldLocked(world,
+                            _benchViewSector ?? (world.MyShipId is { } bid && world.Ships.TryGetValue(bid, out var bs) ? RenderSector(bs.SectorId) : (short)-1));
                     if (world.MyShipId is { } id && world.Ships.TryGetValue(id, out var ship))
                     {
                         bool send = Environment.TickCount64 >= _benchNextCommand;
@@ -318,6 +370,9 @@ public sealed partial class Game1
         };
         if (_skirmish is { } measuredHost && run.BotCount != measuredHost.Options.TeamSize * 2 - 1)
             throw new IOException("Benchmark fleet lost a bot; refusing to report a partial preset");
+        // P789 — latch the recorder BEFORE the session/host are disposed; the
+        // summary is pure computation and the save is handed off off-thread.
+        CaptureSessionPerformance();
         _session.Recording = null; _session.Dispose(); _benchRecording?.Dispose(); _benchRecording = null;
         _skirmish?.Dispose(); _skirmish = null; _benchReplay = null;
         if (_benchSuggestion is null)
@@ -354,7 +409,11 @@ public sealed partial class Game1
             },
             ReplaySha256 = _benchmark.Mode == "replay" ? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(_benchmark.ReplayFile!))) : null, Runs = _benchRuns.ToArray(), Median = selected,
             Bottleneck = BenchmarkPolicy.Bottleneck(selected), Recommendation = _benchSuggestion, AutoTune = _benchTune.ToArray(),
-            TargetStatus = met ? "Verified uncapped: 60 FPS 1% low and server tick p95 < 50 ms (when present)" : "Target unmet after one step down; lowest tested settings shown"
+            TargetStatus = met ? "Verified uncapped: 60 FPS 1% low and server tick p95 < 50 ms (when present)" : "Target unmet after one step down; lowest tested settings shown",
+            // P789 — the Showcase score from the recorded session (null when the
+            // match was never rendered/recorded); ranked only for the fixed tune.
+            Score = _sessionPerf is { ScoreMeasured: true } perf ? perf.Score : null,
+            MatchKind = _benchmark!.IsFixedShowcase ? "showcase-fixed" : "unranked"
         };
         result.Save(_benchmark.Output);
         RecordBenchmarkSharing(result);
@@ -457,7 +516,8 @@ public sealed partial class Game1
             string serverText = result.Mode == "replay" ? "Server / bots: not used (client-only replay)" :
                 $"Server mean/p95/worst {result.Median.ServerTickMs?.Mean:F2}/{result.Median.ServerTickMs?.P95:F2}/{result.Median.ServerTickMs?.Worst:F2} ms; workers {result.Median.WorkerCount}\n" +
                 $"Bot CPU {result.Median.AmortizedCpuMsPerBotSecond:F2} ms/bot/s (worker share); individual decision CPU in JSON";
-            string text = $"Benchmark results (median of 3) - {result.Bottleneck}\n" +
+            string text = $"Showcase results (median of 3) - {result.Bottleneck}\n" +
+                (result.Score is { } score ? $"Score {score} ({result.MatchKind}); {result.Median.BotCount + 1} ships in the measured battle\n" : "") +
                 $"FPS {result.Median.FpsAverage:F1} / 1% low {result.Median.FpsOnePercentLow:F1}; p50/p99 {result.Median.FrameMs?.P50:F2}/{result.Median.FrameMs?.P99:F2} ms\n" +
                 $"CPU/GPU {result.Median.CpuMs:F2}/{result.Median.GpuMs:F2} ms; {result.Renderer}\n" +
                 serverText + "\n" +

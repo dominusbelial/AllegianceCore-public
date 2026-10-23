@@ -145,7 +145,7 @@ public sealed class BenchmarkSharing : IDisposable
             if (next.Sessions >= 3 || _now() - next.Created >= TimeSpan.FromDays(7))
             {
                 string[] changed = settings.ChangedFrom(next.Suggested);
-                var payload = new KeptPayload(1, Guid.NewGuid(), next.InstallId, next.ResultId, _now(), changed.Length == 0, changed);
+                var payload = new KeptPayload(SharePayload.CurrentSchema, Guid.NewGuid(), next.InstallId, next.ResultId, _now(), changed.Length == 0, changed);
                 _state.Queue.Add(new("POST", _endpoint + "/v1/kept", JsonSerializer.Serialize(payload, ShareJson.Default.KeptPayload)));
             }
             else _state.FollowUps.Add(next);

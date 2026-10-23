@@ -42,7 +42,7 @@ public sealed class IntroScreenModel
     {
         "Single Player", "Play Online", "Play LAN / Find Server",
         "Direct Connect", "Options", "Credits", "Replay Intro", "Help",
-        "Exit", "Benchmark",
+        "Exit", "Showcase",
     };
 
     /// <summary>The currently highlighted main-menu index.</summary>

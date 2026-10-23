@@ -6,6 +6,11 @@ namespace Allegiance.SinglePlayer.Benchmark;
 public sealed record BenchmarkCommand(string Mode, SkirmishSize Size, string? ReplayFile, double Seconds, string Output, bool Headless, string? RecordFile, bool ExitWhenComplete = false)
 {
     public const string PilotName = "p729-benchmark";
+    /// <summary>P789 — the fixed Showcase is the one RANKED run: seed 729, the
+    /// fixed Small size and the fixed 150 s duration, identical everywhere.
+    /// The first-launch offer and the intro's tune entry both start exactly
+    /// this; any other size/duration scores unranked.</summary>
+    public bool IsFixedShowcase => Mode == "skirmish" && Size == SkirmishSize.Small && Seconds == 150;
     public static BenchmarkCommand? Parse(string[] args)
     {
         int index = Array.IndexOf(args, "--benchmark");
@@ -22,7 +27,10 @@ public sealed record BenchmarkCommand(string Mode, SkirmishSize Size, string? Re
         return new(replay ? "replay" : "skirmish", size, replay ? (value.Length > 7 ? value[7..] : BattleReplay.DefaultPath) : null,
             seconds, Get("--benchmark-output", "benchmark.json"), args.Contains("--benchmark-headless"), Get("--benchmark-record", "") is { Length: > 0 } file ? file : null, args.Contains("--benchmark-exit"));
     }
-    public SkirmishOptions Options => new() { Size = Size, Seed = 729, Speed = SkirmishSpeed.Normal, ResearchSpeed = 8, StartAsSpectator = false };
+    /// <summary>P789 — the skirmish benchmark is now the fixed Showcase: same
+    /// seed (729), Showcase pacing (×5000 income / ×8 research). Parse is
+    /// unchanged; only the workload's speed follows the Showcase rename.</summary>
+    public SkirmishOptions Options => new() { Size = Size, Seed = 729, Speed = Mode == "replay" ? SkirmishSpeed.Normal : SkirmishSpeed.Showcase, ResearchSpeed = 8, StartAsSpectator = false };
     public static async Task<int> RunHeadlessAsync(BenchmarkCommand command)
     {
         try
@@ -56,7 +64,12 @@ public sealed record BenchmarkCommand(string Mode, SkirmishSize Size, string? Re
             var result = new BenchmarkResult { Mode = command.Mode, Preset = command.Size.ToString(), DurationSeconds = command.Mode == "replay" ? new BattleReplay(command.ReplayFile!).DurationMicroseconds / 1_000_000d : command.Seconds,
                 ReplaySha256 = command.Mode == "replay" ? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(command.ReplayFile!))) : null, Runs = runs.ToArray(), Median = median,
                 Bottleneck = BenchmarkPolicy.Bottleneck(median), Recommendation = BenchmarkPolicy.Recommend(median, command.Size),
-                TargetStatus = "Headless: graphics target unverified; run rendered benchmark for auto-tune" };
+                TargetStatus = "Headless: graphics target unverified; run rendered benchmark for auto-tune",
+                // P789 — the score needs MEASURED client fps; headless runs do not
+                // render, so no score is fabricated. The rendered fixed Showcase
+                // (intro tune entry / first-launch offer) produces the score.
+                MatchKind = command.IsFixedShowcase ? "showcase-fixed" : "unranked",
+                ScoreNote = "headless: not rendered; the score only uses measured client fps and time dilation" };
             result.Save(command.Output);
             Console.WriteLine($"[benchmark] {command.Mode}: 3 runs; {result.Bottleneck}; {Path.GetFullPath(command.Output)}");
             return 0;

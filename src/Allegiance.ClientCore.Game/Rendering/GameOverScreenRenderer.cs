@@ -71,12 +71,22 @@ public sealed class GameOverScreenRenderer
     public IReadOnlyList<(GameOverTablesLayout.SideColumn Column, Rectangle Rect)> LastSideHeaderRects { get; private set; } = [];
     public IReadOnlyList<(GameOverTablesLayout.PlayerColumn Column, Rectangle Rect)> LastPlayerHeaderRects { get; private set; } = [];
 
+    /// <summary>P789 — the native Back button's rect from the most recent
+    /// <see cref="Draw"/>, exposed so the additive performance panel (and its
+    /// layout tests) can prove it never covers a native control.</summary>
+    public Rectangle LastBackButtonRect { get; private set; }
+
     /// <summary>Draw the game-over result panel for the current viewport: the
     /// winner/reason header plus the P752 side-totals and player-results
     /// tables from <paramref name="tables"/> (already sorted by
     /// <see cref="GameOverTablesLayout"/>; the active sort column is
-    /// underlined with its direction arrow).</summary>
-    public void Draw(Viewport viewport, GameOverPanelInfo info, Tables tables, int? nextMatchSeconds = null)
+    /// underlined with its direction arrow).
+    /// <para>P789 — <paramref name="perf"/> is the ADDITIVE, port-only
+    /// performance panel: placed strictly outside the native panel by
+    /// <see cref="GameOverPerfPanelLayout"/>; when no safe placement exists it
+    /// is not drawn at all, so native controls are never moved or covered.</para></summary>
+    public void Draw(Viewport viewport, GameOverPanelInfo info, Tables tables, int? nextMatchSeconds = null,
+        GameOverPerfPanel? perf = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -172,11 +182,71 @@ public sealed class GameOverScreenRenderer
             var hintSz = _small.MeasureString(backHint);
             DrawSmall(backHint, new Vector2(panelX + (panelW - hintSz.X) / 2f, btnY + btnH + 3f),
                 SubColor, 0.8f);
+            LastBackButtonRect = new Rectangle((int)btnX, (int)btnY, (int)btnW, (int)btnH);
+
+            // P789 — the additive performance panel, LAST, strictly outside the
+            // native panel and every native hit rect. Hidden (not drawn) when
+            // no safe placement exists — it never covers native controls.
+            if (perf is { } panel)
+            {
+                var nativeRect = new Rectangle((int)panelX, (int)panelY, (int)panelW, (int)panelH);
+                var protectedRects = new List<Rectangle>(LastSideHeaderRects.Count + LastPlayerHeaderRects.Count + 2)
+                {
+                    nativeRect, LastBackButtonRect
+                };
+                foreach (var (_, rect) in LastSideHeaderRects) protectedRects.Add(rect);
+                foreach (var (_, rect) in LastPlayerHeaderRects) protectedRects.Add(rect);
+                if (GameOverPerfPanelLayout.Compute(viewport.Width, viewport.Height, nativeRect, protectedRects)
+                    is { } perfRect)
+                    DrawPerfPanel(perfRect, panel);
+            }
         }
         finally
         {
             _sb.End();
         }
+    }
+
+    /// <summary>P789 — draw the additive performance panel inside its
+    /// pre-cleared rect (computed by <see cref="GameOverPerfPanelLayout"/>;
+    /// never overlaps a native control).</summary>
+    private void DrawPerfPanel(Rectangle rect, GameOverPerfPanel panel)
+    {
+        FillRect(rect.X, rect.Y, rect.Width, rect.Height, PanelBg);
+        OutlineRect(rect.X, rect.Y, rect.Width, rect.Height, PanelBorder, 1.5f);
+        FillRect(rect.X, rect.Y, rect.Width, 3f, TopAccent);
+        float x = rect.X + 10f;
+        float y = rect.Y + 8f;
+        float maxW = rect.Width - 20f;
+        void Line(string text, Color color, float scale = 1f)
+        {
+            // The HUD fonts' repertoire is limited (native tables scrub through
+            // ScoreboardLayout.AsciiSafe, gameoverscreen.cpp's ASCII panels) —
+            // scrub every line the same way before measuring.
+            text = ScoreboardLayout.AsciiSafe(text);
+            float natural = _small.MeasureString(text).X * scale;
+            float fit = natural > maxW ? maxW / natural : 1f;
+            DrawSmall(text, new Vector2(x, y), color, scale * fit);
+            y += _small.MeasureString("Mg").Y * scale * fit + 3f;
+        }
+        DrawSmall("PERFORMANCE", new Vector2(x, y), TopAccent, 1f);
+        y += _small.MeasureString("Mg").Y + 4f;
+        Line(panel.ScoreLine, WinnerColor);
+        Line($"FPS {panel.FpsAverage:F1}  low-1pct {panel.FpsOnePercentLow:F1}", ReasonColor);
+        Line($"frame ms p50/p95/p99 {panel.FrameP50Ms:F1}/{panel.FrameP95Ms:F1}/{panel.FrameP99Ms:F1}  worst {panel.FrameWorstMs:F0}", SubColor, 0.85f);
+        string cpuGpu;
+        if (panel.CpuMs is { } cpuMs)
+            cpuGpu = $"CPU {cpuMs:F1} ms  GPU {(panel.GpuMs?.ToString("F1") ?? "-")} ms";
+        else if (panel.GpuMs is { } gpuMs)
+            cpuGpu = $"CPU - ms  GPU {gpuMs:F1} ms";
+        else cpuGpu = "CPU/GPU timing unavailable";
+        Line(cpuGpu, SubColor, 0.85f);
+        Line($"time dilation min {panel.TidiMinPercent:F0} mean {panel.TidiMeanPercent:F0}", SubColor, 0.85f);
+        Line($"ships in view mean {panel.ShipsInViewMean:F0}  peak {panel.ShipsInViewPeak}", ReasonColor);
+        Line($"players {panel.TotalPlayersPeak}  length {TimeSpan.FromSeconds(panel.MatchSeconds):mm\\:ss}" +
+             (panel.ServerTickP95Ms is { } tick ? $"  tick p95 {tick:F1} ms" : ""), SubColor, 0.85f);
+        if (panel.Bottleneck.Length > 0) Line(panel.Bottleneck, WinnerColor);
+        if (panel.SuggestionAvailable) Line("A: apply suggested settings", SubColor, 0.85f);
     }
 
     private static readonly string[] SideHeaders =

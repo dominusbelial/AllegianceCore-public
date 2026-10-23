@@ -426,6 +426,12 @@ from the historical README (preserved in full in `docs/DESIGN_NOTES.md`).
   mining, autonomous NPCs (auto-launch, initial miners, plantarget cycles),
   warps, payday, territory/capture, kill-ship scoring.
 - Dedicated server + MonoGame client (DesktopGL + Android), lobby, bots, MCP.
+- Showcase + session performance recorder (P789): every match records fps,
+  frame-ms percentiles, time dilation and ships in view at O(1)/zero-alloc
+  per frame; the game-over screen shows an additive performance panel with
+  the Showcase score (`ships × clamp(fps 1% low/60) × clamp(tidi/100) × 10`,
+  ranked only for the fixed seed-729 tune Showcase); `--benchmark` keeps the
+  headless/CI path. See `docs/reports/P789_SHOWCASE_BENCHMARK_MERGE.md`.
 - Chat — everyone/team/individual/all-sector/friendly-sector/leaders/wing.
 
 **Intentionally not implemented (documented, not missing):**

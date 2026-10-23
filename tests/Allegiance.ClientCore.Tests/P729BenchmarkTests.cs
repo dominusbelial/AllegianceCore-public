@@ -20,7 +20,8 @@ public sealed class P729BenchmarkTests
         Assert.Equal(new[] { 25, 3 }, command.Options.CreateConfig().Games[0].CivIds);
         Assert.Equal("m2xspiderw.igc", command.Options.Map);
         Assert.Equal("C:/battle.alr", BenchmarkCommand.Parse(["--benchmark", "replay:C:/battle.alr"])!.ReplayFile);
-        Assert.Throws<ArgumentException>(() => BenchmarkCommand.Parse(["--benchmark", "skirmish:4"]));
+        // P789 — skirmish:4 is now the Grand size (200v200); 5 is out of range.
+        Assert.Throws<ArgumentException>(() => BenchmarkCommand.Parse(["--benchmark", "skirmish:5"]));
         Assert.Throws<ArgumentException>(() => BenchmarkCommand.Parse(["--benchmark", "bogus"]));
         Assert.Throws<ArgumentException>(() => BenchmarkCommand.Parse(["--benchmark", "replay", "--benchmark-seconds", "NaN"]));
         Assert.Null(BenchmarkCommand.Parse([]));

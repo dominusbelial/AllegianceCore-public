@@ -2,7 +2,7 @@ using Allegiance.Server;
 
 namespace Allegiance.SinglePlayer;
 
-public enum SkirmishSize { Small, Medium, Large, Epic }
+public enum SkirmishSize { Small, Medium, Large, Epic, Grand }
 public enum SkirmishCommander { AI, You }
 public enum SkirmishDifficulty { Easy, Normal, Hard }
 
@@ -30,14 +30,23 @@ public sealed record SkirmishOptions
     public string TechMode { get; init; } = "research";
     public string Map { get; init; } = "m2xspiderw.igc";
     private bool? _startAsSpectator;
-    public bool StartAsSpectator { get => _startAsSpectator ?? Size is SkirmishSize.Large or SkirmishSize.Epic; init => _startAsSpectator = value; }
+    public bool StartAsSpectator { get => _startAsSpectator ?? Size is SkirmishSize.Large or SkirmishSize.Epic or SkirmishSize.Grand; init => _startAsSpectator = value; }
     public int TeamSize => Size switch
     {
         SkirmishSize.Small => 5, SkirmishSize.Medium => 15, SkirmishSize.Large => 30,
-        SkirmishSize.Epic => 60, _ => throw new ArgumentOutOfRangeException(nameof(Size))
+        SkirmishSize.Epic => 60,
+        // P789 — the largest size the local host's own limits already support:
+        // transport MaxConnections floors at 1024 (2×200 + commanders + workers
+        // fit easily) and MaxPlayersPerTeam is TeamSize + 10. No bot or server
+        // behaviour changes — Grand is just the rig's 200v200 preset exposed.
+        SkirmishSize.Grand => 200, _ => throw new ArgumentOutOfRangeException(nameof(Size))
     };
-    public string Warning => Size == SkirmishSize.Epic
-        ? "Epic runs 120 pilots on this machine. Expect higher CPU use and automatic slow motion." : "";
+    public string Warning => Size switch
+    {
+        SkirmishSize.Epic => "Epic runs 120 pilots on this machine. Expect higher CPU use and automatic slow motion.",
+        SkirmishSize.Grand => "Grand runs 400 pilots — the rig's 200v200 Showcase preset. Expect heavy CPU use and automatic slow motion.",
+        _ => ""
+    };
     public (float Accuracy, double Reaction, float Aggression) Knobs => Difficulty switch
     {
         SkirmishDifficulty.Easy => (.55f, .4, .75f),

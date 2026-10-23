@@ -1184,6 +1184,8 @@ public sealed partial class Game1
         {
             case State.GameOverBackAction.LeaveMission:
                 Console.WriteLine("[monogame] game-over Back: stage Over -> leave mission (LOG OFF)");
+                // P789 — leaving at game over latches the recorder summary.
+                CaptureSessionPerformance();
                 _session.SendLogoff();
                 _state = ClientState.Lobby;
                 break;
