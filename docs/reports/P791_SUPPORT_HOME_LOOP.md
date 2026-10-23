@@ -132,15 +132,15 @@ State: new `ActiveBot` fields (`SupportHoldTarget/Since/Last/ImproveAt`, `Suppor
 
 ### 6.1 Builds
 
-(to be filled by the verification run)
+Claude review 2026-10-23 (the delegate timed out at 5 h before filling §6): `tools/allegiance-mcp` Release build 0 warnings / 0 errors.
 
 ### 6.2 Live results
 
-(to be filled by the verification run)
+Claude review 2026-10-23: `SC2SupportPhaseLiveTests.Support_pilots_follow_the_side_phase_instead_of_parking_at_home` **passed** (15 m 3 s). Final `[support-summary]` lines: side 0 `phase=strike battle=3 home=0 repairsStarted=18 repairsCompleted=9 meanRepairSeconds=2.4`; side 1 `phase=opening battle=3 home=0 repairsStarted=7 repairsCompleted=2`. Base (unfixed) run: 0 / 604 samples in the battle sector.
 
 ### 6.3 Fast tier
 
-(to be filled by the verification run)
+Run by Claude on master after the merge (fast tier, see the merge gate). Unit tests `SC2NaniteSupportTests` + `BotFixRegressionTests`: 144/144, 3× alone.
 
 ## 7. Unfinished / next tasks
 
