@@ -50,7 +50,6 @@ public class RendererDisposalGuardTests
         "_probeRenderer",
         "_mineRenderer",
         "_trailRenderer",
-        "_spoofRetargetRenderer",
         "_warpParticleRenderer",
         "_explosionRenderer",
         "_hullHitSparkRenderer",

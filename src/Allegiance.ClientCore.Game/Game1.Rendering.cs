@@ -1226,7 +1226,6 @@ public sealed partial class Game1
                 // by finite difference of the successive samples.
                 _drawMissiles.Clear();
                 _drawTrailMissiles.Clear();
-                _spoofRetargetRenderer.Begin();   // P638 — spoofed-missile retarget traces
                 lock (_session.Gate)
                 {
                     long mNow = ClientNowMilliseconds;
@@ -1246,17 +1245,6 @@ public sealed partial class Game1
                             _drawMissiles.Add((ms.TypeId, ms.Position, mo, PickMissileModel(ms.TypeId)));
                             _drawTrailMissiles.Add(new TrailMissile(
                                 ms.MissileId, ms.Position, ms.Forward, _trailNowSec));
-                            // P638 — a MISSILE_SPOOFED retargeted this missile onto a
-                            // chaff decoy: draw the retarget trace from the missile to
-                            // the decoy's stored position (native pmissile->SetTarget(
-                            // m_pchaffLastCreated), appmsg.cpp:1667-1681).
-                            if (ms.SpoofTargetPosition is { } spoofPos)
-                                _spoofRetargetRenderer.AddLine(
-                                    PoseConverter.ToXna(ms.Position) - cameraEye,
-                                    PoseConverter.ToXna(spoofPos) - cameraEye,
-                                    Microsoft.Xna.Framework.Color.Lerp(
-                                        Microsoft.Xna.Framework.Color.OrangeRed,
-                                        Microsoft.Xna.Framework.Color.Transparent, 0.25f));
                         }
                     }
                 }
@@ -1297,9 +1285,6 @@ public sealed partial class Game1
                     }
                 }
 
-                // P638 — drain the spoofed-missile retarget traces gathered above
-                // (drawn after the missile models so the amber line sits on top).
-                _spoofRetargetRenderer.Draw(view, proj);
 
                 // P290 — probes. Like missiles, ClientWorld.Probes is keyed by
                 // ProbeId from the deploy EXPORT(26)/OT_probe regardless of
