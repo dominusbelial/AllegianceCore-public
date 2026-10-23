@@ -209,6 +209,18 @@ public class P557ShowcaseFleetTests
     // ── Wingman behaviour decisions ───────────────────────────────────────
 
     [Fact]
+    public void Short_lived_mines_are_not_pre_laid_at_an_empty_home_aleph()
+    {
+        // Real PCore001 lifespans: Mine Pack 2 = 5 s, Prox Mine 2 = 18 s, Caltrop = 600 s.
+        var core = Core;
+        Assert.False(Showcase.PreLayMineAtAleph(true, true, core.MineTypes[13].Lifespan));
+        Assert.False(Showcase.PreLayMineAtAleph(true, true, core.MineTypes[9].Lifespan));
+        Assert.True(Showcase.PreLayMineAtAleph(true, true, core.MineTypes[1].Lifespan));
+        Assert.False(Showcase.PreLayMineAtAleph(false, true, core.MineTypes[1].Lifespan));
+        Assert.False(Showcase.PreLayMineAtAleph(true, false, core.MineTypes[1].Lifespan));
+    }
+
+    [Fact]
     public void EnemyWithinMineRange_Uses_Native_2500u()
     {
         Assert.True(Showcase.EnemyWithinMineRange(2499f));

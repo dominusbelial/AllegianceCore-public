@@ -96,7 +96,7 @@ internal sealed partial class BotManager
                     && !s.IsNotVisible && s.SectorId == sector && s.Latest is { } target
                     && CombatTargetSelector.ClassifyTargetId(s.HullId) != BotTargetClass.MinerDrone
                     && Showcase.EnemyWithinMineRange((target.Position - position).Length()));
-                bool defendedAleph = home && nearAleph;
+                bool defendedAleph = Showcase.PreLayMineAtAleph(home, nearAleph, mine.Lifespan);
                 float spacing = Math.Max(100, mine.MineRadius * 2);
                 bool covered = world.Mines.Values.Any(m => m.SideId == bot.Side && m.ClusterId == sector
                     && (m.Position - position).LengthSquared() < spacing * spacing);

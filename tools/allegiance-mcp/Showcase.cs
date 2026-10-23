@@ -268,6 +268,18 @@ internal static class Showcase
     /// enemy is present. Pure so the 2500 u rule is provable.</summary>
     public static bool EnemyWithinMineRange(float distance) => distance < WingmanMineRange;
 
+    /// <summary>Shortest mine lifespan (seconds) worth laying at an own-station
+    /// aleph with no enemy in range. Pre-laying is bot policy (native wingmen only
+    /// mine an enemy within 2500 u, shipIGC.cpp:2651-2665). PCore001 mine packs
+    /// live 5 s and prox mines 15-21 s, so pre-laid ones expire before anyone
+    /// arrives. Only long-lived fields qualify, such as the 600 s Caltrop.</summary>
+    public const float PreLaidMineMinLifespan = 60f;
+
+    /// <summary>Whether a bot lays a mine at an own-station aleph with no
+    /// enemy within range: only mines that outlive the wait.</summary>
+    public static bool PreLayMineAtAleph(bool homeSector, bool nearAleph, float mineLifespan)
+        => homeSector && nearAleph && mineLifespan >= PreLaidMineMinLifespan;
+
     /// <summary>Native missile fire gate (shipIGC.cpp:2584-2596): with the
     /// UseMissiles flag and a mounted magazine whose lock is full
     /// (<c>&gt;= 1.0f</c>), fire when the target's evasion speed is below the
