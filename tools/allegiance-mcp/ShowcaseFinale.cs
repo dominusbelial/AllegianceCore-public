@@ -102,4 +102,96 @@ internal static class ShowcaseFinale
             .ThenBy(e => e.Id).Select(e => (short?)e.Id).FirstOrDefault();
     }
     private static float Dot(Vector3 a, Vector3 b) => a.X * b.X + a.Y * b.Y + a.Z * b.Z;
+
+    // ── P778a — finale bomber push ────────────────────────────────────────────
+    // Real Allegiance escorts "push the bomb": they nose into the back of their
+    // own slow bomber to shove it toward the enemy station faster. The physics
+    // is native and already ported (Sector.ResolveShipShipCollision,
+    // shipIGC.cpp:1023-1202): a stern contact transfers momentum along the
+    // contact normal mass-weighted, and FRIENDLY rams DO damage (native exempts
+    // only friendly lifepod bumps, shipIGC.cpp:1166-1168) — so the closing speed
+    // is picked small (PushClosingSpeed) and nanite scouts pay the hull back.
+
+    /// <summary>How many escorts push one bomber (the stable pick takes the
+    /// lowest ship ids among in-sector escorts while the bomber is not under
+    /// fire; threat response keeps priority via EscortTarget).</summary>
+    internal const int MaxBomberPushers = 2;
+
+    /// <summary>Extra clearance beyond the two hull radii for the contact shell.
+    /// The P778a cut used 4 u ("just outside the bounce shell so the approach
+    /// never walls up"), but the staged live run measured the pusher walling up
+    /// 12 u from the contact point with NO collision events for seconds — it rode
+    /// the separate pass and delivered no impulse. Aiming AT the hull contact
+    /// distance (0 margin) makes the pusher keep ramming, which is what native
+    /// pushing is (a series of gentle contacts).</summary>
+    internal const float PusherMargin = 0f;
+
+    /// <summary>Stern-contact closing speed in u/s. At the real PCore001 finale
+    /// hull masses this keeps one contact's damage to the bomber well under two
+    /// hull hit points (derivation in docs/reports/P778A_BOMBER_PUSH.md and
+    /// <see cref="PushContactDamage"/>).</summary>
+    internal const float PushClosingSpeed = 8f;
+
+    /// <summary>Cap on the CHASE closing speed while astern but still far from
+    /// the contact shell. The staged live run (docs/reports/P778A_BOMBER_PUSH.md)
+    /// measured 13-15 u/s impacts with the old 90 u/s cap: the pusher arrived
+    /// hot, the contact normal was off the target line, and the bomber LOST
+    /// 80→50 u/s at each hit instead of gaining. Tapering to
+    /// <see cref="PushClosingSpeed"/> by the shell keeps every contact a stern
+    /// nudge.</summary>
+    internal const float PushChaseSpeed = 20f;
+
+    /// <summary>Stable pusher pick: <paramref name="self"/> pushes iff the bomber
+    /// has no attacker inside the threat window (threat response keeps priority)
+    /// and its ship id is among the <see cref="MaxBomberPushers"/> LOWEST ids of
+    /// the in-sector escorts — deterministic, so every escort computes the same
+    /// pair without coordinating.</summary>
+    internal static bool IsBomberPusher(IReadOnlyList<short> inSectorEscortIds, bool bomberThreatened, short self)
+        => !bomberThreatened && inSectorEscortIds.Order().Take(MaxBomberPushers).Contains(self);
+
+    /// <summary>The geometry of one stern push: a point just behind the bomber on
+    /// the bomber→target line (sum of the two hull radii + a small margin) and
+    /// the line direction, so closing along it keeps the contact normal pointed
+    /// at the target and the momentum transfer pushes the bomber TOWARD it.</summary>
+    internal readonly record struct BomberPushPlan(Vector3 ContactPoint, Vector3 Direction,
+        float ContactDistance, float ClosingSpeed);
+
+    /// <summary>Plan the push, or null when this escort must not push: the
+    /// target line is degenerate, a radius is unknown, or the escort is NOT
+    /// behind the bomber (at/inside the contact shell toward the target — an
+    /// escort there can only nose backwards, which is not the tactic; it resumes
+    /// its ordinary escort behaviour and can push once it drops astern).</summary>
+    internal static BomberPushPlan? BomberPush(Vector3 escort, Vector3 bomber, Vector3 target,
+        float bomberRadius, float pusherRadius, float closingSpeed = PushClosingSpeed, float margin = PusherMargin)
+    {
+        var toTarget = target - bomber;
+        float distance = toTarget.Length();
+        if (distance <= 1e-3f || bomberRadius <= 0f || pusherRadius <= 0f) return null;
+        var direction = toTarget / distance;
+        float contact = bomberRadius + pusherRadius + margin;
+        if ((escort - bomber) * direction > contact) return null;   // not astern of the contact shell
+        return new(bomber - direction * contact, direction, contact, closingSpeed);
+    }
+
+    /// <summary>Native two-body collision damage for one stern push contact at
+    /// <paramref name="closingSpeed"/> (shipIGC.cpp:1093-1186), derived exactly
+    /// like Sector.ResolveShipShipCollision: the velocity change of a body is
+    /// <c>(1+cElasticity)·s·m_other/(m1+m2)</c> with cElasticity = 0.75 along the
+    /// contact normal, <c>base = |Δv|²/128</c>, <c>damage ahead = 2·base_ahead +
+    /// base_pusher</c> and <c>damage pusher = base_ahead + 2·base_pusher</c>,
+    /// each then split through the native <c>hp·d/(hp+d)</c> share with the
+    /// counterpart's hit-point pool. Returns (damage to bomber, damage to
+    /// pusher) as hit-point amounts.</summary>
+    internal static (float Bomber, float Pusher) PushContactDamage(float bomberMass, float pusherMass,
+        float closingSpeed, float pusherHpPool, float bomberHpPool)
+    {
+        float dvBomber = 1.75f * closingSpeed * pusherMass / (bomberMass + pusherMass);
+        float dvPusher = 1.75f * closingSpeed * bomberMass / (bomberMass + pusherMass);
+        float baseBomber = dvBomber * dvBomber * (1f / 128f);
+        float basePusher = dvPusher * dvPusher * (1f / 128f);
+        float dBomber = 2f * baseBomber + basePusher;   // shipIGC.cpp:1141-1145 (ahead ship = ship1)
+        float dPusher = baseBomber + 2f * basePusher;
+        return (pusherHpPool * dBomber / (pusherHpPool + dBomber),      // shipIGC.cpp:1172-1176
+                bomberHpPool * dPusher / (bomberHpPool + dPusher));     // shipIGC.cpp:1181-1185
+    }
 }

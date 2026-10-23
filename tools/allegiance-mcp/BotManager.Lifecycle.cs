@@ -96,6 +96,15 @@ internal sealed partial class BotManager
         bot.RecentAttackers.Clear();
         bot.RecentAssetAttackers.Clear();
         bot.RecentStationAttackers.Clear();
+        // P778a — push telemetry is per-life state.
+        bot.PushPrevAt = double.NegativeInfinity;
+        bot.PushPrevClosing = bot.PushPrevBomberAlong = 0;
+        bot.PushPrevOwnHull = bot.PushPrevBomberHull = 1f;
+        bot.PushLastContactAt = null;
+        bot.PushLastHoldAt = bot.PushLastSeekAt = double.NegativeInfinity;
+        bot.PushHoldCount = 0;
+        bot.PushLastHoldReason = null;
+        bot.PushContacts = 0;
         EndDefense(bot);
         bot.LastAttackersPruneAt = bot.LastTargetAt = bot.LastFireAt = bot.LastMineAt = double.NegativeInfinity;
         bot.LastChaffAt = bot.LastProbeAt = bot.LastRescueProbeAt = double.NegativeInfinity;

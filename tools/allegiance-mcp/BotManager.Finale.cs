@@ -1,6 +1,9 @@
+using Allegiance.ClientCore.Session;
+using Allegiance.ClientCore.State;
 using Allegiance.Core;
 using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.Tools.McpSpawner;
@@ -29,6 +32,10 @@ internal sealed partial class BotManager
         internal bool Rotated, NextRunCreated;
         internal long CohesionSamples, Protected, BombersKilled;
         internal double CohesionDistance;
+        // P778a — bomber push telemetry, aggregated across the wing for the
+        // per-strike summary (contacts and measured hull damage to both parties).
+        internal long PushContacts;
+        internal double PushTotalDamage;
     }
 
     private sealed class FinalePlan(short targetId, short targetSide, short sector,
@@ -39,6 +46,11 @@ internal sealed partial class BotManager
         internal ShowcaseFinale.StrikeLoadout? Loadout = loadout;
         internal double? KilledAt;
         internal int BomberBudget, EscortBudget;
+        // P778a — first time a live strike bomber of this side is inside its own
+        // launch range of the target (the push goal), and whether the strike
+        // summary has been logged (launch-range reach or bomber death, one each).
+        internal double? LaunchRangeAt;
+        internal bool SummaryLogged;
     }
 
     private sealed record FinaleOriginal(short Hull, string Name, IReadOnlyList<ExpandedPartData>? Parts,
@@ -292,6 +304,28 @@ internal sealed partial class BotManager
                 if (bot.FinaleEscort && TryEscortAnchor(bot, out var center, out var anchorSector)
                     && anchorSector == CsSector(cs) && TryCsPose(cs, bot.ShipId, out var pos, out _))
                 { run.CohesionDistance += (center - pos).Length(); run.CohesionSamples++; }
+                // P778a — the push goal: the first live strike bomber inside its
+                // own launch range of the target logs the per-strike summary once.
+                if (bot.FinaleBomberActive && !bot.IsPod && run.TriggeredAt is not null
+                    && run.StrikeStartedAt is { } strike
+                    && run.Plans.TryGetValue(bot.Side, out var summaryPlan) && !summaryPlan.SummaryLogged)
+                {
+                    bool reached = false;
+                    lock (cs.Gate)
+                        if (cs.World.Ships.TryGetValue(bot.ShipId, out var me) && !me.IsDead && me.StationId < 0
+                            && me.SectorId == summaryPlan.Sector && me.Latest is { } mePose
+                            && cs.World.Stations.TryGetValue(summaryPlan.TargetId, out var st)
+                            && st.Position is { Length: 3 } tp
+                            && FinaleLaunchRange(bot) is > 0 and var range
+                            && (new Vector3(tp[0], tp[1], tp[2]) - mePose.Position).Length() <= range)
+                        { summaryPlan.LaunchRangeAt ??= now; reached = true; }
+                    if (reached)
+                    {
+                        summaryPlan.SummaryLogged = true;
+                        Console.WriteLine($"[push] strike side={bot.Side} contacts={run.PushContacts} "
+                            + $"pushDamage={run.PushTotalDamage:F1} timeToLaunchRange={now - strike:F1}s bomberSurvived=true");
+                    }
+                }
             }
             if (run.TriggeredAt is not null || run.GameOverAt is not null) continue;
             var sides = ShowcaseFinale.TriggerSides(run.Settings, now - run.Created, run.Maturity, run.Kills.Count);
@@ -442,17 +476,34 @@ internal sealed partial class BotManager
     private static bool TryEscortAnchor(ActiveBot bot, out Vector3 anchor, out short sector)
     {
         anchor = default; sector = -1;
+        return TryEscortAnchor(bot, out anchor, out sector, out _);
+    }
+
+    private static bool TryEscortAnchor(ActiveBot bot, out Vector3 anchor, out short sector,
+        out ShipEntity? leaderShip)
+    {
+        anchor = default; sector = -1; leaderShip = null;
         if (bot.Finale is not { } run || bot.Cs is not { } cs) return false;
+        // P778a — "assigned to that bomber": the wing's job is THE strike bomber
+        // en route to the target, so a live bomber already in the plan's target
+        // sector outranks a nearer one still at home (P745's nearest-live pick).
+        // A bomber in another sector is out of POSE view (IsGone) but its
+        // strategic SHIP_STATUS sector still reaches the escort's own world, so
+        // it stays an anchor candidate: the escort transits to it and re-acquires
+        // the pose on arrival. Only a DEAD bomber stops being a leader.
+        short planSector = run.Plans.TryGetValue(bot.Side, out var plan) ? plan.Sector : (short)-1;
         lock (cs.Gate)
         {
             if (!cs.World.Ships.TryGetValue(bot.ShipId, out var own) || own.Latest is not { } pose) return false;
             var candidates = run.Bots.Where(b => b.Side == bot.Side && b.FinaleBomberActive && !b.IsPod)
                 .Select(b => cs.World.Ships.TryGetValue(b.ShipId, out var ship) ? ship : null)
-                .Where(s => s is { IsDead: false, IsGone: false, IsNotVisible: false, Latest: not null })
-                .OrderBy(s => s!.SectorId == own.SectorId ? 0 : 1)
+                .Where(s => s is { IsDead: false, Latest: not null })
+                .OrderBy(s => s!.SectorId == planSector ? 0 : 1)
+                .ThenBy(s => s!.SectorId == own.SectorId ? 0 : 1)
                 .ThenBy(s => (s!.Latest!.Position - pose.Position).LengthSquared()).ThenBy(s => s!.ShipId).FirstOrDefault();
             if (candidates?.Latest is not { } leader) return false;
             anchor = leader.Position; sector = candidates.SectorId;
+            leaderShip = candidates;
             return true;
         }
     }
@@ -471,7 +522,28 @@ internal sealed partial class BotManager
             return true;
         }
         bot.ExitClearFrom = null;
-        if (!TryEscortAnchor(bot, out var anchor, out short sector))
+        short ownSector = CsSector(cs);
+        // P778a — ride with the strike: a committed strike owns the wing's
+        // destination, not any single bomber. This MUST run before the anchor
+        // pick: TryEscortAnchor needs a LIVE bomber, and in the P778a natural
+        // runs every strike ship was podded ~20-40 s after launch ("no buyable
+        // bomber strike loadout" fallback fighters), so the anchor went null,
+        // the escorts loitered in their HOME sector for the whole strike, and
+        // the push path never ran (0 [push] seek / 0 [push] contact; every hold
+        // reason wrong-sector-*). Keep transiting to the plan sector while the
+        // side's target station lives; the next bomber relaunch then finds its
+        // wing already on station. (The previous form also re-gated every tick
+        // on a live bomber, so a bomber dying mid-transit aborted the whole
+        // multi-hop transit and sent the escort home.)
+        if (run.Plans.TryGetValue(bot.Side, out var strikePlan) && ownSector != strikePlan.Sector
+            && run.StrikeStartedAt is not null && strikePlan.KilledAt is null)
+        {
+            List<short>? path;
+            lock (cs.Gate) path = cs.World.Graph?.FindShortestPath(ownSector, strikePlan.Sector);
+            if (path is not { Count: >= 2 } || !TransitWarp(cs, bot, ownSector, path[1])) LoiterCombat(bot, now);
+            return true;
+        }
+        if (!TryEscortAnchor(bot, out var anchor, out short sector, out var leaderShip))
         {
             // Wait at the launch point for a newly purchased bomber rather than
             // racing an unarmed escort alone to the enemy garrison.
@@ -479,7 +551,6 @@ internal sealed partial class BotManager
             LoiterCombat(bot, now);
             return true;
         }
-        short ownSector = CsSector(cs);
         if (sector != ownSector)
         {
             List<short>? path;
@@ -499,9 +570,211 @@ internal sealed partial class BotManager
             }
         var target = ShowcaseFinale.EscortTarget(pos, anchor, enemies, run.Settings.EscortRadius, run.Settings.Leash);
         bot.TargetId = target;
-        if (target is { } id) EngageShipAt(bot, cs, id, now, 0, 0);
-        else CombatFlyTo(bot, anchor, 15, Math.Max(100, run.Settings.EscortRadius * .3f), 0);
+        if (target is { } id) { HoldPush(bot, now, "engaging"); EngageShipAt(bot, cs, id, now, 0, 0); }
+        else if (!TryPushFinaleBomber(bot, cs, run, leaderShip, now))
+            CombatFlyTo(bot, anchor, 15, Math.Max(100, run.Settings.EscortRadius * .3f), 0);
         return true;
+    }
+
+    /// <summary>P778a — "push the bomb": with no threat to answer (EscortTarget
+    /// above keeps priority), up to two in-sector escorts nose into the back of
+    /// their own finale bomber to shove it toward the target station faster —
+    /// the real-Allegiance escort tactic. The physics is native (friendly rams
+    /// DO damage, shipIGC.cpp:1166-1168), so the closing speed is deliberately
+    /// small and nanite scouts (P778a bomber-first repair) pay the hull back.
+    /// Stop conditions: bomber dead/podded (the anchor pick), in its own launch
+    /// range of the target (the push goal is reached), under fire, or not
+    /// astern of it on the bomber→target line.</summary>
+    private bool TryPushFinaleBomber(ActiveBot bot, ConnectionSession cs, FinaleRun run,
+        ShipEntity? leaderShip, double now)
+    {
+        if (leaderShip?.Latest is not { } bomberPose || leaderShip.IsNotVisible) { HoldPush(bot, now, "no-leader"); return false; }
+        if (!run.Plans.TryGetValue(bot.Side, out var plan) || run.StrikeStartedAt is null) return false;
+        short sector = CsSector(cs);
+        if (sector != plan.Sector) { HoldPush(bot, now, $"wrong-sector-{sector}"); return false; }   // push only in the target sector
+        Vector3 target;
+        lock (cs.Gate)
+        {
+            if (!cs.World.Stations.TryGetValue(plan.TargetId, out var station) || station.SideId == bot.Side
+                || station.ClusterId != sector || station.Position is not { Length: 3 } sp) return false;
+            target = new(sp[0], sp[1], sp[2]);
+        }
+        var bomberBot = run.Bots.FirstOrDefault(b => b.ShipId == leaderShip.ShipId
+            && b.Side == bot.Side && b.FinaleBomberActive && !b.IsPod);
+        if (bomberBot is null) return false;
+        // Stop pushing once the bomber can loose its own ordnance at the target.
+        float launchRange = FinaleLaunchRange(bomberBot);
+        if (launchRange > 0 && (target - bomberPose.Position).Length() <= launchRange)
+        { HoldPush(bot, now, "in-launch-range"); return false; }
+
+        bool threatened = bomberBot.RecentAttackers.Any(a => now - a.Value < ThreatWindowSeconds);
+        if (threatened) HoldPush(bot, now, "bomber-threatened");
+        List<short> inSectorEscorts;
+        lock (cs.Gate)
+            inSectorEscorts = run.Bots.Where(b => b.Side == bot.Side && b.FinaleEscort && !b.IsPod)
+                .Select(b => cs.World.Ships.GetValueOrDefault(b.ShipId))
+                .Where(s => s is { IsDead: false, IsGone: false, IsNotVisible: false, Latest: not null, StationId: < 0 }
+                            && s.SectorId == sector).Select(s => s!.ShipId).ToList();
+        if (!ShowcaseFinale.IsBomberPusher(inSectorEscorts, threatened, bot.ShipId))
+        { HoldPush(bot, now, "not-selected"); return false; }
+
+        if (!TryCsPose(cs, bot.ShipId, out var pos, out var orient)) return false;
+        var push = ShowcaseFinale.BomberPush(pos, bomberPose.Position, target,
+            HullRadius(leaderShip.HullId), HullRadius(ActualHullId(bot)));
+        if (push is not { } pushPlan)
+        {
+            // P778a — not astern (typically the contact bounced the pusher past
+            // the shell). Station-keep BEHIND the bomber on the target line: the
+            // ordinary escort flight goes to the bomber's position, which parks
+            // the pusher alongside/ahead and it never pushes again (the staged
+            // live run saw one contact then no more for the rest of the run).
+            var toTarget = target - bomberPose.Position;
+            float lineLength = toTarget.Length();
+            if (lineLength <= 1e-3f) { HoldPush(bot, now, "not-astern"); return false; }
+            var line = toTarget / lineLength;
+            float shell = HullRadius(leaderShip.HullId) + HullRadius(ActualHullId(bot)) + ShowcaseFinale.PusherMargin;
+            bot.TargetId = null;
+            CombatFlyTo(bot, bomberPose.Position - line * (shell + 40f), 15f, 200f, 0);
+            HoldPush(bot, now, "not-astern");
+            return true;
+        }
+        bot.TargetId = null;
+
+        // Direct steering: the planned contact IS the goal, so the shared dodge
+        // law must not veto it (same exemption pattern as the HabmBoard station
+        // approach in TryDodgeGoal — a deliberate boarding/push is not an
+        // unplanned impact). Proportional closing law: catch up astern, then
+        // taper to the chosen contact speed so each contact's damage stays small.
+        var toContact = pushPlan.ContactPoint - pos;
+        float gap = toContact.Length();
+        var dir = gap > 1e-3f ? toContact / gap : pushPlan.Direction;
+        var (yaw, pitch, _) = SteerTowardDirection(orient, dir);
+        float closing = (TryCsFreshPose(cs, bot.ShipId, out _, out var myVel, out _) ? myVel : Vector3.Zero)
+            * dir - bomberPose.Velocity * dir;
+        // Chase at up to PushChaseSpeed, taper to the design closing at the shell
+        // (a 90 u/s arrival was measured slamming the bomber off-axis and SLOWING
+        // it, 80→50 u/s, in the staged live run; see PushChaseSpeed).
+        float desired = Math.Clamp((gap - pushPlan.ContactDistance) * .4f,
+            pushPlan.ClosingSpeed, ShowcaseFinale.PushChaseSpeed);
+        float throttle = Math.Clamp((desired - closing) * .4f, -1f, 1f);
+        cs.CommandControls(new ControlData(yaw, pitch, 0f, throttle), 0);
+        SeekPush(bot, now, gap, closing);
+        TrackPushContact(bot, cs, run, bomberBot, leaderShip, bomberPose, pushPlan, dir, closing, now);
+        return true;
+    }
+
+    /// <summary>P778a — bounded hold telemetry: why an in-sector escort with a
+    /// live wing leader is NOT pushing right now (threat priority, not among
+    /// the two selected pushers, not astern of the bomber, engaging, or the
+    /// wrong sector). Suppressed repeats are COUNTED and reported with the next
+    /// logged line; the line itself is rate-limited to one per escort per 10 s.</summary>
+    private void HoldPush(ActiveBot bot, double now, string reason)
+    {
+        if (now - bot.PushLastHoldAt < 10)
+        {
+            bot.PushHoldCount++;
+            bot.PushLastHoldReason = reason;
+            return;
+        }
+        string counted = bot.PushLastHoldReason == reason && bot.PushHoldCount > 0
+            ? $" x{bot.PushHoldCount + 1}" : "";
+        bot.PushHoldCount = 0;
+        bot.PushLastHoldReason = reason;
+        bot.PushLastHoldAt = now;
+        Console.WriteLine($"[push] hold ship={bot.ShipId} reason={reason}{counted}");
+    }
+
+    /// <summary>P778a — bounded seek telemetry (one line per pushing escort per
+    /// 2 s): the gap to the contact shell and the measured closing speed, so a
+    /// rig run shows the push actually closing, not just being attempted.</summary>
+    private void SeekPush(ActiveBot bot, double now, float gap, float closing)
+    {
+        if (now - bot.PushLastSeekAt < 2) return;
+        bot.PushLastSeekAt = now;
+        Console.WriteLine($"[push] seek ship={bot.ShipId} gap={gap:F0} closing={closing:F1}");
+    }
+
+    /// <summary>The range at which the bomber's own ordnance reaches the target:
+    /// its launcher's missile flight envelope (the accelerating-missile integral
+    /// <c>v0·L + a·L²/2</c> over the round's lifespan), falling back to the lead
+    /// gun's range; 0 when unarmed (never stop pushing a target the bomber
+    /// cannot yet engage).</summary>
+    private static float FinaleLaunchRange(ActiveBot bomber)
+    {
+        var core = Catalog.RepresentativeCore();
+        if (bomber.LauncherPartId is { } id && core.Launchers.TryGetValue(id, out var launcher)
+            && core.MissileTypes.TryGetValue(launcher.ExpendabletypeId, out var missile) && missile.Lifespan > 0)
+            return missile.InitialSpeed * missile.Lifespan + .5f * missile.Acceleration * missile.Lifespan * missile.Lifespan;
+        return bomber.WeaponPartId is { } gun && TryWeaponBallistics(gun, out _, out float range, out _, out _)
+            ? range : 0;
+    }
+
+    /// <summary>P778a — bounded per-contact telemetry. A contact is a REAL
+    /// collision: the pair appears in <see cref="ClientWorld.TakeCollisionEvents"/>
+    /// (the client half of the same <c>COLLISION_EVENT(216)</c> the sector
+    /// broadcast emits for the native <c>COLLISION_EVENT</c>). The first P778a
+    /// cut inferred a bounce from the measured closing speed collapsing; the
+    /// staged live run showed that heuristic firing on ordinary throttle changes
+    /// (a logged contact with <c>bomberAlong 80.1→80.1</c> and no collision at
+    /// all) while MISSING the real collision that followed. Each logged contact
+    /// carries the closing speed, the bomber's speed along the target line
+    /// before → after, the measured hull damage to both parties (hull-fraction
+    /// drop × hull hit points; shield-absorbed portions are not visible on the
+    /// wire) and the native-formula expectation. Rate-limited to one contact per
+    /// pusher per second and only for fresh (≤ 0.5 s old) pose samples.</summary>
+    private void TrackPushContact(ActiveBot bot, ConnectionSession cs, FinaleRun run, ActiveBot bomberBot,
+        ShipEntity bomberShip, ServerShipUpdate bomberPose, ShowcaseFinale.BomberPushPlan plan,
+        Vector3 dir, float closing, double now)
+    {
+        // The telemetry's "speed along the target line" is the bomber's velocity
+        // projected on the BOMBER→TARGET line (plan.Direction), not on the
+        // escort-relative steering vector — the first live staged run logged
+        // -45.9 u/s for a bomber doing 80 u/s toward the station because the
+        // steering dir flipped once the pusher overshot the contact point.
+        float bomberAlong = bomberPose.Velocity * plan.Direction;
+        float ownHull = 1f, bomberHull = 1f;
+        bool collided = false;
+        lock (cs.Gate)
+        {
+            if (cs.World.Ships.TryGetValue(bot.ShipId, out var me)) ownHull = me.Latest?.HullFraction ?? 1f;
+            bomberHull = bomberShip.Latest?.HullFraction ?? 1f;
+            // Headless bot world: draining is safe (the audio pass is the only
+            // other consumer and a bot has none).
+            foreach (var hit in cs.World.TakeCollisionEvents())
+                if ((hit.Party1Id == bot.ShipId && hit.Party2Id == bomberShip.ShipId)
+                    || (hit.Party2Id == bot.ShipId && hit.Party1Id == bomberShip.ShipId))
+                { collided = true; break; }
+        }
+        bool fresh = now - bot.PushPrevAt is > 0 and <= 0.5;
+        bool bounce = collided && fresh
+            && (bot.PushLastContactAt is not { } last || now - last >= 1.0);
+        if (bounce)
+        {
+            bot.PushLastContactAt = now;
+            bot.PushContacts++;
+            var core = Catalog.RepresentativeCore();
+            float bomberHp = core.HullTypes.TryGetValue(bomberShip.HullId, out var bh) ? MathF.Max(1f, bh.HitPoints) : 1f;
+            float pusherHp = core.HullTypes.TryGetValue(ActualHullId(bot), out var ph) ? MathF.Max(1f, ph.HitPoints) : 1f;
+            float bomberDamage = MathF.Max(0f, (bot.PushPrevBomberHull - bomberHull) * bomberHp);
+            float pusherDamage = MathF.Max(0f, (bot.PushPrevOwnHull - ownHull) * pusherHp);
+            var (expectedBomber, expectedPusher) = ShowcaseFinale.PushContactDamage(
+                core.HullTypes.TryGetValue(bomberShip.HullId, out var bm) ? bm.Mass : 1f,
+                core.HullTypes.TryGetValue(ActualHullId(bot), out var pm) ? pm.Mass : 1f,
+                plan.ClosingSpeed, pusherHp, bomberHp);
+            lock (run.Sync)
+            {
+                run.PushContacts++;
+                run.PushTotalDamage += bomberDamage + pusherDamage;
+            }
+            Console.WriteLine($"[push] contact pusher={bot.ShipId} bomber={bomberShip.ShipId} closing={bot.PushPrevClosing:F1} "
+                + $"bomberAlong={bot.PushPrevBomberAlong:F1}->{bomberAlong:F1} bomberDamage={bomberDamage:F2} pusherDamage={pusherDamage:F2} "
+                + $"expected={expectedBomber:F2}/{expectedPusher:F2}");
+        }
+        bot.PushPrevAt = now;
+        bot.PushPrevClosing = closing;
+        bot.PushPrevBomberAlong = bomberAlong;
+        bot.PushPrevOwnHull = ownHull;
+        bot.PushPrevBomberHull = bomberHull;
     }
 
     private static short? FinaleStationTarget(ActiveBot bot, short sector)

@@ -27,13 +27,38 @@ internal sealed partial class BotManager
         && Catalog.RepresentativeCore().ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var r) && r.Power < 0;
 
     internal readonly record struct RepairTarget(short Id, bool Station, short Sector, Vector3 Position,
-        Vector3 Velocity, float Radius);
+        Vector3 Velocity, float Radius, bool FinaleBomber = false, bool FinalePusher = false);
 
     // Selection is harness policy; native repair discriminant/lead/fire law:
     // Igc/shipIGC.cpp:2608-2676. Only observed, living, damaged own assets qualify.
-    internal static RepairTarget? PickRepairTarget(ClientWorld world, short side, short own, short sector, Vector3 position)
+    // P778a — during a finale, a damaged finale bomber in the sector outranks
+    // stations and other ships (it IS the mission), and damaged pushers outrank
+    // them too (they pay the native friendly-ram damage, shipIGC.cpp:1166-1168,
+    // on every contact). Outside a finale both lists are empty and the existing
+    // station-then-ship order is unchanged.
+    internal static RepairTarget? PickRepairTarget(ClientWorld world, short side, short own, short sector, Vector3 position,
+        IReadOnlyCollection<short>? finaleBombers = null, IReadOnlyCollection<short>? finalePushers = null)
     {
         var core = Catalog.RepresentativeCore();
+        if (finaleBombers is { Count: > 0 })
+        {
+            var bomber = world.Ships.Values.FirstOrDefault(s => finaleBombers.Contains(s.ShipId) && s.SideId == side
+                    && s.SectorId == sector && !s.IsNotVisible && !s.Unknown && s.StationId < 0 && s.ParentId < 0
+                    && !Catalog.IsLifepodHull(s.HullId) && s.Latest is { HullFraction: > 0 and < 1 });
+            if (bomber?.Latest is { } bp)
+                return new(bomber.ShipId, false, sector, bp.Position, bp.Velocity, HullRadius(bomber.HullId),
+                    FinaleBomber: true);
+        }
+        if (finalePushers is { Count: > 0 })
+        {
+            var pusher = world.Ships.Values.Where(s => finalePushers.Contains(s.ShipId) && s.SideId == side
+                    && s.SectorId == sector && !s.IsNotVisible && !s.Unknown && s.StationId < 0 && s.ParentId < 0
+                    && !Catalog.IsLifepodHull(s.HullId) && s.Latest is { HullFraction: > 0 and < 1 })
+                .OrderBy(s => (s.Latest!.Position - position).LengthSquared()).ThenBy(s => s.ShipId).FirstOrDefault();
+            if (pusher?.Latest is { } pp)
+                return new(pusher.ShipId, false, sector, pp.Position, pp.Velocity, HullRadius(pusher.HullId),
+                    FinalePusher: true);
+        }
         var station = world.Stations.Values.Where(s => s.SideId == side && s.ClusterId == sector
                 && s.Position is { Length: 3 } && world.StationLive.TryGetValue(s.StationId, out var live)
                 && live.HullFraction > 0 && live.HullFraction < 1)
@@ -115,14 +140,26 @@ internal sealed partial class BotManager
         if (bot.OrderedCommand?.CommandId == OrderChange.CidRepair && DriveCommanderOrder(bot, now)) return true;
         if (!TryCsPose(cs, bot.ShipId, out var pos, out _)) return true;
         short sector = CsSector(cs);
+        // P778a — during a finale the wing's damaged bombers come first, then
+        // the pushers that pay collision damage; the station/ship order follows.
+        List<short>? finaleBombers = null, finalePushers = null;
+        if (bot.Finale is { Rotated: false } activeFinale)
+            lock (_gate)
+            {
+                finaleBombers = activeFinale.Bots.Where(b => b.Side == bot.Side && b.FinaleBomberActive && !b.IsPod)
+                    .Select(b => b.ShipId).ToList();
+                finalePushers = activeFinale.Bots.Where(b => b.Side == bot.Side && b.FinaleEscort && !b.IsPod && b.PushContacts > 0)
+                    .Select(b => b.ShipId).ToList();
+            }
         RepairTarget? target;
-        lock (cs.Gate) target = PickRepairTarget(cs.World, bot.Side, bot.ShipId, sector, pos);
+        lock (cs.Gate) target = PickRepairTarget(cs.World, bot.Side, bot.ShipId, sector, pos, finaleBombers, finalePushers);
         if (target is { } repair)
         {
             bot.TargetId = repair.Id;
             if (bot.SupportTraceTarget != repair.Id || bot.SupportTraceStation != repair.Station)
             {
-                Console.WriteLine($"[support] {bot.Name} ship={bot.ShipId} side={bot.Side} repair={(repair.Station ? "station" : "ship")} target={repair.Id} sector={sector}");
+                Console.WriteLine($"[support] {bot.Name} ship={bot.ShipId} side={bot.Side} "
+                    + $"repair={(repair.Station ? "station" : repair.FinaleBomber ? "finale-bomber" : repair.FinalePusher ? "pusher" : "ship")} target={repair.Id} sector={sector}");
                 bot.SupportTraceTarget = repair.Id; bot.SupportTraceStation = repair.Station;
             }
             FlyRepairTarget(bot, cs, repair);

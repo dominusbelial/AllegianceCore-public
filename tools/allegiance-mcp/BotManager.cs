@@ -2771,7 +2771,7 @@ bool isThreat =
             {
                 if (ResearchSiegeDuty(bot))
                     return TryResearchSiegeDodge(cs, bot, cur, myPos, myVel, hull, out goal);
-                return Allegiance.ClientCore.Flight.ClientAutopilotDodge.TryComputeDodgeGoal(
+                bool dodging = Allegiance.ClientCore.Flight.ClientAutopilotDodge.TryComputeDodgeGoal(
                     cs.World, bot.ShipId, bot.Side, myPos, myVel,
                     new Allegiance.ClientCore.Flight.ClientAutopilotDodge.MoverHull(hull.Length, hull.Thrust, hull.Mass),
                     dodgeStations,
@@ -2779,6 +2779,39 @@ bool isThreat =
                     tid => core.StationTypes.TryGetValue(tid, out var t) && t.Radius > 0f ? t.Radius : (float?)null,
                     skipGoal: null,
                     out goal);
+                // P778a — the finale bomber must not dodge ITS OWN pushers. The
+                // shared dodge feed treats a closing same-side ship as an
+                // obstacle; with an escort pushing from astern the bomber braked
+                // 80→50 u/s just before every contact in the staged live run, so
+                // the wing's momentum transfer was more than cancelled. If the
+                // dodge disappears when the nearest finale escort is skipped,
+                // the escort is the only imminence source: fly the line (the
+                // deliberate contact is the tactic, exactly like the escort's
+                // own dodge exemption below).
+                if (dodging && bot.FinaleBomberActive && bot.Finale is { } pushRun)
+                {
+                    short nearestEscort = -1;
+                    float best = float.MaxValue;
+                    foreach (var mate in pushRun.Bots)
+                    {
+                        if (!mate.FinaleEscort || mate.IsPod || mate.Side != bot.Side
+                            || !cs.World.Ships.TryGetValue(mate.ShipId, out var mateShip)
+                            || mateShip.Latest is not { } mp || mateShip.SectorId != cur) continue;
+                        float d = (mp.Position - myPos).Length();
+                        if (d < best && d <= 1000f) { best = d; nearestEscort = mate.ShipId; }
+                    }
+                    if (nearestEscort >= 0
+                        && !Allegiance.ClientCore.Flight.ClientAutopilotDodge.TryComputeDodgeGoal(
+                            cs.World, bot.ShipId, bot.Side, myPos, myVel,
+                            new Allegiance.ClientCore.Flight.ClientAutopilotDodge.MoverHull(hull.Length, hull.Thrust, hull.Mass),
+                            dodgeStations,
+                            id => core.HullTypes.TryGetValue(id, out var h2) ? h2.Length : (float?)null,
+                            tid => core.StationTypes.TryGetValue(tid, out var t2) && t2.Radius > 0f ? t2.Radius : (float?)null,
+                            skipGoal: new Allegiance.ClientCore.Flight.ClientAutopilotDodge.SkipGoal(ShipId: nearestEscort),
+                            out _))
+                        return false;   // only the pusher was in the way: hold the line
+                }
+                return dodging;
             }
         }
         return false;
@@ -3537,7 +3570,23 @@ bool isThreat =
                 bot.EverPod = true;
                 bot.Deaths++;
                 if (bot.FinaleBomberActive && bot.Finale is { } finale)
-                    lock (finale.Sync) { finale.BombersKilled++; bot.FinaleProtectedSince = null; bot.FinaleGrantVerified = false; }
+                    lock (finale.Sync)
+                    {
+                        finale.BombersKilled++;
+                        bot.FinaleProtectedSince = null; bot.FinaleGrantVerified = false;
+                        // P778a — a strike that ends without reaching launch range
+                        // still logs its summary once, with survival = false.
+                        if (finale.Plans.TryGetValue(bot.Side, out var deadPlan) && !deadPlan.SummaryLogged)
+                        {
+                            deadPlan.SummaryLogged = true;
+                            string span = deadPlan.LaunchRangeAt is { } reached && finale.StrikeStartedAt is { } start
+                                ? $"{reached - start:F1}s" : "never";
+                            Console.WriteLine($"[push] strike side={bot.Side} contacts={finale.PushContacts} "
+                                + $"pushDamage={finale.PushTotalDamage:F1} "
+                                + $"timeToLaunchRange={span} "
+                                + $"bomberSurvived={(deadPlan.LaunchRangeAt is not null).ToString().ToLowerInvariant()}");
+                        }
+                    }
                 // P539d — classify this death: a credited ship shooter (KILL_SHIP
                 // TypeCredit 0 = OT_ship, distinct killer) = gunfire kill; otherwise
                 // (no credited shooter — a ram/crash) = collision/other death.
@@ -6067,6 +6116,18 @@ bool isThreat =
         public double FinaleRefitCheckAt = double.NegativeInfinity;
         public long FinaleMissileLaunchBase;
         public double? FinaleProtectedSince;
+        // P778a — bomber push telemetry state (per life; reset in ResetNewLife):
+        // the previous driver tick's closing speed / bomber-along-line speed /
+        // hull fractions for bounce detection, the last logged contact, and how
+        // many contacts this pusher logged (drives pusher-first repair priority).
+        public double PushPrevAt = double.NegativeInfinity;
+        public float PushPrevClosing, PushPrevBomberAlong, PushPrevOwnHull = 1f, PushPrevBomberHull = 1f;
+        public double? PushLastContactAt;
+        public double PushLastHoldAt = double.NegativeInfinity;
+        public double PushLastSeekAt = double.NegativeInfinity;
+        public int PushHoldCount;
+        public string? PushLastHoldReason;
+        public int PushContacts;
         /// <summary>P558 — whether the PREVIOUS attack tick held the
         /// afterburner button. Native's band-Engage afterburner rule fires
         /// afterburners at relativeSpeed &lt; −15 only if the drone was already
