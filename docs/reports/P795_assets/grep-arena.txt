@@ -1,0 +1,19 @@
+# grep -rniE "arena" tools/allegiance-mcp (source only; bin/ and obj/ are build outputs)
+tools/allegiance-mcp/BotManager.cs:134:    // P795 — the arena battle-start mode was removed; TTK samples are still
+tools/allegiance-mcp/BotManager.cs:622:        // P795 — the arena relocation that used to run here was removed with the
+tools/allegiance-mcp/BotManager.cs:623:        // arena mode; a spawn always registers the bot and lets it march.
+tools/allegiance-mcp/McpTools.cs:68:                Description = "Spawn a fight with size bots per side, explicit fleet arrays, or preset:\"showcase\" (15 per side times size_scale). Hull names seed capability-based roles. Each bot buys the best legal affordable loadout from its own side techs and dock station, then re-picks on death or the next match. Locked roles temporarily fly a legal fighter/scout. Legacy tech_a, tech_b and fleet tech fields are accepted but ignored. Grants report actual purchases. Supports march staging, routes, wingman settings, native layer-drone minefields, and a mature-battle bomber finale (showcase default 30 minutes; finale_after_minutes:0 disables it). History: P795 removed the `arena` battle-start mode (and the legacy `arena: true` flag); `march` is the only mode and an arena request returns a clear removal error.",
+tools/allegiance-mcp/McpTools.cs:87:                        mode = new { type = "string", @enum = new[] { "march" }, @default = "march", description = "Battle start mode. `march` (DEFAULT and now the ONLY mode, the 200v200 baseline): each side launches at home, flies its wings through the alephs (P635 routes), stages, and converges on `target_sector` — wings advance independently. History: the `arena` mode (both fleets spawned directly in `target_sector`, formerly also reachable as the legacy `arena: true` flag) was removed in P795 because it collapsed into a home-sector death loop; an arena request returns a removal error instead of silently marching." },
+tools/allegiance-mcp/McpTools.cs:409:        // P795 — arena was removed. Reject it explicitly instead of silently
+tools/allegiance-mcp/McpTools.cs:411:        if (ArenaRequested(args)) return Err(ArenaRemovedError);
+tools/allegiance-mcp/McpTools.cs:459:        // assembled before advancing together. P795 removed the arena alternative;
+tools/allegiance-mcp/McpTools.cs:532:            // the only battle start; arena was removed).
+tools/allegiance-mcp/McpTools.cs:621:        // battle start; the arena alternative was removed.
+tools/allegiance-mcp/McpTools.cs:1365:    /// <summary>P795 — the arena battle-start mode was removed (Domingo,
+tools/allegiance-mcp/McpTools.cs:1366:    /// 2026-10-22: 200v200 arenas collapsed into a home-sector death loop).</summary>
+tools/allegiance-mcp/McpTools.cs:1367:    private const string ArenaRemovedError =
+tools/allegiance-mcp/McpTools.cs:1368:        "spawn_scenario: arena mode was removed in P795; use mode:\"march\" (the only battle start). "
+tools/allegiance-mcp/McpTools.cs:1371:    /// <summary>P795 — detect the retired arena request (`mode: "arena"` or the
+tools/allegiance-mcp/McpTools.cs:1372:    /// legacy `arena: true` flag). Kept only to return the clear removal error.</summary>
+tools/allegiance-mcp/McpTools.cs:1373:    private static bool ArenaRequested(IDictionary<string, JsonElement> args)
+tools/allegiance-mcp/McpTools.cs:1374:        => string.Equals(OptStr(args, "mode"), "arena", StringComparison.OrdinalIgnoreCase) || OptBool(args, "arena");

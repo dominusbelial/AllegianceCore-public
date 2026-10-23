@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# P593b — reproduction v7: arena 1v1 in the observer's sector; ONE enemy bot
+# P593b — reproduction v7: march 1v1 in the observer's sector; ONE enemy bot
 # (side 1, lit-solid launcher) attacks the HOVERING observer (no auto-target, so
 # it stays put and the incoming missile volleys stay in the chase-cam frame).
 # Dense real-window autoshots.
@@ -37,8 +37,8 @@ MCP=$!
 sleep 3
 feed() { printf '%s\n' "$1" >> "$CMD"; }
 
-echo "== arena 1v1 ${LAUNCHER} at $SECTOR (enemy attacks hovering observer) =="
-feed "{\"tool\":\"spawn_scenario\",\"args\":{\"size\":1,\"target_sector\":\"$SECTOR\",\"arena\":true,\"launcher\":\"$LAUNCHER\"}}"
+echo "== march 1v1 ${LAUNCHER} at $SECTOR (enemy attacks hovering observer) =="
+feed "{\"tool\":\"spawn_scenario\",\"args\":{\"size\":1,\"target_sector\":\"$SECTOR\",\"mode\":\"march\",\"staging\":false,\"launcher\":\"$LAUNCHER\"}}"
 for i in $(seq 1 120); do
   if grep -q "RESULT spawn_scenario " "$MCO" 2>/dev/null; then echo "spawn RESULT seen (~${i}s)"; break; fi
   sleep 1

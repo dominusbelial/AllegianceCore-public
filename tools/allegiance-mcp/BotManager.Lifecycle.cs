@@ -220,7 +220,7 @@ internal sealed partial class BotManager
             if (!bot.ObjectivesPending) return true;
             if (!world.WorldReady) return false;
             short? target = null;
-            if (bot.TargetSector is not null && !bot.Arena && string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase))
+            if (bot.TargetSector is not null && string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase))
                 target = world.Stations.Values.Where(s => s.SideId >= 0 && s.SideId != bot.Side)
                     .Select(s => (short?)s.ClusterId).FirstOrDefault();
             if (bot.TargetSector is not null && target is null && bot.ObjectiveName is { } name)
@@ -302,8 +302,8 @@ internal sealed partial class BotManager
 
     public long DecisionOverruns => _cadence.OverrunCount;
 
-    internal static short? ResolveScenarioTarget(bool arena, Showcase.HullRole role, short? rendezvous, short enemyHome)
-        => rendezvous is null or < 0 ? null : arena ? rendezvous : ResolveRoleTarget(role, rendezvous.Value, enemyHome);
+    internal static short? ResolveScenarioTarget(Showcase.HullRole role, short? rendezvous, short enemyHome)
+        => rendezvous is null or < 0 ? null : ResolveRoleTarget(role, rendezvous.Value, enemyHome);
 
     private static short ActualHullId(ActiveBot bot)
     {

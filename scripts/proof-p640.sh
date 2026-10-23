@@ -23,7 +23,7 @@ if [ -f "$repo/local.env" ]; then cp "$repo/local.env" "$proof_tree/local.env"; 
 dotnet restore "$proof_tree/AllegianceCore.slnx" -m:1
 dotnet build "$proof_tree/AllegianceCore.slnx" --no-restore -m:1
 # 15 real combat bots on each side rendezvous in Omega; the player observes.
-bots='spawn_scenario {"size":15,"target_sector":"Omega","arena":true}'
+bots='spawn_scenario {"size":15,"target_sector":"Omega","mode":"march"}'
 for camera in command commandtd dronefollow dronecockpit; do
     "$proof_tree/scripts/live-proof.sh" --out "$out/$camera" --port 6074 \
         --autoshots '12,20,28' --exit-after 32 --bots "$bots" \

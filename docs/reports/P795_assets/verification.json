@@ -1,0 +1,136 @@
+{
+  "task": "P795",
+  "baseCommit": "37ea36f2",
+  "branch": "pi/p795",
+  "sourceChanges": {
+    "server": 0,
+    "core": 0,
+    "client": 0,
+    "tools": "tools/allegiance-mcp only",
+    "docs": [
+      "README.md",
+      "docs/GUIDE.md",
+      "docs/reports/P795_REMOVE_ARENA.md"
+    ],
+    "scripts": 10
+  },
+  "build": {
+    "solution": "PASS 0 warnings / 0 errors",
+    "buildTools": "PASS 70/70 tool projects",
+    "aotPublish": "not required (no src/Allegiance.Server or src/Allegiance.Core change)"
+  },
+  "tests": {
+    "new": {
+      "P795ArenaRemovedTests": "9 cases, 3x alone PASS (9/9 each)"
+    },
+    "affected": {
+      "P539dFairContactDecisionTests": "3x alone PASS (10/10 each)",
+      "BotFixRegressionTests": "3x alone PASS (135/135 each)",
+      "P554AdminCheatLiveTests": "3x alone PASS (7/7 each)",
+      "P539dFairContactLiveTests.Record_one_run": "3x alone PASS (staging, size 3, 60 s; plus one 90 s before/after trace pair)"
+    },
+    "fastTier": [
+      {
+        "run": "20261023T041655Z",
+        "tests": 10020,
+        "result": "PASS",
+        "seconds": 286.4
+      },
+      {
+        "run": "20261023T042647Z",
+        "tests": 10023,
+        "result": "FAIL",
+        "seconds": 282.8,
+        "note": "2 unrelated load flakes (P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate, ChatTargetComposeLiveTests.ComposeDefault_Team_SendsToTeammate_NotEnemy); each passed 3/3 alone"
+      },
+      {
+        "run": "20261023T043442Z",
+        "tests": 10023,
+        "result": "PASS",
+        "seconds": 281.8
+      }
+    ]
+  },
+  "showcaseNeverParks": {
+    "baseRuns": 6,
+    "basePassed": 6,
+    "afterRuns": 5,
+    "afterPassed": 5,
+    "stats": {
+      "base": [
+        {
+          "file": "run1-detailed.log",
+          "seconds": 109.4,
+          "samples": 1093,
+          "reached": 28,
+          "longestIdleWithTargetSeconds": 2.006,
+          "shots": 2770,
+          "hits": 1202,
+          "kills": 10
+        }
+      ],
+      "after": [
+        {
+          "file": "run1.log",
+          "seconds": 107.3,
+          "samples": 1072,
+          "reached": 27,
+          "longestIdleWithTargetSeconds": 2.107,
+          "shots": 2479,
+          "hits": 898,
+          "kills": 8
+        },
+        {
+          "file": "run2.log",
+          "seconds": 111.3,
+          "samples": 1111,
+          "reached": 28,
+          "longestIdleWithTargetSeconds": 1.924,
+          "shots": 3477,
+          "hits": 1603,
+          "kills": 10
+        },
+        {
+          "file": "run3.log",
+          "seconds": 109.3,
+          "samples": 1091,
+          "reached": 28,
+          "longestIdleWithTargetSeconds": 2.007,
+          "shots": 3476,
+          "hits": 1493,
+          "kills": 12
+        },
+        {
+          "file": "run4.log",
+          "seconds": 111.7,
+          "samples": 1114,
+          "reached": 28,
+          "longestIdleWithTargetSeconds": 1.917,
+          "shots": 2779,
+          "hits": 1254,
+          "kills": 13
+        },
+        {
+          "file": "run5.log",
+          "seconds": 110.5,
+          "samples": 1103,
+          "reached": 27,
+          "longestIdleWithTargetSeconds": 2.006,
+          "shots": 3573,
+          "hits": 1412,
+          "kills": 8
+        }
+      ]
+    }
+  },
+  "marchDecisionEquivalence": {
+    "p539dTrace": "base and after traces have identical RENDEZVOUS/SECTOR/SIDE lines and identical per-side route topology (side 0 home 1050 -> 1059 -> 1052; side 1 home 1051 -> 1061 -> 1052); run-to-run shot/kill counts vary because ActiveBot.NextSeed uses Random.Shared, so exact trace replay is not possible",
+    "codeProof": "every removed read of bot.Arena was only true for arena spawns; at Arena=false the removed branches are dead and each simplified condition is equivalent (!x && A -> A; x || A -> A; if (x) -> no-op; arena ? r : ResolveRoleTarget(...) -> ResolveRoleTarget(...))",
+    "decompiledDiff": "ILSpy base-vs-after diff: 66 hunks; all semantic hunks are arena symbol/branch removal or dropped arena parameters, the rest is goto/IL-offset renumbering. See ~/allegiance-evidence/P795/decompiled-base-vs-after.diff.txt"
+  },
+  "grepArena": {
+    "command": "grep -rniE 'arena' tools/allegiance-mcp --include=*.cs --include=*.md --include=*.json --include=*.py",
+    "hits": 18,
+    "classification": "only the P795 removal error, its doc/history note, and two removal comments; see P795_assets/grep-arena.txt"
+  }
+}

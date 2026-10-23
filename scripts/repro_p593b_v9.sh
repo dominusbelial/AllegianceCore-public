@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# P593b — v9 (after): arena 3v3 lit-solid launcher; observer auto-targets the
+# P593b — v9 (after): march 3v3 lit-solid launcher; observer auto-targets the
 # nearest enemy so it flies INTO the fight, dense real-window autoshots.
 set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -36,8 +36,8 @@ MCP=$!
 sleep 3
 feed() { printf '%s\n' "$1" >> "$CMD"; }
 
-echo "== arena ${SIZE}v${SIZE} ${LAUNCHER} at $SECTOR =="
-feed "{\"tool\":\"spawn_scenario\",\"args\":{\"size\":$SIZE,\"target_sector\":\"$SECTOR\",\"arena\":true,\"launcher\":\"$LAUNCHER\"}}"
+echo "== march ${SIZE}v${SIZE} ${LAUNCHER} at $SECTOR =="
+feed "{\"tool\":\"spawn_scenario\",\"args\":{\"size\":$SIZE,\"target_sector\":\"$SECTOR\",\"mode\":\"march\",\"staging\":false,\"launcher\":\"$LAUNCHER\"}}"
 for i in $(seq 1 120); do
   if grep -q "RESULT spawn_scenario " "$MCO" 2>/dev/null; then echo "spawn RESULT seen (~${i}s)"; break; fi
   sleep 1

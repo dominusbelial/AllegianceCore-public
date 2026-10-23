@@ -196,7 +196,7 @@ debugMode), `compose.server.debugmode.json` (the 221 live-test config:
 - **Combat demo** — `dotnet run --project tools/livecombat -- 0` (N independent
   1v1 lanes of real bots to a real kill).
 - **`tools/allegiance-mcp`** — a Model-Context-Protocol server that scripts
-  bot spawns, scenarios and arenas against a running server. It speaks JSON
+  bot spawns and scenarios against a running server. It speaks JSON
   stdio to an MCP client; `scripts/mcp_driver.py` is a self-contained stdio
   driver (no machine-local dependencies). The P572 `scripts/live-proof.sh`
   uses it for `--bots 'spawn_scenario {...}'`.

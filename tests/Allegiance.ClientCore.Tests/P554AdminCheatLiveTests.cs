@@ -5,7 +5,6 @@ using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 using Allegiance.ClientCore.Session;
-using Allegiance.Tools.McpSpawner;
 using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
@@ -102,9 +101,8 @@ public sealed class P554AdminCheatLiveTests
 
     private static Vector3 Vec3(float[] v) => v is { Length: >= 3 } ? new Vector3(v[0], v[1], v[2]) : Vector3.Zero;
 
-    /// <summary>Mirror of <c>BotManager.ProbeSectorCenter</c>: the centroid of a
-    /// sector's warps and stations from the peer's real world (the same source
-    /// the arena mirroring uses).</summary>
+    /// <summary>The centroid of a sector's warps and stations from the peer's
+    /// real world (the relocation spot is derived from it).</summary>
     private static Vector3 WorldCenter(ConnectionSession cs, short sector)
     {
         var pts = new List<Vector3>();
@@ -205,8 +203,9 @@ public sealed class P554AdminCheatLiveTests
         short home = CsSector(cs);
         short target = PickTargetSector(server, home);
 
-        // The proven-safe arena spot: the target's warp/station centroid + 650u
-        // (the MCP ArenaOffset), the same placement the P539d arena uses.
+        // The proven-safe relocation spot: the target's warp/station centroid +
+        // 650u (the offset the removed P539d arena used to mirror about) so the
+        // ship lands in open space away from the anchors.
         PumpUntil(server, () =>
         {
             lock (cs.Gate) return cs.World.Warps.Count > 0 && cs.World.Stations.Count > 0;
@@ -231,16 +230,14 @@ public sealed class P554AdminCheatLiveTests
         Assert.Equal(target, CsSector(cs));
     }
 
-    // ── Failing-first: MCP arena against a refusing server returns an explicit error ──
-
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Privileged_admin_relocates_an_mcp_harness_bot_it_launched()
     {
         Require.Artwork();
         // The ownership rule's "launched a bot" leg: an allow-listed admin may
-        // relocate an MCP-harness (mcp-prefixed) bot — the exact population the
-        // probe drives in the networked arena proof.
+        // relocate an MCP-harness (mcp-prefixed) bot — the population the MCP
+        // probe launches.
         using var server = new Srv { SpawnInitialMinersAtBoot = false };
         var config = Config(new Ac { Enabled = true, AllowNames = ["admin"] });
         config.LiveSettings!.TestHarness = new global::Allegiance.Server.TestHarnessConfig { Enabled = true, IgnoreTechGate = false };
@@ -284,42 +281,6 @@ public sealed class P554AdminCheatLiveTests
 
         Assert.Equal(home, ServerShipById(server, humanShip)!.Sector!.Id);   // never moved
         Assert.Equal(home, CsSector(human));
-    }
-
-    [Trait("Requires", "Artwork")]
-    [SkippableFact]
-    public void Mcp_arena_against_a_refusing_server_returns_an_explicit_error()
-    {
-        Require.Artwork();
-        using var server = new Srv { SpawnInitialMinersAtBoot = false };
-        var config = Config(null);
-        // H-06: buy in the real debug hangar with an explicit test-harness
-        // tech grant, so this test reaches the intended relocation refusal.
-        config.LiveSettings.TestHarness = new global::Allegiance.Server.TestHarnessConfig
-            { Enabled = true, Money = 1_000_000, IgnoreTechGate = true };
-        server.Boot(config);                                           // adminCheats disabled → server refuses
-        var ticker = new Ticker(server);
-        try
-        {
-            using var mgr = new BotManager("127.0.0.1", server.BoundPort);
-            Assert.True(mgr.ServerReady, "probe must validate");
-
-            // Drive the arena spawn of ONE combat bot; the networked relocator
-            // (installed by default) sends the 'relocate' cheat via the bot's own
-            // connection, the server refuses (adminCheats disabled), and the
-            // arena path must surface a CLEAR error — never a silent staging.
-            var hull = Catalog.DefaultFighterHull();
-            var parts = Catalog.NativePreferredLoadout(hull.Id, hull.Name, 0).Parts;
-            var ex = Record.Exception(() => mgr.SpawnBot(hull.Id, hull.Name, mgr.ValidSides()[0], parts, "combat",
-                targetSector: 1052, arena: true, arenaPosition: new Vector3(0, 0, 650), arenaFacing: new Vector3(0, 0, 1)));
-            Assert.NotNull(ex);
-            Assert.Contains("REFUSED", ex.Message, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains("adminCheats", ex.Message, StringComparison.OrdinalIgnoreCase);
-        }
-        finally
-        {
-            ticker.Dispose();
-        }
     }
 
     // ── P602: shared secret — trusted only when the line presents it ───────
@@ -378,27 +339,5 @@ public sealed class P554AdminCheatLiveTests
         var ship = ServerShipById(server, shipId)!;
         Assert.Equal(target, ship.Sector!.Id);
         Assert.True((ship.Position - destPos).Length() < 1f, $"server position {ship.Position} != {destPos}");
-    }
-
-    private sealed class Ticker : IDisposable
-    {
-        private readonly Srv _server;
-        private readonly CancellationTokenSource _cts = new();
-        private readonly Thread _thread;
-        public Ticker(Srv server)
-        {
-            _server = server;
-            _thread = new Thread(Loop) { IsBackground = true, Name = "p554-ticker" };
-            _thread.Start();
-        }
-        private void Loop()
-        {
-            while (!_cts.IsCancellationRequested)
-            {
-                try { _server.TickSim(); } catch { }
-                Thread.Sleep(4);
-            }
-        }
-        public void Dispose() { _cts.Cancel(); _thread.Join(2000); }
     }
 }

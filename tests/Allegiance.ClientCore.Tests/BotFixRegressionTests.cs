@@ -184,15 +184,6 @@ public sealed partial class BotFixRegressionTests
     }
 
     [Fact]
-    public void FailedArena_RemovesRegisteredEntry_AndReportsFailure()
-    {
-        using var cs = Session(); var bot = Bot(cs); var mgr = Manager(bot);
-        Assert.IsType<InvalidOperationException>(Call("FailArena", mgr, "probe-bot", bot, "refused"));
-        Assert.Empty(Get<IList>(mgr, "_bots")); Assert.True(Get<bool>(bot, "Inactive"));
-        Assert.Equal("arena spawn failed", Assert.Single(mgr.RemovedBots()).Reason);
-    }
-
-    [Fact]
     public void MissionRotation_ResolvesNamedObjectiveAndClearsOldArrival_BeforeDriving()
     {
         using var cs = Session(); var bot = Bot(cs); var mgr = Manager(bot);
@@ -350,14 +341,9 @@ public sealed partial class BotFixRegressionTests
     }
 
     [Theory]
-    [InlineData("Bomber")][InlineData("Fighter")][InlineData("Scout")]
-    public void Arena_AllRolesUseArenaSector(string role) =>
-        Assert.Equal((short?)4, BotManager.ResolveScenarioTarget(true, Enum.Parse<Showcase.HullRole>(role), 4, 9));
-
-    [Theory]
     [InlineData("Bomber")][InlineData("Fighter")]
     public void MissingTarget_EngagesInPlace(string role) =>
-        Assert.Null(BotManager.ResolveScenarioTarget(false, Enum.Parse<Showcase.HullRole>(role), null, 9));
+        Assert.Null(BotManager.ResolveScenarioTarget(Enum.Parse<Showcase.HullRole>(role), null, 9));
 
     [Theory]
     [InlineData("dead")][InlineData("gone")][InlineData("missing")]

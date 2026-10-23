@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# P593b — v12 (after, deterministic): arena 1v1; observer auto-targets the enemy;
+# P593b — v12 (after, deterministic): march 1v1; observer auto-targets the enemy;
 # inject middle-click (fire missile) inputs into the client window; COCKPIT cam so
 # the fired missile volley streams large and directly ahead in the forward view.
 set -uo pipefail
@@ -36,8 +36,8 @@ MCP=$!
 sleep 3
 feed() { printf '%s\n' "$1" >> "$CMD"; }
 
-echo "== arena 1v1 ${LAUNCHER} at $SECTOR =="
-feed "{\"tool\":\"spawn_scenario\",\"args\":{\"size\":1,\"target_sector\":\"$SECTOR\",\"arena\":true,\"launcher\":\"$LAUNCHER\"}}"
+echo "== march 1v1 ${LAUNCHER} at $SECTOR =="
+feed "{\"tool\":\"spawn_scenario\",\"args\":{\"size\":1,\"target_sector\":\"$SECTOR\",\"mode\":\"march\",\"staging\":false,\"launcher\":\"$LAUNCHER\"}}"
 for i in $(seq 1 120); do
   if grep -q "RESULT spawn_scenario " "$MCO" 2>/dev/null; then echo "spawn RESULT seen (~${i}s)"; break; fi
   sleep 1

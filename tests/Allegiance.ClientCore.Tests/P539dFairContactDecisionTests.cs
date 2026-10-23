@@ -12,8 +12,8 @@ namespace Allegiance.ClientCore.Tests;
 ///    collision ring of the target (no ramming);
 /// 3. collision deaths are counted: a death with no credited ship shooter is
 ///    classified collision/other, a credited ship kill is gunfire;
-/// 4. arena placements are mirrored about the centre and equidistant from it;
-///    plus cross-side approach avoidance deflects around a ship in the path.
+/// 4. cross-side approach avoidance deflects around a ship in the path.
+/// (P795 removed the arena mode and its mirrored-placement helper.)
 /// </summary>
 public class P539dFairContactDecisionTests
 {
@@ -129,44 +129,6 @@ public class P539dFairContactDecisionTests
         // A "kill" whose killer IS the victim (suicide) is not credited to another ship.
         Assert.Equal(BotManager.DeathCause.CollisionOrOther, BotManager.ClassifyDeath(50,
             new[] { (VictimId: (short)50, KillerId: (short)50, KillerType: (short)0) }));
-    }
-
-    // ── 4. Arena placements mirrored + equidistant ──
-
-    [Fact]
-    public void ArenaPlacements_AreMirroredAndEquidistantFromCentre()
-    {
-        var center = new Vector3(100f, 200f, 50f);
-        var axis = new Vector3(0f, 0f, 1f);
-        float offset = 650f;
-        var (a, b, fa, fb) = BotManager.ComputeArenaPlacements(5, center, axis, offset, 220f);
-
-        Assert.Equal(5, a.Length);
-        Assert.Equal(5, b.Length);
-        for (int i = 0; i < 5; i++)
-        {
-            // Mirrored about the centre: b[i] is the reflection of a[i].
-            Vector3 reflectedB = 2f * center - a[i];
-            Assert.True((reflectedB - b[i]).Length() < 1e-3f, $"bot {i} must be mirrored about the centre");
-            // Both sides EQUIDISTANT from the centre (the lane spread shifts both equally).
-            float da = (a[i] - center).Length();
-            float db = (b[i] - center).Length();
-            Assert.True(MathF.Abs(da - db) < 1e-3f, $"side-A and side-B bot {i} must be equidistant from the centre ({da:F1} vs {db:F1})");
-            // Each is at least the axial offset from the centre (the offset dominates).
-            Assert.True(da >= offset - 1e-3f, $"bot {i} must be at least the arena offset ({offset}) from the centre, got {da:F1}");
-        }
-        // Facing each other: side A (at +axis) faces −axis, side B (at −axis) faces +axis.
-        Assert.True((fa + axis).Length() < 1e-4f, "side A faces toward side B (−axis)");
-        Assert.True((fb - axis).Length() < 1e-4f, "side B faces toward side A (+axis)");
-    }
-
-    [Fact]
-    public void ArenaPlacements_SameSideBotsSpreadApart()
-    {
-        var (a, b, _, _) = BotManager.ComputeArenaPlacements(4, Vector3.Zero, new Vector3(0f, 0f, 1f), 650f, 220f);
-        for (int i = 0; i < a.Length; i++)
-            for (int j = i + 1; j < a.Length; j++)
-                Assert.True((a[i] - a[j]).Length() > 50f, $"same-side bots {i},{j} must not stack on one point");
     }
 
     // ── Cross-side approach avoidance: steer around a ship in the path ──

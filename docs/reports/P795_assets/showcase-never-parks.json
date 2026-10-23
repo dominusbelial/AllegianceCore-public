@@ -1,0 +1,66 @@
+{
+  "base": [
+    {
+      "file": "run1-detailed.log",
+      "seconds": 109.4,
+      "samples": 1093,
+      "reached": 28,
+      "longestIdleWithTargetSeconds": 2.006,
+      "shots": 2770,
+      "hits": 1202,
+      "kills": 10
+    }
+  ],
+  "after": [
+    {
+      "file": "run1.log",
+      "seconds": 107.3,
+      "samples": 1072,
+      "reached": 27,
+      "longestIdleWithTargetSeconds": 2.107,
+      "shots": 2479,
+      "hits": 898,
+      "kills": 8
+    },
+    {
+      "file": "run2.log",
+      "seconds": 111.3,
+      "samples": 1111,
+      "reached": 28,
+      "longestIdleWithTargetSeconds": 1.924,
+      "shots": 3477,
+      "hits": 1603,
+      "kills": 10
+    },
+    {
+      "file": "run3.log",
+      "seconds": 109.3,
+      "samples": 1091,
+      "reached": 28,
+      "longestIdleWithTargetSeconds": 2.007,
+      "shots": 3476,
+      "hits": 1493,
+      "kills": 12
+    },
+    {
+      "file": "run4.log",
+      "seconds": 111.7,
+      "samples": 1114,
+      "reached": 28,
+      "longestIdleWithTargetSeconds": 1.917,
+      "shots": 2779,
+      "hits": 1254,
+      "kills": 13
+    },
+    {
+      "file": "run5.log",
+      "seconds": 110.5,
+      "samples": 1103,
+      "reached": 27,
+      "longestIdleWithTargetSeconds": 2.006,
+      "shots": 3573,
+      "hits": 1412,
+      "kills": 8
+    }
+  ]
+}

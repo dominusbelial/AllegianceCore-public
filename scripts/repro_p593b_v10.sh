@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# P593b — v10 (after): arena 1v1 (enemy attacks hovering observer) with DENSE
+# P593b — v10 (after): march 1v1 (enemy attacks hovering observer) with DENSE
 # autoshots to catch the incoming missile volley.
 set -uo pipefail
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -35,8 +35,8 @@ MCP=$!
 sleep 3
 feed() { printf '%s\n' "$1" >> "$CMD"; }
 
-echo "== arena 1v1 ${LAUNCHER} at $SECTOR =="
-feed "{\"tool\":\"spawn_scenario\",\"args\":{\"size\":1,\"target_sector\":\"$SECTOR\",\"arena\":true,\"launcher\":\"$LAUNCHER\"}}"
+echo "== march 1v1 ${LAUNCHER} at $SECTOR =="
+feed "{\"tool\":\"spawn_scenario\",\"args\":{\"size\":1,\"target_sector\":\"$SECTOR\",\"mode\":\"march\",\"staging\":false,\"launcher\":\"$LAUNCHER\"}}"
 for i in $(seq 1 120); do
   if grep -q "RESULT spawn_scenario " "$MCO" 2>/dev/null; then echo "spawn RESULT seen (~${i}s)"; break; fi
   sleep 1

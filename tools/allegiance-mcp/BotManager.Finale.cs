@@ -54,7 +54,7 @@ internal sealed partial class BotManager
     }
 
     private sealed record FinaleOriginal(short Hull, string Name, IReadOnlyList<ExpandedPartData>? Parts,
-        short? Weapon, short? Launcher, double ReadyTime, short Wingman, short? Target, int RouteIndex, bool Arena, string Role);
+        short? Weapon, short? Launcher, double ReadyTime, short Wingman, short? Target, int RouteIndex, string Role);
 
     public object ConfigureFinale(ShowcaseFinale.Settings settings, IReadOnlyCollection<string> names)
     {
@@ -380,7 +380,7 @@ internal sealed partial class BotManager
                 bot.FinaleEscort = true;
             if (!bot.FinaleBomberReserved && !bot.FinaleEscort) return;
             bot.FinaleOriginal ??= new(bot.HullId, bot.HullName, bot.Parts, bot.WeaponPartId,
-                bot.LauncherPartId, bot.MissileReadyTime, bot.WingmanBehaviour, bot.TargetSector, bot.RouteIndex, bot.Arena, bot.Role);
+                bot.LauncherPartId, bot.MissileReadyTime, bot.WingmanBehaviour, bot.TargetSector, bot.RouteIndex, bot.Role);
             if (bot.FinaleBomberReserved)
             {
                 var loadout = SelectFinaleLoadout(bot, Catalog.RepresentativeCore().StationTypes[plan.TargetTypeId]);
@@ -400,7 +400,6 @@ internal sealed partial class BotManager
             }
             EndDefense(bot);
             bot.TargetSector = plan.Sector;
-            bot.Arena = false;
             bot.RoutePath = null; bot.RouteIndex = -1;
             AssignResearchSiegeRoute(bot, run, plan);
         }
@@ -446,7 +445,7 @@ internal sealed partial class BotManager
                 bot.WeaponPartId = original.Weapon; bot.LauncherPartId = original.Launcher;
                 bot.MissileReadyTime = original.ReadyTime; bot.WingmanBehaviour = original.Wingman;
                 bot.TargetSector = original.Target;
-                bot.RouteIndex = original.RouteIndex; bot.Arena = original.Arena; bot.Role = original.Role;
+                bot.RouteIndex = original.RouteIndex; bot.Role = original.Role;
                 bot.MineDispenserPartId = original.Parts is { } parts ? FindMineDispenser(parts) : null;
             }
             bot.FinaleOriginal = null;

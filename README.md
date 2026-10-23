@@ -75,7 +75,7 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
 **Bots**
 
 - Headless bots fly real missions through `tools/allegiance-mcp`, an MCP
-  server that spawns scenarios, arenas and full showcase matches.
+  server that spawns scenarios and full showcase matches.
 - A research commander picks tech and issues attack and repair orders. Bots
   run strike waves on the softest enemy station with defend escorts, plus
   cloak, nanite repair support, chaff/probes/mines, ammo trips and
@@ -230,9 +230,9 @@ clients. A 200v200 is one tool call:
   "args": { "preset": "showcase", "target_sector": "Alderan", "size_scale": 13, "mode": "march" } }
 ```
 
-`size_scale` 13 ≈ 195 per side; `mode: "march"` launches each side at home and sends
-wings through different alephs, `"arena"` spawns both fleets directly in Alderan for an
-instant clash. ~390 bots are a heavy load: run the bot tool on its own wired machine,
+`size_scale` 13 ≈ 195 per side; `mode: "march"` (the only battle start since P795
+removed the arena mode) launches each side at home and sends wings through different
+alephs to converge on Alderan. ~390 bots are a heavy load: run the bot tool on its own wired machine,
 not on the server or the machine you play on.
 
 ## More

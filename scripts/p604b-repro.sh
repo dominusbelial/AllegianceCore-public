@@ -67,7 +67,7 @@ CMD_FILE="$OUTDIR/mcp_cmds.jsonl"; MC_OUT="$OUTDIR/mcp_out.log"
 python3 "$DRIVER" "$MCP_EXE" 127.0.0.1 "$PORT" "$CMD_FILE" "$MC_OUT" "$OUTDIR/mcp_err.log" >> "$MC_OUT" 2>&1 &
 MCP_PID=$!; PIDS+=("$MCP_PID")
 sleep 3
-printf '%s\n' "{\"tool\": \"spawn_scenario\", \"args\": {\"preset\": \"showcase\", \"size_scale\": $SIZE_SCALE, \"target_sector\": \"Haumea\", \"staging\": true, \"arena\": ${ARENA:-false}}}" >> "$CMD_FILE"
+printf '%s\n' "{\"tool\": \"spawn_scenario\", \"args\": {\"preset\": \"showcase\", \"size_scale\": $SIZE_SCALE, \"target_sector\": \"Haumea\", \"staging\": true}}" >> "$CMD_FILE"
 found=0
 for i in $(seq 1 300); do grep -q "RESULT spawn_scenario " "$MC_OUT" 2>/dev/null && { found=1; break; }; sleep 1; done
 echo "[p604b-repro] spawn RESULT seen=$found"; grep "RESULT spawn_scenario" "$MC_OUT" | head -1

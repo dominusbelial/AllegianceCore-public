@@ -42,7 +42,7 @@ internal sealed partial class BotManager
         && CombatTargetSelector.ClassifyTargetId(ActualHullId(bot)) == BotTargetClass.Fighter;
 
     private static bool DefenseAvailable(ActiveBot bot) => IsParticipating(bot) && !bot.SpawnPending
-        && !bot.ObjectivesPending && !bot.InScenario && !bot.Arena && bot.Behavior == "combat"
+        && !bot.ObjectivesPending && !bot.InScenario && bot.Behavior == "combat"
         && bot.Cs is not null && !bot.FinaleEscort && !bot.IsPod && !bot.PodDocked
         && !Catalog.IsLifepodHull(ActualHullId(bot));
 
@@ -52,7 +52,7 @@ internal sealed partial class BotManager
         var liveKeys = new HashSet<DefenseKey>();
         foreach (var bot in bots)
         {
-            if (!IsParticipating(bot) || bot.SpawnPending || bot.InScenario || bot.Arena
+            if (!IsParticipating(bot) || bot.SpawnPending || bot.InScenario
                 || bot.Behavior != "combat" || bot.Cs is not { } cs) continue;
             lock (cs.Gate)
             {
@@ -191,7 +191,7 @@ internal sealed partial class BotManager
 
     private bool TryDriveDefense(ActiveBot bot, short sector, double now)
     {
-        if (!DefenseConfig.Enabled || bot.Arena || bot.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase)
+        if (!DefenseConfig.Enabled || bot.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase)
             || CombatTargetSelector.ClassifyTargetId(ActualHullId(bot)) is BotTargetClass.MinerDrone or BotTargetClass.Bomber) return false;
         var cs = bot.Cs!;
         bool alerted = DefenseIncidents.ContainsKey(DefenseKeyFor(bot, sector));

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# P593b — reproduction v4: IC(25) vs GT(3), ARENA fight (both sides launch
-# directly into the observer's sector at mirrored spots) armed with a LIT-SOLID
+# P593b — reproduction v4: IC(25) vs GT(3), MARCH fight (P795 removed the arena
+# mode; both sides launch at home and fly to the observer's sector) armed with a LIT-SOLID
 # missile launcher (MRM Quickfire 1 -> mis08). Observer hovers/targets the
 # nearest enemy so it is immersed in the missile exchange. Real-window capture.
 set -uo pipefail
@@ -38,8 +38,8 @@ MCP=$!
 sleep 3
 feed() { printf '%s\n' "$1" >> "$CMD"; }
 
-echo "== arena ${SIZE}v${SIZE} ${LAUNCHER} at $SECTOR =="
-feed "{\"tool\":\"spawn_scenario\",\"args\":{\"size\":$SIZE,\"target_sector\":\"$SECTOR\",\"arena\":true,\"launcher\":\"$LAUNCHER\"}}"
+echo "== march ${SIZE}v${SIZE} ${LAUNCHER} at $SECTOR =="
+feed "{\"tool\":\"spawn_scenario\",\"args\":{\"size\":$SIZE,\"target_sector\":\"$SECTOR\",\"mode\":\"march\",\"staging\":false,\"launcher\":\"$LAUNCHER\"}}"
 for i in $(seq 1 120); do
   if grep -q "RESULT spawn_scenario " "$MCO" 2>/dev/null; then echo "spawn RESULT seen (~${i}s)"; break; fi
   sleep 1

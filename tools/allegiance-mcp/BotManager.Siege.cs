@@ -37,9 +37,9 @@ internal sealed partial class BotManager
             {
                 if (bot.FinaleBomberActive && bot.FinaleGrantVerified) return false;
                 bot.FinaleOriginal ??= new(bot.HullId, bot.HullName, bot.Parts, bot.WeaponPartId,
-                    bot.LauncherPartId, bot.MissileReadyTime, bot.WingmanBehaviour, bot.TargetSector, bot.RouteIndex, bot.Arena, bot.Role);
+                    bot.LauncherPartId, bot.MissileReadyTime, bot.WingmanBehaviour, bot.TargetSector, bot.RouteIndex, bot.Role);
                 bot.FinaleBomberActive = bot.FinaleGrantVerified = true;
-                bot.Role = "bomber"; bot.TargetSector = plan.Sector; bot.Arena = false;
+                bot.Role = "bomber"; bot.TargetSector = plan.Sector;
                 bot.WingmanBehaviour |= Showcase.WbbmUseMissiles;
                 bot.TargetId = bot.OrderedTargetId = null; bot.Arrived = false; bot.ArrivedAt = null;
                 bot.StagingSector = -1; bot.StagePhase = StageReleasedPhase; bot.ReleasedAt = now;

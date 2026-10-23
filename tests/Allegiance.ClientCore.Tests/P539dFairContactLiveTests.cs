@@ -25,10 +25,11 @@ namespace Allegiance.ClientCore.Tests;
 ///   • per-side arrival (hops, first/last arrival, spread) in travel mode vs
 ///     travel-with-staging,
 ///   • collision-vs-gunfire death accounting per side,
-///   • symmetry (equal-tech shots within 1.5×) in travel-with-staging AND arena,
+///   • symmetry (equal-tech shots within 1.5×) with travel-with-staging,
 ///   • the full showcase bar (higher-tech side wins, reversal flips it).
 ///
-/// Parameterised by env: ALLEGIANCE_P539D_MODE=trace|travel|staging|arena,
+/// P795 removed the arena mode; this harness now records march only
+/// (travel or travel-with-staging). Parameterised by env: ALLEGIANCE_P539D_MODE=travel|staging,
 /// _SIZE, _SECONDS, _TECH_A, _TECH_B, _TAG. All gated behind
 /// ALLEGIANCE_LIVE_P539D=1; the run trace is written to $TMPDIR/p539d_*.txt.
 /// </summary>
@@ -127,43 +128,9 @@ public sealed class P539dFairContactLiveTests
         return null;
     }
 
-    private static Sector? ServerSectorById(Srv server, short id)
-    {
-        foreach (var m in server.Missions)
-            foreach (var sec in m.Sectors)
-                if (sec.Id == id) return sec;
-        return null;
-    }
-
-    /// <summary>Supported arena relocation: launch at home, then relocate via the
-    /// server's OWN warp-transit wire path. P554 moved this logic INTO the server
-    /// (<see cref="Srv.RelocateShipToSector"/>) so the in-process test and the
-    /// networked 'relocate' admin cheat share ONE implementation: physically move
-    /// the ship (source-sector remove / dest add / Sector / Position / Orientation
-    /// / zero velocity) and then raise the site's <c>ShipWarped</c> hook, which
-    /// the Server has wired to its per-peer SET_CLUSTER broadcaster
-    /// (<c>Server.Lifecycle.cs:679 → Server.OnShipWarped</c>). That is exactly
-    /// the wire notification a real warp transit sends the bot's client, so the
-    /// bot's ClientWorld learns the new sector and pose (a bare server move that
-    /// skips this would leave the client's world stale in its home sector).</summary>
-    private static void WireArenaRelocator(BotManager mgr, Srv server)
-    {
-        mgr.Relocator = (shipId, sector, pos, fwd) =>
-        {
-            try
-            {
-                var ship = ServerShip(server, shipId);
-                var dest = ServerSectorById(server, sector);
-                if (ship is null || dest is null) return false;
-                return server.RelocateShipToSector(ship, dest, pos, fwd);   // SET_CLUSTER to the bot's peer
-            }
-            catch { return false; }
-        };
-    }
-
-    /// <summary>Boot a fresh 221-config server + BotManager and wire the arena
-    /// relocator. Returns (server, ticker, mgr). The server stays DISPOSABLE; the
-    /// caller disposes ticker+mgr+server in reverse order.</summary>
+    /// <summary>Boot a fresh 221-config server + BotManager. Returns (server,
+    /// ticker, mgr). The server stays DISPOSABLE; the caller disposes
+    /// ticker+mgr+server in reverse order.</summary>
     private static (Srv server, ServerTicker ticker, BotManager mgr, StampTee tee, TextWriter saved)
         Boot(out int? boundPort)
     {
@@ -176,11 +143,9 @@ public sealed class P539dFairContactLiveTests
         var ticker = new ServerTicker(server);
         var mgr = new BotManager("127.0.0.1", server.BoundPort);
         if (!mgr.ServerReady) throw new InvalidOperationException("probe must validate");
-        WireArenaRelocator(mgr, server);
         return (server, ticker, mgr, tee, saved);
     }
 
-    private static readonly object _reloc = new();
     private static int _runSeq;
 
     /// <summary>Run ONE 221-config combat scenario of `size` bots/side with the
@@ -212,48 +177,25 @@ public sealed class P539dFairContactLiveTests
 
             // Resolve the rendezvous (Alderan) + per-side routes from a probe snapshot.
             var clusters = mgr.ProbeClusters();
-            // P539d — the arena target sector is configurable so the arena showcase
-            // can run in open space (Alderan's 134-rock field swamps the loadout
-            // edge; every other sector has 0 asteroids).
-            short alderan = short.TryParse(Environment.GetEnvironmentVariable("ALLEGIANCE_P539D_ARENA_SECTOR"), out var ars) ? ars : (short)1052;
-            var center = mgr.ProbeSectorCenter(alderan) ?? Vector3.Zero;
-            sb.AppendLine($"RENDEZVOUS sector={alderan} name={(clusters.TryGetValue(alderan, out var c) ? c.Name : "?")} center={center}");
+            short alderan = 1052;
+            sb.AppendLine($"RENDEZVOUS sector={alderan} name={(clusters.TryGetValue(alderan, out var c) ? c.Name : "?")}");
             foreach (var kv in clusters)
                 sb.AppendLine($"SECTOR {kv.Key} '{kv.Value.Name}'");
             foreach (var s in sides)
                 sb.AppendLine($"SIDE {s} -> rendezvous {alderan}");
 
             bool useStaging = mode is "staging";
-            bool arena = mode is "arena";
             var botIds = new HashSet<short>();
             var sideById = new Dictionary<short, short>();
 
-            if (arena)
+            for (int i = 0; i < size; i++)
             {
-                float aOff = float.TryParse(Environment.GetEnvironmentVariable("ALLEGIANCE_P539D_ARENA_OFFSET"), out var ao) ? ao : BotManager.ArenaOffset;
-                float aSpr = float.TryParse(Environment.GetEnvironmentVariable("ALLEGIANCE_P539D_ARENA_SPREAD"), out var asp) ? asp : 220f;
-                var axis = new Vector3(0f, 0f, 1f);
-                var (pa, pb, fa, fb) = BotManager.ComputeArenaPlacements(size, center, axis, aOff, aSpr);
-                sb.AppendLine($"ARENA offset={aOff} spread={aSpr} axis=+Z");
-                for (int i = 0; i < size; i++)
-                {
-                    var ra = mgr.SpawnBot(hull.Id, hull.Name, a, partsA, "combat", alderan, null, null, useStaging: false, arena: true, pa[i], fa);
-                    botIds.Add(ra.ShipId); sideById[ra.ShipId] = a;
-                    var rb = mgr.SpawnBot(hull.Id, hull.Name, b, partsB, "combat", alderan, null, null, useStaging: false, arena: true, pb[i], fb);
-                    botIds.Add(rb.ShipId); sideById[rb.ShipId] = b;
-                }
+                var ra = mgr.SpawnBot(hull.Id, hull.Name, a, partsA, "combat", alderan, null, null, useStaging);
+                botIds.Add(ra.ShipId); sideById[ra.ShipId] = a;
+                var rb = mgr.SpawnBot(hull.Id, hull.Name, b, partsB, "combat", alderan, null, null, useStaging);
+                botIds.Add(rb.ShipId); sideById[rb.ShipId] = b;
             }
-            else
-            {
-                for (int i = 0; i < size; i++)
-                {
-                    var ra = mgr.SpawnBot(hull.Id, hull.Name, a, partsA, "combat", alderan, null, null, useStaging);
-                    botIds.Add(ra.ShipId); sideById[ra.ShipId] = a;
-                    var rb = mgr.SpawnBot(hull.Id, hull.Name, b, partsB, "combat", alderan, null, null, useStaging);
-                    botIds.Add(rb.ShipId); sideById[rb.ShipId] = b;
-                }
-            }
-            sb.AppendLine($"SPAWNED {botIds.Count} bots (A:{size} B:{size}) mode={mode} staging={useStaging} arena={arena}");
+            sb.AppendLine($"SPAWNED {botIds.Count} bots (A:{size} B:{size}) mode={mode} staging={useStaging}");
 
             var t0 = DateTime.UtcNow;
             var deadline = t0.AddSeconds(seconds);
@@ -342,7 +284,7 @@ public sealed class P539dFairContactLiveTests
                 if (!botsText.Any(bid => Regex.IsMatch(body, $@"ship {bid}( |\b)|player ship {bid} "))) continue;
                 if (body.Contains("[warp]", StringComparison.Ordinal) || body.Contains("[eject]", StringComparison.Ordinal)
                     || body.Contains("[collision]", StringComparison.Ordinal) || body.Contains("[combat] ship", StringComparison.Ordinal)
-                    || body.Contains("[p539d] DEATH", StringComparison.Ordinal) || body.Contains("[p539d] arena:", StringComparison.Ordinal)
+                    || body.Contains("[p539d] DEATH", StringComparison.Ordinal)
                     || body.Contains("[p539d] side ", StringComparison.Ordinal))
                     sb.AppendLine("SERV " + t);
             }
@@ -375,8 +317,8 @@ public sealed class P539dFairContactLiveTests
         var clusters = mgr.ProbeClusters();
         foreach (var kv in clusters.OrderBy(x => x.Key))
             sb.AppendLine($"  SECTOR {kv.Key} '{kv.Value.Name}'");
-        // Asteroid density per sector (the asteroid field is what drowns the
-        // arena's loadout edge in collisions).
+        // Asteroid density per sector (the asteroid field is what used to drown
+        // the loadout edge in collisions in the removed arena mode).
         foreach (var m in server.Missions)
             foreach (var sec in m.Sectors)
                 sb.AppendLine($"  DENSITY sector {sec.Id} '{sec.Name}' asteroids={sec.Mineable.Count}");

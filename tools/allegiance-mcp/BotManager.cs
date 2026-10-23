@@ -130,7 +130,9 @@ internal sealed partial class BotManager : IDisposable
     private static readonly List<(short Side, double Ttk)> TtkSamples = new();
 
     /// <summary>P556 — clear the TTK accumulator (call at the START of each
-    /// arena run so samples never bleed across games).</summary>
+    /// combat run so samples never bleed across games).</summary>
+    // P795 — the arena battle-start mode was removed; TTK samples are still
+    // per-run telemetry for march scenarios.
     public static void ResetCombatTiming()
     {
         lock (TtkLock) { TtkFirstHit.Clear(); TtkSamples.Clear(); }
@@ -161,15 +163,6 @@ internal sealed partial class BotManager : IDisposable
         lock (TtkLock) return TtkSamples.Count(s => s.Side == side);
     }
 
-    /// <summary>
-    /// P539d — optional host-supplied arena relocation: given a bot's ship id,
-    /// the target sector, a mirrored position and a facing, move that ship into
-    /// the arena sector at that spot (the in-process live tests wire this to the
-    /// server's native SetCluster relocation; a standalone MCP host provides its
-    /// own supported relocation). null = arena spawns without relocation (the bot
-    /// stays at home and the caller is told).
-    /// </summary>
-    public Func<short, short, Vector3, Vector3, bool>? Relocator;
     private readonly Thread _loopThread;
     private int _nameCounter;
     /// <summary>P779b-1 — the stable per-bot roster id the medevac pick keys on
@@ -215,73 +208,11 @@ internal sealed partial class BotManager : IDisposable
         Probe.World.CountOnlyProjectiles = true;
         Probe.World.ReckonRemotes = false;   // P633 — headless probe: no render consumption
         ConnectProbe();
-        // P554 — a standalone MCP always talks to a NETWORKED server (host/port),
-        // so install the wire-based arena relocator by default: it sends the
-        // 'relocate' admin cheat via each bot's OWN connection and waits for the
-        // bot's ClientWorld to show the new sector (SET_CLUSTER). The in-process
-        // live tests override this with WireArenaRelocator right after
-        // construction. When the server refuses (adminCheats off / name not
-        // allow-listed) it returns false and the arena path throws a clear error.
-        Relocator = CreateNetworkedRelocator();
         _loopThread = new Thread(Loop) { IsBackground = true, Name = "allegiance-mcp-behavior" };
         _researchThread = new Thread(ResearchLoop) { IsBackground = true, Name = "allegiance-mcp-research" };
         if (Partition is null || Partition.Index == 0) _researchThread.Start();
         ownership.Transfer();
         telemetryOwnership.Transfer();
-    }
-
-    /// <summary>P554 — how long the networked arena relocator waits for the
-    /// relocated bot's ClientWorld to show the target sector before declaring
-    /// the relocate refused/undelivered.</summary>
-    private const double RelocateTimeoutSeconds = 6.0;
-
-    /// <summary>
-    /// P554 — the networked arena relocator (installed by default for a standalone
-    /// MCP). Given a bot's ship id, target sector and mirrored pose, it sends the
-    /// <c>relocate &lt;shipId&gt; &lt;sectorId&gt; &lt;x&gt; &lt;y&gt; &lt;z&gt; [fx fy fz]</c>
-    /// admin cheat through the PROBE connection (the allow-listed <c>mcp-probe-*</c>
-    /// — see the ownership rule <c>Server.MayRelocate</c>: the probe may move its
-    /// own ship or any MCP-harness bot), then waits for the BOT's own real
-    /// ClientWorld to show the new sector — the authoritative proof the server
-    /// processed the relocate and delivered <c>SET_CLUSTER</c> to that peer
-    /// (<c>Server.OnShipWarped</c>). Returns true only on that confirmation;
-    /// false = refused/undelivered (the caller throws a clear arena error).
-    /// </summary>
-    private Func<short, short, Vector3, Vector3, bool> CreateNetworkedRelocator()
-    {
-        return (shipId, sector, pos, fwd) =>
-        {
-            ActiveBot? bot;
-            lock (_gate) bot = _bots.FirstOrDefault(b => b.ShipId == shipId);
-            if (bot?.Cs is not { } cs)
-            {
-                Console.WriteLine($"[p554] arena: ship {shipId} has no combat wire peer to observe — aborting arena placement");
-                return false;
-            }
-            string F(double v) => v.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
-            string cmd = $"relocate {shipId} {sector} {F(pos.X)} {F(pos.Y)} {F(pos.Z)} {F(fwd.X)} {F(fwd.Y)} {F(fwd.Z)}";
-            // Send via the PROBE (the allow-listed 'mcp-*' prefix), which may move
-            // its own ship or any MCP-harness bot (Server.MayRelocate). On the
-            // refusal path (non-privileged / disabled) the unconsumed line is
-            // relayed as Individual chat to the target ship — contained, not a
-            // whole-server broadcast.
-            lock (Probe.Gate)
-                Probe.SendChat(cmd, ChatTarget.Individual, oidRecipient: shipId);
-            Console.WriteLine($"[p554] arena: sent relocate cheat '{cmd}' via the probe connection — waiting for SET_CLUSTER on ship {shipId}");
-
-            var deadline = DateTime.UtcNow.AddSeconds(RelocateTimeoutSeconds);
-            while (DateTime.UtcNow < deadline)
-            {
-                if (CsSector(cs) == sector)
-                {
-                    Console.WriteLine($"[p554] arena: ship {shipId} confirmed in sector {sector} (SET_CLUSTER applied to its ClientWorld)");
-                    return true;
-                }
-                Thread.Sleep(50);
-            }
-            Console.WriteLine($"[p554] arena: ship {shipId} never showed sector {sector} after the relocate cheat — server refused (adminCheats disabled / name not allow-listed) or the relocate was not processed");
-            return false;
-        };
     }
 
     private double Now() => _clock.Elapsed.TotalSeconds;
@@ -485,14 +416,14 @@ internal sealed partial class BotManager : IDisposable
     /// a specific error — never a silent no-op.
     /// </summary>
     public SpawnResult SpawnBot(short hullId, string hullName, short? side, IReadOnlyList<ExpandedPartData> parts, string behavior, short? targetSector = null, short? launcherPartId = null, string? launcherRequestName = null,
-        bool useStaging = false, bool arena = false, Vector3? arenaPosition = null, Vector3? arenaFacing = null,
+        bool useStaging = false,
         short wingmanBehaviour = Showcase.DefaultScenarioWingman,
         IReadOnlyList<short>? routePath = null, int routeIndex = -1, string? role = null, bool reportFailure = true)
     {
         try
         {
             return SpawnBotCore(hullId, hullName, side, parts, behavior, targetSector, launcherPartId, launcherRequestName,
-                useStaging, arena, arenaPosition, arenaFacing, wingmanBehaviour, routePath, routeIndex, role);
+                useStaging, wingmanBehaviour, routePath, routeIndex, role);
         }
         catch (Exception ex)
         {
@@ -502,7 +433,7 @@ internal sealed partial class BotManager : IDisposable
     }
 
     private SpawnResult SpawnBotCore(short hullId, string hullName, short? side, IReadOnlyList<ExpandedPartData> parts, string behavior, short? targetSector = null, short? launcherPartId = null, string? launcherRequestName = null,
-        bool useStaging = false, bool arena = false, Vector3? arenaPosition = null, Vector3? arenaFacing = null,
+        bool useStaging = false,
         short wingmanBehaviour = Showcase.DefaultScenarioWingman,
         IReadOnlyList<short>? routePath = null, int routeIndex = -1, string? role = null)
     {
@@ -657,7 +588,7 @@ internal sealed partial class BotManager : IDisposable
         }
 
         // P539d — fair-contact bookkeeping (combat bots only; idle/weave bots
-        // never travel or fight, so staging/arena leave them be).
+        // never travel or fight, so staging leaves them be).
         bot.LaunchedAt = Now();
         if (targetSector is { } objective)
         {
@@ -678,12 +609,6 @@ internal sealed partial class BotManager : IDisposable
         // enemy base. Fighters keep the staging barrier.
         bot.UseStaging = useStaging && behavior == "combat"
             && !string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase);
-        if (arena && behavior == "combat")
-        {
-            bot.Arena = true;
-            if (arenaPosition is { } ap) bot.ArenaPosition = ap;
-            if (arenaFacing is { } af) bot.ArenaFacing = af;
-        }
 
         lock (_gate)
         {
@@ -694,40 +619,8 @@ internal sealed partial class BotManager : IDisposable
                 _loopThread.Start();
             }
         }
-        // P554 — the arena relocation runs AFTER the bot is registered in
-        // _bots, because the networked relocator looks the bot up by shipId to
-        // send the 'relocate' cheat via the bot's OWN connection (ownership = a
-        // privileged player relocates their own ship). Arena REQUIRES a real
-        // relocation: a missing relocator or a server that refuses (adminCheats
-        // disabled / name not allow-listed) is a HARD ERROR, never the old
-        // silent "bot stays at home / travels" fallback — the caller sees it in
-        // the tool output instead of unknowingly staging.
-        if (arena && behavior == "combat")
-        {
-            if (targetSector is not { } ts)
-                throw FailArena(name, bot, "spawn_bot: arena mode requires a `target_sector` to place the bot in");
-            if (arenaPosition is not { } ap2)
-                throw FailArena(name, bot, "spawn_bot: arena mode requires a mirrored arena position");
-            if (bot.Cs is null)
-                throw FailArena(name, bot, "spawn_bot: arena mode needs the bot's own wire peer (combat ConnectionSession) to drive the relocate cheat");
-            var reloc = Relocator
-                ?? throw FailArena(name, bot, "spawn_bot: arena mode requires a relocation mechanism, but no Relocator is registered — cannot place the bot in the arena sector");
-
-            bool ok;
-            try { ok = reloc(bot.ShipId, ts, ap2, arenaFacing ?? Vector3.Zero); }
-            catch (Exception ex)
-            {
-                throw FailArena(name, bot, $"spawn_bot: arena relocation for bot '{name}' (ship {bot.ShipId}) threw: {ex.Message}");
-            }
-            if (!ok)
-                throw FailArena(name, bot,
-                    $"spawn_bot: arena relocation for bot '{name}' (ship {bot.ShipId}) to sector {ts} was REFUSED or not delivered by the server — "
-                    + "liveSettings.adminCheats is likely disabled or the bot's name not allow-listed (check the boot banner '[boot] *** ADMIN CHEATS ACTIVE'); the bot was NOT silently staged.");
-
-            bot.Arrived = true;
-            bot.ArrivedAt ??= Now();
-            Console.WriteLine($"[p539d] arena: bot {name} (ship {bot.ShipId} side {actualSide}) relocated to mirrored spot in sector {ts}");
-        }
+        // P795 — the arena relocation that used to run here was removed with the
+        // arena mode; a spawn always registers the bot and lets it march.
 
         if (!IsParticipating(bot))
             throw new InvalidOperationException($"spawn_bot: bot '{name}' disconnected before registration completed");
@@ -761,16 +654,6 @@ internal sealed partial class BotManager : IDisposable
         var grant = new LoadoutGrant(ack.HullId, ack.Parts.ToList());
         warning = EvaluateGrant(name, hullId, parts, grant);
         return grant;
-    }
-
-    /// <summary>P554 — on an arena-relocation failure the bot must not linger as
-    /// an orphan wire peer; dispose its connection(s) and return the clear error
-    /// that the tool surfaces (instead of silently staging).</summary>
-    private Exception FailArena(string name, ActiveBot bot, string message)
-    {
-        RemoveInactiveBot(bot, "arena spawn failed");
-        Console.WriteLine($"[p554] arena: {message}");
-        return new InvalidOperationException(message);
     }
 
     /// <summary>
@@ -869,30 +752,6 @@ internal sealed partial class BotManager : IDisposable
         }, 3000);
         lock (Probe.Gate)
             return new Dictionary<short, DataClusterIGC>(Probe.World.Clusters);
-    }
-
-    /// <summary>
-    /// P539d — the geometric centre of a sector (centroid of its warps and
-    /// stations, from the probe's real world), used to mirror arena spawns about
-    /// a common point so travel can't favour either side. null when the sector is
-    /// unknown or has no anchor geometry yet.
-    /// </summary>
-    public Vector3? ProbeSectorCenter(short sector)
-    {
-        var pts = new List<Vector3>();
-        lock (Probe.Gate)
-        {
-            foreach (var w in Probe.World.Warps.Values)
-                if (w.ClusterId == sector && w.Position is { Length: 3 } p)
-                    pts.Add(new Vector3(p[0], p[1], p[2]));
-            foreach (var st in Probe.World.Stations.Values)
-                if (st.ClusterId == sector && st.Position is { Length: 3 } p)
-                    pts.Add(new Vector3(p[0], p[1], p[2]));
-        }
-        if (pts.Count == 0) return null;
-        var c = Vector3.Zero;
-        foreach (var p in pts) c += p;
-        return c / pts.Count;
     }
 
     // ── P486: commander tools (invest / list_drones / order_drone) ──────────
@@ -2889,7 +2748,7 @@ bool isThreat =
             && (Showcase.ClassifyHull(flyingHull) == Showcase.HullRole.Bomber
                 || (bot.FinaleBomberActive && bot.FinaleGrantVerified && ResearchFinale(bot)
                     && bot.PreviousLegalLoadout?.Strike is { } strike && strike.HullId == flyingHull.HullId))
-            && (bot.Arena || bot.TargetSector is null || bot.TargetSector == myCluster))
+            && (bot.TargetSector is null || bot.TargetSector == myCluster))
         {
             short? station;
             lock (cs.Gate) station = FinaleStationTarget(bot, myCluster)
@@ -3025,7 +2884,7 @@ bool isThreat =
             }
         }
         if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase)
-            && !bot.Arena && bot.TargetSector is { } destination && destination != myCluster)
+            && bot.TargetSector is { } destination && destination != myCluster)
             candidates = candidates.Where(c => bot.RecentAttackers.TryGetValue(c.Id, out var at)
                 && now - at < ThreatWindowSeconds).ToList();
         var ctx = new BotSelectionContext(bot.ShipId, myCluster, 0, _tickEngagers);
@@ -4400,9 +4259,6 @@ bool isThreat =
     /// <summary>Maximum lateral deflection (units) the travel-separation term may
     /// add to a travel goal (bounded so it can never swing the bot off course).</summary>
     public const float TravelSpacingStrength = 60f;
-    /// <summary>Arena offset (units) of each mirrored spawn from the target
-    /// sector centre along the facing axis.</summary>
-    public const float ArenaOffset = 650f;
 
     /// <summary>
     /// P539 — solve the LEAD aim: the world-space unit direction to point the
@@ -4734,38 +4590,6 @@ bool isThreat =
         return false;
     }
 
-    /// <summary>
-    /// P539d — pure mirrored arena placements: <paramref name="count"/> ships per
-    /// side placed <paramref name="offset"/> on either side of the sector centre
-    /// along <paramref name="axis"/>, each side spread along a perpendicular
-    /// (<paramref name="spread"/>) lane so same-side ships don't stack on the same
-    /// point. Side 0 faces +axis (toward side 1), side 1 faces −axis. Positions
-    /// are equidistant from the centre and mirror images across the centre plane.
-    /// </summary>
-    public static (Vector3[] SideA, Vector3[] SideB, Vector3 FaceA, Vector3 FaceB) ComputeArenaPlacements(
-        int count, Vector3 center, Vector3 axis, float offset, float spread)
-    {
-        var a = new Vector3[count];
-        var b = new Vector3[count];
-        axis.Normalize();
-        // A perpendicular lane basis.
-        var up = Math.Abs(axis.Y) > 0.9f ? new Vector3(1f, 0f, 0f) : new Vector3(0f, 1f, 0f);
-        var laneX = Vector3.CrossProduct(axis, up); laneX.Normalize();
-        var laneY = Vector3.CrossProduct(axis, laneX); laneY.Normalize();
-        for (int i = 0; i < count; i++)
-        {
-            // Spread each bot along the two lanes by its index (alternating quadrants).
-            float sx = (i % 2 == 0 ? 1f : -1f) * spread * (i / 2 + 1);
-            float sy = (i % 4 >= 2 ? 1f : -1f) * spread * 0.6f;
-            var lane = laneX * sx + laneY * sy;
-            a[i] = center + axis * offset + lane;
-            b[i] = center - axis * offset - lane;       // exact mirror across the centre plane
-        }
-        // Facing: side A sits at +axis, so it faces −axis (toward side B); side B at
-        // −axis faces +axis (toward side A). They look at each other across the centre.
-        return (a, b, -axis, axis);
-    }
-
     /// <summary>Keep warp telemetry and arrival clearance on both objective and defence legs.</summary>
     private static void RecordCombatSectorTransition(ActiveBot bot, ConnectionSession cs, short cur, double now)
     {
@@ -4833,7 +4657,7 @@ bool isThreat =
         AdvanceResearchSiegeDuty(bot, cs);
 
         short defenseSector = CsSector(cs);
-        if (!bot.Arena && defenseSector >= 0) RecordCombatSectorTransition(bot, cs, defenseSector, now);
+        if (defenseSector >= 0) RecordCombatSectorTransition(bot, cs, defenseSector, now);
         // Leave the arrival volume before any engagement (including local
         // defence). Otherwise close-band matching can park the whole wing here.
         if (bot.ExitClearFrom is { } exit && TryCsPose(cs, bot.ShipId, out var exitPos, out var exitOrient)
@@ -4853,7 +4677,7 @@ bool isThreat =
         if (defenseSector >= 0 && TryDriveDefense(bot, defenseSector, now)) return;
         // Fight what hits us or a friendly ship while travelling, without
         // manufacturing a station-defence incident in an empty battle sector.
-        if (DefenseConfig.Enabled && !bot.Arena && !bot.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase)
+        if (DefenseConfig.Enabled && !bot.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase)
             && CombatTargetSelector.ClassifyTargetId(ActualHullId(bot)) is not (BotTargetClass.MinerDrone or BotTargetClass.Bomber)
             && HasVisibleAssetAttacker(bot, cs, defenseSector, now))
         {
@@ -4866,15 +4690,6 @@ bool isThreat =
             bot.TargetId = null;
 
         if (bot.TargetSector is not { } goal) { EngageCombat(bot, now, prep); return; }
-
-        // P539d — arena: both sides were relocated to mirrored spots in the target
-        // sector at spawn; no travel, so engage in place (travel can't decide it).
-        if (bot.Arena)
-        {
-            if (!bot.Arrived) { bot.Arrived = true; bot.ArrivedAt ??= now; }
-            EngageCombat(bot, now, prep);
-            return;
-        }
 
         short cur = CsSector(cs);
         if (cur < 0) return;                             // own pose not streaming yet
@@ -6241,11 +6056,6 @@ bool isThreat =
         // ── P610 — aleph exit clear-out ──
         public Vector3? ExitClearFrom;                  // the arrival aleph position to clear after a transit
         public float ExitClearRadius;                   // its wire radius (DataWarpIGC.Radius)
-
-        // ── P539d — arena mode ──
-        public bool Arena;                              // starts engaged in the target sector (mirrored spots)
-        public Vector3 ArenaPosition;                   // mirrored arena spot
-        public Vector3 ArenaFacing;                     // facing the opposing side's mirrored spot
     }
 }
 

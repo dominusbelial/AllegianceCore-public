@@ -65,7 +65,7 @@ internal static class McpTools
             new Tool
             {
                 Name = "spawn_scenario",
-                Description = "Spawn a fight with size bots per side, explicit fleet arrays, or preset:\"showcase\" (15 per side times size_scale). Hull names seed capability-based roles. Each bot buys the best legal affordable loadout from its own side techs and dock station, then re-picks on death or the next match. Locked roles temporarily fly a legal fighter/scout. Legacy tech_a, tech_b and fleet tech fields are accepted but ignored. Grants report actual purchases. Supports staging/arena, routes, wingman settings, native layer-drone minefields, and a mature-battle bomber finale (showcase default 30 minutes; finale_after_minutes:0 disables it).",
+                Description = "Spawn a fight with size bots per side, explicit fleet arrays, or preset:\"showcase\" (15 per side times size_scale). Hull names seed capability-based roles. Each bot buys the best legal affordable loadout from its own side techs and dock station, then re-picks on death or the next match. Locked roles temporarily fly a legal fighter/scout. Legacy tech_a, tech_b and fleet tech fields are accepted but ignored. Grants report actual purchases. Supports march staging, routes, wingman settings, native layer-drone minefields, and a mature-battle bomber finale (showcase default 30 minutes; finale_after_minutes:0 disables it). History: P795 removed the `arena` battle-start mode (and the legacy `arena: true` flag); `march` is the only mode and an arena request returns a clear removal error.",
                 InputSchema = Schema(new
                 {
                     type = "object",
@@ -84,8 +84,7 @@ internal static class McpTools
                         target_sector = new { type = "string", description = "Optional real sector NAME or numeric id to fly real warps to before engaging — passed identically to every bot on both sides, so they rendezvous and fight in one place." },
                         tech_a = new { type = "integer", @default = 0, minimum = 0, description = "Legacy compatibility field; ignored. Purchases use the real side techs at the dock." },
                         tech_b = new { type = "integer", @default = 0, minimum = 0, description = "Legacy compatibility field; ignored. Purchases use the real side techs at the dock." },
-                        mode = new { type = "string", @enum = new[] { "march", "arena" }, @default = "march", description = "Battle start mode (Domingo, 2026-10-13). `march` (DEFAULT, the 200v200 baseline): each side launches at home, flies its wings through the alephs (P635 routes), stages, and converges on `target_sector` — wings advance independently. `arena`: both fleets spawn directly in `target_sector` facing each other for an instant clash (server stress test). The legacy `arena: true` flag is an alias for `mode: \"arena\"`." },
-                        arena = new { type = "boolean", @default = false, description = "P539d — arena mode: launch both sides DIRECTLY into `target_sector` at mirrored spots so travel can't decide the outcome. Requires `target_sector`." },
+                        mode = new { type = "string", @enum = new[] { "march" }, @default = "march", description = "Battle start mode. `march` (DEFAULT and now the ONLY mode, the 200v200 baseline): each side launches at home, flies its wings through the alephs (P635 routes), stages, and converges on `target_sector` — wings advance independently. History: the `arena` mode (both fleets spawned directly in `target_sector`, formerly also reachable as the legacy `arena: true` flag) was removed in P795 because it collapsed into a home-sector death loop; an arena request returns a removal error instead of silently marching." },
                         staging = new { type = "boolean", @default = true, description = "P539d — travel-with-staging mode (DEFAULT when `target_sector` is set): each side gathers until its whole living complement is assembled before advancing." },
                         finale_after_minutes = new { type = "number", minimum = 0, description = "Finale minimum battle age in minutes (showcase default 30; other scenarios default 0; 0 disables). Also requires both sides' pod relaunch share and sustained kills." },
                         finale_side = new { description = "leader (default, ahead on kills; ties side 0), integer 0 or 1, or both", anyOf = new object[] { new { type = "string", @enum = new[] { "leader", "both" } }, new { type = "integer", minimum = 0, maximum = 1 } } },
@@ -407,6 +406,9 @@ internal static class McpTools
     /// otherwise the P557 mixed-fleet/showcase/minefield path.</summary>
     private static CallToolResult SpawnScenario(IDictionary<string, JsonElement> args, BotManager mgr)
     {
+        // P795 — arena was removed. Reject it explicitly instead of silently
+        // treating it as march (the old alias would otherwise hide the removal).
+        if (ArenaRequested(args)) return Err(ArenaRemovedError);
         bool mixed = args.ContainsKey("fleet") || args.ContainsKey("fleet_a") || args.ContainsKey("fleet_b")
                      || (OptStr(args, "preset") is { Length: > 0 })
                      || args.ContainsKey("minefields") || args.ContainsKey("wingman");
@@ -452,26 +454,11 @@ internal static class McpTools
         var flyHullIdA = hull.Id; var flyHullNameA = hull.Name;
         var flyHullIdB = hull.Id; var flyHullNameB = hull.Name;
         IReadOnlyList<ExpandedPartData> partsA = [], partsB = [];
-        // P539d — fair contact: `arena` launches both sides DIRECTLY into the
-        // target sector at mirrored spots (equal distance from the centre, facing
-        // each other) so travel can't decide the outcome. `staging` (default for a
-        // travel scenario with a target sector) makes each side gather at a staging
-        // point until its whole complement is assembled before advancing together.
-        bool arena = IsArenaMode(args);   // `mode: "arena"|"march"` (2026-10-13); legacy `arena: true` still honoured
-        bool staging = arena ? false : OptBool(args, "staging", def: targetSector is not null);
-        var arenaSpots = new List<(Vector3 Pos, Vector3 Fwd)>();
-        string arenaNote = "";
-        if (arena)
-        {
-            if (targetSector is not { } tsA) return Err("spawn_scenario: `arena` requires `target_sector` (the rendezvous to place both sides in)");
-            if (mgr.ProbeSectorCenter(tsA) is not { } cen)
-                return Err($"spawn_scenario: cannot resolve the centre of sector {tsA} for arena mirroring (need warp/station anchors)");
-            // Mirror axis: the line through the two sides' homes is not needed for a
-            // fair arena — any axis works since positions are mirrored about the centre.
-            var (pa, pb, fa, fb) = BotManager.ComputeArenaPlacements(size, cen, new Vector3(0f, 0f, 1f), BotManager.ArenaOffset, 220f);
-            arenaSpots = pa.Concat(pb).Select((p, i) => (p, i < size ? fa : fb)).ToList();
-            arenaNote = $"arena: {size} bots/side mirrored about sector {tsA} centre (offset {BotManager.ArenaOffset}u) — P554 relocation via the 'relocate' admin cheat on the bot's own connection (needs liveSettings.adminCheats enabled + the bot's name allow-listed); a refused relocation is a hard per-bot error, never a silent staging fallback.";
-        }
+        // P539d — `staging` (default for a travel scenario with a target sector)
+        // makes each side gather at a staging point until its whole complement is
+        // assembled before advancing together. P795 removed the arena alternative;
+        // march is the only battle start.
+        bool staging = OptBool(args, "staging", def: targetSector is not null);
 
         // P635 — multi-route wings (same rule as the mixed-fleet path): split each
         // side across all its distinct entry alephs into the rendezvous. `routes`
@@ -479,7 +466,7 @@ internal static class McpTools
         // excess to the least-loaded route. Only for a travelling, staging scenario.
         string routesArg = (OptStr(args, "routes") ?? "auto").ToLowerInvariant();
         int maxPerRoute = OptInt(args, "maxPerRoute") ?? 100;
-        bool wantMultiRoute = routesArg == "auto" && staging && !arena;
+        bool wantMultiRoute = routesArg == "auto" && staging;
         bool multiRoute = wantMultiRoute && targetSector is not null;
         short rz2 = wantMultiRoute && targetSector is { } rzv ? rzv : (short)0;
         var routePlans = new Dictionary<short, List<List<short>>>();
@@ -503,8 +490,6 @@ internal static class McpTools
 
         for (int i = 0; i < size; i++)
         {
-            var spotA = arena ? arenaSpots[i] : default;
-            var spotB = arena ? arenaSpots[size + i] : default;
             // P635 — least-loaded wing per side.
             IReadOnlyList<short>? raPath = null; int raIdx = -1;
             IReadOnlyList<short>? rbPath = null; int rbIdx = -1;
@@ -514,16 +499,16 @@ internal static class McpTools
             { rbIdx = BotManager.PickLeastLoadedRoute(routeCounts[sideB]); routeCounts[sideB][rbIdx]++; rbPath = rsB[rbIdx]; }
             spawnSlots.Add(new(i, sideA, flyHullNameA, () => mgr.SpawnBot(
                 flyHullIdA, flyHullNameA, sideA, partsA, "combat", targetSector, launcherId, launcherRequest,
-                useStaging: staging, arena: arena, arenaPosition: arena ? spotA.Pos : null, arenaFacing: arena ? spotA.Fwd : null,
+                useStaging: staging,
                 routePath: raPath, routeIndex: raIdx, role: Showcase.ClassifyHull(Catalog.RepresentativeCore().HullTypes[flyHullIdA]).ToString(), reportFailure: false)));
             spawnSlots.Add(new(i, sideB, flyHullNameB, () => mgr.SpawnBot(
                 flyHullIdB, flyHullNameB, sideB, partsB, "combat", targetSector, launcherId, launcherRequest,
-                useStaging: staging, arena: arena, arenaPosition: arena ? spotB.Pos : null, arenaFacing: arena ? spotB.Fwd : null,
+                useStaging: staging,
                 routePath: rbPath, routeIndex: rbIdx, role: Showcase.ClassifyHull(Catalog.RepresentativeCore().HullTypes[flyHullIdB]).ToString(), reportFailure: false)));
         }
         // Native lobby rank balance applies during a started showcase. Take
         // turns between fleets so a side's whole batch does not fill first.
-        // Keep slot indices (and their routes/arena positions) intact.
+        // Keep slot indices (and their routes) intact.
         var balancedSlots = spawnSlots.GroupBy(slot => slot.Side)
             .SelectMany(group => group.Select((slot, turn) => (slot, turn)))
             .OrderBy(item => item.turn).ThenBy(item => item.slot.Side == mgr.ProbeSide ? 1 : 0)
@@ -543,11 +528,10 @@ internal static class McpTools
             hull = hull.Name,
             targetSector,
             launcher = launcherId is null ? null : Catalog.ResolveLauncherName(launcherId.Value),
-            // P539d — the fair-contact mode this scenario ran in.
-            mode = arena ? "arena" : staging ? "march" : "travel",   // "march" = launch home → wings through the alephs → stage → converge
+            // P539d — the fair-contact mode this scenario ran in (P795: march is
+            // the only battle start; arena was removed).
+            mode = staging ? "march" : "travel",   // "march" = launch home → wings through the alephs → stage → converge
             staging,
-            arena,
-            arenaNote,
             routes = routesNote,
             maxPerRoute,
             loadoutPolicy = "current side techs and dock station; legacy synthetic levels ignored",
@@ -568,8 +552,8 @@ internal static class McpTools
     }
 
     /// <summary>P557 — the mixed-fleet / showcase / minefield spawn path. See
-    /// the tool description; the whole fair-contact (staging/arena) and
-    /// wingman/mine/missile machinery operates over the resolved mixed fleet.</summary>
+    /// the tool description; the staging and wingman/mine/missile machinery
+    /// operates over the resolved mixed fleet.</summary>
     private static CallToolResult SpawnScenarioModern(IDictionary<string, JsonElement> args, BotManager mgr)
     {
         var core = Catalog.RepresentativeCore();
@@ -633,23 +617,11 @@ internal static class McpTools
 
         var (launcherId, launcherRequest) = ResolveLauncherArg(args);
 
-        bool arena = IsArenaMode(args);   // `mode: "arena"|"march"` (2026-10-13); legacy `arena: true` still honoured
-        bool staging = arena ? false : OptBool(args, "staging", def: targetSector is not null);
+        // P795 — march (home launch → alephs → staging → converge) is the only
+        // battle start; the arena alternative was removed.
+        bool staging = OptBool(args, "staging", def: targetSector is not null);
         int totalA = fleetA.Sum(e => e.Count);
         int totalB = fleetB.Sum(e => e.Count);
-        var arenaSpots = new List<(Vector3 Pos, Vector3 Fwd)>();
-        string arenaNote = "";
-        if (arena)
-        {
-            if (targetSector is not { } tsA) return Err("spawn_scenario: `arena` requires `target_sector` (the rendezvous to place both sides in)");
-            if (mgr.ProbeSectorCenter(tsA) is not { } cen)
-                return Err($"spawn_scenario: cannot resolve the centre of sector {tsA} for arena mirroring (need warp/station anchors)");
-            int n = Math.Max(totalA, totalB);
-            var (pa, pb, fa2, fb2) = BotManager.ComputeArenaPlacements(n, cen, new Vector3(0f, 0f, 1f), BotManager.ArenaOffset, 220f);
-            for (int i = 0; i < totalA; i++) arenaSpots.Add((pa[i], fa2));
-            for (int i = 0; i < totalB; i++) arenaSpots.Add((pb[i], fb2));
-            arenaNote = $"arena: {totalA}/{totalB} bots mirrored about sector {tsA} centre (offset {BotManager.ArenaOffset}u) — P554 relocation via the 'relocate' admin cheat on the bot's own connection (needs liveSettings.adminCheats enabled + the bot's name allow-listed)";
-        }
 
         // Per-bot spawn slots (mixed-fleet loadout resolution + mine/missile slicing).
         var slots = new List<ShowcaseSpawnSlot>();
@@ -671,11 +643,10 @@ internal static class McpTools
         // "auto" (default; split when ≥2 distinct routes exist) | "single"
         // (today's behaviour). `maxPerRoute` caps bots per route; the excess goes
         // to the least-loaded route (PickLeastLoadedRoute). Only meaningful for a
-        // travelling, staging showcase to a rendezvous (never arena, which parks
-        // both sides in the target sector).
+        // travelling, staging showcase to a rendezvous.
         string routesArg = (OptStr(args, "routes") ?? "auto").ToLowerInvariant();
         int maxPerRoute = OptInt(args, "maxPerRoute") ?? 100;
-        bool wantMultiRoute = routesArg == "auto" && staging && !arena;
+        bool wantMultiRoute = routesArg == "auto" && staging;
         bool multiRoute = wantMultiRoute && targetSector is not null;
         short rz2 = wantMultiRoute && targetSector is { } rzv ? rzv : (short)0;
         var routePlans = new Dictionary<short, List<List<short>>>();
@@ -706,7 +677,7 @@ internal static class McpTools
         // rendezvous like everyone else).
         var bomberPlans = new Dictionary<short, List<List<short>>>();
         var bomberCounts = new Dictionary<short, int[]>();
-        foreach (var side in arena ? Array.Empty<short>() : new[] { sideA, sideB })
+        foreach (var side in new[] { sideA, sideB })
         {
             short enemyHome = mgr.FindSideHomeSector(side == sideA ? sideB : sideA) ?? -1;
             if (enemyHome < 0) continue;
@@ -723,11 +694,10 @@ internal static class McpTools
             supportOrdinals[slot.Side] = ordinal + 1;
             string pilotRole = BotManager.SupportSlot(ordinal, slots.Count(s => s.Side == slot.Side), supportConfig.Share)
                 ? "support" : slot.Role.ToString();
-            var spot = arena && arenaSpots.Count > si ? arenaSpots[si] : default;
             // P637 — per-role target: a BOMBER's own objective is the ENEMY
             // HOME sector (its garrison), not the fighter rendezvous; every
             // other role converges on the rendezvous.
-            short? botTarget = BotManager.ResolveScenarioTarget(arena, slot.Role, targetSector,
+            short? botTarget = BotManager.ResolveScenarioTarget(slot.Role, targetSector,
                 mgr.FindSideHomeSector(slot.Side == sideA ? sideB : sideA) ?? -1);
 
             // P635/P637 — assign this bot to the least-loaded wing of its
@@ -735,7 +705,7 @@ internal static class McpTools
             // never a fighter wing (whose rendezvous staging it would wait on).
             IReadOnlyList<short>? routePath = null;
             int routeIndex = -1;
-            if (!arena && slot.Role == Showcase.HullRole.Bomber && botTarget >= 0
+            if (slot.Role == Showcase.HullRole.Bomber && botTarget >= 0
                 && bomberPlans.TryGetValue(slot.Side, out var bs))
             {
                 var bc = bomberCounts[slot.Side];
@@ -751,14 +721,13 @@ internal static class McpTools
                 routePath = rs[routeIndex];
             }
             spawnSlots.Add(new(si, slot.Side, slot.SourceHull, () => mgr.SpawnBot(slot.FlyHullId, slot.FlyHullName, slot.Side, slot.Parts, "combat", botTarget,
-                slot.LauncherId, slot.LauncherName, useStaging: staging, arena: arena,
-                arenaPosition: arena ? spot.Pos : null, arenaFacing: arena ? spot.Fwd : null,
+                slot.LauncherId, slot.LauncherName, useStaging: staging,
                 wingmanBehaviour: slot.Wingman, routePath: routePath, routeIndex: routeIndex,
                 role: pilotRole, reportFailure: false)));
         }
         // Native lobby rank balance applies during a started showcase. Take
         // turns between fleets so a side's whole batch does not fill first.
-        // Keep slot indices (and their routes/arena positions) intact.
+        // Keep slot indices (and their routes) intact.
         var balancedSlots = spawnSlots.GroupBy(slot => slot.Side)
             .SelectMany(group => group.Select((slot, turn) => (slot, turn)))
             .OrderBy(item => item.turn).ThenBy(item => item.slot.Side == mgr.ProbeSide ? 1 : 0)
@@ -775,13 +744,11 @@ internal static class McpTools
         var summary = new
         {
             finale,
-            battleMode = arena ? "arena" : staging ? "march" : "travel",
+            battleMode = staging ? "march" : "travel",
             mode = showcase ? "showcase" : (fleetA.Count > 1 || fleetB.Count > 1 ? "mixed-fleet" : "mixed-fleet"),
             preset,
             targetSector,
-            arena,
             staging,
-            arenaNote,
             wingman,
             routes = routesNote,
             maxPerRoute,
@@ -1395,10 +1362,15 @@ internal static class McpTools
     private static int? OptInt(IDictionary<string, JsonElement> a, string key) =>
         a.TryGetValue(key, out var je) ? TryInt(je) : null;
 
-    /// <summary>2026-10-13 — battle start mode: `mode: "arena"` (or the legacy
-    /// `arena: true`) spawns both fleets in the target sector; anything else is
-    /// `march` (launch home → wings through the alephs → stage → converge).</summary>
-    private static bool IsArenaMode(IDictionary<string, JsonElement> args)
+    /// <summary>P795 — the arena battle-start mode was removed (Domingo,
+    /// 2026-10-22: 200v200 arenas collapsed into a home-sector death loop).</summary>
+    private const string ArenaRemovedError =
+        "spawn_scenario: arena mode was removed in P795; use mode:\"march\" (the only battle start). "
+        + "Both fleets now launch at home and march through the alephs to `target_sector`.";
+
+    /// <summary>P795 — detect the retired arena request (`mode: "arena"` or the
+    /// legacy `arena: true` flag). Kept only to return the clear removal error.</summary>
+    private static bool ArenaRequested(IDictionary<string, JsonElement> args)
         => string.Equals(OptStr(args, "mode"), "arena", StringComparison.OrdinalIgnoreCase) || OptBool(args, "arena");
 
     private static bool OptBool(IDictionary<string, JsonElement> a, string key, bool def = false) =>
