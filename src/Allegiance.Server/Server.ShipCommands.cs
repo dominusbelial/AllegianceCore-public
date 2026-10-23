@@ -150,6 +150,15 @@ public sealed partial class Server
             return;
         }
 
+        // P799 — the native handler head also drops ghost requests entirely
+        // (FedSrv.CPP:6388: `|| pfsPlayer->GetIGCShip()->IsGhost()`), i.e. no
+        // BOARD_NACK even — a ghost cannot board or unboard anything.
+        if (IsGhost(live))
+        {
+            Console.WriteLine($"[boardship] {from} ship {ship.Id}: ghost ({live.PlayerScore.Deaths} deaths > lives {mission.Lives}) — ignored (native gate, FedSrv.CPP:6388)");
+            return;
+        }
+
         bool success;
         if (req.SidParent == Na)
         {
@@ -311,6 +320,14 @@ public sealed partial class Server
         if (mission is null || mission.Stage != MissionStage.Started)
         {
             ConsoleLog.Write($"[promote] {from} ship {ship.Id}: {(mission is null ? "no mission" : $"stage {mission.Stage} != STAGE_STARTED")} — ignored (native gate, FedSrv.CPP:6357)");
+            return;
+        }
+
+        // P799 — the native handler head also drops ghost requests (FedSrv.CPP:6356:
+        // `|| pfsPlayer->GetIGCShip()->IsGhost()`); a ghost cannot promote anyone.
+        if (IsGhost(live))
+        {
+            ConsoleLog.Write($"[promote] {from} ship {ship.Id}: ghost ({live.PlayerScore.Deaths} deaths > lives {mission.Lives}) — ignored (native gate, FedSrv.CPP:6356)");
             return;
         }
 
@@ -2611,9 +2628,13 @@ public sealed partial class Server
         // parent. IsGhost means exhausted lives (shipIGC.h:2465-2469), NOT
         // zero hull fraction. Dead is an additional port integrity guard: both
         // eject and restart must restore the pod before it can reach this point.
+        // P799 — the native ghost gate is explicit in the same handler head
+        // (FedSrv.CPP:6156: `|| pfsPlayer->GetIGCShip()->IsGhost()`): a ghost
+        // cannot buy a loadout at all.
         var failures = new List<string>();
         if (ship.StationId is null) failures.Add("not_docked");
         if (ship.Dead) failures.Add("dead_fraction");
+        if (IsGhost(live)) failures.Add($"ghost={live.PlayerScore.Deaths}>lives={mission.Lives}");
         if (ship.ParentShip is not null) failures.Add($"boarded_parent={ship.ParentShip.Id}");
         if (ship.SideId is not >= 0) failures.Add($"invalid_side={ship.SideId}");
         if (stationType is null) failures.Add($"unresolved_station={ship.StationId}");

@@ -14,7 +14,7 @@ public static class HudModelAdapter
         Vector2? bearing = null, LeaderBotCommand? leaderCommand = null,
         string? ripcord = null, string? commandee = null, bool turret = false,
         string? diagnostics = null, bool hidden = false, bool docked = false,
-        bool dead = false, bool commandView = false, IReadOnlyList<HudNotice>? notices = null,
+        bool dead = false, bool commandView = false, bool ghost = false, IReadOnlyList<HudNotice>? notices = null,
         RadarMode radarMode = RadarMode.Default, HudChat? chat = null,
         string? cargoLine = null, string? flightPartsLine = null,
         IReadOnlyList<string>? commandLines = null, bool inventoryVisible = false,
@@ -29,7 +29,7 @@ public static class HudModelAdapter
         => HudModel.Create(frame, new HudContext
         {
             PodReturnInstruction = podReturnInstruction, HitConfirmation = hitConfirmation, Camera = mode, CameraLabel = cameraLabel, Hidden = hidden,
-            Docked = docked, Dead = dead, CommandView = commandView, Turret = turret, RoundRadar = roundRadar,
+            Docked = docked, Dead = dead, CommandView = commandView, Ghost = ghost, Turret = turret, RoundRadar = roundRadar,
             ShowJoystickIndicator = showJoystickIndicator,
             VelocityMarker = velocityMarker is { } velocity ? Point(velocity) : null,
             ChaseAim = chaseAim is { } aimPoint ? Point(aimPoint) : null,

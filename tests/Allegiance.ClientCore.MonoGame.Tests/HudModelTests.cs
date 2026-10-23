@@ -90,8 +90,13 @@ public class HudModelTests
         Assert.Equal(0, model.Gauges.Single(g => g.Kind == GaugeKind.Ammo).Fraction);
         Assert.Equal(0, model.Gauges.Single(g => g.Kind == GaugeKind.Energy).Fraction);
         Assert.False(HudModel.Create(pod, new() { Docked = true }).PodVisible);
-        Assert.True(HudModel.Create(pod, new() { Dead = true }).DeathVisible);
-        Assert.False(HudModel.Create(pod, new() { Dead = true }).PodVisible);
+        // P799 — the death banner gates on IsGhost alone (dialog.mdl:5438-5439,
+        // WinTrek.cpp:3653), not on the transient Dead flag the port used before:
+        // a plain death (unlimited lives ⇒ no ghost) shows no banner.
+        Assert.False(HudModel.Create(pod, new() { Dead = true }).DeathVisible);
+        Assert.True(HudModel.Create(pod, new() { Ghost = true }).DeathVisible);
+        // A docked ghost (command view at the base) shows no adrift-pod panel.
+        Assert.False(HudModel.Create(pod, new() { Ghost = true, Docked = true }).PodVisible);
     }
 
     [Fact]

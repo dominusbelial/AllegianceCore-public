@@ -7,7 +7,7 @@ public sealed class SkirmishScreenModel
     public void ApplyDefaults(Benchmark.BenchmarkRecommendation settings) => Options = Options with
     { Size = settings.BattleSize, Difficulty = settings.Difficulty, ResearchSpeed = settings.ResearchSpeed, Speed = settings.Speed, SpectatorDefault = settings.SpectatorDefault };
     public int Selected { get; private set; }
-    public const int StartRow = 8, BackRow = 9, RowCount = 10;
+    public const int StartRow = 9, BackRow = 10, RowCount = 11;
     public void Move(int delta) => Selected = (Selected + delta + RowCount) % RowCount;
     public void Change(int delta)
     {
@@ -23,6 +23,8 @@ public sealed class SkirmishScreenModel
             5 => Options with { Commander = Options.Commander == SkirmishCommander.AI ? SkirmishCommander.You : SkirmishCommander.AI },
             6 => Options with { Speed = (SkirmishSpeed)(((int)Options.Speed + delta + 3) % 3) },
             7 => Options with { StartAsSpectator = !Options.StartAsSpectator },
+            // P799 — the lives row cycles the unlimited sentinel and the finite budgets.
+            8 => Options with { Lives = SkirmishOptions.LivesChoices[(Array.IndexOf(SkirmishOptions.LivesChoices, Options.Lives) + delta + SkirmishOptions.LivesChoices.Length) % SkirmishOptions.LivesChoices.Length] },
             _ => Options
         };
     }
@@ -36,6 +38,7 @@ public sealed class SkirmishScreenModel
         "Commander: " + Options.Commander,
         "Game speed: " + Options.Speed,
         "Start as spectator: " + (Options.StartAsSpectator ? "Yes" : "No"),
+        "Lives: " + (Options.Lives == Allegiance.Core.Wire.MissionDef.UnlimitedLives ? "Unlimited" : Options.Lives.ToString()),
         "Start Skirmish", "Back"
     ];
 }

@@ -106,7 +106,12 @@ public static class SkirmishSmoke
             {
                 if (pilot.World.MyShipId is { } id && pilot.World.Ships.TryGetValue(id, out var ship) && ship.Latest is { } pose)
                 {
-                    if (ship.StationId >= 0 && watch.Elapsed.TotalSeconds >= nextLaunch
+                    // P799 — ghost guard: a pilot out of lives is a ghost
+                    // (deaths > iLives, shipIGC.h:2465-2469); the server refuses
+                    // every BUY_LOADOUT (FedSrv.CPP:6156), so stop retrying.
+                    bool pilotGhost = pilot.World.TryGetOwnMissionStats(out _, out short pilotDeaths)
+                        && pilotDeaths > pilot.World.MissionLives;
+                    if (ship.StationId >= 0 && !pilotGhost && watch.Elapsed.TotalSeconds >= nextLaunch
                         && pilot.World.Mission?.Stage == MissionStageMessage.StageStarted)
                     {
                         pilot.SendBuyLoadout(ship.HullId, true, ship.Loadout);

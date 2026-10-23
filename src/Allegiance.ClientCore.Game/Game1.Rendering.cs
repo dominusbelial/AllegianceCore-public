@@ -2880,6 +2880,12 @@ public sealed partial class Game1
         HudFrame? frame = null;
         HudInventoryPane? inventoryPane = null;
         bool hudDocked = _dockedActive, hudDead = false;
+        // P799 — native IsGhost for the local player via ClientWorld.OwnIsGhost:
+        // mission deaths > iLives (shipIGC.h:2465-2469); see the helper's cite
+        // block for the two wire paths the readings come from. The unlimited
+        // sentinel can never be exceeded, so unlimited missions never ghost
+        // (fLimitedLives, fsmission.cpp:4086).
+        bool hudGhost = world.OwnIsGhost;
         lock (_session.Gate)
         {
             // P366 — resolve the leader-only bot dock/launch command for THIS
@@ -3113,7 +3119,7 @@ public sealed partial class Game1
             diagnostics: Environment.GetEnvironmentVariable("ALLEGIANCE_LOD_OVERLAY") == "1"
                 ? $"LOD full:{_lodFullCount} far:{_lodFarCount}" : null,
             hidden: _hideHud || _directorActive || _hudHidden,
-            docked: hudDocked, dead: hudDead, commandView: CommandCameraActive,
+            docked: hudDocked, dead: hudDead, commandView: CommandCameraActive, ghost: hudGhost,
             notices: BuildTipNotices(),
             contacts: _drawRadarContacts,
             radarPulse: (MathF.Sin((float)_nowSeconds * 5f) + 1f) * 0.5f, radarMode: _radarMode,

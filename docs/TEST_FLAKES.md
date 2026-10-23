@@ -2694,3 +2694,13 @@ connection/cleanup change). Recorded as a load flake per the 3/3-alone rule.
 | 2026-10-22 | Hud16RadarIconTests.Per_frame_icon_name_resolution_allocates_nothing | fast tier 2026-10-22 23:2x: 208 B once over 1000 frames under suite load; passes 3x alone. Test now takes the best of 3 windows (a real per-frame allocation still fails every window). |
 
 | 2026-10-23 | PackagingManifestTests.Artwork_manifest_matches_the_code_and_the_pinned_corpus | P800 fast-tier run 2026-10-23 ~07:05: "artwork-roots.txt is stale" once under suite load (the shared artwork corpus was being modified concurrently — `sbbmp.mdl` had just been added to it by another lane); passes 3x alone and the pinned manifests are byte-identical after `git checkout`. Pure corpus drift on the shared rig, no repo change. |
+
+## P799 validation environment (2026-10-23)
+
+P799's single fast-tier run recorded one failure outside the task's surface:
+`Allegiance.ClientCore.Tests.SessionLossLiveTests.EstablishedSession_ServerKilled_RaisesLost_EventAndControlsGoSilent`
+("SessionLost event must fire on the transport thread"). It passed the exact-class
+isolated invocation immediately after (1/1) — a transport-thread timing race while the
+shared machine was also running the P799 5v5 skirmish live run. P799 touches no
+transport/connection-cleanup code (the closest surface, `PerformUndock`, gained only a
+pre-state ghost refusal). Recorded as a load flake per the 3/3-alone rule.

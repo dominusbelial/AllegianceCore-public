@@ -965,9 +965,48 @@ public sealed partial class Server
         //    sector's Stations list (removed in the combat pass), so
         //    PerformUndock's reposition lookup finds nothing and simply skips the
         //    launch-reposition — the ship is still correctly ejected.
+        //    P799 — GHOSTS ARE NOT VACATED (fsmission.cpp:4796-4802): native's
+        //    VacateStation skips IsGhost ships in the eject loop and instead
+        //    re-docks every ghost of that side at another restart-capable base
+        //    (fsmission.cpp:4805-4849: `pship->SetStation(ps)`); ghosts cannot
+        //    launch, so undocking one would strand it in space forever. If the
+        //    side has NO alternate restart base the ghost keeps its (destroyed)
+        //    station pointer — native's "don't worry: side will be eliminated"
+        //    branch (fsmission.cpp:4789) — because losing the last restart
+        //    station fires SideLostRestartStation → DeactivateSide, which
+        //    force-kills the docked ghosts.
         foreach (var kv in _peerShips.ToArray())
-            if (kv.Value.Ship.StationId == station.StationId)
-                PerformUndock(kv.Key, kv.Value);
+        {
+            if (kv.Value.Ship.StationId != station.StationId) continue;
+            if (IsGhost(kv.Value))
+            {
+                var ghostMission = kv.Value.Ship.Mission;
+                var ghostSide = kv.Value.Ship.SideId;
+                var altBase = ghostMission is { } gm && ghostSide is { } gs
+                    ? FindNearestRestartStation(gm, gs, station.ClusterId, station.Center)
+                    : null;
+                if (altBase is { } dest)
+                {
+                    var destSector = ghostMission!.Sectors.First(s => s.Id == dest.ClusterId);
+                    kv.Value.Ship.StationId = dest.StationId;                       // pship->SetStation(ps), fsmission.cpp:4846
+                    kv.Value.Ship.LastDockTime = _simNow;
+                    _peerShips[kv.Key] = _peerShips[kv.Key] with { Sector = destSector };  // status frames follow the new dock
+                    // Acknowledge the relocation like the manual teleport path does
+                    // (FM_S_TELEPORT_ACK, FedSrv.CPP:7054-7131): native VacateStation
+                    // sends no message (the docked SHIP_STATUS carries the new
+                    // station), but the port's own-ship status latch benefits from
+                    // the explicit ack. Port adaptation, stated plainly.
+                    SendPeer(kv.Key, FedPacket.Pack(new[] { new TeleportAck { StationId = dest.StationId, BNewHull = false }.Encode() }));
+                    Console.WriteLine($"[station] ghost ship {kv.Value.Ship.Id} relocated dock {station.StationId} (destroyed) -> restart base {dest.StationId} '{dest.Name}' (fsmission.cpp:4805-4849)");
+                }
+                else
+                {
+                    Console.WriteLine($"[station] ghost ship {kv.Value.Ship.Id} keeps its destroyed station {station.StationId} — no alternate restart base; side elimination will collect it (fsmission.cpp:4789)");
+                }
+                continue;
+            }
+            PerformUndock(kv.Key, kv.Value);
+        }
 
         // 2. Whole-mission broadcast: every connected peer with a seated ship,
         //    regardless of side (GetGroupRealSides(), FedSrv.CPP:12279).
@@ -1886,6 +1925,22 @@ public sealed partial class Server
             SendPeer(conn, FedPacket.Pack(new[] { enter.Encode() }));   // FM_S_ENTER_LIFEPOD(166) → own peer only
             Console.WriteLine($"[lifepod] player ship {victim.Id} -> docked Lifepod (hull {lp.HullId}) at station {dest.StationId} '{dest.Name}' " +
                               $"in sector '{destSector?.Name ?? "?"}' ; ENTER_LIFEPOD(166) -> own peer only");
+
+            // P799 — native ghost elimination (FedSrv.CPP:12068-12072): right after
+            // the (possibly ghost) player's lifepod restart, `if (pship->IsGhost()
+            // && !m_pfsMission->HasPlayers(pside, false)) m_pfsMission->
+            // DeactivateSide(pside);` — a side whose every connected player is a
+            // ghost (all out of lives) is eliminated and falls through native's
+            // game-over path (SIDE_INACTIVE + "is no more" chat + the
+            // win-by-elimination check, i.e. this port's P455 DeactivateSide flow,
+            // which may declare the last-side-standing winner or a side-only game
+            // over for the eliminated side). Unlimited lives never ghosts, so this
+            // is dead code for pre-P799 configs.
+            if (IsGhost(_peerShips[conn]) && !SideHasNonGhostPlayers(mission, side.Id))
+            {
+                Console.WriteLine($"[lives] ship {victim.Id} is a ghost ({_peerShips[conn].PlayerScore.Deaths} deaths > lives {mission.Lives}) and side {side.Id} has no non-ghost players left — deactivating side (FedSrv.CPP:12070)");
+                DeactivateSide(mission, side);
+            }
         }
         finally
         {
@@ -2214,6 +2269,41 @@ public sealed partial class Server
                 return station;
             }
         return null;
+    }
+
+    // ── P799 — native lives limit (ghosts) ──────────────────────────────
+
+    /// <summary>
+    /// P799 — the native ghost test (<c>Igc/shipIGC.h:2465-2469</c>):
+    /// <c>IsGhost() = m_nDeaths &gt; GetMyMission()-&gt;GetMissionParams()-&gt;iLives</c>.
+    /// The port's death counter is the owning peer's <see cref="PlayerScore.Deaths"/>
+    /// (native <c>CFSPlayer::AddDeath</c> → <c>m_cDeaths</c>, incremented at
+    /// <c>FedSrv.CPP:12032</c>) and the mission budget is
+    /// <see cref="Allegiance.Core.Model.Mission.Lives"/> (= wire iLives). With the
+    /// unlimited sentinel (0x7fff) this is never true — the pre-P799 behaviour for
+    /// every production mission.
+    /// </summary>
+    internal bool IsGhost(LiveShip live) =>
+        live.Ship.Mission is { } m && live.PlayerScore.Deaths > m.Lives;
+
+    /// <summary>
+    /// P799 — native <c>HasPlayers(pside, fCountGhosts=false)</c>
+    /// (<c>fsmission.cpp:1335-1361</c>): does <paramref name="side"/> still own at
+    /// least one connected, non-ghost player? The ghost half of the count is
+    /// exactly <see cref="IsGhost"/>; a ghost bot/unowned ship has no player score
+    /// of its own and never counts as a live player (native counts CFSPayers, not
+    /// ships). Runs on the sim thread — same ownership as <see cref="IsGhost"/>.
+    /// </summary>
+    internal bool SideHasNonGhostPlayers(Mission mission, short sideId)
+    {
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission) || kv.Value.Ship.SideId != sideId)
+                continue;
+            if (kv.Value.PlayerScore.Deaths <= mission.Lives)
+                return true;
+        }
+        return false;
     }
 
     /// <summary>

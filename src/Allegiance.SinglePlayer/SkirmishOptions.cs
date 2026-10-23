@@ -27,6 +27,16 @@ public sealed record SkirmishOptions
     public SkirmishDifficulty Difficulty { get; init; } = SkirmishDifficulty.Normal;
     public SkirmishCommander Commander { get; init; }
     public SkirmishSpeed Speed { get; init; } = SkirmishSpeed.Normal;
+    /// <summary>P799 — the skirmish lives option: the native per-player life
+    /// budget (<c>MissionParams::iLives</c>, igc.h:1185) passed straight into
+    /// <see cref="GameConfig.Lives"/>. Default
+    /// <see cref="Allegiance.Core.Wire.MissionDef.UnlimitedLives"/> — the native
+    /// default and every pre-P799 skirmish's behaviour.</summary>
+    public short Lives { get; init; } = Allegiance.Core.Wire.MissionDef.UnlimitedLives;
+    /// <summary>P799 — the values the setup screen's Lives row cycles through:
+    /// the unlimited sentinel, then the finite budgets. Native's lobby option
+    /// ("Lives", fsmission.cpp:4086 fLimitedLives) accepts any count.</summary>
+    public static readonly short[] LivesChoices = [Allegiance.Core.Wire.MissionDef.UnlimitedLives, 5, 3, 1];
     public string TechMode { get; init; } = "research";
     public string Map { get; init; } = "m2xspiderw.igc";
     private bool? _startAsSpectator;
@@ -117,6 +127,9 @@ public sealed record SkirmishOptions
                 // P797 — the bots cannot scout yet, so a skirmish reveals the map
                 // (native bShowMap, igc.h:1123) until P798's scout opening lands.
                 ShowMap = true,
+                // P799 — the skirmish lives option reaches the wire (MISSIONDEF
+                // iLives) and the server's ghost gates through the game config.
+                Lives = Lives,
                 // P767 / SIM-0100 — a skirmish embeds the offline case: native's
                 // wingman resupply latch only fires when the client runs the sim
                 // (!m_fm.IsConnected(), clintlib.cpp:3697-3717).
@@ -149,15 +162,16 @@ public sealed record SkirmishPrefs(
     int EnemyCiv = 3,
     string TechMode = "research",
     bool StartAsSpectator = false,
-    bool SpectatorDefault = false)
+    bool SpectatorDefault = false,
+    short Lives = Allegiance.Core.Wire.MissionDef.UnlimitedLives)
 {
     public static SkirmishPrefs From(SkirmishOptions o) => new(o.Size, o.Difficulty, o.Commander, o.Speed,
-        o.PlayerCiv, o.EnemyCiv, o.TechMode, o.StartAsSpectator, o.SpectatorDefault);
+        o.PlayerCiv, o.EnemyCiv, o.TechMode, o.StartAsSpectator, o.SpectatorDefault, o.Lives);
 
     public SkirmishOptions ToOptions() => new()
     {
         Size = Size, Difficulty = Difficulty, Commander = Commander, Speed = Speed,
         PlayerCiv = PlayerCiv, EnemyCiv = EnemyCiv, TechMode = TechMode,
-        StartAsSpectator = StartAsSpectator, SpectatorDefault = SpectatorDefault
+        StartAsSpectator = StartAsSpectator, SpectatorDefault = SpectatorDefault, Lives = Lives
     };
 }

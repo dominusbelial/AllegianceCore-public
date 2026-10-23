@@ -180,6 +180,23 @@ public sealed class GameConfig
     public double? GameLengthSeconds { get; set; }
 
     /// <summary>
+    /// P799 — the native per-player life budget, <c>MissionParams::iLives</c>
+    /// (<c>igc.h:1185</c>: "Player must die more than this number of times to
+    /// exit"; a ship is a ghost while <c>m_nDeaths &gt; iLives</c>,
+    /// <c>Igc/shipIGC.h:2465-2469</c>). Default
+    /// <see cref="Allegiance.Core.Wire.MissionDef.UnlimitedLives"/> = 0x7fff —
+    /// the native <c>MissionParams::Reset</c> default (<c>igc.h:1291</c>) and the
+    /// value production missions have always sent (<c>c_cUnlimitedLives</c>,
+    /// <c>igc.h:1007</c>), so absent from the config the behaviour is
+    /// byte-for-byte the pre-P799 unlimited game. A finite value N grants each
+    /// player N+1 launches' worth of deaths: the (N+1)-th death makes them a
+    /// ghost (no buy/launch/board/promote, FedSrv.CPP:6156,6356,6388,6405,7050)
+    /// and a side whose every connected player is a ghost is eliminated
+    /// (FedSrv.CPP:12070 → fsmission.cpp DeactivateSide).
+    /// </summary>
+    public short Lives { get; set; } = Allegiance.Core.Wire.MissionDef.UnlimitedLives;
+
+    /// <summary>
     /// P598 — the port of native's <c>fRestartCountdown</c> (igc.h:1171,
     /// default <c>60.0f</c> at igc.h:1274): the seconds, when
     /// <see cref="AutoRestart"/> is on, between a game-over rotation and the

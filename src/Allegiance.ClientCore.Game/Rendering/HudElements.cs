@@ -395,7 +395,10 @@ public static class HudElements
                         element = element with { Available = c.Ripcord is not null, Visible = instrument && c.Ripcord is not null, Text = c.Ripcord }; break;
                     case "Eject pod identity panel": Set(f is not null ? (model.PodVisible ? 1 : 0) : null, model.PodVisible); break;
                     case "Lifepod oxygen endurance": Set(f?.FuelFraction, model.PodVisible); break;
-                    case "Death banner": element = element with { Available = true, Visible = model.DeathVisible, Value = c.Dead ? 1 : 0 }; break;
+                    // P799 — the banner follows IsGhost (SwitchPane gate), not the
+                    // transient Dead flag; the value is the native
+                    // m_pnumberIsGhost stamp (WinTrek.cpp:3653).
+                    case "Death banner": element = element with { Available = true, Visible = model.DeathVisible, Value = c.Ghost ? 1 : 0 }; break;
                     case "Boundary and crowd warnings":
                         element = element with { Available = f is not null, Visible = model.Warnings.Count > 0, Text = string.Join(" / ", model.Warnings) }; break;
                     case "Damage flash timer": Set(f is { } flash ? (flash.Flashing ? 1 : 0) : null, instrument && f?.Flashing == true); break;

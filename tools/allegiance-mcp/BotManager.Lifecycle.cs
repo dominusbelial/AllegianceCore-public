@@ -124,7 +124,24 @@ internal sealed partial class BotManager
     {
         // The player's shop uses one BUY_LOADOUT(fLaunch:true), not an NPC undock.
         lock (cs.Gate)
+        {
             if (!cs.World.Ships.TryGetValue(bot.ShipId, out var me) || me.StationId < 0) return;
+            // P799 — ghost guard (minimal, per the task brief): a bot whose player
+            // is out of lives (deaths > iLives, shipIGC.h:2465-2469) is a ghost;
+            // the server refuses every BUY_LOADOUT (FedSrv.CPP:6156), so stop
+            // requesting launches instead of burning the 3-attempt retry budget
+            // forever on a refusal that can never succeed.
+            if (cs.World.TryGetOwnMissionStats(out _, out short ghostDeaths) && ghostDeaths > cs.World.MissionLives)
+            {
+                if (!bot.RelaunchExhausted)
+                {
+                    bot.RelaunchExhausted = true;
+                    bot.GrantWarning = $"relaunch: {bot.Name} is a ghost ({ghostDeaths} deaths > lives {cs.World.MissionLives}) — out of lives, cannot launch";
+                    Console.WriteLine(bot.GrantWarning);
+                }
+                return;
+            }
+        }
         HandleRelaunchAck(bot, cs);
         if (now - bot.RelaunchAt < 5) return;
         if (bot.RelaunchAttempts >= 3)

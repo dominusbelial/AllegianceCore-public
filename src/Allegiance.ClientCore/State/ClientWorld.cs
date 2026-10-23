@@ -1769,6 +1769,15 @@ public sealed partial class ClientWorld
         return true;
     }
 
+    /// <summary>P799 — the LOCAL player is a ghost: mission deaths > iLives
+    /// (native <c>IshipIGC::IsGhost()</c>, <c>Igc/shipIGC.h:2465-2469</c>), read
+    /// from exactly the two wire values the native client uses — deaths from
+    /// PLAYERINFO(10)/KILL_SHIP(105) (<see cref="TryGetOwnMissionStats"/>, the
+    /// <c>PlayerInfo::MissionDeaths()</c> path, <c>clintlib.h:347</c>) and iLives
+    /// from MISSIONDEF(38) (<see cref="MissionLives"/>). The unlimited sentinel
+    /// (0x7fff) can never be exceeded, so unlimited missions never ghost.</summary>
+    public bool OwnIsGhost => TryGetOwnMissionStats(out _, out short deaths) && deaths > MissionLives;
+
     /// <summary>P266 — the local ship's predictive lead-aim point, streamed on the
     /// owner-only <c>LeadIndicatorUpdate(210)</c> (server-computed from the real
     /// <c>solveForLead</c> physics, <see cref="Wire.LeadIndicatorUpdate"/>). The

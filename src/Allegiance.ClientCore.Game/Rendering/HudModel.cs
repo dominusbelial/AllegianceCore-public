@@ -156,6 +156,14 @@ public sealed record HudContext
     public bool Docked { get; init; }
     public bool Dead { get; init; }
     public bool CommandView { get; init; }
+    /// <summary>P799 — the local ship is a GHOST: its player's mission deaths
+    /// exceed the mission's iLives (native <c>IshipIGC::IsGhost()</c>,
+    /// <c>Igc/shipIGC.h:2465-2469</c>; the client's deaths count arrives via
+    /// PLAYERINFO(10) nDeaths + KILL_SHIP(105) bDeathCredit —
+    /// <c>appmsg.cpp:2766-2773</c> — and iLives via MISSIONDEF(38)). Drives the
+    /// death banner (<c>m_pnumberIsGhost</c>, <c>WinTrek.cpp:3653</c>) and the
+    /// command-view-instead-of-hangar rule (<c>trekigc.cpp:2832-2857</c>).</summary>
+    public bool Ghost { get; init; }
     public bool Turret { get; init; }
     public bool HitConfirmation { get; init; }
     public string? PodReturnInstruction { get; init; }
@@ -265,7 +273,13 @@ public sealed class HudModel
         && Context.TargetPane is { Present: true }
         && Context.Camera is CameraMode.Cockpit or CameraMode.Chase or CameraMode.ExternalOverride;
     public bool PodVisible => FlightVisible && Telemetry is { IsAdriftLifepod: true };
-    public bool DeathVisible => Visible && Context.Dead && !Context.Docked;
+    // P799 — native DeathBannerPane = SwitchPane(IsGhost, deathbannerbmp)
+    // (dialog.mdl:5438-5439; the value stamped at WinTrek.cpp:3653). The gate is
+    // IsGhost ALONE — deaths > iLives (shipIGC.h:2465-2469) — not the transient
+    // Dead flag the port used before P799: with unlimited lives nobody is ever a
+    // ghost, so no death banner ever shows (the pre-P799 parity gap), and a
+    // ghost shows it docked in command view exactly like native.
+    public bool DeathVisible => Visible && Context.Ghost;
     public string SpeedUnit => "mps"; // Artwork/dialog.mdl:2546-2554.
     public string CameraLabel => Context.CameraLabel ?? (Context.Camera switch
     {

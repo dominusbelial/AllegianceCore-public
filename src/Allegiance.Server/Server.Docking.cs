@@ -2126,6 +2126,21 @@ public sealed partial class Server
     /// </summary>
     private void PerformUndock(ConnectionId from, LiveShip live)
     {
+        // P799 — native ghost launch gate (FedSrv.CPP:7048, the FM_C_DOCKED
+        // handler head): `(pfmDocked->stationID == NA) &&
+        // !pfsPlayer->GetIGCShip()->IsGhost()` — a ghost's undock request falls
+        // through to the teleport branch instead, where stationID NA is invalid
+        // and the server answers TELEPORT_ACK stationID=NA
+        // (FedSrv.CPP:7067-7073) and the ship stays docked. Mirror exactly that:
+        // no state change, just the negative ack. Ghosts cannot buy either
+        // (FedSrv.CPP:6156), so a ghost can never leave its base.
+        if (IsGhost(live))
+        {
+            SendPeer(from, FedPacket.Pack(new[] { new TeleportAck { StationId = -1, BNewHull = false }.Encode() }));
+            Console.WriteLine($"[undock] ship {live.Ship.Id}: ghost ({live.PlayerScore.Deaths} deaths > lives {live.Ship.Mission?.Lives}) cannot launch — TELEPORT_ACK(NA), stays docked (FedSrv.CPP:7048,7067-7073)");
+            return;
+        }
+
         // Capture the docked station id before the undock core clears it — the
         // diagnostic below reports which station the ship left.
         var undockedFrom = live.Ship.StationId!.Value;

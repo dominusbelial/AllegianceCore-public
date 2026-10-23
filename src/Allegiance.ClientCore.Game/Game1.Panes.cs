@@ -72,6 +72,41 @@ public sealed partial class Game1
         if (myDocked)
         {
             var mySe = world.Ships[me]; // non-null (myDocked guaranteed membership)
+
+            // P799 — GHOST VIEW MODE (trekigc.cpp:2832-2857, WinTrek.cpp:2332):
+            // a docked ghost lands in COMMAND VIEW, never the hangar — native
+            // SetViewMode(IsGhost ? vmCommand : vmHangar) on dock/spawn, and the
+            // back button never returns a ghost to the hangar (console.cpp:1128,
+            // `if (!IsGhost()) SetViewMode(... vmHangar)`). Ghosts cannot buy or
+            // launch (FedSrv.CPP:6156,7048), so the shop is meaningless for
+            // them; the command view is where native leaves them. The ghost
+            // test is exactly the native client's: mission deaths > iLives
+            // (shipIGC.h:2465-2469) — unlimited lives never ghosts.
+            bool ownGhost = world.OwnIsGhost;
+            if (ownGhost)
+            {
+                if (_dockedActive)
+                {
+                    // Defensive: a ghost must never sit in the hangar UI (native
+                    // never opens vmHangar for one). Tear down the docked panes
+                    // exactly like the undock path below.
+                    _dockedActive = false;
+                    _hangarLaunch.Cancel();
+                    _shopModel = null;
+                    _teleportModel = null;
+                    _teleportActive = false;
+                }
+                if (_cameraMode != CameraMode.Command)
+                {
+                    _cameraMode = CameraMode.Command;
+                    Console.WriteLine("[monogame] ghost docked: command view, not hangar (trekigc.cpp:2832-2857)");
+                    // P571's dock teardown applies to the ghost's dock too: the eject
+                    // pod autopilot must not survive the respawn dock.
+                    if (!EjectAutopilotStaysEngaged(myDocked))
+                        DisengageAutopilot(AutopilotDisengageReason.Docked);
+                }
+                return false;   // command view processes the frame (same contract as the docked T-command-view path below)
+            }
             // P499 — read the pad once per docked frame so the shop/teleport/
             // invest panes can accept DPAD+face-button navigation alongside the
             // keyboard (all-false on desktop without a connected pad).

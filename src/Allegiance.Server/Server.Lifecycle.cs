@@ -1192,6 +1192,10 @@ public sealed partial class Server
             throw new InvalidDataException($"game '{g.Name}': {g.Teams} teams but {g.CivIds.Length} civ ids");
         if (g.SideNames.Length < g.Teams)
             throw new InvalidDataException($"game '{g.Name}': {g.Teams} teams but {g.SideNames.Length} side names");
+        // P799 — iLives must be a count or the unlimited sentinel (igc.h:1185,1007);
+        // a negative value is a config error, not "extra lives".
+        if (g.Lives < 0)
+            throw new InvalidDataException($"game '{g.Name}': lives must be >= 0 (or {Allegiance.Core.Wire.MissionDef.UnlimitedLives} = unlimited), got {g.Lives}");
 
         var sides = new SideSpec[g.Teams];
         for (int t = 0; t < g.Teams; t++)
@@ -1223,6 +1227,11 @@ public sealed partial class Server
         // and whatever its scanners cover, nothing else.
         mission.ShowMap = g.ShowMap;
         mission.ShowHomeSector = g.ShowHomeSector;
+        // P799 — MissionParams::iLives (igc.h:1185): the real per-player life
+        // budget, defaulting to the unlimited sentinel. Sent verbatim in the
+        // MISSIONDEF(38) slot the lives badge reads (console.cpp:812-817) and the
+        // standard the server's own ghost gates compare deaths against.
+        mission.Lives = g.Lives;
         mission.CrowdingPenaltyEnabled = _config.Sim.CrowdingEnabled;
         g.Treasure.Validate();
         mission.TreasureParameters = g.Treasure;
