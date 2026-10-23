@@ -4624,10 +4624,15 @@ public sealed partial class Game1
     /// P607 — startup audit of NATIVE ship art resolution across the whole
     /// loaded core (mirroring P593b's projectile/missile audits): every hull's
     /// <c>ModelName</c> <c>.mdl</c> must resolve through the native ship
-    /// renderer (exists + decodes to geometry). Reports N hulls and the
-    /// unresolved list — 0 means every hull renders native; any hull that
-    /// fails is logged once by name and falls back to the procedural stand-in
-    /// at draw time (never a crash, never invisible).
+    /// renderer (exists + decodes to geometry). P800 extends it beyond "mesh
+    /// non-null" with the degeneracy checks that can still leave a hull
+    /// invisible (empty mesh, non-finite/non-positive radius → bad scale,
+    /// non-positive Length → bad preview framing, unresolvable texture stem —
+    /// see <see cref="Rendering.ShipNativeAudit.CollectDefects"/>).
+    /// Reports N hulls and the unresolved/defect list — 0 means every hull
+    /// renders native; any hull that fails is logged once by name and falls
+    /// back to the procedural stand-in at draw time (never a crash, never
+    /// invisible).
     /// </summary>
     private void AuditNativeShipResolution()
     {
@@ -4638,9 +4643,30 @@ public sealed partial class Game1
         int n = _hullById.Count;
         foreach (var u in unresolved)
             Console.WriteLine($"[client] P607 native ship resolution FAILED: hull {u.HullId} '{u.Name}' (ModelName '{u.Stem}') — will render the procedural stand-in");
-        Console.WriteLine(unresolved.Count == 0
-            ? $"[monogame] P607 ship-model audit: {n} hull(s), 0 unresolved native"
-            : $"[monogame] P607 ship-model audit: {n} hull(s), {unresolved.Count} unresolved native -> procedural stand-in");
+        // P800 — degeneracy audit over the SAME parsed meshes (cheap: the meshes
+        // are already compiled by the resolution pass above; the texture-stem
+        // check is an asset-existence probe, not a decode).
+        var defects = Rendering.ShipNativeAudit.CollectDefects(_hullById.Values.Select(h =>
+        {
+            var stem = h.ModelName?.Trim();
+            var geo = stem is { Length: > 0 } s ? _nativeShipRenderer.MeshFor(s) : null;
+            return new Rendering.ShipNativeAudit.HullHealth(
+                h.HullId, h.Name, h.ModelName,
+                MeshResolved: geo is not null,
+                TriangleCount: geo?.TriangleCount ?? 0,
+                MeshRadius: geo?.MeshRadius ?? 0f,
+                MaxVertexRadius: geo?.MaxVertexRadius ?? 0f,
+                HullLength: h.Length,
+                TextureStemResolved: stem is { Length: > 0 } st
+                    && _nativeShipRenderer.TextureStemFor(st, h.TextureName) is not null);
+        }));
+        foreach (var d in defects)
+            Console.WriteLine($"[client] P800 native ship health FAILED: {d}");
+        Console.WriteLine(unresolved.Count == 0 && defects.Count == 0
+            ? $"[monogame] P607 ship-model audit: {n} hull(s), 0 unresolved native, 0 degenerate (P800 health ok)"
+            : unresolved.Count == 0
+                ? $"[monogame] P607 ship-model audit: {n} hull(s), 0 unresolved native, {defects.Count} degenerate (P800)"
+                : $"[monogame] P607 ship-model audit: {n} hull(s), {unresolved.Count} unresolved native -> procedural stand-in");
     }
 
     /// <summary>

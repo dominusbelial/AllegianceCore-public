@@ -32,12 +32,19 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 /// before the caller's world matrix, exactly mirroring native's
 /// <c>Orient · Scale · RY(π)</c> chain (thinggeo.cpp:1484-1503, shipIGC.cpp:1419).</para>
 ///
-/// <para><b>Lighting.</b> P530 sector lighting is applied with the PURE native
-/// ambient (0.25) — deliberately WITHOUT the <see cref="ShipRenderer.ShipAmbientFloor"/>
-/// lift, which P530 added specifically for the dark textured MESHY hulls. Native
-/// ships carry real native art whose brightness the original game tuned to be
-/// readable under 0.25 ambient; whether that lift is warranted for native art is
-/// reported in docs/reports/P566.</para>
+/// <para><b>Lighting.</b> P530 sector lighting is applied with the native
+/// bidirectional ambient (0.25) — but P800 lifts the result to the shared
+/// <see cref="ShipRenderer.ShipAmbientFloor"/>: the same floor the Meshy path
+/// (<see cref="ShipRenderer.Draw"/>) and the HD/PBR path
+/// (<see cref="HdMaterialRenderer"/>) already apply. Measured (P800): the
+/// darkest native hull texture (the stealth bomber's <c>sbbmp</c>) averages
+/// RGB (13,7,4) — at pure 0.25 ambient its hull renders at ~1–3/255 luminance,
+/// effectively invisible in flight, while the SAME hull under the HD path or
+/// as a Meshy model was readable. Native itself ships a second, brighter
+/// ambient level (0.5, clusterIGC.h <c>GetAmbientLevel</c>, applied by
+/// WinTrek.cpp:4935 when bidirectional lighting is off), so a 0.5-class
+/// ambient floor stays inside native's own lighting envelope; a
+/// componentwise <c>Max</c> leaves every normally-painted hull unchanged.</para>
 /// </summary>
 public sealed class NativeShipRenderer : IDisposable
 {
@@ -249,6 +256,21 @@ public sealed class NativeShipRenderer : IDisposable
         return NativeShipResolver.ResolveTextureStem(mdl, hullTextureName, modelStem, stem => _assets.Exists(stem + ".mdl"));
     }
 
+    /// <summary>P800 — the sector lighting with its ambient component lifted to
+    /// <see cref="ShipRenderer.ShipAmbientFloor"/> (componentwise Max, so only
+    /// sub-floor ambients change). The native ship path now shares the floor the
+    /// Meshy and HD paths already apply; see the class doc for the native cite.</summary>
+    internal static SectorLighting WithShipAmbientFloor(SectorLighting l)
+    {
+        var a = l.Ambient;
+        var f = ShipRenderer.ShipAmbientFloor;
+        return l with
+        {
+            Ambient = new Allegiance.Core.Collision.Vector3(
+                MathF.Max(a.X, f.X), MathF.Max(a.Y, f.Y), MathF.Max(a.Z, f.Z)),
+        };
+    }
+
     private void LogMissingModel(string stem, string why)
     {
         if (_missingModelLogged.Add(stem))
@@ -296,9 +318,13 @@ public sealed class NativeShipRenderer : IDisposable
         _effect.Projection = projection;
         if (lighting is { } lp)
         {
-            // P566 — PURE native sector lighting (ambient 0.25). No ShipAmbientFloor
-            // lift: native art is tuned for native ambient; see report.
-            SectorLightingEffect.Apply(_effect, lp);
+            // P800 — ambient floor lift, shared with the Meshy path
+            // (ShipRenderer.ShipAmbientFloor) and the HD/PBR path
+            // (HdMaterialRenderer.cs:130). Componentwise Max: normally-painted
+            // hulls (albedo ≫ floor) are untouched; the darkest native art
+            // (stealth bomber sbbmp, measured avg RGB (13,7,4)) stops
+            // disappearing under the 0.25 bidirectional ambient.
+            SectorLightingEffect.Apply(_effect, WithShipAmbientFloor(lp));
         }
         else
         {

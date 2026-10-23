@@ -2692,3 +2692,5 @@ thread/socket-count race on a busy box, in code P775 does not touch (no
 connection/cleanup change). Recorded as a load flake per the 3/3-alone rule.
 
 | 2026-10-22 | Hud16RadarIconTests.Per_frame_icon_name_resolution_allocates_nothing | fast tier 2026-10-22 23:2x: 208 B once over 1000 frames under suite load; passes 3x alone. Test now takes the best of 3 windows (a real per-frame allocation still fails every window). |
+
+| 2026-10-23 | PackagingManifestTests.Artwork_manifest_matches_the_code_and_the_pinned_corpus | P800 fast-tier run 2026-10-23 ~07:05: "artwork-roots.txt is stale" once under suite load (the shared artwork corpus was being modified concurrently — `sbbmp.mdl` had just been added to it by another lane); passes 3x alone and the pinned manifests are byte-identical after `git checkout`. Pure corpus drift on the shared rig, no repo change. |
