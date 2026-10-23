@@ -1003,6 +1003,7 @@ ripiconbmp.mdl
 rrocket.cvh
 rrocket.mdl
 rticon.png
+sbbmp.mdl
 sbcannon.ogg
 sectorbomberbmp.mdl
 sectorcapitalbmp.mdl
