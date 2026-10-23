@@ -426,7 +426,12 @@ public sealed partial class Game1
             bool investmentOpen = _investActive;
             bool teleportOpen = _teleportActive;
             bool loadoutOpen = _dockedActive && _cameraMode != CameraMode.Command && !_hangarOnly && _shopModel is not null;
-            var cancel = MainMenuRules.Escape(IsBriefingVisible(out _), _chatActive, _qcMenuOpen,
+            var cancel = MainMenuRules.Escape(IsBriefingVisible(out _),
+                // P784 — every live compose state owns Escape (native console
+                // VK_ESCAPE console.cpp:2375-2385; the mouse-command selection
+                // is quit as an adaptation of OnSwitchViewMode's cleanup).
+                _chatActive || LiveComposeState is NativeComposeState.Command or NativeComposeState.MouseCommand,
+                _qcMenuOpen,
                 _keyBindVisible, _helpVisible, _creditsVisible, ActionDown(ks, "MainMenu") || backBtn,
                 _cameraMode == CameraMode.ExternalOverride || _state == ClientState.Connecting || _session.World.GameOverResult is not null,
                 investment: investmentOpen, teleport: teleportOpen, loadout: loadoutOpen,
@@ -442,7 +447,15 @@ public sealed partial class Game1
             switch (cancel)
             {
                 case EscapeUiAction.Briefing: DismissBriefing(); break;
-                case EscapeUiAction.Chat: _chatActive = false; _chatBuffer.Clear(); break;
+                case EscapeUiAction.Chat:
+                    // P784 — native VK_ESCAPE (console.cpp:2375-2385): Command
+                    // steps BACK to Chat with the typed text cleared; every
+                    // other compose state quits composing.
+                    if (LiveComposeState == NativeComposeState.Command)
+                        SetComposeState(NativeComposeState.Chat);
+                    else
+                        SetComposeState(NativeComposeState.NotComposing);
+                    break;
                 case EscapeUiAction.QuickChat: BackQuickChat(); break;
                 case EscapeUiAction.Controls: _keyBindVisible = false; break;
                 case EscapeUiAction.Help: _helpVisible = false; break;
@@ -1018,15 +1031,33 @@ public sealed partial class Game1
         {
             if (IsBriefingVisible(out _))
                 DismissBriefing();   // P271 — Enter closes the briefing popup, doesn't open chat
-            else if (_chatActive) SendChatLine();
+            else if (LiveComposeState != NativeComposeState.NotComposing)
+            {
+                // P784 — native OnChar VK_RETURN (console.cpp:2359-2368): an
+                // empty buffer quits; text sends through the state's send path
+                // and every send ends in QuitComposing (console.cpp:1618-1620).
+                if (_chatBuffer.Length == 0)
+                    SetComposeState(NativeComposeState.NotComposing);
+                else if (LiveComposeState == NativeComposeState.Shell)
+                {
+                    // Shell compose does NOT send chat — it runs
+                    // ParseShellCommand (console.cpp:1612-1614).
+                    RunShellCommand(_chatBuffer.ToString());
+                    SetComposeState(NativeComposeState.NotComposing);
+                }
+                else
+                {
+                    SendChatLine();
+                    SetComposeState(NativeComposeState.NotComposing);
+                }
+            }
             else
             {
                 // SIM-0319 — native StartChat() plays chatKeySound before it
                 // opens the composer (console.cpp:2423; sounddef.mdl:324 text wave).
                 if (ChatKeySound.OnStartChat())
                     _sound?.PlayChatKey();
-                _chatActive = true;
-                _chatBuffer.Clear();
+                SetComposeState(NativeComposeState.Chat);   // console.cpp:2423-2431
             }
         }
         _enterWasDown = enter;
@@ -1051,9 +1082,52 @@ public sealed partial class Game1
             if (chatTab && !_chatTabKeyWasDown && ChatTargetLogic.CanCycleWhileComposing(_chatBuffer.ToString()))
             {
                 _chatTarget = ChatTargetLogic.Next(_chatTarget);
+                // P784 — the channel-filter mode's channel set follows the
+                // compose recipient (native AddChannel rebuilds the view,
+                // chatpane.cpp:340-345), so a mid-compose Tab cycle re-applies
+                // it while the pane filter is in its channel mode.
+                if (_chatPaneFilterMode == 2) ApplyChatPaneFilterMode();
                 Console.WriteLine($"[monogame] chat target -> {_chatTarget} ({ChatTargetLogic.ComposeLabel(_chatTarget).Trim()})");
             }
             _chatTabKeyWasDown = chatTab;
+        }
+    }
+
+    /// <summary>P784 — the port of native <c>SetComposeState</c>
+    /// (console.cpp:1072-1091): writes the live compose state and keeps
+    /// <c>_chatActive</c> ("a keyboard composer owns typing") in sync — Chat
+    /// and Shell are the typing states (native IsTakingKeystrokes accepts
+    /// characters from both, console.cpp:2335-2338). Leaving a typing state
+    /// clears the typed text, like native <c>QuitComposing</c> and
+    /// <c>StartComposing</c> (<c>m_strTypedText.SetEmpty()</c>,
+    /// console.cpp:1641,1659).</summary>
+    private void SetComposeState(NativeComposeState next)
+    {
+        _composeState = next;
+        _chatActive = next is NativeComposeState.Chat or NativeComposeState.Shell;
+        if (!_chatActive) _chatBuffer.Clear();
+    }
+
+    /// <summary>P784 — the shell compose's send path: native
+    /// <c>SendChat</c> routes a Shell-state line to
+    /// <c>trekClient.ParseShellCommand</c> instead of the chat relay
+    /// (console.cpp:1612-1614); the shipped shell commands are
+    /// <c>!mute &lt;player&gt;</c> / <c>!unmute &lt;player&gt;</c> by character
+    /// name (clintlib/clintlib.cpp:2277-2296) and an unrecognised line is
+    /// silently dropped (the <c>bCommand</c> result is ignored). The port's
+    /// mute store is <see cref="Allegiance.ClientCore.State.ClientWorld.SetPilotMuted"/>.</summary>
+    private void RunShellCommand(string line)
+    {
+        lock (_session.Gate)
+        {
+            var result = ShellCommands.Parse(line, _session.World.Ships);
+            if (!result.Handled)
+            {
+                Console.WriteLine($"[monogame] shell (dropped, native unknown shell line) >> {line}");
+                return;
+            }
+            _session.World.SetPilotMuted(result.ShipId, result.Mute);
+            Console.WriteLine($"[monogame] shell >> {(result.Mute ? "!mute" : "!unmute")} {result.Name} (ship {result.ShipId})");
         }
     }
 

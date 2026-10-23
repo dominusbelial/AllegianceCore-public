@@ -134,6 +134,13 @@ public sealed record HudChat(IReadOnlyList<string> Lines, int Offset, string Inp
     NativeComposeState ComposeState = NativeComposeState.NotComposing,
     float ComposeProgress = 0f, HudColor? SideColor = null,
     IReadOnlyList<HudColor?>? LineColors = null,
+    /// <summary>P784 — per-line "sender is the side leader" flag, aligned with
+    /// <see cref="Lines"/>. Native <c>ChatInfo::m_bFromLeader</c> is stamped
+    /// from <c>PlayerInfo::IsTeamLeader()</c> at chat arrival
+    /// (clintlib/clintlib.h:235; trekigc.cpp:4498) and the chat pane draws
+    /// leader lines in the bold font (<c>TrekResources::GetFont(size,
+    /// IsFromLeader())</c>, chatpane.cpp:34,93). Null keeps every line regular.</summary>
+    IReadOnlyList<bool>? LeaderLines = null,
     /// <summary>HUD-11 — native <c>NumChatLines</c>: the configured chat-pane
     /// height (<c>ChatLines</c> preference, capped at 6 in the loadout view),
     /// NOT the number of history lines currently shown. Drives the native pane

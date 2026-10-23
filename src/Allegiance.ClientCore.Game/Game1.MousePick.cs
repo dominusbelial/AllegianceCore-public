@@ -213,6 +213,11 @@ public sealed partial class Game1
                                         world.MySideId, me, leftButton: true);
         if (picked is { } p)
         {
+            // P784 — native PickShip (console.cpp:1776-1790): a left pick of a
+            // friendly ship STARTS the MouseCommand compose when not composing
+            // (the recipient then becomes the picked ship).
+            if (LiveComposeState == NativeComposeState.NotComposing)
+                SetComposeState(NativeComposeState.MouseCommand);
             if (_cameraMode == CameraMode.Command && ActionDown(Keyboard.GetState(), "CommandSelectionAdd"))
             {
                 if (_commandGroup.Count == 0 && _commandee is { } previous) _commandGroup.Add(previous);
@@ -221,11 +226,12 @@ public sealed partial class Game1
                 _commandee = _commandGroup.Count > 0 ? _commandGroup[0] : null;
             }
             else { _commandGroup.Clear(); _commandee = p; }
+            ClearWingRecipient();
             Console.WriteLine($"[monogame] pointer: commandee {p.Name} (ship #{p.Id})");
         }
         else
         {
-            if (_cameraMode == CameraMode.Command) { _commandGroup.Clear(); _commandee = null; }
+            if (_cameraMode == CameraMode.Command) { _commandGroup.Clear(); _commandee = null; ClearWingRecipient(); }
             Console.WriteLine("[monogame] pointer: no own-side ship under the cursor");
         }
     }

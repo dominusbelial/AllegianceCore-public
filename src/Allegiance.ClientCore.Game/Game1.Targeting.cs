@@ -1249,12 +1249,14 @@ public sealed partial class Game1
         {
             _commandGroup.Clear();
             _commandee = null;
+            ClearWingRecipient();
             Console.WriteLine("[monogame] commandee: no friendly ship to command in sector");
             return;
         }
         var picked = cycle ? StepCycle(filtered, _commandee) : filtered[0];
         _commandGroup.Clear();
         _commandee = picked;
+        ClearWingRecipient();
         Console.WriteLine($"[monogame] commandee: {picked.Name} (ship #{picked.Id})");
     }
 

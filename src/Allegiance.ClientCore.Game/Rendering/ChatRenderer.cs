@@ -40,13 +40,21 @@ public sealed class ChatRenderer
         _native = nativeFonts;
     }
 
-    // FONT-1 — classic chat: history lines use the native largeFont (and would
-    // use largeBoldFont for leader lines, chatpane.cpp:34 — the port's chat
-    // model carries no per-line "from leader" flag, so all lines use largeFont,
-    // a recorded gap), compose text uses the native smallFont. When no registry
-    // is supplied (isolated renderer tests) the historic mono font is used.
+    // FONT-1 — classic chat: history lines use the native largeFont (and
+    // largeBoldFont for leader lines, chatpane.cpp:34 — P784 wires the
+    // per-line leader flag; see HistoryFontKind), compose text uses the native
+    // smallFont. When no registry is supplied (isolated renderer tests) the
+    // historic mono font is used.
     private SpriteFont HistoryFont => _native is { } n ? n.Get(NativeFont.LargeFont, 1f).Font : _font;
     private SpriteFont ComposeFont => _native is { } n ? n.Get(NativeFont.SmallFont, 1f).Font : _font;
+
+    /// <summary>P784 — which native history font one line draws with: the bold
+    /// face when the sender is the side leader, exactly native
+    /// <c>TrekResources::GetFont(m_pFontSize, m_pchatInfo-&gt;IsFromLeader())</c>
+    /// (chatpane.cpp:34,93). Pure so the decision is testable without a font
+    /// registry.</summary>
+    public static NativeFont HistoryFontKind(bool fromLeader) =>
+        fromLeader ? NativeFont.LargeBoldFont : NativeFont.LargeFont;
 
     /// <summary>
     /// Draw the chat log + (optionally) the active input line. Self-contained —
@@ -61,7 +69,7 @@ public sealed class ChatRenderer
         double nowSeconds, Viewport viewport, string targetLabel, string? filterLabel = null,
         NativeComposeState composeState = NativeComposeState.NotComposing, float composeProgress = 0f,
         IReadOnlyList<HudColor?>? lineColors = null, HudColor? sideColor = null,
-        int paneLines = ChatPaneLayout.DefaultLines)
+        int paneLines = ChatPaneLayout.DefaultLines, IReadOnlyList<bool>? leaderLines = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -114,9 +122,15 @@ public sealed class ChatRenderer
                         line = TruncateToWidth(historyFont, line, (ChatPaneLayout.Width - 6f) / textScale);
                     int y = paneTop + 3 + i * ChatPaneLayout.NativeFontHeight;
                     if (y + ChatPaneLayout.NativeFontHeight > paneTop + paneHeight) break;
+                    // P784 — leader lines draw in the native BOLD history face
+                    // (chatpane.cpp:34,93); without a font registry every line
+                    // keeps the mono fallback.
+                    bool fromLeader = leaderLines is not null && i < leaderLines.Count && leaderLines[i];
+                    SpriteFont lineFont = fromLeader && _native is { } n
+                        ? n.Get(HistoryFontKind(true), 1f).Font : historyFont;
                     Color color = lineColors is not null && i < lineColors.Count && lineColors[i] is { } lc
                         ? From(lc) : TextMain;
-                    _sb.DrawString(historyFont, line, new Vector2(paneLeft + 3f, y), color, 0f,
+                    _sb.DrawString(lineFont, line, new Vector2(paneLeft + 3f, y), color, 0f,
                         Vector2.Zero, textScale, SpriteEffects.None, 0f);
                 }
             }
@@ -217,7 +231,7 @@ public sealed class ChatRenderer
         if (!model.Visible || model.Context.Chat is not { } chat) return;
         Draw(chat.Lines, chat.Offset, chat.Input, chat.Composing, chat.NowSeconds, viewport,
             chat.Recipient, chat.FilterLabel, chat.ComposeState, chat.ComposeProgress,
-            chat.LineColors, chat.SideColor, chat.PaneLines);
+            chat.LineColors, chat.SideColor, chat.PaneLines, chat.LeaderLines);
     }
 
     private string TruncateToWidth(SpriteFont font, string s, float maxWidth)

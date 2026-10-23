@@ -3154,27 +3154,48 @@ public sealed partial class Game1
 
     /// <summary>HUD-10 — build the chat snapshot with the native compose state
     /// (console.cpp:524-529) and the per-line sender side colours
-    /// (trekigc.cpp:4736-4741). Production reaches ComposingChat (typed chat) and
-    /// ComposingQuick (the quick-chat menu); the mouse-command / command / shell
-    /// states have no port input path yet and are never fabricated.</summary>
+    /// (trekigc.cpp:4736-4741). P784 — all five compose states are live
+    /// (ComposeMachine), the recipient label resolves the actual recipient name
+    /// (UpdateComposedChat, console.cpp:1299-1338) and history lines carry the
+    /// native leader flag (trekigc.cpp:4498).</summary>
     private HudChat BuildChatModel()
     {
-        var (lines, colors) = BuildChatLinesAndColors();
+        var (lines, colors, leaders) = BuildChatLinesAndColors();
         NativeComposeState state = _composeVisualState;
         float composeProgress = ChatComposeProgress;
         Rendering.HudColor? side = null;
+        string recipientLabel;
         lock (_session.Gate)
         {
             var world = _session.World;
             if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own)
                 && world.TryGetSideColor(own.SideId, out float r, out float g, out float b))
                 side = new Rendering.HudColor(r * 0.85f, g * 0.85f, b * 0.85f, 1f);
+
+            // P784 — native UpdateComposedChat fills the compose line's
+            // recipient box with the RESOLVED recipient (side name / wing name /
+            // cluster name / ship name, console.cpp:1299-1338); resolve the same
+            // names from the world, falling back to the plain channel tag.
+            string? sideName = null, wingName = null, sectorName = null, shipName = null;
+            if (_chatTarget == ChatTarget.Team)
+                sideName = world.SideRoster?.Sides.FirstOrDefault(s => s.SideId == world.MySideId).Name;
+            else if (_chatTarget == ChatTarget.Wing && world.MyShipId is { } meWing
+                     && world.Ships.TryGetValue(meWing, out var wingOwn))
+                wingName = Allegiance.ClientCore.State.WingNames.For(wingOwn.WingId);
+            else if (_chatTarget == ChatTarget.FriendlySector && world.MyShipId is { } meSector
+                     && world.Ships.TryGetValue(meSector, out var sectorOwn))
+                sectorName = world.Clusters.TryGetValue(sectorOwn.SectorId, out var cluster) ? cluster.Name : null;
+            else if (_chatTarget == ChatTarget.Individual && world.MyShipId is { } meSelf
+                     && world.Ships.TryGetValue(meSelf, out var self))
+                shipName = self.CharacterName;
+            recipientLabel = ChatTargetLogic.ResolvedLabel(_chatTarget, sideName, wingName, sectorName, shipName);
         }
         return new HudChat(lines, _chatPane.Offset,
             _chatActive ? _chatBuffer.ToString() : string.Empty,
             state != NativeComposeState.NotComposing, _nowSeconds,
-            ChatTargetLogic.ComposeLabel(_chatTarget), ChatPaneFilterLabel(),
+            recipientLabel, ChatPaneFilterLabel(),
             state, composeProgress, side, colors,
+            leaders,
             Rendering.ChatPaneLayout.ConfiguredLines(_hudSettings.ChatLines, _dockedActive));
     }
 

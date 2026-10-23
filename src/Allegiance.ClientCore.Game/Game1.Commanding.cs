@@ -26,6 +26,15 @@ public sealed partial class Game1
     // for the next order; recipients/wing are stored for the bar display.
     private short _commandVerb;
     private int _commandRecipientColumn;
+
+    /// <summary>A ship pick or drag selection replaces the recipient, as native
+    /// does (SetRecipient CHAT_INDIVIDUAL / CHAT_GROUP / CHAT_NOSELECTION,
+    /// console.cpp:1809,2146,2151,2166,2176): an earlier wing pick on the
+    /// command bar must not keep fanning orders out to the whole wing.</summary>
+    private void ClearWingRecipient()
+    {
+        if (_commandRecipientColumn >= 4) _commandRecipientColumn = -1;
+    }
     private int _commandWing;
     private bool _commandCentered;
     private long _commandViewVersion;
@@ -232,22 +241,50 @@ public sealed partial class Game1
         _commandGroup.Clear();
         _commandGroup.AddRange(ResolveCommandRectangle(candidates, project, start, end, _session.World.MySideId, me));
         _commandee = _commandGroup.Count > 0 ? _commandGroup[0] : null;
+        ClearWingRecipient();
+        // P784 — native Button's left-drag rectangle (console.cpp:2128-2138): a
+        // non-empty selection STARTS the MouseCommand compose and sets the
+        // Group recipient; an empty rectangle quits composing.
+        if (_commandGroup.Count > 0)
+        {
+            if (LiveComposeState == NativeComposeState.NotComposing)
+                SetComposeState(NativeComposeState.MouseCommand);
+        }
+        else if (LiveComposeState == NativeComposeState.MouseCommand)
+            SetComposeState(NativeComposeState.NotComposing);
     }
 
     private void TryIssueOrderToCommandee()
     {
-        if (_cameraMode != CameraMode.Command || _commandGroup.Count == 0)
+        // P784 — per-recipient fan-out (native SendChatInternal's subject loop,
+        // console.cpp:1546-1564): a multi-recipient selection — the drag-group
+        // or a wing chosen on the command bar — sends ONE order message per
+        // recipient, not one order to a single target.
+        List<AutopilotTarget> recipients;
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            bool wingSelected = _commandRecipientColumn >= 4;   // native c_iRecipientWing0, console.cpp:18
+            short wingId = (short)_commandWing;
+            recipients = CommandFanout.Recipients(_commandGroup, _commandee,
+                wingSelected, wingId, world.MyShipId ?? (short)-1, world.Ships, world.MySideId);
+        }
+        if (recipients.Count == 0)
         { TryIssueOrderToSingleCommandee(); return; }
         var primary = _commandee;
         try
         {
-            foreach (var ship in _commandGroup)
+            foreach (var ship in recipients)
             {
                 _commandee = ship;
                 TryIssueOrderToSingleCommandee();
             }
         }
         finally { _commandee = primary; }
+        // P784 — native SendChat ends in QuitComposing (console.cpp:1618-1620):
+        // the issued order closes the mouse-command/command compose.
+        if (LiveComposeState is NativeComposeState.Command or NativeComposeState.MouseCommand)
+            SetComposeState(NativeComposeState.NotComposing);
     }
 
     private CommandGridRenderer? _commandGridRenderer;
@@ -363,6 +400,10 @@ public sealed partial class Game1
             // the shell state (console.cpp:1266), then arms the selected verb.
             if (ChatKeySound.OnVerb(LiveComposeState))
                 _sound?.PlayChatKey();
+            // P784 — native OnVerbButton then starts (from NotComposing) or
+            // force-moves the compose to the COMMAND state
+            // (console.cpp:1270-1273); Shell swallows the press (:1266).
+            SetComposeState(ComposeMachine.Next(LiveComposeState, ComposeMachine.Trigger.VerbButton));
             _commandVerb = Rendering.CommandBarLayout.VerbCommandId(verb);
             Console.WriteLine($"[monogame] command verb -> {OrderLabel(_commandVerb)}");
             return true;
@@ -370,8 +411,17 @@ public sealed partial class Game1
         int recipient = Rendering.CommandBarLayout.RecipientColumn(x, y);
         if (recipient >= 0)
         {
+            // P784 — native OnRecipientButton (console.cpp:1134-1192): Shell
+            // swallows the press; from NotComposing it STARTS a chat compose;
+            // from a composing state it only retargets. The column maps to the
+            // native chat targets (console.cpp:13-18,1140-1175): 0 = Me
+            // (Individual), 1 = Sector (FriendlySector), 2 = Team, 3 = All
+            // (Everyone), ≥4 = Wing (the wing combo's index).
+            SetComposeState(ComposeMachine.Next(LiveComposeState, ComposeMachine.Trigger.RecipientButton));
             _commandRecipientColumn = recipient;
             _commandWing = recipient >= 4 ? recipient - 4 : _commandWing;
+            if (LiveComposeState == NativeComposeState.Chat)
+                _chatTarget = Rendering.CommandBarLayout.RecipientChatTarget(recipient);
             Console.WriteLine($"[monogame] command recipient -> column {recipient}");
             return true;
         }

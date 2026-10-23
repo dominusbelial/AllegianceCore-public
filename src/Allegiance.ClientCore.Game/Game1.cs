@@ -1338,6 +1338,11 @@ public sealed partial class Game1 : Game
     private bool _chatActive;
     private readonly StringBuilder _chatBuffer = new();
     private ChatTarget _chatTarget = ChatTargetLogic.DefaultTarget;
+    // P784 — the live compose state (native m_csComposeState,
+    // console.cpp:524-529). _chatActive now means "a keyboard composer owns
+    // typing" (Chat or Shell); Command/MouseCommand are mouse-driven compose
+    // states that live only here. Quick stays derived from _qcMenuOpen.
+    private NativeComposeState _composeState = NativeComposeState.NotComposing;
     private const int MaxChatLen = 880;
     private ChatRenderer _chatRenderer = null!;
     // P757 — the chat pane's history view: native ChatListPaneImpl's channel

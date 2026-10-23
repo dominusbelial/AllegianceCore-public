@@ -55,6 +55,7 @@ public sealed partial class Game1
         _dockedActive = false;
         _ownShipSendArmed = false;
         _chatActive = false;
+        _composeState = NativeComposeState.NotComposing;   // P784 — reset the live compose state too
         _mainMenuVisible = false;
         _state = ClientState.Flying;
         _skirmishCamera.SelectMode(SkirmishCameraMode.HottestFight);

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Allegiance.Core.Sim;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
 
@@ -255,6 +256,22 @@ public static class CommandBarLayout
     /// console.cpp:1276).</summary>
     public static short VerbCommandId(int column) =>
         column is >= 0 and <= 8 ? (short)(column + 1) : (short)0;
+
+    /// <summary>P784 — the chat target a recipient column maps to, mirroring
+    /// native OnRecipientButton's switch (console.cpp:1140-1175) with the
+    /// native column constants (console.cpp:13-18): 0 = Me (CHAT_INDIVIDUAL),
+    /// 1 = Sector (CHAT_FRIENDLY_SECTOR), 2 = Team (CHAT_TEAM), 3 = All
+    /// (CHAT_EVERYONE), ≥4 = Wing (CHAT_WING). Out-of-range columns fall back
+    /// to the no-selection sentinel rather than a wrong channel.</summary>
+    public static ChatTarget RecipientChatTarget(int column) => column switch
+    {
+        0 => ChatTarget.Individual,
+        1 => ChatTarget.FriendlySector,
+        2 => ChatTarget.Team,
+        3 => ChatTarget.Everyone,
+        >= 4 => column - 4 < WingNames.Length ? ChatTarget.Wing : ChatTarget.NoSelection,
+        _ => ChatTarget.NoSelection,
+    };
 }
 
 /// <summary>

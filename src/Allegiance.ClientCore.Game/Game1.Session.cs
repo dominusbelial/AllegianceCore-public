@@ -1120,8 +1120,9 @@ public sealed partial class Game1
     private void SendChatLine()
     {
         string text = _chatBuffer.ToString().Trim();
-        _chatActive = false;
-        _chatBuffer.Clear();
+        // P784 — every send ends in native QuitComposing (console.cpp:1618-1620):
+        // the state resets and the typed text clears with it.
+        SetComposeState(NativeComposeState.NotComposing);
         if (text.Length == 0)
             return;
         lock (_session.Gate)
@@ -1139,7 +1140,29 @@ public sealed partial class Game1
         // sender's own echo back, which is what actually displays the line (it
         // is NOT echoed locally). commandId=c_cidNone marks a typed chat as
         // carrying no order (P457), so the server never queues one from it.
-        _session.SendChat(text, _chatTarget, commandId: OrderChange.CidNone);
+        // P784 — native BaseClient::SendChat converts a NA recipient to the
+        // sender's own ids (clintlib.cpp:2312-2367): Individual → own ship id,
+        // Wing → own wing id, Team → own side id, FriendlySector/AllSector →
+        // the current chat cluster. The port's server routes Individual on
+        // OidRecipient (ship id), Wing on the wing id and FriendlySector on the
+        // sector id, so the compose fills all three from the world.
+        short oidRecipient = 0;
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var ownShip))
+            {
+                switch (_chatTarget)
+                {
+                    case ChatTarget.Individual: oidRecipient = ownShip.ShipId; break;
+                    case ChatTarget.Wing: oidRecipient = ownShip.WingId; break;
+                    case ChatTarget.Team: oidRecipient = ownShip.SideId; break;
+                    case ChatTarget.FriendlySector:
+                    case ChatTarget.AllSector: oidRecipient = ownShip.SectorId; break;
+                }
+            }
+        }
+        _session.SendChat(text, _chatTarget, oidRecipient: oidRecipient, commandId: OrderChange.CidNone);
     }
 
     /// <summary>MonoGame's real text-input handler (<c>Window.TextInput</c>):
@@ -1186,6 +1209,19 @@ public sealed partial class Game1
 
         if (_state == ClientState.Flying && _chatActive)
         {
+            // P784 — native OnChar's special characters (console.cpp:2386-2396):
+            // '`'/'~' quit composing and open the main quick-chat menu; '!' —
+            // while composing a plain CHAT with an EMPTY buffer — switches the
+            // compose to the SHELL state (the '!' itself stays in the buffer,
+            // console.cpp:2388-2396).
+            if (c is '`' or '~')
+            {
+                SetComposeState(NativeComposeState.NotComposing);   // QuitComposing
+                OpenQuickChat();                                    // OpenMainQuickChatMenu
+                return;
+            }
+            if (c == '!' && LiveComposeState == NativeComposeState.Chat && _chatBuffer.Length == 0)
+                SetComposeState(NativeComposeState.Shell);
             if (_chatBuffer.Length < MaxChatLen)
             {
                 _chatBuffer.Append(c);
@@ -1222,8 +1258,13 @@ public sealed partial class Game1
     /// colour. Native <c>ChatInfo::SetChat</c> stores the sender's side colour
     /// scaled by 0.85 (or 0.75 for your own non-echo line) and the pane draws
     /// that colour (trekigc.cpp:4736-4741, chatpane.cpp:93-101). Unknown senders
-    /// stay null so the renderer falls back to its neutral text colour.</summary>
-    private (List<string> Lines, List<Rendering.HudColor?> Colors) BuildChatLinesAndColors()
+    /// stay null so the renderer falls back to its neutral text colour.
+    /// P784 — each line also carries native's <c>IsFromLeader</c> flag
+    /// (trekigc.cpp:4498: the sender's <c>PlayerInfo::IsTeamLeader()</c>),
+    /// resolved from the port's per-side leader roster
+    /// (<c>TeamLeaderShipIdFor</c>); the pane draws those lines bold
+    /// (chatpane.cpp:34,93).</summary>
+    private (List<string> Lines, List<Rendering.HudColor?> Colors, List<bool> Leaders) BuildChatLinesAndColors()
     {
         var world = _session.World;
         lock (_session.Gate)
@@ -1236,6 +1277,7 @@ public sealed partial class Game1
             int start = ChatScroll.StartIndex(_chatPane.Offset, visible.Count, ChatRenderer.MaxVisible);
             var lines = new List<string>(Math.Min(visible.Count, ChatRenderer.MaxVisible));
             var colors = new List<Rendering.HudColor?>(Math.Min(visible.Count, ChatRenderer.MaxVisible));
+            var leaders = new List<bool>(Math.Min(visible.Count, ChatRenderer.MaxVisible));
             int end = Math.Min(visible.Count, start + ChatRenderer.MaxVisible);
             for (int i = start; i < end; i++)
             {
@@ -1251,6 +1293,16 @@ public sealed partial class Game1
                     sender = $"sid{m.SidSender}";
                 lines.Add(ChatLogFormat.Format(sender, m.Message, (ChatTarget)m.ChatTarget));
 
+                // P784 — native stamps IsFromLeader from the sender's
+                // PlayerInfo::IsTeamLeader() (trekigc.cpp:4498); the port reads
+                // the same fact from its per-side leader roster. A leaderless
+                // side (no SET_TEAM_LEADER yet) marks nobody, like native's
+                // false default (trekigc.cpp:4484).
+                bool fromLeader = ent is { } leaderEnt
+                    && world.TeamLeaderShipIdFor(leaderEnt.SideId) is { } leaderId
+                    && leaderId == leaderEnt.ShipId;
+                leaders.Add(fromLeader);
+
                 Rendering.HudColor? color = null;
                 if (ent is { } e && world.TryGetSideColor(e.SideId, out float r, out float g, out float b))
                 {
@@ -1260,7 +1312,7 @@ public sealed partial class Game1
                 }
                 colors.Add(color);
             }
-            return (lines, colors);
+            return (lines, colors, leaders);
         }
     }
 

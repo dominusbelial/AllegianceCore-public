@@ -25,10 +25,12 @@ public sealed partial class Game1
     // P770 review: the live compose state for sound decisions. _composeVisualState
     // only updates in UpdateConsoleOverlay and lags a frame (and stays Chat while the
     // pane slides out), so it is not native's m_csComposeState.
+    // P784 — _composeState IS the live m_csComposeState now (all five states);
+    // Quick stays derived from the quick-chat menu bool (the port's adaptation
+    // of native StartQuickChat, console.cpp:1508-1532).
     private NativeComposeState LiveComposeState =>
-        _chatActive ? NativeComposeState.Chat
-        : _qcMenuOpen ? NativeComposeState.Quick
-        : NativeComposeState.NotComposing;
+        _qcMenuOpen ? NativeComposeState.Quick
+        : _composeState;
     private readonly ActionPressEdges _playerPingsPressEdges = new();
     private readonly FlightCameraZoom _flightZoom = new();
     private static readonly string[] ConsoleActions = ["ConModeCombat", "ConModeGameState", "ConModeNav",
@@ -42,6 +44,11 @@ public sealed partial class Game1
 
     private void ApplyConsoleMode(string action, bool updatePointer = true)
     {
+        // P784 — native OnSwitchViewMode quits only the MouseCommand compose
+        // (console.cpp:1031-1035): switching console/camera views always ends
+        // a mouse-command selection.
+        if (_composeState == NativeComposeState.MouseCommand)
+            SetComposeState(NativeComposeState.NotComposing);
         _consolePanes = ConsoleModeRules.Switch(_consolePanes with { Nav = _minimapExpanded,
             Team = _teamPaneVisible ? (_consolePanes.Team == TeamConsoleSize.Mini ? TeamConsoleSize.Mini : TeamConsoleSize.Expanded) : TeamConsoleSize.Hidden }, action);
         _minimapExpanded = _consolePanes.Nav;
@@ -104,8 +111,12 @@ public sealed partial class Game1
         var mask = ComputeOverlayMask();
         bool changed = _paneSlides.Update(_nowSeconds, mask);
         // The compose panel slides on the compose state, not the overlay mask.
+        // P784 — the mouse-command/command/shell states slide the pane too
+        // (native SetComposeState drives ComposeState, dialog.mdl:5355-5387);
+        // MouseCommand shows the chatmouse art exactly like native's
+        // c_csComposeMouseCommand pane.
         _paneSlides.SetTarget(SlidingPane.ChatComposition, _nowSeconds,
-            _chatActive || _qcMenuOpen ? 1f : 0f);
+            _composeState != NativeComposeState.NotComposing || _qcMenuOpen ? 1f : 0f);
         if (changed && _overlayMaskInitialized)
             _sound?.PlayPaneSlide();
         _overlayMaskInitialized = true;
@@ -113,8 +124,10 @@ public sealed partial class Game1
 
         // Keep the compose panel's visual state while it slides out (native
         // Show(false) animates the pane off screen rather than popping it).
-        if (_chatActive) _composeVisualState = NativeComposeState.Chat;
-        else if (_qcMenuOpen) _composeVisualState = NativeComposeState.Quick;
+        // P784 — every live compose state now drives the slide target and the
+        // ComposingPane art variant; not just Chat/Quick.
+        if (LiveComposeState != NativeComposeState.NotComposing)
+            _composeVisualState = LiveComposeState;
         else if (_paneSlides.IsOff(SlidingPane.ChatComposition, _nowSeconds))
             _composeVisualState = NativeComposeState.NotComposing;
     }

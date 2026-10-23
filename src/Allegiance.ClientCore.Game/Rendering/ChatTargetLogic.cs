@@ -84,4 +84,24 @@ public static class ChatTargetLogic
         ChatTarget.FriendlySector => "[FSECTOR] ",
         _                         => "",
     };
+
+    /// <summary>P784 — the compose-line recipient label with the RESOLVED
+    /// recipient name. Native <c>UpdateComposedChat</c> fills the compose
+    /// line's ChatRecipient with the actual name — the side name for Team, the
+    /// wing name for Wing, the cluster name for FriendlySector, the ship name
+    /// for Individual, "All" for Everyone (console.cpp:1299-1338) — not a
+    /// generic channel tag. The port keeps its bracketed aid but resolves the
+    /// name when the world knows it; unresolved names fall back to the plain
+    /// <see cref="ComposeLabel"/> tag. Wing uses the native wing names
+    /// (<c>c_pszWingName</c>, Igc/common.cpp:23-33).</summary>
+    public static string ResolvedLabel(ChatTarget target, string? sideName, string? wingName,
+        string? sectorName, string? shipName) => target switch
+    {
+        ChatTarget.Team           => sideName is null ? "[TEAM] " : $"[TEAM {sideName}] ",
+        ChatTarget.Everyone       => "[ALL] ",
+        ChatTarget.Wing           => wingName is null ? "[WING] " : $"[WING {wingName}] ",
+        ChatTarget.FriendlySector => sectorName is null ? "[FSECTOR] " : $"[{sectorName}] ",
+        ChatTarget.Individual     => shipName is null ? "[ME] " : $"[{shipName}] ",
+        _                         => ComposeLabel(target),
+    };
 }
