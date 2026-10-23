@@ -51,7 +51,7 @@ public sealed class P622TargetSpreadLiveTests
         Games =
         [
             new Gm { // P797 harness option: the harness bots cannot scout yet (P798).
-            ShowMap = true, Name = "P622 (221 cfg)", Map = "m2xspiderw.igc", Teams = 2, CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] },
+            Name = "P622 (221 cfg)", Map = "m2xspiderw.igc", Teams = 2, CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 

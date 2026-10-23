@@ -58,7 +58,7 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
         Games =
         [
             new Gm { // P797 harness option: the harness bots cannot scout yet (P798).
-            ShowMap = true, Name = "P431 MCP Bot Accepts Teammate Order", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            Name = "P431 MCP Bot Accepts Teammate Order", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 
@@ -135,7 +135,7 @@ public sealed class BotAcceptsAndEngagesOrderLiveTests
         // Both eligible sides use Iron Coalition so a native balance retry
         // still exercises the hull-444 pod lifecycle this regression targets.
         config.Games[0] = new Gm { // P797 harness option: the harness bots cannot scout yet (P798).
-            ShowMap = true, Name = "P653c MCP lifecycle", Map = "m2xspiderw.igc", Teams = 2,
+            Name = "P653c MCP lifecycle", Map = "m2xspiderw.igc", Teams = 2,
             CivIds = [25, 25], SideNames = ["Alpha", "Bravo"] };
         server.Boot(config);
         foreach (var m in server.Missions) m.Stage = MissionStage.Started;

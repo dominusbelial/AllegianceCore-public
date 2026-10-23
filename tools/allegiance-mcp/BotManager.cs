@@ -1690,6 +1690,7 @@ internal sealed partial class BotManager : IDisposable
                         if (b.Cs is { } donor) DonateToHumanCommander(donor);
                 }
                 UpdateFinales(now);
+                UpdateExploration(snap, now);
                 UpdateDefense(snap, now);
                 if (now >= _nextMedevacRefresh)   // P779b-1: roster changes settle the per-side pick
                 {
@@ -3342,6 +3343,7 @@ bool isThreat =
     /// killer (unchanged).</item>
     /// </list>
     /// Called each combat tick under <c>cs.Gate</c>.</summary>
+
     private static void SampleCombatStats(ActiveBot bot, ConnectionSession cs, short myShipId, double now)
     {
         lock (cs.Gate)
@@ -3380,6 +3382,19 @@ bool isThreat =
                     && (tgtSide == bot.Side || (cs.World.Stations.TryGetValue(h.TargetId, out var station) && station.SideId == bot.Side)))
                     bot.RecentAssetAttackers[h.SourceId] = now;
 
+                // P798 — a friendly miner/constructor taking a real hit is a
+                // support call: the same incident model that recalls fighters
+                // to a station now covers the economy's assets.
+                if (h.TargetId != -1 && h.SourceId >= 0
+                    && cs.World.Ships.TryGetValue(h.TargetId, out var victim)
+                    && victim.SideId == bot.Side
+                    && cs.World.Ships.TryGetValue(h.SourceId, out var assetHitSource)
+                    && assetHitSource.SideId >= 0 && assetHitSource.SideId != bot.Side
+                    && Catalog.RepresentativeCore().HullTypes.TryGetValue(victim.HullId, out var victimHull)
+                    && (victimHull.HasCapability(DataHullTypeIGC.HabmMiner)
+                        || victimHull.HasCapability(DataHullTypeIGC.HabmBuilder)))
+                    NoteFriendlyAssetAttack(bot, h.ClusterId, now);
+
                 if (h.SourceId >= 0 && cs.World.Ships.TryGetValue(h.SourceId, out var stationAttacker)
                     && stationAttacker.SideId >= 0 && stationAttacker.SideId != bot.Side
                     // The port hit extension has no object-type discriminator.
@@ -3414,6 +3429,16 @@ bool isThreat =
                 // P556 — TTK: an observed death (KILL_SHIP of a ship we first
                 // hit, of any credited killer) resolves that victim's
                 // first-hit→death interval into a sample for its side.
+                // P798 — an own-side miner/constructor kill is a support call even
+                // when no hull-hit broadcast was delivered (a fast kill can end
+                // before the watching peer applies the impact).
+                if (k.ShipId != myShipId && k.SideIdKiller != bot.Side
+                    && cs.World.Ships.TryGetValue(k.ShipId, out var killedAsset)
+                    && killedAsset.SideId == bot.Side
+                    && Catalog.RepresentativeCore().HullTypes.TryGetValue(killedAsset.HullId, out var killedHull)
+                    && (killedHull.HasCapability(DataHullTypeIGC.HabmMiner)
+                        || killedHull.HasCapability(DataHullTypeIGC.HabmBuilder)))
+                    NoteFriendlyAssetAttack(bot, killedAsset.SectorId, now);
                 if (k.TypeCredit == 0)
                 {
                     lock (TtkLock)
@@ -3435,6 +3460,9 @@ bool isThreat =
                     bot.RecentAssetAttackers.Remove(id);
                 foreach (var key in bot.RecentStationAttackers.Where(a => now - a.Value > ThreatWindowSeconds).Select(a => a.Key).ToArray())
                     bot.RecentStationAttackers.Remove(key);
+                foreach (var sector in bot.RecentMinerAttackSectors
+                             .Where(a => now - a.Value > ThreatWindowSeconds * 2).Select(a => a.Key).ToArray())
+                    bot.RecentMinerAttackSectors.Remove(sector);
                 if (bot.RecentAttackers.Count > 0)
                 {
                     var stale = bot.RecentAttackers
@@ -4752,6 +4780,10 @@ bool isThreat =
             return;
         }
         bot.ExitClearFrom = null;
+        // P798 — scouts explore the opening before the fleet commits anywhere.
+        // (After the aleph exit-clear: a scout that just transited must clear
+        // the warp volume first or it bounces back into the aleph.)
+        if (TryDriveExploration(bot, cs, now)) return;
         if (TryDriveSupport(bot, now)) return;
         if (DriveCommanderOrder(bot, now)) return;
         if (TryDriveFinaleEscort(bot, now)) return;
@@ -4823,7 +4855,10 @@ bool isThreat =
                 {
                     // Still en route to the staging sector.
                     MaybeNarrateTransit(bot, cs, now, cur, bot.StagingSector, "stage");
-                    if (!TransitWarp(cs, bot, cur, next)) LoiterCombat(bot, now);
+                    // P798 — under native fog the next aleph may still be unseen
+                    // (its scout died / has not swept here yet). Sweep this sector
+                    // to reveal it instead of loitering at the choke forever.
+                    if (!TransitWarp(cs, bot, cur, next)) SweepSector(bot, cs, cur, now, lane: null);
                     bot.LastCluster = cur;
                     return;
                 }
@@ -4871,8 +4906,11 @@ bool isThreat =
         if (bot.Path.Count == 0) { LoiterCombat(bot, now); bot.LastCluster = cur; return; }   // unroutable / no CLUSTERINFO yet
         short gn = CombatNextHop(bot, cur);
         if (gn == cur) { bot.Arrived = true; bot.ArrivedAt ??= now; bot.LastCluster = cur; EngageCombat(bot, now, prep); return; }
+        // P798 — an unseen next aleph is swept for, not waited on: any ship can
+        // reveal the lane (native makes a seen aleph visible to its whole side,
+        // FedSrv.CPP:10750-10784).
         if (!TransitWarp(cs, bot, cur, gn))
-            LoiterCombat(bot, now);
+            SweepSector(bot, cs, cur, now, lane: null);
         bot.LastCluster = cur;
     }
 
@@ -5913,6 +5951,28 @@ bool isThreat =
         // combat ships or miners.
         public readonly Dictionary<short, double> RecentAttackers = new();
         public readonly Dictionary<short, double> RecentAssetAttackers = new();
+        // P798 — sectors where a friendly miner/constructor was hit recently
+        // (the support call). Filled from the real hit stream in SampleCombatStats.
+        public readonly Dictionary<short, double> RecentMinerAttackSectors = new();
+        // P798 — scout opening state: this bot is one of its side's explorers,
+        // the frontier lane it owns, and its deterministic sector sweep cursor.
+        public bool IsExplorer;
+        public FrontierLane? ExploreLane;
+        // P798b — the enemy home sector this scout was sent to reconnoitre (the
+        // only way a side learns where the enemy base is under native fog). Null
+        // for every other scout and once the side has observed an enemy station.
+        public short? ReconTarget;
+        // P798 — the clash sector this manager assigned (null until the computed
+        // clash exists). Lets a provisional topology fallback be upgraded to the
+        // resource sector without clobbering a finale/research objective.
+        public short? AssignedClashSector;
+        // P798 — last time this scout engaged an enemy miner (the raid lingers
+        // past exploration completion so the kill/support call can land).
+        public double LastMinerRaidAt = double.NegativeInfinity;
+        public short SweepSector = -1;
+        public int SweepWaypoint;
+        public double SweepStartedAt;
+        public double SweepPhaseAt;
         public readonly Dictionary<(short Station, short Attacker), double> RecentStationAttackers = new();
         public long DefenseChatCursor;
         public short? DefenseSector;

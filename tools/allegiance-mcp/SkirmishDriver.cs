@@ -22,7 +22,10 @@ internal static class SkirmishDriver
         }
         var args = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(JsonSerializer.Serialize(new
         {
-            preset = "showcase", count_a = counts[0], count_b = counts[1], target_sector = "Alderan", staging = true
+            // P798 — no hard-coded rendezvous: the fleet's scouts find the map
+            // and the clash sector is computed per side from the resources seen
+            // (the showcase `target_sector` override is intentionally omitted).
+            preset = "showcase", count_a = counts[0], count_b = counts[1], staging = true
         }))!;
         var result = WorkerReply.FromTool(await supervisor.HandleAsync("spawn_scenario", args, ct));
         if (result.IsError) throw new IOException(result.Data.ToString());
@@ -51,7 +54,7 @@ internal static class SkirmishDriver
             if (playerSide is { } old)
             {
                 string hull = vacantHulls.GetValueOrDefault(old) ?? inventory.Where(b => b.GetProperty("side").GetInt16() == old).OrderBy(b => string.Equals(b.GetProperty("role").GetString(), "fighter", StringComparison.OrdinalIgnoreCase) ? 0 : 1).First().GetProperty("hull").GetString()!;
-                await Call("spawn_bot", new JsonObject { ["hull"] = hull, ["side"] = old, ["behavior"] = "combat", ["target_sector"] = "Alderan" });
+                await Call("spawn_bot", new JsonObject { ["hull"] = hull, ["side"] = old, ["behavior"] = "combat" });
                 playerSide = null;
             }
             if (side is { } next)

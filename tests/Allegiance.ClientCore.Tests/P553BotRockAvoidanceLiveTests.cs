@@ -50,7 +50,7 @@ public sealed class P553BotRockAvoidanceLiveTests
         Games =
         [
             new Gm { // P797 harness option: the harness bots cannot scout yet (P798).
-            ShowMap = true, Name = "P553 (221 cfg)", Map = "m2xspiderw.igc", Teams = 2, CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] },
+            Name = "P553 (221 cfg)", Map = "m2xspiderw.igc", Teams = 2, CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 

@@ -124,9 +124,9 @@ public sealed record SkirmishOptions
                 // Worker probes and the research commander may occupy additional seats.
                 MaxPlayersPerTeam = TeamSize + 10, MaxTeamImbalance = 0x7fff,
                 ResearchPlans = new() { [0] = "auto", [1] = "auto" },
-                // P797 — the bots cannot scout yet, so a skirmish reveals the map
-                // (native bShowMap, igc.h:1123) until P798's scout opening lands.
-                ShowMap = true,
+                // P798 — native fog stays on: the bot scouts unveil the map and
+                // the clash forms around the resources they find, so a skirmish
+                // no longer needs the bShowMap reveal (igc.h:1123, default off).
                 // P799 — the skirmish lives option reaches the wire (MISSIONDEF
                 // iLives) and the server's ghost gates through the game config.
                 Lives = Lives,

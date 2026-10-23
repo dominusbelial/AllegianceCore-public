@@ -41,7 +41,7 @@ public sealed class P496CaptureProofLiveTests
         Games =
         [
             new Gm { // P797 harness option: the harness bots cannot scout yet (P798).
-            ShowMap = true, Name = debug ? "P496 Capture Proof (debug)" : "P496 Capture Proof (normal)",
+            Name = debug ? "P496 Capture Proof (debug)" : "P496 Capture Proof (normal)",
                      Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"],
                      // The scenario seats all defenders before attackers; preserve those explicit sides.
                      MaxTeamImbalance = 0x7fff },

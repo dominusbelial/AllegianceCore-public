@@ -50,7 +50,7 @@ public sealed class RunHullMatrixLiveTests
         Games =
         [
             new Gm { // P797 harness option: the harness bots cannot scout yet (P798).
-            ShowMap = true, Name = "P432 Hull/Weapon Matrix", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            Name = "P432 Hull/Weapon Matrix", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 

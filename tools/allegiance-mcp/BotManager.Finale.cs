@@ -29,6 +29,7 @@ internal sealed partial class BotManager
         internal short? Winner;
         internal string? EndReason;
         internal double LastUpdate = double.NegativeInfinity;
+        internal double LastReadinessLog = double.NegativeInfinity;
         internal bool Rotated, NextRunCreated;
         internal long CohesionSamples, Protected, BombersKilled;
         internal double CohesionDistance;
@@ -379,9 +380,27 @@ internal sealed partial class BotManager
             }
             if (run.TriggeredAt is not null || run.GameOverAt is not null) continue;
             var sides = ShowcaseFinale.TriggerSides(run.Settings, now - run.Created, run.Maturity, run.Kills.Count);
-            if (sides.Length == 0) continue;
+            if (sides.Length == 0)
+            {
+                // P798b — bounded readiness telemetry: why the finale has not
+                // triggered yet (age, per-side combat bots, relaunch share and
+                // kills inside the window). One line per 30 s.
+                if (now - run.Created >= 30 && now - run.LastReadinessLog >= 30)
+                {
+                    run.LastReadinessLog = now;
+                    Console.WriteLine($"[finale] waiting t={now - run.Created:F0}s: "
+                        + string.Join("; ", run.Maturity.Select(m =>
+                            $"side {m.Side} combat={m.CombatBots} relaunched={m.Relaunched} share={m.RelaunchShare:F2} kills={m.Kills}"))
+                        + $" recentKills={run.Kills.Count} need age>={run.Settings.AfterMinutes * 60:F0}s share>={run.Settings.MinRelaunchShare:F2} kills>={run.Settings.MinKillsLastFiveMinutes}");
+                }
+                continue;
+            }
             run.Sides = sides;
             run.TriggeredAt = now;
+            Console.WriteLine($"[finale] trigger sides=[{string.Join(",", sides)}] at t={now - run.Created:F0}s: "
+                + string.Join("; ", run.Maturity.Select(m =>
+                    $"side {m.Side} combat={m.CombatBots} relaunched={m.Relaunched} share={m.RelaunchShare:F2} kills={m.Kills}"))
+                + $" recentKills={run.Kills.Count}");
             // Arm the server's simulation-time bound once at the actual maturity trigger.
             // This remains effective if no legal starting weapon can damage a station.
             var researchPeer = bots.FirstOrDefault(b => sides.Contains(b.Side) && ResearchFinale(b));

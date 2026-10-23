@@ -28,7 +28,7 @@ public sealed class P700ShowcaseLiveTests(ITestOutputHelper output)
         {
             using var manager = new BotManager("127.0.0.1", server.BoundPort);
             var args = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
-                """{"preset":"showcase","size_scale":1,"target_sector":"Alderan","staging":true,"finale_after_minutes":0}""")!;
+                """{"preset":"showcase","size_scale":1,"staging":true,"finale_after_minutes":0}""")!;
             var result = McpTools.Handle("spawn_scenario", args, manager);
             Assert.False(result.IsError ?? false, JsonSerializer.Serialize(result));
             var watch = Stopwatch.StartNew();
@@ -36,7 +36,10 @@ public sealed class P700ShowcaseLiveTests(ITestOutputHelper output)
             var reached = new HashSet<string>();
             double firstCombat = double.NaN, longest = 0;
             int samples = 0;
-            while (watch.Elapsed.TotalSeconds < 150)
+            // P798 — with native fog the fleet must first scout its route to the
+            // showcase rendezvous, so the observation window covers the scout
+            // opening plus the march (the never-park sample rule is unchanged).
+            while (watch.Elapsed.TotalSeconds < 480)
             {
                 double now = watch.Elapsed.TotalSeconds;
                 var bots = manager.ActiveBots();
@@ -78,12 +81,17 @@ public sealed class P700ShowcaseLiveTests(ITestOutputHelper output)
                     }
                 }
                 samples++;
-                if (!double.IsNaN(firstCombat) && now - firstCombat >= 45 && reached.Count >= 24) break;
+                if (!double.IsNaN(firstCombat) && now - firstCombat >= 45 && reached.Count >= 24
+                    && manager.GetCombatSummary().ShipHits > 0) break;
                 Thread.Sleep(100);
             }
             var combat = manager.GetCombatSummary();
             output.WriteLine($"P700 local 15v15: {watch.Elapsed.TotalSeconds:F1}s, samples={samples}, reached={reached.Count}/30, "
                 + $"longest speed<1 with target={longest:F3}s, shots={combat.ShotsFired}, hits={combat.ShipHits}, kills={combat.Kills}");
+            foreach (var bot in manager.ActiveBots())
+                output.WriteLine($"[p798-p700] {bot.Name} role={bot.Role} sec={bot.Sector} targetSec={bot.TargetSector} "
+                    + $"staging={bot.StagingSector} phase={bot.StagePhase} state={bot.State} speed={bot.Speed:F1} target={bot.Target}");
+            output.WriteLine(JsonSerializer.Serialize(manager.SideIntelReport()));
             output.WriteLine(JsonSerializer.Serialize(manager.GetPerfStats(null)));
             var perf = McpTools.Handle("get_perf_stats", new Dictionary<string, JsonElement>(), manager);
             Assert.False(perf.IsError ?? false);

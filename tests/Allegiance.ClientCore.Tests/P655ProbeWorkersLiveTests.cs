@@ -27,7 +27,7 @@ public sealed class P655ProbeWorkersLiveTests
         {
             ArtPath = ExternalPaths.Resolve(ExternalResourceKind.Artwork), StaticCore = "PCore001.igc", Port = 0,
             Games = [new GameConfig { // P797 harness option: the harness bots cannot scout yet (P798).
-            ShowMap = true, Name = "P655d refusal", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] }],
+            Name = "P655d refusal", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] }],
         });
         server.Missions[0].LockSides = true;
         var startup = Task.Run(() => Record.Exception(() =>

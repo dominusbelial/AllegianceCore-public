@@ -8,6 +8,10 @@ internal sealed partial class BotManager
     private long _coordinationEpoch;
     private int _coordinationHolding;
     private double _lastCoordinationPublish = double.NegativeInfinity;
+    // P798 — cached per-side intel digest, rebuilt every couple of seconds so
+    // the 5 Hz coordination publish stays cheap.
+    private double _nextIntelDigest = double.NegativeInfinity;
+    private IntelDigest[] _lastIntelDigest = [];
     private readonly Dictionary<DefenseKey, double> _localThreats = new();
     internal long CoordinationEpoch => Interlocked.Read(ref _coordinationEpoch);
     internal WorkerState WorkerSnapshot(System.Text.Json.JsonElement bots)
@@ -28,6 +32,10 @@ internal sealed partial class BotManager
     internal void SetCoordination(CoordinationDecisions decisions)
     {
         if (decisions.Epoch != CoordinationEpoch) return;
+        // P798 — merge sibling workers' own-side intel (union only, never a
+        // different side's data: each digest was built from that worker's bots).
+        if (decisions.Intel is { Length: > 0 } intel)
+            foreach (var digest in intel) _intel.Apply(digest);
         Volatile.Write(ref _coordinationDecisions, decisions);
         Interlocked.Exchange(ref _coordinationReceived, Environment.TickCount64);
     }
@@ -69,6 +77,10 @@ internal sealed partial class BotManager
         foreach (var bot in bots.Where(DefenseAvailable))
             lock (bot.Cs!.Gate)
                 foreach (var station in bot.Cs.World.Stations.Values.Where(s => s.SideId == bot.Side)) bases.Add(DefenseKeyFor(bot, station.ClusterId));
+        // P798 — a miner/constructor support call makes its sector a defence
+        // objective even without a friendly station, so the supervisor's
+        // base filter keeps the incident and can assign fighters to it.
+        foreach (var key in _supportSectors.Where(kv => now - kv.Value <= ScoutOpening.SupportWindowSeconds).Select(kv => kv.Key)) bases.Add(key);
         var population = bots.Where(DefenseAvailable).GroupBy(b => DefenseKeyFor(b, 0))
             .Select(g => new DefensePopulation(g.Key.Cookie, g.Key.Generation, g.Key.Side, g.Count())).ToArray();
         var candidates = new List<DefenseCandidate>();
@@ -79,7 +91,12 @@ internal sealed partial class BotManager
                 candidates.Add(new(key, bot.Name, bot.ShipId, distance.Hops, distance.Local));
             }
         foreach (var key in _localThreats.Where(kv => now - kv.Value > DefenseMinimumSeconds || !bases.Contains(kv.Key)).Select(kv => kv.Key).ToArray()) _localThreats.Remove(key);
+        if (now >= _nextIntelDigest)
+        {
+            _nextIntelDigest = now + 2;
+            _lastIntelDigest = _intel.DigestAll();
+        }
         Volatile.Write(ref _coordinationState, new(stages, bases.ToArray(), population, candidates.ToArray(),
-            _localThreats.Select(kv => new DefenseThreat(kv.Key, now - kv.Value)).ToArray(), epoch, Environment.TickCount64));
+            _localThreats.Select(kv => new DefenseThreat(kv.Key, now - kv.Value)).ToArray(), epoch, Environment.TickCount64, _lastIntelDigest));
     }
 }

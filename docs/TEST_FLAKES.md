@@ -2704,3 +2704,27 @@ isolated invocation immediately after (1/1) — a transport-thread timing race w
 shared machine was also running the P799 5v5 skirmish live run. P799 touches no
 transport/connection-cleanup code (the closest surface, `PerformUndock`, gained only a
 pre-state ghost refusal). Recorded as a load flake per the 3/3-alone rule.
+
+## P798b validation (2026-10-23) — one Core load flake, and two REAL regressions fixed
+
+The first Fast-tier run on this task's tree (2026-10-23 21:33Z) recorded one failure
+outside the task's surface: `Allegiance.Core.Tests.P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect`
+("station 1052 was exported to a side that had not seen it"). It passed **3/3 exact-class
+isolated** invocations immediately after, and the same test passed in the two later full
+Fast-tier runs. P798b touches only `tools/allegiance-mcp/**` and test projects — no
+`src/Allegiance.Core` / `src/Allegiance.Server` change — so this is recorded as a **load
+flake** per the 3/3-alone rule.
+
+The same run also exposed **two real regressions, not flakes**, both introduced by the
+P798 WIP and fixed here (see `docs/reports/P798_SCOUT_OPENING.md` §6):
+
+* `BotFixRegressionTests` (25 cases) + `P658SupervisorTests` — the bot internals tests build
+  a `BotManager` with `RuntimeHelpers.GetUninitializedObject` (no field initializers), so the
+  WIP's new `_supportSectors` field (and the lazy-unsafe `_intel` store) was null and every
+  `TryDriveDefense` call NRE'd. Both are now lazy-initialised; the tool-surface count grew by
+  one (`get_side_intel`: 13 / 16 supervisor).
+* `BotAcceptsAndEngagesOrderLiveTests` (3 cases, and the only three "SLOW FAST" offenders)
+  — the WIP's opening made a lone debug bot an explorer, so it flew a frontier sweep instead
+  of shooting the target its test placed. Exploration is now fleet-only (≥4 combat bots per
+  side) and never runs for a bot under an explicit commander order; the class passes 3/3 in
+  ~6 s (was 15–30 s and failing).

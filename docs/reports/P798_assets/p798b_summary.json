@@ -1,0 +1,57 @@
+{
+  "task": "P798b",
+  "date": "2026-10-23",
+  "base": "pi/p798b @ 06d2d1d6 (P798 WIP) on master 0e87f190",
+  "raw_logs": "~/allegiance-evidence/P798b/ (54 MB: final-m2x-*.log, final-training-*.log, final-loop-*.log, final-p700-*.log, fast-tier-3.log, build-tools.log, loop9.log)",
+  "opening_timeline": {
+    "m2xspiderw_fog": {
+      "first_aleph_s": {"side0": 1, "side1": 0},
+      "first_enemy_station_s": {"side0": 142, "side1": 170, "runs": [[142,170],[141,170],[142,170]], "pinned_N_minutes": 6},
+      "first_miner_raid_s": {"side0": 106, "side1": 135},
+      "first_support_call_s": {"side0": 141, "side1": 168},
+      "clash": "1052 (Alderan, all 134 rocks; resources=878.3 both sides)",
+      "sectors_seen_at_break": {"side0": "54%", "side1": "54-61%"},
+      "rock_visibility_audit": "134+134 rocks audited against Asteroid.SeenBySide(side): 0 leaks (3/3 runs)"
+    },
+    "training_6_fog": {
+      "first_enemy_station_s": {"side0": 45, "side1": 40, "runs": [[45,40],[45,41],[45,42]], "pinned_N_minutes": 3},
+      "first_miner_raid_s": {"side0": 45, "side1": 41},
+      "first_support_call_s": {"side0": 62},
+      "exploration": "3/3 sectors, 4/4 alephs, 67/67 rocks both sides",
+      "clash": "2081 (the middle resource sector, resources=36.3 both sides)",
+      "rock_visibility_audit": "67+67 rocks audited, 0 leaks (3/3 runs)"
+    }
+  },
+  "full_loop": {
+    "map": "training_6.igc", "mode": "showcase size_scale 1 (15/side), fog on (no showMap), no target_sector",
+    "server": "Showcase.TechMode=research, IncomeMultiplier=1000, ResearchTimeScale=64, FinaleTimeoutSeconds=3600, AutoNextMatch on",
+    "runs_s": [308, 319, 309],
+    "constructor_build_s": [15, 15, 38],
+    "first_station_kill_s": [79, 86, 66],
+    "game_over_s": [307, 318, 308],
+    "next_match_started_s": [308, 319, 309],
+    "ore_mined": [6987, 6821, 3260],
+    "payday_credits_per_side": [70, 72, 70],
+    "research_end": {"run1": {"side0": "157/157 100%", "side1": "165/181 90.9%"}, "run2": {"side0": "157/157 100%", "side1": "126/181 69.3%"}, "run3": {"side0": "139/157 88.2%", "side1": "129/181 71.0%"}},
+    "miners_seen_per_side": 2,
+    "stations_destroyed_per_run": "19-20 (expansions + the home Teleport; once the enemy restart Garrison 2081)"
+  },
+  "showcase_never_parks": {
+    "runs": 5, "passed": 5,
+    "wall_s": [447.6, 441.5, 440.4, 452.6, 371.9],
+    "longest_idle_s": [2.005, 1.904, 2.104, 1.904, 1.002],
+    "ship_hits": [2314, 3331, 4617, 2959, 1531],
+    "kills": [17, 29, 36, 21, 15],
+    "reached": "24/30 every run"
+  },
+  "gates": {
+    "solution_build": "0 warnings / 0 errors",
+    "build_tools": "72/72 tool projects, 0/0",
+    "aot_publish": "not run: no src/Allegiance.Server or src/Allegiance.Core change",
+    "P798ScoutOpeningTests": "21 passed, 3x alone",
+    "P798ScoutOpeningLiveTests": "m2xspiderw 3/3, training_6 3/3 (final build)",
+    "P798FullLoopLiveTests": "3/3 (final build)",
+    "P700ShowcaseLiveTests": "5/5",
+    "fast_tier": "10,113 tests, 290.1 s, PASS (final build); an earlier run found the two real regressions listed in TEST_FLAKES.md"
+  }
+}

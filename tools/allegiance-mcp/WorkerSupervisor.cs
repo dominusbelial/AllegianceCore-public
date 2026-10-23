@@ -140,7 +140,7 @@ internal sealed class WorkerSupervisor : IDisposable
     {
         if (!ToolNames.Contains(name)) return Result(JsonSerializer.SerializeToElement(new { error = $"unknown tool '{name}'" }), true);
         var args = JsonSerializer.SerializeToElement(arguments ?? new Dictionary<string, JsonElement>());
-        bool mutating = name is not ("list_active_bots" or "get_perf_stats" or "list_hulls" or "list_parts" or "list_drones");
+        bool mutating = name is not ("list_active_bots" or "get_perf_stats" or "list_hulls" or "list_parts" or "list_drones" or "get_side_intel" or "get_weapon_coverage");
         if (mutating) await _mutation.WaitAsync(ct);
         try
         {
@@ -165,6 +165,25 @@ internal sealed class WorkerSupervisor : IDisposable
             {
                 var replies = await FanOut("__perf", args, ct);
                 return Result(SupervisorResults.MergePerf(replies, WorkerStatus(), LostBots()), replies.All(r => r.IsError));
+            }
+            if (name == "get_side_intel")
+            {
+                // P798 — each worker reports only its own side's knowledge; merge
+                // the per-(side, mission) rows by taking the richest one (workers
+                // share the same intel through the coordination channel, so this
+                // is presentation-level de-duplication, never cross-side data).
+                var replies = await FanOut(name, args, ct);
+                var rows = replies.Where(r => !r.IsError && r.Data.ValueKind == JsonValueKind.Array)
+                    .SelectMany(r => r.Data.EnumerateArray()).ToArray();
+                int Richness(JsonElement e) =>
+                    (e.TryGetProperty("knownSectors", out var ks) && ks.ValueKind == JsonValueKind.Array ? ks.GetArrayLength() : 0)
+                    + (e.TryGetProperty("rockCount", out var rc) && rc.ValueKind == JsonValueKind.Number ? rc.GetInt32() : 0)
+                    + (e.TryGetProperty("enemyHullCount", out var hc) && hc.ValueKind == JsonValueKind.Number ? hc.GetInt32() : 0);
+                var merged = rows.GroupBy(r => (
+                        r.TryGetProperty("cookie", out var c) ? c.GetUInt32() : 0,
+                        r.TryGetProperty("side", out var s) ? s.GetInt16() : (short)-1))
+                    .Select(g => g.OrderByDescending(Richness).First()).ToArray();
+                return Result(JsonSerializer.SerializeToElement(merged), replies.All(r => r.IsError));
             }
             if (name is "stop_bots" or "clear_bots" or "despawn_bot")
             {

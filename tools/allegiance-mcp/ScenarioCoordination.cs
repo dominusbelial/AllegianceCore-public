@@ -8,11 +8,13 @@ internal sealed record DefensePopulation(uint? Cookie, long Generation, short Si
 internal sealed record DefenseThreat(DefenseKey Key, double AgeSeconds);
 internal sealed record DefenseDeployment(DefenseKey Key, string[] Names);
 internal sealed record CoordinationState(StageTally[] Stages, DefenseKey[] Bases, DefensePopulation[] Population,
-    DefenseCandidate[] Candidates, DefenseThreat[] Threats, long Epoch = 0, long PublishedAtMs = 0)
+    DefenseCandidate[] Candidates, DefenseThreat[] Threats, long Epoch = 0, long PublishedAtMs = 0,
+    IntelDigest[]? Intel = null)
 {
     internal static readonly CoordinationState Empty = new([], [], [], [], []);
 }
-internal sealed record CoordinationDecisions(StageKey[] Releases, DefenseDeployment[] Defense, long Epoch = 0)
+internal sealed record CoordinationDecisions(StageKey[] Releases, DefenseDeployment[] Defense, long Epoch = 0,
+    IntelDigest[]? Intel = null)
 {
     internal static readonly CoordinationDecisions Empty = new([], []);
 }
@@ -39,7 +41,12 @@ internal sealed class ScenarioCoordinator(BotManager.DefenseSettings settings, b
             return assembled || g.HoldSeconds >= BotManager.StagingHoldSeconds
                 + BotManager.SyncOffsetSeconds(g.Key.Route, side.Max(o => o.Hops), g.Hops);
         }).Select(g => g.Key).ToArray();
-        if (!settings.Enabled) return new(releases, []);
+        // P798 — sibling workers on the same side share their intel digests.
+        // This is a union of OWN-side knowledge per (cookie, side); no worker can
+        // inject another side's data because each digest is built from that
+        // worker's own bots' worlds.
+        var intel = all.SelectMany(s => s.Intel ?? []).ToArray();
+        if (!settings.Enabled) return new(releases, [], 0, intel);
 
         var bases = all.SelectMany(s => s.Bases).ToHashSet();
         foreach (var threat in all.SelectMany(s => s.Threats))
@@ -62,11 +69,11 @@ internal sealed class ScenarioCoordinator(BotManager.DefenseSettings settings, b
             if (count == 0) continue;
             var used = _incidents.Where(kv => kv.Key.Cookie == key.Cookie && kv.Key.Generation == key.Generation && kv.Key.Side == key.Side)
                 .SelectMany(kv => kv.Value.Names ?? []).ToHashSet();
-            int budget = Math.Max(0, Math.Min(settings.Cap, (int)Math.Ceiling(count * settings.Share)) - used.Count);
+            int budget = BotManager.DefenseBudgetFor(count, used.Count, settings.Cap, settings.Share);
             var names = candidates.Where(c => c.Key == key && !used.Contains(c.Name) && c.Hops >= 0)
                 .OrderBy(c => c.Hops).ThenBy(c => c.Distance).ThenBy(c => c.ShipId).Take(budget).Select(c => c.Name).ToArray();
             if (names.Length > 0 || budget == 0) { incident.Names = names; incident.Started = now; }
         }
-        return new(releases, _incidents.Select(kv => new DefenseDeployment(kv.Key, kv.Value.Names ?? [])).ToArray());
+        return new(releases, _incidents.Select(kv => new DefenseDeployment(kv.Key, kv.Value.Names ?? [])).ToArray(), 0, intel);
     }
 }

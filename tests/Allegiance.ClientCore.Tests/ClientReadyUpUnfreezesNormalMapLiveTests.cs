@@ -49,7 +49,7 @@ public sealed class ClientReadyUpUnfreezesNormalMapLiveTests
         Games =
         [
             new Gm { // P797 harness option: the harness bots cannot scout yet (P798).
-            ShowMap = true, Name = "P485 Normal Freeze", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            Name = "P485 Normal Freeze", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 

@@ -125,6 +125,12 @@ internal static class McpTools
             },
             new Tool
             {
+                Name = "get_side_intel",
+                Description = "P798 — read-only per-side intel: everything that side's own bots have actually seen (P797 per-side map discovery), never another side's data or server truth. Per side and mission: known/reachable sectors, alephs with their partner sector, He3/gold/tech rocks with the ore seen, enemy stations (id/type/sector — the type implies the tech path), enemy hull sightings over time with any observed loadout, enemy miner locations, the opening timeline (first aleph, first enemy station, first miner raid, first support call) and the computed main-clash sector with every scoring term. Supervisor mode merges the sides' rows from all workers (own-side knowledge only).",
+                InputSchema = Schema(new { type = "object" }),
+            },
+            new Tool
+            {
                 Name = "run_hull_matrix",
                 Description = "Systematically run a real combat scenario for every (hull × weapon × size) combination in the cartesian product of the requested lists, capture real per-combination balance/performance data, and return one row per combination. For each combination it spawns `size` real 'combat' bots PER SIDE with that exact hull+weapon loadout, lets them fight for a real observation window, captures real KILL_SHIP-based combat outcomes (kill count per side, time-to-first-kill, survivors per side) and the real per-bot update cadence, then clears exactly that combination's own bots (each ends its own real connection) before the next combination — so measurements never bleed across loadouts. A weapon that does not mount on a hull's real capability mask is a real, specific per-combination error row, never a silent skip or a crash of the whole matrix.",
                 InputSchema = Schema(new
@@ -233,6 +239,7 @@ internal static class McpTools
                 "run_hull_matrix" => RunHullMatrix(args, mgr),
                 "run_scenario" => RunScenario(args, mgr),
                 "get_weapon_coverage" => Ok(JsonSerializer.Serialize(mgr.Coverage.Json())),
+                "get_side_intel" => Ok(JsonSerializer.Serialize(mgr.SideIntelReport())),
                 "invest" => Invest(args, mgr),
                 "list_drones" => ListDrones(args, mgr),
                 "order_drone" => OrderDrone(args, mgr),
@@ -443,6 +450,9 @@ internal static class McpTools
             targetSector = Catalog.ResolveSector(ts, mgr.ProbeClusters()).Id;
         else if (args.ContainsKey("target_sector"))
             return Err("spawn_scenario: `target_sector` must be a non-empty sector id or name");
+        // P798 — the explicit showcase target is the optional override; without
+        // it the bots compute the clash sector from their own intel.
+        mgr.ConfigureScenarioTarget(targetSector);
 
         // P433 - optional real missile launcher for every bot in the scenario
         // (same resolution semantics as the spawn_bot `launcher` argument).
@@ -476,11 +486,12 @@ internal static class McpTools
         string routesArg = (OptStr(args, "routes") ?? "auto").ToLowerInvariant();
         int maxPerRoute = OptInt(args, "maxPerRoute") ?? 100;
         bool wantMultiRoute = routesArg == "auto" && staging;
-        bool multiRoute = wantMultiRoute && targetSector is not null;
+        bool multiRoute = wantMultiRoute && targetSector is not null && mgr.RoutesReliable;
         short rz2 = wantMultiRoute && targetSector is { } rzv ? rzv : (short)0;
         var routePlans = new Dictionary<short, List<List<short>>>();
         var routeCounts = new Dictionary<short, int[]>();
-        string routesNote = "single (routes not split)";
+        string routesNote = mgr.RoutesReliable ? "single (routes not split)"
+            : "deferred until the scouts reveal the aleph graph (per-bot shortest path + sweep-on-stall)";
         if (multiRoute)
         {
             foreach (var side in new[] { sideA, sideB })
@@ -631,6 +642,9 @@ internal static class McpTools
             targetSector = Catalog.ResolveSector(ts, mgr.ProbeClusters()).Id;
         else if (args.ContainsKey("target_sector"))
             return Err("spawn_scenario: `target_sector` must be a non-empty sector id or name");
+        // P798 — the explicit showcase target is the optional override; without
+        // it the bots compute the clash sector from their own intel.
+        mgr.ConfigureScenarioTarget(targetSector);
 
         var sides = mgr.ValidSides();
         if (sides.Count < 2)
@@ -669,11 +683,12 @@ internal static class McpTools
         string routesArg = (OptStr(args, "routes") ?? "auto").ToLowerInvariant();
         int maxPerRoute = OptInt(args, "maxPerRoute") ?? 100;
         bool wantMultiRoute = routesArg == "auto" && staging;
-        bool multiRoute = wantMultiRoute && targetSector is not null;
+        bool multiRoute = wantMultiRoute && targetSector is not null && mgr.RoutesReliable;
         short rz2 = wantMultiRoute && targetSector is { } rzv ? rzv : (short)0;
         var routePlans = new Dictionary<short, List<List<short>>>();
         var routeCounts = new Dictionary<short, int[]>();
-        string routesNote = "single (routes not split)";
+        string routesNote = mgr.RoutesReliable ? "single (routes not split)"
+            : "deferred until the scouts reveal the aleph graph (per-bot shortest path + sweep-on-stall)";
         if (multiRoute)
         {
             foreach (var side in new[] { sideA, sideB })
