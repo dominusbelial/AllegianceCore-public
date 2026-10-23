@@ -85,6 +85,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: player-${{ matrix.rid }}
+          # Intermediate: only needed until the publish job attaches it to the release.
+          retention-days: 1
           path: |
             dist/Allegiance-*.tar.gz
             dist/Allegiance-*.zip
@@ -140,6 +142,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: player-win-installer
+          retention-days: 1
           path: |
             dist/Allegiance-*-setup.exe
             dist/Allegiance-*-setup.exe.sha256
