@@ -108,6 +108,10 @@ public sealed partial class BotFixRegressionTests
         cs.World.Apply(new ExportWarp { Warp = new(20, 21, 60, "", "", "gate", [500, 0, 0], [0, 0, -1], [0, 0, 0, 1], 0, 1) });
         SC4Use(bot, cs, 10); Assert.Equal(double.NegativeInfinity, Get<double>(bot, "LastMineAt"));
         cs.World.Apply(new ExportStation { Station = Station(100, 0, 1) });
+        // Prox Mine 1 (part 59, 15 s) is not pre-laid at an empty owned aleph; only a
+        // long-lived field is (Caltrop, part 830, 600 s — Showcase.PreLayMineAtAleph).
+        SC4Use(bot, cs, 10); Assert.Equal(double.NegativeInfinity, Get<double>(bot, "LastMineAt"));
+        SC4Inventory(cs, new ExpandedPartData(830, 5, 0, 240));
         SC4Use(bot, cs, 10); Assert.Equal(10, Get<double>(bot, "LastMineAt"));
         SC4Use(bot, cs, 10.5); Assert.Equal(10, Get<double>(bot, "LastMineAt"));
         cs.World.Apply(new ExportMine { Mine = new() { MineId = 91, SideId = 0, ClusterId = 1, P0 = Vector3.Zero } });

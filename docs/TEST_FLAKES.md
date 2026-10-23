@@ -2690,3 +2690,5 @@ The same run also recorded one failure in
 **3/3 exact-class isolated invocations** immediately after (2/2 each run) — a
 thread/socket-count race on a busy box, in code P775 does not touch (no
 connection/cleanup change). Recorded as a load flake per the 3/3-alone rule.
+
+| 2026-10-22 | Hud16RadarIconTests.Per_frame_icon_name_resolution_allocates_nothing | fast tier 2026-10-22 23:2x: 208 B once over 1000 frames under suite load; passes 3x alone. Test now takes the best of 3 windows (a real per-frame allocation still fails every window). |
