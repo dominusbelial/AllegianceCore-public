@@ -6008,6 +6008,18 @@ bool isThreat =
         public double SupportCheckAt;
         public short? SupportTraceTarget;
         public bool SupportTraceStation;
+        // P791 — repair hysteresis: the held target, when the hold started, the
+        // last observed hull fraction (improvement is measured against the
+        // PREVIOUS observation — an all-time best would be masked every time a
+        // ship under fire is re-damaged), and a per-target cooldown after a
+        // drop. Reset in ResetNewLife.
+        public short? SupportHoldTarget;
+        public double SupportHoldSince;
+        public float SupportHoldLast = 1f;
+        public double SupportHoldImproveAt;
+        public short SupportCooldownTarget = -1;
+        public double SupportCooldownUntil = double.NegativeInfinity;
+        public short SupportCooldownStrikes;
         public LoadoutPurchasePacer? PurchasePacer;
         public double PurchaseScheduledAt = double.NegativeInfinity;
         public bool LoadoutRefused;

@@ -58,6 +58,12 @@ internal sealed partial class BotManager
         bot.SupportRefitting = false;
         bot.SupportTraceTarget = null;
         bot.SupportCheckAt = double.NegativeInfinity;
+        // P791 — fresh life, fresh repair-hysteresis state.
+        bot.SupportHoldTarget = null;
+        bot.SupportHoldLast = 1f;
+        bot.SupportCooldownTarget = -1;
+        bot.SupportCooldownUntil = double.NegativeInfinity;
+        bot.SupportCooldownStrikes = 0;
         bot.FinaleRefitting = bot.FinaleRefitLaunchPending = false;
         bot.FinaleRefitCheckAt = double.NegativeInfinity;
         bot.PodStationId = bot.PodDockStationId = bot.PodStationSector = -1;

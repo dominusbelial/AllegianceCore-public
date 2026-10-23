@@ -97,6 +97,12 @@ internal sealed class ResearchTactics
     // station dies or no member is left alive and undocked in its sector.
     private short? _strikeTarget;
     private short _strikeSector = -1;
+
+    // P791 — minimal shared phase signal for the support driver: whether a
+    // strike wave is committed (rally gathered/committed, one shared station,
+    // ResearchTactics.cs SC-7/8/9) and which sector it is headed for.
+    internal bool StrikeWaveActive => _waveMembers.Count > 0 && _strikeTarget is not null;
+    internal short StrikeSector => _strikeSector;
     private Target? _rally;
     private double _rallySince = double.NaN;
     private double _committedAt = double.NaN;

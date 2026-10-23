@@ -24,6 +24,60 @@ public sealed class SC2NaniteSupportTests(ITestOutputHelper output)
         Assert.Equal(15, Enumerable.Range(0, 15).Count(i => BotManager.SupportSlot(i, 15, 1)));
     }
 
+    [Fact]
+    public void Support_phase_signal_precedence_and_destination()
+    {
+        // Opening: the fighters' rendezvous mode wins over where they happen to be.
+        var opening = BotManager.SupportPhaseFrom(false, null, false, -1, [(7, 5), (8, 2)], [(2, 9)]);
+        Assert.Equal(BotManager.SupportPhaseKind.Opening, opening.Kind);
+        Assert.Equal((short?)7, opening.AnchorSector);
+        // No rendezvous knowledge (fog): where the fighters actually are (tie keeps the first).
+        Assert.Equal((short?)2, BotManager.SupportPhaseFrom(false, null, false, -1, [], [(2, 9), (3, 9)]).AnchorSector);
+        // An active SC-7/8/9 strike wave outranks the opening...
+        var wave = BotManager.SupportPhaseFrom(false, null, true, 5, [(7, 5)], []);
+        Assert.Equal(BotManager.SupportPhaseKind.Strike, wave.Kind);
+        Assert.Equal((short?)5, wave.AnchorSector);
+        // ...and an active finale (bomb runs) outranks the strike wave.
+        var finale = BotManager.SupportPhaseFrom(true, 9, true, 5, [(7, 5)], []);
+        Assert.Equal(BotManager.SupportPhaseKind.Strike, finale.Kind);
+        Assert.Equal((short?)9, finale.AnchorSector);
+        // No signal at all → Opening with no anchor (the pilot keeps its own rendezvous).
+        Assert.Null(BotManager.SupportPhaseFrom(false, null, false, -1, [], []).AnchorSector);
+        // Same side state, different phase → different destination.
+        var phase = new BotManager.SupportPhaseSignal(BotManager.SupportPhaseKind.Opening, 7);
+        Assert.Equal(((short?)7, true), BotManager.PickSupportDestination(null, phase, 3));
+        var strike = new BotManager.SupportPhaseSignal(BotManager.SupportPhaseKind.Strike, 9);
+        Assert.Equal(((short?)9, true), BotManager.PickSupportDestination(null, strike, 3));
+        // A damaged own station recalls the pilot in ANY phase.
+        Assert.Equal(((short?)4, false), BotManager.PickSupportDestination(4, strike, 3));
+        // Without a phase signal the pilot keeps its own rendezvous.
+        Assert.Equal(((short?)3, false), BotManager.PickSupportDestination(null,
+            new BotManager.SupportPhaseSignal(BotManager.SupportPhaseKind.Opening, null), 3));
+    }
+
+    [Fact]
+    public void Support_hold_hysteresis_drops_full_stale_stuck_and_leashed_targets()
+    {
+        const double now = 1000, started = 990, lastImprove = 998;
+        const float best = .8f;
+        var Keep = BotManager.SupportHoldDecision.Keep;
+        // A healthy, fresh, improving observation keeps the hold.
+        Assert.Equal(Keep, BotManager.EvaluateRepairHold(now, started, best, .85f, .4, lastImprove));
+        // Full → completed (native stop law, shipIGC.cpp:2668-2671).
+        Assert.Equal(BotManager.SupportHoldDecision.DroppedFull, BotManager.EvaluateRepairHold(now, started, best, 1f, .4, lastImprove));
+        // Dead/gone is not a completion.
+        Assert.Equal(BotManager.SupportHoldDecision.DroppedStale, BotManager.EvaluateRepairHold(now, started, best, 0f, .4, lastImprove));
+        // A stale observation is dropped.
+        Assert.Equal(BotManager.SupportHoldDecision.DroppedStale, BotManager.EvaluateRepairHold(now, started, best, .85f, 6.1, lastImprove));
+        // A target that stopped improving is dropped.
+        Assert.Equal(BotManager.SupportHoldDecision.DroppedNoImprove, BotManager.EvaluateRepairHold(now, started, best, .85f, .4, 989));
+        // The leash: never repair one target longer than RepairLeashSeconds.
+        Assert.Equal(BotManager.SupportHoldDecision.DroppedLeash, BotManager.EvaluateRepairHold(now, 950, best, .9f, .4, 999.9));
+        // Precedence: full beats the leash; the leash beats stale.
+        Assert.Equal(BotManager.SupportHoldDecision.DroppedFull, BotManager.EvaluateRepairHold(now, 900, best, 1f, 99, 900));
+        Assert.Equal(BotManager.SupportHoldDecision.DroppedLeash, BotManager.EvaluateRepairHold(now, 900, best, .85f, 99, 900));
+    }
+
     [SkippableTheory]
     [InlineData((short)25)] [InlineData((short)3)]
     public void Support_selection_obeys_research_dock_budget_and_mounts(short civ)
@@ -91,6 +145,93 @@ public sealed partial class BotFixRegressionTests
         Friend(8, .3f); w.Apply(new ShipStatusMessage { ShipId = 8, HullId = 15, SectorId = 1, StationId = 100, ParentId = -1 });
         Assert.Null(BotManager.PickRepairTarget(w, 0, 1, 1, Vector3.Zero));
     }
+    [SkippableFact]
+    public void SC2_Support_pick_respects_phase_damage_bars_support_ring_rule_cooldown_and_P778a_order()
+    {
+        Require.Artwork();
+        using var cs = Session(); var w = cs.World;
+        DefenseMap(w);
+        void Friend(short id, float hull, short side = 0, short sector = 2, short hullId = 15)
+        {
+            w.Apply(new ExportShip { ShipId = id, SideId = side, HullId = hullId });
+            var bytes = new byte[ServerShipUpdate.Width];
+            var writer = new WireWriter(bytes); Pose(id, id * 10).EncodeBody(ref writer); bytes[40] = (byte)(hull * 240);
+            var reader = new WireReader(bytes);
+            w.Apply(new SingleShipUpdate { OidTarget = id, Ship = ServerShipUpdate.DecodeBody(ref reader) });
+            w.Apply(new ShipStatusMessage { ShipId = id, HullId = hullId, SectorId = sector, StationId = -1, ParentId = -1 });
+        }
+        // Home = sector 2, battle = sector 1 (no candidates there unless placed).
+        HashSet<short> supports = [1, 2];   // the pilot (1) and its peer support pilot (2)
+        // P791 ring rule: a slightly-damaged support pilot at home is never a target.
+        Friend(2, .9f);
+        Assert.Null(BotManager.PickRepairTarget(w, 0, 1, 2, Vector3.Zero, battleSector: 1, supportShipIds: supports));
+        // ...in the battle sector it is a target only when genuinely damaged.
+        Assert.Null(BotManager.PickRepairTarget(w, 0, 1, 2, Vector3.Zero, battleSector: 2, supportShipIds: supports));
+        Friend(2, .8f);
+        Assert.Equal((short)2, BotManager.PickRepairTarget(w, 0, 1, 2, Vector3.Zero, battleSector: 2, supportShipIds: supports)!.Value.Id);
+        // Non-support ship at home: the 0.85 bar (bumps above it are ignored)...
+        w.Apply(new KillShip { ShipId = 2, BDeathCredit = true });
+        Friend(5, .9f);
+        Assert.Null(BotManager.PickRepairTarget(w, 0, 1, 2, Vector3.Zero, battleSector: 1, supportShipIds: supports));
+        // ...and real damage starts a repair at home.
+        w.Apply(new KillShip { ShipId = 5, BDeathCredit = true });
+        Friend(6, .8f);
+        Assert.Equal((short)6, BotManager.PickRepairTarget(w, 0, 1, 2, Vector3.Zero, battleSector: 1, supportShipIds: supports)!.Value.Id);
+        // In the battle sector ANY damage still qualifies (P778a behaviour unchanged).
+        w.Apply(new KillShip { ShipId = 6, BDeathCredit = true });
+        Friend(7, .95f, sector: 1);
+        Assert.Equal((short)7, BotManager.PickRepairTarget(w, 0, 1, 1, Vector3.Zero, battleSector: 1, supportShipIds: supports)!.Value.Id);
+        // A target under cooldown is skipped for the tick.
+        Assert.Null(BotManager.PickRepairTarget(w, 0, 1, 1, Vector3.Zero, battleSector: 1, supportShipIds: supports, cooldownTarget: 7));
+        // P778a ordering unchanged with the new parameters: bomber > pusher > station > ship.
+        w.Apply(new KillShip { ShipId = 7, BDeathCredit = true });
+        Friend(8, .5f, sector: 1);                  // plain damaged ship
+        w.Apply(new StationsUpdate { Entries = [new(100, 120, 240)] });   // damaged own station
+        var withFinale = BotManager.PickRepairTarget(w, 0, 1, 1, Vector3.Zero, [9], [7], battleSector: 1, supportShipIds: supports);
+        Assert.True(withFinale!.Value.Station);     // dead/unknown finale ids fall through to the station
+        var ordered = BotManager.PickRepairTarget(w, 0, 1, 1, Vector3.Zero, [8], [], battleSector: 1, supportShipIds: supports);
+        Assert.True(ordered!.Value.FinaleBomber);   // bomber outranks the station
+        ordered = BotManager.PickRepairTarget(w, 0, 1, 1, Vector3.Zero, [], [8], battleSector: 1, supportShipIds: supports);
+        Assert.True(ordered!.Value.FinalePusher);   // pusher outranks the station
+        Assert.True(BotManager.PickRepairTarget(w, 0, 1, 1, Vector3.Zero, battleSector: 1, supportShipIds: supports)!.Value.Station);
+        w.Apply(new StationsUpdate { Entries = [new(100, 240, 240)] });   // station full again
+        Assert.Equal((short)8, BotManager.PickRepairTarget(w, 0, 1, 1, Vector3.Zero, battleSector: 1, supportShipIds: supports)!.Value.Id);
+    }
+
+    [SkippableFact]
+    public void SC2_Support_hold_drops_a_full_target_and_cools_it_down()
+    {
+        Require.Artwork();
+        using var reads = new DefenseLiveReads(); using var cs = Session(true);
+        DefenseMap(cs.World);
+        void SetHull(short id, float hull)
+        {
+            var bytes = new byte[ServerShipUpdate.Width];
+            var writer = new WireWriter(bytes); Pose(id, id * 10).EncodeBody(ref writer); bytes[40] = (byte)(hull * 240);
+            var reader = new WireReader(bytes);
+            cs.World.Apply(new SingleShipUpdate { OidTarget = id, Ship = ServerShipUpdate.DecodeBody(ref reader) });
+        }
+        cs.World.Apply(new ExportShip { ShipId = 2, SideId = 0, HullId = 15 });
+        cs.World.Apply(new ShipStatusMessage { ShipId = 2, HullId = 15, SectorId = 1, StationId = -1, ParentId = -1 });
+        SetHull(2, .5f);
+        var bot = Bot(cs); Set(bot, "Role", "support");
+        var manager = Manager(bot);
+        var target = new BotManager.RepairTarget(2, false, 1, new Vector3(100, 0, 0), Vector3.Zero, 10);
+        // First tick starts the hold and returns the target (observed fraction from the world).
+        var held = Call("ApplyRepairHold", manager, bot, cs, target, 10.0, (short)1, (short?)1);
+        Assert.NotNull(held);
+        Assert.Equal((short?)2, Get<short?>(bot, "SupportHoldTarget"));
+        Assert.True(MathF.Abs(Get<float>(bot, "SupportHoldLast") - .5f) < .01f);
+        // The same target observed full next tick is dropped and cooled down.
+        SetHull(2, 1f);
+        Assert.Null(Call("ApplyRepairHold", manager, bot, cs, target, 12.0, (short)1, (short?)1));
+        Assert.Null(Get<short?>(bot, "SupportHoldTarget"));
+        Assert.Equal((short)2, Get<short>(bot, "SupportCooldownTarget"));
+        Assert.True(Get<double>(bot, "SupportCooldownUntil") >= 22.0);
+        // A fresh hold (new target change) starts again regardless of the cooldown.
+        Assert.NotNull(Call("ApplyRepairHold", manager, bot, cs, target, 40.0, (short)1, (short?)1));
+    }
+
     [SkippableFact]
     public void SC2_Equipped_support_engages_friendlies_and_retains_role_through_finale_and_life_reset()
     {
