@@ -303,7 +303,7 @@ public sealed class Station : IStationIgc, ISideVisible
     /// (<see cref="Sector.ResolveCrossSideVisibility"/>, P132) and read through
     /// <see cref="SeenBySide"/> / <see cref="GetCurrentEye"/>. A station in a
     /// sector that is never swept reads all-false.</summary>
-    public SideVisibilityState SideVisibility { get; } = new();
+    public SideVisibilityState SideVisibility { get; } = new() { Predictable = true };
 
     /// <summary>Whether <paramref name="sideId"/> can currently see this
     /// station (<c>modelIGC.h:110-114</c>) — reads the live

@@ -902,6 +902,8 @@ public sealed partial class Server
         _playerInfoSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         _crossSideExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         _crossSideMineExportSent.RemoveWhere(e => e.Recipient == conn);
+        _crossSideDiscoverySent.RemoveWhere(e => e.Recipient == conn);
+        _buildingEffectExportSent.RemoveWhere(e => e.Recipient == conn);
         _sameSideNpcExportSent.RemoveWhere(e => e.Recipient == conn || e.ShipId == oldShipId);
         foreach (var k in _lastSameSideNpcStatusTick
                      .Where(kv => kv.Key.Recipient == conn || kv.Key.ShipId == oldShipId)
@@ -1580,6 +1582,16 @@ private void CompleteStartCountdown(Mission mission, double now)
         mission.Stage = MissionStage.Started;
         mission.CountdownStart = _startCountdownDeadline[mission];
         _startCountdownDeadline.Remove(mission);
+
+        // P797 — seed every side's starting visibility the moment the mission
+        // actually starts: native runs the bShowMap reveal here
+        // (missionigc.cpp:4056-4071) and the first Cluster::Update pass (every
+        // model's UpdateSeenBySide, clusterIGC.cpp:347-357) is what makes each
+        // side's own stations/ships — and everything within their scanner range
+        // — known at start. Doing it on this transition means the very first
+        // join export and the first ASTEROIDS/STATIONS update carry real per-side
+        // answers instead of an all-false slate.
+        mission.SeedStartingVisibility();
 
         // P443 — the real Started transition is where the game begins: seed each
         // side's starting treasury and run the immediate first payday (native
@@ -3894,40 +3906,101 @@ private void CompleteStartCountdown(Mission mission, double now)
 
         // Same peer/session, immediately after the cluster exports,
         // per sector, in the reference server's own order
-        // (fsmission.cpp:4170-4222): cluster → warps → stations.
-        // This is what finally gives the native client's
-        // FindTarget (src/Igc/common.cpp:470, station search at
-        // :500-501, adjacent-cluster warp walk at :677-707)
-        // non-empty GetWarps()/GetStations() to search, closing the
-        // P34 finding that FindTarget always returned NULL because
-        // the client's clusters had empty lists. Asteroids ARE
-        // exported (P64) — the map is m2xspiderw.igc, 134 real
-        // rocks — since the client's UndockMinersAndStartMining
-        // (CommanderResearchAndExpand.cs:1563-1568) searches
-        // GetAsteroids() for He3-named rocks. Runtime treasures in the
-        // entered sector are exported below, after SET_CLUSTER; they
-        // are not part of this static, all-sectors map export.
+        // (fsmission.cpp:4170-4250): cluster → alephs (+ aleph bombs) →
+        // asteroids (+ building effects) → stations → treasures → mines →
+        // probes. This is what gives the native client's FindTarget
+        // (src/Igc/common.cpp:470, station search at :500-501, adjacent-cluster
+        // warp walk at :677-707) non-empty GetWarps()/GetStations() to search,
+        // closing the P34 finding that FindTarget always returned NULL because
+        // the client's clusters had empty lists.
         //
-        // Unconditional — no SeenBySide()/fog-of-war gate, exactly
-        // as P30 reasoned for clusters (Server.cs:742-747): this
-        // codebase has no scouting/visibility system, so export
-        // every warp, station and asteroid of every sector to every
-        // peer. Ships' resolved destination sectors come for free:
-        // the warp's own ClusterId addresses its sector, and all
-        // sectors are already exported above.
-        foreach (var sector in _missions[0].Sectors)
+        // P797 — PER SIDE, exactly native: every entry in that list is exported
+        // only when the joining peer's side has SEEN it.
+        //   • alephs        fsmission.cpp:4175-4186  if (pwarplink->data()->SeenBySide(pside))
+        //   • asteroids     fsmission.cpp:4201-4213  if (pmdllink->data()->SeenBySide(pside))
+        //                   (+ GetBuildingEffect() → ExportObj(pbe, OT_buildingEffect))
+        //   • stations      fsmission.cpp:4215-4222
+        //   • treasures     fsmission.cpp:4224-4231
+        //   • mines         fsmission.cpp:4233-4240
+        //   • probes        fsmission.cpp:4242-4249
+        // Clusters above stay whole-mission (fsmission.cpp:4170), and
+        // CLUSTERINFO above gives the full sector graph without positions
+        // (fsmission.cpp:4122-4166), which is exactly what native does — the map
+        // preview is public knowledge, the objects in it are not.
+        //
+        // Where the seen-ness comes from: the same latched Per-side flags the
+        // live P132 sweep maintains (Sector.ResolveCrossSideVisibility), seeded
+        // first by Mission.SeedStartingVisibility so a peer joining before the
+        // first live sector tick still gets its own stations plus everything
+        // their scanners cover (native's own-side rule + first
+        // UpdateSeenBySide pass, FedSrv.CPP:10907-10912, clusterIGC.cpp:347-357).
+        // Ships' resolved destination sectors come for free: the warp's own
+        // ClusterId addresses its sector, and all sectors are already exported
+        // above. Each object also latches _crossSideDiscoverySent so the
+        // mid-game discovery sweep (SweepCrossSideDiscoveryExports) never
+        // re-sends what this burst already delivered.
+        var joinMission = _missions[0];
+        int sentWarps = 0, sentStations = 0, sentAsteroids = 0, sentEffects = 0, sentProbes = 0;
+        if (live.Ship.SideId is { } joinSide)
         {
-            foreach (var resolved in sector.Warps)
-                SendPeer(from, FedPacket.Pack(new[] { ExportWarp.FromWarp(resolved).Encode() }));
-            foreach (var station in sector.Stations)
+            joinMission.SeedStartingVisibility();
+            foreach (var sector in joinMission.Sectors)
             {
-                SendPeer(from, FedPacket.Pack(new[] { ExportStation.FromStation(station).Encode() }));
-                _stationIdentitySent.Add((from, _missions[0], station.StationId, station.StationTypeId));
+                foreach (var warp in sector.Warps)
+                {
+                    if (!warp.SeenBySide(joinSide)) continue;
+                    SendPeer(from, FedPacket.Pack(new[] { ExportWarp.FromWarp(warp).Encode() }));
+                    _crossSideDiscoverySent.Add((from, (byte)IgcObjectType.Warp, warp.Warp.WarpId));
+                    sentWarps++;
+                }
+                foreach (var asteroid in sector.Mineable)
+                {
+                    if (!asteroid.SeenBySide(joinSide)) continue;
+                    SendPeer(from, FedPacket.Pack(new[] { ExportAsteroid.FromAsteroid(asteroid.Data).Encode() }));
+                    _crossSideDiscoverySent.Add((from, (byte)IgcObjectType.Asteroid, asteroid.Data.AsteroidId));
+                    sentAsteroids++;
+                    // Native exports the rock's building effect in the same breath
+                    // (fsmission.cpp:4209-4211) — the client draws the construction
+                    // only from that export.
+                    if (asteroid.BuildingEffect is { } effect)
+                    {
+                        SendPeer(from, FedPacket.Pack(new[] { BuildingEffectExport(effect).Encode() }));
+                        _buildingEffectExportSent.Add((from, asteroid.Data.AsteroidId));
+                        sentEffects++;
+                    }
+                }
+                foreach (var station in sector.StationRuntimes)
+                {
+                    if (!station.SeenBySide(joinSide)) continue;
+                    SendPeer(from, FedPacket.Pack(new[] { ExportStation.FromStation(station.Data).Encode() }));
+                    _stationIdentitySent.Add((from, joinMission, station.StationId, station.Data.StationTypeId));
+                    sentStations++;
+                }
+                foreach (var model in sector.Models)
+                {
+                    if (model is Probe probe)
+                    {
+                        if (!probe.SeenBySide(joinSide)) continue;
+                        SendPeer(from, ProbeDiscoveryPacket(probe));
+                        _crossSideDiscoverySent.Add((from, (byte)IgcObjectType.Probe, probe.Id));
+                        sentProbes++;
+                    }
+                    else if (model is Mine mine)
+                    {
+                        if (mine.SideId is not { } mineSide || !mine.SeenBySide(joinSide)) continue;
+                        short launcherId = (mine.Launcher as Ship)?.Id ?? -1;
+                        var mineExport = ExportMine.FromMine(mine, (uint)TickIndex, launcherId, mineSide);
+                        SendPeer(from, FedPacket.Pack(new[] { mineExport.Encode() }));
+                        _crossSideMineExportSent.Add((from, mine.Id));
+                    }
+                }
             }
-            foreach (var asteroid in sector.Asteroids)
-                SendPeer(from, FedPacket.Pack(new[] { ExportAsteroid.FromAsteroid(asteroid).Encode() }));
         }
-        Console.WriteLine($"[export] peer {from} '{req.CharacterName}' -> {_missions[0].Warps.Count} warp(s), {_missions[0].Sectors.Sum(s => s.Stations.Count)} station(s), {_missions[0].Sectors.Sum(s => s.Asteroids.Count)} asteroid(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5)");
+        Console.WriteLine($"[export] peer {from} '{req.CharacterName}' side {live.Ship.SideId?.ToString() ?? "(none)"} -> " +
+                          $"{sentWarps}/{joinMission.Warps.Count} warp(s), {sentStations}/{joinMission.Sectors.Sum(s => s.Stations.Count)} station(s), " +
+                          $"{sentAsteroids}/{joinMission.Sectors.Sum(s => s.Asteroids.Count)} asteroid(s), {sentEffects} building effect(s), " +
+                          $"{sentProbes} probe(s) (OT_warp 7 / OT_station 1 / OT_asteroid 5; seen/total); " +
+                          "treasures follow in the post-SET_CLUSTER snapshot + the discovery sweep");
 
         var set = new SetCluster
         {

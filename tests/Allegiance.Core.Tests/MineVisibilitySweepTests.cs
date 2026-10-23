@@ -154,13 +154,17 @@ public class MineVisibilitySweepTests
         Console.WriteLine($"MINE-VIS-IN: side-1 mine at 300u of side-0 faohshcar -> SeenBySide(0) true after sweep (detect radius 1952); own side always true");
     }
 
-    /// <summary>⭐ Moving the enemy scanner out of range flips the mine's
-    /// <c>SeenBySide</c> true→false on the re-sweep (the sweep rewrites state on
-    /// transition, not just an initial check) — while the owner side stays
-    /// visible.</summary>
+    /// <summary>⭐ P797 — moving the enemy scanner out of range KEEPS the mine
+    /// known (<c>SeenBySide</c> stays true) and only drops the current-eye flag.
+    /// This is native's predictable latch: <c>if (m_bPredictable) //keep static
+    /// objects visible (but not currentEyed) sv.fVisible(true);</c>
+    /// (<c>FedSrv/FedSrv.CPP:11124-11126</c>), and a mine is created with
+    /// <c>c_mtPredictable</c> (<c>mineigc.cpp:104</c>). Before P797 this test
+    /// asserted the pre-latch port behaviour (true→false), which native does not
+    /// do for any static object — see P797_MAP_DISCOVERY.md.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Moving_the_scanner_out_of_scope_flips_the_mine_to_unseen()
+    public void Moving_the_scanner_out_of_scope_keeps_the_mine_known_but_not_eyed()
     {
         Require.Artwork();
         var mission = NewStartedMission();
@@ -177,21 +181,24 @@ public class MineVisibilitySweepTests
         scanner.Position = basePos + new Vector3(50_000f, 0f, 0f);
         ReSweep(mission, 1.0);
 
-        Assert.False(mine.SeenBySide(Side0), "moving the scanner beyond range must flip the mine SeenBySide to false");
+        Assert.True(mine.SeenBySide(Side0), "a predictable static mine stays known after the scanner leaves (FedSrv.CPP:11124-11126)");
+        Assert.False(mine.GetCurrentEye(Side0), "…but the side is no longer the eye on it");
         Assert.True(mine.SeenBySide(Side1), "own side stays visible");
 
-        Console.WriteLine("MINE-VIS-OUT: side-0 scanner moved 50km away -> mine SeenBySide(0) flipped true->false after re-sweep");
+        Console.WriteLine("MINE-VIS-OUT: side-0 scanner moved 50km away -> mine SeenBySide(0) latched true, GetCurrentEye(0) false (native predictable latch)");
     }
 
-    /// <summary>⭐ A real asteroid occluding an in-range scanner→mine pair flips
-    /// the mine to unseen while the pair is STILL within detection range —
-    /// proving the sweep honours
-    /// <see cref="VisibilityMath.LineOfSightExist"/> for mines, not just the
-    /// range half (geometry mirrors the P131 occlusion test: one radius either
-    /// side of a radius-644 rock).</summary>
+    /// <summary>⭐ P797 — a mine that has NEVER been seen and is occluded by a real
+    /// asteroid stays unseen, while the pair is STILL within detection range —
+    /// proving the sweep honours <see cref="VisibilityMath.LineOfSightExist"/>
+    /// for mines, not just the range half (geometry mirrors the P131 occlusion
+    /// test: one radius either side of a radius-644 rock). The occlusion is
+    /// installed BEFORE any sweep runs, because a predictable object that was
+    /// ever seen latches visible (FedSrv.CPP:11124-11126) and could no longer
+    /// demonstrate the LOS rule.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void An_asteroid_occluding_an_in_range_pair_flips_the_mine_to_unseen()
+    public void An_occluded_mine_that_was_never_seen_stays_unseen()
     {
         Require.Artwork();
         var mission = NewStartedMission();
@@ -209,12 +216,10 @@ public class MineVisibilitySweepTests
         mission.PlaceShip(scanner, sector);
         var mine = PlaceMine(sector, mission.Core, 9706, Side1, rockCentre + new Vector3(300f, 0f, 0f), mission.LastUpdate);
 
-        // In range + clear LOS first (no rock yet).
-        mission.Update(0.25);
-        Assert.True(mine.SeenBySide(Side0), "pair must first be seen (clear LOS precondition)");
-
-        // Drop a real asteroid of radius 120 dead-centre between them (colinear,
-        // closer than the mine, outside the scanner).
+        // Drop the occluding rock BEFORE the first sweep: the pair is in range
+        // but the rock blocks the sight line, so the mine must never be seen.
+        // (Placing it after an earlier sighting could not prove the LOS rule any
+        // more — the native predictable latch would keep the mine visible.)
         mission.PlaceAsteroid(new Asteroid(new DataAsteroidIGC(
             Signature: 1.0f,
             Position: [rockCentre.X + 150f, rockCentre.Y, rockCentre.Z],
@@ -228,7 +233,7 @@ public class MineVisibilitySweepTests
         Assert.True((scanner.Position - mine.Position).Length() <= 790f);
         Assert.False(mine.SeenBySide(Side0), "an in-range mine occluded by a real asteroid must not be seen");
 
-        Console.WriteLine("MINE-VIS-OCCLUDE: side-1 mine in range (300u, D=790) but occluded by radius-120 asteroid colinear at 150 -> SeenBySide(0) true->false (LineOfSightExist honoured)");
+        Console.WriteLine("MINE-VIS-OCCLUDE: side-1 mine in range (300u, D=790) but occluded by radius-120 asteroid colinear at 150 -> SeenBySide(0) stays false (LineOfSightExist honoured)");
     }
 
     /// <summary>⭐ A mine is NEVER a scanner. Side 1's only presence in the

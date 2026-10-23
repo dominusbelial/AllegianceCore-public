@@ -114,6 +114,9 @@ public sealed record SkirmishOptions
                 // Worker probes and the research commander may occupy additional seats.
                 MaxPlayersPerTeam = TeamSize + 10, MaxTeamImbalance = 0x7fff,
                 ResearchPlans = new() { [0] = "auto", [1] = "auto" },
+                // P797 — the bots cannot scout yet, so a skirmish reveals the map
+                // (native bShowMap, igc.h:1123) until P798's scout opening lands.
+                ShowMap = true,
                 // P767 / SIM-0100 — a skirmish embeds the offline case: native's
                 // wingman resupply latch only fires when the client runs the sim
                 // (!m_fm.IsConnected(), clintlib.cpp:3697-3717).

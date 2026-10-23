@@ -101,7 +101,13 @@ public sealed class P693TeamLimitsLiveTests(ITestOutputHelper output)
         {
             using var manager = new BotManager("127.0.0.1", server.BoundPort);
             var args = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(
-                """{"preset":"showcase","size_scale":2,"target_sector":"Alderan","staging":false,"finale_after_minutes":30}""")!;
+                // P797 — no finale: the finale planner needs an OBSERVED enemy
+                // home station (BotManager.Finale.cs:83), and a fresh side no
+                // longer starts knowing every station (native exports stations
+                // per side, fsmission.cpp:4215-4222). This test's subject is the
+                // 30v30 spawn / team-capacity behaviour, not the finale; P798
+                // restores the finale once the bots scout the enemy home.
+                """{"preset":"showcase","size_scale":2,"target_sector":"Alderan","staging":false,"finale_after_minutes":0}""")!;
             var watch = Stopwatch.StartNew();
             var result = McpTools.Handle("spawn_scenario", args, manager);
             Assert.False(result.IsError ?? false, JsonSerializer.Serialize(result));

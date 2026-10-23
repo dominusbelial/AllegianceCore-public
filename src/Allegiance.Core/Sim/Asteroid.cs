@@ -141,7 +141,7 @@ public sealed class Asteroid : IAsteroidIgc, ISideVisible
     /// sweep's own-side-is-always-visible rule does not apply: it is seen by a
     /// side only via one of that side's scanners in range with line of sight,
     /// exactly like a cross-side ship.</summary>
-    public SideVisibilityState SideVisibility { get; } = new();
+    public SideVisibilityState SideVisibility { get; } = new() { Predictable = true };
 
     /// <summary>Whether <paramref name="sideId"/> can currently see this
     /// asteroid — the port of <c>ImodelIGC::SeenBySide</c> (<c>modelIGC.h:110-114</c>),

@@ -35,6 +35,10 @@ public sealed class Treasure : Model, ITreasureIgc
         PreviousPosition = Position;
         Velocity = TreasureMotion.VelocityAt(TreasureMotion.Vector(data.V0), now - CreatedAt);
         _sweepVelocity = Velocity;
+        // P797 — a treasure is a side-visible, predictable static model
+        // (treasureIGC.cpp:167-177), so once a side sees it the model stays
+        // known (FedSrv.CPP:11124-11126).
+        SideVisibility.Predictable = true;
         InitClock(now);
     }
 

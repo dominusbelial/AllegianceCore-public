@@ -1926,7 +1926,7 @@ public sealed partial class Server
             if (_rand.Next(5) == 0)   // randomInt(0,4)==0 — uniform pick in [0,4], p=1/5
             {
                 var treasure = victim.CreateDropTreasure(part.Type, part.Amount, now, time0, dv: 100.0f, lifespan: 60.0f);
-                SendSectorWide(sector, new TreasureSpawn { Data = treasure.Data }.Encode());
+                SendTreasureSpawnSectorWide(sector, treasure);
                 Console.WriteLine($"[loot] ship {victim.Id}: part {part.Type.PartId} amount {part.Amount} -> part treasure obj={treasure.Data.ObjectId} sector {sector.Id}");
             }
         }
@@ -1949,7 +1949,7 @@ public sealed partial class Server
             if (ammoPack is { } ap && _rand.Next(5) == 0)
             {
                 var treasure = victim.CreateDropTreasure(ap, ammo, now, time0, dv: 100.0f, lifespan: 30.0f);
-                SendSectorWide(sector, new TreasureSpawn { Data = treasure.Data }.Encode());
+                SendTreasureSpawnSectorWide(sector, treasure);
                 Console.WriteLine($"[loot] ship {victim.Id}: ammo {ammo} -> ammo-pack treasure obj={treasure.Data.ObjectId} sector {sector.Id}");
             }
             victim.Ammo = 0;   // pship->SetAmmo(0), FedSrv.CPP:11711
@@ -1975,7 +1975,7 @@ public sealed partial class Server
             if (fuelPack is { } fp && _rand.Next(5) == 0)
             {
                 var treasure = victim.CreateDropTreasure(fp, (short)fuel, now, time0, dv: 100.0f, lifespan: 30.0f);
-                SendSectorWide(sector, new TreasureSpawn { Data = treasure.Data }.Encode());
+                SendTreasureSpawnSectorWide(sector, treasure);
                 Console.WriteLine($"[loot] ship {victim.Id}: fuel {fuel:F1} -> fuel-pack treasure obj={treasure.Data.ObjectId} sector {sector.Id}");
             }
         }
@@ -1994,7 +1994,7 @@ public sealed partial class Server
             else
             {
                 var ft = victim.CreateFlagTreasure(sidFlag, now, time0);
-                SendSectorWide(sector, new TreasureSpawn { Data = ft.Data }.Encode());
+                SendTreasureSpawnSectorWide(sector, ft);
                 Console.WriteLine($"[loot] ship {victim.Id}: jettisoned flag of side {sidFlag} as treasure obj={ft.Data.ObjectId} sector {sector.Id}");
             }
 
@@ -2084,7 +2084,7 @@ public sealed partial class Server
             CreateNow: false);                           // createNow = false (FedSrv.CPP:13928)
         var flag = new Treasure(data.ObjectId, sec, data, _simNow, mission);
         sec.Add(flag);
-        SendSectorWide(sec, new TreasureSpawn { Data = flag.Data }.Encode());
+        SendTreasureSpawnSectorWide(sec, flag);
         Console.WriteLine($"[loot] flag {sidFlag} respawned above pedestal station {st.StationId} in sector {sec.Id} obj={flag.Data.ObjectId}");
     }
 

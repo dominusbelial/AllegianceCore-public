@@ -477,6 +477,24 @@ public sealed partial class Server
                 SendPeer(kv.Key, packet);
     }
 
+    /// <summary>P797 — the sector-wide treasure CREATION broadcast
+    /// (<c>FM_S_TREASURE</c>, 28) with the per-(peer, treasure) discovery latch
+    /// recorded alongside it, so the cross-side discovery sweep never re-delivers
+    /// a treasure the creation path already sent (native's <c>ShowObject</c> fires
+    /// once; the port has both a creation broadcast and a discovery sweep, and the
+    /// native client's <c>CreateObject</c> is not an upsert). Used by every
+    /// treasure-spawn site (drop, death drop, artifact flag).</summary>
+    private void SendTreasureSpawnSectorWide(Sector sector, Treasure treasure)
+    {
+        var packet = FedPacket.Pack(new[] { new TreasureSpawn { Data = treasure.Data }.Encode() });
+        foreach (var kv in _peerShips)
+            if (ReferenceEquals(kv.Value.Ship.Sector, sector))
+            {
+                SendPeer(kv.Key, packet);
+                _crossSideDiscoverySent.Add((kv.Key, (byte)IgcObjectType.Treasure, treasure.Id));
+            }
+    }
+
     /// <summary>
     /// P113 — the port of <c>FedSrvSiteBase::UseRipcord</c>
     /// (<c>FedSrv.CPP:13440-13500</c>), the actual relocation that runs when a
@@ -1234,24 +1252,43 @@ public sealed partial class Server
             SendPeer(kv.Key, packet);
             n++;
         }
+        // P797 — the effect is gone; a later rebuild may legitimately re-export it.
+        _buildingEffectExportSent.RemoveWhere(e => e.AsteroidId == asteroidId);
         Console.WriteLine($"[build] interrupted building effect on asteroid {asteroidId} -> BUILDINGEFFECT_DESTROYED(181) whole-mission to {n} peer(s)");
     }
 
+    /// <summary>P797 — per-(recipient, asteroid) latch for the in-progress build's
+    /// <c>EXPORT(26)</c>/OT_buildingEffect, so the three senders that can carry it
+    /// (the live creation broadcast, the join export, and the mid-game discovery
+    /// export) never deliver the same construction twice to the same peer — the
+    /// native client's <c>CreateObject(OT_buildingEffect, …)</c> is a create, not an
+    /// upsert. Cleared for an asteroid when its effect is interrupted/destroyed
+    /// (<see cref="BroadcastBuildingEffectDestroyed"/>) so a rebuild re-exports.</summary>
+    private readonly HashSet<(ConnectionId Recipient, short AsteroidId)> _buildingEffectExportSent = new();
+
     /// <summary>Export construction to the owning side and sides which observed its start.
     /// Native FedSrv/FedSrv.CPP:13733-13767. Envelope geometry is captured at creation.</summary>
+    /// <summary>P797 — build the <c>EXPORT(26)</c>/OT_buildingEffect message for one
+    /// in-progress build. Shared by the live creation broadcast and the join /
+    /// discovery exports (native sends the same <c>ExportObj(pbe, OT_buildingEffect)`
+    /// at sector-join sync, <c>fsmission.cpp:4206-4212</c>, and from
+    /// <c>ShowObject</c> when the underlying rock is first spotted,
+    /// <c>FedSrv.CPP:10819-10825</c>).</summary>
+    private ExportBuildingEffect BuildingEffectExport(BuildingEffect effect)
+        => ExportBuildingEffect.FromBuildingEffect(
+            effect, (uint)TickIndex, effect.PositionStart,
+            50f / 255f, 28f / 255f, 146f / 255f, 1f);
+
     private void BroadcastBuildingEffectCreated(BuildingEffect effect)
     {
-        uint timeStart = (uint)TickIndex;
-        var msg = ExportBuildingEffect.FromBuildingEffect(
-            effect, timeStart, effect.PositionStart,
-            50f / 255f, 28f / 255f, 146f / 255f, 1f);
-        byte[] packet = FedPacket.Pack(new[] { msg.Encode() });
+        byte[] packet = FedPacket.Pack(new[] { BuildingEffectExport(effect).Encode() });
         int n = 0;
         foreach (var kv in _peerShips)
         {
             if (!ReferenceEquals(kv.Value.Ship.Mission, effect.Builder.Mission)
                 || kv.Value.Ship.SideId is not { } side || !effect.InformedSides.Contains(side)) continue;
             SendPeer(kv.Key, packet);
+            _buildingEffectExportSent.Add((kv.Key, effect.Target.Data.AsteroidId));
             n++;
         }
         Console.WriteLine($"[build] building effect started on asteroid {effect.Target.Data.AsteroidId} (station {effect.StationType.Name}) -> EXPORT(26)/OT_buildingEffect({ExportBuildingEffect.OtBuildingEffect}) to {n} informed peer(s)");

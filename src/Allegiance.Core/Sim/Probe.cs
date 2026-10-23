@@ -65,6 +65,9 @@ public sealed class Probe : Model, IProbeIgc
         ProbeType = probeType;
         Launcher = launcher;
         SideId = sideId;
+        // P797 — native creates a probe with c_mtPredictable|... (probeigc.cpp:115),
+        // so once a side sees it the probe stays known (FedSrv.CPP:11124-11126).
+        SideVisibility.Predictable = true;
         _timeExpire = now + probeType.Lifespan;
         DeployTime = now;
         // probeigc.cpp:123-128: probes receive a random initial attitude.

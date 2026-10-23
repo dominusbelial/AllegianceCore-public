@@ -55,7 +55,8 @@ public class SpectatorFrameLiveTests
         Port = port,
         UpdatesPerSecond = 20,
         SideSelectAutoSeatSeconds = 30,   // P763: preserve the pre-flag 30 s auto-seat (these peers never send POSITIONREQ)
-        Games = [new Gm { Name = "Spectator Frame", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] }],
+        Games = [new Gm { ShowMap = true,   // P797: the frame translates alephs; keep them known until P798.
+            Name = "Spectator Frame", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] }],
     };
 
     private static LogonRequest Request(string name) => new()

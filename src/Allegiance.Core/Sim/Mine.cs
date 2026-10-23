@@ -108,6 +108,13 @@ public sealed class Mine : Model
         // side-less mine has no side (fires on everyone, like Ship.SideId's
         // own nullable-short convention).
         SideId = (launcher as Ship)?.SideId;
+        // P797 — native creates a mine with c_mtSeenBySide|c_mtPredictable|...
+        // (mineigc.cpp:104), so a side that has spotted the field keeps knowing
+        // it after its last scanner leaves (FedSrv.CPP:11124-11126: "keep static
+        // objects visible (but not currentEyed)"). Before this the port flipped
+        // the mine's SeenBySide back to false, which is what the mine sweep test
+        // line P453 asserted; the native latch is the correct rule.
+        SideVisibility.Predictable = true;
         InitClock(now);
     }
 

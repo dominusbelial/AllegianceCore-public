@@ -5,6 +5,8 @@ using Srv = global::Allegiance.Server.Server;
 using Cfg = global::Allegiance.Server.ServerConfig;
 using Gm = global::Allegiance.Server.GameConfig;
 using Allegiance.Core;
+using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
 using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.Tests;
@@ -54,7 +56,12 @@ public class WorldPopulationLiveTests
             // m2xspiderw.igc: a real map the sibling tests prove carries ~13
             // clusters, stations, warps AND ~134 asteroids (XXV_simple has no
             // asteroids, so world-population coverage needs this one).
-            new Gm { Name = "World Population", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            // P797 — ShowHomeSector is the native mission option that reveals every
+            // model in a cluster where the side owns a station
+            // (Igc/mapmakerigc.cpp:969-997). This test's subject is the join
+            // burst's world population, and asteroids are per side now, so the
+            // home cluster's rocks are what a fresh side legitimately knows.
+            new Gm { ShowHomeSector = true, Name = "World Population", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 
@@ -89,6 +96,22 @@ public class WorldPopulationLiveTests
         Require.Artwork();
         using var server = new Srv();
         server.Boot(Config());
+        // P797 TEST FIXTURE: asteroids are exported per side now (native
+        // fsmission.cpp:4206), and this map's 134 rocks live in NON-home sectors,
+        // so a fresh side legitimately knows none of them. This test's subject is
+        // the join-burst world-population plumbing, so start the mission (the
+        // visibility sweep only runs on a started cluster, clusterIGC.cpp:255) and
+        // reveal the map's rocks to both sides — the native SetSideVisibility
+        // grant — then let the P797 discovery sweep deliver them. P798 replaces
+        // this with real scouting.
+        foreach (var m in server.Missions)
+        {
+            m.Stage = MissionStage.Started;
+            foreach (var side in m.Sides)
+                foreach (var sector in m.Sectors)
+                    foreach (var rock in sector.Mineable)
+                        rock.SideVisibility.SetSideVisibility(side.Id, true);
+        }
 
         string[] names = { "wp_one", "wp_two", "wp_three" };
         var sessions = new ConnectionSession[3];

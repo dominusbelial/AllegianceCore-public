@@ -331,6 +331,16 @@ public sealed partial class Server
         // export (BroadcastExportMine) is unchanged. Runs after Mission.Update
         // so the latched SeenBySide flags reflect this tick's sweep.
         Step("crossSideMineExportSweep", SweepCrossSideMineExports);
+        // P797 — cross-side DISCOVERY of the static objects native gates per side:
+        // alephs, asteroids (+ their building effects), probes and treasures. The
+        // static sibling of the two sweeps above, driven by the same latched
+        // SeenBySide flags (which now include warps, and latch for every
+        // c_mtPredictable object per FedSrv.CPP:11124-11126). Reads this tick's
+        // post-Mission.Update flags and sends each newly-seen object + its
+        // OBJECT_SPOTTED(6) to the seeing side's peers exactly once. Stations keep
+        // their own P747 identity path (ExportDiscoveredStations); mines theirs
+        // (P453).
+        Step("crossSideDiscoverySweep", SweepCrossSideDiscoveryExports);
         // P493 — cross-side SHIP_STATUS(90) delivery of an enemy ship's
         // LAST-KNOWN sector/state to a side that comes to see it through its
         // scanner net (probes/ships/scan range, the P132/P270/P476 rules), and
@@ -2052,6 +2062,200 @@ public sealed partial class Server
             EnsureEmissionPose(conn, layer, mine.OwnerSector);
         SendPeer(conn, PackBroadcast(new[] { Message(exp) }));
         if (ConsoleLog.Verbose) ConsoleLog.Write($"[xexport] side {seeingSide} <- peer {conn} mine {mine.Id} (type {mine.MineType.ExpendableTypeId}) @ {mine.Position}");   // P619c: gated
+    }
+
+    /// <summary>
+    /// P797 — per-tick catch-up sweep for the cross-side identity of the static
+    /// <b>predictable</b> objects native exports per side: alephs, asteroids,
+    /// probes and treasures. The static mirror of
+    /// <see cref="SweepCrossSideExports"/> (P349) and
+    /// <see cref="SweepCrossSideMineExports"/> (P453), and the mid-game half of
+    /// this task's join-export gate.
+    /// <para><b>Native rule.</b> A static object carries
+    /// <c>c_mtSeenBySide | c_mtPredictable</c> (<c>warpIGC.cpp:35</c>,
+    /// <c>asteroidigc.cpp:36</c>, <c>probeigc.cpp:115</c>,
+    /// <c>treasureIGC.cpp:167</c>), so when a side's scanner first sees it
+    /// <c>ThingSiteImpl::UpdateSideVisibility</c> calls <c>ShowObject</c>
+    /// (<c>FedSrv/FedSrv.CPP:10944-10950</c>), which sets the recipient side's
+    /// <c>FM_GUARANTEED</c> default recipient and
+    /// <c>ExportObj(pmodel, type, NULL)</c> to that whole side
+    /// (<c>:10766-10775</c>: "Tell everyone on the side about the newly visible
+    /// static object"), then emits <c>OBJECT_SPOTTED</c>(6) for a station, an
+    /// aleph or a special (non-plain-buildable) asteroid (<c>:11055-11062</c>).
+    /// The flag never clears again for a predictable object
+    /// (<c>:11124-11126</c>), so the export happens once per object per side; the
+    /// per-peer latch <c>_crossSideDiscoverySent</c> (not a per-side one) is what
+    /// lets a peer that joins LATER be caught up by its own join export while a
+    /// peer that was present receives exactly one copy.
+    /// <para><b>Audience.</b> Per side, all seated peers of that side (the side's
+    /// scanner net is shared: one scout's eyes are the whole side's), never the
+    /// mission, never a peer of another side.
+    /// <para><b>Cost.</b> One <c>SeenBySide</c> read per object per side per tick
+    /// (the same scan the ASTEROIDS/PROBES update passes already do) plus one
+    /// latch probe per (newly-seen object, peer of the seeing side). Nothing is
+    /// encoded or sent for an object the side already knows, so a steady tick
+    /// costs no packet work at all.
+    /// </summary>
+    private void SweepCrossSideDiscoveryExports()
+    {
+        var peers = SnapshotBroadcastPeers();
+        Dictionary<short, List<ConnectionId>> bySide = new();
+        foreach (var kv in peers)
+        {
+            if (kv.Value.Ship.SideId is not { } s) continue;   // unseated (team-lobby) peers see nothing side-gated
+            if (!bySide.TryGetValue(s, out var list)) { list = new(); bySide[s] = list; }
+            list.Add(kv.Key);
+        }
+        if (bySide.Count == 0) return;   // nobody seated on a real side
+
+        foreach (var m in _missions)
+        {
+            // The P132 sweep only runs once the mission is Started/Starting, so
+            // the latched SeenBySide flags are meaningful only then (the same
+            // precondition the ship/mine sweeps assume).
+            if (m.Stage != MissionStage.Started && m.Stage != MissionStage.Starting) continue;
+
+            foreach (var sector in m.Sectors)
+            {
+                foreach (var (sideId, conns) in bySide)
+                {
+                    foreach (var warp in sector.Warps)
+                    {
+                        if (!warp.SeenBySide(sideId)) continue;
+                        byte[]? packet = null;
+                        int told = 0;
+                        foreach (var conn in conns)
+                            if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Warp, warp.Warp.WarpId)))
+                            {
+                                packet ??= DiscoveryPacket(ExportWarp.FromWarp(warp).Encode(), warp);
+                                SendPeer(conn, packet);
+                                told++;
+                            }
+                        if (told > 0)
+                            Console.WriteLine($"[discover] side {sideId} aleph {warp.Warp.WarpId} '{warp.Warp.Name}' sector {sector.Id} -> {told} peer(s)");   // P797 rig probe: one line per newly seen aleph
+                    }
+
+                    foreach (var rock in sector.Mineable)
+                    {
+                        if (!rock.SeenBySide(sideId)) continue;
+                        byte[]? packet = null;
+                        int told = 0;
+                        foreach (var conn in conns)
+                            if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Asteroid, rock.Data.AsteroidId)))
+                            {
+                                packet ??= AsteroidDiscoveryPacket(conn, rock);
+                                SendPeer(conn, packet);
+                                told++;
+                            }
+                        if (told > 0)
+                            Console.WriteLine($"[discover] side {sideId} asteroid {rock.Data.AsteroidId} '{rock.Data.Name}' sector {sector.Id} -> {told} peer(s)");   // P797 rig probe
+                    }
+
+                    foreach (var model in sector.Models)
+                    {
+                        if (model is Probe probe)
+                        {
+                            if (!probe.SeenBySide(sideId)) continue;
+                            byte[]? packet = null;
+                            int told = 0;
+                            foreach (var conn in conns)
+                                if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Probe, probe.Id)))
+                                {
+                                    packet ??= ProbeDiscoveryPacket(probe);
+                                    SendPeer(conn, packet);
+                                    told++;
+                                }
+                            if (told > 0)
+                                Console.WriteLine($"[discover] side {sideId} probe {probe.Id} sector {sector.Id} -> {told} peer(s)");   // P797 rig probe
+                        }
+                        else if (model is Treasure treasure)
+                        {
+                            // Native's OBJECT_SPOTTED gate excludes treasure
+                            // (FedSrv.CPP:11051-11054: station / warp / special
+                            // asteroid only), so this is the ExportObj half alone.
+                            // The creation broadcast (SendTreasureSpawnSectorWide /
+                            // BroadcastGeneratedTreasure) and the post-SET_CLUSTER
+                            // snapshot latch this same mark, so no peer is told
+                            // twice about one treasure.
+                            if (!treasure.SeenBySide(sideId)) continue;
+                            byte[]? packet = null;
+                            int told = 0;
+                            foreach (var conn in conns)
+                                if (_crossSideDiscoverySent.Add((conn, (byte)IgcObjectType.Treasure, treasure.Id)))
+                                {
+                                    packet ??= FedPacket.Pack(new[] { new TreasureSpawn { Data = treasure.Data }.Encode() });
+                                    SendPeer(conn, packet);
+                                    told++;
+                                }
+                            if (told > 0)
+                                Console.WriteLine($"[discover] side {sideId} treasure {treasure.Id} sector {sector.Id} -> {told} peer(s)");   // P797 rig probe
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>P797 — one aleph's discovery packet: the <c>EXPORT(26)</c>/OT_warp
+    /// byte-mate of the join export, followed by the <c>OBJECT_SPOTTED</c>(6)
+    /// announcement native emits alongside it (<c>FedSrv.CPP:11055-11062</c>;
+    /// alephs are always in that gate).</summary>
+    private static byte[] DiscoveryPacket(byte[] export, ResolvedWarp warp)
+    {
+        var (otSpotter, oidSpotter) = warp.SideVisibility.LastSpotter;
+        var spotted = new ObjectSpotted
+        {
+            OtObject = (short)IgcObjectType.Warp,
+            OidObject = warp.Warp.WarpId,
+            OtSpotter = otSpotter,
+            OidSpotter = oidSpotter,
+        };
+        return FedPacket.Pack(new[] { export, spotted.Encode() });
+    }
+
+    /// <summary>P797 — one asteroid's discovery packet: the <c>EXPORT(26)</c>/
+    /// OT_asteroid plus (a) the building effect riding on it, exactly as native's
+    /// join export sends <c>ExportObj(pbe, OT_buildingEffect)</c> when it exists
+    /// (<c>fsmission.cpp:4206-4212</c>) and (b) the <c>OBJECT_SPOTTED</c> for a
+    /// special (non-plain-buildable) asteroid
+    /// (<c>(capabilities &amp; ~c_aabmBuildable) != 0</c>, <c>FedSrv.CPP:11051-11054</c>,
+    /// <c>c_aabmBuildable = 0x08</c> at <c>igc.h:765</c>).</summary>
+    private byte[] AsteroidDiscoveryPacket(ConnectionId conn, Asteroid rock)
+    {
+        var messages = new List<byte[]>(3) { ExportAsteroid.FromAsteroid(rock.Data).Encode() };
+        // Native ShowObject sends the building effect along with a newly spotted
+        // rock (FedSrv.CPP:10819-10825) — but the live creation broadcast may
+        // already have told this peer, so the shared per-(peer, rock) latch keeps
+        // the native "create once" semantics.
+        if (rock.BuildingEffect is { } effect
+            && _buildingEffectExportSent.Add((conn, rock.Data.AsteroidId)))
+            messages.Add(BuildingEffectExport(effect).Encode());
+        if ((rock.Data.AabmCapabilities & ~0x08) != 0)
+        {
+            var (otSpotter, oidSpotter) = rock.SideVisibility.LastSpotter;
+            messages.Add(new ObjectSpotted
+            {
+                OtObject = (short)IgcObjectType.Asteroid,
+                OidObject = rock.Data.AsteroidId,
+                OtSpotter = otSpotter,
+                OidSpotter = oidSpotter,
+            }.Encode());
+        }
+        return FedPacket.Pack(messages);
+    }
+
+    /// <summary>P797 — one probe's discovery packet: the <c>EXPORT(26)</c>/OT_probe
+    /// the client needs to instantiate a foreign static probe (PROBES_UPDATE(92)
+    /// carries health only — it has no type/position). Native's OBJECT_SPOTTED
+    /// gate does not cover probes, so this is the export alone.</summary>
+    private byte[] ProbeDiscoveryPacket(Probe probe)
+    {
+        short launcherId = (probe.Launcher as Ship)?.Id ?? -1;   // NA when no launcher ship (mirrors native probeigc.cpp)
+        // timeCreate uses the port's established tick-index convention (the same
+        // value BroadcastExportMine/the P453 cross-side mine sweep send); the
+        // native ms clock is unused across the port's exports.
+        var export = ExportProbe.FromProbe(probe, (uint)TickIndex, launcherId, probe.SideId ?? -1);
+        return FedPacket.Pack(new[] { export.Encode() });
     }
 
     /// <summary>HUD-17 — recompute every own-side ship's <c>Detected</c> bit for

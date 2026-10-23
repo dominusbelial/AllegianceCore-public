@@ -74,9 +74,22 @@ public sealed class P663TreasureLiveTests
         }
         var neutralSectors = m.Sectors.Where(s => !s.Cluster.HomeSector).ToArray();
         Assert.Equal(2, neutralSectors.Length);
+        // P797 TEST FIXTURE: treasures are per-side visible now (native
+        // c_mtSeenBySide | c_mtPredictable, treasureIGC.cpp:167-177), and the
+        // fixture ships sit at a fixed point with the core's first (scanner-less)
+        // hull. This test is about the treasure GENERATION/expiry/respawn wire
+        // path, not about scouting, so give each watcher's side the eye on the
+        // flags it must observe (the native ShowObject grant) and let the P797
+        // discovery sweep deliver them.
+        void Reveal(ConnectionSession watcher, Treasure t)
+        {
+            if (watcher.World.MySideId is { } side) t.SideVisibility.SetSideVisibility(side, true);
+        }
         for (int i = 0; i < 2; i++)
         {
             var session = sessions[i];
+            foreach (var flag in m.Sectors.SelectMany(x => x.Models).OfType<Treasure>().Where(t => t.Code == TreasureCode.Flag))
+                Reveal(session, flag);
             Pump(server, () => { lock (session.Gate) return session.World.Treasures.Values.Any(t => t.Code == TreasureCode.Flag); });
         }
         // A real loaded-core payday generates in both neutral sectors, never home.
@@ -123,6 +136,7 @@ public sealed class P663TreasureLiveTests
             int i = Array.IndexOf(neutralSectors, treasure.OwnerSector);
             Assert.InRange(i, 0, 1);
             var watcher = sessions[i];
+            Reveal(watcher, treasure);
             Pump(server, () => { lock (watcher.Gate) return watcher.World.Treasures.ContainsKey(treasure.Id); });
             lock (watcher.Gate) Assert.Equal(treasure.Position, watcher.World.Treasures[treasure.Id].Position);
         }

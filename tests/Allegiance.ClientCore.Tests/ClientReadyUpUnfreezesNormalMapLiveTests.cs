@@ -48,7 +48,8 @@ public sealed class ClientReadyUpUnfreezesNormalMapLiveTests
         LiveSettings = new() { DebugMode = false },   // a NORMAL map: no debug auto-start
         Games =
         [
-            new Gm { Name = "P485 Normal Freeze", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { // P797 harness option: the harness bots cannot scout yet (P798).
+            ShowMap = true, Name = "P485 Normal Freeze", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 

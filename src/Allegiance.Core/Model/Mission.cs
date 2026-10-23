@@ -114,6 +114,115 @@ public sealed partial class Mission : IMissionIgc
     /// <summary>Native bAllowAlliedViz (probeigc.cpp:459), firing reveal only.</summary>
     public bool AllowAlliedViz { get; set; }
 
+    /// <summary>
+    /// P797 — the port of native <c>MissionParams::bShowMap</c>
+    /// (<c>Igc/igc.h:1123</c>, <b>default <c>false</c></b> at <c>igc.h:1244</c>:
+    /// "Show all warps at the start of the game"). When set, every aleph is
+    /// revealed to every side at mission creation
+    /// (<c>Igc/mapmakerigc.cpp:1002-1017</c> <c>RevealMap</c>: “Show every side
+    /// every warp”, called from <c>:473-477</c>; the start-time repeat is
+    /// <c>Igc/missionigc.cpp:4056-4071</c>). With it off — native's default — a
+    /// side knows only the alephs its scanners have seen, which is the whole
+    /// point of the P797 fog of war.
+    /// </summary>
+    public bool ShowMap { get; set; }
+
+    /// <summary>
+    /// P797 — the port of native <c>MissionParams::bShowHomeSector</c>
+    /// (<c>Igc/igc.h:1148</c>, <b>default <c>false</c></b> at <c>igc.h:1313</c>:
+    /// "Show everything in a player's home sector at start of game"). When set,
+    /// every model in a cluster where the side owns a station is revealed to
+    /// that side (<c>Igc/mapmakerigc.cpp:969-997</c> <c>RevealHomeClusters</c>:
+    /// “Make every model in the station's cluster visible to the side”,
+    /// called from <c>:470-471</c>). Off by default, so a side starts knowing
+    /// only its own stations (the own-side rule, <c>FedSrv.CPP:10907-10912</c>)
+    /// plus whatever its scanners actually cover.
+    /// </summary>
+    public bool ShowHomeSector { get; set; }
+
+    private bool _startingVisibilitySeeded;
+    private bool _startingVisibilitySwept;
+
+    /// <summary>
+    /// P797 — seed every side's visibility from the mission's starting content,
+    /// the port of the two things native guarantees before the first client can
+    /// look at the map:
+    /// <list type="number">
+    /// <item><b>The start-of-game reveals</b> — <c>bShowHomeSector</c> /
+    /// <c>bShowMap</c> when configured (<c>Igc/mapmakerigc.cpp:470-477</c>,
+    /// both no-ops at their native-default false).</item>
+    /// <item><b>One full scanner sweep</b> — the port's own equivalent of the
+    /// first <c>Cluster::Update</c> pass running every model's
+    /// <c>UpdateSeenBySide</c> (<c>Igc/clusterIGC.cpp:347-357</c>): the own-side
+    /// rule makes a side's own stations and ships visible
+    /// (<c>FedSrv.CPP:10907-10912</c>) and each station's scanner range covers
+    /// its home sector (<c>stationIGC.h:308-328</c>), which is exactly "what its
+    /// starting ships/stations can see at start". Running it here means the
+    /// join export (<c>fsmission.cpp:4113-4250</c>) and the discovery sweep read
+    /// real flags even for a peer that joins before the first live sector tick.
+    /// </item>
+    /// </list>
+    /// Idempotent: the flags only ever grow (statics latch, ships are re-derived
+    /// every live sweep), so re-running it is harmless and later live sweeps take
+    /// over anyway. Called by the server at the Started transition and before a
+    /// join export.
+    /// </summary>
+    public void SeedStartingVisibility()
+    {
+        if (!_startingVisibilitySeeded)
+        {
+            _startingVisibilitySeeded = true;
+            // Reveals first, exactly native's mapmaker order (RevealHomeClusters /
+            // RevealMap run before ActivateSides, mapmakerigc.cpp:470-479), so the
+            // sweep below cannot immediately un-see a revealed object.
+            if (ShowHomeSector) RevealHomeClusters();
+            if (ShowMap) RevealMap();
+        }
+        // The sweep itself is one-shot: it is the start-of-game pass. Later live
+        // sweeps (every Sector.c_nPassesPerUpdate) keep the flags current, and a
+        // peer joining mid-game reads exactly those live flags.
+        if (!_startingVisibilitySwept)
+        {
+            _startingVisibilitySwept = true;
+            foreach (var sector in Sectors)
+                sector.ResolveCrossSideVisibility();
+        }
+    }
+
+    /// <summary>P797 — native <c>CmapMakerIGC::RevealHomeClusters</c>
+    /// (<c>Igc/mapmakerigc.cpp:969-997</c>): for every side, make every model in
+    /// a cluster where that side owns a station visible to it.</summary>
+    private void RevealHomeClusters()
+    {
+        foreach (var side in Sides)
+            foreach (var sector in Sectors)
+            {
+                bool owned = false;
+                foreach (var station in sector.StationRuntimes)
+                    if (station.SideId == side.Id && !station.Dead) { owned = true; break; }
+                if (!owned) continue;
+                foreach (var model in sector.Models)
+                    model.SideVisibility.SetSideVisibility(side.Id, true);
+                foreach (var runtimestation in sector.StationRuntimes)
+                    runtimestation.SideVisibility.SetSideVisibility(side.Id, true);
+                foreach (var rock in sector.Mineable)
+                    rock.SideVisibility.SetSideVisibility(side.Id, true);
+                foreach (var warp in sector.Warps)
+                    warp.SideVisibility.SetSideVisibility(side.Id, true);
+            }
+    }
+
+    /// <summary>P797 — native <c>CmapMakerIGC::RevealMap</c>
+    /// (<c>Igc/mapmakerigc.cpp:999-1018</c>, repeated at mission start by
+    /// <c>Igc/missionigc.cpp:4056-4071</c>): every aleph visible to every side.</summary>
+    private void RevealMap()
+    {
+        foreach (var sector in Sectors)
+            foreach (var warp in sector.Warps)
+                foreach (var side in Sides)
+                    warp.SideVisibility.SetSideVisibility(side.Id, true);
+    }
+
     /// <summary>Allied side pairs for native AlliedSides damage immunity
     /// (shipIGC.cpp:1224). Either ordering represents the same alliance.</summary>
     public HashSet<(short, short)> AlliedSidePairs { get; } = [];

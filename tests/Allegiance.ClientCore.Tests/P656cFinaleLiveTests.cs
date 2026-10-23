@@ -43,6 +43,14 @@ public sealed class P656cFinaleLiveTests(Xunit.Abstractions.ITestOutputHelper ou
                     CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] }],
             });
             Mission.Stage = MissionStage.Started;
+            // P797 TEST FIXTURE: the finale strikes an OBSERVED enemy home station,
+            // and stations are exported per side now (native fsmission.cpp:4215-4222).
+            // Give this side the eye on one enemy station (the native ShowObject
+            // SetSideVisibility grant) so its join export carries it. P798 replaces
+            // this with real scouting.
+            var enemyStation = Mission.Sectors.SelectMany(x => x.StationRuntimes)
+                .First(st => st.SideId is { } owner && owner != side);
+            enemyStation.SideVisibility.SetSideVisibility(side, true);
             Client.Connect(Server.BoundPort, "p656c");
             Client.SendLogonRequest(new()
             {

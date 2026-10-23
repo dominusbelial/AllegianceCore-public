@@ -49,7 +49,8 @@ public sealed class ClientWarpApproachLiveTests
         LiveSettings = new Ls { DebugMode = true },
         Games =
         [
-            new Gm { Name = "P484 Warp Approach", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { ShowMap = true,   // P797: client-bot navigation needs known alephs until P798.
+                Name = "P484 Warp Approach", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 

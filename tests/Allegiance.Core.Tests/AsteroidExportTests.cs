@@ -1,7 +1,9 @@
 using System.Buffers.Binary;
 using System.Linq;
 using Allegiance.Core;
+using Allegiance.Core.Collision;
 using Allegiance.Core.Model;
+using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 // 'Server'/'Bot' are also namespaces — alias to unambiguous identifiers (same
 // pattern as MiningTests / BotFlightTests).
@@ -20,7 +22,8 @@ namespace Allegiance.Core.Tests;
 /// over every corpus asteroid record (so the codec is internally consistent);
 /// and (2) a loopback TCP <see cref="FltBot"/> boot on the real
 /// <c>m2xspiderw.igc</c> map (134 asteroids) receives an <c>ExportAsteroid</c>
-/// (<c>objecttype=5</c>, OT_asteroid) for every asteroid of every sector, each
+/// (<c>objecttype=5</c>, OT_asteroid) for the asteroids its <b>side has seen</b>
+/// (P797: the join export is per side, native <c>fsmission.cpp:4206</c>), each
 /// byte-for-byte identical to the map's own parsed <c>DataAsteroidIGC</c> — the
 /// exact static snapshot <c>UndockMinersAndStartMining</c>'s
 /// <c>GetAsteroids()</c> search consumes. This is the final server-side gap
@@ -86,6 +89,23 @@ public class AsteroidExportTests
             a => Convert.ToHexString(a.Encode()), _ => true);
 
         using var server = new Srv();
+        // P797 — the ship must be SEATED (native exports map objects per side, and
+        // an unseated peer has no side to gate on) and must actually scan the
+        // sector's rocks. Place it, on side 0, inside a rock-bearing sector next
+        // to its first few asteroids, with a hull that has a real scanner range.
+        server.ShipSpawner = (core, mission, shipId) =>
+        {
+            var sector = mission.Sectors.First(x => x.Mineable.Count > 0);
+            var rock = sector.Mineable.First(a => a.Data.Position is { Length: 3 });
+            var rp = rock.Data.Position!;
+            var hull = core.HullTypes.Values.Where(h => h.ScannerRange >= 3000f)
+                .OrderBy(h => h.HitPoints).First();
+            var ship = new Ship(shipId, hull,
+                new Vector3(rp[0] + 200f, rp[1], rp[2]), Vector3.Zero, Orientation.Identity)
+            { SideId = mission.Sides[0].Id };
+            mission.PlaceShip(ship, sector);
+            return (ship, sector);
+        };
         server.Boot(new Cfg
         {
             ArtPath = ArtRoot,
@@ -116,8 +136,14 @@ public class AsteroidExportTests
             Assert.True(waited < 20000, "bot never got a ship assignment");
             Thread.Sleep(300);
 
+            // P797 — the join export is PER SIDE (native fsmission.cpp:4206
+            // `if (pmdllink->data()->SeenBySide(pside))`), so a peer receives the
+            // rocks its own side has seen, not all 134 of the map. What this test
+            // still proves byte-for-byte is the wire path: every received export
+            // is a real map record, exactly once, and the set equals the mission's
+            // own latched SeenBySide answer for the peer's side.
             var received = bot.AsteroidExports;
-            Assert.Equal(expected.Count, received.Count);
+            Assert.NotEmpty(received);
             foreach (var ex in received)
             {
                 Assert.Equal(ExportAsteroid.OtAsteroid, ex.ObjectType);
@@ -125,7 +151,15 @@ public class AsteroidExportTests
                 Assert.True(expectedBytes.Remove(bytes),
                     $"received an unexpected asteroid (cluster {ex.Asteroid.ClusterId}, {ex.Asteroid.Name}, {expectedBytes.Count} unmatched remain)");
             }
-            Assert.Empty(expectedBytes);   // every map rock accounted for, no extras
+            short side = server.Ships.First(x => x.Ship.Id == bot.ShipAssignment!.Ship.ShipId).Ship.SideId!.Value;
+            var mission = server.Missions[0];
+            var seen = mission.Sectors.SelectMany(x => x.Mineable)
+                .Where(a => a.SeenBySide(side))
+                .Select(a => a.Data.AsteroidId).OrderBy(x => x).ToArray();
+            Assert.Equal(seen, received.Select(r => r.Asteroid.AsteroidId).Distinct().OrderBy(x => x).ToArray());
+            Assert.True(received.Count < expected.Count,
+                $"a fresh side must not receive all {expected.Count} map rocks (got {received.Count})");
+            Assert.Contains(received, r => r.Asteroid.Name.StartsWith("He"));
         }
         finally
         {

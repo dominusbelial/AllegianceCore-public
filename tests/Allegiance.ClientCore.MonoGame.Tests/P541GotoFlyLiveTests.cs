@@ -50,7 +50,8 @@ public sealed class P541GotoFlyLiveTests
         SideSelectAutoSeatSeconds = 30,   // P763: preserve the pre-flag 30 s auto-seat (these peers never send POSITIONREQ)
         Games =
         [
-            new Gm { Name = "P541 Goto Fly Live Proof", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { ShowMap = true,   // P797: the client goto proof needs known alephs until P798.
+                Name = "P541 Goto Fly Live Proof", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 

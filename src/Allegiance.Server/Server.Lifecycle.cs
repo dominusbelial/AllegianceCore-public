@@ -1217,6 +1217,12 @@ public sealed partial class Server
         mission.AllowDevelopments = g.AllowDevelopments;
         mission.AllowAlliedRip = g.AllowAlliedRip;
         mission.NpcWingmanAmmoResupply = g.NpcWingmanAmmoResupply;   // P767 / SIM-0100
+        // P797 — the native mission options that reveal the map. Both default
+        // false (igc.h:1244 bShowMap, igc.h:1313 bShowHomeSector), i.e. the port
+        // now starts fogged exactly like native: a side knows its own stations
+        // and whatever its scanners cover, nothing else.
+        mission.ShowMap = g.ShowMap;
+        mission.ShowHomeSector = g.ShowHomeSector;
         mission.CrowdingPenaltyEnabled = _config.Sim.CrowdingEnabled;
         g.Treasure.Validate();
         mission.TreasureParameters = g.Treasure;
@@ -1838,6 +1844,10 @@ public sealed partial class Server
         // subject dimension is not ship-linked — a mine's id is unrelated to any
         // ship id, so only the recipient dimension is released here).
         _crossSideMineExportSent.RemoveWhere(e => e.Recipient == id);
+        // P797 — the static-object discovery latches follow the same rule (the
+        // object-id dimension is not ship-linked, so only the recipient frees).
+        _crossSideDiscoverySent.RemoveWhere(e => e.Recipient == id);
+        _buildingEffectExportSent.RemoveWhere(e => e.Recipient == id);
         // P366 — the same-side NPC latches get the same treatment as their
         // teammates: free every entry where the departing peer was the recipient
         // OR the departing ship was the subject, else they grow monotonically

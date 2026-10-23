@@ -115,7 +115,23 @@ public sealed class TargetPickSectorScopeLiveTests
         });
 
         server.Boot(Config("P371 Two-Sector Target-Pick"));
-        foreach (var m in server.Missions) m.Stage = MissionStage.Started;
+        // P797 TEST FIXTURE: this test pins per-SECTOR target scoping against a
+        // map-WIDE export pool. P797 makes that pool per side (native
+        // fsmission.cpp:4181/4206/4220), so reveal the whole map to the side both
+        // peers are seated on — the native bShowMap / SetSideVisibility grants —
+        // and let the discovery sweep deliver it. P798 replaces this with real
+        // scouting.
+        foreach (var m in server.Missions)
+        {
+            m.Stage = MissionStage.Started;
+            short side = m.Sides[0].Id;
+            foreach (var sector in m.Sectors)
+            {
+                foreach (var warp in sector.Warps) warp.SideVisibility.SetSideVisibility(side, true);
+                foreach (var rock in sector.Mineable) rock.SideVisibility.SetSideVisibility(side, true);
+                foreach (var station in sector.StationRuntimes) station.SideVisibility.SetSideVisibility(side, true);
+            }
+        }
 
         using var alpha = Connect(server, "AlphaGanymede");
         using var bravo = Connect(server, "BravoAlderan");

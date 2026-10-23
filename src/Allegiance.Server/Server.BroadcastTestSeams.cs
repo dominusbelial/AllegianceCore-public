@@ -262,6 +262,8 @@ public sealed partial class Server
         TestResetBroadcastState();
         _crossSideExportSent.Clear();
         _crossSideMineExportSent.Clear();
+        _crossSideDiscoverySent.Clear();
+        _buildingEffectExportSent.Clear();
         _crossSideShipStatusSeen.Clear();
         _crossSideShipStatusTick.Clear();
         _shipDetected.Clear();

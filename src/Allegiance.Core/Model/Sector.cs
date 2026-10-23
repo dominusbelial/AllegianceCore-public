@@ -4881,10 +4881,14 @@ public sealed class Sector : IClusterIgc
 
     /// <summary>A ship/station/probe participating in the cross-side visibility
     /// sweep: its side, body geometry and scanner attributes, plus the live
-    /// object to write <see cref="SideVisibilityState"/> onto.</summary>
+    /// object to write <see cref="SideVisibilityState"/> onto. <c>Ot</c>/<c>Oid</c>
+    /// are the model's native <c>(ObjectType, ObjectID)</c> — the pair recorded as
+    /// the side's <c>pLastSpotter</c> (P797, native FedSrv.CPP:10944) and carried
+    /// by the <c>OBJECT_SPOTTED</c>(6) announcement (FedSrv.CPP:11055-11062).
+    /// <c>(-1,-1)</c> for a target-only participant (asteroid/warp/treasure).</summary>
     private readonly record struct VisibilityParticipant(
         ISideVisible Body, short? SideId, Vector3 Position,
-        float Radius, float ScannerRange, float Signature);
+        float Radius, float ScannerRange, float Signature, short Ot = -1, short Oid = -1);
 
     /// <summary>
     /// P132 — the per-tick cross-side visibility sweep, called from
@@ -4925,13 +4929,16 @@ public sealed class Sector : IClusterIgc
     /// a per-sector pass) and strictly simpler, the same
     /// "query instead of maintain an index" substitution this port already
     /// makes by reusing existing collections elsewhere.</para>
-    /// <para><b>"Last spotter" cache omitted.</b> The native
-    /// <c>sv.pLastSpotter()</c> shortcut (<c>FedSrv.CPP:10896-10903</c>) is a
-    /// pure performance optimization — it skips re-scanning every scanner when
-    /// the same one that saw the target last tick still can. Deliberately
-    /// omitted: the full scanner loop re-runs every sweep. If profiling ever
-    /// shows a real cost, the caching layer can be added then; it is not a
-    /// behavior difference.</para>
+    /// <para><b>"Last spotter" cache omitted, spotter identity recorded.</b> The
+    /// native <c>sv.pLastSpotter()</c> short-circuit (<c>FedSrv.CPP:10896-10903</c>)
+    /// is a pure performance optimization — it skips re-scanning every scanner
+    /// when the same one that saw the target last tick still can. Deliberately
+    /// omitted: the full scanner loop re-runs every sweep. What the port DOES keep
+    /// (P797) is the native side effect of the same field — the spotting scanner's
+    /// <c>(ObjectType, ObjectID)</c>, written with
+    /// <see cref="SideVisibilityState.SetLastSpotter"/> so the discovery sweep can
+    /// fill <c>OBJECT_SPOTTED</c>'s <c>otSpotter/oidSpotter</c> exactly as native
+    /// (<c>FedSrv.CPP:10944,11055-11062</c>).</para>
     /// <para><b>Alliance simplification.</b> The native allied-leg
     /// (<c>pside-&gt;AlliedSides(...) &amp;&amp; bAllowAlliedViz</c>,
     /// FedSrv.CPP:10894-10895) is dropped unconditionally — this port has no
@@ -4944,11 +4951,12 @@ public sealed class Sector : IClusterIgc
     /// the sector is still reconciled to <c>false</c>; falls back to the sides
     /// actually present for an isolated (non-mission) sector.</para>
     /// <para><b>Scope boundary.</b> No <c>ShowObject</c>/<c>HideObject</c>
-    /// effects, no territory refresh, no broadcasts (PROBES_UPDATE(92) /
-    /// ASTEROIDS_UPDATE(179) / STATIONS_UPDATE(57) / Phase 5 are separate,
-    /// now-unblocked tasks) and no "last spotter" cache — this pass only flips
-    /// <see cref="SideVisibilityState"/>'s flags, exactly P131's stated
-    /// boundary.</para>
+    /// effects, no territory refresh and no broadcasts — the wire half lives in
+    /// the host's sweeps (<c>Server.Broadcast.SweepCrossSideExports</c> /
+    /// <c>SweepCrossSideDiscoveryExports</c>), exactly P131's stated boundary.
+    /// P797 adds two side effects to the Core side of the line: the last-spotter
+    /// record above, and native's aleph-pair reveal (one visible aleph makes its
+    /// partner visible to the same side, <c>FedSrv.CPP:10786-10800</c>).</para>
     /// </remarks>
     internal void ResolveCrossSideVisibility()
     {
@@ -4975,7 +4983,8 @@ public sealed class Sector : IClusterIgc
             return 1.0f;
         }
 
-        void Add(ISideVisible body, short? sideId, Vector3 pos, float radius, float scannerRange, float sig, bool isScanner = true)
+        void Add(ISideVisible body, short? sideId, Vector3 pos, float radius, float scannerRange, float sig,
+                 bool isScanner = true, short ot = -1, short oid = -1)
         {
             // The participant's stored signature is consumed ONLY as a TARGET
             // signature in VisibilityMath.InScannerRange (the scanner role uses
@@ -4986,7 +4995,7 @@ public sealed class Sector : IClusterIgc
             // folded into <paramref name="scannerRange"/> via the models'
             // EffectiveScannerRange() accessors (Ship/Station/Probe).
             float detSig = sideId is { } ts ? sig / SideSignatureFactor(ts) : sig;
-            var p = new VisibilityParticipant(body, sideId, pos, radius, scannerRange, detSig);
+            var p = new VisibilityParticipant(body, sideId, pos, radius, scannerRange, detSig, ot, oid);
             targets.Add(p);
             // P453 — mines are targets with a side but NOT scanners (native
             // mines carry no c_mtScanner flag; they only take part in the
@@ -5015,7 +5024,8 @@ public sealed class Sector : IClusterIgc
                 // the same per-object mechanic native's InScannerRange applies.
                 case Ship s:
                     Add(s, s.SideId, s.Position, 0.5f * s.HullType.Length,
-                        s.EffectiveScannerRange(), s.EffectiveSignature);
+                        s.EffectiveScannerRange(), s.EffectiveSignature,
+                        ot: (short)IgcObjectType.Ship, oid: s.Id);
                     break;
                 // Probe radius / range / signature from the probe type. The
                 // probe's scan range is the side-GA-boosted value
@@ -5023,7 +5033,22 @@ public sealed class Sector : IClusterIgc
                 // multiplies by c_gaScanRange).
                 case Probe p:
                     Add(p, p.SideId, p.Position, p.ProbeType.Radius,
-                        p.EffectiveScannerRange(), p.ProbeType.Signature);
+                        p.EffectiveScannerRange(), p.ProbeType.Signature,
+                        ot: (short)IgcObjectType.Probe, oid: p.Id);
+                    break;
+                // P797 — a treasure is a side-visible, predictable static model
+                // (treasureIGC.cpp:167-177: c_mtSeenBySide | c_mtPredictable,
+                // plus c_mtStatic for the stationary ones). Native exports it at
+                // join only when SeenBySide (fsmission.cpp:4224-4231) and shows
+                // it to a side the first time a scanner sees it (ShowObject,
+                // FedSrv.CPP:10750-10784). Radius 5 is native's hardcoded
+                // SetRadius(5.0f) (treasureIGC.cpp:185) — the same value the
+                // port already uses as PickupRadius. A treasure never calls
+                // SetSignature, so it keeps CmodelIGC's default
+                // `m_signature(1.0f)` (modelIGC.cpp:32) — the value that feeds the
+                // detection radius, exactly like every other un-stamped model.
+                case Treasure tr:
+                    Add(tr, null, tr.Position, Treasure.PickupRadius, 0f, 1.0f, isScanner: false);
                     break;
                 // P453 — mines are side-visible static objects (native mines are
                 // created with c_mtSeenBySide | c_mtPredictable | c_mtHitable |
@@ -5044,7 +5069,20 @@ public sealed class Sector : IClusterIgc
             }
         }
         foreach (var st in _stationRuntimes)
-            Add(st, st.SideId, st.Center, st.Radius, st.EffectiveScannerRange(), st.Type.Signature);
+            Add(st, st.SideId, st.Center, st.Radius, st.EffectiveScannerRange(), st.Type.Signature,
+                ot: (short)IgcObjectType.Station, oid: st.StationId);
+
+        // P797 — alephs join the sweep as side-visible, predictable targets. A
+        // warp is a real native model created with c_mtSeenBySide | c_mtPredictable
+        // (warpIGC.cpp:35), scored by the cluster's UpdateSeenBySide sweep like a
+        // rock or a station (clusterIGC.cpp:347-357) and exported to a side only
+        // once that side has seen it (fsmission.cpp:4181). The port's warp has no
+        // SideId, so sideId:null keeps it a target only (native warps are not
+        // scanners); the radius is the record's (SetRadius(m_warpDef.radius),
+        // warpIGC.cpp:45) and the signature is the map record's own field.
+        foreach (var w in _warps)
+            if (w.Warp.Position is { Length: 3 })
+                Add(w, null, w.Position, w.Radius, 0f, w.Warp.Signature, isScanner: false);
 
         // P134 — asteroids join the sweep as visibility targets. Native gives a
         // rock c_mtSeenBySide (asteroidigc.cpp:36) and scores it in
@@ -5089,6 +5127,7 @@ public sealed class Sector : IClusterIgc
                 if (sideId == t.SideId) continue;
 
                 bool seen = false;
+                VisibilityParticipant spotter = default;
                 if (scannersBySide.TryGetValue(sideId, out var scns))
                     foreach (var sc in scns)
                     {
@@ -5097,6 +5136,7 @@ public sealed class Sector : IClusterIgc
                                 new VisibilityMath.SightBody(t.Position, t.Radius), t.Signature, Id, occluders))
                         {
                             seen = true;
+                            spotter = sc;
                             break;
                         }
                     }
@@ -5115,6 +5155,33 @@ public sealed class Sector : IClusterIgc
                 // correct (the visibility determination itself is untouched).
                 if (seen && !t.Body.GetCurrentEye(sideId)) skills?.Record(sideId, ShowcaseSkill.Scouting);
                 t.Body.SideVisibility.SetSideVisibility(sideId, seen);
+                // P797 — record (or clear) the side's last spotter, native's
+                // sv.pLastSpotter(s) / sv.pLastSpotter(NULL) (FedSrv.CPP:10944,
+                // :11119-11120). The discovery sweep reads it to fill
+                // OBJECT_SPOTTED(6)'s otSpotter/oidSpotter exactly as native does.
+                if (seen)
+                    t.Body.SideVisibility.SetLastSpotter(spotter.Ot, spotter.Oid);
+                else if (!seen)
+                    t.Body.SideVisibility.ClearLastSpotter();
+            }
+        }
+
+        // P797 — native's aleph-pair reveal: when an aleph first becomes visible
+        // to a side, ShowObject exports its partner too and force-sets the
+        // partner's visible flag ("perform a hack here: if a aleph becomes
+        // visible, make its corresponding aleph visible", FedSrv.CPP:10786-10800).
+        // One pass after the scan is enough: the relation is a pair, so the
+        // partner's own entry was already computed and the forced flag latches
+        // (predictable) from the next sweep on.
+        foreach (var warp in _warps)
+        {
+            if (warp.Destination is null) continue;
+            foreach (var sideId in sideIds)
+            {
+                if (!warp.SeenBySide(sideId)) continue;
+                var partner = warp.Partner();
+                if (partner is null || partner.SeenBySide(sideId)) continue;
+                partner.SideVisibility.RevealToSide(sideId);
             }
         }
     }

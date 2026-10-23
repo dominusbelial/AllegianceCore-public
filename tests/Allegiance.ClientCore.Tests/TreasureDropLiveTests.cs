@@ -41,7 +41,12 @@ public class TreasureDropLiveTests
         StaticCore = "PCore001.igc",
         Port = port,
         UpdatesPerSecond = 20,
-        SideSelectAutoSeatSeconds = 30,   // P763: preserve the pre-flag 30 s auto-seat (these peers never send POSITIONREQ)
+        // P763/P797: these peers never send POSITIONREQ, so they seat via the
+        // auto-seat timer — which is WALL seconds. Keep it short: the late-join
+        // proof needs the part-treasure's per-side join export to land while the
+        // treasure is still alive, not 30 wall-seconds (and hundreds of sim
+        // seconds) later when its lifespan has already destroyed it.
+        SideSelectAutoSeatSeconds = 1,
         Games =
         [
             new Gm { Name = "Treasure Drop Client Test", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
@@ -89,7 +94,13 @@ public class TreasureDropLiveTests
         short? weaponId = null;
         SetShipSpawner(server, (core, mission, shipId) =>
         {
-            var hull = core.HullTypes.Values.First();
+            // P797 — the dropping ship must carry a real scanner: treasures are now
+            // per-side visible (native c_mtSeenBySide, treasureIGC.cpp:167-177), and
+            // the core's first hull (a lifepod, ScannerRange 0) can never see the
+            // part it drops, so the late-sector-entry export would (correctly for
+            // that hull) stay empty.
+            var hull = core.HullTypes.Values.Where(h => h.ScannerRange >= 3000f)
+                .OrderBy(h => h.HullId).First();
             var fly = mission.Sectors.First(s => s.Id == FlySector);
             var ship = new Ship(shipId, hull, new Vector3(810f, 820f, 930f), Vector3.Zero, Orientation.Identity);
             if (mission.Sides.Count > 0) ship.SideId = mission.Sides[0].Id;

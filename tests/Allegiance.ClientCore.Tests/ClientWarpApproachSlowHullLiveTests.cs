@@ -62,7 +62,8 @@ public sealed class ClientWarpApproachSlowHullLiveTests
         },
         Games =
         [
-            new Gm { Name = "P496 Slow Board Hull Warp", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { ShowMap = true,   // P797: client-bot navigation needs known alephs until P798.
+                Name = "P496 Slow Board Hull Warp", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 

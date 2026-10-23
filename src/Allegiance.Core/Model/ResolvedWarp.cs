@@ -1,5 +1,6 @@
 namespace Allegiance.Core.Model;
 
+using Allegiance.Core.Collision;
 using Allegiance.Core.Sim;
 
 /// <summary>
@@ -20,7 +21,7 @@ using Allegiance.Core.Sim;
 /// marker is deliberately empty — this class is the concrete data carrier and
 /// the marker is just the seam's object-pointer shape.
 /// </remarks>
-public sealed class ResolvedWarp : IWarpIgc
+public sealed class ResolvedWarp : IWarpIgc, ISideVisible
 {
     /// <summary>The raw warp record.</summary>
     public DataWarpIGC Warp { get; }
@@ -37,6 +38,39 @@ public sealed class ResolvedWarp : IWarpIgc
         Warp = warp;
         Destination = destination;
     }
+
+    /// <summary>
+    /// P797 — the aleph's per-side "seen" state: the port's host of the native
+    /// <c>ThingSiteImpl::m_rgSideVisibility</c> for an <c>OT_warp</c> model.
+    /// Native creates every aleph with
+    /// <c>c_mtStatic | c_mtHitable | c_mtSeenBySide | c_mtPredictable</c>
+    /// (<c>Igc/warpIGC.cpp:35</c>), so a warp takes part in the cluster's
+    /// per-side <c>UpdateSeenBySide</c> sweep exactly like a rock or a station
+    /// (<c>clusterIGC.cpp:347-357</c>) and — being <c>c_mtPredictable</c> — stays
+    /// known to a side once that side has seen it (<c>FedSrv.CPP:11124-11126</c>).
+    /// Written by <see cref="Sector.ResolveCrossSideVisibility"/>; read by the
+    /// join export (<c>fsmission.cpp:4175-4186</c>) and the discovery sweep.
+    /// </summary>
+    public SideVisibilityState SideVisibility { get; } = new() { Predictable = true };
+
+    /// <summary>Whether <paramref name="sideId"/> has seen this aleph — the port of
+    /// <c>ImodelIGC::SeenBySide</c> (<c>Igc/modelIGC.h:110-114</c>).</summary>
+    public bool SeenBySide(short sideId) => SideVisibility.SeenBySide(sideId);
+
+    /// <summary>Whether <paramref name="sideId"/> is currently the eye on this
+    /// aleph (native <c>GetCurrentEye</c>, <c>modelIGC.h:120-124</c>). Decays when
+    /// the last scanner leaves range; <see cref="SeenBySide"/> does not.</summary>
+    public bool GetCurrentEye(short sideId) => SideVisibility.GetCurrentEye(sideId);
+
+    /// <summary>The aleph's fixed world position in its sector (<c>dataWarp.position</c>,
+    /// <c>warpIGC.cpp:47</c>), or the origin when the record has no usable vector.
+    /// Mirrors <see cref="Ship.Position"/>'s role for the sweep's range test.</summary>
+    public Vector3 Position => Warp.Position is { Length: 3 } p ? new Vector3(p[0], p[1], p[2]) : Vector3.Zero;
+
+    /// <summary>The aleph's collision/visual radius (<c>SetRadius(m_warpDef.radius)</c>,
+    /// <c>warpIGC.cpp:45</c>) — the body radius the sweep's <c>InScannerRange</c>
+    /// adds to the scanner's own (<c>Igc/common.cpp</c>, <c>InScannerRange</c>).</summary>
+    public float Radius => Warp.Radius;
 
     /// <summary>
     /// The other warp of this warp's pair — the C++ <c>GetWarp(m_warpDef.destinationID)</c>

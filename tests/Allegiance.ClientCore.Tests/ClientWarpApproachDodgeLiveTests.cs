@@ -45,7 +45,8 @@ public sealed class ClientWarpApproachDodgeLiveTests
         LiveSettings = new Ls { DebugMode = true },
         Games =
         [
-            new Gm { Name = "P489 Warp Approach Dodge", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { ShowMap = true,   // P797: client-bot navigation needs known alephs until P798.
+                Name = "P489 Warp Approach Dodge", Map = "m2xspiderw.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 
@@ -297,6 +298,22 @@ public sealed class ClientWarpApproachDodgeLiveTests
         // Sanity: Alderan genuinely has its mining-hub rock field present
         // (nothing stripped) — this is the very field P484 showed blocks a
         // straight line.
+        //
+        // P797 TEST FIXTURE: the field is not exported to a fresh side any more
+        // (native exports asteroids per side, fsmission.cpp:4206). This test is
+        // about the ALEPH-APPROACH GEOMETRY through that field, not about
+        // scouting, so reveal Alderan's rocks to the bot's side the same way
+        // native's bShowHomeSector reveal does (mapmakerigc.cpp:969-997:
+        // SetSideVisibility(side, true)) and let the P797 discovery sweep
+        // deliver them over the wire. P798 replaces this with real scouting.
+        short dodgeSide = bot.World.MySideId!.Value;
+        foreach (var rock in mission.Sectors.First(x => x.Id == 1052).Mineable)
+            rock.SideVisibility.SetSideVisibility(dodgeSide, true);
+        PumpUntil(server, () =>
+        {
+            lock (bot.Gate) return bot.World.Asteroids.Values.Any(a => a.ClusterId == 1052);
+        }, 2000);
+
         var alderan = mission.Sectors.First(s => s.Id == 1052);
         int alderanRocks;
         lock (bot.Gate) alderanRocks = bot.World.Asteroids.Values.Count(a => a.ClusterId == 1052);

@@ -43,6 +43,26 @@ public sealed class GameConfig
     public bool AllowDevelopments { get; set; } = true;
 
     /// <summary>
+    /// P797 — native <c>MissionParams::bShowMap</c> (<c>Igc/igc.h:1123</c>,
+    /// "Show all warps at the start of the game"): when true every aleph is
+    /// revealed to every side at mission creation (<c>Igc/mapmakerigc.cpp:999-1018</c>
+    /// <c>RevealMap</c>, repeated at start by <c>Igc/missionigc.cpp:4056-4071</c>).
+    /// <b>Default <c>false</c></b> is native's default (<c>igc.h:1244</c>) — a side
+    /// must scout its alephs. Set it for a showcase/test world that wants the
+    /// pre-P797 "everyone knows the map" behaviour.
+    /// </summary>
+    public bool ShowMap { get; set; }
+
+    /// <summary>
+    /// P797 — native <c>MissionParams::bShowHomeSector</c> (<c>Igc/igc.h:1148</c>,
+    /// "Show everything in a player's home sector at start of game"): when true,
+    /// every model in a cluster where a side owns a station is revealed to that
+    /// side (<c>Igc/mapmakerigc.cpp:969-997</c>). <b>Default <c>false</c></b> is
+    /// native's default (<c>igc.h:1313</c>).
+    /// </summary>
+    public bool ShowHomeSector { get; set; }
+
+    /// <summary>
     /// P767 / SIM-0100 — enables the NPC wingman "getting ammo" resupply
     /// latch (mission option <c>Mission.NpcWingmanAmmoResupply</c>). Native's
     /// trigger lives only in the offline client (<c>BaseClient::Reload</c>'s

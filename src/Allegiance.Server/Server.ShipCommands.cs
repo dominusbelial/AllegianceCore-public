@@ -671,7 +671,7 @@ public sealed partial class Server
         }
 
         var treasure = ship.CreateDropTreasure(dropped, _simNow, (uint)(_simNow * 1000));
-        SendSectorWide(ship.Sector!, new TreasureSpawn { Data = treasure.Data }.Encode());
+        SendTreasureSpawnSectorWide(ship.Sector!, treasure);
         Console.WriteLine($"[droppart] {from} ship {ship.Id}: created part treasure obj={treasure.Data.ObjectId} part={treasure.Data.TreasureId} amount={treasure.Data.Amount} -> TREASURE(28) sector {ship.Sector!.Id} wide");
     }
 
@@ -2540,7 +2540,7 @@ public sealed partial class Server
             // ppt, GetPosition(), 25.0f, 120.0f), FedSrv.CPP:6127-6129) — a NEW
             // treasure (not the original, which was destroyed on touch).
             var treasure = ship.CreateDropTreasure(partType, offer.Amount, _simNow, (uint)(_simNow * 1000));
-            SendSectorWide(ship.Sector!, new TreasureSpawn { Data = treasure.Data }.Encode());
+            SendTreasureSpawnSectorWide(ship.Sector!, treasure);
             Console.WriteLine($"[treasureack] {from} ship {ship.Id}: declined part {offer.PartTypeId} amount {offer.Amount} -> re-created treasure obj={treasure.Data.ObjectId} -> TREASURE(28) sector {ship.Sector!.Id} wide");
         }
 

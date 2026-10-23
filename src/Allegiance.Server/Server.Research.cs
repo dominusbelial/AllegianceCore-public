@@ -1,3 +1,4 @@
+using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
@@ -26,10 +27,24 @@ public sealed partial class Server
                 if (_peerShips.TryGetValue(peer, out var live) && ReferenceEquals(live.Ship.Mission, mission)
                     && _stationIdentitySent.Add((peer, mission, station.StationId, station.Data.StationTypeId)))
                 {
+                    // P797 — native also announces a newly spotted station on
+                    // OBJECT_SPOTTED(6), carrying the side's last spotter
+                    // (FedSrv.CPP:11035-11062: the station branch of ShowObject,
+                    // sent to the seeing side's group). It rides the very packet
+                    // that first instantiates the station for this peer, so the
+                    // client has the station when it renders the feedback line.
+                    var (otSpotter, oidSpotter) = station.SideVisibility.LastSpotter;
+                    var spotted = new ObjectSpotted
+                    {
+                        OtObject = (short)IgcObjectType.Station,
+                        OidObject = station.StationId,
+                        OtSpotter = otSpotter,
+                        OidSpotter = oidSpotter,
+                    }.Encode();
                     packet ??= staleRock
                         ? FedPacket.Pack(new[] { new AsteroidDestroyed { AsteroidId = station.ConsumedAsteroid!.Data.AsteroidId,
-                            ClusterId = station.Data.ClusterId, ExplodeF = false }.Encode(), ExportStation.FromStation(station.Data).Encode() })
-                        : FedPacket.Pack(ExportStation.FromStation(station.Data).Encode());
+                            ClusterId = station.Data.ClusterId, ExplodeF = false }.Encode(), ExportStation.FromStation(station.Data).Encode(), spotted })
+                        : FedPacket.Pack(new[] { ExportStation.FromStation(station.Data).Encode(), spotted });
                     SendPeer(peer, packet);
                     recipients++;
                 }

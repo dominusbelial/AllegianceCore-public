@@ -56,6 +56,54 @@ public sealed class SideVisibilityState
     private readonly Dictionary<short, bool> _currentEye = [];
     private readonly HashSet<short> _revealedPredictable = [];
 
+    /// <summary>
+    /// Whether this model carries the native <c>c_mtPredictable</c> attribute
+    /// (a static object: warp, asteroid, station, mine, probe, static treasure —
+    /// <c>warpIGC.cpp:35</c>, <c>asteroidigc.cpp:36</c>, <c>stationIGC.cpp:244</c>,
+    /// <c>mineigc.cpp:104</c>, <c>probeigc.cpp:115</c>, <c>treasureIGC.cpp:167</c>).
+    /// The flag is what makes native's visibility <b>latch</b>: once a side has
+    /// seen a predictable object it stays <c>SeenBySide</c> forever, because
+    /// <c>ThingSiteImpl::UpdateSideVisibility</c> re-forces the visible flag back
+    /// to true instead of hiding it —
+    /// <c>if (m_bPredictable) //keep static objects visible (but not currentEyed)
+    ///   sv.fVisible(true);</c> (<c>FedSrv/FedSrv.CPP:11124-11126</c>).
+    /// Only the <c>CurrentEyed</c> flag keeps decaying, which is why the port can
+    /// still tell "known" (static) from "currently watched" (ore updates, radar).
+    /// Ships are the one non-predictable visibility kind, so their flag still
+    /// clears when the last scanner loses them (<c>FedSrv.CPP:11126-11129</c>).
+    /// </summary>
+    public bool Predictable { get; set; }
+
+    /// <summary>
+    /// The last scanner that established this side's visibility — the port of
+    /// native <c>SideVisibility::pLastSpotter()</c> (<c>FedSrv.CPP:10944</c> sets
+    /// it on every successful scan; <c>:11119</c> clears it when the eye is lost),
+    /// recorded as the native <c>(ObjectType, ObjectID)</c> pair the
+    /// <c>OBJECT_SPOTTED</c>(6) announcement carries (<c>FedSrv.CPP:11055-11062</c>).
+    /// <c>(-1, -1)</c> = no spotter yet (native NULL pointer / <c>NA</c>).
+    /// </summary>
+    public (short ObjectType, short ObjectId) LastSpotter { get; private set; } = (-1, -1);
+
+    /// <summary>Record the scanner that just established visibility for a side
+    /// (native <c>sv.pLastSpotter(s)</c>, <c>FedSrv.CPP:10944</c>).</summary>
+    public void SetLastSpotter(short objectType, short objectId) => LastSpotter = (objectType, objectId);
+
+    /// <summary>Clear the last spotter — native <c>sv.pLastSpotter(NULL)</c> when the
+    /// eye is lost while the object stays known (<c>FedSrv.CPP:11119-11120</c>).</summary>
+    public void ClearLastSpotter() => LastSpotter = (-1, -1);
+
+    /// <summary>
+    /// Force this model visible to a side <b>without</b> touching its current-eye
+    /// flag — the port of the native aleph-pair hack that writes
+    /// <c>sv.fVisible(true)</c> directly on the partner warp
+    /// (<c>FedSrv/FedSrv.CPP:10795-10799</c>, "force the visibility of this warp
+    /// wrt the side to true without going through SetSideVisibility"). Because a
+    /// warp is <c>c_mtPredictable</c>, the next sweep's plain false write keeps
+    /// the forced true (the latch above), so the partner stays known exactly as
+    /// natively.
+    /// </summary>
+    public void RevealToSide(short sideId) => _visible[sideId] = true;
+
     // Probe firing explicitly reveals a predictable static object. Native
     // FedSrv/FedSrv.CPP:11120-11126 retains its known position after scanners
     // lose the current eye. Other visibility participants retain their policy.
@@ -96,7 +144,11 @@ public sealed class SideVisibilityState
     /// </summary>
     public void SetSideVisibility(short sideId, bool visible)
     {
-        _visible[sideId] = visible || _revealedPredictable.Contains(sideId);
+        // The predictable latch (native FedSrv.CPP:11124-11126): a static object
+        // that was ever seen stays visible to that side; only the current-eye
+        // flag drops. Non-predictable models (ships) keep the plain assignment.
+        _visible[sideId] = visible || _revealedPredictable.Contains(sideId)
+            || (Predictable && SeenBySide(sideId));
         _currentEye[sideId] = visible;
     }
 }

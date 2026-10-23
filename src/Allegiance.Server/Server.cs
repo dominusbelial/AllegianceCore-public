@@ -419,6 +419,24 @@ public sealed partial class Server : IDisposable
     // Sim-thread only, like the sibling; freed on disconnect.
     private readonly HashSet<(ConnectionId Recipient, short MineId)> _crossSideMineExportSent = new();
 
+    /// <summary>
+    /// P797 — the per-(recipient, kind, object id) "have I already told THIS peer
+    /// about THIS static object" latch for the cross-side DISCOVERY exports
+    /// (<see cref="SweepCrossSideDiscoveryExports"/>): warps, asteroids, probes
+    /// and treasures, the static kinds native sends at join only when the side
+    /// has seen them (<c>FedSrv/fsmission.cpp:4181,4206,4229,4247</c>) and pushes
+    /// to the seeing side the moment a scanner first spots them —
+    /// <c>ThingSiteImpl::ShowObject</c>'s <c>ExportObj(pmodel, type, NULL)</c>
+    /// (<c>FedSrv/FedSrv.CPP:10766-10784</c>) plus the <c>OBJECT_SPOTTED</c>(6)
+    /// announcement (<c>:11055-11062</c>). Stations keep their own sibling latch
+    /// (<c>_stationIdentitySent</c>, P747/P797); mines keep
+    /// <c>_crossSideMineExportSent</c> (P453). Written by BOTH the join export
+    /// and the sweep, so a peer told at join is never re-told, and a peer that
+    /// joins after its side discovered something is caught up by its own join
+    /// export. Sim-thread only, like the siblings.
+    /// </summary>
+    private readonly HashSet<(ConnectionId Recipient, byte Kind, short Id)> _crossSideDiscoverySent = new();
+
     // P366 — the same-side NPC identity + status latch. Exactly parallel to
     // `_teammateExportSent` but for same-side AI bot ships (IsNpc), which the
     // P62 teammate path skips (those are real peers) and the P346 cross-side

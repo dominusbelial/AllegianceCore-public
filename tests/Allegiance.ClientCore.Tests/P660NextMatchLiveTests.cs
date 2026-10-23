@@ -32,7 +32,8 @@ public sealed class P660NextMatchLiveTests(ITestOutputHelper output)
             AutoNextMatch = new() { Enabled = enabled, IntermissionSeconds = intermission },
             TestHarness = new() { Enabled = true, Money = 1_000_000, IgnoreTechGate = true },
         },
-        Games = [new() { Name = "P660", Map = "m2xspiderw.igc", Teams = 2,
+        // P797 harness option: the harness bots cannot scout yet (P798).
+        Games = [new() { ShowMap = true, Name = "P660", Map = "m2xspiderw.igc", Teams = 2,
             CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] }],
     };
 

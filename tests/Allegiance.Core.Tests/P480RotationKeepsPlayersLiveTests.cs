@@ -164,7 +164,7 @@ public class P480RotationKeepsPlayersLiveTests
                 () => bot.MissionStages.Any(s => s.Stage == (int)MissionStage.NotStarted)
                    && bot.ShipAssignment is not null && !oldIds.Contains(bot.ShipAssignment!.Ship.ShipId)
                    && bot.ClusterExports.Count >= newMission.Sectors.Count
-                   && bot.StationExports.Count >= newMission.Sectors.Sum(s => s.Stations.Count),
+                   && bot.StationExports.Count >= 1,
                 2000);
             Assert.True(landed < 2000, $"bot did not fully re-join the new mission (NotStarted stage / new-world EXPORTs / fresh ship id)");
 
@@ -172,12 +172,19 @@ public class P480RotationKeepsPlayersLiveTests
             Assert.Contains(bot.MissionStages, s => s.Stage == (int)MissionStage.NotStarted);
 
             // (2) Each Bot received the NEW world's EXPORTs (clusters + stations).
+            // P797: clusters are still whole-mission (native fsmission.cpp:4170),
+            // but stations are now PER SIDE — native exports one only when the
+            // peer's side has seen it (fsmission.cpp:4215-4222) — so the proof is
+            // "the new world's own stations arrived", not "all of them".
             Assert.True(
                 bot.ClusterExports.Count >= newMission.Sectors.Count,
                 $"bot got {bot.ClusterExports.Count} cluster exports, expected >= {newMission.Sectors.Count}");
-            Assert.True(
-                bot.StationExports.Count >= newMission.Sectors.Sum(s => s.Stations.Count),
-                $"bot got {bot.StationExports.Count} station exports, expected >= {newMission.Sectors.Sum(s => s.Stations.Count)}");
+            Assert.NotEmpty(bot.StationExports);
+            var botSide = server.Ships.First(x => x.Ship.Id == bot.ShipAssignment!.Ship.ShipId).Ship.SideId;
+            Assert.All(bot.StationExports, st => Assert.True(
+                newMission.Sectors.SelectMany(x => x.StationRuntimes)
+                    .Any(rt => rt.StationId == st.Station.StationId && rt.SeenBySide(botSide!.Value)),
+                $"station {st.Station.StationId} was exported to a side that had not seen it"));
 
             // (3) The bot's ship is seated on its ORIGINAL side in the NEW mission.
             short newId = bot.ShipAssignment!.Ship.ShipId;
