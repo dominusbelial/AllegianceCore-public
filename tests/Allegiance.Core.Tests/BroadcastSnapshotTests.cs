@@ -270,12 +270,19 @@ public sealed class BroadcastSnapshotTests
         // P697: pin the source-pose-before-missile and sector-local tracking transcript.
         // P672 roster deltas remain included. The four
         // off/on/encode-once comparisons above still check every byte and lane.
+        // NT-1: regenerated at 30c8912c after three intentional native-parity wire
+        // changes: P762 (FedSrv.CPP:4093-4104) writes bpTargetShield only when the
+        // target source ship has a mounted shield, so a shieldless target reports 255;
+        // P773 retires the port-only OwnShipKillBonusUpdate(212); P775 sends
+        // PLAYERINFO only at native moments (fsmission.cpp:411,:3958-3968). The
+        // native/parallel/encode-once equality assertions are unchanged: each case
+        // changes for the same reason and all three transcripts still hash equal.
         string golden = (native, parallel) switch
         {
-            (false, false) => "541A35CDD063BD74",
-            (false, true) => "6187E7BD1C430DC4",
-            (true, false) => "A598B9A9AF615A44",
-            _ => "C40329E83294FBD0",
+            (false, false) => "BF92D4A2003D66CC",
+            (false, true) => "D74C1E1854875051",
+            (true, false) => "3C1876D181A6A011",
+            _ => "E06266AEDF1980C0",
         };
         Assert.StartsWith(golden, result.offHash);
         Assert.Equal(result.offHash, result.onHash);

@@ -31,8 +31,22 @@ public sealed class SC2NaniteSupportLiveTests(ITestOutputHelper output)
         config.LiveSettings.AutoNextMatch.Enabled = false;
         server.Boot(config);
         using var stop = new CancellationTokenSource();
-        var ticker = new Thread(() => { while (!stop.IsCancellationRequested) { server.TickSim(); Thread.Sleep(20); } }) { IsBackground = true };
+        var simActions = new System.Collections.Concurrent.ConcurrentQueue<Action>();
+        var ticker = new Thread(() =>
+        {
+            while (!stop.IsCancellationRequested)
+            {
+                while (simActions.TryDequeue(out var action)) action();
+                server.TickSim(); Thread.Sleep(20);
+            }
+        }) { IsBackground = true };
         ticker.Start();
+        void OnSim(Action action)
+        {
+            using var done = new ManualResetEventSlim();
+            simActions.Enqueue(() => { try { action(); } finally { done.Set(); } });
+            Assert.True(done.Wait(5000));
+        }
         try
         {
             using var manager = new BotManager("127.0.0.1", server.BoundPort);
@@ -49,11 +63,32 @@ public sealed class SC2NaniteSupportLiveTests(ITestOutputHelper output)
                 Assert.Equal(5, fleet.Count(b => b.Side == side && b.Role.Equals("support", StringComparison.OrdinalIgnoreCase)));
             }
             var mission = server.Missions[0];
+            // NT-1: SC-5's native cloak work puts each civ's tactical/stealth branch in
+            // front of its anti-base branch (SC5_CLOAK_ON_RIG), so in this match the
+            // natural siege damages only one side's stations and the other side's
+            // NaniteStation counter stays 0. Seed the same training-style fixture damage
+            // the one-pilot test below uses: a real own station per side is damaged while
+            // that side still lacks 10 station repairs. The repairs themselves remain
+            // production (legal nanite loadouts, real projectiles, Ship/Station
+            // ReceiveDamage and the SC-1 counters); only the damage stimulus is staged.
+            var stationHull = typeof(Station).GetProperty(nameof(Station.ArmorFraction))!;
+            void SeedStationDamage()
+            {
+                if (mission.Stage != MissionStage.Started || mission.Skills is not { } skills) return;
+                foreach (short damagedSide in new short[] { 0, 1 })
+                {
+                    if (skills.Count(damagedSide, ShowcaseSkill.NaniteStation) >= 10) continue;
+                    foreach (var station in mission.Sectors.SelectMany(s => s.StationRuntimes)
+                        .Where(s => s.SideId == damagedSide && !s.Dead && s.ArmorFraction > .95f))
+                        stationHull.SetValue(station, .5f);
+                }
+            }
             var watch = Stopwatch.StartNew();
             bool Complete() => mission.Skills is { } skills && new short[] { 0, 1 }.All(side =>
                 skills.Count(side, ShowcaseSkill.NaniteShip) >= 10 && skills.Count(side, ShowcaseSkill.NaniteStation) >= 10);
             while (!Complete() && watch.Elapsed.TotalSeconds < 1200 && mission.Stage != MissionStage.Over)
             {
+                OnSim(SeedStationDamage);
                 Trace($"wall={watch.Elapsed.TotalSeconds:F1} sim={server.SimNow:F1} " + string.Join(";", new short[] {0,1}.Select(s =>
                     $"side={s} ship={mission.Skills?.Count(s, ShowcaseSkill.NaniteShip)} station={mission.Skills?.Count(s, ShowcaseSkill.NaniteStation)}")));
                 Trace("[support-sample] " + JsonSerializer.Serialize(manager.ActiveBots().Where(b => b.Role.Equals("support", StringComparison.OrdinalIgnoreCase))));
