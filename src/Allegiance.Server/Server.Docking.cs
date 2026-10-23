@@ -647,16 +647,17 @@ public sealed partial class Server
 
     /// <summary>
     /// P115 — the port of <c>FedSrvSiteBase::RescueShipEvent</c>
-    /// (<c>FedSrv.CPP:13033-13074</c>): a <c>c_habmLifepod</c> ship that drifted
-    /// within proximity of a friendly <c>c_habmRescue</c>-capable ship is
-    /// rescued — <c>PLAYER_RESCUED</c>(16) to both ships' connections, then the
+    /// (<c>FedSrv.CPP:13033-13076</c>): a <c>c_habmLifepod</c> ship that touched
+    /// (P790, the native trigger) or drifted within proximity of a friendly
+    /// <c>c_habmRescue</c>-capable ship is rescued — <c>PLAYER_RESCUED</c>(16) to both ships' connections, then the
     /// rescued ship is placed at the nearest friendly station. Queued by
-    /// <c>Sector.ResolveRescueEvents</c> and drained here on the sim thread
-    /// right after <c>Mission.Update</c> (the same accumulate/drain split as the
-    /// ripcord teleport, P113). The pair (rescuee, rescuer) is already validated
-    /// by the pass — same-side, exactly-one-is-the-lifepod, the other is
-    /// rescue-capable, within proximity — so this method only performs the
-    /// wire + placement halves of the native event.
+    /// <c>Sector.ResolveShipShipCollision</c> (hull contact) or
+    /// <c>Sector.ResolveRescueEvents</c> (proximity fallback), and drained here
+    /// on the sim thread right after <c>Mission.Update</c> (the same
+    /// accumulate/drain split as the ripcord teleport, P113). The pair
+    /// (rescuee, rescuer) is already validated by the producer — same-side,
+    /// exactly-one-is-the-lifepod, the other is rescue-capable — so this method
+    /// only performs the wire + placement halves of the native event.
     /// </summary>
     /// <remarks>
     /// <para><b>Score / Steam — N/A, skipped.</b> Native awards rescue

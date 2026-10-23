@@ -214,14 +214,26 @@ public sealed class Sector : IClusterIgc
     // port of UseRipcord) on each drained ripper.
     private readonly List<Ship> _pendingRipcordTeleports = [];
 
-    // P115 — ship pairs whose rescue this tick's proximity pass
-    // (ResolveRescueEvents) found: every friendly same-side pair where one
-    // ship carries c_habmLifepod and the other c_habmRescue, within the sum-of-
-    // spheres proximity radius. Same accumulate-per-tick /
-    // drain-after-Mission.Update split as the ripcord pending lists; the host
-    // performs the rescue (Server.PerformRescue) and sends PLAYER_RESCUED(16)
-    // — the Core side never sends wire.
+    // P115 — ship pairs whose rescue this tick found: every friendly same-side
+    // pair where one ship carries c_habmLifepod and the other c_habmRescue.
+    // Two producers (P790): the NATIVE trigger — the hull contact resolved by
+    // ResolveShipShipCollision (shipIGC.cpp:1023-1042) — and the proximity
+    // sweep ResolveRescueEvents, kept for pairs that overlap without a detected
+    // collision. Same accumulate-per-tick / drain-after-Mission.Update split as
+    // the ripcord pending lists; the host performs the rescue
+    // (Server.PerformRescue) and sends PLAYER_RESCUED(16) — the Core side never
+    // sends wire.
     private readonly List<(Ship Rescuee, Ship Rescuer)> _pendingRescues = [];
+
+    // P790 — the one-rescue-per-ship-per-sector-tick latch shared by the two
+    // rescue producers above. Cleared at the top of <see cref="Update"/> (the
+    // first of the two passes, ResolveShipShipCollisions, runs there), so a pod
+    // rescued on contact cannot be rescued again by the later proximity pass in
+    // the same tick — and, exactly like native (where RescueShipEvent docks the
+    // pod before the next collision can see it), an already-rescued pod is not
+    // a physics body for the rest of the tick either. Reused (P780 precedent,
+    // no per-tick allocation) and never carried across ticks.
+    private readonly HashSet<Ship> _shipRescueDone = [];
 
     /// <summary>P301 — this tick's station-side pod rescues (detected by
     /// <see cref="ResolveStationRescueEvents"/>: a drifting <c>c_habmLifepod</c>
@@ -965,12 +977,14 @@ public sealed class Sector : IClusterIgc
         // P254 asteroid pass because both are the elastic-collision PHYSICS
         // passes of this sector (one is a moving-vs-infinite-mass body, this one
         // is the general two-finite-mass case) — keeping the physics block
-        // cohesive. Mutual exclusivity with the rescue pass is NOT achieved by
-        // ordering: ResolveRescueEvents still runs later (below, line 651) and
-        // this pass independently re-checks the same rescue-eligibility
-        // predicate for every detected pair and skips physics, exactly as the
-        // native rescue check pre-empts the physics via break
-        // (shipIGC.cpp:1027-1042). See ResolveShipShipCollisions.
+        // cohesive. P790: this pass also owns native's rescue TRIGGER — a
+        // friendly lifepod ↔ c_habmRescue pair in hull contact is rescued
+        // inside the collision handler (shipIGC.cpp:1023-1042) and never
+        // treated as a physics pair. The per-tick one-rescue-per-ship latch it
+        // shares with the later proximity pass (ResolveRescueEvents) is cleared
+        // here, immediately before it: these are the first and last readers.
+        // See ResolveShipShipCollisions.
+        _shipRescueDone.Clear();
         { using (TickProfiler.Enter("sim.collision")) ResolveShipShipCollisions(timeUpdate, (float)dt); }
 
         // P466 — ship↔station elastic collision pass, grouped here with the P254
@@ -1039,10 +1053,13 @@ public sealed class Sector : IClusterIgc
         // ResolveRipcordCountdowns.
         { using (TickProfiler.Enter("sim.navigation")) ResolveRipcordCountdowns((float)dt); }
 
-        // Rescue proximity pass — P115. Every friendly same-side ship pair
-        // where one carries c_habmLifepod and the other c_habmRescue, within
-        // the sum-of-spheres radius, is handed to the host's PerformRescue
-        // (PLAYER_RESCUED(16) + placement). See ResolveRescueEvents.
+        // Rescue proximity pass — P115, kept by P790 as the FALLBACK for pairs
+        // that overlap without a detected hull collision (native's trigger is
+        // the collision itself, which the ship-ship pass above now owns). Every
+        // friendly same-side ship pair where one carries c_habmLifepod and the
+        // other c_habmRescue, within the sum-of-spheres radius, is handed to the
+        // host's PerformRescue (PLAYER_RESCUED(16) + placement). See
+        // ResolveRescueEvents.
         { using (TickProfiler.Enter("sim.rescue")) ResolveRescueEvents(); }
 
         // P301 — station-side pod rescue proximity pass. A drifting
@@ -1195,12 +1212,13 @@ public sealed class Sector : IClusterIgc
         return taken;
     }
 
-    /// <summary>P115 — return this tick's rescue pairs (detected by
-    /// <see cref="ResolveRescueEvents"/>: friendly same-side
-    /// lifepod/rescue-capable pairs within proximity) and clear the
-    /// accumulation. Called by the host right after <c>Mission.Update</c> so
-    /// the rescue (Server.PerformRescue) rides the sim thread exactly like the
-    /// ripcord teleport drain.</summary>
+    /// <summary>P115 — return this tick's rescue pairs (detected by the native
+    /// hull-contact trigger <see cref="ResolveShipShipCollision"/> and/or the
+    /// <see cref="ResolveRescueEvents"/> proximity fallback: friendly same-side
+    /// lifepod/rescue-capable pairs) and clear the accumulation. Called by the
+    /// host right after <c>Mission.Update</c> so the rescue
+    /// (Server.PerformRescue) rides the sim thread exactly like the ripcord
+    /// teleport drain.</summary>
     public IReadOnlyList<(Ship Rescuee, Ship Rescuer)> DrainRescues()
     {
         var taken = _pendingRescues.ToArray();
@@ -1223,13 +1241,15 @@ public sealed class Sector : IClusterIgc
 
     /// <summary>
     /// P115 — the per-tick rescue proximity pass, called from <see cref="Update"/>
-    /// alongside the other per-tick passes. The port's stand-in for the native
-    /// ship-vs-ship collision branch of <c>CshipIGC::HandleCollision</c>
-    /// (<c>shipIGC.cpp:1022-1058</c>): this port has no ship-vs-ship physics
-    /// collision system, and this pass deliberately does not build one — it is
-    /// the same point-in-sphere proximity-sweep convention
-    /// <see cref="ResolveDockCollisions"/> establishes for docking (the
-    /// <c>// Point-in-sphere</c> simplification, <c>Sector.cs:1269</c>).
+    /// alongside the other per-tick passes. P790 keeps it as the <b>fallback</b>
+    /// for a friendly lifepod/rescue-capable pair that overlaps without a
+    /// detected hull collision (e.g. both drifting nearly stationary, or a slow
+    /// contact whose hulls do not quite touch): the native trigger is the
+    /// collision itself, ported in <see cref="ResolveShipShipCollision"/> — see
+    /// its remarks. The pass is the same point-in-sphere proximity-sweep
+    /// convention <see cref="ResolveDockCollisions"/> establishes for docking
+    /// (the <c>// Point-in-sphere</c> simplification, <c>Sector.cs:1269</c>
+    /// region).
     /// </summary>
     /// <remarks>
     /// <para><b>Pair trigger</b> — for every distinct same-side pair of ships
@@ -1242,7 +1262,10 @@ public sealed class Sector : IClusterIgc
     /// the other ship (if rescue-capable) rescues it, direction-free. Exactly
     /// one side of the pair must be the lifepod; a pair where both (or neither)
     /// are lifepods, or where the partner lacks <c>c_habmRescue</c>, is not a
-    /// rescue pair.</para>
+    /// rescue pair. The capability/side test is the shared
+    /// <see cref="IsRescueCapablePair"/> the collision pass uses — the two
+    /// triggers differ only in whether the hulls touched (contact) or the
+    /// centres are close (proximity).</para>
     /// <para><b>Friendly gate</b> — same-side only (<c>bFriendly =
     /// GetSide() == pModel-&gt;GetSide()</c>, <c>shipIGC.cpp:1023-1026</c>);
     /// this port has no alliance/AlliedSides concept, so the allied leg
@@ -1253,12 +1276,17 @@ public sealed class Sector : IClusterIgc
     /// sphere radii (the port's established ship-extent convention, the same
     /// P113/P114 use), mirroring how the dock/mining passes measure
     /// proximity as <c>objectRadius + shipRadius</c> and the native's
-    /// ship-ship collision would use <c>radius_a + radius_b</c>.</para>
+    /// ship-ship collision would use <c>radius_a + radius_b</c>. This is a
+    /// FALLBACK radius only: the native rescue needs no distance test at all,
+    /// which is why the contact trigger above has none.</para>
     /// <para><b>Latches</b> — a ship that is dead, unplaced, or already docked
     /// is excluded (a docked lifepod is not adrift to be rescued), and each
-    /// ship participates in at most one rescue per tick (a successful rescue
-    /// docks the pod and clears the <c>StationId</c> latch for subsequent
-    /// ticks, mirroring how the dock pass's latch prevents re-fire).</para>
+    /// ship participates in at most one rescue per tick: the latch is
+    /// <see cref="_shipRescueDone"/>, shared with the contact trigger, so a pair
+    /// rescued on contact this tick is never queued again here (and a pod can
+    /// never be booked by two rescuers in one tick). A successful rescue docks
+    /// the pod and clears the <c>StationId</c> latch for subsequent ticks,
+    /// mirroring how the dock pass's latch prevents re-fire.</para>
     /// </remarks>
     private void ResolveRescueEvents()
     {
@@ -1287,7 +1315,7 @@ public sealed class Sector : IClusterIgc
             return;
         }
 
-        var done = new HashSet<Ship>();              // one rescue per ship per tick
+        var done = _shipRescueDone;                  // one rescue per ship per tick (P790, shared with the contact trigger)
         for (int i = 0; i < ships.Count; i++)
         {
             var a = ships[i];
@@ -1295,25 +1323,12 @@ public sealed class Sector : IClusterIgc
             for (int j = i + 1; j < ships.Count; j++)
             {
                 var b = ships[j];
+                if (done.Contains(a)) break;         // P790: a was rescued by an earlier partner this tick
                 if (done.Contains(b)) continue;
 
-                // Friendly gate (shipIGC.cpp:1023-1026): same side only.
-                if (a.SideId != b.SideId) continue;
-
-                // Symmetric capability match (shipIGC.cpp:1027-1035): exactly
-                // one is the lifepod, the other is rescue-capable.
-                Ship rescuee, rescuer;
-                if (a.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
-                    && b.HullType.HasCapability(DataHullTypeIGC.HabmRescue))
-                {
-                    rescuee = a; rescuer = b;
-                }
-                else if (b.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
-                    && a.HullType.HasCapability(DataHullTypeIGC.HabmRescue))
-                {
-                    rescuee = b; rescuer = a;
-                }
-                else continue;
+                // Friendly gate + symmetric capability match (shipIGC.cpp:1023-1035):
+                // same side, exactly one lifepod and the other rescue-capable.
+                if (!IsRescueCapablePair(a, b, out var rescuee, out var rescuer)) continue;
 
                 // Proximity: sum of the two ships' 0.5×Length sphere radii
                 // (the established extent convention, P113/P114 precedent).
@@ -1332,11 +1347,7 @@ public sealed class Sector : IClusterIgc
                 // parallel latch, so the callback was bypassed on the default
                 // (non-parallel) path.
                 if (Mission?.Site.RescueShipEvent(rescuee, rescuer) ?? true)
-                {
-                    _pendingRescues.Add((rescuee, rescuer));
-                    done.Add(a);
-                    done.Add(b);
-                }
+                    QueueRescue(rescuee, rescuer);
             }
         }
     }
@@ -1347,9 +1358,10 @@ public sealed class Sector : IClusterIgc
     /// <see cref="ParallelSectorSim.ThreadCount"/> workers, collects the
     /// qualifying pairs, sorts them back into the exact serial scan order
     /// (ascending i, ascending j), then applies the one-rescue-per-ship latch
-    /// and <c>_pendingRescues</c> accumulation serially in that order. The
-    /// accepted rescue set — and the order they land in <c>_pendingRescues</c> —
-    /// is therefore identical to the serial loop for any thread count, satisfying
+    /// (<see cref="_shipRescueDone"/>, shared with the contact trigger) and the
+    /// <c>_pendingRescues</c> accumulation serially in that order. The accepted
+    /// rescue set — and the order they land in <c>_pendingRescues</c> — is
+    /// therefore identical to the serial loop for any thread count, satisfying
     /// the P667 determinism gate. Ship positions are never mutated during
     /// qualification (a rescue only latches and drains later), so the concurrent
     /// reads are safe.
@@ -1364,16 +1376,9 @@ public sealed class Sector : IClusterIgc
             for (int j = i + 1; j < n; j++)
             {
                 var b = ships[j];
-                if (a.SideId != b.SideId) continue;              // friendly gate (shipIGC.cpp:1023-1026)
 
-                // Symmetric capability match (shipIGC.cpp:1027-1035).
-                if (a.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
-                    && b.HullType.HasCapability(DataHullTypeIGC.HabmRescue))
-                { }
-                else if (b.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
-                    && a.HullType.HasCapability(DataHullTypeIGC.HabmRescue))
-                { }
-                else continue;
+                // Friendly gate + symmetric capability match (shipIGC.cpp:1023-1035).
+                if (!IsRescueCapablePair(a, b, out _, out _)) continue;
 
                 float ra = 0.5f * a.HullType.Length;
                 float rb = 0.5f * b.HullType.Length;
@@ -1388,30 +1393,35 @@ public sealed class Sector : IClusterIgc
         });
 
         // Serial latch in the identical (i,j) scan order the serial loop uses.
-        var done = new HashSet<Ship>();
+        var done = _shipRescueDone;
         foreach (var (i, j) in qualifying.OrderBy(p => p.I).ThenBy(p => p.J))
         {
             var a = ships[i];
             var b = ships[j];
             if (done.Contains(a) || done.Contains(b)) continue;
 
-            Ship rescuee, rescuer;
-            if (a.HullType.HasCapability(DataHullTypeIGC.HabmLifepod)
-                && b.HullType.HasCapability(DataHullTypeIGC.HabmRescue))
-            {
-                rescuee = a; rescuer = b;
-            }
-            else
-            {
-                rescuee = b; rescuer = a;
-            }
+            if (!IsRescueCapablePair(a, b, out var rescuee, out var rescuer)) continue;
             if (Mission?.Site.RescueShipEvent(rescuee, rescuer) ?? true)
-            {
-                _pendingRescues.Add((rescuee, rescuer));
-                done.Add(a);
-                done.Add(b);
-            }
+                QueueRescue(rescuee, rescuer);
         }
+    }
+
+    /// <summary>P790 — queue one ship-rescue pair for the host's drain
+    /// (<see cref="DrainRescues"/>): latch both ships for the rest of the sector
+    /// tick (one rescue per ship — see <see cref="_shipRescueDone"/>) and append
+    /// the pair unless it is already pending. The contact trigger
+    /// (<see cref="TryRescueOnContact"/>) and the proximity pass
+    /// (<see cref="ResolveRescueEvents"/>) can both reach this within one
+    /// <c>Mission.Update</c>'s several sector chunks, and native would have
+    /// docked the pod inside the first <c>RescueShipEvent</c>, so the second
+    /// sighting must not queue a duplicate.</summary>
+    private void QueueRescue(Ship rescuee, Ship rescuer)
+    {
+        _shipRescueDone.Add(rescuee);
+        _shipRescueDone.Add(rescuer);
+        foreach (var (queuedRescuee, queuedRescuer) in _pendingRescues)
+            if (ReferenceEquals(queuedRescuee, rescuee) && ReferenceEquals(queuedRescuer, rescuer)) return;
+        _pendingRescues.Add((rescuee, rescuer));
     }
 
     /// <summary>
@@ -3021,7 +3031,10 @@ public sealed class Sector : IClusterIgc
     /// and the two-body position correction — for every ship-ship pair the
     /// detector reports this tick. This is the port's missing ship-vs-ship
     /// physics that <see cref="ResolveRescueEvents"/> explicitly declined to
-    /// build (<c>Sector.cs:784-786</c>, P115).
+    /// build (<c>Sector.cs:784-786</c>, P115). P790 also makes it the owner of
+    /// native's ship-to-ship <b>rescue trigger</b>: a friendly lifepod /
+    /// rescue-capable pair that touches is rescued here, on the contact, exactly
+    /// as native's <c>break</c> does before any physics (see the remarks).
     /// </summary>
     /// <remarks>
     /// <para><b>Pair detection.</b> All flying ships (alive, placed, not docked —
@@ -3030,18 +3043,25 @@ public sealed class Sector : IClusterIgc
     /// <c>0.5 × HullType.Length</c>, exactly like the ship colliders in
     /// <see cref="ResolveShipAsteroidCollisions"/>; every reported pair of
     /// distinct ships is resolved.</para>
-    /// <para><b>Mutual exclusivity with rescue.</b> Native runs the friendly
-    /// rescue/carrier special cases first and <c>break</c>s out of the collision
-    /// switch so physics never applies to that pair this tick
-    /// (<c>shipIGC.cpp:1027-1060</c>). The port reproduces this by re-checking
-    /// the <b>same</b> predicate <see cref="ResolveRescueEvents"/> uses (same
-    /// side, exactly one lifepod with the other rescue-capable, in proximity) for
-    /// each detected pair and skipping physics when it matches — the pair is then
-    /// picked up by the later rescue pass instead of being bumped/damaged. The
-    /// call order vs. the rescue pass is therefore irrelevant to correctness: the
-    /// in-pass re-check enforces the native rescue-priority regardless of
-    /// ordering (this pass is grouped with the asteroid physics block purely for
-    /// cohesion).</para>
+    /// <para><b>Rescue on contact (P790).</b> Native runs the friendly
+    /// rescue special case <b>first</b>, on the collision itself, and
+    /// <c>break</c>s out of the switch so physics never applies to that pair on
+    /// that tick (<c>shipIGC.cpp:1023-1044</c>): if one hull is a lifepod and the
+    /// other is <c>c_habmRescue</c>-capable, <c>igcsite-&gt;RescueShipEvent(pod,
+    /// rescuer)</c> is called; a <c>true</c> answer ends the handler. There is
+    /// <b>no distance test</b> — the hull contact is the trigger. This pass
+    /// therefore attempts the rescue for every detected friendly
+    /// lifepod↔rescue-capable pair <b>before</b> any physics
+    /// (<see cref="TryRescueOnContact"/>): accepted → the pair is queued for the
+    /// host's drain and the handler returns (no bounce, no damage, no sound);
+    /// refused (native's <c>RescueShipEvent</c> returns false when no friendly
+    /// restart station exists, <c>FedSrv.CPP:13060-13075</c>) → the code falls
+    /// through to the ordinary bounce, where the friendly-lifepod exemption
+    /// (<c>shipIGC.cpp:1166-1168</c>) still keeps both hulls unharmed. The
+    /// proximity pass <see cref="ResolveRescueEvents"/> remains as the fallback
+    /// for a pair that overlaps without a detected hull collision, so the call
+    /// order vs. that pass is irrelevant: both share the per-tick one-rescue
+    /// latch (<see cref="_shipRescueDone"/>).</para>
     /// <para><b>Physics.</b> The exact native two-body blend
     /// (<c>shipIGC.cpp:1093-1124</c>): <c>cElasticity = 0.75</c>,
     /// <c>c_impactDamageCoefficient = 1/128</c> (reused from P254), the
@@ -3145,17 +3165,22 @@ public sealed class Sector : IClusterIgc
 
     private void ResolveShipShipCollision(double now, CollisionEvent ev, Ship ship1, Ship ship2, Separate.ProbeCache probeCache)
     {
+        // P790 — native's rescue test is the FIRST thing the OT_ship collision
+        // case does (shipIGC.cpp:1023-1044) and it is triggered by the hull
+        // contact itself, with no centre-distance gate: a friendly lifepod ↔
+        // c_habmRescue pair that touches is rescued (no bounce, no damage), or,
+        // if the site refuses (no friendly restart station), falls through to
+        // the ordinary bounce below. It must run before the zero-relative-
+        // velocity early-out too: a pair that is already overlapping and
+        // drifting together is still a native collision/contact.
+        if (TryRescueOnContact(ship1, ship2)) return;
+
         // Equal current velocities give zero relative normal speed for EVERY
         // separating normal. The existing approach gate below would return
         // without applying separation, damage, or events. Check at dispatch
         // (not detection): an earlier collision may have changed either ship.
         var relativeVelocity = ship1.Velocity - ship2.Velocity;
         if (relativeVelocity.X == 0 && relativeVelocity.Y == 0 && relativeVelocity.Z == 0) return;
-
-        // Collision-time positions (unsmeared) — the rescue-gate proximity uses
-        // these (the same convention the old code did).
-        var rawPos1 = ship1.Position + ship1.Velocity * ev.TCollision;
-        var rawPos2 = ship2.Position + ship2.Velocity * ev.TCollision;
 
         // P621 — the separating-plane normal and the separated positions come
         // from native Separate (Separate.SeparateColliders, shipIGC.cpp:514-616),
@@ -3167,11 +3192,6 @@ public sealed class Sector : IClusterIgc
         using (TickProfiler.Enter("collision.ship.separate"))
             sep = Separate.SeparateColliders(ev.A, ev.B, ev.TCollision, fEqualBounce: true, ev.HtsA, ev.HtsB, probeCache);
         var normal = sep.Normal;
-
-        // Mutual exclusivity with the rescue pass: a rescue-eligible pair is
-        // skipped here (the rescue pass handles it) — native's rescue check
-        // pre-empts physics via break (shipIGC.cpp:1027-1042).
-        if (IsRescueEligiblePair(ship1, ship2, rawPos1, rawPos2)) return;
 
         var velocity1 = ship1.Velocity;
         var velocity2 = ship2.Velocity;
@@ -3563,36 +3583,66 @@ public sealed class Sector : IClusterIgc
     }
 
     /// <summary>
-    /// P354 — the port of the native rescue-check half of the ship-ship collision
-    /// special cases (<c>shipIGC.cpp:1027-1042</c>), re-verified inside
-    /// <see cref="ResolveShipShipCollision"/> so a rescue-eligible pair never
-    /// also takes a physics bump/damage the same tick. Mirrors the predicate
-    /// <see cref="ResolveRescueEvents"/> uses verbatim (same side, exactly one
-    /// lifepod with the other rescue-capable, in proximity).
+    /// P354/P790 — the port of the native rescue-check half of the ship-ship
+    /// collision special cases (<c>shipIGC.cpp:1023-1044</c>), evaluated for
+    /// every detected pair <b>on the contact itself</b>. If the pair is a
+    /// friendly lifepod ↔ <c>c_habmRescue</c> pair (side + capability match
+    /// only — native has <b>no</b> distance gate here), the site decides: a
+    /// <c>true</c> <see cref="IIgcSite.RescueShipEvent"/> queues the rescue for
+    /// the host's drain and reports <see langword="true"/> so the caller returns
+    /// without physics (native's <c>break</c>); a refusal returns
+    /// <see langword="false"/> so the caller falls through to the ordinary
+    /// bounce (native's fall-through), where the friendly-lifepod exemption
+    /// still prevents damage. A pod already rescued this tick is treated as
+    /// gone — native docked it inside <c>RescueShipEvent</c>, so no second
+    /// rescue and no physics.
     /// </summary>
-    private static bool IsRescueEligiblePair(Ship a, Ship b, Vector3 pa, Vector3 pb)
+    private bool TryRescueOnContact(Ship a, Ship b)
+    {
+        if (!IsRescueCapablePair(a, b, out var rescuee, out var rescuer)) return false;
+
+        if (_shipRescueDone.Contains(rescuee)) return true;   // already rescued/queued this tick
+
+        // The accept/refuse decision is the SITE's (native
+        // FedSrvSiteBase::RescueShipEvent, FedSrv.CPP:13033-13076: the rescue is
+        // only legal when a friendly restart station exists) — the same gate the
+        // proximity pass applies (P754b).
+        if (!(Mission?.Site.RescueShipEvent(rescuee, rescuer) ?? true)) return false;
+
+        QueueRescue(rescuee, rescuer);
+        return true;
+    }
+
+    /// <summary>
+    /// P354/P790 — the native rescue PAIR test, and nothing else: same side
+    /// (<c>bFriendly = GetSide() == pModel-&gt;GetSide()</c>,
+    /// <c>shipIGC.cpp:1023-1026</c>; the port has no alliance concept, so the
+    /// allied leg collapses as everywhere else) and the symmetric capability
+    /// match (<c>shipIGC.cpp:1027-1042</c>): exactly one is a
+    /// <c>c_habmLifepod</c>, the other carries <c>c_habmRescue</c>, direction
+    /// free. There is deliberately <b>no proximity condition</b> — P790 removed
+    /// the old centre-distance clause, which native does not have (the hull
+    /// contact is the trigger) and which wrongly made the physics pass judge a
+    /// touching pair "not a rescue pair". The proximity variant of the same
+    /// pairing lives in <see cref="ResolveRescueEvents"/>, which applies its
+    /// sphere-sum radius itself after calling this helper.
+    /// </summary>
+    private static bool IsRescueCapablePair(Ship a, Ship b, out Ship rescuee, out Ship rescuer)
     {
         // Friendly gate (shipIGC.cpp:1023-1026): same side only.
-        if (a.SideId != b.SideId) return false;
+        if (a.SideId != b.SideId) { rescuee = a; rescuer = b; return false; }
 
         // Symmetric capability match (shipIGC.cpp:1027-1042): exactly one is the
         // lifepod, the other is rescue-capable.
         bool aPod = a.HullType.HasCapability(DataHullTypeIGC.HabmLifepod);
         bool bPod = b.HullType.HasCapability(DataHullTypeIGC.HabmLifepod);
-        if (aPod == bPod) return false;
+        if (aPod == bPod) { rescuee = a; rescuer = b; return false; }
         bool aCanRescue = a.HullType.HasCapability(DataHullTypeIGC.HabmRescue);
         bool bCanRescue = b.HullType.HasCapability(DataHullTypeIGC.HabmRescue);
-        if (!((aPod && bCanRescue) || (bPod && aCanRescue))) return false;
-
-        // Proximity: sum of the two 0.5×Length sphere radii (the same extent
-        // convention and threshold as ResolveRescueEvents, Sector.cs:860-868).
-        // Evaluated at the collision-time positions so it is consistent with the
-        // swept detection that triggered this pair.
-        float ra = 0.5f * a.HullType.Length;
-        float rb = 0.5f * b.HullType.Length;
-        float threshold = ra + rb;
-        float dx = pa.X - pb.X, dy = pa.Y - pb.Y, dz = pa.Z - pb.Z;
-        return dx * dx + dy * dy + dz * dz <= threshold * threshold;
+        if (aPod && bCanRescue) { rescuee = a; rescuer = b; return true; }
+        if (bPod && aCanRescue) { rescuee = b; rescuer = a; return true; }
+        rescuee = a; rescuer = b;
+        return false;
     }
 
     /// <summary>
