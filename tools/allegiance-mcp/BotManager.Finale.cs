@@ -56,13 +56,62 @@ internal sealed partial class BotManager
     private sealed record FinaleOriginal(short Hull, string Name, IReadOnlyList<ExpandedPartData>? Parts,
         short? Weapon, short? Launcher, double ReadyTime, short Wingman, short? Target, int RouteIndex, string Role);
 
+    // P797 follow-up — with native map discovery a side does not know where the
+    // enemy base is until one of its ships has seen it (fsmission.cpp:4169-4250),
+    // so the finale is registered once every side has observed an enemy station,
+    // instead of failing the whole spawn when nothing is known yet.
+    private List<(ShowcaseFinale.Settings Settings, string[] Names)>? _pendingFinales;
+
     public object ConfigureFinale(ShowcaseFinale.Settings settings, IReadOnlyCollection<string> names)
     {
         settings.Validate();
         if (!settings.Enabled) return new { enabled = false };
-        DataStationIGC[] stations;
-        lock (Probe.Gate) stations = Probe.World.Stations.Values.ToArray();
+        var stations = StationsSeenByAnEnemy(names);
+        if (stations is null)
+        {
+            lock (_gate) (_pendingFinales ??= []).Add((settings, names.ToArray()));
+            Console.WriteLine($"[finale] armed for {names.Count} bots; waiting until every side has observed an enemy station (map discovery)");
+            return new { enabled = true, pending = "waiting until every side has observed an enemy station" };
+        }
         return RegisterFinale(settings, names, stations);
+    }
+
+    /// <summary>Stations an opposing side has actually seen (each side's own bot
+    /// worlds), or null while some side of <paramref name="names"/> has not yet
+    /// seen any enemy station. Never hands a side knowledge it does not have.</summary>
+    private DataStationIGC[]? StationsSeenByAnEnemy(IReadOnlyCollection<string> names)
+    {
+        ActiveBot[] bots;
+        lock (_gate) bots = _bots.Where(b => names.Contains(b.Name)).ToArray();
+        var seen = new Dictionary<int, DataStationIGC>();
+        var sides = bots.Select(b => b.Side).Distinct().ToArray();
+        if (sides.Length == 0) return null;
+        var sidesWithTarget = new HashSet<short>();
+        foreach (var bot in bots)
+        {
+            if (bot.Cs is not { } cs) continue;
+            lock (cs.Gate)
+                foreach (var st in cs.World.Stations.Values)
+                    if (st.SideId >= 0 && st.SideId != bot.Side)
+                    {
+                        seen[st.StationId] = st;
+                        sidesWithTarget.Add(bot.Side);
+                    }
+        }
+        return sides.All(sidesWithTarget.Contains) ? seen.Values.ToArray() : null;
+    }
+
+    private void RegisterPendingFinales()
+    {
+        (ShowcaseFinale.Settings Settings, string[] Names)[] pending;
+        lock (_gate) pending = _pendingFinales?.ToArray() ?? [];
+        foreach (var p in pending)
+        {
+            if (StationsSeenByAnEnemy(p.Names) is not { } stations) continue;
+            lock (_gate) _pendingFinales?.Remove(p);
+            RegisterFinale(p.Settings, p.Names, stations);
+            Console.WriteLine($"[finale] registered: every side has observed an enemy station");
+        }
     }
 
     internal object RegisterFinale(ShowcaseFinale.Settings settings, IReadOnlyCollection<string> names,
@@ -267,6 +316,7 @@ internal sealed partial class BotManager
 
     private void UpdateFinales(double now)
     {
+        RegisterPendingFinales();
         RearmRotatedFinales();
         FinaleRun[] runs;
         lock (_gate) runs = _finales?.ToArray() ?? [];

@@ -866,7 +866,19 @@ internal sealed partial class BotManager : IDisposable
                     restartSector ??= st.ClusterId;
             }
         }
-        return restartSector ?? anySector;
+        if ((restartSector ?? anySector) is { } observed) return observed;
+        // P797 follow-up — the enemy base is not observed yet under map discovery.
+        // The topology overview flags every home sector (CLUSTERINFO(200)
+        // homeSectors, fsmission.cpp:4122-4160 — what the map preview shows a
+        // human); the home that is not one of this probe side's own is the enemy's.
+        lock (Probe.Gate)
+        {
+            if (Probe.World.Graph is not { } graph) return null;
+            var own = Probe.World.Stations.Values.Where(s => s.SideId == ProbeSide).Select(s => s.ClusterId).ToHashSet();
+            if (side == ProbeSide) return null;
+            var homes = graph.Clusters.Where(c => c.HomeSector && !own.Contains(c.Id)).Select(c => c.Id).ToArray();
+            return homes.Length == 1 ? homes[0] : null;
+        }
     }
 
     /// <summary>

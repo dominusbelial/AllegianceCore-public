@@ -242,8 +242,18 @@ internal sealed partial class BotManager
             if (!world.WorldReady) return false;
             short? target = null;
             if (bot.TargetSector is not null && string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase))
+            {
                 target = world.Stations.Values.Where(s => s.SideId >= 0 && s.SideId != bot.Side)
                     .Select(s => (short?)s.ClusterId).FirstOrDefault();
+                // P797 follow-up — enemy base not seen yet: the topology overview's
+                // home-sector flags (CLUSTERINFO(200)) minus this side's own homes.
+                if (target is null && world.Graph is { } graph)
+                {
+                    var ownHomes = world.Stations.Values.Where(s => s.SideId == bot.Side).Select(s => s.ClusterId).ToHashSet();
+                    var enemyHomes = graph.Clusters.Where(c => c.HomeSector && !ownHomes.Contains(c.Id)).Select(c => c.Id).ToArray();
+                    if (enemyHomes.Length == 1) target = enemyHomes[0];
+                }
+            }
             if (bot.TargetSector is not null && target is null && bot.ObjectiveName is { } name)
                 target = world.Clusters.Values.Where(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase))
                     .Select(c => (short?)c.ClusterId).FirstOrDefault();
