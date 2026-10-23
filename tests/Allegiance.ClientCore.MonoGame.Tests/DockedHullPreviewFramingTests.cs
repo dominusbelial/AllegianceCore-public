@@ -1,5 +1,8 @@
 using Allegiance.ClientCore.MonoGame.Rendering;
 using Xunit;
+using Allegiance.Core;
+using Allegiance.Core.Model;
+using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
@@ -100,5 +103,25 @@ public class DockedHullPreviewFramingTests
     {
         Assert.Equal(50f, DockedHullPreviewFraming.FieldOfViewDegrees);
         Assert.Equal(2.4f, DockedHullPreviewFraming.EyeDistanceFactor);
+    }
+
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Native_preview_clip_planes_contain_every_real_hull()
+    {
+        Require.Artwork();
+        // WinTrek/load.cpp:863 SetZClip(1, 10000). The native-art preview places the eye at
+        // 2.4 x the rendered radius (0.5 x Length); the whole hull sphere must sit between
+        // the planes for every hull in the real core, capital ships included.
+        var path = System.IO.Path.Combine(ExternalPaths.Resolve(ExternalResourceKind.Artwork), "PCore001.igc");
+        var core = StaticCore.Load(IgcReader.ParseFile(path));
+        foreach (var hull in core.HullTypes.Values)
+        {
+            float r = 0.5f * hull.Length;
+            if (r <= 0f) continue;
+            float eye = DockedHullPreviewFraming.EyeDistance(r);
+            Assert.True(eye - r > DockedHullPreviewFraming.NativeZClipNear, $"hull {hull.HullId} {hull.Name}: near plane cuts the hull");
+            Assert.True(eye + r < DockedHullPreviewFraming.NativeZClipFar, $"hull {hull.HullId} {hull.Name}: far plane cuts the hull (length {hull.Length})");
+        }
     }
 }

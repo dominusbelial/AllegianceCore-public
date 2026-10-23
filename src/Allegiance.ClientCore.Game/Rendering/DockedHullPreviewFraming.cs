@@ -44,6 +44,15 @@ public static class DockedHullPreviewFraming
     /// <summary>The 50° loadout FOV in radians (load.cpp:864).</summary>
     public static float FovRadians => (float)(FieldOfViewDegrees * Math.PI / 180.0);
 
+    /// <summary>Native loadout camera clip planes, <c>m_pcamera-&gt;SetZClip(1, 10000)</c>
+    /// (WinTrek/load.cpp:863). The native-art preview frames the hull in world units
+    /// (eye = 2.4 × 0.5·Length), so a capital hull sits hundreds of units away and a
+    /// short far plane clips the whole ship (the preview went black).</summary>
+    public const float NativeZClipNear = 1f;
+
+    /// <inheritdoc cref="NativeZClipNear"/>
+    public const float NativeZClipFar = 10000f;
+
     /// <summary>Half the loadout FOV — the half-angle the whole hull sphere must
     /// fit inside (a sphere fully visible from the eye).</summary>
     public static float HalfFovDegrees => FieldOfViewDegrees / 2f;

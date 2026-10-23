@@ -4808,7 +4808,9 @@ public sealed partial class Game1
                     var nview = Matrix.CreateLookAt(neye, Vector3.Zero, Vector3.Up);
                     var nproj = Matrix.CreatePerspectiveFieldOfView(
                         Rendering.DockedHullPreviewFraming.FovRadians,
-                        GraphicsDevice.Viewport.AspectRatio, 0.1f, 40f);
+                        GraphicsDevice.Viewport.AspectRatio,
+                        Rendering.DockedHullPreviewFraming.NativeZClipNear,
+                        Rendering.DockedHullPreviewFraming.NativeZClipFar);
                     _nativeShipRenderer.Draw(ngeo, ntex, nworld, nview, nproj, 1f, nref.NativeScale, null, nref.ModelStem, nref.TextureStem);
                     return;
                 }
