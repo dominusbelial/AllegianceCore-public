@@ -96,6 +96,8 @@ internal static class McpTools
                         finale_escort_radius = new { type = "number", @default = 1500, exclusiveMinimum = 0 },
                         finale_escort_leash = new { type = "number", @default = 2500, exclusiveMinimum = 0 },
                         launcher = new { type = "string", description = "Optional real launcher/dispenser for the loadout (P433/P435): a name/substring resolves a real one of ANY expendable kind. Homogeneous-mode convenience; mixed-fleet/showcase equip their own mines/missiles natively." },
+                        loadout_mode = new { type = "string", @enum = new[] { "best", "varied" }, description = "P796 — purchase policy within the existing legality: 'best' = today's per-role argmax; 'varied' = deterministic seeded least-recently-used rotation that spreads purchases across every legal, affordable hull/part of the side's real techs (role rules keep bombers on anti-base strike and support on nanite). Default: 'varied' for preset:\"showcase\" (the point of P796 — every legal weapon gets used), 'best' everywhere else." },
+                        loadout_seed = new { type = "integer", @default = 796, description = "P796 — the varied policy's deterministic seed. Same seed + same usage state = same choices." },
                         minefields = new { type = "object", description = "P557 — lay minefields via native LAYER drones before the fleets meet: { side: 'a'|'b'|'both', count: int (fields per side, default 1), at: 'rendezvous' (default; in front of the enemy's arrival aleph) | 'aleph:<sector>' | { sector, x, y, z } }. Invests the side's layer-drone bucket (the 221 testUnlock money covers it), waits for the drone, and orders it to build at the location." },
                         wingman = new { type = "object", description = "P557 — scenario-default native wingman behaviour mask: { strafe?: bool, use_missiles?: bool, use_mines?: bool }. Default = UseMissiles|UseMines (native WingmanBehaviourBitMask, igc.h:785-794)." },
                     },
@@ -114,6 +116,12 @@ internal static class McpTools
                         bot = new { type = "string", description = "Optional bot-name substring to restrict the aggregate to a single bot (pinpoints a specific offender)." },
                     },
                 }),
+            },
+            new Tool
+            {
+                Name = "get_weapon_coverage",
+                Description = "P796 — read-only weapon-coverage telemetry for this run, built only from events the bots already receive: per real part id (equipped / fire events / hits / damage dealt), per missile/mine/probe/chaff TYPE (fired / hits / damage) and per hull (bought / launched / killed), plus every equipped item that never fired with the reason when known. Gun triggers are the bot fire law's rising AllWeapons edge; hits are shooter-attributed PROJECTILE_HULL_HIT broadcasts deduped across observers; damage is the victims' own VICTIM_DAMAGED unicast; kills are KILL_SHIP deaths. `preset:\"showcase\"` runs the varied loadout rotation (loadout_mode), so the table shows the variety across legal hulls/parts.",
+                InputSchema = Schema(new { type = "object" }),
             },
             new Tool
             {
@@ -224,6 +232,7 @@ internal static class McpTools
                 "get_perf_stats" => GetPerfStats(args, mgr),
                 "run_hull_matrix" => RunHullMatrix(args, mgr),
                 "run_scenario" => RunScenario(args, mgr),
+                "get_weapon_coverage" => Ok(JsonSerializer.Serialize(mgr.Coverage.Json())),
                 "invest" => Invest(args, mgr),
                 "list_drones" => ListDrones(args, mgr),
                 "order_drone" => OrderDrone(args, mgr),
@@ -561,6 +570,19 @@ internal static class McpTools
         var finaleSettings = ReadFinaleSettings(args, preset == "showcase");
         var finaleNames = new List<string>();
 
+        // P796 — loadout variety is the showcase default (every legal weapon gets
+        // used); every other mode keeps the best selector unless the caller opts
+        // in explicitly.
+        string? loadoutMode = OptStr(args, "loadout_mode")?.ToLowerInvariant();
+        if (loadoutMode is not (null or "best" or "varied"))
+            return Err($"spawn_scenario: `loadout_mode` must be 'best' or 'varied', got '{loadoutMode}'");
+        bool variety = loadoutMode is not null ? loadoutMode == "varied" : preset == "showcase";
+        long loadoutSeed = OptInt(args, "loadout_seed") ?? LoadoutVariety.DefaultSeed;
+        if (args.ContainsKey("loadout_seed") && TryInt(args["loadout_seed"]) is { } sd && sd <= 0)
+            return Err("spawn_scenario: `loadout_seed` must be a positive integer");
+        mgr.ConfigureLoadoutVariety(variety, loadoutSeed);
+        Console.WriteLine($"[p796] loadout_mode={(variety ? "varied" : "best")} seed={loadoutSeed}");
+
         // Scenario-default native wingman behaviour mask (igc.h:785-794).
         short wingman = Showcase.DefaultScenarioWingman;
         if (args.TryGetValue("wingman", out var wj) && wj.ValueKind == JsonValueKind.Object)
@@ -723,7 +745,7 @@ internal static class McpTools
             spawnSlots.Add(new(si, slot.Side, slot.SourceHull, () => mgr.SpawnBot(slot.FlyHullId, slot.FlyHullName, slot.Side, slot.Parts, "combat", botTarget,
                 slot.LauncherId, slot.LauncherName, useStaging: staging,
                 wingmanBehaviour: slot.Wingman, routePath: routePath, routeIndex: routeIndex,
-                role: pilotRole, reportFailure: false)));
+                role: pilotRole, reportFailure: false, loadoutVariety: variety)));
         }
         // Native lobby rank balance applies during a started showcase. Take
         // turns between fleets so a side's whole batch does not fill first.

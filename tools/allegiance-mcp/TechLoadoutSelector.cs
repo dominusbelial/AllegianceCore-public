@@ -49,6 +49,160 @@ internal static class TechLoadoutSelector
         return best;
     }
 
+    // ── P796 — loadout variety within legality ─────────────────────────────
+
+    /// <summary>Immutable per-side usage snapshot the pure varied selector
+    /// consumes: how many times each hull and part id has already been equipped
+    /// on this side (P796 least-recently-used coverage state), the side id, and
+    /// a deterministic (seed, ordinal) pair so the same inputs always produce
+    /// the same selection. No civ names or ids play a role — purely data.</summary>
+    internal sealed record VarietyState(short Side, long Seed, long Ordinal,
+        IReadOnlyDictionary<short, int> HullUse, IReadOnlyDictionary<short, int> PartUse);
+
+    /// <summary>P796 — the varied purchase policy: the SAME legality as
+    /// <see cref="Select"/> (research unlocks, station local mask, successor
+    /// obsolescence, mount masks, energy/ammo/budget), but instead of the
+    /// per-role argmax it spreads purchases across every legal hull and part:
+    /// the least-recently-used group wins, and within a group the choice is a
+    /// seeded weighted pick that favours the higher-scoring options without
+    /// starving the rest. Role rules keep the best-path behaviour: bombers
+    /// keep the anti-base strike loadout, support pilots keep the nanite
+    /// selector, medevac scouts keep the rescue-probe ranking (the caller
+    /// routes those to <see cref="Select"/>).
+    /// Deterministic: (state, seed, ordinal) → selection.</summary>
+    internal static Selection? SelectVaried(StaticCore core, short civId, Showcase.HullRole role,
+        TechTreeBitMask techs, short dockTypeId, VarietyState variety,
+        DataStationTypeIGC? target = null, long budget = long.MaxValue, bool preferMines = false)
+    {
+        // Finale/strike (bomber vs a real station target) keeps today's best
+        // loadout — a mandated P796 scope rule. Other roles ignore the target
+        // exactly like the best selector does.
+        if (role == Showcase.HullRole.Bomber) return Select(core, civId, role, techs, dockTypeId, target, budget, preferMines);
+        if (!core.StationTypes.TryGetValue(dockTypeId, out var dock)) return null;
+        var c = Create(core, civId, techs, dock.TtbmLocal, [dockTypeId], budget);
+        var hulls = c.Core.HullTypes.Values.Where(h => c.Hulls.Contains(h.HullId)
+            && Showcase.IsPlayerBuyable(c.Core, h) && Classify(h) == role
+            && !SuccessorUpgrade.HullIsObsolete(c.Core, h, c.Local, c.Techs)).OrderBy(h => h.HullId).ToArray();
+        if (hulls.Length == 0) return null;
+
+        var rng = new Random(unchecked((int)StableHash(variety.Seed, variety.Ordinal, civId, dockTypeId, (short)role)));
+        // Hull pick: least-used group first; weighted inside the group so the
+        // better hulls of the group are favoured (weight 1..4) but no legal
+        // hull is starved.
+        var hullWeights = hulls.Select(h => (Hull: h, Use: variety.HullUse.GetValueOrDefault(h.HullId)))
+            .GroupBy(x => x.Use).OrderBy(g => g.Key).First()
+            .Select(x => (Hull: x.Hull, Weight: 1 + 3 * HullScore(x.Hull, role) / Math.Max(1e-9, hulls.Max(h2 => HullScore(h2, role)))))
+            .ToList();
+        var hull = WeightedPick(rng, hullWeights);
+
+        var parts = new List<ExpandedPartData>();
+        long spent = Math.Max(0, hull.Price);
+        float energy = hull.MaxEnergy;
+        int ammo = hull.MaxAmmo;
+        var legal = c.Parts.Select(id => Part(c.Core, id)).Where(p => p.GroupId != byte.MaxValue
+            && !SuccessorUpgrade.PartIsObsolete(c.Core, p, c.Local, c.Techs)).ToArray();
+        var mounts = Enumerable.Range(0, Math.Min(8, hull.Hardpoints.Length)).Where(m => hull.Hardpoints[m].Fixed).ToArray();
+
+        // Primary gun: least-used fitting weapon across ALL fixed mounts (rotates
+        // every legal gun into service), weighted by the role DPS score inside
+        // the least-used group; its mount is the first one it fits.
+        var primaryCandidates = legal.Where(p => p.Type is DataPartTypeIGC.Weapon pw
+                && WeaponScore(c.Core, p, role) > 0
+                && pw.EnergyPerShot <= energy && pw.CAmmoPerShot <= ammo
+                && spent + PartPrice(p, 1) <= c.Budget)
+            .Select(p => (Part: p, Mount: mounts.FirstOrDefault(m => hull.CanMountPart(p, m))))
+            .Where(x => hull.CanMountPart(x.Part, x.Mount)).ToArray();
+        if (primaryCandidates.Length == 0) return null; // automatic steering needs a damaging fixed gun
+        var primary = WeightedPick(rng, LeastUsedGroup(primaryCandidates,
+            x => variety.PartUse.GetValueOrDefault(x.Part.PartId),
+            x => WeaponScore(c.Core, x.Part, role)).ToList());
+        Add(primary.Part, primary.Mount, 1);
+        var primaryWeapon = (DataPartTypeIGC.Weapon)primary.Part.Type;
+        energy -= Math.Max(0, primaryWeapon.EnergyPerShot);
+        ammo -= Math.Max(0, (int)primaryWeapon.CAmmoPerShot);
+
+        // Remaining mounts keep the best-path DPS pick from the leftover pool.
+        foreach (var mount in mounts.Where(m => m != primary.Mount))
+        {
+            var gun = legal.Where(p => p.Type is DataPartTypeIGC.Weapon w && hull.CanMountPart(p, mount)
+                    && w.EnergyPerShot <= energy && w.CAmmoPerShot <= ammo && spent + PartPrice(p, 1) <= c.Budget)
+                .OrderByDescending(p => WeaponScore(c.Core, p, role)).ThenBy(p => p.PartId)
+                .FirstOrDefault(p => WeaponScore(c.Core, p, role) > 0);
+            if (gun.Type is null) continue;
+            Add(gun, mount, 1);
+            var w = (DataPartTypeIGC.Weapon)gun.Type;
+            energy -= Math.Max(0, w.EnergyPerShot); ammo -= Math.Max(0, (int)w.CAmmoPerShot);
+        }
+        if (parts.Count == 0) return null;
+
+        // Equipment: same order and gates as the best path (scouts reserve their
+        // budget for stealth first), but each slot rotates the least-used legal
+        // fitting part instead of always mounting the strongest.
+        var equipmentOrder = role == Showcase.HullRole.Scout && !preferMines
+            ? new[] { EquipmentType.Cloak, EquipmentType.Shield, EquipmentType.Afterburner,
+                EquipmentType.Magazine, EquipmentType.Dispenser, EquipmentType.ChaffLauncher }
+            : new[] { EquipmentType.Shield, EquipmentType.Afterburner, EquipmentType.Magazine,
+                EquipmentType.Dispenser, EquipmentType.ChaffLauncher, EquipmentType.Cloak };
+        foreach (var equipment in equipmentOrder)
+        {
+            var candidates = legal.Where(p => p.EquipmentType == equipment && hull.CanMountPart(p, 0))
+                .Select(p => (Part: p, Amount: Ship.ClampPartAmount(hull, c.Core, p,
+                    equipment is EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher ? short.MaxValue : 1)))
+                .Where(p => p.Amount > 0 && spent + PartPrice(p.Part, p.Amount) <= c.Budget)
+                .Where(p => SupportScore(c.Core, p.Part, role, preferMines) > 0).ToArray();
+            if (candidates.Length == 0) continue;
+            var pick = WeightedPick(rng, LeastUsedGroup(candidates,
+                x => variety.PartUse.GetValueOrDefault(x.Part.PartId),
+                x => SupportScore(c.Core, x.Part, role, preferMines)).ToList());
+            Add(pick.Part, 0, pick.Amount);
+        }
+        var selected = Describe(c, role, hull.HullId, parts);
+        return selected with { Reason = $"varied seed={variety.Seed} ord={variety.Ordinal} hullUse={variety.HullUse.GetValueOrDefault(hull.HullId)}; " + selected.Reason };
+
+        void Add(DataPartTypeIGC p, int mount, short amount)
+        {
+            parts.Add(new(p.PartId, amount, (byte)mount, ExpandedPartData.FullyMounted));
+            spent += PartPrice(p, amount);
+        }
+    }
+
+    /// <summary>The subset of candidates with the minimal usage count — the
+    /// least-recently-equipped group the weighted pick rotates through.</summary>
+    private static IEnumerable<(T Item, double Weight)> LeastUsedGroup<T>(IReadOnlyCollection<T> candidates,
+        Func<T, int> use, Func<T, double> score)
+    {
+        int min = candidates.Count == 0 ? 0 : candidates.Min(use);
+        var group = candidates.Where(x => use(x) == min).ToArray();
+        double max = Math.Max(1e-9, group.Max(score));
+        return group.Select(x => (Item: x, Weight: 1 + 3 * score(x) / max));
+    }
+
+    private static T WeightedPick<T>(Random rng, IReadOnlyList<(T Item, double Weight)> items)
+    {
+        double total = items.Sum(i => Math.Max(0, i.Weight));
+        double roll = rng.NextDouble() * total;
+        foreach (var (item, weight) in items)
+        {
+            roll -= Math.Max(0, weight);
+            if (roll <= 0) return item;
+        }
+        return items[^1].Item;
+    }
+
+    private static long StableHash(long a, long b, short c, short d, short e)
+    {
+        // FNV-1a over the deterministic inputs — no Random-on-string, no time.
+        ulong h = 1469598103934665603UL;
+        Span<long> inputs = stackalloc long[] { a, b, c, d, e };
+        foreach (long v in inputs)
+            for (int i = 0; i < 8; i++)
+            {
+                h ^= (byte)(v >> (i * 8));
+                h *= 1099511628211UL;
+            }
+        return (long)h;
+    }
+
     // Kept for existing socket-free finale catalogue queries with a local mask.
     internal static Selection? SelectAtLocal(StaticCore core, short civId, Showcase.HullRole role,
         TechTreeBitMask techs, byte[]? local, DataStationTypeIGC? target = null)
@@ -190,33 +344,45 @@ internal static class TechLoadoutSelector
         return options.OrderBy(o => o.Price).ThenBy(o => o.HullId).FirstOrDefault();
     }
 
-    private static double HullScore(DataHullTypeIGC h, Showcase.HullRole role) => role switch
+    internal static double HullScore(DataHullTypeIGC h, Showcase.HullRole role) => role switch
     {
         Showcase.HullRole.Scout => h.ScannerRange * h.Speed,
         Showcase.HullRole.Interceptor => h.HitPoints * h.Speed,
         _ => h.HitPoints * Math.Max(1, (int)h.MaxFixedWeapons),
     };
 
-    private static double WeaponScore(StaticCore core, DataPartTypeIGC p, Showcase.HullRole role)
+    internal static double WeaponScore(StaticCore core, DataPartTypeIGC p, Showcase.HullRole role)
     {
         if (p.Type is not DataPartTypeIGC.Weapon w || !core.ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var r)
             || r.Power <= 0) return 0;
         // Mean effectiveness against player fighter armor avoids repair or anti-base guns
-        // winning simply because their raw projectile power is large.
+        // winning simply because their raw projectile power is large. The defenses table
+        // depends only on the core — computed once per core instance (pure; P796 made this
+        // a cache so the varied rotation stays inside the Fast-tier time budget).
+        double[] rates = DefenseRates(core);
+        double dps = r.Power * (r.DamageType < DataConstantsIGC.DmgidMax ? rates[r.DamageType] : 1) / Math.Max(.01f, w.DtimeBurst);
+        return role == Showcase.HullRole.Interceptor ? dps * Math.Sqrt(Math.Max(1, r.Speed * r.Lifespan)) : dps;
+    }
+
+    private static (StaticCore Core, double[] Rates) _defenseRates;
+    private static double[] DefenseRates(StaticCore core)
+    {
+        if (_defenseRates.Core == core && _defenseRates.Rates is { Length: > 0 }) return _defenseRates.Rates;
         var defenses = core.HullTypes.Values.Where(h => h.GroupId >= 0 && h.HasCapability(DataHullTypeIGC.HabmFighter))
             .Select(h => h.DefenseType).Distinct().ToArray();
-        double effectiveness = defenses.Length == 0 ? 1 : defenses.Average(d =>
-            r.DamageType < DataConstantsIGC.DmgidMax && d < DataConstantsIGC.DefidMax
-                ? Math.Max(0, core.Constants.DamageConstants[r.DamageType][d]) : 1);
-        double dps = r.Power * effectiveness / Math.Max(.01f, w.DtimeBurst);
-        return role == Showcase.HullRole.Interceptor ? dps * Math.Sqrt(Math.Max(1, r.Speed * r.Lifespan)) : dps;
+        var rates = new double[DataConstantsIGC.DmgidMax];
+        for (int d = 0; d < rates.Length; d++)
+            rates[d] = defenses.Length == 0 ? 1
+                : defenses.Average(def => def < DataConstantsIGC.DefidMax ? Math.Max(0, core.Constants.DamageConstants[d][def]) : 1);
+        _defenseRates = (core, rates);
+        return rates;
     }
 
     // P779b-1 — `rescueProbe` is the medevac scout's exception: a rescue-capable
     // probe launcher (c_eabmRescue/RescueAny) scores by the medevac ranking
     // (Lifespan first, then HitPoints, encoded as Lifespan*1000+HP) instead of
     // the 0 the scouting branch gives it; every other bot keeps the exclusion.
-    private static double SupportScore(StaticCore core, DataPartTypeIGC p, Showcase.HullRole role,
+    internal static double SupportScore(StaticCore core, DataPartTypeIGC p, Showcase.HullRole role,
         bool preferMines = false, bool rescueProbe = false) => p.Type switch
     {
         DataPartTypeIGC.Shield s => s.MaxStrength,

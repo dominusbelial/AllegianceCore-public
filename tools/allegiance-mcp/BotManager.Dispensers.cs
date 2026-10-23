@@ -43,6 +43,7 @@ internal sealed partial class BotManager
             {
                 cs.SendFireExpendable(EquipmentType.ChaffLauncher);
                 bot.LastChaffAt = now;
+                WeaponCoverage.Global.RecordDispenserDrop(bot.ShipId, counter.PartId);   // P796
                 Console.WriteLine($"[sc4] chaff bot={bot.Name} side={bot.Side} sector={sector} part={counter.PartId} tracked=true lock={world.MissileTrack.BestLock:F3}");
             }
 
@@ -56,7 +57,7 @@ internal sealed partial class BotManager
                 && core.ProbeTypes.TryGetValue(rescueLauncher.ExpendableTypeId, out var rescueProbe)
                 && (rescueProbe.EabmCapabilities & 0x6000) != 0)
             {
-                MaybeDropMedevacProbe(bot, cs, now, sector, position, rescueProbe);
+                MaybeDropMedevacProbe(bot, cs, now, sector, position, rescueProbe, dispenser.PartId);
                 return;
             }
             bool home = world.Stations.Values.Any(s => s.SideId == bot.Side && s.ClusterId == sector);
@@ -83,6 +84,7 @@ internal sealed partial class BotManager
                 {
                     cs.SendFireExpendable(EquipmentType.Dispenser);
                     bot.LastProbeAt = now;
+                    WeaponCoverage.Global.RecordDispenserDrop(bot.ShipId, dispenser.PartId);   // P796
                     Console.WriteLine($"[sc4] probe bot={bot.Name} side={bot.Side} sector={sector} part={dispenser.PartId} contested=true aleph={nearAleph} lifespan={probe.Lifespan}");
                 }
             }
@@ -104,6 +106,7 @@ internal sealed partial class BotManager
                 {
                     cs.SendFireExpendable(EquipmentType.Dispenser);
                     bot.LastMineAt = now;
+                    WeaponCoverage.Global.RecordDispenserDrop(bot.ShipId, dispenser.PartId);   // P796
                     Console.WriteLine($"[sc4] mine bot={bot.Name} side={bot.Side} sector={sector} part={dispenser.PartId} defendedAleph={defendedAleph} enemyWithin2500={enemyNear} lifespan={mine.Lifespan}");
                 }
             }

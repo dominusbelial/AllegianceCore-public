@@ -43,8 +43,8 @@ public sealed class P658SupervisorTests
     public void OptionsDefaultAndInternalWorkerAreDistinct()
     {
         Assert.Equal(1, DriverOptions.Parse(["localhost", "6073"]).Workers);
-        Assert.Equal(11, McpTools.Definitions().Count);
-        Assert.Equal(14, McpTools.Definitions(supervisor: true).Count);
+        Assert.Equal(12, McpTools.Definitions().Count);
+        Assert.Equal(15, McpTools.Definitions(supervisor: true).Count);
         Assert.Null(DriverOptions.Parse(["localhost", "6073", "--workers", "1"]).Worker);
         Assert.Equal(new WorkerPartition(1, 2), DriverOptions.Parse(["localhost", "6073", "--worker", "2/2"]).Worker);
         Assert.Throws<ArgumentException>(() => DriverOptions.Parse(["localhost", "6073", "--worker", "2/2", "--workers", "2"]));

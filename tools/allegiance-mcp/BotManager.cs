@@ -76,6 +76,9 @@ internal sealed partial class BotManager : IDisposable
 
     private readonly Stopwatch _clock = Stopwatch.StartNew();
     private readonly CancellationTokenSource _loopCts = new();
+    // P796 — coverage sweep / gallery cadence.
+    private double _nextCoverageSweep = double.NegativeInfinity;
+    private double _nextGalleryLine = double.NegativeInfinity;
 
     // ── P636c — snapshot-age instrumentation ─────────────────────────────
     // The age (ms) of the decision snapshot each bot's aim actually consumed,
@@ -196,11 +199,30 @@ internal sealed partial class BotManager : IDisposable
     internal WorkerPartition? Partition { get; }
     internal bool PlanOnly { get; set; }
 
+    // ── P796 — loadout variety + weapon coverage ────────────────────────
+    // Off (best loadout) by default; spawn_scenario preset:"showcase" turns it
+    // on unless the caller pins `loadout_mode:"best"`. Seed is the run's
+    // deterministic variety seed (LoadoutVariety.DefaultSeed unless overridden).
+    internal bool LoadoutVarietyEnabled { get; private set; }
+    internal long LoadoutVarietySeed { get; private set; } = LoadoutVariety.DefaultSeed;
+    internal WeaponCoverage Coverage => WeaponCoverage.Global;
+
+    /// <summary>P796 — set the run's loadout mode/seed (from the spawn_scenario
+    /// args). Variety stays within the existing legality: the varied selector
+    /// only reweights the same legal, affordable options.</summary>
+    internal void ConfigureLoadoutVariety(bool enabled, long seed)
+    {
+        LoadoutVarietyEnabled = enabled;
+        LoadoutVarietySeed = seed;
+        LoadoutVariety.Configure(seed);
+    }
+
     public BotManager(string host, ushort port, WorkerPartition? partition = null)
     {
         Partition = partition;
         _host = host;
         _port = port;
+        WeaponCoverage.Global.BeginRun();   // P796 — one coverage run per manager (process invariant)
         using var telemetryOwnership = new PendingOwnership();
         _stallTelemetry = telemetryOwnership.Own(new StallWatchdog());
         using var ownership = new PendingOwnership(DisposePeer);
@@ -418,12 +440,12 @@ internal sealed partial class BotManager : IDisposable
     public SpawnResult SpawnBot(short hullId, string hullName, short? side, IReadOnlyList<ExpandedPartData> parts, string behavior, short? targetSector = null, short? launcherPartId = null, string? launcherRequestName = null,
         bool useStaging = false,
         short wingmanBehaviour = Showcase.DefaultScenarioWingman,
-        IReadOnlyList<short>? routePath = null, int routeIndex = -1, string? role = null, bool reportFailure = true)
+        IReadOnlyList<short>? routePath = null, int routeIndex = -1, string? role = null, bool reportFailure = true, bool loadoutVariety = false)
     {
         try
         {
             return SpawnBotCore(hullId, hullName, side, parts, behavior, targetSector, launcherPartId, launcherRequestName,
-                useStaging, wingmanBehaviour, routePath, routeIndex, role);
+                useStaging, wingmanBehaviour, routePath, routeIndex, role, loadoutVariety);
         }
         catch (Exception ex)
         {
@@ -435,7 +457,7 @@ internal sealed partial class BotManager : IDisposable
     private SpawnResult SpawnBotCore(short hullId, string hullName, short? side, IReadOnlyList<ExpandedPartData> parts, string behavior, short? targetSector = null, short? launcherPartId = null, string? launcherRequestName = null,
         bool useStaging = false,
         short wingmanBehaviour = Showcase.DefaultScenarioWingman,
-        IReadOnlyList<short>? routePath = null, int routeIndex = -1, string? role = null)
+        IReadOnlyList<short>? routePath = null, int routeIndex = -1, string? role = null, bool loadoutVariety = false)
     {
         if (!ServerReady)
             throw new InvalidOperationException("spawn_bot: server probe not connected/validated — cannot spawn");
@@ -496,7 +518,8 @@ internal sealed partial class BotManager : IDisposable
             }
             var cs = ownership.Own(SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide, out granted, out grantWarning,
                 botId, role, out bool medevacScout, out bool canBuyRescueProbe,
-                techRole, selected => { hullId = selected.HullId; hullName = selected.HullName; finalParts = selected.Parts.ToList(); }, support: string.Equals(role, "support", StringComparison.OrdinalIgnoreCase), defensiveMines: defensiveMines));
+                techRole, selected => { hullId = selected.HullId; hullName = selected.HullName; finalParts = selected.Parts.ToList(); }, support: string.Equals(role, "support", StringComparison.OrdinalIgnoreCase), defensiveMines: defensiveMines,
+                loadoutVariety: loadoutVariety));
             DiagnoseProbeLaunch(name, shipId, actualSide);
 
             bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed())
@@ -511,6 +534,8 @@ internal sealed partial class BotManager : IDisposable
                 PurchasePacer = _loadoutPurchasePacer,
                 ShipId = shipId,
                 Launched = true,
+                Variety = loadoutVariety,
+                VarietySeed = LoadoutVarietySeed + botId * 1_000_003,
                 TargetSector = targetSector,
                 Parts = finalParts,
                 WeaponPartId = Catalog.FirstWeaponPartId(finalParts),
@@ -545,6 +570,8 @@ internal sealed partial class BotManager : IDisposable
             b.ResetBuyLoadoutAcks();
             granted = BuyAndConfirmLaunch(name, hullId, finalParts, () => b.Connected, ownLaunched,
                 () => b.SendBuyLoadout(hullId, fLaunch: true, finalParts), () => b.BuyLoadoutAcks, out grantWarning);
+            // P796 — real launch ack coverage rows (idle/weave path).
+            WeaponCoverage.Global.RecordPurchase(actualSide, granted.HullId, granted.Parts);
             DiagnoseProbeLaunch(name, shipId, actualSide);
 
             bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed())
@@ -668,7 +695,8 @@ internal sealed partial class BotManager : IDisposable
     /// </summary>
     private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide, out LoadoutGrant granted, out string? warning,
         int botId, string? roleName, out bool medevacScout, out bool canBuyRescueProbe,
-        Showcase.HullRole? techRole = null, Action<TechLoadoutSelector.Selection>? onSelected = null, bool support = false, bool defensiveMines = false)
+        Showcase.HullRole? techRole = null, Action<TechLoadoutSelector.Selection>? onSelected = null, bool support = false, bool defensiveMines = false,
+        bool loadoutVariety = false)
     {
         bool pickedMedevac = false, pickedCanBuy = false;
         using var ownership = new PendingOwnership(DisposePeer);
@@ -723,7 +751,8 @@ internal sealed partial class BotManager : IDisposable
                     }
                 }
                 selected = PickTechLoadout(s, techRole ?? Showcase.HullRole.Fighter, support: support,
-                    defensiveMines: defensiveMines, medevacScout: pickedMedevac);
+                    defensiveMines: defensiveMines, medevacScout: pickedMedevac,
+                    varied: loadoutVariety, varietySeed: LoadoutVarietySeed + botId * 1_000_003);
                 return selected is not null;
             }, 15000)) throw new InvalidOperationException($"spawn_bot: '{name}' has no observed legal affordable loadout for role {techRole}");
             hullId = selected!.HullId; parts = selected.Parts;
@@ -734,6 +763,9 @@ internal sealed partial class BotManager : IDisposable
         cs.ResetBuyLoadoutAcks();
         granted = BuyAndConfirmLaunch(name, hullId, parts, () => cs.Connected && !cs.Lost, ownLaunched,
             () => cs.SendBuyLoadout(hullId, fLaunch: true, parts), () => cs.BuyLoadoutAcks, out warning);
+        // P796 — a real launch ack: the hull was bought and launched and every
+        // granted part is equipped (coverage rows).
+        WeaponCoverage.Global.RecordPurchase(actualSide, granted.HullId, granted.Parts);
         ownership.Transfer();
         medevacScout = pickedMedevac;
         canBuyRescueProbe = pickedCanBuy;
@@ -1655,6 +1687,27 @@ internal sealed partial class BotManager : IDisposable
 
                 var decisionDue = DecisionDue(snap, now);
 
+                // P796 — bounded weapon-coverage sweeps (~1 Hz per combat bot,
+                // built ONLY from events the bot worlds already buffer) and the
+                // once-per-minute `[gallery]` summary line (never per-tick).
+                if (now >= _nextCoverageSweep)
+                {
+                    _nextCoverageSweep = now + 1;
+                    foreach (var b in snap)
+                        if (b.Cs is { } covCs && covCs.World.WorldReady)
+                        {
+                            try { WeaponCoverage.Global.SweepBot(covCs); } catch { /* coverage must never break the loop */ }
+                        }
+                    if (WeaponCoverage.Global.ConsumeEndOfMatchFlag())
+                        Console.WriteLine($"[gallery] end-of-match coverage:\n{string.Join("\n", WeaponCoverage.Global.Table())}");
+                }
+                if (now >= _nextGalleryLine)
+                {
+                    _nextGalleryLine = now + 60;
+                    if (WeaponCoverage.Global.HasData)
+                        Console.WriteLine($"[gallery] coverage: {WeaponCoverage.Global.GallerySummary()}");
+                }
+
                 // P636d — LAZY publish: request a fresh decision snapshot from every
                 // seated bot's receive thread BEFORE this pass reads .Decision. The
                 // request is a single volatile write (no gate, no lock), so it costs
@@ -2171,7 +2224,7 @@ bool isThreat =
         try
         {
             var cs = SeatCombatClient(name, bot.Side, bot.HullId, parts, out short shipId, out short actualSide, out var upGranted, out var upWarning,
-                bot.BotId, bot.Role, out bool upgradedMedevac, out bool upgradedCanBuyRescue);
+                bot.BotId, bot.Role, out bool upgradedMedevac, out bool upgradedCanBuyRescue, loadoutVariety: bot.Variety);
             try { DisposePeer(old); } catch { }   // free the old plain-client peer now that the combat one is real
             bot.Bot = null;
             bot.Cs = cs;
@@ -3128,6 +3181,18 @@ bool isThreat =
         }
         bool reacted = now - bot.DifficultyTargetSince >= bot.Difficulty.ReactionSeconds;
         bool fire = reacted && !friendlyBlocked && AttackFireGate(angleToLead, t / bot.Difficulty.Aggression, lifespan);
+        // P796 — rising edge of the AllWeapons trigger = one gun-fire event for
+        // every mounted weapon part of this bot (native allWeapons,
+        // shipIGC.cpp:2600). The part ids come from the bot's real loadout.
+        if (fire && !bot.FireTriggerHeld)
+        {
+            bot.FireTriggerHeld = true;
+            var core = Catalog.RepresentativeCore();
+            var weaponParts = (bot.Parts ?? []).Where(p => p.Amount > 0)
+                .Select(p => p.PartId).Where(id => TechLoadoutSelector.Part(core, id).Type is DataPartTypeIGC.Weapon).ToList();
+            WeaponCoverage.Global.RecordGunTrigger(bot.ShipId, weaponParts);
+        }
+        else if (!fire) bot.FireTriggerHeld = false;
 
         int stateM = CloakApproach(bot, cs, state | (fire ? ShipControlState.AllWeapons : 0));
         bot.AttackAfterburnerHeld = (stateM & ShipControlState.AfterburnerButton) != 0;
@@ -3278,7 +3343,9 @@ bool isThreat =
             // Real hits attributed to the shooter: only hull-hits WE caused,
             // bucketed by the struck target's side + shield/hull (pure logic).
             var hits = new List<(short SourceId, short TargetId, bool Absorbed, short? TargetSide)>();
-            foreach (var h in cs.World.TakeNewHullHits())
+            var drainedHits = cs.World.TakeNewHullHits();
+            if (drainedHits.Count > 0) WeaponCoverage.Global.RecordHullHits(drainedHits);   // P796 coverage reads the same drain
+            foreach (var h in drainedHits)
             {
                 short? tgtSide = null;
                 if (h.TargetId != -1 && cs.World.Ships.TryGetValue(h.TargetId, out var tgt))
@@ -4039,6 +4106,8 @@ bool isThreat =
 
         cs.SendFireMissile();
         bot.LastFireAt = now;
+        if (bot.LauncherPartId is { } firedLauncher)   // P796 — real missile launch coverage
+            WeaponCoverage.Global.RecordMissileLaunch(bot.ShipId, firedLauncher);
         Console.WriteLine($"[p433] bot {bot.Name} (ship {bot.ShipId}) fired real missile launcher at lock 1.0 -> SendFireMissile (ready {bot.MissileReadyTime:F2}s)");
     }
 
@@ -5743,6 +5812,10 @@ bool isThreat =
         _loopCts.Cancel();
         if (_loopThread.IsAlive) _loopThread.Join(500);
         if (_researchThread?.IsAlive == true) _researchThread.Join(1500);
+        // P796 — the end-of-run coverage table (bounded; nothing printed when
+        // this manager never bought anything).
+        if (WeaponCoverage.Global.HasData)
+            Console.WriteLine($"[gallery] end-of-run coverage:\n{string.Join("\n", WeaponCoverage.Global.Table())}");
         ActiveBot[] bots;
         lock (_gate) { bots = _bots.ToArray(); _bots.Clear(); }
         foreach (var bot in bots)
@@ -5899,6 +5972,10 @@ bool isThreat =
         public short? LauncherPartId;
         public double MissileReadyTime;
         public double LastFireAt = double.NegativeInfinity;
+        // P796 — variety + coverage bookkeeping for this bot.
+        public bool Variety;
+        public long VarietySeed;
+        public bool FireTriggerHeld;
         public BotDifficulty Difficulty = new(1, 0, 1);
         public short? DifficultyTarget;
         public double DifficultyTargetSince;

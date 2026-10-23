@@ -1,0 +1,39 @@
+P796 coverage table (t=95s): parts=13 expendables=5 hulls=4
+part | kind | equipped | fired | hits | damage
+expendable-type | kind | fired | hits | damage
+hull | bought | launched | killed
+never fired (equipped):
+ coverage after 92s: equippedParts=13 firedParts=8 fires=78 hits=39 damage=5087 kills=1 bought=31 expendableFires=92
+ fireCapableShare=80% (8/10)
+ P796 coverage table (t=95s): parts=13 expendables=5 hulls=4
+ part | kind | equipped | fired | hits | damage
+ 21 | Sm Shield 1 | shield | 28 | 0 | 0 | 0
+ 23 | Booster 1 | afterburner | 9 | 0 | 0 | 0
+ 33 | PW Gat Gun 1 | gun | 28 | 24 | 10 | 911
+ 59 | Prox Mine 1 | mine-launcher | 11 | 10 | 0 | 0
+ 80 | Counter 1 | chaff-launcher | 26 | 12 | 5 | 997
+ 81 | EWS Probe 1 | probe-launcher | 3 | 3 | 0 | 0
+ 85 | Counter 2 | chaff-launcher | 1 | 0 | 0 | 0
+ 91 | ER Nanite 1 | gun | 4 | 0 | 0 | 0
+ 92 | EW Disruptor 1 | gun | 5 | 6 | 5 | 249
+ 120 | PW Mini-Gun 1 | gun | 6 | 2 | 1 | 35
+ 125 | Afterburner 1 | afterburner | 3 | 0 | 0 | 0
+ 150 | SRM Dumbfire 1 | missile-launcher | 20 | 17 | 16 | 2637
+ 153 | MRM Seeker 1 | missile-launcher | 4 | 4 | 2 | 257
+ expendable-type | kind | fired | hits | damage
+ 11 |  | mine | 20 | 0 | 0
+ 21 |  | chaff | 24 | 5 | 997
+ 22 | utl23 | probe | 6 | 0 | 0
+ 32 | mis05 | missile | 34 | 16 | 2637
+ 35 | mis06 | missile | 8 | 2 | 257
+ hull | bought | launched | killed
+ 114 | Scout | 6 | 6 | 0
+ 121 | Fighter | 9 | 9 | 0
+ 410 | Scout | 13 | 13 | 1
+ 415 | Lt Interceptor | 3 | 3 | 0
+ never fired (equipped):
+ 21 | Sm Shield 1 | shield | equipped=28 | passive equipment — never fires
+ 23 | Booster 1 | afterburner | equipped=9 | passive equipment — never fires
+ 85 | Counter 2 | chaff-launcher | equipped=1 | chaff law (inbound missile lock, MissileTrack) never qualified
+ 91 | ER Nanite 1 | gun | equipped=4 | fire gate (aim ≤ open-fire angle within lifespan, shipIGC.cpp:2600) never satisfied in observed fights
+ 125 | Afterburner 1 | afterburner | equipped=3 | passive equipment — never fires

@@ -36,7 +36,7 @@ internal sealed partial class BotManager
         }
     }
 
-    internal sealed record LoadoutShop(short Civ, short DockType, TechTreeBitMask Techs, long Budget, DataStationTypeIGC? Target = null);
+    internal sealed record LoadoutShop(short Civ, short DockType, TechTreeBitMask Techs, long Budget, DataStationTypeIGC? Target = null, short Side = -1);
 
     // Called under the purchasing client's gate, never from the probe's tech snapshot.
     internal static LoadoutShop? CurrentLoadoutShop(ConnectionSession cs, short side, short ship)
@@ -56,17 +56,44 @@ internal sealed partial class BotManager
         var target = w.Stations.Values.Where(s => s.SideId >= 0 && s.SideId != side && core.StationTypes.ContainsKey(s.StationTypeId))
             .OrderByDescending(s => core.StationTypes[s.StationTypeId].HasCapability(DataStationTypeIGC.SabmRestart))
             .ThenBy(s => s.StationId).Select(s => (DataStationTypeIGC?)core.StationTypes[s.StationTypeId]).FirstOrDefault();
-        return new(civ, dock.StationTypeId, techs, Math.Max(0, money), target);
+        return new(civ, dock.StationTypeId, techs, Math.Max(0, money), target, side);
     }
 
     internal static TechLoadoutSelector.Selection? PickTechLoadout(LoadoutShop shop, Showcase.HullRole role,
         DataStationTypeIGC? target = null, bool allowRoleFallback = true, bool support = false, bool defensiveMines = false,
-        bool medevacScout = false)
+        bool medevacScout = false, bool varied = false, long varietySeed = LoadoutVariety.DefaultSeed)
     {
         var core = Catalog.RepresentativeCore();
         // P779b-1 — the medevac exception is scout-only: its Dispenser slot takes
         // the side's best rescue-capable probe launcher instead of a scanner.
         bool rescueProbe = medevacScout && role == Showcase.HullRole.Scout;
+        // P796 — varied rotation within the SAME legality. Mandated exceptions
+        // keep the best selector: bomber strike loadouts (anti-base), support
+        // nanite loadouts, medevac scouts (rescue-probe ranking) and the mine
+        // layer fallback below (a defensive layer MUST carry mines).
+        if (varied && !support && !rescueProbe && role != Showcase.HullRole.Bomber)
+        {
+            var state = LoadoutVariety.Begin(shop.Side);
+            TechLoadoutSelector.Selection? variedSelection;
+            if (defensiveMines && allowRoleFallback)
+            {
+                variedSelection = TechLoadoutSelector.SelectVaried(core, shop.Civ, Showcase.HullRole.Scout, shop.Techs,
+                    shop.DockType, state, budget: shop.Budget, preferMines: true);
+                if (variedSelection is null || !variedSelection.Parts.Any(p => Showcase.IsMineLauncher(core, p.PartId)))
+                    variedSelection = null;   // a defensive layer without mines is a duty failure — take the best layer
+            }
+            else
+            {
+                variedSelection = TechLoadoutSelector.SelectVaried(core, shop.Civ, role, shop.Techs,
+                    shop.DockType, state, target ?? shop.Target, shop.Budget);
+            }
+            if (variedSelection is not null)
+            {
+                LoadoutVariety.Record(shop.Side, variedSelection);
+                return variedSelection;
+            }
+            // varied found nothing legal/affordable — fall through to best.
+        }
         if (defensiveMines && allowRoleFallback && !support)
         {
             var layer = TechLoadoutSelector.Select(core, shop.Civ, Showcase.HullRole.Scout, shop.Techs,
@@ -129,7 +156,8 @@ internal sealed partial class BotManager
                     target = Catalog.RepresentativeCore().StationTypes[plan.TargetTypeId];
                 if (!Enum.TryParse<Showcase.HullRole>(bot.Role, true, out var role)) role = Showcase.HullRole.Fighter;
                 selected = PickTechLoadout(shop, role, target, allowRoleFallback: !bot.FinaleBomberActive, support: IsSupport(bot),
-                    defensiveMines: bot.DefensiveMineDuty, medevacScout: bot.MedevacScout);
+                    defensiveMines: bot.DefensiveMineDuty, medevacScout: bot.MedevacScout,
+                    varied: bot.Variety, varietySeed: bot.VarietySeed);
                 if (selected is null && bot.FinaleBomberActive && target is { } station
                     && cs.World.ResearchBriefing?.TechMode == "research")
                 {

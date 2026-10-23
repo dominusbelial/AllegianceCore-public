@@ -1,0 +1,58 @@
+P796 coverage table (t=265s): parts=20 expendables=9 hulls=10
+part | kind | equipped | fired | hits | damage
+expendable-type | kind | fired | hits | damage
+hull | bought | launched | killed
+never fired (equipped):
+ coverage after 262s: equippedParts=20 firedParts=13 fires=322 hits=204 damage=17134 kills=11 bought=52 expendableFires=237
+ fireCapableShare=87% (13/15)
+ P796 coverage table (t=265s): parts=20 expendables=9 hulls=10
+ part | kind | equipped | fired | hits | damage
+ 21 | Sm Shield 1 | shield | 46 | 0 | 0 | 0
+ 23 | Booster 1 | afterburner | 14 | 0 | 0 | 0
+ 26 | Lt Booster 1 | afterburner | 4 | 0 | 0 | 0
+ 33 | PW Gat Gun 1 | gun | 48 | 128 | 48 | 3876
+ 41 | Hvy Cloak 1 | cloak | 3 | 0 | 0 | 0
+ 50 | EW Utl Can 1 | gun | 6 | 2 | 0 | 0
+ 59 | Prox Mine 1 | mine-launcher | 19 | 19 | 0 | 0
+ 80 | Counter 1 | chaff-launcher | 26 | 28 | 22 | 2349
+ 81 | EWS Probe 1 | probe-launcher | 4 | 4 | 0 | 0
+ 85 | Counter 2 | chaff-launcher | 22 | 2 | 2 | 397
+ 91 | ER Nanite 1 | gun | 4 | 0 | 0 | 0
+ 92 | EW Disruptor 1 | gun | 7 | 40 | 51 | 1218
+ 104 | MRM Quickfire 2 | missile-launcher | 2 | 2 | 1 | 0
+ 120 | PW Mini-Gun 1 | gun | 12 | 30 | 18 | 2244
+ 125 | Afterburner 1 | afterburner | 3 | 0 | 0 | 0
+ 150 | SRM Dumbfire 1 | missile-launcher | 30 | 50 | 35 | 5651
+ 153 | MRM Seeker 1 | missile-launcher | 4 | 12 | 17 | 1069
+ 154 | MRM Seeker 2 | missile-launcher | 4 | 4 | 10 | 330
+ 155 | LRM Hunter 1 | missile-launcher | 1 | 1 | 0 | 0
+ 157 | SRM Anti-Base 1 | missile-launcher | 1 | 0 | 0 | 0
+ expendable-type | kind | fired | hits | damage
+ 11 |  | mine | 38 | 0 | 0
+ 21 |  | chaff | 56 | 22 | 2349
+ 22 | utl23 | probe | 8 | 0 | 0
+ 27 |  | chaff | 3 | 2 | 397
+ 32 | mis05 | missile | 100 | 35 | 5651
+ 35 | mis06 | missile | 21 | 17 | 1069
+ 36 | mis06 | missile | 6 | 10 | 330
+ 37 | mis07 | missile | 1 | 0 | 0
+ 59 | mis08 | missile | 4 | 1 | 0
+ hull | bought | launched | killed
+ 114 | Scout | 8 | 8 | 1
+ 121 | Fighter | 14 | 14 | 2
+ 132 | Adv Stl Fighter | 1 | 1 | 0
+ 223 | Mine Layer Drone | 0 | 0 | 1
+ 410 | Scout | 20 | 20 | 3
+ 414 | Enh Fighter | 1 | 1 | 1
+ 415 | Lt Interceptor | 6 | 6 | 1
+ 420 | Stealth Bomber | 1 | 1 | 0
+ 444 | Lifepod | 0 | 0 | 2
+ 486 | Adv Stl Fighter | 1 | 1 | 0
+ never fired (equipped):
+ 21 | Sm Shield 1 | shield | equipped=46 | passive equipment — never fires
+ 23 | Booster 1 | afterburner | equipped=14 | passive equipment — never fires
+ 26 | Lt Booster 1 | afterburner | equipped=4 | passive equipment — never fires
+ 41 | Hvy Cloak 1 | cloak | equipped=3 | passive equipment — never fires
+ 91 | ER Nanite 1 | gun | equipped=4 | fire gate (aim ≤ open-fire angle within lifespan, shipIGC.cpp:2600) never satisfied in observed fights
+ 125 | Afterburner 1 | afterburner | equipped=3 | passive equipment — never fires
+ 157 | SRM Anti-Base 1 | missile-launcher | equipped=1 | missile gate (lock ≥ 1.0 and target evasion below max, shipIGC.cpp:2584-2596) never satisfied

@@ -141,7 +141,7 @@ internal sealed partial class BotManager
     /// this tick spent the dispenser, so the scouting/mine branches stay out.
     /// Called under cs.Gate.</summary>
     private static bool MaybeDropMedevacProbe(ActiveBot bot, ConnectionSession cs, double now,
-        short sector, Vector3 position, DataProbeTypeIGC probe)
+        short sector, Vector3 position, DataProbeTypeIGC probe, short launcherPartId)
     {
         if (!bot.MedevacScout) return false;
         var world = cs.World;
@@ -156,6 +156,7 @@ internal sealed partial class BotManager
         cs.SendFireExpendable(EquipmentType.Dispenser);
         bot.LastRescueProbeAt = now;
         bot.RescueProbesDropped++;
+        WeaponCoverage.Global.RecordDispenserDrop(bot.ShipId, launcherPartId);   // P796
         Console.WriteLine($"[p779b] medevac bot={bot.Name} side={bot.Side} sector={sector} pods={pods} ejects60={ejects} probe={probe.ExpendableTypeId}");
         return true;
     }

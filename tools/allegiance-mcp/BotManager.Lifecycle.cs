@@ -161,6 +161,10 @@ internal sealed partial class BotManager
         {
             bot.RelaunchAckHandled = true;
             var grant = new LoadoutGrant(ack.HullId, ack.Parts.ToList());
+            // P796 — every real relaunch purchase ack: hull bought+launched and
+            // every granted part equipped. The initial spawn purchase is recorded
+            // in SeatCombatClient (RelaunchAttempts > 0 keeps this from double-counting).
+            if (ack.FLaunch) WeaponCoverage.Global.RecordPurchase(bot.Side, ack.HullId, ack.Parts);
             bot.LoadoutRefused = !ack.FLaunch;
             if (bot.TechLoadouts && ack.FBoughtEverything && ack.FLaunch && bot.PendingTechLoadout is { } selected
                 && ack.HullId == selected.HullId && selected.Parts.All(p => ack.Parts.Contains(p)))
