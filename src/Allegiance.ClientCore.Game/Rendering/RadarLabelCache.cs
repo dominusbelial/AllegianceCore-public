@@ -62,16 +62,22 @@ public sealed class RadarLabelCache
                     // Only the rounded range moved (the usual case for a flying
                     // contact): refresh the range line, keep the name line and the
                     // drawn-id array. Both strings come from the metre-keyed cache.
+                    // P783 — the per-kind tier decides whether the range line
+                    // exists at all (the Target-mode clips), so re-read the spec
+                    // and let a clipped range clear the line.
                     slot.Contact = contact;
                     var label = slot.View.Label;
                     if (label is { } l)
                     {
-                        string? rangeText = contact.Range is > 0 ? RadarLabelModel.RangeText(contact.Range.Value) : null;
+                        var spec = RadarLabelModel.Spec(contact, mode, commandCamera);
+                        int metres = contact.Range ?? 0;
+                        bool showRange = spec.Range && metres > 0;
+                        string? rangeText = showRange ? RadarLabelModel.RangeText(metres) : null;
                         var updated = l with { RangeText = rangeText };
                         slot.View = slot.View with
                         {
                             Label = updated.HasAny ? updated : null,
-                            RangeLine = contact.Range is > 0 ? RadarLabelModel.RangeLineText(contact.Range.Value) : null,
+                            RangeLine = showRange ? RadarLabelModel.RangeLineText(metres) : null,
                         };
                     }
                     return slot.View;
@@ -112,7 +118,11 @@ public sealed class RadarLabelCache
             l.CommandId is null ? prefixed : FormatNameLine(l, includeCommand: false),
             FormatNameLine(l, includeCommand: true, includeEye: false),
             FormatNameLine(l, includeCommand: false, includeEye: false),
-            contact.Range is > 0 ? RadarLabelModel.RangeLineText(contact.Range.Value) : null,
+            // P783 — the model already applied the per-kind range tier/clip, so
+            // the drawn range line follows the resolved label, never the raw
+            // contact range.
+            l.RangeText is not null && contact.Range is > 0
+                ? RadarLabelModel.RangeLineText(contact.Range.Value) : null,
             "radar:" + (l.Name ?? l.RangeText ?? "label"),
             DrawnIds(l));
     }
@@ -195,5 +205,13 @@ public sealed class RadarLabelCache
            && a.CarriedFlag == b.CarriedFlag && a.CarriedArtifact == b.CarriedArtifact
            && a.Highlight == b.Highlight && a.CommandId == b.CommandId
            && a.CommandAccepted == b.CommandAccepted
-           && a.RipcordSeconds == b.RipcordSeconds && a.DetectionEye == b.DetectionEye;
+           && a.RipcordSeconds == b.RipcordSeconds && a.DetectionEye == b.DetectionEye
+           // P783 — the per-kind tier inputs. The clip is compared through its
+           // native verdict, not the continuously moving metre value, so a steady
+           // contact keeps its cached label and only a 1000 m crossing rebuilds.
+           && a.IsAllied == b.IsAllied
+           && a.MissileTargetsOwnSide == b.MissileTargetsOwnSide
+           && a.TreasureUseful == b.TreasureUseful
+           && a.IsPedestalStation == b.IsPedestalStation
+           && RadarLabelModel.WithinRangeClip(a) == RadarLabelModel.WithinRangeClip(b);
 }

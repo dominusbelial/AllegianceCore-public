@@ -3799,8 +3799,16 @@ public sealed partial class Game1
                         HudContactKind.Ship,
                         new HudPoint(ownSite.Point.X, ownSite.Point.Y),
                         true, op, SideHud(mySide), false, false,
+                        // P783 — the native ship All tier labels the own ship too
+                        // (bLabel = bStats = true, radarimage.cpp:740-745), so it
+                        // carries its real name and its own hull/shield readings;
+                        // every other LOD suppresses them again.
+                        Name: string.IsNullOrEmpty(ownEnt.CharacterName) ? null : ownEnt.CharacterName,
+                        Shield: ownEnt.Latest?.ShieldFraction,
+                        Hull: ownEnt.Latest?.HullFraction,
                         IsSelf: true, IsSameSide: true,
                         Range: rangeLabels ? 0 : null,
+                        ClipSeparation: LodSeparation(0f, ownRadius),
                         ScreenRadius: ownBracket.ScreenRadius,
                         DistanceToEdge: ownBracket.DistanceToEdge,
                         IconStem: iconNames?.Ship(ownEnt.HullId)));
@@ -3853,6 +3861,10 @@ public sealed partial class Game1
                 byte pilotType = RadarOverlayRules.PilotTypeOf(ship.Player);
                 bool droneRip = RadarOverlayRules.DroneRipcord(
                     ship.Latest?.StateM ?? 0, sameSide, pilotType);
+                // P783 — native ship ore fill is gated on the pilot being a MINER
+                // of the exact own side (radarimage.cpp:992-997), not merely on
+                // the contact being friendly.
+                bool minerFill = sameSide && pilotType == Allegiance.Core.Sim.Ship.PilotTypeMiner;
                 // Remote ripcord start times are stamped with the world's wall
                 // clock (ClientWorld.NowSeconds); the HUD's _nowSeconds is a
                 // different base, so read the ripcord countdown on the world
@@ -3871,8 +3883,9 @@ public sealed partial class Game1
                     Range: rangeLabels ? (int)(separation + 0.5f) : null,
                     Hull: ship.Latest?.HullFraction,
                     Shield: ship.Latest?.ShieldFraction,
-                    Fill: ship.SideId == mySide ? ship.Latest?.OreFraction : null,
+                    Fill: minerFill ? ship.Latest?.OreFraction : null,
                     IsEnemy: isEnemy, IsSameSide: sameSide,
+                    IsAllied: !sameSide && world.AreAllied(mySide, ship.SideId),
                     AcceptedOrder: shipCommand.CommandAccepted, QueuedOrder: shipCommand.CommandId is not null && !shipCommand.CommandAccepted,
                     Threat: threat, ThreatFlash: threatFlash,
                     Subject: subject,
@@ -3888,6 +3901,9 @@ public sealed partial class Game1
                     // constant. The gate itself is RadarLabelModel's pure native
                     // port (ShowDetectionEyeFor), unit-pinned.
                     DetectionEye: RadarLabelModel.ShowDetectionEyeFor(ship, mySide, isSelf: false),
+                    // P783 — the native clip runs on the surface separation, not
+                    // the printed centre distance (radarimage.cpp:626-636).
+                    ClipSeparation: LodSeparation(separation, HullLength(ship.HullId) * 0.5f),
                     ScreenRadius: shipBracket.ScreenRadius,
                     DistanceToEdge: shipBracket.DistanceToEdge,
                     IconStem: iconNames?.Ship(ship.HullId)));
@@ -3931,8 +3947,14 @@ public sealed partial class Game1
                     Shield: world.StationLive.TryGetValue(sid, out var liveShield) ? liveShield.ShieldFraction : null,
                     IsEnemy: st.SideId != mySide && !world.AreAllied(mySide, st.SideId),
                     IsSameSide: st.SideId == mySide,
+                    IsAllied: st.SideId != mySide && world.AreAllied(mySide, st.SideId),
                     AcceptedOrder: stationCommand.CommandAccepted, QueuedOrder: stationCommand.CommandId is not null && !stationCommand.CommandAccepted,
                     CommandId: stationCommand.CommandId, CommandAccepted: stationCommand.CommandAccepted,
+                    // P783 — the pedestal capability chooses the fixed 1000 m label
+                    // tier (radarimage.cpp:784-791) and the clip uses the surface
+                    // separation (:626-636).
+                    IsPedestalStation: pedestal,
+                    ClipSeparation: LodSeparation(centre, objectRadius),
                     ScreenRadius: stationBracket.ScreenRadius,
                     DistanceToEdge: stationBracket.DistanceToEdge,
                     IconStem: iconNames?.Station(st.StationTypeId)));
@@ -3960,6 +3982,9 @@ public sealed partial class Game1
                     Range: rangeLabels ? (int)(separation + 0.5f) : null,
                     AcceptedOrder: warpCommand.CommandAccepted, QueuedOrder: warpCommand.CommandId is not null && !warpCommand.CommandAccepted,
                     CommandId: warpCommand.CommandId, CommandAccepted: warpCommand.CommandAccepted,
+                    // P783 — the Target-mode range clip (radarimage.cpp:955-956)
+                    // compares the surface separation (:626-636).
+                    ClipSeparation: LodSeparation(separation, wp.Radius),
                     ScreenRadius: warpBracket.ScreenRadius,
                     DistanceToEdge: warpBracket.DistanceToEdge,
                     // Native warp icon = the map's warpDef.iconName, which the
@@ -3982,6 +4007,7 @@ public sealed partial class Game1
                     ? launchShip.SideId : (short)-1;
                 Color? sideCol = launcherSide >= 0 ? SideColor(launcherSide) : null;
                 if (!RadarLod.ShowMissile(radarMode, aimsAtOwnSide, isSelected: false)) continue;
+                float centre = (ownSimPos - ms.Position).Length();
                 var missileXna = PoseConverter.ToXna(ms.Position);
                 var site = RadarProjection.Project(
                     missileXna, cameraEye, view, proj, w, h, inset);
@@ -3995,6 +4021,12 @@ public sealed partial class Game1
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
                     sideCol is { } c ? new HudColor(c.R / 255f, c.G / 255f, c.B / 255f, c.A / 255f) : null,
                     false, false,
+                    // P783 — the missile tier (radarimage.cpp:819-832) is a range
+                    // line only: native keeps it in All and, outside All, only for
+                    // a missile aimed at the exact own side (GetSide() == mine).
+                    Range: rangeLabels ? (int)(centre + 0.5f) : null,
+                    MissileTargetsOwnSide: aimsAtOwnSide,
+                    ClipSeparation: LodSeparation(centre, 0f),
                     ScreenRadius: missileBracket.ScreenRadius,
                     DistanceToEdge: missileBracket.DistanceToEdge,
                     // Native missile icon = dataMissileType->iconName
@@ -4008,7 +4040,11 @@ public sealed partial class Game1
                 if (pb.ClusterId != mySector) continue;
                 float centre = (ownSimPos - pb.Position).Length();
                 float objectRadius = _shopCatalog?.ProbeTypes is { } probeTypes
-                    && probeTypes.TryGetValue(pb.ProbetypeId, out var probeType) ? probeType.Radius : 0f;
+                    && probeTypes.TryGetValue(pb.ProbetypeId, out var probeType)
+                        ? probeType.Radius : 0f;
+                string? probeTypeName = _shopCatalog?.ProbeTypes is { } probeTypesNamed
+                    && probeTypesNamed.TryGetValue(pb.ProbetypeId, out var probeTypeNamed)
+                        ? probeTypeNamed.ModelName : null;
                 bool isSel = RadarTargetSelection.IsSelected(
                     RadarBracketRenderer.RadarContactType.Probe, pid, selType, sel?.Id);
                 if (!RadarLod.ShowProbeOrMine(radarMode, OwnOrAllied(pb.SideId),
@@ -4017,11 +4053,24 @@ public sealed partial class Game1
                 var site = RadarProjection.Project(
                     probeXna, cameraEye, view, proj, w, h, inset);
                 var probeBracket = Bracketing(site, objectRadius, probeXna);
+                bool probeSameSide = pb.SideId == mySide;
                 _drawRadarContacts.Add(new HudContact(
                     HudContactKind.Probe,
                     new HudPoint(site.Point.X, site.Point.Y),
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
                     SideHud(pb.SideId), isSel, false,
+                    // P783 — native probe/mine tier (radarimage.cpp:834-875): the
+                    // model name is the All-mode enemy name line, hull is the real
+                    // probe health (GetFraction, :1080). The native fill bar is
+                    // GetTimeFraction (:1079), which needs the probe's m_time0 that
+                    // the export does not carry - left absent, see the report.
+                    Name: string.IsNullOrEmpty(probeTypeName) ? null : probeTypeName,
+                    Range: rangeLabels ? (int)(centre + 0.5f) : null,
+                    Hull: pb.Fraction,
+                    IsEnemy: !probeSameSide && !world.AreAllied(mySide, pb.SideId),
+                    IsSameSide: probeSameSide,
+                    IsAllied: !probeSameSide && world.AreAllied(mySide, pb.SideId),
+                    ClipSeparation: LodSeparation(centre, objectRadius),
                     ScreenRadius: probeBracket.ScreenRadius,
                     DistanceToEdge: probeBracket.DistanceToEdge,
                     IconStem: iconNames?.Probe(pb.ProbetypeId)));
@@ -4033,17 +4082,31 @@ public sealed partial class Game1
                 if (mine.ClusterId != mySector) continue;
                 float centre = (ownSimPos - mine.Position).Length();
                 float objectRadius = Rendering.MineModelSource.ResolveRadius(mine.MinetypeId, _shopCatalog?.MineTypes);
+                string? mineTypeName = _shopCatalog?.MineTypes is { } mineTypes
+                    && mineTypes.TryGetValue(mine.MinetypeId, out var mineType)
+                        ? mineType.ModelName : null;
                 if (!RadarLod.ShowProbeOrMine(radarMode, OwnOrAllied(mine.SideId),
                     LodSeparation(centre, objectRadius), isSelected: false)) continue;
                 var mineXna = PoseConverter.ToXna(mine.Position);
                 var site = RadarProjection.Project(
                     mineXna, cameraEye, view, proj, w, h, inset);
                 var mineBracket = Bracketing(site, objectRadius, mineXna);
+                bool mineSameSide = mine.SideId == mySide;
                 _drawRadarContacts.Add(new HudContact(
                     HudContactKind.Mine,
                     new HudPoint(site.Point.X, site.Point.Y),
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
                     SideHud(mine.SideId), false, false,
+                    // P783 — native mine tier (radarimage.cpp:834-875): name for an
+                    // on-screen enemy in All, and the fill bar is the mine's
+                    // GetTimeFraction (:1073), which needs m_time0 from the
+                    // export - absent, so no bar is shown (see the report).
+                    Name: string.IsNullOrEmpty(mineTypeName) ? null : mineTypeName,
+                    Range: rangeLabels ? (int)(centre + 0.5f) : null,
+                    IsEnemy: !mineSameSide && !world.AreAllied(mySide, mine.SideId),
+                    IsSameSide: mineSameSide,
+                    IsAllied: !mineSameSide && world.AreAllied(mySide, mine.SideId),
+                    ClipSeparation: LodSeparation(centre, objectRadius),
                     ScreenRadius: mineBracket.ScreenRadius,
                     DistanceToEdge: mineBracket.DistanceToEdge,
                     IconStem: iconNames?.Mine(mine.MinetypeId)));
@@ -4067,6 +4130,26 @@ public sealed partial class Game1
 
             // Treasures in my sector — useful part vs tech vs not-useful
             // (radarimage.cpp:437-511).
+            // P783 — the native treasure NAME the All-mode label prints
+            // (Igc/treasureIGC.cpp:121-167): the buyable's model name for a part
+            // or development, "Flag"/"Artifact" for a flag (SetName), and the
+            // literal "acs14" model name for cash/powerup.
+            string? TreasureName(TreasureEntity te)
+            {
+                switch (te.Code)
+                {
+                    case TreasureCode.Flag:
+                        return te.PayloadId == Allegiance.Core.Model.Side.ArtifactSentinelFlag
+                            ? "Artifact" : "Flag";
+                    case TreasureCode.Part:
+                        return ResolveFlightPart(te.PayloadId)?.ModelName;
+                    case TreasureCode.Development:
+                        return world.MissionCore?.Developments.TryGetValue(te.PayloadId, out var dev) == true
+                            ? dev.ModelName : null;
+                    default:
+                        return "acs14";
+                }
+            }
             foreach (var (tid, te) in world.Treasures)
             {
                 if (te.ClusterId != mySector) continue;
@@ -4091,7 +4174,7 @@ public sealed partial class Game1
                 bool useful = use != RadarTreasureUse.NotUseful;
                 bool isTech = use == RadarTreasureUse.UsefulTech;
                 bool isSel = sel is { Kind: TargetKind.Treasure } treasureSel && treasureSel.Id == tid;
-                if (!RadarLod.ShowTreasure(radarMode, useful, LodSeparation(centre, 0f), isSel)) continue;
+                if (!RadarLod.ShowTreasure(radarMode, useful, LodSeparation(centre, 5f), isSel)) continue;
                 var treasureXna = PoseConverter.ToXna(te.Position);
                 var site = RadarProjection.Project(
                     treasureXna, cameraEye, view, proj, w, h, inset);
@@ -4104,8 +4187,14 @@ public sealed partial class Game1
                     new HudPoint(site.Point.X, site.Point.Y),
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
                     null, isSel, false,
+                    // P783 — the treasure tier (radarimage.cpp:877-899): a useful
+                    // treasure/tech prints its name in All only, its range in
+                    // every LOD except the Target clip, and never any stat bar.
+                    Name: TreasureName(te),
                     Range: rangeLabels ? (int)(centre + 0.5f) : null,
-                    IsSelf: false, IsTech: isTech,
+                    IsSelf: false, IsTech: isTech, TreasureUseful: useful,
+                    // Native SetRadius(5.0f) for a treasure (treasureIGC.cpp:193).
+                    ClipSeparation: LodSeparation(centre, 5f),
                     ScreenRadius: treasureBracket.ScreenRadius,
                     DistanceToEdge: treasureBracket.DistanceToEdge,
                     // Native treasure icon = the treasure model's own icon, with
@@ -4146,6 +4235,9 @@ public sealed partial class Game1
                     Fill: world.AsteroidLive.TryGetValue(aid, out var liveOre) ? liveOre.OreFraction : null,
                     AcceptedOrder: asteroidCommand.CommandAccepted, QueuedOrder: asteroidCommand.CommandId is not null && !asteroidCommand.CommandAccepted,
                     CommandId: asteroidCommand.CommandId, CommandAccepted: asteroidCommand.CommandAccepted,
+                    // P783 — the asteroid tier clips on the surface separation
+                    // (radarimage.cpp:626-636,909,926,939).
+                    ClipSeparation: separation,
                     ScreenRadius: asteroidBracket.ScreenRadius,
                     DistanceToEdge: asteroidBracket.DistanceToEdge,
                     // Native asteroid icon = AsteroidDef.iconName, carried by the

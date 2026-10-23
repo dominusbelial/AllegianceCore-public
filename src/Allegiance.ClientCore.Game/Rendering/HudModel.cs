@@ -101,7 +101,34 @@ public readonly record struct HudContact(
     // <c>pmodel-&gt;GetIcon()</c>, radarimage.cpp:591-593), resolved once per
     // contact kind by <see cref="RadarIconNameCache"/>: the '&lt;iconName&gt;bmp'
     // stem from the contact's core type data. Null keeps the procedural shape.
-    string? IconStem = null);
+    string? IconStem = null,
+    // P783 — the context the native per-kind label tiers read
+    // (radarimage.cpp:703-961).
+    /// <summary>Native <c>pside-&gt;AlliedSides(pside,psideMine)</c> — an ALLY
+    /// (not the exact own side). The ship Target tier and the probe/mine All/
+    /// Default/Target tiers treat allies exactly like the own side, while the
+    /// ship All/Default tiers only special-case the exact own side.</summary>
+    bool IsAllied = false,
+    /// <summary>Native <c>separation</c> AFTER <c>separation -= radiusSource +
+    /// pmodel-&gt;GetRadius()</c> (radarimage.cpp:626-636) — the value every
+    /// <c>rangeClipLabels</c> comparison uses (:749,773,786,803,843,859,866,883,
+    /// 909,939,955). Distinct from <see cref="Range"/>, which prints the centre
+    /// distance (:626-628). Null falls back to <see cref="Range"/>.</summary>
+    float? ClipSeparation = null,
+    /// <summary>Missile tier context (radarimage.cpp:819-832): the missile's
+    /// target exists AND is on the exact own side
+    /// (<c>pmodelTarget-&gt;GetSide() == psideMine</c>, no ally term). Outside the
+    /// All LOD only such a missile keeps its icon and range.</summary>
+    bool MissileTargetsOwnSide = false,
+    /// <summary>Treasure tier context (radarimage.cpp:877-899):
+    /// <c>UsefulTreasure(...) != c_iNotUseful</c>. A useful treasure/tech gets a
+    /// name in the All LOD only; a not-useful one is label-less everywhere (and
+    /// only on the radar at all in All, <see cref="RadarLod.ShowTreasure"/>).</summary>
+    bool TreasureUseful = false,
+    /// <summary>Native <c>HasCapability(c_sabmPedestal)</c> (radarimage.cpp:784):
+    /// a pedestal station uses the fixed 1000 m clip tier instead of the mode
+    /// switch.</summary>
+    bool IsPedestalStation = false);
 public sealed record HudChat(IReadOnlyList<string> Lines, int Offset, string Input,
     bool Composing, double NowSeconds, string Recipient, string? FilterLabel = null,
     NativeComposeState ComposeState = NativeComposeState.NotComposing,

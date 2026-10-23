@@ -21,9 +21,24 @@ public readonly record struct RadarLabel(
         || RipcordSeconds is > 0 || Eye || CommandId is not null;
 }
 
+/// <summary>P783 — the native per-kind, per-LOD <em>label tier</em> for one
+/// contact: which of the three label payloads native draws (name line, range
+/// line, hull/shield/ore/fill stat bars). This is the pure
+/// <c>kind × LOD × context → spec</c> result of the switch at
+/// <c>WinTrek/radarimage.cpp:703-961</c>; <see cref="RadarLabelModel.Resolve"/>
+/// turns it into a <see cref="RadarLabel"/> by attaching the raw readings.
+/// Name is native <c>bLabel</c>, Stats is native <c>bStats</c>, Range is
+/// <c>range &gt; 0</c> after the per-kind clip assignments.</summary>
+public readonly record struct RadarLabelSpec(bool Name, bool Stats, bool Range)
+{
+    /// <summary>The all-suppressed spec (native leaves bLabel/bStats false and
+    /// range zeroed).</summary>
+    public static readonly RadarLabelSpec None = default;
+}
+
 /// <summary>
-/// HUD-5 — pure port of native radar label/stat visibility
-/// (<c>WinTrek/radarimage.cpp:704-980,1199-1416</c>). The radar snapshot stores
+/// HUD-5 / P783 — pure port of native radar label/stat visibility
+/// (<c>WinTrek/radarimage.cpp:703-980,1199-1441</c>). The radar snapshot stores
 /// the raw per-contact readings; this resolver applies the native per-kind LOD
 /// and important-mask rules that decide which of those readings become a label.
 /// No graphics, no fonts — the same headless discipline as
@@ -31,7 +46,7 @@ public readonly record struct RadarLabel(
 /// </summary>
 public static class RadarLabelModel
 {
-    public const float RangeClipLabels = 1000f;   // radarimage.cpp:15
+    public const float RangeClipLabels = 1000f;   // radarimage.cpp:18
 
     /// <summary>HUD-5b — native <c>colorOther</c> brightness
     /// (radarimage.cpp:1094-1096): a contact carrying one of
@@ -158,60 +173,21 @@ public static class RadarLabelModel
     /// <summary>Resolve the label block native would draw for
     /// <paramref name="contact"/> in <paramref name="mode"/>. Command camera
     /// suppresses range (native <c>bRangeLabels</c>, radarimage.cpp:523,627-629).</summary>
-    public static RadarLabel? Resolve(HudContact contact, RadarMode mode, bool commandCamera)
+    public static RadarLabel? Resolve(in HudContact contact, RadarMode mode, bool commandCamera)
     {
-        bool important = contact.Selected || contact.AcceptedOrder || contact.QueuedOrder
-            || contact.Threat || contact.Highlight || contact.CarriedFlag || contact.CarriedArtifact;
-
-        bool bLabel = important;
-        bool bStats = important;
-        int? range = commandCamera ? null : contact.Range;
-        string? name = contact.Name;
-
-        if (!important)
-        {
-            if (mode == RadarMode.Minimal)
-            {
-                // Native Minimal keeps only the own ship (radarimage.cpp:724-736);
-                // every other contact loses both its icon and its label data.
-                if (!contact.IsSelf)
-                {
-                    name = null;
-                    range = null;
-                }
-            }
-            else
-            {
-                switch (contact.Kind)
-                {
-                    case HudContactKind.Ship:
-                        ApplyShip(mode, contact, ref bLabel, ref bStats, ref range, ref name);
-                        break;
-                    case HudContactKind.Station:
-                        ApplyStation(mode, contact, ref bLabel, ref bStats, ref range);
-                        break;
-                    case HudContactKind.Warp:
-                        bLabel = mode <= RadarMode.Default;                       // radarimage.cpp:954
-                        if (mode == RadarMode.Target && (range ?? 0) >= RangeClipLabels)
-                            range = null;                                          // radarimage.cpp:955-956
-                        break;
-                    case HudContactKind.Asteroid:
-                        ApplyAsteroid(mode, contact, ref bLabel, ref bStats, ref range, ref name);
-                        break;
-                }
-            }
-        }
+        var spec = Spec(contact, mode, commandCamera);
 
         // Native: !bLabel clears the name but may keep a bare range line
-        // (radarimage.cpp:966-970). Stats are only computed when bStats.
-        if (!bLabel) name = null;
+        // (radarimage.cpp:967-974). Stats are only computed when bStats (:977).
+        string? name = spec.Name && contact.Name is { Length: > 0 } ? contact.Name : null;
+        int? range = spec.Range ? contact.Range : null;
 
-        float? shield = bStats && contact.Shield is { } sh && sh <= 1f ? sh : null;
-        float? hull = bStats && contact.Hull is { } hu && hu <= 1f ? hu : null;
-        float? fill = bStats && contact.Fill is { } fl && fl <= 1f ? fl : null;
+        float? shield = spec.Stats && contact.Shield is { } sh && sh <= 1f ? sh : null;
+        float? hull = spec.Stats && contact.Hull is { } hu && hu <= 1f ? hu : null;
+        float? fill = spec.Stats && contact.Fill is { } fl && fl <= 1f ? fl : null;
 
         var result = new RadarLabel(
-            name is { Length: > 0 } ? name : null,
+            name,
             range is > 0 ? RangeText(range.Value) : null,
             shield, hull, fill,
             contact.RipcordSeconds, contact.DetectionEye, contact.CommandId, contact.CommandAccepted);
@@ -219,76 +195,180 @@ public static class RadarLabelModel
         return result.HasAny ? result : null;
     }
 
-    private static void ApplyShip(RadarMode mode, HudContact contact,
-        ref bool bLabel, ref bool bStats, ref int? range, ref string? name)
+    /// <summary>P783 — THE native label-tier table: one pure function mapping
+    /// <c>kind × LOD × context</c> to the label spec native's per-kind block
+    /// produces (<c>WinTrek/radarimage.cpp:703-961</c>). Context is the flag set
+    /// <see cref="HudContact"/> carries for that contact (important mask, exact
+    /// same side vs allied, on-screen, missile aim, treasure usefulness).
+    /// Command camera zeroes the range line exactly like native's
+    /// <c>bRangeLabels</c> gate (:523-524,626-636) but never changes a clip.
+    /// </summary>
+    public static RadarLabelSpec Spec(in HudContact contact, RadarMode mode, bool commandCamera)
     {
-        // radarimage.cpp:738-778.
-        switch (mode)
+        // radarimage.cpp:703-712 — an important contact (target, accepted/queued
+        // order, highlight, threat, flag, artifact) takes bLabel = bStats = true
+        // and SKIPS every per-kind tier below.
+        if (IsImportant(contact))
+            return new RadarLabelSpec(true, true, RangeLineShown(contact, commandCamera));
+
+        // radarimage.cpp:724-731 — Minimal suppresses icon+range for every
+        // non-self contact and leaves bLabel/bStats false for ALL of them (the
+        // own ship keeps its icon but still gets no label).
+        if (mode == RadarMode.Minimal) return RadarLabelSpec.None;
+
+        bool withinClip = WithinRangeClip(contact);
+        bool sameSide = contact.IsSameSide;
+        bool sameOrAllied = sameSide || contact.IsAllied;
+        bool range = RangeLineShown(contact, commandCamera);
+
+        switch (contact.Kind)
         {
-            case RadarMode.All:
-                bLabel = bStats = true;
-                if (!contact.OnScreen && contact.IsSameSide) range = null;
-                break;
-            case RadarMode.Default:
-                if (contact.OnScreen || (range ?? 0) < RangeClipLabels) bLabel = true;
-                if (contact.IsSameSide) range = null;
-                else bStats = true;
-                break;
-            case RadarMode.Target:
-                if (!contact.IsEnemy)
+            case HudContactKind.Ship:
+                // radarimage.cpp:736-780.
+                return mode switch
                 {
-                    if (!contact.IsSelf)
-                    {
-                        name = null;
-                        range = null;
-                    }
-                }
-                else
+                    // :740-745 — label+stats for every ship; a same-side ship
+                    // that is off screen loses its range (the bracket carries it).
+                    RadarMode.All => new(true, true, range && !(!contact.OnScreen && sameSide)),
+                    // :747-757 — label only on screen or within the clip; the
+                    // exact own side loses its range, everyone else gets stats.
+                    RadarMode.Default => new(
+                        contact.OnScreen || withinClip,
+                        !sameSide,
+                        range && !sameSide),
+                    // :758-777 — friendly/allied ships leave the radar (icon off,
+                    // range 0, no label); enemies keep the range, get stats only
+                    // on screen and the name only within the clip.
+                    RadarMode.Target => sameOrAllied
+                        ? RadarLabelSpec.None
+                        : new(withinClip, contact.OnScreen, range),
+                    _ => RadarLabelSpec.None,
+                };
+
+            case HudContactKind.Station:
+                // radarimage.cpp:782-817. A pedestal station clips at the label
+                // range in every LOD (icon + label + range); the non-pedestal
+                // tiers follow the mode switch.
+                if (IsPedestal(contact))
+                    return new(false, false, withinClip && range);
+                return mode switch
                 {
-                    if (contact.OnScreen) bStats = true;
-                    if ((range ?? 0) < RangeClipLabels) bLabel = true;
-                }
-                break;
+                    RadarMode.All => new(true, true, range),        // :796-800
+                    RadarMode.Default => new(false, false,           // :801-806
+                        range && contact.OnScreen && withinClip),
+                    RadarMode.Target => RadarLabelSpec.None,         // :807-813 (range = 0)
+                    _ => RadarLabelSpec.None,
+                };
+
+            case HudContactKind.Warp:
+                // radarimage.cpp:952-957 — name in All+Default, range clipped
+                // only in Target.
+                return mode switch
+                {
+                    RadarMode.All or RadarMode.Default => new(true, false, range),
+                    RadarMode.Target => new(false, false, withinClip && range),
+                    _ => RadarLabelSpec.None,
+                };
+
+            case HudContactKind.Missile:
+                // radarimage.cpp:819-832 — a missile never has a name or stats;
+                // outside All only a missile aimed at the own side keeps its
+                // range (native drops the icon and the range otherwise).
+                return mode switch
+                {
+                    RadarMode.All => new(false, false, range),
+                    _ => new(false, false, contact.MissileTargetsOwnSide && range),
+                };
+
+            case HudContactKind.Probe:
+            case HudContactKind.Mine:
+                // radarimage.cpp:834-875. All: stats for every probe/mine and a
+                // name only for an ON-SCREEN enemy; same side/ally keeps its
+                // range unless it is both off screen and beyond the clip.
+                // Default: no label, same-side/ally range clipped at 1000 m.
+                // Target: only a within-clip enemy keeps its range.
+                return mode switch
+                {
+                    RadarMode.All => new(
+                        Name: !sameOrAllied && contact.OnScreen,
+                        Stats: true,
+                        Range: range && !(sameOrAllied && !contact.OnScreen && !withinClip)),
+                    RadarMode.Default => new(false, false, range && !(sameOrAllied && !withinClip)),
+                    RadarMode.Target => new(false, false, range && !sameOrAllied && withinClip),
+                    _ => RadarLabelSpec.None,
+                };
+
+            case HudContactKind.Treasure:
+            case HudContactKind.Tech:
+                // radarimage.cpp:877-899. A useful treasure/tech gets its name in
+                // All only, its range always except the Target clip; a NOT-useful
+                // treasure has no label at all (it only exists on the radar in
+                // All — see RadarLod.ShowTreasure).
+                bool useful = contact.TreasureUseful || contact.IsTech;
+                if (!useful)
+                    return mode == RadarMode.All
+                        ? new RadarLabelSpec(false, false, range)
+                        : RadarLabelSpec.None;
+                return mode switch
+                {
+                    RadarMode.All => new(true, false, range),
+                    RadarMode.Default => new(false, false, range),
+                    RadarMode.Target => new(false, false, withinClip && range),
+                    _ => RadarLabelSpec.None,
+                };
+
+            case HudContactKind.Asteroid:
+                // radarimage.cpp:901-950. A generic rock ('A…' or unnamed) never
+                // gets a label, only its range within the clip; a named special
+                // rock gets name+stats (hull + ore) in All, a bare range in
+                // Default, and the Target clip.
+                bool generic = string.IsNullOrEmpty(contact.Name) || contact.Name[0] == 'A';
+                return mode switch
+                {
+                    RadarMode.All => generic
+                        ? new RadarLabelSpec(false, false, withinClip && range)
+                        : new RadarLabelSpec(true, true, range),
+                    // Default clips only the GENERIC branch (:922-935); a named
+                    // special rock keeps its bare range line at any distance.
+                    RadarMode.Default => generic
+                        ? new RadarLabelSpec(false, false, withinClip && range)
+                        : new RadarLabelSpec(false, false, range),
+                    RadarMode.Target => new(false, false, withinClip && range),
+                    _ => RadarLabelSpec.None,
+                };
         }
+
+        return RadarLabelSpec.None;
     }
 
-    private static void ApplyStation(RadarMode mode, HudContact contact,
-        ref bool bLabel, ref bool bStats, ref int? range)
-    {
-        // radarimage.cpp:782-810 (non-pedestal branch). Pedestal 1000 m clipping
-        // is an icon-presence rule owned by the radar-contacts row; labels follow
-        // the same 1000 m range clip here for the All/Default tiers.
-        switch (mode)
-        {
-            case RadarMode.All:
-                bLabel = bStats = true;   // radarimage.cpp:798
-                break;
-            case RadarMode.Default:
-                if ((range ?? 0) >= RangeClipLabels || !contact.OnScreen) range = null;
-                break;
-            case RadarMode.Target:
-                range = null;
-                break;
-        }
-    }
+    /// <summary>Native <c>bLabel</c>'s important-mask term
+    /// (radarimage.cpp:704-710): the current/accepted/queued order, the
+    /// highlight, a threat, and the carried flag/artifact. Those contacts keep
+    /// the full label+stats in every LOD (and the full colour, :1094-1096).</summary>
+    public static bool IsImportant(in HudContact contact)
+        => contact.Selected || contact.AcceptedOrder || contact.QueuedOrder
+           || contact.Threat || contact.Highlight || contact.CarriedFlag
+           || contact.CarriedArtifact;
 
-    private static void ApplyAsteroid(RadarMode mode, HudContact contact,
-        ref bool bLabel, ref bool bStats, ref int? range, ref string? name)
-    {
-        // radarimage.cpp:903-930. Generic rocks ('A' or unnamed) only get a label
-        // in All for named special rocks; otherwise the rock label is suppressed.
-        bool generic = string.IsNullOrEmpty(name) || name[0] == 'A';
-        if (generic)
-        {
-            if ((range ?? 0) >= RangeClipLabels || (range ?? 0) == 0)
-            {
-                name = null;
-                range = null;
-            }
-        }
-        else if (mode == RadarMode.All)
-        {
-            bLabel = bStats = true;
-        }
-    }
+    /// <summary>The native clip test <c>separation &lt; rangeClipLabels</c>
+    /// (radarimage.cpp:18,749,773,786,803,843,859,866,883,909,939,955) against
+    /// the ADJUSTED surface separation — native subtracts both radii before the
+    /// LOD switch (<c>separation -= radiusSource + pmodel-&gt;GetRadius()</c>,
+    /// :626-636), so this is NOT the number the range line prints. Falls back to
+    /// the range value when the snapshot has no adjusted separation (headless
+    /// fixtures), which is what the pre-P783 model compared.</summary>
+    public static bool WithinRangeClip(in HudContact contact)
+        => (contact.ClipSeparation ?? contact.Range ?? 0f) < RangeClipLabels;
+
+    /// <summary>The native pedestal-station capability
+    /// (<c>GetBaseStationType()-&gt;HasCapability(c_sabmPedestal)</c>,
+    /// radarimage.cpp:784), which puts the station on the 1000 m clip in every
+    /// LOD instead of the per-mode tiers.</summary>
+    private static bool IsPedestal(in HudContact contact) => contact.IsPedestalStation;
+
+    /// <summary>Native draws the range line only when <c>range &gt; 0</c>
+    /// (radarimage.cpp:1209) — always false in the command camera
+    /// (<c>bRangeLabels</c>, :523-529) and for the own ship (:626-628).</summary>
+    private static bool RangeLineShown(in HudContact contact, bool commandCamera)
+        => !commandCamera && contact.Range is > 0;
 }
