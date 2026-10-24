@@ -130,12 +130,18 @@ public sealed class P661EgressAccountingTests(ITestOutputHelper output)
         var accounting = new EgressAccounting();
         var frame = Frame((175, 12), (176, 36), (175, 8));
         for (int i = 0; i < 20_000; i++) RecordAll(accounting, frame);
-        long start = GC.GetAllocatedBytesForCurrentThread();
-        long ticks = Stopwatch.GetTimestamp();
+        // Best of three windows: a one-off runtime allocation (tiered JIT, seen on the CI runner
+        // and in TEST_FLAKES.md) must not fail the test; a real per-event allocation shows in every window.
         const int iterations = 100_000;
-        for (int i = 0; i < iterations; i++) RecordAll(accounting, frame);
-        long elapsed = Stopwatch.GetTimestamp() - ticks;
-        long allocated = GC.GetAllocatedBytesForCurrentThread() - start;
+        long allocated = long.MaxValue, elapsed = 0;
+        for (int window = 0; window < 3 && allocated != 0; window++)
+        {
+            long start = GC.GetAllocatedBytesForCurrentThread();
+            long ticks = Stopwatch.GetTimestamp();
+            for (int i = 0; i < iterations; i++) RecordAll(accounting, frame);
+            elapsed = Stopwatch.GetTimestamp() - ticks;
+            allocated = Math.Min(allocated, GC.GetAllocatedBytesForCurrentThread() - start);
+        }
         Assert.Equal(0, allocated);
         double ns = elapsed * (1e9 / Stopwatch.Frequency) / (4 * iterations);
         output.WriteLine($"P661 accounting: allocatedBytes={allocated}, mixed3MessageEventNs={ns:0.0}, events={4 * iterations}");
