@@ -68,14 +68,20 @@ public class Hud21TargetModelPreviewTests
     [Fact]
     public void Eligible_only_knows_the_three_in_scope_kinds()
     {
-        // Operates on TargetPreviewKind (ship/station/asteroid): warps, probes,
-        // mines, missiles and treasure never map to a preview kind at all (the
-        // production switch returns the empty fallback for them).
+        // P805 (row 409) — the kind set grew from the HUD-21 ship/station/asteroid
+        // triple to include the aleph/probe/treasure/mine previews native's gate
+        // also shows (WinTrek.cpp:8783-8818 is NOT kind-specific; warp surface
+        // warpIGC.cpp:33, probe mesh probetypeigc.cpp:28-33, mine sprite
+        // mineigc.cpp:103, treasure decal/model treasureIGC.cpp:118-171).
         var kinds = System.Enum.GetValues<TargetPreviewKind>();
-        Assert.Equal(3, kinds.Length);
+        Assert.Equal(7, kinds.Length);
         Assert.Contains(TargetPreviewKind.Ship, kinds);
         Assert.Contains(TargetPreviewKind.Station, kinds);
         Assert.Contains(TargetPreviewKind.Asteroid, kinds);
+        Assert.Contains(TargetPreviewKind.Warp, kinds);
+        Assert.Contains(TargetPreviewKind.Probe, kinds);
+        Assert.Contains(TargetPreviewKind.Treasure, kinds);
+        Assert.Contains(TargetPreviewKind.Mine, kinds);
     }
 
     // ── 2. Own-source climb (the real gate inputs, HUD-21b fix 5) ──────────

@@ -437,6 +437,9 @@ public enum SlidingPane
     TeamPane,
     GameState,
     SectorPane,
+    /// <summary>P805 (row 471) — the native bottom target pane
+    /// (TargetDisplayImage, dialog.mdl:5404).</summary>
+    TargetPane,
 }
 
 /// <summary>
@@ -469,6 +472,10 @@ public sealed class PaneSlideTracker
         SlidingPane.TeamPane => ConsoleOverlayMask.Team | ConsoleOverlayMask.ExpandedTeam,
         SlidingPane.GameState => ConsoleOverlayMask.GameState,
         SlidingPane.SectorPane => ConsoleOverlayMask.SectorPane,
+        // P805 (row 471) — the target pane's own slide (dialog.mdl:5404,
+        // TargetDisplayImage SideBottom(-320,-183)→(-320,25), .5 s, mask
+        // ofInCockpit | ofInChase | ofGloatCam).
+        SlidingPane.TargetPane => ConsoleOverlayMask.InCockpit | ConsoleOverlayMask.InChase,
         _ => ConsoleOverlayMask.None,
     };
 

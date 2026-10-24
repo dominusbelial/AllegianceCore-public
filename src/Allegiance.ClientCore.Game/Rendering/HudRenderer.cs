@@ -106,6 +106,11 @@ public class HudRenderer
     /// gauges; the port's % readout is an extension gated by this HUD option
     /// (default off = native). See <see cref="HudSettings.GaugePercentage"/>.</summary>
     private readonly bool _gaugePercentage;
+    /// <summary>P805 (row 418) — the P345/P376 3-D-view target-selection box is
+    /// a port superset (native marks the selected target only with the radar
+    /// targetedbmp bracket, radarimage.cpp:307-319,352); default OFF = native.
+    /// </summary>
+    private readonly bool _selectionBracket;
 
     /// <summary>
     /// HUD-21 — the 3-D target-model preview render target for this frame,
@@ -136,6 +141,7 @@ public class HudRenderer
         bool damageWash = true,
         HudNativeTextures? nativeHudTextures = null,
         bool gaugePercentage = false,
+        bool selectionBracket = false,
         NativeFonts? nativeFonts = null,
         Texture2D? joystickMesh = null)
     {
@@ -154,6 +160,7 @@ public class HudRenderer
         _nativeHud = nativeHudTextures;
         _damageWash = damageWash;
         _gaugePercentage = gaugePercentage;
+        _selectionBracket = selectionBracket;
     }
 
     /// <summary>
@@ -294,10 +301,20 @@ public class HudRenderer
             // missile-lock box and lead reticle so the pilot's own selection is the
             // most prominent of the target markers when several overlap. Distinct
             // shape (closed vs open corners) and colour from the lock box.
+            // P805 (parity row 418) — this box is a SUPERSET native lacks: native
+            // marks the selected target only with the targetedbmp bracket on the
+            // radar contact (radarimage.cpp:307-319,352) and has NO 3-D-view
+            // selection box, so it is now gated behind the
+            // HudSettings.SelectionBracketOn (default: off in Classic = native, on in Modern). The
+            // target-info readout below the bracket belongs to the same extension
+            // and is hidden with it.
             if (model.FlightVisible && context.Target is { } ts)
                 {
-                    DrawTargetSelectionBracket(new(new(ts.Center.X, ts.Center.Y), ts.Engaged, ts.Name, ts.HullFraction, ts.ShieldFraction, ts.IsEnemy, ts.OreFraction, ts.Distance, ts.ClosingSpeed, ts.SideColor));
-                    ElementDrawn("Selected target bracket", "Target ore");
+                    if (_selectionBracket)
+                    {
+                        DrawTargetSelectionBracket(new(new(ts.Center.X, ts.Center.Y), ts.Engaged, ts.Name, ts.HullFraction, ts.ShieldFraction, ts.IsEnemy, ts.OreFraction, ts.Distance, ts.ClosingSpeed, ts.SideColor));
+                        ElementDrawn("Selected target bracket", "Target ore");
+                    }
                 }
 
             // P359 — the target bearing arrow: a fixed-position compass chevron in
@@ -402,7 +419,11 @@ public class HudRenderer
             // The MODERN skin is a port invention (not native), so its gauges
             // keep the normal alpha-blended batch.
             bool classicGaugesLoaded = !UsesModernGauges && _gauges is { } g && g.AllLoaded;
-            if (classicGaugesLoaded)
+            // P805 (row 470) — native ShowCenterHUD (WinTrek.cpp:2898,3300;
+            // dialog.mdl:5195-5197 VisibleImage(CenterHudDisplay, ShowCenterHUD))
+            // hides the whole centre group: gauges, speed, afterburner, own-ship
+            // status. The F1 global hide (Context.Hidden) stays on top of it.
+            if (classicGaugesLoaded && model.CentreHudVisible)
             {
                 _sb.End();
                 // HUD-14c — gauge textures are premultiplied (GaugeTextures.cs
@@ -417,20 +438,21 @@ public class HudRenderer
             }
             else if (UsesModernGauges || _gauges is { } mg && mg.AllLoaded)
             {
-                DrawGauges(model, viewport);
+                if (model.CentreHudVisible) DrawGauges(model, viewport);
             }
-            else
+            else if (model.CentreHudVisible)
             {
                 DrawStatusPanel(f, w);
                 DrawThrottleGauge(f.Throttle, w, h);
             }
+            if (model.CentreHudVisible)
             {
                 float speedCy = model.TargetPaneVisible ? paneTop - 40f
                     : model.PodVisible && !UsesModernGauges ? h - 238f : h - 108f;
                 DrawSpeed(f.Speed, model.SpeedUnit, w, speedCy);
                 ElementDrawn("Speed");
+                DrawAfterburner(f.AfterburnerActive, f.Power, w);
             }
-            DrawAfterburner(f.AfterburnerActive, f.Power, w);
             {
                 DrawWeaponMode(f, w);
                 ElementDrawn("Equipment selected and active state");
@@ -452,7 +474,7 @@ public class HudRenderer
             // HUD-6 — native centre-HUD own-ship status icons/readouts at their
             // dialog.mdl anchors (kill bonus, signature, detection eye, cloak,
             // autopilot, vector lock, carried flag/artifact).
-            DrawOwnStatus(model, viewport);
+            if (model.CentreHudVisible) DrawOwnStatus(model, viewport);
             DrawRoll(f.RollDegrees, w, h);
             // HUD-10 — native has no in-flight money readout: moneyPane lives only
             // inside MergedInvestmentsPaneImage under ofInvestment
@@ -931,7 +953,11 @@ public class HudRenderer
     {
         if (!model.Visible || model.Context.Console is not { } console) return;
         float w = viewport.Width, h = viewport.Height;
-        var side = console.SideColor is { } sc ? From(sc) : TextMain;
+        // P805 — native's tip/sector text colour is mySideColor =
+        // GetSideColor(Me, OnEveryFrame) (dialog.mdl:26), whose fallback is
+        // Color(1,1,1) WHITE (ModelData::GetSideColor, consoledata.cpp:99-107)
+        // — never an accent hue. The teal accent fallback was a port invention.
+        var side = console.SideColor is { } sc ? From(sc) : Color.White;
         var cortText = new Color(0.586f, 0.578f, 0.680f);   // native cortText/softText (dialog.mdl:24, :3517)
         var yellow = new Color(1f, 1f, 0f);       // native promptFont yellowText
         var red = new Color(1f, 0f, 0f);          // native critical/queued red
@@ -1575,6 +1601,7 @@ public class HudRenderer
         var (summaryFont, summaryFs) = HudFont(NativeFont.MedVerdana, TextScale);
         var (summaryBold, summaryBoldFs) = HudFont(NativeFont.MedBoldVerdana, TextScale);
         var soft = _nativeHud?.SoftGauge;
+        var cortText = new Color(0.586f, 0.578f, 0.680f);   // native cortText (dialog.mdl:24) — the target group's labels/values
         Color side = model.Context.TargetPane?.SideColor is { } sc
             ? new Color(sc.R, sc.G, sc.B) : Accent;
 
@@ -1600,15 +1627,30 @@ public class HudRenderer
             DrawSummaryText(summaryFont, summaryFs, HudStringCache.KillBonusLine(f.KillBonusPercent), new Vector2(x, y), BonusGold);
             y += line;
         }
-        // Money / autopilot / radar mode are the console's other per-frame
-        // readouts (console.cpp:791-793); native draws them in their own HUD
-        // slots, so the command summary echoes them here in one compact line.
-        DrawSummaryText(summaryFont, summaryFs, HudStringCache.SummaryLine(f.Money, f.AutopilotEngaged, model.Context.RadarMode),
-            new Vector2(x, y), TextDim);
-        y += line + 4f;
-        string? target = model.Context.Target?.Name ?? model.Context.TargetPane?.Name;
-        if (target is { Length: > 0 })
-            DrawSummaryText(summaryFont, summaryFs, HudStringCache.TargetSummary(target), new Vector2(x, y), TextMain);
+        // P805 (parity row 492) — the native TARGET group (cortTargetGroup,
+        // dialog.mdl:4689-4705) is drawn under IsNotNull(Target, OnEveryFrame)
+        // and carries the target's shields/hull softgauges (dialog.mdl:4658-4688),
+        // "Target range:" (Nm with no space, or the sector name when GetRange is
+        // -1, dialog.mdl:4606-4628) and "Target speed:" (N mps, dialog.mdl:4630-4656).
+        // The former money/AP/RADAR echo line and the "Target: <name>" row were
+        // port inventions — native feeds money (m_pnumberMoney), autopilot and the
+        // radar mode into their own console slots (console.cpp:791-793) and shows
+        // no target-name text in this group (the name row is the experience badge,
+        // dialog.mdl:4597) — so both are removed per the native-intent rule.
+        if (model.Context.TargetPane is { Present: true } tp)
+        {
+            y += 4f;
+            if (tp.ShieldFraction is { } tShield) DrawCommandGauge("Target shields:", tShield, ref y, x, soft, line);
+            if (tp.HullFraction is { } tHull) DrawCommandGauge("Target hull:", tHull, ref y, x, soft, line);
+            if (tp.Distance is { } tDistance)
+                DrawSummaryText(summaryFont, summaryFs, HudStringCache.TargetRange(tDistance), new Vector2(x + 50f, y), cortText);
+            else if (tp.SectorName is { } tSector)
+                DrawSummaryText(summaryFont, summaryFs, HudStringCache.Location(tSector), new Vector2(x + 50f, y), cortText);
+            y += line;
+            if (tp.Speed is { } tSpeed)
+                DrawSummaryText(summaryFont, summaryFs, HudStringCache.TargetSpeed(tSpeed), new Vector2(x + 50f, y), cortText);
+            y += line + 4f;
+        }
         ElementDrawn("Command view ship summary");
     }
 
@@ -2361,7 +2403,11 @@ public class HudRenderer
         float w = viewport.Width, h = viewport.Height;
         float s = TargetPaneLayout.Scale(w, h);
         float x0 = TargetPaneLayout.OriginX(w, h);
-        float y0 = TargetPaneLayout.OriginY(w, h);
+        // P805 (row 471) — native slides TargetDisplayImage up from below the
+        // screen (SideBottom(-320,-183) → (-320,25), .5 s, dialog.mdl:5404), so
+        // while the slide is in flight the pane sits lower by the remaining
+        // 208 native px of travel, scaled with the pane.
+        float y0 = TargetPaneLayout.OriginY(w, h) + TargetPaneLayout.SlideOffset(model.Context.TargetPaneSlide, s);
         var side = From(tp.SideColor);
 
         // Native paint order (Claude review of HUD-21b): GroupImage::AddImage

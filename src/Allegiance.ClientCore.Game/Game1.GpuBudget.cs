@@ -35,6 +35,9 @@ public sealed partial class Game1
     private GlFrameTimer? _gpuTimer;
     private FsrPostProcessor? _fsr;
     private bool _graphicsSettingsVisible, _graphicsOpenWasDown;
+    /// <summary>P805 (row 470) — native ShowChatHistoryHUD toggle (menu-only,
+    /// NOT persisted: WinTrek.cpp:2897,5074-5078,3934), default on.</summary>
+    private bool _chatHistoryVisible = true;
     private KeyboardState _graphicsPrevious;
     private int _graphicsRow;
     private Action<long, bool, double>? _receiveGpu;
@@ -116,8 +119,8 @@ public sealed partial class Game1
         _flightGc.SetFlying(false);
         bool Press(Keys k) => ks.IsKeyDown(k) && !_graphicsPrevious.IsKeyDown(k);
         if (Press(Keys.Escape)) _graphicsSettingsVisible = false;
-        if (Press(Keys.Down)) _graphicsRow = (_graphicsRow + 1) % 13;
-        if (Press(Keys.Up)) _graphicsRow = (_graphicsRow + 12) % 13;
+        if (Press(Keys.Down)) _graphicsRow = (_graphicsRow + 1) % 16;
+        if (Press(Keys.Up)) _graphicsRow = (_graphicsRow + 15) % 16;
         int direction = Press(Keys.Right) ? 1 : Press(Keys.Left) ? -1 : 0;
         bool changed = direction != 0;
         if (changed)
@@ -132,6 +135,13 @@ public sealed partial class Game1
                 // HUD-19 — native Graphics Options "Joystick Indicator: On/Off"
                 // (WinTrek.cpp:4507,4526), toggled/saved at WinTrek.cpp:5222-5238.
                 case 12: _hudSettings.ShowJoystickIndicator = !_hudSettings.ShowJoystickIndicator; break;
+                // P805 (row 470) — native Graphics Options toggles: Center HUD
+                // (idmToggleCenterHUD 615, persisted WinTrek.cpp:5082-5086), Target
+                // HUD (616, :5090-5094) and the menu-only Chat History (614,
+                // :5074-5078, NOT persisted).
+                case 13: _hudSettings.ShowCenterHud = !_hudSettings.ShowCenterHud; break;
+                case 14: _hudSettings.ShowTargetHud = !_hudSettings.ShowTargetHud; break;
+                case 15: _chatHistoryVisible = !_chatHistoryVisible; break;
                 case 0: _upscaling.Upscaling = _upscaling.Upscaling == UpscalingMode.Off ? UpscalingMode.FSR1 : UpscalingMode.Off; break;
                 case 1: _upscaling.Preset = (FsrPreset)(((int)_upscaling.Preset + direction + 4) % 4); break;
                 case 2: _upscaling.Sharpness = Math.Clamp(_upscaling.Sharpness + direction * .05f, 0, 1); break;
@@ -188,7 +198,10 @@ public sealed partial class Game1
                 $"Effects quality: {_upscaling.Effects}",
                 $"HD lighting (PBR, experimental): {(_upscaling.HdPbr ? "On" : "Off")}",
                 $"Round radar border: {(_hudSettings.RoundRadar ? "On" : "Off")}",
-                $"Joystick indicator: {(_hudSettings.ShowJoystickIndicator ? "On" : "Off")}" };
+                $"Joystick indicator: {(_hudSettings.ShowJoystickIndicator ? "On" : "Off")}",
+                $"Center HUD: {(_hudSettings.ShowCenterHud ? "On" : "Off")}",
+                $"Target HUD: {(_hudSettings.ShowTargetHud ? "On" : "Off")}",
+                $"Chat history: {(_chatHistoryVisible ? "On" : "Off")}" };
             for (int i = 0; i < rows.Length; i++)
                 _spriteBatch.DrawString(_hudSmall, (_graphicsRow == i ? "> " : "  ") + rows[i], new Vector2(48, 78 + i * 46), _graphicsRow == i ? Color.Yellow : Color.White);
             _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, 300, 8), Color.Gray);

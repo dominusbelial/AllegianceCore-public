@@ -88,6 +88,13 @@ public readonly record struct HudLocationBlock(string Label, string Name, HudCol
 /// <summary>Pure formatting for the console-text rows; no MonoGame types.</summary>
 public static class HudConsoleFormat
 {
+    /// <summary>P805 (parity row 456) — the side-colour FALLBACK for tip/sector
+    /// console text. Native binds <c>mySideColor = GetSideColor(Me, OnEveryFrame)</c>
+    /// (dialog.mdl:26) whose ModelData fallback is <c>Color(1,1,1)</c> WHITE
+    /// (<c>WinTrek/consoledata.cpp:99-107</c>) — never an accent hue. RGB 0..1.
+    /// </summary>
+    public const float FallbackSideR = 1f, FallbackSideG = 1f, FallbackSideB = 1f;
+
     /// <summary>HUD-12 — the lives badge is drawn only while the remaining count
     /// is below 10 (native <c>m_pnumberLivesOn</c>, <c>console.cpp:814-817</c>).</summary>
     public static bool LivesVisible(int? lives) => lives is { } n && n < 10;

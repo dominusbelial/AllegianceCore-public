@@ -249,7 +249,7 @@ public sealed class NativeTreasureRenderer : IDisposable
     /// Returns true when the decal texture drew; false when unavailable.
     /// </summary>
     public bool DrawDecal(TreasureVisual visual, short treasureId, Vector3 worldPos,
-        Matrix view, Matrix projection, SectorLighting? lighting)
+        Matrix view, Matrix projection, SectorLighting? lighting, float half = 5.0f)
     {
         if (visual.TextureStem is null) return false;
         var tex = TextureFor(visual.TextureStem);
@@ -262,11 +262,11 @@ public sealed class NativeTreasureRenderer : IDisposable
         gd.SamplerStates[0] = SamplerState.LinearClamp;
 
         // Camera-facing billboard: undo view rotation. Size = native pickup radius
-        // 5.0 (treasureIGC.cpp:193) — the same legibility scale as the gem.
+        // 5.0 (treasureIGC.cpp:193) — the same legibility scale as the gem; the
+        // P805 target preview passes its own radius-1 half-size instead.
         Matrix viewRot = view;
         viewRot.Translation = Vector3.Zero;
         Matrix inverseViewRot = Matrix.Transpose(viewRot);   // view rotation is orthonormal
-        var half = 5.0f;
         var corners = new[]
         {
             new Vector3(-half, -half, 0f), new Vector3(-half, half, 0f),

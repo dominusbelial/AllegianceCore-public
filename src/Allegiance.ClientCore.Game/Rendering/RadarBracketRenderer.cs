@@ -571,10 +571,14 @@ public sealed class RadarBracketRenderer
     /// (radarimage.cpp:352-357); an accepted or queued order is NOT one of them
     /// (native conveys it through the command icon plus the label/bracket
     /// brightness, radarimage.cpp:1094-1096), so the former green/amber corner
-    /// frames are gone. Pure and GPU-free so the rule is unit-testable.</summary>
+    /// frames are gone. P805 (rows 428/437): c_maskHighlight (the flag-treasure
+    /// highlight, radarimage.cpp:637-640) has NO surface either — native loads
+    /// no highlight bitmap and DrawBlip never draws one — so it is no longer a
+    /// bracket either; it only keeps the FULL brightness (radarimage.cpp:1094).
+    /// Pure and GPU-free so the rule is unit-testable.</summary>
     public static bool HasOverlayBracket(in RadarContact c)
         => c.NearestEnemy || c.Subject || c.CarriedFlag || c.CarriedArtifact
-           || c.Ripcord || c.Threat || c.Highlight;
+           || c.Ripcord || c.Threat;
 
     private void DrawOverlayBrackets(RadarContact c, Vector2 pt, float a, Color colour, float highlightPulse)
     {
@@ -639,7 +643,14 @@ public sealed class RadarBracketRenderer
             if (_artThreat is { } art) DrawExpandedBlip(art, pt, colour, ba, bracketRadius);
             else DrawThreatTicks(pt, ThreatMarkerColour, ba, bracketRadius);
         }
-        if (c.Highlight) DrawRing(pt, 17f, 1.6f, HighlightMarkerColour, ba);
+        // P805 (rows 428/437) — the Highlight mask draws NOTHING: native
+        // c_maskHighlight has no surface (radarimage.cpp loads no highlight
+        // bitmap; DrawBlip's bracket pass handles only enemy/me/subject/flag/
+        // artifact/rip/targeted/last-fired). Its native effect is the FULL
+        // brightness already applied via BracketBrightness above and the label
+        // gate (radarimage.cpp:707). The former procedural ring was a port
+        // invention; the P495 build-spot pulse remains the separate asteroid
+        // feature it always was.
     }
 
     /// <summary>HUD-12 — draw a native radar bracket surface exactly the way

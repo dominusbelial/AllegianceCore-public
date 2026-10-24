@@ -85,4 +85,12 @@ public static class TargetPaneLayout
         int height = Math.Max(1, (int)MathF.Round(OriginY(viewportW, viewportH) - TopY(viewportW, viewportH)));
         return new Rectangle(x, y, width, height);
     }
+
+    /// <summary>P805 (row 471) — the target pane's slide offset, screen px down.
+    /// Native slides <c>TargetDisplayImage</c> up from fully below the screen —
+    /// <c>SideBottom(-320,-183) → (-320,25)</c>, 0.5 s (dialog.mdl:5404) — a
+    /// 208 native px travel; while the slide is in flight the pane sits lower
+    /// by the remaining travel, scaled with the pane (y-down positive).</summary>
+    public static float SlideOffset(float slideProgress, float scale)
+        => (1f - Math.Clamp(slideProgress, 0f, 1f)) * 208f * scale;
 }

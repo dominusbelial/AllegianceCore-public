@@ -2577,8 +2577,59 @@ public sealed partial class Game1
                     worldMat = rot;
                     break;
                 }
+                case TargetKind.Warp:
+                {
+                    // P805 (row 409) — native's preview shows an aleph: its
+                    // ThingGeo is the LoadAleph surface (warpIGC.cpp:33-34,
+                    // modelIGC.cpp:127-132), so the preview draws the warp
+                    // texture as a camera-facing surface (the port reads the
+                    // same stem the native LoadAleph loads: textureName+"bmp").
+                    if (!world.Warps.TryGetValue(t.Id, out var wp)) return false;
+                    targetSourceId = -1;                       // a warp is no ship
+                    sameCluster = wp.ClusterId == ownSector;
+                    visible = true;                            // a warp is always seen
+                    kind = TargetPreviewKind.Warp;
+                    modelStem = wp.TextureName + "bmp";         // native LoadAleph: textureName + "bmp"
+                    targetPos = PoseConverter.ToXna(Vec(wp.Position));
+                    _previewOri.Set(Vec(wp.Forward));
+                    worldMat = PoseConverter.ToXnaRotation(_previewOri);
+                    break;
+                }
+                case TargetKind.Probe:
+                {
+                    // P805 (row 409) — a probe's ThingGeo is its per-type REAL
+                    // mesh (HitTest::Load(m_data.modelName), probetypeigc.cpp:28-33).
+                    if (!world.Probes.TryGetValue(t.Id, out var pb)) return false;
+                    var pModel = world.MissionCore?.ProbeTypes.TryGetValue(pb.ProbetypeId, out var pt) == true
+                        ? pt.ModelName : null;
+                    if (string.IsNullOrEmpty(pModel)) return false;
+                    targetSourceId = -1;
+                    sameCluster = pb.ClusterId == ownSector;
+                    visible = true;
+                    kind = TargetPreviewKind.Probe;
+                    modelStem = pModel;
+                    targetPos = PoseConverter.ToXna(pb.Position);
+                    worldMat = Matrix.Identity;
+                    break;
+                }
+                case TargetKind.Treasure:
+                {
+                    // P805 (row 409) — a treasure's ThingGeo is its LoadDecal
+                    // billboard (flag) or the buyable's model (part/development/
+                    // cash/powerup/artifact; treasureIGC.cpp:118-171).
+                    if (!world.Treasures.TryGetValue(t.Id, out var te)) return false;
+                    targetSourceId = -1;
+                    sameCluster = te.ClusterId == ownSector;
+                    visible = true;
+                    kind = TargetPreviewKind.Treasure;
+                    hullId = (int)te.Code;                     // the art resolve re-resolves the visual from it
+                    modelStem = te.Code.ToString();            // cache key only
+                    targetPos = PoseConverter.ToXna(te.Position);
+                    worldMat = Matrix.Identity;
+                    break;
+                }
                 default:
-                    return false;   // warp/probe/mine/treasure → empty fallback
+                    return false;   // missiles → empty fallback (native has no missile ThingGeo)
             }
         }
 
@@ -2620,6 +2671,25 @@ public sealed partial class Game1
                 _targetModelPreviewRenderer.RenderAsteroid(art.ShipGeo!, art.Texture,
                     worldMat, previewView, proj, art.NativeScale, lighting, restoreTo);
                 break;
+            case TargetPreviewKind.Warp:
+                // P805 (row 409) — the aleph surface as a camera-facing quad at the
+                // preview origin (native's preview draws the same ThingGeo the
+                // world does, thinggeo.cpp:1482-1573).
+                _targetModelPreviewRenderer.RenderTreasureDecal(art.Treasure!.Value,
+                    (short)targetId, previewView, proj, lighting, restoreTo);
+                break;
+            case TargetPreviewKind.Treasure when art.IsDecal:
+                _targetModelPreviewRenderer.RenderTreasureDecal(art.Treasure!.Value,
+                    (short)targetId, previewView, proj, lighting, restoreTo);
+                break;
+            case TargetPreviewKind.Probe:
+            case TargetPreviewKind.Treasure:
+                // P805 (row 409) — probe/treasure models go through the native
+                // treasure renderer with the radius-1 scale folded into the world.
+                _targetModelPreviewRenderer.RenderTreasureModel(art.Treasure!.Value,
+                    (short)targetId, Matrix.CreateScale(art.NativeScale) * worldMat,
+                    previewView, proj, 0.0, lighting, restoreTo);
+                break;
             default:
                 _targetModelPreviewRenderer.RenderShip(art.ShipGeo!, art.Texture,
                     worldMat, previewView, proj, art.NativeScale, lighting, restoreTo);
@@ -2636,6 +2706,13 @@ public sealed partial class Game1
         public NativeStationRenderer.NativeStationGeometry? StationGeo;
         public Texture2D? Texture;
         public float NativeScale = 1f;
+        /// <summary>P805 (row 409) — the resolved treasure/aleph-surface visual
+        /// (drawn through the native treasure renderer).</summary>
+        public Rendering.TreasureVisual? Treasure;
+        /// <summary>P805 — true when the visual is a camera-facing decal surface
+        /// (a flag's biosflag billboard or an aleph's surface) rather than a mesh.
+        /// </summary>
+        public bool IsDecal;
     }
 
     /// <summary>HUD-21b — the allocating art resolve, run by the preview cache
@@ -2681,6 +2758,58 @@ public sealed partial class Game1
                     ShipGeo = geo,
                     Texture = tStem is null ? null : _nativeAsteroidRenderer.TextureFor(tStem),
                     NativeScale = TargetModelPreview.ScaleForMaxVertexRadius(geo.MaxVertexRadius),
+                };
+            }
+            case TargetPreviewKind.Warp:
+            {
+                // P805 (row 409) — the aleph's surface texture (native LoadAleph
+                // loads textureName+"bmp", warpIGC.cpp:33-34, modelIGC.cpp:127-132);
+                // the draw step renders it as the camera-facing surface quad.
+                if (key.ModelStem is null) return null;
+                var tex = _nativeTreasureRenderer.TextureFor(key.ModelStem);
+                if (tex is null) return null;
+                return new PreviewArt
+                {
+                    Treasure = new Rendering.TreasureVisual(Rendering.TreasureVisualKind.Flag,
+                        ModelStem: null, TextureStem: key.ModelStem, IconName: "",
+                        DisplayName: "", IsDecal: true),
+                };
+            }
+            case TargetPreviewKind.Probe:
+            {
+                // P805 (row 409) — a probe's per-type real mesh
+                // (probetypeigc.cpp:28-33), loaded like any native model.
+                if (key.ModelStem is null) return null;
+                var geo = _nativeTreasureRenderer.MeshFor(key.ModelStem);
+                if (geo is null) return null;
+                var pTexStem = _nativeTreasureRenderer.TextureStemFor(key.ModelStem);
+                return new PreviewArt
+                {
+                    ShipGeo = geo,
+                    Texture = pTexStem is null ? null : _nativeTreasureRenderer.TextureFor(pTexStem),
+                    NativeScale = TargetModelPreview.ScaleForMaxVertexRadius(geo.MaxVertexRadius),
+                };
+            }
+            case TargetPreviewKind.Treasure:
+            {
+                // P805 (row 409) — the treasure's own visual (treasureIGC.cpp:118-171):
+                // the buyable's/acs14/artifact model or the flag's biosflag decal.
+                // The key carries the TreasureCode in HullId and the treasure id in
+                // TargetId (the resolver needs both; the stem is cache salt only).
+                var visual = Rendering.TreasureVisualResolver.Resolve(
+                    (TreasureCode)key.HullId, (short)key.TargetId, _shopCatalog);
+                if (visual.IsDecal)
+                {
+                    if (visual.TextureStem is null
+                        || _nativeTreasureRenderer.TextureFor(visual.TextureStem) is null) return null;
+                    return new PreviewArt { Treasure = visual, IsDecal = true };
+                }
+                if (visual.ModelStem is null
+                    || _nativeTreasureRenderer.MeshFor(visual.ModelStem) is not { } tgeo) return null;
+                return new PreviewArt
+                {
+                    Treasure = visual,
+                    NativeScale = TargetModelPreview.ScaleForMaxVertexRadius(tgeo.MaxVertexRadius),
                 };
             }
             default:
@@ -3152,6 +3281,11 @@ public sealed partial class Game1
             commandee: CommandeeLabel(), turret: IsTurretGunner(),
             targetPane: ComputeTargetPane(),
             inventorySlide: _paneSlides.Progress(SlidingPane.Inventory, _nowSeconds),
+            centreHudVisible: _hudSettings.ShowCenterHud,
+            targetHudVisible: _hudSettings.ShowTargetHud,
+            chatHistoryVisible: _chatHistoryVisible,
+            targetPaneSlide: _paneSlides.Progress(SlidingPane.TargetPane, _nowSeconds),
+            selectionBracket: _hudSettings.SelectionBracketOn,
             diagnostics: Environment.GetEnvironmentVariable("ALLEGIANCE_LOD_OVERLAY") == "1"
                 ? $"LOD full:{_lodFullCount} far:{_lodFarCount}" : null,
             hidden: _hideHud || _directorActive || _hudHidden,
@@ -4274,12 +4408,26 @@ public sealed partial class Game1
                     if (RadarTreasure.IsLauncherType(tp.EquipmentType) && ownHull is { } hull)
                         launcherMountable = InFlightPartRules.CanMount(hull, tp, 0);
                 }
-                // The native tech-vs-part discrimination still needs the side's
-                // live development-tech mask; a default (unobserved) mask has no
-                // usable bits, so partEffectsSatisfied stays true (documented
-                // deferral). Pack usefulness + launcher mountability ARE live.
+                // P805 — the live dev-tech split is now real (radarimage.cpp:452-463,
+                // :506-511): the own side's development-tech mask arrives on
+                // CREATE_BUCKETS(191) (ClientWorld.DevelopmentTechsBySideId, P284),
+                // so a Part treasure's effect-tech test and a Development treasure's
+                // IsObsolete (developmentigc.h:110-113) both run live. Pack
+                // usefulness + launcher mountability were already live.
+                bool partEffectsSatisfied = true;
+                bool developmentObsolete = false;
+                var ownDevTechs = world.DevelopmentTechsFor(world.MySideId ?? -1);
+                if (ownDevTechs is { } devTechs)
+                {
+                    if (treasurePart is { } tpEff)
+                        partEffectsSatisfied = Allegiance.Core.Model.TechTreeBitMask
+                            .FromBytes(tpEff.TtbmEffects).IsSubsetOf(devTechs);
+                    if (te.Code == TreasureCode.Development
+                        && world.MissionCore?.Developments.TryGetValue(te.PayloadId, out var obsoleteDev) == true)
+                        developmentObsolete = Allegiance.Core.Model.DevelopmentLogic.IsObsolete(obsoleteDev, devTechs);
+                }
                 var use = RadarTreasure.Usefulness(te.Code, partEquipmentType,
-                    partEffectsSatisfied: true, packUseful, launcherMountable);
+                    partEffectsSatisfied, packUseful, launcherMountable, developmentObsolete);
                 bool useful = use != RadarTreasureUse.NotUseful;
                 bool isTech = use == RadarTreasureUse.UsefulTech;
                 bool isSel = sel is { Kind: TargetKind.Treasure } treasureSel && treasureSel.Id == tid;
@@ -4302,6 +4450,14 @@ public sealed partial class Game1
                     Name: TreasureName(te),
                     Range: rangeLabels ? (int)(centre + 0.5f) : null,
                     IsSelf: false, IsTech: isTech, TreasureUseful: useful,
+                    // P805 (rows 428/437) — the native flag-treasure highlight:
+                    // a treasure whose code is c_tcFlag takes c_maskHighlight
+                    // (radarimage.cpp:637-640), which has NO bracket surface —
+                    // it only keeps the contact at FULL label/bracket brightness
+                    // (radarimage.cpp:1094-1096) and forces the label gate
+                    // (radarimage.cpp:707). Native c_maskHighlight is the flag
+                    // treasure, NOT asteroid construction.
+                    Highlight: te.Code == TreasureCode.Flag,
                     // Native SetRadius(5.0f) for a treasure (treasureIGC.cpp:193).
                     ClipSeparation: LodSeparation(centre, 5f),
                     ScreenRadius: treasureBracket.ScreenRadius,

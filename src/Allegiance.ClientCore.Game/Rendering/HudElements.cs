@@ -410,7 +410,12 @@ public static class HudElements
             { Available = value is not null, Visible = visible, Value = value, Text = text };
             void Target(string? text, float? value = null)
             {
-                bool available = c.Target is not null && (id == "Selected target bracket" || text is not null || value is not null);
+                // P805 (row 418) — the bracket element is only VISIBLE while the
+                // opt-in SelectionBracket extension is enabled; native shows no
+                // 3-D-view selection box.
+                bool available = c.Target is not null && (id == "Selected target bracket"
+                    ? c.SelectionBracket
+                    : text is not null || value is not null);
                 element = element with { Available = available, Visible = model.FlightVisible && available, Value = value, Text = text };
                 if (c.Target is { } t) element = element with { ScreenPosition = t.Center };
             }

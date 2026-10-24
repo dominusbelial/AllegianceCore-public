@@ -75,9 +75,11 @@ public class Hud12bReviewFixTests
         Assert.Equal("50", HudStringCache.KillBonusNumber(50f));
         Assert.Equal("1350 cr", HudStringCache.Money(1350));
         Assert.Equal("Speed: 179 mps", HudStringCache.Speed(179.2f, "mps"));
-        Assert.Equal("1350 cr  AP off  RADAR Default",
-            HudStringCache.SummaryLine(1350, false, RadarMode.Default));
-        Assert.Equal("cr --  AP on  RADAR All", HudStringCache.SummaryLine(null, true, RadarMode.All));
+        // P805 (row 492) — the port-invention SummaryLine (money/AP/RADAR echo)
+        // was removed with the command summary's money/AP/RADAR line; the target
+        // group's native range/speed rows took its slot.
+        Assert.Equal("1200m", HudStringCache.TargetRange(1199.6f));
+        Assert.Equal("179 mps", HudStringCache.TargetSpeed(179.2f));
         Assert.Equal("Ship: Adv Scout", HudStringCache.ShipSummary("Adv Scout"));
         Assert.Equal("Target: bandit", HudStringCache.TargetSummary("bandit"));
         Assert.Equal("Adv Scout (turret)", HudStringCache.TurretShipType("Adv Scout"));
@@ -93,8 +95,8 @@ public class Hud12bReviewFixTests
         Assert.Same(HudStringCache.KillBonusNumber(50f), HudStringCache.KillBonusNumber(50f));
         Assert.Same(HudStringCache.Money(1350), HudStringCache.Money(1350));
         Assert.Same(HudStringCache.Speed(179.2f, "mps"), HudStringCache.Speed(179.2f, "mps"));
-        Assert.Same(HudStringCache.SummaryLine(1350, false, RadarMode.Default),
-            HudStringCache.SummaryLine(1350, false, RadarMode.Default));
+        Assert.Same(HudStringCache.TargetRange(1200f), HudStringCache.TargetRange(1200f));
+        Assert.Same(HudStringCache.TargetSpeed(179.2f), HudStringCache.TargetSpeed(179.2f));
         Assert.Same(HudStringCache.ShipSummary("Adv Scout"), HudStringCache.ShipSummary("Adv Scout"));
         Assert.Same(HudStringCache.TargetSummary("bandit"), HudStringCache.TargetSummary("bandit"));
         Assert.Same(HudStringCache.TurretShipType("Adv Scout"), HudStringCache.TurretShipType("Adv Scout"));
@@ -125,7 +127,8 @@ public class Hud12bReviewFixTests
             _ = HudStringCache.KillBonusNumber(50f);
             _ = HudStringCache.Money(1350);
             _ = HudStringCache.Speed(179.2f, "mps");
-            _ = HudStringCache.SummaryLine(1350, false, RadarMode.Default);
+            _ = HudStringCache.TargetRange(1200f);
+            _ = HudStringCache.TargetSpeed(179.2f);
             _ = HudStringCache.ShipSummary("Adv Scout");
             _ = HudStringCache.TargetSummary("bandit");
             _ = HudStringCache.TurretShipType("Adv Scout");
@@ -159,7 +162,8 @@ public class Hud12bReviewFixTests
             }
             _ = HudStringCache.Cloak(22.4f);
             _ = HudStringCache.Lives(5);
-            _ = HudStringCache.SummaryLine(1350, false, RadarMode.Default);
+            _ = HudStringCache.TargetRange(1200f);
+            _ = HudStringCache.TargetSpeed(179.2f);
         }
 
         for (int warm = 0; warm < 40; warm++) Frame(context, buffers, tracker, count, now);

@@ -118,11 +118,15 @@ public class Hud19CentreHudTests
     public void Graphics_overlay_has_the_joystick_row_and_it_toggles()
     {
         // Native Graphics Options "Joystick Indicator: On/Off" (WinTrek.cpp:4507,
-        // :4526), row count 12 → 13 with Up/Down wrap.
+        // :4526). P805 (row 470) added the Center HUD / Target HUD / Chat History
+        // rows, so the row count is 16 now (13 → 16 with Up/Down wrap).
         var gpu = Src("Game1.GpuBudget.cs");
         Assert.Contains("\"Joystick indicator: ", gpu);
-        Assert.Contains("% 13", gpu);
+        Assert.Contains("% 16", gpu);
         Assert.Contains("case 12: _hudSettings.ShowJoystickIndicator", gpu);
+        Assert.Contains("case 13: _hudSettings.ShowCenterHud", gpu);
+        Assert.Contains("case 14: _hudSettings.ShowTargetHud", gpu);
+        Assert.Contains("case 15: _chatHistoryVisible", gpu);
 
         // Live reflection: the row toggles the setting (and it round-trips).
         const BindingFlags f = BindingFlags.Instance | BindingFlags.NonPublic;

@@ -279,7 +279,8 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         float w = viewport.Width, h = viewport.Height;
         float s = TargetPaneLayout.Scale(w, h);
         float x0 = TargetPaneLayout.OriginX(w, h);
-        float y0 = TargetPaneLayout.OriginY(w, h);
+        // P805 (row 471) — the native target-pane slide, same rule as classic.
+        float y0 = TargetPaneLayout.OriginY(w, h) + TargetPaneLayout.SlideOffset(model.Context.TargetPaneSlide, s);
         var side = tp.SideColor is { } sc ? new Color(sc.R, sc.G, sc.B, sc.A) : new Color(224, 231, 235);
         if (_settings.ColorBlindSafe) side = HudPalette.Side(side);
 
@@ -522,7 +523,10 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             // BuildChatLines already returns the ChatPaneModel's visible window
             // (offset applied once). Re-applying StartIndex here collapsed every
             // scrolled window back to the newest page (P757b).
-            int take = Math.Min(ChatRenderer.MaxVisible, chat.Lines.Count);
+            // P805 (row 470) — native ShowChatHistoryHUD (WinTrek.cpp:5074-5078)
+            // hides the history lines; the compose line still draws.
+            bool historyVisible = model.ChatHistoryVisible;
+            int take = Math.Min(ChatRenderer.MaxVisible, chat.Lines.Count) * (historyVisible ? 1 : 0);
             // HUD-10/HUD-11 — the native ChatListPane geometry: 355 px wide,
             // configured NumChatLines at the native 14 px line height, CommPane
             // at SideTop(-160,-126) (dialog.mdl:180,5394; chatpane.cpp:374-380).
@@ -535,7 +539,7 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             float maxWidth = ChatPaneLayout.Width;
             float textScale = ChatPaneLayout.TextScale(_small.LineSpacing);
             float markerY = paneTop - _small.LineSpacing * textScale;
-            if (chat.Offset > 0)
+            if (chat.Offset > 0 && historyVisible)
                 _smallSdf.Draw(_sb, "(OLDER - PgDn to newest)", new(paneLeft, markerY), Muted, textScale);
             if (chat.FilterLabel is { } fl && take > 0)
             {
@@ -621,7 +625,7 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         float w = viewport.Width, h = viewport.Height;
         var side = console.SideColor is { } native
             ? (_settings.ColorBlindSafe ? HudPalette.Side(new(native.R, native.G, native.B)) : new Color(native.R, native.G, native.B))
-            : Accent;
+            : Color.White;   // P805 — native GetSideColor fallback is white (consoledata.cpp:99-107)
         var cortText = new Color(0.586f, 0.578f, 0.680f);   // native cortText/softText (dialog.mdl:24, :3517)
         var yellow = new Color(255, 224, 96);
         var red = Alert;

@@ -44,6 +44,23 @@ public enum TargetPreviewKind
     Ship,
     Station,
     Asteroid,
+    /// <summary>P805 (row 409) — an aleph (warp): native's preview shows the
+    /// aleph's <c>LoadAleph</c> surface ThingGeo (warpIGC.cpp:33-34;
+    /// modelIGC.cpp:127-132).</summary>
+    Warp,
+    /// <summary>P805 (row 409) — a probe: native loads a REAL mesh per probe
+    /// type (<c>HitTest::Load(m_data.modelName)</c>, probetypeigc.cpp:28-33).
+    /// </summary>
+    Probe,
+    /// <summary>P805 (row 409) — a treasure: the buyable's model (acs14 /
+    /// artifact / part model) or the flag's LoadDecal billboard
+    /// (treasureIGC.cpp:118-171).</summary>
+    Treasure,
+    /// <summary>P805 (row 409) — a mine. NOT reachable through the port yet
+    /// (the port's target cycle has no Mine kind); the enum value exists so the
+    /// gate and art resolve are complete (native LoadMine sprite,
+    /// modelIGC.cpp:134-139; mineigc.cpp:103).</summary>
+    Mine,
 }
 
 /// <summary>
@@ -179,22 +196,27 @@ public static class TargetModelPreview
 
     /// <summary>
     /// The native <c>SetTargetGeo</c> gate (<c>WinTrek.cpp:8783-8818</c>): a model
-    /// preview is shown only for a ship/station/asteroid whose SOURCE ship is not
-    /// the player's own source ship, that is in the player's cluster, is visible
-    /// (CanSee) and resolves to a native mesh. Warp/probe/mine/missile/treasure
-    /// (scope item 6) and no-mesh fall back to the empty viewport.
+    /// preview is shown only for a model whose SOURCE ship is not the player's
+    /// own source ship, that is in the player's cluster, is visible
+    /// (CanSee) and resolves to a native mesh. P805 (row 409) extends the kind
+    /// set to warps/probes/treasures/mines: native's gate is NOT kind-specific —
+    /// it requires only a hit test (<c>GetHitTest() != NULL</c>) and a ThingSite
+    /// with a ThingGeo, and every one of these models loads one (aleph surface
+    /// warpIGC.cpp:33; probe mesh probetypeigc.cpp:28-33; mine sprite
+    /// mineigc.cpp:103; treasure decal/model treasureIGC.cpp:118-171).
     /// <para>The own-ship test is the native one: it compares the target's
     /// <c>GetSourceShip()</c> with <c>trekClient.GetShip()-&gt;GetSourceShip()</c>
     /// (<c>WinTrek.cpp:8796-8797</c>), so the caller climbs BOTH sides' parent
     /// chain first (a gunner's own carrier, or one's own turret, shows nothing).
-    /// HUD-21 passed a hard-coded <c>false</c> here; HUD-21b makes these the real
-    /// per-frame inputs.</para>
+    /// </para>
     /// </summary>
     public static bool Eligible(
         TargetPreviewKind kind, int targetSourceShipId, int ownSourceShipId,
         bool sameCluster, bool visible, bool hasMesh)
         => targetSourceShipId != ownSourceShipId && sameCluster && visible && hasMesh
-           && kind is TargetPreviewKind.Ship or TargetPreviewKind.Station or TargetPreviewKind.Asteroid;
+           && kind is TargetPreviewKind.Ship or TargetPreviewKind.Station or TargetPreviewKind.Asteroid
+              or TargetPreviewKind.Warp or TargetPreviewKind.Probe or TargetPreviewKind.Treasure
+              or TargetPreviewKind.Mine;
 
     /// <summary>Native dp = target−player; the constant <c>(0,1,5)</c> replaces
     /// it when the real dp is inside the unit sphere (<c>WinTrek.cpp:438-444</c>).</summary>

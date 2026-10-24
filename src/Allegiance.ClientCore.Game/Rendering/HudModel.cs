@@ -213,6 +213,30 @@ public sealed record HudContext
     /// <summary>HUD-10 — native inventory pane slide progress (0 off, 1 on;
     /// dialog.mdl:5387 <c>SideBottomRight(-36,-150)→(-36,40)</c>, .5 s).</summary>
     public float InventorySlide { get; init; }
+    /// <summary>P805 (row 470) — native ShowCenterHUD preference
+    /// (<c>WinTrek.cpp:2898</c>, LoadPreference("CenterHUD") :3300-3301),
+    /// default true. Gates the centre HUD group (gauges + own status) exactly
+    /// like native's VisibleImage(CenterHudDisplay, ShowCenterHUD),
+    /// dialog.mdl:5195-5197.</summary>
+    public bool CentreHudVisible { get; init; } = true;
+    /// <summary>P805 (row 470) — native ShowTargetHUD preference
+    /// (<c>WinTrek.cpp:2899</c>, LoadPreference("TargetHUD") :3302-3303),
+    /// default true — native's VisibleImage(TargetDisplay, ShowTargetHUD),
+    /// dialog.mdl:5198.</summary>
+    public bool TargetHudVisible { get; init; } = true;
+    /// <summary>P805 (row 470) — native ShowChatHistoryHUD toggle (menu-only,
+    /// NOT persisted: WinTrek.cpp:2897, 5074-5078, idmToggleChatHistoryHUD :3934),
+    /// default true. Gates the chat history lines.</summary>
+    public bool ChatHistoryVisible { get; init; } = true;
+    /// <summary>P805 (row 471) — native target-pane slide progress (0 off, 1 on;
+    /// dialog.mdl:5404 <c>TargetDisplayImage SideBottom(-320,-183)→(-320,25), .5 s</c>,
+    /// under ofInCockpit | ofInChase | ofGloatCam).</summary>
+    public float TargetPaneSlide { get; init; }
+    /// <summary>P805 (row 418) — the port's 3-D-view target-selection box is a
+    /// SUPERSET native lacks (native marks the target only on the radar,
+    /// radarimage.cpp:307-319,352), gated behind HudSettings.SelectionBracket
+    /// (default OFF = native). Marks the element's visibility to match.</summary>
+    public bool SelectionBracket { get; init; }
     /// <summary>HUD-7 — the resolved native flight equipment/inventory pane
     /// (own ship name + ordered rows). Null when it cannot be resolved (no
     /// hull/catalogue); the renderers then draw nothing rather than inventing
@@ -289,7 +313,16 @@ public sealed class HudModel
     // views use their own summaries.
     public bool TargetPaneVisible => InstrumentsVisible
         && Context.TargetPane is { Present: true }
+        && Context.TargetHudVisible   // P805 — native ShowTargetHUD (WinTrek.cpp:2899,3302)
         && Context.Camera is CameraMode.Cockpit or CameraMode.Chase or CameraMode.ExternalOverride;
+    /// <summary>P805 (row 470) — native ShowCenterHUD (WinTrek.cpp:2898,3300;
+    /// dialog.mdl:5195-5197): the centre HUD group (flight gauges + own-ship
+    /// status) is hidden while this is off. The port's F1 global hide stays on
+    /// top of it (Context.Hidden).</summary>
+    public bool CentreHudVisible => FlightVisible && Context.CentreHudVisible;
+    /// <summary>P805 (row 470) — native ShowChatHistoryHUD (menu-only toggle,
+    /// WinTrek.cpp:5074-5078): gates the chat history lines, not the composer.</summary>
+    public bool ChatHistoryVisible => Context.ChatHistoryVisible;
     public bool PodVisible => FlightVisible && Telemetry is { IsAdriftLifepod: true };
     // P799 — native DeathBannerPane = SwitchPane(IsGhost, deathbannerbmp)
     // (dialog.mdl:5438-5439; the value stamped at WinTrek.cpp:3653). The gate is

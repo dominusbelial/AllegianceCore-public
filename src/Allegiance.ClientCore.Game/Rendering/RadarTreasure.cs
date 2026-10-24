@@ -31,19 +31,29 @@ public static class RadarTreasure
     /// native <c>IsLauncherType(et) &amp;&amp; pship-&gt;GetCluster() &amp;&amp;
     /// pship-&gt;GetHullType()-&gt;CanMount(ppt, 0)</c> gate (radarimage.cpp:503-508).
     /// Ignored for non-launcher parts.</param>
+    /// <param name="developmentObsolete">P805 — for a Development treasure, the
+    /// LIVE native obsolete test <c>pd-&gt;IsObsolete(GetDevelopmentTechs())</c>
+    /// (radarimage.cpp:458-461; <c>IdevelopmentIGC::IsObsolete</c>,
+    /// developmentigc.h:110-113): a tech-only development whose effect techs the
+    /// side already fully holds is <b>not useful</b> and loses its radar icon in
+    /// every LOD but All.</param>
     public static RadarTreasureUse Usefulness(
         TreasureCode code,
         EquipmentType? partEquipmentType = null,
         bool partEffectsSatisfied = true,
         bool packUseful = true,
-        bool launcherMountable = true)
+        bool launcherMountable = true,
+        bool developmentObsolete = false)
     {
         return code switch
         {
-            // Cash/flag/powerup/development are always useful parts to an in-flight
-            // ship (radarimage.cpp:443-463; the development obsolete check is a
-            // documented follow-up, so a stale development still shows as useful).
-            TreasureCode.Cash or TreasureCode.Flag or TreasureCode.Powerup or TreasureCode.Development => RadarTreasureUse.UsefulPart,
+            // Cash/flag/powerup are always useful parts to an in-flight ship
+            // (radarimage.cpp:443-450); a DEVELOPMENT treasure is useful only
+            // while not obsolete (radarimage.cpp:452-463).
+            TreasureCode.Development => developmentObsolete
+                ? RadarTreasureUse.NotUseful
+                : RadarTreasureUse.UsefulPart,
+            TreasureCode.Cash or TreasureCode.Flag or TreasureCode.Powerup => RadarTreasureUse.UsefulPart,
             TreasureCode.Part => partEquipmentType switch
             {
                 EquipmentType.Pack => packUseful ? RadarTreasureUse.UsefulPart : RadarTreasureUse.NotUseful,

@@ -69,7 +69,8 @@ public sealed class ChatRenderer
         double nowSeconds, Viewport viewport, string targetLabel, string? filterLabel = null,
         NativeComposeState composeState = NativeComposeState.NotComposing, float composeProgress = 0f,
         IReadOnlyList<HudColor?>? lineColors = null, HudColor? sideColor = null,
-        int paneLines = ChatPaneLayout.DefaultLines, IReadOnlyList<bool>? leaderLines = null)
+        int paneLines = ChatPaneLayout.DefaultLines, IReadOnlyList<bool>? leaderLines = null,
+        bool historyVisible = true)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -90,7 +91,7 @@ public sealed class ChatRenderer
             SpriteFont historyFont = HistoryFont;
             float textScale = ChatPaneLayout.TextScale(historyFont.LineSpacing);
 
-            if (take > 0)
+            if (take > 0 && historyVisible)
             {
                 // CommPane is a dark native list over the 3-D scene; the port
                 // keeps the same subtle panel fill rather than drawing a black
@@ -225,13 +226,17 @@ public sealed class ChatRenderer
             new Vector2(x + (width - font.MeasureString(text).X) / 2f, y), color);
     }
 
-    /// <summary>Classic chat presentation of the shared HUD frame.</summary>
+    /// <summary>Classic chat presentation of the shared HUD frame. P805 (row
+    /// 470) — native ShowChatHistoryHUD (WinTrek.cpp:5074-5078) hides the chat
+    /// HISTORY lines; the active compose line still draws.</summary>
     public void Draw(HudModel model, Viewport viewport)
     {
         if (!model.Visible || model.Context.Chat is not { } chat) return;
+        if (!model.ChatHistoryVisible && !chat.Composing) return;
         Draw(chat.Lines, chat.Offset, chat.Input, chat.Composing, chat.NowSeconds, viewport,
             chat.Recipient, chat.FilterLabel, chat.ComposeState, chat.ComposeProgress,
-            chat.LineColors, chat.SideColor, chat.PaneLines, chat.LeaderLines);
+            chat.LineColors, chat.SideColor, chat.PaneLines, chat.LeaderLines,
+            historyVisible: model.ChatHistoryVisible);
     }
 
     private string TruncateToWidth(SpriteFont font, string s, float maxWidth)

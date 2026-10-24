@@ -31,9 +31,10 @@ public static class HudStringCache
     private static readonly Dictionary<int, string> _killBonusNumber = new();
     private static readonly Dictionary<int, string> _money = new();
     private static readonly Dictionary<(int Mps, string Unit), string> _speed = new();
-    private static readonly Dictionary<(int Money, bool Autopilot, RadarMode Mode), string> _summaryLine = new();
     private static readonly Dictionary<string, string> _shipSummary = new(StringComparer.Ordinal);
     private static readonly Dictionary<string, string> _targetSummary = new(StringComparer.Ordinal);
+    private static readonly Dictionary<int, string> _targetRange = new();
+    private static readonly Dictionary<int, string> _targetSpeed = new();
     private static readonly Dictionary<string, string> _turretType = new(StringComparer.Ordinal);
     private static readonly Dictionary<string, string> _location = new(StringComparer.Ordinal);
     private static readonly Dictionary<string, string> _tti = new(StringComparer.Ordinal);
@@ -110,16 +111,18 @@ public static class HudStringCache
         Get(_speed, (Mps: Round(MathF.Max(0f, metresPerSecond)), Unit: unit),
             static k => $"Speed: {k.Mps} {k.Unit}");
 
-    /// <summary>The command summary's money/autopilot/radar line. The native
-    /// console draws money (<c>m_pnumberMoney</c>), the autopilot flag and the
-    /// radar mode in their OWN HUD slots (console.cpp:778-800); the port's single
-    /// summary row is an invention and stays documented as such.</summary>
-    public static string SummaryLine(int? money, bool autopilotEngaged, RadarMode mode) =>
-        Get(_summaryLine, (Money: money ?? int.MinValue, Autopilot: autopilotEngaged, Mode: mode), static k =>
-        {
-            string moneyText = k.Money == int.MinValue ? "cr --" : Money(k.Money);
-            return $"{moneyText}  AP {(k.Autopilot ? "on" : "off")}  RADAR {k.Mode}";
-        });
+    /// <summary>P805 (row 492) — the command-summary TARGET group's range row
+    /// (<c>cortTargetRange</c>, dialog.mdl:4615-4628: native concatenates the
+    /// rounded metres with "m" with NO space, or prints the sector name when
+    /// GetRange is -1; the label "Target range:" is drawn separately).</summary>
+    public static string TargetRange(float metres) =>
+        Get(_targetRange, Round(MathF.Max(0f, metres)), static m => $"{m}m");
+
+    /// <summary>P805 (row 492) — the command-summary TARGET group's speed row
+    /// (<c>cortTargetSpeed</c>, dialog.mdl:4630-4656: native concatenates the
+    /// rounded metres-per-second with " mps").</summary>
+    public static string TargetSpeed(float metresPerSecond) =>
+        Get(_targetSpeed, Round(MathF.Max(0f, metresPerSecond)), static v => $"{v} mps");
 
     /// <summary>Command-summary ship type row (<c>Ship: &lt;type&gt;</c>).</summary>
     public static string ShipSummary(string typeName) =>

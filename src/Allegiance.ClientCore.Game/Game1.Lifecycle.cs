@@ -314,6 +314,7 @@ public sealed partial class Game1
             _statusTextures, indicatorTextures, targetPaneTextures, _inventoryTextures,
             damageWash: _hudSettings.DamageWash, nativeHudTextures: _hudNativeTextures,
             gaugePercentage: _hudSettings.GaugePercentage, nativeFonts: nativeFonts,
+            selectionBracket: _hudSettings.SelectionBracketOn,
             joystickMesh: Rendering.JoystickMeshTexture.Create(GraphicsDevice));
 
         // P214 — in-flight chat overlay (same SpriteBatch/font plumbing as the HUD).
@@ -570,8 +571,16 @@ public sealed partial class Game1
 
         // HUD-21 — the target-model-preview renderer: one 256×256 RT created on
         // first use; renders the eligible target's native mesh each frame.
+        // P805 (row 409) — also takes the native treasure renderer so
+        // part/development/cash/powerup/artifact treasure MODELS and the flag
+        // biosflag decal can render into the preview (native's SetTargetGeo
+        // shows any target with a hit test + ThingSite, WinTrek.cpp:8783-8818;
+        // a treasure's ThingGeo is its LoadDecal billboard or buyable model,
+        // treasureIGC.cpp:118-171).
+        _nativeTreasureRenderer = new NativeTreasureRenderer(GraphicsDevice, _assets, _hdMaterials);
         _targetModelPreviewRenderer = new Rendering.TargetModelPreviewRenderer(
-            GraphicsDevice, _nativeShipRenderer, _nativeStationRenderer, _nativeAsteroidRenderer);
+            GraphicsDevice, _nativeShipRenderer, _nativeStationRenderer, _nativeAsteroidRenderer,
+            _nativeTreasureRenderer);
 
         // P227 — the shared procedural warp funnel mesh (the P218 pattern,
         // different shape). Generated once here (no content-pipeline asset)
@@ -686,7 +695,6 @@ public sealed partial class Game1
         // models, acs14, artifact, the biosflag decal) now takes over; the gem
         // remains the fallback when a resolved model is unavailable.
         _treasureRenderer = new TreasureRenderer(GraphicsDevice);
-        _nativeTreasureRenderer = new NativeTreasureRenderer(GraphicsDevice, _assets, _hdMaterials);
 
         // P292 — the shared REAL chaff sprites + billboard renderer (the P291
         // runtime-native-asset pattern, applied to the chaff's single-decal

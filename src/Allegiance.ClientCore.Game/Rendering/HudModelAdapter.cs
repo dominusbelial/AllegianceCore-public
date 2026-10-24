@@ -24,6 +24,8 @@ public static class HudModelAdapter
         Vector2? velocityMarker = null, Vector2? chaseAim = null, HudOrderArrows? orderArrows = null,
         HudInventoryPane? inventoryPane = null,
         HudTargetPane? targetPane = null, bool roundRadar = false, float inventorySlide = 0f,
+        bool centreHudVisible = true, bool targetHudVisible = true, bool chatHistoryVisible = true,
+        float targetPaneSlide = 1f, bool selectionBracket = false,
         HudSnapshotBuffers? buffers = null,
         bool showJoystickIndicator = true,
         int trainingOverlayId = 0)
@@ -53,6 +55,11 @@ public static class HudModelAdapter
             Contacts = contacts ?? Array.Empty<HudContact>(),
             InventorySlide = inventorySlide,
             TrainingOverlayId = trainingOverlayId,
+            CentreHudVisible = centreHudVisible,
+            TargetHudVisible = targetHudVisible,
+            ChatHistoryVisible = chatHistoryVisible,
+            TargetPaneSlide = targetPaneSlide,
+            SelectionBracket = selectionBracket
         }, buffers);
 
     private static HudPoint Point(Vector2 v) => new(v.X, v.Y);

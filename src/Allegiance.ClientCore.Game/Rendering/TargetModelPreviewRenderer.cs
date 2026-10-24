@@ -35,18 +35,21 @@ public sealed class TargetModelPreviewRenderer : IDisposable
     private readonly NativeShipRenderer _ship;
     private readonly NativeStationRenderer _station;
     private readonly NativeAsteroidRenderer _asteroid;
+    private readonly NativeTreasureRenderer _treasure;
     private RenderTarget2D? _rt;
 
     public TargetModelPreviewRenderer(
         GraphicsDevice gd,
         NativeShipRenderer ship,
         NativeStationRenderer station,
-        NativeAsteroidRenderer asteroid)
+        NativeAsteroidRenderer asteroid,
+        NativeTreasureRenderer? treasure = null)
     {
         _gd = gd;
         _ship = ship;
         _station = station;
         _asteroid = asteroid;
+        _treasure = treasure ?? new NativeTreasureRenderer(gd, Assets.AssetSources.Game, null);
     }
 
     /// <summary>The last rendered preview, or null before the first render.</summary>
@@ -107,6 +110,34 @@ public sealed class TargetModelPreviewRenderer : IDisposable
     {
         Begin();
         _asteroid.Draw(geo, texture, world, view, proj, nativeScale, lighting);
+        End(restoreTo);
+    }
+
+    /// <summary>P805 (row 409) — a treasure MODEL (part/development/cash/
+    /// powerup/artifact) via the shared native treasure renderer. The world
+    /// matrix already carries the radius-1 scale folded in by the caller.</summary>
+    public void RenderTreasureModel(Rendering.TreasureVisual visual, short treasureId,
+        in Matrix world, in Matrix view, in Matrix proj, double elapsed, SectorLighting lighting,
+        RenderTarget2D? restoreTo)
+    {
+        Begin();
+        _treasure.DrawModel(visual, treasureId, world, view, proj, elapsed, lighting);
+        End(restoreTo);
+    }
+
+    /// <summary>P805 (row 409) — a treasure DECAL (the flag's camera-facing
+    /// biosflag billboard, treasureIGC.cpp:157-171), drawn radius-1 like the
+    /// native preview's <c>RenderTargetGeo</c> 1/m_radiusMesh normalization
+    /// (thinggeo.cpp:1185-1193).</summary>
+    public void RenderTreasureDecal(Rendering.TreasureVisual visual, short treasureId,
+        in Matrix view, in Matrix proj, SectorLighting lighting,
+        RenderTarget2D? restoreTo)
+    {
+        Begin();
+        // The target sits at the preview camera's origin; the decal half-size is
+        // 1.0 so one model unit = half the 2-unit ortho viewport (the same
+        // radius-1 framing the mesh kinds get from TargetModelPreview.ScaleForMaxVertexRadius).
+        _treasure.DrawDecal(visual, treasureId, Vector3.Zero, view, proj, lighting, half: 1f);
         End(restoreTo);
     }
 

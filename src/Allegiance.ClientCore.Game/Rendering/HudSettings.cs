@@ -36,6 +36,26 @@ public sealed class HudSettings
     /// LoadPreference("ShowJoystickIndicator", 1) (WinTrek.cpp:3059).
     /// Gates <see cref="HudModel.JoystickIndicatorVisible"/>.</summary>
     public bool ShowJoystickIndicator { get; set; } = true;
+    /// <summary>P805 (row 470) — native ShowCenterHUD Graphics option
+    /// (WinTrek.cpp:2898; LoadPreference("CenterHUD", TRUE) :3300-3301 persisted
+    /// by ToggleCenterHUD :5082-5086), default true.</summary>
+    public bool ShowCenterHud { get; set; } = true;
+    /// <summary>P805 (row 470) — native ShowTargetHUD Graphics option
+    /// (WinTrek.cpp:2899; LoadPreference("TargetHUD", TRUE) :3302-3303 persisted
+    /// by ToggleTargetHUD :5090-5094), default true.</summary>
+    public bool ShowTargetHud { get; set; } = true;
+    /// <summary>P805 (parity row 418) — the port's 3-D-view target-selection
+    /// box (P345/P376 closed rectangle) is a SUPERSET native lacks: native marks
+    /// the selected target only with the targetedbmp bracket on the RADAR
+    /// contact (radarimage.cpp:307-319,352) and nothing in the 3-D view.
+    /// </summary>
+    /// <remarks>Null = the style's default (Domingo, 2026-10-24): off in Classic
+    /// (native has no 3-D selection box), on in Modern (readability extension).
+    /// An explicit true/false is the player's choice in either style.</remarks>
+    public bool? SelectionBracket { get; set; }
+    /// <summary>Whether the 3-D selection box draws: the player's choice, else the
+    /// style default.</summary>
+    public bool SelectionBracketOn => SelectionBracket ?? Style == HudStyle.Modern;
     public static string DefaultPath => Environment.GetEnvironmentVariable("ALLEGIANCE_HUD_SETTINGS")
         ?? Path.Combine(IntroPreferences.DirectoryPath, "hud.json");
     public void Normalize()
