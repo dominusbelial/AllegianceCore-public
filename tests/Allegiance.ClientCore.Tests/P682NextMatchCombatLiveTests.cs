@@ -27,6 +27,10 @@ public sealed class P682NextMatchCombatLiveTests(ITestOutputHelper output)
         using var server = new Srv();
         server.SpawnInitialMinersAtBoot = false;
         var config = P660NextMatchLiveTests.Config(true, intermission: 2);
+        // P797 fog + 0e87f190: a finale registers only once each side has SEEN an enemy station
+        // (native discovery). This test is about next-match combat, not scouting — one bomber per
+        // side never explores — so reveal the map like the other P797 stopgaps.
+        foreach (var g in config.Games) g.ShowMap = true;
         config.LiveSettings.TestHarness = new() { Enabled = true, Money = 1_000_000, IgnoreTechGate = true };
         config.LiveSettings.TestUnlock = new() { Enabled = true, AllTech = true, Money = 1_000_000 };
         config.Broadcast = new() { ShipUpdateModel = model, ImmutableSnapshot = pipeline,
@@ -56,7 +60,7 @@ public sealed class P682NextMatchCombatLiveTests(ITestOutputHelper output)
         for (int match = 1; match <= 3; match++)
         {
             Wait(() => server.Missions[0].Stage == MissionStage.Started && manager.FinaleStatus().Length == match,
-                $"match {match} automatic start and fresh finale");
+                $"match {match} automatic start and fresh finale", seconds: 240);   // fog: recon finds the base first
             Wait(() =>
             {
                 bool flying = false;
@@ -257,10 +261,10 @@ public sealed class P682NextMatchCombatLiveTests(ITestOutputHelper output)
         Assert.NotSame(mission, server.Missions[0]);
     }
 
-    private static void Wait(Func<bool> done, string reason)
+    private static void Wait(Func<bool> done, string reason, double seconds = 40)
     {
         var watch = Stopwatch.StartNew();
-        while (watch.Elapsed.TotalSeconds < 40) { if (done()) return; Thread.Sleep(25); }
+        while (watch.Elapsed.TotalSeconds < seconds) { if (done()) return; Thread.Sleep(25); }
         Assert.Fail(reason + " timed out");
     }
 

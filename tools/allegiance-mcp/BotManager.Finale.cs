@@ -115,6 +115,20 @@ internal sealed partial class BotManager
         return sides.All(sidesWithTarget.Contains) ? seen.Values.ToArray() : null;
     }
 
+    /// <summary>A finale is armed but still waiting for one of these bots' side to
+    /// observe an enemy station (<see cref="ConfigureFinale"/>).</summary>
+    private bool FinalePendingFor(IEnumerable<ActiveBot> group)
+    {
+        lock (_gate)
+        {
+            if (_pendingFinales is not { Count: > 0 } pending) return false;
+            foreach (var bot in group)
+                foreach (var p in pending)
+                    if (p.Names.Contains(bot.Name)) return true;
+        }
+        return false;
+    }
+
     private void RegisterPendingFinales()
     {
         (ShowcaseFinale.Settings Settings, string[] Names)[] pending;

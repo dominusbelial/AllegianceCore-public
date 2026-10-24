@@ -266,8 +266,12 @@ internal sealed partial class BotManager
         {
             var cookie = group.Key.Item1;
             var side = group.Key.Item2;
-            // A lone debug/order bot is not a fleet: leave it to its own drive.
-            if (group.Count(b => !b.IsPod && !b.PodDocked && b.Behavior == "combat") < ScoutOpening.MinFleetForExploration)
+            // A lone debug/order bot is not a fleet: leave it to its own drive —
+            // unless a finale is waiting for this side to find the enemy base
+            // (a small skirmish has no scouts; without recon its finale never
+            // registers, rig/live test P682b 2026-10-24).
+            if (group.Count(b => !b.IsPod && !b.PodDocked && b.Behavior == "combat") < ScoutOpening.MinFleetForExploration
+                && !FinalePendingFor(group))
                 continue;
             var cs = group.First().Cs!;
             ClusterGraph? graph;
@@ -286,6 +290,14 @@ internal sealed partial class BotManager
                     && CombatTargetSelector.ClassifyTargetId(ActualHullId(b)) != BotTargetClass.Bomber
                     && CombatTargetSelector.ClassifyTargetId(ActualHullId(b)) != BotTargetClass.MinerDrone)
                 .OrderBy(b => b.BotId).ToList();
+            // A pending finale needs this side to find the enemy base: if the side
+            // has nothing lighter, its bombers may recon (they are headed there).
+            if (eligible.Count == 0 && FinalePendingFor(group))
+                eligible = group.Where(b => !b.IsPod && !b.PodDocked && b.Behavior == "combat"
+                        && b.OrderedCommand is null
+                        && !b.Role.Equals("support", StringComparison.OrdinalIgnoreCase)
+                        && CombatTargetSelector.ClassifyTargetId(ActualHullId(b)) != BotTargetClass.MinerDrone)
+                    .OrderBy(b => b.BotId).ToList();
             var dedicated = eligible.Where(b => b.Role.Equals("scout", StringComparison.OrdinalIgnoreCase)).ToList();
             // A 3-sector training map needs 2 scouts; a 13-sector map needs more
             // than a 10-bot showcase's two scouts. Fill the opening detachment
@@ -472,8 +484,12 @@ internal sealed partial class BotManager
         {
             var cookie = group.Key.Item1;
             var side = group.Key.Item2;
-            // A lone debug/order bot is not a fleet: leave it to its own drive.
-            if (group.Count(b => !b.IsPod && !b.PodDocked && b.Behavior == "combat") < ScoutOpening.MinFleetForExploration)
+            // A lone debug/order bot is not a fleet: leave it to its own drive —
+            // unless a finale is waiting for this side to find the enemy base
+            // (a small skirmish has no scouts; without recon its finale never
+            // registers, rig/live test P682b 2026-10-24).
+            if (group.Count(b => !b.IsPod && !b.PodDocked && b.Behavior == "combat") < ScoutOpening.MinFleetForExploration
+                && !FinalePendingFor(group))
                 continue;
             var cs = group.First().Cs!;
             ClusterGraph? graph;
