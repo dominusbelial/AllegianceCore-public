@@ -1,0 +1,19 @@
+name: publish-guard
+on:
+  push:
+  pull_request:
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan new commits (identity, secrets, personal email, home paths, Meshy)
+        env:
+          ALLOW_MEDIA: "1"   # CI lists new media; the local pre-push hook makes the reviewer confirm it
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then BASE=${{ github.event.pull_request.base.sha }}; HEAD=${{ github.event.pull_request.head.sha }};
+          else BASE=${{ github.event.before }}; HEAD=${{ github.sha }}; fi
+          if [ "$BASE" = "0000000000000000000000000000000000000000" ]; then BASE=$(git rev-list --max-parents=0 "$HEAD" | tail -1); fi
+          bash scripts/publish-guard.sh "$BASE" "$HEAD"

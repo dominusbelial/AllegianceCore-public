@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Runs scripts/publish-guard.sh on every pushed range. Enable once per clone:
+#   git config core.hooksPath .githooks
+z=0000000000000000000000000000000000000000
+while read -r lref lsha rref rsha; do
+  [ "$lsha" = "$z" ] && continue
+  base=$rsha; [ "$base" = "$z" ] && base=$(git merge-base "$lsha" origin/master 2>/dev/null || git rev-list --max-parents=0 "$lsha" | tail -1)
+  scripts/publish-guard.sh "$base" "$lsha" || exit 1
+done
