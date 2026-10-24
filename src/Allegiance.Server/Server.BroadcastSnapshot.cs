@@ -204,6 +204,7 @@ public sealed partial class Server
         }
         TestPublicationSizeCapture?.Invoke(peer, memory.Length, key, guaranteed);
         Interlocked.Add(ref _egressPayloadOfferedBytes, memory.Length);
+        Interlocked.Increment(ref _egressPacketsOffered);
         if (key == 0) _host.Send(peer, memory.Span);
         else if (guaranteed) _host.SendGuaranteedCoalescing(peer, memory.Span, key);
         else _host.SendCoalescing(peer, memory.Span, key);
@@ -217,6 +218,7 @@ public sealed partial class Server
             _captureStream?.Write(CaptureStream.EncodeFrame(sent: true, bytes));
         TestPublicationSizeCapture?.Invoke(peer, bytes.Length, key, guaranteed);
         Interlocked.Add(ref _egressPayloadOfferedBytes, bytes.Length);
+        Interlocked.Increment(ref _egressPacketsOffered);
         _testSendCapture?.Invoke(peer, bytes);
         TestPublicationCapture?.Invoke(peer, bytes, key, guaranteed);
         if (key == 0) _host.Send(peer, bytes);

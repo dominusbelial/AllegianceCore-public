@@ -505,6 +505,7 @@ public sealed partial class Server
             // P670 — simulation payload offers versus actual transport enqueue / socket acceptance.
             // Transport counters include framing; offers do not. Use measured wall time.
             long bytes = Interlocked.Exchange(ref _egressPayloadOfferedBytes, 0);
+            long packets = Interlocked.Exchange(ref _egressPacketsOffered, 0);
             long stamp = System.Diagnostics.Stopwatch.GetTimestamp();
             double windowSecs = Math.Max(1e-9, (stamp - _egressWindowStarted) / (double)System.Diagnostics.Stopwatch.Frequency);
             _egressWindowStarted = stamp;
@@ -524,7 +525,7 @@ public sealed partial class Server
             // bytes/tick), for the port-mode allocation A/B.
             long alloc = GC.GetTotalAllocatedBytes();
             long logDrops = ConsoleLog.DroppedWrites;
-            Console.WriteLine($"[egress] window: payloadOfferedBytes={bytes} enqueuedBytes={enqueued} writtenBytes={written} peers={peers} windowSecs={windowSecs:0.###} enqueued-per-peer-bps={perPeerBps:0.0} written-per-peer-bps={(peers > 0 ? written / windowSecs / peers : 0):0.0} gc={{gen0={g0 - _lastGc0},gen1={g1 - _lastGc1},gen2={g2 - _lastGc2}}} allocMB={(alloc - _lastAllocatedBytes) / (1024.0 * 1024.0):0.##} logDrops={logDrops - _lastLogDrops}");
+            Console.WriteLine($"[egress] window: payloadOfferedBytes={bytes} packetsOffered={packets} enqueuedBytes={enqueued} writtenBytes={written} peers={peers} windowSecs={windowSecs:0.###} enqueued-per-peer-bps={perPeerBps:0.0} written-per-peer-bps={(peers > 0 ? written / windowSecs / peers : 0):0.0} gc={{gen0={g0 - _lastGc0},gen1={g1 - _lastGc1},gen2={g2 - _lastGc2}}} allocMB={(alloc - _lastAllocatedBytes) / (1024.0 * 1024.0):0.##} logDrops={logDrops - _lastLogDrops}");
             _lastGc0 = g0; _lastGc1 = g1; _lastGc2 = g2; _lastAllocatedBytes = alloc; _lastLogDrops = logDrops;
         });
         // P507 — every ~10s, a per-peer acceptance summary of the native

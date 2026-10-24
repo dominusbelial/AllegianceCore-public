@@ -119,6 +119,10 @@ public sealed partial class Server : IDisposable
     /// Updated atomically by the sim or publisher thread. Diagnostic only.
     /// </summary>
     private long _egressPayloadOfferedBytes;
+    // P807 — packets offered (one per SendPeer/QueueBroadcast delivery), the
+    // packet-count sibling of the byte counter above. Used by the
+    // [gameover-timing] migration lines to attribute a batch's fan-out.
+    private long _egressPacketsOffered;
     private long _lastEgressWrittenBytes, _lastEgressEnqueuedBytes;
     private long _egressWindowStarted = System.Diagnostics.Stopwatch.GetTimestamp();
     // P604b — last window's GC collection counts, so the [egress] summary can
@@ -464,7 +468,7 @@ public sealed partial class Server : IDisposable
     // appmsg.cpp:2264). Replaces the former P63 teammate latch and the HUD-20
     // mission-seed latch (two sets), whose lazy sends (first sighting, first
     // same-side NPC EXPORT) produced native announcements minutes late.
-    // Pruned with the peer (ReleasePeer, ClearPeerJoinLatches on rotation) and
+    // Pruned with the peer (ReleasePeer, RunMigrationLatchSweep on rotation) and
     // when a drone dies; a genuinely NEW ship's id has its stale entries
     // dropped explicitly before its announce (AnnounceFreshShip — called only
     // where a new ship is created: SpawnNpcShip, TrainingHost.CreateDrone, the
