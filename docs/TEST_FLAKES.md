@@ -4,6 +4,15 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P787a observation (2026-10-24) — Hud12bReviewFixTests allocation flake
+
+`Allegiance.ClientCore.MonoGame.Tests.Hud12bReviewFixTests.Hostile_damage_threat_and_flash_allocate_nothing_per_contact`
+failed once in the single Fast-tier run (MonoGame, ~39 ms) under concurrent
+suites on the shared workstation, then passed **3/3 isolated** (10-12 ms each).
+It is an allocation-threshold rendering test in the pure renderer, untouched by
+P787a (which records client-side one-shot sound events only), so it is classified
+a **load flake** (timing/alloc pressure, no assertion semantics changed).
+
 ## CI gate observation (2026-10-21) — CleanCloneSkipGuardTests near the Fast limit
 
 > **Fixed by CI-2** (2026-10-22, master `43d11eb5`). The guard now parses the test tree in

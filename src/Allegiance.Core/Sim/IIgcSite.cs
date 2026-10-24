@@ -595,6 +595,22 @@ public interface IIgcSite
                              IReadOnlyList<global::Allegiance.Core.Wire.ReloadData> entries,
                              bool success) { }
 
+    // ── launcher auto-reload on empty (P787a) ────────────────────────────
+    // Raised by Ship.TryAutoReloadLauncher (the port of native
+    // BaseClient::Reload's ET_Magazine/ET_Dispenser/ET_ChaffLauncher branch,
+    // clintlib.cpp:3560-3667) on the RELOAD-FAILURE leg: no spare launcher of
+    // the equipment type was found in cargo, so the empty mounted launcher is
+    // dropped the native way — native sends FM_CS_DROP_PART and terminates the
+    // launcher (clintlib.cpp:3685-3695). The receiver (ServerHost → Server)
+    // broadcasts the DROP_PART(33) sector-wide so every peer — including the
+    // own ship's pure-renderer client — observes the launcher gone and can play
+    // the type-specific depleted cue (salMissilesDepletedSound /
+    // salChaffDepletedSound / salDispenserEmptySound) from what it sees.
+    // The SUCCESS leg of the same reload rides the existing
+    // <see cref="AutoReloadTriggered"/> seam (entries → RELOAD(129) relay).
+    // No-op default, matching the seam convention.
+    void LauncherReloadFailed(IShipIgc pship, EquipmentType et, byte mount) { }
+
     /// <summary>
     /// C#-only (no igc.h member): a real ship↔ship, ship↔asteroid or
     /// ship↔station collision was just resolved by one of <c>Sector</c>'s

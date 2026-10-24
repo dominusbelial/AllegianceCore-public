@@ -230,13 +230,24 @@ public sealed class DispenserEquipFireLiveTests
         session.SendFireExpendable(FireEt(kind));
 
         // The server's authoritative HandleFireExpendable deploys the real object
-        // and decrements the dispenser's ammo by 1.
+        // and decrements the dispenser's ammo by 1. A launcher with a 1-round
+        // reserve (the real probe launcher here) is EMPTIED by that fire and — no
+        // spare in cargo — is DROPPED the native way (P787a: BaseClient::Reload
+        // failure → FM_CS_DROP_PART + Terminate, clintlib.cpp:3685-3695), so the
+        // mounted launcher vanishes instead of lingering at 0. A launcher with a
+        // bigger reserve stays at ammoBefore - 1.
+        bool empties = ammoBefore == 1;
         int fired = PumpUntil(server, () =>
-            ShipById(server, myId).Parts.First(p => p.PartId == lo.Part.PartId).Amount < ammoBefore,
-            6000);
-        Assert.True(fired < 6000, "server never decremented the dispenser ammo after FIRE_EXPENDABLE");
-        Assert.Equal((short)(ammoBefore - 1),
-            ShipById(server, myId).Parts.First(p => p.PartId == lo.Part.PartId).Amount);
+        {
+            var cur = ShipById(server, myId).Parts.FirstOrDefault(p => p.PartId == lo.Part.PartId);
+            return empties ? cur is null : cur is not null && cur.Amount < ammoBefore;
+        }, 6000);
+        Assert.True(fired < 6000, "server never fired/deployed the dispenser after FIRE_EXPENDABLE");
+        if (empties)
+            Assert.DoesNotContain(ShipById(server, myId).Parts, p => p.PartId == lo.Part.PartId);
+        else
+            Assert.Equal((short)(ammoBefore - 1),
+                ShipById(server, myId).Parts.First(p => p.PartId == lo.Part.PartId).Amount);
 
         var sector = ShipById(server, myId).Sector!;
         short expId = ExpendableId(lo);

@@ -77,6 +77,37 @@ public sealed partial class ClientWorld
         if (!Ships.TryGetValue(message.ShipID, out var ship)) return;
         int mount = unchecked((sbyte)message.Mount);
         var inventory = (ship.Loadout ?? []).Concat(ship.Cargo ?? []).ToList();
+
+        // P787a — an own-ship launcher dropped while EMPTY is the observable
+        // edge native's reload-FAILURE leg exposes: the server broadcasts
+        // DROP_PART(33) when a fire empties a launcher and no spare of that
+        // equipment type is in cargo, having already dropped the empty launcher
+        // (clintlib.cpp:3685-3695). That is the moment the type-specific
+        // DEPLETED cue plays (native fires it at the reload failure,
+        // clintlib.cpp:3223-3226,3407-3421). A MANUAL drop of a launcher that
+        // still has rounds carries Amount > 0 and does not cue.
+        if (message.ShipID == MyShipId && MyShipId is { } me)
+        {
+            var dropped = inventory.FirstOrDefault(p => p.MountId == message.Mount && (mount < 0
+                || PartTypeResolver(p.PartId)?.EquipmentType == message.Et));
+            if (dropped.PartId != 0 && dropped.Amount == 0)
+            {
+                switch (PartTypeResolver(dropped.PartId)?.Type)
+                {
+                    case DataPartTypeIGC.MissileLauncher:
+                        RecordSoundEvent(ClientSoundEventKind.SalMissilesDepleted, me);
+                        break;
+                    case DataPartTypeIGC.ChaffLauncher:
+                        RecordSoundEvent(ClientSoundEventKind.SalChaffDepleted, me);
+                        break;
+                    case DataPartTypeIGC.MineLauncher:
+                    case DataPartTypeIGC.ProbeLauncher:
+                        RecordSoundEvent(ClientSoundEventKind.SalDispenserEmpty, me);
+                        break;
+                }
+            }
+        }
+
         inventory.RemoveAll(p => p.MountId == message.Mount && (mount < 0
             || PartTypeResolver(p.PartId)?.EquipmentType == message.Et));
         StoreInventory(ship, inventory);

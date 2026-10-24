@@ -99,7 +99,11 @@ public sealed partial class Ship
             default: return null;
         }
         part.TimeLoaded = now + DispenserLoadTime(part)!.Value;
-        SetPartAmount(part, (short)(part.Amount - 1)); // FedSrv/FedSrv.CPP:5778-5780
+        short remaining = (short)(part.Amount - 1);
+        SetPartAmount(part, remaining); // FedSrv/FedSrv.CPP:5778-5780
+        // P787a — native's fire-emptied expendable reload (clintlib.cpp:3382-3422):
+        // a chaff/mine/probe fired the launcher to exactly zero → auto-reload.
+        if (remaining == 0) TryAutoReloadLauncher(now, part.EquipmentType);
         return new(model, spoofed);
     }
 }

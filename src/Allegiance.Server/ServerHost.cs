@@ -642,6 +642,27 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
         AutoReload?.Invoke(pship, entries, success);
 
     /// <summary>
+    /// P787a — optional hook the owning <see cref="Server"/> subscribes to
+    /// receive every <see cref="IIgcSite.LauncherReloadFailed"/> the world
+    /// missions raise when a fire empties a launcher and <c>Ship.TryAutoReloadLauncher</c>
+    /// finds no spare launcher of that equipment type in cargo (the port of
+    /// native <c>BaseClient::Reload</c>'s reload-failure leg, which sends
+    /// <c>FM_CS_DROP_PART</c> and terminates the empty launcher,
+    /// <c>clintlib.cpp:3685-3695</c>). The sim has already dropped the empty
+    /// launcher; the owning <see cref="Server"/> broadcasts the <c>DROP_PART(33)</c>
+    /// sector-wide so every peer observes the launcher gone and the own-ship
+    /// pure-renderer client can play the type-specific depleted cue. Null by
+    /// default; <see cref="Server"/> sets it once at boot, running on the sim
+    /// thread.</summary>
+    public Action<IShipIgc, EquipmentType, byte>? LauncherDepleted;
+    /// <summary>The world-mission site implementation of
+    /// <see cref="IIgcSite.LauncherReloadFailed"/>: raise the
+    /// <see cref="LauncherDepleted"/> hook so the owning <see cref="Server"/>
+    /// can relay the <c>DROP_PART(33)</c> sector-wide.</summary>
+    public void LauncherReloadFailed(IShipIgc pship, EquipmentType et, byte mount) =>
+        LauncherDepleted?.Invoke(pship, et, mount);
+
+    /// <summary>
     /// Optional hook the owning <see cref="Server"/> subscribes to receive every
     /// <see cref="IIgcSite.MineCreatedEvent"/> the world missions raise when
     /// <c>Ship.DeployMine</c> creates a real <see cref="Mine"/> model

@@ -33,7 +33,11 @@ public sealed class P692EquipmentLiveTests
         Assert.Equal(1, part.Amount);
         ship.StateM = kind == "chaff" ? ShipControlState.ChaffFire : ShipControlState.MineFire;
         ship.Update(ship.LastUpdate + .01); ship.StateM = 0;
-        Assert.Equal(0, ship.Parts.Single(p => p.PartId == part.PartId).Amount);
+        // P787a — a 1-round launcher fired dry with no spare in cargo is DROPPED
+        // the native way (BaseClient::Reload failure → FM_CS_DROP_PART +
+        // Terminate, clintlib.cpp:3685-3695), so the mounted launcher is gone
+        // rather than lingering at amount 0 (the pre-P787a shape).
+        Assert.DoesNotContain(ship.Parts, p => p.PartId == part.PartId);
         P660NextMatchLiveTests.Pump(server, () => P660NextMatchLiveTests.Read(owner, () => kind switch
         {
             "mine" => owner.World.Mines.Count > 0,

@@ -37,6 +37,11 @@ public class P737SoundAssetTests
             "vo_sal_reloadingmissiles",
             "vo_sal_reloadingchaff",
             "vo_sal_reloadingdispenser",
+            // P787a — the launcher DEPLETED (reload-failure) VOs, SIM-0445/0452/0453
+            // (clintlib.cpp:3224,3412,3417):
+            "vo_sal_missilesdepleted",
+            "vo_sal_chaffdepleted",
+            "vo_sal_dispenserempty",
         };
 
         foreach (var stem in newWaves)

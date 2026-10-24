@@ -653,6 +653,19 @@ public sealed partial class Game1
                     snd?.PlayStartReload();
                     Console.WriteLine("[monogame] audio: reload started");
                     break;
+                // ── P787a — own-ship launcher depleted (reload failure) ────
+                case ClientSoundEventKind.SalMissilesDepleted:
+                    snd?.PlaySalMissilesDepleted();
+                    Console.WriteLine("[monogame] audio: missiles depleted");
+                    break;
+                case ClientSoundEventKind.SalChaffDepleted:
+                    snd?.PlaySalChaffDepleted();
+                    Console.WriteLine("[monogame] audio: chaff depleted");
+                    break;
+                case ClientSoundEventKind.SalDispenserEmpty:
+                    snd?.PlaySalDispenserEmpty();
+                    Console.WriteLine("[monogame] audio: dispenser empty");
+                    break;
             }
         }
     }

@@ -344,6 +344,32 @@ public enum ClientSoundEventKind
     /// shipIGC.h:617,647; wave <c>mount</c>, sounddef.mdl:289).</summary>
     StartReload,
 
+    // ── P787a — own-ship launcher DEPLETED (reload-failure) cues ──────────
+    // Native plays these from the reload-FAILURE leg when a fire empties a
+    // launcher and no spare is in cargo, at the moment Reload fails
+    // (FireMissile clintlib.cpp:3223-3226; FireExpendable clintlib.cpp:3407-3421),
+    // BEFORE dropping the empty launcher. This pure-renderer client cannot see
+    // the fire-time depletion (no per-magazine pool wire), so it infers it from
+    // what the native drop makes observable: the own ship's launcher arriving
+    // at an empty state via the DROP_PART(33) relay the server broadcasts on the
+    // reload-failure leg (P787a). Each cue is gated to the local ship (native's
+    // <c>pShip == m_ship</c>).
+
+    /// <summary><c>salMissilesDepletedSound</c> — the local ship's missile
+    /// launcher ran dry with no spare in cargo (clintlib.cpp:3224; wave
+    /// <c>vo_sal_missilesdepleted</c>).</summary>
+    SalMissilesDepleted,
+
+    /// <summary><c>salChaffDepletedSound</c> — the local ship's chaff launcher
+    /// ran dry with no spare (clintlib.cpp:3412; wave
+    /// <c>vo_sal_chaffdepleted</c>).</summary>
+    SalChaffDepleted,
+
+    /// <summary><c>salDispenserEmptySound</c> — the local ship's mine/probe
+    /// dispenser ran dry with no spare (clintlib.cpp:3417; wave
+    /// <c>vo_sal_dispenserempty</c>).</summary>
+    SalDispenserEmpty,
+
     // ── P741 (parity wave 25: own-ship shield power edges + quit reasons) ──
     // Native fires the shield power-up/down cues from CshieldIGC on the OWN
     // shield object (shieldIGC.cpp:94,185): the power-up cue when the shield

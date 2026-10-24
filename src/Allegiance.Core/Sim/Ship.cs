@@ -3660,6 +3660,163 @@ public sealed partial class Ship : Model, IShipIgc
         return outcome;
     }
 
+    /// <summary>
+    /// P787a — the launcher auto-reload, the port of native
+    /// <c>BaseClient::Reload</c>'s <c>ET_Magazine</c>/<c>ET_Dispenser</c>/
+    /// <c>ET_ChaffLauncher</c> branch (<c>clintlib.cpp:3560-3667</c>), executed
+    /// SERVER-side at the native trigger — the fire that empties the launcher
+    /// (<c>TryFireMissile</c>/<c>FireDispenser</c>). Native runs this on the
+    /// client and sends the chosen <c>FM_CS_RELOAD</c> entries to the server;
+    /// this port's client is a pure renderer and the server is the sole sim
+    /// authority, so the same selection rules run here and the outcome rides
+    /// the same wires: success → <see cref="IIgcSite.AutoReloadTriggered"/>
+    /// with the applied entries (server relays <c>RELOAD(129)</c> sector-wide);
+    /// failure → the empty launcher is dropped natively and
+    /// <see cref="IIgcSite.LauncherReloadFailed"/> is raised (server relays
+    /// <c>DROP_PART(33)</c>). Selection rules mirror native exactly: an empty
+    /// launcher takes any mountable part of that equipment type (dropping
+    /// itself, <c>clintlib.cpp:3599-3620</c>); otherwise it tops up from the
+    /// same part type (<c>clintlib.cpp:3621-3626</c>); capped at
+    /// <c>c_MaxReloads = 8</c> entries (<c>clintlib.cpp:3431</c>); every applied
+    /// entry resets the mounted fraction and load deadline
+    /// (<c>clintlib.cpp:3651-3652</c>, via <see cref="TryApplyReloadEntry"/>'s
+    /// existing FedSrv.CPP:6637 reset). Debounce: none — native calls Reload
+    /// straight from the fire path (<c>clintlib.cpp:3206,3382</c>) with no
+    /// timer, because the reload only fires on the exact empty edge and a
+    /// failure drops the launcher (so nothing re-triggers).
+    /// </summary>
+    public AutoReloadOutcome TryAutoReloadLauncher(double now, EquipmentType et)
+    {
+        if (et is not (EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher))
+            return AutoReloadOutcome.NotAttempted;
+        if (Mission is null) return AutoReloadOutcome.NotAttempted;
+
+        // The just-emptied launcher at mount 0 (native Reload receives plauncher).
+        var mounted = _parts.FirstOrDefault(p => p.EquipmentType == et && p.MountId == 0);
+        if (mounted is null || !IsLauncherType(mounted.Type.Type))
+            return AutoReloadOutcome.NotAttempted;
+
+        var entries = new List<ReloadData>();
+
+        // Native mutable "current launcher" state (clintlib.cpp:3564-3578):
+        // the equipped launcher's part type + its hull capacity; ammo starts at
+        // the just-emptied amount (0). ppartType == null means "pick anything".
+        DataPartTypeIGC? ppartType = mounted.Type;
+        int ammo = mounted.Amount;
+        int maxAmmo = LauncherCapacity(mounted.Type);
+        var consumed = new HashSet<int>();   // cargo slots already committed to an entry
+
+        while (ammo < maxAmmo)
+        {
+            int? topupSlot = null;
+
+            // Scan cargo slot 0..4 (native mount -1..-c_maxCargo — slot 0 first,
+            // CargoSlotForMount(-1)=0), keeping the LAST same-type match as the
+            // top-up source (native's unconditional reassignment,
+            // clintlib.cpp:3621-3626).
+            for (int s = 0; s < _cargo.Length; s++)
+            {
+                if (consumed.Contains(s)) continue;
+                var cp = _cargo[s];
+                if (cp is null || cp.EquipmentType != et) continue;
+                if (!_hull.CanMountPart(cp.Type, 0)) continue;
+
+                if (ppartType is null)
+                {
+                    // Empty launcher with no same-type spare: "when one has
+                    // nothing ... one will pick anything" (clintlib.cpp:3599-3620).
+                    // The FIRST mountable match in scan order is picked (sets
+                    // ppartType, so later matches in this pass take the top-up
+                    // path); the NA entry drops the empty launcher and swaps the
+                    // cargo one to mount 0.
+                    consumed.Add(s);
+                    entries.Add(new ReloadData(AmountTransfered: -1, Mount: (sbyte)(-(s + 1))));
+                    ppartType = cp.Type;
+                    ammo = cp.Amount;
+                    maxAmmo = LauncherCapacity(cp.Type);
+                    if (ammo == maxAmmo) break;   // full up — no point continuing (clintlib.cpp:3618-3619)
+                }
+                else if (cp.Type == ppartType)
+                {
+                    topupSlot = s;
+                }
+            }
+
+            if (topupSlot is { } ts)
+            {
+                consumed.Add(ts);
+                int amount = _cargo[ts]!.Amount;
+                int transfer;
+                if (ammo + amount <= maxAmmo)
+                {
+                    transfer = amount;                     // consume the whole cargo launcher (clintlib.cpp:3639)
+                }
+                else
+                {
+                    transfer = maxAmmo - ammo;             // partial top-up (clintlib.cpp:3644)
+                }
+                ammo += transfer;
+                entries.Add(new ReloadData(AmountTransfered: (short)transfer, Mount: (sbyte)(-(ts + 1))));
+            }
+            else if (ppartType is not null && ammo == 0)
+            {
+                // Couldn't reload the existing launcher — retry being less
+                // picky (clintlib.cpp:3656-3664).
+                ppartType = null;
+                maxAmmo = int.MaxValue;
+            }
+            else break;
+        }
+
+        AutoReloadOutcome outcome;
+        if (entries.Count > 0)
+        {
+            // Apply each entry through the EXACT P192 per-entry applicator (the
+            // same method Server.HandleReload calls for a manual FM_CS_RELOAD),
+            // which swaps/terminates/moves launchers and resets mounted fractions
+            // (FedSrv.CPP:6593-6640). The NA pick must come before its top-ups
+            // (native records it first, clintlib.cpp:3602-3603), which this
+            // ordering preserves.
+            foreach (var e in entries)
+                TryApplyReloadEntry(e.Mount, e.AmountTransfered);
+
+            outcome = AutoReloadOutcome.Reloaded;
+            LastLauncherAutoReloadOutcome = outcome;
+            LastLauncherAutoReloadAt = now;
+            Mission?.Site.AutoReloadTriggered(this, entries, true);
+        }
+        else
+        {
+            // Reload-failure leg: drop the empty launcher the native way
+            // (plauncher->Terminate() + FM_CS_DROP_PART, clintlib.cpp:3685-3695).
+            // The sim removes it (no treasure — native's empty-launcher guard,
+            // FedSrv.CPP:6323); the site seam lets the server relay DROP_PART(33).
+            outcome = AutoReloadOutcome.Depleted;
+            LastLauncherAutoReloadOutcome = outcome;
+            LastLauncherAutoReloadAt = now;
+            _parts.Remove(mounted);
+            BumpLoadout();
+            Mission?.Site.LauncherReloadFailed(this, et, mounted.MountId);
+        }
+        return outcome;
+    }
+
+    /// <summary>The P787a analogue of <see cref="LastAutoReloadOutcome"/>: the
+    /// outcome of the most recent launcher auto-reload attempt ("Reloading
+    /// missiles/chaff/dispenser..." vs "…depleted.").</summary>
+    public AutoReloadOutcome LastLauncherAutoReloadOutcome { get; private set; } = AutoReloadOutcome.NotAttempted;
+
+    /// <summary>The P787a analogue of <see cref="LastAutoReloadAt"/>.</summary>
+    public double LastLauncherAutoReloadAt { get; private set; }
+
+    /// <summary>P787a — the hull's capacity for a launcher, the port of native
+    /// <c>((IlauncherTypeIGC*)pparttype)-&gt;GetAmount(pship)</c>
+    /// (clintlib.cpp:3571,3614): <c>max(1, hullCapacity / expendableSize)</c>
+    /// for the launcher's equipment type — exactly what
+    /// <see cref="ClampPartAmount"/> clamps to, so that helper yields it.</summary>
+    private int LauncherCapacity(DataPartTypeIGC type)
+        => ClampPartAmount(_hull, Mission?.Core, type, int.MaxValue);
+
     /// <summary>The P412 fuel analogue of <see cref="LastAutoReloadOutcome"/>:
     /// the outcome of the most recent fuel auto-reload attempt ("Reloading
     /// fuel..." vs "Fuel depleted."), mirroring <see cref="Ship.Ammo"/>'s shape.</summary>
@@ -4342,7 +4499,11 @@ public sealed partial class Ship : Model, IShipIgc
         mission.Site.FireMissile(this, MagazineSentinel.Instance, now, target,
             missileType.MaxLock > 0f ? launchLock / missileType.MaxLock : 1f);
         FireMissile(missileType, now, target, launchLock, dud);
-        SetPartAmount(launcher, (short)(launcher.Amount - 1));         // ammo decrement (FedSrv.CPP:5509-5510)
+        short remainingMissiles = (short)(launcher.Amount - 1);
+        SetPartAmount(launcher, remainingMissiles);         // ammo decrement (FedSrv.CPP:5509-5510)
+        // P787a — native's fire-emptied launcher reload (clintlib.cpp:3206-3228):
+        // a missile fired the magazine to exactly zero → auto-reload from cargo.
+        if (remainingMissiles == 0) TryAutoReloadLauncher(now, EquipmentType.Magazine);
         return true;
     }
 

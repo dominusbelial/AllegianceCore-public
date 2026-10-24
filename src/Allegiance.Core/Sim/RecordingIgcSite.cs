@@ -285,6 +285,11 @@ public sealed class RecordingIgcSite : IIgcSite
         Wrap(nameof(AutoReloadTriggered), () => _default.AutoReloadTriggered(pship, entries, success),
              pship, $"entries[{entries.Count}]", success);
 
+    // ── launcher auto-reload on empty (P787a) ─────────────────────────────
+    public void LauncherReloadFailed(IShipIgc pship, EquipmentType et, byte mount) =>
+        Wrap(nameof(LauncherReloadFailed), () => _default.LauncherReloadFailed(pship, et, mount),
+             pship, et, mount);
+
     // ── projectile hull hit (P364) ─────────────────────────────────────────
     public void ProjectileHitEvent(Projectile p, Vector3 worldImpact, Vector3 worldNormal,
         float targetRadius, short targetId, short clusterId, bool absorbedByShield) =>

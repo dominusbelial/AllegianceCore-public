@@ -563,7 +563,39 @@ public sealed partial class Server
         }
         var msg = new Reload { Entries = entries, ShipID = ship.Id };
         SendSectorWide(ship.Sector, msg.Encode());
-        Console.WriteLine($"[autoreload] ship {ship.Id}: ammo hit zero -> auto-reload {entries.Count} cargo entry/entries applied -> RELOAD(129) shipID={ship.Id} sector {ship.Sector.Id} wide");
+        Console.WriteLine($"[autoreload] ship {ship.Id}: pool/launcher emptied -> auto-reload {entries.Count} cargo entry/entries applied -> RELOAD(129) shipID={ship.Id} sector {ship.Sector.Id} wide");
+    }
+
+    /// <summary>
+    /// P787a — relay a launcher auto-reload FAILURE (raised from <c>Sim/Ship.cs</c>
+    /// <c>TryAutoReloadLauncher</c> via <see cref="ServerHost.LauncherReloadFailed"/>
+    /// when a fire empties a missile/chaff/dispenser launcher and no spare
+    /// launcher of that equipment type remains in cargo) as a sector-wide
+    /// <c>DROP_PART(33)</c> broadcast — the port of native's reload-failure leg
+    /// (<c>clintlib.cpp:3685-3695</c>: <c>FM_CS_DROP_PART</c> + terminating the
+    /// empty launcher). The sim has already dropped the empty launcher; this
+    /// relay lets every peer — including the own ship's pure-renderer client —
+    /// observe the launcher gone and play the type-specific depleted cue
+    /// (salMissilesDepletedSound / salChaffDepletedSound / salDispenserEmptySound).
+    /// Unlike a MANUAL DROP_PART, no part treasure is created (native's empty-
+    /// launcher guard, <c>FedSrv.CPP:6323</c>). Runs on the simulation thread
+    /// inside the tick that emptied the launcher, like every other broadcast.
+    /// </summary>
+    private void BroadcastLauncherDepleted(IShipIgc pship, EquipmentType et, byte mount)
+    {
+        if (pship is not Ship ship)
+        {
+            Console.WriteLine("[launcher] LauncherReloadFailed with a non-Ship — ignored");
+            return;
+        }
+        if (ship.Sector is null)
+        {
+            Console.WriteLine($"[launcher] ship {ship.Id} has no sector — no DROP_PART relay");
+            return;
+        }
+        var msg = new DropPart { ShipID = ship.Id, Et = et, Mount = mount };
+        SendSectorWide(ship.Sector, msg.Encode());
+        if (ConsoleLog.Verbose) ConsoleLog.Write($"[launcher] ship {ship.Id}: {et}@{(int)mount} emptied, no cargo spare -> empty launcher dropped -> DROP_PART(33) shipID={ship.Id} sector {ship.Sector.Id} wide (depleted)");
     }
 
     /// <summary>Export a newly deployed field to its owning side (including NPC layers).

@@ -365,6 +365,12 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
     private SoundEffect _salReloadingMissiles = null!;
     private SoundEffect _salReloadingChaff = null!;
     private SoundEffect _salReloadingDispenser = null!;
+    // P787a — own-ship launcher DEPLETED (reload-failure) VOs
+    // (vo_sal_{missilesdepleted,chaffdepleted,dispenserempty}; sounddef.mdl:814-818
+    // family; NativeVoiceCatalog IDs 1417-1419).
+    private SoundEffect _salMissilesDepleted = null!;
+    private SoundEffect _salChaffDepleted = null!;
+    private SoundEffect _salDispenserEmpty = null!;
     private SoundEffect _drop = null!;            // drop — dropSound (:290)
     private SoundEffect _reloading = null!;       // vo_sal_reloading — salReloadingSound (:819)
     // P723 — in-flight command/targeting one-shots. Real waves from
@@ -873,6 +879,11 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
             _salReloadingMissiles = LoadSound("Sounds/vo_sal_reloadingmissiles");
             _salReloadingChaff = LoadSound("Sounds/vo_sal_reloadingchaff");
             _salReloadingDispenser = LoadSound("Sounds/vo_sal_reloadingdispenser");
+            // P787a — launcher depleted VOs (vo_sal_{missilesdepleted,
+            // chaffdepleted,dispenserempty}; NativeVoiceCatalog 1417-1419).
+            _salMissilesDepleted = LoadSound("Sounds/vo_sal_missilesdepleted");
+            _salChaffDepleted = LoadSound("Sounds/vo_sal_chaffdepleted");
+            _salDispenserEmpty = LoadSound("Sounds/vo_sal_dispenserempty");
             _drop = LoadSound("Sounds/drop");
             _reloading = LoadSound("Sounds/vo_sal_reloading");
             _newTarget = LoadSound("Sounds/newtargetneutral");
@@ -1399,6 +1410,18 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
     /// <summary>P737 — reloading dispenser (<c>vo_sal_reloadingdispenser</c>;
     /// salReloadingDispenserSound, clintlib.cpp:3403, sounddef.mdl:817).</summary>
     public void PlaySalReloadingDispenser() => PlayWarnOneShot(_salReloadingDispenser);
+
+    /// <summary>P787a — missiles depleted (<c>vo_sal_missilesdepleted</c>;
+    /// salMissilesDepletedSound, clintlib.cpp:3224).</summary>
+    public void PlaySalMissilesDepleted() => PlayWarnOneShot(_salMissilesDepleted);
+
+    /// <summary>P787a — chaff depleted (<c>vo_sal_chaffdepleted</c>;
+    /// salChaffDepletedSound, clintlib.cpp:3412).</summary>
+    public void PlaySalChaffDepleted() => PlayWarnOneShot(_salChaffDepleted);
+
+    /// <summary>P787a — dispenser empty (<c>vo_sal_dispenserempty</c>;
+    /// salDispenserEmptySound, clintlib.cpp:3417).</summary>
+    public void PlaySalDispenserEmpty() => PlayWarnOneShot(_salDispenserEmpty);
 
     /// <summary>P737 — the generic reload-start SFX (<c>mount</c>; native
     /// startReloadSound, clintlib.cpp:3219,3404 / shipIGC.h:617,647,
@@ -2279,6 +2302,9 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
             _salReloadingMissiles?.Dispose();    // P737
             _salReloadingChaff?.Dispose();       // P737
             _salReloadingDispenser?.Dispose();   // P737
+            _salMissilesDepleted?.Dispose();     // P787a
+            _salChaffDepleted?.Dispose();        // P787a
+            _salDispenserEmpty?.Dispose();       // P787a
             _drop?.Dispose();                  // P719
             _reloading?.Dispose();             // P719
             foreach (var sfx in _voices.Values) sfx.Dispose();
