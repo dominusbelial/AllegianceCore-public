@@ -60,7 +60,10 @@ public static class ShipRenderScale
         BoundingSphere? acc = null;
         foreach (var mesh in m.Meshes)
         {
-            var T = mesh.ParentBone.Transform;
+            // A procedurally built model (the stand-in) can carry meshes with no
+            // parent bone — treat that as the identity transform (P803: the
+            // boarded-gunner hangar preview crashed here).
+            var T = mesh.ParentBone?.Transform ?? Matrix.Identity;
             float s = new Vector3(T.M11, T.M12, T.M13).Length();
             var local = mesh.BoundingSphere;
             var c = Vector3.Transform(local.Center, T);

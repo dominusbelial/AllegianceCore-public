@@ -2451,10 +2451,15 @@ public sealed partial class Game1
     /// effect, so each ship gets one stable orientation object. Falls back to the raw
     /// last-known pose when the kill switch is off or the reckoner isn't seeded (a
     /// ship with no pose was already excluded by the gather guard).</summary>
+    /// <summary>P803 — the carrier a boarded gunner rides this frame (-1 = not
+    /// boarded): its hull is hidden in the turret cockpit view like the own hull.</summary>
+    private short _turretCarrierId = -1;
+
     private void GatherRenderPoses(GameTime gameTime, int sentFireM = 0)
     {
         var world = _session.World;
         _poses.Clear();
+        _turretCarrierId = -1;
         _teleportEmitterCount = 0;   // P781 — rebuilt every frame below (preallocated array)
         _damageEmitters.Clear();
         _engineTrailEmitters.Clear();
@@ -2502,9 +2507,22 @@ public sealed partial class Game1
 
             if (world.MyShipId is { } me)
             {
+                // P803 — a boarded gunner/observer has no ship of its own to fly:
+                // native's gunner controls only aim the turret, and its view rides
+                // the carrier (GetSourceShip). Running the own-ship flight sim here
+                // let the gunner's inputs fly an unseated copy far away from the
+                // carrier ("decoupled", seen live 2026-10-24); the scene pose is
+                // the carrier's instead.
+                if (world.Ships.TryGetValue(me, out var boardedSelf) && boardedSelf.ParentId >= 0
+                    && world.Ships.TryGetValue(boardedSelf.ParentId, out var carrierEnt))
+                {
+                    _turretCarrierId = boardedSelf.ParentId;
+                    if (carrierEnt.Latest is { } carrierUp)
+                        _poses[me] = new Flight.PredictedPose(carrierUp.Position, carrierUp.Orientation);
+                }
                 // Own ship also drives the P213 engine/ambience mix from its
                 // real telemetry.
-                if (world.Ships.TryGetValue(me, out var mine) && mine.Latest is { } mineUp)
+                else if (world.Ships.TryGetValue(me, out var mine) && mine.Latest is { } mineUp)
                 {
                     // P508 — wire the own-ship local simulation for this frame BEFORE
                     // reading the render pose: feed the server clock, seed/re-seed the
@@ -2668,6 +2686,9 @@ public sealed partial class Game1
                 // no pose were already excluded above.
                 Flight.PredictedPose pose = RemoteShipPose(world, id, up, ship);
                 _poses[id] = pose;
+                // P803 — a boarded gunner rides its carrier's smoothed render pose.
+                if (world.MyShipId is { } meRide && world.Ships.TryGetValue(meRide, out var rider) && rider.ParentId == id)
+                    _poses[meRide] = pose;
                 // P297 — any other visible damaged ship vents too (native's
                 // per-ship AddDamageParticles scope — not just the local hull).
                 // P338 — pass the ship's real rendered radius (0.5 × HullType.Length)

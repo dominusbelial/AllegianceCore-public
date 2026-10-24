@@ -244,4 +244,38 @@ public class TurretGunnerFiringTests
         Assert.NotEqual(bpt.Lifespan, actualLife);       // the gunner target changed the lifespan off the decoded value
         Console.WriteLine($"BLAST-LEAD: turret blast round lifespan {actualLife:F3}s (intercept {intercept:F3}, decoded {bpt.Lifespan:F3})");
     }
+
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void A_weapon_mounted_on_an_occupied_turret_picks_up_its_gunner_and_fires()
+    {
+        // P803 — native CweaponIGC::SetMountID (weaponIGC.cpp:126-135): a weapon mounted on a turret
+        // hardpoint binds the gunner already sitting there. The carrier's launch BUY_LOADOUT remounts
+        // every part; without this the boarded gunner's trigger pointed at a discarded weapon and the
+        // turret never fired (real-window P803 proof: 280 ACTIVE_TURRET_UPDATEs, 0 projectiles).
+        Require.Artwork();
+        var mission = NewStartedMission();
+        var sector = mission.Sectors[0];
+        var (hull, turretMount, weaponType, _) = TurretFight.Value;
+
+        var carrier = new Ship(7712, hull, new Vector3(50f, 0f, 0f), Vector3.Zero, Orientation.Identity);
+        mission.PlaceShip(carrier, sector);
+        var gunner = NewGunner(mission, Orientation.Identity);
+        gunner.ParentShip = carrier;
+        gunner.TurretId = (short)turretMount;
+        carrier.AddChildShip(gunner);
+
+        var turretWeapon = carrier.MountWeapon(weaponType, (short)turretMount);   // the (re)mount
+        Assert.Same(gunner, turretWeapon.Gunner);
+
+        gunner.StateM |= ShipControlState.WeaponsMask;
+        if (weaponType.CAmmoPerShot > 0) carrier.Ammo = 1; else carrier.Energy = weaponType.EnergyPerShot;
+        turretWeapon.Update(0.0);
+        turretWeapon.Update(turretWeapon.GetDtBurst() + 0.003);
+        Assert.Single(sector.Models.OfType<Projectile>());
+
+        // A fixed mount never picks up a gunner.
+        int fixedMount = Enumerable.Range(0, hull.Hardpoints.Length).First(i => hull.Hardpoints[i].Fixed);
+        Assert.Null(carrier.MountWeapon(weaponType, (short)fixedMount).Gunner);
+    }
 }

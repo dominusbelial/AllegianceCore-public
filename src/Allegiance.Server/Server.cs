@@ -94,6 +94,20 @@ public sealed partial class Server : IDisposable
     private readonly PerPeerRateLimiter _unsupportedLog = new();
     private readonly PerPeerRateLimiter _turretLog = new();
 
+    // P803 (SIM-0470) — the stored last ACTIVE_TURRET_UPDATE(99) per gunner
+    // ship, the port of native CFSShip::m_atu (FedSrv/fsship.h:541, written by
+    // CFSPlayer::SetActiveTurretUpdate fsship.cpp:1206-1219): the relay in the
+    // HEAVY_SHIPS_UPDATE(176) assembly (FedSrv.CPP:4049-4071) copies
+    // atu.controls/atu.orientation intact for every OTHER peer, gated only on
+    // the stored time being within ±1.5 s of the mission clock
+    // (FedSrv.CPP:3783-3790) — so the entry is kept until a fresher ATU
+    // replaces it and simply ages out of the relay when the gunner stops
+    // firing. Keyed by ship id; entries for gone ships are inert (the relay
+    // only reads live sector models) and replaced on the next board.
+    // Internal for the SIM-0470 relay test (InternalsVisibleTo).
+    internal readonly Dictionary<short, (uint TimeMs, ControlData Controls, Orientation Orientation)>
+        _lastTurretUpdates = new();
+
     // P646 (review finding H3) — rate-limits the "DUPLICATE LOGONREQ from a
     // seated peer" refusal log so a duplicate-logon flood cannot force
     // unbounded synchronous console I/O inside one tick (same rationale and

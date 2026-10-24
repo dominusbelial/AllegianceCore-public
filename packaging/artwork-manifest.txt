@@ -1412,6 +1412,7 @@ invshield.mdl
 invsmine.mdl
 invsmissile.mdl
 invsweapon.mdl
+invturret.mdl
 invturreticonbmp.mdl
 invweaponiconbmp.mdl
 ioncannon.ogg

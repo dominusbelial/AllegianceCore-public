@@ -25,6 +25,7 @@ public enum AutoActionKind
     TargetClass,    // P623 — StrArg = "rel:cls[:dir]" class-filtered target
     Autoshot,       // real-backbuffer screenshot; ShotIndex = in-flight schedule index
     HeadToDock,     // engage autopilot to the home friendly station (server docks us)
+    BoardPilot,     // P803 — board StrArg (player name) as a turret gunner once seated
     SweepHull,      // docked hangar preview: IntArg = hull step (0 = shot current, >0 = cycle+hshot)
     Suicide,        // P584 — send the suicide (K key) so death/eject HUD art can be photographed
     Exit,           // request the client to exit
@@ -54,6 +55,7 @@ public sealed class AutoProofMachine
 
     // observed-world latches (fed by the client)
     private bool _seated;
+    private double? _seatedAt;
     private bool _docked;
     private bool _launched;
     private double _now;
@@ -61,6 +63,7 @@ public sealed class AutoProofMachine
 
     // emission latches (ensure one-shot)
     private bool _readyEmitted;
+    private bool _boardEmitted;
     private bool _launchEmitted;
     private bool _gotoEmitted;
     private bool _targetEmitted;
@@ -105,7 +108,16 @@ public sealed class AutoProofMachine
     public void Tick(double nowSeconds) => _now = nowSeconds;
 
     /// <summary>The local ship has been seated (MyShipId set).</summary>
-    public void NoteSeated() => _seated = true;
+    public void NoteSeated()
+    {
+        if (!_seated) _seatedAt = _now;
+        _seated = true;
+    }
+
+    /// <summary>P803 — seconds since seating (0 before seated); the
+    /// <c>--auto-launch-after</c> delay anchor.</summary>
+    public double SecondsSinceSeated
+        => _seated ? Math.Max(0.0, _now - (_seatedAt ?? _now)) : 0.0;
 
     /// <summary>The client has docked (ShipEntity.StationId != -1).</summary>
     public void NoteDocked()
@@ -160,8 +172,19 @@ public sealed class AutoProofMachine
             _due.Enqueue(new AutoAction(AutoActionKind.SendReady));
         }
 
-        // A docked ship that never launched: auto-launch fires when docked.
-        if (!_launched && _plan.AutoLaunchRequested && _docked && !_launchEmitted)
+        // P803 — board the named pilot once seated (the executor retries until
+        // both ships are docked and the mission started).
+        if (_plan.AutoBoard.Length > 0 && !_boardEmitted && _seated)
+        {
+            _boardEmitted = true;
+            _due.Enqueue(new AutoAction(AutoActionKind.BoardPilot, StrArg: _plan.AutoBoard));
+        }
+
+        // A docked ship that never launched: auto-launch fires when docked
+        // (P803 — optionally delayed from seating so a second auto client can
+        // board this ship first; boarding needs both ships docked).
+        if (!_launched && _plan.AutoLaunchRequested && _docked && !_launchEmitted
+            && SecondsSinceSeated >= _plan.AutoLaunchAfterSeconds)
         {
             _launchEmitted = true;
             _due.Enqueue(new AutoAction(AutoActionKind.LaunchHull, StrArg: _plan.LaunchHull));

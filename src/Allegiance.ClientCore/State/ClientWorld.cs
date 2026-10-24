@@ -2942,6 +2942,26 @@ public sealed partial class ClientWorld
             if ((wasGone || !hadPose) && ownSector != 0)
                 MaybeSignalArrival(ownSector, e.ShipId, e.Latest?.Position, entry.Velocity, e.IsMine);
         }
+
+        // P803 (SIM-0470) — the active-turret relay (native client half,
+        // appmsg.cpp:776-794): each record carries another gunner's
+        // controls/orientation; the native client resolves the ship, requires
+        // it boarded with a cluster (pship->GetParentShip() && GetCluster(),
+        // :791-792) and applies ProcessShipUpdate(timeReference, atu)
+        // (shipIGC.cpp:3104-3137), integrating the turret facing and latching
+        // the weapons stateM. The port stores both on the child entity — a
+        // boarded child streams no pose of its own, so this relay is the only
+        // wire source of where a remote turret points / whether it fires.
+        foreach (var atu in heavy.ActiveTurretUpdates)
+        {
+            if (atu.ShipId == MyShipId) continue;          // native assert (appmsg.cpp:788)
+            // Native resolves the ship in its own IGC table (appmsg.cpp:789) and
+            // skips unknown ids without creating anything.
+            if (!_ships.TryGetValue(atu.ShipId, out var e)) continue;
+            if (e.ParentId < 0) continue;                  // native gate (appmsg.cpp:791-792)
+            e.TurretFacing = atu.Orientation;
+            e.TurretFiring = true;
+        }
     }
 
     /// <summary>
@@ -3974,6 +3994,8 @@ public sealed partial class ClientWorld
         // appmsg.cpp:2007-2008).
         e.ParentId = -1;
         e.BoardTurretId = -1;   // HUD-20 — the mount dies with the parent link
+        e.TurretFacing = null;  // P803 — a flying ship carries no turret facing
+        e.TurretFiring = false;
 
         // Native re-applies the whole loadout incl. hull (ProcessShipLoadout,
         // :2029-2031). Split mounted vs cargo like BuyLoadoutAck (P626).

@@ -255,12 +255,21 @@ public sealed partial class Game1
             };
             // HUD-18 — the TTI's GetSpeed(Me) is exactly HudFrame.Speed: the
             // local sim's |velocity| while prediction renders, else the server's.
+            // P803 — Me is the SOURCE ship (console.cpp:783), so a boarded
+            // gunner's pane reads the carrier's speed.
             float? ownSpeed = null;
             if (_session.World.MyShipId is { } me && _session.World.Ships.TryGetValue(me, out var mine)
                 && mine.Latest is { } mineUp)
-                ownSpeed = _ownShipPrediction && _ownSim.HaveHull
+            {
+                var speedShip = mine;
+                if (mine.ParentId >= 0 && _session.World.Ships.TryGetValue(mine.ParentId, out var speedParent)
+                    && speedParent.Latest is { })
+                    speedShip = speedParent;
+                var speedUp = ReferenceEquals(speedShip, mine) ? mineUp : speedShip.Latest!;
+                ownSpeed = _ownShipPrediction && _ownSim.HaveHull && ReferenceEquals(speedShip, mine)
                     ? _ownSim.Velocity.Length()
-                    : mineUp.Velocity.Length();
+                    : speedUp.Velocity.Length();
+            }
             return TargetPaneModel.Build(_session.World, kind, t.Id, t.Name, _hullById,
                 _shopCatalog?.StationTypes, _shopCatalog?.ProbeTypes, ComputeTargetInRange(kind, t.Id), ownSpeed,
                 // P786 — the miner shipload the Target ore fill divides by
@@ -307,13 +316,17 @@ public sealed partial class Game1
     /// <see cref="TargetWeaponRange.IsInRange"/>; this method only gathers the
     /// native inputs:
     /// <list type="bullet">
-    /// <item>shooter = the own ship (a boarded gunner returns false: native
-    /// solves with the parent's <c>GetTurretID()</c> part, which the client does
-    /// not store yet — HUD-18b);</item>
-    /// <item>weapon = the selected mount's catalogue weapon;</item>
-    /// <item>own pose/orientation = the own-shot echo's pose (<c>_poses[me]</c>),
-    /// own velocity = the server update's velocity, exactly as
-    /// <see cref="EmitOwnShots"/> uses them;</item>
+    /// <item>shooter = the own ship, or — P803, for a boarded gunner — the
+    /// PARENT (native pship = pshipParent, indicator.cpp:196-204);
+    /// an observer (turret NA) has no weapon and stays false (native
+    /// <c>w = NULL</c>, :200-203);</item>
+    /// <item>weapon = the selected mount's catalogue weapon, or the TURRET's
+    /// weapon — the carrier's mounted part at the gunner's
+    /// <c>GetTurretID()</c> mount (indicator.cpp:196-204);</item>
+    /// <item>own pose/orientation = the shooter's streamed pose, own velocity =
+    /// the shooter's server-update velocity (solveForLead's
+    /// <c>shooter-&gt;GetPosition/GetVelocity/GetOrientation</c>,
+    /// Igc/common.cpp:135-138);</item>
     /// <item>target pose/velocity/radius for the four kinds
     /// <see cref="TargetPaneModel"/> resolves.</item>
     /// </list>
@@ -324,21 +337,39 @@ public sealed partial class Game1
         if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var mine)
             || mine.Latest is not { } mineUp)
             return false;
-        // Out of scope (HUD-18b): a gunner's weapon is the parent's turret mount
-        // (indicator.cpp:196-204), and the client keeps only ParentId today.
-        if (mine.ParentId >= 0) return false;
+        // P803 — the gunner branch native takes at indicator.cpp:196-204:
+        // shooter = the parent ship, weapon = the parent's mounted part at the
+        // gunner's turret mount (GetTurretID() != NA, else w = NULL → no
+        // indicator). The client stores exactly this pairing (ParentId +
+        // BoardTurretId, appmsg.cpp:2035-2079/SetTurretID :2073).
+        ShipEntity shooter = mine;
+        ServerShipUpdate shooterUp = mineUp;
+        int weaponMount = _selectedMount;
+        if (mine.ParentId >= 0)
+        {
+            if (mine.BoardTurretId < 0) return false;   // observer: native w = NULL (indicator.cpp:200-203)
+            if (!world.Ships.TryGetValue(mine.ParentId, out var parent)
+                || parent.Latest is not { } parentUp)
+                return false;
+            shooter = parent;
+            shooterUp = parentUp;
+            weaponMount = mine.BoardTurretId;
+        }
         if (kind is not (IgcObjectType.Ship or IgcObjectType.Station
             or IgcObjectType.Asteroid or IgcObjectType.Warp))
             return false;
 
-        var spec = ResolveSelectedWeapon(mine);
+        var spec = ResolveSelectedWeapon(shooter, weaponMount);
         if (!spec.Found) return false;
         if (!TargetPaneModel.TryTargetPose(world, kind, id, out var targetPos, out var targetVelocity))
             return false;
 
-        var pose = _poses.TryGetValue(me, out var posed)
+        // The shooter's streamed pose (the own-shot echo's pose when the local
+        // ship IS the shooter; the carrier's server pose for a gunner — native
+        // reads the parent IGC ship's position/orientation directly).
+        var pose = ReferenceEquals(shooter, mine) && _poses.TryGetValue(me, out var posed)
             ? posed
-            : new Flight.PredictedPose(mineUp.Position, mineUp.Orientation);
+            : new Flight.PredictedPose(shooterUp.Position, shooterUp.Orientation);
 
         short ownSide = world.MySideId ?? mine.SideId;
         short? targetSide = kind switch
@@ -371,7 +402,7 @@ public sealed partial class Game1
             LifespanEnergyGa: ga.Get(GlobalAttributeSet.LifespanEnergy),
             MyPosition: pose.Position,
             MyOrientation: pose.Orientation,
-            MyVelocity: mineUp.Velocity,
+            MyVelocity: shooterUp.Velocity,
             MountPosition: spec.MuzzleOffset,
             TargetRadius: TargetRadius(kind, id),
             TargetPosition: targetPos,
@@ -404,45 +435,50 @@ public sealed partial class Game1
         }
     }
 
-    private SelectedWeaponSpec ResolveSelectedWeapon(ShipEntity mine)
-    {
-        if (_rangeWeaponSpec is { } cached
-            && ReferenceEquals(_rangeWeaponCatalog, _shopCatalog)
-            && _rangeWeaponHullId == mine.HullId
-            && ReferenceEquals(_rangeWeaponLoadout, mine.Loadout)
-            && _rangeWeaponMount == _selectedMount)
-            return cached;
+    private SelectedWeaponSpec ResolveSelectedWeapon(ShipEntity shooter)
+        => ResolveSelectedWeapon(shooter, _selectedMount);
 
-        var spec = ResolveSelectedWeaponUncached(mine);
+    private SelectedWeaponSpec ResolveSelectedWeapon(ShipEntity shooter, int mount)
+    {
+        var cached = _rangeWeaponSpec;
+        if (cached is { } spec0
+            && ReferenceEquals(_rangeWeaponCatalog, _shopCatalog)
+            && _rangeWeaponHullId == shooter.HullId
+            && ReferenceEquals(_rangeWeaponLoadout, shooter.Loadout)
+            && _rangeWeaponMount == mount)
+            return spec0;
+
+        var spec = ResolveSelectedWeaponUncached(shooter, mount);
         _rangeWeaponSpec = spec;
         _rangeWeaponCatalog = _shopCatalog;
-        _rangeWeaponHullId = mine.HullId;
-        _rangeWeaponLoadout = mine.Loadout;
-        _rangeWeaponMount = _selectedMount;
+        _rangeWeaponHullId = shooter.HullId;
+        _rangeWeaponLoadout = shooter.Loadout;
+        _rangeWeaponMount = mount;
         return spec;
     }
 
-    private SelectedWeaponSpec ResolveSelectedWeaponUncached(ShipEntity mine)
+    private SelectedWeaponSpec ResolveSelectedWeaponUncached(ShipEntity shooter, int mount)
     {
         var miss = new SelectedWeaponSpec(false, false, false, 0f, 0f, 0f, false, default);
         var catalog = _shopCatalog;
-        if (catalog?.ProjectileTypes is not { } projectiles || mine.Loadout is not { } loadout)
+        if (catalog?.ProjectileTypes is not { } projectiles || shooter.Loadout is not { } loadout)
             return miss;
 
-        // GetMountedPart(ET_Weapon, m_selectedWeapon): the weapon on the
-        // SELECTED fixed mount, not the first weapon in the loadout.
-        if (Rendering.SelectedMountWeapon.Resolve(loadout, catalog.Parts, _selectedMount) is not { } resolved
+        // GetMountedPart(ET_Weapon, mount): the weapon on the resolved mount —
+        // the pilot's SELECTED fixed mount, or (P803) the carrier's turret
+        // mount the gunner mans (indicator.cpp:196-204).
+        if (Rendering.SelectedMountWeapon.Resolve(loadout, catalog.Parts, mount) is not { } resolved
             || !projectiles.TryGetValue(resolved.ProjectileTypeId, out var projectile))
             return miss;
 
-        // w->GetPosition(): the hardpoint muzzle in the ship's local frame; a
+        // w->GetPosition(): the hardpoint muzzle in the shooter's local frame; a
         // missing hull/cvh degrades to the ship centre (zero offset), exactly
         // like the own-shot echo (Game1.FlightInput.MuzzleOffsetsFor).
         SimVec muzzle = default;
-        if (_hullById.TryGetValue(mine.HullId, out var hull) && hull.Hardpoints.Length > 0
+        if (_hullById.TryGetValue(shooter.HullId, out var hull) && hull.Hardpoints.Length > 0
             && MuzzleOffsetsFor(hull) is { } muzzles
-            && (uint)_selectedMount < (uint)muzzles.Length)
-            muzzle = muzzles[_selectedMount];
+            && (uint)mount < (uint)muzzles.Length)
+            muzzle = muzzles[mount];
 
         return new SelectedWeaponSpec(
             Found: true,
@@ -572,12 +608,49 @@ public sealed partial class Game1
     /// HUD-8 — the velocity-direction marker: project the own source ship's
     /// velocity DIRECTION into the view (cockpit only; the zero-speed and camera
     /// gates are applied by <see cref="HudModel.VelocityMarkerVisible"/>).
+    /// P803 — native reads the velocity through
+    /// <c>GetSourceShip()</c> (indicator.cpp:130), so a boarded gunner projects
+    /// the CARRIER's velocity (the child's own stream carries no pose — the
+    /// carrier is what moves); the own ship otherwise.
     /// </summary>
     private Vector2? ComputeVelocityMarker(Matrix view, Matrix proj)
     {
-        if (!TryOwnPose(out _, out _, out var velocity)) return null;
+        if (!TrySourcePose(out _, out _, out var velocity)) return null;
         if ((int)(velocity.Length() + 0.5f) == 0) return null;
         return TransformDirectionToScreen(PoseConverter.ToXna(velocity), view, proj);
+    }
+
+    /// <summary>
+    /// P803 — the native <c>GetSourceShip()</c> pose (parent ship when boarded,
+    /// else the own ship), resolved from the same client state the HUD already
+    /// carries (<c>ShipEntity.ParentId</c> + the parent's <c>Latest</c>). No own-sim
+    /// substitution: the local prediction sim flies the OWN hull only, and a
+    /// boarded gunner's HUD values read the carrier's server pose exactly as
+    /// native reads the parent IGC ship's. Falls back to the own pose when the
+    /// parent is not (yet) known.
+    /// </summary>
+    private bool TrySourcePose(out SimVec position, out Orientation orientation, out SimVec velocity)
+    {
+        position = default;
+        orientation = Orientation.Identity;
+        velocity = default;
+        lock (_session.Gate)
+        {
+            if (RenderShipId(_session.World) is not { } me) return false;
+            if (!_session.World.Ships.TryGetValue(me, out var mine) || mine.Latest is not { } up) return false;
+            if (mine.ParentId >= 0 && _session.World.Ships.TryGetValue(mine.ParentId, out var parent)
+                && parent.Latest is { } parentUp)
+            {
+                position = parentUp.Position;
+                orientation = parentUp.Orientation;
+                velocity = parentUp.Velocity;
+                return true;
+            }
+            position = up.Position;
+            orientation = up.Orientation;
+            velocity = up.Velocity;
+            return true;
+        }
     }
 
     /// <summary>

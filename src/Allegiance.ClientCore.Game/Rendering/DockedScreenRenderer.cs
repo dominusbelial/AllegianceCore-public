@@ -55,6 +55,32 @@ public sealed class DockedScreenRenderer
     /// panes keep the near-opaque default.</summary>
     public const float InvestBackdropAlpha = 0.52f;
 
+    /// <summary>P803 — the loadout screen's board-state text (native
+    /// BoardTextImage, dialog.mdl:2104-2112 + :5432-5433, ofInLoadout):
+    /// SwitchImage over BoardState — 1 draws medVerdana side-coloured
+    /// "Observer of <carrier>" (ObserverTextImage, :2086-2093), 2 draws
+    /// "Turret of <carrier>" (TurretTextImage, :2096-2103). The companion
+    /// InTurretPaneImage (hangarinturretbmp, state 2 only) is drawn as the
+    /// port's [IN TURRET] badge — a port presentation of the same state.
+    /// BoardState comes from the same client state the flight HUD's
+    /// "Turret of:" block reads (console.cpp:797-804). Null = not boarded.</summary>
+    public void DrawBoardText(Vector2 centerTop, int boardState, string carrierName, Color sideColor)
+    {
+        string prefix = boardState == 2 ? "Turret of " : "Observer of ";
+        var pos = new Vector2(centerTop.X - _big.MeasureString(prefix + carrierName).X / 2f, centerTop.Y);
+        // Its own batch, like every other pass of this renderer (the boarded
+        // loadout view crashed: DrawString outside Begin/End).
+        _sb.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        _sb.DrawString(_big, prefix + carrierName, pos, sideColor);
+        if (boardState == 2)
+        {
+            string badge = "[IN TURRET]";
+            var bpos = new Vector2(centerTop.X + 120f - _small.MeasureString(badge).X / 2f, centerTop.Y + 4f);
+            _sb.DrawString(_small, badge, bpos, new Color(1f, 0.85f, 0.45f));
+        }
+        _sb.End();
+    }
+
     public DockedScreenRenderer(SpriteBatch spriteBatch, Texture2D whitePixel,
         SpriteFont small, SpriteFont big)
     {

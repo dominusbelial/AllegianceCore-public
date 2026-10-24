@@ -678,7 +678,7 @@ public sealed partial class Game1
                 {
                     // In cockpit mode the local hull is not drawn — you are inside
                     // it; every OTHER known ship still renders normally.
-                    if ((_cameraMode == CameraMode.Cockpit && id == me) || (_cameraMode == CameraMode.DroneCockpit && id == _commandee?.Id))
+                    if ((_cameraMode == CameraMode.Cockpit && (id == me || id == _turretCarrierId)) || (_cameraMode == CameraMode.DroneCockpit && id == _commandee?.Id))
                         continue;
 
                     if (!ShipInDrawnSector(id, me)) continue;
@@ -1976,6 +1976,25 @@ public sealed partial class Game1
                 backdropAlpha: 0.62f, footerHeight: 84f);
         }
 
+        // P803 — the loadout screen's board-state text (native BoardTextImage /
+        // InTurretPaneImage, dialog.mdl:2104-2112 + :5431-5433, ofInLoadout):
+        // a boarded player's loadout view names whose ship they are aboard —
+        // "Observer of X" (state 1) / "Turret of X" + the in-turret badge
+        // (state 2), in the viewer's side colour like native mySideColor.
+        if (_dockedActive && LoadoutBoardState() is { } board)
+        {
+            var world0 = _session.World;
+            var side = new Color(1f, 1f, 1f);
+            lock (_session.Gate)
+                if (world0.MySideId is { } sideId && world0.TryGetSideColor(sideId, out float sr, out float sg, out float sb))
+                    side = new Color(sr, sg, sb);
+            float k = GraphicsDevice.Viewport.Height / 1080f;
+            _dockedScreenRenderer.DrawBoardText(
+                new Vector2(GraphicsDevice.Viewport.Width / 2f - 362f * k,
+                            GraphicsDevice.Viewport.Height / 2f - 20f * k),
+                board.State, board.Carrier, side);
+        }
+
         DrawConsolePanes();
         DrawHangarControls();
         // P639 — Ctrl+T Team Pane: the full-roster screen (every side's pilots
@@ -2354,7 +2373,7 @@ public sealed partial class Game1
         // the depth silhouettes match exactly what the color pass can draw.
         foreach (var (id, pose) in _poses)
         {
-            if ((_cameraMode == CameraMode.Cockpit && id == me) || (_cameraMode == CameraMode.DroneCockpit && id == _commandee?.Id)) continue;
+            if ((_cameraMode == CameraMode.Cockpit && (id == me || id == _turretCarrierId)) || (_cameraMode == CameraMode.DroneCockpit && id == _commandee?.Id)) continue;
             if (!ShipInDrawnSector(id, me)) continue;
             // P628 — far-tier ships draw as sprites, not models: no depth
             // silhouette (their tiny point must not occlude soft smoke oddly).
@@ -3023,9 +3042,18 @@ public sealed partial class Game1
                     // same-frame ship the player flies); server-truth velocity otherwise
                     // (the --noPrediction debug toggle). All the OTHER HUD values
                     // (hull/shield/fuel/ammo/power) stay server truth.
-                    Speed: (_ownShipPrediction && _ownSim.HaveHull
-                        ? _ownSim.Velocity.Length()
-                        : up.Velocity.Length()),
+                    // P803 — native's speed readout (and every other Me-derived
+                    // value) reads the SOURCE ship (console.cpp:783:
+                    // m_pmodelDataMe->SetModel(GetSourceShip())), so a boarded
+                    // gunner's speed gauge shows the CARRIER's |velocity| — the
+                    // boarded child streams no pose of its own.
+                    Speed: (entity.ParentId >= 0
+                            && world.Ships.TryGetValue(entity.ParentId, out var speedSrc)
+                            && speedSrc.Latest is { } srcUp
+                              ? srcUp.Velocity.Length()
+                              : _ownShipPrediction && _ownSim.HaveHull
+                                ? _ownSim.Velocity.Length()
+                                : up.Velocity.Length()),
                     // P445 — the HUD Thrust gauge now reads the client-owned
                     // PERSISTENT throttle (the setting the pilot steps with = / -
                     // and the wheel), not the server-echoed control value. They
@@ -3322,6 +3350,24 @@ public sealed partial class Game1
             Deathmatch = deathmatch,
             SideColor = sideColor
         };
+    }
+
+    /// <summary>P803 — the loadout screen's board state for DrawBoardText:
+    /// native BoardState (console.cpp:797-804) — parented non-turret = 1
+    /// (observer), parented turret = 2 (gunner) — plus the carrier's character
+    /// name (GetName(Me) with Me = the source ship, console.cpp:783). Null
+    /// while not boarded or the carrier is unnamed/unknown.</summary>
+    private (int State, string Carrier)? LoadoutBoardState()
+    {
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)) return null;
+            if (own.ParentId < 0) return null;
+            if (!world.Ships.TryGetValue(own.ParentId, out var parent)
+                || parent.CharacterName is not { Length: > 0 } name) return null;
+            return (own.State == ShipStatusMessage.StateTurret ? 2 : 1, name);
+        }
     }
 
     /// <summary>Resolve the native accepted/queued order target name and defer the
@@ -4863,6 +4909,13 @@ public sealed partial class Game1
 
         short side = _session.World.MySideId ?? -1;
         short hullId = shop.EffectiveHullId;
+        // P803 — a boarded gunner/observer has no hull of its own (its loadout is
+        // emptied on boarding); the hangar shows the CARRIER it rides (native
+        // GetSourceShip). Rendering the empty own record crashed the client.
+        if (_session.World.MyShipId is { } meId
+            && _session.World.Ships.TryGetValue(meId, out var meEnt) && meEnt.ParentId >= 0
+            && _session.World.Ships.TryGetValue(meEnt.ParentId, out var carrierEnt) && carrierEnt.HullId > 0)
+            hullId = carrierEnt.HullId;
 
         // Native gives the loadout geo its OWN z-buffered pane with no world
         // scene (load.cpp:860-910, "Give this guy a zbuffer"); the docked world

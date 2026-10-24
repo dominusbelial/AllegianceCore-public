@@ -1,3 +1,4 @@
+using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.ClientCore.State;
@@ -273,6 +274,24 @@ public sealed class ShipEntity
     /// <c>NA</c>) is an observer; -1 means unknown/not boarded. Cleared whenever
     /// <see cref="ParentId"/> is reset.</summary>
     public short BoardTurretId { get; internal set; } = -1;
+
+    /// <summary>P803 (SIM-0470) — a boarded gunner's latest relayed turret
+    /// facing, from the HEAVY_SHIPS_UPDATE(176) active-turret relay
+    /// (<c>rgActiveTurretUpdates</c>; native client half
+    /// <c>appmsg.cpp:776-794</c> → <c>ProcessShipUpdate(timeRef, atu)</c>,
+    /// <c>shipIGC.cpp:3104-3137</c>, which integrates and sets the CHILD ship's
+    /// orientation). The port stores it on the entity for the turret-facing
+    /// consumer: a boarded child streams no pose of its own, so this is the
+    /// only wire source of where a remote turret points. Null until the first
+    /// relayed update for a known-boarded child.</summary>
+    public Orientation? TurretFacing { get; internal set; }
+
+    /// <summary>P803 (SIM-0470) — native's relayed "we're shooting" latch
+    /// (<c>SetStateM(weaponsMaskIGC)</c>, shipIGC.cpp:3359, applied per relayed
+    /// update): true while the gunner's relay keeps flowing. The native client
+    /// never clears it on an expired relay (the facing simply freezes), so the
+    /// port keeps the same last-value semantics.</summary>
+    public bool TurretFiring { get; internal set; }
 
     /// <summary>Native <c>NA</c> as a <c>Mount</c> char (0xFF) — a boarded child
     /// with no turret slot is an observer (<c>inventoryimage.cpp:141-169</c>).</summary>

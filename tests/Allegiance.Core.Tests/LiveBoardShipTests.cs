@@ -361,6 +361,31 @@ public class LiveBoardShipTests
     /// ParentId=carrier). Then it leaves (sidParent=NA): parent/turret cleared,
     /// hull restored to the side's Lifepod, and a real LEAVE_SHIP(94) broadcast
     /// to the whole side naming the correct child id.</summary>
+    /// <summary>P803 — the pilot quits with a gunner aboard: native promotes the
+    /// first turret gunner to pilot (fsmission.cpp:895-913, pship->Promote() +
+    /// FM_S_PROMOTE). Before, the gunner was detached and the carrier vanished
+    /// from under it (seen live: "it decoupled from the ship").</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Pilot_quitting_promotes_the_turret_gunner_to_pilot()
+    {
+        Require.Artwork();
+        var (server, carrier, boarder, sp) = Setup(out short cId, out short bId);
+        WaitDocked(server, (carrier, sp.Carrier), (boarder, sp.Boarder));
+        var carrierHull = sp.Carrier.HullType;
+        boarder.SendBoard(cId);
+        Assert.True(PumpUntil(server, () => sp.Boarder.ParentShip is not null, PumpMax) < PumpMax, "board");
+        Assert.NotNull(sp.Boarder.TurretId);
+
+        carrier.Dispose();   // the pilot's client goes away (link dead)
+        int promoted = PumpUntil(server, () => sp.Boarder.ParentShip is null
+            && sp.Boarder.HullType.HullId == carrierHull.HullId
+            && server.Ships.All(l => l.Ship != sp.Carrier), PumpMax * 4);
+        Assert.True(promoted < PumpMax * 4, "the gunner was not promoted to pilot when the pilot left");
+        Assert.Null(sp.Boarder.TurretId);
+        Assert.Empty(sp.Boarder.ChildShips);   // the departed pilot is not left riding the heir
+    }
+
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Board_with_equipped_turret_and_leave()

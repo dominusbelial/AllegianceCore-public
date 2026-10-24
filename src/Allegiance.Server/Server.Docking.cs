@@ -145,8 +145,17 @@ public sealed partial class Server
         if (boarder.ParentShip is { } oldParent && !ReferenceEquals(oldParent, carrier))
             oldParent.RemoveChildShip(boarder);
         boarder.ParentShip = carrier;
-        carrier.AddChildShip(boarder);
+        // P803 — assign the mount BEFORE the passenger-list broadcast: native
+        // FedSrv.CPP:2445-2446 does SetParentShip + SetTurretID and native's
+        // SetTurretID raises c_lcPassengerMove on the parent
+        // (shipIGC.h:1434-1436), so clients' SECOND LOADOUT_CHANGE carries the
+        // real mount. This port raises one broadcast per mutation, so the
+        // AddChildShip passenger snapshot must already see the final
+        // TurretId — the pre-P803 order (AddChildShip first) sent
+        // turretID NA and every client stored the gunner as an OBSERVER,
+        // breaking the per-turret occupant rows this wave adds.
         boarder.TurretId = turret;
+        carrier.AddChildShip(boarder);
 
         // P109 — the turret weapon-gunner binding (native SetTurretID →
         // SetGunner, shipIGC.h:1405-1437): if the boarder occupies a real

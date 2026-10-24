@@ -111,6 +111,38 @@ public sealed class AutoProofPlan
     /// the native inventory pane (<c>--auto-inventory</c>).</summary>
     public bool AutoInventory;
 
+    /// <summary>P803 — delay in seconds (from seating) before the
+    /// <c>--auto-launch</c> hull selection fires (<c>--auto-launch-after N</c>).
+    /// 0 = the pre-P803 behaviour (launch as soon as docked). Exists so a
+    /// second auto client can board the pilot BEFORE the carrier launches
+    /// (boarding needs both ships docked).</summary>
+    public double AutoLaunchAfterSeconds;
+
+    /// <summary>P803 — board the named pilot as a turret gunner once seated and
+    /// the mission started (<c>--auto-board "name"</c>): the production
+    /// <see cref="ConnectionSession.SendBoardShip"/> path, retried until the
+    /// world shows the parent link (boarding needs both ships docked, so the
+    /// named pilot must NOT pass --auto-launch before this lands). Null/empty
+    /// = never board. Real-window proof harness for the P803 gunner HUD.</summary>
+    public string AutoBoard = "";
+
+    /// <summary>P803 — the side leader turns native auto-accept on once seated
+    /// (<c>--auto-accept</c>, FM_CS_AUTO_ACCEPT) so a second auto client joining the
+    /// side mid-mission is seated without a manual accept.</summary>
+    public bool AutoAccept;
+
+    /// <summary>P803 — a boarded gunner holds its turret trigger once airborne
+    /// (<c>--auto-gunner-fire</c>): proves turret fire end to end in a real window.</summary>
+    public bool AutoGunnerFire;
+
+    /// <summary>P803 — initial turret yaw in degrees for a boarded gunner (<c>--auto-turret-yaw DEG</c>).</summary>
+    public float AutoTurretYawDegrees;
+
+    /// <summary>P803 — launch as soon as this many boarded children ride this ship
+    /// (<c>--auto-launch-when-boarded N</c>); <see cref="AutoLaunchAfterSeconds"/> is
+    /// then only the upper bound. 0 = off.</summary>
+    public int AutoLaunchWhenBoarded;
+
     /// <summary>P580 — enable the director b-roll camera at launch
     /// (<c>--director</c>). Mutually the same thing the F2 key toggles; the flag
     /// just arms it from startup so a recording can begin immediately.</summary>
@@ -220,6 +252,38 @@ public sealed class AutoProofPlan
                 plan.AutoLaunchRequested = true;
                 plan.LaunchHull = a.Substring("--auto-launch=".Length);
             }
+            else if (a == "--auto-launch-after")
+            {
+                if (i + 1 < args.Count && double.TryParse(args[++i], NumberStyles.Float, CultureInfo.InvariantCulture, out var la))
+                    plan.AutoLaunchAfterSeconds = la;
+                else
+                    Console.Error.WriteLine("[monogame] --auto-launch-after: expected seconds");
+            }
+            else if (a.StartsWith("--auto-launch-after=", StringComparison.Ordinal))
+                _ = double.TryParse(a.Substring("--auto-launch-after=".Length), NumberStyles.Float, CultureInfo.InvariantCulture, out plan.AutoLaunchAfterSeconds);
+            else if (a == "--auto-launch-when-boarded")
+            {
+                if (i + 1 < args.Count && int.TryParse(args[i + 1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var nb))
+                { plan.AutoLaunchWhenBoarded = nb; i++; }
+            }
+            else if (a == "--auto-turret-yaw")
+            {
+                if (i + 1 < args.Count && float.TryParse(args[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out var ty))
+                { plan.AutoTurretYawDegrees = ty; i++; }
+            }
+            else if (a == "--auto-gunner-fire")
+                plan.AutoGunnerFire = true;
+            else if (a == "--auto-accept")
+                plan.AutoAccept = true;
+            else if (a == "--auto-board")
+            {
+                if (i + 1 < args.Count && !args[i + 1].StartsWith('-'))
+                    plan.AutoBoard = args[++i];
+                else
+                    Console.Error.WriteLine("[monogame] --auto-board: expected a player name");
+            }
+            else if (a.StartsWith("--auto-board=", StringComparison.Ordinal))
+                plan.AutoBoard = a.Substring("--auto-board=".Length);
             else if (a == "--auto-credits" || a == "--auto-credits=true")
                 plan.AutoCredits = true;
             else if (a == "--auto-credits=false")

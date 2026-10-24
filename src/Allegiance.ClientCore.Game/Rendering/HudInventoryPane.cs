@@ -1,3 +1,4 @@
+using Allegiance.ClientCore.State;
 using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.Core.Wire;
@@ -9,6 +10,7 @@ namespace Allegiance.ClientCore.MonoGame.Rendering;
 public enum HudInventoryRowKind
 {
     Weapon,          // invsweapon.mdl — fixed/turret weapon mount
+    Turret,          // invturret.mdl — per-turret occupant row (P803; inventoryimage.cpp:263-289)
     Observers,       // invobserver.mdl — "Observers: N" (inventoryimage.cpp:141-169,320-332)
     Magazine,        // invsmissile.mdl — missile launcher
     Chaff,           // invchaff.mdl — chaff dispenser
@@ -66,6 +68,34 @@ public static class HudInventoryPaneBuilder
     public static bool ShouldBuild(bool inventoryVisible, bool docked, bool dead)
         => inventoryVisible && !docked && !dead;
 
+    /// <summary>
+    /// P803 — the per-turret occupant resolver + observer count of one source
+    /// ship, computed from the client's own wire state: LOADOUT_CHANGE(96) re-seats
+    /// boarded children and stores <c>child.ParentId</c> +
+    /// <c>child.BoardTurretId</c> (0xFF = observer; native
+    /// <c>appmsg.cpp:2035-2079</c>, <c>SetTurretID</c> :2073), which is exactly
+    /// the client-side equivalent of walking the source ship's
+    /// <c>GetChildShips()</c> the way native
+    /// <c>ProcessTurret</c>/<c>ProcessObservers</c> do
+    /// (inventoryimage.cpp:141-169,263-289). Pure so the loopback test can pin
+    /// the occupant→mount mapping without a Game1 instance.
+    /// </summary>
+    public static (int Observers, Func<int, string?> Occupant) SourceShipOccupants(
+        IReadOnlyDictionary<short, ShipEntity> ships, short sourceId)
+    {
+        int observers = 0;
+        var byMount = new Dictionary<int, string>();
+        foreach (var other in ships.Values)
+        {
+            if (other.ParentId != sourceId) continue;
+            if (other.BoardTurretId == ShipEntity.BoardTurretObserver) observers++;
+            else if (other.BoardTurretId >= 0
+                     && other.CharacterName is { Length: > 0 } name)
+                byMount[other.BoardTurretId] = name;
+        }
+        return (observers, mount => byMount.TryGetValue(mount, out var name) ? name : null);
+    }
+
     // Native hotkey vocabulary (WinTrek/inventoryimage.cpp:238-241).
     private static readonly string[] WeaponKeys = ["1.", "2.", "3.", "4."];
     private static readonly string[] TurretKeys = ["Y.", "U.", "I.", "O.", "", "", "", ""];
@@ -82,7 +112,10 @@ public static class HudInventoryPaneBuilder
         bool GroupFire,
         int SelectedMount,
         float? CloakStrengthPercent,
-        Func<EquipmentType, float, float>? ArmedFraction);
+        Func<EquipmentType, float, float>? ArmedFraction,
+        Func<int, string?>? TurretOccupant,
+        int? BoardedTurretId,
+        bool TurretFiring);
 
     public static HudInventoryPane Build(
         ShopCatalog? catalog,
@@ -102,6 +135,19 @@ public static class HudInventoryPaneBuilder
         DataHullTypeIGC? sourceHull = null,
         float? cloakStrengthPercent = null,
         int observerCount = 0,
+        // P803 — per-turret occupant names of the source ship (mount → gunner
+        // character name; the client's own LOADOUT_CHANGE PassengerData state,
+        // see the turret loop below). Null keeps the pre-P803 no-occupant-rows
+        // behaviour for callers that cannot resolve them.
+        Func<int, string?>? turretOccupant = null,
+        // P803 — the gunner's semantics for the ASSIGNED weapon (native
+        // PartWrapper::IsSelected gunner branch, consoledata.cpp:1087-1091:
+        // fSelected = pweapon->GetGunner() == trekClient.GetShip(); and
+        // IsActive = fActive(), :1122 — for a turret the client's only fActive
+        // knowledge is the local gunner's own fire state). Null = the pilot
+        // path (fixed mounts only, unchanged).
+        int? boardedTurretId = null,
+        bool turretFiring = false,
         // P786 — the own launcher arming clocks (native GetArmedFraction,
         // consoledata.cpp:1189-1202): a launcher row's ReadyState 2 + its
         // arming-bar fill. Null keeps the pre-P786 behaviour (mounted
@@ -121,7 +167,7 @@ public static class HudInventoryPaneBuilder
         // carrier's hull when the local pilot is a turret gunner.
         var ctx = new Ctx(catalog, h, sourceHull ?? h, attributes, fuelFraction,
             energyFraction, shieldFraction, ammoFraction, groupFire, selectedMount, cloakStrengthPercent,
-            armedFraction);
+            armedFraction, turretOccupant, boardedTurretId, turretFiring);
 
         int maxFixed = Math.Min(h.MaxFixedWeapons, h.Hardpoints.Length);
         int maxWeapons = Math.Min(h.MaxWeapons, h.Hardpoints.Length);
@@ -139,11 +185,22 @@ public static class HudInventoryPaneBuilder
             rows.Add(new HudInventoryRow(HudInventoryRowKind.Observers, "",
                 "Observers: " + Round(observerCount), false, false, false, null, 0, 0, null, null));
 
-        // Turrets — inventoryimage.cpp:248-252 (ProcessTurret). The gunner-name
-        // row needs per-turret occupant data the port's wire does not carry.
+        // Turrets — inventoryimage.cpp:248-252 (ProcessTurret). P803 — the
+        // occupant names ARE client state: LOADOUT_CHANGE(96) re-seats boarded
+        // children and the client keeps child.ParentId + child.BoardTurretId
+        // (0xFF = observer; appmsg.cpp:2035-2079, SetTurretID :2073), exactly
+        // the native GetGunner(mount) walk. Each occupied mount gets the extra
+        // invturret row under its weapon row (inventoryimage.cpp:263-289:
+        // "if (pshipGunner != NULL)"; invturret.mdl:3 — turret icon, empty key,
+        // the gunner's name at Point(35,5)).
         for (int mount = maxFixed; mount < maxWeapons; mount++)
+        {
             AddPart(rows, ctx, all, EquipmentType.Weapon, mount,
                 isPilot && mount - maxFixed < TurretKeys.Length ? TurretKeys[mount - maxFixed] : "");
+            if (turretOccupant?.Invoke(mount) is { Length: > 0 } gunnerName)
+                rows.Add(new HudInventoryRow(HudInventoryRowKind.Turret, "", gunnerName,
+                    false, false, false, null, 0, 0, null, null));
+        }
 
         // Equipment — inventoryimage.cpp:254-259.
         AddPart(rows, ctx, all, EquipmentType.Magazine, 0, "5.");
@@ -280,8 +337,28 @@ public static class HudInventoryPaneBuilder
         bool selected = false, active = false;
         if (et == EquipmentType.Weapon)
         {
-            selected = WeaponSelected(entry, ctx.Hull, ctx.GroupFire, ctx.SelectedMount);
-            active = selected;
+            // P803 — the gunner's ASSIGNED turret weapon (native
+            // consoledata.cpp:1087-1091: when the viewer's ship is not the
+            // part's ship — i.e. a boarded player reading the carrier's part —
+            // fSelected = pweapon->GetGunner() == trekClient.GetShip(); the port
+            // equivalent is "this viewer mans this mount", and an observer
+            // (boardedTurretId < 0) mans none). Active follows
+            // IsActive = fActive() (consoledata.cpp:1122): for a turret weapon
+            // the client's only fActive knowledge is the local gunner's own
+            // fire state (the ACTIVE_TURRET_UPDATE cadence is driven by it,
+            // clintlib.cpp:1870-1905). While BOARDED the pilot's fire-mode
+            // selection does not reach these rows at all — every other row's
+            // GetGunner() != viewer → unselected.
+            if (ctx.BoardedTurretId is { } boarded)
+            {
+                selected = boarded >= 0 && entry.MountId == boarded;
+                active = selected && ctx.TurretFiring;
+            }
+            else
+            {
+                selected = WeaponSelected(entry, ctx.Hull, ctx.GroupFire, ctx.SelectedMount);
+                active = selected;
+            }
         }
 
         string? stats = readyState == 3 ? StatsText(ctx, p, entry) : null;

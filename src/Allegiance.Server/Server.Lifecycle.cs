@@ -1817,6 +1817,46 @@ public sealed partial class Server
     /// transport's own OnPeerLeft) is a no-op.</summary>
     private void ReleasePeer(ConnectionId id) => ReleasePeerWithReason(id, QuitSideReason.LinkDead);
 
+    /// <summary>P803 — a pilot leaving with gunners aboard hands the ship to the
+    /// first turret gunner, the port of native <c>RemovePlayerFromSide</c>'s
+    /// "They are leaving their team ... promote" (<c>fsmission.cpp:895-913</c>:
+    /// <c>pship->Promote()</c> + <c>FM_S_PROMOTE</c> to the sector, or the side
+    /// group when docked). The departing pilot, demoted into the vacated seat by
+    /// <see cref="Ship.Promote"/>, is then unseated so its retirement deletes only
+    /// its own (now empty) ship. Before this the gunner was simply detached and the
+    /// carrier vanished from under it.</summary>
+    private void PromoteHeirOnPilotExit(LiveShip live)
+    {
+        var ship = live.Ship;
+        if (ship.ParentShip is not null) return;   // a gunner leaving: nothing to hand over
+        var heir = ship.ChildShips.FirstOrDefault(c => c.TurretId is not null);
+        if (heir is null) return;                  // observers only: the detach path below handles them
+        var sector = ship.Sector;
+        short? sideId = ship.SideId;
+        _loadoutCommandDepth++;
+        try { heir.Promote(); }
+        finally { _loadoutCommandDepth--; }
+        // Unseat the departing pilot (now a child of the heir) — it no longer
+        // owns the hull, so it must not take the heir's ship down with it.
+        if (ship.ParentShip is { } newCarrier)
+        {
+            if (ship.TurretId is { } seat)
+                newCarrier.Weapons.FirstOrDefault(w => w.MountId == seat)?.SetGunner(null);
+            newCarrier.RemoveChildShip(ship);
+            ship.ParentShip = null;
+            ship.TurretId = null;
+        }
+        var packet = new Promote { ShipidPromoted = heir.Id }.Encode();
+        if (sector is not null)
+            SendSectorWide(sector, packet);
+        else
+            foreach (var peer in _peerShips)
+                if (peer.Value.Ship.SideId == sideId && ReferenceEquals(peer.Value.Ship.Mission, ship.Mission))
+                    SendPeer(peer.Key, FedPacket.Pack([packet]));
+        Console.WriteLine($"[promote] pilot ship {ship.Id} left — gunner {heir.Id} promoted to pilot -> PROMOTE(189) "
+            + $"{(sector is not null ? $"sector {sector.Id} wide" : "side-wide (docked)")} (fsmission.cpp:895-913)");
+    }
+
     private void ReleasePeerWithReason(ConnectionId id, QuitSideReason reason)
     {
         // P281 — a pending side-select peer (logged on, not yet spawned) is
@@ -2019,6 +2059,7 @@ public sealed partial class Server
     /// got a validated logon) has nothing to retire.</summary>
     private void RetireShipOnDisconnect(LiveShip live)
     {
+        PromoteHeirOnPilotExit(live);
         var ship = live.Ship;
         if (ship.Sector is not { } sector)
         {

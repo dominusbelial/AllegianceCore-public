@@ -653,7 +653,11 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         if (model.FlightVisible && console.BoardState == 2 && console.CarrierName is { } carrier)
         {
             float cx = w - 100 * _scale;
-            float labelTop = HudConsoleFormat.TurretLabelTop * _scale;
+            // Native anchors "Turret of:" at -75 (dialog.mdl:5425); Modern's larger
+            // font makes the sector NAME above run into it, so it also clears that
+            // name (visual-only; the classic HUD keeps the native anchor).
+            float labelTop = MathF.Max(HudConsoleFormat.TurretLabelTop * _scale,
+                HudConsoleFormat.NameBelowLabel(HudConsoleFormat.SectorLabelTop * _scale, lineHeight) + lineHeight + 4 * _scale);
             var hsz = _small.MeasureString("Turret of:");
             var nsz = _small.MeasureString(carrier);
             DrawMeasuredText(_small, "Turret of:", new(cx - hsz.X / 2, labelTop), yellow, fixedAnchor: true);

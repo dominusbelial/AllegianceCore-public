@@ -42,14 +42,90 @@ public sealed partial class Game1
                 _auto.NoteSeated();
             bool docked = world.MyShipId is { } me
                 && world.Ships.TryGetValue(me, out var ent) && ent.StationId != -1;
+            // P803 — a boarded gunner/observer is docked exactly while its CARRIER
+            // is (native GetSourceShip): its own record can keep the old station id.
+            if (world.MyShipId is { } me2 && world.Ships.TryGetValue(me2, out var self)
+                && self.ParentId >= 0 && world.Ships.TryGetValue(self.ParentId, out var carrier))
+                docked = carrier.StationId != -1;
             if (docked) _auto.NoteDocked();
             else _auto.NoteUndocked();
-            if (_state == ClientState.Flying)
+            // P803 — with a delayed launch or a board request the launch clock
+            // starts only once actually AIRBORNE: the client enters Flying at mission
+            // start while still docked, which would otherwise mark it launched and
+            // suppress the delayed LaunchHull (and start the gunner's shots before
+            // its carrier has launched). Other proofs keep the old behaviour.
+            bool waitForAirborne = _autoPlan.AutoLaunchAfterSeconds > 0 || _autoPlan.AutoBoard.Length > 0;
+            if (_state == ClientState.Flying && (!docked || !waitForAirborne))
                 _auto.NoteLaunch();
             airborne = _state == ClientState.Flying && !docked;
         }
 
         _auto.Tick(nowSec);
+
+        // P803 — --auto-accept is re-asserted every 5 s while still docked and
+        // unlaunched: a stray AutoAcceptToggle (U) in the ready-check UI must not
+        // leave a second auto client's join request pending forever.
+        if (_autoPlan.AutoAccept && !_launchSent && Environment.TickCount64 >= _autoAcceptNextAtMs)
+        {
+            short? aaSideRead;
+            lock (_session.Gate) aaSideRead = _session.World.MySideId;
+            if (aaSideRead is { } aaSide && aaSide >= 0)
+            {
+                _session.SendAutoAccept(aaSide, true);
+                _autoAcceptNextAtMs = Environment.TickCount64 + 5000;
+            }
+        }
+
+        // P803 — the --auto-board retry drain. Runs here (docked included)
+        // because boarding needs BOTH ships docked: the airborne-only pending
+        // slots in ApplyAutoProofFlying would never fire it.
+        if (_pendingBoardTarget is { Length: > 0 } boardName)
+        {
+            bool boarded = false;
+            short? targetId = null;
+            lock (_session.Gate)
+            {
+                if (_session.World.MyShipId is { } me
+                    && _session.World.Ships.TryGetValue(me, out var mine)
+                    && mine.ParentId >= 0)
+                {
+                    boarded = true;   // already aboard someone
+                }
+                else
+                {
+                    foreach (var s in _session.World.Ships.Values)
+                    {
+                        // P803 — name match is enough: while both ships are
+                        // DOCKED the same-side EXPORT may not have flowed yet,
+                        // but PLAYERINFO seeds every teammate's CharacterName
+                        // (native appmsg.cpp:2280), which is the identity the
+                        // board request needs (BOARD resolves on the boarder's
+                        // own side server-side, FedSrv.CPP:6404-6409).
+                        if (s.CharacterName is { Length: > 0 } name
+                            && string.Equals(name, boardName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            targetId = s.ShipId;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (boarded)
+            {
+                Console.WriteLine($"[autoproof] auto-board: parent link observed — done ({boardName})");
+                _pendingBoardTarget = null;
+            }
+            else if (targetId is { } tid && Environment.TickCount64 >= _boardNextAttemptAtMs)
+            {
+                _session.SendBoardShip(tid);
+                _boardNextAttemptAtMs = Environment.TickCount64 + 1000;
+                if (++_boardAttempts > 40)
+                {
+                    Console.Error.WriteLine($"[autoproof] auto-board: no parent link after {_boardAttempts} tries — giving up");
+                    _pendingBoardTarget = null;
+                }
+            }
+        }
 
         // HUD-4b — --auto-graphics-settings: keep the settings panel open from
         // the first AIRBORNE frame (drawn in EndDraw, so it must already be
@@ -93,11 +169,21 @@ public sealed partial class Game1
                 case LiveProof.AutoActionKind.SendReady:
                     // Wired directly from the plan in UpdateReadyCheck (seating
                     // is its own gate); nothing to buffer here.
+                    // P803 — the seated side leader also turns auto-accept on.
+                    short? aaSideRead;
+                    lock (_session.Gate) aaSideRead = _session.World.MySideId;
+                    if (_autoPlan.AutoAccept && aaSideRead is { } aaSide && aaSide >= 0)
+                    {
+                        _session.SendAutoAccept(aaSide, true);
+                        Console.WriteLine($"[autoproof] auto-accept ON for side {aaSide}");
+                    }
                     break;
                 case LiveProof.AutoActionKind.LaunchHull:
-                    // Launched directly from the plan in HandleDockedScreen
-                    // (ApplyAutoProofDocked → TryAutoLaunch) once docked; the
-                    // machine's emission is the sequencing signal, not the action.
+                    // Launched from ApplyAutoProofDocked once docked; the machine's
+                    // emission is the sequencing signal — P803: it is now the GATE,
+                    // so --auto-launch-after really delays the launch (the pilot
+                    // stays docked while a gunner boards).
+                    _autoLaunchDue = true;
                     break;
                 case LiveProof.AutoActionKind.GotoSector:
                     _pendingGotoSector = a.StrArg;
@@ -115,6 +201,15 @@ public sealed partial class Game1
                     break;
                 case LiveProof.AutoActionKind.HeadToDock:
                     _pendingHeadToDock = true;
+                    break;
+                case LiveProof.AutoActionKind.BoardPilot:
+                    // P803 — buffered; drained EVERY frame (docked included)
+                    // with retries: both ships must be docked and the mission
+                    // started before BOARD_SHIP can succeed.
+                    Console.WriteLine($"[autoproof] auto-board → {a.StrArg} (retrying until parented)");
+                    _pendingBoardTarget = a.StrArg;
+                    _boardAttempts = 0;
+                    _boardNextAttemptAtMs = 0;
                     break;
                 case LiveProof.AutoActionKind.Suicide:
                     // P584 — the deterministic self-kill (the client's own K-key
@@ -145,6 +240,10 @@ public sealed partial class Game1
     private long _pendingTargetRetryAtMs;
     private string? _pendingTargetClass;   // P623 — "rel:cls[:dir]" class target spec
     private bool _pendingHeadToDock;
+    private string? _pendingBoardTarget;   // P803 — --auto-board: pilot name to board
+    private int _boardAttempts;
+    private long _boardNextAttemptAtMs;
+    private long _autoAcceptNextAtMs;
     private bool _pendingExit;
 
     // ── side select ───────────────────────────────────────────────────────────
@@ -190,11 +289,32 @@ public sealed partial class Game1
     /// used). Launch selects the requested hull (blank = keep the current hull)
     /// and sends BUY_LOADOUT(fLaunch=true); the sweep steps through hull
     /// previews with a real-backbuffer shot each.</summary>
+    private bool _autoPreBuySent;
+    private bool _autoLaunchDue;
+
     private void ApplyAutoProofDocked(Rendering.ShopModel shop)
     {
         if (!_launchSent)
         {
-            if (_autoPlan.AutoLaunchRequested && !_autoLaunchApplied)
+            // P803 — a delayed launch with a named hull buys that hull while still
+            // DOCKED (native BUY_LOADOUT fLaunch=false), so a second client can board
+            // its turret seats before the carrier launches (BoardShip needs both
+            // ships docked and seats on the docked hull, FedSrv.CPP:2322-2345).
+            if (!_autoPreBuySent && _autoPlan.AutoLaunchAfterSeconds > 0 && _autoPlan.LaunchHull.Length > 0)
+            {
+                _autoPreBuySent = true;
+                SelectAutoLaunchHull(shop);
+                _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: false, parts: shop.ChosenParts);
+                Console.WriteLine($"[autoproof] auto-launch pre-buy (docked) hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
+            }
+            int aboard = 0;
+            if (_autoPlan.AutoLaunchWhenBoarded > 0)
+                lock (_session.Gate)
+                    if (_session.World.MyShipId is { } meC)
+                        aboard = _session.World.Ships.Values.Count(sh => sh.ParentId == meC);
+            bool boardedEnough = _autoPlan.AutoLaunchWhenBoarded > 0 && aboard >= _autoPlan.AutoLaunchWhenBoarded;
+            if (_autoPlan.AutoLaunchRequested && !_autoLaunchApplied
+                && (_autoLaunchDue || boardedEnough || _autoPlan.AutoLaunchAfterSeconds <= 0))
             {
                 _autoLaunchApplied = true;
                 TryAutoLaunch(shop);
@@ -210,6 +330,20 @@ public sealed partial class Game1
 
     private void TryAutoLaunch(Rendering.ShopModel shop)
     {
+        SelectAutoLaunchHull(shop);
+        if (!shop.TryLaunch())
+        {
+            Console.WriteLine($"[autoproof] auto-launch BLOCKED: {shop.BlockReason}");
+            return;
+        }
+        _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
+        _launchSent = true;
+        _throttle = FlightInput.DefaultThrottle;
+        Console.WriteLine($"[autoproof] auto-launch BUY_LOADOUT(fLaunch) hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
+    }
+
+    private void SelectAutoLaunchHull(Rendering.ShopModel shop)
+    {
         // Select the requested hull (empty = keep the current hull + parts).
         if (_autoPlan.LaunchHull.Length > 0)
         {
@@ -222,15 +356,6 @@ public sealed partial class Game1
                     shop.CycleHull(true);
             }
         }
-        if (!shop.TryLaunch())
-        {
-            Console.WriteLine($"[autoproof] auto-launch BLOCKED: {shop.BlockReason}");
-            return;
-        }
-        _session.SendBuyLoadout(shop.EffectiveHullId, fLaunch: true, parts: shop.ChosenParts);
-        _launchSent = true;
-        _throttle = FlightInput.DefaultThrottle;
-        Console.WriteLine($"[autoproof] auto-launch BUY_LOADOUT(fLaunch) hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
     }
 
     private void DoDockSweepStep(int step, Rendering.ShopModel shop)

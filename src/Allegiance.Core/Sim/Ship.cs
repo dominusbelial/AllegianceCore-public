@@ -2679,6 +2679,22 @@ public sealed partial class Ship : Model, IShipIgc
     /// </summary>
     public IReadOnlyList<Ship> ChildShips => _childShips;
 
+    /// <summary>P803 — native <c>CweaponIGC::SetMountID</c> (<c>weaponIGC.cpp:126-135</c>):
+    /// a weapon mounted on a turret hardpoint picks up the turret gunner already
+    /// sitting in that position ("Is there a turret gunner in this position"). Without
+    /// it a loadout remount (e.g. the carrier's launch BUY_LOADOUT) left the boarded
+    /// gunner holding a trigger bound to a discarded weapon object — the turret never
+    /// fired.</summary>
+    private void BindTurretGunner(Weapon weapon)
+    {
+        foreach (var child in _childShips)
+            if (child.TurretId is { } t && t == weapon.MountId)
+            {
+                weapon.SetGunner(child);
+                break;
+            }
+    }
+
     private readonly List<Ship> _childShips = [];
 
     /// <summary>Add a child to <see cref="ChildShips"/> — the port of the C++
@@ -2954,6 +2970,7 @@ public sealed partial class Ship : Model, IShipIgc
                 $"weapon '{type.ProjectileTypeId}' names projectile type {type.ProjectileTypeId} absent from core {mission.Core.Version}");
         var weapon = new Weapon(this, type, projectileType, mountId);
         _weapons.Add(weapon);
+        BindTurretGunner(weapon);
         return weapon;
     }
 
@@ -3028,6 +3045,7 @@ public sealed partial class Ship : Model, IShipIgc
             {
                 var weapon = new Weapon(this, w, projectileType, mountId);
                 _weapons.Add(weapon);
+        BindTurretGunner(weapon);
                 part.FunctionalWeapon = weapon;
             }
         }
@@ -4029,6 +4047,7 @@ public sealed partial class Ship : Model, IShipIgc
         {
             var weapon = new Weapon(this, w, projectileType, part.MountId);
             _weapons.Add(weapon);
+        BindTurretGunner(weapon);
             replacement.FunctionalWeapon = weapon;
         }
 

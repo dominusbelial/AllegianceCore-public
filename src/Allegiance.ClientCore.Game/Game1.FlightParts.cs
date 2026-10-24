@@ -113,46 +113,66 @@ public sealed partial class Game1
     {
         var catalog = _shopCatalog;
         if (catalog is null) return null;
-        var hull = catalog.Hulls.FirstOrDefault(h => h.HullId == entity.HullId);
-        if (hull.HullId != entity.HullId) return null;
+        var world = _session.World;
+        // P803 — native Rebuild runs the whole pane off the SOURCE ship
+        // (inventoryimage.cpp:289-291: pship = GetSourceShip()): a turret gunner
+        // reads the CARRIER's hull, mounted parts, cargo, resource fractions and
+        // name, not the boarded child's. The port client has all of it —
+        // LOADOUT_CHANGE(96) grants every same-side peer (incl. the gunner) the
+        // carrier's loadout, and the PassengerData re-seat keeps
+        // child.ParentId/BoardTurretId (appmsg.cpp:2035-2079).
+        ShipEntity source = entity;
+        if (entity.ParentId >= 0 && world.Ships.TryGetValue(entity.ParentId, out var carrier0))
+            source = carrier0;
+        bool gunner = IsTurretGunner() && entity.BoardTurretId >= 0;
+        var hull = catalog.Hulls.FirstOrDefault(h => h.HullId == source.HullId);
+        if (hull.HullId != source.HullId) return null;
         // Native Rebuild resolves the source ship (inventoryimage.cpp:289); the
         // stats hull is GetSourceShip()->GetHullType() (consoledata.cpp:855,976)
         // — the carrier when the local pilot is a turret gunner (WinTrek.cpp:10215).
         DataHullTypeIGC? sourceHull = hull;
-        if (entity.ParentId >= 0 && _session.World.Ships.TryGetValue(entity.ParentId, out var carrier))
-        {
-            var carrierHull = catalog.Hulls.FirstOrDefault(h => h.HullId == carrier.HullId);
-            if (carrierHull.HullId == carrier.HullId) sourceHull = carrierHull;
-        }
-        var inventory = OwnInventory();
+        var inventory = gunner
+            ? ((source.Loadout ?? []).Concat(source.Cargo ?? [])).ToList()
+            : OwnInventory();
         var loadout = inventory.Where(e => !CargoSelector.IsCargoMount(e.MountId)).ToList();
         var cargo = inventory.Where(e => CargoSelector.IsCargoMount(e.MountId)).ToList();
         var attributes = _session.World.MySideId is { } sideId
             ? _session.World.GlobalAttributesFor(sideId) : GlobalAttributeSet.Identity;
+        // P803 — a gunner has no own fire-mode selection (the turret is the
+        // weapon) and no own launcher arming clocks (OwnLauncherArming replays
+        // the OWN fire events only), so the launcher rows resolve ready, as the
+        // pre-P786 convention does when no clock is available.
+        bool groupFire = gunner ? false : _groupFire;
+        int selectedMount = gunner ? 0 : _selectedMount;
+        var fractions = gunner ? source.Latest : up;
+        if (fractions is null) return null;
         // HUD-20 — native GetCloaking(Me) = 100·(1−GetCloaking()) for the own or
         // parent ship only (consoledata.cpp:480-490), from the owner-only
         // OwnShipCloakUpdate(220) the HUD-12 path already reads.
         float? cloakStrength = _session.World.MyCloaking is { } cloaking
             ? Allegiance.Core.Wire.OwnShipCloakUpdate.StrengthPercent(cloaking)
             : null;
-        // HUD-20 — native ProcessObservers counts the source ship's children with
-        // GetTurretID() == NA (inventoryimage.cpp:141-169); the source ship is the
+        // HUD-20/P803 — native ProcessObservers counts the source ship's children
+        // with GetTurretID() == NA (inventoryimage.cpp:141-169) and ProcessTurret
+        // names each occupied mount's gunner (:263-289); the source ship is the
         // own ship, or the carrier when the local pilot is boarded
-        // (GetSourceShip(), inventoryimage.cpp:290).
-        int observers = 0;
-        short sourceId = entity.ParentId >= 0 ? entity.ParentId : entity.ShipId;
-        foreach (var other in _session.World.Ships.Values)
-            if (other.ParentId == sourceId && other.BoardTurretId == ShipEntity.BoardTurretObserver)
-                observers++;
+        // (GetSourceShip(), inventoryimage.cpp:290). Resolved by the pure
+        // SourceShipOccupants helper from the LOADOUT_CHANGE passenger state.
+        short sourceId = source.ShipId;
+        var (observers, occupant) = Rendering.HudInventoryPaneBuilder.SourceShipOccupants(
+            world.Ships, sourceId);
         // P786 — the native GetArmedFraction replay for the arming bars.
         if (_armedFractionQuery is null) _armedFractionQuery = _launcherArming.ArmedFraction;
         return HudInventoryPaneBuilder.Build(
             catalog, hull, loadout, cargo, attributes,
-            up.FuelFraction, up.EnergyFraction, up.ShieldFraction, up.AmmoFraction,
-            _groupFire, _selectedMount, _selectedCargoMount,
-            hull.Name, isPilot: !IsTurretGunner(), sourceHull: sourceHull,
+            fractions.FuelFraction, fractions.EnergyFraction, fractions.ShieldFraction, fractions.AmmoFraction,
+            groupFire, selectedMount, _selectedCargoMount,
+            hull.Name, isPilot: !gunner, sourceHull: sourceHull,
             cloakStrengthPercent: cloakStrength, observerCount: observers,
-            armedFraction: _armedFractionQuery);
+            turretOccupant: occupant,
+            boardedTurretId: entity.ParentId >= 0 ? entity.BoardTurretId : null,
+            turretFiring: gunner && _turretFiring,
+            armedFraction: gunner ? null : _armedFractionQuery);
     }
 
     private void CycleInventory(bool next)

@@ -38,6 +38,15 @@ public sealed partial class Game1
     /// <see cref="Flight.TurretGunnerCadence"/>.</summary>
     private readonly Flight.TurretGunnerCadence _turretCadence = new();
 
+    /// <summary>P803 — whether the local gunner is holding fire THIS frame (the
+    /// same <c>stateM &amp; weaponsMaskIGC</c> trigger that drives the
+    /// ACTIVE/INACTIVE send branch below). Native's <c>PartWrapper::IsActive</c>
+    /// (<c>consoledata.cpp:1122</c>, <c>m_ppart-&gt;fActive()</c>) reads the
+    /// weapon's firing state, and the turret weapon's is exactly this trigger
+    /// (<c>clintlib.cpp:1870-1905</c>); the F4 equipment pane reads it while the
+    /// gunner is boarded. Reset whenever the gunner loop does not run.</summary>
+    private bool _turretFiring;
+
     /// <summary>
     /// Wire timestamp from the shared PING-fed clock, in milliseconds.
     /// </summary>
@@ -87,6 +96,11 @@ public sealed partial class Game1
         if (!_turretSeeded)
         {
             _turretOrientation = TurretSeedOrientation();
+            // P803 proof harness: --auto-turret-yaw DEG swings the turret off the
+            // carrier's axis so its tracers cross the screen instead of receding
+            // straight down the line of sight.
+            if (_autoPlan.AutoTurretYawDegrees != 0f)
+                _turretOrientation.Yaw(_autoPlan.AutoTurretYawDegrees * MathF.PI / 180f);
             _turretSeeded = true;
             Console.WriteLine($"[monogame] turret gunner: aim seeded {_turretOrientation.GetForward()}");
         }
@@ -95,7 +109,11 @@ public sealed partial class Game1
 
         // 2 — the control-cadence send branch (native clintlib.cpp:1870-1905),
         // driven by the pure TurretGunnerCadence (shared with the live test).
-        bool fireHeld = (flightStateM & ShipControlState.WeaponsMask) != 0;
+        bool fireHeld = (flightStateM & ShipControlState.WeaponsMask) != 0
+            // P803 proof harness: --auto-gunner-fire holds the trigger once the
+            // carrier is in space (the auto-proof launch clock has started).
+            || (_autoPlan.AutoGunnerFire && _auto is { SecondsSinceLaunch: > 3.0 });
+        _turretFiring = fireHeld;   // P803 — the F4 pane's IsActive for the assigned weapon
         switch (_turretCadence.Update(_nowSeconds, fireHeld, _ownServerClock.Ready))
         {
             case Flight.TurretSendAction.Active:

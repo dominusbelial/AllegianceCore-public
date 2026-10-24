@@ -2989,6 +2989,9 @@ public class HudRenderer
         {
             HudInventoryRowKind.Weapon => art?.WeaponIcon,
             HudInventoryRowKind.EmptyWeapon => art?.WeaponIcon,
+            // P803 — invturret.mdl:1-12 mounts the real invturreticonbmp at
+            // Point(5,5), like every other row icon.
+            HudInventoryRowKind.Turret => art?.TurretIcon,
             // HUD-20 — an observer row has no icon natively (invobserver.mdl:1-12).
             HudInventoryRowKind.Observers => null,
             _ => art?.EquipmentIcon,

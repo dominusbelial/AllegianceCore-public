@@ -684,6 +684,7 @@ goldrockbmp.mdl
 gotobmp.mdl
 groupweapons.ogg
 hangar.mdl
+hangarinturretbmp.mdl
 hasartifactbmp.mdl
 hasflagbmp.mdl
 heavyexp.cvh
@@ -725,6 +726,7 @@ invshield.mdl
 invsmine.mdl
 invsmissile.mdl
 invsweapon.mdl
+invturret.mdl
 invturreticonbmp.mdl
 invweaponiconbmp.mdl
 ioncannon.ogg

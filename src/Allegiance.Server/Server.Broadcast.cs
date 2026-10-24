@@ -2602,6 +2602,42 @@ public sealed partial class Server
     }
 
     /// <summary>
+    /// P803 (SIM-0470) — the <c>rgActiveTurretUpdates</c> fill (native
+    /// FedSrv.CPP:4049-4071): walk this cluster's boarded gunner ships, keep
+    /// those with a stored <see cref="ClientActiveTurretUpdate"/> whose time is
+    /// within ±1.5 s of the mission clock (the FedSrv.CPP:3783-3790 freshness
+    /// gate), skip the recipient's own ship (FedSrv.CPP:4058 — a gunner never
+    /// sees its own relay), and copy <c>atu.controls</c>/<c>atu.orientation</c>
+    /// intact with the ship id and a CompactTime delta from
+    /// <paramref name="timeRef"/> (FedSrv.CPP:4064-4068). The stored wire time
+    /// is P655's server milliseconds; this message's time domain is the tick
+    /// index (every <see cref="HeavyShipUpdateEntry"/> carries tickIndex), so
+    /// the instant is converted into that domain before the CompactTime delta
+    /// is taken. The native walk only considers PLAYERS' gunner ships
+    /// (FedSrv.CPP:3774 <c>IsPlayer()</c>) — this port has no boarding drones,
+    /// so every boarded ship here qualifies.
+    /// </summary>
+    private ServerActiveTurretUpdate[] CollectActiveTurretRelay(Sector sector, Ship self, uint timeRef)
+    {
+        List<ServerActiveTurretUpdate>? acts = null;
+        double missionNow = self.Mission?.LastUpdate ?? 0.0;
+        double msToTicks = Math.Max(1, _config.UpdatesPerSecond) / 1000.0;
+        foreach (var model in sector.Models)
+        {
+            if (model is not Ship gunner || gunner.ParentShip is null || gunner.TurretId is null) continue;
+            if (gunner.Dead || gunner.StationId is not null) continue;
+            if (ReferenceEquals(gunner, self)) continue;            // FedSrv.CPP:4058
+            if (!_lastTurretUpdates.TryGetValue(gunner.Id, out var stu)) continue;
+            double dt = stu.TimeMs / 1000.0 - missionNow;
+            if (dt is < -1.5 or > 1.5) continue;                    // FedSrv.CPP:3786-3789
+            uint timeTicks = (uint)Math.Round(stu.TimeMs * msToTicks);
+            (acts ??= new List<ServerActiveTurretUpdate>()).Add(
+                ServerActiveTurretUpdate.From(gunner.Id, timeRef, timeTicks, stu.Controls, stu.Orientation));
+        }
+        return acts?.ToArray() ?? [];
+    }
+
+    /// <summary>
     /// P134 — the periodic per-side ASTEROIDS_UPDATE (179) broadcast, port of
     /// the native per-cluster-per-side batch in fsship.cpp:883-915 — the direct
     /// sibling of the STATIONS_UPDATE batch (fsship.cpp:817-849, P133). For each
@@ -3124,7 +3160,21 @@ public sealed partial class Server
                 TimeReference = tickIndex,
                 PositionReference = posRef,
                 HeavyShipEntries = entries.ToArray(),
-                ActiveTurretUpdates = [],              // turret relay deferred (see §3)
+                // P803 (SIM-0470) — the active-turret relay (native
+                // FedSrv.CPP:4049-4071): every boarded gunner in THIS cluster
+                // whose stored P109 update is still fresh (|atu.time − g.timeNow|
+                // ≤ 1.5 s, the FedSrv.CPP:3783-3790 gate that filled
+                // rgActiveTurrets) is forwarded to this peer INTACT
+                // (controls + orientation, time compacted as a delta from the
+                // message's timeReference), skipping the peer's own ship
+                // (FedSrv.CPP:4058). The native cadence is inherited: the relay
+                // list is rebuilt on every SendShipUpdates pass from the stored
+                // atu, so a gunner drops out exactly when its last update ages
+                // past 1.5 s. Native's rgInactiveTurretUpdates (LIGHT, the
+                // "stopped firing" identifiers) has no port sender — the port
+                // never emits LIGHT (P219 folded the light tier into heavy; the
+                // stale-ATU drop-out serves the same signal).
+                ActiveTurretUpdates = CollectActiveTurretRelay(sector, self, tickIndex).ToArray(),
                 BpTargetHull = bpTargetHull,
                 BpTargetShield = bpTargetShield,
                 FractionsHull = Percent(self.Fraction),

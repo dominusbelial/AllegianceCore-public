@@ -65,9 +65,13 @@ public sealed partial class Game1
         lock (_session.Gate)
         {
             world.PruneExpiredProjectiles(now);
-            if (world.MyShipId is { } me
-                && world.Ships.TryGetValue(me, out var own)
-                && own.Latest is { } meUp)
+            // P803 — a boarded gunner/observer hears from its CARRIER (native
+            // GetSourceShip): its own record keeps the docked pose, so the turret's
+            // shots never counted as local fire and the gunner heard no gun sound.
+            ShipEntity? listener = null;
+            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own))
+                listener = own.ParentId >= 0 && world.Ships.TryGetValue(own.ParentId, out var carrier) ? carrier : own;
+            if (listener?.Latest is { } meUp)
             {
                 var anchor = meUp.Position;
                 foreach (var pj in world.Projectiles)

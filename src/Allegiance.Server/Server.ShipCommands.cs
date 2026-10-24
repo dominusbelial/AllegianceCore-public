@@ -262,6 +262,11 @@ public sealed partial class Server
             }
             gunner.SetOrientation(orientation);                // SetOrientation(orientation), shipIGC.cpp:3386
 
+            // P803 (SIM-0470) — store the accepted update for the S→C relay
+            // (native m_atu = atu, fsship.cpp:1215), copied intact into every
+            // other peer's HEAVY_SHIPS_UPDATE(176) (FedSrv.CPP:4049-4071).
+            _lastTurretUpdates[gunner.Id] = (atu.Time, atu.Controls, atu.Orientation);
+
             if (ShouldLogTurret(from)) ConsoleLog.Write($"[turret] ship {gunner.Id} ACTIVE_TURRET_UPDATE time={atu.Time} deltaT={deltaT:F3} -> " +
                               $"StateM=weaponsMaskIGC controls={atu.Controls} orientForward={orientation.GetForward()}");
         }
