@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Globalization;
 using Allegiance.Core.Profiling;
 using Allegiance.Core.Wire;
 using Allegiance.Core.Sim;
@@ -21,7 +22,7 @@ public sealed partial class Server
         cadence.Begin(candidates, self, sector, admin, now, TickProfiler.Instance is not null,
             _interestClassifier ??= ClassifyInterest, tierServer: this);
         var selected = cadence.SelectTierCandidates(self, target, now, _tier1Hz, _tier2Hz,
-            _config.UpdatesPerSecond, tick);
+            _config.UpdatesPerSecond, tick, _promotionEpsilonSq);
         bool seesTarget = target is not null && ShipPoseVisible(self, target, admin);
         int count = selected.Length + (seesTarget ? 1 : 0);
         int length = HeavyShipsUpdate.FixedSize + count * HeavyShipUpdateEntry.Width;
@@ -68,6 +69,7 @@ public sealed partial class Server
         record.WriteRelative(bytes.Slice(offset, HeavyShipUpdateEntry.Width), reference);
         offset += HeavyShipUpdateEntry.Width;
         cadence.MarkPose(ship.Id, now);
+        cadence.MarkPosePosition(ship.Id, ship.Position, ship.Velocity, now);
     }
 
     private static void WritePoseVector(Span<byte> bytes, Vector3 position)
@@ -80,6 +82,7 @@ public sealed partial class Server
     internal bool _broadcastInterestTiersEnabled;
     private double _tier1Hz = 5, _tier2Hz = 2;
     private float _engagementRange = 1500, _midDistanceRange = 6000;
+    private float _promotionEpsilonSq;   // P813a — 0 disables big-change promotion
     private readonly PoseAgeWindow _retiredTierAges = new();
     // Only the projection owns these identity keys. Workers classify copied
     // scalar values; no live Ship or Mission is part of the immutable input.
@@ -209,12 +212,14 @@ public sealed partial class Server
         if (!double.IsFinite(config.Tier1Hz) || config.Tier1Hz <= 0
             || !double.IsFinite(config.Tier2Hz) || config.Tier2Hz <= 0
             || !float.IsFinite(config.EngagementRange) || config.EngagementRange <= 0
-            || !float.IsFinite(config.MidDistanceRange) || config.MidDistanceRange < config.EngagementRange)
-            throw new InvalidDataException("broadcast tier rates must be finite and positive; midDistanceRange must be >= engagementRange > 0");
+            || !float.IsFinite(config.MidDistanceRange) || config.MidDistanceRange < config.EngagementRange
+            || !float.IsFinite(config.PromotionEpsilon) || config.PromotionEpsilon < 0)
+            throw new InvalidDataException("broadcast tier rates must be finite and positive; midDistanceRange must be >= engagementRange > 0; promotionEpsilon must be finite and >= 0");
         _tier2Hz = Math.Min(Math.Max(config.Tier2Hz, _minUpdateHz), Math.Max(1, _config.UpdatesPerSecond));
         _tier1Hz = Math.Min(Math.Max(config.Tier1Hz, _tier2Hz), Math.Max(1, _config.UpdatesPerSecond));
         _engagementRange = config.EngagementRange;
         _midDistanceRange = config.MidDistanceRange;
+        _promotionEpsilonSq = config.PromotionEpsilon > 0 ? config.PromotionEpsilon * config.PromotionEpsilon : 0;
         _retiredTierAges.Clear();
     }
 
@@ -255,4 +260,16 @@ public sealed partial class Server
             var band = window.Band(tier);
             return FormattableString.Invariant($" T{tier}[n={band.Count},p50={band.P50:0.###},p95={band.P95:0.###},max={band.Max:0.###}s]");
         }));
+
+    /// <summary>P813a — bounded per-tier delivery telemetry for the
+    /// <c>[update-age]</c> window: promotions (a far ship force-served early
+    /// because it drifted past <c>PromotionEpsilon</c>) as a window total and
+    /// per-second rate, and served HEAVY record messages + record-payload bytes
+    /// by tier. Record bytes are <c>messages × HeavyShipUpdateEntry.Width</c>;
+    /// the small per-message fixed header is not attributed to any tier.</summary>
+    private static string FormatTierTelemetry(long promotions, double seconds, long[] messages)
+        => string.Create(CultureInfo.InvariantCulture,
+            $" proms=[n={promotions},s={(promotions / Math.Max(1e-9, seconds)):0.###}]"
+            + $" msgs/Bps {string.Concat(Enumerable.Range(0, 3).Select(tier =>
+                $"T{tier}[m={messages[tier]},b={messages[tier] * HeavyShipUpdateEntry.Width}]"))}");
 }

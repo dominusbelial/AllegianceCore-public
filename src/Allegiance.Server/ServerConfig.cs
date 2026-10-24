@@ -644,6 +644,16 @@ public sealed class BroadcastConfig
     /// <summary>Enemies outside this radius are T2; allies remain T1.</summary>
     public float MidDistanceRange { get; set; } = 6000;
 
+    /// <summary>P813a — distance-tiered promotion (world units). A far (T1/T2)
+    /// ship whose pose has displaced this far since its last served pose is
+    /// "big-changed" and promoted to a full-rate send for that tick, so a
+    /// manoeuvring distant ship is caught up within one tick of drifting past
+    /// the threshold and the client's dead reckoner never extrapolates further
+    /// than this distance. 0 (the value used before P813a) disables promotion —
+    /// far ships ride only their tier cadence. Used only when
+    /// <c>InterestTiers</c> is on; the flag-off stream is untouched.</summary>
+    public float PromotionEpsilon { get; set; } = 200;
+
     /// <summary>P659 — minimum remote visible-ship pose frequency per viewer.
     /// Default 2 Hz; 0 preserves the existing ranked budget. Rounded up to a
     /// whole broadcast tick, capped by UpdatesPerSecond. LIGHT records carry

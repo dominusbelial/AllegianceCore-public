@@ -15,6 +15,7 @@ public sealed partial class Server
     private readonly Dictionary<ConnectionId, ViewerPoseCadence> _viewerPoseCadence = new();
     private readonly PoseAgeWindow _updateAgeAggregate = new();
     private readonly PoseAgeWindow _retiredPoseAges = new();
+    private long _retiredPromotions; private long[] _retiredMessages = new long[3];   // P813a tier telemetry
     private int _updateAgeReportRequested;
     private double _updateAgeWindowStart;
     // Deterministic test clock; production always uses monotonic wall time.
@@ -36,6 +37,7 @@ public sealed partial class Server
         _fireSent = _fireNeverPosed = _fireInitialPoses = _fireRefreshPoses = _fireHidden = 0;
         _retiredPoseAges.Clear();
         _updateAgeWindowStart = UpdateCadenceNow;
+        _retiredPromotions = 0; Array.Clear(_retiredMessages);
         TickProfiler.WindowReported -= RequestUpdateAgeWindow;
         TickProfiler.WindowReported += RequestUpdateAgeWindow;
         Console.WriteLine($"[boot] broadcast.minUpdateHz = {_minUpdateHz:R} (requested {hz:R}); 0 = ranked budget only");
@@ -54,6 +56,7 @@ public sealed partial class Server
         _probeViewers.Clear();
         _retiredPoseAges.Clear();
         _retiredTierAges.Clear();
+        _retiredPromotions = 0; Array.Clear(_retiredMessages);
     }
 
     internal void RetireViewerUpdateCadence(ConnectionId id)
@@ -77,6 +80,9 @@ public sealed partial class Server
         _retiredTierAges.Merge(state.TierWindow);
         _retiredPoseAges.ExtraBytes += state.ExtraBytes;
         _retiredPoseAges.PacketBytes += state.PacketBytes;
+        // P813a — preserve this viewer's tier telemetry across the retire.
+        _retiredPromotions += state.Promotions;
+        for (int t = 0; t < _retiredMessages.Length; t++) _retiredMessages[t] += state.MessagesByTier[t];
     }
 
     internal string TakeUpdateAgeReport(double now)
@@ -84,6 +90,8 @@ public sealed partial class Server
         var tiers = new PoseAgeWindow();
         tiers.Merge(_retiredTierAges);
         _retiredTierAges.Clear();
+        long retiredPromos = _retiredPromotions; long[] retiredMsgs = _retiredMessages;
+        _retiredPromotions = 0; Array.Clear(_retiredMessages);
         var total = _updateAgeAggregate;
         total.Clear();
         total.Merge(_retiredPoseAges);
@@ -91,6 +99,7 @@ public sealed partial class Server
         total.PacketBytes = _retiredPoseAges.PacketBytes;
         _retiredPoseAges.Clear();
         long older1 = 0, older3 = 0, pairs = 0;
+        long promotions = retiredPromos; var msgs = (long[])retiredMsgs.Clone();
         foreach (var state in _viewerPoseCadence.Values)
         {
             older1 += state.Older1;
@@ -103,10 +112,13 @@ public sealed partial class Server
             total.ExtraBytes += state.ExtraBytes;
             total.PacketBytes += state.PacketBytes;
             state.ExtraBytes = state.PacketBytes = 0;
+            // P813a — bounded per-tier delivery telemetry.
+            promotions += state.Promotions; state.Promotions = 0;
+            for (int t = 0; t < msgs.Length; t++) { msgs[t] += state.MessagesByTier[t]; state.MessagesByTier[t] = 0; }
         }
         double seconds = Math.Max(0.000001, now - _updateAgeWindowStart);
         _updateAgeWindowStart = now;
-        return string.Create(CultureInfo.InvariantCulture, $"[update-age] window={seconds:0.###}s viewers={_viewerPoseCadence.Count} minHz={_minUpdateHz:0.###} {total.FormatBands()} visiblePairs={pairs} older1s={older1} older3s={older3} older1sSamples={total.Older1} older3sSamples={total.Older3} neverPose={total.NeverPose} shipsBytes={total.PacketBytes} shipsBps={total.PacketBytes / seconds:0.0} floorExtraBytes={total.ExtraBytes} floorExtraBps={total.ExtraBytes / seconds:0.0}{(_broadcastInterestTiersEnabled ? FormatTierAges(tiers) : "")}");
+        return string.Create(CultureInfo.InvariantCulture, $"[update-age] window={seconds:0.###}s viewers={_viewerPoseCadence.Count} minHz={_minUpdateHz:0.###} {total.FormatBands()} visiblePairs={pairs} older1s={older1} older3s={older3} older1sSamples={total.Older1} older3sSamples={total.Older3} neverPose={total.NeverPose} shipsBytes={total.PacketBytes} shipsBps={total.PacketBytes / seconds:0.0} floorExtraBytes={total.ExtraBytes} floorExtraBps={total.ExtraBytes / seconds:0.0}{(_broadcastInterestTiersEnabled ? FormatTierAges(tiers) + FormatTierTelemetry(promotions, seconds, msgs) : "")}");
     }
 
     private void EmitUpdateAgeWindow()
@@ -129,6 +141,11 @@ internal sealed class ViewerPoseCadence
         public int Generation;
         public int Tier;
         public Server.InterestMembership Interest;
+        // P813a — last SERVED position for big-change promotion of far ships.
+        public Vector3 LastPos;
+        public Vector3 LastVel;
+        public double LastPosTime;
+        public bool HasServedPos;
     }
 
     private readonly Dictionary<short, Stamp> _stamps = new();
@@ -142,6 +159,10 @@ internal sealed class ViewerPoseCadence
     internal long ExtraBytes, PacketBytes;
     internal int Older1, Older3;
     internal int TrackedCount => _stamps.Count;
+    // P813a — bounded per-window delivery telemetry (merged into the
+    // [update-age] report and cleared there, like PacketBytes).
+    internal long Promotions;
+    internal readonly long[] MessagesByTier = new long[3];
 
     internal void Begin(IReadOnlyList<Ship> candidates, Ship self, Sector sector,
         bool adminSpectator, double now, bool sample, Func<Ship, Ship, int>? classify = null, Server? tierServer = null)
@@ -212,7 +233,7 @@ internal sealed class ViewerPoseCadence
     }
     private TierCandidate[] _tierCandidates = [];
     internal ReadOnlySpan<TierCandidate> SelectTierCandidates(Ship self, Ship? target, double now,
-        double tier1Hz, double tier2Hz, int tickHz, uint tick)
+        double tier1Hz, double tier2Hz, int tickHz, uint tick, float promotionEpsilonSq = 0)
     {
         if (_tierCandidates.Length < _visible.Count) Array.Resize(ref _tierCandidates, _visible.Count);
         int count = 0;
@@ -221,14 +242,42 @@ internal sealed class ViewerPoseCadence
             var ship = _visible[i];
             if (ship == target) continue;
             int tier = _stamps[ship.Id].Tier;
-            if (tier == 0 || TierDue(ship.Id, now, tier == 1 ? tier1Hz : tier2Hz, tickHz, tick, self.Id))
+            // P813a — big-change promotion: a far (T1/T2) ship that has drifted
+            // past PromotionEpsilon since its last served pose is force-served
+            // NOW (promoted to a faster tier for this tick), so a manoeuvring
+            // distant ship is caught up within one tick and dead-reckoning
+            // extrapolation never exceeds the epsilon. Reuses the deviation
+            // ranking: the promoted record still sorts by deviation within its
+            // tier, and served ships reset their staleness accumulator below.
+            bool bigChange = tier != 0 && promotionEpsilonSq > 0 && Promotable(ship, tier, promotionEpsilonSq, now);
+            if (tier == 0 || TierDue(ship.Id, now, tier == 1 ? tier1Hz : tier2Hz, tickHz, tick, self.Id) || bigChange)
+            {
                 _tierCandidates[count++] = new() { Ship = ship, Tier = tier, Index = i, Deviation = ship.Deviation };
+                MessagesByTier[tier]++;
+                if (bigChange) Promotions++;
+            }
             else ship.Deviation += 1;
         }
         // Skipped records do not affect served order. Sorting only due records
         // preserves the stable tier/deviation ordering with much less work.
         SortTierCandidates(count);
         return _tierCandidates.AsSpan(0, count);
+    }
+
+    /// <summary>P813a — has this far ship displaced past
+    /// <paramref name="epsilonSq"/> since its last served pose? Serves as the
+    /// big-change (turn/accel — motion) promotion trigger; false for a ship
+    /// never served yet (which TierDue already forces immediately) or one that
+    /// has not moved materially.</summary>
+    /// <summary>P813a — promote when the client's dead-reckoned pose (last served
+    /// position + velocity × elapsed) is off by more than the epsilon: a far ship
+    /// cruising straight stays on its low cadence, a manoeuvring one is caught up.</summary>
+    internal bool Promotable(Ship ship, int tier, float epsilonSq, double now)
+    {
+        if (epsilonSq <= 0) return false;   // P813a — 0 disables big-change promotion
+        if (!_stamps.TryGetValue(ship.Id, out var stamp) || !stamp.HasServedPos) return false;
+        var predicted = stamp.LastPos + stamp.LastVel * (float)Math.Max(0, now - stamp.LastPosTime);
+        return (ship.Position - predicted).LengthSquared() >= epsilonSq;
     }
 
     private void SortTierCandidates(int count)
@@ -272,6 +321,19 @@ internal sealed class ViewerPoseCadence
         if (!_stamps.TryGetValue(id, out var stamp)) return;
         stamp.LastPose = now;
         stamp.HasPose = true;
+        _stamps[id] = stamp;
+    }
+
+    /// <summary>P813a — record that this ship was served at its current
+    /// position, refreshing the big-change promotion baseline. Call after the
+    /// record is actually emitted (alongside <see cref="MarkPose"/>).</summary>
+    internal void MarkPosePosition(short id, Vector3 position, Vector3 velocity, double now)
+    {
+        if (!_stamps.TryGetValue(id, out var stamp)) return;
+        stamp.LastPos = position;
+        stamp.LastVel = velocity;
+        stamp.LastPosTime = now;
+        stamp.HasServedPos = true;
         _stamps[id] = stamp;
     }
 

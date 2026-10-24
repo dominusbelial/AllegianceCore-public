@@ -3012,15 +3012,22 @@ public sealed partial class Server
                 // intent: target first (FedSrv.CPP:4141-4146), deviation descending
                 // inside each tier (FedSrv.CPP:3614-3621,3923). Rate quotas replace
                 // the era's 2+2 cap; no presence-only record satisfies a pose rate.
+                // P813a — a far (T1/T2) ship that has drifted past PromotionEpsilon
+                // since its last served pose is promoted (big change) and served
+                // NOW, so a manoeuvring distant ship is caught up within one tick.
                 foreach (var c in all.Where(c => c != self && c != targetShip && peerSees(c))
                     .OrderBy(c => ClassifyInterest(self, c)).ThenByDescending(c => c.Deviation))
                 {
                     int tier = ClassifyInterest(self, c);
                     double hz = InterestRate(tier);
-                    if (tier == 0 || cadence!.TierDue(c.Id, poseNow, hz, _config.UpdatesPerSecond, tickIndex, self.Id))
+                    bool bigChange = cadence!.Promotable(c, tier, _promotionEpsilonSq, poseNow);
+                    if (tier == 0 || cadence.TierDue(c.Id, poseNow, hz, _config.UpdatesPerSecond, tickIndex, self.Id) || bigChange)
                     {
                         entries.Add(CaptureHeavyUpdate(tickIndex, posRef, c, tickIndex));
                         c.Deviation = 0;
+                        cadence.MarkPosePosition(c.Id, c.Position, c.Velocity, poseNow);
+                        cadence.MessagesByTier[tier]++;
+                        if (bigChange) cadence.Promotions++;
                     }
                     else c.Deviation += 1;
                 }
