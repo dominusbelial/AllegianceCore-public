@@ -208,9 +208,11 @@ public class P557ShowcaseFleetTests
 
     // ── Wingman behaviour decisions ───────────────────────────────────────
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Short_lived_mines_are_not_pre_laid_at_an_empty_home_aleph()
     {
+        Require.Artwork();   // reads PCore001.igc from the artwork tree
         // Real PCore001 lifespans: Mine Pack 2 = 5 s, Prox Mine 2 = 18 s, Caltrop = 600 s.
         var core = Core;
         Assert.False(Showcase.PreLayMineAtAleph(true, true, core.MineTypes[13].Lifespan));

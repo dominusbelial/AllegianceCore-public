@@ -495,7 +495,9 @@ internal sealed class ResearchTactics
         }
         else _goTime = double.NaN;
 
-        if (time - _stageSince >= StagingHardCapSeconds)
+        // A wave that is ready (its go time is set) is never aborted by the cap: it
+        // launches on its go tick (rig 221 batch 23b: required=1 assembled=1 aborted at 204 s).
+        if (!ready && time - _stageSince >= StagingHardCapSeconds)
         {
             if (_strikeTarget is { } id) _abandonedUntil[id] = time + StagingAbandonSeconds;
             _events.Add(new(StrikeEventKind.Abort, _waveNumber, 0, 0, _strikeTarget ?? -1, _strikeSector,

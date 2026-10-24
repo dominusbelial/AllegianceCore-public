@@ -216,9 +216,11 @@ public sealed class P796VariedLoadoutTests(ITestOutputHelper output)
         LoadoutVariety.Reset();
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Coverage_tracker_rows_report_equipped_fired_hits_damage_kills_and_never_fired_reasons()
     {
+        Require.Artwork();   // reads PCore001.igc from the artwork tree
         var coverage = new WeaponCoverage();
         coverage.BeginRun();
         // Two purchases of hull 12 with a gun (101), a shield (210) and a missile launcher (300).

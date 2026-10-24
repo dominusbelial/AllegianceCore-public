@@ -87,9 +87,11 @@ public sealed class P798ScoutOpeningTests
             ExplorationPlanner.FindFrontiers(graph, known, warps, home).Select(l => (l.From, l.To, l.EntryWarpId)));
     }
 
-    [Fact]
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
     public void Frontiers_work_on_two_generated_maps_of_different_sizes()
     {
+        Require.Artwork();   // reads PCore001.igc from the artwork tree
         foreach (var size in new[] { 0, 1 })
         {
             var graph = GeneratedGraph(size);
