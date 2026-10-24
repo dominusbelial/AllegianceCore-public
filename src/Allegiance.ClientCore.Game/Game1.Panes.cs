@@ -160,6 +160,7 @@ public sealed partial class Game1
                 _shopModel.SlotPartChosen += mounted => _sound?.PlayWarnPartSound(
                     mounted ? Allegiance.Core.FlightPartAction.Mount : Allegiance.Core.FlightPartAction.Unmount);
                 _shopModel.HullChosen += () => _sound?.PlayMountPart();
+                _shopHoverRow = -1;   // P787b — a fresh dock rebuilds the list; native's last-hover resets with it
                 // P273 — build the teleport destination list from the live world.
                 _teleportModel = BuildTeleportModel(world, mySe);
                 _teleportActive = false;
@@ -195,6 +196,13 @@ public sealed partial class Game1
             // P501 — touch: docked verb taps (launch/undock, pane toggles, and
             // row-tap to buy/select/invest on the active sub-view).
             HandleDockedTouch(mySe);
+
+            // P787b — SIM-0321/0327: mouse hover over the docked loadout list
+            // (native OnListHover, loadout.cpp:1173-1190, and the slot
+            // MouseEnter, load.cpp:233-237): hovering a row moves the shop
+            // cursor onto it and cues mouseoverSound when the hovered row
+            // changed. Mouse-only: no-ops without a real pointer position.
+            HandleShopMouseHover();
 
             if (!composing && !_launchSent && _teleportActive && _teleportModel is { } tel)
             {
@@ -673,6 +681,55 @@ public sealed partial class Game1
     /// Composing (chat) and a pending launch yield the frame to the keys. Called
     /// every docked frame; zones from <see cref="Rendering.DockedTouchZones"/>.
     /// </summary>
+    /// <summary>P787b — SIM-0321/0327: mouse hover over the docked loadout
+    /// list. Reads the pointer (the docked screen is a free-cursor screen,
+    /// native's vmHangar), maps it onto the shop's row bands with the SAME
+    /// geometry the touch taps use (<see cref="Rendering.DockedTouchZones.RowIndex"/>),
+    /// and applies native <c>OnListHover</c>'s rule
+    /// (<see cref="Rendering.ShopHover.Hover"/>, loadout.cpp:1173-1190): the
+    /// cursor follows the hovered row and <c>mouseoverSound</c> cues when the
+    /// hovered row changed. Runs only while the shop list is actually on
+    /// screen (hangar verbs/teleport/invest panes own the pointer otherwise,
+    /// and native's loadout list only exists in the loadout view).</summary>
+    private void HandleShopMouseHover()
+    {
+        if (_hangarOnly || _investActive || _teleportActive || _launchSent
+            || _chatActive || _qcMenuOpen || _helpVisible || _shopModel is null)
+        {
+            RunShopHover(null);
+            return;
+        }
+        var mouse = Microsoft.Xna.Framework.Input.Mouse.GetState();
+        var vp = GraphicsDevice.Viewport;
+        int idx = Rendering.DockedTouchZones.RowIndex(vp.Width, vp.Height, _shopModel.RowCount, mouse.X, mouse.Y);
+        RunShopHover(idx < 0 ? null : idx);
+    }
+
+    /// <summary>P787b — the post-hit-test half of the shop hover, split from
+    /// <see cref="HandleShopMouseHover"/> (which needs the mouse and viewport)
+    /// so headless tests can pin the <c>UiSounds?.PlayMouseOver()</c> call and
+    /// the cursor move at the trigger — native's
+    /// <c>trekClient.PlaySoundEffect(mouseoverSound)</c>
+    /// (loadout.cpp:1178) and slot <c>MouseEnter</c> (load.cpp:236).
+    /// </summary>
+    private void RunShopHover(int? hoveredRow)
+    {
+        int previousHover = _shopHoverRow;
+        var (lastHover, cue) = Rendering.ShopHover.Hover(hoveredRow, _shopHoverRow);
+        _shopHoverRow = lastHover;
+        // Only a hover CHANGE moves the cursor (native OnListHover displays the hovered
+        // row, loadout.cpp:1168-1184): a pointer resting on the list must not undo
+        // keyboard navigation every frame.
+        if (hoveredRow is { } row && row >= 0 && row != previousHover
+            && _shopModel is { } shop && row != shop.Cursor)
+        {
+            shop.MoveCursor(row - shop.Cursor);
+            Console.WriteLine($"[monogame] shop hover: cursor -> row {row} (page {shop.Page})");
+        }
+        if (cue)
+            UiSounds?.PlayMouseOver();
+    }
+
     private void HandleDockedTouch(ShipEntity mySe)
     {
         if (!TouchAvailable()) return;

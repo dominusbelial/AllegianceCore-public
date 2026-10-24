@@ -29,6 +29,73 @@ public sealed partial class ClientWorld
         if (MyShipId == modelShipId) PostText(critical, format, args);
     }
 
+    // ── P787b — SIM-0195: the resource-pool notification texts ─────────────
+    // Native posts "Ammo depleted." / "Reloading ammo..." / "Fuel depleted." /
+    // "Reloading fuel..." from the CLIENT's own IGC sim when the pool's
+    // SetAmmo/SetFuel crosses to zero and the auto-reload attempt resolves
+    // (Igc/shipIGC.h:597-650). The port is a pure-renderer client: the same
+    // edges are derived from the own ship's wire ammo/fuel fraction — the
+    // positive→≈0 crossing is the SetAmmo(0)/SetFuel(0) transition; a
+    // recovery above the epsilon while the decision is pending is the
+    // successful auto-reload ("Reloading …" — the pool refills synchronously
+    // on the server and the wire fraction comes back inside the grace
+    // window); the grace elapsing with the pool still ≈0 is the failed
+    // reload ("… depleted.") — the same philosophy as WeaponReloadTracker's
+    // HUD statuses (0.35 s grace; P361's reload is instant).
+
+    /// <summary>The grace a pool-zero crossing waits for the wire fraction to
+    /// recover before being resolved as "depleted" (seconds).</summary>
+    public const double ReloadFeedbackGraceSeconds = 0.35;
+
+    private double _ammoDepletedDeadline = -1;
+    private double _fuelDepletedDeadline = -1;
+
+    /// <summary>Arm one pool's depletion decision on a positive→≈0 fraction
+    /// crossing — the client-visible shape of native's
+    /// <c>SetAmmo(0)</c>/<c>SetFuel(0)</c> transition (shipIGC.h:609/638).</summary>
+    private void WatchPoolDepletion(float prevFraction, float nextFraction, float epsilon, ref double deadline)
+    {
+        if (prevFraction > epsilon && nextFraction <= epsilon)
+            deadline = NowSeconds() + ReloadFeedbackGraceSeconds;
+    }
+
+    /// <summary>Resolve one pending pool decision: a recovery above the
+    /// epsilon posts the reload text (native's success leg, shipIGC.h:617/647);
+    /// the grace window elapsing still-empty posts the depleted text (native's
+    /// failure leg, shipIGC.h:611-613/640-642). Called once per frame from
+    /// <see cref="UpdateOwnStatusAlarms"/> under the gate.</summary>
+    private void TickPoolDepletion(float ammoFraction, float fuelFraction,
+        float ammoEpsilon, float fuelEpsilon)
+    {
+        double now = NowSeconds();
+        if (_ammoDepletedDeadline > 0)
+        {
+            if (ammoFraction > ammoEpsilon)
+            {
+                _ammoDepletedDeadline = -1;
+                PostPlainText(critical: false, "Reloading ammo...");
+            }
+            else if (now >= _ammoDepletedDeadline)
+            {
+                _ammoDepletedDeadline = -1;
+                PostPlainText(critical: false, "Ammo depleted.");
+            }
+        }
+        if (_fuelDepletedDeadline > 0)
+        {
+            if (fuelFraction > fuelEpsilon)
+            {
+                _fuelDepletedDeadline = -1;
+                PostPlainText(critical: false, "Reloading fuel...");
+            }
+            else if (now >= _fuelDepletedDeadline)
+            {
+                _fuelDepletedDeadline = -1;
+                PostPlainText(critical: false, "Fuel depleted.");
+            }
+        }
+    }
+
     /// <summary>P760b/SIM-0197 — one killed model awaiting the game thread.
     /// Native's <c>TargetKilled</c> compares the victim against the ship's
     /// <c>c_cmdCurrent</c> target, which can be ANY model type
@@ -175,6 +242,18 @@ public sealed partial class ClientWorld
     public void ReceiveChat(ChatMessage message)
     {
         if (IsPilotMuted(message.SidSender)) return;
+        // P787b — SIM-0172: native's default-on unknown-VC filter
+        // (trekigc.cpp:4494-4496, m_bFilterUnknownChats = true,
+        // trekigc.cpp:2464): a human sender's null-text sonic chat whose
+        // caption is "Unknown chat" is dropped entirely — no event-log line,
+        // no sound, no callback. (The other three filter toggles default off /
+        // to no-filter — FilterChatsToAll/FilterQuickComms false,
+        // FilterLobbyChats mode 0/3 — so the port's defaults match native's.)
+        if (message.MessageIsAbsent && message.VoiceOver != Na
+            && Allegiance.Core.Audio.NativeVoiceCatalog.Caption(message.VoiceOver) == "Unknown chat"
+            && _ships.TryGetValue(message.SidSender, out var vcSender)
+            && vcSender.Player is { } vcInfo && vcInfo.IsHuman)
+            return;
         var voice = Allegiance.Core.Audio.NativeVoiceCatalog.Resolve(message.VoiceOver, message.Message, message.MessageIsAbsent);
         if (message.MessageIsAbsent && message.VoiceOver != Na)
             message.Message = Allegiance.Core.Audio.NativeVoiceCatalog.Caption(message.VoiceOver);
@@ -197,6 +276,14 @@ public sealed partial class ClientWorld
     public void ReceiveChat(ChatBuoy message)
     {
         if (IsPilotMuted(message.Cd.SidSender)) return;
+        // P787b — SIM-0172: the same default-on unknown-VC filter as the chat
+        // path (native's buoys go through the same ReceiveChat,
+        // trekigc.cpp:4494-4496).
+        if (message.MessageIsAbsent && message.Cd.VoiceOver != Na
+            && Allegiance.Core.Audio.NativeVoiceCatalog.Caption(message.Cd.VoiceOver) == "Unknown chat"
+            && _ships.TryGetValue(message.Cd.SidSender, out var vcSender)
+            && vcSender.Player is { } vcInfo && vcInfo.IsHuman)
+            return;
         var voice = Allegiance.Core.Audio.NativeVoiceCatalog.Resolve(message.Cd.VoiceOver, message.Message, message.MessageIsAbsent);
         if (message.MessageIsAbsent && message.Cd.VoiceOver != Na)
             message.Message = Allegiance.Core.Audio.NativeVoiceCatalog.Caption(message.Cd.VoiceOver);

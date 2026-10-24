@@ -392,6 +392,67 @@ public sealed partial class Game1
         }
     }
 
+    /// <summary>P787b — drain the per-asteroid ambient layer (SIM-0345): native
+    /// attaches an <c>AmbientSoundSite</c> to every asteroid
+    /// (trekigc.cpp:1432-1434) whose sound is the shared <c>asteroidSound</c>
+    /// template — a pitch-0.35 <c>shipout</c> loop with a 200-unit positioned
+    /// radius (sounddef.mdl; the <c>asteroid</c> DEFSOUND, sounds.h:140). The
+    /// port replays the bundled <c>shipout</c> wave at pitch −0.35, one loop per
+    /// rock in the listener's sector within
+    /// <see cref="Audio.AsteroidAmbientSoundCurve.AudibleRadius"/>, volume by
+    /// listener distance (native's authored radius — kept, unlike the station
+    /// curve's near-field widening, because a 200-unit rumble is exactly the
+    /// mining-distance cue native intended).</summary>
+    private readonly List<(short AsteroidId, float Distance)> _asteroidSoundScratch = new();
+
+    private void UpdateAsteroidSounds()
+    {
+        var world = _session.World;
+        if (_sound is not { } snd) return;
+
+        var inRange = _asteroidSoundScratch;
+        inRange.Clear();
+        lock (_session.Gate)
+        {
+            // A boarded gunner hears from the carrier (native source ship, as the
+            // P803 audio listener).
+            if (world.MyShipId is { } me
+                && world.Ships.TryGetValue(me, out var own)
+                && (own.ParentId >= 0 && world.Ships.TryGetValue(own.ParentId, out var carrier) ? carrier : own) is var source
+                && source.Latest is { } meUp)
+            {
+                var anchor = meUp.Position;
+                short mySector = source.SectorId;
+                foreach (var (asteroidId, rock) in world.Asteroids)
+                {
+                    if (rock.ClusterId != mySector) continue;
+                    var pos = rock.Position;
+                    float dist = (new SimVec(pos[0], pos[1], pos[2]) - anchor).Length();
+                    if (dist > Audio.AsteroidAmbientSoundCurve.AudibleRadius) continue;
+                    inRange.Add((asteroidId, dist));
+                }
+            }
+        }
+
+        foreach (var cmd in _asteroidSoundPlanner.Plan(inRange))
+        {
+            switch (cmd.Action)
+            {
+                case Audio.StationSoundAction.Start:
+                    snd.StartAsteroidAmbient(cmd.StationId, cmd.Volume);
+                    Console.WriteLine($"[monogame] audio: asteroid ambient start (rock {cmd.StationId}, vol {cmd.Volume:F3})");
+                    break;
+                case Audio.StationSoundAction.Update:
+                    snd.UpdateAsteroidAmbient(cmd.StationId, cmd.Volume);
+                    break;
+                case Audio.StationSoundAction.Stop:
+                    snd.StopAsteroidAmbient(cmd.StationId);
+                    Console.WriteLine($"[monogame] audio: asteroid ambient stop (rock {cmd.StationId})");
+                    break;
+            }
+        }
+    }
+
     /// <summary>P267 — drain the world's one-shot sound events (station
     /// destroyed/captured, development completion) into the audio manager,
     /// replaying each exactly once with a console line for the live proof.

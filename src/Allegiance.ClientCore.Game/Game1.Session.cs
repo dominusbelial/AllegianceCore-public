@@ -1163,7 +1163,16 @@ public sealed partial class Game1
                     case ChatTarget.Wing: oidRecipient = ownShip.WingId; break;
                     case ChatTarget.Team: oidRecipient = ownShip.SideId; break;
                     case ChatTarget.FriendlySector:
-                    case ChatTarget.AllSector: oidRecipient = ownShip.SectorId; break;
+                    case ChatTarget.AllSector:
+                        // P787b — SIM-0332: the compose's sector recipient is the
+                        // last RIGHT-CLICK-picked cluster when set (native
+                        // console.cpp:1745-1746 SetRecipient), else the chat
+                        // cluster fallback (native converts NA → GetChatCluster(),
+                        // clintlib.cpp:2352-2366: the viewed cluster, else the own).
+                        oidRecipient = _chatSectorRecipient
+                            ?? world.ViewedClusterId
+                            ?? ownShip.SectorId;
+                        break;
                 }
             }
         }

@@ -131,6 +131,27 @@ public sealed partial class Game1
                     Console.WriteLine("[monogame] turret idle -> INACTIVE_TURRET_UPDATE(100)");
                 break;
         }
+
+        // P787b — SIM-0348: the manned-turret turn loop. Native loops the hull
+        // hardpoint's turnSound while the gunner turns
+        // (trekigc.cpp:988-996); for the LOCAL gunner (gunner == own ship, the
+        // branch native's predicate always admits) the port loops it while the
+        // gunner's look axes exceed native's TurnRate > 0.01 threshold and
+        // stops below it. The carrier hull comes from the shop catalogue via
+        // the boarded ship's parent.
+        short turnSoundId = 0;
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var gunner)
+                && gunner.ParentId >= 0 && world.Ships.TryGetValue(gunner.ParentId, out var carrier)
+                && _shopCatalog is { } cat)
+                foreach (var h in cat.Hulls)
+                    if (h.HullId == carrier.HullId) { turnSoundId = Audio.TurretTurnCue.FirstTurretTurnSound(h); break; }
+        }
+        if (turnSoundId != 0)
+            _sound?.SetTurretTurnLoop(turnSoundId,
+                Audio.TurretTurnCue.ShouldLoop(turretControls.Yaw, turretControls.Pitch, turretControls.Roll));
         return 0;
     }
 

@@ -738,6 +738,19 @@ public sealed partial class ClientWorld
             RecordSoundEvent(kind, me);
         _prevOwnAlarms = next;
 
+        // P787b — SIM-0195: the resource-pool notification texts (native
+        // shipIGC.h:597-650). A positive→≈0 crossing of the wire ammo/fuel
+        // fraction arms a depletion decision (skipping the first sample, whose
+        // Unarmed stand-in would false-fire); the grace window resolves in
+        // TickPoolDepletion, or is cancelled by a RELOAD relay
+        // (RecordReloadFeedback → ReloadRelayText).
+        if (_prevOwnAlarms is not null)
+        {
+            WatchPoolDepletion(prev.AmmoFraction, next.AmmoFraction, ShipStatusAlarms.AmmoEmptyEpsilon, ref _ammoDepletedDeadline);
+            WatchPoolDepletion(prev.FuelFraction, next.FuelFraction, ShipStatusAlarms.FuelEmptyEpsilon, ref _fuelDepletedDeadline);
+        }
+        TickPoolDepletion(next.AmmoFraction, next.FuelFraction, ShipStatusAlarms.AmmoEmptyEpsilon, ShipStatusAlarms.FuelEmptyEpsilon);
+
         // P717 — SIM-0243: the shields-offline VO (salShieldsOfflineSound,
         // shieldIGC.cpp:186) fires on the LOCAL ship's own shield collapsing
         // from online to ≈0 (native plays it when overload damage knocks the

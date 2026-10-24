@@ -3892,3 +3892,177 @@
 /processor:SoundEffectProcessor
 /processorParam:Quality=Best
 /build:Sounds/text.ogg
+
+#begin Sounds/cannon1pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/cannon1pwrup.ogg
+
+#begin Sounds/cannon2pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/cannon2pwrup.ogg
+
+#begin Sounds/dn_ptlascan1pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_ptlascan1pwrup.ogg
+
+#begin Sounds/dn_ptlascan2pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_ptlascan2pwrup.ogg
+
+#begin Sounds/dn_ptvulcan1pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_ptvulcan1pwrup.ogg
+
+#begin Sounds/dn_ptvulcan2pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/dn_ptvulcan2pwrup.ogg
+
+#begin Sounds/gausspwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/gausspwrup.ogg
+
+#begin Sounds/machinegun1pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/machinegun1pwrup.ogg
+
+#begin Sounds/machinegun2pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/machinegun2pwrup.ogg
+
+#begin Sounds/machinegun3pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/machinegun3pwrup.ogg
+
+#begin Sounds/minigun1pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/minigun1pwrup.ogg
+
+#begin Sounds/minigun2pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/minigun2pwrup.ogg
+
+#begin Sounds/minigun3pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/minigun3pwrup.ogg
+
+#begin Sounds/plasmarifle1pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmarifle1pwrup.ogg
+
+#begin Sounds/plasmarifle2pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmarifle2pwrup.ogg
+
+#begin Sounds/plasmarifle3pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/plasmarifle3pwrup.ogg
+
+#begin Sounds/sniperlaser1pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/sniperlaser1pwrup.ogg
+
+#begin Sounds/sniperlaser2pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/sniperlaser2pwrup.ogg
+
+#begin Sounds/tfpwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/tfpwrup.ogg
+
+#begin Sounds/turretcannon1pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/turretcannon1pwrup.ogg
+
+#begin Sounds/turretcannon2pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/turretcannon2pwrup.ogg
+
+#begin Sounds/turretcannon3pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/turretcannon3pwrup.ogg
+
+#begin Sounds/turretgun1pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/turretgun1pwrup.ogg
+
+#begin Sounds/turretgun2pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/turretgun2pwrup.ogg
+
+#begin Sounds/turretgun3pwrup.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/turretgun3pwrup.ogg
+
+#begin Sounds/sturret.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/sturret.ogg
+
+#begin Sounds/mturret.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/mturret.ogg
+
+#begin Sounds/lturret.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/lturret.ogg
+
+#begin Sounds/shipint.ogg
+/importer:OggImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:Sounds/shipint.ogg

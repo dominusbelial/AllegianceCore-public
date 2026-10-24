@@ -182,4 +182,108 @@ public static class WeaponSoundMap
     /// <summary>Resolve a burst id, falling back to <see cref="FallbackStem"/>.</summary>
     public static string BurstStem(short soundId)
         => TryResolveBurst(soundId, out var stem) ? stem : FallbackStem;
+
+    /// <summary>P787b — weapon <c>activateSound</c> id → wave stem, derived the
+    /// same way as the single-shot/burst tables: sounddef.mdl's
+    /// <c>soundList</c> maps the id to a <c>*ActivationSound</c> template and
+    /// each template's <c>ImportWave</c> names the wave (e.g.
+    /// <c>(81, antiUtility1ActivationSound)</c>,
+    /// <c>antiUtility1ActivationSound = … ImportWave("plasmarifle1pwrup")</c>,
+    /// sounddef.mdl:2068-2129 area). Native plays it as the per-mount
+    /// <c>m_vpActiveSound[mount]</c> loop while the weapon is active
+    /// (<c>PlaySoundIf(m_vpActiveSound[mount], pweapon-&gt;GetActivateSound(), …,
+    /// pweapon &amp;&amp; pweapon-&gt;fActive())</c>, trekigc.cpp:984-986).
+    /// Unlike the shot tables there is NO fallback: an id that resolves to no
+    /// wave (or NA, 0) means native's <c>StartSound(NA)</c> — silence. All 44
+    /// distinct activation ids of the real PCore001 core resolve (dump:
+    /// 81-142, 530/533/550/553).</summary>
+    public static readonly IReadOnlyDictionary<short, string> ActivationStemBySoundId = new Dictionary<short, string>
+    {
+        [81] = "plasmarifle1pwrup",
+        [82] = "machinegun1pwrup",
+        [83] = "sniperlaser1pwrup",
+        [84] = "plasmarifle2pwrup",
+        [85] = "cannon2pwrup",
+        [86] = "minigun2pwrup",
+        [87] = "minigun2pwrup",
+        [88] = "turretgun1pwrup",
+        [89] = "turretcannon1pwrup",
+        [90] = "turretcannon3pwrup",
+        [91] = "plasmarifle2pwrup",
+        [92] = "plasmarifle3pwrup",
+        [93] = "sniperlaser1pwrup",
+        [94] = "sniperlaser2pwrup",
+        [95] = "machinegun3pwrup",
+        [96] = "machinegun2pwrup",
+        [97] = "cannon1pwrup",
+        [99] = "minigun1pwrup",
+        [100] = "minigun3pwrup",
+        [101] = "turretgun2pwrup",
+        [102] = "turretgun3pwrup",
+        [103] = "turretcannon2pwrup",
+        [104] = "plasmarifle1pwrup",
+        [105] = "plasmarifle3pwrup",
+        [106] = "sniperlaser1pwrup",
+        [107] = "turretcannon2pwrup",
+        [109] = "minigun1pwrup",
+        [110] = "machinegun1pwrup",
+        [111] = "minigun1pwrup",
+        [113] = "tfpwrup",
+        [114] = "turretcannon3pwrup",
+        [115] = "turretcannon2pwrup",
+        [116] = "plasmarifle3pwrup",
+        [127] = "minigun2pwrup",
+        [128] = "minigun3pwrup",
+        [129] = "machinegun2pwrup",
+        [130] = "machinegun3pwrup",
+        [131] = "minigun2pwrup",
+        [132] = "minigun3pwrup",
+        [142] = "gausspwrup",
+        [530] = "dn_ptvulcan1pwrup",
+        [533] = "dn_ptvulcan2pwrup",
+        [550] = "dn_ptlascan1pwrup",
+        [553] = "dn_ptlascan2pwrup",
+    };
+
+    /// <summary>P787b — hull hardpoint <c>turnSound</c> id → wave stem
+    /// (sounddef.mdl soundList: <c>(120, smallTurretSound)</c> →
+    /// <c>sturret</c>, <c>(121, mediumTurretSound)</c> → <c>mturret</c>,
+    /// <c>(122, largeTurretSound)</c> → <c>lturret</c>; native plays it as the
+    /// per-mount <c>m_vpTurretSound[mount]</c> loop while a manned turret moves,
+    /// trekigc.cpp:988-996). The real PCore001 core uses exactly ids 120/121/122
+    /// (corpus dump). No fallback: an unlisted id stays silent, like native's
+    /// <c>StartSound(NA)</c>.</summary>
+    public static readonly IReadOnlyDictionary<short, string> TurnStemBySoundId = new Dictionary<short, string>
+    {
+        [120] = "sturret",
+        [121] = "mturret",
+        [122] = "lturret",
+    };
+
+    /// <summary>Try to resolve a weapon's activate-loop sound id to its wave
+    /// stem. Returns false for NA/0/unlisted ids — the caller plays nothing,
+    /// exactly like native's <c>StartSound(NA)</c> no-op.</summary>
+    public static bool TryResolveActivation(short soundId, out string stem)
+    {
+        if (ActivationStemBySoundId.TryGetValue(soundId, out var s))
+        {
+            stem = s!;
+            return true;
+        }
+        stem = "";
+        return false;
+    }
+
+    /// <summary>Try to resolve a hardpoint turn-sound id to its wave stem
+    /// (false for NA/0/unlisted ids — silence, as native).</summary>
+    public static bool TryResolveTurn(short soundId, out string stem)
+    {
+        if (TurnStemBySoundId.TryGetValue(soundId, out var s))
+        {
+            stem = s!;
+            return true;
+        }
+        stem = "";
+        return false;
+    }
 }

@@ -1,5 +1,7 @@
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.ClientCore.MonoGame.Audio;
 using Allegiance.Core;
+using Allegiance.Core.Sim;
 using Microsoft.Xna.Framework.Input;
 using NumericsVec2 = System.Numerics.Vector2;
 
@@ -153,13 +155,22 @@ public sealed partial class Game1
         if (down && !_mapLeftButtonWasDown)
             ExecuteStarmapClick(new NumericsVec2(mouse.X, mouse.Y));
         bool right = mouse.RightButton == ButtonState.Pressed;
-        if (right && !_mapRightButtonWasDown && ActionDown(Keyboard.GetState(), "SectorHighlightModifier"))
-            ExecuteStarmapClick(new NumericsVec2(mouse.X, mouse.Y), mark: true);
+        if (right && !_mapRightButtonWasDown)
+        {
+            // P764b — the Ctrl+RIGHT-click path is native's highlight mark
+            // (sectormap.cpp:1491-1510, silent); P787b — SIM-0332: a PLAIN
+            // right-click on a cluster is the console PickCluster path
+            // (sectormap.cpp:1583-1587): mouseclickSound + PickCluster.
+            if (ActionDown(Keyboard.GetState(), "SectorHighlightModifier"))
+                ExecuteStarmapClick(new NumericsVec2(mouse.X, mouse.Y), mark: true);
+            else
+                ExecuteStarmapClick(new NumericsVec2(mouse.X, mouse.Y), consolePick: true);
+        }
         _mapRightButtonWasDown = right;
         _mapLeftButtonWasDown = down;
     }
 
-    private void ExecuteStarmapClick(NumericsVec2 cursor, bool mark = false)
+    private void ExecuteStarmapClick(NumericsVec2 cursor, bool mark = false, bool consolePick = false)
     {
         // Build the layout for whichever map is up (mini or expanded) under the
         // Gate lock (reads world.Graph/world.Clusters, mutated by the receive
@@ -203,7 +214,80 @@ public sealed partial class Game1
             return;
 
         short cluster = StarmapHitTest.HitTest(layout, cursor);
-        RunStarmapClick(cluster, mark);
+        if (consolePick)
+            RunConsolePickCluster(cluster);
+        else
+            RunStarmapClick(cluster, mark);
+    }
+
+    /// <summary>
+    /// P787b — the port of native's plain RIGHT-click on a starmap cluster
+    /// (sectormap.cpp:1583-1587):
+    /// <c>trekClient.PlaySoundEffect(mouseclickSound);
+    /// pWindow-&gt;GetConsoleImage()-&gt;GetConsoleData()-&gt;PickCluster(pClusterFound,
+    /// button);</c>. The console's <c>PickCluster</c> (console.cpp:1739-1791)
+    /// starts a chat compose addressed to the clicked sector when not composing
+    /// (<c>StartComposing(c_csComposeChat)</c> +
+    /// <c>SetRecipient(CHAT_FRIENDLY_SECTOR, clusterID, pcluster)</c>), and while
+    /// already composing switches to the command compose and issues a
+    /// <c>c_cidGoto</c> order with a cluster buoy for the clicked sector. Split
+    /// from <see cref="ExecuteStarmapClick"/> (which needs the graphics viewport)
+    /// so headless tests can pin the sound call and the compose recipient
+    /// (SIM-0332).
+    /// </summary>
+    private void RunConsolePickCluster(short cluster)
+    {
+        if (cluster < 0)
+        {
+            Console.WriteLine("[monogame] starmap right-click: empty map (no cluster) — nothing (native: no PickCluster)");
+            return;
+        }
+
+        // Native sectormap.cpp:1586 — the click cue fires on the plain
+        // right-click cluster hit, BEFORE the console action.
+        UiSounds?.PlayMapClick();
+
+        if (!_chatActive)
+        {
+            // Native console.cpp:1743-1751: start composing a chat whose
+            // recipient is CHAT_FRIENDLY_SECTOR addressed to the clicked
+            // cluster. The port mirrors it on its compose model: typing state
+            // Chat, target FriendlySector, sector recipient = the cluster (used
+            // by the send path, Game1.Session.SendChatLine).
+            SetComposeState(NativeComposeState.Chat);
+            _chatTarget = ChatTarget.FriendlySector;
+            _chatSectorRecipient = cluster;
+            Console.WriteLine($"[monogame] starmap right-click: compose chat to sector {cluster} (PickCluster, console.cpp:1743-1751)");
+            return;
+        }
+
+        // Native console.cpp:1753-1791: already composing — the compose becomes
+        // a command compose and PickCluster issues a c_cidGoto order with a
+        // cluster buoy for the clicked sector, sent to the CURRENT compose
+        // recipient. The builder special case (console.cpp:1758-1777, a builder
+        // individual recipient gets a build order on the best build target in
+        // the sector) needs native's FindTarget over the sector's asteroids,
+        // which the port's command model does not expose; the goto leg is
+        // ported (documented remainder in the P787b report).
+        if (_composeState != NativeComposeState.Command)
+            _composeState = NativeComposeState.Command;
+        var db = Rendering.StarmapClick.BuildClusterGotoBuoy(cluster);
+        short oidRecipient;
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            oidRecipient = world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own)
+                ? _chatTarget switch
+                {
+                    ChatTarget.Individual => own.ShipId,
+                    ChatTarget.Wing => own.WingId,
+                    ChatTarget.Team => own.SideId,
+                    _ => _chatSectorRecipient ?? world.ViewedClusterId ?? own.SectorId,
+                }
+                : (short)0;
+        }
+        _session.SendChatBuoy("goto", _chatTarget, oidRecipient, db);
+        Console.WriteLine($"[monogame] starmap right-click (composing): goto order for sector {cluster} via compose recipient {_chatTarget} (console.cpp:1782-1791)");
     }
 
     /// <summary>

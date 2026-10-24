@@ -2267,6 +2267,7 @@ public sealed partial class Game1
             // re-seed the aim orientation and re-arm the turret send cadence.
             _turretSeeded = false;
             _turretCadence.Reset();
+            _sound?.SetTurretTurnLoop(0, turning: false);   // P787b — stop the turret turn loop on leaving
             _autopilotDeltaSeconds = (float)gameTime.ElapsedGameTime.TotalSeconds;
             if (_autoPilotEngaged && TryGetAutopilotControls(out var apControls))
             {
@@ -2371,6 +2372,10 @@ public sealed partial class Game1
         // P267 — the station exterior ambient loop (shipout), driven from the
         // live in-sector stations within audible range this frame (see the method).
         UpdateStationSounds();
+
+        // P787b — the per-asteroid ambient loop (SIM-0345, the asteroidSound
+        // AmbientSoundSite layer) — see the method.
+        UpdateAsteroidSounds();
 
         // P711 — the ship low-status alarm edge detection (SIM-0361..0366,
         // trekigc.cpp:1264-1275) and the ripcord-active + mining loop gates
@@ -2665,6 +2670,21 @@ public sealed partial class Game1
                         capitalHull: capitalHull,
                         exteriorSoundId: ownHull.ManuveringThrusterExteriorSound);
                     _sound?.UpdateShipExterior(exteriorView);
+
+                    // P787b — SIM-0411: the docked station's interior ambient
+                    // (native trekigc.cpp:5076-5087: while docked at a station on
+                    // the combat screen, the ambient is the station type's
+                    // interiorSound, restarted whenever the id changes;
+                    // trekigc.cpp:5093-5098 kills it when not docked). The port
+                    // resolves the docked station's type → interiorSound via the
+                    // shop catalogue and lets the manager start/switch/stop the
+                    // loop; undocked frames pass 0 (stop).
+                    short interiorSoundId = 0;
+                    if (mine.StationId != -1 && _shopCatalog?.StationTypes is { } stypes
+                        && world.Stations.TryGetValue(mine.StationId, out var dockedStation)
+                        && stypes.TryGetValue(dockedStation.StationTypeId, out var stype))
+                        interiorSoundId = stype.InteriorSound;
+                    _sound?.SetStationInteriorAmbient(interiorSoundId);
                 }
             }
             foreach (var (id, ship) in world.Ships)
@@ -3575,11 +3595,15 @@ public sealed partial class Game1
         {
             // Fire released (or autopilot driving neutral) → drop every burst loop
             // so a held-trigger loop doesn't linger after the trigger lifts.
-            if (_burstingMounts.Count > 0 || _prevFiringMounts.Count > 0)
+            // P787b — and every weapon activate loop (native PlaySoundIf stops
+            // m_vpActiveSound when pweapon->fActive() goes false, trekigc.cpp:942-950).
+            if (_burstingMounts.Count > 0 || _prevFiringMounts.Count > 0 || _activateLoopMounts.Count > 0)
             {
                 _sound?.StopAllWeaponBursts();
+                _sound?.StopAllWeaponActivates();
                 _burstingMounts.Clear();
                 _prevFiringMounts.Clear();
+                _activateLoopMounts.Clear();
             }
             return;
         }
@@ -3613,6 +3637,12 @@ public sealed partial class Game1
         // Resolve each mounted weapon against the loaded core → the minimal
         // spec the echo needs (cadence, energy/ammo cost, projectile physics).
         var specs = new List<Flight.OwnShotWeapon>(lo.Count);
+        // P787b — each mount's weapon activate-sound id (SIM-0347): native loops
+        // pweapon->GetActivateSound() while the weapon is active
+        // (trekigc.cpp:984-986); the port resolves the id → wave via
+        // WeaponSoundMap.ActivationStemBySoundId and loops it for the mounts
+        // that are active this frame (fired or sustained-bursting).
+        var activateByMount = new Dictionary<int, short>(lo.Count);
         foreach (var p in lo)
         {
             DataPartTypeIGC part = default;
@@ -3621,6 +3651,7 @@ public sealed partial class Game1
             if (!found || part.Type is not DataPartTypeIGC.Weapon w) continue;
             if (cat.ProjectileTypes is null || !cat.ProjectileTypes.TryGetValue(w.ProjectileTypeId, out var ptp)) continue;
             float minEnergyFrac = (w.EnergyPerShot > 0f && effMaxEnergy > 0f) ? w.EnergyPerShot / effMaxEnergy : 0f;
+            activateByMount[p.MountId] = w.ActivateSound;
             specs.Add(new Flight.OwnShotWeapon(
                 p.MountId, w.ProjectileTypeId, w.DtimeBurst, w.EnergyPerShot,
                 w.CAmmoPerShot, w.Dispersion, ptp.Speed, ptp.Lifespan, ptp.AbsoluteF, minEnergyFrac,
@@ -3671,6 +3702,24 @@ public sealed partial class Game1
             _prevFiringMounts.Clear();
             _prevFiringMounts.UnionWith(firing);
             foreach (var m in nowBursting) _burstingMounts.Add(m);
+
+            // P787b — SIM-0347: the per-mount weapon activate loop. Native plays
+            // it while the weapon is active (trekigc.cpp:984-986); the port's
+            // client-visible proxy for fActive() is the same shot/burst state the
+            // burst loops use (a mount active this frame = it fired now or is in
+            // sustained fire), so a held trigger keeps one loop per mount with an
+            // activateSound and lifting the trigger stops them all (the
+            // fire-released block above).
+            var nowActive = new HashSet<int>();
+            foreach (var (m, act) in activateByMount)
+            {
+                if (act == 0 || (!firing.Contains(m) && !nowBursting.Contains(m))) continue;
+                snd.StartWeaponActivate(m, act);
+                nowActive.Add(m);
+            }
+            foreach (var m in _activateLoopMounts.ToList())
+                if (!nowActive.Contains(m)) { snd.StopWeaponActivate(m); _activateLoopMounts.Remove(m); }
+            _activateLoopMounts.UnionWith(nowActive);
         }
     }
 

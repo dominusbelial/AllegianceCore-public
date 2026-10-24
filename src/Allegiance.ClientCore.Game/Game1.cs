@@ -598,6 +598,11 @@ public sealed partial class Game1 : Game
     // P267 — station exterior ambient loop (shipout), decided by the same
     // pure-planner pattern as the warp ambient (see UpdateStationSounds).
     private readonly Audio.StationSoundPlanner _stationSoundPlanner = new();
+    // P787b — per-asteroid ambient loop (SIM-0345): the same enter/refresh/stop
+    // planner shape, keyed by AsteroidId (native's per-asteroid AmbientSoundSite,
+    // trekigc.cpp:1432-1434). The planner class is id-generic — a second
+    // instance with independent state drives the asteroid layer.
+    private readonly Audio.StationSoundPlanner _asteroidSoundPlanner = new();
 
     // First-person camera mode (V, "View"). Defaults to Cockpit — native's
     // own WinTrekClient constructor starts in m_cm(cmCockpit)
@@ -744,6 +749,11 @@ public sealed partial class Game1 : Game
     // rising-edge discriminator that keeps a tap a single-shot, not a burst).
     private readonly HashSet<int> _burstingMounts = new();
     private readonly HashSet<int> _prevFiringMounts = new();
+    // P787b — own-shot activate-loop lifecycle: the mounts whose weapon
+    // activate wave is currently looping (native's m_vpActiveSound[mount],
+    // trekigc.cpp:984-986 — started while the weapon is active, stopped on
+    // release). Keyed by mount, mirroring the burst-loop set above.
+    private readonly HashSet<int> _activateLoopMounts = new();
     // P270 — ship ids rendered cloaked this frame (subset of _poses), collected
     // in the same locked pass that builds _poses so the Draw loop can read the
     // cloaked state lock-free and alpha-blend those ships' models.
@@ -904,6 +914,10 @@ public sealed partial class Game1 : Game
     // dock never forcibly undocks a player (native docked players stay docked).
     private Rendering.ShopCatalog? _shopCatalog;
     private Rendering.ShopModel? _shopModel;
+    // P787b — the docked loadout list's last mouse-hovered row (native
+    // m_nLastHoverIndex, loadout.cpp:1186); -1 = pointer off the list. Reset
+    // whenever the shop model is rebuilt (a fresh dock).
+    private int _shopHoverRow = -1;
     // P465b — the loaded static core's projectile-type table, captured ONCE at
     // load time (Game1.Lifecycle) so the per-frame bolt gather resolves each
     // ProjectileEntity's ProjectileTypeId against a cached dictionary instead of
@@ -1349,6 +1363,16 @@ public sealed partial class Game1 : Game
     private bool _chatActive;
     private readonly StringBuilder _chatBuffer = new();
     private ChatTarget _chatTarget = ChatTargetLogic.DefaultTarget;
+    // P787b — the compose's sector recipient override (SIM-0332): native's
+    // console PickCluster starts a chat compose whose recipient is
+    // CHAT_FRIENDLY_SECTOR addressed to the RIGHT-CLICKED cluster
+    // (console.cpp:1743-1751, SetRecipient(CHAT_FRIENDLY_SECTOR, clusterID,
+    // pcluster)); the compose state (m_chsChat) is a member, so the recipient
+    // persists across compose sessions exactly like _chatTarget does. Null
+    // until the first sector right-click; BaseClient::SendChat's NA →
+    // GetChatCluster() fallback (clintlib.cpp:2352-2366: the viewed cluster,
+    // else the ship's own) keeps applying while null.
+    private short? _chatSectorRecipient;
     // P784 — the live compose state (native m_csComposeState,
     // console.cpp:524-529). _chatActive now means "a keyboard composer owns
     // typing" (Chat or Shell); Command/MouseCommand are mouse-driven compose

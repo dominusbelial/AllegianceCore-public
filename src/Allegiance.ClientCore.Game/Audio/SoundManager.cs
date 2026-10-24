@@ -177,6 +177,24 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
     // P465 — per-mount burst loops during sustained fire (native's per-mount
     // m_vpBurstSound[mount], trekigc.cpp:999-1004), keyed by the firing mount id.
     private readonly Dictionary<int, SoundEffectInstance> _weaponBursts = new();
+    // P787b — per-mount weapon activate loops while the weapon is active
+    // (native's per-mount m_vpActiveSound[mount], trekigc.cpp:984-986), keyed by
+    // the firing mount id, and the manned-turret turn loop (native's
+    // m_vpTurretSound[mount], trekigc.cpp:988-996 — the port's gunner loop is a
+    // single instance, see Game1.TurretGunner).
+    private readonly Dictionary<int, SoundEffectInstance> _weaponActivates = new();
+    private SoundEffectInstance? _turretTurn;
+    private short _turretTurnSoundId;
+    // P787b — the docked station's interior ambient loop (native
+    // m_psoundAmbient, trekigc.cpp:5076-5087: restarted whenever the station
+    // type's interiorSound id changes). Native's interior templates are a
+    // PairedSound of a pitch-0.5 shipint loop and an intermittent random bed;
+    // the port loops the bundled shipint component at pitch 0.5 (the
+    // intermittent component's gigambient/ironambient waves are not bundled —
+    // documented remainder).
+    private SoundEffectInstance? _stationInteriorAmbient;
+    private short _stationInteriorSoundId;
+    private SoundEffect _shipInt = null!;   // shipint — the station-interior loop component
     private SoundEffect _projectileAmbient = null!; // erbeam — projectile in-flight loop (P232)
     private readonly Dictionary<ProjectileEntity, SoundEffectInstance> _projectileAmbients = new();
     // P237 — warp ambient loop (alephloop), one instance per warp within earshot,
@@ -216,6 +234,11 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
     // ILStationExternalSound (sounddef id 380), see StationAmbientSoundCurve.
     private SoundEffect _stationAmbient = null!;      // shipout
     private readonly Dictionary<short, SoundEffectInstance> _stationAmbients = new();
+    // P787b — per-asteroid ambient loop (SIM-0345): native's AmbientSoundSite
+    // on every asteroid (trekigc.cpp:1432-1434) plays the shared
+    // asteroidSound = pitch-0.35 shipout loop (sounddef.mdl). Keyed by the
+    // asteroid's real AsteroidId; one instance per rock in earshot.
+    private readonly Dictionary<short, SoundEffectInstance> _asteroidAmbients = new();
     // P451 — id → asset-stem table for the base UNDER-ATTACK / CRITICAL voice
     // cues, covering EXACTLY the SoundIDs the real PCore001 station types decode
     // for UnderAttackSound / CriticalSound (dump: garrison=820, outpost=821,
@@ -756,6 +779,7 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
             _countdownMilestones[30] = LoadSound("Sounds/vo_time_30sec");
             _gameOver = LoadSound("Sounds/vo_ma_gameover");
             _fireSound = LoadSound("Sounds/pulselaser");   // P232 — weapon single-shot (pulselaserShotSound, sounddef.mdl)
+            _shipInt = LoadSound("Sounds/shipint");        // P787b — station interior ambient loop component
             _projectileAmbient = LoadSound("Sounds/erbeam");// P232 — projectile in-flight loop (er_beam, sounddef.mdl)
             _warpAmbient = LoadSound("Sounds/alephloop");  // P237 — warp ambient loop (alephSound, sounddef.mdl:385)
             // P236 — missile cues. Real single-default assets (per-type ids are
@@ -1552,6 +1576,122 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
             StopWeaponBurst(mount);
     }
 
+    /// <summary>P787b — begin (or keep) a mount's weapon activate loop: a looping
+    /// instance of the weapon's <c>activateSound</c> wave, keyed by the mount id.
+    /// Native keeps one such per-mount loop while the weapon is active
+    /// (<c>PlaySoundIf(m_vpActiveSound[mount], pweapon ? pweapon-&gt;GetActivateSound()
+    /// : NA, m_psounceWeaponMount[mount], pweapon &amp;&amp; pweapon-&gt;fActive())</code>,
+    /// trekigc.cpp:984-986); <c>PlaySoundIf</c> starts it when not already
+    /// playing and stops it when the predicate turns false, which this +
+    /// <see cref="StopWeaponActivate"/> mirror. An id that resolves to no wave
+    /// (NA/0/unlisted) plays nothing — exactly like native's
+    /// <c>StartSound(NA)</c>. No-op when audio is not loaded.</summary>
+    public void StartWeaponActivate(int mount, short activateSoundId)
+    {
+        if (!IsLoaded || _weaponActivates.ContainsKey(mount)) return;
+        if (!WeaponSoundMap.TryResolveActivation(activateSoundId, out var stem)) return;
+        var sfx = WeaponWaveByStem(stem);
+        if (sfx is null) return;
+        var inst = sfx.CreateInstance();
+        inst.IsLooped = true;
+        Safe(inst.Play);
+        _weaponActivates[mount] = inst;
+        Track(inst, SoundCategory.WeaponBurst, isLoop: true, essential: false,
+            loudness: 1f, audible: true, started: true);
+    }
+
+    /// <summary>P787b — stop (and release) a mount's activate loop. Safe on a
+    /// mount with no tracked loop. No-op when audio is not loaded.</summary>
+    public void StopWeaponActivate(int mount)
+    {
+        if (!IsLoaded) return;
+        if (_weaponActivates.Remove(mount, out var inst))
+        {
+            ForgetVoice(inst);
+            if (inst.State == SoundState.Playing) Safe(inst.Stop);
+            Safe(inst.Dispose);
+        }
+    }
+
+    /// <summary>P787b — stop every mount's activate loop (all fire released, weapon
+    /// changed, or teardown — native stops m_vpActiveSound on both, trekigc.cpp:963-974).</summary>
+    public void StopAllWeaponActivates()
+    {
+        foreach (var mount in _weaponActivates.Keys.ToList())
+            StopWeaponActivate(mount);
+    }
+
+    /// <summary>P787b — the manned-turret turn loop (native's m_vpTurretSound,
+    /// trekigc.cpp:988-996): a looping instance of the hull hardpoint's
+    /// <c>turnSound</c> wave that plays while the gunner's turn rate exceeds
+    /// native's 0.01 threshold and stops below it. Single instance — the port's
+    /// boarding wire carries no turret mount index, so the local gunner's cue
+    /// resolves the carrier's first turret hardpoint's turnSound (documented in
+    /// the P787b report). No-op when audio is not loaded or the id resolves to
+    /// no bundled wave.</summary>
+    public void SetTurretTurnLoop(short turnSoundId, bool turning)
+    {
+        if (!IsLoaded) return;
+        if (!turning)
+        {
+            if (_turretTurn is { } inst)
+            {
+                ForgetVoice(inst);
+                if (inst.State == SoundState.Playing) Safe(inst.Stop);
+                Safe(inst.Dispose);
+                _turretTurn = null;
+                _turretTurnSoundId = 0;
+            }
+            return;
+        }
+        if (_turretTurn is not null) return;   // already looping
+        if (!WeaponSoundMap.TryResolveTurn(turnSoundId, out var stem)) return;
+        var sfx = WeaponWaveByStem(stem);
+        if (sfx is null) return;
+        var loop = sfx.CreateInstance();
+        loop.IsLooped = true;
+        Safe(loop.Play);
+        _turretTurn = loop;
+        _turretTurnSoundId = turnSoundId;
+        Track(loop, SoundCategory.WeaponBurst, isLoop: true, essential: false,
+            loudness: 1f, audible: true, started: true);
+    }
+
+    /// <summary>P787b — the docked station's interior ambient (native
+    /// trekigc.cpp:5076-5087): while docked, a loop of the station type's
+    /// interiorSound bed; restarted whenever the id changes
+    /// (<c>if (!m_psoundAmbient || m_idAmbient != newAmbientSound)</c>);
+    /// stopped (id ≤ 0 call) when undocking/launching. Native's interior
+    /// template is a pitch-0.5 shipint loop paired with an intermittent random
+    /// bed; the port plays the shipint component at pitch 0.5.</summary>
+    public void SetStationInteriorAmbient(short interiorSoundId)
+    {
+        if (!IsLoaded) return;
+        var action = AmbientSwitchRule.Next(
+            _stationInteriorAmbient is null ? null : _stationInteriorSoundId, interiorSoundId);
+        if (action == AmbientSwitchRule.Action.None) return;
+        if (action is AmbientSwitchRule.Action.Stop or AmbientSwitchRule.Action.Switch)
+        {
+            if (_stationInteriorAmbient is { } old)
+            {
+                ForgetVoice(old);
+                if (old.State == SoundState.Playing) Safe(old.Stop);
+                Safe(old.Dispose);
+                _stationInteriorAmbient = null;
+            }
+            _stationInteriorSoundId = 0;
+            if (action == AmbientSwitchRule.Action.Stop) return;
+        }
+        var inst = _shipInt.CreateInstance();
+        inst.IsLooped = true;
+        Safe(() => inst.Pitch = -0.5f);   // PitchSound(0.5) — half rate
+        Safe(inst.Play);
+        _stationInteriorAmbient = inst;
+        _stationInteriorSoundId = interiorSoundId;
+        Track(inst, SoundCategory.WorldAmbient, isLoop: true, essential: false,
+            loudness: 1f, audible: true, started: true);
+    }
+
     /// <summary>Resolve a weapon wave stem to a loaded <see cref="SoundEffect"/>:
     /// the fallback stem returns the always-loaded <c>_fireSound</c>; any other
     /// stem is loaded lazily and cached (failed loads are remembered so a missing
@@ -2019,6 +2159,48 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
         }
     }
 
+    /// <summary>P787b — begin (or keep) an asteroid's ambient loop: a looping
+    /// instance of the shared asteroid ambient wave (shipout, the
+    /// <c>asteroidSound</c> template's only wave) at pitch −0.35, keyed by the
+    /// asteroid's real AsteroidId. Native attaches an AmbientSoundSite to every
+    /// asteroid (trekigc.cpp:1432-1434); this is its per-frame Start leg. No-op
+    /// when audio is not loaded.</summary>
+    public void StartAsteroidAmbient(short asteroidId, float volume)
+    {
+        if (!IsLoaded || _asteroidAmbients.ContainsKey(asteroidId)) return;
+        var inst = _stationAmbient.CreateInstance();   // same shipout wave
+        inst.IsLooped = true;
+        Safe(() => inst.Pitch = -0.35f);               // PitchSound(0.35)
+        SetLoopVolume(inst, volume);
+        Safe(inst.Play);
+        _asteroidAmbients[asteroidId] = inst;
+        Track(inst, SoundCategory.WorldAmbient, isLoop: true, essential: false,
+            loudness: volume, audible: volume > 0f, started: true);
+    }
+
+    /// <summary>P787b — refresh a live asteroid's ambient loop volume for the
+    /// current listener distance. No-op if the rock has no tracked ambient.</summary>
+    public void UpdateAsteroidAmbient(short asteroidId, float volume)
+    {
+        if (!IsLoaded) return;
+        if (_asteroidAmbients.TryGetValue(asteroidId, out var inst))
+            SetTrackedLoudness(inst, volume);
+    }
+
+    /// <summary>P787b — stop (and release) an asteroid's ambient loop: the rock
+    /// left earshot, the listener left its sector, or the rock was mined away.
+    /// Safe on a rock with no tracked ambient.</summary>
+    public void StopAsteroidAmbient(short asteroidId)
+    {
+        if (!IsLoaded) return;
+        if (_asteroidAmbients.Remove(asteroidId, out var inst))
+        {
+            ForgetVoice(inst);
+            if (inst.State == SoundState.Playing) Safe(inst.Stop);
+            Safe(inst.Dispose);
+        }
+    }
+
     /// <summary>Play the core-selected station cue, even after the station has
     /// been removed. Native clintlib/appmsg.cpp:548-551,674-677. Uses the same
     /// cached, budgeted warning voice path as other station announcements.</summary>
@@ -2237,6 +2419,11 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
             _jump?.Dispose();               // P578
             _fireSound?.Dispose();
             foreach (var inst in _weaponBursts.Values) inst.Dispose();   // P465
+            foreach (var inst in _weaponActivates.Values) inst.Dispose(); // P787b
+            _turretTurn?.Dispose();                                       // P787b
+            _stationInteriorAmbient?.Dispose();                           // P787b
+            foreach (var inst in _asteroidAmbients.Values) inst.Dispose(); // P787b
+            _shipInt?.Dispose();
             foreach (var sfx in _weaponShots.Values) sfx.Dispose();      // P465
             _projectileAmbient?.Dispose();
             foreach (var inst in _projectileAmbients.Values) inst.Dispose();
