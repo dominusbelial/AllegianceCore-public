@@ -62,6 +62,7 @@ internal sealed partial class BotManager
         internal readonly HashSet<short> GoMembers = new();
         internal bool MassLogged, OutcomeLogged;
         internal double LastSampleAt = double.NegativeInfinity;
+        internal double LastStagingLogAt = double.NegativeInfinity;
         internal float HullAtGo = -1, ShieldAtGo = -1, HullNow = -1, ShieldNow = -1;
         internal int HitsInWindow;
     }

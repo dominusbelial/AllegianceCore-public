@@ -150,6 +150,11 @@ internal sealed partial class BotManager
                 // (staging-timeout, assembled=1). The cap now counts from the first arrival at the
                 // standoff, and a timeout never sends a single bomber against a volley that needs more:
                 // it keeps holding for reinforcements (the finale deadline still ends the match).
+                if (now - plan.LastStagingLogAt >= FinaleStagingLogSeconds)
+                {
+                    plan.LastStagingLogAt = now;
+                    LogFinaleStaging(run, plan, side, armed, assembled.Count, required, now);
+                }
                 plan.StagingSince = assembled.Count == 0 ? null : plan.StagingSince ?? now;
                 if (FinaleCommitReason(assembled.Count, required, plan.StagingSince, now) is { } reason)
                     CommitFinaleWave(run, plan, side, assembled, now, reason, armed);
@@ -185,6 +190,42 @@ internal sealed partial class BotManager
                 }
             }
         }
+    }
+
+    /// <summary>Cadence of the bounded <c>[strike] … finale staging</c> line.</summary>
+    internal const double FinaleStagingLogSeconds = 60;
+
+    /// <summary>P801 follow-up telemetry (rig 221 batch 25: one finale commit in a whole finale, side 1
+    /// never assembled two bombers) — where the side's reserved finale bombers are while a wave forms:
+    /// pods, docked/refitting, armed but not yet in the target sector (by sector), in the sector, at the
+    /// standoff. One line per side per minute.</summary>
+    private static void LogFinaleStaging(FinaleRun run, FinalePlan plan, short side, ActiveBot[] armed,
+        int assembled, int required, double now)
+    {
+        int reserved = 0, pods = 0, docked = 0, unarmed = 0, inSector = 0;
+        var elsewhere = new SortedDictionary<short, int>();
+        foreach (var bot in run.Bots)
+        {
+            if (bot.Side != side || !bot.FinaleBomberReserved) continue;
+            reserved++;
+            if (bot.IsPod) { pods++; continue; }
+            if (!armed.Contains(bot)) { unarmed++; continue; }
+            if (bot.Cs is not { } cs) continue;
+            short sector; bool atStation;
+            lock (cs.Gate)
+            {
+                if (!cs.World.Ships.TryGetValue(bot.ShipId, out var own)) continue;
+                sector = own.SectorId; atStation = own.StationId >= 0;
+            }
+            if (atStation) docked++;
+            else if (sector == plan.Sector) inSector++;
+            else elsewhere[sector] = elsewhere.GetValueOrDefault(sector) + 1;
+        }
+        string where = elsewhere.Count == 0 ? "-" : string.Join(",", elsewhere.Select(kv => $"{kv.Key}:{kv.Value}"));
+        Console.WriteLine($"[strike] side={side} finale staging reserved={reserved} armed={armed.Length} "
+            + $"assembled={assembled} required={required} inSector={inSector} docked={docked} pods={pods} "
+            + $"unarmed={unarmed} elsewhere={where} target=station#{plan.TargetId} sector={plan.Sector} "
+            + $"staging={(plan.StagingSince is { } since ? $"{now - since:F0}s" : "-")}");
     }
 
     /// <summary>P801 follow-up — when a finale wave forming at the standoff commits:
