@@ -90,7 +90,14 @@ public sealed class P708ShipUpdateTests
         var target = Place(m, 101, 1, z: -500); target.Velocity = new(40, 0, 0); s.SetWingmanAttackOrder(target);
         Clock(s, 10); Call(s, "UpdateWingmanCombat", .05f);
         Clock(s, 10.05); Call(s, "UpdateWingmanCombat", .05f);
-        var expected = Place(m, 102); Gun(expected); expected.SolveLead(target, expected.Weapons[0], .5f, out var direction);
+        var expected = Place(m, 102); Gun(expected);
+        // P804 — the public SolveLead wrapper (P266's server-lead accessor) is
+        // gone with the server lead stream; the wingman's own private solve is
+        // the same code the client HUD now runs (LeadSolver).
+        var solve = typeof(Ship).GetMethod("SolveForLead", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        object?[] solveArgs = [target, expected.Weapons[0], .5f, default(Vector3)];
+        solve.Invoke(expected, solveArgs);
+        var direction = (Vector3)solveArgs[3]!;
         Call(expected, "TurnWingmanToFace", direction, .05f, .75f);
         Assert.Equal(expected.Controls.Yaw, s.Controls.Yaw, 5);
         Clock(s, 13); Call(s, "UpdateWingmanCombat", .05f); Assert.NotEqual(0, s.Controls.Yaw);

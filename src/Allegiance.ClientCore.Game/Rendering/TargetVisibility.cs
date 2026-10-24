@@ -134,6 +134,30 @@ public static class TargetVisibility
         return false;
     }
 
+    /// <summary>
+    /// P804 — one scanner's native <c>InScannerRange(pModel)</c> test for an
+    /// arbitrary target (used by the lead-reticle relay gate,
+    /// <c>indicator.cpp:280-315</c>: <c>ps-&gt;InScannerRange(targetModel)</c>).
+    /// A ship scanner applies <c>shipIGC.h:341-376</c> (local frame + backward
+    /// dilation); a station (or a probe) applies the plain radial
+    /// <c>stationIGC.h:308-333</c> / <c>probeigc.h:163-193</c> rule. Both include
+    /// native's <c>LineOfSightExist</c> over the cluster's asteroids.
+    /// </summary>
+    public static bool InScannerRange(
+        in SideScanner scanner,
+        Vector3 targetPosition, float targetRadius, float targetSignature,
+        float targetSideSignatureAttribute,
+        IReadOnlyList<VisibilityMath.SightBody> occluders)
+        => scanner.IsShip
+            ? ShipInScannerRange(
+                scanner.Position, scanner.Radius, scanner.ScannerRange, scanner.ForwardNose,
+                targetPosition, targetRadius, targetSignature,
+                targetSideSignatureAttribute, occluders)
+            : PlainScannerInRange(
+                scanner.Position, scanner.Radius, scanner.ScannerRange,
+                targetPosition, targetRadius, targetSignature,
+                targetSideSignatureAttribute, occluders);
+
     /// <summary>The native SHIP scanner rule (<c>shipIGC.h:341-376</c>):
     /// <c>r = scannerRadius + targetRadius + scannerRange · signature /
     /// targetSideGA</c>, the delta tested in the scanner's LOCAL frame with

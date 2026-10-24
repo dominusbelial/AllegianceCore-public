@@ -1467,12 +1467,6 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                     // patch (219) dispatch cases are gone; the world
                     // derives the roster from PLAYERINFO(10) + KILL_SHIP(105)
                     // as native does. A stray 209/219 lands in UnknownFmids.
-                    case LeadIndicatorUpdate.Fmid:
-                        // P266 — owner-only predictive lead-aim snapshot (lead
-                        // point + range/hit-probability); the world records it so
-                        // the MonoGame lead reticle can render at the lead point.
-                        _world.Apply(LeadIndicatorUpdate.Decode(m));
-                        break;
                     case StationDestroyed.Fmid:
                         // P267 — a station was destroyed (whole-mission notice);
                         // the world records the sound event + removes the station.

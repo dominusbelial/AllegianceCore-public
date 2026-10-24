@@ -192,18 +192,4 @@ public sealed partial class Server
         packet.Buffer[5] = tracked ? Percent(Math.Clamp(bestLock, 0, 1)) : (byte)0;
         return packet;
     }
-
-    private BroadcastPacket PackLead(short ship, short target, bool inRange, float green,
-        Vector3 lead, Vector3 targetPosition)
-    {
-        if (!ReuseBroadcastBuffers) return PackBroadcast(Message(LeadIndicatorUpdate.From(ship, target, inRange, green, lead, targetPosition)));
-        var packet = SmallPacket(LeadIndicatorUpdate.Fmid, LeadIndicatorUpdate.Width);
-        BinaryPrimitives.WriteInt16LittleEndian(packet.Buffer.Slice(4), ship);
-        BinaryPrimitives.WriteInt16LittleEndian(packet.Buffer.Slice(6), target);
-        packet.Buffer[8] = inRange ? (byte)1 : (byte)0;
-        packet.Buffer[9] = Percent(Math.Clamp(green, 0, 1));
-        WritePoseVector(packet.Buffer.Slice(10), lead);
-        WritePoseVector(packet.Buffer.Slice(22), targetPosition);
-        return packet;
-    }
 }

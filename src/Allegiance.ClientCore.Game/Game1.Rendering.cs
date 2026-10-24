@@ -490,18 +490,15 @@ public sealed partial class Game1
                 // it is out of view). Uses the same camera-relative projection as the
                 // P212 target-pick.
                 _lockBracket = ComputeLockBracket(view, proj, cameraEye);
-                // P266 — project the server-solved lead point AND the target's
-                // current position into this frame's view and stage the reticle
-                // descriptor for DrawHud (null when no lead is granted or either
-                // point is out of view).
-                _leadIndicator = ComputeLeadIndicator(view, proj, cameraEye);
+                // P804 — solve the lead on the CLIENT (native indicator.cpp:183-405)
+                // and stage the cockpit lead marker / aim predictor, or the
+                // chase/missile no-target grey marker, for DrawHud. Null when
+                // nothing applies (no target, gate failed, no solution).
+                ComputeLeadIndicators(view, proj, cameraEye, out _leadIndicator, out _chaseAim);
                 // HUD-8 — stage the velocity-direction marker (cockpit gate is
-                // applied in HudModel), the chase aim without target, and the
-                // accepted/current order turn arrows for this frame's snapshot.
+                // applied in HudModel) and the accepted/current order turn
+                // arrows for this frame's snapshot.
                 _velocityMarker = ComputeVelocityMarker(view, proj);
-                _chaseAim = _cameraMode is CameraMode.Chase or CameraMode.ExternalMissile
-                    ? ComputeChaseAim(view, proj, cameraEye)
-                    : null;
                 _orderArrows = ComputeOrderArrows(view, proj, cameraEye);
                 // P345 — project the player's OWN T-selected autopilot target into
                 // this frame's view and stage the selection-bracket descriptor for
@@ -3726,7 +3723,10 @@ public sealed partial class Game1
         var world = _session.World;
         var vp = GraphicsDevice.Viewport;
         float w = vp.Width, h = vp.Height;
-        const float inset = 14f;
+        // Native c_flBorderSide = 10 px (WinTrek/radarimage.h:20): the radar
+        // image rect is shrunk by it before the eye-space clamp and it is the
+        // constant in the native round-radar radius (WinTrek.cpp:7726).
+        const float inset = RadarBracketLayout.NativeBorderSide;
         // Native has no distance-alpha fade (radarimage.cpp:689-700 is commented
         // out), so every contact is full opacity; pinned by the parity test.
         const float op = RadarBracketLayout.NativeContactOpacity;
@@ -3875,7 +3875,7 @@ public sealed partial class Game1
             {
                 var ownXna = PoseConverter.ToXna(ownSimPos);
                 var ownSite = RadarProjection.Project(
-                    ownXna, cameraEye, view, proj, w, h, inset);
+                    ownXna, cameraEye, view, proj, w, h, inset, roundRadar: _hudSettings.RoundRadar);
                 if (ownSite.Placement == RadarBracketLayout.RadarPlacement.OnScreen)
                 {
                     var ownBracket = Bracketing(ownSite, ownRadius, ownXna);
@@ -3917,7 +3917,7 @@ public sealed partial class Game1
                 if (!RadarLod.ShowShip(radarMode, OwnOrAllied(ship.SideId), isSelf: false, isSel)) continue;
                 var shipXna = PoseConverter.ToXna(shipPos);
                 var site = RadarProjection.Project(
-                    shipXna, cameraEye, view, proj, w, h, inset);
+                    shipXna, cameraEye, view, proj, w, h, inset, roundRadar: _hudSettings.RoundRadar);
                 // HUD-13 — this contact's native bracket-sizing inputs
                 // (GetScreenRadius/GetDistanceToEdge, radarimage.cpp:307-319).
                 var shipBracket = Bracketing(site, HullLength(ship.HullId) * 0.5f, shipXna);
@@ -4015,7 +4015,7 @@ public sealed partial class Game1
                     RadarBracketRenderer.RadarContactType.Station, sid, selType, sel?.Id);
                 var stationXna = PoseConverter.ToXna(sp);
                 var site = RadarProjection.Project(
-                    stationXna, cameraEye, view, proj, w, h, inset);
+                    stationXna, cameraEye, view, proj, w, h, inset, roundRadar: _hudSettings.RoundRadar);
                 bool onScreen = site.Placement == RadarBracketLayout.RadarPlacement.OnScreen;
                 if (!RadarLod.ShowStation(radarMode, pedestal, OwnOrAllied(st.SideId), onScreen,
                     LodSeparation(centre, objectRadius), isSel)) continue;
@@ -4054,7 +4054,7 @@ public sealed partial class Game1
                 var wPos = Vec(wp.Position);
                 var warpXna = PoseConverter.ToXna(wPos);
                 var site = RadarProjection.Project(
-                    warpXna, cameraEye, view, proj, w, h, inset);
+                    warpXna, cameraEye, view, proj, w, h, inset, roundRadar: _hudSettings.RoundRadar);
                 float separation = (ownSimPos - wPos).Length();
                 var warpCommand = CommandFor(IgcObjectType.Warp, wid);
                 var warpBracket = Bracketing(site, wp.Radius, warpXna);
@@ -4104,7 +4104,7 @@ public sealed partial class Game1
                         ? missileType.Radius : 0f;
                 var missileXna = PoseConverter.ToXna(ms.Position);
                 var site = RadarProjection.Project(
-                    missileXna, cameraEye, view, proj, w, h, inset);
+                    missileXna, cameraEye, view, proj, w, h, inset, roundRadar: _hudSettings.RoundRadar);
                 // HUD-13 — a missile carries no overlay bracket, so the
                 // bracket-sizing radius stays unused.
                 var missileBracket = Bracketing(site, 0f, missileXna);
@@ -4144,7 +4144,7 @@ public sealed partial class Game1
                     LodSeparation(centre, objectRadius), isSel)) continue;
                 var probeXna = PoseConverter.ToXna(pb.Position);
                 var site = RadarProjection.Project(
-                    probeXna, cameraEye, view, proj, w, h, inset);
+                    probeXna, cameraEye, view, proj, w, h, inset, roundRadar: _hudSettings.RoundRadar);
                 var probeBracket = Bracketing(site, objectRadius, probeXna);
                 bool probeSameSide = pb.SideId == mySide;
                 _drawRadarContacts.Add(new HudContact(
@@ -4191,7 +4191,7 @@ public sealed partial class Game1
                     LodSeparation(centre, objectRadius), isSelected: false)) continue;
                 var mineXna = PoseConverter.ToXna(mine.Position);
                 var site = RadarProjection.Project(
-                    mineXna, cameraEye, view, proj, w, h, inset);
+                    mineXna, cameraEye, view, proj, w, h, inset, roundRadar: _hudSettings.RoundRadar);
                 var mineBracket = Bracketing(site, objectRadius, mineXna);
                 bool mineSameSide = mine.SideId == mySide;
                 _drawRadarContacts.Add(new HudContact(
@@ -4286,7 +4286,7 @@ public sealed partial class Game1
                 if (!RadarLod.ShowTreasure(radarMode, useful, LodSeparation(centre, 5f), isSel)) continue;
                 var treasureXna = PoseConverter.ToXna(te.Position);
                 var site = RadarProjection.Project(
-                    treasureXna, cameraEye, view, proj, w, h, inset);
+                    treasureXna, cameraEye, view, proj, w, h, inset, roundRadar: _hudSettings.RoundRadar);
                 // HUD-13 — the wire carries no treasure model radius; native's
                 // minimum icon radius applies (a treasure carries only the
                 // flag highlight, which has no art in this checkout).
@@ -4329,7 +4329,7 @@ public sealed partial class Game1
                 if (!buildSpot && !RadarLod.ShowAsteroid(radarMode, namedSpecial, rangeZero, separation, isSel)) continue;
                 var asteroidXna = PoseConverter.ToXna(astPos);
                 var aSite = RadarProjection.Project(
-                    asteroidXna, cameraEye, view, proj, w, h, inset);
+                    asteroidXna, cameraEye, view, proj, w, h, inset, roundRadar: _hudSettings.RoundRadar);
                 world.AsteroidLive.TryGetValue(aid, out var asteroidLive);
                 var asteroidCommand = CommandFor(IgcObjectType.Asteroid, aid);
                 var asteroidBracket = Bracketing(aSite, ast.Radius, asteroidXna);

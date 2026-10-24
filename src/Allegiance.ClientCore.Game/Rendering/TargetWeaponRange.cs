@@ -89,30 +89,10 @@ public static class TargetWeaponRange
     /// The native no-solution sentinel (<c>FLT_MAX / 500000000</c>,
     /// common.cpp:86) is far above any real lifespan, so it reads as out of
     /// range exactly as in native.
+    /// <para>P804 — the gate and the solve are the SAME code the lead marker and
+    /// aim predictor use (<see cref="ClientLead.Solve"/>), so the pane's flag and
+    /// the reticle cannot disagree.</para>
     /// </summary>
     public static bool IsInRange(in TargetWeaponRangeInput input)
-    {
-        if (!input.SameCluster || !input.CanSee || !input.HasWeapon)
-            return false;
-
-        // Healing weapons only on friends; damaging weapons only on non-friends.
-        // Chase/missile cameras skip the test entirely (indicator.cpp:214-218).
-        if (!input.ChaseCamera && input.FriendlyOrAllied != (input.ProjectilePower < 0f))
-            return false;
-
-        float speed = input.ProjectileSpeed * (input.AmmoPerShot ? input.SpeedAmmoGa : 1f);
-        float lifespan = input.ProjectileLifespan;
-        if (input.EnergyWeapon)
-            lifespan *= input.LifespanEnergyGa;
-
-        // solveForLead: muzzle-offset deltaP, absoluteF picks the relative
-        // velocity, target radius is the contact radius (common.cpp:121-149).
-        Vector3 deltaP = input.TargetPosition - (input.MyPosition + input.MountPosition * input.MyOrientation);
-        Vector3 deltaV = input.AbsoluteF
-            ? input.TargetVelocity
-            : input.TargetVelocity - input.MyVelocity;
-
-        float t = NavMath.SolveForImpact(deltaP, deltaV, speed, input.TargetRadius, out _);
-        return t <= lifespan;
-    }
+        => ClientLead.Solve(input).InRange;
 }

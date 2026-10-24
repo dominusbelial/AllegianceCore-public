@@ -262,7 +262,7 @@ public class HudRenderer
             // at the projected lead point, cockpit only (indicator.cpp:320-330).
             if (model.LeadMarkerVisible && context.Lead is { } leadMarker)
                 {
-                    DrawLeadIndicator(new(new(leadMarker.Center.X, leadMarker.Center.Y), new(leadMarker.TargetCenter.X, leadMarker.TargetCenter.Y), leadMarker.InRange, leadMarker.Green, leadMarker.NowSeconds));
+                    DrawLeadIndicator(new(new(leadMarker.Center.X, leadMarker.Center.Y), new(leadMarker.TargetCenter.X, leadMarker.TargetCenter.Y), leadMarker.InRange, leadMarker.Green, leadMarker.NowSeconds, leadMarker.Granted, leadMarker.Visible, leadMarker.TargetVisible));
                     ElementDrawn("Ballistic lead marker");
                 }
 
@@ -270,7 +270,7 @@ public class HudRenderer
             // (indicator.cpp:334-362) in cockpit, projected aim point in chase.
             if (model.AimPredictorVisible && context.Lead is { } aimLead)
                 {
-                    DrawAimPredictor(new(new(aimLead.Center.X, aimLead.Center.Y), new(aimLead.TargetCenter.X, aimLead.TargetCenter.Y), aimLead.InRange, aimLead.Green, aimLead.NowSeconds), context.Camera, viewport);
+                    DrawAimPredictor(new(new(aimLead.Center.X, aimLead.Center.Y), new(aimLead.TargetCenter.X, aimLead.TargetCenter.Y), aimLead.InRange, aimLead.Green, aimLead.NowSeconds, aimLead.Granted, aimLead.Visible, aimLead.TargetVisible), context.Camera, viewport);
                     ElementDrawn("Aim hit-probability predictor");
                 }
 
@@ -2601,8 +2601,8 @@ public class HudRenderer
     }
 
     /// <summary>
-    /// P266 — the predictive lead reticle (distinct from the static round
-    /// crosshair): an open DIAMOND (rotated-square outline) with a centre dot,
+    /// P804 (was P266) — the predictive lead reticle (distinct from the static
+    /// round crosshair): an open DIAMOND (rotated-square outline) with a centre dot,
     /// drawn at the projected lead point — where a shot fired now must aim to
     /// intercept the selected moving target, i.e. genuinely offset from where the
     /// target currently appears. Colour follows the server-computed hit-
@@ -2647,7 +2647,9 @@ public class HudRenderer
 
         // Port extension: a faint hollow ring at the target's CURRENT on-screen
         // centre makes the real predictive offset legible (native draws only the
-        // lead surface, not the target-now ring).
+        // lead surface, not the target-now ring). P804 — only when the target
+        // actually projects inside the viewport.
+        if (!v.TargetVisible) return;
         const float tHalf = 8f;
         const int seg = 24;
         var tcol = new Color(0.9f, 0.9f, 0.9f, 0.40f);

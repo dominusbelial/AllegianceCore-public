@@ -194,7 +194,9 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     {
         var color = lead.InRange ? Color.Lerp(Alert, Accent, lead.Green) : Muted;
         Arc(lead.LeadCenter, 10 * _scale, 0, MathF.Tau, color, 1.5f * _scale);
-        DrawLine(lead.LeadCenter, lead.TargetCenter, _scale, color * .28f);
+        // P804 — the target-now tether only when the target projects in view.
+        if (lead.TargetVisible)
+            DrawLine(lead.LeadCenter, lead.TargetCenter, _scale, color * .28f);
     }
     public override void DrawAimPredictor(LeadIndicatorView v, CameraMode camera, Viewport viewport)
     {

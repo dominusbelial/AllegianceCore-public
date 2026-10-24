@@ -153,42 +153,6 @@ public sealed class P722InterfaceLoopbackTests
         }
     }
 
-    // Native indicator.cpp:296-320: same-side, unboarded relay with scanner
-    // contact; allies don't grant this indicator. Revoking a grant clears it.
-    [SkippableTheory]
-    [InlineData(true, true, false, true)]
-    [InlineData(false, true, false, false)]
-    [InlineData(true, false, false, false)]
-    [InlineData(true, true, true, false)]
-    public void Remote_lead_relay_grants_and_revokes_owner_indicator(bool friendly, bool inRange, bool boarded, bool granted)
-    {
-        Require.Artwork();
-        using var server = Boot(); using var peer = new Peer(server, "p722-lead");
-        var shooter = Ship(server, peer); var mission = shooter.Mission!; var sector = shooter.Sector!;
-        shooter.ChangeHull(shooter.HullType with { HabmCapabilities = 0 });
-        var weapon = mission.Core.PartTypes.Values.Where(p => p.EquipmentType == EquipmentType.Weapon)
-            .Select(p => (DataPartTypeIGC.Weapon)p.Type).First(w => mission.Core.ProjectileTypes[w.ProjectileTypeId].Speed > 0);
-        shooter.MountWeapon(weapon);
-        var hull = shooter.HullType with { HabmCapabilities = 0, Signature = 1 };
-        var target = new Ship(30001, hull, shooter.Position + new Vector3(0, 300, -300), Vector3.Zero, Orientation.Identity) { SideId = 1 };
-        mission.PlaceShip(target, sector); shooter.CommandTarget = target;
-        var relay = new Ship(30002, hull with { HabmCapabilities = DataHullTypeIGC.HabmRemoteLeadIndicator,
-            ScannerRange = inRange ? 100000 : 0 }, target.Position + new Vector3(100, 0, 0), Vector3.Zero, Orientation.Identity)
-            { SideId = friendly ? (short)0 : (short)1 };
-        mission.PlaceShip(relay, sector);
-        if (boarded) relay.ParentShip = shooter;
-        int before = peer.Of(LeadIndicatorUpdate.Fmid).Length;
-        Pump(server, () => peer.Of(LeadIndicatorUpdate.Fmid).Skip(before).Any(m => LeadIndicatorUpdate.Decode(m).HasLead == granted));
-        var frame = peer.Of(LeadIndicatorUpdate.Fmid).Skip(before).Last();
-        Assert.Equal((byte)34, frame[0]); Assert.Equal((byte)210, frame[2]);
-        Assert.Equal(shooter.Id, System.Buffers.Binary.BinaryPrimitives.ReadInt16LittleEndian(frame.AsSpan(4)));
-        Assert.Equal(granted ? target.Id : (short)-1, LeadIndicatorUpdate.Decode(frame).TargetShipId);
-        relay.ChangeHull(relay.HullType with { HabmCapabilities = 0 });
-        before = peer.Of(LeadIndicatorUpdate.Fmid).Length;
-        Pump(server, () => peer.Of(LeadIndicatorUpdate.Fmid).Skip(before).Any(m => !LeadIndicatorUpdate.Decode(m).HasLead));
-        lock (peer.Session.Gate) Assert.False(peer.Session.World.LeadIndicator.HasLead);
-    }
-
     // Native igc.h:738-739; FedSrv.CPP:13393-13429; shipIGC.cpp:3727-3729.
     [SkippableTheory]
     [InlineData(true, true, true)]

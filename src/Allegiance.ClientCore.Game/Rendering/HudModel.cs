@@ -14,7 +14,12 @@ public readonly record struct HudGauge(
     HudColor Color, bool DamageFlash, bool Visible);
 
 public readonly record struct HudLock(HudPoint Center, MissileLockFeedback.LockState State, double NowSeconds, float Fraction = 1, float? ScreenRadius = null);
-public readonly record struct HudLead(HudPoint Center, HudPoint TargetCenter, bool InRange, float Green, double NowSeconds);
+/// <summary>P804 — the client-solved lead/aim descriptor. <c>Granted</c> is the
+/// native hull/relay capability gate for the cockpit lead SURFACE
+/// (indicator.cpp:286-320), <c>Visible</c> the projected point's in-view test and
+/// <c>TargetVisible</c> the port target-ring's.</summary>
+public readonly record struct HudLead(HudPoint Center, HudPoint TargetCenter, bool InRange, float Green, double NowSeconds,
+    bool Granted = false, bool Visible = true, bool TargetVisible = true);
 /// <summary>Accepted/current order turn-arrow directions, normalized in
 /// centre-relative screen space (+X right, +Y down). SameTarget collapses the
 /// pair to the native single yellow arrow (indicator.cpp:786-791).</summary>
@@ -251,14 +256,20 @@ public sealed class HudModel
     // allowed indicator camera when the ShowJoystickIndicator preference is on
     // (default on, WinTrek.cpp:2739).
     public bool JoystickIndicatorVisible => IndicatorsVisible && Telemetry is not null && Context.ShowJoystickIndicator;
-    // Native draws the ballistic lead surface only in the cockpit branch
-    // (indicator.cpp:320-330); chase/missile views use the projected aim point.
-    public bool LeadMarkerVisible => IndicatorsVisible && Context.Camera == CameraMode.Cockpit && Context.Lead is not null;
+    // Native draws the ballistic lead surface only in the cockpit branch, and
+    // only after the hull/relay capability gate and a successful
+    // TransformDirectionToImage of the solved lead direction
+    // (indicator.cpp:283-330).
+    public bool LeadMarkerVisible => IndicatorsVisible && Context.Camera == CameraMode.Cockpit
+        && Context.Lead is { Granted: true, Visible: true };
     // Native cockpit predictor (centre crosshair, indicator.cpp:334-362) shows
-    // only while the intercept is in range; chase/missile views always draw the
-    // projected aim predictor (green ramp or out-of-range grey).
+    // only while the intercept is in range AND the lead direction projects in
+    // front; chase/missile views draw the projected aim predictor whenever it is
+    // in front (green ramp or out-of-range grey).
     public bool AimPredictorVisible => IndicatorsVisible && Context.Lead is { } aimLead
-        && (Context.Camera != CameraMode.Cockpit || aimLead.InRange);
+        && aimLead.Visible && (Context.Camera != CameraMode.Cockpit || aimLead.InRange);
+    // Native's no-target / gate-failed grey marker (indicator.cpp:325-405):
+    // chase/missile only, and never together with a drawn aim predictor.
     public bool ChaseAimVisible => IndicatorsVisible
         && Context.Camera is CameraMode.Chase or CameraMode.ExternalMissile
         && Context.ChaseAim is not null && Context.Lead is null;

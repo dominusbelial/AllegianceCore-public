@@ -1,5 +1,14 @@
 # P266 — Predictive lead / aim indicator (lead reticle)
 
+> **Superseded by P804** (`docs/reports/P804_CLIENT_LEAD_SOLVER.md`). P266
+> streamed a server-solved lead point on the port-only owner-only
+> `LEAD_INDICATOR_UPDATE(210)` message because the MonoGame client was assumed
+> to have no static core. The client does have the hull/weapon catalogue and the
+> target pose/velocity now, so P804 removed that message and solves the lead on
+> the client with the shared Core `LeadSolver` — exactly native's
+> `RenderLeadIndicator` (indicator.cpp:183-405). This document is kept as the
+> history of the retired server workaround.
+
 ## Relationship to native
 
 Native renders a predictive LEAD reticle in `WinTrek/indicator.cpp:199-360`

@@ -88,10 +88,9 @@ public class Hud18TargetPaneTests
         // There is deliberately no capability input: native sets the in-range
         // flag at indicator.cpp:221-228 BEFORE the c_habmLeadIndicator/relay
         // gate at :286-320. The model likewise keeps an explicitly supplied
-        // flag even when no lead message exists at all.
+        // flag; since P804 the flag comes from the client-side solve itself.
         var w = World();
         AddStation(w, 100, Sector, -1, (300f, 0f, 0f));
-        Assert.False(w.LeadIndicator.HasLead);   // no server lead message
         var pane = TargetPaneModel.Build(w, IgcObjectType.Station, 100, inRange: true);
         Assert.True(pane.InRange);
         Assert.False(pane.IsShip);

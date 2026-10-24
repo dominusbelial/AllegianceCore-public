@@ -88,7 +88,7 @@ public class FedMsgDispatchCoverageTests
         (207, "ExplosionEvent"), (208, "MissileTrackWarningUpdate"),
         // P774 — the port-only score roster (209/219) was retired; the client
         // derives the roster from PLAYERINFO(10) + KILL_SHIP(105) as native.
-        (210, "LeadIndicatorUpdate"), (211, "SideRoster"),
+        (211, "SideRoster"),
         (213, "ProjectileHullHit"), (214, "ClusterWarningUpdate"), (215, "QueuedCommandUpdate"),
         (216, "CollisionEvent"), (217, "VictimDamaged"), (853, "MineStrength"), (991, "TimescaleUpdate"),
     };
@@ -141,7 +141,6 @@ public class FedMsgDispatchCoverageTests
         switch (fmid)
         {
             case 204: return MissileLockUpdate.From(5, -1, 0f, Vector3.Zero, "test");
-            case 210: return LeadIndicatorUpdate.From(5, -1, false, 0f, Vector3.Zero, Vector3.Zero);
             case 214: return ClusterWarningUpdate.From(1, 1, false, false);
         }
 
@@ -278,10 +277,13 @@ public class FedMsgDispatchCoverageTests
         Assert.Equal(ExpectedConsumedServerSent.Length, consumed.Count);
         Assert.Equal(KnownUnconsumedServerSent.Length, unconsumed.Count);
         Assert.Equal(99, consumed.Count(f => supportedNativeServerSent.Contains(f)));
-        Assert.Equal(14, consumed.Count(f => !supportedNativeServerSent.Contains(f)));
+        // 13 port-added consumed messages: P266's lead stream (210) retired in
+        // P804 (the client solves the lead itself), like P774's 209/219.
+        Assert.Equal(13, consumed.Count(f => !supportedNativeServerSent.Contains(f)));
 
-        // Sanity: the executable counts match the audited numbers.
-        Assert.Equal(113, ExpectedConsumedServerSent.Length);
+        // Sanity: the executable counts match the audited numbers (112 after
+        // P804 retired the port-only lead stream, 210).
+        Assert.Equal(112, ExpectedConsumedServerSent.Length);
         Assert.Equal(3, KnownUnconsumedServerSent.Length);
         Assert.Equal(102, supportedNativeServerSent.Length);
     }

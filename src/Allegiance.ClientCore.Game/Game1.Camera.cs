@@ -311,10 +311,11 @@ public sealed partial class Game1
     /// <summary>
     /// HUD-18 — native's in-range flag for the current command target
     /// (<c>WinTrek/indicator.cpp:183-228</c>), computed locally on the client
-    /// exactly as native does and independent of the server lead message and of
-    /// any <c>c_habmLeadIndicator</c>/relay capability. The decision itself is
-    /// <see cref="TargetWeaponRange.IsInRange"/>; this method only gathers the
-    /// native inputs:
+    /// exactly as native does. The decision is <see cref="TargetWeaponRange.IsInRange"/>,
+    /// which since P804 runs through the SAME <see cref="ClientLead.Solve"/> the
+    /// lead marker and aim predictor use, so the pane's flag and the reticle
+    /// cannot disagree. This method only gathers the native inputs
+    /// (<see cref="TryGatherLeadScene"/>):
     /// <list type="bullet">
     /// <item>shooter = the own ship, or — P803, for a boarded gunner — the
     /// PARENT (native pship = pshipParent, indicator.cpp:196-204);
@@ -332,7 +333,35 @@ public sealed partial class Game1
     /// </list>
     /// </summary>
     private bool ComputeTargetInRange(IgcObjectType kind, short id)
+        => TryGatherLeadScene(kind, id, out var scene) && TargetWeaponRange.IsInRange(scene.Input);
+
+    /// <summary>
+    /// P804/P786 — everything the client-side lead solve reads, gathered from
+    /// the wire state exactly as native's <c>RenderLeadIndicator</c> reads it
+    /// from the IGC (indicator.cpp:183-224): the local SOURCE ship's pose and
+    /// velocity, the selected mount's weapon (projectile speed/lifespan/power/
+    /// absolute flag + the hardpoint muzzle), the target's pose/velocity/radius
+    /// and the cluster/CanSee/friendly gates. Value-only (+ the entity
+    /// reference), so a frame does not allocate.
+    /// <para><b>Gunner case (P803).</b> Native solves with the parent ship and its
+    /// turret mount (<c>indicator.cpp:194-207</c>): the shooter, its pose/velocity/sector
+    /// and the weapon come from the carrier and the gunner's turret mount.</para>
+    /// </summary>
+    private readonly record struct LeadScene(
+        TargetWeaponRangeInput Input,
+        SimVec TargetPosition,
+        SimVec TargetVelocity,
+        float TargetRadius,
+        ShipEntity Own,
+        short OwnSide,
+        short OwnSector,
+        float TargetSignature,
+        float TargetSideSignatureGa,
+        ShipEntity? TargetShip);
+
+    private bool TryGatherLeadScene(IgcObjectType kind, short id, out LeadScene scene)
     {
+        scene = default;
         var world = _session.World;
         if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var mine)
             || mine.Latest is not { } mineUp)
@@ -372,10 +401,11 @@ public sealed partial class Game1
             : new Flight.PredictedPose(shooterUp.Position, shooterUp.Orientation);
 
         short ownSide = world.MySideId ?? mine.SideId;
+        ShipEntity? targetShip = kind == IgcObjectType.Ship
+            && world.Ships.TryGetValue(id, out var foundShip) ? foundShip : null;
         short? targetSide = kind switch
         {
-            IgcObjectType.Ship => world.Ships.TryGetValue(id, out var targetShip) && targetShip.HasRealIdentity
-                ? targetShip.SideId : null,
+            IgcObjectType.Ship => targetShip is { HasRealIdentity: true } ? targetShip.SideId : null,
             IgcObjectType.Station => world.Stations.TryGetValue(id, out var targetStation)
                 ? targetStation.SideId : null,
             _ => null,   // asteroid / aleph have no side (indicator.cpp:217)
@@ -383,31 +413,128 @@ public sealed partial class Game1
         bool friendly = targetSide is { } side && (side == ownSide || world.AreAllied(side, ownSide));
 
         var ga = world.GlobalAttributesFor(ownSide);
-        // The port's CanSee stand-in: same cluster + visible (see
-        // TargetPaneModel.SameCluster).
+        // Native indicator.cpp:188-192 — the target must be in the source
+        // ship's cluster AND visible. Same cluster is the port's static-model
+        // stand-in; a ship target uses the real client-side CanSee scanner gate
+        // (P786, TargetVisibility.CanSeeShip), exactly like the target pane.
         bool sameCluster = TargetPaneModel.SameCluster(world, kind, id);
-        var input = new TargetWeaponRangeInput(
-            SameCluster: sameCluster,
-            CanSee: sameCluster,
-            HasWeapon: true,
-            ChaseCamera: _cameraMode is Rendering.CameraMode.Chase or Rendering.CameraMode.ExternalMissile,
-            FriendlyOrAllied: friendly,
-            ProjectilePower: spec.Power,
-            AbsoluteF: spec.AbsoluteF,
-            AmmoPerShot: spec.AmmoPerShot,
-            EnergyWeapon: spec.EnergyWeapon,
-            ProjectileSpeed: spec.ProjectileSpeed,
-            ProjectileLifespan: spec.ProjectileLifespan,
-            SpeedAmmoGa: ga.Get(GlobalAttributeSet.SpeedAmmo),
-            LifespanEnergyGa: ga.Get(GlobalAttributeSet.LifespanEnergy),
-            MyPosition: pose.Position,
-            MyOrientation: pose.Orientation,
-            MyVelocity: shooterUp.Velocity,
-            MountPosition: spec.MuzzleOffset,
-            TargetRadius: TargetRadius(kind, id),
-            TargetPosition: targetPos,
-            TargetVelocity: targetVelocity);
-        return TargetWeaponRange.IsInRange(input);
+        bool canSee = sameCluster;
+        if (kind == IgcObjectType.Ship && targetShip is not null)
+            canSee = CanSeeOrderTarget(world, targetShip);
+
+        float radius = TargetRadius(kind, id);
+        scene = new LeadScene(
+            new TargetWeaponRangeInput(
+                SameCluster: sameCluster,
+                CanSee: canSee,
+                HasWeapon: true,
+                ChaseCamera: _cameraMode is Rendering.CameraMode.Chase or Rendering.CameraMode.ExternalMissile,
+                FriendlyOrAllied: friendly,
+                ProjectilePower: spec.Power,
+                AbsoluteF: spec.AbsoluteF,
+                AmmoPerShot: spec.AmmoPerShot,
+                EnergyWeapon: spec.EnergyWeapon,
+                ProjectileSpeed: spec.ProjectileSpeed,
+                ProjectileLifespan: spec.ProjectileLifespan,
+                SpeedAmmoGa: ga.Get(GlobalAttributeSet.SpeedAmmo),
+                LifespanEnergyGa: ga.Get(GlobalAttributeSet.LifespanEnergy),
+                MyPosition: pose.Position,
+                MyOrientation: pose.Orientation,
+                MyVelocity: shooterUp.Velocity,
+                MountPosition: spec.MuzzleOffset,
+                TargetRadius: radius,
+                TargetPosition: targetPos,
+                TargetVelocity: targetVelocity),
+            targetPos, targetVelocity, radius, mine, ownSide, shooter.SectorId,
+            TargetSignature(world, kind, id),
+            targetSide is { } ts and >= 0
+                ? world.GlobalAttributesFor(ts).Get(GlobalAttributeSet.Signature) : 0f,
+            targetShip);
+        return true;
+    }
+
+    /// <summary>The target's native <c>GetSignature()</c> for the relay
+    /// scanner's range test: a hull's signature for a ship, the type's for a
+    /// station, the export's for an asteroid/aleph.</summary>
+    private float TargetSignature(ClientWorld world, IgcObjectType kind, short id)
+    {
+        switch (kind)
+        {
+            case IgcObjectType.Ship:
+                return world.Ships.TryGetValue(id, out var ship)
+                    && _hullById.TryGetValue(ship.HullId, out var hull) ? hull.Signature : 0f;
+            case IgcObjectType.Station:
+                return world.Stations.TryGetValue(id, out var station)
+                    && _shopCatalog?.StationTypes is { } stations
+                    && stations.TryGetValue(station.StationTypeId, out var st) ? st.Signature : 0f;
+            case IgcObjectType.Asteroid:
+                return world.Asteroids.TryGetValue(id, out var asteroid) ? asteroid.Signature : 0f;
+            case IgcObjectType.Warp:
+                return world.Warps.TryGetValue(id, out var warp) ? warp.Signature : 0f;
+            default:
+                return 0f;
+        }
+    }
+
+    /// <summary>
+    /// P804 — native's lead-reticle capability gate (<c>indicator.cpp:286-320</c>),
+    /// now computed on the CLIENT from the same IGC state native reads: the
+    /// shooter's own hull carries <c>c_habmLeadIndicator</c> (0x800), OR a
+    /// FRIENDLY relay — a same-side station with
+    /// <c>c_sabmRemoteLeadIndicator</c> or a same-side non-boarded ship with
+    /// <c>c_habmRemoteLeadIndicator</c> — has the target in its scanner range
+    /// (<c>ps-&gt;InScannerRange(targetModel)</c>). The relay walk mirrors the
+    /// native loops exactly: only the SOURCE ship's cluster is scanned
+    /// (<c>pcluster-&gt;GetStations()</c> <c>:280-294</c>, <c>GetShips()</c>
+    /// <c>:294-315</c>), the ship leg skips parented (turret) ships
+    /// (<c>GetParentShip() == NULL</c>), and no allied-side term exists (the
+    /// native code compares <c>ps-&gt;GetSide() == pside</c>).
+    /// </summary>
+    private bool LeadGranted(ClientWorld world, in LeadScene scene)
+    {
+        if (_hullById.TryGetValue(scene.Own.HullId, out var ownHull)
+            && ownHull.HasCapability(DataHullTypeIGC.HabmLeadIndicator))
+            return true;
+
+        short sector = scene.OwnSector;
+        short mySide = scene.OwnSide;
+        if (sector < 0) return false;
+        FillOrderOccluders(world, sector);
+        float targetSignature = scene.TargetSignature;
+        float targetSideGa = scene.TargetSideSignatureGa;
+        SimVec targetPos = scene.TargetPosition;
+        float targetRadius = scene.TargetRadius;
+
+        // Friendly relay STATIONS (indicator.cpp:280-294).
+        foreach (var station in world.Stations.Values)
+        {
+            if (station.SideId != mySide || station.ClusterId != sector) continue;
+            if (_shopCatalog?.StationTypes is not { } stationTypes
+                || !stationTypes.TryGetValue(station.StationTypeId, out var st)) continue;
+            if (!st.HasCapability(DataStationTypeIGC.SabmRemoteLeadIndicator)) continue;
+            var scanner = new TargetVisibility.SideScanner(
+                new SimVec(station.Position[0], station.Position[1], station.Position[2]),
+                st.Radius, st.ScannerRange, IsShip: false, default);
+            if (TargetVisibility.InScannerRange(scanner, targetPos, targetRadius,
+                    targetSignature, targetSideGa, _orderOccluders))
+                return true;
+        }
+
+        // Friendly relay SHIPS — same side, unboarded, relay bit (indicator.cpp:294-315).
+        foreach (var ship in world.Ships.Values)
+        {
+            if (ship.SideId != mySide || ship.ParentId >= 0 || ship.SectorId != sector) continue;
+            if (!_hullById.TryGetValue(ship.HullId, out var hull)
+                || !hull.HasCapability(DataHullTypeIGC.HabmRemoteLeadIndicator)) continue;
+            if (ship.Latest is not { } up) continue;
+            var scanner = new TargetVisibility.SideScanner(
+                up.Position, 0.5f * hull.Length, hull.ScannerRange,
+                IsShip: true, up.Orientation.GetForward());
+            if (TargetVisibility.InScannerRange(scanner, targetPos, targetRadius,
+                    targetSignature, targetSideGa, _orderOccluders))
+                return true;
+        }
+        return false;
     }
 
     /// <summary>HUD-18 — the target's contact radius: 0.5 × hull Length for a
@@ -539,37 +666,98 @@ public sealed partial class Game1
     }
 
     /// <summary>
-    /// P266 — project the server-authoritative predictive lead (from
-    /// <see cref="ClientCore.State.ClientWorld.LeadIndicator"/>, the owner-only
-    /// <c>LEAD_INDICATOR_UPDATE(210)</c>) into screen space for the lead reticle
-    /// overlay, or return null when there is no granted lead or the point is out
-    /// of view. Uses the same camera-relative projection as
-    /// <see cref="ComputeLockBracket"/> (subtract <paramref name="cameraEye"/>,
-    /// transform through <c>view*proj</c>, reject behind-camera and out-of-frustum,
-    /// then NDC → viewport px) for BOTH the lead point and the target's current
-    /// centre — the two together expose the real predictive offset on screen.
+    /// P804 — native's lead marker and aim predictors, solved on the CLIENT from
+    /// the IGC state the client already holds
+    /// (<c>WinTrek/indicator.cpp:183-405</c>). Replaces the P266
+    /// server-solved <c>LEAD_INDICATOR_UPDATE(210)</c> stand-in outright.
+    /// <para><b>Flow (native order).</b> The target is the current TARGET
+    /// COMMAND (<c>GetCommandTarget(c_cmdCurrent)</c>, the client's
+    /// <see cref="ClientWorld.MyCurrentCommand"/>). With a target in the source
+    /// ship's cluster, seen, and a weapon passing the healing/friendly gate, the
+    /// shared Core <see cref="LeadSolver"/> solves the lead
+    /// (<see cref="ClientLead.Solve"/>). In the cockpit the lead DIRECTION is
+    /// projected (<c>TransformDirectionToImage(vecLeadPosition)</c>, :283) and
+    /// the centre crosshair's green ramp comes from the screen-space distance to
+    /// that point (:334-357); in chase/missile the forward-projected aim point
+    /// <c>shipPos + forward·|target−ship|</c> is projected (:246-265) with the
+    /// native forward-projected hit ramp (:271). When no lead applies (no
+    /// target, gate failure, or no solution) the chase/missile no-target grey
+    /// marker is staged instead (:367-405) — exactly native's <c>else if</c>.
+    /// The cockpit lead surface additionally needs the hull/relay capability
+    /// (<see cref="LeadGranted"/>, :286-320).</para>
     /// </summary>
-    private LeadIndicatorView? ComputeLeadIndicator(Matrix view, Matrix proj, Vector3 cameraEye)
+    private void ComputeLeadIndicators(Matrix view, Matrix proj, Vector3 cameraEye,
+        out LeadIndicatorView? lead, out Vector2? chaseAim)
     {
-        LeadIndicatorState state;
+        lead = null;
+        chaseAim = null;
+        var world = _session.World;
+        int viewportHeight = GraphicsDevice.Viewport.Height;
+        float halfW = GraphicsDevice.Viewport.Width * 0.5f;
+        float halfH = viewportHeight * 0.5f;
+
         lock (_session.Gate)
         {
-            state = _session.World.LeadIndicator;
-            if (!state.HasLead) return null;
+            // indicator.cpp:186 — GetCommandTarget(c_cmdCurrent); any model kind
+            // with a position/velocity/radius can be led.
+            if (world.MyCurrentCommand is { } command
+                && command.TargetType is IgcObjectType.Ship or IgcObjectType.Station
+                    or IgcObjectType.Asteroid or IgcObjectType.Warp
+                && TryGatherLeadScene(command.TargetType, command.TargetId, out var scene))
+            {
+                var result = ClientLead.Solve(scene.Input);
+                if (result.GatePassed)
+                {
+                    bool chase = _cameraMode is Rendering.CameraMode.Chase
+                        or Rendering.CameraMode.ExternalMissile;
+                    // indicator.cpp:246-265 — chase/missile aim along the ship's
+                    // nose at the target's range; cockpit aims at the solved lead.
+                    Vector3 aimDirection = chase
+                        ? PoseConverter.ToXna(result.TrackingPoint) - cameraEye
+                        : PoseConverter.ToXna(result.Direction);
+                    if (TryProjectDirection(aimDirection, view, proj, out var screen, out bool inside))
+                    {
+                        Vector2 targetScreen = screen;
+                        bool targetOnScreen = ProjectToScreen(
+                            PoseConverter.ToXna(scene.TargetPosition), view, proj, cameraEye, out var targetPx);
+                        if (targetOnScreen) targetScreen = targetPx;
+
+                        float green = result.Green;
+                        if (!chase)
+                        {
+                            // indicator.cpp:340-357 — l = px distance between the
+                            // view centre and the projected lead, r = the
+                            // target's native GetScreenRadius().
+                            float toTarget = (PoseConverter.ToXna(scene.TargetPosition) - cameraEye).Length();
+                            float screenRadius = RadarScreenRadius.Project(
+                                scene.TargetRadius, toTarget, viewportHeight, proj.M22);
+                            green = ClientLead.CockpitGreen(screen.X, screen.Y, halfW, halfH, screenRadius);
+                        }
+
+                        lead = new LeadIndicatorView(
+                            screen, targetScreen, result.InRange, green, _nowSeconds,
+                            LeadGranted(world, scene), inside, targetOnScreen);
+                    }
+                }
+            }
         }
 
-        if (!ProjectToScreen(PoseConverter.ToXna(state.LeadWorldPos), view, proj, cameraEye, out Vector2 leadPx)) return null;
-        if (!ProjectToScreen(PoseConverter.ToXna(state.TargetPos), view, proj, cameraEye, out Vector2 targetPx)) return null;
-
-        return new LeadIndicatorView(leadPx, targetPx, state.InRange, state.Green, _nowSeconds);
+        // indicator.cpp:325-405 — the no-target (or gate-failed) chase/missile
+        // marker. Native reaches this branch both with no target and when a
+        // target exists but no weapon/gate passes; the port stages it whenever
+        // no lead view was produced.
+        if (lead is null && _cameraMode is Rendering.CameraMode.Chase
+                or Rendering.CameraMode.ExternalMissile)
+            chaseAim = ComputeChaseAim(view, proj, cameraEye);
     }
 
     /// <summary>
-    /// P266 — the shared world→screen projection used by
-    /// <see cref="ComputeLeadIndicator"/>: subtract the camera eye, transform
-    /// through <c>view*proj</c>, reject a point behind the camera or outside the
-    /// FOV frustum, then map NDC to viewport pixels. Returns false (and nothing in
-    /// <paramref name="screen"/>) when the point is not visible.
+    /// P266 (shared with the target-pick / lock-bracket projection) — the
+    /// world→screen projection used for the target's current centre: subtract the
+    /// camera eye, transform through <c>view*proj</c>, reject a point behind the
+    /// camera or outside the FOV frustum, then map NDC to viewport pixels.
+    /// Returns false (and nothing in <paramref name="screen"/>) when the point is
+    /// not visible.
     /// </summary>
     private bool ProjectToScreen(Vector3 world, Matrix view, Matrix proj, Vector3 cameraEye, out Vector2 screen)
     {
@@ -587,22 +775,41 @@ public sealed partial class Game1
     }
 
     /// <summary>
+    /// P804 — native <c>Camera::TransformDirectionToImage</c>
+    /// (<c>engine/camera.cpp</c>): a world-space DIRECTION (w=0) through the view
+    /// and projection, mapped to viewport px. Returns false only when the
+    /// direction is NOT in front of the eye (native's <c>vecEye.Z() &gt;= 0</c>);
+    /// an in-front direction that lands outside the view rectangle still yields
+    /// a pixel with <paramref name="inside"/> = false. Native uses the pixel
+    /// regardless (the draw is clipped), but the cockpit green ramp needs the
+    /// screen distance even for an off-screen lead, so this is exactly the
+    /// native contract.
+    /// </summary>
+    private bool TryProjectDirection(Vector3 direction, Matrix view, Matrix proj,
+        out Vector2 screen, out bool inside)
+    {
+        screen = default;
+        inside = false;
+        if (direction.LengthSquared() < 1e-12f) return false;
+        var clip = Vector4.Transform(new Vector4(direction.X, direction.Y, direction.Z, 0f), view * proj);
+        if (clip.W <= 1e-6f) return false;                 // behind the eye (native :false)
+        float sx = clip.X / clip.W;
+        float sy = clip.Y / clip.W;
+        var vp = GraphicsDevice.Viewport;
+        screen = new Vector2((sx * 0.5f + 0.5f) * vp.Width, (0.5f - sy * 0.5f) * vp.Height);
+        inside = MathF.Abs(sx) <= 1f && MathF.Abs(sy) <= 1f;
+        return true;
+    }
+
+    /// <summary>
     /// HUD-8 — project a world-space DIRECTION (w=0) to viewport px, mirroring
     /// native <c>Camera::TransformDirectionToImage</c> + <c>rect.TransformNDCToImage</c>
     /// (indicator.cpp:140-143). Returns null when the direction does not land
     /// inside the view rect (native <c>rect.Inside</c>, indicator.cpp:144).
     /// </summary>
     private Vector2? TransformDirectionToScreen(Vector3 direction, Matrix view, Matrix proj)
-    {
-        var viewProj = view * proj;
-        var clip = Vector4.Transform(new Vector4(direction.X, direction.Y, direction.Z, 0f), viewProj);
-        if (MathF.Abs(clip.W) < 1e-6f) return null;
-        float sx = clip.X / clip.W;
-        float sy = clip.Y / clip.W;
-        if (MathF.Abs(sx) > 1f || MathF.Abs(sy) > 1f) return null;   // outside the view rect
-        var vp = GraphicsDevice.Viewport;
-        return new Vector2((sx * 0.5f + 0.5f) * vp.Width, (0.5f - sy * 0.5f) * vp.Height);
-    }
+        => TryProjectDirection(direction, view, proj, out var screen, out bool inside) && inside
+            ? screen : null;
 
     /// <summary>
     /// HUD-8 — the velocity-direction marker: project the own source ship's
@@ -654,55 +861,47 @@ public sealed partial class Game1
     }
 
     /// <summary>
-    /// HUD-8 — chase weapon aim without a target (indicator.cpp:367-405): project
-    /// the mounted weapon's forward range point (speed × lifespan) from the real
-    /// camera as a direction. Returns null when the weapon/loadout is unresolved.
+    /// HUD-8/P804 — chase weapon aim without a target (indicator.cpp:367-405):
+    /// project the selected weapon's forward range point
+    /// <c>shipPosition + forward · pt-&gt;GetSpeed() · w-&gt;GetLifespan()</c> from the
+    /// real camera as a direction. Native's <c>pWeapon</c> is
+    /// <c>trekClient.GetWeapon()</c> — the weapon on the SELECTED mount — and a
+    /// boarded gunner draws none (<c>!pship-&gt;GetParentShip()</c>). Returns null
+    /// when the loadout/weapon cannot be resolved, which is native's
+    /// <c>if (pWeapon)</c> guard.
     /// </summary>
     private Vector2? ComputeChaseAim(Matrix view, Matrix proj, Vector3 cameraEye)
     {
-        if (!TryOwnPose(out var position, out var orientation, out _)) return null;
-        if (!TryResolveActiveWeaponRange(out float range)) return null;
-        var shipPosition = PoseConverter.ToXna(position);
-        var forward = PoseConverter.ToXna(orientation.GetForward());
-        var tracking = shipPosition + forward * range;
-        var aim = tracking - cameraEye;
-        if (aim.LengthSquared() < 1e-6f) return null;
-        aim.Normalize();
-        return TransformDirectionToScreen(aim, view, proj);
-    }
-
-    /// <summary>
-    /// HUD-8 — resolve the currently-selected weapon's projectile range
-    /// (speed × lifespan, indicator.cpp:391-393) from the live loadout + core
-    /// projectile table. Mirrors <see cref="BuildWeaponStatusRows"/>'s active
-    /// weapon selection (group-fire → first weapon; single → selected mount).
-    /// </summary>
-    private bool TryResolveActiveWeaponRange(out float range)
-    {
-        range = 0f;
-        var catalog = _shopCatalog;
-        if (catalog?.ProjectileTypes is not { } projectiles) return false;
         var world = _session.World;
         lock (_session.Gate)
         {
-            if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)
-                || own.Loadout is not { Count: > 0 } loadout) return false;
+            if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own))
+                return null;
+            if (own.ParentId >= 0) return null;            // native !GetParentShip()
+            var spec = ResolveSelectedWeapon(own);
+            if (!spec.Found) return null;
+            var pose = _poses.TryGetValue(me, out var posed)
+                ? posed
+                : own.Latest is { } up
+                    ? new Flight.PredictedPose(up.Position, up.Orientation)
+                    : default(Flight.PredictedPose?);
+            if (pose is not { } ship) return null;
 
-            DataPartTypeIGC.Weapon? active = null;
-            foreach (var p in loadout)
-            {
-                DataPartTypeIGC part = default;
-                bool found = false;
-                foreach (var candidate in catalog.Parts)
-                    if (candidate.PartId == p.PartId) { part = candidate; found = true; break; }
-                if (!found || part.Type is not DataPartTypeIGC.Weapon weapon) continue;
-                if (_groupFire) { active = weapon; break; }
-                if (p.MountId == _selectedMount) { active = weapon; break; }
-            }
+            short ownSide = world.MySideId ?? own.SideId;
+            var ga = world.GlobalAttributesFor(ownSide);
+            // weaponIGC.h:165-171 — GetLifespan() folds c_gaLifespanEnergy;
+            // indicator.cpp:391-393 multiplies by the RAW pt->GetSpeed().
+            float lifespan = spec.ProjectileLifespan;
+            if (spec.EnergyWeapon) lifespan *= ga.Get(GlobalAttributeSet.LifespanEnergy);
+            float range = spec.ProjectileSpeed * lifespan;
+            if (range <= 0f) return null;
 
-            if (active is not { } resolved || !projectiles.TryGetValue(resolved.ProjectileTypeId, out var projectile)) return false;
-            range = projectile.Speed * projectile.Lifespan;
-            return range > 0f;
+            var shipPosition = PoseConverter.ToXna(ship.Position);
+            var forward = PoseConverter.ToXna(ship.Orientation.GetForward());
+            var tracking = shipPosition + forward * range;
+            var aim = tracking - cameraEye;
+            if (aim.LengthSquared() < 1e-6f) return null;
+            return TransformDirectionToScreen(aim, view, proj);
         }
     }
 
@@ -807,6 +1006,21 @@ public sealed partial class Game1
             _shopCatalog?.ProbeTypes, _shopCatalog?.StationTypes, _orderSideScanners);
     }
 
+    /// <summary>P786/P804 — fill the shared per-frame occluder scratch with
+    /// <paramref name="sector"/>'s asteroids (the only occluders native's
+    /// <c>LineOfSightExist</c> considers, <c>common.cpp:2349</c>), reused by
+    /// every CanSee / relay-scanner evaluation in the frame.</summary>
+    private void FillOrderOccluders(ClientWorld world, short sector)
+    {
+        _orderOccluders.Clear();
+        foreach (var ast in world.Asteroids.Values)
+        {
+            if (ast.ClusterId != sector) continue;
+            _orderOccluders.Add(new VisibilityMath.SightBody(
+                new SimVec(ast.Position[0], ast.Position[1], ast.Position[2]), ast.Radius));
+        }
+    }
+
     private bool CanSeeOrderTarget(ClientWorld world, ShipEntity target)
     {
         // shipIGC.h:383 — same side always seen.
@@ -819,13 +1033,7 @@ public sealed partial class Game1
             ? world.GlobalAttributesFor(ts).Get(Allegiance.Core.Model.GlobalAttributeSet.Signature)
             : 0f;
         short sector = target.SectorId;
-        _orderOccluders.Clear();
-        foreach (var ast in world.Asteroids.Values)
-        {
-            if (ast.ClusterId != sector) continue;
-            _orderOccluders.Add(new VisibilityMath.SightBody(
-                new SimVec(ast.Position[0], ast.Position[1], ast.Position[2]), ast.Radius));
-        }
+        FillOrderOccluders(world, sector);
         return TargetVisibility.CanSeeShip(
             own, target, ownHull, 0.5f * ownHull.Length,
             targetHull, 0.5f * targetHull.Length,

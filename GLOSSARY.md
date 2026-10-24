@@ -66,6 +66,11 @@ list in **reverse**.
   `mountc.cpp`.
 - **Projectile / weapon** — guns and their rounds. `src/Allegiance.Core/Sim/Weapon.cs`,
   `Projectile.cs`, `BlastDamage.cs`. *Native:* `weaponigc.cpp`, `projectileigc.cpp`.
+- **Lead solve** — the shared ballistic lead/intercept solve
+  (`solveForLead` → `solveForImpact`), used by the AI *and* the client HUD.
+  `src/Allegiance.Core/Sim/LeadSolver.cs` (pure), `ShipDodgeLaw.cs`
+  (`SolveForImpact`). *Native:* `Igc/common.cpp:59-149`,
+  `Igc/shipIGC.cpp:2464,2617`. Report P804.
 - **Missile** — homing ordnance. `src/Allegiance.Core/Sim/Missile.cs`,
   `MissileIntercept.cs`. *Native:* `missileigc.cpp`.
 - **Mine / probe / chaff** — deployable equipment.
@@ -149,6 +154,12 @@ list in **reverse**.
   (`Rendering/ModernHudRenderer.cs`). *Native:* the original classic HUD layout.
 - **HUD renderer** — `Rendering/HudRenderer.cs` (shared model +
   Classic), `Rendering/ModernHudRenderer.cs` (Modern override). P786 report.
+- **Lead marker / aim predictor** — the client-solved lead and the native
+  aim/missile indicators: `Rendering/ClientLead.cs` (gate + solve + the
+  screen-space ramp), `Game1.Camera.cs` (`ComputeLeadIndicators`,
+  `LeadGranted`, `ComputeChaseAim`), `Rendering/HudModel.cs`
+  (`LeadMarkerVisible` / `AimPredictorVisible` / `ChaseAimVisible`).
+  *Native:* `WinTrek/indicator.cpp:183-405`; report P804.
 - **Radar** — contacts, icons, brackets, labels, overlays.
   `Rendering/Radar*.cs` (RadarBracketRenderer, RadarIconPlacement,
   RadarLabelModel, RadarProjection, RadarLod).

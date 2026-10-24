@@ -176,7 +176,6 @@ public sealed partial class ClientWorld
         ClearRipcord();
         _missileLock = MissileLockState.None;
         _missileTrack = MissileTrackState.Clear;
-        _leadIndicator = LeadIndicatorState.None;
         _miningAsteroidId = -1;
         ShipWarnings.Reset();
     }

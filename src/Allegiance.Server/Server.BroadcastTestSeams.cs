@@ -251,9 +251,6 @@ public sealed partial class Server
             allocationMark = GC.GetAllocatedBytesForCurrentThread();
             using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastMissileTrackWarning")) BroadcastMissileTrackWarning();
             TestProjectionAllocationCapture?.Invoke("step:broadcastMissileTrackWarning", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
-            allocationMark = GC.GetAllocatedBytesForCurrentThread();
-            using (Allegiance.Core.Profiling.TickProfiler.Enter("step:broadcastLeadIndicator")) BroadcastLeadIndicator();
-            TestProjectionAllocationCapture?.Invoke("step:broadcastLeadIndicator", GC.GetAllocatedBytesForCurrentThread() - allocationMark);
         }
         finally
         {

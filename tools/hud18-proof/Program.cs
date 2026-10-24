@@ -190,7 +190,6 @@ sealed class Hud18Proof(Game1 game, Srv server, Mission mission, string output, 
             string loadout = mine.Loadout is { } lo
                 ? string.Join(",", lo.Select(p => $"part{p.PartId}@m{p.MountId}"))
                 : "-";
-            var leadState = world.LeadIndicator;
             Console.WriteLine($"[hud18] diag pose=({_posePos.X:0},{_posePos.Y:0},{_posePos.Z:0})"
                 + $" fwd=({_poseOrientation.GetForward().X:0.00},{_poseOrientation.GetForward().Y:0.00},{_poseOrientation.GetForward().Z:0.00})"
                 + $" serverOwn=({_own?.Position.X:0},{_own?.Position.Y:0},{_own?.Position.Z:0})"
@@ -201,7 +200,7 @@ sealed class Hud18Proof(Game1 game, Srv server, Mission mission, string output, 
                 + $" clientOwnVel={(mine.Latest is { } muv ? $"({muv.Velocity.X:0.0},{muv.Velocity.Y:0.0},{muv.Velocity.Z:0.0})" : "-")}"
                 + $" serverEnemyVel=({_enemy?.Velocity.X:0.0},{_enemy?.Velocity.Y:0.0},{_enemy?.Velocity.Z:0.0})");
             Console.WriteLine($"[hud18] {tag}: own ship={me} hull={mine.HullId} '{hull.Name}' leadCapability={lead}"
-                + $" loadout=[{loadout}] statusSector={mine.SectorId} leadMsg(HasLead={leadState.HasLead},InRange={leadState.InRange})"
+                + $" loadout=[{loadout}] statusSector={mine.SectorId}"
                 + $" camera={Get<object>("_cameraMode")} selectedMount={Get<int>("_selectedMount")}");
         }
     }

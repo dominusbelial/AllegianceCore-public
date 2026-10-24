@@ -6559,9 +6559,12 @@ public sealed partial class Ship : Model, IShipIgc
 
     /// <summary>
     /// P169 — the Wingman's aim-leading intercept solve, a faithful port of
-    /// native <c>solveForLead</c> (<c>src/Igc/common.cpp:121-149</c>) layered
-    /// directly on <see cref="SolveForImpact"/> (P168's faithful port of
-    /// <c>solveForImpact</c>, <c>common.cpp:59-119</c>). Predicts where to
+    /// native <c>solveForLead</c> (<c>src/Igc/common.cpp:121-149</c>). Since
+    /// P804 the arithmetic lives in the shared, pure
+    /// <see cref="LeadSolver"/> — the SAME implementation the client HUD calls
+    /// (native also shares it between the AI and the client,
+    /// <c>Igc/shipIGC.cpp:2464,2617</c> vs <c>WinTrek/indicator.cpp:221</c>) —
+    /// and this method only gathers the sim's inputs. Predicts where to
     /// point the mounted weapon so a round fired at its projectile's speed
     /// intercepts <paramref name="target"/> as it moves — the "lead" aim point
     /// — rather than aiming at the target's current position. Returns the
@@ -6575,9 +6578,9 @@ public sealed partial class Ship : Model, IShipIgc
     /// the target's velocity is skill-scaled, <c>hisVelocity * skill</c>
     /// (<c>common.cpp:137</c>); the projectile speed is
     /// <paramref name="weapon"/>'s <see cref="DataProjectileTypeIGC.Speed"/>
-    /// (<c>common.cpp:141</c>, with the <c>c_gaSpeedAmmo</c> boost omitted —
-    /// no side-economy attribute in this port, the identical omission accepted
-    /// at <c>Weapon.cs:233</c>); and <see cref="DataProjectileTypeIGC.AbsoluteF"/>
+    /// (<c>common.cpp:141</c>, scaled by the side's <c>c_gaSpeedAmmo</c> for an
+    /// ammo weapon exactly as native does); and
+    /// <see cref="DataProjectileTypeIGC.AbsoluteF"/>
     /// selects which velocity term feeds the solve — the (skill-scaled) target
     /// velocity alone for an absolute projectile, else that velocity relative
     /// to the shooter's own (<c>common.cpp:144-146</c>). The target's radius is
@@ -6593,11 +6596,6 @@ public sealed partial class Ship : Model, IShipIgc
     /// </summary>
     private float SolveForLead(Ship target, Weapon weapon, float skill, out Vector3 direction)
     {
-        Vector3 myPosition = Position;                               // + muzzle offset (none: no hull mesh), cf Weapon.cs:230
-        Vector3 myVelocity = Velocity;
-        Vector3 hisPosition = target.Position;
-        Vector3 hisVelocity = target.Velocity * skill;               // common.cpp:137 (skill scales the TARGET's motion)
-
         DataProjectileTypeIGC pt = weapon.ProjectileType;
         float speed = pt.Speed;
         // c_gaSpeedAmmo (common.cpp:141): the lead solve scales the round's
@@ -6605,66 +6603,17 @@ public sealed partial class Ship : Model, IShipIgc
         // an ammo weapon only (weapon->GetAmmoPerShot() nonzero).
         if (weapon.Type.CAmmoPerShot != 0)
             speed *= GlobalAttributeFactor(GlobalAttributeSet.SpeedAmmo);
-        Vector3 deltaV = pt.AbsoluteF ? hisVelocity : hisVelocity - myVelocity;   // common.cpp:144-146
 
-        return SolveForImpact(hisPosition - myPosition, deltaV, speed,
-                              0.5f * target.HullType.Length, out direction);      // target.GetRadius() analogue (Ship.cs:1873)
-    }
-
-    /// <summary>
-    /// P266 — the public, server-facing accessor over the private
-    /// <see cref="SolveForLead(Ship, Weapon, float, out Vector3)"/> (P169's faithful
-    /// port of native <c>solveForLead</c>, <c>common.cpp:121-149</c>), exposing the
-    /// solved lead aim DIRECTION and intercept TIME <c>t</c> to
-    /// <c>Server.BroadcastLeadIndicator</c> so the server can stream the predictive
-    /// lead reticle to the owner-only wire (the renderer-only MonoGame client has no
-    /// static core to solve it locally). Returns the time-to-intercept <c>t ≥ 0</c>;
-    /// the lead aim direction is written to <paramref name="direction"/>. A
-    /// <paramref name="skill"/> of 1.0 leaves the target's velocity unscaled (the
-    /// player-pilot case); &lt;1 underestimates the target's motion (the wingman
-    /// shooting-accuracy model, <c>SolveForLead</c>'s own doc).</summary>
-    public float SolveLead(Ship target, Weapon weapon, float skill, out Vector3 direction)
-        => SolveForLead(target, weapon, skill, out direction);
-
-    /// <summary>
-    /// P266 — the lead indicator's green→red hit-probability <c>g ∈ [0,1]</c>,
-    /// ported from the native client's cockpit-view crosshair colour ramp
-    /// (<c>WinTrek/indicator.cpp:341-357</c>). Native colours the centre
-    /// crosshair from the screen-space distance ratio <c>f = l²/r²</c>, where
-    /// <c>l</c> is the on-screen separation between the lead point and the fixed
-    /// reticle and <c>r</c> the target's on-screen radius, applying the piecewise
-    /// <c>g = (f&lt;1) ? 1-0.75f : (f&lt;2) ? 0.5-f/4 : 0</c>. This port has no
-    /// screen-space quantities server-side, so it computes the ANGULAR
-    /// equivalent (algebraically the same ramp): <c>θ</c> is the angle between the
-    /// ship's current forward aim (the weapon's firing solution — fixed guns fire
-    /// straight along the hull) and the solved lead direction, and
-    /// <paramref name="targetAngularRadius"/> is the angle the target subtends at
-    /// the shooter (<c>atan2(targetRadius, distance)</c>). <c>f =
-    /// (θ/targetAngularRadius)²</c> feeds the identical piecewise. The result maps
-    /// to the render colour <c>(1-g, g, 0)</c>: full green at a perfectly-aligned
-    /// aim, shifting through amber to red as the aim drifts more than ~1× the
-    /// target's angular size off the lead point (the brief's "green→red based on
-    /// angular deviation between the lead point and the firing solution").</summary>
-    public static float LeadHitProbability(Vector3 shipForward, Vector3 leadDirection, float targetAngularRadius)
-    {
-        float ll = leadDirection.LengthSquared();
-        if (ll <= 1e-9f) return 0f;                       // no solved direction — nothing aligned
-        leadDirection /= MathF.Sqrt(ll);
-        if (targetAngularRadius <= 1e-9f) return 1f;      // target dead ahead at zero separation
-
-        float cos = shipForward.X * leadDirection.X
-                  + shipForward.Y * leadDirection.Y
-                  + shipForward.Z * leadDirection.Z;      // no Vector3.Dot static (port convention)
-        cos = Math.Clamp(cos, -1f, 1f);
-        float theta = MathF.Acos(cos);
-        float f = theta / targetAngularRadius;
-        f *= f;
-        if (f < 2.0f)
-        {
-            if (f < 1.0f) return 1.0f - 0.75f * f;        // indicator.cpp:344-345
-            return 0.5f - f / 4.0f;                       // indicator.cpp:346
-        }
-        return 0.0f;                                      // indicator.cpp:348
+        return LeadSolver.SolveForLead(new LeadSolver.Input(
+            ShooterPosition: Position,                    // + muzzle offset (none: no hull mesh), cf Weapon.cs:230
+            ShooterVelocity: Velocity,
+            TargetPosition: target.Position,
+            TargetVelocity: target.Velocity * skill,      // common.cpp:137 (skill scales the TARGET's motion)
+            MuzzleOffsetWorld: Vector3.Zero,
+            ProjectileSpeed: speed,
+            Absolute: pt.AbsoluteF,                       // common.cpp:144-146
+            TargetRadius: 0.5f * target.HullType.Length), // target.GetRadius() analogue (Ship.cs:1873)
+            out direction);
     }
 
     /// <summary>

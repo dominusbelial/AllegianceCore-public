@@ -354,17 +354,42 @@ public class HudModelTests
     }
 
     [Theory]
-    [InlineData(CameraMode.Cockpit, true, true, true)]
-    [InlineData(CameraMode.Cockpit, false, true, false)]
-    [InlineData(CameraMode.Chase, true, false, true)]
-    [InlineData(CameraMode.Chase, false, false, true)]
-    public void Lead_marker_and_predictor_follow_the_native_split(CameraMode camera, bool inRange, bool leadVisible, bool aimVisible)
+    // camera, inRange, granted (native indicator.cpp:286-320 hull/relay gate),
+    // expected lead SURFACE, expected aim predictor.
+    [InlineData(CameraMode.Cockpit, true, true, true, true)]
+    [InlineData(CameraMode.Cockpit, false, true, true, false)]
+    // P804 — the cockpit centre crosshair does NOT need the capability
+    // (it sits outside the bLeadIndicator block, indicator.cpp:334-362).
+    [InlineData(CameraMode.Cockpit, true, false, false, true)]
+    [InlineData(CameraMode.Chase, true, false, false, true)]
+    [InlineData(CameraMode.Chase, false, true, false, true)]
+    [InlineData(CameraMode.ExternalMissile, true, true, false, true)]
+    [InlineData(CameraMode.ExternalTurret, true, true, false, false)]
+    public void Lead_marker_and_predictor_follow_the_native_split(
+        CameraMode camera, bool inRange, bool granted, bool leadVisible, bool aimVisible)
     {
-        var model = HudModel.Create(Frame, new() { Camera = camera, Lead = new(new(300, 400), new(350, 420), inRange, .8f, 1) });
+        var model = HudModel.Create(Frame, new() { Camera = camera, Lead = new(new(300, 400), new(350, 420), inRange, .8f, 1, granted) });
         Assert.Equal(leadVisible, model.LeadMarkerVisible);
         Assert.Equal(aimVisible, model.AimPredictorVisible);
         Assert.Equal(leadVisible, model.Elements.Single(e => e.Id == "Ballistic lead marker").Visible);
         Assert.Equal(aimVisible, model.Elements.Single(e => e.Id == "Aim hit-probability predictor").Visible);
+    }
+
+    [Theory]
+    [InlineData(CameraMode.Cockpit)]
+    [InlineData(CameraMode.Chase)]
+    public void Lead_direction_behind_the_camera_shows_neither_marker(CameraMode camera)
+    {
+        // P804 — native TransformDirectionToImage fails behind the eye
+        // (engine/camera.cpp), so neither the lead surface nor the centre
+        // crosshair is drawn (indicator.cpp:265,283).
+        var model = HudModel.Create(Frame, new()
+        {
+            Camera = camera,
+            Lead = new(new(300, 400), new(350, 420), true, .8f, 1, Granted: true, Visible: false),
+        });
+        Assert.False(model.LeadMarkerVisible);
+        Assert.False(model.AimPredictorVisible);
     }
 
     [Theory]

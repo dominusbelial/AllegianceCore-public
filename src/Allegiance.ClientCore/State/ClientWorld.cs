@@ -661,7 +661,6 @@ public sealed partial class ClientWorld
     // the best lock fraction among them, streamed by the owner-only
     // MissileTrackWarningUpdate(208). Drives the incoming-missile warning loop.
     private MissileTrackState _missileTrack = MissileTrackState.Clear;
-    private LeadIndicatorState _leadIndicator = LeadIndicatorState.None;
 
     /// <summary>The local ship id assigned by SET_CLUSTER(7), with its launch
     /// pose/cookie. JOINED_MISSION's earlier player identity is JoinedShipId.
@@ -1778,17 +1777,6 @@ public sealed partial class ClientWorld
     /// (0x7fff) can never be exceeded, so unlimited missions never ghost.</summary>
     public bool OwnIsGhost => TryGetOwnMissionStats(out _, out short deaths) && deaths > MissionLives;
 
-    /// <summary>P266 — the local ship's predictive lead-aim point, streamed on the
-    /// owner-only <c>LeadIndicatorUpdate(210)</c> (server-computed from the real
-    /// <c>solveForLead</c> physics, <see cref="Wire.LeadIndicatorUpdate"/>). The
-    /// server solves where the mounted weapon must point to intercept the ship's
-    /// selected moving target and gates it by the <c>c_habmLeadIndicator</c> hull
-    /// capability / relay scanner; the MonoGame client renders the reticle at the
-    /// projected lead world point. <see cref="LeadIndicatorState.None"/> until the
-    /// first such message; refreshed every tick (the server always sends, even to
-    /// clear). Read under the caller's lock like the other world tables.</summary>
-    public LeadIndicatorState LeadIndicator => _leadIndicator;
-
     /// <summary>Local receipt instant of the latest SET_START_TIME announcement.
     /// Reset when the restart hold is replaced by the briefing deadline.
     /// CountdownRemainingSeconds uses the absolute server-time target.</summary>
@@ -1926,7 +1914,6 @@ public sealed partial class ClientWorld
         _prevLockState = MissileLockFeedback.LockState.None;
         _prevLockTargetId = -1;
         _missileTrack = MissileTrackState.Clear;
-        _leadIndicator = LeadIndicatorState.None;
         _miningAsteroidId = -1;
         _myCloaking = null;              // HUD-12 — no stale cloak fraction across missions
         _remoteRipcords.Clear();         // HUD-12 — remote ripcords do not survive a reset
@@ -2291,9 +2278,6 @@ public sealed partial class ClientWorld
             case GameOverPlayers gameOverPlayers:
                 // P583 — the per-player endgame roster for the game-over screen.
                 Apply(gameOverPlayers);
-                break;
-            case LeadIndicatorUpdate leadIndicator:
-                Apply(leadIndicator);
                 break;
             case ExplosionEvent explosion:
                 Apply(explosion);
@@ -4863,7 +4847,6 @@ public sealed partial class ClientWorld
         _prevLockState = MissileLockFeedback.LockState.None;
         _prevLockTargetId = -1;
         _missileTrack = MissileTrackState.Clear;
-        _leadIndicator = LeadIndicatorState.None;
         _miningAsteroidId = -1;
         _myCloaking = null;              // HUD-12
         _remoteRipcords.Clear();         // HUD-12
@@ -5351,19 +5334,6 @@ public sealed partial class ClientWorld
     /// caller (Game1) edge-detects arm/disarm to drive the warning loop.</summary>
     private void Apply(MissileTrackWarningUpdate m) =>
         _missileTrack = new MissileTrackState(m.Tracked, m.BestLock);
-
-    /// <summary>FM_S_LEAD_INDICATOR_UPDATE(210) — the owner-only P266 snapshot of
-    /// the local ship's predictive lead-aim point (server-computed from the real
-    /// solveForLead physics). Overwrites <see cref="LeadIndicator"/> wholesale each
-    /// tick; a <c>HasLead=false</c> (NA target) message clears the reticle. The
-    /// server always sends, so a stale lead never lingers when the target dies,
-    /// leaves sector, or the hull/relay gate stops granting it.</summary>
-    private void Apply(LeadIndicatorUpdate m)
-    {
-        _leadIndicator = m.HasLead
-            ? new LeadIndicatorState(m.HasLead, m.InRange, m.Green, m.LeadWorldPos, m.TargetPos)
-            : LeadIndicatorState.None;
-    }
 
     private ShipEntity Upsert(short shipId)
     {

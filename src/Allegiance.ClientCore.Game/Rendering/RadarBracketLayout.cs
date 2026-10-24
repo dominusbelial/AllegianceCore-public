@@ -52,7 +52,24 @@ public static class RadarBracketLayout
     public const float NativeContactOpacity = 1f;
 
     /// <summary>
-    /// Decide an object's radar placement + viewport pixel.
+    /// Native <c>c_flBorderSide</c> (<c>WinTrek/radarimage.h:20</c>): the inset
+    /// the radar image rect is shrunk by before the eye-space clamp, and the
+    /// constant in the native round-radar radius
+    /// <c>(YMax − YMin) · 0.48 = (height − 2·10) · 0.48</c>
+    /// (<c>WinTrek.cpp:7726</c>, <c>radarimage.cpp:167-169</c>).
+    /// </summary>
+    public const float NativeBorderSide = 10f;
+
+    /// <summary>Native's round-radar radius: <c>((YMax − YMin) · 0.48f)</c> on
+    /// the border-expanded image rect (<c>WinTrek.cpp:7726</c>,
+    /// <c>radarimage.cpp:173</c>). With <see cref="NativeBorderSide"/> this is
+    /// <c>0.48 · (height − 20)</c>.</summary>
+    public static float RoundRadarRadius(float height, float inset = NativeBorderSide)
+        => MathF.Max(0f, (height - 2f * inset) * 0.48f);
+
+    /// <summary>
+    /// Decide an object's radar placement + viewport pixel, faithfully to
+    /// native's eye-space edge clamp (<c>WinTrek.cpp:7882-7960</c>).
     /// </summary>
     /// <param name="inFront">True when the object projects in front of the
     /// camera (<c>clip.w &gt; 0</c>), so <paramref name="ndcX"/>/<paramref name="ndcY"/>
@@ -60,44 +77,78 @@ public static class RadarBracketLayout
     /// <param name="ndcX"/><param name="ndcY">The object's normalized device
     /// coordinates (-1..1) from projecting through <c>view*proj</c>. Only valid
     /// when <paramref name="inFront"/> is true.</param>
-    /// <param name="dirX"/><param name="dirY">The object's NDC <em>direction</em> from
-    /// the screen centre, computed in camera space (right/up components at a
-    /// forced in-front depth) so the lateral signs stay correct even when the
-    /// object is behind the eye — the same eye-space direction native clamps in
-    /// WinTrek.cpp:7882-7923.</param>
+    /// <param name="eyeX"/><param name="eyeY">The object's CAMERA-SPACE
+    /// right/up components (<c>m_pcamera-&gt;TransformLocalToEye(positionModel)</c>,
+    /// <c>WinTrek.cpp:7882</c>) — the values native clamps directly, with y UP.
+    /// Valid even behind the eye.</param>
     /// <param name="width"/><param name="height">Viewport size in pixels.</param>
     /// <param name="inset">Inset from the viewport edge (px) at which off-screen
-    /// brackets are clamped, so a centred icon stays fully on screen. Equivalent
-    /// to native's edge "gutter" (radarimage.cpp:318-319 clips by the border).</param>
+    /// markers are clamped — native <c>c_flBorderSide</c> = 10.</param>
+    /// <param name="roundRadar">Native <c>m_bRoundRadar</c>
+    /// (<c>WinTrek.cpp:7849-7875,7883-7906</c>, <c>radarimage.cpp:1176</c>): the
+    /// blip is on screen only inside the inscribed circle and an off-screen blip
+    /// is pinned to that circle, not the rectangle.</param>
     public static RadarSite Resolve(
         bool inFront, float ndcX, float ndcY,
-        float dirX, float dirY,
-        float width, float height, float inset)
+        float eyeX, float eyeY,
+        float width, float height, float inset, bool roundRadar = false)
     {
-        // On-screen: the object's real projected NDC lands inside the viewport —
-        // place the icon at its exact projected pixel (native's
-        // c_ucRadarOnScreenLarge path, WinTrek.cpp:7868).
-        if (inFront && MathF.Abs(ndcX) <= 1f && MathF.Abs(ndcY) <= 1f)
+        float halfW = MathF.Max(width * 0.5f - inset, 1f);
+        float halfH = MathF.Max(height * 0.5f - inset, 1f);
+        float roundRadius = RoundRadarRadius(height, inset);
+
+        // WinTrek.cpp:7836-7875 — native projects first, then decides on-screen
+        // state. The square radar uses the image rect; the round radar compares
+        // the CENTRED image point against the inscribed circle.
+        bool inRect = inFront && MathF.Abs(ndcX) <= 1f && MathF.Abs(ndcY) <= 1f;
+        bool onScreen = inRect;
+        if (inRect && roundRadar)
+        {
+            // rectImage was offset to the centre, so the native image point is
+            // (x·0.5·width, y·0.5·height) in y-up pixels.
+            float cx = ndcX * 0.5f * width;
+            float cy = ndcY * 0.5f * height;
+            onScreen = cx * cx + cy * cy < roundRadius * roundRadius;
+        }
+        if (onScreen)
         {
             float px = (ndcX * 0.5f + 0.5f) * width;
             float py = (0.5f - ndcY * 0.5f) * height;
             return new RadarSite(RadarPlacement.OnScreen, new Vector2(px, py));
         }
 
-        // Off-screen (out of the frustum OR behind the camera): clamp to the
-        // viewport edge in the object's real screen direction. The direction is
-        // normalised so the dominant axis lands on the inset rect boundary —
-        // the classic square edge-bracket (native clamps the eye-space x/y to
-        // the image rect the same way, WinTrek.cpp:7893-7923).
-        float sx = dirX, sy = dirY;
-        float s = MathF.Max(MathF.Abs(sx), MathF.Abs(sy));
-        if (s < 1e-6f) { sx = 0f; sy = -1f; s = 1f; }   // dead-centre degenerate: pin bottom
-        float nx = sx / s;   // now in [-1,1]
-        float ny = sy / s;
-        float spanW = MathF.Max(width - 2f * inset, 1f);
-        float spanH = MathF.Max(height - 2f * inset, 1f);
-        float ex = (nx * 0.5f + 0.5f) * spanW + inset;
-        float ey = (0.5f - ny * 0.5f) * spanH + inset;
-        return new RadarSite(RadarPlacement.EdgeClamped, new Vector2(ex, ey));
+        // Off-screen. WinTrek.cpp:7883-7906 — ROUND radar: scale the eye-space
+        // (x,y) so it lands on the circle. (Native scales by fScreenSize / |xy|;
+        // a zero lateral direction pins straight down, the same degenerate
+        // fallback native's directionCentre uses.)
+        if (roundRadar)
+        {
+            float len = MathF.Sqrt(eyeX * eyeX + eyeY * eyeY);
+            float dx, dy;
+            if (len < 1e-6f) { dx = 0f; dy = -roundRadius; }
+            else { float f = roundRadius / len; dx = eyeX * f; dy = eyeY * f; }
+            return new RadarSite(RadarPlacement.EdgeClamped,
+                new Vector2(width * 0.5f + dx, height * 0.5f - dy));
+        }
+
+        // WinTrek.cpp:7908-7921 — SQUARE radar: clamp the eye-space (x,y) to the
+        // rect by the SMALLER ray parameter, so the marker lands exactly on the
+        // edge the ray crosses (native's tX/tY/tMin). Not an NDC normalisation:
+        // the lateral components are used raw.
+        float x = eyeX, y = eyeY;
+        if (x == 0f)
+            y = y <= 0f ? -halfH : halfH;                 // :7910-7912
+        else if (y == 0f)
+            x = x <= 0f ? -halfW : halfW;                 // :7913-7915
+        else
+        {
+            float tX = (x > 0f ? halfW : -halfW) / x;     // :7917-7918
+            float tY = (y > 0f ? halfH : -halfH) / y;
+            float tMin = MathF.Min(tX, tY);               // :7919-7921
+            x *= tMin;
+            y *= tMin;
+        }
+        return new RadarSite(RadarPlacement.EdgeClamped,
+            new Vector2(width * 0.5f + x, height * 0.5f - y));   // image y-up → screen y-down
     }
 }
