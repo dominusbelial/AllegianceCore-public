@@ -25,7 +25,8 @@ public static class HudModelAdapter
         HudInventoryPane? inventoryPane = null,
         HudTargetPane? targetPane = null, bool roundRadar = false, float inventorySlide = 0f,
         HudSnapshotBuffers? buffers = null,
-        bool showJoystickIndicator = true)
+        bool showJoystickIndicator = true,
+        int trainingOverlayId = 0)
         => HudModel.Create(frame, new HudContext
         {
             PodReturnInstruction = podReturnInstruction, HitConfirmation = hitConfirmation, Camera = mode, CameraLabel = cameraLabel, Hidden = hidden,
@@ -50,7 +51,8 @@ public static class HudModelAdapter
             Console = console,
             InventoryPane = inventoryPane,
             Contacts = contacts ?? Array.Empty<HudContact>(),
-            InventorySlide = inventorySlide
+            InventorySlide = inventorySlide,
+            TrainingOverlayId = trainingOverlayId,
         }, buffers);
 
     private static HudPoint Point(Vector2 v) => new(v.X, v.Y);

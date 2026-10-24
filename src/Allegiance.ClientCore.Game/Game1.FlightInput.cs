@@ -264,6 +264,18 @@ public sealed partial class Game1
         }
         // TR-2 — pump the active training mission every frame (native TrainingMission::Frame).
         UpdateTraining(gameTime.ElapsedGameTime.TotalSeconds);
+        // P785 — real-window proof hook: ALLEGIANCE_TRAINING_OVERLAY=<id> forces the
+        // training overlay id (TrainingOverlay.Current, native s_trainingOverlay set by
+        // SetHudOverlayAction) so screenshots can show a callout without scripting the
+        // mission to that goal. One-shot at boot; inert when the var is unset.
+        if (!_trainingOverlayProofSeeded
+            && Environment.GetEnvironmentVariable("ALLEGIANCE_TRAINING_OVERLAY") is { Length: > 0 } overlayProof
+            && int.TryParse(overlayProof, out var overlayProofId))
+        {
+            _trainingOverlayProofSeeded = true;
+            TrainingOverlay.Current = overlayProofId;
+            Console.WriteLine($"[training] proof overlay {overlayProofId} forced (ALLEGIANCE_TRAINING_OVERLAY)");
+        }
         _sound?.UpdateAudioFrame((float)gameTime.ElapsedGameTime.TotalSeconds);
         UpdateSoundEvents();
         _flightGc.SetFlying(_state == ClientState.Flying && !_dockedActive
@@ -1154,6 +1166,12 @@ public sealed partial class Game1
     /// </summary>
     private void UpdateFlying(KeyboardState ks, GameTime gameTime)
     {
+        // P785 — the training key gate (WinTrek.cpp:8753-8769): while a training mission
+        // is running the six training keys route to Training::RecordKeyPress first
+        // (pause/clock/finish/skip; a key the mission rejects is swallowed). Runs before
+        // every other handler exactly as native's OnKeyFilter feeds the mission first.
+        UpdateTrainingKeys(ks);
+
         // Chat compose/send/focus (native TK_StartChat, WinTrek.cpp:9441-9446,
         // + UpdateComposedChat, console.cpp:1282-1338): P757 extracted into
         // <see cref="HandleChatCompose"/> (the same production-seam discipline

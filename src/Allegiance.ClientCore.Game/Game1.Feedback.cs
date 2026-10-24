@@ -20,11 +20,6 @@ namespace Allegiance.ClientCore.MonoGame;
 /// </summary>
 public sealed partial class Game1
 {
-    /// <summary>P578 — how long a HUD feedback line stays visible before it
-    /// fades (native <c>fTipTextDuration = Training ? 30.0f : 7.5f</c>,
-    /// console.cpp:913 — the non-training value this client uses).</summary>
-    private const double TipDurationSeconds = Rendering.HudConsoleFormat.CriticalTipDurationSeconds;
-
     /// <summary>P578/HUD-9 — the three ordinary tip slots, newest first,
     /// retained until overwritten (native <c>TipText/TipText1/TipText2</c> are
     /// not cleared by the expiry path, console.cpp:913-931; dialog.mdl:5347-5349).</summary>
@@ -32,9 +27,10 @@ public sealed partial class Game1
 
     /// <summary>P578/HUD-9 — the up-to-four critical tip slots, oldest first
     /// (the renderer draws the newest at the bottom, matching native slot 0),
-    /// each expiring after <see cref="TipDurationSeconds"/> (native
+    /// each expiring after the native lifetime (<see cref="HudConsoleFormat"/>
+    /// <c>CriticalTipLifetime</c>: 7.5 s, or 30 s during training — native
     /// <c>CriticalTipText0..3</c>, console.cpp:726-730, 913-931).</summary>
-    private readonly List<(string Text, double ExpiresAt)> _criticalTips = new();
+    private readonly List<(string Text, double SetAt)> _criticalTips = new();
 
     /// <summary>P578 — the override camera's tracked world point (native
     /// <c>cmExternalOverride</c> tracks a fixed target position,
@@ -131,8 +127,11 @@ public sealed partial class Game1
         }
 
         // Prune expired critical tips (native expires each critical slot after
-        // the duration, console.cpp:913-931). Ordinary tips are retained.
-        _criticalTips.RemoveAll(t => _nowSeconds >= t.ExpiresAt);
+        // fTipTextDuration, evaluated per frame — 7.5 s normally, 30 s during a
+        // training mission, console.cpp:913-931). Ordinary tips are retained.
+        double tipLifetime = Rendering.HudConsoleFormat.CriticalTipLifetime(
+            Allegiance.ClientCore.Training.TrainingController.IsTraining);
+        _criticalTips.RemoveAll(t => _nowSeconds - t.SetAt >= tipLifetime);
 
         // Revert a finished override camera back to the normal chase view.
         UpdateOverrideCameraExpiry();
@@ -150,7 +149,11 @@ public sealed partial class Game1
         text = Rendering.HudFormat.Printable(text);
         if (critical)
         {
-            _criticalTips.Add((text, _nowSeconds + TipDurationSeconds));
+            // Native stamps each slot's set time (m_timeLastCriticalTipSetN) and
+            // evaluates the lifetime per frame (console.cpp:914-931), so a tip pushed
+            // before a training mission ends keeps the 30 s lifetime while training
+            // lasts. The port stores the set time and prunes the same way.
+            _criticalTips.Add((text, _nowSeconds));
             if (_criticalTips.Count > Rendering.HudConsoleFormat.CriticalTipSlots)
                 _criticalTips.RemoveAt(0);
         }

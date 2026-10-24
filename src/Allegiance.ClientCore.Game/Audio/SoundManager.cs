@@ -1098,6 +1098,39 @@ public sealed class SoundManager : IDisposable, IUiSoundSink
         if (IsLoaded) PlayOneShot(_paneSlide, SoundCategory.Interface, 1f);
     }
 
+    /// <summary>
+    /// P785 — a slideshow slide's sound (native <c>Slideshow::NextSlide</c>,
+    /// WinTrek/Slideshow.cpp:105 <c>m_pSoundInstance = GetWindow()-&gt;StartSound(soundID)</c>:
+    /// each slide of the training-screen MDL <c>slides</c> list carries a SoundID, and the
+    /// slide holds until the clip finishes). The port resolves the slide's native stem
+    /// (tm_slide_*, the artwork corpus's training narration clips) first through the
+    /// port's Content pack, then from the installed artwork corpus
+    /// (<c>SoundEffect.FromFile</c>); when neither is installed the clip is a silent
+    /// no-op and the slide waits for a key press, as native does with an unplayable clip.
+    /// Returns the playing instance (finish detection) or null.
+    /// </summary>
+    public Microsoft.Xna.Framework.Audio.SoundEffectInstance? PlaySlideSound(string? stem)
+    {
+        if (!IsLoaded || stem is null) return null;
+        Microsoft.Xna.Framework.Audio.SoundEffect? sound = null;
+        try { sound = _content.Load<Microsoft.Xna.Framework.Audio.SoundEffect>($"Sounds/{stem}"); }
+        catch { /* not in the Content pack — try the artwork corpus */ }
+        if (sound is null)
+        {
+            try
+            {
+                string path = System.IO.Path.Combine(
+                    Allegiance.Core.ExternalPaths.Resolve(Allegiance.Core.ExternalResourceKind.Artwork), stem + ".ogg");
+                if (System.IO.File.Exists(path)) sound = Microsoft.Xna.Framework.Audio.SoundEffect.FromFile(path);
+            }
+            catch { /* artwork corpus not installed */ }
+        }
+        if (sound is null) return null;
+        var instance = sound.CreateInstance();
+        instance.Play();
+        return instance;
+    }
+
     /// <summary>Play the autopilot-disengage voice chime (one-shot). No-op
     /// when audio is not loaded.</summary>
     public void PlayAutopilotDisengage()

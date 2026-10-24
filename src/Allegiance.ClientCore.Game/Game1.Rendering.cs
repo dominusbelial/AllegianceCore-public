@@ -3156,6 +3156,7 @@ public sealed partial class Game1
                 ? $"LOD full:{_lodFullCount} far:{_lodFarCount}" : null,
             hidden: _hideHud || _directorActive || _hudHidden,
             docked: hudDocked, dead: hudDead, commandView: CommandCameraActive, ghost: hudGhost,
+            trainingOverlayId: TrainingOverlay.Current,
             notices: BuildTipNotices(),
             contacts: _drawRadarContacts,
             radarPulse: (MathF.Sin((float)_nowSeconds * 5f) + 1f) * 0.5f, radarMode: _radarMode,
@@ -3340,8 +3341,7 @@ public sealed partial class Game1
             QueuedOrder = queued,
             VoteText = vote,
             OrdinaryTips = _ordinaryTips.Where(t => !string.IsNullOrEmpty(t)).ToArray(),
-            CriticalTips = _criticalTips.Where(t => _nowSeconds < t.ExpiresAt)
-                .Select(t => new HudNotice(t.Text, true, 1)).ToArray(),
+            CriticalTips = _criticalTips.Select(t => new HudNotice(t.Text, true, 1)).ToArray(),
             Lives = lives,
             MissionKills = missionKills,
             Deathmatch = deathmatch,

@@ -26,7 +26,7 @@ public class HelpOverlayTests
     [Fact]
     public void Table_HasAllLogicalGroups()
     {
-        Assert.Equal(18, KeyBindingTable.GroupCount);   // + LOCAL SKIRMISH (SP-5) and TEAM FUNDING (P728)
+        Assert.Equal(19, KeyBindingTable.GroupCount);   // + LOCAL SKIRMISH (SP-5), TEAM FUNDING (P728) and TRAINING (P785)
         Assert.Contains(KeyBindingTable.All, g => g.Title == "LOCAL SKIRMISH");
         Assert.Contains(KeyBindingTable.All, g => g.Title == "MOVEMENT");
         // P445 — the persistent-cruise-throttle keys' own group.

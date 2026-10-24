@@ -1,5 +1,6 @@
 using Allegiance.ClientCore.Training;
 using Allegiance.SinglePlayer;
+using Microsoft.Xna.Framework.Input;
 using static Allegiance.ClientCore.Training.TrainingMissionIds;
 
 namespace Allegiance.ClientCore.MonoGame;
@@ -18,13 +19,55 @@ public sealed partial class Game1
     private TrainingHost? _embeddedHost;
     private string _trainingError = "";
     private double _trainingClock;
+    private int _trainingMissionId;
+
+    /// <summary>P785 — the slideshow currently showing (pre-mission, post-mission or
+    /// the Introduction screen itself). Null when none.</summary>
+    private SlideshowModel? _trainingSlideshow;
+
+    /// <summary>P785 — the current slide's playing clip (native m_pSoundInstance,
+    /// Slideshow.cpp:105): when it finishes the 1 s advance timer arms.</summary>
+    private Microsoft.Xna.Framework.Audio.SoundEffectInstance? _slideSound;
+
+    /// <summary>P785 — the training launch drives side-select/ready-check automatically
+    /// (the embedded-host mission is already Stage=Started; native StartTraining goes
+    /// straight to ScreenIDCombat, WinTrek.cpp:7401-7421).</summary>
+    private bool _trainingAutoJoin;
+    private bool _trainingSideRequested;
+
+    /// <summary>Which dismiss behaviour the active slideshow carries (native's
+    /// TrainingSlideshow vs PostTrainingSlideshow subclasses).</summary>
+    private bool _trainingSlideshowIsPost;
+
+    // P785 — whether a key/click was down last frame (the slideshow advances on the edge).
+    private bool _slideInputHeld;
+
+    /// <summary>P785 — native DoQuitMission skips the post slideshow
+    /// (WinTrek.cpp:3559-3566 SetSkipPostSlideshow → trainingscreen); the port's
+    /// completion path honours the same flag (trainingmission.cpp:110-115).</summary>
+    private bool _trainingSkipPostSlideshow;
+
+    // P785 — edge latches for the six training keys (UpdateTrainingKeys).
+    private bool _pauseTmWasDown, _finishTmWasDown, _skipTmGoalWasDown,
+        _tmClockUpWasDown, _tmClockDownWasDown, _tmClockResetWasDown;
+
+    /// <summary>P785 — the ALLEGIANCE_TRAINING_OVERLAY proof hook ran once.</summary>
+    private bool _trainingOverlayProofSeeded;
 
     /// <summary>Whether a training mission is currently running on this client.</summary>
     private bool TrainingActive => _trainingSession is { Finished: false };
 
-    /// <summary>Begin a native training mission against the embedded host.</summary>
+    /// <summary>Begin a native training mission against the embedded host. TM1
+    /// (Introduction) never starts a mission: native routes it to the tm_1_introduction
+    /// post-slideshow (trainingscreen.cpp:182-185; Training.cpp:85-89 starts no mission
+    /// for it).</summary>
     private void BeginTrainingMission(int missionId)
     {
+        if (missionId == Tm1Introduction)
+        {
+            BeginTrainingSlideshow(TrainingSlides.Introduction, isPost: true, missionId);
+            return;
+        }
         _trainingError = "";
         if (missionId is not (Tm2BasicFlight or Tm3BasicWeaponry or Tm4EnemyEngagement
             or Tm5CommandView or Tm6PracticeArena or Tm8Nanite or Tm10FreeFlight))
@@ -60,6 +103,7 @@ public sealed partial class Game1
         }
         _embeddedHost = started.Host!;
         Diagnostics.CrashLog.SetMode($"training:{variant.GameName}");
+        _embeddedHost.StartBackgroundTicker();
 
         var facilities = new ClientTrainingFacilities
         {
@@ -95,7 +139,9 @@ public sealed partial class Game1
         TrainingController.BeginMission();
         session.Start();
         _trainingSession = session;
-        _trainingClock = 0;
+        _trainingMissionId = missionId;
+        _trainingSkipPostSlideshow = false;
+        _trainingClock = TrainingClock.Advance(0);
 
         // Native marks training as begun so the first-run suggestion stops appearing
         // (Ui.ShowStartupTrainingSuggestion cleared, introscreen.cpp:1055 / trainingscreen.cpp:169).
@@ -108,24 +154,170 @@ public sealed partial class Game1
 
         _returnToIntroOnFailure = true;
         Console.WriteLine($"[training] Mission {missionId} ({variant.GameName}) started on the embedded host");
+
+        // P785 — the real-client launch (native StartTraining, WinTrek.cpp:7401-7421:
+        // StartMission → screen(ScreenIDCombat) → SetupShipAndCamera). The client joins
+        // its own embedded host exactly like a skirmish (loopback connect), so the
+        // lesson runs against the live client: real session, real flight input, real
+        // HUD. The training host's mission is already Stage=Started, so side-select
+        // auto-seats and ready-check releases straight into flight.
+        _trainingAutoJoin = true;
+        _trainingSideRequested = false;
+        _ownReady = true;
+        _disconnectTransitioned = false;
+        _readyConfirmedShip = null;
+        _nextMatchGeneration = _session.World.MissionGeneration;
+        BeginConnect("127.0.0.1", _embeddedHost.Port);
     }
 
-    /// <summary>Per-frame pump of the active training mission (native TrainingMission::Frame).</summary>
+    /// <summary>Per-frame pump of the active training mission (native TrainingMission::Frame).
+    /// The mission clock runs on <see cref="TrainingClock"/> (native's static Time class):
+    /// TK_PauseTM freezes it and the embedded host (zlib/ztime.cpp:15-49), the debug
+    /// shift scales it. On completion native goes to the post-training slideshow
+    /// (trainingmission.cpp:110-115) — or straight back to the training screen when the
+    /// skip flag is set — and unpauses the clock (trainingmission.cpp:123-125).</summary>
     private void UpdateTraining(double dt)
     {
         if (_trainingSession is not { } session) return;
-        _trainingClock += dt;
+        _trainingClock = TrainingClock.Advance(dt);
+        if (_embeddedHost is { } host) host.Paused = TrainingClock.IsPaused;
         if (session.Advance())
         {
             Console.WriteLine("[training] mission complete");
             TrainingController.EndMission();
+            if (TrainingClock.IsPaused) TrainingClock.Continue();   // trainingmission.cpp:123-125
             _embeddedHost?.Dispose();
             _embeddedHost = null;
             _trainingSession = null;
             _trainingError = "";
-            _introView = IntroView.SinglePlayer;   // back to the chooser
-            _state = ClientState.Intro;
+            // Leave the embedded-host match like any session exit (the skirmish path
+            // disposes the session; Connect() re-establishes on the next launch).
+            _session.Dispose();
+            _trainingAutoJoin = false;
+            if (_trainingSkipPostSlideshow)
+            {
+                ReturnToTrainingScreen();
+            }
+            else
+            {
+                var name = TrainingScreenModel.NameOf(_trainingMissionId);
+                BeginTrainingSlideshow(TrainingSlides.PostMission(_trainingMissionId, name),
+                    isPost: true, _trainingMissionId);
+            }
         }
+    }
+
+    /// <summary>P785 — open a training slideshow (native CreateTrainingSlideshow /
+    /// CreatePostTrainingSlideshow, WinTrek.cpp:2473-2510). <paramref name="isPost"/>
+    /// selects the dismiss behaviour: post slideshows return to the training screen
+    /// (PostTrainingSlideshow::Dismiss, PostTrainingSlideshow.cpp:25-29); the pre
+    /// slideshow shows the "Training simulation initiated..." box and starts the
+    /// mission (TrainingSlideshow::Dismiss, TrainingSlideshow.cpp:30-50).</summary>
+    private void BeginTrainingSlideshow(SlideshowModel slideshow, bool isPost, int missionId)
+    {
+        _trainingSlideshow = slideshow;
+        _trainingSlideshowIsPost = isPost;
+        _trainingMissionId = missionId;
+        slideshow.Start();
+        _slideInputHeld = true;
+        _slideSound = _sound?.PlaySlideSound(slideshow.Current?.SoundStem);
+        _introView = IntroView.TrainingSlideshow;
+        _state = ClientState.Intro;
+        Console.WriteLine($"[training] slideshow {(isPost ? "post" : "pre")} for mission {missionId} ({slideshow.Count} slides)");
+    }
+
+    /// <summary>P785 — native Slideshow::NextSlide starts each slide's sound
+    /// (Slideshow.cpp:105, SIM-0272) — see <see cref="Audio.SoundManager.PlaySlideSound"/>.
+    /// </summary>
+    /// (Slideshow.cpp:123-146), any key advances immediately (:147-150,179-183), and
+    /// dismissal routes per the subclass (start the mission / back to the training
+    /// screen).</summary>
+    private void UpdateTrainingSlideshow(KeyboardState ks)
+    {
+        if (_trainingSlideshow is not { } slide) return;
+        // The current clip finished → arm the 1 s advance timer (Slideshow.cpp:127-136).
+        if (_slideSound is { State: Microsoft.Xna.Framework.Audio.SoundState.Stopped })
+        {
+            _slideSound.Dispose();
+            _slideSound = null;
+            slide.OnSoundFinished();
+        }
+        slide.Tick(1.0 / 60.0);   // timer path
+        bool advanced = false;
+        // Native advances on a key-DOWN event or a click (Slideshow.cpp:147-150,
+        // 179-183), not while a key is held: latch the edge, and start latched so the
+        // Enter that opened the slideshow does not skip slide 1.
+        bool anyDown = ks.GetPressedKeyCount() > 0
+            || Microsoft.Xna.Framework.Input.Mouse.GetState().LeftButton == ButtonState.Pressed;
+        bool anyKey = anyDown && !_slideInputHeld;
+        _slideInputHeld = anyDown;
+        if (anyKey && !slide.Dismissed)
+        {
+            slide.OnKey();
+            advanced = true;
+        }
+        if (advanced && !slide.Dismissed)
+        {
+            _slideSound?.Stop();
+            _slideSound?.Dispose();
+            _slideSound = _sound?.PlaySlideSound(slide.Current?.SoundStem);
+        }
+        if (slide.Dismissed)
+        {
+            _slideSound?.Stop();
+            _slideSound?.Dispose();
+            _slideSound = null;
+            bool wasPost = _trainingSlideshowIsPost;
+            int missionId = _trainingMissionId;
+            _trainingSlideshow = null;
+            if (wasPost)
+            {
+                ReturnToTrainingScreen();
+            }
+            else
+            {
+                // TrainingSlideshow::Dismiss (TrainingSlideshow.cpp:30-50): the
+                // "Training simulation initiated..." box, then the mission — which
+                // connects the client to the embedded host (native screen(ScreenIDCombat)).
+                Console.WriteLine("[training] Training simulation initiated...");
+                BeginTrainingMission(missionId);
+                if (_trainingError != "") _introView = IntroView.Training;   // asset fault → back to the list
+            }
+        }
+    }
+
+    /// <summary>Native OnButtonBack destination (trainingscreen.cpp:160-164) and the
+    /// post-slideshow Dismiss destination (PostTrainingSlideshow.cpp:24): the training
+    /// screen — the port's IntroView.Training (ScreenIDTrainScreen).</summary>
+    private void ReturnToTrainingScreen()
+    {
+        _introView = IntroView.Training;
+        _state = ClientState.Intro;
+    }
+
+    /// <summary>P785 — the six training keys, routed from the flight input exactly as
+    /// native's key filter does (WinTrek.cpp:8753-8769): while a mission is running
+    /// every one of these presses goes to Training::RecordKeyPress first; a key the
+    /// mission rejects is swallowed. Native binds CommandPauseTM to Ctrl+Pause,
+    /// CommandFinishTM to End, the clock keys to Ctrl+F10/F11/F12 and CommandSkipTMGoal
+    /// to numpad-decimal (defaultinputmap.mdl keyCommandMap).</summary>
+    private void UpdateTrainingKeys(KeyboardState ks)
+    {
+        if (!Allegiance.ClientCore.Training.TrainingController.IsTraining) return;
+        RouteTrainingKey(ks, "PauseTM", KeyPauseTm, ref _pauseTmWasDown);
+        RouteTrainingKey(ks, "FinishTM", KeyCommandFinishTm, ref _finishTmWasDown);
+        RouteTrainingKey(ks, "SkipTMGoal", KeySkipTmGoal, ref _skipTmGoalWasDown);
+        RouteTrainingKey(ks, "IncreaseTMClockSpeed", KeyIncreaseTMClockSpeed, ref _tmClockUpWasDown);
+        RouteTrainingKey(ks, "DecreaseTMClockSpeed", KeyDecreaseTMClockSpeed, ref _tmClockDownWasDown);
+        RouteTrainingKey(ks, "ResetTMClockSpeed", KeyResetTMClockSpeed, ref _tmClockResetWasDown);
+    }
+
+    private void RouteTrainingKey(KeyboardState ks, string action, int trekKey, ref bool wasDown)
+    {
+        bool down = ActionDown(ks, action);
+        if (down && !wasDown)
+            RecordTrainingKey(trekKey);   // consumed/rejected inside the mission framework
+        wasDown = down;
     }
 
     /// <summary>Route a real key press from the flight input into the active mission (RecordKeyPress,

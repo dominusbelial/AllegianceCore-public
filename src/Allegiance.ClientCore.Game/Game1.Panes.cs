@@ -1364,6 +1364,21 @@ public sealed partial class Game1
         // P306 — headless capture auto-seats on side 0 (where all the stress
         // bots live) instead of waiting for a human to pick a side, so the video
         // starts promptly. (The server's auto-seat is opt-in/off by default, P763.)
+        // P785 — the training launch auto-seats the same way: native StartTraining
+        // goes straight to ScreenIDCombat (WinTrek.cpp:7401-7421); the embedded-host
+        // mission is already Stage=Started, so once seated ready-check releases
+        // immediately into flight.
+        if (_trainingAutoJoin)
+        {
+            if (_session.World.MyShipId is not null) { _state = ClientState.ReadyCheck; return; }
+            if (!_trainingSideRequested && _session.World.SideRoster?.Sides.Length > 0)
+            {
+                _trainingSideRequested = true;
+                _session.SendPositionReq(0);
+                Console.WriteLine("[training] auto side-select -> side 0");
+            }
+            return;
+        }
         if (_skirmish is not null)
         {
             if (_session.World.MySideId == _skirmish.PlayerSide) { _state = ClientState.ReadyCheck; return; }

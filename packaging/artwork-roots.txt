@@ -1255,6 +1255,7 @@ thrustgauge2bmp.mdl
 thrustspinebmp.mdl
 timebmp.mdl
 tm_0_blank.ogg
+tm_1_introduction.mdl
 tm_2_01.ogg
 tm_2_02.ogg
 tm_2_03.ogg

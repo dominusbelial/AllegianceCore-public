@@ -164,19 +164,19 @@ public class TR2TrainingTests
         var screen = new TrainingScreenModel();
         // The native training screen lists missions 1,2,3,4,5,6,8 (mission 7 removed) — trainingscreen.cpp:50-58.
         Assert.Equal(7, screen.Count);
-        Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm1Introduction && !m.Playable);
+        // P785 — TM1 is playable like native: OnButtonTrain routes it to the
+        // tm_1_introduction slideshow (trainingscreen.cpp:182-185; Training.cpp:85-89
+        // starts no mission for it), so the whole listed set is enabled.
+        Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm1Introduction && m.Playable);
         Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm2BasicFlight && m.Playable);
-        // TR-3 enables Missions 3 and 4; TR-4 enables Missions 5 (Command View) and 6 (Practice Arena);
-        // TR-5 enables Mission 8 (Nanite). Only Introduction stays coming-soon — the full native list
-        // (except the slideshow-only Mission 1) is playable.
+        // TR-3 enabled Missions 3 and 4; TR-4 enabled Missions 5 (Command View) and 6
+        // (Practice Arena); TR-5 enabled Mission 8 (Nanite); P785 enables Introduction.
         Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm3BasicWeaponry && m.Playable);
         Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm4EnemyEngagement && m.Playable);
         Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm5CommandView && m.Playable);
         Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm6PracticeArena && m.Playable);
         Assert.Contains(TrainingScreenModel.Missions, m => m.MissionId == Tm8Nanite && m.Playable);
-        Assert.All(TrainingScreenModel.Missions.Where(
-            m => m.MissionId is not (Tm2BasicFlight or Tm3BasicWeaponry or Tm4EnemyEngagement or Tm5CommandView or Tm6PracticeArena or Tm8Nanite)),
-            m => Assert.False(m.Playable));
+        Assert.All(TrainingScreenModel.Missions, m => Assert.True(m.Playable));
 
         // The playable missions are startable; a coming-soon mission is not.
         screen.Index = Array.FindIndex(TrainingScreenModel.Missions, m => m.MissionId == Tm2BasicFlight);
@@ -191,8 +191,10 @@ public class TR2TrainingTests
         Assert.True(screen.CanStart);
         screen.Index = Array.FindIndex(TrainingScreenModel.Missions, m => m.MissionId == Tm8Nanite);
         Assert.True(screen.CanStart);
+        // P785 — the Introduction starts its slideshow (StartTrainingMission → the
+        // tm_1_introduction post-slideshow; no host boot for it).
         screen.Index = Array.FindIndex(TrainingScreenModel.Missions, m => m.MissionId == Tm1Introduction);
-        Assert.False(screen.CanStart);
+        Assert.True(screen.CanStart);
     }
 
     [Fact]

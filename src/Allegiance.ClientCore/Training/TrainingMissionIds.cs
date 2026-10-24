@@ -19,6 +19,11 @@ public static class TrainingMissionIds
     // TrekKey values the training missions react to (src/Igc/igc.h:261-436)
     public const int KeyFireBooster = 50; // TK_FireBooster — the SPACEBAR (igc.h:273)
     public const int KeyPauseTm = 157;              // TK_PauseTM (igc.h:375) — pause/resume training
+    public const int KeySkipTmGoal = 200;           // TK_SkipTMGoal (igc.h:424) — skip a goal (debug)
+    public const int KeyIncreaseTMClockSpeed = 201; // TK_IncreaseTMClockSpeed (igc.h:425) — debug
+    public const int KeyDecreaseTMClockSpeed = 202; // TK_DecreaseTMClockSpeed (igc.h:426) — debug
+    public const int KeyResetTMClockSpeed = 203;    // TK_ResetTMClockSpeed (igc.h:427) — debug
+    public const int KeyCommandFinishTm = 207;      // TK_CommandFinishTM (igc.h:433) — delivered to key conditions
     public const int KeyViewCommand = 38;           // TK_ViewCommand (igc.h:261)
     public const int KeyRejectCommand = 42;         // TK_RejectCommand (igc.h:265)
     public const int KeyToggleAutoPilot = 43;       // TK_ToggleAutoPilot (igc.h:266)

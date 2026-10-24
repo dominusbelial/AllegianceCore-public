@@ -313,6 +313,13 @@ public class HudRenderer
             // drawn after the target markers so labels yield to those boxes.
             DrawRadarLabels(model, viewport);
 
+            // P785 — the training overlay callouts (native RenderTrainingOverlay,
+            // indicator.cpp:461-735): a red angular two-line pointer with a hilite dot
+            // and description text naming the HUD element the active lesson is
+            // describing. Inherited by ModernHudRenderer, so both HUD styles draw it.
+            if (model.FlightVisible && context.TrainingOverlayId is > 0)
+                DrawTrainingCallout(context.TrainingOverlayId, w, h);
+
             if (lastBaseObjectives is { } objectives)
                 for (int i = 0; i < objectives.Count; i++)
                 {
@@ -1854,6 +1861,40 @@ public class HudRenderer
         // Value in the teal accent; a dim "MONEY" caption above it.
         DrawText(moneyFont, "MONEY", new Vector2(x, y), TextDim);
         DrawText(moneyFont, val, new Vector2(x, y + vsz.Y + 2f), Accent);
+    }
+
+    /// <summary>
+    /// P785 — the training overlay callout (native <c>RenderTrainingOverlay</c>,
+    /// WinTrek/indicator.cpp:461-735): two red lines in an angular formation from the
+    /// anchor <c>pointA</c> via <c>pointB</c> to <c>pointC</c> (the text-width
+    /// extension of the second leg, indicator.cpp:676-690), the hilite dot at the
+    /// anchor, and the description text hung below or above the second point depending
+    /// on the leg direction (indicator.cpp:700-722). Roll/Fuel/Throttle draw a second
+    /// description line above (indicator.cpp:723-733). Geometry comes from the shared
+    /// <see cref="HudTrainingCallout"/> table; the port draws the same red text
+    /// (Color(1,0,0,0.9), indicator.cpp:475) in both HUD styles.
+    /// </summary>
+    protected virtual void DrawTrainingCallout(int overlayId, float w, float h)
+    {
+        if (HudTrainingCallout.For(overlayId) is not { } c) return;
+        float cx = w / 2f, cy = h / 2f;
+        var a = new Vector2(cx + c.AnchorX, cy + c.AnchorY);
+        var b = new Vector2(a.X + c.SecondX, a.Y + c.SecondY);
+        var color = new Color(1f, 0f, 0f, 0.9f);   // indicator.cpp:475 colorLine
+        var font = NativeFontAt(NativeFont.SmallFont);
+        var size = font.MeasureString(c.Description);
+        var pointC = new Vector2(b.X + (c.SecondX >= 0 ? size.X : -size.X), b.Y);
+        DrawLine(a, b, 2f, color);                 // indicator.cpp:721 SetLineWidth(2.0f)
+        DrawLine(b, pointC, 2f, color);
+        // Text placement (indicator.cpp:700-719): left/right edge follows the leg
+        // direction; the line hangs below a downward leg, above an upward one.
+        float textX = c.SecondX >= 0 ? b.X : pointC.X;
+        float textY = c.SecondY >= 0 ? b.Y + 2f : b.Y - size.Y - 2f;
+        DrawText(font, c.Description, new Vector2(textX, textY), color);
+        if (c.Description2 is { } second)
+            DrawText(font, second, new Vector2(textX, textY - size.Y - 4f), color);
+        // The hilite dot at the anchor (m_psurfaceTrainingOverlay, indicator.cpp:735).
+        FillRect(a.X - 3f, a.Y - 3f, 6f, 6f, color);
     }
 
     /// <summary>

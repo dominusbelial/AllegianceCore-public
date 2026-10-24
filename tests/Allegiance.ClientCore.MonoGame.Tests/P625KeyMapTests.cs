@@ -241,7 +241,7 @@ public class P625KeyMapTests
         // The established help groups (native command categories plus the
         // P625b additions for panes/menus, free-cam/spectator and system, and
         // the P626 additions for inventory/cargo and vote/command).
-        Assert.Equal(18, titles.Count);                  // + LOCAL SKIRMISH (SP-5), TEAM FUNDING (P728)
+        Assert.Equal(19, titles.Count);                  // + LOCAL SKIRMISH (SP-5), TEAM FUNDING (P728), TRAINING (P785)
         Assert.Contains("LOCAL SKIRMISH", titles);
         Assert.Contains("TEAM FUNDING", titles);
         Assert.Contains("MOVEMENT", titles);
@@ -297,10 +297,13 @@ public class P625KeyMapTests
     [Fact]
     public void FKeyFix_NoBindingSharesF5OrF11ExceptTheirCamera()
     {
-        // Across the WHOLE catalogue, F5 and F11 may only be the fly-by and
+        // Across the WHOLE catalogue, BARE F5 and F11 may only be the fly-by and
         // station cameras respectively — the "native wins the F-keys" invariant.
+        // P785: native itself binds the training clock keys to Ctrl+F10/F11/F12
+        // (defaultinputmap.mdl), so modified F-chords stay outside the invariant.
         foreach (var d in InputActionCatalog.Definitions)
         {
+            if (d.Default.Modifiers != InputModifiers.None) continue;
             if (d.Default.Key == Keys.F5)
                 Assert.Equal("ViewFlyby", d.Name);
             if (d.Default.Key == Keys.F11)

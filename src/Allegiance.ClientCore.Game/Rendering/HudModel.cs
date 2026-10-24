@@ -218,6 +218,13 @@ public sealed record HudContext
     /// hull/catalogue); the renderers then draw nothing rather than inventing
     /// rows.</summary>
     public HudInventoryPane? InventoryPane { get; init; }
+
+    /// <summary>P785 — the active training overlay id (<c>SetHudOverlayAction</c> →
+    /// <c>TrainingOverlay.Current</c>; native <c>s_trainingOverlay</c>,
+    /// indicator.cpp:461 <c>RenderTrainingOverlay</c>). 0 = none (native's
+    /// NoTrainingOverlay returns immediately, indicator.cpp:486-488). Both HUD styles
+    /// render it through the shared <see cref="HudTrainingCallout"/> table.</summary>
+    public int TrainingOverlayId { get; init; }
 }
 
 /// <summary>A renderer-independent snapshot of one HUD frame. HudFrame is the

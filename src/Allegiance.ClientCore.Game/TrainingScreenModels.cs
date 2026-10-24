@@ -33,10 +33,12 @@ public sealed class SinglePlayerChooserModel
 /// (and their descriptive art) as <c>missionNumberN</c> bitmaps switched on the selected
 /// mission (trainingscreen.mdl <c>missionInfoImage = SwitchImage(missionNumber, ...)</c>),
 /// with one button per mission (trainingscreen.cpp:50-58). The port renders the same
-/// list as text and marks only the slideshow-only Introduction mission as disabled
-/// "coming soon" — every playable native mission (2,3,4,5,6,8) is enabled across TR-2..TR-5.
-/// Free Flight (mission 10) is deliberately absent from the chooser: native has no button
-/// for it (it launches only via the bStartTraining debug flag, trainingscreen.cpp:105-108).
+/// list as text. P785 — the Introduction entry is playable like native: the Train
+/// button routes TM1 to the tm_1_introduction slideshow (trainingscreen.cpp:182-185;
+/// Training.cpp:85-89 starts no mission for it), so every listed mission (2,3,4,5,6,8)
+/// plus TM1 is enabled. Free Flight (mission 10) is deliberately absent from the
+/// chooser: native has no button for it (it launches only via the bStartTraining debug
+/// flag, trainingscreen.cpp:105-108).
 /// </summary>
 public sealed class TrainingScreenModel
 {
@@ -51,7 +53,7 @@ public sealed class TrainingScreenModel
     /// </summary>
     public static readonly TrainingEntry[] Missions =
     {
-        new(Tm1Introduction, "Introduction", "How to fly, shoot and command your wingmen.", Playable: false),
+        new(Tm1Introduction, "Introduction", "How to fly, shoot and command your wingmen.", Playable: true),
         new(Tm2BasicFlight, "Basic Flight", "Radar, turning, throttle, gauges, booster and autopilot home.", Playable: true),
         new(Tm3BasicWeaponry, "Basic Weaponry", "Weapon mounts, ammo, energy and firing techniques.", Playable: true),
         new(Tm4EnemyEngagement, "Enemy Engagement", "Engage and destroy hostile craft in combat.", Playable: true),
@@ -77,6 +79,12 @@ public sealed class TrainingScreenModel
         return rows;
     }
 
-    /// <summary>The selected mission is playable iff it is the Basic Flight entry.</summary>
+    /// <summary>The selected mission is playable (P785: every listed mission,
+    /// including the slideshow-only Introduction).</summary>
     public bool CanStart => Selected.Playable;
+
+    /// <summary>P785 — display name of a mission id (the post-slideshow title);
+    /// unknown ids fall back to the number (native's missionNumber bitmap).</summary>
+    public static string NameOf(int missionId) =>
+        System.Array.Find(Missions, m => m.MissionId == missionId) is { } e ? e.Name : $"Mission {missionId}";
 }

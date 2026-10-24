@@ -55,8 +55,8 @@ public sealed record HudConsoleText
 
     /// <summary>Up to four critical tip slots, oldest first (the renderer draws
     /// the newest at the bottom, matching native slot 0), each expiring after
-    /// <see cref="CriticalTipDurationSeconds"/> (native <c>fTipTextDuration</c>,
-    /// <c>console.cpp:913</c>; 30 s during training, not surfaced by this port).
+    /// <see cref="HudConsoleFormat.CriticalTipLifetime"/> (native
+    /// <c>fTipTextDuration</c>, console.cpp:913; 30 s during training).
     /// <see cref="HudNotice.Opacity"/> is 1 while active (native has no fade).</summary>
     public IReadOnlyList<HudNotice> CriticalTips { get; init; } = Array.Empty<HudNotice>();
 
@@ -104,8 +104,15 @@ public static class HudConsoleFormat
         missionLives - missionDeaths;
 
     /// <summary>Native critical-tip lifetime for non-training missions
-    /// (<c>fTipTextDuration = Training ? 30.0f : 7.5f</c>, <c>console.cpp:913</c>).</summary>
+    /// (<c>fTipTextDuration = Training ? 30.0f : 7.5f</c>, console.cpp:913).
+    /// Kept for callers that only need the non-training value.</summary>
     public const double CriticalTipDurationSeconds = 7.5;
+
+    /// <summary>P785 — the native critical-tip lifetime: 30 s during a training
+    /// mission, 7.5 s otherwise (<c>fTipTextDuration = Training::IsTraining()
+    /// ? 30.0f : 7.5f</c>, console.cpp:913 — the port gates on
+    /// <c>TrainingController.IsTraining</c>, the g_pMission analogue).</summary>
+    public static double CriticalTipLifetime(bool training) => training ? 30.0 : CriticalTipDurationSeconds;
 
     public const int OrdinaryTipSlots = 3;   // dialog.mdl:5347-5349
     public const int CriticalTipSlots = 4;   // console.cpp:727-730

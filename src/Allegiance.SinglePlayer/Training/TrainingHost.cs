@@ -250,7 +250,10 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         try
         {
             while (!_stop.IsCancellationRequested)
+            {
+                if (Paused) { Thread.Sleep(10); continue; }
                 lock (_simGate) _server.Tick();
+            }
         }
         catch (Exception)
         {
@@ -258,9 +261,19 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
         }
     }
 
+    /// <summary>
+    /// P785 — TK_PauseTM: native's pause freezes the whole in-process clock
+    /// (<c>Time::Pause</c>, ztime.cpp:15-25; trainingmission.cpp:347-358), so the
+    /// training universe stops ticking while the mission waits. The port freezes the
+    /// embedded host's sim the same way (the mission clock freeze is handled by
+    /// <see cref="Allegiance.ClientCore.Training.TrainingClock"/>).
+    /// </summary>
+    public volatile bool Paused;
+
     /// <summary>Manually advance the embedded sim once (deterministic headless driving).</summary>
     public void Tick()
     {
+        if (Paused) return;
         lock (_simGate) _server.Tick();
     }
 
@@ -274,6 +287,7 @@ public sealed class TrainingHost : ITrainingHost, IDisposable
     /// </summary>
     public void Step()
     {
+        if (Paused) return;
         lock (_simGate) _server.Tick();
         AdvanceAutopilot();
     }

@@ -2206,6 +2206,7 @@ thrustgauge2bmp.mdl
 thrustspinebmp.mdl
 timebmp.mdl
 tm_0_blank.ogg
+tm_1_introduction.mdl
 tm_2_01.ogg
 tm_2_02.ogg
 tm_2_03.ogg
@@ -2402,6 +2403,8 @@ tm_8_18.ogg
 tm_8_19.ogg
 tm_8_20.ogg
 tm_8_21.ogg
+tm_helpbmp.mdl
+tm_loadout_backgroundbmp.mdl
 tm_slide_1_01.ogg
 tm_slide_1_02.ogg
 tm_slide_1_03.ogg
@@ -2483,6 +2486,9 @@ tm_slide_8_post_02.ogg
 tm_slide_8_post_03.ogg
 tm_slide_8_post_04.ogg
 tm_slide_8_post_05.ogg
+tm_slide_backgroundbmp.mdl
+tm_slide_circle_overlaybmp.mdl
+tm_teleportbmp.mdl
 training_1.igc
 training_3.igc
 training_5.igc

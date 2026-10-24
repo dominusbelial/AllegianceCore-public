@@ -108,11 +108,47 @@ public abstract class TrainingMission
     public bool RecordKeyPress(int key)
     {
         // trainingmission.cpp:342-413
-        if (key == KeyPauseTm) // TK_PauseTM — pause/resume the training clock. In TR-2 the
-            // embedded-host pause is the host's concern; the framework returns true (consumed)
-            // without routing to a key condition, exactly as native (no key-condition iteration).
+        if (key == KeyPauseTm)
+        {
+            // TK_PauseTM (trainingmission.cpp:347-358): pause/resume the training game
+            // clock. Native toggles Time::Pause()/Time::Continue() (ztime.cpp:15-49) and
+            // returns without iterating the key conditions — no mission key ever sees it.
+            if (TrainingClock.IsPaused)
+                TrainingClock.Continue();
+            else
+                TrainingClock.Pause();
             return true;
+        }
 
+        if (key is KeySkipTmGoal or KeyIncreaseTMClockSpeed or KeyDecreaseTMClockSpeed or KeyResetTMClockSpeed)
+        {
+            // trainingmission.cpp:359-384 — these four handlers are compiled only under
+            // #ifdef _DEBUG_TRAINING, a define that appears in NO project file, so in
+            // every shipped build they fall through to the default branch (key
+            // conditions; inert for every real mission). The port reproduces both
+            // halves: shipping mode forwards them like any other key; debug mode runs
+            // the native debug bodies (skip-goal is native "XXX NYI", an empty case).
+            if (TrainingClock.DebugTrainingKeys)
+            {
+                switch (key)
+                {
+                    case KeySkipTmGoal:
+                        // native "XXX NYI" (trainingmission.cpp:361-364)
+                        break;
+                    case KeyIncreaseTMClockSpeed:
+                        TrainingClock.SetShift(TrainingClock.GetShift() + 1); // ztime.cpp:58-67 clamp ±3
+                        break;
+                    case KeyDecreaseTMClockSpeed:
+                        TrainingClock.SetShift(TrainingClock.GetShift() - 1);
+                        break;
+                    case KeyResetTMClockSpeed:
+                        TrainingClock.SetShift(0);
+                        break;
+                }
+                return true; // handled in the switch — never reaches the key conditions
+            }
+            // shipping behaviour: fall through to the key-condition branch below
+        }
         // "XXX hack to disable some keys in training" (trainingmission.cpp:388-396): these are
         // swallowed outright except in Free Flight (mission 10).
         bool hardDisabled = key is KeyConModeInvest or KeyTargetSelf or KeySuicide
@@ -127,6 +163,10 @@ public abstract class TrainingMission
         if (commandViewKey && !CommandViewEnabled)
             return false;
 
+        // default branch (trainingmission.cpp:402-410): every remaining key — including
+        // TK_CommandFinishTM (207), which has no case of its own — is delivered to the
+        // mission's key conditions (GetKeyCondition::KeyPressed, GetKeyCondition.cpp:55-60
+        // via the site key queue the port's GetKeyCondition polls).
         Site.RecordKeyPress(key);
         return true;
     }

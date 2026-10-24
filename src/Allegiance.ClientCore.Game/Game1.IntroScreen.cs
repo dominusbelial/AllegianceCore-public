@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Allegiance.ClientCore.MonoGame.Discovery;
 using Allegiance.ClientCore.MonoGame.Rendering;
+using static Allegiance.ClientCore.Training.TrainingMissionIds;
 using XnaKeys = Microsoft.Xna.Framework.Input.Keys;
 
 namespace Allegiance.ClientCore.MonoGame;
@@ -22,8 +23,11 @@ public sealed partial class Game1
     /// screen and its popups  -  FindServerPopup/CreditsPopup/Options; the port
     /// models each as a view of the same screen). TR-2 splits Single Player into a
     /// Training | Skirmish chooser (native's big single-player button trains,
-    /// introscreen.cpp:1221/:1558) plus a first-run training-suggestion dialog.</summary>
-    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSuggest, Credits, Benchmark, BenchmarkOffer, Settings, Help }
+    /// introscreen.cpp:1221/:1558) plus a first-run training-suggestion dialog.
+    /// P785 adds the training slideshow screens (native ScreenIDTrainSlideshow /
+    /// ScreenIDPostTrainSlideshow, Treki.h:31-32 — the port uses one view whose
+    /// dismiss behaviour follows the slideshow kind).</summary>
+    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSlideshow, TrainingSuggest, Credits, Benchmark, BenchmarkOffer, Settings, Help }
 
     private IntroView _introView = IntroView.Main;
     private int _introIndex;
@@ -250,6 +254,9 @@ public sealed partial class Game1
             case IntroView.Training:      // TR-2 — the native training mission list
                 UpdateTrainingScreen(ks, up, down, enter, esc);
                 break;
+            case IntroView.TrainingSlideshow: // P785 — native ScreenIDTrainSlideshow/PostTrainSlideshow
+                UpdateTrainingSlideshow(ks);
+                break;
             case IntroView.TrainingSuggest: // TR-2 — the one-shot first-run suggestion dialog
                 UpdateTrainingSuggest(ks, enter, esc);
                 break;
@@ -365,7 +372,7 @@ public sealed partial class Game1
         if (esc && !_iEsc) { _introView = IntroView.Main; _introIndex = 0; }
     }
 
-    // ── TR-2 — the training mission list (Basic Flight playable) ───────────
+    // ── TR-2 — the training mission list (every mission playable; P785 adds TM1) ──
     private void UpdateTrainingScreen(KeyboardState ks, bool up, bool down, bool enter, bool esc)
     {
         if (up && !_iUp) _trainingScreen.Move(-1);
@@ -375,18 +382,35 @@ public sealed partial class Game1
             if (_trainingScreen.CanStart)
                 StartTrainingMission(_trainingScreen.Selected.MissionId);
             else
-                Console.WriteLine($"[training] mission {_trainingScreen.Selected.MissionId} locked in TR-2 (coming soon)");
+                Console.WriteLine($"[training] mission {_trainingScreen.Selected.MissionId} locked (coming soon)");
         }
-        if (esc && !_iEsc) { _introView = IntroView.SinglePlayer; }
+        if (esc && !_iEsc)
+        {
+            // P785 — native OnButtonBack (trainingscreen.cpp:160-164): the back button
+            // goes to ScreenIDIntroScreen (the main menu), NOT the chooser.
+            _introView = IntroView.Main;
+            _introIndex = 0;
+        }
     }
 
     /// <summary>
     /// TR-2 — begin a native training mission on the embedded single-player host
-    /// (training host mode, P727 + TR-1). See <see cref="BeginTrainingMission"/>.
+    /// (training host mode, P727 + TR-1). P785: missions 2-8 first show the native
+    /// pre-mission slideshow (trainingscreen.cpp:187-198 → ScreenIDTrainSlideshow; its
+    /// Dismiss starts the mission, TrainingSlideshow.cpp:30-50); TM1 is the Introduction
+    /// slideshow; Free Flight (10) skips it (trainingscreen.cpp:198-206).
     /// </summary>
     private void StartTrainingMission(int missionId)
     {
-        BeginTrainingMission(missionId);
+        if (missionId == Tm1Introduction)
+            BeginTrainingMission(missionId);   // routes to the tm_1_introduction (post) slideshow
+        else if (missionId == Tm10FreeFlight)
+            BeginTrainingMission(missionId);   // native skips the slideshow for Free Flight
+        else
+        {
+            var name = TrainingScreenModel.NameOf(missionId);
+            BeginTrainingSlideshow(TrainingSlides.PreMission(missionId, name), isPost: false, missionId);
+        }
     }
 
     // ── TR-2 — the one-shot first-run training suggestion dialog ───────────
@@ -594,6 +618,7 @@ public sealed partial class Game1
                 case IntroView.SinglePlayer: DrawIntroChooser(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.SkirmishSetup: DrawIntroSkirmishSetup(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.Training: DrawIntroTraining(w, h, titleCol, dimCol, textCol); break;
+                case IntroView.TrainingSlideshow: DrawIntroSlideshow(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.TrainingSuggest: DrawIntroTrainingSuggest(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.Credits: DrawIntroCredits(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.Help: DrawIntroHelp(w, h, titleCol, dimCol, textCol); break;
@@ -779,6 +804,54 @@ public sealed partial class Game1
         var fsz = _hudSmall.MeasureString("UP/DOWN select   ENTER start   ESC back");
         _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   ENTER start   ESC back",
             new Vector2((w - fsz.X) / 2f, layout.FooterY), dimCol);
+    }
+
+    // ── P785 — the training slideshow (native Slideshow/TrainingSlideshow/PostTrainingSlideshow).
+    // Native fills the screen with each slide's full-screen image; the port renders the
+    // slide's native narration text wrapped (visual parity — no tm_* slide art ships in
+    // the Content pack).
+    private void DrawIntroSlideshow(float w, float h, Color titleCol, Color dimCol, Color textCol)
+    {
+        var slide = _trainingSlideshow?.Current;
+        if (slide is { } s)
+        {
+            float textWidth = MathF.Min(w * 0.8f, 900f);
+            var lines = WrapText(s.Caption.Replace("\n", " "), textWidth);
+            var tsz = _hudSmall.MeasureString(lines.Count > 0 ? lines[0] : "");
+            float top = (h - lines.Count * (tsz.Y + 6f)) / 2f;
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var size = _hudSmall.MeasureString(lines[i]);
+                _spriteBatch.DrawString(_hudSmall, lines[i], new Vector2((w - size.X) / 2f, top + i * (tsz.Y + 6f)), titleCol);
+            }
+        }
+        var hint = $"{_trainingSlideshow?.Title}   {( (_trainingSlideshow?.Index ?? 0) + 1)}/{_trainingSlideshow?.Count ?? 0}   any key: next";
+        var hsz = _hudSmall.MeasureString(hint);
+        _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - hsz.X) / 2f, h * 0.92f), dimCol);
+    }
+
+    /// <summary>Greedy word wrap to the pixel width (the intro slideshow's caption
+    /// stand-in; native wraps via StringImage(JustifyLeft, 500, …), tm_1_introduction.mdl).</summary>
+    private List<string> WrapText(string text, float maxWidth)
+    {
+        var lines = new List<string>();
+        foreach (var paragraph in text.Split('\n'))
+        {
+            var words = paragraph.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var current = "";
+            foreach (var word in words)
+            {
+                var candidate = current.Length == 0 ? word : current + " " + word;
+                if (_hudSmall.MeasureString(candidate).X > maxWidth && current.Length > 0)
+                {
+                    lines.Add(current);
+                    current = word;
+                }
+                else current = candidate;
+            }
+            if (current.Length > 0 || words.Length == 0) lines.Add(current);
+        }
+        return lines;
     }
 
     // ── TR-2 — the one-shot first-run training suggestion dialog ───────────

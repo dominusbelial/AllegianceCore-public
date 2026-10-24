@@ -32,7 +32,7 @@ public static class InputActionCatalog
         "QUEUED ORDERS (RECEIVED COMMAND)", "COMMANDED SHIP (DRONE)",
         "VOTE / COMMAND", "CAMERA / VIEW", "MUSIC", "CHAT", "LOBBY (SERVER BROWSER)",
         "READY CHECK (PRE-FLIGHT)",
-        "PANES / MENUS", "FREE-CAM / SPECTATOR", "LOCAL SKIRMISH", "SYSTEM",
+        "PANES / MENUS", "FREE-CAM / SPECTATOR", "LOCAL SKIRMISH", "TRAINING (MISSION ONLY)", "SYSTEM",
     };
 
     // ---- convenient chord builders -----------------------------------------
@@ -518,6 +518,28 @@ public static class InputActionCatalog
         new("SkirmishCamera", "LOCAL SKIRMISH", "Spectator: action / ship / station / free", K(Keys.V), null),
         new("SkirmishPrevious", "LOCAL SKIRMISH", "Spectator: previous ship / station", K(Keys.PageDown), null),
         new("OrbitSubjectNext", "FREE-CAM / SPECTATOR", "Orbit camera: cycle locked subject", K(Keys.PageUp), null),
+
+        // -- TRAINING (MISSION ONLY) — P785, the six native training keys. Commands are
+        // registered for every pilot exactly like native (trekinput.cpp:346-357, where
+        // the _DEBUG_TRAINING guard is commented out) and are active only while a
+        // training mission runs (Training::RecordKeyPress, WinTrek.cpp:8753-8769 —
+        // trainingmission.cpp:342-413). Defaults are native's keyCommandMap rows:
+        // Ctrl+Pause (157), numpad decimal (200), Ctrl+F11 (201), Ctrl+F10 (202),
+        // Ctrl+F12 (203), End (207). TK_SkipTMGoal/TK_*TMClockSpeed handlers are
+        // compiled under _DEBUG_TRAINING (no project defines it — shipping-native no-ops;
+        // the port gates the same handlers behind TrainingClock.DebugTrainingKeys).
+        // SkipTMGoal's native vk is 108 (VK_SEPARATOR); the port's default is the
+        // numpad Decimal key (VK_DECIMAL 110), the period key most keyboards send.
+        new("PauseTM", "TRAINING (MISSION ONLY)", "Pause (training mission only) [TK_PauseTM]", C(Keys.Pause), C(Keys.Pause)),
+        // FinishTM ships unbound (the port's End is RejectCommand, native has both on
+        // End via different maps) with the MDL chord (End, Any) offered on the rebind
+        // popup; SkipTMGoal's native vk 108 (VK_SEPARATOR) has no MonoGame key, so the
+        // chord decodes to null and the numpad Decimal default stands in.
+        new("FinishTM", "TRAINING (MISSION ONLY)", "Finish goal (training mission only) [TK_CommandFinishTM]", U(), new KeyBinding(Keys.End, InputModifiers.None)),
+        new("SkipTMGoal", "TRAINING (MISSION ONLY)", "Skip goal (training mission only, debug) [TK_SkipTMGoal]", K(Keys.Decimal), null),
+        new("IncreaseTMClockSpeed", "TRAINING (MISSION ONLY)", "Training clock faster (debug) [TK_IncreaseTMClockSpeed]", C(Keys.F11), C(Keys.F11)),
+        new("DecreaseTMClockSpeed", "TRAINING (MISSION ONLY)", "Training clock slower (debug) [TK_DecreaseTMClockSpeed]", C(Keys.F10), C(Keys.F10)),
+        new("ResetTMClockSpeed", "TRAINING (MISSION ONLY)", "Training clock normal (debug) [TK_ResetTMClockSpeed]", C(Keys.F12), C(Keys.F12)),
 
         // -- SYSTEM (game-flow / overlay keys that are not flight commands) --
         new("GameOverBack", "SYSTEM", "Game-over: back / leave (Log Off)", K(Keys.Back), null),

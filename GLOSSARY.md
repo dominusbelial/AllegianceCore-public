@@ -175,6 +175,12 @@ list in **reverse**.
 - **Skirmish (offline single player)** — `src/Allegiance.SinglePlayer/`
   (`SkirmishHost.cs`, `SkirmishOptions.cs`), hosted from `Game1.Skirmish.cs`.
 - **Training** — the native training missions. `src/Allegiance.SinglePlayer/Training/`.
+  P785 completion: the client joins its embedded host over loopback
+  (`Game1.Training.cs`), the mission clock is `TrainingClock` (port of
+  `zlib/ztime.cpp`, pause + debug clock shift) in
+  `src/Allegiance.ClientCore/Training/`, and the pre/post slideshows are
+  `SlideshowModel` + `TrainingSlideData` (native slides from the artwork corpus's
+  tm_*.mdl) driven by `Game1.IntroScreen.cs`'s TrainingSlideshow view.
 
 ## 5. Bots / MCP (`src/Allegiance.Bot`, `tools/allegiance-mcp`)
 
