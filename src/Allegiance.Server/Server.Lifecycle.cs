@@ -980,6 +980,11 @@ public sealed partial class Server
         return new MapGenParams
         {
             Type = type,
+            // P811 — the config's fixed seed (CLI --map-seed N overlays it); an
+            // unseeded game draws a fresh seed per generated map (native
+            // srand(iSeed) per run) and logs it, so EVERY generated map — boot
+            // and each game-over rotation — is rebuildable with --map-seed N.
+            Seed = cfg.Seed ?? Random.Shared.Next(),
             Teams = teams,
             CivIds = civIds,
             MapSize = cfg.MapSize ?? 0,
@@ -1189,9 +1194,13 @@ public sealed partial class Server
         {
             var pmp = ToCoreParams(mg!, g.Teams, g.CivIds);
             map = MissionMapGenerator.Generate(pmp, core, _simNow);
-            Console.WriteLine($"[boot] game '{g.Name}' generating map: topology={mg!.Type}, "
-                + $"{map.Clusters.Count} sectors / {map.Warps.Count} warps / "
-                + $"{map.Stations.Count} stations / {map.Asteroids.Count} asteroids");
+            // P811 — one reproducible line per generated map: the topology,
+            // the seed actually used (configured or freshly drawn) and the
+            // resulting object counts, so `--map-seed N` rebuilds it exactly.
+            Console.WriteLine($"[boot] game '{g.Name}' generating map: topology={mg!.Type}"
+                + $" seed={pmp.Seed}" + (mg.Seed is null ? " (drawn)" : "")
+                + $" ({map.Clusters.Count} sectors / {map.Warps.Count} warps / "
+                + $"{map.Stations.Count} stations / {map.Asteroids.Count} asteroids)");
         }
         else
         {

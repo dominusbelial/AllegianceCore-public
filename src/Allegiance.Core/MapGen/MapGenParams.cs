@@ -18,6 +18,14 @@ public sealed class MapGenParams
     /// implemented (P398).</summary>
     public MapGenType Type { get; init; } = MapGenType.SingleRing;
 
+    /// <summary>P811 — the RNG seed for this generation run. <c>null</c>
+    /// (the default) draws from the ambient shared RNG (historic,
+    /// non-reproducible behaviour); a fixed value drives every draw through a
+    /// <see cref="SeededMapRandom"/> so <c>--map-seed N</c> rebuilds the exact
+    /// same generated map. Mirrors the native map maker seeding its RNG once
+    /// per run (<c>srand(iSeed)</c>).</summary>
+    public int? Seed { get; init; }
+
     /// <summary><c>MissionParams.nTeams</c> — the number of sides.</summary>
     public int Teams { get; init; }
 

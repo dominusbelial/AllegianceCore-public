@@ -110,6 +110,11 @@ The first public release, **v0.1.0**, is out. For local packaging and the releas
 
 ## Quick start
 
+> P811 — the fastest way to stand up the whole ecosystem (server + lobby +
+> optional bots + optional client) is `scripts/dev-stack.sh up|down|status`;
+> see **[QUICKSTART.md](QUICKSTART.md)**. `GLOSSARY.md` is the kept-current
+> per-domain index of the codebase.
+
 Prerequisites: the **.NET SDK 10.0.400** (CI pins this exact version) and a
 clone of the **original game art**.
 

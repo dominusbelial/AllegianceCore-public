@@ -59,6 +59,8 @@ internal sealed class MapGenContext
 
     public MapGenParams Params { get; }
 
+    private readonly IMapRandom _rng;
+
     /// <summary>The generation time (native <c>CMapData::mNow</c>). Unused by the
     /// port's record-producing generator (records carry no timestamps) but kept
     /// for faithfulness and future use.</summary>
@@ -72,10 +74,11 @@ internal sealed class MapGenContext
 
     private int _nextWarpId;
 
-    public MapGenContext(MapGenParams pmp, double now)
+    public MapGenContext(MapGenParams pmp, double now, IMapRandom rng)
     {
         Params = pmp;
         Now = now;
+        _rng = rng;
         _clusterNamesLeft = (string[])ClusterNames.Clone();
         _clusterNamesLeftCount = NumClusterNames;
         Array.Fill(_clusterSides, NaSide);
@@ -110,7 +113,7 @@ internal sealed class MapGenContext
     /// (<c>CMapData::GetNewClusterName</c>, <c>mapmakerigc.cpp:119-128</c>).</summary>
     public string GetNewClusterName()
     {
-        int n = Random.Shared.Next(0, _clusterNamesLeftCount);
+        int n = _rng.Next(0, _clusterNamesLeftCount);
         string name = _clusterNamesLeft[n];
         _clusterNamesLeftCount--;
         _clusterNamesLeft[n] = _clusterNamesLeft[_clusterNamesLeftCount];

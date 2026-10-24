@@ -65,6 +65,7 @@ public sealed class MissionMapGenerator
     private readonly MapGenContext _ctx;
     private readonly StaticCore _core;
     private readonly MapGenType _type;
+    private readonly IMapRandom _rng;
 
     private readonly List<DataClusterIGC> _clusters = [];
     private readonly List<DataWarpIGC> _warps = [];
@@ -74,10 +75,11 @@ public sealed class MissionMapGenerator
     private int _nextAsteroidId;
     private int _nextStationId;
 
-    private MissionMapGenerator(MapGenContext ctx, StaticCore core)
+    private MissionMapGenerator(MapGenContext ctx, StaticCore core, IMapRandom rng)
     {
         _ctx = ctx;
         _core = core;
+        _rng = rng;
         // Native carries the selected map maker id as CmapMakerIGC::mMMID and the
         // shared HiHigher layout/link code branches on it (mapmakerigc.cpp:1382,
         // 1412, 1485, 1511). The port has no per-class state, so the topology is
@@ -117,7 +119,11 @@ public sealed class MissionMapGenerator
 
         ValidateTopology(pmp);
 
-        var gen = new MissionMapGenerator(new MapGenContext(pmp, now), core);
+        // P811 — a set seed drives every draw through a deterministic stream so
+        // the generated map is exactly reproducible; an absent seed keeps the
+        // historic shared-RNG (non-reproducible) behaviour.
+        var rng = MapRandomFactory.FromSeed(pmp.Seed);
+        var gen = new MissionMapGenerator(new MapGenContext(pmp, now, rng), core, rng);
         switch (pmp.Type)
         {
             case MapGenType.SingleRing:
@@ -348,7 +354,7 @@ public sealed class MissionMapGenerator
     // mapmakerigc.cpp:550-592
     private DataClusterIGC GenerateTeamCluster(short id)
     {
-        var rng = Random.Shared;
+        var rng = _rng;
         float theta = (float)(2.0 * Math.PI * id / _ctx.TotalClusters);
         return new DataClusterIGC(
             StarSeed: (uint)rng.Next(),
@@ -361,7 +367,7 @@ public sealed class MissionMapGenerator
             Stars: (short)rng.Next(250, 751),
             Name: _ctx.GetNewClusterName(),
             PosterName: "globe" + rng.Next(1, 9),
-            PlanetName: MapGenContext.PlanetNames[rng.Next(MapGenContext.PlanetNames.Length)],
+            PlanetName: MapGenContext.PlanetNames[rng.Next(0, MapGenContext.PlanetNames.Length)],
             PlanetSinLatitude: 0,
             PlanetLongitude: 0,
             PlanetRadius: (byte)rng.Next(50, 101),
@@ -373,7 +379,7 @@ public sealed class MissionMapGenerator
     // mapmakerigc.cpp:607-644 (planet name is empty for a neutral cluster)
     private DataClusterIGC GenerateNeutralCluster(short id)
     {
-        var rng = Random.Shared;
+        var rng = _rng;
         float theta = (float)(2.0 * Math.PI * id / _ctx.TotalClusters);
         return new DataClusterIGC(
             StarSeed: (uint)rng.Next(),
@@ -1234,7 +1240,7 @@ public sealed class MissionMapGenerator
     /// with zero ore via the shared <see cref="AddAsteroid"/> port.</summary>
     private void AddBrawlScatterAsteroids(short clusterId)
     {
-        int n = Random.Shared.Next(3, 6);   // randomInt(3,5) inclusive
+        int n = _rng.Next(3, 6);   // randomInt(3,5) inclusive
         for (int i = 0; i < n; i++)
             AddAsteroid(clusterId, 0, 0f);
     }
@@ -1248,8 +1254,8 @@ public sealed class MissionMapGenerator
     // "rock_mine"/"rock_build" names. See the P750 report.
     private void AddAsteroid(short clusterId, short capabilities, float amountHe3)
     {
-        var rng = Random.Shared;
-        int typeIndex = NativeAsteroidTypes.ResolveTypeIndex(capabilities);
+        var rng = _rng;
+        int typeIndex = NativeAsteroidTypes.ResolveTypeIndex(capabilities, _rng);
         var def = NativeAsteroidTypes.GetTypeDefaults(typeIndex);
 
         // randomInt(def.radius, 2*def.radius) inclusive (common.cpp:2865).
@@ -1309,10 +1315,10 @@ public sealed class MissionMapGenerator
     }
 
     // ── geometry / randomness helpers ──────────────────────────────────────
-    private static float[] RandomDirection()
+    private float[] RandomDirection()
     {
-        double u = Random.Shared.NextDouble() * 2.0 - 1.0;   // z ∈ [-1, 1]
-        double phi = Random.Shared.NextDouble() * 2.0 * Math.PI;
+        double u = _rng.NextDouble() * 2.0 - 1.0;   // z ∈ [-1, 1]
+        double phi = _rng.NextDouble() * 2.0 * Math.PI;
         double s = Math.Sqrt(1.0 - u * u);
         return [(float)(s * Math.Cos(phi)), (float)(s * Math.Sin(phi)), (float)u];
     }
@@ -1359,7 +1365,7 @@ public sealed class MissionMapGenerator
         while (true)
         {
             var direction = RandomDirection();
-            float distance = radius * MathF.Cbrt((float)Random.Shared.NextDouble());
+            float distance = radius * MathF.Cbrt((float)_rng.NextDouble());
             float[] position = [direction[0] * distance, direction[1] * distance, direction[2] * distance * lens];
             bool clear = true;
             foreach (var model in models)

@@ -1,5 +1,7 @@
 namespace Allegiance.Core;
 
+using Allegiance.Core.MapGen;
+
 /// <summary>
 /// The native fixed asteroid-type table and its selection rules — one shared
 /// home for every asteroid the port generates (the procedural map generator,
@@ -104,14 +106,23 @@ public static class NativeAsteroidTypes
     /// outside those three (native's <c>default: assert(false)</c>) is not a
     /// GetRandomType case; use <see cref="ResolveTypeIndex"/> for those.
     /// </summary>
-    public static int GetRandomType(short aabm) => aabm switch
+    public static int GetRandomType(short aabm, IMapRandom? rng = null)
     {
-        0 => FirstHugeType + Random.Shared.Next(0, 2),
-        DataAsteroidIGC.AabmBuildable => FirstGenericType + Random.Shared.Next(0, 2),
-        DataAsteroidIGC.AabmMineHe3 => FirstMinableType + Random.Shared.Next(0, 2),
-        _ => throw new ArgumentOutOfRangeException(nameof(aabm), aabm,
-            "GetRandomType only handles aabm 0 / c_aabmBuildable / c_aabmMineHe3 (asteroidigc.cpp:235-252)"),
-    };
+        // P811 — an injected rng (the map generator's seeded stream) makes this
+        // coin flip reproducible with the rest of the map; null keeps the
+        // ambient shared RNG for the other callers (native draws randomInt(0,1)
+        // from the run's RNG). SharedMapRandom delegates to Random.Shared, so
+        // the null/default path is bit-for-bit the historic behaviour.
+        var r = rng ?? SharedMapRandom.Instance;
+        return aabm switch
+        {
+            0 => FirstHugeType + r.Next(0, 2),
+            DataAsteroidIGC.AabmBuildable => FirstGenericType + r.Next(0, 2),
+            DataAsteroidIGC.AabmMineHe3 => FirstMinableType + r.Next(0, 2),
+            _ => throw new ArgumentOutOfRangeException(nameof(aabm), aabm,
+                "GetRandomType only handles aabm 0 / c_aabmBuildable / c_aabmMineHe3 (asteroidigc.cpp:235-252)"),
+        };
+    }
 
     /// <summary>
     /// The caller-facing selector the map generator and showcase use: the type
@@ -126,10 +137,10 @@ public static class NativeAsteroidTypes
     /// <c>FindAsteroidRow</c>'s assert-then-return-<c>asteroidTypes[0]</c>
     /// fallback (asteroidigc.cpp:160-161) without crashing the map.
     /// </summary>
-    public static int ResolveTypeIndex(short aabm)
+    public static int ResolveTypeIndex(short aabm, IMapRandom? rng = null)
     {
         if (aabm is 0 or DataAsteroidIGC.AabmBuildable or DataAsteroidIGC.AabmMineHe3)
-            return GetRandomType(aabm);
+            return GetRandomType(aabm, rng);
         for (int i = FirstSpecialType; i < FirstSpecialType + NumSpecialTypes; i++)
             if (Table[i].Capabilities == aabm) return i;
         return FirstHugeType;   // native FindAsteroidRow fallback (asteroidigc.cpp:161)

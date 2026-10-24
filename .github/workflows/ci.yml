@@ -48,6 +48,11 @@ jobs:
         # its build (~340 MB each; all 70 ran the runner out of disk, run 39719003509).
         run: tools/build-tools.sh --drop-bins
 
+      - name: GLOSSARY.md link check
+        # P811 — the agent-maintained per-domain index must never cite a path
+        # that does not exist in the tree.
+        run: python3 tools/check-glossary-links.py
+
       - name: Test Fast tier (non-corpus gate)
         env:
           TEST_FILTER: "Requires!=Artwork&Requires!=NativeSource&Requires!=Gpu&Requires!=MeshyPack&Lane!=LiveTiming"

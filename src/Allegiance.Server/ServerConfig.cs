@@ -221,6 +221,13 @@ public sealed class MapGenConfig
     /// case-insensitively against <see cref="Allegiance.Core.MapGen.MapGenType"/>.</summary>
     public string Type { get; set; } = "";
 
+    /// <summary>P811 — the fixed RNG seed for this game's generated map. When
+    /// set, the map generator draws through a deterministic stream so the same
+    /// seed rebuilds the exact same generated map (CLI <c>--map-seed N</c>
+    /// overlays this). Absent → the historic shared-RNG (non-reproducible)
+    /// behaviour.</summary>
+    public int? Seed { get; set; }
+
     /// <summary>0 ⇒ one team cluster per team; non-zero ⇒ two (<c>iMapSize</c>).</summary>
     public int? MapSize { get; set; }
 
@@ -1079,6 +1086,18 @@ public static class ServerConfigLoader
                     config.Games[0].CivIds = ids.Select(int.Parse).ToArray();
                     if (config.Games[0].Teams != 2)
                         throw new InvalidDataException("--civs currently supports two-side games only");
+                    recognized++; break;
+                case "mapseed":
+                case "map-seed":
+                    // P811 — pin the generated map's RNG seed. Applies to every
+                    // game configured with a procedural mapGen; a config that
+                    // only loads file maps cannot be made reproducible this way.
+                    if (!int.TryParse(value, out var mapSeed))
+                        throw new InvalidDataException($"--map-seed must be an integer, got '{value}'");
+                    if (config.Games.All(g => g.MapGen is null))
+                        throw new InvalidDataException("--map-seed requires a game configured with a generated map (a \"mapGen\" block with a topology type), not a file map");
+                    foreach (var game in config.Games)
+                        if (game.MapGen is { } mg) mg.Seed = mapSeed;
                     recognized++; break;
                 case "capture":
                 case "capturefile":
