@@ -97,6 +97,19 @@ internal sealed class ResearchTactics
     /// station goes on a short cooldown and the next boundary re-picks.</summary>
     internal const double StagingHardCapSeconds = 180;
 
+    /// <summary>P801 review — lone wolves are a bonus, never a gate: once the
+    /// bombers present (visible at the rally + wolves in position) already meet the
+    /// volley requirement, a late lone wolf delays the go by at most this long.</summary>
+    internal const double LoneWolfGraceSeconds = 60;
+
+    /// <summary>Pure staging gate (unit-tested): the visible quota and every lone wolf
+    /// in position, or — after <see cref="LoneWolfGraceSeconds"/> — enough bombers of
+    /// either kind present to meet the requirement on their own.</summary>
+    internal static bool StagingReady(int atRally, int visibleRequired, int wolvesReady, int wolvesAssigned,
+        int required, double waitedSeconds)
+        => (atRally >= visibleRequired && wolvesReady == wolvesAssigned)
+           || (atRally + wolvesReady >= required && waitedSeconds >= LoneWolfGraceSeconds);
+
     /// <summary>P801 — how long an aborted station is skipped before the wave
     /// considers it again.</summary>
     internal const double StagingAbandonSeconds = 120;
@@ -468,7 +481,8 @@ internal sealed class ResearchTactics
             ? visible
             : visible.Where(p => p.Sector == stagePoint.Sector
                 && (p.Position - stagePoint.Position).LengthSquared() <= RallyGatherRadius * RallyGatherRadius).ToArray();
-        bool ready = instantLegacy || (atRally >= _visibleRequired && wolvesReady == _loneWolfRoute.Count);
+        bool ready = instantLegacy || StagingReady(atRally, _visibleRequired, wolvesReady, _loneWolfRoute.Count,
+            _required, time - _stageSince);
         // Never issue an empty commit (that would restart staging every tick and
         // flood the [strike] log): if no visible member is actually at the staging
         // point yet, keep holding.

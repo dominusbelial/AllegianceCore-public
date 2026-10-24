@@ -303,4 +303,17 @@ public sealed class P801StrikeMassTests(ITestOutputHelper output)
         // Already-released ships are not held again.
         Assert.True(StrikeVolley.ShouldRelease(now: 5, goTime: 15, inCommittedWave: true, alreadyReleased: true));
     }
+
+    [Fact]
+    public void A_late_lone_wolf_does_not_block_a_strike_that_already_has_enough_bombers()
+    {
+        // Rig 221 batch 23 (2026-10-24): 6 visible bombers at the rally vs required 2/4, the lone
+        // wolves never reached their entry, and the wave aborted "insufficient-volley" after 180 s.
+        Assert.False(ResearchTactics.StagingReady(atRally: 6, visibleRequired: 2, wolvesReady: 0, wolvesAssigned: 1,
+            required: 2, waitedSeconds: 30));                         // grace still running: wait for the wolf
+        Assert.True(ResearchTactics.StagingReady(6, 2, 0, 1, 2, ResearchTactics.LoneWolfGraceSeconds));
+        Assert.True(ResearchTactics.StagingReady(4, 2, 0, 2, 4, 61)); // visible alone meet the requirement
+        Assert.False(ResearchTactics.StagingReady(1, 3, 0, 2, 5, 170)); // genuinely short: keep holding / abort at cap
+        Assert.True(ResearchTactics.StagingReady(3, 3, 2, 2, 5, 0));    // full plan in position: go at once
+    }
 }
