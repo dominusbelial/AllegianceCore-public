@@ -28,6 +28,8 @@ for f in sys.stdin.read().split():
         if (k=="literal" and f==v) or (k=="glob" and fnmatch.fnmatch(f,v)): print(f); break')
   [ -z "$MESHY" ] || { say "Meshy path(s) added (never public): $MESHY"; fail=1; }
 fi
+BRIEFS=$(git diff --name-only --diff-filter=AM "$BASE" "$HEAD" | grep -E '(^|/)[A-Z0-9]+_BRIEF\.md$|(^|/)hermes-[^/]*-prompt\.md$' || true)
+[ -z "$BRIEFS" ] || { say "delegate brief/prompt file(s) committed (internal, never public): $BRIEFS"; fail=1; }
 MEDIA=$(git diff --name-only --diff-filter=AM "$BASE" "$HEAD" | grep -iE "$MEDIA_RE" || true)
 if [ -n "$MEDIA" ]; then
   say "new/changed media ($(echo "$MEDIA" | wc -l)) — review: no Meshy ships, no private content:"; echo "$MEDIA" | sed 's/^/   /'
