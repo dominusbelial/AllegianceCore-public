@@ -2728,3 +2728,5 @@ P798 WIP and fixed here (see `docs/reports/P798_SCOUT_OPENING.md` §6):
   of shooting the target its test placed. Exploration is now fleet-only (≥4 combat bots per
   side) and never runs for a bot under an explicit commander order; the class passes 3/3 in
   ~6 s (was 15–30 s and failing).
+
+| 2026-10-24 | P784ComposeTests.Fanout_issues_one_order_message_per_recipient_on_the_wire | fast tier on P801 merge (43ec8d33): "3 peers / 2 teams must leave one teammate and one enemy" (line 315) — side auto-assignment of 3 joining peers differs under suite load; passes 3/3 alone; unrelated to P801 (bot-only). Follow-up: assign sides explicitly in the test. |
