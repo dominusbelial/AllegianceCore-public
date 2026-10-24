@@ -526,6 +526,7 @@ public sealed partial class Server
         _restartWarnings.Remove(mission);
         _ballots.Remove(mission);
         _mapGenMissions.Remove(mission);
+        _missionConfigs.Remove(mission);   // P802 — the rebuilt mission re-registers its config
         // HUD-17: NPC detection entries are never pruned per ship (ids only grow);
         // drop them all with the old world. A missing entry reads as false.
         _shipDetected.Clear();
@@ -3311,20 +3312,11 @@ private void CompleteStartCountdown(Mission mission, double now)
             }));
         }
         // P703 read-only extension: clients execute the server's actual selected plan.
-        if (_missions.FirstOrDefault(m => m.Sides.Contains(side)) is { } researchMission && researchMission.ResearchPlans.TryGetValue(side.Id, out var plan))
-        {
-            foreach (var ship in researchMission.Sectors.SelectMany(s => s.Models).OfType<Ship>().Where(s => s.IsNpc && s.SideId == side.Id))
-                SendPeer(to, FedPacket.Pack(ProductionIdentity(ship).Encode()));
-            SendPeer(to, FedPacket.Pack(new ResearchBriefing
-            {
-                Epoch = researchMission.ResearchEpoch, SideId = side.Id, Plan = plan,
-                Settings = researchMission.Research, IncomeMultiplier = _config.Showcase.IncomeMultiplier,
-                TechMode = _config.Showcase.TechMode, ResearchTimeScale = researchMission.ShowcaseResearchTimeScale,
-                Loop = _config.Showcase.LoopResearchPlans,
-                CompletedDevelopments = side.Buckets.Where(b => b.Completed && b.Development.HasValue)
-                    .Select(b => b.Development!.Value.DevelopmentId).ToList(),
-            }.Encode()));
-        }
+        // P802 — the payload/broadcast pair is shared with the lobby civ change
+        // (Server.TeamCiv.cs SendResearchBriefing), so a re-selected plan reaches
+        // the same client executor through the same message.
+        if (_missions.FirstOrDefault(m => m.Sides.Contains(side)) is { } researchMission)
+            SendResearchBriefing(to, researchMission, side);
         if (side.Buckets.Count > 0)
             Console.WriteLine($"[bucketstatus] peer {to} -> BUCKET_STATUS(65) x{side.Buckets.Count} for side {side.Id}");
     }

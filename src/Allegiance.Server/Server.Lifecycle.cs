@@ -1095,6 +1095,23 @@ public sealed partial class Server
     /// </summary>
     private readonly Dictionary<GameConfig, Dictionary<short, ResearchPlanCatalog.Selection>> _showcasePlanSelections = new();
 
+    /// <summary>P802 — the <see cref="GameConfig"/> each live mission was assembled
+    /// from (assigned in <see cref="AssembleGameMission"/> and dropped on the
+    /// game-over rotation). A lobby <c>CHANGE_TEAM_CIV</c> uses it to re-select
+    /// the side's research plan with the same config inputs the boot-time
+    /// selection used (<see cref="ReselectSideResearchPlan"/>).</summary>
+    private readonly Dictionary<Mission, GameConfig> _missionConfigs = new();
+
+    /// <summary>The native research settings every plan selection is built
+    /// from (<c>SelectShowcasePlans</c> and P802's per-civ re-selection share
+    /// them, so the two can never drift).</summary>
+    private static ResearchSettings ResearchSettingsFor(GameConfig game) => new()
+    {
+        AllowDevelopments = game.AllowDevelopments, AllowShipyardPath = game.AllowShipyardPath,
+        AllowExpansionPath = game.AllowExpansionPath, AllowTacticalPath = game.AllowTacticalPath,
+        AllowSupremacyPath = game.AllowSupremacyPath, InitialMinersPerTeam = game.InitialMinersPerTeam,
+    };
+
     /// <summary>Resolve every side from its loaded civilization; research mode requires a real cycle.</summary>
     private Dictionary<short, ResearchPlanCatalog.Selection> SelectShowcasePlans(StaticCore core, GameConfig game)
     {
@@ -1110,12 +1127,7 @@ public sealed partial class Server
         // re-reading/validating every plan file (≈0.5 s) on the tick.
         if (_showcasePlanSelections.TryGetValue(game, out var cached))
             return new Dictionary<short, ResearchPlanCatalog.Selection>(cached);
-        var settings = new ResearchSettings
-        {
-            AllowDevelopments = game.AllowDevelopments, AllowShipyardPath = game.AllowShipyardPath,
-            AllowExpansionPath = game.AllowExpansionPath, AllowTacticalPath = game.AllowTacticalPath,
-            AllowSupremacyPath = game.AllowSupremacyPath, InitialMinersPerTeam = game.InitialMinersPerTeam,
-        };
+        var settings = ResearchSettingsFor(game);
         for (short side = 0; side < game.Teams; side++)
         {
             int civ = game.CivIds[side];
@@ -1161,6 +1173,10 @@ public sealed partial class Server
     /// </summary>
     private Mission AssembleGameMission(GameConfig g, StaticCore core, HullLandingBayCache landingBays, WeaponMuzzleCache weaponMuzzles, StationLandingBayCache stationLandingBays, CollisionHullCache collisionHulls)
     {
+        // P802 — remember the config that produced this mission; the lobby civ
+        // picker re-selects research plans through it (see Server.TeamCiv.cs).
+        // Recorded here so boot AND the game-over rotation both register the
+        // fresh mission.
         // P397 — procedurally generate this game's map instead of loading a
         // file when g.MapGen is set. The generator path is a pure addition:
         // with MapGen null (every existing config), the byte-for-byte
@@ -1282,6 +1298,7 @@ public sealed partial class Server
         // P465c — attach the weapon-muzzle cache so Weapon.FireWeapon spawns
         // each round at its hardpoint frame (the server's real muzzle geometry).
         mission.WeaponMuzzles = weaponMuzzles;
+        _missionConfigs[mission] = g;   // P802 — for a lobby civ's research-plan re-selection
         return mission;
     }
 

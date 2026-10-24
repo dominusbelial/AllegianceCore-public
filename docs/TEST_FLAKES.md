@@ -2730,3 +2730,4 @@ P798 WIP and fixed here (see `docs/reports/P798_SCOUT_OPENING.md` §6):
   ~6 s (was 15–30 s and failing).
 
 | 2026-10-24 | P784ComposeTests.Fanout_issues_one_order_message_per_recipient_on_the_wire | fast tier on P801 merge (43ec8d33): "3 peers / 2 teams must leave one teammate and one enemy" (line 315) — side auto-assignment of 3 joining peers differs under suite load; passes 3/3 alone; unrelated to P801 (bot-only). Follow-up: assign sides explicitly in the test. |
+| 2026-10-24 | DockedStationUpdateLiveTests.Docked_player_receives_own_station_update_when_own_station_has_no_scanner | fast tier on the P802 merge gate (rebased on 058fe07f) while three Pi/GLM delegates built and tested on the same host: "STATIONS_UPDATE for zero-scanner own station did not arrive within 15 ticks (0.750s sim time)" | 3/3 exact-class pass alone (2/2 tests each); P802 touches no station-update path — load-timing flake |

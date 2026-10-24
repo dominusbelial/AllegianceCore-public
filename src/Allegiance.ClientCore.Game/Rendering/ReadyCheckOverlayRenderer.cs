@@ -45,8 +45,12 @@ public sealed class ReadyCheckOverlayRenderer
     }
 
     /// <summary>Draw the ready-check panel for the given
-    /// <see cref="ReadyCheckLayout"/> rows.</summary>
-    public void Draw(Viewport viewport, IReadOnlyList<ReadyCheckLayout.Row> rows)
+    /// <see cref="ReadyCheckLayout"/> rows. P802 — <paramref name="civIcon"/> is
+    /// the native <c>icon&lt;civ&gt;bmp</c> art for the viewed side's civilization
+    /// (teamscreen.cpp:586-591); it is drawn top-right inside the panel, scaled
+    /// to fit a 72 px box and never stretched past its native aspect. Null
+    /// (artwork missing / no civ yet) simply omits it.</summary>
+    public void Draw(Viewport viewport, IReadOnlyList<ReadyCheckLayout.Row> rows, Texture2D? civIcon = null)
     {
         float w = viewport.Width;
         float h = viewport.Height;
@@ -61,6 +65,8 @@ public sealed class ReadyCheckOverlayRenderer
             maxLine = MathF.Max(maxLine, f.MeasureString(r.Text).X);
         }
         if (totalH <= 0f) totalH = 1f;
+        // P802 — keep the top-right civilization art clear of the longest row.
+        if (civIcon is not null) maxLine += 88f;
 
         float panelW = MathF.Min(maxLine + 2f * Padding, w * 0.96f);
         float panelH = totalH + 2f * Padding - LineGap;
@@ -85,6 +91,16 @@ public sealed class ReadyCheckOverlayRenderer
                 _sb.DrawString(f, r.Text, new Vector2(panelX + Padding, y), c, 0f,
                     Vector2.Zero, 1f, SpriteEffects.None, 0f);
                 y += f.LineSpacing + LineGap;
+            }
+
+            // P802 — the side's civilization art (native icon<civ>bmp).
+            if (civIcon is not null)
+            {
+                const float box = 72f;
+                float scale = MathF.Min(1f, MathF.Min(box / civIcon.Width, box / civIcon.Height));
+                float iw = civIcon.Width * scale;
+                _sb.Draw(civIcon, new Vector2(panelX + panelW - Padding - iw, panelY + Padding), null,
+                    Color.White, 0f, Vector2.Zero, scale, SpriteEffects.None, 0f);
             }
         }
         finally

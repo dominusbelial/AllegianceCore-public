@@ -15,9 +15,14 @@ namespace Allegiance.Core.Wire;
 ///   END_FEDMSG
 /// </code>
 /// <c>SideID</c> and <c>CivID</c> are both <c>short</c>s (igc.h typedefs);
-/// the trailing <c>bool random</c> is decoded for wire completeness but its
-/// random-faction value is ignored by this port (no faction-randomization
-/// concept — always a direct civ change). Natural alignment:
+/// the trailing <c>bool random</c> is native's random-faction option
+/// (Xynth #170): the native client picks a random legal civ itself and sends
+/// that civID with <c>random=true</c> (<c>WinTrek/teamscreen.cpp:1062-1075</c>),
+/// and the server applies the civ plus the side's random-faction flag. This
+/// port honours the flag on the SERVER instead: <c>random=true</c> makes the
+/// server resolve the pick from the legal lobby pool and relay the resolved
+/// civID (<c>Server.TeamCiv.cs</c>), so every peer and the authoritative side
+/// agree without the native owner re-roll loop (<c>teamscreen.cpp:2662-2695</c>). Natural alignment:
 /// <code>
 ///   offset 0: ushort cbmsg
 ///   offset 2: ushort fmid = 51
@@ -39,8 +44,9 @@ public sealed class ChangeTeamCiv : IFedMessage
     /// <summary>The target civilization's id (<c>CivID</c> = short).</summary>
     public short CivId;
 
-    /// <summary>Random-faction option (<c>bool</c>). Decoded for wire
-    /// completeness; ignored by this port (always a direct civ change).</summary>
+    /// <summary>Random-faction option (<c>bool</c>). When true the server
+    /// resolves the civ from the legal lobby pool and the relayed message carries
+    /// that concrete civ id with the flag still set.</summary>
     public bool Random;
 
     public ushort GetFmid() => Fmid;

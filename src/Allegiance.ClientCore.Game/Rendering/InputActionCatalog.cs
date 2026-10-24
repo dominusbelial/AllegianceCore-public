@@ -464,6 +464,11 @@ public static class InputActionCatalog
         new("AutoAcceptToggle", "READY CHECK (PRE-FLIGHT)", "Commander: toggle auto-accept join requests", K(Keys.U), null),
         new("LockLobbyToggle", "READY CHECK (PRE-FLIGHT)", "Mission owner: lock the lobby against joiners", K(Keys.N), null),
         new("LockSidesToggle", "READY CHECK (PRE-FLIGHT)", "Mission owner: lock side switching", K(Keys.H), null),
+        // P802 — the side's team leader changes the side's civilization before
+        // the game starts (native's team-settings civ combo,
+        // teamscreen.cpp:1007-1075/3049-3065; server gate FedSrv.CPP:7348-7360).
+        // The picker pane reuses MenuUp/MenuDown/MenuConfirm in this context.
+        new("CivPicker", "READY CHECK (PRE-FLIGHT)", "Team leader: change the side's civilization", K(Keys.C), null),
 
         // -- PANES / MENUS (docked shop / teleport / invest, side-select) --
         // Generic navigation verbs shared across the docked sub-panes and the

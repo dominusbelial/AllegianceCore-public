@@ -351,6 +351,36 @@ public sealed class PlayerScore
     public void SetWin(bool win) => Win = win;
 
     /// <summary>
+    /// P802 — the native <c>SetSideCiv</c> per-ship score reset
+    /// (<c>FedSrv/fsmission.cpp:5274-5283</c>):
+    /// <c>ppso-&gt;SetPersist(pfsship-&gt;GetPlayer()-&gt;GetPersistPlayerScore(civID))</c>.
+    /// A civ change makes the player's persistent score <em>for that
+    /// civilization</em> their live score. This port has no persistent per-civ
+    /// score store (P193/P583: connection-lifetime only, no account layer), so
+    /// that persistent object is the native default-constructed
+    /// <c>PlayerScoreObject</c> — the neutral zero score — and the copy
+    /// collapses to resetting every live <em>session</em> counter. Rank and
+    /// combat rating are kept: native takes those from the per-civ persistent
+    /// record the port does not have, and rank is the connection's only
+    /// identity value. In a pre-start lobby the counters are already zero, so
+    /// this is the native ordering rather than a visible lobby change.
+    /// </summary>
+    /// <param name="civId">The civilization the side is moving to (the native
+    /// persist-score lookup key; retained in the log for traceability).</param>
+    public void ResetToPersistScoreForCiv(short civId)
+    {
+        Score = 0f;
+        Kills = 0; Deaths = 0; Ejections = 0; Rescues = 0; Assists = 0;
+        TechsRecovered = 0; Artifacts = 0; Flags = 0;
+        WarpsSpotted = 0; AsteroidsSpotted = 0; HighValueTargetsSpotted = 0;
+        MinerKills = 0f; BuilderKills = 0f; LayerKills = 0f; CarrierKills = 0f; PlayerKills = 0f;
+        BaseKills = 0f; BaseCaptures = 0f; Repair = 0f; TimePlayed = 0f;
+        RankRatio = 1.0f;
+        Win = false;
+        Console.WriteLine($"[changeciv] player score reset to the neutral persist score for civ {civId} (native SetSideCiv)");
+    }
+
+    /// <summary>
     /// P583 — port of native <c>PlayerScoreObject::CalculateScore</c>
     /// (<c>src/Igc/common.cpp:2667-2695</c>), the full scoring formula
     /// reconstructed 1:1 from the counters above. The point values are read

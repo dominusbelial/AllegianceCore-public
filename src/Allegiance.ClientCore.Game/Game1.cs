@@ -877,6 +877,13 @@ public sealed partial class Game1 : Game
     private bool _rcYWasDown, _rcOWasDown;
     // P761 — the team lobby configuration controls' edge flags.
     private bool _aaKeyWasDown, _llKeyWasDown, _lsKeyWasDown;
+    // P802 — the team lobby's CIVILIZATION picker: open state, cursor, key
+    // edges, and a per-civ cache of the native icon<civ>bmp artwork (loaded
+    // lazily from the artwork source when the picker/current-civ row draws).
+    private bool _civPickerOpen;
+    private int _civPickerIndex;
+    private bool _civOpenWasDown, _civUpWasDown, _civDownWasDown, _civConfirmWasDown;
+    private readonly Dictionary<string, Texture2D?> _civIcons = new(StringComparer.Ordinal);
     // P598 — the ship id this client last sent PLAYER_READY(true) for. The
     // server re-seats a migrated peer after a game-over rotation with a FRESH
     // ship id (new SET_CLUSTER), so a non-null mismatch here means the mission

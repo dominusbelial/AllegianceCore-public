@@ -49,7 +49,7 @@ public static class SideSelectLayout
     /// <see cref="SelectableSideIds"/> feeds the picker.</summary>
     public static IReadOnlyList<Row> Build(
         SideRoster? roster, int selectedIndex, bool amMissionOwner,
-        Func<short, bool>? isSideActive = null)
+        Func<short, bool>? isSideActive = null, Func<short, string?>? civNameFor = null)
     {
         var rows = new List<Row>();
 
@@ -82,8 +82,12 @@ public static class SideSelectLayout
             }
             bool isSel = s.SideId == selectedSide;
             char marker = isSel ? '>' : ' ';
+            // P802 — the side's current civilization (read-only here; the team
+            // leader changes it in the team lobby). Native draws the same civ
+            // identity on the team screen (teamscreen.cpp:586-591,2479-2492).
+            string civ = civNameFor?.Invoke(s.SideId) is { Length: > 0 } name ? "  [" + AsciiSafe(name) + "]" : "";
             rows.Add(new Row(Kind.Item,
-                $"{marker} {AsciiSafe(s.Name),-20}  (players: {s.PlayerCount})",
+                $"{marker} {AsciiSafe(s.Name),-20}  (players: {s.PlayerCount}){civ}",
                 Highlight: isSel));
         }
 

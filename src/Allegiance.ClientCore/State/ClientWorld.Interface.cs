@@ -1,4 +1,5 @@
 using Allegiance.Core;
+using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 
@@ -28,6 +29,16 @@ public sealed partial class ClientWorld
     }
 
     // appmsg.cpp:2530-2539: civilization and random-faction choice are independent.
+    // The native client applies the change to its own core mirror too:
+    // `GetSide(iSide)->SetCivilization(GetCivilization(civID))` and
+    // `SetRandomCivilization(random)` (clintlib/appmsg.cpp:2530-2537). This port
+    // keeps no IsideIGC, so the locally-visible halves of
+    // `IsideIGC::SetCivilization` (Igc/sideigc.h:76-102) are mirrored here:
+    // development techs := the new civilization's base techs (:88, so the shop,
+    // investment pane and buy gate follow the pick immediately) and every
+    // station of that side retyped to the civ's initial station type
+    // (:92-100) — the same local retype native clients perform; the server does
+    // the authoritative copy.
     private void Apply(ChangeTeamCiv message)
     {
         if (message.SideId is < 0 or >= GameState.MaxSides) return;
@@ -35,6 +46,12 @@ public sealed partial class ClientWorld
         if (SideRoster is { } roster)
             SideRoster = new SideRoster { Sides = roster.Sides.Select(s => s.SideId == message.SideId
                 ? s with { CivId = message.CivId } : s).ToArray() };
+        if (MissionCore is not { } core || !core.Civilizations.TryGetValue(message.CivId, out var civ)) return;
+        _developmentTechsBySideId[message.SideId] = TechTreeBitMask.FromBytes(civ.TtbmBaseTechs);
+        foreach (var (id, station) in _stations.ToArray())
+            if (station.SideId == message.SideId && station.StationTypeId != civ.InitialStationTypeId)
+                _stations[id] = station with { StationTypeId = civ.InitialStationTypeId };
+        MarkSnapshotDirty();
     }
 
     // appmsg.cpp:2392-2407: replace all four counters for each side, in side-id order.

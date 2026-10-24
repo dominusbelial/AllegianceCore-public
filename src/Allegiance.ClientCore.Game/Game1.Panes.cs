@@ -1432,9 +1432,22 @@ public sealed partial class Game1
         lock (_session.Gate)
             rows = Rendering.SideSelectLayout.Build(
                 _session.World.SideRoster, _sideSelectIndex, _session.World.AmMissionOwner,
-                _session.World.IsSideActive).Concat(Rendering.LobbyStatusLayout.Build(_session.World)
+                _session.World.IsSideActive, SideCivName).Concat(Rendering.LobbyStatusLayout.Build(_session.World)
                 .Select(text => new Rendering.SideSelectLayout.Row(Rendering.SideSelectLayout.Kind.Info, text))).ToArray();
         _sideSelectRenderer.Draw(GraphicsDevice.Viewport, rows);
+    }
+
+    /// <summary>P802 — a side's civilization name for the side-select roster
+    /// (resolved from the mission core against the roster's civ id), or null
+    /// before the core/roster are known.</summary>
+    private string? SideCivName(short sideId)
+    {
+        var world = _session.World;
+        if (world.SideRoster is not { } roster || world.MissionCore is not { } core) return null;
+        foreach (var record in roster.Sides)
+            if (record.SideId == sideId)
+                return core.Civilizations.TryGetValue(record.CivId, out var civ) ? civ.Name : null;
+        return null;
     }
 
     /// <summary>Drive the READY-CHECK screen (shown once seated, before the
@@ -1591,6 +1604,62 @@ public sealed partial class Game1
         }
         _lsKeyWasDown = lsKey;
 
+        // P802 — the side's team leader changes the side's civilization while the
+        // mission has not started. Native's picker is the TEAM SETTINGS dialog's
+        // civilization combo (teamscreen.cpp:860-1104) which posts
+        // FM_CS_CHANGE_TEAM_CIV(51) from OnCivChosen (:3049-3065); the server
+        // admits it only from the side's leader at STAGE_NOTSTARTED
+        // (FedSrv.CPP:7344-7366). Everyone else sees the civ read-only.
+        bool civCanPick;
+        lock (_session.Gate) civCanPick = State.TeamCivPicker.CanPick(world);
+        if (!civCanPick) _civPickerOpen = false;   // the game started / lost leadership
+        bool civKey = ActionDown(ks, "CivPicker");
+        if (civKey && !_civOpenWasDown && civCanPick)
+        {
+            _civPickerOpen = !_civPickerOpen;
+            if (_civPickerOpen)
+            {
+                lock (_session.Gate) _civPickerIndex = Rendering.TeamCivPickerLayout.InitialIndex(world);
+                Console.WriteLine("[monogame] ready-check: civilization picker opened (team leader, STAGE_NOTSTARTED)");
+            }
+        }
+        _civOpenWasDown = civKey;
+
+        if (_civPickerOpen)
+        {
+            IReadOnlyList<State.TeamCivPicker.Option> civOptions;
+            lock (_session.Gate) civOptions = State.TeamCivPicker.Options(world.MissionCore);
+            int civCount = civOptions.Count;
+            bool civUp = ActionDown(ks, "MenuUp") || nav.Up;
+            if (civUp && !_civUpWasDown && civCount > 0)
+                _civPickerIndex = State.TeamCivPicker.Move(_civPickerIndex, -1, civCount);
+            _civUpWasDown = civUp;
+            bool civDown = ActionDown(ks, "MenuDown") || nav.Down;
+            if (civDown && !_civDownWasDown && civCount > 0)
+                _civPickerIndex = State.TeamCivPicker.Move(_civPickerIndex, 1, civCount);
+            _civDownWasDown = civDown;
+
+            bool civConfirm = ActionDown(ks, "MenuConfirm") || ActionDown(ks, "MenuSelect");
+            bool civBack = ActionDown(ks, "MenuBack");
+            if (civBack) _civPickerOpen = false;
+            else if ((civConfirm && !_civConfirmWasDown) && civCount > 0)
+            {
+                var option = civOptions[((_civPickerIndex % civCount) + civCount) % civCount];
+                short? currentCiv;
+                short pickSide;
+                lock (_session.Gate)
+                {
+                    currentCiv = State.TeamCivPicker.CurrentCivId(world);
+                    pickSide = world.MySideId!.Value;
+                }
+                var (civId, random) = State.TeamCivPicker.Request(option, currentCiv);
+                _session.SendChangeTeamCiv(pickSide, civId, random);
+                _civPickerOpen = false;
+                Console.WriteLine($"[monogame] ready-check: CHANGE_TEAM_CIV side {pickSide} civ {civId} random={random} (option '{option.Name}')");
+            }
+            _civConfirmWasDown = civConfirm;
+        }
+
         // P501 — touch: tap the big READY/UNREADY button to toggle; the commander taps
         // FORCE READY to toggle their team-ready flag.
         if (TouchAvailable())
@@ -1659,19 +1728,47 @@ public sealed partial class Game1
 
         var rows = Rendering.ReadyCheckLayout.Build(
             sideName, _ownReady, players, agg, forced, canForce, launchCountdown);
+        string civIconStem;
         lock (_session.Gate)
         {
-            rows = rows.Concat(Rendering.LobbyStatusLayout.Build(world)
-                .Select(text => new Rendering.ReadyCheckLayout.Row(Rendering.ReadyCheckLayout.Kind.Info, text))).ToList();
-            // P761 — the team lobby's configuration controls (native's button
-            // row, teamscreen.cpp:1554-1573): one line per VISIBLE control with
-            // its checked/enable state (hidden controls are omitted entirely,
-            // exactly like native's SetHidden).
-            var controls = State.LobbyScreenState.BuildTeamControls(world, world.MySideId);
-            rows = rows.Concat(controls.DisplayLines()
-                .Select(text => new Rendering.ReadyCheckLayout.Row(Rendering.ReadyCheckLayout.Kind.Info, text))).ToList();
+            // P802 — the team-civilization block: current civ (read-only for
+            // everyone but the leader pre-start) + the leader's selector. While
+            // the selector is OPEN it replaces the ready-check body (native's
+            // modal team-settings dialog, teamscreen.cpp:860-1104), so the
+            // civilization list fits even on a 720p window.
+            if (_civPickerOpen && !State.TeamCivPicker.CanPick(world)) _civPickerOpen = false;
+            if (_civPickerOpen)
+            {
+                rows = Rendering.TeamCivPickerLayout.Build(world, open: true, _civPickerIndex).ToList();
+            }
+            else
+            {
+                rows = rows.Concat(Rendering.TeamCivPickerLayout.Build(world, open: false, _civPickerIndex)).ToList();
+                rows = rows.Concat(Rendering.LobbyStatusLayout.Build(world)
+                    .Select(text => new Rendering.ReadyCheckLayout.Row(Rendering.ReadyCheckLayout.Kind.Info, text))).ToList();
+                // P761 — the team lobby's configuration controls (native's button
+                // row, teamscreen.cpp:1554-1573): one line per VISIBLE control with
+                // its checked/enable state (hidden controls are omitted entirely,
+                // exactly like native's SetHidden).
+                var controls = State.LobbyScreenState.BuildTeamControls(world, world.MySideId);
+                rows = rows.Concat(controls.DisplayLines()
+                    .Select(text => new Rendering.ReadyCheckLayout.Row(Rendering.ReadyCheckLayout.Kind.Info, text))).ToList();
+            }
+            civIconStem = State.TeamCivPicker.IconStem(world);
         }
-        _readyCheckRenderer.Draw(GraphicsDevice.Viewport, rows);
+        _readyCheckRenderer.Draw(GraphicsDevice.Viewport, rows, CivIconFor(civIconStem));
+    }
+
+    /// <summary>P802 — the native <c>icon&lt;civ&gt;bmp</c> art for a civilization
+    /// (teamscreen.cpp:586-591), decoded once per stem and cached. Null when the
+    /// artwork is absent (the picker still shows the civ's name).</summary>
+    private Texture2D? CivIconFor(string stem)
+    {
+        if (stem.Length == 0) return null;
+        if (_civIcons.TryGetValue(stem, out var cached)) return cached;
+        var texture = Rendering.HudNativeTextures.LoadMissionImage(GraphicsDevice, _assets, stem);
+        _civIcons[stem] = texture;
+        return texture;
     }
 
     /// <summary>Whether the B-key scoreboard toggle may fire this frame. Gated

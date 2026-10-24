@@ -124,6 +124,14 @@ public sealed partial class HudNativeTextures : IDisposable
         _ => null,
     };
 
+    /// <summary>P802 — decode an arbitrary native 2-D image stem (the same .mdl
+    /// script + PNG/JPEG pipeline this HUD loader uses) for a lobby picker: the
+    /// team civilization art is <c>icon&lt;civ icon name&gt;bmp</c>
+    /// (<c>WinTrek/teamscreen.cpp:586-591</c>, <c>:2479-2492</c>). Null when the
+    /// artwork is missing or cannot be decoded (the caller falls back to text).</summary>
+    internal static Texture2D? LoadMissionImage(GraphicsDevice gd, IAssetSource assets, string stem) =>
+        TryDecode(gd, assets, stem);
+
     private static Texture2D? TryDecode(GraphicsDevice gd, IAssetSource assets, string stem, bool luminanceAlpha = false)
     {
         string rel = stem + ".mdl";

@@ -1504,18 +1504,24 @@ public sealed partial class Server
             else if (fmid == ChangeTeamCiv.Fmid)   // FM_CS_CHANGE_TEAM_CIV (Messages.h:407-411)
             {
                 // P186 — the side's leader changes their side's civilization.
-                // Port of FedSrv.CPP:7344-7367 (native changes the leader's OWN
+                // Port of FedSrv.CPP:7344-7366 (native changes the leader's OWN
                 // side, pside = pfsPlayer->GetSide(), so the named iSide must be
                 // the sender's own side): refuse unless the sender is that side's
                 // current leader AND the mission is STAGE_NOTSTARTED. On success:
-                // relay whole-mission, resolve the target civilization from
-                // Mission.Core (refuse — log and ignore — if civID is absent, the
-                // native TrapHackBoot(pciv)), and set the side's civilization. The
-                // random (random-faction) field is out of scope — ignored, always
-                // a direct civ change. The per-player score-reset loop of native
-                // SetSideCiv (fsmission.cpp:5274-5283) is out of scope (no
-                // player-score-persistence system, the same gap that excluded
-                // GAME_OVER_PLAYERS from [[allegiance-win-condition-plan]]).
+                // resolve the target civilization from Mission.Core, relay the
+                // message whole-mission, apply the side's civilization and its
+                // native SetSideCiv side effects.
+                //
+                // P802 — `random` is HONOURED: a random-faction request (civID may
+                // be a placeholder such as native RANDOM_ID 9999, igc.h:501) is
+                // resolved to a concrete civ from the legal lobby pool, the relay
+                // carries the RESOLVED civID with random=true, and that civ is
+                // applied. Server.TeamCiv.cs cites the native rules (the client's
+                // randomInt pick, the owner re-roll loop and the "prevent special
+                // civs" <300 cut) and performs the side effects: dev techs = the
+                // new civ's base techs, stations retyped to the civ's initial
+                // station type, the per-ship persist-score reset
+                // (fsmission.cpp:5274-5283) and the side's research plan.
                 try
                 {
                     var cc = command.Read<ChangeTeamCiv>();
@@ -1542,9 +1548,9 @@ public sealed partial class Server
                         {
                             ConsoleLog.Write($"[changeciv] {from} ship {ccLive.Ship.Id}: mission stage {mission.Stage} != STAGE_NOTSTARTED — CHANGE_TEAM_CIV refused");
                         }
-                        else if (!mission.Core.Civilizations.TryGetValue(cc.CivId, out var targetCiv))
+                        else if (!TryResolveTeamCiv(mission, cc, out var targetCiv, out var resolvedCivId))
                         {
-                            ConsoleLog.Write($"[changeciv] {from} ship {ccLive.Ship.Id}: civilization {cc.CivId} not in core — CHANGE_TEAM_CIV ignored");
+                            ConsoleLog.Write($"[changeciv] {from} ship {ccLive.Ship.Id}: civilization {(cc.Random ? "random (no legal civ in core)" : cc.CivId.ToString())} not in core — CHANGE_TEAM_CIV ignored");
                         }
                         else
                         {
@@ -1556,10 +1562,20 @@ public sealed partial class Server
                             }
                             else
                             {
-                                SendToMissionPeers(mission, FedPacket.Pack(new[] { cc.Encode() }));
-                                short oldCivId = ccSide.Civilization.CivilizationId;
-                                ccSide.Civilization = targetCiv;
-                                Console.WriteLine($"[changeciv] ship {ccLive.Ship.Id}: side {ccSideId} civ {oldCivId} -> {targetCiv.CivilizationId} whole-mission");
+                                // Relay the RESOLVED civ (native forwards the
+                                // message the client sent, which already carries
+                                // its concrete random pick, teamscreen.cpp:1074).
+                                var relay = new ChangeTeamCiv { SideId = cc.SideId, CivId = resolvedCivId, Random = cc.Random };
+                                SendToMissionPeers(mission, FedPacket.Pack(new[] { relay.Encode() }));
+                                ApplySideCivilization(mission, ccSide, targetCiv);
+                                ReselectSideResearchPlan(mission, ccSide);
+                                // A peer still on the side-select screen reads the
+                                // SIDE_ROSTER snapshot, not the CHANGE_TEAM_CIV relay
+                                // (side-select peers are routed to _missions[0]).
+                                if (ReferenceEquals(mission, _missions[0]))
+                                    BroadcastSideRosterToPendingPeers(mission);
+                                Console.WriteLine($"[changeciv] ship {ccLive.Ship.Id}: side {ccSideId} civ -> {targetCiv.CivilizationId} '{targetCiv.Name}' whole-mission" +
+                                                  (cc.Random ? $" (random resolved from requested {cc.CivId})" : ""));
                             }
                         }
                     }

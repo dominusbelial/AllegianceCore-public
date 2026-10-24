@@ -31,6 +31,9 @@ public sealed class P703ResearchCommanderLiveTests(ITestOutputHelper output)
         server.Boot(new ServerConfig
         {
             ArtPath = Catalog.ArtRoot, StaticCore = "PCore001.igc", Port = 0,
+            // P763 — these ConnectionSession peers never send POSITIONREQ; the
+            // opt-in 30 s auto-seat preserves the harness's seat-and-join flow.
+            SideSelectAutoSeatSeconds = 30,
             LiveSettings = new() { TestUnlock = new() { Enabled = false },
                 TestHarness = new() { Enabled = false, IgnoreTechGate = false } },
             Games = [new() { Name = "P703 remote death", Teams = 2, CivIds = [1, 2], SideNames = ["A", "B"],

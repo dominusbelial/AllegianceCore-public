@@ -50,6 +50,12 @@ internal sealed class ResearchCommander
     internal Report? Telemetry { get; private set; }
     internal short Side { get; }
     internal string Epoch { get; }
+    /// <summary>P802 — the civilization the executing plan was built for. A
+    /// lobby CHANGE_TEAM_CIV re-selects the side's plan for the new civ; the
+    /// research loop rebuilds this commander when this no longer matches the
+    /// fresh briefing's <c>Plan.CivId</c> (the epoch is unchanged — native keeps
+    /// one mission identity across a pre-start civ change).</summary>
+    internal short PlanCivId => _plan.CivId;
 
     internal ResearchCommander(short side, string epoch, ResearchTree tree, ResearchPlan plan,
         TechTreeBitMask initialTechs, Dictionary<short, short> reservations, bool loop = false, double researchTimeScale = 1)

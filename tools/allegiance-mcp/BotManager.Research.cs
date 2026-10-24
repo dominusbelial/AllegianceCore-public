@@ -91,7 +91,11 @@ internal sealed partial class BotManager
                                 peer.SendAutoDonate(-1); // Keep our own payday share, native opt-out (FedSrv.CPP:5535-5544).
                             lock (_researchGate)
                             {
-                                if (!_research.TryGetValue(side, out var commander) || commander.Epoch != briefing.Epoch)
+                                // P802 — a lobby CHANGE_TEAM_CIV re-selects the side's plan
+                                // (same epoch, new civ). Rebuild the commander so it executes
+                                // the NEW civ's plan instead of the boot-time one.
+                                if (!_research.TryGetValue(side, out var commander) || commander.Epoch != briefing.Epoch
+                                    || commander.PlanCivId != briefing.Plan.CivId)
                                 {
                                     commander?.ReleaseReservations();
                                     commander = new(side, briefing.Epoch, new ResearchTree(core, briefing.Plan.CivId, briefing.Settings),

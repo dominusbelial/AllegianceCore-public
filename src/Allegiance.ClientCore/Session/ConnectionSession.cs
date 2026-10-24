@@ -602,6 +602,23 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         Send(FedPacket.Pack(new[] { msg.Encode() }));
     }
 
+    /// <summary>Send a real <c>FM_CS_CHANGE_TEAM_CIV(51)</c> — the side's team
+    /// leader changes the civilization backing their side (<c>Inc/Messages.h:407-411</c>).
+    /// The server refuses unless the sender is the named (own) side's current
+    /// leader and the mission is <c>STAGE_NOTSTARTED</c> (<c>FedSrv.CPP:7344-7366</c>),
+    /// forwards the message to the whole mission and swaps the side's civ plus
+    /// the native <c>SetSideCiv</c> effects (<c>fsmission.cpp:5268-5284</c>).
+    /// <paramref name="random"/> asks for a random faction: native's client
+    /// resolves the random pick locally (<c>teamscreen.cpp:1062-1075</c>); this
+    /// port's server resolves it authoritatively and relays the concrete civ, so
+    /// <paramref name="civId"/> is only a placeholder for that case (the picker
+    /// sends the current civ). Mirror of <c>Bot.SendChangeTeamCiv</c>.</summary>
+    public void SendChangeTeamCiv(short sideId, short civId, bool random = false)
+    {
+        var msg = new ChangeTeamCiv { SideId = sideId, CivId = civId, Random = random };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
     /// <summary>Send a real <c>FM_C_SUICIDE(80)</c> — the client's "I want to
     /// die" request, the mirror of <c>Bot.SendSuicide</c>. The message is
     /// header-only (no fields to encode), so this takes no parameters. The
