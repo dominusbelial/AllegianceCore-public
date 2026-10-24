@@ -185,7 +185,7 @@ public sealed class CommandedDroneBuildKeyLiveTests
             Assert.NotEqual(commander.Id, drone.Id);
             Assert.Empty(sector.BuildingEffects);
 
-            SendBuild(client, drone.Id, rock.Data.AsteroidId);
+            SendBuild(client, drone.Id, rock.Data.AsteroidId, rock.Data.AabmCapabilities);
             int started = PumpUntil(srv, () => sector.BuildingEffects.Count > 0, 2000);
             Assert.True(started < 2000, "construction did not register");
             var effect = Assert.Single(sector.BuildingEffects);
@@ -223,7 +223,13 @@ public sealed class CommandedDroneBuildKeyLiveTests
             var rp = RockPos(wrongRock);
             var drone = SpawnBuilderDrone(srv, mission, sector, side, builderDroneId, stationType, new SimVec(rp.X + 300f, rp.Y, rp.Z));
 
-            SendBuild(client, drone.Id, wrongRock.Data.AsteroidId);
+            // P806 — the NATIVE client resolves a wrong-type rock to Goto (the
+            // miner/builder branch needs HasCapability(m_abmOrders),
+            // shipIGC.h:2080-2090), so a real client would not send Build here.
+            // This leg deliberately sends the explicit illegal Build to exercise
+            // the server's LegalCommand refusal (shipIGC.h:1701-1702).
+            client.SendChat("", ChatTarget.Individual, drone.Id, commandId: OrderChange.CidBuild,
+                otTarget: (short)IgcObjectType.Asteroid, oidTarget: wrongRock.Data.AsteroidId);
             // The echo on the same ordered connection fences command delivery;
             // native comments out the illegal drone command's Negative reply.
             const string Barrier = "P728 illegal command delivered";
@@ -249,12 +255,17 @@ public sealed class CommandedDroneBuildKeyLiveTests
         }
     }
 
-    private static void SendBuild(ConnectionSession client, short droneId, short rockId)
+    /// <summary>Resolve and send the exact default-order payload the issue-order
+    /// key would. P806 — the native miner/builder branch requires the rock's
+    /// <c>HasCapability(m_abmOrders)</c> (shipIGC.h:2080-2090), and the production
+    /// client fills that from the world's asteroid <c>AabmCapabilities</c>
+    /// (Game1.Targeting.BuildTargetProfile); this stand-in passes the same value.</summary>
+    private static void SendBuild(ConnectionSession client, short droneId, short rockId, short asteroidAbm)
     {
         var order = Game1.CommandOrderResolver.ResolveDefaultOrder(DataHullTypeIGC.HabmBuilder,
             commandeeIsLayer: false, commandeeHasParent: false,
             target: new Game1.CommandTargetProfile(Game1.TargetKind.Asteroid, rockId, Friendly: null,
-                TargetHullAbm: null, StationSabm: null, ProbeEabm: null));
+                TargetHullAbm: null, StationSabm: null, ProbeEabm: null, AsteroidAbm: asteroidAbm));
         Assert.NotNull(order);
         var payload = order.Value;
         client.SendChat("", ChatTarget.Individual, droneId, commandId: payload.CommandId,

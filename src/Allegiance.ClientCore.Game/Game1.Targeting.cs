@@ -1283,6 +1283,7 @@ public sealed partial class Game1
         short roleBits;
         bool commandeeOnParent;
         bool commandeeIsLayer;
+        short? builderAbm;
         lock (_session.Gate)
         {
             if (!world.Ships.TryGetValue(cmd.Id, out var ent))
@@ -1293,6 +1294,7 @@ public sealed partial class Game1
             roleBits = ShipRoleBits(ent.HullId);
             commandeeOnParent = ent.ParentId != -1;   // native m_pshipParent != NULL
             commandeeIsLayer = ShipIsLayer(ent.HullId);
+            builderAbm = BuilderOrdersAbm(ent.HullId);
         }
 
         // P757 — the target profile for the full native GetDefaultOrder table
@@ -1301,7 +1303,7 @@ public sealed partial class Game1
         // catalogues the rest of the commander UI reads.
         CommandTargetProfile profile;
         lock (_session.Gate) profile = BuildTargetProfile(world, tgt);
-        var order = CommandOrderResolver.ResolveDefaultOrder(roleBits, commandeeIsLayer, commandeeOnParent, profile);
+        var order = CommandOrderResolver.ResolveDefaultOrder(roleBits, commandeeIsLayer, commandeeOnParent, profile, builderAbm);
         if (order is not { } o)
         {
             Console.WriteLine($"[monogame] issue order: no applicable order for commandee {cmd.Name} (#{cmd.Id}) + target {tgt.Name} ({tgt.Kind}#{tgt.Id})");
@@ -1350,7 +1352,7 @@ public sealed partial class Game1
         bool? friendly = side is { } other && world.MySideId is { } ownSide
             ? other == ownSide || world.AreAllied(ownSide, other)
             : null;
-        short? targetHullAbm = null, stationSabm = null, probeEabm = null;
+        short? targetHullAbm = null, stationSabm = null, probeEabm = null, asteroidAbm = null;
         if (tgt.Kind == TargetKind.Ship && world.Ships.TryGetValue(tgt.Id, out var shipT))
             targetHullAbm = ShipRoleBits(shipT.HullId);
         else if (tgt.Kind == TargetKind.Station && world.Stations.TryGetValue(tgt.Id, out var stT)
@@ -1359,7 +1361,11 @@ public sealed partial class Game1
         else if (tgt.Kind == TargetKind.Probe && world.Probes.TryGetValue(tgt.Id, out var prT)
                  && _shopCatalog is { ProbeTypes: { } ptypes } && ptypes.TryGetValue(prT.ProbetypeId, out var ptype))
             probeEabm = ptype.EabmCapabilities;
-        return new CommandTargetProfile(tgt.Kind, tgt.Id, friendly, targetHullAbm, stationSabm, probeEabm);
+        else if (tgt.Kind == TargetKind.Asteroid && world.Asteroids.TryGetValue(tgt.Id, out var astT))
+            // P806 — the rock's AabmCapabilities: native's miner/builder default
+            // order tests HasCapability(m_abmOrders) against it (shipIGC.h:2080-2090).
+            asteroidAbm = astT.AabmCapabilities;
+        return new CommandTargetProfile(tgt.Kind, tgt.Id, friendly, targetHullAbm, stationSabm, probeEabm, asteroidAbm);
     }
 
     /// <summary>P415 — resolve a ship hull id to its role-relevant ABILITY bits
@@ -1742,5 +1748,21 @@ public sealed partial class Game1
             _targetNoMatchUntil = _nowSeconds + TargetNoMatchDisplaySeconds;
             Console.WriteLine("[monogame] target hostile: no recent damager and no enemy ship in sector");
         }
+    }
+
+    /// <summary>P806 — a builder drone's orders mask, native
+    /// <c>m_abmOrders = GetBuildAABM()</c> of the station type it constructs
+    /// (shipIGC.h:2053-2057): the station type whose construction drone flies this
+    /// hull. Null when the hull builds no catalogued station type.</summary>
+    private short? BuilderOrdersAbm(short hullId)
+    {
+        if (_shopCatalog is not { DroneTypes: { } drones, StationTypes: { } stations }) return null;
+        foreach (var drone in drones.Values)
+        {
+            if (drone.HullTypeId != hullId) continue;
+            foreach (var st in stations.Values)
+                if (st.ConstructionDroneTypeId == drone.DroneTypeId) return st.AabmBuild;
+        }
+        return null;
     }
 }

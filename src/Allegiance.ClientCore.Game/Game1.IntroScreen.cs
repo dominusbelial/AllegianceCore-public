@@ -290,9 +290,10 @@ public sealed partial class Game1
 
     // P757 — extra intro edge latches (manual Back/scroll).
     private bool _iBack, _iPgUp, _iPgDn;
-    // P757 — the options-menu row and the intro credits' scroll position
+    // P806 — the native options MENU TREE (root + Sound/Game/Chat submenus,
+    // WinTrek.cpp:4429-4442, 4502-4590) and the intro credits' scroll position
     // (native creditsTime, introscreen.cpp:643-653).
-    private int _optionsMenuRow;
+    private readonly OptionsMenuModel _optionsMenu = new();
     private float _introCreditsScroll;
     // P757 — the shared manual model (intro Help + the in-flight H overlay).
     private Rendering.HelpManualModel _helpManual = new();
@@ -334,7 +335,7 @@ public sealed partial class Game1
                 break;
             case IntroCommand.Options:        // native OnButtonOptions → ShowOptionsMenu (introscreen.cpp:1847-1851): the four-group options menu.
                 _introView = IntroView.Settings;
-                _optionsMenuRow = 0;
+                _optionsMenu.Reset();
                 _optionsPrefsLoaded = false;   // re-read player.json once on open (P757b)
                 EnsureOptionsPrefs();
                 break;

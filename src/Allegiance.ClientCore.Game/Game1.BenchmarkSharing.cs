@@ -71,100 +71,175 @@ public sealed partial class Game1
         _optionsPrefsLoaded = true;
     }
 
-    /// <summary>P757 — the intro Options menu (native
-    /// <c>WinTrek::ShowOptionsMenu</c>, WinTrek.cpp:4429-4442 + GetSubMenu
-    /// :4502-4590): four native-named groups, each backed by the port's real
-    /// controls — Graphics Options (the graphics settings overlay), Sound
-    /// Options (music on/off + volume), Game Options (chat filter default +
-    /// "Map Keys and Controls", both native Game Options items) and the key
-    /// bindings popup. Up/Down + Enter navigate; the inherited hotkeys are
-    /// G (Graphics), S (benchmark sharing) and K (Map Keys and Controls), with
-    /// the new Sound/Game toggles on the previously unused A/F keys.</summary>
+    /// <summary>P806 — the intro Options menu is the NATIVE MENU TREE
+    /// (<c>WinTrek::ShowOptionsMenu</c>, WinTrek.cpp:4429-4442, and the submenus
+    /// <c>GetSubMenu</c> builds at :4502-4590): Sound Options and Game Options
+    /// are nested menus (with Chat/Mute/Filter nested one level deeper), not
+    /// one-press toggles. <see cref="OptionsMenuModel"/> owns the tree and the
+    /// labels; this method feeds it the live switch state and executes the
+    /// selected command against the port's real controls. Up/Down move,
+    /// Enter activates, a row's native hotkey activates it directly, and ESC
+    /// leaves a submenu (and closes the menu at the root — native OnCancel).</summary>
     private void UpdateOptionsMenu(KeyboardState? ks = null)
     {
         var keys = ks ?? Keyboard.GetState();
         EnsureOptionsPrefs();
         bool Press(Keys key) => keys.IsKeyDown(key) && !_iPrivacyKeys.IsKeyDown(key);
 
+        var state = CurrentOptionsState();
         bool esc = Press(Keys.Escape);
-        if (Press(Keys.Up)) _optionsMenuRow = (_optionsMenuRow + 3) % 4;
-        if (Press(Keys.Down)) _optionsMenuRow = (_optionsMenuRow + 1) % 4;
+        if (Press(Keys.Up)) _optionsMenu.Move(-1, state);
+        if (Press(Keys.Down)) _optionsMenu.Move(1, state);
 
-        void Activate(int row)
+        void Run(OptionsMenuModel.OptionsCommand cmd)
         {
-            switch (row)
+            switch (cmd)
             {
-                case 0:   // Graphics Options (native idmOptions)
+                case OptionsMenuModel.OptionsCommand.GraphicsSettings:   // native idmOptions
                     _graphicsSettingsVisible = true;
                     _introView = IntroView.Main;
                     break;
-                case 1:   // Sound Options (native idmSoundOptions: the port's real
-                          // sound controls are the music toggle + volume)
-                    if (_music is not null) _music.Toggle();
+                case OptionsMenuModel.OptionsCommand.OpenSoundMenu:
+                case OptionsMenuModel.OptionsCommand.OpenGameMenu:
+                case OptionsMenuModel.OptionsCommand.OpenChatMenu:
+                    _optionsMenu.Activate(state);          // descend one level
                     break;
-                case 2:   // Game Options (native idmGameOptions): chat filter + controls
-                    ToggleOptionsChatFilter();
-                    break;
-                case 3:   // Map Keys and Controls (native Game Options 'C')
+                case OptionsMenuModel.OptionsCommand.MapKeysAndControls: // native idmConfigure 'C'
                     ToggleKeyBindings();
                     _introView = IntroView.Main;
+                    break;
+                case OptionsMenuModel.OptionsCommand.ToggleMusic:         // native idmToggleMusic
+                    _music?.Toggle();
+                    break;
+                case OptionsMenuModel.OptionsCommand.MusicVolumeUp:       // native idmMusicVolumeUp
+                    _music?.VolumeUp();
+                    break;
+                case OptionsMenuModel.OptionsCommand.MusicVolumeDown:     // native idmMusicVolumeDown
+                    _music?.VolumeDown();
+                    break;
+                case OptionsMenuModel.OptionsCommand.ToggleFilterChatsToAll: // native idmFilterChatsToAll
+                    ToggleOptionsChatFilter();
+                    break;
+                case OptionsMenuModel.OptionsCommand.ToggleLinearControls:   // native idmToggleLinearControls 'L'
+                    _mouseFlight.LinearControls = !_mouseFlight.LinearControls;
+                    Console.WriteLine($"[intro] game options: linear controls -> {(_mouseFlight.LinearControls ? "on" : "off")}");
+                    break;
+                case OptionsMenuModel.OptionsCommand.CycleDeadzone:          // native idmToggleLargeDeadZone 'Z'
+                {
+                    var presets = Flight.MouseFlightController.DeadzonePresets;
+                    int i = System.Array.FindIndex(presets, d => MathF.Abs(d - _mouseFlight.Deadzone) < 0.0005f);
+                    i = i < 0 ? 0 : (i + 1) % presets.Length;
+                    _mouseFlight.Deadzone = presets[i];
+                    Console.WriteLine($"[intro] game options: mouse dead zone -> {presets[i]:0.00}");
+                    break;
+                }
+                case OptionsMenuModel.OptionsCommand.ToggleFlipY:            // native idmToggleFlipY 'Y'
+                    _mouseFlight.InvertPitch = !_mouseFlight.InvertPitch;
+                    Console.WriteLine($"[intro] game options: flip Y -> {(_mouseFlight.InvertPitch ? "on" : "off")}");
+                    break;
+                case OptionsMenuModel.OptionsCommand.ToggleVirtualJoystick:  // native idmToggleVirtualJoystick 'J'
+                    _mouseFlightEnabled = !_mouseFlightEnabled;
+                    if (_mouseFlightEnabled) _mouseFlight.Enable(); else _mouseFlight.Reset();
+                    Console.WriteLine($"[intro] game options: virtual joystick -> {(_mouseFlightEnabled ? "on" : "off")}");
                     break;
             }
         }
 
-        // Old, documented hotkeys first (G/S/K keep their pre-P757 meaning),
-        // then the new one-press Sound/Game toggles on unused keys.
-        if (esc) _introView = IntroView.Main;                 // native OnCancel
-        else if (Press(Keys.G)) Activate(0);
-        else if (Press(Keys.S)) { if (_benchmarkSharing?.Available == true) _sharePanel = true; }
-        else if (Press(Keys.K)) Activate(3);
-        else if (Press(Keys.A)) Activate(1);
-        else if (Press(Keys.F)) Activate(2);
-        else if (Press(Keys.Enter)) Activate(_optionsMenuRow);
+        // ESC leaves a submenu; at the root it closes the menu (native OnCancel).
+        if (esc)
+        {
+            if (!_optionsMenu.Back()) _introView = IntroView.Main;
+        }
+        else if (Press(Keys.Enter))
+        {
+            if (_optionsMenu.Activate(state) is { } cmd) Run(cmd);
+        }
+        else
+        {
+            // Native menu hotkeys (the letters GetSubMenu assigns) first.
+            foreach (Keys k in Enum.GetValues<Keys>())
+            {
+                if (k is < Keys.A or > Keys.Z || !Press(k)) continue;
+                if (_optionsMenu.CommandForHotkey((char)('A' + (k - Keys.A)), state) is { } cmd)
+                {
+                    Run(cmd);
+                    break;
+                }
+            }
+        }
 
+        // The port's added benchmark-sharing panel moves to B (S is the native
+        // Sound Options hotkey now). Global music keys stay as they were.
+        if (Press(Keys.B)) { if (_benchmarkSharing?.Available == true) _sharePanel = true; }
         if (Press(Keys.M) && _music is not null) _music.Toggle();
         if (Press(Keys.OemPlus) && _music is not null) _music.VolumeUp();
         if (Press(Keys.OemMinus) && _music is not null) _music.VolumeDown();
         _iPrivacyKeys = keys;
     }
 
+    /// <summary>P806 — the live switch state the options menu labels render.</summary>
+    private OptionsMenuModel.OptionsState CurrentOptionsState()
+    {
+        EnsureOptionsPrefs();
+        return new OptionsMenuModel.OptionsState(
+            MusicOn: _music?.Enabled ?? false,
+            FilterChatsToAll: _optionsPrefs.FilterChatsToAll,
+            LinearControls: _mouseFlight.LinearControls,
+            FlipY: _mouseFlight.InvertPitch,
+            VirtualJoystick: _mouseFlightEnabled,
+            Deadzone: _mouseFlight.Deadzone);
+    }
+
+    /// <summary>P806 — native <c>ToggleFilterChatsToAll</c> (WinTrek.cpp:4706-4722):
+    /// flip the "filter chats sent to all" switch, persist it, and re-filter the
+    /// chat log (native drops CHAT_EVERYONE in <c>ReceiveChat</c>,
+    /// <c>trekigc.cpp:4493</c>; the port applies it to the visible history).</summary>
     private void ToggleOptionsChatFilter()
     {
         EnsureOptionsPrefs();
-        _optionsPrefs.ChatFilterPlayersOnly = !_optionsPrefs.ChatFilterPlayersOnly;
+        _optionsPrefs.FilterChatsToAll = !_optionsPrefs.FilterChatsToAll;
         _optionsPrefs.Save();
-        _chatPaneFilterMode = _optionsPrefs.ChatFilterPlayersOnly ? 1 : 0;
-        ApplyChatPaneFilterMode();
-        Console.WriteLine($"[intro] game options: chat filter -> {(_optionsPrefs.ChatFilterPlayersOnly ? "PLAYERS" : "ALL")}");
+        _chatFilterChatsToAll = _optionsPrefs.FilterChatsToAll;
+        // The Options screen also opens from the intro (no session yet): only the
+        // in-flight/team-lobby pane has a log to re-window.
+        if (_session is not null) _lastChatCount = FilteredChatCount();
+        Console.WriteLine($"[intro] game options: filter chats sent to all -> {(_chatFilterChatsToAll ? "on" : "off")}");
     }
 
+    /// <summary>P806 — draw the current native menu page (root or submenu): the
+    /// highlighted row and the labels, plus the native navigation hint. Drawing
+    /// reads the cached preference snapshot only (P757b: no file I/O here).</summary>
     private void DrawPrivacySettings(float width, float height, Color title, Color dim)
     {
-        // Drawing reads the cached snapshot only (P757b): Load() does file I/O
-        // and must never run from the Draw path. UpdateOptionsMenu loads it once
-        // before Draw on the same frame the Settings view first becomes active.
-        bool playersOnly = _optionsPrefs.ChatFilterPlayersOnly;
-        DrawIntroTitle(width, "Options", "Graphics / Sound / Game / Controls", title, dim);
-        string[] rows =
+        EnsureOptionsPrefs();
+        var state = CurrentOptionsState();
+        var rows = _optionsMenu.Rows(state);
+        string subtitle = _optionsMenu.Current switch
         {
-            "Graphics Options (G)",
-            "Sound Options (A toggle, +/- volume)",
-            $"Game Options (F: chat filter: {(playersOnly ? "PLAYERS" : "ALL")})",
-            "Map Keys and Controls (K)",
+            OptionsMenuModel.Page.Sound => "Sound Options",
+            OptionsMenuModel.Page.Game => "Game Options",
+            OptionsMenuModel.Page.Chat => "Game Options / Chat, Mute, Filter",
+            _ => "Graphics / Sound / Game / Controls",
         };
+        DrawIntroTitle(width, "Options", subtitle, title, dim);
         float y = height * 0.36f;
-        for (int i = 0; i < rows.Length; i++)
+        for (int i = 0; i < rows.Count; i++)
         {
-            bool sel = i == _optionsMenuRow;
+            bool sel = i == _optionsMenu.Row0;
             if (sel)
                 _spriteBatch.Draw(_whitePixel, new Rectangle(60, (int)y - 4, (int)width - 120, 30),
                     new Color(0.08f, 0.35f, 0.33f, 0.55f));
-            _spriteBatch.DrawString(_hudSmall, (sel ? "> " : "  ") + rows[i], new Vector2(72, y), sel ? title : Color.White);
+            string hot = rows[i].Hotkey == '\0' ? "" : $"  ({rows[i].Hotkey})";
+            _spriteBatch.DrawString(_hudSmall, (sel ? "> " : "  ") + rows[i].Label + hot,
+                new Vector2(72, y), sel ? title : Color.White);
             y += 40f;
         }
-        _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   ENTER open   ESC back", new Vector2(72, y + 18f), dim);
+        string hint = _optionsMenu.Current == OptionsMenuModel.Page.Root
+            ? "UP/DOWN select   ENTER open   ESC back"
+            : "UP/DOWN select   ENTER toggle   ESC back";
+        _spriteBatch.DrawString(_hudSmall, hint, new Vector2(72, y + 18f), dim);
         if (_benchmarkSharing?.Available == true)
-            _spriteBatch.DrawString(_hudSmall, "S: Anonymous benchmark sharing\n" + _benchmarkSharing.Status,
+            _spriteBatch.DrawString(_hudSmall, "B: Anonymous benchmark sharing\n" + _benchmarkSharing.Status,
                 new Vector2(72, y + 60f), Color.White);
     }
     private bool UpdateBenchmarkSharingPanel(KeyboardState keys)

@@ -24,7 +24,18 @@ internal sealed record ServerListing(
     IReadOnlyList<string> Players,
     /// <summary>P761b — the per-server opt-in that lets this directory answer
     /// find-player queries from its pilot list. Default OFF.</summary>
-    bool PublishPlayers);
+    bool PublishPlayers,
+    /// <summary>P806 — the game settings the SERVER-LIST FILTERS and the
+    /// status/skill/settings SORT columns read. Native carries the same data in
+    /// the <c>MissionParams</c> the lobby hands the client inside
+    /// <c>MissionInfo</c> (<c>clintlib/clintlib.h:540-557</c>: AllowDevelopments /
+    /// LimitedLives / ScoresCount / WasObjectModelCreated / GoalConquest /
+    /// GoalDeathMatch / GoalProsperity / GoalCountdown / GoalArtifacts /
+    /// GoalFlags / GoalTerritory / MinRank / MaxRank / InProgress). Null when a
+    /// (pre-P806) host did not publish it — the client then cannot prove either
+    /// side of a Yes/No filter and hides the listing while that flag is set.
+    /// </summary>
+    GameParamsDto? Game = null);
 
 /// <summary>
 /// The public, read-only projection of a <see cref="ServerListing"/> — the exact
@@ -51,7 +62,49 @@ public sealed record ServerListingDto(
     string CoreFile,
     string Version,
     DateTimeOffset RegisteredUtc,
-    DateTimeOffset LastSeenUtc);
+    DateTimeOffset LastSeenUtc,
+    /// <summary>P806 — the registered game settings (same shape as
+    /// <see cref="GameParamsDto"/>). Null for a host that publishes none.</summary>
+    GameParamsDto? Game = null);
+
+/// <summary>
+/// P806 — the native mission settings the server-list screen filters and sorts
+/// on, as published by a registering server. Every field mirrors one native
+/// <c>MissionInfo</c> accessor (<c>clintlib/clintlib.h:540-557</c>):
+/// <list type="bullet">
+/// <item><see cref="AllowDevelopments"/> — <c>bAllowDevelopments</c> (igc.h:1128);</item>
+/// <item><see cref="Lives"/> — <c>iLives</c> (igc.h:1185); <c>0x7fff</c> =
+/// unlimited, so <c>LimitedLives()</c> is <c>Lives != 0x7fff</c>;</item>
+/// <item><see cref="ScoresCount"/> — <c>bScoresCount</c> (igc.h:1141);</item>
+/// <item><see cref="ObjectModelCreated"/> — <c>bObjectModelCreated</c>
+/// (igc.h:1150), the native "Zone" filter column;</item>
+/// <item><see cref="InProgress"/> — <c>fInProgress</c> (the status/running-time
+/// sort input);</item>
+/// <item><see cref="GoalConquest"/>/<see cref="GoalDeathmatch"/>/<see cref="GoalProsperity"/>/<see cref="GoalCountdown"/>/<see cref="GoalArtifacts"/>/<see cref="GoalFlags"/>/<see cref="GoalTerritory"/> —
+/// the seven winning-condition bits (<c>igc.h:1511-1540</c>);</item>
+/// <item><see cref="MinRank"/>/<see cref="MaxRank"/> — <c>iMinRank</c>/<c>iMaxRank</c>
+/// (igc.h:1196-1197), the skill sort column.</item>
+/// </list>
+/// These are <b>native wire-carried</b> values: the native client gets them in
+/// the mission definition the lobby relays (<c>MissionInfo::GetMissionParams()</c>),
+/// not by inspecting a running game. In this port the HTTP directory is the
+/// lobby, so the same fields ride the register/heartbeat payload.
+/// </summary>
+public sealed record GameParamsDto(
+    bool AllowDevelopments,
+    int Lives,
+    bool ScoresCount,
+    bool ObjectModelCreated,
+    bool InProgress,
+    bool GoalConquest,
+    bool GoalDeathmatch,
+    bool GoalProsperity,
+    bool GoalCountdown,
+    bool GoalArtifacts,
+    bool GoalFlags,
+    bool GoalTerritory,
+    short MinRank,
+    short MaxRank);
 
 /// <summary>
 /// P761b — one hit of the per-name find-player query (<c>GET /api/servers/findplayer?name=</c>):
@@ -99,8 +152,41 @@ public sealed class RegisterRequest
     /// choice.</summary>
     public bool PublishPlayers { get; set; }
 
+    /// <summary>P806 — the game settings the server-list filters/sort read (see
+    /// <see cref="GameParamsDto"/>). Optional: a host that omits it registers
+    /// exactly as before, and the client treats the metadata as unknown.</summary>
+    public GameParamsRequest? Game { get; set; }
+
     /// <summary>The ownership token; null/blank means "new registration".</summary>
     public string? Token { get; set; }
+}
+
+/// <summary>
+/// P806 — the mutable JSON shape of <see cref="GameParamsDto"/> on the register
+/// payload. Nullable members let an older host omit individual settings; the
+/// registry fills each missing one with native <c>MissionParams::Reset</c>'s
+/// value (<c>Igc/igc.h:1190-1310</c>), so a partial payload still describes a
+/// plausible mission rather than flipping every filter.
+/// </summary>
+public sealed class GameParamsRequest
+{
+    public bool? AllowDevelopments { get; set; }
+    /// <summary><c>MissionParams::iLives</c>; omitted → <c>c_cUnlimitedLives</c> (0x7fff).</summary>
+    public int? Lives { get; set; }
+    public bool? ScoresCount { get; set; }
+    public bool? ObjectModelCreated { get; set; }
+    public bool? InProgress { get; set; }
+    public bool? GoalConquest { get; set; }
+    public bool? GoalDeathmatch { get; set; }
+    public bool? GoalProsperity { get; set; }
+    public bool? GoalCountdown { get; set; }
+    public bool? GoalArtifacts { get; set; }
+    public bool? GoalFlags { get; set; }
+    public bool? GoalTerritory { get; set; }
+    /// <summary><c>iMinRank</c>; omitted → native default -1 (no lower bound).</summary>
+    public int? MinRank { get; set; }
+    /// <summary><c>iMaxRank</c>; omitted → native default 1000.</summary>
+    public int? MaxRank { get; set; }
 }
 
 /// <summary>

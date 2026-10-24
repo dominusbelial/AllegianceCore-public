@@ -453,6 +453,11 @@ public static class InputActionCatalog
         new("LobbyResetFilters", "LOBBY (SERVER BROWSER)", "Reset all game filters + sort to players reversed", K(Keys.C), null),
         new("LobbyFindPlayer", "LOBBY (SERVER BROWSER)", "Find player in the directory's games", K(Keys.P), null),
         new("LobbyDetails", "LOBBY (SERVER BROWSER)", "Show the selected game's details", K(Keys.I), null),
+        // P806 — the native FilterDialogPopup (gamescreen.cpp:351-529): eleven
+        // Yes/No/DontCare game-setting filters (developments/lives/scores/zone/
+        // conquest/deathmatch/prosperity/countdown/artifact/flags/territorial).
+        // L is free in the lobby group (the native Filter button has no key).
+        new("LobbyGameFilters", "LOBBY (SERVER BROWSER)", "Filter games by their settings", K(Keys.L), null),
 
         // -- READY CHECK (PRE-FLIGHT) --
         new("ReadyToggle", "READY CHECK (PRE-FLIGHT)", "Toggle your ready (PLAYER_READY)", K(Keys.Y), null),

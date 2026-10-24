@@ -169,7 +169,9 @@ public sealed class LobbyHeartbeatTests
     /// through the source-generated context byte-identically to the anonymous
     /// payload the heartbeat used to POST under System.Net.Http.Json's Web
     /// defaults (camelCase keys, null Token still emitted). The wire bytes must
-    /// not change when AOT swaps in source-gen.</summary>
+    /// not change when AOT swaps in source-gen. P806 appended the optional
+    /// <c>Game</c> settings object (also emitted as null when absent), so the
+    /// reference payload carries it too.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void LobbyRegisterRequest_serializes_to_byte_identical_wire_shape()
@@ -177,7 +179,7 @@ public sealed class LobbyHeartbeatTests
         Require.Artwork();
         var req = new global::Allegiance.Server.LobbyRegisterRequest(
             "Srv", "1.2.3.4", 5333, 7, 0, "Wing War", "PCore001.igc", "0.1.0", null,
-            PublishPlayers: false, Token: null);
+            PublishPlayers: false, Token: null, Game: null);
         string viaContext = JsonSerializer.Serialize(req,
             global::Allegiance.Server.ServerJsonContext.Default.LobbyRegisterRequest);
 
@@ -185,11 +187,13 @@ public sealed class LobbyHeartbeatTests
         var anon = new { Name = "Srv", Address = "1.2.3.4", Port = 5333, PlayerCount = (int?)7,
             MaxPlayers = 0, MissionName = "Wing War", CoreFile = "PCore001.igc", Version = "0.1.0",
             Players = (System.Collections.Generic.IReadOnlyList<string>?)null,
-            PublishPlayers = false, Token = (string?)null };
+            PublishPlayers = false, Token = (string?)null,
+            Game = (global::Allegiance.Server.LobbyGameParams?)null };
         string viaWebDefaults = JsonSerializer.Serialize(anon, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
         Assert.Equal(viaWebDefaults, viaContext);           // byte-identical wire shape
         Assert.Contains("\"token\":null", viaContext);      // null Token still emitted (no IgnoreCondition)
+        Assert.Contains("\"game\":null", viaContext);       // P806 — absent settings still emitted (no IgnoreCondition)
         Assert.Contains("\"playerCount\":7", viaContext);   // camelCase, as before
     }
 

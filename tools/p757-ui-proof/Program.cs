@@ -134,16 +134,15 @@ sealed class FlightProof(Game1 game, string output) : GameComponent(game)
                 Call("SendChatLine");
                 break;
             case 3:
-                // Cycle the channel filter (Alt+C edge's production seam) to the
-                // channel mode: the Everyone system lines drop out, the Team
-                // chat stays (native ChatPassesFilter).
-                Set("_chatPaneFilterMode", 2);
-                Call("ApplyChatPaneFilterMode");
-                Shot("chat-filter-channel-720p");
+                // P806 — the native players-only switch (chatpane.cpp:146): the
+                // non-player system lines drop out, player chat stays.
+                Set("_chatPlayerChatsOnly", true);
+                Call("ApplyChatPaneFilter");
+                Shot("chat-filter-players-720p");
                 break;
             case 4:
-                Set("_chatPaneFilterMode", 0);
-                Call("ApplyChatPaneFilterMode");
+                Set("_chatPlayerChatsOnly", false);
+                Call("ApplyChatPaneFilter");
                 Pane.PageUp((int)Call("FilteredChatCount")!, ChatRenderer.MaxVisible, 0);
                 Shot("chat-filter-paused-720p");   // autoscroll paused + (OLDER) hint
                 break;

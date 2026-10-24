@@ -757,6 +757,13 @@ public sealed partial class Game1
     private void PrimeInFlightKeyLatches(KeyboardState ks)
     {
         PrimeFlightParts(ks);
+        // P806 — leaving the team lobby drops its chat-channel filter: native's
+        // in-flight console chat pane selects NO channels (console.cpp:3439-3442),
+        // only the players-only switch applies. Re-applied if/when the port shows
+        // the lobby pane again.
+        _lobbyChatChannelsApplied = false;
+        if (_chatPane is not null) _chatPane.ResetChannels();
+        if (_session is not null) _lastChatCount = FilteredChatCount();
         (_enterWasDown, _qcRWasDown) = ComputeSharedEdgePrimes(ks);
         // The chat-delete Backspace is TEXT ENTRY (allow-listed raw key);
         // every other latch below tracks the ACTION (resolved binding).
@@ -1111,7 +1118,7 @@ public sealed partial class Game1
                 // compose recipient (native AddChannel rebuilds the view,
                 // chatpane.cpp:340-345), so a mid-compose Tab cycle re-applies
                 // it while the pane filter is in its channel mode.
-                if (_chatPaneFilterMode == 2) ApplyChatPaneFilterMode();
+                if (_state == ClientState.ReadyCheck) ApplyChatPaneFilter();
                 Console.WriteLine($"[monogame] chat target -> {_chatTarget} ({ChatTargetLogic.ComposeLabel(_chatTarget).Trim()})");
             }
             _chatTabKeyWasDown = chatTab;
@@ -1198,16 +1205,17 @@ public sealed partial class Game1
         // history over new activity.
         if (!_qcMenuOpen && !_helpVisible)
         {
-            // P757 — one-shot: seed the pane's channel-filter mode from the
-            // saved Game Options preference (native m_bPlayerChatsOnly default).
+            // P806 — one-shot: seed the pane's players-only switch (native
+            // m_bPlayerChatsOnly, chatpane.cpp:146) from the saved Game Options
+            // preference. The channel list stays EMPTY in flight, exactly like
+            // native's console chat pane (console.cpp:3439-3442).
             if (!_chatPaneFilterSeeded)
             {
                 _chatPaneFilterSeeded = true;
-                if (IntroPreferences.Load().ChatFilterPlayersOnly)
-                {
-                    _chatPaneFilterMode = 1;
-                    ApplyChatPaneFilterMode();
-                }
+                var prefs = IntroPreferences.Load();
+                _chatPlayerChatsOnly = prefs.ChatFilterPlayersOnly;
+                _chatFilterChatsToAll = prefs.FilterChatsToAll;   // native default true
+                ApplyChatPaneFilter();
             }
             // P757 — the chat pane's history view is the ChatPaneModel now
             // (native chatpane.cpp): new lines scroll only while autoscroll is
@@ -1234,17 +1242,20 @@ public sealed partial class Game1
             if (msgDn && !_chatMsgDnWasDown) _chatPane.ScrollBy(-1, chatCount, ChatRenderer.MaxVisible, _nowSeconds);
             _chatMsgDnWasDown = msgDn;
 
-            // P757 — chat-pane channel filter (Alt+C): cycle All → Players →
-            // Channel. Every state is a native configuration of the same
-            // ChatPassesFilter machinery (chatpane.cpp:299-358): Players = the
-            // native m_bPlayerChatsOnly default; Channel = the lobby pane's
-            // [compose channel, Individual, IndividualNoFilter, Admin] set
-            // (teamscreen.cpp:3085-3101).
+            // P806 — the native Game Options "Filter Chats" switch (the pane's
+            // m_bPlayerChatsOnly, chatpane.cpp:146,228-233; the menu item is
+            // WinTrek.cpp:4570-4572/4706-4722). Toggles non-player chatter
+            // filtering and persists the choice. (The old Alt+C All/Players/
+            // Channel CYCLE is gone: native selects channels from the lobby chat
+            // target buttons, not with a cycle — teamscreen.cpp:3085-3101.)
             bool filterKey = ActionDown(ks, "ChatPaneFilter");
             if (filterKey && !_chatPaneFilterWasDown)
             {
-                _chatPaneFilterMode = (_chatPaneFilterMode + 1) % 3;
-                ApplyChatPaneFilterMode();
+                _chatPlayerChatsOnly = !_chatPlayerChatsOnly;
+                EnsureOptionsPrefs();
+                _optionsPrefs.ChatFilterPlayersOnly = _chatPlayerChatsOnly;
+                _optionsPrefs.Save();
+                ApplyChatPaneFilter();
                 Console.WriteLine($"[monogame] chat filter -> {ChatPaneFilterLabel()}");
             }
             _chatPaneFilterWasDown = filterKey;

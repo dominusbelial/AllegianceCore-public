@@ -294,8 +294,12 @@ public class Hud11LayoutPerfTests
         // Merge fixup: native GetDefaultOrder switches on m_pilotType; a human is
         // c_ptPlayer, so hull Miner/Builder bits never turn a pick into Mine/Build.
         var rock = new Game1.AutopilotTarget(Game1.TargetKind.Asteroid, 5, "rock");
+        // P806 — the rock's capability is part of the native branch
+        // (HasCapability(m_abmOrders), shipIGC.h:2080-2090), so the drone-rule
+        // leg needs an He3 rock (the Miner mask) to reach Mine.
         var profile = new Game1.CommandTargetProfile(Game1.TargetKind.Asteroid, 5, Friendly: null,
-            TargetHullAbm: null, StationSabm: null, ProbeEabm: null);
+            TargetHullAbm: null, StationSabm: null, ProbeEabm: null,
+            AsteroidAbm: DataAsteroidIGC.AabmMineHe3);
         short hullRoles = (short)(DataHullTypeIGC.HabmMiner | DataHullTypeIGC.HabmBuilder);
 
         Assert.Equal(OrderChange.CidMine, Game1.CurrentCommandSetFor(rock, hullRoles,

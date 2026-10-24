@@ -25,7 +25,17 @@ public sealed record ServerListing(
     string CoreFile,
     string Version,
     DateTimeOffset RegisteredUtc,
-    DateTimeOffset LastSeenUtc)
+    DateTimeOffset LastSeenUtc,
+    /// <summary>
+    /// P806 — the game settings this server published (native
+    /// <c>MissionInfo</c>, <c>clintlib/clintlib.h:540-557</c>), the data the
+    /// server-list filters and the status/skill/settings sort columns evaluate.
+    /// Null when a host publishes none: the client then cannot prove either
+    /// side of a Yes/No filter and hides that listing while the flag is set
+    /// (see <see cref="LobbyGameFilters"/>). Optional so the record keeps the
+    /// pre-P806 construction sites working.
+    /// </summary>
+    GameParams? Game = null)
 {
     /// <summary>The default lobby-directory URL the client browses when none is
     /// given. This is the lobby's real default listen address — confirmed by
@@ -160,6 +170,21 @@ public static class ServerDirectorySearch
             "VERSION: " + (string.IsNullOrWhiteSpace(l.Version) ? "-" : l.Version),
             "PLAYERS: " + l.PlayerCount + (l.MaxPlayers > 0 ? "/" + l.MaxPlayers : ""),
         };
+        // P806 — the directory now carries the native MissionInfo settings, so
+        // the panel can show the same facts native's list paints from them:
+        // the winning condition (GameType, gametypes.cpp), the developments and
+        // lives switches and the running/waiting state. Only carried values are
+        // shown; a host that publishes none keeps the pre-P806 panel.
+        if (l.Game is { } g)
+        {
+            lines.Add("TYPE:    " + GameParams.GameTypeName(g));
+            lines.Add("STATE:   " + (g.InProgress ? "running" : "waiting"));
+            lines.Add("GOALS:   " + g.GoalSummary());
+            // One fact per line, same label column: the combined line ran past the
+            // panel's right edge at 1280 wide.
+            lines.Add("DEVEL:   " + (g.AllowDevelopments ? "on" : "off"));
+            lines.Add("LIVES:   " + g.LivesLabel());
+        }
         return lines;
     }
 }

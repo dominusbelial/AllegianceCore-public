@@ -61,6 +61,21 @@ public static class ChatTargetLogic
     }
 
     /// <summary>
+    /// P806 — the LOBBY chat-target cycle: native's three chat buttons
+    /// (<c>OnButtonBarChat</c>, teamscreen.cpp:3082-3118) are Everyone, Team and
+    /// Leaders; the Leaders step only exists for the side's team leader (the
+    /// native button is skipped otherwise), so a non-leader cycles the first two.
+    /// The port's team lobby (ReadyCheck) uses Tab as the keyboard stand-in for
+    /// those buttons, mirroring the flight compose cycle's key.
+    /// </summary>
+    public static ChatTarget NextLobby(ChatTarget current, bool isTeamLeader)
+    {
+        if (current == ChatTarget.Everyone) return ChatTarget.Team;
+        if (isTeamLeader) return current == ChatTarget.Team ? ChatTarget.Leaders : ChatTarget.Everyone;
+        return ChatTarget.Everyone;
+    }
+
+    /// <summary>
     /// Whether Tab may cycle the recipient mid-compose. Native only cycles when
     /// the typed buffer is empty or holds a single leading space
     /// (<c>*pcc == '\0' || *pcc == ' '</c>, console.cpp:2747-2755); typed text

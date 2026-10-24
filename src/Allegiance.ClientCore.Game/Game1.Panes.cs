@@ -1633,6 +1633,27 @@ public sealed partial class Game1
         if (o && !_rcOWasDown) ToggleTeamReady();
         _rcOWasDown = o;
 
+        // P806 — the team lobby's chat pane (native TeamScreen hosts the same
+        // ChatListPane, teamscreen.cpp:1214/1455): TAB steps the chat-target
+        // button set (Everyone → Team → Leaders, the last one only for the side's
+        // team leader — the native OnButtonBarChat cases, teamscreen.cpp:3082-3118)
+        // and each step re-applies the native channel list
+        // [target, Individual, IndividualNoFilter, Admin]. The pane itself is
+        // drawn by DrawReadyCheckChat.
+        if (!_lobbyChatChannelsApplied)
+        {
+            ApplyChatPaneFilter();
+            _lobbyChatChannelsApplied = true;
+        }
+        bool rcChatTab = ActionDown(ks, "CycleChatTarget");
+        if (rcChatTab && !_rcChatTabWasDown && !_civPickerOpen)
+        {
+            _lobbyChatTarget = Rendering.ChatTargetLogic.NextLobby(_lobbyChatTarget, IsTeamLobbyLeader());
+            ApplyChatPaneFilter();
+            Console.WriteLine($"[monogame] ready-check: lobby chat target -> {_lobbyChatTarget} ({ChatPaneFilterLabel()})");
+        }
+        _rcChatTabWasDown = rcChatTab;
+
         // P761 — the team lobby's configuration controls (native's button row,
         // teamscreen.cpp:1554-1573): the visibility/enable matrix in
         // LobbyScreenState.BuildTeamControls decides whether the key fires at
@@ -1829,6 +1850,57 @@ public sealed partial class Game1
             civIconStem = State.TeamCivPicker.IconStem(world);
         }
         _readyCheckRenderer.Draw(GraphicsDevice.Viewport, rows, CivIconFor(civIconStem));
+        DrawReadyCheckChat();
+    }
+
+    /// <summary>P806 — the team lobby's chat pane (native <c>ChatListPane</c> on
+    /// the TeamScreen, teamscreen.cpp:1214-1214/1455): the filtered history tail,
+    /// bottom-left, with the active channel shown in its header. The history
+    /// window itself is <see cref="Rendering.ChatPaneModel"/>'s (autoscroll /
+    /// 10-second resume / paused-pane content, chatpane.cpp:167-283), so this
+    /// draw is only the panel.</summary>
+    private void DrawReadyCheckChat()
+    {
+        var lines = BuildChatLines();
+        var vp = GraphicsDevice.Viewport;
+        const int MaxLines = 8;
+        int first = Math.Max(0, lines.Count - MaxLines);
+        int shown = lines.Count - first;
+        float lh = _hudSmall.LineSpacing;
+        float bw = MathF.Min(560f, vp.Width * 0.45f);
+        float bh = 24f + Math.Max(1, shown) * lh;
+        float bx = 16f;
+        float by = vp.Height - bh - 16f;
+        _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+        try
+        {
+            _spriteBatch.Draw(_whitePixel, new Rectangle((int)bx, (int)by, (int)bw, (int)bh),
+                new Color(0.01f, 0.02f, 0.03f, 0.72f));
+            _spriteBatch.Draw(_whitePixel, new Rectangle((int)bx, (int)by, (int)bw, 1),
+                new Color(0.42f, 0.72f, 0.95f));
+            string head = "TEAM CHAT  TAB: " + _lobbyChatTarget.ToString().ToUpperInvariant()
+                + "  (" + (_chatPlayerChatsOnly ? "PLAYERS" : "ALL") + ")";
+            _spriteBatch.DrawString(_hudSmall, Rendering.TeamPaneRenderer.Fit(head, _hudSmall, bw - 16f),
+                new Vector2(bx + 8f, by + 4f), new Color(0.55f, 0.85f, 0.82f));
+            if (shown == 0)
+            {
+                _spriteBatch.DrawString(_hudSmall, "(no chat yet)",
+                    new Vector2(bx + 8f, by + 6f + lh), new Color(0.48f, 0.64f, 0.62f));
+            }
+            else
+            {
+                for (int i = 0; i < shown; i++)
+                {
+                    string line = Rendering.TeamPaneRenderer.Fit(lines[first + i], _hudSmall, bw - 16f);
+                    _spriteBatch.DrawString(_hudSmall, line,
+                        new Vector2(bx + 8f, by + 6f + lh + i * lh), new Color(0.88f, 0.96f, 0.95f));
+                }
+            }
+        }
+        finally
+        {
+            _spriteBatch.End();
+        }
     }
 
     /// <summary>P802 — the native <c>icon&lt;civ&gt;bmp</c> art for a civilization

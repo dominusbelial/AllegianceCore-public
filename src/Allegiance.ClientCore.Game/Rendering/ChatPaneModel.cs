@@ -106,6 +106,32 @@ public sealed class ChatPaneModel
         UpdateContents();
     }
 
+    /// <summary>
+    /// P806 — the native LOBBY chat pane's channel rule: a chat-target button
+    /// (<c>OnButtonBarChat</c>, <c>WinTrek/teamscreen.cpp:3082-3118</c>) resets the
+    /// pane's channel list and adds the selected channel plus the three fixed
+    /// ones — <c>{target, CHAT_INDIVIDUAL, CHAT_INDIVIDUAL_NOFILTER, CHAT_ADMIN}</c>
+    /// (<c>:3088-3092</c> for Everyone, <c>:3097-3101</c> for Team, <c>:3108-3112</c>
+    /// for Leaders). The Leaders button exists only for a team leader
+    /// (<c>:3104-3116</c>: the whole case is skipped otherwise, leaving both the
+    /// target and the pane's channels unchanged).
+    /// <para>Returns whether the target was applied. This is the only native
+    /// place a chat pane filters by channel; the in-flight console chat pane
+    /// (same class) selects no channels at all and only runs the
+    /// <see cref="PlayerChatsOnly"/> rule (chatpane.cpp:146, console.cpp:3439-3442).</para>
+    /// </summary>
+    public bool ApplyLobbyChatTarget(Allegiance.Core.Sim.ChatTarget target, bool isTeamLeader)
+    {
+        if (target == Allegiance.Core.Sim.ChatTarget.Leaders && !isTeamLeader)
+            return false;
+        ResetChannels();
+        AddChannel(target);
+        AddChannel(Allegiance.Core.Sim.ChatTarget.Individual);
+        AddChannel(Allegiance.Core.Sim.ChatTarget.IndividualNoFilter);
+        AddChannel(Allegiance.Core.Sim.ChatTarget.Admin);
+        return true;
+    }
+
     /// <summary>Toggle the player-chats-only flag (the native Game Options
     /// "Chat/Mute/Filter" family drives the same member). Rebuilds like the
     /// channel mutators.</summary>

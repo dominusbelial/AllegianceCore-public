@@ -275,7 +275,12 @@ public sealed partial class Server
             // P761 — the directory's player lists (native FIND_PLAYER's data,
             // gamescreen.cpp:1348-1352): the cross-thread-safe pilot-name
             // snapshot paired with LivePlayerCount.
-            () => LivePlayerNames);
+            () => LivePlayerNames,
+            // P806 — the first mission's game settings (native MissionInfo:
+            // developments/lives/scores/zone/goal bits/rank window/in-progress)
+            // for the client's server-list filters and status/skill/settings
+            // sort columns. Cross-thread-safe snapshot like the fields above.
+            () => LiveGameParams);
         Console.WriteLine($"[lobby] heartbeat enabled -> {_config.Lobby.Url}, every {_config.Lobby.HeartbeatIntervalSeconds}s");
     }
 

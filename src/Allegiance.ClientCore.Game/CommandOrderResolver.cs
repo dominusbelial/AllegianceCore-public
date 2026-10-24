@@ -21,18 +21,20 @@ public partial class Game1
         bool? Friendly,          // null = no side (neutral); true = same side or allied
         short? TargetHullAbm,    // OT_ship: the target hull's HabmCapabilities
         short? StationSabm,      // OT_station: the station type's SabmCapabilities
-        short? ProbeEabm);       // OT_probe: the probe type's EabmCapabilities
+        short? ProbeEabm,        // OT_probe: the probe type's EabmCapabilities
+        // P806 — OT_asteroid: the rock's AabmCapabilities, the mask native tests
+        // with `((IasteroidIGC*)pmodel)->HasCapability(m_abmOrders)` in the
+        // miner/builder branch (Igc/shipIGC.h:2080-2090).
+        short? AsteroidAbm = null);
 
     internal static class CommandOrderResolver
     {
-        public static CommandOrder? Resolve(short commandeeRoleBits, TargetKind commandeeKind, TargetKind targetKind, short targetId)
-        {
-            if (commandeeKind != TargetKind.Ship) return null;   // only ships/drones are commanded
-            bool isBuilder = (commandeeRoleBits & DataHullTypeIGC.HabmBuilder) != 0;
-            if (isBuilder && targetKind == TargetKind.Asteroid)
-                return new CommandOrder(OrderChange.CidBuild, IgcObjectType.Asteroid, targetId);
-            return null;
-        }
+        // P806 — the legacy two-case `Resolve` helper (builder+asteroid only) is
+        // gone: it was a partial duplicate of the native GetDefaultOrder table and
+        // no production path used it (the issue-order key and the plain target
+        // pick both resolve through ResolveDefaultOrder below). Keeping a second,
+        // weaker resolver in the file is how this row stayed `partial` — one
+        // table, one truth.
 
         /// <summary>
         /// P757 — the full generic target-to-order table, faithful to native
@@ -55,7 +57,8 @@ public partial class Game1
             short commandeeRoles,
             bool commandeeIsLayer,
             bool commandeeHasParent,
-            in CommandTargetProfile target)
+            in CommandTargetProfile target,
+            short? builderOrdersAbm = null)
         {
             if (target.Kind == TargetKind.Cluster) return null;   // not a model target
             var type = ObjectTypeOf(target.Kind);
@@ -68,14 +71,28 @@ public partial class Game1
 
             if (miner || builder)
             {
-                // Miner/Builder: an asteroid carrying the commandee's orders ABM
-                // becomes Mine/Build (shipIGC.h:2080-2090). The client cannot see
-                // the per-drone orders ABM, so it applies the hull role directly:
-                // a Miner commands Mine at an asteroid, a Builder Build (the same
-                // split native's pshipTo->GetOrdersABM() produces for the stock
-                // core's miner/builder hulls). Anything else stays Goto.
-                if (target.Kind == TargetKind.Asteroid)
-                    cid = miner ? OrderChange.CidMine : OrderChange.CidBuild;
+                // Miner/Builder (shipIGC.h:2080-2090): native requires the target
+                // to have NO side AND the asteroid to carry the commandee's orders
+                // ABM — `psideHim == NULL && type == OT_asteroid &&
+                // ((IasteroidIGC*)pmodel)->HasCapability(m_abmOrders)` — before it
+                // turns the default Goto into Mine/Build. Anything else (a sided
+                // model, an unminable/unbuildable rock) stays Goto.
+                //
+                // The per-ship m_abmOrders comes from the DataShipIGC the server
+                // created the drone with (shipIGC.cpp:104): miners c_aabmMineHe3
+                // (trainingmission.cpp:613-617); a builder takes its station type's
+                // GetBuildAABM() (shipIGC.h:2053-2057) — a tech base builds on a
+                // special rock, not a generic one. The client does not decode
+                // abmOrders from the wire, so the caller resolves the builder's
+                // station type from the catalogue (builderOrdersAbm); without it the
+                // generic c_aabmBuildable stands in.
+                if (target.Kind == TargetKind.Asteroid && target.Friendly is null &&
+                    target.AsteroidAbm is { } aabm)
+                {
+                    short ordersAbm = miner ? DataAsteroidIGC.AabmMineHe3 : builderOrdersAbm ?? DataAsteroidIGC.AabmBuildable;
+                    if ((aabm & ordersAbm) != 0)
+                        cid = miner ? OrderChange.CidMine : OrderChange.CidBuild;
+                }
             }
             else if (commandeeIsLayer)
             {

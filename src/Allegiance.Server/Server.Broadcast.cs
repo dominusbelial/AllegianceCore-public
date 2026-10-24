@@ -189,6 +189,10 @@ public sealed partial class Server
             // read off-thread by the lobby heartbeat; never enumerate
             // _peerNames outside this lock). Same keys as _peerShips.
             _liveShipNames = new List<string>(_peerNames.Values);
+            // P806 — the game settings the directory publishes for the
+            // server-list filters (native MissionInfo, read off-thread by the
+            // lobby heartbeat like the two snapshots above).
+            _liveGameParams = _missions.Count > 0 ? LobbyGameParams.FromMission(_missions[0]) : null;
         }
         // P112 — broadcast ripcord aborts raised during this tick's per-tick
         // revalidation pass (Sector.ResolveRipcordCountdowns). The sim cleared

@@ -83,6 +83,10 @@ public sealed partial class Server : IDisposable
     // _liveShipCount each tick under _statsLock so the lobby heartbeat can
     // publish them without touching the sim-thread-owned _peerShips map.
     private IReadOnlyList<string> _liveShipNames = Array.Empty<string>();
+    /// <summary>P806 — the published game settings, captured once per tick with
+    /// <see cref="_liveShipCount"/> under <c>_statsLock</c> (see
+    /// <see cref="LiveGameParams"/>).</summary>
+    private LobbyGameParams? _liveGameParams;
     private readonly List<short> _bucketCompletions = new();
     private readonly object _statsLock = new();
 
@@ -710,6 +714,14 @@ public sealed partial class Server : IDisposable
     /// publishes them so the client's find-player search can locate the game a
     /// pilot is in (native FIND_PLAYER, gamescreen.cpp:1348-1352).</summary>
     public IReadOnlyList<string> LivePlayerNames { get { lock (_statsLock) return _liveShipNames; } }
+
+    /// <summary>P806 — snapshot of the FIRST mission's game settings, refreshed
+    /// once per tick under <c>_statsLock</c> next to <see cref="LivePlayerCount"/>.
+    /// The lobby heartbeat publishes it so the client's server-list filters and
+    /// status/skill/settings sort columns read real mission metadata (native
+    /// <c>MissionInfo</c>, <c>clintlib/clintlib.h:540-557</c>) — never the
+    /// sim-thread-owned mission itself.</summary>
+    public LobbyGameParams? LiveGameParams { get { lock (_statsLock) return _liveGameParams; } }
 
     /// <summary>Bucket ids that have become fully funded AND fully
     /// time-invested (the P119 completion-detection seam), in completion order,

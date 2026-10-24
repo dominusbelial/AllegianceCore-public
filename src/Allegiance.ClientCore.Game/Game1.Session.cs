@@ -455,11 +455,31 @@ public sealed partial class Game1
             _ = FetchServersAsync();
         }
 
+        // P806 — the FILTER DIALOG (native FilterDialogPopup, gamescreen.cpp:351-529)
+        // owns the keyboard while open: UP/DOWN pick a combo row, LEFT/RIGHT (or
+        // SPACE) cycle its Yes/No/DontCare value, ENTER copies every combo into the
+        // screen's filter state and re-filters (OnButtonOK), ESC discards the draft
+        // (OnButtonCancel). Modal, like every native popup.
+        if (_filterDialog.Active)
+        {
+            HandleLobbyFilterDialog(ks);
+            return;
+        }
+
+        // P806 — open the dialog (the native Filter button; the keyboard stand-in).
+        bool filtersKey = ActionDown(ks, "LobbyGameFilters");
+        if (filtersKey && !_filtersKeyWasDown && !_filterActive && !_findPlayerActive)
+        {
+            _detailsActive = false;      // one popup at a time (native opens one dialog)
+            _filterDialog.Open(_gameFilters);
+            Console.WriteLine("[monogame] game filters OPEN");
+        }
+        _filtersKeyWasDown = filtersKey;
+
         // Navigation: arrows (also free pre-flight — no flight keys collide).
         // _selectedIndex is an index INTO the filtered _visibleRows, so with no
         // filter active it behaves exactly as before (every row visible).
-        bool up = ActionDown(ks, "LobbyUp");
-        if (up && !_upWasDown && _visibleRows.Count > 0)
+        bool up = ActionDown(ks, "LobbyUp");        if (up && !_upWasDown && _visibleRows.Count > 0)
             _selectedIndex = (_selectedIndex - 1 + _visibleRows.Count) % _visibleRows.Count;
         _upWasDown = up;
 
@@ -617,6 +637,56 @@ public sealed partial class Game1
             HandleConnectGamepad();
             HandleConnectTouch();
         }
+    }
+
+    /// <summary>P806 — one frame of the server list's filter dialog (native
+    /// <c>FilterDialogPopup</c>, gamescreen.cpp:351-529). Runs only while the
+    /// popup is open; the screen's own keys are suppressed for that frame.
+    /// <para>UP/DOWN move the combo row; LEFT/RIGHT step the selected value
+    /// (RIGHT/SPACE forward through Yes→No→DontCare, LEFT backward); ENTER is
+    /// OnButtonOK (copy every combo into <see cref="_gameFilters"/> and re-filter
+    /// via UpdateGameList); ESC is OnButtonCancel (discard the draft).</para></summary>
+    private void HandleLobbyFilterDialog(KeyboardState ks)
+    {
+        bool up = ActionDown(ks, "LobbyUp");
+        if (up && !_fdUpWasDown) _filterDialog.MoveRow(-1);
+        _fdUpWasDown = up;
+        bool down = ActionDown(ks, "LobbyDown");
+        if (down && !_fdDownWasDown) _filterDialog.MoveRow(1);
+        _fdDownWasDown = down;
+
+        bool left = ActionDown(ks, "LobbyHeaderLeft");
+        if (left && !_fdLeftWasDown)
+            _filterDialog.CycleBackward(_filterDialog.Row);
+        _fdLeftWasDown = left;
+        bool right = ActionDown(ks, "LobbyHeaderRight");
+        bool space = ActionDown(ks, "LobbyHeaderClick");
+        if ((right && !_fdRightWasDown) || (space && !_fdSpaceWasDown))
+            _filterDialog.Cycle(_filterDialog.Row);
+        _fdRightWasDown = right;
+        _fdSpaceWasDown = space;
+
+        bool enter = ActionDown(ks, "LobbyJoin");
+        if (enter && !_fdEnterWasDown)
+        {
+            _filterDialog.Commit(_gameFilters);
+            RebuildVisibleRows();   // OnButtonOK → UpdateGameList
+            // Keep the shared join latch "down" so the OK keystroke cannot also
+            // join the selected server on the next frame.
+            _enterWasDown = true;
+            Console.WriteLine($"[monogame] game filters applied; {_visibleRows.Count}/{_displayServers.Count} shown");
+            return;
+        }
+        _fdEnterWasDown = enter;
+
+        bool esc = ActionDown(ks, "LobbyClearFilter");
+        if (esc && !_fdEscWasDown)
+        {
+            _filterDialog.Cancel();
+            Console.WriteLine("[monogame] game filters cancelled");
+            _enterWasDown = ActionDown(ks, "LobbyJoin");
+        }
+        _fdEscWasDown = esc;
     }
 
     /// <summary>Rebuild the <see cref="_visibleRows"/> index list from
@@ -855,7 +925,8 @@ public sealed partial class Game1
 
             // P761 — the details popup itself, drawn ON TOP of the (shortened)
             // row band: native OnButtonDetails' panel, gamescreen.cpp:1308-1326.
-            if (detailsPanel != default)
+            // Hidden while the modal filter dialog is open: the two overlapped.
+            if (detailsPanel != default && !_filterDialog.Active)
             {
                 var sel = _displayServers[_visibleRows[Math.Clamp(_selectedIndex, 0, _visibleRows.Count - 1)]];
                 var lines = ServerDirectorySearch.DetailsLines(sel);
@@ -867,6 +938,27 @@ public sealed partial class Game1
                 for (int li = 0; li < lines.Count; li++)
                     _spriteBatch.DrawString(_hudSmall, lines[li],
                         new Vector2(detailsPanel.X + 14f, detailsPanel.Y + 32f + li * _hudSmall.LineSpacing), textCol);
+            }
+
+            // P806 — the FILTER DIALOG (native FilterDialogPopup): the eleven
+            // Yes/No/DontCare combos, drawn over the browser as a centred panel
+            // while open. Modal, so it is the last thing painted.
+            if (_filterDialog.Active)
+            {
+                var lines = _filterDialog.Text().Split('\n');
+                float lh = _hudSmall.LineSpacing;
+                float bw = MathF.Min(560f, w * 0.62f);
+                float bh = 18f + lines.Length * lh + 12f;
+                float bx = (w - bw) / 2f;
+                float by = MathF.Max(40f, (h - bh) / 2f);
+                _spriteBatch.Draw(_whitePixel, new Rectangle((int)bx, (int)by, (int)bw, (int)bh),
+                    new Color(0.014f, 0.020f, 0.029f, 0.97f));
+                _spriteBatch.Draw(_whitePixel, new Rectangle((int)bx, (int)by, (int)bw, 2),
+                    new Color(0.42f, 0.72f, 0.95f));
+                for (int li = 0; li < lines.Length; li++)
+                    _spriteBatch.DrawString(_hudSmall, lines[li],
+                        new Vector2(bx + 14f, by + 10f + li * lh),
+                        li == 1 + _filterDialog.Row ? new Color(0.98f, 1.0f, 0.65f) : textCol);
             }
 
             // P500 — bottom action buttons (connect store only).
@@ -891,7 +983,7 @@ public sealed partial class Game1
                     ? "TYPE to filter   BACKSPACE delete   UP/DOWN select   ENTER join   ESC clear"
                     // P761b — kept inside the viewport: the old wording ran off
                     // both edges at 1280 wide.
-                    : "UP/DOWN select   ENTER join   F find   P player   I details   C reset   <-/->+SPACE sort   R refresh   ESC quit");
+                    : "UP/DOWN   ENTER join   F find   L filters   P player   I details   C reset   ARROWS+SPACE sort   R refresh   ESC");
             var fsz = _hudSmall.MeasureString(footer);
             // P500 — on the connect screen the footer anchors above the bottom
             // safe-area inset (Android clips the bottom ~6%); the desktop path
@@ -1342,6 +1434,12 @@ public sealed partial class Game1
         bool fromPlayer = m.SidSender >= 0
             && world.Ships.TryGetValue(m.SidSender, out var ent)
             && !string.IsNullOrEmpty(ent.CharacterName);
+        // P806 — native m_bFilterChatsToAll: a message to CHAT_EVERYONE while in
+        // game is dropped before it reaches the pane (ReceiveChat,
+        // trekigc.cpp:4493; toggle = idmFilterChatsToAll, WinTrek.cpp:4572).
+        if (_chatFilterChatsToAll && (ChatTarget)m.ChatTarget == ChatTarget.Everyone
+            && world.MyShipId is not null)
+            return false;
         return _chatPane.PassesFilter(fromPlayer, m.BObjectModel, (ChatTarget)m.ChatTarget);
     }
 
@@ -1361,42 +1459,52 @@ public sealed partial class Game1
         }
     }
 
-    /// <summary>P757 — apply the current chat-pane filter mode
-    /// (<see cref="_chatPaneFilterMode"/>) to the pane model. Every mutator
-    /// rebuilds the view and snaps it to the live edge with autoscroll on
-    /// (native <c>AddChannel</c>/<c>RemoveChannel</c>/<c>ResetChannels</c> →
-    /// <c>UpdateContents</c>, chatpane.cpp:286-297, 340-358).</summary>
-    private void ApplyChatPaneFilterMode()
+    /// <summary>P806 — apply the pane's TWO native filters (see the field remarks
+    /// on <c>_chatPlayerChatsOnly</c>/<c>_lobbyChatTarget</c>):
+    /// <list type="bullet">
+    /// <item><c>m_bPlayerChatsOnly</c> (the Game Options chat filter,
+    /// chatpane.cpp:146,228-233) — always applied;</item>
+    /// <item>the LOBBY channel set, while the team lobby (ReadyCheck) is up:
+    /// native <c>OnButtonBarChat</c> resets the list and adds the selected target
+    /// plus Individual/IndividualNoFilter/Admin (teamscreen.cpp:3088-3112), with
+    /// the Leaders button gated on team leadership (:3104-3116). In flight the
+    /// list stays empty (native's console chat pane selects no channels,
+    /// console.cpp:3439-3442).</item>
+    /// </list>
+    /// Every mutator rebuilds the view and snaps it to the live edge with
+    /// autoscroll on (<c>UpdateContents</c>, chatpane.cpp:286-297, 340-358).</summary>
+    private void ApplyChatPaneFilter()
     {
+        _chatPane.SetPlayerChatsOnly(_chatPlayerChatsOnly);
         _chatPane.ResetChannels();
-        switch (_chatPaneFilterMode)
-        {
-            case 1:     // Players only — native m_bPlayerChatsOnly default
-                _chatPane.SetPlayerChatsOnly(true);
-                break;
-            case 2:     // Channel set — the native lobby pane's filter
-                        // (teamscreen.cpp:3085-3101)
-                _chatPane.SetPlayerChatsOnly(false);
-                _chatPane.AddChannel(_chatTarget);
-                _chatPane.AddChannel(ChatTarget.Individual);
-                _chatPane.AddChannel(ChatTarget.IndividualNoFilter);
-                _chatPane.AddChannel(ChatTarget.Admin);
-                break;
-            default:    // All — no restriction
-                _chatPane.SetPlayerChatsOnly(false);
-                break;
-        }
+        if (_state == ClientState.ReadyCheck)
+            _chatPane.ApplyLobbyChatTarget(_lobbyChatTarget, IsTeamLobbyLeader());
         _lastChatCount = FilteredChatCount();
     }
 
-    /// <summary>P757 — short label of the active chat-pane filter mode, drawn in
-    /// the pane's header so the player sees what the pane is filtering.</summary>
-    private string ChatPaneFilterLabel() => _chatPaneFilterMode switch
+    /// <summary>P806 — is the local player its side's team leader (the gate on
+    /// native's Leaders chat button, teamscreen.cpp:3104)?</summary>
+    private bool IsTeamLobbyLeader()
     {
-        1 => "PLAYERS",
-        2 => $"CHANNEL {_chatTarget.ToString().ToUpperInvariant()}",
-        _ => "ALL",
-    };
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            return world.MyShipId is { } me
+                && world.Ships.TryGetValue(me, out var own)
+                && world.TeamLeaderShipIdFor(own.SideId) == me;
+        }
+    }
+
+    /// <summary>P806 — short label of the chat pane's filter state, drawn in the
+    /// pane's header: the native players-only switch plus the lobby channel when
+    /// the team lobby set one.</summary>
+    private string ChatPaneFilterLabel()
+    {
+        string players = _chatPlayerChatsOnly ? "PLAYERS" : "ALL";
+        if (_state == ClientState.ReadyCheck)
+            return $"{players} / {_lobbyChatTarget.ToString().ToUpperInvariant()}";
+        return players;
+    }
 
     /// <summary>Render the in-flight chat overlay (log panel + active composing
     /// line) on top of the HUD.</summary>

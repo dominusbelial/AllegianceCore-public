@@ -247,11 +247,13 @@ public sealed class P757ChatPaneTests
     }
 
     [Fact]
-    public void Chat_pane_pipeline_filters_the_visible_lines_by_mode()
+    public void P806_chat_pane_pipeline_uses_the_two_native_filters()
     {
-        // The production filter path the Alt+C edge drives: ApplyChatPaneFilterMode
-        // + BuildChatLines + FilteredChatCount over a real world with a player
-        // line, a drone line and an everyone line.
+        // P806 — the production pane config, not an Alt+C cycle. Native has TWO
+        // independent filters (chatpane.cpp):
+        //   * m_bPlayerChatsOnly — drops non-player chatter, everywhere;
+        //   * the LOBBY channel list, set from the chat-target buttons
+        //     (teamscreen.cpp:3085-3118) and EMPTY in flight (console.cpp:3439-3442).
         using var session = new ConnectionSession();
         var world = session.World;
         world.Apply(new ExportShip { ShipId = 10, SideId = 0, CharacterName = "pilot" });
@@ -260,32 +262,101 @@ public sealed class P757ChatPaneTests
         world.Apply(new ChatMessage { Message = "everyone line", ChatTarget = (int)ChatTarget.Everyone, SidSender = 10 });
         var game = Headless(session);
 
-        // Mode 0 (All): every line is visible.
-        Set(game, "_chatPaneFilterMode", 0);
-        Call(game, "ApplyChatPaneFilterMode");
+        // IN FLIGHT, players-only off: every line, no channel restriction.
+        Set(game, "_chatPlayerChatsOnly", false);
+        Call(game, "ApplyChatPaneFilter");
         Assert.Equal(3, Call(game, "FilteredChatCount"));
         var lines = Call(game, "BuildChatLines") as List<string>;
         Assert.NotNull(lines);
         Assert.Equal(3, lines!.Count);
 
-        // Mode 1 (Players): native m_bPlayerChatsOnly — the drone line (no
-        // character name, not an object model) is non-critical and drops out.
-        Set(game, "_chatPaneFilterMode", 1);
-        Call(game, "ApplyChatPaneFilterMode");
+        // IN FLIGHT, players-only on (native chatpane.cpp:146): the drone line
+        // (no character name, not an object model) is non-critical and drops.
+        Set(game, "_chatPlayerChatsOnly", true);
+        Call(game, "ApplyChatPaneFilter");
         Assert.Equal(2, Call(game, "FilteredChatCount"));
         lines = Call(game, "BuildChatLines") as List<string>;
         Assert.DoesNotContain(lines!, l => l.Contains("drone chatter"));
         Assert.Contains(lines!, l => l.Contains("player line"));
+        // ...and the in-flight pane still has NO channels (native console pane).
+        Assert.Empty(Get<ChatPaneModel>(game, "_chatPane").Channels);
 
-        // Mode 2 (Channel): the lobby pane's set = [compose channel,
-        // Individual, IndividualNoFilter, Admin] (teamscreen.cpp:3085-3101) —
-        // the everyone line drops out.
-        Set(game, "_chatPaneFilterMode", 2);
-        Call(game, "ApplyChatPaneFilterMode");
+        // TEAM LOBBY (ReadyCheck), native OnButtonBarChat with the Team button:
+        // ResetChannels + [Team, Individual, IndividualNoFilter, Admin] — the
+        // everyone line drops out, team/individual/admin stay.
+        var state = typeof(Game1).GetField("_state", Hidden)!;
+        state.SetValue(game, Enum.Parse(state.FieldType, "ReadyCheck"));
+        Set(game, "_lobbyChatTarget", ChatTarget.Team);
+        Set(game, "_chatPlayerChatsOnly", false);
+        Call(game, "ApplyChatPaneFilter");
         lines = Call(game, "BuildChatLines") as List<string>;
         Assert.DoesNotContain(lines!, l => l.Contains("everyone line"));
         Assert.Contains(lines!, l => l.Contains("player line"));
+        Assert.Equal(
+            new[] { ChatTarget.Team, ChatTarget.Individual, ChatTarget.IndividualNoFilter, ChatTarget.Admin }
+                .OrderBy(c => c).ToArray(),
+            Get<ChatPaneModel>(game, "_chatPane").Channels.OrderBy(c => c).ToArray());
     }
+
+    [Fact]
+    public void P806_filter_chats_to_all_drops_everyone_lines_in_game()
+    {
+        // Native m_bFilterChatsToAll (WinTrek.cpp:3271-3272, default true) drops a
+        // CHAT_EVERYONE message while in game (ReceiveChat, trekigc.cpp:4493).
+        using var session = new ConnectionSession();
+        var world = session.World;
+        world.Apply(new SetCluster { SectorId = 1, Ship = Pose(10) });
+        world.Apply(new ExportShip { ShipId = 10, SideId = 0, CharacterName = "pilot" });
+        world.Apply(new ChatMessage { Message = "everyone line", ChatTarget = (int)ChatTarget.Everyone, SidSender = 10 });
+        world.Apply(new ChatMessage { Message = "team line", ChatTarget = (int)ChatTarget.Team, SidSender = 10 });
+        Assert.NotNull(world.MyShipId);   // in game
+
+        var game = Headless(session);
+        Set(game, "_chatPlayerChatsOnly", false);
+        Set(game, "_chatFilterChatsToAll", true);
+        Call(game, "ApplyChatPaneFilter");
+        var lines = Call(game, "BuildChatLines") as List<string>;
+        Assert.DoesNotContain(lines!, l => l.Contains("everyone line"));
+        Assert.Contains(lines!, l => l.Contains("team line"));
+
+        // Off (the native toggle) restores the everyone line.
+        Set(game, "_chatFilterChatsToAll", false);
+        lines = Call(game, "BuildChatLines") as List<string>;
+        Assert.Contains(lines!, l => l.Contains("everyone line"));
+    }
+
+    private static ServerShipUpdate Pose(short id) =>
+        ServerShipUpdate.FromValues(
+            id, stateM: 0, new ControlData(0f, 0f, 0f, 0f), time: 1u,
+            Allegiance.Core.Collision.Vector3.Zero, Orientation.Identity,
+            Allegiance.Core.Collision.Vector3.Zero,
+            turnRates: new[] { 0f, 0f, 0f },
+            hullFrac: 1f, shieldFrac: 1f, ammoFrac: 1f, fuelFrac: 1f,
+            energyFrac: 1f, oreFrac: 0f, power: 0f);
+
+    [Fact]
+    public void P806_lobby_chat_target_cycle_is_the_native_button_set()
+    {
+        // Native's team-screen chat buttons (teamscreen.cpp:3082-3118): Everyone,
+        // Team, and Leaders only for the side's team leader.
+        Assert.Equal(ChatTarget.Team, ChatTargetLogic.NextLobby(ChatTarget.Everyone, isTeamLeader: false));
+        Assert.Equal(ChatTarget.Everyone, ChatTargetLogic.NextLobby(ChatTarget.Team, isTeamLeader: false));
+        Assert.Equal(ChatTarget.Leaders, ChatTargetLogic.NextLobby(ChatTarget.Team, isTeamLeader: true));
+        Assert.Equal(ChatTarget.Everyone, ChatTargetLogic.NextLobby(ChatTarget.Leaders, isTeamLeader: true));
+
+        // The pane rule itself: reset + the four native channels; the Leaders
+        // button does nothing at all for a non-leader (:3104-3116).
+        var pane = new ChatPaneModel();
+        pane.AddChannel(ChatTarget.Everyone);
+        Assert.False(pane.ApplyLobbyChatTarget(ChatTarget.Leaders, isTeamLeader: false));
+        Assert.Equal(new[] { ChatTarget.Everyone }, pane.Channels.OrderBy(c => c).ToArray());
+        Assert.True(pane.ApplyLobbyChatTarget(ChatTarget.Leaders, isTeamLeader: true));
+        Assert.Equal(
+            new[] { ChatTarget.Leaders, ChatTarget.Individual, ChatTarget.IndividualNoFilter, ChatTarget.Admin }
+                .OrderBy(c => c).ToArray(),
+            pane.Channels.OrderBy(c => c).ToArray());
+    }
+
 }
 
 /// <summary>

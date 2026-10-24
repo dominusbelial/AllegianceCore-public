@@ -51,6 +51,14 @@ public sealed class IntroPreferences
     /// default, since its chat log is also the console surface).</summary>
     public bool ChatFilterPlayersOnly { get; set; }
 
+    /// <summary>P806 — native <c>FilterChatsToAll</c> (WinTrek.cpp:3271-3272,
+    /// default <b>true</b>: a fresh install filters them). Native applies it in
+    /// <c>ReceiveChat</c> — a message to <c>CHAT_EVERYONE</c> while in game is
+    /// dropped (<c>trekigc.cpp:4493</c>) — and exposes the toggle on the Game
+    /// Options → Chat/Mute/Filter submenu (<c>idmFilterChatsToAll</c>,
+    /// WinTrek.cpp:4572/4706-4722).</summary>
+    public bool FilterChatsToAll { get; set; } = true;
+
     /// <summary>P761 — the pilot's profile description, edited on the character
     /// sheet (native CharInfoScreen OnButtonApply sends
     /// CHARACTER_INFO_EDIT_DESCRIPTION to the club server; this port has no

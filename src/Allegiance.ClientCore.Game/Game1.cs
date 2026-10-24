@@ -1345,6 +1345,11 @@ public sealed partial class Game1 : Game
     private bool _findPlayerBusy;             // main-thread: a query is in flight
     private bool _detailsActive;                       // the details popup
     private bool _detailsIWasDown;
+    // P806 — the filter dialog (native FilterDialogPopup): the pure draft lives in
+    // LobbyFilterDialog, the latches here are UI state only.
+    private readonly LobbyFilterDialog _filterDialog = new();
+    private bool _filtersKeyWasDown, _fdUpWasDown, _fdDownWasDown,
+        _fdLeftWasDown, _fdRightWasDown, _fdSpaceWasDown, _fdEnterWasDown, _fdEscWasDown;
 
     private int _selectedIndex;
     private string? _lobbyError;
@@ -1385,13 +1390,29 @@ public sealed partial class Game1 : Game
     // offset. The rendered window still reads the model's Offset (lines pulled
     // from the newest edge; 0 = live edge).
     private readonly Rendering.ChatPaneModel _chatPane = new();
-    // P757 — chat-pane channel-filter mode (Alt+C): All (no restriction) →
-    // Players (native m_bPlayerChatsOnly) → the compose channel + the
-    // individual/admin channels (the native lobby pane's set,
-    // teamscreen.cpp:3085-3101) → back to All.
-    private int _chatPaneFilterMode;
+    // P806 — the native chat filter is TWO independent mechanisms, and the port
+    // now drives both the native way (no cycle):
+    //  * m_bPlayerChatsOnly (chatpane.cpp:146,228-233), the Game Options
+    //    "Filter/Chats" switch: drops non-critical (non-player) chatter. Seeded
+    //    from the persisted preference; the ChatPaneFilter key toggles it.
+    //  * the LOBBY chat pane's channel list, which native sets from the chat
+    //    target buttons [target, Individual, IndividualNoFilter, Admin]
+    //    (teamscreen.cpp:3085-3118) and which the in-flight console pane leaves
+    //    EMPTY (console.cpp:3439-3442). The port applies the lobby set on the
+    //    ReadyCheck (team lobby) screen and clears it on the way into flight.
+    private bool _chatPlayerChatsOnly;
+    // P806 — native m_bFilterChatsToAll (WinTrek.cpp:3271, default true): drop
+    // CHAT_EVERYONE lines while in game (trekigc.cpp:4493). Seeded from the
+    // persisted Game Options value.
+    private bool _chatFilterChatsToAll = true;
     private bool _chatPaneFilterWasDown;
     private bool _chatPaneFilterSeeded;
+    // P806 — the team lobby's chat target (native m_chattargetChannel, default
+    // Everyone on first open: teamscreen.cpp:1384-1390 restores the last tab,
+    // 0 = Everyone) and the Tab edge latch for its three-button cycle.
+    private ChatTarget _lobbyChatTarget = ChatTarget.Everyone;
+    private bool _rcChatTabWasDown;
+    private bool _lobbyChatChannelsApplied;
     private bool _chatPgUpWasDown, _chatPgDnWasDown, _chatMsgUpWasDown, _chatMsgDnWasDown;
     private int _lastChatCount;
     // P626 — vote keys (TK_VoteYes/VoteNo) edge latches.

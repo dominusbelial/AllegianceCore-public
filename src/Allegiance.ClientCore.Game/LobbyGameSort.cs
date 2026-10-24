@@ -5,7 +5,7 @@ using System.Linq;
 namespace Allegiance.ClientCore.MonoGame;
 
 /// <summary>
-/// P761 — pure model of the SERVER LIST's column sort stack and game filters
+/// P806 — pure model of the SERVER LIST's column sort stack and game filters
 /// (native <c>GameScreen</c>, <c>WinTrek/gamescreen.cpp</c>).
 ///
 /// <para><b>Sort stack</b> (OnButtonBarGames, gamescreen.cpp:858-898): clicking
@@ -21,38 +21,43 @@ namespace Allegiance.ClientCore.MonoGame;
 ///
 /// <para><b>Columns.</b> Native's eight (KGJV #114, gamescreen.cpp:1193-1237):
 /// 0 status, 1 name, 2 running time, 3 skill, 4 server, 5 core, 6 players,
-/// 7 settings. The port's server records (<see cref="ServerListing"/>) can
-/// express five of them:</para>
+/// 7 settings. P806 makes all eight selectable: the directory listing now
+/// carries the native <see cref="GameParams"/> the three previously missing
+/// columns read — <c>InProgress</c>/slot state (status), <c>MinRank</c>/
+/// <c>MaxRank</c> (skill) and the game-type settings (settings). The
+/// comparators are the native ones, mapped to an ascending key (native compares
+/// "true ⇒ the first value sorts AFTER the second", so an ascending key is the
+/// inverse of the native predicate):
 /// <list type="bullet">
-/// <item>1 name — the game/mission name (MissionName; native NameCompare is
-/// case-insensitive, gamescreen.cpp:1046-1052);</item>
-/// <item>2 running time — the mission's start time (RegisteredUtc; native
-/// RunningTimeCompare orders in-progress games by timeStart ascending,
-/// gamescreen.cpp:1054-1065);</item>
-/// <item>4 server — the server display name (Name; ServerCompare,
-/// gamescreen.cpp:1109-1116);</item>
-/// <item>5 core — the static-core file (CoreFile; CoreCompare,
-/// gamescreen.cpp:1118-1125);</item>
-/// <item>6 players — the player count (PlayerCount; NumPlayersCompare,
-/// gamescreen.cpp:1127-1133).</item>
-/// </list>
-/// <para>Columns 0 (status), 3 (skill/max-rank range) and 7 (game-type
-/// settings) read mission metadata the lobby directory's
-/// <c>ServerListingDto</c> does not carry — they are not selectable here
-/// (listed in the P761 report).</para>
+/// <item>col 0 — <c>StatusCompare</c> (gamescreen.cpp:1023-1044): green before
+/// yellow before red (<c>MissionStatusColor</c>, :1002-1021), in-progress games
+/// first, object-model games after lobby games, started-stage games last. The
+/// port has no squads, so native's squad tie-break is constant.</item>
+/// <item>col 1 — <c>NameCompare</c> (:1046-1052), case-insensitive ascending.</item>
+/// <item>col 2 — <c>RunningTimeCompare</c> (:1054-1065): in-progress games
+/// first, then by start time ascending; waiting games compare equal.</item>
+/// <item>col 3 — <c>SkillCompare</c> (:1067-1076): max rank then min rank
+/// ascending. Native's predicate also returns true for two games whose rank
+/// window is IDENTICAL (an inconsistent comparator — a native bug); a stable
+/// ascending key is used instead (see the P806 report).</item>
+/// <item>col 4 — <c>ServerCompare</c> (:1109-1116), case-insensitive ascending.</item>
+/// <item>col 5 — <c>CoreCompare</c> (:1118-1125), case-insensitive ascending.</item>
+/// <item>col 6 — <c>NumPlayersCompare</c> (:1127-1133) ascending.</item>
+/// <item>col 7 — <c>SettingsCompare</c> (:1135-1168): the first matching
+/// <c>GameType</c> index, DESCENDING (native returns true — "after" — when
+/// <c>index(a) &lt; index(b)</c>), so higher indices sort first and a custom
+/// (unmatched) game sorts at the top.</item>
+/// </list></para>
 ///
 /// <para><b>Filters.</b> Native's filter popup (FilterDialogPopup,
 /// gamescreen.cpp:351-529; GameScreenFilter::operator(), gamescreen.cpp:933-999)
 /// holds eleven Yes/No/DontCare flags — developments, lives, scores-count, zone,
 /// conquest, deathmatch, prosperity, countdown, artifact, flags, territorial —
-/// plus the game-name substring. Only the substring can be evaluated against a
-/// <see cref="ServerListing"/> (it is the port's existing
-/// <see cref="ServerListing.Matches"/> rule); the eleven boolean flags read
-/// mission metadata the directory does not carry, so the port's filter model
-/// keeps their DontCare semantics (reset sets them all back) but they exclude
-/// nothing. ResetFilters (gamescreen.cpp:900-927) additionally resets the sort
-/// stack to a single reversed PLAYERS criterion (column 6, "the big numbers on
-/// top", WLP 2005).</para>
+/// plus the game-name substring. All eleven now evaluate the published
+/// <see cref="GameParams"/> exactly like the native predicate; the substring is
+/// the port's existing <see cref="ServerListing.Matches"/> rule. ResetFilters
+/// (gamescreen.cpp:900-927) additionally resets the sort stack to a single
+/// reversed PLAYERS criterion (column 6, "the big numbers on top", WLP 2005).</para>
 /// </summary>
 public sealed class LobbyGameSort
 {
@@ -64,22 +69,26 @@ public sealed class LobbyGameSort
     public const int ColStatus = 0, ColName = 1, ColRunningTime = 2, ColSkill = 3,
         ColServer = 4, ColCore = 5, ColPlayers = 6, ColSettings = 7;
 
-    /// <summary>The columns the port's server records can express, in header
-    /// order (the rest of native's eight are not selectable — see remarks).</summary>
-    public static readonly int[] ExpressibleColumns =
+    /// <summary>Every native column, in header order (P806 — all eight are
+    /// selectable because the directory now carries their inputs).</summary>
+    public static readonly int[] Columns =
     {
-        ColName, ColRunningTime, ColServer, ColCore, ColPlayers,
+        ColStatus, ColName, ColRunningTime, ColSkill, ColServer, ColCore, ColPlayers, ColSettings,
     };
+
+    /// <summary>Pre-P806 name, kept for existing call sites/tests: the columns the
+    /// port can express. P806 makes that all eight.</summary>
+    public static readonly int[] ExpressibleColumns = Columns;
 
     public static string ColumnLabel(int column) => column switch
     {
+        ColStatus => "STATUS",
         ColName => "GAME",
         ColRunningTime => "RUNNING",
+        ColSkill => "SKILL",
         ColServer => "SERVER",
         ColCore => "CORE",
         ColPlayers => "PLAYERS",
-        ColStatus => "STATUS",
-        ColSkill => "SKILL",
         ColSettings => "SETTINGS",
         _ => "?",
     };
@@ -124,18 +133,18 @@ public sealed class LobbyGameSort
     public int CursorIndex { get; set; }
 
     /// <summary>The header column currently under the cursor.</summary>
-    public int CursorColumn => ExpressibleColumns[Math.Clamp(CursorIndex, 0, ExpressibleColumns.Length - 1)];
+    public int CursorColumn => Columns[Math.Clamp(CursorIndex, 0, Columns.Length - 1)];
 
     /// <summary>Move the header cursor (Left/Right), clamped to the expressible
     /// columns.</summary>
     public void MoveCursor(int delta) =>
-        CursorIndex = Math.Clamp(CursorIndex + delta, 0, ExpressibleColumns.Length - 1);
+        CursorIndex = Math.Clamp(CursorIndex + delta, 0, Columns.Length - 1);
 
     /// <summary>Apply the stack to <paramref name="items"/>: one stable ordered
     /// pass per criterion in stack order (UpdateGameList's sequential
     /// SortingList wraps, so the LAST criterion dominates and earlier ones
     /// break its ties). The key selector maps an item to the comparable value
-    /// of a native column; unexpressible columns sort equal (stable).</summary>
+    /// of a native column.</summary>
     public IReadOnlyList<T> Apply<T>(IReadOnlyList<T> items, Func<T, int, IComparable> keyOf)
     {
         IEnumerable<T> current = items;
@@ -149,16 +158,52 @@ public sealed class LobbyGameSort
     }
 
     /// <summary>The standard <see cref="ServerListing"/> key mapping for the
-    /// expressible columns (native comparators, see the type remarks).</summary>
+    /// native columns (see the type remarks for each comparator).</summary>
     public static IComparable ListingKey(ServerListing listing, int column) => column switch
     {
+        // StatusCompare — MissionStatusColor then InProgress/WasObjectModelCreated/
+        // stage, packed ascending (all fields are small).
+        ColStatus => StatusKey(listing),
         ColName => listing.MissionName ?? string.Empty,
-        ColRunningTime => listing.RegisteredUtc.UtcTicks,
+        // RunningTimeCompare — in-progress first, then start time; waiting games
+        // compare equal (long.MaxValue keeps them together at the end).
+        ColRunningTime => listing.Game?.InProgress == true
+            ? listing.RegisteredUtc.UtcTicks
+            : long.MaxValue,
+        // SkillCompare — max rank then min rank, ascending.
+        ColSkill => listing.Game is { } sg
+            ? ((long)sg.MaxRank << 16) | (ushort)sg.MinRank
+            : long.MinValue,
         ColServer => listing.Name ?? string.Empty,
         ColCore => listing.CoreFile ?? string.Empty,
         ColPlayers => listing.PlayerCount,
-        _ => 0,   // unexpressible column: sorts equal (stable pass)
+        // SettingsCompare — descending GameTypeIndex (native: index(a) < index(b)
+        // means a sorts AFTER b), so negate. An unknown game is the list-end
+        // index and therefore sorts first, exactly like native.
+        ColSettings => listing.Game is { } pg ? -pg.GameTypeIndex : int.MaxValue,
+        _ => 0,
     };
+
+    /// <summary>Native <c>StatusCompare</c> (gamescreen.cpp:1023-1044) as an
+    /// ascending key. Port simplifications, both native-constant: no squads
+    /// (HasPlayerSquad is false for every listing) and no guaranteed-slot state
+    /// (native's yellow branch is commented out, gamescreen.cpp:1008-1012).</summary>
+    private static long StatusKey(ServerListing listing)
+    {
+        // MissionStatusColor: green while any slot is available, else red.
+        // MaxPlayers == 0 means "unknown/unbounded" on this directory (every slot
+        // open), the same reading FindGames applies to a 0 cap.
+        int status = listing.MaxPlayers > 0 && listing.PlayerCount >= listing.MaxPlayers ? 1 : 0;
+        bool inProgress = listing.Game?.InProgress == true;
+        bool objectModel = listing.Game?.ObjectModelCreated == true;
+        // Native's final tie-break is (a.stage == STARTED) && (b.stage != STARTED):
+        // a started game sorts after a non-started one. The published bit is
+        // InProgress, which starts at Starting — use it as the stage proxy.
+        return ((long)status << 24)
+             | ((inProgress ? 0L : 1L) << 16)
+             | ((objectModel ? 1L : 0L) << 8)
+             | (inProgress ? 1L : 0L);
+    }
 
     internal static void ApplyReset(LobbyGameSort sort)
     {
@@ -166,13 +211,13 @@ public sealed class LobbyGameSort
         sort._stack.Add(new Criterion(ColPlayers, Reversed: true));
     }
 
-    /// <summary>The header-bar text: the expressible columns, the cursor cell
-    /// bracketed, stack members marked with their direction (^ ascending,
-    /// v reversed) — the port's keyboard stand-in for native's radio-checked
-    /// header (RefreshButtonBarGames, gamescreen.cpp:846-856).</summary>
+    /// <summary>The header-bar text: the columns, the cursor cell bracketed,
+    /// stack members marked with their direction (^ ascending, v reversed) —
+    /// the port's keyboard stand-in for native's radio-checked header
+    /// (RefreshButtonBarGames, gamescreen.cpp:846-856).</summary>
     public string HeaderText()
     {
-        var cells = ExpressibleColumns.Select((column, i) =>
+        var cells = Columns.Select((column, i) =>
         {
             string label = ColumnLabel(column);
             string cell = i == CursorIndex ? $"[{label}]" : label;
@@ -181,7 +226,7 @@ public sealed class LobbyGameSort
                 cell += crit.Reversed ? " v" : " ^";
             return cell;
         });
-        return string.Join("   ", cells) + "   (LEFT/RIGHT choose, SPACE sort)";
+        return string.Join(" ", cells) + "   (LEFT/RIGHT choose, SPACE sort)";
     }
 
     /// <summary>One-line description of the active stack (for the log).</summary>
@@ -192,23 +237,20 @@ public sealed class LobbyGameSort
 }
 
 /// <summary>
-/// P761 — the port's stand-in for native's GameScreenFilter state
+/// P806 — the port's stand-in for native's GameScreenFilter state
 /// (FilterDialogPopup, gamescreen.cpp:351-529): the eleven Yes/No/DontCare
 /// flags plus the game-name substring, all defaulting to
 /// <see cref="LobbyGameSort.BooleanFilter.DontCare"/>/empty exactly like
 /// ResetFilters (gamescreen.cpp:900-914) does.
 ///
-/// <para><b>Honest scope note.</b> The predicate
-/// (GameScreenFilter::operator(), gamescreen.cpp:933-999) reads mission
-/// metadata — AllowDevelopments/LimitedLives/ScoresCount/WasObjectModelCreated
-/// and the seven goal flags — that the lobby directory's
-/// <see cref="ServerListing"/> does not carry. <see cref="Apply"/> therefore
-/// evaluates ONLY the name substring (via <see cref="ServerListing.Matches"/>,
-/// the port's existing faithful port of the native substring rule); the eleven
-/// flags keep their DontCare default and exclude nothing (a DontCare flag also
-/// excludes nothing natively). They exist in the model so a future directory
-/// that carries the metadata can flip them without reshaping the type; the
-/// inexpressible set is listed in the P761 report.</para>
+/// <para><b>Evaluation.</b> <see cref="Apply"/> is the native predicate
+/// (GameScreenFilter::operator(), gamescreen.cpp:933-999): a DontCare flag
+/// excludes nothing; a Yes/No flag must agree with the listing's published
+/// <see cref="GameParams"/>. A listing that publishes no settings
+/// (<see cref="ServerListing.Game"/> null) cannot prove either side, so a
+/// set flag hides it — the honest reading of "the directory has no
+/// metadata" and the reason the pre-P806 port could only carry the flags as
+/// placeholders. The name substring is <see cref="ServerListing.Matches"/>.</para>
 /// </summary>
 public sealed class LobbyGameFilters
 {
@@ -238,9 +280,158 @@ public sealed class LobbyGameFilters
         NameSubstring = "";
     }
 
-    /// <summary>The port-expressible slice of native's filter predicate: the
-    /// game-name substring (gamescreen.cpp:997-999 → ServerListing.Matches).
-    /// The eleven boolean flags are DontCare-only until the directory carries
-    /// their metadata (see the type remarks).</summary>
-    public bool Apply(ServerListing listing) => listing.Matches(NameSubstring);
+    /// <summary>GameScreenFilter::operator() (gamescreen.cpp:933-999): every
+    /// flag that is not DontCare must agree with the listing's settings, then
+    /// the name substring must be contained.</summary>
+    public bool Apply(ServerListing listing)
+    {
+        // gamescreen.cpp:933-937 — developments.
+        if (!Agrees(Developments, listing.Game?.AllowDevelopments)) return false;
+        // :939-943 — lives (LimitedLives() ⇔ iLives != 0x7fff).
+        if (!Agrees(Lives, listing.Game?.LimitedLives)) return false;
+        // :945-949 — scores count.
+        if (!Agrees(ScoresCount, listing.Game?.ScoresCount)) return false;
+        // :951-956 — the native "Zone" column = WasObjectModelCreated().
+        if (!Agrees(Zone, listing.Game?.ObjectModelCreated)) return false;
+        // :958-997 — the seven winning conditions.
+        if (!Agrees(Conquest, listing.Game?.GoalConquest)) return false;
+        if (!Agrees(Deathmatch, listing.Game?.GoalDeathmatch)) return false;
+        if (!Agrees(Prosperity, listing.Game?.GoalProsperity)) return false;
+        if (!Agrees(Countdown, listing.Game?.GoalCountdown)) return false;
+        if (!Agrees(Artifact, listing.Game?.GoalArtifacts)) return false;
+        if (!Agrees(Flags, listing.Game?.GoalFlags)) return false;
+        if (!Agrees(Territorial, listing.Game?.GoalTerritory)) return false;
+        // :997-999 — the game-name substring.
+        return listing.Matches(NameSubstring);
+    }
+
+    /// <summary>One native flag test: DontCare passes; Yes/No require the
+    /// published value to be known and equal. Unknown metadata fails a set flag.</summary>
+    public static bool Agrees(LobbyGameSort.BooleanFilter filter, bool? value) => filter switch
+    {
+        LobbyGameSort.BooleanFilter.DontCare => true,
+        LobbyGameSort.BooleanFilter.Yes => value == true,
+        LobbyGameSort.BooleanFilter.No => value == false,
+        _ => true,
+    };
+}
+
+/// <summary>
+/// P806 — the server list's FILTER DIALOG (native <c>FilterDialogPopup</c>,
+/// <c>WinTrek/gamescreen.cpp:351-529</c>): the eleven Yes/No/DontCare combos in
+/// native's order, edited on a working copy and committed on OK
+/// (<c>OnButtonOK</c> :500-521 copies every combo into the screen's members and
+/// calls <c>UpdateGameList</c>); Cancel (:523-529) closes without touching them.
+/// The game-name edit box is the port's existing F filter line, which sets
+/// <see cref="LobbyGameFilters.NameSubstring"/> live — the same rule
+/// (gamescreen.cpp:997-999), so the dialog itself only carries the eleven flags.
+/// Pure model: the screen owns input + drawing.
+/// </summary>
+public sealed class LobbyFilterDialog
+{
+    /// <summary>The flag rows in native popup construction order
+    /// (gamescreen.cpp:355-400, 407-411).</summary>
+    public static readonly string[] Labels =
+    {
+        "DEVELOPMENTS", "LIVES", "SCORES COUNT", "ZONE",
+        "CONQUEST", "DEATHMATCH", "PROSPERITY", "COUNTDOWN",
+        "ARTIFACT", "FLAGS", "TERRITORIAL",
+    };
+
+    /// <summary>Number of rows (native's eleven combos).</summary>
+    public int Count => Labels.Length;
+
+    /// <summary>The row the cursor sits on.</summary>
+    public int Row { get; set; }
+
+    /// <summary>True while the popup owns the keyboard.</summary>
+    public bool Active { get; private set; }
+
+    private readonly LobbyGameSort.BooleanFilter[] _draft = new LobbyGameSort.BooleanFilter[Labels.Length];
+
+    /// <summary>The working-copy value of a row (native m_pcomboXxx->GetSelection()
+    /// before OK).</summary>
+    public LobbyGameSort.BooleanFilter this[int row] => _draft[row];
+
+    /// <summary>The next value in native's combo order (Yes, No, DontCare —
+    /// InitializeYesNoDontCare, gamescreen.cpp:407-411).</summary>
+    public static LobbyGameSort.BooleanFilter Next(LobbyGameSort.BooleanFilter v) => v switch
+    {
+        LobbyGameSort.BooleanFilter.Yes => LobbyGameSort.BooleanFilter.No,
+        LobbyGameSort.BooleanFilter.No => LobbyGameSort.BooleanFilter.DontCare,
+        _ => LobbyGameSort.BooleanFilter.Yes,
+    };
+
+    /// <summary>FilterDialogPopup::SetContainer (gamescreen.cpp:449-487): seed
+    /// every combo from the screen's current flags and focus the first row.</summary>
+    public void Open(LobbyGameFilters filters)
+    {
+        _draft[0] = filters.Developments;
+        _draft[1] = filters.Lives;
+        _draft[2] = filters.ScoresCount;
+        _draft[3] = filters.Zone;
+        _draft[4] = filters.Conquest;
+        _draft[5] = filters.Deathmatch;
+        _draft[6] = filters.Prosperity;
+        _draft[7] = filters.Countdown;
+        _draft[8] = filters.Artifact;
+        _draft[9] = filters.Flags;
+        _draft[10] = filters.Territorial;
+        Row = 0;
+        Active = true;
+    }
+
+    /// <summary>Move the row cursor (clamped, like the combo list).</summary>
+    public void MoveRow(int delta) => Row = Math.Clamp(Row + delta, 0, Labels.Length - 1);
+
+    /// <summary>Cycle a row's value forward (the combo's selection).</summary>
+    public void Cycle(int row) => _draft[Math.Clamp(row, 0, Labels.Length - 1)] =
+        Next(_draft[Math.Clamp(row, 0, Labels.Length - 1)]);
+
+    /// <summary>Cycle a row's value backward (Yes→DontCare→No→Yes).</summary>
+    public void CycleBackward(int row)
+    {
+        int i = Math.Clamp(row, 0, Labels.Length - 1);
+        _draft[i] = _draft[i] switch
+        {
+            LobbyGameSort.BooleanFilter.Yes => LobbyGameSort.BooleanFilter.DontCare,
+            LobbyGameSort.BooleanFilter.No => LobbyGameSort.BooleanFilter.Yes,
+            _ => LobbyGameSort.BooleanFilter.No,
+        };
+    }
+
+    /// <summary>OnButtonOK (gamescreen.cpp:500-521): close and copy every combo
+    /// into the screen's filter state.</summary>
+    public void Commit(LobbyGameFilters filters)
+    {
+        filters.Developments = _draft[0];
+        filters.Lives = _draft[1];
+        filters.ScoresCount = _draft[2];
+        filters.Zone = _draft[3];
+        filters.Conquest = _draft[4];
+        filters.Deathmatch = _draft[5];
+        filters.Prosperity = _draft[6];
+        filters.Countdown = _draft[7];
+        filters.Artifact = _draft[8];
+        filters.Flags = _draft[9];
+        filters.Territorial = _draft[10];
+        Active = false;
+    }
+
+    /// <summary>OnButtonCancel (gamescreen.cpp:523-529): close, keep the draft
+    /// discarded (the screen's flags are untouched).</summary>
+    public void Cancel() => Active = false;
+
+    /// <summary>The popup text: one row per combo, the cursor row bracketed.</summary>
+    public string Text()
+    {
+        var lines = new List<string>(Labels.Length + 2) { "FILTER GAMES" };
+        for (int i = 0; i < Labels.Length; i++)
+        {
+            string mark = i == Row ? ">" : " ";
+            lines.Add($"{mark} {Labels[i],-14} {_draft[i]}");
+        }
+        lines.Add("UP/DOWN row  LEFT/RIGHT value  ENTER ok  ESC cancel");
+        return string.Join('\n', lines);
+    }
 }

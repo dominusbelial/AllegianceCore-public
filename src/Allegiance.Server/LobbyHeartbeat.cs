@@ -39,6 +39,9 @@ public sealed class LobbyHeartbeat : IDisposable
     private readonly string _missionName;
     private readonly string _coreFile;
     private readonly string _version;
+    /// <summary>P806 — reads the cross-thread-safe mission-settings snapshot (the
+    /// same discipline as <c>LivePlayerCount</c>/<c>LivePlayerNames</c>).</summary>
+    private readonly Func<LobbyGameParams?>? _liveGameParams;
     private readonly int _intervalSeconds;
     private readonly TimeProvider _clock;
     private DateTimeOffset? _lastAttempt;
@@ -60,8 +63,9 @@ public sealed class LobbyHeartbeat : IDisposable
     /// </summary>
     public LobbyHeartbeat(LobbyConfig config, Func<int> livePlayerCount,
         string missionName, string coreFile, string version, int port,
-        Func<IReadOnlyList<string>>? livePlayerNames = null)
-        : this(BuildClient(config.Url), ownsHttp: true, config, livePlayerCount, missionName, coreFile, version, port, clock: null, livePlayerNames)
+        Func<IReadOnlyList<string>>? livePlayerNames = null,
+        Func<LobbyGameParams?>? liveGameParams = null)
+        : this(BuildClient(config.Url), ownsHttp: true, config, livePlayerCount, missionName, coreFile, version, port, clock: null, livePlayerNames, liveGameParams)
     {
     }
 
@@ -72,14 +76,16 @@ public sealed class LobbyHeartbeat : IDisposable
     /// </summary>
     internal LobbyHeartbeat(HttpClient http, LobbyConfig config, Func<int> livePlayerCount,
         string missionName, string coreFile, string version, int port, TimeProvider? clock = null,
-        Func<IReadOnlyList<string>>? livePlayerNames = null)
-        : this(http, ownsHttp: false, config, livePlayerCount, missionName, coreFile, version, port, clock, livePlayerNames)
+        Func<IReadOnlyList<string>>? livePlayerNames = null,
+        Func<LobbyGameParams?>? liveGameParams = null)
+        : this(http, ownsHttp: false, config, livePlayerCount, missionName, coreFile, version, port, clock, livePlayerNames, liveGameParams)
     {
     }
 
     private LobbyHeartbeat(HttpClient http, bool ownsHttp, LobbyConfig config, Func<int> livePlayerCount,
         string missionName, string coreFile, string version, int port, TimeProvider? clock = null,
-        Func<IReadOnlyList<string>>? livePlayerNames = null)
+        Func<IReadOnlyList<string>>? livePlayerNames = null,
+        Func<LobbyGameParams?>? liveGameParams = null)
     {
         _clock = clock ?? TimeProvider.System;
         _http = http;
@@ -95,6 +101,9 @@ public sealed class LobbyHeartbeat : IDisposable
         _missionName = missionName;
         _coreFile = coreFile;
         _version = version;
+        // P806 — the game settings the directory publishes for the server-list
+        // filters (see LobbyGameParams). Null when the caller has none.
+        _liveGameParams = liveGameParams;
         _intervalSeconds = config.HeartbeatIntervalSeconds > 0 ? config.HeartbeatIntervalSeconds : 25;
 
         _timer = new Timer(_ => Fire(), null,
@@ -153,7 +162,8 @@ public sealed class LobbyHeartbeat : IDisposable
                 _version,
                 _livePlayerNames?.Invoke(),     // P761 — find-player data (opt-in only, P761b)
                 _publishPlayers,                // P761b — the per-server opt-in the directory honours
-                _token);                        // null on the first tick, or after a 409 forced a fresh re-register
+                _token,                         // null on the first tick, or after a 409 forced a fresh re-register
+                _liveGameParams?.Invoke());     // P806 — game settings for the server-list filters
 
             HttpResponseMessage resp;
             try
@@ -281,4 +291,64 @@ internal sealed record LobbyRegisterRequest(
     // P761b — the directory stores/answers the pilot names ONLY for a server that
     // opts in (default off: the lobby cannot authenticate a self-hosted server).
     bool PublishPlayers,
-    string? Token);
+    string? Token,
+    // P806 — the mission settings the client's server-list filters and sort
+    // columns read (mirror of Allegiance.Lobby's GameParamsRequest).
+    LobbyGameParams? Game = null);
+
+/// <summary>
+/// P806 — the game settings a server publishes to the directory, mirroring
+/// native <c>MissionInfo</c>'s accessors (<c>clintlib/clintlib.h:540-557</c>).
+/// The native client receives these inside the mission definition the lobby
+/// relays; in this port the HTTP directory is the lobby, so they ride the
+/// register payload in exactly the same read-only, lobby-owned way.
+/// <para>Every value here is something the SERVER genuinely knows about its own
+/// mission: <c>Mission.AllowDevelopments</c> (<c>MissionParams.bAllowDevelopments</c>,
+/// igc.h:1128), <c>Mission.Lives</c> (<c>iLives</c>, igc.h:1185), the P191/P302/
+/// P303 win flags (<c>IsConquestGame</c>/<c>IsDeathMatchGame</c>/…, igc.h:1511-1540),
+/// <c>Mission.CountdownDuration</c> (<c>dtGameLength</c>, igc.h:1162) and
+/// <c>Mission.Stage</c> (<c>fInProgress</c>).</para>
+/// </summary>
+public sealed record LobbyGameParams(
+    bool AllowDevelopments,
+    int Lives,
+    bool ScoresCount,
+    bool ObjectModelCreated,
+    bool InProgress,
+    bool GoalConquest,
+    bool GoalDeathmatch,
+    bool GoalProsperity,
+    bool GoalCountdown,
+    bool GoalArtifacts,
+    bool GoalFlags,
+    bool GoalTerritory,
+    short MinRank,
+    short MaxRank)
+{
+    /// <summary>Native <c>c_cUnlimitedLives</c> (<c>igc.h:1007</c>).</summary>
+    public const int UnlimitedLives = 0x7fff;
+
+    /// <summary>
+    /// Snapshot one live mission. Values with no port equivalent take the native
+    /// <c>MissionParams::Reset</c> default and are documented as such:
+    /// <c>bScoresCount = true</c> (igc.h:1141/Reset and the game types' Apply),
+    /// <c>bObjectModelCreated = true</c> (igc.h:1150: the mission was created by
+    /// the server app — every port mission is), <c>iMinRank = -1</c> /
+    /// <c>iMaxRank = 1000</c> (igc.h:1301-1302: the port has no rank window).
+    /// </summary>
+    public static LobbyGameParams FromMission(Allegiance.Core.Model.Mission m) => new(
+        AllowDevelopments: m.AllowDevelopments,
+        Lives: m.Lives,
+        ScoresCount: true,
+        ObjectModelCreated: true,
+        InProgress: m.Stage is Allegiance.Core.Sim.MissionStage.Starting or Allegiance.Core.Sim.MissionStage.Started,
+        GoalConquest: m.ConquestEnabled,
+        GoalDeathmatch: m.KillsEnabled,
+        GoalProsperity: m.ProsperityEnabled,
+        GoalCountdown: m.CountdownDuration is > 0,
+        GoalArtifacts: m.ArtifactEnabled,
+        GoalFlags: m.FlagsEnabled,
+        GoalTerritory: m.TerritoryEnabled,
+        MinRank: -1,
+        MaxRank: 1000);
+}

@@ -5,74 +5,93 @@ using Xunit;
 namespace Allegiance.ClientCore.MonoGame.Tests;
 
 /// <summary>
-/// P425 — the pure ORDER-CHANGE payload decision for a commandee+target pair
-/// (<see cref="Game1.CommandOrderResolver"/>). These pin the contract that earns
-/// the test — the ISSUE-ORDER key computes the exact real wire shape the
-/// server's direct-NPC Build gate expects:
+/// P806 — the ISSUE-ORDER payload decision (<see cref="Game1.CommandOrderResolver"/>).
+/// The old P425 helper resolved ONLY builder+asteroid, which is why the parity row
+/// stayed partial; the production path (the issue-order key at
+/// <c>Game1.Targeting.TryIssueOrderToSingleCommandee</c> and the plain target pick
+/// at <c>Game1.Orders</c>) resolves every commandee/target pair through the single
+/// native table below. These tests pin the wire shape the server's
+/// <c>ORDER_CHANGE</c> handler consumes:
 /// <list type="bullet">
-/// <item>A Builder-role commandee at an asteroid target → a real
+/// <item>A Builder-role commandee at a BUILDABLE asteroid → a real
 /// <c>ORDER_CHANGE</c> with <c>CommandId=c_cidBuild</c>,
-/// <c>ObjectType=OT_asteroid</c>, <c>ObjectID=</c>the rock (mirroring
-/// <c>HandlePlayerBuildOrder</c>'s own gate, so the client pre-check and the
-/// server's authoritative refusal agree).</item>
-/// <item>A non-Builder commandee → null (no order; the server would refuse
-/// Builder-role anyway, so the client refuses upfront).</item>
-/// <item>A Builder ordered at something other than an asteroid → null.</item>
-/// <item>A non-ship "commandee" → null (only ships/drones are commanded).</item>
+/// <c>ObjectType=OT_asteroid</c>, <c>ObjectID=</c>the rock.</item>
+/// <item>A Miner at an He3 rock → <c>c_cidMine</c> (only that capability).</item>
+/// <item>A rock without the commandee's orders capability stays <c>Goto</c> —
+/// native's <c>HasCapability(m_abmOrders)</c> test (<c>Igc/shipIGC.h:2080-2090</c>).</item>
+/// <item>A non-ship "commandee" (the profile's own kind check) and a cluster
+/// target produce no order.</item>
 /// </list>
 /// The commandee's role bits are its hull's <c>HabmCapabilities</c>; Builder =
-/// <c>DataHullTypeIGC.HabmBuilder</c> (0x8000).
+/// <c>DataHullTypeIGC.HabmBuilder</c> (0x8000), Miner = <c>HabmMiner</c> (0x4000).
 /// </summary>
 public class CommandOrderResolverTests
 {
     private static readonly short BuilderRole = DataHullTypeIGC.HabmBuilder;
+    private static readonly short MinerRole = DataHullTypeIGC.HabmMiner;
     private static readonly short FighterRole = DataHullTypeIGC.HabmFighter;
 
+    private static Game1.CommandOrder? Resolve(short roles, Game1.TargetKind kind, short id,
+        short? asteroidAbm = null, bool? friendly = null)
+        => Game1.CommandOrderResolver.ResolveDefaultOrder(roles, commandeeIsLayer: false,
+            commandeeHasParent: false,
+            new Game1.CommandTargetProfile(kind, id, friendly, null, null, null, asteroidAbm));
+
     [Fact]
-    public void Builder_commandee_at_asteroid_yields_real_build_order_change()
+    public void Builder_at_a_buildable_asteroid_yields_real_build_order_change()
     {
-        var order = Game1.CommandOrderResolver.Resolve(BuilderRole, Game1.TargetKind.Ship, Game1.TargetKind.Asteroid, targetId: 6211);
+        var order = Resolve(BuilderRole, Game1.TargetKind.Asteroid, 6211, DataAsteroidIGC.AabmBuildable);
         Assert.NotNull(order);
-        // The exact real wire shape the server's HandleOrderChange/direct-NPC
-        // Build gate consumes: CommandId=c_cidBuild, ObjectType=OT_asteroid,
-        // ObjectID=the target rock. ShipID is supplied separately by the key
-        // handler (the commandee's id), not part of the resolver's target half.
         Assert.Equal(OrderChange.CidBuild, order.Value.CommandId);
         Assert.Equal(IgcObjectType.Asteroid, order.Value.ObjectType);
         Assert.Equal((short)6211, order.Value.ObjectId);
     }
 
     [Fact]
-    public void Non_builder_commandee_at_asteroid_yields_null()
+    public void Tech_base_builder_builds_on_its_special_rock_not_a_generic_one()
     {
-        Assert.Null(Game1.CommandOrderResolver.Resolve(FighterRole, Game1.TargetKind.Ship, Game1.TargetKind.Asteroid, 999));
+        // native m_abmOrders = the station type's GetBuildAABM() (shipIGC.h:2053-2057).
+        static short Cid(short rockAbm) => Game1.CommandOrderResolver.ResolveDefaultOrder(BuilderRole,
+            commandeeIsLayer: false, commandeeHasParent: false,
+            new Game1.CommandTargetProfile(Game1.TargetKind.Asteroid, 7, null, null, null, null, rockAbm),
+            builderOrdersAbm: DataAsteroidIGC.AabmSpecial)!.Value.CommandId;
+        Assert.Equal(OrderChange.CidBuild, Cid(DataAsteroidIGC.AabmSpecial));
+        Assert.Equal(OrderChange.CidGoto, Cid(DataAsteroidIGC.AabmBuildable));
     }
 
     [Fact]
-    public void Builder_commandee_at_ship_or_station_yields_null()
+    public void Miner_at_an_he3_asteroid_yields_a_mine_order()
     {
-        // A Builder is only orderable to build an asteroid; ordering at a ship or
-        // station is not a Build order.
-        Assert.Null(Game1.CommandOrderResolver.Resolve(BuilderRole, Game1.TargetKind.Ship, Game1.TargetKind.Ship, 888));
-        Assert.Null(Game1.CommandOrderResolver.Resolve(BuilderRole, Game1.TargetKind.Ship, Game1.TargetKind.Station, 887));
-        Assert.Null(Game1.CommandOrderResolver.Resolve(BuilderRole, Game1.TargetKind.Ship, Game1.TargetKind.Warp, 886));
+        var order = Resolve(MinerRole, Game1.TargetKind.Asteroid, 6212, DataAsteroidIGC.AabmMineHe3);
+        Assert.Equal(OrderChange.CidMine, order!.Value.CommandId);
+        Assert.Equal(IgcObjectType.Asteroid, order.Value.ObjectType);
     }
 
     [Fact]
-    public void Non_ship_commandee_yields_null()
+    public void Asteroid_without_the_commandees_orders_capability_stays_goto()
     {
-        // Only ships/drones are commanded; an asteroid or station can never be a
-        // commandee, regardless of target.
-        Assert.Null(Game1.CommandOrderResolver.Resolve(BuilderRole, Game1.TargetKind.Asteroid, Game1.TargetKind.Asteroid, 881));
-        Assert.Null(Game1.CommandOrderResolver.Resolve(BuilderRole, Game1.TargetKind.Station, Game1.TargetKind.Asteroid, 882));
+        // native shipIGC.h:2082-2090: HasCapability(m_abmOrders) is required.
+        Assert.Equal(OrderChange.CidGoto,
+            Resolve(BuilderRole, Game1.TargetKind.Asteroid, 1, DataAsteroidIGC.AabmMineHe3)!.Value.CommandId);
+        Assert.Equal(OrderChange.CidGoto,
+            Resolve(MinerRole, Game1.TargetKind.Asteroid, 1, DataAsteroidIGC.AabmBuildable)!.Value.CommandId);
+        // Unknown capability data (no asteroid resolved) cannot prove the order.
+        Assert.Equal(OrderChange.CidGoto,
+            Resolve(BuilderRole, Game1.TargetKind.Asteroid, 1, asteroidAbm: null)!.Value.CommandId);
     }
 
     [Fact]
-    public void Zero_role_bits_yields_null_even_at_asteroid()
+    public void Non_builder_roles_at_an_asteroid_stay_goto()
     {
-        // Unknown/unresolvable role bits (no ShopCatalog match) never fabricate a
-        // Build order — the server must be the authority, not a guess.
-        Assert.Null(Game1.CommandOrderResolver.Resolve(0, Game1.TargetKind.Ship, Game1.TargetKind.Asteroid, 871));
+        Assert.Equal(OrderChange.CidGoto,
+            Resolve(FighterRole, Game1.TargetKind.Asteroid, 999, DataAsteroidIGC.AabmBuildable)!.Value.CommandId);
+    }
+
+    [Fact]
+    public void Cluster_target_yields_no_order()
+    {
+        // Not a model target — native's default order needs pmodel->GetObjectType().
+        Assert.Null(Resolve(BuilderRole, Game1.TargetKind.Cluster, 7, DataAsteroidIGC.AabmBuildable));
     }
 }
 
@@ -88,9 +107,9 @@ public sealed class P757DefaultOrderTests
         short roles, bool isLayer = false, bool onParent = false,
         Game1.TargetKind kind = Game1.TargetKind.Ship, short id = 1,
         bool? friendly = null, short? targetHullAbm = null,
-        short? stationSabm = null, short? probeEabm = null)
+        short? stationSabm = null, short? probeEabm = null, short? asteroidAbm = null)
         => Game1.CommandOrderResolver.ResolveDefaultOrder(roles, isLayer, onParent,
-            new Game1.CommandTargetProfile(kind, id, friendly, targetHullAbm, stationSabm, probeEabm));
+            new Game1.CommandTargetProfile(kind, id, friendly, targetHullAbm, stationSabm, probeEabm, asteroidAbm));
 
     private const short Miner = DataHullTypeIGC.HabmMiner;
     private const short Builder = DataHullTypeIGC.HabmBuilder;
@@ -101,12 +120,17 @@ public sealed class P757DefaultOrderTests
     private const short LandOnCarrier = DataHullTypeIGC.HabmLandOnCarrier;
 
     [Fact]
-    public void Miner_and_builder_roles_split_mine_and_build_at_an_asteroid()
+    public void Miner_and_builder_roles_split_mine_and_build_at_a_matching_asteroid()
     {
-        // shipIGC.h:2080-2090: Miner → Mine, Builder → Build at an asteroid;
-        // anything else (warp) stays Goto.
-        Assert.Equal(OrderChange.CidMine, Resolve(Miner, kind: Game1.TargetKind.Asteroid)!.Value.CommandId);
-        Assert.Equal(OrderChange.CidBuild, Resolve(Builder, kind: Game1.TargetKind.Asteroid)!.Value.CommandId);
+        // shipIGC.h:2080-2090: a SIDELESS asteroid carrying the commandee's orders
+        // ABM → Miner Mine (c_aabmMineHe3) / Builder Build (c_aabmBuildable);
+        // anything else (warp, wrong rock type) stays Goto.
+        Assert.Equal(OrderChange.CidMine,
+            Resolve(Miner, kind: Game1.TargetKind.Asteroid, asteroidAbm: DataAsteroidIGC.AabmMineHe3)!.Value.CommandId);
+        Assert.Equal(OrderChange.CidBuild,
+            Resolve(Builder, kind: Game1.TargetKind.Asteroid, asteroidAbm: DataAsteroidIGC.AabmBuildable)!.Value.CommandId);
+        Assert.Equal(OrderChange.CidGoto,
+            Resolve(Miner, kind: Game1.TargetKind.Asteroid, asteroidAbm: DataAsteroidIGC.AabmBuildable)!.Value.CommandId);
         Assert.Equal(OrderChange.CidGoto, Resolve(Miner, kind: Game1.TargetKind.Warp)!.Value.CommandId);
     }
 

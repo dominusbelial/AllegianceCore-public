@@ -14,6 +14,9 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <!-- P806 — the loopback server-list test drives the REAL client filter/sort
+         model against the REAL lobby directory, so both sides are production. -->
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.5.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Allegiance.Lobby\Allegiance.Lobby.csproj" />
+    <ProjectReference Include="..\..\src\Allegiance.ClientCore.Game\Allegiance.ClientCore.Game.csproj" />
   </ItemGroup>
 
 </Project>

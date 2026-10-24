@@ -170,6 +170,19 @@ list in **reverse**.
 - **Screens** — intro, connect, hangar/loadout, team lobby, briefing, panes.
   `src/Allegiance.ClientCore.Game/Game1.*.cs` (Game1.Hangar.cs, Game1.Panes.cs,
   Game1.IntroScreen.cs, Game1.ConnectScreen.cs).
+- **Options menu tree** — the native root + Sound/Game/Chat submenus
+  (`WinTrek.cpp:4429-4442`, `:4502-4590`). Key:
+  `src/Allegiance.ClientCore.Game/OptionsMenuModel.cs`, driven by
+  `Game1.BenchmarkSharing.cs` (`UpdateOptionsMenu`/`DrawPrivacySettings`).
+- **Server browser model** — the listing mirror, the eight native sort columns,
+  the eleven game filters and the filter dialog (native `gamescreen.cpp`). Key:
+  `src/Allegiance.ClientCore.Game/ServerListing.cs`, `LobbyGameSort.cs`,
+  `LobbyGameMetadata.cs` (`GameParams`/`NativeGameTypes`), `Game1.Session.cs`.
+- **Team-lobby chat pane** — the native `ChatListPane` filter rules (players-only,
+  lobby channel set, Filter Chats To All). Key:
+  `src/Allegiance.ClientCore.Game/Rendering/ChatPaneModel.cs`,
+  `Rendering/ChatTargetLogic.cs`, `Game1.Panes.cs`
+  (`UpdateReadyCheck`/`DrawReadyCheckChat`).
 - **Input** — keyboard/mouse/joystick/gamepad rebindable.
   `src/Allegiance.ClientCore.Game/Game1.FlightInput.cs`, `Game1.KeyBind.cs`.
 - **Skirmish (offline single player)** — `src/Allegiance.SinglePlayer/`
@@ -203,6 +216,13 @@ list in **reverse**.
 - **Server directory** — the ASP.NET app players browse to find servers.
   `src/Allegiance.Lobby/Program.cs`, `LobbySettings.cs`, `ServerRegistry.cs`.
   Stage docs: `docs/ALLEGIANCE_LOBBY_STAGE*_P17*.md`.
+- **Published game settings** — the native `MissionInfo` fields (developments,
+  lives, scores, zone, goal bits, rank window, in-progress) on the register
+  payload and the listing, so the client's server-list filters/sort columns are
+  real. Key: `src/Allegiance.Lobby/ServerListing.cs` (`GameParamsDto`/
+  `GameParamsRequest`), `src/Allegiance.Server/LobbyHeartbeat.cs`
+  (`LobbyGameParams.FromMission`), `src/Allegiance.Server/Server.cs`
+  (`LiveGameParams`). Report `docs/reports/P806_SCREENS_LOBBY_COMMANDER.md`.
 
 ## 7. Tools / proofs (`tools/`)
 
@@ -210,7 +230,8 @@ list in **reverse**.
   `tools/p762b-sector-map-proof/`, `tools/hud-gauge-proof/`,
   `tools/collision-perf-proof/`); built by
   `tools/build-tools.sh --drop-bins` (the `-proof` projects are outside the
-  solution).
+  solution). The screen/options proof: `tools/p806-ui-proof/` (intro options
+  tree, real lobby server browser, team-lobby chat in both HUD styles).
 - **Corpus utilities** — `tools/cvhdump/`, `tools/fedmsgdump/`, `tools/igcdump/`,
   `tools/corpusvalidate/`.
 - **Benchmark** — `tools/benchmark/` (replay benchmark) and
@@ -278,6 +299,9 @@ list in **reverse**.
 | Wire messages | `src/Allegiance.Core/Wire/*.cs` (+ `docs/parity/fedmsg-wiring.csv`) |
 | Server boot | `src/Allegiance.Server/Program.cs`, `src/Allegiance.Server/ServerConfig.cs`, `src/Allegiance.Server/Server.Lifecycle.cs` |
 | HUD styles | `src/Allegiance.ClientCore.Game/Rendering/HudSettings.cs`, `src/Allegiance.ClientCore.Game/Rendering/ModernHudRenderer.cs` |
+| Server browser / filters | `src/Allegiance.ClientCore.Game/LobbyGameSort.cs`, `src/Allegiance.ClientCore.Game/LobbyGameMetadata.cs` |
+| Options menu | `src/Allegiance.ClientCore.Game/OptionsMenuModel.cs` |
+| Chat pane filters | `src/Allegiance.ClientCore.Game/Rendering/ChatPaneModel.cs` |
 | Map generation | `src/Allegiance.Core/MapGen/MissionMapGenerator.cs`, `src/Allegiance.Core/MapGen/MapGenParams.cs` |
 | Seed reproducibility | `src/Allegiance.Core/MapGen/MapRandom.cs`, `tests/Allegiance.Core.Tests/MapGenSeedReproTests.cs` |
 | One-command stack | `scripts/dev-stack.sh`, `QUICKSTART.md` |

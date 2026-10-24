@@ -99,7 +99,10 @@ public sealed class ServerRegistry
                 now, now,
                 // P761b — names are kept ONLY for an opted-in server.
                 req.PublishPlayers ? SanitizePlayers(req.Players) : Array.Empty<string>(),
-                req.PublishPlayers);
+                req.PublishPlayers,
+                // P806 — the mission settings the client's server-list filters and
+                // status/skill/settings sort columns read (native MissionInfo).
+                ToGameParams(req.Game));
 
             if (!_entries.TryAdd(id, listing))
                 return null; // id collision is effectively impossible; treat as a transient refusal
@@ -125,6 +128,10 @@ public sealed class ServerRegistry
             LastSeenUtc = now,
             Players = req.PublishPlayers ? SanitizePlayers(req.Players) : Array.Empty<string>(),
             PublishPlayers = req.PublishPlayers,
+            // P806 — the live game settings. A heartbeat refreshes them in place,
+            // exactly like the player count (the mission moves NotStarted →
+            // Started, so InProgress and the goal bits can change mid-listing).
+            Game = ToGameParams(req.Game),
         };
 
         _entries[target.Id] = refreshed;
@@ -263,5 +270,42 @@ public sealed class ServerRegistry
     /// (privacy fix; the names survive only for <see cref="FindPlayer"/>).</summary>
     private static ServerListingDto ToDto(ServerListing l) => new(
         l.Id, l.Name, l.Address, l.Port, l.PlayerCount, l.MaxPlayers,
-        l.MissionName, l.CoreFile, l.Version, l.RegisteredUtc, l.LastSeenUtc);
+        l.MissionName, l.CoreFile, l.Version, l.RegisteredUtc, l.LastSeenUtc,
+        l.Game);
+
+    /// <summary>
+    /// P806 — normalize the caller-supplied game settings. Every omitted field
+    /// takes native <c>MissionParams::Reset</c>'s value (<c>Igc/igc.h:1246-1310</c>:
+    /// developments on, unlimited lives, scores count, conquest percentage 100
+    /// i.e. a conquest game, no other goal, rank window -1..1000), and the
+    /// numeric fields are clamped to their native short ranges. A payload with no
+    /// <c>Game</c> object at all stays null: the directory then has no settings to
+    /// publish and the client cannot evaluate a Yes/No filter against it.
+    /// </summary>
+    private static GameParamsDto? ToGameParams(GameParamsRequest? g)
+    {
+        if (g is null) return null;
+        const int UnlimitedLives = 0x7fff;   // c_cUnlimitedLives, igc.h:1007
+        static short ClampShort(int value) => value switch
+        {
+            < short.MinValue => short.MinValue,
+            > short.MaxValue => short.MaxValue,
+            _ => (short)value,
+        };
+        return new GameParamsDto(
+            AllowDevelopments: g.AllowDevelopments ?? true,
+            Lives: Math.Clamp(g.Lives ?? UnlimitedLives, 0, UnlimitedLives),
+            ScoresCount: g.ScoresCount ?? true,
+            ObjectModelCreated: g.ObjectModelCreated ?? false,
+            InProgress: g.InProgress ?? false,
+            GoalConquest: g.GoalConquest ?? true,
+            GoalDeathmatch: g.GoalDeathmatch ?? false,
+            GoalProsperity: g.GoalProsperity ?? false,
+            GoalCountdown: g.GoalCountdown ?? false,
+            GoalArtifacts: g.GoalArtifacts ?? false,
+            GoalFlags: g.GoalFlags ?? false,
+            GoalTerritory: g.GoalTerritory ?? false,
+            MinRank: ClampShort(g.MinRank ?? -1),
+            MaxRank: ClampShort(g.MaxRank ?? 1000));
+    }
 }
