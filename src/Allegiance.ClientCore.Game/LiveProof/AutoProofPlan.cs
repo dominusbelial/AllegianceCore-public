@@ -129,6 +129,12 @@ public sealed class AutoProofPlan
     /// geometry (P572 minimal toggle; see <see cref="AutoProofMachine"/>).</summary>
     public bool HideHud;
 
+    /// <summary>P786 — pin the radar LOD for a proof frame
+    /// (<c>--auto-radar all|default|target|minimal</c>). The FLIGHTKEYS proof
+    /// cycles modes only right after launch, before a --auto-goto flight
+    /// arrives, so a targeted fill-bar frame needs a pinned mode.</summary>
+    public string AutoRadarMode = "";
+
     /// <summary>Real-backbuffer screenshot seconds-after-launch schedule
     /// (<c>--autoshots t1,t2,...</c>). Empty = no timed shots.</summary>
     public double[] AutoshotSeconds = Array.Empty<double>();
@@ -318,6 +324,14 @@ public sealed class AutoProofPlan
                 plan.HideHud = true;
             else if (a == "--hide-hud=false")
                 plan.HideHud = false;
+            else if (a == "--auto-radar" && i + 1 < args.Count)
+            {
+                plan.AutoRadarMode = args[++i];
+            }
+            else if (a.StartsWith("--auto-radar=", StringComparison.Ordinal))
+            {
+                plan.AutoRadarMode = a.Substring("--auto-radar=".Length);
+            }
             else if (a == "--autoshots")
             {
                 if (i + 1 < args.Count)
@@ -426,6 +440,7 @@ public sealed class AutoProofPlan
         AutoCredits || AutoScreen != AutoScreenKind.None || AutoGraphicsSettings ||
         GotoSector.Length > 0 || Target != AutoTargetKind.None || AutoTargetClass.Length > 0 ||
         HideHud || AutoParityCommands || AutoFlightParts || AutoInventory || AutoHighlightSector.Length > 0 || AutoshotSeconds.Length > 0 ||
+        AutoRadarMode.Length > 0 ||
         AutoDockAfter.HasValue || DockSweepCount > 0 || ExitAfter.HasValue ||
         AutoSuicideAt.Length > 0 ||
         Director || FollowShip != -1 || DirectorSeed.HasValue ||

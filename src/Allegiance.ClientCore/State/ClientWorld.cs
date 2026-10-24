@@ -1852,6 +1852,11 @@ public sealed partial class ClientWorld
     /// Time slot is a tick index in this port and must never be interpreted as milliseconds.</summary>
     public double SimulationTimeSeconds => _treasureClockSeeded ? _treasureServerSeconds : 0;
 
+    /// <summary>P786 — whether the server sim clock has been seeded by a PING
+    /// sample (until then <see cref="SimulationTimeSeconds"/> reads 0, which
+    /// would make lifetime fills garbage — callers gate on this).</summary>
+    public bool ServerClockSeeded => _treasureClockSeeded;
+
     public void ObserveServerTime(uint serverMs, long localMs)
     {
         _treasureClockSeeded = true;
@@ -3229,7 +3234,14 @@ public sealed partial class ClientWorld
             ClusterId = dp.ClusterId,
             ProbetypeId = dp.ProbetypeId,
             Position = dp.P0,
+            // P786 — the export's m_time0 (probeigc.cpp:542) in server seconds,
+            // the anchor of the radar probe lifetime fill (probeigc.h:271-279).
+            Time0ServerSeconds = dp.Time0 / 1000.0,
         };
+        // P786 — the OWN ship's dispenser deploy is the native client's own
+        // magazine-clock event for the arming readout (a dispenser fires with
+        // SetTimeFired semantics, dispenserigc.h:165-175 / magazineigc.h:128-137).
+        if (MyShipId is { } me && dp.ShipId == me) OwnDispenserDeployed++;
     }
 
     /// <summary>P260 — <c>FM_S_PROBE_DESTROYED(85)</c>: the probe was destroyed
@@ -3257,13 +3269,21 @@ public sealed partial class ClientWorld
             MinetypeId = dm.MinetypeId,
             ClusterId = dm.ClusterId,
             Position = dm.P0,
+            // P786 — the export's m_time0 (mineigc.cpp:167) in server seconds,
+            // the anchor of the radar mine lifetime fill (mineigc.h:183-191).
+            Time0ServerSeconds = dm.Time0 / 1000.0,
         };
-        // P717 — SIM-0447: the LOCAL ship's own deploy plays the mine-deploy
+        // P786 — the OWN ship's dispenser deploy is the native client's own
+        // magazine-clock event for the arming readout (see ExportProbe above).
+        // P717 — SIM-0447: the LOCAL ship's own deploy also plays the mine-deploy
         // one-shot (native deployMineSound, clintlib.cpp:3253, gated
         // `if (pShip == m_ship)`). The server's FM_S_EXPORT(26)/OT_mine carries
         // the launcher ship id, so the own-deploy edge is `LauncherId == MyShipId`.
         if (MyShipId is { } me && dm.LauncherId == me)
+        {
+            OwnDispenserDeployed++;
             RecordSoundEvent(ClientSoundEventKind.MineDeployed, dm.MineId);
+        }
     }
 
     /// <summary>P291 — <c>FM_S_MINE_DESTROYED(84)</c>: the mine detonated or its
@@ -3705,6 +3725,19 @@ public sealed partial class ClientWorld
     /// <summary>Confirmed own missile quantity, not fire requests. Native consumes
     /// the salvo count (clintlib/clintlib.cpp:3114-3120,3206).</summary>
     public long OwnMissilesFired { get; private set; }
+
+    /// <summary>
+    /// P786 — confirmed own DISPENSER deploys (probes + mines laid by the local
+    /// ship), counted from the creation EXPORTs that carry the launcher ship id
+    /// (<c>Apply(ExportProbe)</c>/<c>Apply(ExportMine)</c>). This is the
+    /// dispenser half of the native client's own launcher-fire clock — a
+    /// dispenser fires with <c>SetTimeFired</c> semantics
+    /// (<c>Igc/dispenserigc.h:165-175</c>, load reset <c>:148-152</c>) — which
+    /// the flight inventory's arming readout replays
+    /// (<see cref="MonoGame.Rendering.OwnLauncherArming"/>). Mirrors
+    /// <see cref="OwnMissilesFired"/> (magazine half).
+    /// </summary>
+    public long OwnDispenserDeployed { get; private set; }
 
     private void Apply(FireMissile m)
     {

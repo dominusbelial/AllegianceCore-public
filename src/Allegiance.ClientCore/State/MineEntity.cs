@@ -76,4 +76,18 @@ public sealed class MineEntity
     /// <c>SetMineStrength</c>/<c>SetCount</c> does (<c>efgeo.cpp:21-24,43-51</c>)
     /// — the visible \"the field wears down\" half of a mine popping.</summary>
     public float Strength = 1f;
+
+    /// <summary>
+    /// P786 — the mine's native <c>m_time0</c> lay instant, in server mission
+    /// seconds (<c>DataMineExport.Time0</c> is the wire's uint server
+    /// millisecond tick; the export sets it from the live mine at creation,
+    /// <c>mineigc.cpp:167</c> <c>pdme-&gt;time0 = m_time0</c>, with
+    /// <c>m_time0 = now</c> at construction <c>mineigc.cpp:40</c>). This is the
+    /// value native's <c>GetTimeFraction</c> needs (<c>mineigc.h:183-191</c>:
+    /// <c>(m_timeExpire − now) / (m_timeExpire − m_time0)</c>,
+    /// <c>m_timeExpire = m_time0 + lifespan</c>, <c>mineigc.cpp:113</c>) — the
+    /// radar mine contact's lifetime fill bar. Interpreted against
+    /// <see cref="ClientWorld.SimulationTimeSeconds"/>.
+    /// </summary>
+    public double Time0ServerSeconds;
 }

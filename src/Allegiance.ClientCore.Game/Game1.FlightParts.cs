@@ -50,6 +50,60 @@ public sealed partial class Game1
                 ? (ship.Loadout ?? []).Concat(ship.Cargo ?? []).ToList() : [];
     }
 
+    /// <summary>P786 — the own launcher arming clocks (native
+    /// GetArmedFraction, consoledata.cpp:1189-1202), replayed each frame from
+    /// the wire events the native client's own magazine/dispenser sim would
+    /// act on — see <see cref="Rendering.OwnLauncherArming"/>.</summary>
+    private readonly OwnLauncherArming _launcherArming = new();
+
+    // Cached delegates — the frame path must not allocate (method groups and
+    // closures over `this` would otherwise be rebuilt per frame).
+    private Func<ExpandedPartData, (EquipmentType Type, double LoadTime)?>? _launcherResolve;
+    private Func<EquipmentType, float, float>? _armedFractionQuery;
+
+    /// <summary>The expendable load time of a mounted launcher part in seconds
+    /// (magazine → its missile type's GetLoadTime, magazineigc.h:159-165;
+    /// dispenser → its mine/probe type, dispenserigc.h:165-175 with the
+    /// Ship.DispenserLoadTime subtype mapping). Null for non-launchers.
+    /// Allocation-free.</summary>
+    private (EquipmentType Type, double LoadTime)? LauncherLoadTime(DataPartTypeIGC part)
+    {
+        double? loadTime = part.Type switch
+        {
+            DataPartTypeIGC.MissileLauncher ml
+                when _shopCatalog?.MissileTypes is { } mts && mts.TryGetValue(ml.ExpendableTypeId, out var mt) => mt.LoadTime,
+            DataPartTypeIGC.ProbeLauncher pl
+                when _shopCatalog?.ProbeTypes is { } pts && pts.TryGetValue(pl.ExpendableTypeId, out var pt) => pt.LoadTime,
+            DataPartTypeIGC.MineLauncher ml2
+                when _shopCatalog?.MineTypes is { } mts2 && mts2.TryGetValue(ml2.ExpendableTypeId, out var mt2) => mt2.LoadTime,
+            _ => null,
+        };
+        return loadTime is { } lt ? (part.EquipmentType, lt) : null;
+    }
+
+    /// <summary>Replay the arming clocks for one frame from the live world
+    /// (own missile-fire salvo count, own dispenser deploys, loadout mount
+    /// transitions). Runs under the session gate; allocation-free.</summary>
+    private void UpdateLauncherArming(ShipEntity entity)
+    {
+        var world = _session.World;
+        if (entity.Loadout is not { Count: > 0 } loadout)
+        {
+            _launcherArming.Update(world.OwnMissilesFired, world.OwnDispenserDeployed,
+                Array.Empty<ExpandedPartData>(), static _ => default((EquipmentType, double)?), 1.0,
+                Environment.TickCount64 * 0.001);
+            return;
+        }
+        // Native c_fcidMountRate = FloatConstants[10] (igc.h:69), default 1.0 —
+        // the same constant and fallback Sim.Ship.MountRate uses.
+        double mountRate = _shopCatalog?.Core?.Constants.FloatConstants is { Length: > 10 } fc && fc[10] > 0f
+            ? fc[10] : 1.0;
+        if (_launcherResolve is null)
+            _launcherResolve = e => ResolveFlightPart(e.PartId) is { } part ? LauncherLoadTime(part) : null;
+        _launcherArming.Update(world.OwnMissilesFired, world.OwnDispenserDeployed,
+            loadout, _launcherResolve, mountRate, Environment.TickCount64 * 0.001);
+    }
+
     /// <summary>HUD-7 — resolve the native flight equipment/inventory pane for
     /// the local source ship (WinTrek/inventoryimage.cpp:299-346), driven by the
     /// granted loadout + cargo, the core catalogue, the own hull, the side's
@@ -90,12 +144,15 @@ public sealed partial class Game1
         foreach (var other in _session.World.Ships.Values)
             if (other.ParentId == sourceId && other.BoardTurretId == ShipEntity.BoardTurretObserver)
                 observers++;
+        // P786 — the native GetArmedFraction replay for the arming bars.
+        if (_armedFractionQuery is null) _armedFractionQuery = _launcherArming.ArmedFraction;
         return HudInventoryPaneBuilder.Build(
             catalog, hull, loadout, cargo, attributes,
             up.FuelFraction, up.EnergyFraction, up.ShieldFraction, up.AmmoFraction,
             _groupFire, _selectedMount, _selectedCargoMount,
             hull.Name, isPilot: !IsTurretGunner(), sourceHull: sourceHull,
-            cloakStrengthPercent: cloakStrength, observerCount: observers);
+            cloakStrengthPercent: cloakStrength, observerCount: observers,
+            armedFraction: _armedFractionQuery);
     }
 
     private void CycleInventory(bool next)

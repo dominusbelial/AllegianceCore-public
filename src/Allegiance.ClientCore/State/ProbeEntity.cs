@@ -63,4 +63,19 @@ public sealed class ProbeEntity
     /// <summary>The probe's position (<c>DataProbeExport.P0</c>) — fixed for the
     /// probe's whole life (a probe never moves, <c>probeigc.cpp:115,142</c>).</summary>
     public Vector3 Position;
+
+    /// <summary>
+    /// P786 — the probe's native <c>m_time0</c> deploy instant, in server
+    /// mission seconds (<c>DataProbeExport.Time0</c> is the wire's uint server
+    /// millisecond tick; the export sets it from the live probe at creation,
+    /// <c>probeigc.cpp:542</c> <c>pdme-&gt;time0 = m_time0</c>, with
+    /// <c>m_time0 = now</c> at construction <c>probeigc.cpp:47</c>). This is
+    /// the value native's <c>GetTimeFraction</c> needs
+    /// (<c>probeigc.h:271-279</c>: <c>(m_timeExpire − now) / (m_timeExpire −
+    /// m_time0)</c>, <c>m_timeExpire = m_time0 + lifespan</c>) — the radar
+    /// probe contact's lifetime fill bar. Interpreted against
+    /// <see cref="ClientWorld.SimulationTimeSeconds"/> (both server-mission
+    /// seconds, the same clock the treasure entities use).
+    /// </summary>
+    public double Time0ServerSeconds;
 }

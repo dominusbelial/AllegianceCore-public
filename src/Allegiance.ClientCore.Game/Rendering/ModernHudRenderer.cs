@@ -493,7 +493,9 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
             float bw = 64f * s;
             float bh = 14f * s;
             FillRect(bx, by, bw, bh, new Color(0f, 0f, 0f, 0.7f));
-            float frac = HudFormat.Clamp01(row.MountedFraction);
+            // P786 — ReadyState 2 fills by the live GetArmedFraction
+            // (consoledata.cpp:1189-1202), ReadyState 1 by the mount fraction.
+            float frac = HudFormat.Clamp01(row.ReadyState == 2 ? (row.ArmedFraction ?? row.MountedFraction) : row.MountedFraction);
             if (frac > 0f)
                 FillRect(bx + 1f, by + 1f, (bw - 2f) * frac, bh - 2f,
                     row.ReadyState == 2 ? new Color(140, 220, 150) : new Color(200, 205, 210));

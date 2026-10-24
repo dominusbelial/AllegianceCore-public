@@ -282,6 +282,7 @@ public sealed partial class Game1
 
     protected override void Draw(GameTime gameTime)
     {
+        unchecked { _hudFrame++; }   // P786B — frame stamp for the side-scanner cache
         if (_benchReplay is { } replay)
             gameTime = new(TimeSpan.FromSeconds(replay.Frame / 60d), TimeSpan.FromSeconds(1d / 60));
         _gpuTimer?.Poll(_receiveGpu!);
@@ -2980,6 +2981,11 @@ public sealed partial class Game1
                 if (_weaponFrameShipId != me) { _weaponReloadTracker.Reset(); _weaponFrameShipId = me; }
                 var weaponRows = BuildWeaponStatusRows(entity, up.AmmoFraction);
 
+                // P786 — replay the own launcher arming clocks every frame (the
+                // native client's magazine/dispenser sim runs every frame; the
+                // F4 pane reads the resulting armed fraction when shown).
+                UpdateLauncherArming(entity);
+
                 // HUD-7 — the native flight equipment/inventory pane (F4). Built
                 // only while the pane is actually shown (native rebuilds on
                 // loadout/cluster change, inventoryimage.cpp:356-393 — never
@@ -3085,8 +3091,13 @@ public sealed partial class Game1
                     WarningMask: world.ShipWarnings.Mask,
                     ControlState: up.StateM,
                     // HUD-6 — own-ship centre-HUD status telemetry.
+                    // P786 — the signature gauge multiplies the accumulated
+                    // signature by the LIVE GetCloaking() ramp
+                    // (shipIGC.h:268-270), streamed owner-only per tick by
+                    // OwnShipCloakUpdate(220) — not the engaged end state.
                     SignaturePercent: OwnSignaturePercent(world, ownStatus.SourceShip,
-                        firing, _groupFire, _selectedMount, afterburnerActive, cloakActive),
+                        firing, _groupFire, _selectedMount, afterburnerActive, cloakActive,
+                        world.MyCloaking),
                     Detected: entity.Detected,
                     AutopilotEngaged: ownStatus.AutopilotEngaged,
                     VectorLockEngaged: ownStatus.VectorLockEngaged,
@@ -3201,7 +3212,8 @@ public sealed partial class Game1
     /// Unknown hull/side data leaves the readout absent rather than inventing a
     /// value.</summary>
     private float? OwnSignaturePercent(ClientWorld world, ShipEntity entity,
-        bool firing, bool groupFire, int selectedMount, bool afterburnerActive, bool cloakActive)
+        bool firing, bool groupFire, int selectedMount, bool afterburnerActive, bool cloakActive,
+        float? cloaking)
     {
         short sideId = entity.SideId;
         if (_shopCatalog is null) return null;
@@ -3210,7 +3222,7 @@ public sealed partial class Game1
         if (!_hullById.TryGetValue(entity.HullId, out var ownHull)) return null;
         float resistance = world.GlobalAttributesFor(sideId).Get(Allegiance.Core.Model.GlobalAttributeSet.Signature);
         return OwnStatusData.SignaturePercent(ownHull.Signature, entity.Loadout, ResolveFlightPart,
-            firing, groupFire, selectedMount, afterburnerActive, cloakActive, resistance);
+            firing, groupFire, selectedMount, afterburnerActive, cloakActive, resistance, cloaking);
     }
 
     /// <summary>P578/HUD-9 — flat tip view for the shared snapshot: the three
@@ -3711,6 +3723,16 @@ public sealed partial class Game1
             bool commandCamera = CommandCameraActive;
             bool rangeLabels = RadarLabelModel.RangeLabelsEnabled(commandCamera);
             bool rangeZero = !rangeLabels;   // native asteroid LOD reuses bRangeLabels
+            // P786 — the miner shipload both ore fills divide by
+            // (radarimage.cpp:576-577): FloatConstants[c_fcidCapacityHe3 = 7]
+            // (default 90) × the OWN side's GA[c_gaMiningCapacity = 19].
+            float minerCapacityHe3 = HudWireValues.MinerCapacityHe3(
+                _shopCatalog?.Core?.Constants.FloatConstants is { Length: > 7 } fc ? fc[7] : null,
+                world.GlobalAttributesFor(mySide).Get(Allegiance.Core.Model.GlobalAttributeSet.MiningCapacity));
+            // P786 — native probe/mine GetTimeFraction reads GetMyLastUpdate()
+            // (server sim time); the client's server-clock sample stands in and
+            // is only usable once a PING seeded it.
+            double simSeconds = world.ServerClockSeeded ? world.SimulationTimeSeconds : double.NaN;
             var accepted = world.MyAcceptedCommand;
             var queued = world.MyQueuedCommand;
             float ownRadius = HullLength(ownEnt.HullId) * 0.5f;
@@ -4024,12 +4046,21 @@ public sealed partial class Game1
                 Color? sideCol = launcherSide >= 0 ? SideColor(launcherSide) : null;
                 if (!RadarLod.ShowMissile(radarMode, aimsAtOwnSide, isSelected: false)) continue;
                 float centre = (ownSimPos - ms.Position).Length();
+                // P786 — the missile's MODEL radius from the static core: native
+                // clips its range line on the surface separation
+                // (radarimage.cpp:626-636, separation -= radiusSource +
+                // pmodel->GetRadius()), and a missile's GetRadius() is its
+                // type's radius (missileIGC.cpp Load radius). The wire's
+                // FIRE_MISSILE/MISSILE_UPDATE carry the type id; the core the
+                // client loaded carries DataMissileTypeIGC.Radius.
+                float missileRadius = _shopCatalog?.MissileTypes is { } missileTypes
+                    && missileTypes.TryGetValue(ms.TypeId, out var missileType)
+                        ? missileType.Radius : 0f;
                 var missileXna = PoseConverter.ToXna(ms.Position);
                 var site = RadarProjection.Project(
                     missileXna, cameraEye, view, proj, w, h, inset);
-                // HUD-13 — the client wire carries no missile model radius, so
-                // this takes native's minimum icon radius (unused anyway: a
-                // missile carries no overlay bracket).
+                // HUD-13 — a missile carries no overlay bracket, so the
+                // bracket-sizing radius stays unused.
                 var missileBracket = Bracketing(site, 0f, missileXna);
                 _drawRadarContacts.Add(new HudContact(
                     HudContactKind.Missile,
@@ -4042,7 +4073,7 @@ public sealed partial class Game1
                     // a missile aimed at the exact own side (GetSide() == mine).
                     Range: rangeLabels ? (int)(centre + 0.5f) : null,
                     MissileTargetsOwnSide: aimsAtOwnSide,
-                    ClipSeparation: LodSeparation(centre, 0f),
+                    ClipSeparation: LodSeparation(centre, missileRadius),
                     ScreenRadius: missileBracket.ScreenRadius,
                     DistanceToEdge: missileBracket.DistanceToEdge,
                     // Native missile icon = dataMissileType->iconName
@@ -4077,12 +4108,21 @@ public sealed partial class Game1
                     SideHud(pb.SideId), isSel, false,
                     // P783 — native probe/mine tier (radarimage.cpp:834-875): the
                     // model name is the All-mode enemy name line, hull is the real
-                    // probe health (GetFraction, :1080). The native fill bar is
-                    // GetTimeFraction (:1079), which needs the probe's m_time0 that
-                    // the export does not carry - left absent, see the report.
+                    // probe health (GetFraction, :1080). P786 — the fill bar is
+                    // native GetTimeFraction (:1079, probeigc.h:271-279): the
+                    // export's m_time0 rides in DataProbeExport.Time0
+                    // (probeigc.cpp:542) and the lifespan in the core's probe
+                    // type, so the fraction is computed client-side exactly as
+                    // native does.
                     Name: string.IsNullOrEmpty(probeTypeName) ? null : probeTypeName,
                     Range: rangeLabels ? (int)(centre + 0.5f) : null,
                     Hull: pb.Fraction,
+                    Fill: !double.IsNaN(simSeconds)
+                          && _shopCatalog?.ProbeTypes is { } probeTypesFill
+                          && probeTypesFill.TryGetValue(pb.ProbetypeId, out var probeTypeFill)
+                          ? HudWireValues.ProbeMineTimeFraction(pb.Time0ServerSeconds,
+                                probeTypeFill.Lifespan, simSeconds)
+                          : null,
                     IsEnemy: !probeSameSide && !world.AreAllied(mySide, pb.SideId),
                     IsSameSide: probeSameSide,
                     IsAllied: !probeSameSide && world.AreAllied(mySide, pb.SideId),
@@ -4114,11 +4154,18 @@ public sealed partial class Game1
                     site.Placement == RadarBracketLayout.RadarPlacement.OnScreen, op,
                     SideHud(mine.SideId), false, false,
                     // P783 — native mine tier (radarimage.cpp:834-875): name for an
-                    // on-screen enemy in All, and the fill bar is the mine's
-                    // GetTimeFraction (:1073), which needs m_time0 from the
-                    // export - absent, so no bar is shown (see the report).
+                    // on-screen enemy in All. P786 — the fill bar is native
+                    // GetTimeFraction (:1073, mineigc.h:183-191): the export's
+                    // m_time0 rides in DataMineExport.Time0 (mineigc.cpp:167) and
+                    // the lifespan in the core's mine type.
                     Name: string.IsNullOrEmpty(mineTypeName) ? null : mineTypeName,
                     Range: rangeLabels ? (int)(centre + 0.5f) : null,
+                    Fill: !double.IsNaN(simSeconds)
+                          && _shopCatalog?.MineTypes is { } mineTypesFill
+                          && mineTypesFill.TryGetValue(mine.MinetypeId, out var mineTypeFill)
+                          ? HudWireValues.ProbeMineTimeFraction(mine.Time0ServerSeconds,
+                                mineTypeFill.Lifespan, simSeconds)
+                          : null,
                     IsEnemy: !mineSameSide && !world.AreAllied(mySide, mine.SideId),
                     IsSameSide: mineSameSide,
                     IsAllied: !mineSameSide && world.AreAllied(mySide, mine.SideId),
@@ -4248,7 +4295,14 @@ public sealed partial class Game1
                     Name: string.IsNullOrEmpty(ast.Name) ? null : ast.Name,
                     Range: rangeLabels ? (int)(centre + 0.5f) : null,
                     Hull: world.AsteroidLive.TryGetValue(aid, out var liveRock) ? liveRock.Fraction : null,
-                    Fill: world.AsteroidLive.TryGetValue(aid, out var liveOre) ? liveOre.OreFraction : null,
+                    // P786 — native fill = GetOreSeenBySide / (2 · miner
+                    // shipload capacity) (radarimage.cpp:1051-1069), drawn only
+                    // when the side-known ore is non-zero. The client's live
+                    // fraction IS the side's oreSeen (the P797 wire only ever
+                    // delivers ore its side has seen).
+                    Fill: world.AsteroidLive.TryGetValue(aid, out var liveOre)
+                          ? HudWireValues.OreSeenFill(liveOre.OreFraction, ast.OreMax, minerCapacityHe3)
+                          : null,
                     AcceptedOrder: asteroidCommand.CommandAccepted, QueuedOrder: asteroidCommand.CommandId is not null && !asteroidCommand.CommandAccepted,
                     CommandId: asteroidCommand.CommandId, CommandAccepted: asteroidCommand.CommandAccepted,
                     // P783 — the asteroid tier clips on the surface separation

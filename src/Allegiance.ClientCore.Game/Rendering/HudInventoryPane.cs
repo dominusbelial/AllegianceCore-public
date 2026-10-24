@@ -81,7 +81,8 @@ public static class HudInventoryPaneBuilder
         float AmmoFraction,
         bool GroupFire,
         int SelectedMount,
-        float? CloakStrengthPercent);
+        float? CloakStrengthPercent,
+        Func<EquipmentType, float, float>? ArmedFraction);
 
     public static HudInventoryPane Build(
         ShopCatalog? catalog,
@@ -100,7 +101,12 @@ public static class HudInventoryPaneBuilder
         bool isPilot = true,
         DataHullTypeIGC? sourceHull = null,
         float? cloakStrengthPercent = null,
-        int observerCount = 0)
+        int observerCount = 0,
+        // P786 — the own launcher arming clocks (native GetArmedFraction,
+        // consoledata.cpp:1189-1202): a launcher row's ReadyState 2 + its
+        // arming-bar fill. Null keeps the pre-P786 behaviour (mounted
+        // launchers resolve straight to ready).
+        Func<EquipmentType, float, float>? armedFraction = null)
     {
         var rows = new List<HudInventoryRow>();
         if (hull is not { } h)
@@ -114,7 +120,8 @@ public static class HudInventoryPaneBuilder
         // GetSourceShip()->GetHullType() (consoledata.cpp:855,976) — the
         // carrier's hull when the local pilot is a turret gunner.
         var ctx = new Ctx(catalog, h, sourceHull ?? h, attributes, fuelFraction,
-            energyFraction, shieldFraction, ammoFraction, groupFire, selectedMount, cloakStrengthPercent);
+            energyFraction, shieldFraction, ammoFraction, groupFire, selectedMount, cloakStrengthPercent,
+            armedFraction);
 
         int maxFixed = Math.Min(h.MaxFixedWeapons, h.Hardpoints.Length);
         int maxWeapons = Math.Min(h.MaxWeapons, h.Hardpoints.Length);
@@ -163,7 +170,7 @@ public static class HudInventoryPaneBuilder
         var entry = MountedAt(ctx, all, et, mount);
         if (entry is { } mountedPart)
         {
-            rows.Add(ResolvePartRow(ctx, mountedPart, key));
+            rows.Add(ResolvePartRow(ctx, mountedPart, key, ctx.ArmedFraction));
         }
         else if (ShipHasPartForMount(ctx, all, et, mount))
         {
@@ -255,7 +262,8 @@ public static class HudInventoryPaneBuilder
         return sum;
     }
 
-    private static HudInventoryRow ResolvePartRow(in Ctx ctx, ExpandedPartData entry, string key)
+    private static HudInventoryRow ResolvePartRow(in Ctx ctx, ExpandedPartData entry, string key,
+        Func<EquipmentType, float, float>? armedFraction)
     {
         var part = Resolve(ctx.Catalog, entry.PartId);
         float mountedFraction = entry.FractionMounted / (float)ExpandedPartData.FullyMounted;
@@ -266,7 +274,7 @@ public static class HudInventoryPaneBuilder
         }
 
         var et = p.EquipmentType;
-        int readyState = ReadyState(entry, p, mountedFraction);
+        int readyState = ReadyState(entry, p, mountedFraction, et, armedFraction, out float? armed);
         bool outOfAmmo = OutOfAmmo(entry, et, ctx.AmmoFraction, ctx.FuelFraction);
 
         bool selected = false, active = false;
@@ -279,7 +287,7 @@ public static class HudInventoryPaneBuilder
         string? stats = readyState == 3 ? StatsText(ctx, p, entry) : null;
         var kind = KindFor(et, entry);
         return new HudInventoryRow(kind, key, p.Name, selected, active, outOfAmmo, stats, readyState,
-            mountedFraction, null, QuantityFor(entry, et, readyState));
+            mountedFraction, armed, QuantityFor(entry, et, readyState));
     }
 
     private static bool OutOfAmmo(ExpandedPartData entry, EquipmentType et, float ammoFraction, float fuelFraction)
@@ -304,16 +312,31 @@ public static class HudInventoryPaneBuilder
         return groupFire || mount == selectedMount;
     }
 
-    private static int ReadyState(ExpandedPartData entry, DataPartTypeIGC part, float mountedFraction)
+    private static int ReadyState(ExpandedPartData entry, DataPartTypeIGC part, float mountedFraction,
+        EquipmentType et, Func<EquipmentType, float, float>? armedFraction, out float? armed)
     {
         // Native PartWrapper::GetReadyState (consoledata.cpp:1157-1177):
         // 0 = not mounted / cargo, 1 = mounting, 2 = launcher arming, 3 = ready.
-        // ReadyState 2 is unreachable here: the port's wire carries no live
-        // launcher arming fraction (see ArmedFraction), so a mounted launcher
-        // with mountedFraction == 1 resolves straight to ready.
+        // Case 2 needs the live GetArmedFraction (consoledata.cpp:1189-1202,
+        // magazineigc.h:156-165 / dispenserigc.h:165-175) — P786 replays the
+        // native client's own launcher clocks from the wire events (see
+        // OwnLauncherArming); without a clock the fraction reads 1 and a fully
+        // mounted launcher resolves straight to ready, as before.
+        armed = null;
         int mount = entry.MountId;
         if (mount < 0) return 0;
         if (mountedFraction < 1f) return 1;
+        // IlauncherIGC::IsLauncher = OT_magazine | OT_dispenser (igc.h:3993-3999)
+        // — chaff launchers are NOT launchers and never arm.
+        if (armedFraction is { } af && et is EquipmentType.Magazine or EquipmentType.Dispenser)
+        {
+            float fraction = af(et, mountedFraction);
+            if (fraction < 1f)
+            {
+                armed = fraction;
+                return 2;
+            }
+        }
         return 3;
     }
 

@@ -16,6 +16,7 @@ public enum AutoActionKind
 {
     SetCamera,      // IntArg unused; StrArg = "chase" | "cockpit"
     HideHud,        // minimal HUD-off toggle so the shot is clean geometry
+    SetRadarMode,   // P786 — StrArg = "all" | "default" | "target" | "minimal": pin the radar LOD for a proof frame
     PickSide,       // IntArg = side id to request (SendPositionReq)
     SendReady,      // SendPlayerReady(true) once seated
     LaunchHull,     // in the hangar: select StrArg hull (or keep current) + launch
@@ -92,6 +93,8 @@ public sealed class AutoProofMachine
         _due.Enqueue(new AutoAction(AutoActionKind.SetCamera, StrArg: plan.Camera));
         if (plan.HideHud)
             _due.Enqueue(new AutoAction(AutoActionKind.HideHud));
+        if (plan.AutoRadarMode.Length > 0)
+            _due.Enqueue(new AutoAction(AutoActionKind.SetRadarMode, StrArg: plan.AutoRadarMode));
         if (plan.AutoSide is { } side)
             _due.Enqueue(new AutoAction(AutoActionKind.PickSide, IntArg: side));
     }
@@ -212,6 +215,11 @@ public sealed class AutoProofMachine
         {
             if (_plan.AutoTargetClass.Length > 0)
                 _due.Enqueue(new AutoAction(AutoActionKind.TargetClass, StrArg: _plan.AutoTargetClass));
+            // P786 — re-pin the radar LOD right before the shot: a death/pod
+            // reset (or the FLIGHTKEYS proof) would otherwise leave the frame
+            // in a different mode than the proof pinned.
+            if (_plan.AutoRadarMode.Length > 0)
+                _due.Enqueue(new AutoAction(AutoActionKind.SetRadarMode, StrArg: _plan.AutoRadarMode));
             _due.Enqueue(new AutoAction(AutoActionKind.Autoshot,
                 IntArg: (int)(t * 1000.0), ShotIndex: _shotIndex));
             _shotIndex++;

@@ -3042,11 +3042,15 @@ public class HudRenderer
                 FillRect(bx, by, bw, bh, new Color(0f, 0f, 0f, 0.85f));
             if (fill is { } f && row.MountedFraction > 0f)
             {
+                // P786 — the ReadyState 2 arming bar fills by the LIVE
+                // GetArmedFraction (consoledata.cpp:1189-1202), not the mount
+                // fraction; ReadyState 1 keeps the mounting fill.
+                float fillFrac = row.ReadyState == 2 ? (row.ArmedFraction ?? row.MountedFraction) : row.MountedFraction;
                 // Native GaugePane::Paint (effect/panes.cpp:31-40) BitBlts the left
                 // m_value = int(xsize·v) columns of the fill surface — a
                 // left-to-right reveal, not a horizontal squeeze. Keep the
                 // 64x14 art at its native columns.
-                int srcW = (int)(f.Width * HudFormat.Clamp01(row.MountedFraction));
+                int srcW = (int)(f.Width * HudFormat.Clamp01(fillFrac));
                 if (srcW > 0)
                     _sb.Draw(f, new Rectangle((int)MathF.Round(bx), (int)MathF.Round(by),
                             Math.Max(1, (int)MathF.Round(bw * srcW / (float)f.Width)), (int)MathF.Round(bh)),

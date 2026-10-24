@@ -73,6 +73,19 @@ public sealed partial class Game1
                     // Applied once in the constructor (camera + HUD are static
                     // for the run); nothing further to do.
                     break;
+                case LiveProof.AutoActionKind.SetRadarMode:
+                    // P786 — pin the radar LOD for a real-window proof frame
+                    // (the FLIGHTKEYS proof cycles modes only right after
+                    // launch, before a --auto-goto flight arrives).
+                    _radarMode = a.StrArg.ToLowerInvariant() switch
+                    {
+                        "all" => RadarMode.All,
+                        "target" => RadarMode.Target,
+                        "minimal" or "none" => RadarMode.Minimal,
+                        _ => RadarMode.Default,
+                    };
+                    Console.WriteLine($"[autoproof] radar mode → {_radarMode}");
+                    break;
                 case LiveProof.AutoActionKind.PickSide:
                     // Wired directly from the plan in UpdateSideSelect (roster
                     // readiness is its own gate); nothing to buffer here.

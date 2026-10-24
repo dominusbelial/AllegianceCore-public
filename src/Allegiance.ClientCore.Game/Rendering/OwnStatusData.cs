@@ -60,16 +60,22 @@ public static class OwnStatusData
     ///   <item>the whole hull signature is multiplied by the cloak factor
     ///         (shipIGC.h:268-270).</item>
     /// </list>
-    /// The wire has no continuous <c>GetCloaking()</c> ramp, so
-    /// <paramref name="cloakActive"/> uses the engaged end state (factor 0);
-    /// the continuous ramp remains the documented gap.</summary>
+    ///   <item>the whole hull signature is multiplied by the live cloak ramp
+    ///         (shipIGC.h:268-270 — <c>GetSignature() = accumulated ·
+    ///         m_cloaking</c>), streamed per tick by the owner-only
+    ///         OwnShipCloakUpdate(220) this client already reads.</item>
+    /// </list>
+    /// <paramref name="cloaking"/> is that live visible fraction; when no
+    /// stream sample has arrived, the engaged end state (0) is used while the
+    /// cloak state bit is set, else the fully-visible 1.</summary>
     public static float? SignaturePercent(
         float hullSignature,
         IReadOnlyList<ExpandedPartData>? loadout,
         Func<short, DataPartTypeIGC?> resolve,
         bool firing, bool groupFire, int selectedMount,
         bool afterburnerActive, bool cloakActive,
-        float sideSignature)
+        float sideSignature,
+        float? cloaking = null)
     {
         if (sideSignature <= 0f) return null;
         float signature = hullSignature;
@@ -96,8 +102,12 @@ public static class OwnStatusData
             }
         }
         // shipIGC.h:268-270 — GetSignature() is the accumulated value times
-        // m_cloaking. The own-ship wire carries only the engaged bit.
-        if (cloakActive) signature = 0f;
+        // the LIVE m_cloaking ramp (the visible fraction 1..1−maxCloaking),
+        // streamed owner-only per tick by OwnShipCloakUpdate(220). With no
+        // sample yet, fall back to the engaged end state while the state bit
+        // is set, else fully visible.
+        float cloakFactor = cloaking ?? (cloakActive ? 0f : 1f);
+        signature *= cloakFactor;
         return 100f * signature / sideSignature;
     }
 }

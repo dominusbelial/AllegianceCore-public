@@ -664,6 +664,11 @@ public sealed partial class Game1 : Game
     // P508 — cumulative count of received SHIP_RESETs (live diagnostics + reset count).
     private long _shipResetCount;
 
+    // P786B — monotonically increasing Draw frame stamp; keys the per-frame
+    // friendly-scanner cache (TargetVisibility side-leg gather) so the side
+    // visibility set is computed once per frame/cluster, never per HUD row.
+    private uint _hudFrame;
+
     // P508 — a client-only debug switch: render the local simulated pose (ON, default)
     // vs the raw last ServerShipUpdate pose (OFF). --noPrediction is now this
     // visualization toggle only — the local simulation ALWAYS runs and always drives

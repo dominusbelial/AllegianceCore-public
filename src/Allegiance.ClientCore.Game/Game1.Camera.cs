@@ -262,7 +262,16 @@ public sealed partial class Game1
                     ? _ownSim.Velocity.Length()
                     : mineUp.Velocity.Length();
             return TargetPaneModel.Build(_session.World, kind, t.Id, t.Name, _hullById,
-                _shopCatalog?.StationTypes, ComputeTargetInRange(kind, t.Id), ownSpeed);
+                _shopCatalog?.StationTypes, _shopCatalog?.ProbeTypes, ComputeTargetInRange(kind, t.Id), ownSpeed,
+                // P786 — the miner shipload the Target ore fill divides by
+                // (radarimage.cpp:576-577): FloatConstants[c_fcidCapacityHe3 = 7]
+                // (default 90) × the OWN side's GA[c_gaMiningCapacity = 19].
+                minerCapacityHe3: _shopCatalog?.Core?.Constants.FloatConstants is { Length: > 7 } fc
+                    ? HudWireValues.MinerCapacityHe3(fc[7],
+                        _session.World.MySideId is { } side
+                            ? _session.World.GlobalAttributesFor(side).Get(Allegiance.Core.Model.GlobalAttributeSet.MiningCapacity)
+                            : 0f)
+                    : null);
         }
     }
 
@@ -696,6 +705,61 @@ public sealed partial class Game1
         return true;
     }
 
+    /// <summary>P786 — the order-arrow <c>CanSee</c> gate for a ship target
+    /// (indicator.cpp:417-419): same side is always seen; otherwise the real
+    /// client-side scanner gate (<see cref="TargetVisibility.CanSeeShip"/>,
+    /// shipIGC.h:380-389) with the target sector's asteroids as occluders and
+    /// — P786B — the friendly side scanners (the SeenBySide leg,
+    /// trekigc.cpp:2057-2120). Static targets (station/asteroid/warp/probe/
+    /// treasure) are sticky-side seen — the P797 wire only ever exports them
+    /// once the side has seen them — so their resolution stays ungated,
+    /// exactly like native's <c>SeenBySide</c> leg. Uses the port's 0.5 ×
+    /// hull-length ship radius convention. False when the own/target hull data
+    /// is missing.</summary>
+    private readonly List<VisibilityMath.SightBody> _orderOccluders = new();
+
+    // P786B — the friendly-scanner list, gathered once per frame/cluster (not
+    // per order row) and reused across the frame's CanSee evaluations.
+    private readonly List<TargetVisibility.SideScanner> _orderSideScanners = new();
+    private short _orderScannerSector = -1;
+    private uint _orderScannerFrame = uint.MaxValue;
+
+    private IReadOnlyList<TargetVisibility.SideScanner> SideScannersFor(ClientWorld world, short sector)
+    {
+        if (_orderScannerFrame == _hudFrame && _orderScannerSector == sector) return _orderSideScanners;
+        _orderScannerFrame = _hudFrame;
+        _orderScannerSector = sector;
+        return TargetVisibility.FriendlyScanners(
+            world, world.MySideId ?? -1, sector, _hullById,
+            _shopCatalog?.ProbeTypes, _shopCatalog?.StationTypes, _orderSideScanners);
+    }
+
+    private bool CanSeeOrderTarget(ClientWorld world, ShipEntity target)
+    {
+        // shipIGC.h:383 — same side always seen.
+        if (world.MySideId is { } mySide && target.SideId == mySide) return true;
+        if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)
+            || own.Latest is null) return false;
+        if (!_hullById.TryGetValue(own.HullId, out var ownHull)
+            || !_hullById.TryGetValue(target.HullId, out var targetHull)) return false;
+        float targetSideGa = target.SideId is { } ts and >= 0
+            ? world.GlobalAttributesFor(ts).Get(Allegiance.Core.Model.GlobalAttributeSet.Signature)
+            : 0f;
+        short sector = target.SectorId;
+        _orderOccluders.Clear();
+        foreach (var ast in world.Asteroids.Values)
+        {
+            if (ast.ClusterId != sector) continue;
+            _orderOccluders.Add(new VisibilityMath.SightBody(
+                new SimVec(ast.Position[0], ast.Position[1], ast.Position[2]), ast.Radius));
+        }
+        return TargetVisibility.CanSeeShip(
+            own, target, ownHull, 0.5f * ownHull.Length,
+            targetHull, 0.5f * targetHull.Length,
+            world.MySideId ?? -1, targetSideGa, _orderOccluders,
+            SideScannersFor(world, sector));
+    }
+
     private bool TryResolveCommandPosition(QueuedCommandState command, out SimVec position, out short clusterId)
     {
         position = default;
@@ -706,6 +770,11 @@ public sealed partial class Game1
             switch (command.TargetType)
             {
                 case IgcObjectType.Ship when world.Ships.TryGetValue(command.TargetId, out var ship) && !ship.IsDead:
+                    // P786 — native gates the turn arrows on
+                    // pshipSource->CanSee(pmodelTarget) (indicator.cpp:417-419);
+                    // for a ship target that is now the real client-side scanner
+                    // gate (TargetVisibility.CanSeeShip), not mere object presence.
+                    if (!CanSeeOrderTarget(world, ship)) return false;
                     if (!ResolveShipAnchor(_poses, world.Ships, command.TargetId, out position)) return false;
                     clusterId = ship.SectorId;
                     return clusterId >= 0;

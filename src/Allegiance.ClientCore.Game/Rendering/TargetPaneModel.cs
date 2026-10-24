@@ -1,5 +1,7 @@
 using Allegiance.ClientCore.State;
 using Allegiance.Core;
+using Allegiance.Core.Collision;
+using Allegiance.Core.Sim;
 using SimVec = Allegiance.Core.Collision.Vector3;
 
 namespace Allegiance.ClientCore.MonoGame.Rendering;
@@ -31,13 +33,21 @@ public static class TargetPaneModel
         string? fallbackName = null,
         IReadOnlyDictionary<short, DataHullTypeIGC>? hullTypes = null,
         IReadOnlyDictionary<short, DataStationTypeIGC>? stationTypes = null,
+        // P786B — the probe-type catalogue, for the SeenBySide leg's friendly
+        // probe scanners (probeigc.h:163-193). Null disables that scanner kind.
+        IReadOnlyDictionary<short, DataProbeTypeIGC>? probeTypes = null,
         // HUD-18 — the client-side in-range flag from TargetWeaponRange
         // (indicator.cpp:405). Game1.ComputeTargetPane supplies the local solve;
         // the server lead message is NOT used here any more.
         bool inRange = false,
         // HUD-18 — the own |velocity| the HUD frame presents (HudFrame.Speed),
         // used only by the TTI readout. Null derives it from the own pose.
-        float? ownSpeed = null)
+        float? ownSpeed = null,
+        // P786 — the miner shipload capacity (FloatConstants[c_fcidCapacityHe3]
+        // × GA[c_gaMiningCapacity], radarimage.cpp:576-577) the Target ore fill
+        // divides by (native fill units oreSeen/(2·capacity)). Null leaves the
+        // ore readout absent.
+        float? minerCapacityHe3 = null)
     {
         string? name = Safe(fallbackName);
         string type = "unknown";
@@ -70,6 +80,13 @@ public static class TargetPaneModel
                     // kept current from KILL_SHIP (:2769,2807-2811).
                     killBonus = TargetExperience(ship.Experience);
                     name = Safe(string.IsNullOrEmpty(ship.CharacterName) ? $"ship {id}" : ship.CharacterName);
+                    // P786 — the type description IS the last-seen hull type:
+                    // ShipEntity.HullId is the SHIP_STATUS(90) HullID (native
+                    // PlayerInfo::LastSeenShipType = m_shipStatus.GetHullID(),
+                    // clintlib.h:432) refreshed by EXPORT identities, so an
+                    // unseen target resolves its last-seen hull name here
+                    // (consoledata.cpp:44-53) and a never-identified one stays
+                    // "unknown" — the HullId lookup below falls through.
                     if (hullTypes is { } hulls && hulls.TryGetValue(ship.HullId, out var hullType))
                         type = Safe(hullType.Name) ?? "unknown";
                     // P373 — only a real EXPORT identity has a trustworthy side.
@@ -78,14 +95,24 @@ public static class TargetPaneModel
                         sideName = SideName(world, sideId);
                         sideColor = SideColor(world, sideId);
                     }
+                    // P786 — the per-target scanner gate. Native gates the
+                    // hull/shield/speed readouts on trekClient.GetShip()->CanSee
+                    // (consoledata.cpp:202-212,252-270,136-150), which this
+                    // client now evaluates for real (TargetVisibility.CanSeeShip,
+                    // shipIGC.h:380-389) instead of approximating with the
+                    // cluster/visibility test. Without the hull catalogue the
+                    // scanner math cannot resolve, so the pane keeps its
+                    // conservative pre-P786 stand-in.
+                    bool canSee = CanSeeTargetShip(world, ship, hullTypes, probeTypes, stationTypes)
+                                  ?? (!ship.IsNotVisible && !ship.Unknown);
                     if (!ship.IsNotVisible && ship.Latest is { } up)
                     {
                         // Hull is cluster-gated (consoledata.cpp:202-212); ship
-                        // shield and speed are not cluster-gated natively
-                        // (consoledata.cpp:252-270,136-150 — only CanSee).
-                        hull = sameCluster ? up.HullFraction : 0f;
-                        shield = up.ShieldFraction;
-                        speed = up.Velocity.Length();
+                        // shield and speed are only CanSee-gated natively
+                        // (consoledata.cpp:252-270,136-150).
+                        hull = sameCluster && canSee ? up.HullFraction : 0f;
+                        shield = canSee ? up.ShieldFraction : 0f;
+                        speed = canSee ? up.Velocity.Length() : -1f;
                     }
                     else
                     {
@@ -130,11 +157,18 @@ public static class TargetPaneModel
                     if (world.AsteroidLive.TryGetValue(id, out var live))
                     {
                         hull = sameCluster ? live.Fraction : 0f;   // consoledata.cpp:202-212
-                        ore = live.OreFraction;
+                        // P786 — Target ore in the native fill units: the
+                        // side-known ore (the P797 wire only ever delivers ore
+                        // the side has seen) over 2 × miner shipload capacity
+                        // (radarimage.cpp:1051-1069) — the same units the radar
+                        // asteroid fill uses, not the raw remaining fraction.
+                        ore = minerCapacityHe3 is { } capacity
+                            ? HudWireValues.OreSeenFill(live.OreFraction, ast.OreMax, capacity)
+                            : null;
                     }
                     else
                     {
-                        hull = 0f; ore = 0f;
+                        hull = 0f; ore = null;
                     }
                 }
                 else
@@ -230,6 +264,66 @@ public static class TargetPaneModel
             && Safe(cluster.Name) is { } clusterName)
             return clusterName;
         return "unknown";
+    }
+
+    /// Pooled per-frame occluder list for the scanner gate (the frame path is
+    /// single-threaded under the session gate; cleared per call, never read
+    /// re-entrantly).
+    private static readonly List<VisibilityMath.SightBody> OccluderScratch = new();
+
+    /// Pooled per-frame friendly-scanner list for the SeenBySide leg
+    /// (trekigc.cpp:2098-2113). <see cref="Build"/> runs once per frame with a
+    /// single ship target, so the gather happens once per frame/cluster — not
+    /// per pane row — reusing this list, same conventions as OccluderScratch.
+    private static readonly List<TargetVisibility.SideScanner> ScannerScratch = new();
+
+    /// <summary>
+    /// P786 — the client-side <c>trekClient.GetShip()-&gt;CanSee(target)</c>
+    /// the target pane's hull/shield/speed readouts are gated on natively
+    /// (<c>consoledata.cpp:202-212,252-270,136-150</c>), evaluated for real by
+    /// <see cref="TargetVisibility.CanSeeShip"/> (shipIGC.h:380-389) instead
+    /// of the cluster/visibility approximation the pane used before. The
+    /// occluders are the target's sector's asteroids, the only occluders
+    /// native's <c>LineOfSightExist</c> considers (<c>common.cpp:2349</c>).
+    /// Radii use the port's established ship-sphere convention (0.5 × hull
+    /// length; <c>VisibilityMath</c> doc). Returns NULL when the hull
+    /// catalogue is missing/unresolvable — the caller then keeps its
+    /// conservative pre-P786 stand-in instead of guessing.
+    /// </summary>
+    private static bool? CanSeeTargetShip(
+        ClientWorld world, ShipEntity target, IReadOnlyDictionary<short, DataHullTypeIGC>? hullTypes,
+        IReadOnlyDictionary<short, DataProbeTypeIGC>? probeTypes,
+        IReadOnlyDictionary<short, DataStationTypeIGC>? stationTypes)
+    {
+        // shipIGC.h:383 — the same side is always seen (no hull data needed).
+        if (world.MySideId is { } mySide && target.SideId == mySide) return true;
+        if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own)
+            || own.Latest is null) return false;
+        if (hullTypes is null
+            || !hullTypes.TryGetValue(own.HullId, out var ownHull)
+            || !hullTypes.TryGetValue(target.HullId, out var targetHull)) return null;
+        // shipIGC.h:355-357 — the margin divides by the TARGET side's
+        // c_gaSignature global attribute.
+        float targetSideGa = target.SideId is { } ts and >= 0
+            ? world.GlobalAttributesFor(ts).Get(Allegiance.Core.Model.GlobalAttributeSet.Signature)
+            : 0f;
+        short sector = target.SectorId;
+        OccluderScratch.Clear();
+        foreach (var ast in world.Asteroids.Values)
+        {
+            if (ast.ClusterId != sector) continue;
+            OccluderScratch.Add(new VisibilityMath.SightBody(
+                new Vector3(ast.Position[0], ast.Position[1], ast.Position[2]), ast.Radius));
+        }
+        // P786B — the SeenBySide leg (trekigc.cpp:2057-2120): any friendly
+        // ship/probe/station of the client's side in the TARGET's cluster with
+        // the model in its own scanner range marks the side as seeing it.
+        TargetVisibility.FriendlyScanners(
+            world, world.MySideId ?? -1, sector, hullTypes, probeTypes, stationTypes, ScannerScratch);
+        return TargetVisibility.CanSeeShip(
+            own, target, ownHull, 0.5f * ownHull.Length,
+            targetHull, 0.5f * targetHull.Length,
+            world.MySideId ?? -1, targetSideGa, OccluderScratch, ScannerScratch);
     }
 
     /// <summary>
