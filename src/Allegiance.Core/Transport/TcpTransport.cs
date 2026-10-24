@@ -368,6 +368,26 @@ public sealed class TcpTransport : ITransport
     /// transports retain the null fast path. No send policy depends on it.</summary>
     public EgressAccounting? Egress { get; init; }
 
+    /// <summary>P813d: optional host-only reliable-tier telemetry (shed/park/
+    /// coalesce per class). Set before Host; mirrors <see cref="Egress"/>'s
+    /// null fast path. No send policy depends on it.</summary>
+    public ReliableTelemetry? Reliable { get; init; }
+
+    /// <summary>
+    /// P813d — EXPERIMENTAL, default OFF. When true, ordered-guaranteed
+    /// one-shot frames (coalesceKey==0, guaranteed — chat, kills, deaths, docks,
+    /// ship deletes, game over) are routed into a dedicated per-peer
+    /// <b>park lane</b> that is drained strictly before the ordinary ordered and
+    /// stream lanes, so a one-shot is never delayed behind accumulated bulk
+    /// ordered traffic or shed-eligible stream backlog, and is never shed or
+    /// coalesced. When false (the default), one-shots ride the ordinary ordered
+    /// lane exactly as today — behaviour byte-for-byte unchanged. Bounded: the
+    /// park lane still counts toward the byte cap and per-peer FIFO order is
+    /// preserved. Set by the server from <c>transport.reliableOneShot</c>;
+    /// tests set it directly on the transport.
+    /// </summary>
+    public bool ReliableOneShot { get; set; }
+
     public void Host(ushort port = 0) => Host(port, null);
 
     public void Host(ushort port, IPAddress? bindAddress)
@@ -414,7 +434,11 @@ public sealed class TcpTransport : ITransport
         // P606 — the client half stamps a reason on its sender's death, but
         // DropClient needs none (it just tears the socket down so the read loop
         // unwinds and surfaces OnSessionLost with the real reason).
-        var sender = new PeerSender(_clientStream, client, _ => DropClient());
+        var sender = new PeerSender(_clientStream, client, _ => DropClient())
+        {
+            Reliable = Reliable,
+            ReliableOneShotPark = ReliableOneShot,
+        };
         lock (_gate) _clientSender = sender;
         sender.Start();
         sender.Enqueue(BuildFrame(FrameType.Greet, Encoding.UTF8.GetBytes(playerName)), guaranteed: true, coalesceKey: 0);
@@ -673,6 +697,8 @@ public sealed class TcpTransport : ITransport
                 Counters = _sendCounters,
                 Egress = Egress,
                 EgressHarness = name.StartsWith("mcp-", StringComparison.Ordinal),
+                Reliable = Reliable,
+                ReliableOneShotPark = ReliableOneShot,
             };
             lock (_gate)
             {
@@ -1339,6 +1365,13 @@ public sealed class TcpTransport : ITransport
         // times out; best-effort: DPNSEND_NONSEQUENTIAL drops at 500 ms).
         private readonly LinkedList<QueuedFrame> _orderedQueue = new();
         private readonly LinkedList<QueuedFrame> _streamQueue = new();
+        // P813d — EXPERIMENTAL reliable park lane (transport.ReliableOneShot).
+        // Holds ordered-guaranteed one-shot frames (coalesceKey==0, guaranteed)
+        // ONLY when the flag is ON; otherwise empty and untouched. Drained
+        // strictly before _orderedQueue and _streamQueue, FIFO preserved, never
+        // shed (guaranteed) and never coalesced (all keys 0). Still counted in
+        // _queuedBytes so the byte cap and hard-cap still bound it.
+        private readonly LinkedList<QueuedFrame> _parkQueue = new();
         private readonly object _sync = new();
         private readonly Stack<LinkedListNode<QueuedFrame>> _freeNodes = new();
         // A peer's frames return on a different thread from their producer.
@@ -1385,6 +1418,10 @@ public sealed class TcpTransport : ITransport
         private bool _inflightStream;
         internal EgressAccounting? Egress;
         internal SendCounters? Counters;
+        // P813d — reliable-tier telemetry sink (null fast path) and the
+        // experimental park-lane switch, copied from the owning transport.
+        internal ReliableTelemetry? Reliable;
+        internal bool ReliableOneShotPark;
         private long _enqueuedBytes, _writtenBytes, _reportedEnqueued, _reportedWritten;
         // Classification is diagnostic only, independent of IsHuman (which
         // controls liveness policy). Greeting classification covers join traffic.
@@ -1484,6 +1521,7 @@ public sealed class TcpTransport : ITransport
                 // drained, so it is not treated as freshly-idle.
                 bool wasEmpty = _orderedQueue.First is null
                                 && _streamQueue.First is null
+                                && _parkQueue.First is null
                                 && _inflight is null;
 
                 if (coalesceKey != 0)
@@ -1498,6 +1536,7 @@ public sealed class TcpTransport : ITransport
                         // accounting stays exact.
                         _queuedBytes -= existing.Value.Length;
                         Egress?.Record(existing.Value.Frame.AsSpan(0, existing.Value.Length), EgressHarness, true, EgressEvent.Coalesced);
+                        Reliable?.RecordCoalesced(ClassOf(coalesceKey, existing.Value.Guaranteed));
                         ReturnFrame(existing.Value);
                         existing.Value = new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks, length, pooled);
                         _queuedBytes += length;
@@ -1523,9 +1562,22 @@ public sealed class TcpTransport : ITransport
                     // before any stream frame — so world data never starves
                     // behind the position stream. Also shed stream traffic if
                     // over capacity so an ordered burst can still land.
-                    while (_queuedBytes + length > CapacityBytes && DropOldestNonGuaranteed()) { }
-                    _orderedQueue.AddLast(RentNode(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks, length, pooled)));
-                    _queuedBytes += length;
+                    // P813d — when the reliableOneShot experiment is ON, an
+                    // ordered GUARANTEED frame (a one-shot) goes to the park
+                    // lane instead, drained ahead of even this ordered lane.
+                    if (ReliableOneShotPark && guaranteed)
+                    {
+                        Reliable?.RecordOneShotParked(true);
+                        _parkQueue.AddLast(RentNode(new QueuedFrame(frame, guaranteed, 0, DateTime.UtcNow.Ticks, length, pooled)));
+                        _queuedBytes += length;
+                    }
+                    else
+                    {
+                        while (_queuedBytes + length > CapacityBytes && DropOldestNonGuaranteed()) { }
+                        _orderedQueue.AddLast(RentNode(new QueuedFrame(frame, guaranteed, coalesceKey, DateTime.UtcNow.Ticks, length, pooled)));
+                        _queuedBytes += length;
+                        if (guaranteed) Reliable?.RecordOneShotParked(false);
+                    }
                 }
                 Monitor.Pulse(_sync);
 
@@ -1554,7 +1606,7 @@ public sealed class TcpTransport : ITransport
                     Interlocked.Exchange(ref _lastWriteProgressUtcTicks, now.Ticks);
                     _overflowSinceUtc = null;
                 }
-                else if (_orderedQueue.First is not null || _streamQueue.First is not null || _inflight is not null)
+                else if (_orderedQueue.First is not null || _streamQueue.First is not null || _parkQueue.First is not null || _inflight is not null)
                 {
                     _overflowSinceUtc = _queuedBytes > CapacityBytes ? (_overflowSinceUtc ?? now) : null;
                     long lastProg = Interlocked.Read(ref _lastWriteProgressUtcTicks);
@@ -1707,6 +1759,7 @@ public sealed class TcpTransport : ITransport
                 if (!node.Value.Guaranteed)
                 {
                     Egress?.Record(node.Value.Frame.AsSpan(0, node.Value.Length), EgressHarness, true, EgressEvent.Dropped);
+                    Reliable?.RecordShed(ClassOf(node.Value.CoalesceKey, false));
                     _queuedBytes -= node.Value.Length;
                     if (node.Value.CoalesceKey != 0) _coalesceNodes.Remove(node.Value.CoalesceKey);
                     _streamQueue.Remove(node);
@@ -1734,7 +1787,10 @@ public sealed class TcpTransport : ITransport
         {
             if (_inflight != null) return true;
             LinkedListNode<QueuedFrame> node;
-            if (_orderedQueue.First is not null) node = _orderedQueue.First!;
+            // P813d — the reliable park lane drains FIRST (one-shots ahead of
+            // everything); then the ordered lane; then the stream lane.
+            if (_parkQueue.First is not null) node = _parkQueue.First!;
+            else if (_orderedQueue.First is not null) node = _orderedQueue.First!;
             else if (_streamQueue.First is not null) node = _streamQueue.First!;
             else return false;
             node.List!.RemoveFirst();
@@ -1749,7 +1805,7 @@ public sealed class TcpTransport : ITransport
             _inflightStream = node.Value.CoalesceKey != 0;
             _queuedBytes -= _inflightLength;
             RecycleNode(node);
-            if (_orderedQueue.First is null && _streamQueue.First is null) _overflowSinceUtc = null;
+            if (_parkQueue.First is null && _orderedQueue.First is null && _streamQueue.First is null) _overflowSinceUtc = null;
             else if (_queuedBytes <= CapacityBytes) _overflowSinceUtc = null;
             return true;
         }
@@ -1872,7 +1928,7 @@ public sealed class TcpTransport : ITransport
                     _inflightOffset = 0;
                 }
                 else return DrainResult.Wrote; // partial progress — resume next turn
-                if (!_closeAfterDrain || _orderedQueue.Count != 0 || _streamQueue.Count != 0)
+                if (!_closeAfterDrain || _orderedQueue.Count != 0 || _streamQueue.Count != 0 || _parkQueue.Count != 0)
                     return DrainResult.Wrote;
             }
             // Owner callbacks acquire the transport gate; keep them outside _sync.
@@ -1920,10 +1976,34 @@ public sealed class TcpTransport : ITransport
             long oldest = long.MaxValue;
             lock (_sync)
             {
+                foreach (var n in _parkQueue) if (n.EnqueuedUtcTicks < oldest) oldest = n.EnqueuedUtcTicks;
                 foreach (var n in _orderedQueue) if (n.EnqueuedUtcTicks < oldest) oldest = n.EnqueuedUtcTicks;
                 foreach (var n in _streamQueue) if (n.Guaranteed && n.EnqueuedUtcTicks < oldest) oldest = n.EnqueuedUtcTicks;
             }
             return oldest == long.MaxValue ? 0 : (now - oldest) / TimeSpan.TicksPerMillisecond;
+        }
+
+        /// <summary>P813d — classify an enqueued frame for telemetry. Guaranteed +
+        /// ordered is the one-shot (reliable) class; guaranteed + stream is the
+        /// own-ship (P608) class; the rest are best-effort.</summary>
+        private static ReliableClass ClassOf(int coalesceKey, bool guaranteed)
+        {
+            if (coalesceKey == 0) return guaranteed ? ReliableClass.OneShot : ReliableClass.BestEffortOrdered;
+            return guaranteed ? ReliableClass.ReliableStream : ReliableClass.BestEffortStream;
+        }
+
+        /// <summary>P813d test seam: number of one-shot frames pending in the
+        /// park lane (0 when the experimental flag is OFF).</summary>
+        internal int ParkPending()
+        {
+            lock (_sync) return _parkQueue.Count;
+        }
+
+        /// <summary>P813d test seam: true when the NEXT drained frame comes from
+        /// the reliable park lane (i.e. it is non-empty and higher-priority).</summary>
+        internal bool NextDrainedIsPark()
+        {
+            lock (_sync) return _parkQueue.First is not null;
         }
 
         private void WriterLoop()
@@ -1969,7 +2049,7 @@ public sealed class TcpTransport : ITransport
             {
                 if (_disconnected || _closeAfterDrain) return;
                 _closeAfterDrain = true;
-                drained = _inflight is null && _orderedQueue.Count == 0 && _streamQueue.Count == 0;
+                drained = _inflight is null && _orderedQueue.Count == 0 && _streamQueue.Count == 0 && _parkQueue.Count == 0;
                 if (!drained)
                     _drainCloseTimer = new Timer(_ => FailAndClose(DisconnectReason.Shutdown),
                         null, TimeSpan.FromMilliseconds(SendTimeoutMs), Timeout.InfiniteTimeSpan);
@@ -1988,7 +2068,8 @@ public sealed class TcpTransport : ITransport
                 _disconnected = true;
                 foreach (var frame in _orderedQueue) ReturnFrame(frame);
                 foreach (var frame in _streamQueue) ReturnFrame(frame);
-                _orderedQueue.Clear(); _streamQueue.Clear(); _coalesceNodes.Clear();
+                foreach (var frame in _parkQueue) ReturnFrame(frame);
+                _orderedQueue.Clear(); _streamQueue.Clear(); _parkQueue.Clear(); _coalesceNodes.Clear();
                 _queuedBytes = 0;
                 // The sole writer may still be inside Send. It owns the in-flight
                 // lease until completion; Close never returns its buffer early.

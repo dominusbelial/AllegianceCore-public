@@ -740,6 +740,20 @@ public sealed class TransportConfig
     /// <c>ALLEGIANCE_TRANSPORT_MAX_FRAME_BYTES</c>.</summary>
     public int? MaxFrameBytes { get; set; }
 
+    /// <summary>
+    /// P813d — EXPERIMENTAL, default OFF. When true, ordered-guaranteed
+    /// one-shot messages (chat, kills, deaths, docks, ship deletes, game over)
+    /// are routed into a dedicated per-peer <b>park lane</b> in the transport
+    /// that drains strictly before ordinary ordered and stream traffic and is
+    /// never shed or coalesced (see <c>TcpTransport.ReliableOneShot</c>). When
+    /// false (the default), one-shots ride the ordinary ordered lane exactly as
+    /// today — behaviour byte-for-byte unchanged. Decided by the 200v200 rig
+    /// baseline; see docs/reports/P813D_RELIABLE_TIER_AUDIT.md. Absent → false.
+    /// Overridable at boot by <c>ALLEGIANCE_TRANSPORT_RELIABLE_ONESHOT</c>
+    /// ("1"/"true" enables).
+    /// </summary>
+    public bool? ReliableOneShot { get; set; }
+
     /// <summary>P654 (H-02) — read deadline (seconds) for a server-inbound frame
     /// once it has STARTED (first header byte seen): a header-then-stall or
     /// dribbling-body peer is dropped rather than parking a buffer + thread

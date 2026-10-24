@@ -38,4 +38,8 @@ services:
       # network by its service name + the port the lobby container actually
       # exposes (its Dockerfile ASPNETCORE_URLS/http :8080).
       - ./docker/compose.server.json:/app/server.json:ro
+    environment:
+      # EXPERIMENTAL flags: default off; kept or dropped by the 200v200 two-match A/B.
+      # P813d — the reliable one-shot park lane (docs/reports/P813D_RELIABLE_TIER_AUDIT.md).
+      ALLEGIANCE_TRANSPORT_RELIABLE_ONESHOT: "${ALLEGIANCE_TRANSPORT_RELIABLE_ONESHOT:-0}"
     restart: unless-stopped

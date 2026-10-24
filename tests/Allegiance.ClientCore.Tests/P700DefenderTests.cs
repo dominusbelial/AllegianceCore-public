@@ -22,7 +22,7 @@ public sealed partial class BotFixRegressionTests
         var transport = Get<TcpTransport>(cs, "_transport");
         var type = typeof(TcpTransport).GetNestedType("PeerSender", BindingFlags.NonPublic)!;
         var sender = RuntimeHelpers.GetUninitializedObject(type);
-        foreach (string name in new[] { "_orderedQueue", "_streamQueue", "_freeNodes", "_coalesceNodes" })
+        foreach (string name in new[] { "_orderedQueue", "_streamQueue", "_parkQueue", "_freeNodes", "_coalesceNodes" })
             Set(sender, name, Activator.CreateInstance(type.GetField(name, Fields)!.FieldType));
         Set(sender, "_sync", new object());
         Set(sender, "_cts", new CancellationTokenSource());

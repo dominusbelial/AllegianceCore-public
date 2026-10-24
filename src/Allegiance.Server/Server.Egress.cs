@@ -25,6 +25,17 @@ public sealed partial class Server
     private void EmitSendWindow()
     {
         if (_host?.Transport is not { } tcp) return;
+        // P813d — bounded reliable-tier telemetry (shed/park/coalesce per class).
+        // Shows queue pressure quantitatively so the 200v200 rig can compare the
+        // flag OFF vs ON. One-shot & reliable-stream shed are expected to stay 0
+        // (guaranteed frames are never shed); best-effort stream is the shedder's
+        // only candidate. Allocation happens only here (one line per window).
+        if (tcp.Reliable is { } rel)
+        {
+            var rw = rel.DrainWindow();
+            Console.WriteLine(FormattableString.Invariant(
+                $"[reliable] windowSecs={rw.WindowSeconds:0.000} oneShotParked={rw.OneShotParked} oneShotParkedLane={rw.OneShotParkedLane} shed=[oneShot={rw.Shed[0]} relStream={rw.Shed[1]} bestStream={rw.Shed[2]} bestOrdered={rw.Shed[3]}] coalesced=[oneShot={rw.Coalesced[0]} relStream={rw.Coalesced[1]} bestStream={rw.Coalesced[2]} bestOrdered={rw.Coalesced[3]}]"));
+        }
         // Reused after the first profiler callback; no diagnostic storage on the hot path.
         int peerCapacity = Math.Max(1024, TcpTransport.MaxConnections);
         int workerCapacity = Math.Max(_transportPoolWorkers, Environment.ProcessorCount);

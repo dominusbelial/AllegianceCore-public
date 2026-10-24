@@ -212,6 +212,10 @@ public sealed partial class Server : IDisposable
     /// default about the core count). Ignored in thread-per-peer mode.
     /// </summary>
     internal int _transportPoolWorkers = 1;
+    // P813d — EXPERIMENTAL reliable-one-shot park lane (default OFF). Resolved
+    // from transport.reliableOneShot / ALLEGIANCE_TRANSPORT_RELIABLE_ONESHOT;
+    // applied to the transport at boot. See TcpTransport.ReliableOneShot.
+    internal bool _reliableOneShot;
 
     /// <summary>
     /// P603 — internal test seam (InternalsVisibleTo): when set, invoked from

@@ -849,7 +849,13 @@ public sealed partial class Server
         var transport = new TcpTransport(_host, _transportMode, _transportPoolWorkers)
         {
             Egress = TickProfiler.Instance is not null ? new EgressAccounting() : null,
+            Reliable = TickProfiler.Instance is not null ? new ReliableTelemetry() : null,
+            ReliableOneShot = _reliableOneShot,
         }; // site set; assign the back-ref next
+        if (_reliableOneShot)
+            Console.WriteLine("[boot] transport reliableOneShot=PARK-LANE (EXPERIMENTAL; one-shots parked ahead of stream/ordered)");
+        else
+            Console.WriteLine("[boot] transport reliableOneShot=OFF (one-shots ride the ordered lane)");
         LastEgressWindow = null;
         TickProfiler.WindowReported += EmitEgressWindow;
         _host.Transport = transport;
@@ -1563,6 +1569,15 @@ public sealed partial class Server
         if (!string.IsNullOrEmpty(envHg) && int.TryParse(envHg, out var ehg) && ehg > 0)
             humanGrace = ehg;
         TcpTransport.HumanGraceTimeout = TimeSpan.FromSeconds(humanGrace);
+
+        // P813d — EXPERIMENTAL reliable-one-shot park lane. Default OFF (today's
+        // behaviour unchanged); enabled only by an explicit
+        // transport.reliableOneShot=true or ALLEGIANCE_TRANSPORT_RELIABLE_ONESHOT=1.
+        bool reliableOneShot = tc?.ReliableOneShot == true;
+        string? envRos = Environment.GetEnvironmentVariable("ALLEGIANCE_TRANSPORT_RELIABLE_ONESHOT");
+        if (envRos is { Length: > 0 })
+            reliableOneShot = envRos is "1" or "true" or "TRUE";
+        _reliableOneShot = reliableOneShot;
 
         // P654 (H-15/H-02) — bind the connection/resource caps + frame cap +
         // data-phase read deadline from config (env wins). Defaults keep the
