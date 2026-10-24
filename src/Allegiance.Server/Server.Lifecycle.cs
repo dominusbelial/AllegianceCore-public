@@ -60,6 +60,7 @@ public sealed partial class Server
     public void Boot(ServerConfig config)
     {
         _config = config;
+        ValidateIdentityConfiguration();
         _rand = config.BenchmarkSeed is { } seed ? new Random(seed) : new Random();
         _config.ResolveShowcaseMode();
         // Plan rejection must precede profiler callbacks and publisher/transport startup.
@@ -1906,6 +1907,7 @@ public sealed partial class Server
         _lastStatusTick.Remove(id);
         _lastClusterInfoTick.Remove(id);
         _lastPingQuery.Remove(id);
+        _peerIdentities.Remove(id);
         _peerRequests.Remove(id);   // P480 — forget the retained LogonRequest with the peer
         RetireViewerUpdateCadence(id);
         _adminAuthenticated.Remove(id);

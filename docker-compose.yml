@@ -1,45 +1,68 @@
-# docker-compose.yml — run Allegiance.Lobby and Allegiance.Server together for
-# a local trial with a single command:
-#
-#     docker compose up --build
-#
-# Browse the lobby directory at http://localhost:8080 ; the server announces
-# itself to it via the opt-in heartbeat (see docker/compose.server.json's
-# "lobby" block) and listens for clients on TCP 6073.
-#
-# Service STARTUP ORDER DOES NOT MATTER: the lobby heartbeat fails soft (Stage 2,
-# LobbyHeartbeat.cs) — if the lobby isn't reachable on a beat, the server just
-# retries next tick; it never crashes or blocks boot. So there is no `depends_on`
-# gating here.
-
+# Fresh-clone trial: docker compose up --build.
+# The one-shot artwork service downloads the public native core/map into a named
+# volume; production deployments can replace the server's /artwork mount.
 services:
+  artwork:
+    image: alpine:3.22.2
+    volumes:
+      - trial-artwork:/artwork
+      - ./docker/fetch-trial-artwork.sh:/fetch-trial-artwork.sh:ro
+    entrypoint: ["sh", "/fetch-trial-artwork.sh"]
+    restart: "no"
+
   lobby:
     build:
       context: .
       dockerfile: src/Allegiance.Lobby/Dockerfile
     ports:
       - "8080:8080"
+    environment:
+      Lobby__Identity__PublicUrl: "${ALLEGIANCE_LOBBY_PUBLIC_URL:-http://localhost:8080}"
+      Lobby__Identity__Store: Sqlite
+      Lobby__Identity__ConnectionString: Data Source=/identity/accounts.db
+      Lobby__Identity__SigningKeyFile: /identity/signing-key.pem
+      Lobby__Identity__PublicKeyFile: /trust/public-key.pem
+      Lobby__Identity__OperatorAccountIds__0: "${ALLEGIANCE_LOBBY_OPERATOR_ID:-}"
+      # Providers are deliberately off. Enable explicitly with credentials from
+      # your environment or a private, ignored compose override; see docker/README.md.
+      Lobby__Identity__GitHub__Enabled: "false"
+      Lobby__Identity__Google__Enabled: "false"
+      Lobby__Identity__Steam__Enabled: "false"
+    volumes:
+      - lobby-identity:/identity
+      - lobby-trust:/trust
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
     restart: unless-stopped
 
   server:
     build:
       context: .
       dockerfile: src/Allegiance.Server/Dockerfile
+    command: ["--identity-issuer", "${ALLEGIANCE_LOBBY_PUBLIC_URL:-http://localhost:8080}"]
     ports:
       - "6073:6073"
     volumes:
-      # The artwork corpus is never baked into the image. Point this at a real
-      # Artwork checkout, or drop a small subset (PCore001.igc + XXV_simple.igc)
-      # into ./docker/artwork-placeholder. Mounted read-only; the config's
-      # artPath (/artwork) is where the container sees it.
-      - ./docker/artwork-placeholder:/artwork:ro
-      # The server image ships config-free; this bind-mount supplies it. Its
-      # lobby.url (http://lobby:8080) targets the lobby SERVICE on the compose
-      # network by its service name + the port the lobby container actually
-      # exposes (its Dockerfile ASPNETCORE_URLS/http :8080).
+      - trial-artwork:/artwork:ro
       - ./docker/compose.server.json:/app/server.json:ro
+      - lobby-trust:/lobby-trust:ro
+      - server-identity:/server-identity
+    depends_on:
+      artwork:
+        condition: service_completed_successfully
+      lobby:
+        condition: service_healthy
     environment:
       # EXPERIMENTAL flags: default off; kept or dropped by the 200v200 two-match A/B.
       # P813d — the reliable one-shot park lane (docs/reports/P813D_RELIABLE_TIER_AUDIT.md).
       ALLEGIANCE_TRANSPORT_RELIABLE_ONESHOT: "${ALLEGIANCE_TRANSPORT_RELIABLE_ONESHOT:-0}"
     restart: unless-stopped
+
+volumes:
+  trial-artwork:
+  lobby-identity:
+  lobby-trust:
+  server-identity:

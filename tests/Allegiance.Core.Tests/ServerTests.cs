@@ -134,7 +134,7 @@ public class ServerTests
             var ack = client.RequestLogon(SampleRequest("HANDSHAKE-BOT"));
 
             Assert.True(ack.FValidated, $"expected validated logon, got '{ack.CharNameOrFailureReason}'");
-            Assert.Equal("Welcome HANDSHAKE-BOT", ack.CharNameOrFailureReason);
+            Assert.Equal("HANDSHAKE-BOT", ack.CharNameOrFailureReason);   // native: the accepted name (appmsg.cpp:39-40)
             // the server observed + logged the peer join (see Server.ConnectionsJoined)
             Assert.True(server.ConnectionsJoined >= 1, "server must have seen the peer join");
         }

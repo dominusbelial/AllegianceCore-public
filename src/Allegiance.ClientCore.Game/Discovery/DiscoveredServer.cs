@@ -48,7 +48,9 @@ public sealed record DiscoveredServer(
     int Players,
     int MaxPlayers,
     string Version,
-    string DisplayName)
+    string DisplayName,
+    bool Verified = false,
+    string? IdentityServerId = null)
 {
     public string SourceLabel => Source switch
     {
@@ -81,6 +83,6 @@ public sealed record DiscoveredServer(
         var display = string.IsNullOrWhiteSpace(DisplayName) ? "" : $"  [{DisplayName}]";
         string ping = PingMs > 0 ? $"{PingMs}ms" : "-";
         string map = string.IsNullOrWhiteSpace(Map) ? "" : $"  {Map}";
-        return $"{name}  {addr}:{Port}  {PlayersText} players  [{SourceLabel}] {ping}{display}{map}";
+        return $"[{(Verified ? "verified" : "unverified")}] {name}  {addr}:{Port}  {PlayersText} players  [{SourceLabel}] {ping}{display}{map}";
     }
 }

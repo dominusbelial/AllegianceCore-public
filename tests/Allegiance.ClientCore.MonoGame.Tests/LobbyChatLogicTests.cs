@@ -55,7 +55,7 @@ public class ServerListingTests
     [Fact]
     public void FormatRow_NoPlayersNoMax_StillFormatsWithoutSlash()
     {
-        Assert.Equal("(unnamed)  ?:?   0 players   -",
+        Assert.Equal("[unverified] (unnamed)  ?:?   0 players   -",
             Listing(name: "", addr: "", port: 0, players: 0, max: 0, mission: "").FormatRow());
     }
 }

@@ -27,3 +27,12 @@ Thumbs.db
 # Local logs / temp
 **/*.log
 *.tmp
+
+# Local identity credentials and build/test scratch must never enter a build context.
+.identity/
+.scratch/
+local.env
+.aws/
+.codex/
+.agents/
+TestResults/

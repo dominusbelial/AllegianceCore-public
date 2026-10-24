@@ -77,3 +77,83 @@ Config/compose files live outside `src/` for exactly this reason — but if a
 future workflow ever widens the rsync scope, treat any local-only edit as at
 risk and copy it back into the repo (like this one) rather than leaving it
 as the only copy.
+
+## P808a accounts and server identity
+
+`docker compose up --build` now initializes a fresh trial stack: a one-shot Alpine
+container downloads two checksum-verified public native files into `trial-artwork`.
+It needs outbound HTTPS once. Production artwork mounts can replace that volume.
+The lobby migrates its SQLite database before becoming healthy. Named volumes:
+`lobby-identity` (database, private signing and provider-state protection keys),
+`lobby-trust` (public key only), and `server-identity` (enrollment credential).
+The server mounts only the public trust volume; it cannot read the lobby's private
+key or database. `docker compose down` preserves identities. `down --volumes`
+permanently deletes them and is appropriate only for disposable trials.
+
+Open `http://localhost:8080/identity.html`, choose a callsign and create a passkey.
+Copy the displayed account ID to `ALLEGIANCE_LOBBY_OPERATOR_ID` in your environment,
+then recreate the lobby (`docker compose up -d lobby`). The server prints an
+approval code and URL. In that browser, review and approve the **game server** code.
+Its next poll persists the server credential; its listing becomes verified.
+Later starts reuse the credential. Until approval it is listed as unverified and
+allows anonymous joins. In the game intro, F2 starts player sign-in, displays the
+code and URL and opens a browser. F2 also cancels a pending sign-in or signs out.
+Signed-in clients use the listed server ID to request a short-lived join ticket.
+
+For production set `ALLEGIANCE_LOBBY_PUBLIC_URL=https://your-lobby-origin` and
+`ALLEGIANCE_LOBBY_OPERATOR_ID=<account ID>`, terminate TLS at a trusted reverse
+proxy, and configure `Lobby__KnownProxies__0` for its IP if forwarding client IPs.
+The server's `--identity-issuer` uses that same public origin. Game-server config
+`identity` accepts `issuer`, `publicKeyFile`, `audience` and `allowAnonymous`.
+An empty audience uses the server ID in `lobby.enrollmentFile`. Set
+`allowAnonymous=false` to require an account. Identity is opt-in outside Compose:
+legacy server configurations remain anonymous and ignore legacy opaque tickets.
+For a remote server, transfer/pin the public PEM through a trusted operator path;
+never mount the lobby's private volume. A public-key response is available at
+`GET /api/identity/public-key` for inspection, not automatic trust-on-first-use.
+
+The lobby's `Lobby:Identity` configuration also supports `PublicUrl`, `Store`
+(`Sqlite` or `Postgres`), `ConnectionString`, `SigningKeyFile`, `PublicKeyFile`,
+`OperatorAccountIds`, and provider blocks `GitHub`, `Google`, `Steam`. Provider
+blocks default off. In a private ignored compose override, set, for example:
+
+```yaml
+services:
+  lobby:
+    environment:
+      Lobby__Identity__GitHub__Enabled: "true"
+      Lobby__Identity__GitHub__ClientId: "${ALLEGIANCE_GITHUB_CLIENT_ID}"
+      Lobby__Identity__GitHub__ClientSecret: "${ALLEGIANCE_GITHUB_CLIENT_SECRET}"
+```
+
+Google uses equivalent `Google__Enabled`, `Google__ClientId`,
+`Google__ClientSecret`; Steam uses `Steam__Enabled` and `Steam__ClientSecret`
+(the Steam Web API application key). Provider callback paths are
+`/signin-github`, `/signin-google`, `/signin-steam` on the public lobby origin.
+Configure forwarded HTTPS at your TLS proxy; never enable a provider with dummy
+credentials. Provider login creates a separate account with a chosen unused
+callsign; it never silently links to an existing callsign or email.
+
+PostgreSQL is optional:
+
+```sh
+# Supply ALLEGIANCE_POSTGRES_PASSWORD securely in your shell environment first.
+docker compose -f docker-compose.yml -f docker/compose.override.postgres.yml up --build
+```
+
+The override adds PostgreSQL 17 with a named volume and healthcheck; lobby startup
+waits for it. It publishes no database host port. Migrations run automatically on
+both engines. Changing engines does not copy existing identities: migrate the data
+explicitly, preserve the issuer and signing key, and back up both database and keys.
+Sessions last 12 hours, device approvals five minutes, join tickets 60 seconds.
+Game sessions are held in memory and revoked on sign-out; browser sign-out revokes
+its own session. Existing accepted matches continue after sign-out. Back up keys;
+key loss invalidates outstanding tickets. Rotation requires distributing a new
+trusted public key to game servers; this slice intentionally has no key overlap or
+account-recovery UI.
+
+The live PostgreSQL integration test accepts `P808A_POSTGRES_TEST_CONNECTION` in the
+test runner's environment (a standard Npgsql connection string). Use a disposable
+test database: each run creates and drops a unique schema. This is a test harness
+setting, not a lobby/server deployment variable; the Compose PostgreSQL service
+stays private to its network unless an operator explicitly adds a test-only port.

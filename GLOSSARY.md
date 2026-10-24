@@ -307,3 +307,29 @@ list in **reverse**.
 | One-command stack | `scripts/dev-stack.sh`, `QUICKSTART.md` |
 | Parity tracking | `docs/parity/*.csv`, `docs/reports/P7*_PARITY_WAVE*.md` |
 | Test tiers | `tools/run-tests.sh`, `tools/test-tiers/runner.py` |
+
+## 12. Player identity (P808a)
+
+- **Lobby identity issuer / account** — stable account ID and unique callsign;
+  passkeys and optional configured GitHub/Google/Steam proofs. Design:
+  `docs/P808A_IDENTITY_DESIGN.md`; HTTP: `src/Allegiance.Lobby/Identity/IdentityEndpoints.cs`,
+  `src/Allegiance.Lobby/Identity/PasskeyService.cs`,
+  `src/Allegiance.Lobby/Identity/ExternalProviders.cs`.
+- **Identity store / migration** — SQLite by default, PostgreSQL optionally;
+  accounts, passkeys, sessions, challenges, device grants and enrolled servers:
+  `src/Allegiance.Lobby/Identity/IdentityStore.cs`.
+- **Device authorization / join ticket** — browser approves an in-game code;
+  `src/Allegiance.ClientCore/Session/LobbyIdentityClient.cs`,
+  `src/Allegiance.ClientCore.Game/Game1.Identity.cs`,
+  `src/Allegiance.ClientCore.Game/IdentityScreenModel.cs`.
+  `src/Allegiance.Core/Identity/JoinTokens.cs` signs/verifies short-lived ES256
+  tickets in native LOGONREQ.ZoneTicket; canonical names/IDs bind in
+  `src/Allegiance.Server/Server.Identity.cs`. Native:
+  `Inc/ClubMessages.h:42-58`, `FedSrv/FedSrv.CPP:5824-5904`.
+- **Verified game server / enrollment** — operator-approved persistent server
+  credential in `src/Allegiance.Server/LobbyHeartbeat.cs`; verification metadata
+  is authenticated by `src/Allegiance.Lobby/LobbyEndpoints.cs`.
+  Public-only trust volume and optional PostgreSQL:
+  `docker-compose.yml`, `docker/compose.override.postgres.yml`, `docker/README.md`.
+- **Identity visual proof** — actual Game1 window with production sign-in code,
+  renderer and HTTP client: `tools/p808a-identity-proof/Program.cs`.

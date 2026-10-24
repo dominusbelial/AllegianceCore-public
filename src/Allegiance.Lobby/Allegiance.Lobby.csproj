@@ -8,4 +8,15 @@
     <RootNamespace>Allegiance.Lobby</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../Allegiance.Core/Allegiance.Core.csproj" />
+    <!-- Steam middleware permits older AngleSharp; pin the patched parser (GHSA-pgww-w46g-26qg). -->
+    <PackageReference Include="AngleSharp" Version="1.5.0" />
+    <PackageReference Include="Fido2" Version="4.0.1" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
+    <PackageReference Include="Npgsql" Version="10.0.3" />
+    <PackageReference Include="AspNet.Security.OAuth.GitHub" Version="10.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.11" />
+    <PackageReference Include="AspNet.Security.OpenId.Steam" Version="10.0.0" />
+  </ItemGroup>
 </Project>

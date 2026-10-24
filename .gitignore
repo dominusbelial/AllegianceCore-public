@@ -50,3 +50,10 @@ TestResults/
 /.p748-scratch/
 /.p748-evidence/
 .pi-sessions/
+
+# Local identity databases, private keys and task scratch.
+.identity/
+.scratch/
+
+# docker compose reads secrets (e.g. ALLEGIANCE_POSTGRES_PASSWORD) from .env; never commit it
+/.env

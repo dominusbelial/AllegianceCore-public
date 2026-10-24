@@ -1,4 +1,5 @@
 using Allegiance.Lobby;
+using Allegiance.Lobby.Identity;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Net;
 
@@ -21,7 +22,7 @@ builder.Configuration.GetSection("Lobby").Bind(settings);
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 16 * 1024);
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedHeaders = settings.KnownProxies.Count > 0 ? ForwardedHeaders.XForwardedFor : ForwardedHeaders.None;
+    options.ForwardedHeaders = settings.KnownProxies.Count > 0 ? ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto : ForwardedHeaders.None;
     options.ForwardLimit = 1;
     options.KnownProxies.Clear();
     options.KnownIPNetworks.Clear();
@@ -33,6 +34,19 @@ builder.Services.AddSingleton(sp => new ServerRegistry(
     settings.MaxEntries,
     TimeSpan.FromSeconds(settings.MaxAgeSeconds), settings.MaxEntriesPerAddress));
 
+var identity = new IdentitySettings();
+builder.Configuration.GetSection("Lobby:Identity").Bind(identity);
+identity.Validate();
+builder.Services.AddSingleton(identity);
+builder.Services.AddSingleton<IdentityStore>();
+builder.Services.AddSingleton<IdentitySigningKey>();
+builder.Services.AddSingleton<PasskeyService>();
+builder.Services.AddIdentityProviders(identity);
+builder.Services.ConfigureHttpJsonOptions(o =>
+{
+    o.SerializerOptions.RespectNullableAnnotations = true;
+    o.SerializerOptions.RespectRequiredConstructorParameters = true;
+});
 builder.Services.AddLobbyRateLimiting();
 builder.Services.AddHostedService(sp => new ExpirySweepService(
     sp.GetRequiredService<ServerRegistry>(),
@@ -42,9 +56,16 @@ builder.Services.AddHostedService(sp => new ExpirySweepService(
 
 var app = builder.Build();
 
+app.Services.GetRequiredService<IdentityStore>().Migrate();
+_ = app.Services.GetRequiredService<IdentitySigningKey>();
 app.UseForwardedHeaders();
+app.UseAuthentication();
 app.Use(async (context, next) =>
 {
+    context.Response.Headers.XContentTypeOptions = "nosniff";
+    context.Response.Headers.XFrameOptions = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "no-referrer";
+    context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
     if (context.Request.ContentLength > 16 * 1024)
     {
         context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
@@ -56,6 +77,7 @@ app.UseRateLimiter();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.MapLobbyEndpoints();
+app.MapIdentity(app.Services.GetRequiredService<IdentitySettings>());
 
 app.Run();
 

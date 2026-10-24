@@ -1,0 +1,111 @@
+{
+  "base": "650eb6a5",
+  "branch": "codex/p808a",
+  "commits": false,
+  "pushes": false,
+  "solutionBuild": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "toolBuild": {
+    "projects": 75,
+    "errors": 0,
+    "warnings": 0
+  },
+  "serverNativeAot": {
+    "rid": "linux-x64",
+    "publishPassed": true,
+    "IL2026": 0,
+    "IL3050": 0,
+    "bytes": 14483744,
+    "sha256": "343fecdfe3f93a8423e7f33a48840253e6bec0d8776fe2733b8e37a81d8b28c3"
+  },
+  "newTests": {
+    "lobbyAndStoreIncludingPostgres": 14,
+    "serverCore": 4,
+    "sharedStyles": 2,
+    "runsEach": 3,
+    "skipped": 0
+  },
+  "affectedGroups": {
+    "lobby": [
+      14,
+      14,
+      14
+    ],
+    "core": [
+      24,
+      24,
+      24
+    ],
+    "ui": [
+      22,
+      22,
+      22
+    ]
+  },
+  "fast": {
+    "invocations": 1,
+    "seconds": 300.69152529901476,
+    "total": 10241,
+    "outcomes": {
+      "Passed": 10231,
+      "Failed": 7,
+      "NotExecuted": 3
+    },
+    "passed": false,
+    "infrastructureChecks": 9
+  },
+  "isolatedRecovery": {
+    "hudAllocation": [
+      true,
+      true,
+      true
+    ],
+    "profileEditorWithWritableXdgConfig": [
+      true,
+      true,
+      true
+    ]
+  },
+  "compose": {
+    "sqliteConfig": true,
+    "postgresConfig": true,
+    "sqliteFreshVolumesStarted": true,
+    "postgresFreshVolumesStarted": true,
+    "postgresMigrationVersion": 1,
+    "persistentServerEnrollmentSurvivedRestart": true,
+    "taskStacksStoppedAndVolumesRemoved": true
+  },
+  "parity": {
+    "identityRows": 8,
+    "done": 7,
+    "partial": 1,
+    "masterClubRow": "partial",
+    "glossaryPaths": 110
+  },
+  "baseline": {
+    "identityEndpoints": {
+      "device": 404,
+      "passkeys/register/options": 404,
+      "join-token": 404
+    },
+    "forgedTicketAccepted": true
+  },
+  "screenshots": {
+    "renderer": "actual Game1 window/backbuffer",
+    "browser": "headed Chromium with CDP virtual WebAuthn authenticator",
+    "classicAndModern": true,
+    "reviewedByAgent": true,
+    "operatorMediaReviewBeforePushRequired": true,
+    "totalPng": 10,
+    "totalEvidenceBytes": 655719
+  },
+  "rawEvidence": ".scratch/evidence/",
+  "limitations": [
+    "Fast run retains five known path-fixture failures, one allocation flake and one read-only profile failure.",
+    "Real optional provider consent not exercised; native Steam wire auth remains partial.",
+    "Replay cache is per process; issued token can survive sign-out until expiry.",
+    "No account recovery or key-overlap rotation UI."
+  ]
+}

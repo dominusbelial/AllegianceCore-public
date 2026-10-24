@@ -1,0 +1,26 @@
+# Set ALLEGIANCE_POSTGRES_PASSWORD in your environment; never commit credentials.
+# docker compose -f docker-compose.yml -f docker/compose.override.postgres.yml up --build
+services:
+  postgres:
+    image: postgres:17.6
+    environment:
+      POSTGRES_DB: allegiance
+      POSTGRES_USER: allegiance
+      POSTGRES_PASSWORD: "${ALLEGIANCE_POSTGRES_PASSWORD:?Set ALLEGIANCE_POSTGRES_PASSWORD}"
+    volumes:
+      - identity-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U allegiance -d allegiance"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+  lobby:
+    environment:
+      Lobby__Identity__Store: Postgres
+      Lobby__Identity__ConnectionString: "Host=postgres;Database=allegiance;Username=allegiance;Password=${ALLEGIANCE_POSTGRES_PASSWORD:?Set ALLEGIANCE_POSTGRES_PASSWORD}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+volumes:
+  identity-postgres:

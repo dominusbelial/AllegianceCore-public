@@ -1088,7 +1088,17 @@ public sealed partial class Game1
         try
         {
             _session.Connect(port, _playerName, host);
-            _session.SendLogonRequest(Request(_playerName));
+            var logon = Request(_playerName);
+            if (_skirmish is null && _identityClient?.Account is not null)
+            {
+                var listing = _servers.FirstOrDefault(s => s.Address == host && s.Port == port && s.Verified);
+                string? serverId = listing?.IdentityServerId;
+                if (serverId is null)
+                    lock (_introFoundLock) serverId = _introFound.FirstOrDefault(s => s.Address == host && s.Port == port && s.Verified)?.IdentityServerId;
+                if (serverId is not null)
+                    logon.ZoneTicket = System.Text.Encoding.UTF8.GetBytes(_identityClient.JoinTokenAsync(serverId).GetAwaiter().GetResult());
+            }
+            _session.SendLogonRequest(logon);
             var ack = _session.WaitForAck(5000);
             Console.WriteLine($"[monogame] logged on: serverTime={ack.TimeServer}");
             // P281 — the server now defers our spawn to a post-connect side-select
@@ -1652,7 +1662,7 @@ public sealed partial class Game1
     private static LogonRequest Request(string name) => new()
     {
         CharacterName = name,
-        ZoneTicket = [0x01, 0x02, 0x03, 0x04],
+        ZoneTicket = null,
         CDKey = "ABCDEFGHIJKL",
         MissionPassword = "pw",
         FedsrvVer = LogonRequest.MsgVer,

@@ -102,7 +102,8 @@ public sealed class ServerRegistry
                 req.PublishPlayers,
                 // P806 — the mission settings the client's server-list filters and
                 // status/skill/settings sort columns read (native MissionInfo).
-                ToGameParams(req.Game));
+                ToGameParams(req.Game),
+                req.Verified, req.IdentityServerId);
 
             if (!_entries.TryAdd(id, listing))
                 return null; // id collision is effectively impossible; treat as a transient refusal
@@ -132,6 +133,7 @@ public sealed class ServerRegistry
             // exactly like the player count (the mission moves NotStarted →
             // Started, so InProgress and the goal bits can change mid-listing).
             Game = ToGameParams(req.Game),
+            Verified = req.Verified, IdentityServerId = req.IdentityServerId,
         };
 
         _entries[target.Id] = refreshed;
@@ -271,7 +273,7 @@ public sealed class ServerRegistry
     private static ServerListingDto ToDto(ServerListing l) => new(
         l.Id, l.Name, l.Address, l.Port, l.PlayerCount, l.MaxPlayers,
         l.MissionName, l.CoreFile, l.Version, l.RegisteredUtc, l.LastSeenUtc,
-        l.Game);
+        l.Game, l.Verified, l.IdentityServerId);
 
     /// <summary>
     /// P806 — normalize the caller-supplied game settings. Every omitted field

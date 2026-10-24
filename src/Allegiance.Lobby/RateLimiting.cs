@@ -14,6 +14,8 @@ namespace Allegiance.Lobby;
 public static class RateLimiting
 {
     /// <summary>Named policy applied to <c>POST /api/servers/register</c> (fresh + heartbeat).</summary>
+    public const string IdentityPolicy = "identity";
+
     public const string RegisterPolicy = "register";
 
     /// <summary>P761b — named policy for the per-name find-player query
@@ -40,6 +42,10 @@ public static class RateLimiting
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                 RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
                     _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = RegisterWindow, QueueLimit = 0, AutoReplenishment = true }));
+
+            options.AddPolicy(IdentityPolicy, context =>
+                RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = RegisterWindow, QueueLimit = 0, AutoReplenishment = true }));
 
             options.AddPolicy(FindPlayerPolicy, context =>
                 RateLimitPartition.GetFixedWindowLimiter(

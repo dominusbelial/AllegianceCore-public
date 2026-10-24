@@ -254,6 +254,9 @@ public sealed class MapGenConfig
 /// </summary>
 public sealed class LobbyConfig
 {
+    /// <summary>Opt-in private credential file; empty keeps an unverified directory listing.</summary>
+    public string EnrollmentFile { get; set; } = "";
+
     /// <summary>Base URL of the lobby directory (e.g. <c>http://localhost:5000</c>).</summary>
     public string Url { get; set; } = "";
 
@@ -825,6 +828,8 @@ public sealed class ReceiveConfig
 /// </summary>
 public sealed class ServerConfig
 {
+    public ServerIdentityConfig? Identity { get; set; }
+
     /// <summary>
     /// P762 / SIM-0142-adjacent moderation row — the port's stand-in for the
     /// native Steam moderator/developer group (<c>FedSrv.CPP:6751-6753</c>):
@@ -1076,6 +1081,10 @@ public static class ServerConfigLoader
         {
             switch (key.ToLowerInvariant())
             {
+                case "identity-issuer":
+                case "identityissuer":
+                    if (config.Identity is null) throw new InvalidDataException("--identity-issuer requires an identity config block");
+                    config.Identity.Issuer = value; recognized++; break;
                 case "artpath":
                 case "art":
                     config.ArtPath = value; recognized++; break;

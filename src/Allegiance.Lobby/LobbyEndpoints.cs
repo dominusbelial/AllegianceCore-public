@@ -15,13 +15,16 @@ public static class LobbyEndpoints
     {
         // Fresh registration (no token) or idempotent heartbeat/update (valid token).
         // Rate-limited: this is the single write path a public registry must protect.
-        app.MapPost("/api/servers/register", (RegisterRequest req, ServerRegistry registry, HttpContext context) =>
+        app.MapPost("/api/servers/register", (RegisterRequest req, ServerRegistry registry, Identity.IdentityStore identities, HttpContext context) =>
         {
             // The socket source (or a configured trusted proxy's source) owns
             // the listing. A caller cannot redirect clients to a victim IP/DNS.
             if (context.Connection.RemoteIpAddress is not { } source) return Results.BadRequest("source address required");
             req.Address = source.IsIPv4MappedToIPv6 ? source.MapToIPv4().ToString() : source.ToString();
             if (req.Port is < 1 or > 65535) return Results.BadRequest("port must be in 1..65535");
+            req.Verified = identities.VerifyServer(req.IdentityServerId, req.IdentityServerSecret) is not null;
+            if (!req.Verified && (req.IdentityServerId is not null || req.IdentityServerSecret is not null)) return Results.Unauthorized();
+            if (!req.Verified) req.IdentityServerId = null;
             var response = registry.Register(req);
             // Rejected either because the directory is full (new registration) or because a
             // presented token matched no listing. Both are caller errors — report 409.

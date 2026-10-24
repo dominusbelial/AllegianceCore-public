@@ -170,6 +170,7 @@ public sealed partial class Game1
 
     private void UpdateIntro(KeyboardState ks)
     {
+        UpdateIdentity(ks);
         // P731  -  one-shot proof: schedule the real-backbuffer screenshot after
         // the delay, then exit once the Draw-end flush has written it.
         if (_introProofDelayMs >= 0)
@@ -217,7 +218,7 @@ public sealed partial class Game1
         switch (_introView)
         {
             case IntroView.Main:
-                if (tab && !_iTab) { _introEditingPilot = !_introEditingPilot; }
+                if (tab && !_iTab && _identityScreen.Account is null) { _introEditingPilot = !_introEditingPilot; }
                 if (up && !_iUp && !_introEditingPilot)
                     _introIndex = (_introIndex - 1 + IntroMainLabels.Length) % IntroMainLabels.Length;
                 if (down && !_iDown && !_introEditingPilot)
@@ -420,7 +421,7 @@ public sealed partial class Game1
         // Tab toggles the "don't ask me again" checkbox; Enter accepts (begin training);
         // Esc declines (clear the flag, go to the main menu).
         bool tab = ks.IsKeyDown(XnaKeys.Tab);
-        if (tab && !_iTab) _trainingSuggestDontAsk = !_trainingSuggestDontAsk;
+        if (tab && !_iTab && _identityScreen.Account is null) _trainingSuggestDontAsk = !_trainingSuggestDontAsk;
         if ((enter || esc) && !_trainingSuggestHandled)
         {
             _trainingSuggestHandled = true;
@@ -523,7 +524,7 @@ public sealed partial class Game1
                         Name: s.Name, Address: s.Address, Port: s.Port,
                         Source: DiscoverySource.Lobby, PingMs: 0,
                         Map: s.MissionName, Players: s.PlayerCount, MaxPlayers: s.MaxPlayers,
-                        Version: s.Version, DisplayName: ""));
+                        Version: s.Version, DisplayName: "", Verified: s.Verified, IdentityServerId: s.IdentityServerId));
             }
         }
     }
@@ -668,10 +669,16 @@ public sealed partial class Game1
 
         // Pilot name entry (native remembered the last character name,
         // introscreen.cpp:1607; this is the port's pilot-name field).
-        var nameLabel = "Pilot: " + _pilotBuf.ToString() + (_introEditingPilot ? "_" : "");
+        var nameLabel = _identityScreen.PilotLabel(_pilotBuf.ToString() + (_introEditingPilot ? "_" : ""));
         var nsz = _hudSmall.MeasureString(nameLabel);
         _spriteBatch.DrawString(_hudSmall, nameLabel, new Vector2(cx - nsz.X / 2f, lay.PilotY),
             _introEditingPilot ? titleCol : dimCol);
+
+        var identityLine = _identityScreen.ApprovalLine;
+        var identitySize = _hudSmall.MeasureString(identityLine);
+        float identityScale = Math.Min(1f, (w - 40f) / Math.Max(1f, identitySize.X));
+        _spriteBatch.DrawString(_hudSmall, identityLine, new Vector2((w - identitySize.X * identityScale) / 2f, lay.PilotY - 48),
+            titleCol, 0, Vector2.Zero, identityScale, SpriteEffects.None, 0);
 
         var fsz = _hudSmall.MeasureString("UP/DOWN select   ENTER choose   TAB edit pilot   ESC quit");
         _spriteBatch.DrawString(_hudSmall, "UP/DOWN select   ENTER choose   TAB edit pilot   ESC quit",

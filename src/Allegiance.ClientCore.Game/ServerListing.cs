@@ -35,7 +35,9 @@ public sealed record ServerListing(
     /// (see <see cref="LobbyGameFilters"/>). Optional so the record keeps the
     /// pre-P806 construction sites working.
     /// </summary>
-    GameParams? Game = null)
+    GameParams? Game = null,
+    bool Verified = false,
+    string? IdentityServerId = null)
 {
     /// <summary>The default lobby-directory URL the client browses when none is
     /// given. This is the lobby's real default listen address — confirmed by
@@ -65,7 +67,7 @@ public sealed record ServerListing(
             ? $"{PlayerCount}/{MaxPlayers}"
             : PlayerCount.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var mission = string.IsNullOrWhiteSpace(MissionName) ? "-" : MissionName;
-        return $"{name}  {addr}   {players} players   {mission}";
+        return $"[{(Verified ? "verified" : "unverified")}] {name}  {addr}   {players} players   {mission}";
     }
 
     /// <summary>

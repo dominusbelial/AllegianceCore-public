@@ -35,7 +35,9 @@ internal sealed record ServerListing(
     /// (pre-P806) host did not publish it — the client then cannot prove either
     /// side of a Yes/No filter and hides the listing while that flag is set.
     /// </summary>
-    GameParamsDto? Game = null);
+    GameParamsDto? Game = null,
+    bool Verified = false,
+    string? IdentityServerId = null);
 
 /// <summary>
 /// The public, read-only projection of a <see cref="ServerListing"/> — the exact
@@ -65,7 +67,9 @@ public sealed record ServerListingDto(
     DateTimeOffset LastSeenUtc,
     /// <summary>P806 — the registered game settings (same shape as
     /// <see cref="GameParamsDto"/>). Null for a host that publishes none.</summary>
-    GameParamsDto? Game = null);
+    GameParamsDto? Game = null,
+    bool Verified = false,
+    string? IdentityServerId = null);
 
 /// <summary>
 /// P806 — the native mission settings the server-list screen filters and sorts
@@ -130,6 +134,11 @@ public sealed record FindPlayerResultDto(
 /// </summary>
 public sealed class RegisterRequest
 {
+    public string? IdentityServerId { get; set; }
+    public string? IdentityServerSecret { get; set; }
+    // Never bound from JSON: only the endpoint can authenticate enrollment.
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool Verified { get; set; }
     public string? Name { get; set; }
     public string? Address { get; set; }
     public int Port { get; set; }

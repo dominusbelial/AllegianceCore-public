@@ -52,7 +52,7 @@ async function refresh() {
   } else {
     for (const s of servers) {
       const tr = document.createElement('tr');
-      tr.appendChild(cell(s.name));
+      tr.appendChild(cell(s.name + (s.verified ? " [verified]" : " [unverified]")));
       tr.appendChild(cell(s.address));
       tr.appendChild(cell(s.port));
       tr.appendChild(cell(s.playerCount + ' / ' + s.maxPlayers));

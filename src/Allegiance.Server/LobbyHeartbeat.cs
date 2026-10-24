@@ -1,4 +1,6 @@
 using System.Net.Http.Json;
+using System.Text.Json;
+using Allegiance.Core.Identity;
 
 namespace Allegiance.Server;
 
@@ -26,6 +28,10 @@ public sealed class LobbyHeartbeat : IDisposable
     private readonly Timer _timer;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
+    private readonly string _enrollmentFile;
+    private DeviceAuthorization? _authorization;
+    private DateTimeOffset _nextEnrollmentPoll;
+    private ServerEnrollment? _enrollment;
     private readonly string _displayName;
     private readonly string _publicAddress;
     private readonly int _port;
@@ -90,6 +96,10 @@ public sealed class LobbyHeartbeat : IDisposable
         _clock = clock ?? TimeProvider.System;
         _http = http;
         _ownsHttp = ownsHttp;
+        _enrollmentFile = config.EnrollmentFile;
+        if (_enrollmentFile.Length > 0 && File.Exists(_enrollmentFile))
+            _enrollment = JsonSerializer.Deserialize(File.ReadAllText(_enrollmentFile), IdentityJsonContext.Default.ServerEnrollment)
+                ?? throw new InvalidOperationException("Invalid server enrollment file");
         _displayName = config.DisplayName;
         _publicAddress = config.PublicAddress;
         _port = port;
@@ -134,6 +144,7 @@ public sealed class LobbyHeartbeat : IDisposable
 
         try
         {
+            if (_enrollmentFile.Length > 0 && _enrollment is null) await EnrollAsync().ConfigureAwait(false);
             int playerCount = _livePlayerCount();
             DateTimeOffset now = _clock.GetUtcNow();
             if (periodic && _lastAttempt is { } previous)
@@ -163,7 +174,8 @@ public sealed class LobbyHeartbeat : IDisposable
                 _livePlayerNames?.Invoke(),     // P761 — find-player data (opt-in only, P761b)
                 _publishPlayers,                // P761b — the per-server opt-in the directory honours
                 _token,                         // null on the first tick, or after a 409 forced a fresh re-register
-                _liveGameParams?.Invoke());     // P806 — game settings for the server-list filters
+                _liveGameParams?.Invoke(),      // P806 — game settings for the server-list filters
+                _enrollment?.ServerId, _enrollment?.ServerSecret);
 
             HttpResponseMessage resp;
             try
@@ -217,6 +229,43 @@ public sealed class LobbyHeartbeat : IDisposable
         {
             _gate.Release();
         }
+    }
+
+    private async Task EnrollAsync()
+    {
+        if (_clock.GetUtcNow() < _nextEnrollmentPoll) return;
+        _nextEnrollmentPoll = _clock.GetUtcNow().AddSeconds(5);
+        try
+        {
+            if (_authorization is null)
+            {
+                using var start = await _http.PostAsJsonAsync("/api/identity/device", new DeviceStartRequest("server", _displayName), IdentityJsonContext.Default.DeviceStartRequest).ConfigureAwait(false);
+                start.EnsureSuccessStatusCode();
+                _authorization = await start.Content.ReadFromJsonAsync(IdentityJsonContext.Default.DeviceAuthorization).ConfigureAwait(false);
+                if (_authorization is not null)
+                    Console.WriteLine($"[lobby] Approve server at {_authorization.VerificationUri}, code {_authorization.UserCode}");
+                return;
+            }
+            using var poll = await _http.PostAsJsonAsync("/api/identity/device/poll", new DevicePollRequest(_authorization.DeviceCode), IdentityJsonContext.Default.DevicePollRequest).ConfigureAwait(false);
+            poll.EnsureSuccessStatusCode();
+            var result = await poll.Content.ReadFromJsonAsync(IdentityJsonContext.Default.DeviceResult).ConfigureAwait(false);
+            if (result?.Status == "expired") { _authorization = null; return; }
+            if (result is { Status: "approved", ServerId: not null, ServerSecret: not null })
+            {
+                var enrollment = new ServerEnrollment(result.ServerId, result.ServerSecret);
+                string path = Path.GetFullPath(_enrollmentFile);
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                var options = new FileStreamOptions { Mode = FileMode.CreateNew, Access = FileAccess.Write };
+                if (!OperatingSystem.IsWindows()) options.UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+                await using (var file = new FileStream(path, options))
+                    await JsonSerializer.SerializeAsync(file, enrollment, IdentityJsonContext.Default.ServerEnrollment).ConfigureAwait(false);
+                _enrollment = enrollment;
+                _lastAttempt = null; // publish verified status immediately
+                Console.WriteLine($"[lobby] Server enrolled: {enrollment.ServerId}");
+            }
+        }
+        catch (Exception e) when (e is HttpRequestException or IOException or JsonException or TaskCanceledException)
+        { Console.WriteLine($"[lobby] enrollment unavailable: {e.Message}"); }
     }
 
     /// <summary>Alias for <see cref="Dispose"/>.</summary>
@@ -294,7 +343,9 @@ internal sealed record LobbyRegisterRequest(
     string? Token,
     // P806 — the mission settings the client's server-list filters and sort
     // columns read (mirror of Allegiance.Lobby's GameParamsRequest).
-    LobbyGameParams? Game = null);
+    LobbyGameParams? Game = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? IdentityServerId = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? IdentityServerSecret = null);
 
 /// <summary>
 /// P806 — the game settings a server publishes to the directory, mirroring

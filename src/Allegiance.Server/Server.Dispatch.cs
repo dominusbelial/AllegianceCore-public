@@ -146,7 +146,7 @@ public sealed partial class Server
                     Console.WriteLine($"[logon] {from} '{pendingLogon.Request.CharacterName}' re-LOGONREQ while pending side-select — re-sent same LogonAck (ship {pendingLogon.ShipId}), no new id");
                     var reack = new LogonAck
                     {
-                        CharNameOrFailureReason = pendingLogon.Request.VersionMatches ? $"Welcome {pendingLogon.Request.CharacterName}" : "wrong client version",
+                        CharNameOrFailureReason = pendingLogon.Request.VersionMatches ? IdentityWelcome(from, pendingLogon.Request.CharacterName) : "wrong client version",
                         TimeServer = (uint)pendingLogon.Request.Time + 1,
                         ShipID = pendingLogon.Request.VersionMatches ? pendingLogon.ShipId : (short)0,
                         FValidated = pendingLogon.Request.VersionMatches,
@@ -159,6 +159,8 @@ public sealed partial class Server
                     continue;
                 }
 
+                bool identityAccepted = BindIdentity(from, req, out var identityFailure);
+
                 // Native private standalone joins refuse duplicate names, case
                 // insensitively (FedSrv/FedSrv.CPP:600-624). USEAUTH instead
                 // removes the old player (:629; fsmission.cpp:1248-1276).
@@ -170,8 +172,9 @@ public sealed partial class Server
                         || _peerShips.Any(p => ReferenceEquals(p.Value.Ship.Mission, _missions[0])
                             && _peerNames.TryGetValue(p.Key, out var name)
                             && string.Equals(name, req.CharacterName ?? "", StringComparison.OrdinalIgnoreCase)));
-                var validated = req.VersionMatches && !duplicateName;
-                var failureReason = duplicateName ? "character name already in use in this mission" : "wrong client version";
+                var validated = req.VersionMatches && !duplicateName && identityAccepted;
+                var failureReason = !identityAccepted ? identityFailure : duplicateName ? "character name already in use in this mission" : "wrong client version";
+                if (!validated) _peerIdentities.Remove(from);
                 if (validated) AuthenticatePrivileges(from, req);
                 // P619c — grant a connected HUMAN client (a character name NOT
                 // under the MCP harness prefix) the longer transport liveness
@@ -211,7 +214,7 @@ public sealed partial class Server
 
                 var ack = new LogonAck
                 {
-                    CharNameOrFailureReason = validated ? $"Welcome {req.CharacterName}" : failureReason,
+                    CharNameOrFailureReason = validated ? IdentityWelcome(from, req.CharacterName) : failureReason,
                     TimeServer = (uint)req.Time + 1,
                     ShipID = validated ? shipId : (short)0,
                     FValidated = validated,

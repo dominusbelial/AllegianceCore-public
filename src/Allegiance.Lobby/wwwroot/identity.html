@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Allegiance · Player identity</title><link rel="stylesheet" href="identity.css"><script src="identity.js" defer></script></head>
+<body><main>
+<a class="back" href="/">← Server directory</a><p class="eyebrow">ALLEGIANCE / PLAYER ACCOUNTS</p>
+<h1>Your callsign.<br>Your identity.</h1>
+<p class="lead">Sign in with a passkey, then approve the code shown in your game. Your passkey stays on your device.</p>
+<section id="login"><label for="callsign">Callsign</label><input id="callsign" autocomplete="username webauthn" maxlength="24" placeholder="Choose a callsign"><p class="hint">1–24 printable Latin-1 characters. Callsigns are unique, ignoring case.</p><div class="buttons"><button id="register">Create account with a passkey</button><button id="signin" class="secondary">Sign in with a passkey</button></div><div id="providers"></div><button id="complete" class="secondary" hidden>Finish provider sign-in with this callsign</button></section>
+<section id="account" hidden><p class="eyebrow">SIGNED IN</p><h2 id="pilot"></h2><p id="account-id" class="hint"></p><button id="signout" class="secondary">Sign out of this browser</button></section>
+<section><h2>Approve a device</h2><p>Only approve a code from a game or server you started. Check the purpose before continuing.</p><label for="code">Code shown on your device</label><input id="code" maxlength="10" autocomplete="off" placeholder="XXXXXXXXXX"><div class="buttons"><button id="review" class="secondary">Review device</button><button id="approve" hidden>Approve this device</button></div><p id="device"></p></section>
+<p id="status" role="status" aria-live="polite"></p><footer>Anonymous play remains available on servers that allow it. Signing out in the game revokes that game’s session.</footer>
+</main></body></html>

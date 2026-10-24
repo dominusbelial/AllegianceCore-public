@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# Allegiance.Lobby — the server-directory app. Fully in-memory: no external
+# Allegiance.Lobby — directory and persistent identity issuer. No external
 # asset tree, no required config file (LobbySettings knobs — MaxEntries,
 # SweepIntervalSeconds, MaxAgeSeconds — are bound from the optional "Lobby"
 # config section / env vars and have baked-in defaults; see LobbySettings.cs).
@@ -14,9 +14,11 @@ WORKDIR /src
 
 COPY Directory.Build.props .
 COPY src/Allegiance.Lobby/Allegiance.Lobby.csproj src/Allegiance.Lobby/
+COPY src/Allegiance.Core/Allegiance.Core.csproj src/Allegiance.Core/
 RUN dotnet restore src/Allegiance.Lobby/Allegiance.Lobby.csproj
 
 COPY src/Allegiance.Lobby/ src/Allegiance.Lobby/
+COPY src/Allegiance.Core/ src/Allegiance.Core/
 # Web-SDK publish pulls in the ASP.NET Core shared framework reference and the
 # wwwroot/ static content automatically.
 RUN dotnet publish src/Allegiance.Lobby/Allegiance.Lobby.csproj \
@@ -27,6 +29,7 @@ RUN dotnet publish src/Allegiance.Lobby/Allegiance.Lobby.csproj \
 # SDK (Sdk="Microsoft.NET.Sdk.Web"), so it needs Microsoft.AspNetCore.App at
 # runtime. Pinned to the 10.0.x patch shipping with the SDK above.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0.11 AS final
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /app .
 

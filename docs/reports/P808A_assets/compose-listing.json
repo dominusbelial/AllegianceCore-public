@@ -1,0 +1,17 @@
+[
+  {
+    "id": "9d1a2c21977541d19ce4560fadfab9e0",
+    "name": "My Allegiance Server (compose)",
+    "address": "172.21.0.3",
+    "port": 6073,
+    "playerCount": 0,
+    "maxPlayers": 0,
+    "missionName": "Test Mission",
+    "coreFile": "PCore001.igc",
+    "version": "990051329",
+    "registeredUtc": "2026-10-24T21:25:16.4281803+00:00",
+    "lastSeenUtc": "2026-10-24T21:31:16.4063196+00:00",
+    "verified": true,
+    "identityServerId": "6777010bd8ec4ceb8494337c6d3155c6"
+  }
+]

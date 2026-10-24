@@ -23,6 +23,8 @@ namespace Allegiance.Lobby.Tests;
 /// </summary>
 internal sealed class LobbyTestApp : WebApplicationFactory<Program>
 {
+    internal readonly string IdentityDirectory = Path.Combine(Directory.GetCurrentDirectory(), ".scratch", "lobby-" + Guid.NewGuid().ToString("N"));
+    internal Allegiance.Lobby.Identity.IdentitySettings? IdentityConfiguration { get; set; }
     private readonly TimeProvider _time;
     private readonly Action<LobbySettings>? _configure;
 
@@ -39,6 +41,14 @@ internal sealed class LobbyTestApp : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
+            var identity = IdentityConfiguration ?? new Allegiance.Lobby.Identity.IdentitySettings
+            {
+                ConnectionString = "Data Source=" + Path.Combine(IdentityDirectory, "accounts.db"),
+                SigningKeyFile = Path.Combine(IdentityDirectory, "key.pem"),
+                PublicKeyFile = Path.Combine(IdentityDirectory, "public.pem"),
+            };
+            services.RemoveAll<Allegiance.Lobby.Identity.IdentitySettings>();
+            services.AddSingleton(identity);
             services.AddSingleton<IStartupFilter, LoopbackSource>();
             // Inject the fake (or system) clock.
             services.RemoveAll<TimeProvider>();
