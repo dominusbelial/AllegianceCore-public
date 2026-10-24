@@ -499,6 +499,21 @@ internal sealed partial class BotManager
         }
     }
 
+    /// <summary>P801 follow-up (rig 221 batch 26 staging telemetry: armed finale bombers spread over three
+    /// entry routes, 3-4 per side parked in detour sectors, at most 2 ever reached the target sector, 4-5 of
+    /// 12 were pods). The visible element must arrive together, so every non-wolf bomber takes the SHORTEST
+    /// entry route (routes are ranked by hop count, ClusterGraph.FindDistinctEntryRoutes); only a cloaked lone
+    /// wolf takes the least-used ALTERNATIVE entry (its own lane, P801 3b), falling back to the shortest when
+    /// there is no alternative.</summary>
+    internal static int FinaleRouteIndex(bool loneWolf, IReadOnlyList<int> usagePerRoute)
+    {
+        if (!loneWolf || usagePerRoute.Count <= 1) return 0;
+        int best = 1;
+        for (int i = 2; i < usagePerRoute.Count; i++)
+            if (usagePerRoute[i] < usagePerRoute[best]) best = i;
+        return best;
+    }
+
     private static void AssignResearchSiegeRoute(ActiveBot bot, FinaleRun run, FinalePlan plan)
     {
         // Research finale duty policy: retain the showcase's existing entry-wing
@@ -511,10 +526,11 @@ internal sealed partial class BotManager
                     var routes = graph.FindDistinctEntryRoutes(own.SectorId, plan.Sector, 3);
                     if (routes.Count > 0)
                     {
-                        int route = Enumerable.Range(0, routes.Count)
-                            .OrderBy(i => run.Bots.Count(b => b != bot && b.Side == bot.Side
+                        var usage = Enumerable.Range(0, routes.Count)
+                            .Select(i => run.Bots.Count(b => b != bot && b.Side == bot.Side
                                 && b.FinaleBomberActive && b.RoutePath is { } path && path.SequenceEqual(routes[i])))
-                            .ThenBy(i => i).First();
+                            .ToArray();
+                        int route = FinaleRouteIndex(bot.FinaleLoneWolf, usage);
                         bot.RouteIndex = route;
                         bot.RoutePath = routes[route];
                     }

@@ -341,4 +341,15 @@ public sealed class P801StrikeMassTests(ITestOutputHelper output)
         Assert.False(BotManager.FinaleCloakAllowed(true, loneWolf: true, committedMember: false));   // wolf holding
         Assert.True(BotManager.FinaleCloakAllowed(true, loneWolf: true, committedMember: true));     // wolf going in
     }
+
+    [Fact]
+    public void Finale_visible_bombers_share_the_shortest_route_and_only_lone_wolves_take_alternatives()
+    {
+        // Rig 221 batch 26: least-used routing spread the visible element over three entries; the wave never massed.
+        Assert.Equal(0, BotManager.FinaleRouteIndex(loneWolf: false, usagePerRoute: [5, 0, 0]));
+        Assert.Equal(0, BotManager.FinaleRouteIndex(false, [0]));
+        Assert.Equal(1, BotManager.FinaleRouteIndex(loneWolf: true, usagePerRoute: [5, 0, 0]));
+        Assert.Equal(2, BotManager.FinaleRouteIndex(true, [5, 1, 0]));
+        Assert.Equal(0, BotManager.FinaleRouteIndex(true, [3]));     // no alternative: shortest
+    }
 }

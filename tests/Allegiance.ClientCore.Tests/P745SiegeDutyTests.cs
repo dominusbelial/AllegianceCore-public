@@ -208,7 +208,7 @@ public sealed partial class BotFixRegressionTests
     }
 
     [SkippableFact]
-    public void P745_Research_strike_routes_use_distinct_enemy_home_entries()
+    public void P745_Research_strike_visible_bombers_share_the_shortest_enemy_home_entry()
     {
         Require.Artwork(); using var reads = new DefenseLiveReads();
         using var rig = new FinaleRig(new(Bombers: 2));
@@ -228,7 +228,9 @@ public sealed partial class BotFixRegressionTests
         }
         var routes = rig.Bots.Take(2).Select(b => Get<List<short>?>(b, "RoutePath")).ToArray();
         Assert.All(routes, r => { Assert.NotNull(r); Assert.Equal((short)1,r[0]); Assert.Equal((short)4,r[^1]); });
-        Assert.NotEqual(string.Join(',', routes[0]!), string.Join(',', routes[1]!));
+        // P801 follow-up (rig 221 batch 26): the visible element shares the shortest entry so the wave can
+        // mass; only cloaked lone wolves take alternative entries (BotManager.FinaleRouteIndex, P801StrikeMassTests).
+        Assert.Equal(string.Join(',', routes[0]!), string.Join(',', routes[1]!));
     }
 
     [SkippableTheory]
