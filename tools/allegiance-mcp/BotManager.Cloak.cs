@@ -16,6 +16,16 @@ internal sealed partial class BotManager
             bot.CloakHeld = false;
             return state & ~ShipControlState.CloakActive;
         }
+        // P801 follow-up (rig 221 batch 23b: 13 of 15 lone wolves released uncloaked, 4 visible bombers
+        // released cloaked). In the finale target sector the visible element stays visible — it draws the
+        // defenders — and a lone wolf holds uncloaked so its energy is full, cloaking only once its wave
+        // is committed. Transit to the target sector keeps the ordinary cloak policy.
+        if (bot.FinaleBomberActive && bot.Finale is { } run && CsSector(cs) is var sector and >= 0)
+            lock (run.Sync)
+                if (run.Plans.TryGetValue(bot.Side, out var plan) && plan.KilledAt is null
+                    && !FinaleCloakAllowed(sector == plan.Sector, bot.FinaleLoneWolf,
+                        plan.GoTime is not null && plan.GoMembers.Contains(bot.ShipId)))
+                    approaching = false;
         lock (cs.Gate)
         {
             if (!cs.World.Ships.TryGetValue(bot.ShipId, out var me)) return state & ~ShipControlState.CloakActive;

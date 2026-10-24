@@ -39,6 +39,10 @@ internal sealed partial class BotManager
     /// this waits for a fresh mass instead of joining a spent volley.</summary>
     internal const double FinaleWaveWindowSeconds = 20;
 
+    /// <summary>A staging timeout releases at least this many bombers (or the full
+    /// requirement when it is smaller); fewer keep holding for reinforcements.</summary>
+    internal const int FinaleMinimumStrike = 2;
+
     /// <summary>Proxy radius for "the lone wolf arrived unseen": no visible enemy
     /// ship inside this radius of its release point while the cloak was held.
     /// (The real detection rule is signature vs scanner range — Ship.EffectiveSignature
@@ -55,13 +59,21 @@ internal sealed partial class BotManager
         if (bot.Finale is not { } assigned || !ReferenceEquals(assigned, run)) return;
         lock (run.Sync)
         {
-            if (!run.Plans.TryGetValue(bot.Side, out var plan) || plan.AssignedLoneWolves >= ResearchTactics.MaxLoneWolves) return;
+            if (!run.Plans.TryGetValue(bot.Side, out var plan)) return;
             var loadout = StrikeVolley.FromParts(Catalog.RepresentativeCore(), hullId, parts);
-            if (loadout is not { CloakCapable: true }) return;
+            // A relaunch re-enters here: the wolf keeps its role only if this hull can still cloak.
+            bot.FinaleLoneWolf = false;
+            if (loadout is not { CloakCapable: true }) { plan.AssignedLoneWolves = LiveLoneWolves(run, bot.Side); return; }
+            // Rig 221 batch 23b: a plain counter was bumped again on every relaunch and never released
+            // when a wolf died or lost its cloak, so it sat at 2 and the commit line printed visible=-1.
+            if (LiveLoneWolves(run, bot.Side) >= ResearchTactics.MaxLoneWolves) return;
             bot.FinaleLoneWolf = true;
-            plan.AssignedLoneWolves++;
+            plan.AssignedLoneWolves = LiveLoneWolves(run, bot.Side);
         }
     }
+
+    private static int LiveLoneWolves(FinaleRun run, short side) =>
+        run.Bots.Count(b => b.Side == side && b.FinaleLoneWolf && b.FinaleBomberReserved && !b.IsPod);
 
     /// <summary>P801 — the volley requirement for this finale target, from the
     /// real granted loadouts and the real station type.</summary>
@@ -107,7 +119,7 @@ internal sealed partial class BotManager
                 continue;
             }
             if (armed.Length == 0) continue;
-            plan.StagingSince ??= now;
+            plan.AssignedLoneWolves = LiveLoneWolves(run, side);
             var requirement = FinaleVolleyRequirement(run, plan, side, armed);
             int roster = Math.Max(armed.Length, run.Bots.Count(b => b.Side == side
                 && b.FinaleBomberReserved && !b.IsPod));
@@ -133,11 +145,14 @@ internal sealed partial class BotManager
 
             if (plan.GoTime is null)
             {
-                bool quota = assembled.Count >= required;
-                bool fallback = now - plan.StagingSince >= FinaleStagingHardCapSeconds && assembled.Count > 0;
-                if (quota || fallback)
-                    CommitFinaleWave(run, plan, side, assembled, now,
-                        quota ? "massed" : "staging-timeout", armed);
+                // Rig 221 batch 23b: the clock started when the first bomber was armed at home, so the
+                // transit used up the cap and 25 of 31 finale waves committed one bomber at a time
+                // (staging-timeout, assembled=1). The cap now counts from the first arrival at the
+                // standoff, and a timeout never sends a single bomber against a volley that needs more:
+                // it keeps holding for reinforcements (the finale deadline still ends the match).
+                plan.StagingSince = assembled.Count == 0 ? null : plan.StagingSince ?? now;
+                if (FinaleCommitReason(assembled.Count, required, plan.StagingSince, now) is { } reason)
+                    CommitFinaleWave(run, plan, side, assembled, now, reason, armed);
             }
             else if (now >= plan.GoTime + FinaleWaveWindowSeconds)
             {
@@ -149,7 +164,7 @@ internal sealed partial class BotManager
                     plan.GoTime = null;
                     plan.GoMembers.Clear();
                     plan.MassLogged = false;
-                    plan.StagingSince = now;
+                    plan.StagingSince = null;
                     plan.HitsInWindow = 0;
                     plan.HullAtGo = plan.ShieldAtGo = -1;
                 }
@@ -172,6 +187,26 @@ internal sealed partial class BotManager
         }
     }
 
+    /// <summary>P801 follow-up — when a finale wave forming at the standoff commits:
+    /// "massed" once the volley is assembled; "staging-timeout" after the cap
+    /// (counted from the first arrival) only with at least
+    /// <see cref="FinaleMinimumStrike"/> bombers (or the whole requirement when it
+    /// is smaller); otherwise null — keep holding for reinforcements.</summary>
+    internal static string? FinaleCommitReason(int assembled, int required, double? stagingSince, double now)
+    {
+        if (assembled <= 0 || stagingSince is not { } since) return null;
+        if (assembled >= required) return "massed";
+        return now - since >= FinaleStagingHardCapSeconds && assembled >= Math.Min(required, FinaleMinimumStrike)
+            ? "staging-timeout" : null;
+    }
+
+    /// <summary>P801 follow-up — may a finale bomber use the ordinary cloak policy?
+    /// Outside the target sector (transit) yes. In it, the visible element never
+    /// cloaks (it draws the defenders) and a lone wolf cloaks only once its wave
+    /// is committed, so it holds with full energy.</summary>
+    internal static bool FinaleCloakAllowed(bool inTargetSector, bool loneWolf, bool committedMember) =>
+        !inTargetSector || (loneWolf && committedMember);
+
     private void CommitFinaleWave(FinaleRun run, FinalePlan plan, short side, List<short> members,
         double now, string reason, ActiveBot[] armed)
     {
@@ -189,9 +224,10 @@ internal sealed partial class BotManager
         if (!plan.MassLogged)
         {
             plan.MassLogged = true;
+            int wolves = armed.Count(b => b.FinaleLoneWolf && plan.GoMembers.Contains(b.ShipId));
             Console.WriteLine($"[strike] side={side} finale commit required={plan.RequiredBombers} "
-                + $"assembled={members.Count} visible={members.Count - plan.AssignedLoneWolves} "
-                + $"loneWolves={plan.AssignedLoneWolves} target=station#{plan.TargetId} sector={plan.Sector} "
+                + $"assembled={members.Count} visible={members.Count - wolves} "
+                + $"loneWolves={wolves} target=station#{plan.TargetId} sector={plan.Sector} "
                 + $"goIn={ResearchTactics.StrikeGoLeadSeconds:F0}s wait={now - (plan.StagingSince ?? now):F1}s "
                 + $"stationHull={Fraction(hull)} stationShield={Fraction(shield)} reason={reason}");
         }

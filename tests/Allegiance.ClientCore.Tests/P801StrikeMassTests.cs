@@ -316,4 +316,29 @@ public sealed class P801StrikeMassTests(ITestOutputHelper output)
         Assert.False(ResearchTactics.StagingReady(1, 3, 0, 2, 5, 170)); // genuinely short: keep holding / abort at cap
         Assert.True(ResearchTactics.StagingReady(3, 3, 2, 2, 5, 0));    // full plan in position: go at once
     }
+
+    [Fact]
+    public void A_finale_wave_never_commits_a_single_bomber_and_its_cap_starts_at_the_first_arrival()
+    {
+        // Rig 221 batch 23b (2026-10-24): the staging clock started when the first bomber was armed at
+        // home, so 25 of 31 finale waves committed one bomber at a time (staging-timeout, assembled=1).
+        Assert.Null(BotManager.FinaleCommitReason(assembled: 0, required: 5, stagingSince: null, now: 900));
+        Assert.Null(BotManager.FinaleCommitReason(1, 5, stagingSince: 100, now: 100 + 784));   // one bomber: keep holding
+        Assert.Null(BotManager.FinaleCommitReason(2, 5, 100, 100 + 179));                     // cap not reached yet
+        Assert.Equal("staging-timeout", BotManager.FinaleCommitReason(2, 5, 100, 100 + BotManager.FinaleStagingHardCapSeconds));
+        Assert.Equal("massed", BotManager.FinaleCommitReason(5, 5, 100, 101));
+        Assert.Equal("massed", BotManager.FinaleCommitReason(1, 1, 100, 100));                // a one-bomber requirement
+    }
+
+    [Fact]
+    public void In_the_finale_target_sector_the_visible_element_stays_visible_and_a_wolf_cloaks_only_once_committed()
+    {
+        // Rig 221 batch 23b: 13 of 15 lone wolves released uncloaked (energy spent holding cloaked),
+        // 4 visible bombers released cloaked.
+        Assert.True(BotManager.FinaleCloakAllowed(inTargetSector: false, loneWolf: false, committedMember: false));  // transit
+        Assert.True(BotManager.FinaleCloakAllowed(false, true, false));
+        Assert.False(BotManager.FinaleCloakAllowed(true, loneWolf: false, committedMember: true));   // visible element
+        Assert.False(BotManager.FinaleCloakAllowed(true, loneWolf: true, committedMember: false));   // wolf holding
+        Assert.True(BotManager.FinaleCloakAllowed(true, loneWolf: true, committedMember: true));     // wolf going in
+    }
 }

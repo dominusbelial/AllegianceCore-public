@@ -434,7 +434,7 @@ internal sealed partial class BotManager
                 plan.EscortBudget = bombers.Length == 0 ? 0 : run.Settings.EscortBudget(bots.Count(b => b.Side == side && IsFinaleFighter(b)));
                 // P801 — fresh mass for this strike. Every relaunch joins the wave
                 // forming now; none of them flies at the station alone.
-                plan.StagingSince = now;
+                plan.StagingSince = null;   // starts at the first arrival (FinaleStrikeMassTick)
                 plan.GoTime = null;
                 plan.GoMembers.Clear();
                 plan.MassLogged = plan.OutcomeLogged = false;
