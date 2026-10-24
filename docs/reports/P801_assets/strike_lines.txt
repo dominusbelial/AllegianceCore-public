@@ -1,0 +1,18 @@
+[strike] side=0 finale commit required=5 assembled=5 visible=3 loneWolves=2 target=station#2081 sector=2082 goIn=5s wait=19.5s stationHull=1.000 stationShield=1.000 reason=massed
+[strike] side=1 finale commit required=5 assembled=5 visible=3 loneWolves=2 target=station#2080 sector=2080 goIn=5s wait=24.5s stationHull=1.000 stationShield=1.000 reason=massed
+[strike] side=0 finale release ship=8106 role=visible delta=0.1s cloak=false nearestEnemy=387 undetected=false
+[strike] side=0 finale release ship=8118 role=lone-wolf delta=0.1s cloak=false nearestEnemy=4578 undetected=false
+[strike] side=0 finale release ship=8122 role=visible delta=0.1s cloak=true nearestEnemy=487 undetected=false
+[strike] side=1 finale release ship=8103 role=lone-wolf delta=0.0s cloak=false nearestEnemy=725 undetected=false
+[strike] side=1 finale release ship=8105 role=lone-wolf delta=0.0s cloak=false nearestEnemy=1855 undetected=false
+[strike] side=1 finale release ship=8109 role=visible delta=0.0s cloak=true nearestEnemy=2063 undetected=false
+[strike] side=1 finale release ship=8121 role=visible delta=0.0s cloak=false nearestEnemy=2050 undetected=false
+[strike] side=1 finale release ship=8125 role=visible delta=0.0s cloak=false nearestEnemy=2059 undetected=false
+[strike] side=1 finale end target=station#2080 sector=2080 outcome=station-killed hitsInWindow=5 shield=1.000->0.000 hull=1.000->0.354 required=5 loneWolves=2
+[strike] side=0 finale commit required=5 assembled=5 visible=3 loneWolves=2 target=station#2081 sector=2082 goIn=5s wait=1.0s stationHull=1.000 stationShield=0.075 reason=massed
+[strike] side=0 finale release ship=8104 role=visible delta=0.0s cloak=false nearestEnemy=378 undetected=false
+[strike] side=0 finale release ship=8110 role=visible delta=0.0s cloak=false nearestEnemy=255 undetected=false
+[strike] side=0 finale release ship=8112 role=visible delta=0.0s cloak=false nearestEnemy=301 undetected=false
+[strike] side=0 finale release ship=8126 role=visible delta=0.0s cloak=true nearestEnemy=311 undetected=false
+[strike] side=0 finale release ship=8132 role=visible delta=0.0s cloak=false nearestEnemy=280 undetected=false
+[strike] side=0 finale end target=station#2081 sector=2082 outcome=station-killed hitsInWindow=2 shield=0.075->0.000 hull=1.000->0.296 required=5 loneWolves=2

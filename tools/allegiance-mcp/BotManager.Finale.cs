@@ -52,6 +52,18 @@ internal sealed partial class BotManager
         // summary has been logged (launch-range reach or bomber death, one each).
         internal double? LaunchRangeAt;
         internal bool SummaryLogged;
+        // P801 — massed strike state. Bombers gather at a standoff point in the
+        // target sector and release on one go time once the computed volley is
+        // assembled; relaunches wait for the NEXT wave instead of attacking alone.
+        internal int RequiredBombers = 1;
+        internal int AssignedLoneWolves;
+        internal double? StagingSince;
+        internal double? GoTime;
+        internal readonly HashSet<short> GoMembers = new();
+        internal bool MassLogged, OutcomeLogged;
+        internal double LastSampleAt = double.NegativeInfinity;
+        internal float HullAtGo = -1, ShieldAtGo = -1, HullNow = -1, ShieldNow = -1;
+        internal int HitsInWindow;
     }
 
     private sealed record FinaleOriginal(short Hull, string Name, IReadOnlyList<ExpandedPartData>? Parts,
@@ -378,6 +390,9 @@ internal sealed partial class BotManager
                     }
                 }
             }
+            // P801 — the finale feed: compute the volley requirement, watch the
+            // group assemble at the standoff point, and set one shared go time.
+            FinaleStrikeMassTick(run, bots, now);
             if (run.TriggeredAt is not null || run.GameOverAt is not null) continue;
             var sides = ShowcaseFinale.TriggerSides(run.Settings, now - run.Created, run.Maturity, run.Kills.Count);
             if (sides.Length == 0)
@@ -417,6 +432,14 @@ internal sealed partial class BotManager
                 var plan = run.Plans[side];
                 plan.BomberBudget = bombers.Length;
                 plan.EscortBudget = bombers.Length == 0 ? 0 : run.Settings.EscortBudget(bots.Count(b => b.Side == side && IsFinaleFighter(b)));
+                // P801 — fresh mass for this strike. Every relaunch joins the wave
+                // forming now; none of them flies at the station alone.
+                plan.StagingSince = now;
+                plan.GoTime = null;
+                plan.GoMembers.Clear();
+                plan.MassLogged = plan.OutcomeLogged = false;
+                plan.HitsInWindow = 0;
+                plan.HullAtGo = plan.ShieldAtGo = plan.HullNow = plan.ShieldNow = -1;
             }
         }
     }
@@ -466,6 +489,7 @@ internal sealed partial class BotManager
                 }
                 bot.Role = "bomber";
                 bot.FinaleBomberActive = true;
+                AssignFinaleLoneWolf(bot, run, bot.HullId, bot.Parts);
             }
             EndDefense(bot);
             bot.TargetSector = plan.Sector;
@@ -519,6 +543,8 @@ internal sealed partial class BotManager
             }
             bot.FinaleOriginal = null;
             bot.FinaleBomberReserved = bot.FinaleBomberActive = bot.FinaleEscort = false;
+            bot.FinaleLoneWolf = bot.FinaleReleaseLogged = bot.FinaleStrikeSpent = false;
+            bot.FinaleReleaseAt = null;
             bot.FinaleRefitting = bot.FinaleRefitLaunchPending = bot.FinaleKeepsPayday = false;
             bot.FinaleMissileLaunchBase = 0;
             bot.FinaleProtectedSince = null;

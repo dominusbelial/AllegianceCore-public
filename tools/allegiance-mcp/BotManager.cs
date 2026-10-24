@@ -4787,6 +4787,9 @@ bool isThreat =
         if (TryDriveSupport(bot, now)) return;
         if (DriveCommanderOrder(bot, now)) return;
         if (TryDriveFinaleEscort(bot, now)) return;
+        // P801 — a finale bomber holds at the staging point until the volley is
+        // assembled; only the shared go time releases the group.
+        if (HoldFinaleStrike(bot, now)) return;
         if (defenseSector >= 0 && TryDriveDefense(bot, defenseSector, now)) return;
         // Fight what hits us or a friendly ship while travelling, without
         // manufacturing a station-defence incident in an empty battle sector.
@@ -6088,6 +6091,10 @@ bool isThreat =
         public FinaleRun? Finale;
         public FinaleOriginal? FinaleOriginal;
         public bool FinaleBomberReserved, FinaleBomberActive, FinaleEscort, FinaleResetObserved, FinaleGrantVerified;
+        // P801 — cloaked lone wolf (never joins the visible element's lane) and
+        // per-life release bookkeeping for the shared go time.
+        public bool FinaleLoneWolf, FinaleReleaseLogged, FinaleStrikeSpent;
+        public double? FinaleReleaseAt;
         public bool FinaleRefitting, FinaleRefitLaunchPending, FinaleKeepsPayday;
         public double FinaleRefitCheckAt = double.NegativeInfinity;
         public long FinaleMissileLaunchBase;

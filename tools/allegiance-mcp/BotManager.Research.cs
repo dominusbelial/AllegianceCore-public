@@ -163,9 +163,19 @@ internal sealed partial class BotManager
         static string Duration(double seconds) => double.IsNaN(seconds) || seconds < 0
             ? "-1"
             : seconds.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
-        return wave.Kind == ResearchTactics.StrikeEventKind.Commit
-            ? $"[strike] side={side} wave={wave.Wave} commit members={wave.Members} atRally={wave.AtRally} target=station#{wave.Target} sector={wave.Sector} escorts={wave.Escorts} stationHull={Fraction(wave.StationHull)} stationShield={Fraction(wave.StationShield)} reason={wave.Reason}"
-            : $"[strike] side={side} wave={wave.Wave} end members={wave.Members} arrived={wave.Arrived} peakOnTarget={wave.PeakOnTarget} escorts={wave.Escorts} dur={Duration(wave.DurationSeconds)}s stationHull={Fraction(wave.StationHull)} stationShield={Fraction(wave.StationShield)} reason={wave.Reason}";
+        // P801 — mass fields are appended ONLY on staged events (Required > 0),
+        // so the legacy SC8/SC9 log lines stay byte-identical.
+        string mass = wave.Required > 0
+            ? $" required={wave.Required} assembled={wave.Assembled} wait={Duration(wave.WaitSeconds)}s visible={wave.Visible} loneWolves={wave.LoneWolves} goIn={Duration(wave.GoInSeconds)}s"
+            : "";
+        return wave.Kind switch
+        {
+            ResearchTactics.StrikeEventKind.Commit =>
+                $"[strike] side={side} wave={wave.Wave} commit members={wave.Members} atRally={wave.AtRally} target=station#{wave.Target} sector={wave.Sector} escorts={wave.Escorts} stationHull={Fraction(wave.StationHull)} stationShield={Fraction(wave.StationShield)} reason={wave.Reason}{mass}",
+            ResearchTactics.StrikeEventKind.Abort =>
+                $"[strike] side={side} wave={wave.Wave} abort target=station#{wave.Target} sector={wave.Sector} stationHull={Fraction(wave.StationHull)} stationShield={Fraction(wave.StationShield)} reason={wave.Reason}{mass}",
+            _ => $"[strike] side={side} wave={wave.Wave} end members={wave.Members} arrived={wave.Arrived} peakOnTarget={wave.PeakOnTarget} escorts={wave.Escorts} dur={Duration(wave.DurationSeconds)}s stationHull={Fraction(wave.StationHull)} stationShield={Fraction(wave.StationShield)} reason={wave.Reason}",
+        };
     }
 
     /// <summary>Ready fresh/rotated seats through PLAYER_READY, as the ordinary MCP probe

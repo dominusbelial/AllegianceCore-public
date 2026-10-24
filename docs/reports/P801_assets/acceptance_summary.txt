@@ -1,0 +1,45 @@
+ [p801] station 2080:Base hits=7 maxHitsIn20s=3 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 2081:Enemy Base hits=34 maxHitsIn20s=4 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 2082:Teleport Receiver hits=3 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9187:Teleport hits=2 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9188:Tactical hits=38 maxHitsIn20s=4 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9189:Tactical (Adv) hits=33 maxHitsIn20s=4 shield=1.000->0.000 hull=1.000->0.755 killed=False
+ [p801] station 9190:Tactical hits=4 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9191:Outpost (Hvy) hits=2 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9192:[P]alisade hits=4 maxHitsIn20s=3 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9193:Supremacy hits=4 maxHitsIn20s=3 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9194:Tactical (Adv) hits=2 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9195:Outpost hits=4 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9196:Expansion hits=4 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9197:[R]esearch hits=3 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9198:Supremacy hits=5 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9199:Shipyard hits=6 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9200:Expansion hits=7 maxHitsIn20s=4 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9201:Garrison (Str) hits=11 maxHitsIn20s=3 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9202:Expansion hits=4 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9203:Shipyard (Dry) hits=1 maxHitsIn20s=1 shield=1.000->0.652 hull=1.000->1.000 killed=False
+ [p801] station 9204:Shipyard hits=3 maxHitsIn20s=3 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9205:Garrison (Str) hits=5 maxHitsIn20s=3 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9206:Expansion (Adv) hits=52 maxHitsIn20s=5 shield=0.310->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9207:Expansion hits=3 maxHitsIn20s=3 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9208:Garrison (Str) hits=11 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9209:Supremacy (Adv) hits=4 maxHitsIn20s=2 shield=0.989->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9210:Supremacy (Adv) hits=10 maxHitsIn20s=3 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9211:[P]alisade hits=4 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9212:Outpost hits=2 maxHitsIn20s=1 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9213:Outpost (Hvy) hits=6 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9215:Expansion (Adv) hits=4 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9216:[P]alisade hits=2 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9217:Supremacy (Adv) hits=5 maxHitsIn20s=3 shield=0.610->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9218:Garrison (Str) hits=3 maxHitsIn20s=2 shield=0.575->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9219:Teleport hits=1 maxHitsIn20s=1 shield=0.225->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9220:Garrison (Str) hits=3 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9223:Teleport hits=2 maxHitsIn20s=2 shield=1.000->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9224:Tactical (Adv) hits=2 maxHitsIn20s=2 shield=0.140->0.000 hull=1.000->0.000 killed=True
+ [p801] station 9225:[P]alisade hits=2 maxHitsIn20s=2 shield=0.410->0.000 hull=1.000->0.000 killed=True
+ [p801] [strike] side=0 finale commit required=5 assembled=5 visible=3 loneWolves=2 target=station#2081 sector=2082 goIn=5s wait=19.5s stationHull=1.000 stationShield=1.000 reason=massed
+ [p801] [strike] side=1 finale commit required=5 assembled=5 visible=3 loneWolves=2 target=station#2080 sector=2080 goIn=5s wait=24.5s stationHull=1.000 stationShield=1.000 reason=massed
+ [p801] [strike] side=0 finale commit required=5 assembled=5 visible=3 loneWolves=2 target=station#2081 sector=2082 goIn=5s wait=1.0s stationHull=1.000 stationShield=0.075 reason=massed
+ [p801] elapsed=264s gameOver=True strikes=18 massedCommits=3 (finale=3 wave=0) aborts=0 stationKills=37 garrisonKills=7
+ [p801] garrison kills: station#2080:Base, station#2081:Enemy Base, station#9201:Garrison (Str), station#9205:Garrison (Str), station#9218:Garrison (Str), station#9208:Garrison (Str), station#9220:Garrison (Str)
+ [p801] garrisonFell=True

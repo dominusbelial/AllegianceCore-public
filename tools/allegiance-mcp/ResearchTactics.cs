@@ -8,12 +8,20 @@ namespace Allegiance.Tools.McpSpawner;
 /// Inputs are observed wire state and the manager's own pilots, never server entities.</summary>
 internal sealed class ResearchTactics
 {
-    internal sealed record Pilot(short Id, short Sector, Vector3 Position, bool Support, bool Strike);
+    // P801 — a strike pilot also carries its real anti-base loadout (used to
+    // compute the volley requirement) and whether its hull+parts can cloak
+    // (legal lone wolf). Both default to null/false so SC7/SC8/SC9 fixtures
+    // keep their exact legacy behaviour.
+    internal sealed record Pilot(short Id, short Sector, Vector3 Position, bool Support, bool Strike,
+        StrikeVolley.Loadout? Loadout = null, bool CloakCapable = false);
     internal sealed record Target(short Id, IgcObjectType Type, short Sector, Vector3 Position,
         bool Friendly, bool Damaged = false, bool Bomber = false,
         bool Garrison = false, short DestinationSector = -1,
         // SC9 — observed live station fractions (-1 = unknown), for the [strike] lines.
-        float Hull = -1, float Shield = -1);
+        float Hull = -1, float Shield = -1,
+        // P801 — the real station type + its native durability profile. Null keeps
+        // the legacy SC7 quorum/timeout behaviour (tests without a core profile).
+        short StationTypeId = -1, StrikeVolley.StationProfile? Profile = null);
     internal sealed record Order(short Recipient, short Command, IgcObjectType Type, short Target);
 
     /// <summary>SC8 — one summary line per strike-wave edge (commit/end) for the rig.
@@ -21,11 +29,15 @@ internal sealed class ResearchTactics
     /// policy stays free of side/transport concepts. SC9 adds the escort count and
     /// the observed station health to every edge, and the wave's arrival numbers +
     /// duration to the end edge.</summary>
-    internal enum StrikeEventKind { Commit, End }
+    internal enum StrikeEventKind { Commit, End, Abort }
     internal sealed record StrikeEvent(StrikeEventKind Kind, int Wave, int Members, int AtRally,
         short Target, short Sector, string Reason,
         int Escorts = 0, float StationHull = -1, float StationShield = -1,
-        int Arrived = 0, int PeakOnTarget = 0, double DurationSeconds = -1);
+        int Arrived = 0, int PeakOnTarget = 0, double DurationSeconds = -1,
+        // P801 mass-staging fields (zero/-1 on legacy events, so old log lines
+        // are byte-identical).
+        int Required = 0, int Assembled = 0, double WaitSeconds = -1,
+        int Visible = 0, int LoneWolves = 0, double GoInSeconds = -1);
 
     /// <summary>Per-pilot order bookkeeping. <see cref="Order"/>/<see cref="Time"/> are
     /// the last sent order and when it went out; the Mark* fields reset the
@@ -69,6 +81,25 @@ internal sealed class ResearchTactics
     /// the rally forever: after this long rallying, whoever has gathered commits
     /// (SC8: at least two, or every strike pilot when the side has fewer than two).</summary>
     internal const double RallyTimeoutSeconds = 90;
+
+    /// <summary>P801 — massed strike composition (Domingo, 2026-10-23): one
+    /// visible bomber element (plus its P778a escorts) and at most this many
+    /// cloaked lone wolves, all on one shared go time. Tunables.</summary>
+    internal const int MaxLoneWolves = 2;
+
+    /// <summary>P801 — shared go lead: once the quota is at the staging point the
+    /// visible element and the lone wolves take their attack order this many
+    /// seconds later, so every release lands inside one volley window.</summary>
+    internal const double StrikeGoLeadSeconds = 5;
+
+    /// <summary>P801 — hard cap on staging. A side that cannot assemble the
+    /// required volley after this long aborts the strike (never trickles); the
+    /// station goes on a short cooldown and the next boundary re-picks.</summary>
+    internal const double StagingHardCapSeconds = 180;
+
+    /// <summary>P801 — how long an aborted station is skipped before the wave
+    /// considers it again.</summary>
+    internal const double StagingAbandonSeconds = 120;
 
     /// <summary>At most this many orders per tick across both loops, so a large fleet
     /// cannot flood chat.</summary>
@@ -119,6 +150,19 @@ internal sealed class ResearchTactics
     private int _wavePeakOnTarget;
     private readonly Dictionary<short, short> _escorts = new();
 
+    // P801 — mass staging. The wave first gathers `_visibleRequired` visible
+    // bombers at the rally (plus up to MaxLoneWolves cloaked wolves on their own
+    // entry alephs), then all release on one `_goTime`. Nothing attacks before
+    // the quota is met; a short staging cap aborts instead of trickling.
+    private bool _staging;
+    private double _stageSince = double.NaN;
+    private double _goTime = double.NaN;
+    private int _required;
+    private int _visibleRequired;
+    private readonly Dictionary<short, Target> _loneWolfRoute = new();
+    private readonly HashSet<short> _visibleMembers = new();
+    private readonly Dictionary<short, double> _abandonedUntil = new();
+
     /// <summary>SC8 — hand the caller the strike-wave edges produced since the last
     /// call so it can print one summary line each (never one line per tick).</summary>
     internal StrikeEvent[] TakeStrikeEvents()
@@ -166,17 +210,19 @@ internal sealed class ResearchTactics
                     _strikeTarget = null;
                     _rally = null;
                     _rallySince = double.NaN;
+                    ResetStage();
                 }
                 var signature = StationSignature(enemyStations);
                 if (_strikeTarget is null || !signature.SequenceEqual(_stationSignature))
                 {
                     _stationSignature = signature;
-                    var picked = PickStrikeStation(enemyStations, strikePilots);
+                    var picked = PickStrikeStation(enemyStations, strikePilots, time, _abandonedUntil);
                     if (picked is null)
                     {
                         _strikeTarget = null;
                         _rally = null;
                         _rallySince = double.NaN;
+                        ResetStage();
                     }
                     else if (picked.Id != _strikeTarget || _rally is null)
                     {
@@ -188,6 +234,7 @@ internal sealed class ResearchTactics
                         // it regenerates) must not keep the timeout from firing.
                         if (newRally?.Id != _rally?.Id) _rallySince = time;
                         _rally = newRally;
+                        ResetStage();
                     }
                 }
             }
@@ -200,12 +247,28 @@ internal sealed class ResearchTactics
             }
             if (_strikeTarget is { } stationId && enemyStations.FirstOrDefault(s => s.Id == stationId) is { } station)
             {
+                // P801 — a real station type means mass: hold at the staging point
+                // until the computed volley is assembled, then release on a shared
+                // go time. A target without a profile keeps the legacy SC7 quorum.
+                bool mass = station.Profile is not null;
+                bool aborted = false;
+                if (mass && _waveMembers.Count == 0)
+                {
+                    if (!_staging) BeginStage(time, station, strikePilots, roster, targets);
+                    if (_staging) aborted = UpdateStaging(time, station, strikePilots, pilots);
+                }
+                // The visible element excludes the lone wolves, which fly their own
+                // entry lane and are added only on the shared go time.
+                var visiblePilots = _loneWolfRoute.Count == 0
+                    ? strikePilots
+                    : strikePilots.Where(p => !_loneWolfRoute.ContainsKey(p.Id)).ToArray();
+                Target? stagePoint = _rally ?? (mass ? station : null);
                 // Positions are per-sector coordinates: only a pilot in the same
                 // sector can be near the rally or the station.
-                var atRallyCover = _rally is { } rr
-                    ? strikePilots.Where(p => p.Sector == rr.Sector
+                var atRallyCover = stagePoint is { } rr
+                    ? visiblePilots.Where(p => p.Sector == rr.Sector
                         && (p.Position - rr.Position).LengthSquared() <= RallyGatherRadius * RallyGatherRadius).ToArray()
-                    : strikePilots;
+                    : visiblePilots;
                 int atRally = atRallyCover.Length;
                 if (double.IsNaN(_rallySince)) _rallySince = time;
 
@@ -238,34 +301,43 @@ internal sealed class ResearchTactics
                 }
                 // SC9 — follow/re-point escorts while the wave lives.
                 if (_waveMembers.Count > 0) MaintainEscorts(pilots);
-                bool timedOut = time - _rallySince >= RallyTimeoutSeconds;
-                // SC8/SC9 — no more "commit with nobody": after the timeout commit two
-                // gathered pilots, or every strike pilot when the side's ROSTER has
-                // fewer than two. Before the timeout only a full group commits. A wave
-                // of one is therefore only possible when the whole roster is one.
-                int timeoutQuorum = Math.Min(2, roster);
-                bool fullGroup = roster >= StrikeGroupSize && atRally >= StrikeGroupSize;
-                bool commit = fullGroup || (timedOut && atRally >= timeoutQuorum);
-                if (_waveMembers.Count == 0 && commit)
-                    CommitWave(time, atRallyCover, station, fullGroup ? "full" : "timeout", pilots);
+                if (!mass)
+                {
+                    // Legacy SC7/SC8 quorum for a target without a core profile.
+                    bool timedOut = time - _rallySince >= RallyTimeoutSeconds;
+                    int timeoutQuorum = Math.Min(2, roster);
+                    bool fullGroup = roster >= StrikeGroupSize && atRally >= StrikeGroupSize;
+                    bool commit = fullGroup || (timedOut && atRally >= timeoutQuorum);
+                    if (_waveMembers.Count == 0 && commit)
+                        CommitWave(time, atRallyCover, station, fullGroup ? "full" : "timeout", pilots);
+                }
+                // P801 — a mass wave is committed by UpdateStaging on its go tick;
+                // this tick's order loop then releases every member together.
 
-                foreach (var pilot in strikePilots
+                foreach (var pilot in (aborted ? [] : strikePilots)
                     .OrderBy(p => _sent.TryGetValue(p.Id, out var sent) ? sent.Time : double.NegativeInfinity).ThenBy(p => p.Id))
                 {
                     // Commit together: only the wave's members attack the shared
                     // station; a latecomer keeps (or gets) the rally goto and joins the
-                    // next wave. A pilot already on the target attacks immediately.
-                    bool alreadyOn = pilot.Sector == station.Sector
+                    // next wave. While staging, nobody may shortcut: even a pilot
+                    // already at the station holds for the mass. A lone wolf flies to
+                    // its OWN entry aleph, never the visible element's lane.
+                    bool stagingNow = _staging && _waveMembers.Count == 0;
+                    bool wolf = _loneWolfRoute.TryGetValue(pilot.Id, out var wolfRoute);
+                    bool alreadyOn = !stagingNow && pilot.Sector == station.Sector
                         && (pilot.Position - station.Position).LengthSquared() <= StrikeOnTargetRadius * StrikeOnTargetRadius;
                     bool attack = _waveMembers.Contains(pilot.Id) || alreadyOn;
+                    Target? gotoPoint = stagingNow
+                        ? (wolf ? wolfRoute! : stagePoint)
+                        : _rally;
                     Order order = attack
                         ? new Order(pilot.Id, OrderChange.CidAttack, IgcObjectType.Station, stationId)
-                        : (_rally is { } r
+                        : (gotoPoint is { } r
                             ? new Order(pilot.Id, OrderChange.CidGoto, r.Type, r.Id)
                             : new Order(pilot.Id, OrderChange.CidAttack, IgcObjectType.Station, stationId));
                     // Positions are per-sector: in another sector the distance means
                     // nothing, so only a sector change counts as progress there.
-                    float distance = order.Command == OrderChange.CidGoto && _rally is { } rallyPoint
+                    float distance = order.Command == OrderChange.CidGoto && gotoPoint is { } rallyPoint
                         ? (pilot.Sector == rallyPoint.Sector ? (pilot.Position - rallyPoint.Position).Length() : float.MaxValue)
                         : 0;
                     if (!ShouldSend(pilot, order, time, distance, station.Sector)) continue;
@@ -323,7 +395,12 @@ internal sealed class ResearchTactics
     {
         _waveNumber++;
         _waveMembers.Clear();
-        foreach (var pilot in atRally) _waveMembers.Add(pilot.Id);
+        _visibleMembers.Clear();
+        foreach (var pilot in atRally)
+        {
+            _waveMembers.Add(pilot.Id);
+            _visibleMembers.Add(pilot.Id);
+        }
         _committedAt = time;
         _waveArrived.Clear();
         _wavePeakOnTarget = 0;
@@ -331,6 +408,131 @@ internal sealed class ResearchTactics
         _events.Add(new(StrikeEventKind.Commit, _waveNumber, _waveMembers.Count, atRally.Length,
             station.Id, station.Sector, reason, Escorts: _escorts.Count,
             StationHull: station.Hull, StationShield: station.Shield));
+        ResetStage();
+    }
+
+    // ── P801 — mass staging ─────────────────────────────────────────────────
+
+    /// <summary>P801 — compute this strike's requirement and choose its members.
+    /// The visible element must gather at the rally; up to
+    /// <see cref="MaxLoneWolves"/> cloak-capable bombers are assigned their own
+    /// entry aleph (a different lane from the visible group) and join the SAME
+    /// go time. When the side fields no cloak hull the strike is all visible.</summary>
+    private void BeginStage(double time, Target station, Pilot[] strikePilots, int roster, Target[] targets)
+    {
+        _staging = true;
+        _stageSince = time;
+        _goTime = double.NaN;
+        _loneWolfRoute.Clear();
+        _visibleMembers.Clear();
+        int required = StrikeGroupSize;
+        if (station.Profile is { } profile)
+            required = StrikeVolley.Compute(profile,
+                strikePilots.Select(p => p.Loadout).ToArray(), roster).BombersRequired;
+        _required = Math.Max(1, Math.Min(required, Math.Max(1, roster)));
+        int cloak = strikePilots.Count(p => !p.Support
+            && (p.CloakCapable || p.Loadout is { CloakCapable: true }));
+        int wolves = Math.Min(MaxLoneWolves, Math.Min(_required - 1, cloak));
+        _visibleRequired = Math.Max(1, _required - wolves);
+        var used = new HashSet<short>();
+        if (_rally is { } visibleRally) used.Add(visibleRally.Id);
+        var lanes = targets.Where(t => t.Type == IgcObjectType.Warp && t.DestinationSector == station.Sector
+                && !used.Contains(t.Id))
+            .OrderBy(t => t.Id).ToArray();
+        int lane = 0;
+        foreach (var wolf in strikePilots.Where(p => p.CloakCapable || p.Loadout is { CloakCapable: true })
+            .OrderBy(p => p.Id).Take(wolves))
+            _loneWolfRoute[wolf.Id] = lanes.Length > 0 ? lanes[lane++ % lanes.Length] : (_rally ?? station);
+    }
+
+    /// <summary>P801 — hold until the required visible element (and the assigned
+    /// lone wolves) are at their staging points, then set one shared go time.
+    /// Before the go tick nobody attacks. If the quota cannot be assembled inside
+    /// <see cref="StagingHardCapSeconds"/> the strike aborts rather than
+    /// trickling; the station goes on a short cooldown.</summary>
+    private bool UpdateStaging(double time, Target station, Pilot[] strikePilots, Pilot[] pilots)
+    {
+        Target stagePoint = _rally ?? station;
+        var visible = strikePilots.Where(p => !_loneWolfRoute.ContainsKey(p.Id)).ToArray();
+        int atRally = visible.Count(p => p.Sector == stagePoint.Sector
+            && (p.Position - stagePoint.Position).LengthSquared() <= RallyGatherRadius * RallyGatherRadius);
+        int wolvesReady = _loneWolfRoute.Count(kv =>
+            strikePilots.FirstOrDefault(p => p.Id == kv.Key) is { } wolf
+            && (wolf.Sector == station.Sector || wolf.Sector == kv.Value.Sector));
+        int assembled = atRally + wolvesReady;
+        // A requirement of one is already the whole strike: no reason to hold it.
+        // With no rally point at all (no known aleph) the legacy direct attack
+        // is preserved, so the target is not approached as a staging point.
+        bool instantLegacy = _required <= 1 && _rally is null;
+        var memberPilots = instantLegacy
+            ? visible
+            : visible.Where(p => p.Sector == stagePoint.Sector
+                && (p.Position - stagePoint.Position).LengthSquared() <= RallyGatherRadius * RallyGatherRadius).ToArray();
+        bool ready = instantLegacy || (atRally >= _visibleRequired && wolvesReady == _loneWolfRoute.Count);
+        // Never issue an empty commit (that would restart staging every tick and
+        // flood the [strike] log): if no visible member is actually at the staging
+        // point yet, keep holding.
+        if (memberPilots.Length == 0 && _loneWolfRoute.Count == 0) return false;
+        if (ready)
+        {
+            // A one-bomber requirement has nothing to synchronise with; a real
+            // mass keeps the lead so every release lands inside one window.
+            if (double.IsNaN(_goTime)) _goTime = time + (_required <= 1 ? 0 : StrikeGoLeadSeconds);
+        }
+        else _goTime = double.NaN;
+
+        if (time - _stageSince >= StagingHardCapSeconds)
+        {
+            if (_strikeTarget is { } id) _abandonedUntil[id] = time + StagingAbandonSeconds;
+            _events.Add(new(StrikeEventKind.Abort, _waveNumber, 0, 0, _strikeTarget ?? -1, _strikeSector,
+                "insufficient-volley", Required: _required, Assembled: assembled,
+                WaitSeconds: time - _stageSince, Visible: atRally, LoneWolves: _loneWolfRoute.Count));
+            ResetStage();
+            _strikeTarget = null;
+            _rally = null;
+            _rallySince = double.NaN;
+            _stationSignature = [];
+            return true;
+        }
+        if (double.IsNaN(_goTime) || time < _goTime) return false;
+
+        // The shared go time: every visible member at the rally plus every
+        // assigned lone wolf commits on this tick, so all releases land inside
+        // one volley window. The lone wolves are members but never get escorts.
+        _waveNumber++;
+        _waveMembers.Clear();
+        _visibleMembers.Clear();
+        foreach (var pilot in memberPilots)
+        {
+            _waveMembers.Add(pilot.Id);
+            _visibleMembers.Add(pilot.Id);
+        }
+        foreach (short wolf in _loneWolfRoute.Keys) _waveMembers.Add(wolf);
+        _committedAt = time;
+        _waveArrived.Clear();
+        _wavePeakOnTarget = 0;
+        SelectEscorts(pilots);
+        _events.Add(new(StrikeEventKind.Commit, _waveNumber, _waveMembers.Count, _visibleMembers.Count,
+            station.Id, station.Sector, "massed", Escorts: _escorts.Count,
+            StationHull: station.Hull, StationShield: station.Shield,
+            Required: _required, Assembled: assembled, WaitSeconds: time - _stageSince,
+            Visible: _visibleMembers.Count, LoneWolves: _loneWolfRoute.Count, GoInSeconds: 0));
+        _staging = false;
+        _goTime = double.NaN;
+        _stageSince = double.NaN;
+        _loneWolfRoute.Clear();
+        return false;
+    }
+
+    private void ResetStage()
+    {
+        _staging = false;
+        _stageSince = double.NaN;
+        _goTime = double.NaN;
+        _required = 0;
+        _visibleRequired = 0;
+        _loneWolfRoute.Clear();
+        _visibleMembers.Clear();
     }
 
     /// <summary>SC8 — close the current wave (station gone, or no member left alive
@@ -339,6 +541,7 @@ internal sealed class ResearchTactics
     /// escort count and observed station health (unknown = -1) to the end line.</summary>
     private void EndWave(double time, string reason, Target? station = null)
     {
+        ResetStage();
         if (_waveMembers.Count == 0) return;
         _events.Add(new(StrikeEventKind.End, _waveNumber, _waveMembers.Count, 0, _strikeTarget ?? -1, _strikeSector, reason,
             Escorts: _escorts.Count,
@@ -383,7 +586,8 @@ internal sealed class ResearchTactics
     {
         _escorts.Clear();
         if (_waveMembers.Count == 0) return;
-        int cap = Math.Min(MaxEscorts, _waveMembers.Count * EscortsPerMember);
+        var visible = _visibleMembers.Count > 0 ? _visibleMembers : _waveMembers;
+        int cap = Math.Min(MaxEscorts, visible.Count * EscortsPerMember);
         if (cap <= 0) return;
         var rally = _rally;
         var candidates = pilots.Where(p => !p.Strike && !p.Support)
@@ -393,7 +597,7 @@ internal sealed class ResearchTactics
             .ThenBy(p => p.Id)
             .Take(cap)
             .ToArray();
-        var members = _waveMembers.OrderBy(id => id).ToArray();
+        var members = visible.OrderBy(id => id).ToArray();
         for (int i = 0; i < candidates.Length; i++)
             _escorts[candidates[i].Id] = members[i % members.Length];
     }
@@ -409,7 +613,8 @@ internal sealed class ResearchTactics
             _escorts.Clear();
             return;
         }
-        var live = _waveMembers.Where(id => pilots.Any(p => p.Id == id)).OrderBy(id => id).ToArray();
+        var visible = _visibleMembers.Count > 0 ? _visibleMembers : _waveMembers;
+        var live = visible.Where(id => pilots.Any(p => p.Id == id)).OrderBy(id => id).ToArray();
         if (live.Length == 0)
         {
             _escorts.Clear();
@@ -489,9 +694,18 @@ internal sealed class ResearchTactics
     /// 3. then by distance from the strike group's centroid, then id.
     /// SC9 re-runs this at every wave boundary; SC7's "commit, don't flick" keeps
     /// the pick stable while a wave is in flight.</summary>
-    private static Target? PickStrikeStation(Target[] enemyStations, Pilot[] strikePilots)
+    private static Target? PickStrikeStation(Target[] enemyStations, Pilot[] strikePilots,
+        double time = double.NegativeInfinity, IReadOnlyDictionary<short, double>? abandoned = null)
     {
         if (enemyStations.Length == 0) return null;
+        // P801 — a station whose volley could not be assembled is skipped for a
+        // short cooldown. If every known station is cooling down, use the whole
+        // set anyway (the side must still be able to pick an objective).
+        if (abandoned is not null)
+        {
+            var eligible = enemyStations.Where(s => abandoned.GetValueOrDefault(s.Id) <= time).ToArray();
+            if (eligible.Length > 0) enemyStations = eligible;
+        }
         // Coordinates are per sector: measure only from strike pilots already in
         // the station's sector; stations in other sectors tie and fall to the id.
         float Distance(Target s)

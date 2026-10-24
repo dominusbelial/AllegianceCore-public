@@ -1,0 +1,57 @@
+{
+  "match": "P801 acceptance: fogged showcase, training_6, research (fog on), 600 s cap",
+  "elapsed_wall_seconds": 264,
+  "massed_strikes_logged": 3,
+  "massed_required": 5,
+  "massed_assembled": [
+    5,
+    5,
+    5
+  ],
+  "visible_vs_lone_wolves": "3 visible + 2 lone wolves (each commit)",
+  "aborted_staging": 0,
+  "logged_positive_ab_missile_hits": 167,
+  "stations_damaged": 39,
+  "station_kills": 37,
+  "garrison_kills": 7,
+  "garrison_names": [
+    "2080 Base",
+    "2081 Enemy Base",
+    "9201 Garrison (Str)",
+    "9205 Garrison (Str)",
+    "9218 Garrison (Str)",
+    "9208 Garrison (Str)",
+    "9220 Garrison (Str)"
+  ],
+  "max_logged_hits_in_20s_one_station": 3,
+  "inter_hit_gap_median_s": 14.23,
+  "inter_hit_gap_p25_s": 7.05,
+  "inter_hit_gap_p75_s": 30.3,
+  "outcome": "game over reached inside the 600 s cap",
+  "before": {
+    "source": "P801 brief / rig 221 batch 20 and coverage rig",
+    "garrison_kills": 0,
+    "station_kills": "4 in 2 matches",
+    "ab_missile_hits": "57 in 2 matches",
+    "trickle": "one AB2 hit 1.0->0.5 shield then full shield again; >50 s gaps never break"
+  },
+  "loopback": {
+    "station": "Garrison (Str) 110/210 25k/15k",
+    "massed": "10/10 rounds in one window -> dead",
+    "trickle": "same 10 rounds 60 s apart -> alive (shield 0.188, hull 1.0)"
+  },
+  "gate": {
+    "solution_build": "0 warnings / 0 errors",
+    "build_tools": "72/72 projects",
+    "new_and_affected_tests_3x": "47/47 pass each of 3 runs",
+    "p801_live_3x_180s": "3/3 pass",
+    "fast_tier": "10126 tests, 284.6 s, PASS",
+    "showcase_never_parks": "5/5 pass",
+    "p798_full_loop": "1/1 pass (5m06s)"
+  },
+  "ab_weapon_mix": {
+    "SRM Anti-Base 3 (601)": 81,
+    "SRM Anti-Base 2 (40)": 53,
+    "SRM Anti-Base 1 (39)": 33
+  }
+}

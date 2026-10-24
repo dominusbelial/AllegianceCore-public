@@ -41,6 +41,7 @@ internal sealed partial class BotManager
                 bot.FinaleBomberActive = bot.FinaleGrantVerified = true;
                 bot.Role = "bomber"; bot.TargetSector = plan.Sector;
                 bot.WingmanBehaviour |= Showcase.WbbmUseMissiles;
+                AssignFinaleLoneWolf(bot, run, hullId, bot.Parts);
                 bot.TargetId = bot.OrderedTargetId = null; bot.Arrived = false; bot.ArrivedAt = null;
                 bot.StagingSector = -1; bot.StagePhase = StageReleasedPhase; bot.ReleasedAt = now;
                 EndDefense(bot);

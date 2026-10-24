@@ -12,10 +12,15 @@ internal sealed partial class BotManager
         int strikeRoster;
         lock (_gate)
         {
-            bots = _bots.Where(b => b.Side == side && b.Cs is not null && !b.IsPod && IsParticipating(b)).ToArray();
+            // P801 — finale-duty bombers are driven by the finale strike mass
+            // coordinator, not by this wave policy: exclude them from both the
+            // snapshot and the roster so the two do not fight over one ship.
+            bots = _bots.Where(b => b.Side == side && b.Cs is not null && !b.IsPod && IsParticipating(b)
+                && !b.FinaleBomberActive && !b.FinaleBomberReserved && !b.FinaleRefitting).ToArray();
             // SC9 — the quorum counts the side's whole strike roster (docked or
             // launched), not just the pilots visible in this snapshot.
             strikeRoster = _bots.Count(b => b.Side == side && b.Cs is not null && !b.IsPod && IsParticipating(b)
+                && !b.FinaleBomberActive && !b.FinaleBomberReserved && !b.FinaleRefitting
                 && IsStrikeCapable(b.FinaleBomberActive, b.Role, b.HullId));
         }
         var pilots = new List<ResearchTactics.Pilot>();
@@ -29,8 +34,11 @@ internal sealed partial class BotManager
                     || own.StationId >= 0 || own.ParentId >= 0 || own.Latest is not { HullFraction: > 0 } pose) continue;
                 bool support = IsSupport(bot);
                 if (support && !HasNanite(bot)) continue;
+                var loadout = StrikeVolley.FromParts(Catalog.RepresentativeCore(), own.HullId,
+                    bot.Granted.HullId == own.HullId && bot.Granted.Parts is { Count: > 0 } granted ? granted : bot.Parts);
                 pilots.Add(new(bot.ShipId, own.SectorId, pose.Position, support,
-                    IsStrikeCapable(bot.FinaleBomberActive, bot.Role, bot.HullId)));
+                    IsStrikeCapable(bot.FinaleBomberActive, bot.Role, own.HullId),
+                    loadout, loadout?.CloakCapable == true));
                 // Team pilots report only what their ordinary clients can see.
                 targets.AddRange(ObserveTacticalTargets(cs.World, side));
             }
@@ -73,8 +81,12 @@ internal sealed partial class BotManager
                 shieldFraction = live.ShieldFraction;
             }
             bool damaged = hullFraction >= 0 && (hullFraction < 1 || shieldFraction < 1);
+            // P801 — the real station type drives the volley requirement (native
+            // armor/shield/regen + defense bytes; stationIGC.cpp:138-210).
             targets.Add(new(station.StationId, IgcObjectType.Station, station.ClusterId, Vec3(station.Position), friendly,
-                damaged, Garrison: garrison, Hull: hullFraction, Shield: shieldFraction));
+                damaged, Garrison: garrison, Hull: hullFraction, Shield: shieldFraction,
+                StationTypeId: station.StationTypeId,
+                Profile: StrikeVolley.Profile(core, station.StationTypeId)));
         }
         foreach (var ship in world.Ships.Values.Where(s => s.SideId >= 0 && !s.IsDead && !s.Unknown && !s.IsNotVisible
             && s.StationId < 0 && s.ParentId < 0 && s.SectorId >= 0 && s.Latest is { HullFraction: > 0 }

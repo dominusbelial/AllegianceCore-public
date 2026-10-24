@@ -66,6 +66,10 @@ internal sealed partial class BotManager
         bot.SupportCooldownStrikes = 0;
         bot.FinaleRefitting = bot.FinaleRefitLaunchPending = false;
         bot.FinaleRefitCheckAt = double.NegativeInfinity;
+        // P801 — a fresh life has not released into the current go time yet.
+        bot.FinaleReleaseLogged = false;
+        bot.FinaleReleaseAt = null;
+        bot.FinaleStrikeSpent = false;
         bot.PodStationId = bot.PodDockStationId = bot.PodStationSector = -1;
         bot.PodProbeId = -1;
         bot.PodTargetAuto = false;
