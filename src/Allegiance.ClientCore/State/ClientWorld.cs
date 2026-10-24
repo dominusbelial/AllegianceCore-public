@@ -2703,7 +2703,13 @@ public sealed partial class ClientWorld
         // reads as (int)GetRipcordTimeLeft()+1 (radarimage.cpp:1015-1030).
         // First activations are sector-wide, so this reaches every observer.
         if (m.ShipidRipcord >= 0)
+        {
             _remoteRipcords[m.ShipidRipcord] = (long)(NowSeconds() * 1000);
+            // P788 — native is last-writer-wins on the ripcord model (ACTIVATE
+            // :957, ABORT :981, every SSU :1154): a flag from an SSU sent before
+            // this activation is stale.
+            if (Ships.TryGetValue(m.ShipidRipcord, out var rip)) rip.WireRipcording = null;
+        }
     }
 
     /// <summary>P414/P711 — <c>FM_S_RIPCORD_DENIED(186)</c>: the server refused our
@@ -2732,6 +2738,7 @@ public sealed partial class ClientWorld
         // clears that ship's ripcord model (appmsg.cpp:973-984), so the radar
         // stops drawing its marker/seconds.
         _remoteRipcords.Remove(m.ShipidRipcord);
+        if (Ships.TryGetValue(m.ShipidRipcord, out var aborted)) aborted.WireRipcording = null;   // P788 — last writer wins (appmsg.cpp:981)
         if (m.ShipidRipcord != MyShipId) return;
         ClearRipcord();
         RecordSoundEvent(ClientSoundEventKind.RipcordAborted, m.ShipidRipcord);
@@ -2758,6 +2765,10 @@ public sealed partial class ClientWorld
         if (_botWorld is not null && e.Latest is { } previous && previous.Time > update.Ship.Time) return;
         e.Latest = update.Ship;
         e.LastUpdateTick = update.Ship.Time;
+        // P788 — consume the wire bIsRipcording as native does
+        // (appmsg.cpp:1154 SetRipcordModel): the server's authoritative
+        // ripcord-active flag drives the remote dead-reckoner's frozen flight.
+        e.WireRipcording = update.BIsRipcording;
         // P448b — stamp the local arrival time and (re-)seed the dead-reckoner. A
         // SingleShipUpdate may arrive for a ship whose identity (SideId/HullId) isn't
         // set yet; ReseedRemoteReckoner then leaves any prior seed in place (raw pose

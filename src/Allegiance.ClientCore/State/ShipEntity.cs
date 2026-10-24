@@ -160,6 +160,12 @@ public sealed class ShipEntity
     /// of the three pose-arrival sites (SetCluster / SingleShipUpdate /
     /// HeavyShipsUpdate).</summary>
     public double LatestArrivalTime { get; internal set; }
+    // P788 — the authoritative bIsRipcording flag from the last
+    // SINGLE_SHIP_UPDATE (native appmsg.cpp:1154 SetRipcordModel). Null until
+    // an SSU arrives for this ship; the per-ship RIPCORD_ACTIVATE heuristic
+    // (ClientWorld._remoteRipcords) remains the fallback for ships that never
+    // get an SSU (e.g. enemy hulls that only reach us via HEAVY_SHIPS_UPDATE).
+    public bool? WireRipcording { get; internal set; }
 
     // ── SHIP_STATUS(90) fields, attached incrementally by that message ──────
 

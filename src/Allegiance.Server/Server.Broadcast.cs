@@ -1026,7 +1026,7 @@ public sealed partial class Server
                                         OtTarget = 0,                          // OT_ship
                                         OidTarget = teammateId,
                                         Ship = CaptureShipUpdate(teammateId, tv.Value.Ship, tickIndex),
-                                        BIsRipcording = false,
+                                        BIsRipcording = tv.Value.Ship.IsRipcordActive,   // P788 — native bIsRipcording = fRipcordActive() (FedSrv/fsship.cpp:542,807)
                                     };
                                     enc = Message(teamMove);
                                     (positionEncode ??= new())[teammateId] = enc;
@@ -1260,7 +1260,7 @@ public sealed partial class Server
                     OtTarget = 0,                                // OT_ship
                     OidTarget = ship.Id,
                     Ship = CaptureShipUpdate(ship.Id, ship, tickIndex),
-                    BIsRipcording = false,
+                    BIsRipcording = ship.IsRipcordActive,   // P788 — native bIsRipcording = fRipcordActive() (FedSrv/fsship.cpp:542,807)
                 });
             }
         }
@@ -1405,7 +1405,7 @@ public sealed partial class Server
                 OtTarget = 0,
                 OidTarget = ship.Id,
                 Ship = CaptureShipUpdate(ship.Id, ship, tickIndex, miningNow ? ShipControlState.MiningMask : 0, carryEndurance: true),
-                BIsRipcording = false,
+                BIsRipcording = ship.IsRipcordActive,   // P788 — native bIsRipcording = fRipcordActive() (FedSrv/fsship.cpp:542,807)
             };
             r.Packets.Add((PackBroadcast(Message(msg)), CoalesceOwnShip, true));
             r.NewLiveShip = live with

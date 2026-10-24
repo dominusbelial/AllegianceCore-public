@@ -149,4 +149,45 @@ public class P781RemoteRipcordReckonTests
             "ripcording:true must change the extrapolated render pose");
         Assert.True((ripForward - steerOri.GetForward()).Length() > 1e-3f);
     }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void P788_SingleShipUpdate_captures_the_wire_bIsRipcording_flag(bool ripcording)
+    {
+        // P788 — consume bIsRipcording as native (appmsg.cpp:1154 SetRipcordModel):
+        // the server's authoritative flag is recorded per ship so the remote
+        // dead-reckoner's frozen flight is driven from the wire, not guessed.
+        var world = new ClientWorld { ReckonRemotes = true };
+        world.Apply(new SingleShipUpdate { OidTarget = 9, Ship = UpdateFor(9), BIsRipcording = ripcording });
+        Assert.True(world.Ships.TryGetValue(9, out var ent), "SSU must upsert the ship entity");
+        Assert.Equal(ripcording, ent.WireRipcording);
+
+        // A later update flips it — the server is the source of truth per send.
+        world.Apply(new SingleShipUpdate { OidTarget = 9, Ship = UpdateFor(9), BIsRipcording = !ripcording });
+        Assert.Equal(!ripcording, ent.WireRipcording);
+    }
+
+    [Fact]
+    public void P788_ripcord_flag_is_last_writer_wins_like_native()
+    {
+        // Native: ACTIVATE sets the ripcord model (appmsg.cpp:957), ABORT clears it
+        // (:981), every SSU overwrites it (:1154). A pre-activation SSU false must not
+        // suppress a fresh countdown; a later SSU false ends it.
+        var world = new ClientWorld { ReckonRemotes = true };
+        world.Apply(new SingleShipUpdate { OidTarget = 9, Ship = UpdateFor(9), BIsRipcording = false });
+        Assert.True(world.Ships.TryGetValue(9, out var ent));
+        Assert.False(ent.WireRipcording);
+
+        world.Apply(new RipcordActivate { ShipidRipcord = 9 });
+        Assert.Null(ent.WireRipcording);                       // the countdown decides until the next SSU
+        Assert.True(world.TryGetRemoteRipcord(9, out _));
+
+        world.Apply(new SingleShipUpdate { OidTarget = 9, Ship = UpdateFor(9), BIsRipcording = true });
+        Assert.True(ent.WireRipcording);
+
+        world.Apply(new RipcordAborted { ShipidRipcord = 9 });
+        Assert.Null(ent.WireRipcording);
+        Assert.False(world.TryGetRemoteRipcord(9, out _));
+    }
 }

@@ -2848,13 +2848,16 @@ public sealed partial class Game1
         return new Flight.PredictedPose(up.Position, up.Orientation);
     }
 
-    /// <summary>P781 — whether a remote ship is currently inside a ripcord
-    /// countdown (per-ship client state + the shared TiDi rule). The wire's
-    /// <c>bIsRipcording</c> is deliberately NOT read: the server always sends
-    /// false today (Server.Broadcast.cs:1022,1256,1401) and honouring it would
-    /// wipe live state on every teammate SSU (P781b fixes both ends).</summary>
+    /// <summary>P781/P788 — whether a remote ship is currently inside a ripcord
+    /// countdown. Native sets the ship's ripcord model last-writer-wins: RIPCORD_ACTIVATE
+    /// sets it (appmsg.cpp:957), RIPCORD_ABORTED clears it (:981) and every
+    /// SINGLE_SHIP_UPDATE overwrites it with <c>bIsRipcording</c> (:1154). So the
+    /// newest SSU flag is authoritative BOTH ways; ACTIVATE/ABORT reset it, and
+    /// until the next SSU (and for ships that never get one — enemies reach us via
+    /// HEAVY_SHIPS_UPDATE) the per-ship countdown + the shared TiDi rule decide.</summary>
     private bool RemoteShipRipcording(ClientWorld world, short id, ShipEntity ship)
     {
+        if (ship.WireRipcording is { } wire) return wire;
         if (!world.TryGetRemoteRipcord(id, out long start)) return false;
         return Allegiance.ClientCore.Flight.RipcordLeadup.IsRipcording(start, ClientNowMilliseconds,
             RemoteRipcordDuration(world, ship), world.TimeScale);

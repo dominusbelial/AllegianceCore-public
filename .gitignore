@@ -16,6 +16,7 @@ docker-compose.override.yml
 
 # live-proof scratch / working dirs (never committed)
 .verify*/
+/.scratch/
 graphify-out/
 roster_dump.json
 
