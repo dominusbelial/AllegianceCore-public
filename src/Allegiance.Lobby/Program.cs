@@ -15,8 +15,11 @@ using System.Net;
 var builder = WebApplication.CreateBuilder(args);
 
 // Settings bound from the "Lobby" config section (defaults in LobbySettings).
+// Registered as a singleton so endpoints (and tests, via LobbyTestApp) can
+// resolve/override the same instance.
 var settings = new LobbySettings();
 builder.Configuration.GetSection("Lobby").Bind(settings);
+builder.Services.AddSingleton(settings);
 
 // TimeProvider is registered as a singleton so tests can swap in a fake clock; the
 // ServerRegistry depends on it rather than sampling DateTime.UtcNow itself.
@@ -78,7 +81,7 @@ app.Use(async (context, next) =>
 app.UseRateLimiter();
 app.UseDefaultFiles();
 app.UseStaticFiles();
-app.MapLobbyEndpoints();
+app.MapLobbyEndpoints(settings);
 app.MapIdentity(app.Services.GetRequiredService<IdentitySettings>());
 app.MapCareer();
 

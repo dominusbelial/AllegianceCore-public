@@ -149,6 +149,76 @@ jobs:
             dist/Allegiance-*-setup.exe.json
           if-no-files-found: error
 
+  feed:
+    # P810 — build the signed auto-update feed from the verified portable
+    # bundles: per RID, unpack the bundle, stamp the release version, then run
+    # tools/feedbuild (manifest + ECDSA P-256 signature over the exact manifest
+    # bytes + latest.json + the mirrored application files). The publish job
+    # attaches the feed next to the bundles, so the GitHub release itself is
+    # the feed root the client/lobbies advertise (AUTO_UPDATE_INFO role).
+    # Key handling: RELEASE_UPDATE_SIGNING_KEY_PEM is a repo SECRET (PKCS#8
+    # PEM); it never touches the tree — see packaging/README.md.
+    needs: package
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        include:
+          - { rid: linux-x64, artifact: player-linux-x64, archive: Allegiance-linux-x64.tar.gz, format: tar }
+          - { rid: win-x64, artifact: player-win-x64, archive: Allegiance-win-x64.zip, format: zip }
+          - { rid: osx-arm64, artifact: player-osx-arm64, archive: Allegiance-osx-arm64.zip, format: zip }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.400'
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist
+      - name: Build the signed feed for ${{ matrix.rid }}
+        env:
+          RELEASE_REF: ${{ github.ref_name }}
+          RELEASE_UPDATE_SIGNING_KEY_PEM: ${{ secrets.RELEASE_UPDATE_SIGNING_KEY_PEM }}
+        run: |
+          set -euo pipefail
+          version=0.0.1
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then version="${RELEASE_REF#v}"; fi
+          mkdir -p "dist/unpacked-${{ matrix.rid }}"
+          case '${{ matrix.format }}' in
+            tar) tar -xzf "dist/${{ matrix.archive }}" -C "dist/unpacked-${{ matrix.rid }}" --strip-components=1 ;;
+            zip) python3 -m zipfile -e "dist/${{ matrix.archive }}" "dist/unpacked-${{ matrix.rid }}" ;;
+          esac
+          # The bundle roots differ (linux tar.gz nests one dir; zips carry the
+          # App/.app payloads) — feedbuild takes the deepest dir that contains
+          # the entry assembly.
+          approot="dist/unpacked-${{ matrix.rid }}"
+          while [ "$(find "$approot" -maxdepth 1 -type d | wc -l)" -eq 2 ] \
+              && [ "$(find "$approot" -maxdepth 1 -type f | wc -l)" -eq 0 ]; do
+            approot=$(find "$approot" -mindepth 1 -maxdepth 1 -type d | head -1)
+          done
+          keyargs=()
+          if [[ -n "${RELEASE_UPDATE_SIGNING_KEY_PEM:-}" ]]; then
+            printf '%s' "$RELEASE_UPDATE_SIGNING_KEY_PEM" > "$RUNNER_TEMP/signing.pem"
+            keyargs=(--key "$RUNNER_TEMP/signing.pem")
+          fi
+          dotnet run --project tools/feedbuild -- \
+            --root "$approot" --out "dist/feed-${{ matrix.rid }}" \
+            --base-url "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/feed-${{ matrix.rid }}-" \
+            --asset-prefix "feed-${{ matrix.rid }}-" \
+            --version "$version" --stamp "${keyargs[@]}"
+          rm -f "$RUNNER_TEMP/signing.pem"
+          # Dry-runs (workflow_dispatch, no tag) must never look publishable:
+          # an unsigned feed is refused by every verifier, and we also tag it.
+          if [[ -z "${RELEASE_UPDATE_SIGNING_KEY_PEM:-}" ]]; then
+            echo "UNSIGNED-DRY-RUN (no RELEASE_UPDATE_SIGNING_KEY_PEM secret)" > "dist/feed-${{ matrix.rid }}/UNSIGNED"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: feed-${{ matrix.rid }}
+          retention-days: 1
+          path: dist/feed-${{ matrix.rid }}/
+          if-no-files-found: error
+
   appimage-smoke:
     needs: package
     runs-on: ubuntu-latest
@@ -194,7 +264,7 @@ jobs:
           env -u ALLEGIANCE_ARTWORK_PATH -u ALLEGIANCE_SKY_PACK_PATH "$app/Contents/MacOS/Allegiance" --check-assets
 
   publish:
-    needs: [package, windows-smoke, macos-smoke, appimage-smoke]
+    needs: [package, windows-smoke, macos-smoke, appimage-smoke, feed]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'dominusbelial/AllegianceCore-public'
     runs-on: ubuntu-24.04
     permissions:
@@ -206,6 +276,14 @@ jobs:
           pattern: player-*
           path: dist
           merge-multiple: true
+      # P810 — the auto-update feeds, downloaded UNMERGED (each feed has its
+      # own latest.json) and attached whole: the release then IS a flat-asset
+      # feed root per RID (latest.json + manifest + every application file,
+      # names prefixed feed-<rid>-).
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: feed-*
+          path: dist/feeds
       - name: Verify and combine checksums
         working-directory: dist
         run: |
@@ -220,3 +298,4 @@ jobs:
           --notes-file packaging/RELEASE-NOTES.md
           dist/Allegiance-*.tar.gz dist/Allegiance-*.zip dist/Allegiance-*.AppImage dist/Allegiance-*-setup.exe
           dist/SHA256SUMS.txt dist/Allegiance-*.json
+          dist/feeds/feed-*/latest.json dist/feeds/feed-*/manifest-*.json dist/feeds/feed-*/feed-*-__*

@@ -255,6 +255,33 @@ list in **reverse**.
   `GameParamsRequest`), `src/Allegiance.Server/LobbyHeartbeat.cs`
   (`LobbyGameParams.FromMission`), `src/Allegiance.Server/Server.cs`
   (`LiveGameParams`). Report `docs/reports/P806_SCREENS_LOBBY_COMMANDER.md`.
+- **Version advertisement** — `GET /api/update/info` (current/minimum client
+  version + the signed release feed URL), the HTTP analogue of native
+  `AUTO_UPDATE_INFO(253)` (`lobby/messageslc.h:45-52`). Key:
+  `src/Allegiance.Lobby/LobbyEndpoints.cs`, `LobbySettings.cs`
+  (`CurrentClientVersion`/`MinimumClientVersion`/`UpdateFeedUrl`).
+  Report `docs/reports/P810_AUTO_UPDATE.md`.
+
+## 6b. Auto-update (`src/Allegiance.Update`)
+
+- **Signed release feed** — `latest.json` + `manifest-<version>.json` (one
+  SHA-256 + Unix mode per application file) + the mirrored files; ECDSA P-256
+  signature over the exact manifest bytes. Native analogue: the CRC file list
+  over FTP (`clintlib/AutoDownload.cpp:225-282`).
+- **Client updater** — apply-on-restart (`UpdateApplier`), feed check + per-file
+  delta download + staging (`UpdateClient`), lobby advertisement fetch
+  (`LobbyUpdateInfoClient`). Key: `src/Allegiance.Update/UpdateClient.cs`,
+  `UpdateApplier.cs`, `UpdateManifestBuilder.cs`, `UpdateSignature.cs`;
+  client boot hook `src/Allegiance.ClientCore.MonoGame/ClientUpdateBootstrap.cs`.
+- **Server self-update** — opt-in (`ServerConfig.Updates`), stages ONLY at game
+  over (`src/Allegiance.Server/Server.Update.cs`, `ServerUpdateGate`), applied
+  before the world loads in `src/Allegiance.Server/Program.cs`. Docker keeps
+  pulling images (`docker/README.md`).
+- **Feed builder** — `tools/feedbuild/` (manifest + signature + `latest.json`,
+  GitHub flat-asset mode); driven by the `feed` job in
+  `.github/workflows/release.yml`. Key handling: `packaging/README.md`.
+  Report: `docs/reports/P810_AUTO_UPDATE.md` (design:
+  `docs/P810_AUTO_UPDATE_DESIGN.md`).
 
 ## 7. Tools / proofs (`tools/`)
 

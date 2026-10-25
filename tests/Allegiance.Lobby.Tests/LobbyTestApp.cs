@@ -59,6 +59,11 @@ internal sealed class LobbyTestApp : WebApplicationFactory<Program>
             services.AddSingleton<ServerRegistry>(
                 new ServerRegistry(_time, settings.MaxEntries, TimeSpan.FromSeconds(settings.MaxAgeSeconds), settings.MaxEntriesPerAddress));
 
+            // P810 — the version advertisement (/api/update/info) reads the
+            // settings from DI so a test can advertise versions/feeds.
+            services.RemoveAll<LobbySettings>();
+            services.AddSingleton(settings);
+
             // Drop Program's hosted sweep and re-add one honoring the test cadence + our registry.
             services.RemoveAll<IHostedService>();
             services.AddHostedService(sp => new ExpirySweepService(

@@ -33,6 +33,13 @@ if (args.Length > 0 && args[0] is "--skirmish-smoke" or "--skirmish-owner-proof"
 // P644: handled before MonoGame initializes SDL, GL, audio, or networking.
 if (args.Contains("--check-assets") || args.Contains("--asset-census"))
     return PlayerBundleCheck.Run(args);
+
+// P810 — auto-update: apply any staged pending update BEFORE SDL/GL/audio
+// load, then (opt-in via the lobby's /api/update/info advertisement or the
+// ALLEGIANCE_UPDATE_FEED env var) check the signed release feed and stage a
+// newer build for the next start. Never blocks or crashes the boot path.
+await ClientUpdateBootstrap.RunAsync(args);
+
 PlayerConfig? savedPlayer = null;
 if (args.Length == 0)
 {

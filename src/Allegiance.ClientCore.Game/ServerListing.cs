@@ -37,7 +37,12 @@ public sealed record ServerListing(
     /// </summary>
     GameParams? Game = null,
     bool Verified = false,
-    string? IdentityServerId = null)
+    string? IdentityServerId = null,
+    /// <summary>P810 — the minimum client version this server requires (the
+    /// port's advertised form of native's LOGON <c>crcFileList</c> gate,
+    /// <c>clintlib/clintlib.cpp:1418</c> → <c>lobby/client.cpp:272-281</c>;
+    /// design: no new data on the game-connection wire). Null/empty = none.</summary>
+    string? MinClientVersion = null)
 {
     /// <summary>The default lobby-directory URL the client browses when none is
     /// given. This is the lobby's real default listen address — confirmed by
@@ -53,6 +58,19 @@ public sealed record ServerListing(
     {
         PropertyNameCaseInsensitive = true,
     };
+
+    /// <summary>P810 — does this listing demand a newer client than the one
+    /// installed? A server's <c>minClientVersion</c> (native enforced it at the
+    /// lobby by comparing the LOGON <c>crcFileList</c>,
+    /// <c>lobby/client.cpp:272-281</c>) is advertised on the listing and gated
+    /// at browse time: the poll drops listings this client cannot join. An
+    /// unparsable/absent local version ("0.0.0", never updated) counts as too
+    /// old for any declared minimum — the safe direction, and the same
+    /// fail-closed behaviour an unknown native CRC had at
+    /// <c>client.cpp:272</c>.</summary>
+    public bool RequiresNewerClient(string? installedVersion)
+        => !string.IsNullOrWhiteSpace(MinClientVersion)
+           && Allegiance.Update.UpdateVersionGate.IsTooOld(installedVersion, MinClientVersion);
 
     /// <summary>A usable single server-row line: name, address:port, player
     /// count, mission — the columns the browser is asked to show. Lives here

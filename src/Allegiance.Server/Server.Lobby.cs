@@ -462,6 +462,13 @@ public sealed partial class Server
         // on the shared path so every end state (draw, win-by-elimination,
         // conquest/prosperity/artifact) rotates identically.
         RotateMissionAfterGameOver(mission);
+
+        // P810 — the quiet point: every GAME_OVER packet is on the wire and the
+        // finished mission has been rotated. If self-update is opted in, check
+        // the release feed and stage a newer build for the next restart (never
+        // mid-match — this is the only call site).
+        ScheduleServerUpdateCheckAtGameOver();
+
         if (sw is not null)
         {
             LastGameOverDeclareMs = sw.Elapsed.TotalMilliseconds;

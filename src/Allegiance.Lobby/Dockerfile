@@ -15,8 +15,11 @@ WORKDIR /src
 COPY Directory.Build.props .
 COPY src/Allegiance.Lobby/Allegiance.Lobby.csproj src/Allegiance.Lobby/
 COPY src/Allegiance.Core/Allegiance.Core.csproj src/Allegiance.Core/
+# P810 — the lobby's /api/update/info types live in the shared update library.
+COPY src/Allegiance.Update/Allegiance.Update.csproj src/Allegiance.Update/
 RUN dotnet restore src/Allegiance.Lobby/Allegiance.Lobby.csproj
 
+COPY src/Allegiance.Update/ src/Allegiance.Update/
 COPY src/Allegiance.Lobby/ src/Allegiance.Lobby/
 COPY src/Allegiance.Core/ src/Allegiance.Core/
 # Web-SDK publish pulls in the ASP.NET Core shared framework reference and the

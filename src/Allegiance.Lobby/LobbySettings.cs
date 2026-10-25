@@ -18,4 +18,21 @@ public sealed class LobbySettings
 
     /// <summary>How old an entry must be (since its last heartbeat) before the sweep prunes it.</summary>
     public double MaxAgeSeconds { get; set; } = 90;
+
+    /// <summary>P810 — the lobby's version advertisement (<c>GET /api/update/info</c>),
+    /// the HTTP analogue of native's <c>AUTO_UPDATE_INFO(253)</c> payload
+    /// (<c>lobby/messageslc.h:45-52</c>, which carried the FTP location plus the
+    /// official file-list CRC — no credentials ride the port's shape at all).
+    /// Null/empty means "not advertised": the client then skips the update check
+    /// entirely, like a native lobby with AutoUpdate unconfigured.</summary>
+    public string? CurrentClientVersion { get; set; }
+
+    /// <summary>P810 — clients older than this must update before joining
+    /// (native's trigger: the lobby compared the LOGON <c>crcFileList</c> against
+    /// its official one, <c>lobby/client.cpp:272-281</c>).</summary>
+    public string? MinimumClientVersion { get; set; }
+
+    /// <summary>P810 — the signed release feed root the client downloads from.
+    /// Advertised only when a feed is actually deployed.</summary>
+    public string? UpdateFeedUrl { get; set; }
 }

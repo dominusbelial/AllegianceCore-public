@@ -157,3 +157,15 @@ test runner's environment (a standard Npgsql connection string). Use a disposabl
 test database: each run creates and drops a unique schema. This is a test harness
 setting, not a lobby/server deployment variable; the Compose PostgreSQL service
 stays private to its network unless an operator explicitly adds a test-only port.
+
+## Server self-update (P810) — leave it OFF under Docker
+
+The server can stage auto-updates from a signed release feed between matches
+(`server.json` `updates` section; strictly opt-in, default off, staging happens
+only at game over and the staged build applies at the next process start).
+Under Docker do NOT enable it: the image owns the binaries, and the updater
+would fight the image with the container's filesystem. Keep the `updates`
+section absent in `docker/compose.server.json` and pull new images instead
+(`docker compose pull && docker compose up -d` — the same quiet-point restart
+guarantee applies). Bare-metal/binary deployments are the updater's audience.
+See `docs/reports/P810_AUTO_UPDATE.md` and `docs/P810_AUTO_UPDATE_DESIGN.md`.

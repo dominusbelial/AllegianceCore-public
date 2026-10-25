@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- P810 — the release-feed builder: walks an unpacked player bundle, writes
+       the signed manifest (ECDSA P-256 over the exact manifest bytes) plus
+       latest.json, and can stamp a tree with its release version. Consumed by
+       the release workflow's feed job (release.yml); run it with no arguments
+       for its usage line. A proof/release tool: outside AllegianceCore.slnx,
+       built by tools/build-tools.sh like the other tools. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Allegiance.Update/Allegiance.Update.csproj" />
+  </ItemGroup>
+
+</Project>

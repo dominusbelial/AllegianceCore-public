@@ -37,7 +37,10 @@ internal sealed record ServerListing(
     /// </summary>
     GameParamsDto? Game = null,
     bool Verified = false,
-    string? IdentityServerId = null);
+    string? IdentityServerId = null,
+    /// <summary>P810 — the minimum client version this server accepts, when it
+    /// declares one. Null = no requirement advertised.</summary>
+    string? MinClientVersion = null);
 
 /// <summary>
 /// The public, read-only projection of a <see cref="ServerListing"/> — the exact
@@ -69,7 +72,11 @@ public sealed record ServerListingDto(
     /// <see cref="GameParamsDto"/>). Null for a host that publishes none.</summary>
     GameParamsDto? Game = null,
     bool Verified = false,
-    string? IdentityServerId = null);
+    string? IdentityServerId = null,
+    /// <summary>P810 — the minimum client version this server requires, when it
+    /// declares one (see the internal <see cref="ServerListing.MinClientVersion"/>).
+    /// Null = no requirement advertised.</summary>
+    string? MinClientVersion = null);
 
 /// <summary>
 /// P806 — the native mission settings the server-list screen filters and sorts
@@ -165,6 +172,11 @@ public sealed class RegisterRequest
     /// <see cref="GameParamsDto"/>). Optional: a host that omits it registers
     /// exactly as before, and the client treats the metadata as unknown.</summary>
     public GameParamsRequest? Game { get; set; }
+
+    /// <summary>P810 — the minimum client version this server requires (see
+    /// <see cref="ServerListingDto.MinClientVersion"/>). Optional; omitted =
+    /// no requirement, byte-identical to a pre-P810 payload.</summary>
+    public string? MinClientVersion { get; set; }
 
     /// <summary>The ownership token; null/blank means "new registration".</summary>
     public string? Token { get; set; }

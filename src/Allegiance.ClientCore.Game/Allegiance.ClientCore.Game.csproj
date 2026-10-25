@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="../Allegiance.ClientCore/Allegiance.ClientCore.csproj" />
     <ProjectReference Include="../Allegiance.SinglePlayer/Allegiance.SinglePlayer.csproj" />
+    <ProjectReference Include="../Allegiance.Update/Allegiance.Update.csproj" />
   </ItemGroup>
 
 </Project>

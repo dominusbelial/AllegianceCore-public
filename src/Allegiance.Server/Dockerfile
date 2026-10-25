@@ -60,6 +60,8 @@ RUN apt-get update \
 COPY Directory.Build.props .
 COPY src/Allegiance.Server/Allegiance.Server.csproj src/Allegiance.Server/
 COPY src/Allegiance.Core/Allegiance.Core.csproj src/Allegiance.Core/
+# P810 — the server self-update stages from the shared update library.
+COPY src/Allegiance.Update/Allegiance.Update.csproj src/Allegiance.Update/
 RUN dotnet restore src/Allegiance.Server/Allegiance.Server.csproj \
     -r linux-x64 -p:SelfContained=true -p:PublishAot=true
 
@@ -69,6 +71,7 @@ RUN dotnet restore src/Allegiance.Server/Allegiance.Server.csproj \
 # is available to --no-restore. Multi-arch (arm64 etc.) is out of scope: linux-x64
 # only, matching the existing single-arch build.
 COPY src/Allegiance.Server/ src/Allegiance.Server/
+COPY src/Allegiance.Update/ src/Allegiance.Update/
 COPY src/Allegiance.Core/ src/Allegiance.Core/
 COPY data/showcase-plans/ data/showcase-plans/
 RUN dotnet publish src/Allegiance.Server/Allegiance.Server.csproj \

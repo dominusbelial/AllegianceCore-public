@@ -278,6 +278,12 @@ public sealed class LobbyConfig
     /// per-name query only — the public <c>/api/servers</c> listing never carries
     /// them.</summary>
     public bool PublishPlayerNames { get; set; }
+
+    /// <summary>P810 — the minimum client version this server requires. Empty
+    /// (the default) = no requirement; otherwise the value rides the heartbeat
+    /// as <c>minClientVersion</c> and the client's server list hides this
+    /// server for players on older builds (see the design doc §3).</summary>
+    public string? MinimumClientVersion { get; set; }
 }
 
 /// <summary>P660 dedicated-server rotation policy. Uses native bAutoRestart's
@@ -1002,6 +1008,18 @@ public sealed class ServerConfig
     /// exactly as before. See <see cref="ReconnectConfig"/>.
     /// </summary>
     public ReconnectConfig Reconnect { get; set; } = new();
+
+    /// P810 — the opt-in server self-update (the modernised native
+    /// <c>AllSrvUpdate</c> role, <c>AutoUpdate/AutoUpdate.cpp:325-356</c>).
+    /// Null/absent (the default) = fully opt-out: no feed is ever contacted and
+    /// the updater never runs. When enabled the server stages a newer release
+    /// ONLY at game over — the native-like quiet point, after the finished
+    /// mission is rotated and every GAME_OVER packet is on the wire — and the
+    /// staged build is applied by <see cref="Allegiance.Update.UpdateApplier"/>
+    /// at the next process start. Docker deployments should leave this off and
+    /// keep pulling images (docker/README.md).
+    /// </summary>
+    public UpdatesConfig? Updates { get; set; }
 }
 
 /// <summary>
@@ -1040,6 +1058,33 @@ public sealed class ReconnectConfig
     {
         if (!double.IsFinite(GraceSeconds) || GraceSeconds < 0.25 || GraceSeconds > 300)
             throw new InvalidDataException("reconnect.graceSeconds must be finite and between 0.25 and 300");
+    }
+}
+
+/// <summary>P810 — the server self-update settings (<see cref="ServerConfig.Updates"/>).
+/// All three fields are required together when enabled (validated at boot).</summary>
+public sealed class UpdatesConfig
+{
+    /// <summary>Master switch. <b>Default <c>false</c></b> — the self-update is
+    /// strictly opt-in, and Docker users should keep it off (image pulls own the
+    /// binary there).</summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>The signed release feed root (its <c>latest.json</c> is read first).</summary>
+    public string FeedUrl { get; set; } = "";
+
+    /// <summary>SubjectPublicKeyInfo PEM of the ECDSA P-256 feed signing key.
+    /// Supply via a mounted file / environment expansion — never inline a
+    /// private key (the publish guard scans for secrets).</summary>
+    public string PublicKeyPem { get; set; } = "";
+
+    public void Validate()
+    {
+        if (!Enabled) return;
+        if (string.IsNullOrWhiteSpace(FeedUrl))
+            throw new InvalidDataException("updates.enabled requires updates.feedUrl");
+        if (string.IsNullOrWhiteSpace(PublicKeyPem))
+            throw new InvalidDataException("updates.enabled requires updates.publicKeyPem");
     }
 }
 

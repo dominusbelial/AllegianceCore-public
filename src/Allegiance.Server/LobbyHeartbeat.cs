@@ -48,6 +48,7 @@ public sealed class LobbyHeartbeat : IDisposable
     /// <summary>P806 — reads the cross-thread-safe mission-settings snapshot (the
     /// same discipline as <c>LivePlayerCount</c>/<c>LivePlayerNames</c>).</summary>
     private readonly Func<LobbyGameParams?>? _liveGameParams;
+    private readonly string? _minClientVersion;
     private readonly int _intervalSeconds;
     private readonly TimeProvider _clock;
     private DateTimeOffset? _lastAttempt;
@@ -114,6 +115,11 @@ public sealed class LobbyHeartbeat : IDisposable
         // P806 — the game settings the directory publishes for the server-list
         // filters (see LobbyGameParams). Null when the caller has none.
         _liveGameParams = liveGameParams;
+        // P810 — the advertised minimum-client-version requirement (native
+        // enforced it at the lobby via the LOGON crcFileList,
+        // clintlib/clintlib.cpp:1418 → lobby/client.cpp:272-281; the port
+        // advertises it on the listing and the client gates at browse time).
+        _minClientVersion = string.IsNullOrWhiteSpace(config.MinimumClientVersion) ? null : config.MinimumClientVersion;
         _intervalSeconds = config.HeartbeatIntervalSeconds > 0 ? config.HeartbeatIntervalSeconds : 25;
 
         _timer = new Timer(_ => Fire(), null,
@@ -175,7 +181,9 @@ public sealed class LobbyHeartbeat : IDisposable
                 _publishPlayers,                // P761b — the per-server opt-in the directory honours
                 _token,                         // null on the first tick, or after a 409 forced a fresh re-register
                 _liveGameParams?.Invoke(),      // P806 — game settings for the server-list filters
-                _enrollment?.ServerId, _enrollment?.ServerSecret);
+                _enrollment?.ServerId, _enrollment?.ServerSecret,
+                _minClientVersion);             // P810 — advertised minimum client version (null = none)
+
 
             HttpResponseMessage resp;
             try
@@ -401,7 +409,11 @@ internal sealed record LobbyRegisterRequest(
     // columns read (mirror of Allegiance.Lobby's GameParamsRequest).
     LobbyGameParams? Game = null,
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? IdentityServerId = null,
-    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? IdentityServerSecret = null);
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? IdentityServerSecret = null,
+    // P810 — the optional minimum-client-version requirement this server
+    // enforces (advertised form of native's LOGON crcFileList gate,
+    // clintlib/clintlib.cpp:1418 → lobby/client.cpp:272-281). Absent = none.
+    string? MinClientVersion = null);
 
 /// <summary>
 /// P806 — the game settings a server publishes to the directory, mirroring

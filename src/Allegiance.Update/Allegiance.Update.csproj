@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- P810 — the shared auto-update library (design: docs/P810_AUTO_UPDATE_DESIGN.md).
+       Referenced by the client (Allegiance.ClientCore.MonoGame) and the server
+       (Allegiance.Server), so it must stay free of MonoGame/ASP.NET dependencies
+       and AOT-safe (source-generated JSON only, no reflection serialization). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>

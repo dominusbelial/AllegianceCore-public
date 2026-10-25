@@ -15,7 +15,8 @@ import time
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
-PROJECTS = ["Allegiance.Lobby.Tests", "Allegiance.ClientCore.MonoGame.Tests",
+PROJECTS = ["Allegiance.Lobby.Tests", "Allegiance.Update.Tests",
+            "Allegiance.ClientCore.MonoGame.Tests",
             "Allegiance.ClientCore.Tests", "Allegiance.Core.Tests"]
 TIERS = ("fast", "live", "perf")
 NS = {"t": "http://microsoft.com/schemas/VisualStudio/TeamTest/2010"}

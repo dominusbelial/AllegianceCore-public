@@ -103,7 +103,10 @@ public sealed class ServerRegistry
                 // P806 — the mission settings the client's server-list filters and
                 // status/skill/settings sort columns read (native MissionInfo).
                 ToGameParams(req.Game),
-                req.Verified, req.IdentityServerId);
+                req.Verified, req.IdentityServerId,
+                // P810 — the optional minimum-client-version requirement
+                // (absent stays null, not "").
+                NullIfEmpty(Sanitize(req.MinClientVersion, VersionMax)));
 
             if (!_entries.TryAdd(id, listing))
                 return null; // id collision is effectively impossible; treat as a transient refusal
@@ -134,6 +137,9 @@ public sealed class ServerRegistry
             // Started, so InProgress and the goal bits can change mid-listing).
             Game = ToGameParams(req.Game),
             Verified = req.Verified, IdentityServerId = req.IdentityServerId,
+            // P810 — a heartbeat refreshes the requirement too (a server may
+            // raise its minimum after a client-breaking update).
+            MinClientVersion = NullIfEmpty(Sanitize(req.MinClientVersion, VersionMax)),
         };
 
         _entries[target.Id] = refreshed;
@@ -227,6 +233,11 @@ public sealed class ServerRegistry
     /// caller-supplied string field. Also collapses null to empty and trims surrounding
     /// whitespace.
     /// </summary>
+    /// <summary>P810 — an absent optional field stays null (never an empty
+    /// string) so the DTO shape matches the pre-P810 wire for hosts that do not
+    /// declare a minimum client version.</summary>
+    private static string? NullIfEmpty(string value) => value.Length == 0 ? null : value;
+
     private static string Sanitize(string? value, int maxLen)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -273,7 +284,7 @@ public sealed class ServerRegistry
     private static ServerListingDto ToDto(ServerListing l) => new(
         l.Id, l.Name, l.Address, l.Port, l.PlayerCount, l.MaxPlayers,
         l.MissionName, l.CoreFile, l.Version, l.RegisteredUtc, l.LastSeenUtc,
-        l.Game, l.Verified, l.IdentityServerId);
+        l.Game, l.Verified, l.IdentityServerId, l.MinClientVersion);
 
     /// <summary>
     /// P806 — normalize the caller-supplied game settings. Every omitted field

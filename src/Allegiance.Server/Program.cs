@@ -52,6 +52,11 @@ internal static partial class ServerMain
 
             try
             {
+                // P810 — apply a staged self-update BEFORE the world loads (the
+                // apply-on-restart step; a failure just logs and keeps the old
+                // build). Never runs mid-match: staging only ever happens at
+                // game over (Server.ScheduleServerUpdateCheckAtGameOver).
+                Allegiance.Update.UpdateApplier.ApplyPendingIfAny(AppContext.BaseDirectory, Console.Out);
                 return new Server().RunAsync(configPath, overrides);
             }
             catch (Exception e)

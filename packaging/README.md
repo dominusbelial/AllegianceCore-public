@@ -167,6 +167,31 @@ connection succeeded. No new live-session coverage is claimed by this task.
 Optional content omitted from player bundles: the private Meshy pack. Native
 art is the supported fallback. No sky layers are intentionally omitted.
 
+## Release signing (P810 auto-update feed)
+
+The auto-update client and server refuse unsigned feeds. Create the signing
+key once, outside the repo (the publish guard scans for secrets):
+
+    openssl ecparam -name prime256v1 -genkey -noout -out signing.pem
+    openssl pkcs8 -topk8 -nocrypt -in signing.pem -out signing-pkcs8.pem
+
+- `signing-pkcs8.pem` becomes the repository secret
+  `RELEASE_UPDATE_SIGNING_KEY_PEM` (release.yml's `feed` job reads it; the file
+  never enters the tree or an artifact).
+- The public half (derive with `openssl ec -in signing.pem -pubout`) is what
+  clients pin: ship it as `<app>/autoupdate/feed-public.pem` with the bundle, or
+  set `ALLEGIANCE_UPDATE_PUBLIC_KEY` / `ALLEGIANCE_UPDATE_PUBLIC_KEY_FILE`.
+- The feed itself: release.yml's `feed` job unpacks each verified portable
+  bundle and runs `tools/feedbuild` (manifest of every application file with
+  SHA-256 + Unix mode, ECDSA P-256 signature over the exact manifest bytes,
+  `latest.json` index). On GitHub Releases the assets are flat, so the job
+  passes `--asset-prefix feed-<rid>-` and the feed base URL ends with that
+  prefix; a plain static tree (nginx, GH Pages) needs neither. The HD texture
+  pack (`packs/`, `hd/`) is excluded from every feed by design.
+- Build/dry-run a feed by hand: `dotnet run --project tools/feedbuild` (no
+  arguments prints the usage). `--verify` re-downloads the produced feed
+  through the real client code path against `--base-url`.
+
 ## Release checklist for Claude
 
 1. Review the working-tree diff/report and run the full socket/live suite.
