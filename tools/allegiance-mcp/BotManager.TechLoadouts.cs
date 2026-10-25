@@ -114,10 +114,14 @@ internal sealed partial class BotManager
         var duty = TechLoadoutSelector.FallbackDuty(role);
         if (varied && !support && !rescueProbe && !defensiveMines)
         {
-            selected = TechLoadoutSelector.SelectVaried(core, shop.Civ, duty, shop.Techs, shop.DockType,
-                LoadoutVariety.Begin(shop.Side), budget: shop.Budget,
-                preferMines: role != Showcase.HullRole.Scout, smallCraftFallback: true);
-            if (selected is not null) LoadoutVariety.Record(shop.Side, selected);
+            var variety = LoadoutVariety.Begin(shop.Side);   // one ordinal per purchase, shared by both pools
+            foreach (var pool in TechLoadoutSelector.FallbackPools(duty))
+            {
+                selected = TechLoadoutSelector.SelectVaried(core, shop.Civ, duty, shop.Techs, shop.DockType,
+                    variety, budget: shop.Budget,
+                    preferMines: role != Showcase.HullRole.Scout, fallbackPool: pool);
+                if (selected is not null) { LoadoutVariety.Record(shop.Side, selected); break; }
+            }
         }
         selected ??= TechLoadoutSelector.SelectRoleFallback(core, shop.Civ, role, shop.Techs, shop.DockType,
             shop.Budget, rescueProbe);
