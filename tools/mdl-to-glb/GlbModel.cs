@@ -36,6 +36,17 @@ public sealed record GlbExportModel
     /// <c>.cvh</c> was supplied.</summary>
     public required CollisionSidecar? Collision { get; init; }
 
+    /// <summary>
+    /// P823 — the source <c>.mdl</c>'s own <c>FrameData</c> records (name,
+    /// position, forward and <b>up</b>, in file order) when the model came from
+    /// a native file or a sidecar that carried them. The GLB node tree carries
+    /// mount position + forward only — the up vector and the exact FrameData
+    /// chunk layout ride the sidecar (see <see cref="SidecarDocument.MdlFrames"/>).
+    /// Null for glb-only (new-art) models; the writer then synthesizes frames
+    /// from the mount nodes.
+    /// </summary>
+    public IReadOnlyList<MdlFrameRecord>? SourceMdlFrames { get; init; }
+
     /// <summary>Coordinate-space provenance note carried verbatim into the sidecar.</summary>
     public const string ModelSpace =
         "raw native .mdl space: DirectX-style left-handed, +Z nose, +Y up, y-up 2-D images; " +
@@ -80,6 +91,14 @@ public sealed record MountPoint
 
     public float[]? MdlPosition { get; init; }
 }
+
+/// <summary>
+/// P823 — one raw <c>.mdl</c> FrameData record: the native name plus position /
+/// forward / <b>up</b>. The up vector is not expressible in the GLB node tree
+/// (a node rotation carries forward only), so the sidecar carries it; the port
+/// parser stores it on <see cref="Allegiance.Core.MdlFrame"/>.
+/// </summary>
+public sealed record MdlFrameRecord(string Name, float[] Position, float[] Forward, float[] Up);
 
 /// <summary>A native LightsGeo light (effect/efapp.cpp:101-112 LightData);
 /// blinking timing is not expressible in core glTF, so it rides in the sidecar.</summary>

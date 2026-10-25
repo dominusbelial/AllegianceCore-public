@@ -345,6 +345,15 @@ list in **reverse**.
   mirrored in z (position AND forward). Report
   `docs/reports/P812_GLB_PIPELINE.md`. Prototype only — the game still ships
   `.mdl`.
+- **GLB → native writer (P823)** — the other half of the pipeline: a `.glb`
+  (+ optional sidecar) converts to native's shipping `.mdl` + `.cvh` at pack
+  time — `tools/mdl-to-glb/` commands `import` (glb+sidecar → files) and
+  `verifyimport` (native → glb → files → parse-compare + byte-diff);
+  `MdlWriter.cs` (binary token stream), `CvhWriter.cs` (native printf formats;
+  generated hulls via quickhull + the ported `cvh/main.cpp` ellipse/adjacency
+  walk), `NativeNameMapper.cs` (HP kinds → native frame names). Render check:
+  `tools/p823-render-proof/`. Tests `GlbToMdlTests`. Report
+  `docs/reports/P823_GLB_TO_MDL.md`.
 - **Test runners** — `tools/run-tests.sh`, `tools/build-tools.sh`,
   `tools/test-tiers/runner.py`.
 

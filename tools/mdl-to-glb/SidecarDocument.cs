@@ -21,6 +21,15 @@ public sealed record SidecarDocument
     public required IReadOnlyList<MountPoint> Mounts { get; init; }
     public required CollisionSidecar? Collision { get; init; }
 
+    /// <summary>
+    /// P823 — the source <c>.mdl</c>'s raw FrameData records (name, position,
+    /// forward, up — file order). Optional for backward compatibility with
+    /// P812-era sidecars, which carried the mount table only; when absent the
+    /// importer synthesizes FrameData from the mount nodes (up fallback
+    /// documented in the P823 report).
+    /// </summary>
+    public IReadOnlyList<MdlFrameRecord>? MdlFrames { get; init; }
+
     public static SidecarDocument Build(GlbExportModel model, string mdlPath, string cvhPath)
     {
         static string Sha(string path) =>
@@ -44,6 +53,7 @@ public sealed record SidecarDocument
             Lights = model.Lights,
             Mounts = model.Mounts,
             Collision = model.Collision,
+            MdlFrames = model.SourceMdlFrames,
         };
     }
 

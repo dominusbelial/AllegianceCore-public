@@ -25,15 +25,24 @@ public static class GlbReader
         var (mounts, lights) = ReadNodes(root, bin);
 
         // The sidecar is a full SidecarDocument; the reader stub takes the
-        // embedded "collision" record (unknown top-level properties ignored).
+        // embedded "collision" record, (P823) the raw mdl FrameData and the
+        // full light records (GLB light nodes carry position only — the RGBA
+        // colour and blink timing ride the sidecar, as in P812).
         CollisionSidecar? collision = null;
+        List<MdlFrameRecord>? mdlFrames = null;
+        List<GlbLight>? sidecarLights = null;
         if (sidecar is not null)
         {
             using var sdoc = JsonDocument.Parse(sidecar);
-            collision = sdoc.RootElement.TryGetProperty("collision", out var c)
-                        && c.ValueKind == JsonValueKind.Object
-                ? c.Deserialize<CollisionSidecar>(SidecarJson.Options)
-                : null;
+            if (sdoc.RootElement.TryGetProperty("collision", out var c)
+                && c.ValueKind == JsonValueKind.Object)
+                collision = c.Deserialize<CollisionSidecar>(SidecarJson.Options);
+            if (sdoc.RootElement.TryGetProperty("mdlFrames", out var mf)
+                && mf.ValueKind == JsonValueKind.Array)
+                mdlFrames = mf.Deserialize<List<MdlFrameRecord>>(SidecarJson.Options);
+            if (sdoc.RootElement.TryGetProperty("lights", out var li)
+                && li.ValueKind == JsonValueKind.Array)
+                sidecarLights = li.Deserialize<List<GlbLight>>(SidecarJson.Options);
         }
 
         return new GlbExportModel
@@ -41,10 +50,11 @@ public static class GlbReader
             Name = RootName(root),
             Meshes = meshes,
             Mounts = mounts,
-            Lights = lights,
+            Lights = sidecarLights ?? lights,
             LodPixelRadii = [],                     // LOD thresholds live only in the sidecar/mdl
             TextureStems = meshes.Select(m => m.TextureStem).OfType<string>().Distinct().ToArray(),
             Collision = collision,
+            SourceMdlFrames = mdlFrames,
         };
     }
 
@@ -63,6 +73,9 @@ public static class GlbReader
         {
             int len = (int)BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(pos));
             uint type = BinaryPrimitives.ReadUInt32LittleEndian(data.AsSpan(pos + 4));
+            if (len < 0 || pos + 8 + len > data.Length)
+                throw new InvalidDataException(
+                    $"truncated GLB: chunk at 0x{pos:X} claims {len} bytes past the end of the file");
             var chunk = data[(pos + 8)..(pos + 8 + len)];
             if (type == 0x4E4F534A) json = chunk;
             else if (type == 0x004E4942) bin = chunk;
@@ -146,7 +159,10 @@ public static class GlbReader
         // HP_<Kind>_<Index>
         var body = nodeName["HP_".Length..];
         int cut = body.LastIndexOf('_');
-        return (body[..cut], int.Parse(body[(cut + 1)..]));
+        if (cut <= 0 || !int.TryParse(body[(cut + 1)..], out int index) || index < 0)
+            throw new InvalidDataException(
+                $"malformed hardpoint node name '{nodeName}' (expected HP_<Kind>_<Index> with a non-negative integer index)");
+        return (body[..cut], index);
     }
 
     private static float[] RotateZ(float[] q)

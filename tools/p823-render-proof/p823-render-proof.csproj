@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- P823 — render check for the glb→mdl writer's output: loads a written
+       .mdl through the port's real renderer (NativeShipRenderer) and saves
+       PNGs. Proof tool, NOT a deployable app: built by tools/build-tools.sh. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Allegiance.Core\Allegiance.Core.csproj" />
+    <ProjectReference Include="..\..\src\Allegiance.ClientCore\Allegiance.ClientCore.csproj" />
+    <ProjectReference Include="..\..\src\Allegiance.ClientCore.MonoGame\Allegiance.ClientCore.MonoGame.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>p823-render-proof</AssemblyName>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+</Project>

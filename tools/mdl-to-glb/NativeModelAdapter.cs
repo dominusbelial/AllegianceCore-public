@@ -33,6 +33,12 @@ public static class NativeModelAdapter
             LodPixelRadii = mdl.LodLevels.Select(l => l.PixelRadius).ToArray(),
             TextureStems = mdl.Meshes.Select(m => m.TextureStem).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase).ToArray(),
             Collision = cvh is null ? null : BuildCollision(cvh),
+
+            // P823 — carry the raw FrameData (incl. up vectors, file order) so
+            // the sidecar can restore the .mdl's frames export byte-exactly.
+            SourceMdlFrames = mdl.Frames
+                .Select(f => new MdlFrameRecord(f.Name, f.Position, f.Forward, f.Up))
+                .ToArray(),
         };
     }
 

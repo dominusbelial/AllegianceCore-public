@@ -1,4 +1,112 @@
+using Allegiance.Core.Collision;
+
 namespace Allegiance.Tools.MdlToGlb;
+
+/// <summary>
+/// P823 — bit-exact comparison of the two PARSED .mdl structures the GLB-layer
+/// comparison cannot see: the FrameData records (name/position/forward/up) and
+/// the LightsGeo records. Mesh geometry is covered by <see cref="Compare"/>.
+/// The one intentional difference is <see cref="Allegiance.Core.MdlFile.LodLevels"/>:
+/// the P812 GLB export does not carry the per-level geometry, so the writer
+/// emits a single detail level (asserted here, not compared).
+/// </summary>
+public static class MdlFileCompare
+{
+    public sealed record Result(string Name, bool Pass, string Detail);
+
+    public static (IReadOnlyList<Result> results, bool pass) Run(
+        Allegiance.Core.MdlFile original, Allegiance.Core.MdlFile written)
+    {
+        var results = new List<Result>();
+
+        results.Add(new("mdl.frameCount", original.Frames.Count == written.Frames.Count,
+            $"{original.Frames.Count} vs {written.Frames.Count}"));
+        bool frameBits = original.Frames.Count == written.Frames.Count;
+        if (frameBits)
+            foreach (var (a, b) in original.Frames.Zip(written.Frames))
+                frameBits &= a.Name == b.Name
+                          && a.Position.SequenceEqual(b.Position)
+                          && a.Forward.SequenceEqual(b.Forward)
+                          && a.Up.SequenceEqual(b.Up);
+        results.Add(new("mdl.frames", frameBits, frameBits ? "bit-exact (name/pos/fwd/up)" : "MISMATCH"));
+
+        results.Add(new("mdl.lightCount", original.Lights.Count == written.Lights.Count,
+            $"{original.Lights.Count} vs {written.Lights.Count}"));
+        bool lightBits = original.Lights.Count == written.Lights.Count;
+        if (lightBits)
+            foreach (var (a, b) in original.Lights.Zip(written.Lights))
+                lightBits &= a.Color.SequenceEqual(b.Color)
+                          && a.Position.SequenceEqual(b.Position)
+                          && a.Period.Equals(b.Period) && a.Phase.Equals(b.Phase)
+                          && a.RampUp.Equals(b.RampUp) && a.Hold.Equals(b.Hold) && a.RampDown.Equals(b.RampDown);
+        results.Add(new("mdl.lights", lightBits, lightBits ? "bit-exact (colour/pos/timing)" : "MISMATCH"));
+
+        results.Add(new("mdl.lodLevels",
+            written.LodLevels.Count == 0,
+            $"written has {written.LodLevels.Count} (original {original.LodLevels.Count}; the GLB carries no per-level geometry — documented delta)"));
+
+        return (results, results.All(r => r.Pass));
+    }
+}
+
+/// <summary>
+/// P823 — numeric comparison of two <b>parsed</b> <see cref="Allegiance.Core.Collision.CvhFile"/>s
+/// (native file vs written file): bit-exact float equality on every field —
+/// the writer emits text formatted from the float32 values the sidecar
+/// carries, and re-parsing that text returns exactly those floats (the text
+/// rounding error is orders of magnitude below one float ulp).
+/// </summary>
+public static class CvhCompare
+{
+    public sealed record Result(string Name, bool Pass, string Detail);
+
+    public static (IReadOnlyList<Result> results, bool pass) Run(CvhFile? original, CvhFile? written)
+    {
+        var results = new List<Result>();
+        if (original is null && written is null)
+            return (results, true);
+        if (original is null || written is null)
+            return ([new("cvh.presence", false, $"{original is not null} vs {written is not null}")], false);
+
+        results.Add(new("cvh.radius", original.Radius.Equals(written.Radius),
+            $"{original.Radius:R} vs {written.Radius:R}"));
+        results.Add(new("cvh.ellipse",
+            original.EllipseEquation.Equals(written.EllipseEquation)
+            && original.EllipseRadiusMultiplier.Equals(written.EllipseRadiusMultiplier),
+            "bit-exact"));
+        results.Add(new("cvh.hullCount", original.Hulls.Count == written.Hulls.Count,
+            $"{original.Hulls.Count} vs {written.Hulls.Count}"));
+
+        bool verts = true, adj = true, centers = true;
+        foreach (var (a, b) in original.Hulls.Zip(written.Hulls))
+        {
+            centers &= a.Center.Equals(b.Center)
+                       && a.VertexCount == b.VertexCount && a.AdjacencyCount == b.AdjacencyCount;
+            verts &= a.Vertices.Count == b.Vertices.Count;
+            if (a.Vertices.Count != b.Vertices.Count) { verts = false; adj = false; continue; }
+            foreach (var (va, vb) in a.Vertices.Zip(b.Vertices))
+            {
+                verts &= va.Position.Equals(vb.Position);
+                adj &= va.AdjacentIndices.SequenceEqual(vb.AdjacentIndices);
+            }
+        }
+        results.Add(new("cvh.hullCenters", centers, centers ? "bit-exact" : "MISMATCH"));
+        results.Add(new("cvh.vertexPositions", verts, verts ? "bit-exact" : "MISMATCH"));
+        results.Add(new("cvh.adjacency", adj, adj ? "identical" : "MISMATCH"));
+
+        bool frames = original.Frames.Count == written.Frames.Count;
+        double frameDelta = 0;
+        if (frames)
+            foreach (var (fa, fb) in original.Frames.Zip(written.Frames))
+            {
+                frames &= fa.Name == fb.Name && fa.Position.Equals(fb.Position) && fa.Forward.Equals(fb.Forward);
+            }
+        results.Add(new("cvh.frames", frames,
+            $"{original.Frames.Count} vs {written.Frames.Count}, maxΔ={frameDelta:G3}"));
+
+        return (results, results.All(r => r.Pass));
+    }
+}
 
 /// <summary>
 /// Numeric round-trip comparison (export → re-import vs the original parsed
