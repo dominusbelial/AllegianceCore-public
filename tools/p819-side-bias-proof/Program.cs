@@ -18,6 +18,7 @@ int scale = int.Parse(Option("--size-scale", "1"));
 int finaleSeconds = int.Parse(Option("--finale-seconds", "300"));
 double finaleMinutes = double.Parse(Option("--finale-minutes", "0.5"), System.Globalization.CultureInfo.InvariantCulture);
 int gameSeconds = int.Parse(Option("--game-seconds", "1800"));
+if (args.Contains("--random-rotation")) { P825Rotation.Run(directory, matches, limit); return; }
 var progress = Console.Out;
 for (int match = 1; match <= matches; match++)
 {

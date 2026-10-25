@@ -1,0 +1,65 @@
+{
+  "Completed": 3,
+  "DistinctMatchups": 3,
+  "Matches": [
+    {
+      "Match": 1,
+      "Civs": "35,201",
+      "Wall": 18.3406449,
+      "Plans": [
+        {
+          "Side": 0,
+          "CivId": 35,
+          "Name": "generated"
+        },
+        {
+          "Side": 1,
+          "CivId": 201,
+          "Name": "generated"
+        }
+      ],
+      "Bots": 30,
+      "Failures": 0
+    },
+    {
+      "Match": 2,
+      "Civs": "5,201",
+      "Wall": 39.4981625,
+      "Plans": [
+        {
+          "Side": 0,
+          "CivId": 5,
+          "Name": "generated"
+        },
+        {
+          "Side": 1,
+          "CivId": 201,
+          "Name": "generated"
+        }
+      ],
+      "Bots": 30,
+      "Failures": 0
+    },
+    {
+      "Match": 3,
+      "Civs": "3,1",
+      "Wall": 60.5776578,
+      "Plans": [
+        {
+          "Side": 0,
+          "CivId": 3,
+          "Name": "plan_a"
+        },
+        {
+          "Side": 1,
+          "CivId": 1,
+          "Name": "generated"
+        }
+      ],
+      "Bots": 30,
+      "Failures": 0
+    }
+  ],
+  "Failures": 0,
+  "Finale": []
+}

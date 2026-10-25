@@ -63,21 +63,16 @@ public sealed partial class Server
         ValidateIdentityConfiguration();
         _rand = config.BenchmarkSeed is { } seed ? new Random(seed) : new Random();
         _config.ResolveShowcaseMode();
-        // Plan rejection must precede profiler callbacks and publisher/transport startup.
-        // A failed research boot has no host for those callbacks to inspect.
-        StaticCore? researchCore = null;
-        if (_config.Showcase.TechMode == "research")
-        {
-            ValidatePaths();
-            researchCore = LoadCore();
-            foreach (var game in _config.Games) SelectShowcasePlans(researchCore, game);
-        }
+        // Preserve corpus-independent broadcast validation. Its profiler callback
+        // only requests a deferred flush; it never reads the not-yet-bound host.
+        ResolveBroadcastSnapshot();
+        InitUpdateCadence();
+        // Civ/plan rejection precedes host-reading profiler callbacks and transport.
+        ValidatePaths();
+        var startupCore = LoadCore();
+        foreach (var game in _config.Games) PrimeShowcasePlans(startupCore, game);
         Console.WriteLine(FormattableString.Invariant($"[boot] showcase.researchTimeScale = {_config.Showcase.ResearchTimeScale}"));
         Console.WriteLine($"[boot] showcase.techMode = {_config.Showcase.TechMode}; incomeMultiplier={_config.Showcase.IncomeMultiplier}; researchCommander={(_config.Showcase.TechMode == "research" ? "on" : "per-plan")}");
-        ResolveBroadcastSnapshot();
-        // Reject invalid cadence before any other subsystem registers profiler
-        // callbacks: a failed boot must not leave a partially initialized host.
-        InitUpdateCadence();
         bool crowdingEnabled = _config.Sim.CrowdingEnabled; // validate before binding/listening
         Console.WriteLine($"[boot] sim.crowdingPenalty = {(crowdingEnabled ? "native" : "off")}");
         _period = _config.UpdatesPerSecond > 0 ? 1.0 / _config.UpdatesPerSecond : 0.05;
@@ -196,7 +191,7 @@ public sealed partial class Server
         LogGcMode();
 
         ValidatePaths();
-        var core = researchCore ?? LoadCore();       // checklist item 4
+        var core = startupCore;       // checklist item 4
         _core = core;                                // P439: retain for game-over mission rebuild
         StubFileLists();                             // checklist item 5 (stub — cores/maps; ranks now real, see below)
         _rankTable = LoadRankTable();                // P130: real rank list from <artPath>/ranks.txt
@@ -1107,21 +1102,13 @@ public sealed partial class Server
     }
 
     /// <summary>
-    /// P765 — memoized research-plan selection per game config. The selection
-    /// (<see cref="ResearchPlanCatalog.Select"/>) is a pure function of the
-    /// static core + the plan files on disk, but it re-reads and validates
-    /// EVERY plan file (disk + deserialization + full tree validation) on each
-    /// call — measured ≈ 0.5 s on a research showcase. <c>AssembleGameMission</c>
-    /// calls it once per game at boot AND once more at every game-over rotation,
-    /// so without this the game-over tick carried a ~0.5 s stall (P765: the
-    /// dominant part of the ~0.7 s tick on 221). Keyed by the <see cref="GameConfig"/>
-    /// reference (both call sites pass the same <c>_config.Games[i]</c> instance),
-    /// computed once and reused — the rotation then produces byte-identical
-    /// content to a fresh selection because the plan/selection is deterministic.
-    /// Callers receive a shallow copy, so the cached selections are never aliased
-    /// into mutable use.
+    /// P765/P825 — cache per game, side and actual civilization, populated before
+    /// the simulation starts. Rotation never reads or validates plan files.
     /// </summary>
-    private readonly Dictionary<GameConfig, Dictionary<short, ResearchPlanCatalog.Selection>> _showcasePlanSelections = new();
+    private readonly Dictionary<(GameConfig Game, short Side, short Civ), ResearchPlanCatalog.Selection> _showcasePlanSelections = new();
+    private readonly HashSet<GameConfig> _primedPlanGames = new();
+    private readonly Dictionary<GameConfig, Random> _civSeedStreams = new();
+    private readonly Dictionary<Mission, (long Number, int Seed)> _matchups = new();
 
     /// <summary>P802 — the <see cref="GameConfig"/> each live mission was assembled
     /// from (assigned in <see cref="AssembleGameMission"/> and dropped on the
@@ -1140,42 +1127,69 @@ public sealed partial class Server
         AllowSupremacyPath = game.AllowSupremacyPath, InitialMinersPerTeam = game.InitialMinersPerTeam,
     };
 
-    /// <summary>Resolve every side from its loaded civilization; research mode requires a real cycle.</summary>
-    private Dictionary<short, ResearchPlanCatalog.Selection> SelectShowcasePlans(StaticCore core, GameConfig game)
+    private void PrimeShowcasePlans(StaticCore core, GameConfig game)
     {
+        if (_primedPlanGames.Contains(game)) return;
         bool research = _config.Showcase.TechMode == "research";
-        var selected = new Dictionary<short, ResearchPlanCatalog.Selection>();
-        if (!research && game.ResearchPlanDirectory is null) return selected;
-        if (game.Teams < 1 || game.CivIds.Length < game.Teams
-            || research && game.CivIds.Length != game.Teams)
+        MatchCivilizations.Validate(game, core, research || game.ResearchPlanDirectory is not null);
+        if (research && game.CivIds.Length != game.Teams)
             throw new InvalidDataException($"game '{game.Name}': research requires one civ ID per side");
         if (research && game.ResearchPlans.Keys.Any(side => side < 0 || side >= game.Teams))
             throw new InvalidDataException($"game '{game.Name}': researchPlans contains an unknown side ID");
-        // P765 — reuse the boot-time selection on game-over rotations instead of
-        // re-reading/validating every plan file (≈0.5 s) on the tick.
-        if (_showcasePlanSelections.TryGetValue(game, out var cached))
-            return new Dictionary<short, ResearchPlanCatalog.Selection>(cached);
-        var settings = ResearchSettingsFor(game);
-        for (short side = 0; side < game.Teams; side++)
+        if (research || game.ResearchPlanDirectory is not null)
         {
-            int civ = game.CivIds[side];
-            try
+            var settings = ResearchSettingsFor(game);
+            string coreName = Path.GetFileNameWithoutExtension(_config.StaticCore);
+            string directory = game.ResearchPlanDirectory ?? Path.Combine(AppContext.BaseDirectory, "showcase-plans");
+            var authored = ResearchPlanCatalog.ValidateDirectory(core, coreName, directory);
+            for (short side = 0; side < game.Teams; side++)
             {
-                if (civ < 0 || civ > short.MaxValue) throw new InvalidDataException("civilization ID is out of range");
-                var selection = ResearchPlanCatalog.Select(core, Path.GetFileNameWithoutExtension(_config.StaticCore),
-                    (short)civ, game.ResearchPlanDirectory ?? Path.Combine(AppContext.BaseDirectory, "showcase-plans"),
-                    game.ResearchPlans.GetValueOrDefault(side, "auto"), settings);
-                if (research && !selection.Plan.Steps.Any(step => step.Action == "develop"))
-                    throw new InvalidDataException("no plan with real developments (this civilization/settings has no research cycle)");
-                selected.Add(side, selection);
-            }
-            catch (Exception ex) when (ex is InvalidDataException or KeyNotFoundException or ArgumentException)
-            {
-                throw new InvalidDataException($"game '{game.Name}' side {side} civ {civ}: no valid research plan: {ex.Message}", ex);
+                bool random = game.CivIds[side] == -1;
+                var civs = random ? LegalLobbyCivs(core).Select(c => (int)c.CivilizationId) : [game.CivIds[side]];
+                foreach (int civ in civs)
+                    try
+                    {
+                        string choice = game.ResearchPlans.GetValueOrDefault(side, "auto");
+                        // A named plan for the old fixed matchup must not prevent
+                        // rolling a civ with no authored plan (P702 fallback).
+                        if (random && !authored.Any(p => p.CivId == civ)) choice = "generated";
+                        var selection = ResearchPlanCatalog.Select(core, coreName, (short)civ, directory, choice, settings);
+                        if (research && !selection.Plan.Steps.Any(step => step.Action == "develop"))
+                            throw new InvalidDataException("no plan with real developments (this civilization/settings has no research cycle)");
+                        _showcasePlanSelections[(game, side, (short)civ)] = selection;
+                    }
+                    catch (Exception ex) when (ex is InvalidDataException or KeyNotFoundException or ArgumentException)
+                    {
+                        throw new InvalidDataException($"game '{game.Name}' side {side} civ {civ}: no valid research plan: {ex.Message}", ex);
+                    }
             }
         }
-        _showcasePlanSelections[game] = new Dictionary<short, ResearchPlanCatalog.Selection>(selected);
+        _primedPlanGames.Add(game);
+    }
+
+    private Dictionary<short, ResearchPlanCatalog.Selection> SelectShowcasePlans(GameConfig game, int[] civIds)
+    {
+        var selected = new Dictionary<short, ResearchPlanCatalog.Selection>();
+        for (short side = 0; side < game.Teams; side++)
+            if (_showcasePlanSelections.TryGetValue((game, side, (short)civIds[side]), out var selection))
+                selected.Add(side, selection);
         return selected;
+    }
+
+    private int NextCivSeed(GameConfig game)
+    {
+        if (_civSeedStreams.TryGetValue(game, out var stream)) return stream.Next();
+        int seed = game.CivSeed ?? System.Security.Cryptography.RandomNumberGenerator.GetInt32(int.MaxValue);
+        _civSeedStreams.Add(game, new Random(seed));
+        return seed;
+    }
+
+    private string MatchupDetails(Mission mission)
+    {
+        var match = _matchups[mission];
+        return $"match={match.Number} seed={match.Seed} " + string.Join(" ", mission.Sides.Select(side =>
+            $"side{side.Id}={side.Civilization.CivilizationId}:{side.Civilization.Name}"
+            + $"({(mission.ResearchPlans.TryGetValue(side.Id, out var plan) ? plan.Name : "none")})"));
     }
 
     /// <summary>
@@ -1209,12 +1223,14 @@ public sealed partial class Server
         // file when g.MapGen is set. The generator path is a pure addition:
         // with MapGen null (every existing config), the byte-for-byte
         // file-load path below runs unchanged.
+        int civSeed = NextCivSeed(g);
+        var civIds = MatchCivilizations.Resolve(g, core, civSeed);
         MissionMap map;
         MapGenConfig? mg = g.MapGen;
         bool fromMapGen = mg is not null;
         if (fromMapGen)
         {
-            var pmp = ToCoreParams(mg!, g.Teams, g.CivIds);
+            var pmp = ToCoreParams(mg!, g.Teams, civIds);
             map = MissionMapGenerator.Generate(pmp, core, _simNow);
             // P811 — one reproducible line per generated map: the topology,
             // the seed actually used (configured or freshly drawn) and the
@@ -1247,9 +1263,9 @@ public sealed partial class Server
 
         var sides = new SideSpec[g.Teams];
         for (int t = 0; t < g.Teams; t++)
-            sides[t] = new SideSpec((short)t, g.SideNames[t], (short)g.CivIds[t]);
+            sides[t] = new SideSpec((short)t, g.SideNames[t], (short)civIds[t]);
 
-        var researchPlans = SelectShowcasePlans(core, g);
+        var researchPlans = SelectShowcasePlans(g, civIds);
         if (_config.Showcase.TechMode == "research") map = PrepareResearchMap(core, map, researchPlans);
         var mission = Mission.Assemble(core, map, sides, _host, _simNow, new ResearchSettings
         {
@@ -1264,6 +1280,8 @@ public sealed partial class Server
             mission.ResearchPlans[side] = selection.Plan;
             Console.WriteLine($"[research-plan] side {side}: {selection.Message}");
         }
+        _matchups.Add(mission, (_skillMatchNumber, civSeed));
+        Console.WriteLine($"[matchup] mission #{_config.Games.IndexOf(g)} {MatchupDetails(mission)}");
         mission.ShowcaseResearchTimeScale = _config.Showcase.TechMode == "research" ? _config.Showcase.ResearchTimeScale : 1;
         mission.ShowcaseIncomeMultiplier = _config.Showcase.IncomeMultiplier;
         mission.AllowDevelopments = g.AllowDevelopments;

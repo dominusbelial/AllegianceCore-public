@@ -448,7 +448,7 @@ public sealed partial class Server
 
         Console.WriteLine($"[gameover] mission #{_missions.IndexOf(mission)} -> Stage Over, " +
                           $"iSideWinner={(winnerId == GameOver.NA ? "NA(draw)" : winnerId.ToString())}, " +
-                          $"{targets.Length} peer(s), result packet {packet.Length} bytes");
+                          $"{targets.Length} peer(s), result packet {packet.Length} bytes; {MatchupDetails(mission)}");
         foreach (var t in targets)
             SendPeer(t, packet);
         if (sw is not null) SwMark(sw, "send-gameover", mission, winnerId);
@@ -555,6 +555,7 @@ public sealed partial class Server
         _restartWarnings.Remove(mission);
         _ballots.Remove(mission);
         _mapGenMissions.Remove(mission);
+        _matchups.Remove(mission);
         _missionConfigs.Remove(mission);   // P802 — the rebuilt mission re-registers its config
         // HUD-17: NPC detection entries are never pruned per ship (ids only grow);
         // drop them all with the old world. A missing entry reads as false.

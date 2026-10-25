@@ -498,3 +498,20 @@ list in **reverse**.
 - **Career lobby web pages (P808c)** — read-only ladder + player profile on the
   lobby site: `src/Allegiance.Lobby/wwwroot/ladder.html`, `ladder.js`,
   `profile.html`, `profile.js`, `career.css`.
+
+## 14. Match civilizations (P825)
+
+- **Creation-time random civs** — `games[].civIds` accepts JSON `null` or `-1`
+  for a fresh legal draw on boot and every rotation. `games[].civSeed` pins the
+  sequence; each `[matchup]` logs a directly replayable match seed.
+  `src/Allegiance.Server/MatchCivilizations.cs` implements swap-remove/refill
+  (native `FedSrv/fsmission.cpp:175-198`, NA defaults `Igc/igc.h:1280-1281`),
+  reusing `src/Allegiance.Server/Server.TeamCiv.cs`'s legal lobby pool. Fixed
+  sides are excluded from random draws. `src/Allegiance.Server/Server.Lifecycle.cs`
+  precomputes plans per game/side/civ before ticking; rotations select the actual
+  rolled tuple without plan I/O. JSON sentinel adapter:
+  `src/Allegiance.Server/CivIdsJsonConverter.cs`.
+- **Race-matrix tally** — `tools/p819-side-bias-proof/matchups.py` reads assembly
+  and game-over civ tuples, tallying wins/losses/draws by civ and side position
+  for any number of sides. The same proof tool's `--random-rotation` mode runs
+  consecutive local showcase matches. Report: `docs/reports/P825_RANDOM_CIVS.md`.

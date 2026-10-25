@@ -74,7 +74,9 @@ public sealed class P705TechModeTests
     [InlineData("1", false)]
     [InlineData("1,2,3", false)]
     [InlineData("x,3", false)]
-    [InlineData("-1,3", false)]
+    [InlineData("-1,3", true)]
+    [InlineData("-1,-1", true)]
+    [InlineData("-2,3", false)]
     public void Civ_run_parameter_is_ordered_and_validated(string ids, bool valid)
     {
         var c = new ServerConfig { Games = [new() { Teams = 2 }] };

@@ -1,0 +1,353 @@
+{
+  "current": [
+    {
+      "run": 1,
+      "observationSeconds": 357.5,
+      "samples": 3569,
+      "reached": 24,
+      "maxStopSeconds": 1.72,
+      "shots": 909,
+      "hits": 217,
+      "kills": 1
+    },
+    {
+      "run": 2,
+      "observationSeconds": 325.0,
+      "samples": 3244,
+      "reached": 24,
+      "maxStopSeconds": 2.006,
+      "shots": 1210,
+      "hits": 514,
+      "kills": 2
+    },
+    {
+      "run": 3,
+      "observationSeconds": 352.0,
+      "samples": 3514,
+      "reached": 24,
+      "maxStopSeconds": 2.005,
+      "shots": 2846,
+      "hits": 1029,
+      "kills": 7
+    },
+    {
+      "run": 4,
+      "observationSeconds": 427.7,
+      "samples": 4271,
+      "reached": 30,
+      "maxStopSeconds": 0.0,
+      "shots": 467,
+      "hits": 1,
+      "kills": 0
+    },
+    {
+      "run": 5,
+      "observationSeconds": 373.1,
+      "samples": 3726,
+      "reached": 24,
+      "maxStopSeconds": 2.005,
+      "shots": 3279,
+      "hits": 1340,
+      "kills": 9
+    }
+  ],
+  "historicalBaseline": {
+    "source": "docs/reports/P821_assets/verification.json",
+    "kind": "saved baseline; no new baseline run",
+    "preP821": {
+      "passes": 5,
+      "runs": [
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 1,
+          "exit": 0,
+          "seconds": 403.05,
+          "log": "base-parking-1.log",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 399.5s, samples=3990, reached=24/30, longest speed<1 with target=2.005s, shots=5809, hits=2654, kills=23"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 2,
+          "exit": 0,
+          "seconds": 450.64,
+          "log": "base-parking-2.log",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 447.2s, samples=4465, reached=24/30, longest speed<1 with target=2.205s, shots=8035, hits=3734, kills=29"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 3,
+          "exit": 0,
+          "seconds": 452.57,
+          "log": "base-parking-3.log",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 449.1s, samples=4484, reached=24/30, longest speed<1 with target=1.704s, shots=1970, hits=905, kills=10"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 4,
+          "exit": 0,
+          "seconds": 423.16,
+          "log": "base-parking-4.log",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 419.7s, samples=4190, reached=24/30, longest speed<1 with target=2.005s, shots=8304, hits=3463, kills=23"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 5,
+          "exit": 0,
+          "seconds": 354.57,
+          "log": "base-parking-5.log",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 351.1s, samples=3506, reached=24/30, longest speed<1 with target=1.720s, shots=1250, hits=494, kills=5"
+          ]
+        }
+      ]
+    },
+    "includedP821": {
+      "passes": 5,
+      "runs": [
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 1,
+          "exit": 0,
+          "seconds": 357.78,
+          "log": "P700ShowcaseLiveTests-1.log",
+          "resultsRoot": "strict",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 354.0s, samples=3534, reached=24/30, longest speed<1 with target=0.802s, shots=927, hits=244, kills=2"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 2,
+          "exit": 0,
+          "seconds": 344.74,
+          "log": "P700ShowcaseLiveTests-2.log",
+          "resultsRoot": "strict",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 341.0s, samples=3405, reached=24/30, longest speed<1 with target=1.817s, shots=1503, hits=504, kills=3"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 3,
+          "exit": 0,
+          "seconds": 355.35,
+          "log": "P700ShowcaseLiveTests-3.log",
+          "resultsRoot": "strict",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 351.5s, samples=3510, reached=24/30, longest speed<1 with target=2.021s, shots=2229, hits=1017, kills=5"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 4,
+          "exit": 0,
+          "seconds": 312.15,
+          "log": "P700ShowcaseLiveTests-4.log",
+          "resultsRoot": "strict",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 308.3s, samples=3078, reached=24/30, longest speed<1 with target=1.920s, shots=755, hits=437, kills=4"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 5,
+          "exit": 0,
+          "seconds": 410.2,
+          "log": "P700ShowcaseLiveTests-5.log",
+          "resultsRoot": "strict",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 406.4s, samples=4059, reached=24/30, longest speed<1 with target=1.917s, shots=2031, hits=545, kills=3"
+          ]
+        }
+      ]
+    }
+  }
+}

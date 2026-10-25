@@ -106,8 +106,13 @@ public sealed class GameConfig
     public int MaxTeamImbalance { get; set; } = 0x7ffe;
 
     /// <summary>Per-team <c>rgCivID[]</c> — indexes <see cref="ServerConfig.StaticCore"/>
-    /// civilizations. Length must be &gt;= Teams.</summary>
+    /// civilizations. JSON null or -1 means random at each assembly; length must be &gt;= Teams.</summary>
+    [JsonConverter(typeof(CivIdsJsonConverter))]
     public int[] CivIds { get; set; } = [];
+
+    /// <summary>First match civilization seed; later match seeds follow a reproducible stream.
+    /// Omit to draw and log a seed. Each logged match seed replays as the first civSeed.</summary>
+    public int? CivSeed { get; set; }
 
     /// <summary>Per-team display names; length must be &gt;= Teams.</summary>
     public string[] SideNames { get; set; } = [];
@@ -853,7 +858,7 @@ public sealed class ReceiveConfig
 /// <c>--config</c> (default <c>server.json</c>), with scalar fields overridable
 /// on the command line (<c>--port</c>, <c>--artpath</c>, <c>--staticcore</c>,
 /// <c>--updatespersec</c>). Games are file-defined — there is no CLI form for
-/// a nested array except the ordered civ list of one two-side game (<c>--civs</c>).
+/// a nested array except the ordered civ list of one game (<c>--civs</c>).
 /// </summary>
 public sealed class ServerConfig
 {
@@ -1216,13 +1221,16 @@ public static class ServerConfigLoader
                     config.UpdatesPerSecond = up; recognized++; break;
                 case "civs":
                     var ids = value.Split(',');
-                    if (config.Games.Count != 1 || ids.Length != 2
-                        || ids.Any(id => !int.TryParse(id, out var n) || n < 0 || n > short.MaxValue))
-                        throw new InvalidDataException("--civs requires exactly two comma-separated civilization IDs and one configured game");
-                    // Ordered side IDs, not race-specific branches; future side counts can extend validation.
+                    if (config.Games.Count != 1 || ids.Length != config.Games[0].Teams
+                        || ids.Any(id => !int.TryParse(id, out var n) || n < -1 || n > short.MaxValue))
+                        throw new InvalidDataException("--civs requires one comma-separated civilization ID per team (-1 = random) and one configured game");
                     config.Games[0].CivIds = ids.Select(int.Parse).ToArray();
-                    if (config.Games[0].Teams != 2)
-                        throw new InvalidDataException("--civs currently supports two-side games only");
+                    recognized++; break;
+                case "civseed":
+                case "civ-seed":
+                    if (!int.TryParse(value, out var civSeed))
+                        throw new InvalidDataException("--civ-seed requires an integer");
+                    foreach (var game in config.Games) game.CivSeed = civSeed;
                     recognized++; break;
                 case "mapseed":
                 case "map-seed":

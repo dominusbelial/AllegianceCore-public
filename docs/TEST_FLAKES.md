@@ -2896,3 +2896,14 @@ timing budget, UI code or product path was changed. The original fast run
 remains failed and was not repeated. See [P821 report](reports/P821_ROLE_RESOLUTION.md)
 and [verification receipt](reports/P821_assets/verification.json).
 | 2026-10-25 | ChatTargetComposeLiveTests.ComposeDefault_Team_SendsToTeammate_NotEnemy | Failed in the P824 full MonoGame run and the P821 fast tier under parallel host load (Codex + GLM + tiers); 3/3 alone both times. Live chat routing timing. |
+
+## P825 validation (2026-10-25)
+
+The single Fast-tier run hit the existing
+`Hud12bReviewFixTests.HUD_formatted_readouts_allocate_nothing_in_steady_state`
+allocation flake (1,568 B over 10,000 frames). The exact method passed **3/3**
+in fresh standalone processes on final source; no HUD production code changed.
+Five other failed cases were corrected civ-validation contracts and related
+fixtures, documented as fixes rather than flakes in
+[the P825 report](reports/P825_RANDOM_CIVS.md). The raw Fast snapshot remains
+failed; its targeted follow-ups do not relabel it as a green broad run.

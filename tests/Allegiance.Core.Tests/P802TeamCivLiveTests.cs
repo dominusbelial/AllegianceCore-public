@@ -131,13 +131,12 @@ public class P802TeamCivLiveTests
 
         a.ResetLeadershipSignals();
         b.ResetLeadershipSignals();
-        short before = Side(server, side0).Civilization.CivilizationId;
 
         // Native RANDOM_ID (igc.h:501) is a placeholder, not a civ.
         a.SendChangeTeamCiv(side0, TeamCivPickerRandomId, random: true);
 
-        int got = PumpUntil(server, () => Side(server, side0).Civilization.CivilizationId != before
-            && a.ChangeTeamCivs.Any(x => x.SideId == side0 && x.Random)
+        // Native random may legitimately select the side's current civ again.
+        int got = PumpUntil(server, () => a.ChangeTeamCivs.Any(x => x.SideId == side0 && x.Random)
             && b.ChangeTeamCivs.Any(x => x.SideId == side0 && x.Random), 800);
         Assert.True(got < 800, "a random CHANGE_TEAM_CIV must resolve, apply and relay");
 

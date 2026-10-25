@@ -52,8 +52,10 @@ public sealed partial class Server
     /// civs below <see cref="SpecialCivIdMin"/>, in id order
     /// (<c>teamscreen.cpp:897-916</c>). Used by the random resolver so a
     /// <c>random=true</c> request never resolves to a special/bonus civ.</summary>
-    internal static DataCivilizationIGC[] LegalLobbyCivs(Mission mission) =>
-        mission.Core.Civilizations.Values
+    internal static DataCivilizationIGC[] LegalLobbyCivs(Mission mission) => LegalLobbyCivs(mission.Core);
+
+    internal static DataCivilizationIGC[] LegalLobbyCivs(StaticCore core) =>
+        core.Civilizations.Values
             .Where(c => c.CivilizationId >= 0 && c.CivilizationId < SpecialCivIdMin)
             .OrderBy(c => c.CivilizationId)
             .ToArray();
@@ -62,8 +64,8 @@ public sealed partial class Server
     /// Resolve a <c>random=true</c> CHANGE_TEAM_CIV to a concrete civ: native's
     /// <c>randomInt(0, numCivilizations-1)</c> over the legal list
     /// (<c>teamscreen.cpp:1065-1067</c>, <c>:2683-2685</c>). Drawn from the
-    /// server's seeded <see cref="_rand"/> (the same stream mission-creation civ
-    /// randomisation uses, <c>fsmission.cpp:191</c>). Returns false when the
+    /// server's seeded <see cref="_rand"/> (mission creation uses its own replayable
+    /// civSeed stream, <c>fsmission.cpp:191</c>). Returns false when the
     /// core offers no legal civ (a malformed core — nothing to pick).
     /// </summary>
     private bool TryPickRandomCiv(Mission mission, out DataCivilizationIGC civ)

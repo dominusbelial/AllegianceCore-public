@@ -1,0 +1,916 @@
+{
+  "base": "b782c8cd8ebfa4bc0743c49eb43f02caffac8e2a",
+  "branch": "codex/p825",
+  "commits": 0,
+  "pushes": 0,
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0,
+    "log": "build-final.log"
+  },
+  "toolBuild": {
+    "projects": 87,
+    "warnings": 0,
+    "errors": 0,
+    "log": "build-tools-verified.log"
+  },
+  "aot": {
+    "warnings": 0,
+    "errors": 0,
+    "il2026": 0,
+    "il3050": 0,
+    "log": "aot-final.log",
+    "smoke": {
+      "matchupLogged": true,
+      "seconds": 8.069923225997627,
+      "exit": 0
+    }
+  },
+  "isolated": {
+    "dotnetInvocations": 48,
+    "dotnetCasePasses": 90,
+    "pythonInvocations": 3,
+    "pythonCasePasses": 6,
+    "runs": [
+      {
+        "method": "Json_null_and_cli_minus_one_are_random_and_cli_supports_three_teams",
+        "run": 1,
+        "exit": 0,
+        "log": "Json_null_and_cli_minus_one_are_random_and_cli_supports_three_teams-1.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Json_null_and_cli_minus_one_are_random_and_cli_supports_three_teams",
+        "run": 2,
+        "exit": 0,
+        "log": "Json_null_and_cli_minus_one_are_random_and_cli_supports_three_teams-2.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Json_null_and_cli_minus_one_are_random_and_cli_supports_three_teams",
+        "run": 3,
+        "exit": 0,
+        "log": "Json_null_and_cli_minus_one_are_random_and_cli_supports_three_teams-3.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Malformed_json_has_clear_civIds_error",
+        "run": 1,
+        "exit": 0,
+        "log": "Malformed_json_has_clear_civIds_error-1.log",
+        "casePasses": 3
+      },
+      {
+        "method": "Malformed_json_has_clear_civIds_error",
+        "run": 2,
+        "exit": 0,
+        "log": "Malformed_json_has_clear_civIds_error-2.log",
+        "casePasses": 3
+      },
+      {
+        "method": "Malformed_json_has_clear_civIds_error",
+        "run": 3,
+        "exit": 0,
+        "log": "Malformed_json_has_clear_civIds_error-3.log",
+        "casePasses": 3
+      },
+      {
+        "method": "Resolver_excludes_fixed_and_special_civs_handles_three_teams_and_refills",
+        "run": 1,
+        "exit": 0,
+        "log": "Resolver_excludes_fixed_and_special_civs_handles_three_teams_and_refills-1.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Resolver_excludes_fixed_and_special_civs_handles_three_teams_and_refills",
+        "run": 2,
+        "exit": 0,
+        "log": "Resolver_excludes_fixed_and_special_civs_handles_three_teams_and_refills-2.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Resolver_excludes_fixed_and_special_civs_handles_three_teams_and_refills",
+        "run": 3,
+        "exit": 0,
+        "log": "Resolver_excludes_fixed_and_special_civs_handles_three_teams_and_refills-3.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Boot_and_rotation_replay_seed_and_plans_follow_actual_civs_without_disk_reads",
+        "run": 1,
+        "exit": 0,
+        "log": "Boot_and_rotation_replay_seed_and_plans_follow_actual_civs_without_disk_reads-1.log",
+        "casePasses": 2
+      },
+      {
+        "method": "Boot_and_rotation_replay_seed_and_plans_follow_actual_civs_without_disk_reads",
+        "run": 2,
+        "exit": 0,
+        "log": "Boot_and_rotation_replay_seed_and_plans_follow_actual_civs_without_disk_reads-2.log",
+        "casePasses": 2
+      },
+      {
+        "method": "Boot_and_rotation_replay_seed_and_plans_follow_actual_civs_without_disk_reads",
+        "run": 3,
+        "exit": 0,
+        "log": "Boot_and_rotation_replay_seed_and_plans_follow_actual_civs_without_disk_reads-3.log",
+        "casePasses": 2
+      },
+      {
+        "method": "Drawn_seed_is_logged_and_replays_first_match",
+        "run": 1,
+        "exit": 0,
+        "log": "Drawn_seed_is_logged_and_replays_first_match-1.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Drawn_seed_is_logged_and_replays_first_match",
+        "run": 2,
+        "exit": 0,
+        "log": "Drawn_seed_is_logged_and_replays_first_match-2.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Drawn_seed_is_logged_and_replays_first_match",
+        "run": 3,
+        "exit": 0,
+        "log": "Drawn_seed_is_logged_and_replays_first_match-3.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Failed_civ_boot_does_not_leave_profiler_callbacks",
+        "run": 1,
+        "exit": 0,
+        "log": "Failed_civ_boot_does_not_leave_profiler_callbacks-1.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Failed_civ_boot_does_not_leave_profiler_callbacks",
+        "run": 2,
+        "exit": 0,
+        "log": "Failed_civ_boot_does_not_leave_profiler_callbacks-2.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Failed_civ_boot_does_not_leave_profiler_callbacks",
+        "run": 3,
+        "exit": 0,
+        "log": "Failed_civ_boot_does_not_leave_profiler_callbacks-3.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Random_change_resolves_to_a_real_legal_civ_and_relays_it",
+        "run": 1,
+        "exit": 0,
+        "log": "Random_change_resolves_to_a_real_legal_civ_and_relays_it-1.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Random_change_resolves_to_a_real_legal_civ_and_relays_it",
+        "run": 2,
+        "exit": 0,
+        "log": "Random_change_resolves_to_a_real_legal_civ_and_relays_it-2.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Random_change_resolves_to_a_real_legal_civ_and_relays_it",
+        "run": 3,
+        "exit": 0,
+        "log": "Random_change_resolves_to_a_real_legal_civ_and_relays_it-3.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Change_applies_new_civ_base_techs_stations_and_score_reset",
+        "run": 1,
+        "exit": 0,
+        "log": "Change_applies_new_civ_base_techs_stations_and_score_reset-1.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Change_applies_new_civ_base_techs_stations_and_score_reset",
+        "run": 2,
+        "exit": 0,
+        "log": "Change_applies_new_civ_base_techs_stations_and_score_reset-2.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Change_applies_new_civ_base_techs_stations_and_score_reset",
+        "run": 3,
+        "exit": 0,
+        "log": "Change_applies_new_civ_base_techs_stations_and_score_reset-3.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Research_plan_follows_the_new_civilization",
+        "run": 1,
+        "exit": 0,
+        "log": "Research_plan_follows_the_new_civilization-1.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Research_plan_follows_the_new_civilization",
+        "run": 2,
+        "exit": 0,
+        "log": "Research_plan_follows_the_new_civilization-2.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Research_plan_follows_the_new_civilization",
+        "run": 3,
+        "exit": 0,
+        "log": "Research_plan_follows_the_new_civilization-3.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Boot_uses_configured_miners_and_selects_plans_for_actual_side_civs",
+        "run": 1,
+        "exit": 0,
+        "log": "Boot_uses_configured_miners_and_selects_plans_for_actual_side_civs-1.log",
+        "casePasses": 4
+      },
+      {
+        "method": "Boot_uses_configured_miners_and_selects_plans_for_actual_side_civs",
+        "run": 2,
+        "exit": 0,
+        "log": "Boot_uses_configured_miners_and_selects_plans_for_actual_side_civs-2.log",
+        "casePasses": 4
+      },
+      {
+        "method": "Boot_uses_configured_miners_and_selects_plans_for_actual_side_civs",
+        "run": 3,
+        "exit": 0,
+        "log": "Boot_uses_configured_miners_and_selects_plans_for_actual_side_civs-3.log",
+        "casePasses": 4
+      },
+      {
+        "method": "P765_GameOver_delivers_once_rotates_and_migrates_every_peer",
+        "run": 1,
+        "exit": 0,
+        "log": "P765_GameOver_delivers_once_rotates_and_migrates_every_peer-1.log",
+        "casePasses": 1
+      },
+      {
+        "method": "P765_GameOver_delivers_once_rotates_and_migrates_every_peer",
+        "run": 2,
+        "exit": 0,
+        "log": "P765_GameOver_delivers_once_rotates_and_migrates_every_peer-2.log",
+        "casePasses": 1
+      },
+      {
+        "method": "P765_GameOver_delivers_once_rotates_and_migrates_every_peer",
+        "run": 3,
+        "exit": 0,
+        "log": "P765_GameOver_delivers_once_rotates_and_migrates_every_peer-3.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Civ_run_parameter_is_ordered_and_validated",
+        "run": 1,
+        "exit": 0,
+        "log": "Civ_run_parameter_is_ordered_and_validated-1.log",
+        "casePasses": 8
+      },
+      {
+        "method": "Civ_run_parameter_is_ordered_and_validated",
+        "run": 2,
+        "exit": 0,
+        "log": "Civ_run_parameter_is_ordered_and_validated-2.log",
+        "casePasses": 8
+      },
+      {
+        "method": "Civ_run_parameter_is_ordered_and_validated",
+        "run": 3,
+        "exit": 0,
+        "log": "Civ_run_parameter_is_ordered_and_validated-3.log",
+        "casePasses": 8
+      },
+      {
+        "method": "Unknown_civ_or_named_plan_fails_with_side_context_before_listening",
+        "run": 1,
+        "exit": 0,
+        "log": "Unknown_civ_or_named_plan_fails_with_side_context_before_listening-1.log",
+        "casePasses": 2
+      },
+      {
+        "method": "Unknown_civ_or_named_plan_fails_with_side_context_before_listening",
+        "run": 2,
+        "exit": 0,
+        "log": "Unknown_civ_or_named_plan_fails_with_side_context_before_listening-2.log",
+        "casePasses": 2
+      },
+      {
+        "method": "Unknown_civ_or_named_plan_fails_with_side_context_before_listening",
+        "run": 3,
+        "exit": 0,
+        "log": "Unknown_civ_or_named_plan_fails_with_side_context_before_listening-3.log",
+        "casePasses": 2
+      },
+      {
+        "method": "Boot_WithUnknownCivilization_ThrowsHelpfulError",
+        "run": 1,
+        "exit": 0,
+        "log": "Boot_WithUnknownCivilization_ThrowsHelpfulError-1.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Boot_WithUnknownCivilization_ThrowsHelpfulError",
+        "run": 2,
+        "exit": 0,
+        "log": "Boot_WithUnknownCivilization_ThrowsHelpfulError-2.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Boot_WithUnknownCivilization_ThrowsHelpfulError",
+        "run": 3,
+        "exit": 0,
+        "log": "Boot_WithUnknownCivilization_ThrowsHelpfulError-3.log",
+        "casePasses": 1
+      },
+      {
+        "method": "HUD_formatted_readouts_allocate_nothing_in_steady_state",
+        "run": 1,
+        "exit": 0,
+        "log": "HUD_formatted_readouts_allocate_nothing_in_steady_state-1.log",
+        "casePasses": 1
+      },
+      {
+        "method": "HUD_formatted_readouts_allocate_nothing_in_steady_state",
+        "run": 2,
+        "exit": 0,
+        "log": "HUD_formatted_readouts_allocate_nothing_in_steady_state-2.log",
+        "casePasses": 1
+      },
+      {
+        "method": "HUD_formatted_readouts_allocate_nothing_in_steady_state",
+        "run": 3,
+        "exit": 0,
+        "log": "HUD_formatted_readouts_allocate_nothing_in_steady_state-3.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Floor_configuration_defaults_to_two_and_rejects_invalid_values",
+        "run": 1,
+        "exit": 0,
+        "log": "Floor_configuration_defaults_to_two_and_rejects_invalid_values-1.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Floor_configuration_defaults_to_two_and_rejects_invalid_values",
+        "run": 2,
+        "exit": 0,
+        "log": "Floor_configuration_defaults_to_two_and_rejects_invalid_values-2.log",
+        "casePasses": 1
+      },
+      {
+        "method": "Floor_configuration_defaults_to_two_and_rejects_invalid_values",
+        "run": 3,
+        "exit": 0,
+        "log": "Floor_configuration_defaults_to_two_and_rejects_invalid_values-3.log",
+        "casePasses": 1
+      },
+      {
+        "method": "matchups.py",
+        "run": 1,
+        "exit": 0
+      },
+      {
+        "method": "matchups.py",
+        "run": 2,
+        "exit": 0
+      },
+      {
+        "method": "matchups.py",
+        "run": 3,
+        "exit": 0
+      }
+    ]
+  },
+  "fast": {
+    "invocations": 1,
+    "passed": 10801,
+    "failed": 6,
+    "skipped": 3,
+    "infrastructureChecks": 9,
+    "rawResult": "FAIL",
+    "snapshot": {
+      "discovery": {
+        "Allegiance.Lobby.Tests": {
+          "fast": 82,
+          "live": 3,
+          "perf": 0
+        },
+        "Allegiance.Update.Tests": {
+          "fast": 28,
+          "live": 0,
+          "perf": 0
+        },
+        "Allegiance.ClientCore.MonoGame.Tests": {
+          "fast": 3476,
+          "live": 11,
+          "perf": 9
+        },
+        "Allegiance.ClientCore.Tests": {
+          "fast": 1817,
+          "live": 96,
+          "perf": 6
+        },
+        "Allegiance.Core.Tests": {
+          "fast": 5407,
+          "live": 47,
+          "perf": 62
+        }
+      },
+      "tiers": {
+        "fast": {
+          "tier": "fast",
+          "seconds": 316.91816687400205,
+          "projects": {
+            "Allegiance.Lobby.Tests": {
+              "count": 82,
+              "outcomes": {
+                "Passed": 82
+              }
+            },
+            "Allegiance.Update.Tests": {
+              "count": 28,
+              "outcomes": {
+                "Passed": 28
+              }
+            },
+            "Allegiance.ClientCore.MonoGame.Tests": {
+              "count": 3476,
+              "outcomes": {
+                "Passed": 3472,
+                "NotExecuted": 3,
+                "Failed": 1
+              }
+            },
+            "Allegiance.ClientCore.Tests": {
+              "count": 1817,
+              "outcomes": {
+                "Passed": 1817
+              }
+            },
+            "Allegiance.Core.Tests": {
+              "count": 5407,
+              "outcomes": {
+                "Passed": 5402,
+                "Failed": 5
+              }
+            }
+          },
+          "calibration": {
+            "factor": 0.9849602122015915,
+            "referenceMs": 3.7133,
+            "nominalMs": 3.77,
+            "fastLimitSeconds": 10
+          },
+          "timingOffenders": [],
+          "errors": [
+            "Allegiance.ClientCore.MonoGame.Tests: main failed",
+            "Allegiance.Core.Tests: main failed"
+          ],
+          "quarantineFlakes": [],
+          "infrastructure": {
+            "tier": "Fast",
+            "count": 9,
+            "seconds": 0.06423549900137004,
+            "exitCode": 0,
+            "timingGuardPassed": true
+          }
+        }
+      },
+      "infrastructure": {
+        "tier": "Fast",
+        "count": 9,
+        "seconds": 0.06423549900137004,
+        "exitCode": 0,
+        "timingGuardPassed": true
+      },
+      "passed": false
+    }
+  },
+  "showcase": {
+    "Completed": 3,
+    "DistinctMatchups": 3,
+    "Matches": [
+      {
+        "Match": 1,
+        "Civs": "35,201",
+        "Wall": 18.3406449,
+        "Plans": [
+          {
+            "Side": 0,
+            "CivId": 35,
+            "Name": "generated"
+          },
+          {
+            "Side": 1,
+            "CivId": 201,
+            "Name": "generated"
+          }
+        ],
+        "Bots": 30,
+        "Failures": 0
+      },
+      {
+        "Match": 2,
+        "Civs": "5,201",
+        "Wall": 39.4981625,
+        "Plans": [
+          {
+            "Side": 0,
+            "CivId": 5,
+            "Name": "generated"
+          },
+          {
+            "Side": 1,
+            "CivId": 201,
+            "Name": "generated"
+          }
+        ],
+        "Bots": 30,
+        "Failures": 0
+      },
+      {
+        "Match": 3,
+        "Civs": "3,1",
+        "Wall": 60.5776578,
+        "Plans": [
+          {
+            "Side": 0,
+            "CivId": 3,
+            "Name": "plan_a"
+          },
+          {
+            "Side": 1,
+            "CivId": 1,
+            "Name": "generated"
+          }
+        ],
+        "Bots": 30,
+        "Failures": 0
+      }
+    ],
+    "Failures": 0,
+    "Finale": []
+  },
+  "parking": [
+    {
+      "run": 1,
+      "observationSeconds": 357.5,
+      "samples": 3569,
+      "reached": 24,
+      "maxStopSeconds": 1.72,
+      "shots": 909,
+      "hits": 217,
+      "kills": 1
+    },
+    {
+      "run": 2,
+      "observationSeconds": 325.0,
+      "samples": 3244,
+      "reached": 24,
+      "maxStopSeconds": 2.006,
+      "shots": 1210,
+      "hits": 514,
+      "kills": 2
+    },
+    {
+      "run": 3,
+      "observationSeconds": 352.0,
+      "samples": 3514,
+      "reached": 24,
+      "maxStopSeconds": 2.005,
+      "shots": 2846,
+      "hits": 1029,
+      "kills": 7
+    },
+    {
+      "run": 4,
+      "observationSeconds": 427.7,
+      "samples": 4271,
+      "reached": 30,
+      "maxStopSeconds": 0.0,
+      "shots": 467,
+      "hits": 1,
+      "kills": 0
+    },
+    {
+      "run": 5,
+      "observationSeconds": 373.1,
+      "samples": 3726,
+      "reached": 24,
+      "maxStopSeconds": 2.005,
+      "shots": 3279,
+      "hits": 1340,
+      "kills": 9
+    }
+  ],
+  "historicalBaseline": {
+    "source": "docs/reports/P821_assets/verification.json",
+    "kind": "saved baseline; no new baseline run",
+    "preP821": {
+      "passes": 5,
+      "runs": [
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 1,
+          "exit": 0,
+          "seconds": 403.05,
+          "log": "base-parking-1.log",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 399.5s, samples=3990, reached=24/30, longest speed<1 with target=2.005s, shots=5809, hits=2654, kills=23"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 2,
+          "exit": 0,
+          "seconds": 450.64,
+          "log": "base-parking-2.log",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 447.2s, samples=4465, reached=24/30, longest speed<1 with target=2.205s, shots=8035, hits=3734, kills=29"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 3,
+          "exit": 0,
+          "seconds": 452.57,
+          "log": "base-parking-3.log",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 449.1s, samples=4484, reached=24/30, longest speed<1 with target=1.704s, shots=1970, hits=905, kills=10"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 4,
+          "exit": 0,
+          "seconds": 423.16,
+          "log": "base-parking-4.log",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 419.7s, samples=4190, reached=24/30, longest speed<1 with target=2.005s, shots=8304, hits=3463, kills=23"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 5,
+          "exit": 0,
+          "seconds": 354.57,
+          "log": "base-parking-5.log",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 351.1s, samples=3506, reached=24/30, longest speed<1 with target=1.720s, shots=1250, hits=494, kills=5"
+          ]
+        }
+      ]
+    },
+    "includedP821": {
+      "passes": 5,
+      "runs": [
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 1,
+          "exit": 0,
+          "seconds": 357.78,
+          "log": "P700ShowcaseLiveTests-1.log",
+          "resultsRoot": "strict",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 354.0s, samples=3534, reached=24/30, longest speed<1 with target=0.802s, shots=927, hits=244, kills=2"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 2,
+          "exit": 0,
+          "seconds": 344.74,
+          "log": "P700ShowcaseLiveTests-2.log",
+          "resultsRoot": "strict",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 341.0s, samples=3405, reached=24/30, longest speed<1 with target=1.817s, shots=1503, hits=504, kills=3"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 3,
+          "exit": 0,
+          "seconds": 355.35,
+          "log": "P700ShowcaseLiveTests-3.log",
+          "resultsRoot": "strict",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 351.5s, samples=3510, reached=24/30, longest speed<1 with target=2.021s, shots=2229, hits=1017, kills=5"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 4,
+          "exit": 0,
+          "seconds": 312.15,
+          "log": "P700ShowcaseLiveTests-4.log",
+          "resultsRoot": "strict",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 308.3s, samples=3078, reached=24/30, longest speed<1 with target=1.920s, shots=755, hits=437, kills=4"
+          ]
+        },
+        {
+          "filter": "P700ShowcaseLiveTests",
+          "repeat": 5,
+          "exit": 0,
+          "seconds": 410.2,
+          "log": "P700ShowcaseLiveTests-5.log",
+          "resultsRoot": "strict",
+          "counters": {
+            "total": "1",
+            "executed": "1",
+            "passed": "1",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "movementMetrics": [
+            "P700 local 15v15: 406.4s, samples=4059, reached=24/30, longest speed<1 with target=1.917s, shots=2031, hits=545, kills=3"
+          ]
+        }
+      ]
+    }
+  },
+  "hygiene": {
+    "glossaryLinks": 176,
+    "parityValid": true,
+    "parityCarriageReturns": 0,
+    "diffCheck": true
+  },
+  "rawEvidence": ".scratch/p825"
+}

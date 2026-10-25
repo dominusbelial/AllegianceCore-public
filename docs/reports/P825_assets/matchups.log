@@ -1,0 +1,7 @@
+[matchup] mission #0 match=1 seed=825 side0=35:Bios(generated) side1=201:Rixian(generated)
+[gameover] mission #0 -> Stage Over, iSideWinner=NA(draw), 33 peer(s), result packet 2407 bytes; match=1 seed=825 side0=35:Bios(generated) side1=201:Rixian(generated)
+[matchup] mission #0 match=2 seed=1561494364 side0=5:Omicron(generated) side1=201:Rixian(generated)
+[gameover] mission #0 -> Stage Over, iSideWinner=NA(draw), 33 peer(s), result packet 2407 bytes; match=2 seed=1561494364 side0=5:Omicron(generated) side1=201:Rixian(generated)
+[matchup] mission #0 match=3 seed=1906288745 side0=3:Ga'Taraan(plan_a) side1=1:Dreghklar(generated)
+[gameover] mission #0 -> Stage Over, iSideWinner=NA(draw), 33 peer(s), result packet 2407 bytes; match=3 seed=1906288745 side0=3:Ga'Taraan(plan_a) side1=1:Dreghklar(generated)
+[matchup] mission #0 match=4 seed=930107022 side0=201:Rixian(generated) side1=4:Phoenix(generated)

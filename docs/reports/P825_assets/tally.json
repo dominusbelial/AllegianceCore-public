@@ -1,0 +1,199 @@
+{
+  "assembled": [
+    {
+      "mission": 0,
+      "match": 1,
+      "seed": 825,
+      "sides": [
+        {
+          "side": 0,
+          "civ": 35,
+          "name": "Bios",
+          "plan": "generated"
+        },
+        {
+          "side": 1,
+          "civ": 201,
+          "name": "Rixian",
+          "plan": "generated"
+        }
+      ]
+    },
+    {
+      "mission": 0,
+      "match": 2,
+      "seed": 1561494364,
+      "sides": [
+        {
+          "side": 0,
+          "civ": 5,
+          "name": "Omicron",
+          "plan": "generated"
+        },
+        {
+          "side": 1,
+          "civ": 201,
+          "name": "Rixian",
+          "plan": "generated"
+        }
+      ]
+    },
+    {
+      "mission": 0,
+      "match": 3,
+      "seed": 1906288745,
+      "sides": [
+        {
+          "side": 0,
+          "civ": 3,
+          "name": "Ga'Taraan",
+          "plan": "plan_a"
+        },
+        {
+          "side": 1,
+          "civ": 1,
+          "name": "Dreghklar",
+          "plan": "generated"
+        }
+      ]
+    },
+    {
+      "mission": 0,
+      "match": 4,
+      "seed": 930107022,
+      "sides": [
+        {
+          "side": 0,
+          "civ": 201,
+          "name": "Rixian",
+          "plan": "generated"
+        },
+        {
+          "side": 1,
+          "civ": 4,
+          "name": "Phoenix",
+          "plan": "generated"
+        }
+      ]
+    }
+  ],
+  "completed": [
+    {
+      "mission": 0,
+      "match": 1,
+      "seed": 825,
+      "sides": [
+        {
+          "side": 0,
+          "civ": 35,
+          "name": "Bios",
+          "plan": "generated"
+        },
+        {
+          "side": 1,
+          "civ": 201,
+          "name": "Rixian",
+          "plan": "generated"
+        }
+      ],
+      "winner": null
+    },
+    {
+      "mission": 0,
+      "match": 2,
+      "seed": 1561494364,
+      "sides": [
+        {
+          "side": 0,
+          "civ": 5,
+          "name": "Omicron",
+          "plan": "generated"
+        },
+        {
+          "side": 1,
+          "civ": 201,
+          "name": "Rixian",
+          "plan": "generated"
+        }
+      ],
+      "winner": null
+    },
+    {
+      "mission": 0,
+      "match": 3,
+      "seed": 1906288745,
+      "sides": [
+        {
+          "side": 0,
+          "civ": 3,
+          "name": "Ga'Taraan",
+          "plan": "plan_a"
+        },
+        {
+          "side": 1,
+          "civ": 1,
+          "name": "Dreghklar",
+          "plan": "generated"
+        }
+      ],
+      "winner": null
+    }
+  ],
+  "byCiv": {
+    "35": {
+      "name": "Bios",
+      "appearances": 1,
+      "wins": 0,
+      "losses": 0,
+      "draws": 1
+    },
+    "201": {
+      "name": "Rixian",
+      "appearances": 2,
+      "wins": 0,
+      "losses": 0,
+      "draws": 2
+    },
+    "5": {
+      "name": "Omicron",
+      "appearances": 1,
+      "wins": 0,
+      "losses": 0,
+      "draws": 1
+    },
+    "3": {
+      "name": "Ga'Taraan",
+      "appearances": 1,
+      "wins": 0,
+      "losses": 0,
+      "draws": 1
+    },
+    "1": {
+      "name": "Dreghklar",
+      "appearances": 1,
+      "wins": 0,
+      "losses": 0,
+      "draws": 1
+    }
+  },
+  "byPosition": {
+    "0": {
+      "appearances": 3,
+      "wins": 0,
+      "losses": 0,
+      "draws": 3
+    },
+    "1": {
+      "appearances": 3,
+      "wins": 0,
+      "losses": 0,
+      "draws": 3
+    }
+  },
+  "completedMatchups": {
+    "35,201": 1,
+    "5,201": 1,
+    "3,1": 1
+  },
+  "completedMatches": 3
+}
