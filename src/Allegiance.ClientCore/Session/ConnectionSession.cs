@@ -1785,6 +1785,14 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // pushes while the peer sits in side-select.
                         _world.Apply(SideRoster.Decode(m));
                         break;
+                    case SetTeamInfo.Fmid:
+                        // P820c — the server relays a side's squad on native
+                        // SET_TEAM_INFO(15) (Server.Squads.RelaySideSquad) on every
+                        // squad/name change; the world stores each side's squad for
+                        // the team pane (appmsg.cpp FM_CS_SET_TEAM_INFO,
+                        // clintlib/appmsg.cpp:2541-2550).
+                        _world.Apply(SetTeamInfo.Decode(m));
+                        break;
                     case SetMissionOwner.Fmid:
                         // P281 — whole-mission owner broadcast; the world keeps it
                         // so the side-select randomize-teams control is shown only

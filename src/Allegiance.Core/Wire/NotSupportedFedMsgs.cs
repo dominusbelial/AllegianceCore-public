@@ -133,9 +133,16 @@ public static class NotSupportedFedMsgs
             "effect."),
 
         [Fmid.SetTeamInfo] = new(Reason.NotApplicableToThisPort,
-            "Entirely squad-gated in native (GetIsMemberOfSquad/bSquadGame/" +
-            "GetCanLeadSquad, FedSrv/FedSrv.CPP:7430-7454) — this port has " +
-            "no squad concept anywhere."),
+            "P820c ports the S→C direction: the server relays a side's squad on native "
+            + "SET_TEAM_INFO(15) (fsmission.cpp:1580-1590), gated on bSquadGame "
+            + "(AddPlayerToSide fsmission.cpp:661-690); see Server.Squads.cs + SetTeamInfo.cs. "
+            + "The C→S direction (a client leader proposing a squad/name change) remains a "
+            + "documented gap: native honours it only in a squad game with bLockTeamSettings off "
+            + "and the sender the side's leader (FedSrv/FedSrv.CPP:7430-7463), and this port "
+            + "derives the side squad from the leader's preferred squad with no client "
+            + "squad-selection UI (invited-squad UI for bLockTeamSettings is out of scope), "
+            + "so there is no client entry point to send it. SIDE_ROSTER(211) was reverted to "
+            + "master (P820c fix 4) — squad info no longer rides it."),
 
         [Fmid.IcqChatAck] = new(Reason.NotApplicableToThisPort,
             "A 2000s-era ICQ-instant-messenger character-link feature, SQL " +

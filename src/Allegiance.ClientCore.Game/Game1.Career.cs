@@ -19,7 +19,7 @@ namespace Allegiance.ClientCore.MonoGame;
 public sealed partial class Game1
 {
     /// <summary>Which career sub-view is showing.</summary>
-    private enum CareerMode { CharacterInfo, Leaderboard, Squads }
+    private enum CareerMode { CharacterInfo, Leaderboard, Squads, Events }
 
     private CareerApiClient? _careerClient;
     private string _careerOrigin = "";
@@ -37,6 +37,12 @@ public sealed partial class Game1
     // lobby's squad HTTP API and presented by CareerScreenRenderer.
     private SquadApiClient? _squadClient;
     private readonly SquadScreenModel _squads = new();
+
+    // P820b — the Events sub-screen (native ZoneEventsScreen.cpp), driven from
+    // the lobby's zone-events HTTP API and presented by CareerScreenRenderer.
+    private EventApiClient? _eventClient;
+    private string _eventsOrigin = "";
+    private readonly EventsScreenModel _events = new();
 
     /// <summary>Enter the career screen (intro main menu "Career" item).</summary>
     private void EnterCareerScreen()
@@ -69,6 +75,12 @@ public sealed partial class Game1
         _squads.ViewerAccountId = _identityClient?.Account?.Id ?? "";
         _squads.ViewerCallsign = _identityClient?.Account?.Callsign ?? "";
         _squads.PlayerAccountId = _identityClient?.Account?.Id ?? "";
+        if (_eventClient is null || _eventsOrigin != origin)
+        {
+            _eventClient?.Dispose();
+            _eventClient = new EventApiClient(origin);
+            _eventsOrigin = origin;
+        }
         _careerCursor = 0;
         _careerEditingDesc = false;
         _introView = IntroView.Career;
@@ -78,6 +90,13 @@ public sealed partial class Game1
 
     private void ReloadCareer()
     {
+        if (_careerMode == CareerMode.Events)
+        {
+            if (_eventClient is null) return;
+            _careerStatus = "Loading zone events...";
+            _careerLoad = LoadEventsAsync();
+            return;
+        }
         if (_careerMode == CareerMode.Squads)
         {
             if (_squadClient is null) return;
@@ -153,6 +172,8 @@ public sealed partial class Game1
 
         // P820a — the squads sub-screen has its own keyboard handling.
         if (_careerMode == CareerMode.Squads) { UpdateSquadScreen(ks, up, down, enter, esc, tab); return; }
+        // P820b — the events sub-screen likewise.
+        if (_careerMode == CareerMode.Events) { UpdateEventsScreen(ks, up, down, enter, esc, tab); return; }
 
         // A pending search text entry consumes all keys until Enter/Esc.
         if (_careerSearching)

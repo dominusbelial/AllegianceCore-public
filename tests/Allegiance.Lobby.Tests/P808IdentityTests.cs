@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using Allegiance.Core.Identity;
 using Allegiance.Lobby.Identity;
+using Allegiance.Lobby.Squad;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 
@@ -33,7 +34,7 @@ public sealed class P808IdentityTests
         using var duplicate = await other.Register(http, "p808pilot"); Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
         var settings = app.Services.GetRequiredService<IdentitySettings>();
         var reopened = new IdentityStore(settings, TimeProvider.System); reopened.Migrate(); Assert.Equal(account, reopened.Account(account.Id));
-        using var existingKey = new IdentitySigningKey(settings);
+        using var existingKey = new IdentitySigningKey(settings, app.Services.GetRequiredService<SquadStore>());
         Assert.Equal(app.Services.GetRequiredService<IdentitySigningKey>().PublicKey, existingKey.PublicKey);
     }
     [Fact]

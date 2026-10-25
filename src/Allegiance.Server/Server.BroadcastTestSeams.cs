@@ -1,3 +1,4 @@
+using Allegiance.Core.Identity;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
@@ -274,4 +275,26 @@ public sealed partial class Server
         _lastSectorAssetMaskBySide.Clear();
         _objectSyncDirtySides.Clear();
     }
+
+    /// <summary>P820c test seam — seed (or overwrite) a peer's verified
+    /// <see cref="JoinIdentity"/> (the join-token carrier), so the squad helpers
+    /// (<c>PeerSquads</c>/<c>PeerCanLeadSquad</c>/<c>PeerPreferredSquad</c>) have
+    /// squads to read in a loopback test. Inert in production (unused).</summary>
+    internal void TestSetIdentity(ConnectionId conn, JoinIdentity? identity)
+    {
+        if (identity is null) _peerIdentities.Remove(conn);
+        else _peerIdentities[conn] = identity;
+    }
+
+    /// <summary>P820c test seam — run <see cref="EstablishSideSquadFromLeader"/>
+    /// directly (native AddPlayerToSide's team-leader squad rule, fsmission.cpp:
+    /// 661-690) so a loopback test can exercise the squad establishment + boot
+    /// (QUIT_SIDE SquadChange) without staging a full first-seat join.</summary>
+    internal void TestEstablishSideSquad(Mission mission, Side side) => EstablishSideSquadFromLeader(mission, side);
+
+    /// <summary>P820c test seam — run <see cref="HandleLeaderSuccession"/> directly
+    /// (native RemovePlayerFromSide's leader-change block, fsmission.cpp:896-1000)
+    /// so a loopback test can assert that a mid-game succession KEEPS the side's
+    /// squad and prefers a squad-capable successor (fix 2).</summary>
+    internal void TestHandleLeaderSuccession(Ship ship) => HandleLeaderSuccession(ship);
 }

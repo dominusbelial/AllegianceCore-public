@@ -23,6 +23,9 @@ services:
       Lobby__Identity__SigningKeyFile: /identity/signing-key.pem
       Lobby__Identity__PublicKeyFile: /trust/public-key.pem
       Lobby__Identity__OperatorAccountIds__0: "${ALLEGIANCE_LOBBY_OPERATOR_ID:-}"
+      # P820b — the configurable Zone web link shown on the client's online hub
+      # (served read-only via GET /api/config/zone-web). Empty = link omitted.
+      Lobby__ZoneWebUrl: "${ALLEGIANCE_LOBBY_ZONE_WEB_URL:-}"
       # Providers are deliberately off. Enable explicitly with credentials from
       # your environment or a private, ignored compose override; see docker/README.md.
       Lobby__Identity__GitHub__Enabled: "false"

@@ -143,6 +143,20 @@ public sealed partial class Mission : IMissionIgc
     /// </summary>
     public bool ShowHomeSector { get; set; }
 
+    /// <summary>
+    /// P820c — the port of native <c>MissionParams::bSquadGame</c>
+    /// (<c>Igc/igc.h:1142</c>, <b>default <c>false</c></b> at <c>igc.h:1258</c>):
+    /// whether this is a squad game. Only a squad game gives a side a squad,
+    /// boots non-members on squad change and relays the squad to clients —
+    /// exactly native's gate (<c>AddPlayerToSide</c>'s team-leader squad rule,
+    /// fsmission.cpp:661-690; <c>SetSideSquad</c>'s boot, fsmission.cpp:1623-1641;
+    /// <c>SET_TEAM_INFO</c>, fsmission.cpp:1584-1590). On a non-squad game the
+    /// side keeps <see cref="Side.SquadId"/>/<see cref="Side.SquadName"/>
+    /// null and no player is ever booted for a squad reason — the pre-P820b
+    /// behaviour. Set from <c>GameConfig.SquadGame</c> at assemble.
+    /// </summary>
+    public bool SquadGame { get; set; }
+
     private bool _startingVisibilitySeeded;
     private bool _startingVisibilitySwept;
 

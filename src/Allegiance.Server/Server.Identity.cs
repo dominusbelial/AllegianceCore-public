@@ -21,6 +21,41 @@ public partial class Server
     private readonly Dictionary<string, long> _consumedIdentityTokens = new(StringComparer.Ordinal);
     public string? AccountId(ConnectionId peer) => _peerIdentities.GetValueOrDefault(peer)?.Sub;
 
+    /// <summary>P820b — a verified peer's active squad memberships (from the
+    /// join token's <c>Squads</c> claim), or <c>null</c> when the peer has no
+    /// identity/token squads (anonymous, bot, or none).</summary>
+    private IReadOnlyList<SquadClaim>? PeerSquads(ConnectionId peer) => _peerIdentities.GetValueOrDefault(peer)?.Squads;
+
+    /// <summary>P820b — native <c>CFSPlayer::GetCanLeadSquad</c>
+    /// (fsship.cpp:1374-1390): whether the peer is leader or ASL of the side's
+    /// squad. A null <paramref name="squadId"/> (no squad) means anyone can lead.</summary>
+    private bool PeerCanLeadSquad(ConnectionId peer, string? squadId)
+    {
+        if (squadId is null) return true;
+        return PeerSquads(peer)?.Any(s => string.Equals(s.Id, squadId, StringComparison.Ordinal) && s.CanLead) ?? false;
+    }
+
+    /// <summary>P820b — native <c>CFSPlayer::GetIsMemberOfSquad</c>
+    /// (fsship.cpp:1358-1373): whether the peer is an active member of the
+    /// squad. A null <paramref name="squadId"/> (no squad) is everyone's member.</summary>
+    private bool PeerIsMemberOfSquad(ConnectionId peer, string? squadId)
+    {
+        if (squadId is null) return true;
+        return PeerSquads(peer)?.Any(s => string.Equals(s.Id, squadId, StringComparison.Ordinal)) ?? false;
+    }
+
+    /// <summary>P820b — native <c>CFSPlayer::GetPreferredSquadToLead</c>
+    /// (fsship.cpp:1397+): the squad the player leads, else their first active
+    /// squad (for a peer with no identity/squads, <c>null</c>).</summary>
+    private (string? Id, string? Name)? PeerPreferredSquad(ConnectionId peer)
+    {
+        var squads = PeerSquads(peer);
+        if (squads is null || squads.Count == 0) return null;
+        var led = squads.FirstOrDefault(s => s.CanLead);
+        var chosen = led is { Id: not null } ? led : squads[0];
+        return (chosen.Id, chosen.Name);
+    }
+
     private void ValidateIdentityConfiguration()
     {
         if (_config.Lobby?.EnrollmentFile is { Length: > 0 } && _config.Identity is null)
@@ -45,7 +80,7 @@ public partial class Server
             failure = "this server requires lobby sign-in";
             return settings.AllowAnonymous;
         }
-        if (req.ZoneTicket.Length > 2048) return false;
+        if (req.ZoneTicket.Length > JoinTokens.MaxTokenLength) return false;
         try
         {
             string audience = settings.Audience;

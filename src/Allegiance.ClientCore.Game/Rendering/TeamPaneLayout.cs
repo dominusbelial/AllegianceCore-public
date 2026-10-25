@@ -136,7 +136,8 @@ public static class TeamPaneLayout
         string? controlsHint = null,
         string? selectedName = null,
         IReadOnlyList<string>? joinRequests = null,
-        TeamPaneSort.Key sortKey = TeamPaneSort.Key.Leader)
+        TeamPaneSort.Key sortKey = TeamPaneSort.Key.Leader,
+        Func<short, string?>? sideSquadName = null)
     {
         var lines = new List<Line>();
         lines.Add(new Line(LineKind.Title, "TEAM PANE"));
@@ -147,8 +148,13 @@ public static class TeamPaneLayout
         foreach (var g in entries.GroupBy(e => e.SideId).OrderBy(g => g.Key))
         {
             bool destroyed = isSideActive is not null && !isSideActive(g.Key);
+            // P820b — the side's squad (relayed like native SET_TEAM_INFO squadID,
+            // fsmission.cpp:1584-1590) is shown on the side header when it has one.
+            string? squad = sideSquadName?.Invoke(g.Key);
             lines.Add(new Line(LineKind.SideHeader,
-                destroyed ? $"SIDE {g.Key}  (DESTROYED)" : $"SIDE {g.Key}  (players: {g.Count()})"));
+                destroyed ? $"SIDE {g.Key}  (DESTROYED)"
+                          : (squad is { Length: > 0 } ? $"SIDE {g.Key}  [{ScoreboardLayout.AsciiSafe(squad)}]  (players: {g.Count()})"
+                                                      : $"SIDE {g.Key}  (players: {g.Count()})")));
 
             // P761 — the side's rows in the pane's sort order (native's sorted
             // member list, teampane.cpp:997-1047): the sort comparators read the

@@ -32,7 +32,8 @@ public static class CareerScreenRenderer
     public static void Draw(
         SpriteBatch sb, SpriteFont hudSmall, SpriteFont hudBig, Texture2D whitePixel,
         HudSettings hud, CharacterInfoModel? info, LeaderboardModel? board, SquadScreenModel? squads,
-        bool boardMode, bool squadsMode, int cursor, bool editingDesc, string descBuffer, string status,
+        EventsScreenModel? events,
+        bool boardMode, bool squadsMode, bool eventsMode, int cursor, bool editingDesc, string descBuffer, string status,
         string viewedAccountId, float w, float h)
     {
         bool modern = hud.Style == HudStyle.Modern;
@@ -43,15 +44,16 @@ public static class CareerScreenRenderer
         Color selFill = modern ? new Color(0.12f, 0.42f, 0.40f, 0.75f) : new Color(0.075f, 0.30f, 0.28f, 0.6f);
 
         // Title.
-        string title = squadsMode ? "[ SQUADS ]" : boardMode ? "[ LEADERBOARD ]" : "[ CHARACTER INFO ]";
+        string title = squadsMode ? "[ SQUADS ]" : eventsMode ? "[ ZONE EVENTS ]" : boardMode ? "[ LEADERBOARD ]" : "[ CHARACTER INFO ]";
         var tsz = hudBig.MeasureString(title);
         sb.DrawString(hudBig, title, new Vector2((w - tsz.X) / 2f, 24f), accent);
 
         // Mode tabs + Back.
-        DrawTab(sb, hudSmall, whitePixel, "Career Info", 0, !boardMode && !squadsMode, modern, accent, selFill, dim, w);
+        DrawTab(sb, hudSmall, whitePixel, "Career Info", 0, !boardMode && !squadsMode && !eventsMode, modern, accent, selFill, dim, w);
         DrawTab(sb, hudSmall, whitePixel, "Leaderboard", 1, boardMode, modern, accent, selFill, dim, w);
         DrawTab(sb, hudSmall, whitePixel, "Squads", 2, squadsMode, modern, accent, selFill, dim, w);
-        DrawTab(sb, hudSmall, whitePixel, "Back", 3, false, modern, accent, selFill, dim, w);
+        DrawTab(sb, hudSmall, whitePixel, "Events", 3, eventsMode, modern, accent, selFill, dim, w);
+        DrawTab(sb, hudSmall, whitePixel, "Back", 4, false, modern, accent, selFill, dim, w);
 
         // Panel behind the table.
         int panelW = (int)Math.Min(w - 60f, 990f);
@@ -59,6 +61,8 @@ public static class CareerScreenRenderer
 
         if (squadsMode)
             DrawSquads(sb, hudSmall, whitePixel, squads, modern, accent, text, dim, selFill, w, h);
+        else if (eventsMode)
+            DrawEvents(sb, hudSmall, whitePixel, events, modern, accent, text, dim, selFill, w, h);
         else if (boardMode)
             DrawBoard(sb, hudSmall, whitePixel, board, cursor, modern, accent, text, dim, selFill, w, h);
         else
@@ -67,6 +71,8 @@ public static class CareerScreenRenderer
         // Footer controls + status.
         string controls = squadsMode
             ? "<-/> tab   UP/DOWN move   ENTER view   N create   S find   L log"
+            : eventsMode
+            ? "UP/DOWN move   ENTER select   TAB leaderboard   ESC back"
             : boardMode
             ? "UP/DOWN move   ENTER profile   S search   F find-me   T top   PGUP/PGDN page   <-/-> sort   ESC back"
             : (editingDesc ? "TYPE description   ENTER apply   ESC cancel" : "LEFT/RIGHT civ   E edit description   TAB leaderboard   ESC back");
@@ -341,6 +347,84 @@ public static class CareerScreenRenderer
         else
         {
             sb.DrawString(f, "Press ENTER on a squad to view its members.", new Vector2(dx, HeaderY + 40f), dim);
+        }
+    }
+
+    /// <summary>Draw the Events sub-screen (P820b) — the port of native
+    /// <c>WinTrek/zoneeventsscreen.cpp</c>: a date/time/name/description list
+    /// (<c>colDate..colDescription</c>) with the selected event's sign-up URL
+    /// and attached files, plus the Zone web link footer — in BOTH HUD styles
+    /// (the shared renderer styles both via <paramref name="modern"/>).</summary>
+    private static void DrawEvents(SpriteBatch sb, SpriteFont f, Texture2D px, EventsScreenModel? events,
+        bool modern, Color accent, Color text, Color dim, Color selFill, float w, float h)
+    {
+        float left = (w - Math.Min(w - 60f, 980f)) / 2f + 10f;
+        if (events is null)
+        {
+            var msg = "Loading events\u2026";
+            var sz = f.MeasureString(msg);
+            sb.DrawString(f, msg, new Vector2(left, HeaderY + 40f), dim);
+            return;
+        }
+
+        // Left: the event list (date / time / name — native colDate..colName).
+        float ly = HeaderY + 24f;
+        float listW = 380f;
+        // The date column fits a whole YYYY-MM-DD; the time is in the details pane.
+        float dateW = f.MeasureString("0000-00-00").X + 10f;
+        sb.DrawString(f, "DATE / EVENT", new Vector2(left, ly), dim); ly += RowH;
+        for (int i = 0; i < events.Events.Count && ly < h - 70f; i++)
+        {
+            var e = events.Events[i];
+            if (i == events.Cursor)
+                sb.Draw(px, new Rectangle((int)left - 4, (int)ly - 2, (int)listW, (int)RowH), selFill);
+            sb.DrawString(f, ClipToWidth(f, e.Date, dateW - 6f, 1f), new Vector2(left, ly), dim);
+            sb.DrawString(f, ClipToWidth(f, e.Name, listW - dateW - 8f, 1f), new Vector2(left + dateW, ly), text);
+            ly += RowH;
+        }
+        if (events.Events.Count == 0)
+            sb.DrawString(f, "(no zone events)", new Vector2(left, ly), dim);
+
+        // Right: selected event details (native EventListing: description,
+        // sign-up URL, attached files, zoneeventsscreen.cpp:42-73).
+        float dx = left + listW + 24f;
+        float dw = left - 10f + Math.Min(w - 60f, 980f);   // the panel's right edge
+        if (events.Selected is { } s)
+        {
+            sb.DrawString(f, s.Name, new Vector2(dx, HeaderY + 24f), accent);
+            sb.DrawString(f, s.Date + (s.Time.Trim().Length > 0 ? "  " + s.Time : ""), new Vector2(dx, HeaderY + 44f), dim);
+            float dy = HeaderY + 66f;
+            sb.DrawString(f, "Description:", new Vector2(dx, dy), dim); dy += RowH;
+            foreach (var line in Wrap(f, s.Description.Length == 0 ? "(none)" : s.Description, dw - dx - 20f).Split('\n'))
+            {
+                if (line.Length == 0) continue;
+                sb.DrawString(f, ClipToWidth(f, line, dw - dx - 20f, 1f), new Vector2(dx, dy), text); dy += RowH;
+            }
+            dy += 6f;
+            sb.DrawString(f, ClipToWidth(f, "Sign-up: " + (s.SignUpUrl.Length > 0 ? s.SignUpUrl : "(none)"), dw - dx - 20f, 1f),
+                new Vector2(dx, dy), accent); dy += RowH;
+            if (s.Files.Count > 0)
+            {
+                dy += 4f;
+                sb.DrawString(f, "Files:", new Vector2(dx, dy), dim); dy += RowH;
+                foreach (var file in s.Files)
+                {
+                    sb.DrawString(f, "- " + file, new Vector2(dx, dy), text); dy += RowH;
+                }
+            }
+        }
+        else
+        {
+            sb.DrawString(f, "No zone events.", new Vector2(dx, HeaderY + 40f), dim);
+        }
+
+        // Zone web link footer (a configurable lobby URL; hidden when unset).
+        if (events.ZoneWebUrl.Length > 0)
+        {
+            string z = "Zone: " + events.ZoneWebUrl;
+            var zs = f.MeasureString(z);
+            // Between the panel (ends at h - 102) and the status line (h - 56).
+            sb.DrawString(f, z, new Vector2((w - zs.X) / 2f, h - 84f), accent);
         }
     }
 

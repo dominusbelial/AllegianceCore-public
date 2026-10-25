@@ -61,7 +61,7 @@ public class FedMsgDispatchCoverageTests
         (124, "QuitMission"), (126, "QuitSide"), (128, "EnterGame"), (155, "GameState"),
         (6, "ObjectSpotted"), (93, "OrderChange"), (95, "JoinedMission"), (106, "SetWingId"),
         (2, "LogonAck"), (5, "BuyLoadoutAck"), (7, "SetCluster"), (8, "DevCompleted"),
-        (9, "SetBriefingText"), (10, "PlayerInfo"), (12, "ProjectileInstance"), (13, "RankInfo"), (14, "SetStartTime"),
+        (9, "SetBriefingText"), (10, "PlayerInfo"), (12, "ProjectileInstance"), (13, "RankInfo"), (14, "SetStartTime"), (15, "SetTeamInfo"),
         (16, "PlayerRescued"), (17, "Ballot"), (20, "ShipDelete"), (23, "ChatMessage"),
         (26, "ExportShip"), (28, "TreasureSpawn"), (30, "DestroyTreasure"), (33, "DropPart"), (34, "SwapPart"), (35, "Ping"),
         (37, "MissionStageMessage"), (38, "MissionDef"), (45, "PlayerReady"), (46, "TeamReady"),
@@ -253,10 +253,11 @@ public class FedMsgDispatchCoverageTests
         var consumed = ExpectedConsumedServerSent.Select(x => x.Fmid).ToHashSet();
         var unconsumed = KnownUnconsumedServerSent.Select(x => x.Fmid).ToHashSet();
 
-        // The 102 native S/CS messages that have a port codec:
+        // The 103 native S/CS messages that have a port codec (P820c adds
+        // SET_TEAM_INFO(15)):
         int[] supportedNativeServerSent =
         {
-            2, 3, 5, 6, 7, 8, 9, 10, 12, 13, 14, 16, 17, 18, 20, 23, 26, 28, 30, 31,
+            2, 3, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 20, 23, 26, 28, 30, 31,
             33, 34, 35, 37, 38, 40, 42, 43, 44, 45, 46, 47, 51, 52, 57, 58, 59, 60,
             61, 62, 63, 65, 68, 70, 75, 76, 77, 78, 83, 84, 85, 86, 87, 89, 90, 92,
             93, 94, 95, 96, 102, 105, 106, 108, 109, 110, 111, 114, 115, 116, 121,
@@ -276,15 +277,15 @@ public class FedMsgDispatchCoverageTests
         // Registry entries must be unique; otherwise a duplicate can mask stale counts.
         Assert.Equal(ExpectedConsumedServerSent.Length, consumed.Count);
         Assert.Equal(KnownUnconsumedServerSent.Length, unconsumed.Count);
-        Assert.Equal(99, consumed.Count(f => supportedNativeServerSent.Contains(f)));
+        Assert.Equal(100, consumed.Count(f => supportedNativeServerSent.Contains(f)));
         // 13 port-added consumed messages: P266's lead stream (210) retired in
         // P804 (the client solves the lead itself), like P774's 209/219.
         Assert.Equal(13, consumed.Count(f => !supportedNativeServerSent.Contains(f)));
 
-        // Sanity: the executable counts match the audited numbers (112 after
-        // P804 retired the port-only lead stream, 210).
-        Assert.Equal(112, ExpectedConsumedServerSent.Length);
+        // Sanity: the executable counts match the audited numbers (113 after
+        // P820c added SET_TEAM_INFO(15)).
+        Assert.Equal(113, ExpectedConsumedServerSent.Length);
         Assert.Equal(3, KnownUnconsumedServerSent.Length);
-        Assert.Equal(102, supportedNativeServerSent.Length);
+        Assert.Equal(103, supportedNativeServerSent.Length);
     }
 }

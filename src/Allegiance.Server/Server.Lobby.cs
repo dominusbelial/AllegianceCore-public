@@ -1937,6 +1937,25 @@ private void CompleteStartCountdown(Mission mission, double now)
         Console.WriteLine($"[quitside] ship {shipId} left side (reason {reason}): QUIT_SIDE(126) whole-mission to {n} peer(s)");
     }
 
+/// <summary>P820c — move a peer from its side to the team lobby while staying in
+    /// the mission: the real remove-from-side path a squad boot uses (native
+    /// <c>RemovePlayerFromSide</c>, fsmission.cpp:848-1137 — the same quit-half
+    /// <c>TryJoinSideCore</c> runs before a side switch). Runs leader succession
+    /// if the leaver is the side's leader (a no-op for a plain member), parks
+    /// the ship on <c>SIDE_TEAMLOBBY</c> (-2, igc.h:514) and broadcasts
+    /// <c>QUIT_SIDE(reason)</c> whole-mission so every client updates its roster
+    /// exactly as native's client does (clintlib/appmsg.cpp:2993-3000). P820b's
+    /// silent <c>Ship.SideId = -2</c> write (no broadcast, no bookkeeping) is
+    /// replaced by this path.</summary>
+    private void MoveToTeamLobby(Mission mission, Ship ship, QuitSideReason reason)
+    {
+        if (ship.SideId is not { } oldSideId) return;
+        HandleLeaderSuccession(ship);
+        ship.SideId = SideTeamLobby;
+        BroadcastQuitSide(mission, ship.Id, reason);
+        MarkObjectSyncDirty(oldSideId);
+    }
+
 // ═══════════════════════════ P187 — ballot / voting system ═══════════════════════════
     // Port of native CFSMission::m_ballots + the four Ballot subclasses
     // (fsmission.h:85-180, fsmission.cpp:5817-6194) and the #chat command
@@ -2931,9 +2950,10 @@ private void CompleteStartCountdown(Mission mission, double now)
                     newLeader = donationWinner;
             }
             // fsmission.cpp:963-986: otherwise (not started, or no donation
-            // winner) the first remaining player leads. Native's squad-capable
-            // preference (GetCanLeadSquad) is unported — squads don't exist here.
-            newLeader ??= remaining[0];
+            // winner) prefer a remaining player who can lead the side's current
+            // squad (GetCanLeadSquad, fsship.cpp:1374-1390), then the first
+            // remaining player. P820b adds the squad-capable preference.
+            newLeader ??= PreferSquadCapableLeader(remaining, side, remaining[0]);
             side.LeaderShipId = newLeader.Id;
             BroadcastSetTeamLeader(mission, oldSideId, newLeader.Id);
             if (mission.MissionOwnerSideId == oldSideId)
@@ -2952,6 +2972,13 @@ private void CompleteStartCountdown(Mission mission, double now)
 
         // Side is now empty: clear its leader, then migrate the owner role if needed.
         side.LeaderShipId = null;
+        // P820c — a side that empties before the start also clears its squad
+        // (native fsmission.cpp:1008-1009: "set the squad to NA if the game
+        // hasn't started"); once started the squad is kept for scoring, so no
+        // clear here mid-game. The squad is established afresh when a new
+        // leader joins the empty side (EstablishSideSquadFromLeader).
+        if (mission.Stage == MissionStage.NotStarted)
+            ClearSideSquad(mission, side);
         if (mission.MissionOwnerSideId != oldSideId)
             return;   // wasn't the mission owner — nothing more to do
 
@@ -3037,6 +3064,13 @@ private void CompleteStartCountdown(Mission mission, double now)
                     newMissionOwner = true;
             }
             targetSide.LeaderShipId = ship.Id;
+            // P820b/P820c — the side's squad is established when a TEAM LEADER
+            // joins an empty side (native AddPlayerToSide, fsmission.cpp:661-690),
+            // gated on mission.SquadGame (a non-squad game has no side squad).
+            // This also covers the announce:false rotation reseat, where the
+            // fresh mission re-derives each side's squad from its reseated
+            // leader (native re-creates the mission and leaders re-join).
+            EstablishSideSquadFromLeader(mission, targetSide);
             if (newMissionOwner)
                 mission.MissionOwnerSideId = newSideId;
         }
@@ -4473,6 +4507,16 @@ private void CompleteStartCountdown(Mission mission, double now)
             .ToArray();
         SendPeer(to, FedPacket.Pack(new[] { new SideRoster { Sides = recs }.Encode() }));
         Console.WriteLine($"[sideselect] -> peer {to} SIDE_ROSTER(211): {recs.Length} side(s) [{string.Join(", ", recs.Select(r => $"{r.Name}({r.SideId})={r.PlayerCount}"))}]");
+        // P820c — seed the joining peer with each side's CURRENT squad via native
+        // SET_TEAM_INFO(15) (the squad relay native sends on every squad/name
+        // change, fsmission.cpp:1580-1590), so a late-arriving peer's team pane
+        // shows squads established before it connected. SIDE_ROSTER stays the
+        // master side-name source (P820c revert). Squad games only: a non-squad
+        // game never sends SET_TEAM_INFO (fsmission.cpp:661-690), so its join
+        // traffic stays exactly the pre-P820b sequence.
+        if (mission.SquadGame)
+            foreach (var s in mission.Sides)
+                RelaySideSquad(mission, s, to);
     }
 
 /// <summary>P281 — refresh every still-pending side-select peer's roster

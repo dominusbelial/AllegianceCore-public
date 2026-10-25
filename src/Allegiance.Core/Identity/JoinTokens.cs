@@ -7,22 +7,58 @@ namespace Allegiance.Core.Identity;
 
 // Modern replacement for ZoneTicket. Native: Inc/Messages.h:36-51;
 // FedSrv/FedSrv.CPP:5824-5904 validates the ticket and uses its canonical name/ID.
-public sealed record JoinIdentity(string Iss, string Aud, string Sub, string Callsign, long Iat, long Exp, string Jti);
+// <c>Squads</c> (P820b) carries the player's active squad memberships so they
+// reach the game server through this same identity path (native's SetSideSquad
+// gates on GetIsMemberOfSquad / GetCanLeadSquad, fsmission.cpp:1612-1635,
+// fsship.cpp:1358-1390). Legacy tokens without the claim verify unchanged
+// (Squads reads null).
+public sealed record JoinIdentity(string Iss, string Aud, string Sub, string Callsign, long Iat, long Exp, string Jti,
+    IReadOnlyList<SquadClaim>? Squads = null);
+
+/// <summary>A squad membership riding the join token (P820b). <c>CanLead</c> is
+/// the native <c>GetCanLeadSquad</c> result (leader or ASL, fsship.cpp:1374-1390);
+/// the id/name let the server derive a side's squad and relay it to the client.</summary>
+public sealed record SquadClaim(string Id, string Name, bool CanLead);
 
 public static class JoinTokens
 {
     private static readonly string Header = Base64Url(Encoding.UTF8.GetBytes("{\"alg\":\"ES256\",\"typ\":\"JWT\"}"));
     public const int LifetimeSeconds = 60;
 
+    /// <summary>
+    /// P820c — the per-token cap on squad memberships (P820b fix 5). Native has
+    /// no explicit small per-player squad limit (the membership list is a
+    /// DB-loaded <c>TList&lt;SquadMembership&gt;</c>, fsship.h:383-385,536; the
+    /// lobby database decides), so this is a documented small bound of 16 —
+    /// far beyond any realistic active membership (a player leads or belongs to
+    /// a handful of squads). The lobby's <see cref="SquadStore.SquadClaimsFor"/>
+    /// caps its SELECT at this many active memberships.
+    /// </summary>
+    public const int MaxSquadsPerToken = 16;
+
+    /// <summary>
+    /// P820c — the join-token length cap (P820b fix 5). P820b raised it from
+    /// 2048 to 65536 (the transport's frame cap) with no bound on squad claims.
+    /// With squad memberships capped at <see cref="MaxSquadsPerToken"/>, the
+    /// worst-case token — 16 claims, each with a max-length (24-char, possibly
+    /// JSON-escaped) squad name — is ≈2.9 kB. This cap of 5728 bytes gives
+    /// roughly 2× that margin while staying well under the 8192-byte
+    /// single-message comfort line (and far under the 65536 transport frame
+    /// cap), so a maximal legitimate token verifies and anything larger is
+    /// rejected outright.
+    /// </summary>
+    public const int MaxTokenLength = 5728;
+
     public static bool ValidCallsign(string? name) => name is { Length: >= 1 and <= 24 } && name[0] != ' ' && name[^1] != ' '
         && name.All(c => c is >= ' ' and <= '\u00ff' && !char.IsControl(c));
 
-    public static string Issue(ECDsa key, string issuer, string audience, string accountId, string callsign, DateTimeOffset now)
+    public static string Issue(ECDsa key, string issuer, string audience, string accountId, string callsign, DateTimeOffset now,
+        IReadOnlyList<SquadClaim>? squads = null)
     {
         if (!ValidCallsign(callsign) || !Guid.TryParseExact(accountId, "N", out _) || string.IsNullOrWhiteSpace(audience))
             throw new ArgumentException("Invalid identity");
         var claims = new JoinIdentity(issuer, audience, accountId, callsign, now.ToUnixTimeSeconds(),
-            now.ToUnixTimeSeconds() + LifetimeSeconds, Guid.NewGuid().ToString("N"));
+            now.ToUnixTimeSeconds() + LifetimeSeconds, Guid.NewGuid().ToString("N"), squads);
         string input = Header + "." + Base64Url(JsonSerializer.SerializeToUtf8Bytes(claims, IdentityJsonContext.Default.JoinIdentity));
         return input + "." + Base64Url(key.SignData(Encoding.ASCII.GetBytes(input), HashAlgorithmName.SHA256,
             DSASignatureFormat.IeeeP1363FixedFieldConcatenation));
@@ -32,7 +68,7 @@ public static class JoinTokens
     {
         try
         {
-            if (token.Length > 2048) return null;
+            if (token.Length > MaxTokenLength) return null;
             var parts = token.Split('.');
             if (parts.Length != 3 || parts[0] != Header) return null;
             var signature = FromBase64Url(parts[2]);
@@ -68,6 +104,8 @@ public sealed record ServerEnrollment(string ServerId, string ServerSecret);
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(JoinIdentity))]
+[JsonSerializable(typeof(SquadClaim))]
+[JsonSerializable(typeof(List<SquadClaim>))]
 [JsonSerializable(typeof(DeviceStartRequest))]
 [JsonSerializable(typeof(DeviceAuthorization))]
 [JsonSerializable(typeof(DevicePollRequest))]

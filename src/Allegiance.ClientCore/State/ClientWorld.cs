@@ -1054,6 +1054,20 @@ public sealed partial class ClientWorld
     /// side-select screen from it and sends FM_C_POSITIONREQ(39) on confirm.</summary>
     public SideRoster? SideRoster { get; private set; }
 
+    /// <summary>P820c — each side's squad, as relayed by the server on native
+    /// SET_TEAM_INFO(15) (Server.Squads.RelaySideSquad; appmsg.cpp:2541-2550).
+    /// Keyed by side id; absent = side has no squad. The name is SET_TEAM_INFO's
+    /// SideName field, which native fills with the squad name in a squad game
+    /// (fsmission.cpp:1666-1667). The team pane's side header reads it via
+    /// <see cref="SideSquadName"/>. Cleared on reconnect/mission reset.</summary>
+    private readonly Dictionary<short, string> _sideSquadNameBySideId = new();
+
+    /// <summary>The name of <paramref name="sideId"/>'s squad (from the last
+    /// SET_TEAM_INFO for that side), or null when the side has none. Feeding the
+    /// team pane's <c>sideSquadName</c> resolver (Game1.Rendering.cs).</summary>
+    public string? SideSquadName(short sideId) =>
+        _sideSquadNameBySideId.TryGetValue(sideId, out var name) && name.Length > 0 ? name : null;
+
     /// <summary>P281 — the latest SET_MISSION_OWNER(123) whole-mission broadcast
     /// (side + ship that now owns the mission), kept verbatim so the owner-gated
     /// randomize-teams control can be surfaced only to the current mission owner.
@@ -2026,6 +2040,7 @@ public sealed partial class ClientWorld
         // reader holding the pre-reconnect snapshot keeps a valid (stale) object.
         _publishedDecision = DecisionSnapshot.Empty;
         SideRoster = null;
+        _sideSquadNameBySideId.Clear();   // P820c — no stale squads across reconnect/reset
         MissionOwnerBroadcast = null;
         Graph = null;
         CountdownStartLocalMs = null;
@@ -2447,6 +2462,11 @@ public sealed partial class ClientWorld
             case SideRoster sideRoster:
                 // P281 — post-connect side roster; drives the side-select screen.
                 Apply(sideRoster);
+                break;
+            case SetTeamInfo setTeamInfo:
+                // P820c — the server relays a side's squad on SET_TEAM_INFO(15);
+                // store it for the team pane (appmsg.cpp:2541-2550).
+                Apply(setTeamInfo);
                 break;
             case SetMissionOwner missionOwner:
                 // P281 — whole-mission owner broadcast; gates randomize-teams.
@@ -5185,6 +5205,21 @@ public sealed partial class ClientWorld
         foreach (var side in roster.Sides)
             _sideCivilizations[side.SideId] = new(side.CivId,
                 _sideCivilizations.TryGetValue(side.SideId, out var previous) && previous.Random);
+    }
+
+    /// <summary>P820c — <c>FM_CS_SET_TEAM_INFO(15)</c>: store a side's squad as
+    /// relayed by the server (Server.Squads.RelaySideSquad; native client
+    /// appmsg.cpp:2541-2550). The squad name is SET_TEAM_INFO's SideName field
+    /// (native fills it with the squad name in a squad game, fsmission.cpp:
+    /// 1666-1667); a NA squadID clears the side's squad. Unlike native's client
+    /// we do <b>not</b> rename the side from SideName — the real side name stays
+    /// from SIDE_ROSTER, so the team pane can show "SIDE n [Squad]" separately
+    /// (a deliberate P820c divergence).</summary>
+    private void Apply(SetTeamInfo m)
+    {
+        if (m.SquadId < 0) _sideSquadNameBySideId.Remove(m.SideId);
+        else if (m.SideName.Length > 0) _sideSquadNameBySideId[m.SideId] = m.SideName;
+        else _sideSquadNameBySideId.Remove(m.SideId);
     }
 
     /// <summary>P282 — the whole-mission <c>TEAM_READY(46)</c> broadcast:

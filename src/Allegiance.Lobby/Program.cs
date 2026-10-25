@@ -1,5 +1,6 @@
 using Allegiance.Lobby;
 using Allegiance.Lobby.Career;
+using Allegiance.Lobby.Events;
 using Allegiance.Lobby.Identity;
 using Allegiance.Lobby.Squad;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -46,6 +47,7 @@ builder.Services.AddSingleton(identity);
 builder.Services.AddSingleton<IdentityStore>();
 builder.Services.AddSingleton<CareerStore>();
 builder.Services.AddSingleton<SquadStore>();
+builder.Services.AddSingleton<Allegiance.Lobby.Events.EventStore>();
 builder.Services.AddSingleton<IdentitySigningKey>();
 builder.Services.AddSingleton<PasskeyService>();
 builder.Services.AddIdentityProviders(identity);
@@ -87,6 +89,8 @@ app.MapLobbyEndpoints(settings);
 app.MapIdentity(app.Services.GetRequiredService<IdentitySettings>());
 app.MapCareer();
 app.MapSquad();
+app.MapEvents();
+app.MapZoneWeb();
 
 app.Run();
 

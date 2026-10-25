@@ -2025,7 +2025,8 @@ public sealed partial class Game1
                     $"{KeyOf("TeamPane").Label} TOGGLE | {KeyOf("TeamPaneNextPilot").Label} SELECT | {KeyOf("TeamPaneSort").Label} SORT | D $100 / E $500 / A AUTO / X STOP | {KeyOf("TeamPaneAct").Label} GOTO/ACCEPT | {KeyOf("Scoreboard").Label} LEADERBOARD | {KeyOf("PilotInfo").Label} SHEET",
                     selectedName,
                     joinRequests,
-                    sortKey: _teamPaneControls.SortKey);
+                    sortKey: _teamPaneControls.SortKey,
+                    sideSquadName: sideId => _session.World.SideSquadName(sideId));
                 lines = lines.Append(new TeamPaneLayout.Line(TeamPaneLayout.LineKind.Hint, ModerationModel.Hint))
                     .Append(new TeamPaneLayout.Line(TeamPaneLayout.LineKind.Note, _moderation.Notice ?? "Steam moderator bans unavailable."))
                     .ToArray();

@@ -1,5 +1,6 @@
 using System.Data.Common;
 using System.Globalization;
+using Allegiance.Core.Identity;
 using Allegiance.Lobby.Identity;
 using Microsoft.Data.Sqlite;
 using Npgsql;
@@ -470,6 +471,32 @@ public sealed class SquadStore
         }
         unsorted.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
         return unsorted;
+    }
+
+    /// <summary>The squad memberships the lobby stamps into a player's join
+    /// token (P820b) so they reach the game server over the identity path —
+    /// native gates a side's squad on <c>GetIsMemberOfSquad</c> /
+    /// <c>GetCanLeadSquad</c> (fsship.cpp:1358-1390). Only ACTIVE memberships
+    /// (leader/ASL/member); <c>CanLead</c> = leader or ASL (GetCanLeadSquad,
+    /// fsship.cpp:1374-1390). Pending requests are excluded (a pending player
+    /// is not a member of the squad).</summary>
+    public IReadOnlyList<(string Id, string Name, bool CanLead)> SquadClaimsFor(string accountId)
+    {
+        var claims = new List<(string Id, string Name, bool CanLead)>();
+        using var c = Open();
+        using var cmd = Command(c, """
+            SELECT s.id,s.name,m.status FROM squad_members m JOIN squads s ON s.id=m.squad_id
+            WHERE m.account_id=@p0 AND m.status IN ('leader','asl','member')
+            LIMIT @p1
+            """, accountId, JoinTokens.MaxSquadsPerToken);
+        using var dr = cmd.ExecuteReader();
+        while (dr.Read())
+        {
+            var r = ReadRow(dr);
+            bool canLead = r[2] == "leader" || r[2] == "asl";
+            claims.Add((r[0], r[1], canLead));
+        }
+        return claims;
     }
 
     // ---- internals ----

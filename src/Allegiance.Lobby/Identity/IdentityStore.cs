@@ -77,6 +77,12 @@ public sealed class IdentityStore
             CREATE TABLE IF NOT EXISTS squad_members (squad_id TEXT NOT NULL REFERENCES squads(id) ON DELETE CASCADE, account_id TEXT NOT NULL REFERENCES accounts(id), status TEXT NOT NULL, last_played BIGINT, joined_at BIGINT NOT NULL, PRIMARY KEY(squad_id, account_id));
             CREATE TABLE IF NOT EXISTS squad_log (squad_id TEXT NOT NULL REFERENCES squads(id) ON DELETE CASCADE, seq INTEGER NOT NULL, line TEXT NOT NULL, PRIMARY KEY(squad_id, seq));
             INSERT INTO identity_migrations(version) VALUES(3) ON CONFLICT(version) DO NOTHING;
+            -- P820b — zone events (native WinTrek/zoneeventsscreen.cpp EventListing:
+            -- date/time/name/description/sign-up URL/attached files). files is a
+            -- newline-joined TEXT (native TList<ZString> m_listFiles); events are
+            -- operator-managed, player read-only.
+            CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY, date TEXT NOT NULL, time TEXT NOT NULL, name TEXT NOT NULL, description TEXT NOT NULL, signup_url TEXT NOT NULL, files TEXT NOT NULL, created_at BIGINT NOT NULL);
+            INSERT INTO identity_migrations(version) VALUES(4) ON CONFLICT(version) DO NOTHING;
             """);
         migration.Transaction = tx; migration.ExecuteNonQuery(); tx.Commit();
     }

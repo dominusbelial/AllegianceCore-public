@@ -1275,6 +1275,9 @@ public sealed partial class Server
         // and whatever its scanners cover, nothing else.
         mission.ShowMap = g.ShowMap;
         mission.ShowHomeSector = g.ShowHomeSector;
+        // P820c — bSquadGame (igc.h:1142): only a squad game derives a side's
+        // squad / boots non-members / relays SET_TEAM_INFO (default false).
+        mission.SquadGame = g.SquadGame;
         // P799 — MissionParams::iLives (igc.h:1185): the real per-player life
         // budget, defaulting to the unlimited sentinel. Sent verbatim in the
         // MISSIONDEF(38) slot the lives badge reads (console.cpp:812-817) and the

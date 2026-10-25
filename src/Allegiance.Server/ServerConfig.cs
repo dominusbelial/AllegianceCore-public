@@ -169,6 +169,19 @@ public sealed class GameConfig
     /// </summary>
     public bool LockTeamSettings { get; set; }
 
+    /// <summary>
+    /// P820c — native <c>MissionParams::bSquadGame</c> (<c>Igc/igc.h:1142</c>,
+    /// default <b>false</b> at <c>igc.h:1258</c>): whether this game is a squad
+    /// game. A squad game gives each side a squad (derived from the side
+    /// leader's preferred squad when the leader first joins an empty side),
+    /// boots seated non-members when the squad changes (<c>SetSideSquad</c>,
+    /// fsmission.cpp:1612-1641) and relays the squad to clients via
+    /// <c>SET_TEAM_INFO(15)</c>. Non-squad games (the default) keep every side
+    /// squad-less with no squad-related boots — byte-for-byte the pre-P820b
+    /// behaviour. Mirrored onto <c>Mission.SquadGame</c> at assemble.
+    /// </summary>
+    public bool SquadGame { get; set; }
+
     /// <summary>Permit countdown completion without connected players.
     /// The dedicated server defaults to arena policy; FedSrv.CPP:8237-8243.</summary>
     public bool AllowEmptyTeams { get; set; } = true;

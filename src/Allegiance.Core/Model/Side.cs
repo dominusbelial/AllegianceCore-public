@@ -518,6 +518,19 @@ public sealed class Side : ISideIgc
     public short? LeaderShipId { get; set; }
 
     /// <summary>
+    /// P820b — the side's squad (native per-side <c>m_data.squadID</c>,
+    /// <c>sideigc.h</c>, set by <c>CFSMission::SetSideSquad</c>,
+    /// <c>fsmission.cpp:1612-1635</c> and relayed to clients via
+    /// <c>SET_TEAM_INFO</c> <c>squadID</c>, fsmission.cpp:1584-1590). <c>null</c>
+    /// when the side has no squad. Derived by the Server from the side's leader's
+    /// preferred squad (native <c>GetPreferredSquadToLead</c>, fsship.cpp:1397+)
+    /// when leadership is established, and it gates leader succession and the
+    /// boot-non-members rule (<c>SetSideSquad</c>). Follows the same
+    /// direct-field-on-Side shape as <see cref="LeaderShipId"/>.</summary>
+    public string? SquadId { get; set; }
+    public string? SquadName { get; set; }
+
+    /// <summary>
     /// P259 — the side's owning <see cref="Mission"/>, wired by
     /// <see cref="Mission.Assemble"/> after construction (the same post-assembly
     /// back-link pattern <see cref="Sector.MissionSides"/> uses for sectors).

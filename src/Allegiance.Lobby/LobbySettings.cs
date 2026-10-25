@@ -35,4 +35,10 @@ public sealed class LobbySettings
     /// <summary>P810 — the signed release feed root the client downloads from.
     /// Advertised only when a feed is actually deployed.</summary>
     public string? UpdateFeedUrl { get; set; }
+
+    /// <summary>P820b — the configurable Zone web link shown on the client's
+    /// online hub (the events screen footer). Exposed read-only via
+    /// <c>GET /api/config/zone-web</c>. Empty means "not configured": the client
+    /// omits the link.</summary>
+    public string ZoneWebUrl { get; set; } = "";
 }
