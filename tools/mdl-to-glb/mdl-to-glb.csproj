@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- P812 — prototype: native .mdl (+ .cvh) → glTF .glb export / re-import.
+       Proof tool, NOT a deployable app: built by tools/build-tools.sh, never
+       shipped. Tests: tests/Allegiance.Core.Tests/MdlToGlbTests.cs. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Allegiance.Core\Allegiance.Core.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Allegiance.Tools.MdlToGlb</RootNamespace>
+    <AssemblyName>mdl-to-glb</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+</Project>

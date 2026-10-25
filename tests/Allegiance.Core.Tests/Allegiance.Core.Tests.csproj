@@ -41,6 +41,8 @@
     <ProjectReference Include="..\..\src\Allegiance.Server\Allegiance.Server.csproj" />
     <ProjectReference Include="..\..\src\Allegiance.Bot\Allegiance.Bot.csproj" />
     <ProjectReference Include="..\..\src\Allegiance.Lobby\Allegiance.Lobby.csproj" />
+    <!-- P812: the native-mesh ↔ glTF prototype tool (public API exercised directly) -->
+    <ProjectReference Include="..\..\tools\mdl-to-glb\mdl-to-glb.csproj" />
   </ItemGroup>
 
   <ItemGroup>

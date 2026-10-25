@@ -325,6 +325,15 @@ list in **reverse**.
 - **Benchmark** — `tools/benchmark/` (replay benchmark) and
   `tools/bench-collector/`.
 - **Meshy pipeline** — `tools/extract_meshy_textures.py`, `tools/meshy-repair/`.
+- **GLB mesh pipeline (P812)** — native `.mdl` + `.cvh` → glTF 2.0 `.glb` with
+  `HP_<Kind>_<Index>` hardpoint empty nodes (+Z forward) and a collision
+  sidecar, plus the reverse loader stub and numeric round-trip:
+  `tools/mdl-to-glb/` (commands `export` / `roundtrip` / `inspect`;
+  `render-check.py` renders evidence headless in Blender). Tests
+  `MdlToGlbTests`. Key finding: the `.cvh` file space is the `.mdl` space
+  mirrored in z (position AND forward). Report
+  `docs/reports/P812_GLB_PIPELINE.md`. Prototype only — the game still ships
+  `.mdl`.
 - **Test runners** — `tools/run-tests.sh`, `tools/build-tools.sh`,
   `tools/test-tiers/runner.py`.
 
