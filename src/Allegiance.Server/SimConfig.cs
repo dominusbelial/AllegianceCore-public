@@ -14,6 +14,10 @@ public sealed class SimConfig
     public static bool ResolveNativeGotoPlan(bool configured, string? environment) =>
         string.IsNullOrWhiteSpace(environment) ? configured
         : environment.Trim().ToLowerInvariant() is not ("0" or "false" or "off");
+    /// <summary>P788c EXPERIMENTAL: send started-mission ship/status updates before
+    /// Mission.Update (native FedSrv/FedSrv.CPP:4237-4254). Default off;
+    /// ALLEGIANCE_SIM_NATIVE_BROADCAST_ORDER overrides this setting.</summary>
+    public bool NativeBroadcastOrder { get; set; }
 
     /// <summary>native (default) or off. Does not disable out-of-bounds damage.</summary>
     public string CrowdingPenalty { get; set; } = "native";

@@ -48,6 +48,7 @@ public sealed class P803TurretRelayBroadcastTests
         var viewer = new Ship((short)10003, hull, new Vector3(90, 0, 0), Vector3.Zero, Orientation.Identity) { SideId = 0 };
         gunner.ParentShip = carrier;                       // boarded gunner on mount 2
         gunner.TurretId = 2;
+        gunner.StateM = ShipControlState.WeaponsMask;
         mission.PlaceShip(carrier, sector);
         mission.PlaceShip(gunner, sector);
         mission.PlaceShip(viewer, sector);
@@ -104,6 +105,7 @@ public sealed class P803TurretRelayBroadcastTests
         var viewer = new Ship((short)10013, hull, new Vector3(90, 0, 0), Vector3.Zero, Orientation.Identity) { SideId = 0 };
         gunner.ParentShip = carrier;
         gunner.TurretId = 2;
+        gunner.StateM = ShipControlState.WeaponsMask;
         mission.PlaceShip(carrier, sector);
         mission.PlaceShip(gunner, sector);
         mission.PlaceShip(viewer, sector);

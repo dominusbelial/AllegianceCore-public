@@ -34,6 +34,12 @@ public sealed partial class Server
             return;
         }
 
+        // A controls-only pilot may echo a real pose for the warp handshake in
+        // the same packet. Validation is identical, but that pilot still uses
+        // server flight/orders rather than the local predictor (P788c).
+        bool scriptedControlsInPacket = false;
+        ControlData controlsBeforeScriptedEcho = default;
+        int stateBeforeScriptedEcho = 0;
         foreach (var command in inbound.Messages)
         {
             // A packet may have been queued before LOGOFF retired the peer.
@@ -330,6 +336,12 @@ public sealed partial class Server
                             bool legacy = u.Time == 0 || payload.Position.LengthSquared() == 0f;
                             if (legacy)
                             {
+                                if (!scriptedControlsInPacket)
+                                {
+                                    controlsBeforeScriptedEcho = live.Ship.Controls;
+                                    stateBeforeScriptedEcho = live.Ship.StateM;
+                                }
+                                scriptedControlsInPacket = true;
                                 live.Ship.Controls = payload.Controls;
                                 live.Ship.StateM = payload.StateM;
                                 var c = payload.Controls;
@@ -345,6 +357,11 @@ public sealed partial class Server
                                 // P518 — counted, so a cookie-divergence silent drop
                                 // (the P518 root cause) is visible in the summary.
                                 EnsurePeerUpdate(from).DroppedCookie++;
+                                if (scriptedControlsInPacket && !EnsurePeerUpdate(from).NativeClient)
+                                {
+                                    live.Ship.Controls = controlsBeforeScriptedEcho;
+                                    live.Ship.StateM = stateBeforeScriptedEcho;
+                                }
                                 ConsoleLog.Write($"[ctrlak] {from} ship {live.Ship.Id}: cookie mismatch (expect 0x{EnsurePeerUpdate(from).Cookie:X2}, got 0x{u.Cookie:X2}) — SHIP_UPDATE dropped (FedSrv.CPP:4854)");
                             }
                             else
@@ -355,8 +372,20 @@ public sealed partial class Server
                                 // a ship (see the CHATBUOY gate). Set here, before the
                                 // cookie/accept pipeline, so even a momentarily-dropped
                                 // update still identifies the peer as client-flown.
-                                EnsurePeerUpdate(from).NativeClient = true;
-                                ProcessPeerShipUpdate(from, live.Ship, u, EnsurePeerUpdate(from));
+                                if (!scriptedControlsInPacket) EnsurePeerUpdate(from).NativeClient = true;
+                                bool serverFlown = scriptedControlsInPacket && !EnsurePeerUpdate(from).NativeClient;
+                                try { ProcessPeerShipUpdate(from, live.Ship, u, EnsurePeerUpdate(from), serverFlown); }
+                                finally
+                                {
+                                    // The clock/pose echo is an acknowledgement,
+                                    // not another steering decision. A newer
+                                    // controls-only command may already be active.
+                                    if (serverFlown)
+                                    {
+                                        live.Ship.Controls = controlsBeforeScriptedEcho;
+                                        live.Ship.StateM = stateBeforeScriptedEcho;
+                                    }
+                                }
                             }
                         }
                     }
@@ -2261,7 +2290,7 @@ public sealed partial class Server
     // stateM first (GetSC), then judges the reported pose. Only reached for a
     // non-legacy update whose cookie matched (see the ShipUpdate.Fmid branch).
     // Sim-thread only, like its caller.
-    private void ProcessPeerShipUpdate(ConnectionId from, Ship ship, ShipUpdate u, PeerShipUpdate pu)
+    private void ProcessPeerShipUpdate(ConnectionId from, Ship ship, ShipUpdate u, PeerShipUpdate pu, bool serverFlown = false)
     {
         var payload = u.Payload;
 
@@ -2315,7 +2344,7 @@ public sealed partial class Server
         float maxSpeed = MathF.Max(ship.MovementSpeedLimit(), ship.Velocity.Length());
         // Compare at the same instant. A delayed snapshot of authorized boost
         // or launch momentum may be faster than the server's now-decayed speed.
-        ship.CalculateShipPose(deltaT, ref position, ref velocity, orientation, turnRates);
+        ship.CalculateShipPose(deltaT, ref position, ref velocity, orientation, turnRates, preserveAfterburner: serverFlown);
         float replayedSpeed = velocity.Length();
         // Each compact direction component rounds by at most 1/480; the
         // scalar speed is stored in eighths (Wire/Compact/Quant.cs).
@@ -2348,7 +2377,11 @@ public sealed partial class Server
         float envelope = 20f + maxSpeed * MathF.Min(1.5f, elapsed + MathF.Abs(deltaT));
 
         // Orientation is ALWAYS accepted (shipIGC.cpp:3178).
-        ship.SetOrientation(orientation);
+        // Scripted pilots echo compact authoritative snapshots; they do not
+        // predict flight. Validate exactly the same pose/cookie/time/envelope,
+        // while keeping the existing server-flight authority and full precision.
+        // Re-applying their rounded echo would steer a headless ship itself.
+        if (!serverFlown) ship.SetOrientation(orientation);
 
         float dSq = (ship.Position - position).LengthSquared();
         if (legalVelocity && FiniteVector(position) && velocity.Length() <= maxSpeed
@@ -2362,8 +2395,11 @@ public sealed partial class Server
             pu.LastPoseAt = SimNow;
             pu.MovementCredit -= travel;
             pu.LastPosePosition = position;
-            ship.Position = position;
-            ship.Velocity = velocity;
+            if (!serverFlown)
+            {
+                ship.Position = position;
+                ship.Velocity = velocity;
+            }
 
             // P760 — native warp-state handshake (fsship.cpp:1185-1191).
             // Accepted update transitions NoUpdate -> Waiting (armed for 2 s)

@@ -35,6 +35,7 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         _world.NowSeconds = () => ReplayMilliseconds.GetValueOrDefault() / 1000.0;
         ((ITransportSite)this).OnReceive(ConnectionId.Server, packet);
     }
+    private readonly ScriptedWarpHandshake _scriptedWarpHandshake = new();
     private readonly object _gate;
     private readonly ClientWorld _world;
 
@@ -463,7 +464,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
             Cookie = (byte)(Ack?.Cookie ?? 0),
             Payload = ClientShipUpdate.FromControls(0u, stateM, controls),
         };
-        Send(FedPacket.Pack(new[] { msg.Encode() }));
+        lock (_gate)
+        {
+            bool ping = _scriptedWarpHandshake.Command(controls, stateM, Environment.TickCount64);
+            Send(FedPacket.Pack(ping ? new[] { msg.Encode(), new Ping().Encode() } : new[] { msg.Encode() }));
+        }
     }
 
     /// <summary>
@@ -479,7 +484,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     public void SendShipPose(uint time, byte cookie, ClientShipUpdate payload)
     {
         var msg = new ShipUpdate { Time = time, Cookie = cookie, Payload = payload };
-        Send(FedPacket.Pack(new[] { msg.Encode() }));
+        lock (_gate)
+        {
+            _scriptedWarpHandshake.Disable(); // predictor owns its native stream
+            Send(FedPacket.Pack(new[] { msg.Encode() }));
+        }
     }
 
     /// <summary>
@@ -1318,6 +1327,8 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                             var ping = Ping.Decode(m);
                             _pingEchoes.Add((ping.TimeServer, ReplayMilliseconds ?? Environment.TickCount64));
                             _world.Apply(ping);
+                            if (_scriptedWarpHandshake.Clock(ping.TimeServer) is { } handshake)
+                                Send(ScriptedWarpHandshake.Pack(handshake));
                         }
                         catch { /* ignore a malformed echo */ }
                         break;
@@ -1329,16 +1340,22 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         catch { /* ignore a malformed update */ }
                         break;
                     case SetCluster.Fmid:
-                        _world.Apply(SetCluster.Decode(m));
+                        var assignment = SetCluster.Decode(m);
+                        _world.Apply(assignment);
+                        _scriptedWarpHandshake.Assigned(assignment);
                         break;
                     case SingleShipUpdate.Fmid:
-                        _world.Apply(_world.DecodeBotMessage(m, SingleShipUpdate.Decode));
+                        var singleShip = _world.DecodeBotMessage(m, SingleShipUpdate.Decode);
+                        _world.Apply(singleShip);
+                        _scriptedWarpHandshake.Observed(singleShip.Ship);
                         break;
                     case HeavyShipsUpdate.Fmid:
                         // P347 — the periodic cross-side visibility sync; every
                         // cluster ship the viewer's side sees (now incl. other
                         // factions since P346) refreshes pose via this message.
-                        _world.Apply(_world.DecodeBotMessage(m, HeavyShipsUpdate.Decode));
+                        var heavyShips = _world.DecodeBotMessage(m, HeavyShipsUpdate.Decode);
+                        _world.Apply(heavyShips);
+                        _scriptedWarpHandshake.ObservedTick(heavyShips.TimeReference);
                         break;
                     case LightShipsUpdate.Fmid:
                         _world.Apply(_world.DecodeBotMessage(m, LightShipsUpdate.Decode));
@@ -1852,13 +1869,17 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // P508 — the server rejected this ship's reported pose and
                         // sent an authoritative reset + a NEW cookie; the world
                         // stores the pose and flags the own ship for re-seed.
-                        _world.Apply(ShipReset.Decode(m));
+                        var reset = ShipReset.Decode(m);
+                        _world.Apply(reset);
+                        _scriptedWarpHandshake.Reset(reset);
                         break;
                     case Eject.Fmid:
                         // P540 — a player in this sector ejected into a drifting
                         // Lifepod hull; the world swaps the hull, sets the pod
                         // pose + spin, and latches the own-ship rescue autopilot.
-                        _world.Apply(Eject.Decode(m));
+                        var eject = Eject.Decode(m);
+                        _world.Apply(eject);
+                        _scriptedWarpHandshake.Ejected(eject);
                         break;
                     case PlayerRescued.Fmid:
                         // P627 — FM_S_PLAYER_RESCUED(16): the server tells both the
@@ -1933,6 +1954,11 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         break;
                 }
             }
+            // Scripted pilots continue the real update stream even when their
+            // unchanged controls were commanded only once before the warp.
+            if (_scriptedWarpHandshake.PoseUpdate() is { } scriptedPose)
+                Send(ScriptedWarpHandshake.Pack(scriptedPose));
+            if (_scriptedWarpHandshake.NeedsPing(Environment.TickCount64)) SendPing();
         }
 
         // P636 — after applying the whole batch (outside the gate; the receive

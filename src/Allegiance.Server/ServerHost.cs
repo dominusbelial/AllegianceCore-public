@@ -1557,6 +1557,10 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
             return;
         }
 
+        // Native fsship.cpp:74: the site callback itself also refuses players
+        // awaiting accepted updates, including direct/scripted callback callers.
+        if (!sh.WarpReady) return;
+
         // P760 — Andon aleph mass limit (fsship.cpp:77).
         float massLimit = rw.Warp.MassLimit;
         bool massOk = sh.Mass <= massLimit

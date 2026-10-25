@@ -25,15 +25,21 @@ public sealed partial class Server
             _config.UpdatesPerSecond, tick, _promotionEpsilonSq);
         bool seesTarget = target is not null && ShipPoseVisible(self, target, admin);
         int count = selected.Length + (seesTarget ? 1 : 0);
-        int length = HeavyShipsUpdate.FixedSize + count * HeavyShipUpdateEntry.Width;
+        var activeTurrets = CollectActiveTurretRelay(sector, self, tick);
+        var inactiveTurrets = CollectInactiveTurretRelay(sector);
+        byte[]? light = inactiveTurrets.Length == 0 ? null
+            : new LightShipsUpdate { InactiveTurretShipIds = inactiveTurrets }.Encode();
+        int turretBytes = activeTurrets.Length * ServerActiveTurretUpdate.Width;
+        int length = HeavyShipsUpdate.FixedSize + turretBytes + count * HeavyShipUpdateEntry.Width;
         if (length > ushort.MaxValue) throw new InvalidOperationException("Heavy pose message exceeds wire length");
-        var packet = PooledPosePacket.Rent(length + FedPacket.CrcWidth);
+        var packet = PooledPosePacket.Rent(length + (light?.Length ?? 0) + FedPacket.CrcWidth);
         var bytes = packet.Buffer;
         bytes.Slice(0, HeavyShipsUpdate.FixedSize).Clear();
         BinaryPrimitives.WriteUInt16LittleEndian(bytes, (ushort)length);
         BinaryPrimitives.WriteUInt16LittleEndian(bytes.Slice(2), HeavyShipsUpdate.Fmid);
         BinaryPrimitives.WriteUInt16LittleEndian(bytes.Slice(4), HeavyShipsUpdate.FixedSize);
-        BinaryPrimitives.WriteUInt16LittleEndian(bytes.Slice(8), HeavyShipsUpdate.FixedSize);
+        BinaryPrimitives.WriteUInt16LittleEndian(bytes.Slice(6), (ushort)turretBytes);
+        BinaryPrimitives.WriteUInt16LittleEndian(bytes.Slice(8), (ushort)(HeavyShipsUpdate.FixedSize + turretBytes));
         BinaryPrimitives.WriteUInt16LittleEndian(bytes.Slice(10), (ushort)(count * HeavyShipUpdateEntry.Width));
         BinaryPrimitives.WriteUInt32LittleEndian(bytes.Slice(12), tick);
         WritePoseVector(bytes.Slice(16), self.Position);
@@ -41,16 +47,20 @@ public sealed partial class Server
         bytes[30] = Percent(self.Fraction); bytes[31] = Percent(self.ShieldFraction);
         bytes[32] = bytes[33] = bytes[34] = 240;
         bytes[35] = Percent(self.EffectiveMineCapacity() <= 0 ? 0 : self.Ore / self.EffectiveMineCapacity());
-        int offset = HeavyShipsUpdate.FixedSize;
+        var writer = new WireWriter(bytes.Slice(HeavyShipsUpdate.FixedSize));
+        foreach (var turret in activeTurrets) turret.EncodeBody(ref writer);
+        int offset = HeavyShipsUpdate.FixedSize + turretBytes;
         if (seesTarget) WriteTierRecord(target!, self.Position, tick, bytes, ref offset, cadence, now);
         foreach (ref readonly var candidate in selected)
         {
             WriteTierRecord(candidate.Ship, self.Position, tick, bytes, ref offset, cadence, now);
             candidate.Ship.Deviation = 0;
         }
-        packet.Seal(length);
+        if (light is not null) light.CopyTo(bytes.Slice(length));
+        int packetLength = length + (light?.Length ?? 0);
+        packet.Seal(packetLength);
         SendPeerCoalescing(peer, packet, CoalesceShipsUpdate);
-        cadence.PacketBytes += length + FedPacket.CrcWidth;
+        cadence.PacketBytes += packetLength + FedPacket.CrcWidth;
         Interlocked.Add(ref ShipEncodingCounters.RelativePositions, count);
     }
 

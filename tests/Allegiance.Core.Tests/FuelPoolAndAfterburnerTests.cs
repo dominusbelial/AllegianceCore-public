@@ -395,4 +395,30 @@ public class FuelPoolAndAfterburnerTests
         Assert.True(dryAvg < fueledAvg * 0.75,
             $"powered acceleration must drop at exhaustion (fueled {fueledAvg:F4} vs dry {dryAvg:F4})");
     }
+    [SkippableFact, Trait("Requires", "Artwork")]
+    public void P788c_scripted_pose_replay_preserves_authoritative_afterburner_flight()
+    {
+        Require.Artwork();
+        var control = NewShip();
+        var echoed = NewShip();
+        foreach (var ship in new[] { control, echoed })
+        {
+            ship.MountPart(AfterburnerType(.001f, 200f, 1f, 1f), 1, 0, 255);
+            ship.StateM = ShipControlState.AfterburnerButton;
+            ship.Controls = new ControlData(0, 0, 0, 1);
+        }
+        for (int i = 1; i <= 20; i++)
+        {
+            control.Update(i * .05); echoed.Update(i * .05);
+            var position = echoed.Position;
+            var velocity = echoed.Velocity;
+            var orientation = new Orientation();
+            orientation.Set(echoed.Orientation.GetForward(), echoed.Orientation.GetUp());
+            echoed.CalculateShipPose(.1f, ref position, ref velocity, orientation,
+                echoed.TurnRates.ToArray(), preserveAfterburner: true);
+            Assert.Equal(control.Velocity, echoed.Velocity);
+            Assert.Equal(control.Position, echoed.Position);
+            Assert.Equal(control.Fuel, echoed.Fuel);
+        }
+    }
 }

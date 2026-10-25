@@ -72,6 +72,7 @@ public sealed class Bot : ITransportSite, IDisposable
 
     private LogonAck? _ack;
     private byte _poseCookie;   // P590 — see PoseCookie
+    private readonly ScriptedWarpHandshake _scriptedWarpHandshake = new();
     private SetCluster? _setCluster;
     private readonly List<SetCluster> _assignments = new();
     private readonly List<ShipReset> _shipResets = new();   // P507 (native SHIP_RESET 183)
@@ -1756,7 +1757,11 @@ public sealed class Bot : ITransportSite, IDisposable
             Cookie = (byte)(_ack?.Cookie ?? 0),
             Payload = ClientShipUpdate.FromControls(0u, stateM, controls),
         };
-        Send(FedPacket.Pack(new[] { msg.Encode() }));
+        lock (_gate)
+        {
+            bool ping = _scriptedWarpHandshake.Command(controls, stateM, Environment.TickCount64);
+            Send(FedPacket.Pack(ping ? new[] { msg.Encode(), new Ping().Encode() } : new[] { msg.Encode() }));
+        }
     }
 
     /// <summary>P507 — send a NATIVE-style <c>FM_C_SHIP_UPDATE(24)</c> carrying the
@@ -1774,7 +1779,11 @@ public sealed class Bot : ITransportSite, IDisposable
             Cookie = cookie,
             Payload = ClientShipUpdate.FromPose(time, position, velocity, orientation, stateM, controls, turnRates, power),
         };
-        Send(FedPacket.Pack(new[] { msg.Encode() }));
+        lock (_gate)
+        {
+            _scriptedWarpHandshake.Disable();
+            Send(FedPacket.Pack(new[] { msg.Encode() }));
+        }
     }
     public LogonAck WaitForAck(int timeoutMs)
     {
@@ -1848,6 +1857,7 @@ public sealed class Bot : ITransportSite, IDisposable
                     case SetCluster.Fmid:
                         _setCluster = SetCluster.Decode(m);
                         _assignments.Add(_setCluster);
+                        _scriptedWarpHandshake.Assigned(_setCluster);
                         _myShipId = _setCluster.Ship.ShipId;
                         _ownLaunchRevision++;
                         _ownLaunchFlying = _setCluster.SectorId >= 0;
@@ -1860,13 +1870,18 @@ public sealed class Bot : ITransportSite, IDisposable
                         // echoing it on its pod's SHIP_UPDATEs. Track it so a
                         // pose-driving harness keeps flying the pod after eject.
                         if (ej.ShipId == _myShipId) _poseCookie = ej.Cookie;
+                        _scriptedWarpHandshake.Ejected(ej);
                         _ejects.Add(ej);
                         break;
                     case ShipReset.Fmid:
-                        _shipResets.Add(ShipReset.Decode(m));
+                        var reset = ShipReset.Decode(m);
+                        _shipResets.Add(reset);
+                        _poseCookie = reset.Cookie;
+                        _scriptedWarpHandshake.Reset(reset);
                         break;
                     case SingleShipUpdate.Fmid:
                         var u = SingleShipUpdate.Decode(m);
+                        _scriptedWarpHandshake.Observed(u.Ship);
                         var obs = new ShipObservation(
                             u.OidTarget, u.Ship.Time, u.Ship.Position, u.Ship.Velocity, u.Ship.Orientation, u.Ship.StateM, u.Ship.OreFraction);
                         _anyShipObservations.Add(obs);
@@ -2014,6 +2029,11 @@ public sealed class Bot : ITransportSite, IDisposable
                         _probesUpdates.Add(ProbesUpdate.Decode(m));
                         break;
                     case HeavyShipsUpdate.Fmid:
+                        // Only the shared timeReference (wire offset 12) is
+                        // needed for scripted clocks. Preserve the no-record-
+                        // decode path for lightweight observers (P633).
+                        if (m.Length >= HeavyShipsUpdate.FixedSize)
+                            _scriptedWarpHandshake.ObservedTick(System.Buffers.Binary.BinaryPrimitives.ReadUInt32LittleEndian(m.AsSpan(12)));
                         if (RetainRawCombatUpdates) _heavyShipsUpdates.Add(HeavyShipsUpdate.Decode(m));
                         break;
                     case LightShipsUpdate.Fmid:
@@ -2110,7 +2130,10 @@ public sealed class Bot : ITransportSite, IDisposable
                         _setStartTimes.Add(SetStartTime.Decode(m));
                         break;
                     case Ping.Fmid:
-                        _pings.Add(Ping.Decode(m));
+                        var ping = Ping.Decode(m);
+                        _pings.Add(ping);
+                        if (_scriptedWarpHandshake.Clock(ping.TimeServer) is { } handshake)
+                            Send(ScriptedWarpHandshake.Pack(handshake));
                         break;
                     case PingData.Fmid:
                         _pingDatas.Add(PingData.Decode(m));
@@ -2200,6 +2223,9 @@ public sealed class Bot : ITransportSite, IDisposable
                         break;
                 }
             }
+            if (_scriptedWarpHandshake.PoseUpdate() is { } scriptedPose)
+                Send(ScriptedWarpHandshake.Pack(scriptedPose));
+            if (_scriptedWarpHandshake.NeedsPing(Environment.TickCount64)) SendPing(0);
         }
     }
 

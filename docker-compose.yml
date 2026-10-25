@@ -59,6 +59,8 @@ services:
       # EXPERIMENTAL flags: default off; kept or dropped by the 200v200 two-match A/B.
       # P817 — native NPC travel (docs/reports/P817_NATIVE_GOTOPLAN.md).
       ALLEGIANCE_SIM_NATIVE_GOTOPLAN: "${ALLEGIANCE_SIM_NATIVE_GOTOPLAN:-0}"
+      # P788c — native broadcast-before-update scheduling.
+      ALLEGIANCE_SIM_NATIVE_BROADCAST_ORDER: "${ALLEGIANCE_SIM_NATIVE_BROADCAST_ORDER:-0}"
       # P813d — the reliable one-shot park lane (docs/reports/P813D_RELIABLE_TIER_AUDIT.md).
       ALLEGIANCE_TRANSPORT_RELIABLE_ONESHOT: "${ALLEGIANCE_TRANSPORT_RELIABLE_ONESHOT:-0}"
     restart: unless-stopped

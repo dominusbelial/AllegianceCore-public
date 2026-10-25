@@ -177,3 +177,12 @@ The experimental NPC native travel planner (P817) is off by default. Set
 and NPC wingman travel; player autopilot and MCP pilot controls keep their own
 controllers. See `docs/reports/P817_NATIVE_GOTOPLAN.md` for comparison evidence
 and the separate rig acceptance recipe.
+
+P788c's experimental native ship-broadcast scheduling is off by default. Set
+`ALLEGIANCE_SIM_NATIVE_BROADCAST_ORDER=1` before starting Compose to project
+started-mission ship/status updates before simulation advances; `0` retains the
+post-update schedule. The equivalent server JSON setting is
+`sim.nativeBroadcastOrder`; the environment overrides it. The boot banner and
+profiler label record the resolved value. Keep the other broadcast settings the
+same when comparing the two modes. See
+[`P788C_NATIVE_TICK_ORDER_2.md`](../docs/reports/P788C_NATIVE_TICK_ORDER_2.md).

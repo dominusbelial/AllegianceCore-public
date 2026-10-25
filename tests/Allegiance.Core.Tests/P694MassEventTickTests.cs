@@ -79,7 +79,34 @@ public sealed class P694MassEventTickTests(ITestOutputHelper output)
         finally { ParallelSectorSim.Reset(); }
     }
 
-    private double Run(int count, bool stationDeath, bool coincident, bool parallel, bool nativeLaunch, bool measured)
+    // P788c: reuse the exact P694 collision/mass-launch fixtures but measure the
+    // complete server pass, with one seeded viewer for EVERY friendly ship.
+    [SkippableTheory, Trait("Requires", "Artwork")]
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, false, true)]
+    [InlineData(true, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, false)]
+    public void P788c_full_tick_broadcast_mass_events(bool nativeOrder, bool stationDeath, bool coincident)
+    {
+        Require.Artwork();
+        var warmup = Stopwatch.StartNew();
+        int worlds = 0;
+        do { Run(195, stationDeath, coincident, false, !coincident, false, true, nativeOrder); worlds++; }
+        while (warmup.Elapsed.TotalSeconds < 5 || worlds < 10);
+        var samples = new double[12];
+        for (int i = 0; i < samples.Length; i++)
+            samples[i] = Run(195, stationDeath, coincident, false, !coincident, true, true, nativeOrder);
+        Array.Sort(samples);
+        double p50 = samples[samples.Length / 2], p95 = samples[(int)Math.Ceiling(samples.Length * .95) - 1];
+        output.WriteLine($"P788c nativeOrder={nativeOrder} death={stationDeath} coincident={coincident} n={samples.Length} p50={p50:F3} p95={p95:F3} worst={samples[^1]:F3}ms samples=[{string.Join(",", samples.Select(v => v.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)))}]");
+        // The original 100 ms limit applies to sector simulation alone. This
+        // diagnostic includes the broadcast projection and publishes its paired
+        // flag timings; the rig compares full tick p95/worst across matches.
+    }
+
+    private double Run(int count, bool stationDeath, bool coincident, bool parallel, bool nativeLaunch, bool measured, bool fullTick = false, bool nativeOrder = false)
     {
         var console = Console.Out;
         try
@@ -87,18 +114,20 @@ public sealed class P694MassEventTickTests(ITestOutputHelper output)
             // Boot and warmup are outside the measurement. Do not queue their
             // many megabytes of console output immediately ahead of timed work.
             Console.SetOut(TextWriter.Null);
-            return RunWorld(count, stationDeath, coincident, parallel, nativeLaunch, measured, console);
+            return RunWorld(count, stationDeath, coincident, parallel, nativeLaunch, measured, console, fullTick, nativeOrder);
         }
         finally { Console.SetOut(console); }
     }
 
-    private double RunWorld(int count, bool stationDeath, bool coincident, bool parallel, bool nativeLaunch, bool measured, TextWriter console)
+    private double RunWorld(int count, bool stationDeath, bool coincident, bool parallel, bool nativeLaunch, bool measured, TextWriter console, bool fullTick, bool nativeOrder)
     {
         using var server = new Srv();
         server.Boot(new Allegiance.Server.ServerConfig
         {
             ArtPath = TestArtRoot.Value, StaticCore = "PCore001.igc", Port = 0,
-            Sim = new Allegiance.Server.SimConfig { ParallelSectorCells = parallel, ParallelSectorCellThreads = 4 },
+            Broadcast = fullTick ? new Allegiance.Server.BroadcastConfig
+            { ShipUpdateModel = "native", ImmutableSnapshot = true, EncodeOnce = true, ParallelBuild = true } : null,
+            Sim = new Allegiance.Server.SimConfig { NativeBroadcastOrder = nativeOrder, ParallelSectorCells = parallel, ParallelSectorCellThreads = 4 },
             Games = [new Allegiance.Server.GameConfig
             { Name = "P694", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] }]
         });
@@ -174,6 +203,9 @@ public sealed class P694MassEventTickTests(ITestOutputHelper output)
                     new Vector3(0, 0, 50 * type.Radius), new Vector3(0, 0, 1), sector.LastUpdate, ships[^1]));
             }
         }
+        if (fullTick)
+            server.TestSeedPeers(ships.Where(s => s.SideId == sectors.ToList().IndexOf(s.Sector!))
+                .Select(s => (new Allegiance.Core.Transport.ConnectionId((uint)s.Id), s, s.Sector!)).ToList());
         var csv = Path.Combine(Path.GetTempPath(), $"p694-{Guid.NewGuid():N}.csv");
         try
         {
@@ -193,8 +225,14 @@ public sealed class P694MassEventTickTests(ITestOutputHelper output)
             long allocated = GC.GetTotalAllocatedBytes();
             double pause = GC.GetTotalPauseDuration().TotalMilliseconds;
             var sw = Stopwatch.StartNew();
-            foreach (var sector in sectors) sector.Update(sector.LastUpdate + .05);
+            if (fullTick) server.TickSim();
+            else foreach (var sector in sectors) sector.Update(sector.LastUpdate + .05);
             sw.Stop();
+            if (fullTick)
+            {
+                server.FlushBroadcastSnapshots();
+                Assert.Equal(0, server.SimPassStageFailures);
+            }
             long tickAllocated = GC.GetTotalAllocatedBytes() - allocated;
             double tickPause = GC.GetTotalPauseDuration().TotalMilliseconds - pause;
             int tickGc0 = GC.CollectionCount(0) - gc0, tickGc1 = GC.CollectionCount(1) - gc1, tickGc2 = GC.CollectionCount(2) - gc2;

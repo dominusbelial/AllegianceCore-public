@@ -187,6 +187,7 @@ public sealed partial class Server
         // so a measurement run is never mistaken for an uninstrumented one.
         // Default OFF = today's serial byte-for-byte path.
         ResolveParallelSectorSim();
+        ResolveNativeBroadcastOrder();
 
         // P619 — log the ACTIVE garbage collector (server vs workstation, and
         // concurrent vs batch) so a measurement run is attributable: a server that

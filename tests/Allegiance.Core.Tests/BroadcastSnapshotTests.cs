@@ -80,6 +80,40 @@ public sealed class BroadcastPublisherTests
         Assert.Equal(2, publisher.PublishedSnapshots);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void P788c_complementary_tick_phases_keep_streams_and_later_ticks_replace_them(bool newerTick)
+    {
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var values = new ConcurrentQueue<byte>();
+        using var publisher = new BroadcastPublisher((delivery, bytes) => values.Enqueue(bytes[0]), 1);
+        publisher.BeforeEncode = () => { entered.Set(); Assert.True(release.Wait(TimeSpan.FromSeconds(10))); };
+        BroadcastSnapshot Phase(int tick, int key, byte value)
+        {
+            var snapshot = publisher.Rent(tick);
+            snapshot.Deliveries.Add(new(new(1), new BroadcastPacket([value]), key, key == 0));
+            return snapshot;
+        }
+        try
+        {
+            publisher.Submit(Phase(0, 0, 0));
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(10)));
+            publisher.Submit(Phase(1, 2, 12));
+            publisher.Submit(Phase(1, 3, 13));
+            if (newerTick)
+            {
+                publisher.Submit(Phase(2, 2, 22));
+                publisher.Submit(Phase(2, 3, 23));
+            }
+        }
+        finally { release.Set(); }
+        publisher.Flush();
+        Assert.Equal(newerTick ? new byte[] { 0, 22, 23 } : new byte[] { 0, 12, 13 }, values.ToArray());
+        Assert.Equal(0, publisher.EncodeFailures);
+    }
+
     [Fact]
     public void Dispose_drains_the_final_snapshot_and_joins_workers()
     {
@@ -284,9 +318,9 @@ public sealed class BroadcastSnapshotTests
             (true, false) => "3C1876D181A6A011",
             _ => "E06266AEDF1980C0",
         };
+        File.WriteAllText(Path.Combine(Path.GetTempPath(), $"p669-identity-{native}-{parallel}-{floor}.json"), JsonSerializer.Serialize(result));
         Assert.StartsWith(golden, result.offHash);
         Assert.Equal(result.offHash, result.onHash);
         Assert.Equal(result.onHash, result.sharedHash);
-        File.WriteAllText(Path.Combine(Path.GetTempPath(), $"p669-identity-{native}-{parallel}-{floor}.json"), JsonSerializer.Serialize(result));
     }
 }

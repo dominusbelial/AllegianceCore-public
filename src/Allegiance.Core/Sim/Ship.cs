@@ -643,16 +643,10 @@ public sealed partial class Ship : Model, IShipIgc
     public float Radius => 0.5f * HullType.Length;
 
     /// <summary>
-    /// Sim-time of the ship's most recent warp transit, or
-    /// <c>NegativeInfinity</c> if it has never crossed. The port of the C++
-    /// <c>CFSShip::m_warpState</c> debounce (<c>fsship.cpp:74</c>): native
-    /// blocks a second crossing while <c>m_warpState != warpReady</c> and only
-    /// re-arms ~2 s after a client update (<c>fsship.cpp:1185-1191</c>). Here a
-    /// cooldown window (<see cref="Sector.WarpCooldownSeconds"/>, kept on the
-    /// ship so it survives a sector transfer) stands in for the full state
-    /// machine — a documented simplification for this server's simplified
-    /// scope (single authoritative tick, no client-update re-arm cycle).
-    /// Owned and written by the host's warp transit on the sim thread.
+    /// Sim-time of the ship's most recent warp transit. Players use the native
+    /// accepted-update handshake (FedSrv/fsship.cpp:1173-1190). The sector's
+    /// additional cooldown is a retained port adaptation, including for NPCs
+    /// (native NPCs remain ready, fsship.cpp:74-82).
     /// </summary>
     public double LastWarpTime { get; set; } = double.NegativeInfinity;
 
@@ -5468,6 +5462,23 @@ public sealed partial class Ship : Model, IShipIgc
         }
     }
 
+    /// <summary>P788c: validate a server-flown scripted echo with the same
+    /// native replay (shipIGC.cpp:3244-3297), retaining its authoritative
+    /// afterburner ramp. The existing five-argument flight API is unchanged.</summary>
+    public void CalculateShipPose(float deltaT, ref Vector3 position, ref Vector3 velocity,
+        Orientation orientation, float[] turnRates, bool preserveAfterburner)
+    {
+        if (!preserveAfterburner)
+        {
+            CalculateShipPose(deltaT, ref position, ref velocity, orientation, turnRates);
+            return;
+        }
+        bool active = _afterburnerActive;
+        float power = _afterburnerPower;
+        try { CalculateShipPose(deltaT, ref position, ref velocity, orientation, turnRates); }
+        finally { _afterburnerActive = active; _afterburnerPower = power; }
+    }
+
     /// <summary>
     /// <c>CshipIGC::ExecuteTurretMove(timeStart, timeStop, &amp;pOrientation)</c>
     /// (<c>shipIGC.cpp:1618-1702</c>): advance the gunner's facing from
@@ -8982,18 +8993,8 @@ public sealed partial class Ship : Model, IShipIgc
             return;
         }
 
-        // P760 — native Waiting -> Ready transition also occurs once the armed
-        // time has elapsed, even if no further accepted peer update arrives in
-        // the exact tick. The NoUpdate fallback after the 2 s cooldown keeps
-        // tests and direct server-side ship manipulation working while still
-        // requiring the real handshake for normal player traffic.
-        if (!IsNpc && PlayerWarpState != WarpState.Ready)
-        {
-            if (PlayerWarpState == WarpState.Waiting && now >= TimeNextWarp)
-                PlayerWarpState = WarpState.Ready;
-            else if (PlayerWarpState == WarpState.NoUpdate && now >= LastWarpTime + Sector.WarpCooldownSeconds)
-                PlayerWarpState = WarpState.Ready;
-        }
+        // P788c: both player warp transitions require an accepted peer update,
+        // never elapsed time alone (FedSrv/fsship.cpp:1173-1190).
 
         if (!_skillFlight && Velocity.LengthSquared() > 1 && Mission?.Skills is { } skills)
         {

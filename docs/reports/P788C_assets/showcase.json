@@ -1,0 +1,92 @@
+[
+  {
+    "cohort": "base-showcase-",
+    "runs": [
+      {
+        "receipt": "base-showcase-1.trx",
+        "outcome": "Passed",
+        "metric": "401.4s, samples=4007, reached=24/30, longest speed<1 with target=2.013s, shots=6817, hits=3256, kills=26"
+      },
+      {
+        "receipt": "base-showcase-2.trx",
+        "outcome": "Passed",
+        "metric": "370.3s, samples=3697, reached=24/30, longest speed<1 with target=2.019s, shots=535, hits=287, kills=1"
+      },
+      {
+        "receipt": "base-showcase-3.trx",
+        "outcome": "Passed",
+        "metric": "378.4s, samples=3778, reached=24/30, longest speed<1 with target=2.005s, shots=4227, hits=1950, kills=17"
+      },
+      {
+        "receipt": "base-showcase-4.trx",
+        "outcome": "Passed",
+        "metric": "383.7s, samples=3831, reached=24/30, longest speed<1 with target=1.412s, shots=3889, hits=1737, kills=10"
+      },
+      {
+        "receipt": "base-showcase-5.trx",
+        "outcome": "Passed",
+        "metric": "402.4s, samples=4017, reached=24/30, longest speed<1 with target=1.912s, shots=2050, hits=606, kills=6"
+      }
+    ]
+  },
+  {
+    "cohort": "sealed-showcase-",
+    "runs": [
+      {
+        "receipt": "sealed-showcase-1.trx",
+        "outcome": "Passed",
+        "metric": "360.6s, samples=3601, reached=24/30, longest speed<1 with target=1.917s, shots=3624, hits=1619, kills=18"
+      },
+      {
+        "receipt": "sealed-showcase-2.trx",
+        "outcome": "Passed",
+        "metric": "468.0s, samples=4673, reached=24/30, longest speed<1 with target=2.305s, shots=7151, hits=3495, kills=25"
+      },
+      {
+        "receipt": "sealed-showcase-3.trx",
+        "outcome": "Passed",
+        "metric": "424.7s, samples=4241, reached=24/30, longest speed<1 with target=2.004s, shots=3922, hits=1884, kills=16"
+      },
+      {
+        "receipt": "sealed-showcase-4.trx",
+        "outcome": "Passed",
+        "metric": "379.1s, samples=3786, reached=24/30, longest speed<1 with target=2.106s, shots=4880, hits=2265, kills=19"
+      },
+      {
+        "receipt": "sealed-showcase-5.trx",
+        "outcome": "Passed",
+        "metric": "398.5s, samples=3980, reached=24/30, longest speed<1 with target=2.004s, shots=10230, hits=4220, kills=32"
+      }
+    ]
+  },
+  {
+    "cohort": "final-showcase-complete-",
+    "runs": [
+      {
+        "receipt": "final-showcase-complete-1.trx",
+        "outcome": "Failed",
+        "metric": "383.8s, samples=3832, reached=24/30, longest speed<1 with target=2.006s, shots=4849, hits=1908, kills=14"
+      },
+      {
+        "receipt": "final-showcase-complete-2.trx",
+        "outcome": "Passed",
+        "metric": "421.9s, samples=4212, reached=24/30, longest speed<1 with target=2.021s, shots=6858, hits=3002, kills=27"
+      },
+      {
+        "receipt": "final-showcase-complete-3.trx",
+        "outcome": "Passed",
+        "metric": "425.6s, samples=4249, reached=24/30, longest speed<1 with target=1.705s, shots=2796, hits=1048, kills=6"
+      },
+      {
+        "receipt": "final-showcase-complete-4.trx",
+        "outcome": "Passed",
+        "metric": "387.0s, samples=3863, reached=24/30, longest speed<1 with target=1.907s, shots=4972, hits=2108, kills=11"
+      },
+      {
+        "receipt": "final-showcase-complete-5.trx",
+        "outcome": "Passed",
+        "metric": "340.9s, samples=3403, reached=24/30, longest speed<1 with target=2.017s, shots=1479, hits=692, kills=5"
+      }
+    ]
+  }
+]

@@ -111,6 +111,10 @@ internal sealed class BroadcastPublisher : IDisposable
                 // Never discard ordered reliable traffic: its latches already
                 // advanced on the sim thread. Coalesce only keyed streams,
                 // including guaranteed latest-wins own-ship poses (P608).
+                // P788c: pre-update ships and post-update events/statics are
+                // complementary phases of ONE tick. Keep unsuperseded streams
+                // from that tick; a later tick retains the existing shedding.
+                bool sameTick = previous.Tick == snapshot.Tick;
                 int keep = 0;
                 var replaced = new HashSet<(ConnectionId, int)>();
                 foreach (var delivery in snapshot.Deliveries)
@@ -118,7 +122,7 @@ internal sealed class BroadcastPublisher : IDisposable
                 for (int i = 0; i < previous.Deliveries.Count; i++)
                 {
                     var delivery = previous.Deliveries[i];
-                    if (delivery.Key == 0 || (delivery.Guaranteed && !replaced.Contains((delivery.Peer, delivery.Key))))
+                    if (delivery.Key == 0 || ((delivery.Guaranteed || sameTick) && !replaced.Contains((delivery.Peer, delivery.Key))))
                         previous.Deliveries[keep++] = delivery;
                     else
                     {

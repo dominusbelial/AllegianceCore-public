@@ -1,0 +1,719 @@
+{
+ "base": "dac42b33",
+ "branch": "codex/p788c",
+ "raw_evidence": ".scratch/p788c",
+ "tests": {
+  "BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes-1.trx": "Failed=4",
+  "BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes-2.trx": "Failed=4",
+  "BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes-3.trx": "Failed=4",
+  "P650ServerRulesTests.Warp_exit_uses_loaded_slot_and_preserves_entry_speed-1.trx": "Passed=1",
+  "P650ServerRulesTests.Warp_exit_uses_loaded_slot_and_preserves_entry_speed-2.trx": "Passed=1",
+  "P650ServerRulesTests.Warp_exit_uses_loaded_slot_and_preserves_entry_speed-3.trx": "Passed=1",
+  "P760ServerCallbacksTests-1.trx": "Passed=13",
+  "P760ServerCallbacksTests-2.trx": "Passed=13",
+  "P760ServerCallbacksTests-3.trx": "Passed=13",
+  "P788cConfigTests-1.trx": "Passed=8",
+  "P788cConfigTests-2.trx": "Passed=8",
+  "P788cConfigTests-3.trx": "Passed=8",
+  "P788cNativeTickOrderTests-1.trx": "Passed=11",
+  "P788cNativeTickOrderTests-2.trx": "Passed=11",
+  "P788cNativeTickOrderTests-3.trx": "Passed=11",
+  "P788cScriptedWarpTests-1.trx": "Passed=4",
+  "P788cScriptedWarpTests-2.trx": "Passed=4",
+  "P788cScriptedWarpTests-3.trx": "Passed=4",
+  "P803TurretRelayBroadcastTests-1.trx": "Passed=2",
+  "P803TurretRelayBroadcastTests-2.trx": "Passed=2",
+  "P803TurretRelayBroadcastTests-3.trx": "Passed=2",
+  "P803TurretRelayTests-1.trx": "Passed=4",
+  "P803TurretRelayTests-2.trx": "Passed=4",
+  "P803TurretRelayTests-3.trx": "Passed=4",
+  "UpdateCadenceTests-1.trx": "Passed=12",
+  "UpdateCadenceTests-2.trx": "Passed=12",
+  "UpdateCadenceTests-3.trx": "Passed=12",
+  "WarpTransitServerTests-1.trx": "Passed=4",
+  "WarpTransitServerTests-2.trx": "Passed=4",
+  "WarpTransitServerTests-3.trx": "Passed=4",
+  "all-initial.trx": "Failed=4 Passed=18",
+  "base-instrumented.trx": "Failed=12 Passed=2",
+  "base-showcase-1.trx": "Passed=1",
+  "base-showcase-2.trx": "Passed=1",
+  "base-showcase-3.trx": "Passed=1",
+  "base-showcase-4.trx": "Passed=1",
+  "base-showcase-5.trx": "Passed=1",
+  "base-warp-1.trx": "Passed=1",
+  "base-warp-2.trx": "Passed=1",
+  "base-warp-3.trx": "Passed=1",
+  "base.trx": "Failed=12 Passed=2",
+  "boundary-final-1.trx": "Passed=13",
+  "boundary-final-2.trx": "Passed=13",
+  "boundary-final-3.trx": "Passed=13",
+  "certified-client-1.trx": "Passed=12",
+  "certified-client-2.trx": "Passed=12",
+  "certified-client-3.trx": "Passed=12",
+  "certified-mass-2.trx": "Passed=20",
+  "certified-mass-3.trx": "Passed=20",
+  "certified-protocol-1.trx": "Failed=4 Passed=29",
+  "certified-protocol-2.trx": "Failed=4 Passed=29",
+  "certified-protocol-3.trx": "Failed=4 Passed=29",
+  "certified-showcase-1.trx": "Passed=1",
+  "certified-showcase-2.trx": "Failed=1",
+  "certified-showcase-3.trx": "Passed=1",
+  "certified-showcase-4.trx": "Failed=1",
+  "certified-showcase-5.trx": "Passed=1",
+  "class-BroadcastPublisherTests-1.trx": "Passed=11",
+  "class-BroadcastPublisherTests-2.trx": "Passed=11",
+  "class-BroadcastPublisherTests-3.trx": "Passed=11",
+  "class-ClientWarpApproachLiveTests-1.trx": "Passed=1",
+  "class-ClientWarpApproachLiveTests-2.trx": "Passed=1",
+  "class-ClientWarpApproachLiveTests-3.trx": "Passed=1",
+  "class-CrossSideCombatVisibilityLiveTests-1.trx": "Failed=1 Passed=3",
+  "class-CrossSideCombatVisibilityLiveTests-2.trx": "Passed=4",
+  "class-CrossSideCombatVisibilityLiveTests-3.trx": "Passed=4",
+  "class-FuelPoolAndAfterburnerTests-1.trx": "Passed=8",
+  "class-FuelPoolAndAfterburnerTests-2.trx": "Passed=8",
+  "class-FuelPoolAndAfterburnerTests-3.trx": "Passed=8",
+  "class-P507OwnShipModelLiveTests-1.trx": "Passed=7",
+  "class-P507OwnShipModelLiveTests-2.trx": "Passed=7",
+  "class-P507OwnShipModelLiveTests-3.trx": "Passed=7",
+  "class-P541GotoGateLiveTests-1.trx": "Passed=2",
+  "class-P541GotoGateLiveTests-2.trx": "Passed=2",
+  "class-P541GotoGateLiveTests-3.trx": "Passed=2",
+  "class-P788cConfigTests-1.trx": "Passed=8",
+  "class-P788cConfigTests-2.trx": "Passed=8",
+  "class-P788cConfigTests-3.trx": "Passed=8",
+  "class-P788cNativeTickOrderTests-1.trx": "Passed=12",
+  "class-P788cNativeTickOrderTests-2.trx": "Passed=12",
+  "class-P788cNativeTickOrderTests-3.trx": "Passed=12",
+  "class-P788cScriptedWarpTests-1.trx": "Passed=4",
+  "class-P788cScriptedWarpTests-2.trx": "Passed=4",
+  "class-P788cScriptedWarpTests-3.trx": "Passed=4",
+  "class-P803TurretRelayBroadcastTests-1.trx": "Passed=2",
+  "class-P803TurretRelayBroadcastTests-2.trx": "Passed=2",
+  "class-P803TurretRelayBroadcastTests-3.trx": "Passed=2",
+  "class-P803TurretRelayTests-1.trx": "Passed=4",
+  "class-P803TurretRelayTests-2.trx": "Passed=4",
+  "class-P803TurretRelayTests-3.trx": "Passed=4",
+  "class-ShipDeleteGoneLiveTests-1.trx": "Passed=3",
+  "class-ShipDeleteGoneLiveTests-2.trx": "Passed=3",
+  "class-ShipDeleteGoneLiveTests-3.trx": "Passed=3",
+  "class-ShipKinematicsGoldenTests-1.trx": "Passed=4",
+  "class-ShipKinematicsGoldenTests-2.trx": "Passed=4",
+  "class-ShipKinematicsGoldenTests-3.trx": "Passed=4",
+  "class-UpdateCadenceTests-1.trx": "Passed=12",
+  "class-UpdateCadenceTests-2.trx": "Passed=12",
+  "class-UpdateCadenceTests-3.trx": "Passed=12",
+  "crossside-qualified-1.trx": "Passed=1",
+  "crossside-qualified-2.trx": "Passed=1",
+  "crossside-qualified-3.trx": "Passed=1",
+  "eject-handshake-final.trx": "Passed=4",
+  "fast-environment-isolation-1.trx": "Passed=10",
+  "fast-environment-isolation-2.trx": "Passed=10",
+  "fast-environment-isolation-3.trx": "Passed=10",
+  "final-client-1.trx": "Passed=12",
+  "final-client-2.trx": "Passed=12",
+  "final-client-3.trx": "Passed=12",
+  "final-client-complete-1.trx": "Passed=12",
+  "final-client-complete-2.trx": "Passed=12",
+  "final-client-complete-3.trx": "Passed=12",
+  "final-core-complete-1.trx": "Passed=70",
+  "final-core-complete-2.trx": "Passed=70",
+  "final-core-complete-3.trx": "Passed=70",
+  "final-eject-proof.trx": "Failed=4 Passed=31",
+  "final-perf-complete-1.trx": "Passed=6",
+  "final-perf-complete-2.trx": "Passed=6",
+  "final-perf-complete-3.trx": "Passed=6",
+  "final-protocol-1.trx": "Passed=33",
+  "final-protocol-2.trx": "Passed=33",
+  "final-protocol-3.trx": "Passed=33",
+  "final-showcase-complete-1.trx": "Failed=1",
+  "final-showcase-complete-2.trx": "Passed=1",
+  "final-showcase-complete-3.trx": "Passed=1",
+  "final-showcase-complete-4.trx": "Passed=1",
+  "final-showcase-complete-5.trx": "Passed=1",
+  "final-showcase-native.trx": "Passed=1",
+  "final-verified-client-1.trx": "Passed=12",
+  "final-verified-client-2.trx": "Passed=12",
+  "final-verified-client-3.trx": "Passed=12",
+  "final-verified-core-1.trx": "Passed=70",
+  "final-verified-core-2.trx": "Passed=70",
+  "final-verified-core-3.trx": "Passed=70",
+  "final-verified-perf-1.trx": "Passed=6",
+  "final-verified-perf-2.trx": "Passed=6",
+  "final-verified-perf-3.trx": "Passed=6",
+  "focused-1.trx": "Passed=19",
+  "gate-client-1.trx": "Passed=12",
+  "gate-client-2.trx": "Passed=12",
+  "gate-client-3.trx": "Passed=12",
+  "gate-core-1.trx": "Passed=70",
+  "gate-core-2.trx": "Passed=70",
+  "gate-core-3.trx": "Passed=70",
+  "gate-perf-2.trx": "Passed=6",
+  "gate-perf-3.trx": "Passed=6",
+  "gate-transcript-1.trx": "Failed=4",
+  "gate-transcript-2.trx": "Failed=4",
+  "gate-transcript-3.trx": "Failed=4",
+  "initial.trx": "Passed=10",
+  "mass-final-1.trx": "Passed=20",
+  "p694-original-1.trx": "Passed=14",
+  "perf-1.trx": "Failed=4 Passed=2",
+  "phase-final-1.trx": "Passed=31",
+  "phase-publication-1.trx": "Failed=1 Passed=22",
+  "prepublish-perf-1.trx": "Passed=6",
+  "profile-isolated-1.trx": "Passed=1",
+  "profile-isolated-2.trx": "Passed=1",
+  "profile-isolated-3.trx": "Passed=1",
+  "protocol-validation-1.trx": "Passed=39",
+  "script-clock-debug.trx": "Failed=4",
+  "script-clock-fixed.trx": "Passed=4",
+  "scripted-initial.trx": "Passed=4",
+  "scripted-stream.trx": "Passed=4",
+  "sealed-showcase-1.trx": "Passed=1",
+  "sealed-showcase-2.trx": "Passed=1",
+  "sealed-showcase-3.trx": "Passed=1",
+  "sealed-showcase-4.trx": "Passed=1",
+  "sealed-showcase-5.trx": "Passed=1",
+  "showcase-1.trx": "Passed=1",
+  "showcase-2.trx": "Passed=1",
+  "showcase-3.trx": "Passed=1",
+  "showcase-4.trx": "Passed=1",
+  "showcase-5.trx": "Passed=1",
+  "warp-authority-1.trx": "Failed=1 Passed=7",
+  "warp-authority-2.trx": "Failed=1",
+  "warp-authority-final-1.trx": "Failed=1 Passed=7",
+  "warp-authority-final-2.trx": "Failed=1 Passed=7",
+  "warp-authority-final-3.trx": "Failed=1 Passed=7",
+  "warp-clock-1.trx": "Passed=8",
+  "warp-debug.trx": "Failed=1",
+  "warp-isolation-1.trx": "Failed=2",
+  "warp-isolation-2.trx": "Failed=2",
+  "warp-isolation-3.trx": "Failed=2",
+  "warp-protocol-final-1.trx": "Failed=1 Passed=7",
+  "warp-protocol-final-2.trx": "Failed=1 Passed=7",
+  "warp-protocol-final-3.trx": "Failed=1 Passed=7"
+ },
+ "byte_identity": [
+  {
+   "scenario": "p669-identity-False-False-0.json",
+   "dispatch": "D0ED7EEB37594AF53A7A4EF99547A5D34273210ED9C03201763462035B7D2AAB",
+   "flag_off": "D0ED7EEB37594AF53A7A4EF99547A5D34273210ED9C03201763462035B7D2AAB",
+   "snapshot": "D0ED7EEB37594AF53A7A4EF99547A5D34273210ED9C03201763462035B7D2AAB",
+   "encode_once": "D0ED7EEB37594AF53A7A4EF99547A5D34273210ED9C03201763462035B7D2AAB",
+   "packets": 304202,
+   "bytes": 74077744,
+   "equal": true
+  },
+  {
+   "scenario": "p669-identity-False-True-2.json",
+   "dispatch": "B16780AEF82384FCB05FB4AC1908C67615E66443D09472A4AEB077BBFEDEE074",
+   "flag_off": "B16780AEF82384FCB05FB4AC1908C67615E66443D09472A4AEB077BBFEDEE074",
+   "snapshot": "B16780AEF82384FCB05FB4AC1908C67615E66443D09472A4AEB077BBFEDEE074",
+   "encode_once": "B16780AEF82384FCB05FB4AC1908C67615E66443D09472A4AEB077BBFEDEE074",
+   "packets": 304202,
+   "bytes": 81862612,
+   "equal": true
+  },
+  {
+   "scenario": "p669-identity-True-False-2.json",
+   "dispatch": "227A25DD0857FB42AEAF278F0D5AB893F92AA071A6AEF7B388324633618E9646",
+   "flag_off": "227A25DD0857FB42AEAF278F0D5AB893F92AA071A6AEF7B388324633618E9646",
+   "snapshot": "227A25DD0857FB42AEAF278F0D5AB893F92AA071A6AEF7B388324633618E9646",
+   "encode_once": "227A25DD0857FB42AEAF278F0D5AB893F92AA071A6AEF7B388324633618E9646",
+   "packets": 289082,
+   "bytes": 21044998,
+   "equal": true
+  },
+  {
+   "scenario": "p669-identity-True-True-3.json",
+   "dispatch": "420FA677AEEA2B8FD121C7905321DE824313F24FCCD23EAEA1B335BCD36B220A",
+   "flag_off": "420FA677AEEA2B8FD121C7905321DE824313F24FCCD23EAEA1B335BCD36B220A",
+   "snapshot": "420FA677AEEA2B8FD121C7905321DE824313F24FCCD23EAEA1B335BCD36B220A",
+   "encode_once": "420FA677AEEA2B8FD121C7905321DE824313F24FCCD23EAEA1B335BCD36B220A",
+   "packets": 289082,
+   "bytes": 26689429,
+   "equal": true
+  }
+ ],
+ "performance": [
+  "P788c nativeOrder=False death=True coincident=False n=12 p50=178.258 p95=224.893 worst=224.893ms  (certified-mass-2.trx)",
+  "P788c nativeOrder=False death=False coincident=False n=12 p50=104.101 p95=120.229 worst=120.229ms  (certified-mass-2.trx)",
+  "P788c nativeOrder=True death=False coincident=True n=12 p50=108.780 p95=564.060 worst=564.060ms  (certified-mass-2.trx)",
+  "P788c nativeOrder=True death=True coincident=False n=12 p50=177.266 p95=238.474 worst=238.474ms  (certified-mass-2.trx)",
+  "P788c nativeOrder=False death=False coincident=True n=12 p50=108.909 p95=195.645 worst=195.645ms  (certified-mass-2.trx)",
+  "P788c nativeOrder=True death=False coincident=False n=12 p50=133.727 p95=180.389 worst=180.389ms  (certified-mass-2.trx)",
+  "P788c nativeOrder=False death=True coincident=False n=12 p50=159.360 p95=197.002 worst=197.002ms  (certified-mass-3.trx)",
+  "P788c nativeOrder=True death=False coincident=False n=12 p50=123.293 p95=737.044 worst=737.044ms  (certified-mass-3.trx)",
+  "P788c nativeOrder=False death=False coincident=False n=12 p50=116.465 p95=164.734 worst=164.734ms  (certified-mass-3.trx)",
+  "P788c nativeOrder=True death=True coincident=False n=12 p50=164.148 p95=200.542 worst=200.542ms  (certified-mass-3.trx)",
+  "P788c nativeOrder=False death=False coincident=True n=12 p50=94.311 p95=141.152 worst=141.152ms  (certified-mass-3.trx)",
+  "P788c nativeOrder=True death=False coincident=True n=12 p50=110.919 p95=127.198 worst=127.198ms  (certified-mass-3.trx)",
+  "P788c nativeOrder=True death=False coincident=True n=12 p50=112.422 p95=127.381 worst=127.381ms  (final-perf-complete-1.trx)",
+  "P788c nativeOrder=True death=True coincident=False n=12 p50=180.547 p95=194.861 worst=194.861ms  (final-perf-complete-1.trx)",
+  "P788c nativeOrder=False death=True coincident=False n=12 p50=170.351 p95=180.187 worst=180.187ms  (final-perf-complete-1.trx)",
+  "P788c nativeOrder=True death=False coincident=False n=12 p50=139.552 p95=163.159 worst=163.159ms  (final-perf-complete-1.trx)",
+  "P788c nativeOrder=False death=False coincident=False n=12 p50=114.619 p95=138.193 worst=138.193ms  (final-perf-complete-1.trx)",
+  "P788c nativeOrder=False death=False coincident=True n=12 p50=93.107 p95=100.358 worst=100.358ms  (final-perf-complete-1.trx)",
+  "P788c nativeOrder=True death=True coincident=False n=12 p50=197.089 p95=205.888 worst=205.888ms  (final-perf-complete-2.trx)",
+  "P788c nativeOrder=True death=False coincident=False n=12 p50=138.731 p95=151.354 worst=151.354ms  (final-perf-complete-2.trx)",
+  "P788c nativeOrder=False death=False coincident=True n=12 p50=103.003 p95=118.109 worst=118.109ms  (final-perf-complete-2.trx)",
+  "P788c nativeOrder=False death=False coincident=False n=12 p50=116.676 p95=123.005 worst=123.005ms  (final-perf-complete-2.trx)",
+  "P788c nativeOrder=False death=True coincident=False n=12 p50=158.724 p95=172.753 worst=172.753ms  (final-perf-complete-2.trx)",
+  "P788c nativeOrder=True death=False coincident=True n=12 p50=116.871 p95=134.706 worst=134.706ms  (final-perf-complete-2.trx)",
+  "P788c nativeOrder=True death=False coincident=False n=12 p50=142.141 p95=156.218 worst=156.218ms  (final-perf-complete-3.trx)",
+  "P788c nativeOrder=False death=False coincident=True n=12 p50=98.676 p95=107.596 worst=107.596ms  (final-perf-complete-3.trx)",
+  "P788c nativeOrder=True death=True coincident=False n=12 p50=191.606 p95=205.664 worst=205.664ms  (final-perf-complete-3.trx)",
+  "P788c nativeOrder=False death=False coincident=False n=12 p50=121.999 p95=157.261 worst=157.261ms  (final-perf-complete-3.trx)",
+  "P788c nativeOrder=False death=True coincident=False n=12 p50=163.356 p95=175.947 worst=175.947ms  (final-perf-complete-3.trx)",
+  "P788c nativeOrder=True death=False coincident=True n=12 p50=120.443 p95=161.182 worst=161.182ms  (final-perf-complete-3.trx)",
+  "P788c nativeOrder=True death=False coincident=False n=12 p50=127.217 p95=131.865 worst=131.865ms  (final-verified-perf-1.trx)",
+  "P788c nativeOrder=False death=True coincident=False n=12 p50=150.920 p95=159.449 worst=159.449ms  (final-verified-perf-1.trx)",
+  "P788c nativeOrder=True death=True coincident=False n=12 p50=169.528 p95=196.281 worst=196.281ms  (final-verified-perf-1.trx)",
+  "P788c nativeOrder=True death=False coincident=True n=12 p50=89.617 p95=114.170 worst=114.170ms  (final-verified-perf-1.trx)",
+  "P788c nativeOrder=False death=False coincident=False n=12 p50=97.524 p95=105.811 worst=105.811ms  (final-verified-perf-1.trx)",
+  "P788c nativeOrder=False death=False coincident=True n=12 p50=143.575 p95=180.005 worst=180.005ms  (final-verified-perf-1.trx)",
+  "P788c nativeOrder=False death=False coincident=True n=12 p50=90.610 p95=101.153 worst=101.153ms  (final-verified-perf-2.trx)",
+  "P788c nativeOrder=True death=True coincident=False n=12 p50=162.112 p95=180.424 worst=180.424ms  (final-verified-perf-2.trx)",
+  "P788c nativeOrder=False death=True coincident=False n=12 p50=145.692 p95=153.756 worst=153.756ms  (final-verified-perf-2.trx)",
+  "P788c nativeOrder=True death=False coincident=False n=12 p50=122.219 p95=133.266 worst=133.266ms  (final-verified-perf-2.trx)",
+  "P788c nativeOrder=True death=False coincident=True n=12 p50=88.737 p95=103.323 worst=103.323ms  (final-verified-perf-2.trx)",
+  "P788c nativeOrder=False death=False coincident=False n=12 p50=95.865 p95=100.725 worst=100.725ms  (final-verified-perf-2.trx)",
+  "P788c nativeOrder=True death=False coincident=True n=12 p50=93.450 p95=118.209 worst=118.209ms  (final-verified-perf-3.trx)",
+  "P788c nativeOrder=False death=False coincident=True n=12 p50=91.243 p95=100.448 worst=100.448ms  (final-verified-perf-3.trx)",
+  "P788c nativeOrder=True death=False coincident=False n=12 p50=134.386 p95=142.538 worst=142.538ms  (final-verified-perf-3.trx)",
+  "P788c nativeOrder=False death=False coincident=False n=12 p50=105.683 p95=109.044 worst=109.044ms  (final-verified-perf-3.trx)",
+  "P788c nativeOrder=True death=True coincident=False n=12 p50=167.237 p95=185.128 worst=185.128ms  (final-verified-perf-3.trx)",
+  "P788c nativeOrder=False death=True coincident=False n=12 p50=142.207 p95=171.406 worst=171.406ms  (final-verified-perf-3.trx)",
+  "P788c nativeOrder=True death=True coincident=False n=12 p50=162.105 p95=187.201 worst=187.201ms  (gate-perf-2.trx)",
+  "P788c nativeOrder=True death=False coincident=False n=12 p50=124.907 p95=144.481 worst=144.481ms  (gate-perf-2.trx)",
+  "P788c nativeOrder=True death=False coincident=True n=12 p50=94.730 p95=106.342 worst=106.342ms  (gate-perf-2.trx)",
+  "P788c nativeOrder=False death=False coincident=True n=12 p50=90.385 p95=104.225 worst=104.225ms  (gate-perf-2.trx)",
+  "P788c nativeOrder=False death=True coincident=False n=12 p50=195.674 p95=280.604 worst=280.604ms  (gate-perf-2.trx)",
+  "P788c nativeOrder=False death=False coincident=False n=12 p50=100.501 p95=103.258 worst=103.258ms  (gate-perf-2.trx)",
+  "P788c nativeOrder=False death=True coincident=False n=12 p50=151.692 p95=160.709 worst=160.709ms  (gate-perf-3.trx)",
+  "P788c nativeOrder=True death=False coincident=False n=12 p50=129.507 p95=134.661 worst=134.661ms  (gate-perf-3.trx)",
+  "P788c nativeOrder=False death=False coincident=True n=12 p50=88.866 p95=98.519 worst=98.519ms  (gate-perf-3.trx)",
+  "P788c nativeOrder=True death=True coincident=False n=12 p50=176.170 p95=185.067 worst=185.067ms  (gate-perf-3.trx)",
+  "P788c nativeOrder=True death=False coincident=True n=12 p50=95.511 p95=122.990 worst=122.990ms  (gate-perf-3.trx)",
+  "P788c nativeOrder=False death=False coincident=False n=12 p50=107.332 p95=151.540 worst=151.540ms  (gate-perf-3.trx)",
+  "P788c nativeOrder=True death=False coincident=True n=12 p50=118.672 p95=187.393 worst=187.393ms  (mass-final-1.trx)",
+  "P788c nativeOrder=True death=True coincident=False n=12 p50=156.434 p95=197.800 worst=197.800ms  (mass-final-1.trx)",
+  "P788c nativeOrder=False death=True coincident=False n=12 p50=170.807 p95=195.167 worst=195.167ms  (mass-final-1.trx)",
+  "P788c nativeOrder=True death=False coincident=False n=12 p50=145.284 p95=730.858 worst=730.858ms  (mass-final-1.trx)",
+  "P788c nativeOrder=False death=False coincident=False n=12 p50=104.886 p95=198.444 worst=198.444ms  (mass-final-1.trx)",
+  "P788c nativeOrder=False death=False coincident=True n=12 p50=96.311 p95=145.367 worst=145.367ms  (mass-final-1.trx)",
+  "P788c nativeOrder=False death=True coincident=False n=12 p50=139.502 p95=145.130 worst=145.130ms  (perf-1.trx)",
+  "P788c nativeOrder=True death=False coincident=False n=12 p50=106.263 p95=111.921 worst=111.921ms  (perf-1.trx)",
+  "P788c nativeOrder=True death=True coincident=False n=12 p50=183.954 p95=364.942 worst=364.942ms  (perf-1.trx)",
+  "P788c nativeOrder=True death=False coincident=True n=12 p50=81.834 p95=99.599 worst=99.599ms  (perf-1.trx)",
+  "P788c nativeOrder=False death=False coincident=True n=12 p50=82.631 p95=86.920 worst=86.920ms  (perf-1.trx)",
+  "P788c nativeOrder=False death=False coincident=False n=12 p50=102.969 p95=128.033 worst=128.033ms  (perf-1.trx)",
+  "P788c nativeOrder=False death=False coincident=True n=12 p50=87.734 p95=96.541 worst=96.541ms  (prepublish-perf-1.trx)",
+  "P788c nativeOrder=False death=True coincident=False n=12 p50=147.391 p95=156.773 worst=156.773ms  (prepublish-perf-1.trx)",
+  "P788c nativeOrder=True death=True coincident=False n=12 p50=173.558 p95=190.053 worst=190.053ms  (prepublish-perf-1.trx)",
+  "P788c nativeOrder=False death=False coincident=False n=12 p50=105.816 p95=113.423 worst=113.423ms  (prepublish-perf-1.trx)",
+  "P788c nativeOrder=True death=False coincident=True n=12 p50=108.370 p95=120.144 worst=120.144ms  (prepublish-perf-1.trx)",
+  "P788c nativeOrder=True death=False coincident=False n=12 p50=124.574 p95=139.374 worst=139.374ms  (prepublish-perf-1.trx)",
+  "P788c nativeOrder=True death=True coincident=False n=12 p50=292.446 p95=317.899 worst=317.899ms  (protocol-validation-1.trx)",
+  "P788c nativeOrder=False death=False coincident=True n=12 p50=146.551 p95=160.100 worst=160.100ms  (protocol-validation-1.trx)",
+  "P788c nativeOrder=True death=False coincident=False n=12 p50=209.318 p95=218.532 worst=218.532ms  (protocol-validation-1.trx)",
+  "P788c nativeOrder=True death=False coincident=True n=12 p50=157.288 p95=165.305 worst=165.305ms  (protocol-validation-1.trx)",
+  "P788c nativeOrder=False death=False coincident=False n=12 p50=207.872 p95=216.357 worst=216.357ms  (protocol-validation-1.trx)",
+  "P788c nativeOrder=False death=True coincident=False n=12 p50=274.469 p95=326.401 worst=326.401ms  (protocol-validation-1.trx)"
+ ],
+ "fast": {
+  "discovery": {
+   "Allegiance.Lobby.Tests": {
+    "fast": 60,
+    "live": 1,
+    "perf": 0
+   },
+   "Allegiance.ClientCore.MonoGame.Tests": {
+    "fast": 3461,
+    "live": 11,
+    "perf": 9
+   },
+   "Allegiance.ClientCore.Tests": {
+    "fast": 1801,
+    "live": 96,
+    "perf": 6
+   },
+   "Allegiance.Core.Tests": {
+    "fast": 5151,
+    "live": 43,
+    "perf": 62
+   }
+  },
+  "tiers": {
+   "fast": {
+    "tier": "fast",
+    "seconds": 354.4806074280059,
+    "projects": {
+     "Allegiance.Lobby.Tests": {
+      "count": 60,
+      "outcomes": {
+       "Passed": 60
+      }
+     },
+     "Allegiance.ClientCore.MonoGame.Tests": {
+      "count": 3461,
+      "outcomes": {
+       "Passed": 3457,
+       "Failed": 1,
+       "NotExecuted": 3
+      }
+     },
+     "Allegiance.ClientCore.Tests": {
+      "count": 1801,
+      "outcomes": {
+       "Passed": 1798,
+       "Failed": 3
+      }
+     },
+     "Allegiance.Core.Tests": {
+      "count": 5151,
+      "outcomes": {
+       "Passed": 5145,
+       "Failed": 6
+      }
+     }
+    },
+    "calibration": {
+     "factor": 1.0288859416445624,
+     "referenceMs": 3.8789,
+     "nominalMs": 3.77,
+     "fastLimitSeconds": 10.288859416445623
+    },
+    "timingOffenders": [
+     {
+      "name": "Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return",
+      "method": "Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return",
+      "outcome": "Failed",
+      "seconds": 26.1104481
+     },
+     {
+      "name": "Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return",
+      "method": "Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return",
+      "outcome": "Failed",
+      "seconds": 26.0700619
+     }
+    ],
+    "errors": [
+     "Allegiance.ClientCore.MonoGame.Tests: main failed",
+     "Allegiance.ClientCore.Tests: main failed",
+     "Allegiance.Core.Tests: main failed",
+     "Allegiance.ClientCore.Tests.CrossSideCombatVisibilityLiveTests.CrossSide_sector_stays_correct_across_warp_return: quarantine failed in isolation",
+     "2 Fast test executions exceeded the calibrated 10 second limit"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+     "tier": "Fast",
+     "count": 9,
+     "seconds": 0.06261722400086,
+     "exitCode": 0,
+     "timingGuardPassed": true
+    }
+   }
+  },
+  "infrastructure": {
+   "tier": "Fast",
+   "count": 9,
+   "seconds": 0.06261722400086,
+   "exitCode": 0,
+   "timingGuardPassed": true
+  },
+  "passed": false
+ },
+ "selected_final_receipts": {
+  "build": ".scratch/p788c/logs/final-verified-build.log",
+  "aot": ".scratch/p788c/logs/gate-aot-final.log",
+  "tools": ".scratch/p788c/logs/gate-build-tools-final.log",
+  "functional_groups": [
+   "final-verified-core-*.trx",
+   "final-verified-client-*.trx"
+  ],
+  "class_isolation": "class-*.trx (cross-side setup miss qualified by crossside-qualified-1/2/3.trx)",
+  "performance": [
+   "final-verified-perf-1.trx",
+   "final-verified-perf-2.trx",
+   "final-verified-perf-3.trx"
+  ],
+  "showcase": [
+   "sealed-showcase-1.trx",
+   "sealed-showcase-2.trx",
+   "sealed-showcase-3.trx",
+   "sealed-showcase-4.trx",
+   "sealed-showcase-5.trx"
+  ],
+  "dispatch_showcase": "base-showcase-1/2/3/4/5.trx",
+  "flag_on_showcase": "final-showcase-native.trx",
+  "transcript": "gate-transcript-1/2/3.trx",
+  "fast": ".scratch/p788c/fast/summary.json"
+ },
+ "limitations": [
+  "One Fast sweep failed; task failures fixed and tested in isolation; environment/timing failures qualified.",
+  "Local native-order launch-burst median is about 30% higher; flag stays off; 221 A/B not run.",
+  "Earlier showcase and stale-golden failures remain in the receipts; final showcase cohort passed 5/5."
+ ],
+ "final_showcase": {
+  "sealed_final_pass": 5,
+  "sealed_final_fail": 0,
+  "dispatch_pass": 5,
+  "dispatch_fail": 0,
+  "native_order_extra_pass": 1,
+  "earlier_five_process_cohort_pass": 4,
+  "earlier_five_process_cohort_fail": 1
+ },
+ "class_isolation": [
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P788cConfigTests",
+   "run": 1,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P788cConfigTests",
+   "run": 2,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P788cConfigTests",
+   "run": 3,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P788cNativeTickOrderTests",
+   "run": 1,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P788cNativeTickOrderTests",
+   "run": 2,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P788cNativeTickOrderTests",
+   "run": 3,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P788cScriptedWarpTests",
+   "run": 1,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P788cScriptedWarpTests",
+   "run": 2,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P788cScriptedWarpTests",
+   "run": 3,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "BroadcastPublisherTests",
+   "run": 1,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "BroadcastPublisherTests",
+   "run": 2,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "BroadcastPublisherTests",
+   "run": 3,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "FuelPoolAndAfterburnerTests",
+   "run": 1,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "FuelPoolAndAfterburnerTests",
+   "run": 2,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "FuelPoolAndAfterburnerTests",
+   "run": 3,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "ShipKinematicsGoldenTests",
+   "run": 1,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "ShipKinematicsGoldenTests",
+   "run": 2,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "ShipKinematicsGoldenTests",
+   "run": 3,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "UpdateCadenceTests",
+   "run": 1,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "UpdateCadenceTests",
+   "run": 2,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "UpdateCadenceTests",
+   "run": 3,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P803TurretRelayBroadcastTests",
+   "run": 1,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P803TurretRelayBroadcastTests",
+   "run": 2,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P803TurretRelayBroadcastTests",
+   "run": 3,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P507OwnShipModelLiveTests",
+   "run": 1,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P507OwnShipModelLiveTests",
+   "run": 2,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P507OwnShipModelLiveTests",
+   "run": 3,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P541GotoGateLiveTests",
+   "run": 1,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P541GotoGateLiveTests",
+   "run": 2,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.Core.Tests",
+   "case": "P541GotoGateLiveTests",
+   "run": 3,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.ClientCore.Tests",
+   "case": "P803TurretRelayTests",
+   "run": 1,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.ClientCore.Tests",
+   "case": "P803TurretRelayTests",
+   "run": 2,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.ClientCore.Tests",
+   "case": "P803TurretRelayTests",
+   "run": 3,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.ClientCore.Tests",
+   "case": "ClientWarpApproachLiveTests",
+   "run": 1,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.ClientCore.Tests",
+   "case": "ClientWarpApproachLiveTests",
+   "run": 2,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.ClientCore.Tests",
+   "case": "ClientWarpApproachLiveTests",
+   "run": 3,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.ClientCore.Tests",
+   "case": "ShipDeleteGoneLiveTests",
+   "run": 1,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.ClientCore.Tests",
+   "case": "ShipDeleteGoneLiveTests",
+   "run": 2,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.ClientCore.Tests",
+   "case": "ShipDeleteGoneLiveTests",
+   "run": 3,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.ClientCore.Tests",
+   "case": "CrossSideCombatVisibilityLiveTests",
+   "run": 1,
+   "exit": 1
+  },
+  {
+   "project": "Allegiance.ClientCore.Tests",
+   "case": "CrossSideCombatVisibilityLiveTests",
+   "run": 2,
+   "exit": 0
+  },
+  {
+   "project": "Allegiance.ClientCore.Tests",
+   "case": "CrossSideCombatVisibilityLiveTests",
+   "run": 3,
+   "exit": 0
+  }
+ ]
+}

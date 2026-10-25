@@ -4,6 +4,45 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P788c verification observations (2026-10-25)
+
+- `BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes`:
+  all four expected-prefix assertions fail in three isolated invocations. The
+  dispatch base `dac42b33` fails the same four assertions. All four complete
+  transcripts are byte-identical between dispatch and P788c, and between
+  snapshot off/on/encode-once. This observation is a **stale golden baseline**,
+  rather than evidence of a timing flake. Expected hashes/assertions were not
+  changed; the existing test now saves its diagnostic JSON before the assertion.
+- Five `PlayerBundlePathsTests` cases failed in the one Fast sweep because
+  worktree-local TMPDIR ancestors expose the real checkout's `local.env`.
+  The nine-case class passes **3/3** with an open-directory `/proc` alias to the
+  same worktree scratch (no repository ancestor), as in prior lane reports.
+- `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`
+  failed on the sandbox's read-only user configuration directory. The exact
+  method passes **3/3** with XDG_CONFIG_HOME in task scratch. This is an
+  environment restriction, not a product fix or a load flake.
+- `P813cReconnectGraceTests.Grace_expiry_runs_the_native_removal` missed the
+  observer's removal packet under concurrent suite load; it passes **3/3** in
+  isolated filtered invocations. Its assertion/timing/source are unchanged.
+- P700's sealed final-source showcase cohort passed **5/5**, matching dispatch
+  **5/5**; an additional native-order invocation passed. The earlier cohort was
+  **4/5** (`botsLastMinute == 0`, actual 2; sampled longest stop 2.006 s), and a
+  separate earlier run hit the 480 s arrival threshold. Those original failures
+  remain in the receipts; final success does not prove them impossible. No bot
+  strategy, assertion, budget, or quarantine was changed.
+- A later class-only cross-side-return run failed its initial outbound-warp setup,
+  the existing ledger's timing pattern. Two subsequent class runs and three fresh
+  exact-method runs passed. This is separate from the task's corrected handshake
+  failures in the initial Fast sweep.
+
+The Fast sweep's three warp/return failures were task-related protocol issues
+and were fixed, not classified as flakes: script clients now emit accepted
+updates automatically, and obtain simulation-paced timestamps between the
+rate-limited PING samples. The final affected client class group passes 3/3.
+See [P788c report](reports/P788C_NATIVE_TICK_ORDER_2.md) and its
+[receipts](reports/P788C_assets/verification.json). Raw logs/TRX remain in the
+ignored worktree evidence directory named by that report.
+
 ## P787a observation (2026-10-24) — Hud12bReviewFixTests allocation flake
 
 `Allegiance.ClientCore.MonoGame.Tests.Hud12bReviewFixTests.Hostile_damage_threat_and_flash_allocate_nothing_per_contact`

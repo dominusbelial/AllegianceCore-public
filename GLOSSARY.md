@@ -140,6 +140,21 @@ list in **reverse**.
 - **Broadcast** — sending ship/asteroid/station updates to peers, coalesced and
   interest-tiered. `Server.Broadcast.cs`, `BroadcastSnapshot.cs`,
   `Server.InterestTiers.cs`.
+- **Native broadcast order (P788c, EXPERIMENTAL, default off)** —
+  `sim.nativeBroadcastOrder` / `ALLEGIANCE_SIM_NATIVE_BROADCAST_ORDER` moves
+  started-mission ship/status projection before `Mission.Update`, retaining
+  the per-viewer pose floor and detached encode caches; the ship phase publishes
+  before simulation and complementary same-tick streams merge in
+  `src/Allegiance.Server/BroadcastSnapshot.cs`:
+  `src/Allegiance.Server/Server.NativeBroadcastOrder.cs`. Native:
+  `FedSrv/FedSrv.CPP:4237-4254`. Report:
+  `docs/reports/P788C_NATIVE_TICK_ORDER_2.md`.
+- **Warp re-entry handshake** — players leave `NoUpdate` and then `Waiting`
+  only on accepted ship updates (`FedSrv/fsship.cpp:1173-1190`), handled by
+  `src/Allegiance.Server/Server.Dispatch.cs`. Controls-only scripted pilots
+  echo their latest pose with a fresh PING clock through the same validation:
+  `src/Allegiance.Core/Wire/ScriptedWarpHandshake.cs`, used by Bot and
+  `src/Allegiance.ClientCore/Session/ConnectionSession.cs`.
 - **Ship commands** — client intent handlers (flight, firing, docking, buying).
   `Server.ShipCommands.cs`, `Server.Docking.cs`, `Server.Combat.cs`.
 - **Egress / send path** — the P605/P645 send-worker transport hardening.

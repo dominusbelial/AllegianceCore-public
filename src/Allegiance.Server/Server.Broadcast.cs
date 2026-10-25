@@ -106,6 +106,7 @@ public sealed partial class Server
         });
         if (inboundTrace is not null)
             Step("inboundTrace", () => inboundTrace.EndTick(TickIndex, drainMs));
+        BroadcastBeforeMissionUpdate();
         lock (_statsLock) _simNow += EffectiveSimPeriod;   // P612 — period × sim.timeScale for slow motion
         double now;
         lock (_statsLock) now = _simNow;
@@ -328,7 +329,7 @@ public sealed partial class Server
         // the human spectator connected). Runs after Mission.Update so the
         // latched SeenBySide flags reflect this tick's sweep.
         StartBroadcastProjectionMeasurement();
-        Step("crossSideExportSweep", SweepCrossSideExports);
+        Step("crossSideExportSweep", () => BroadcastAfterMissionUpdate(SweepCrossSideExports));
         // P453 — cross-side MINE EXPORT(26)/OT_mine delivery, the mine analogue
         // of the ship sweep just above. Mines joined the P132 visibility sweep
         // as side-visible targets (they are c_mtSeenBySide|c_mtPredictable
@@ -360,7 +361,7 @@ public sealed partial class Server
         // native's ExportObject-then-status ordering). Edge-driven: a status is
         // sent only when a side's visibility of a ship CHANGES (plus a slow
         // catch-up refresh), never every tick the ship stays visible.
-        Step("crossSideShipStatusSweep", SweepCrossSideShipStatuses);
+        Step("crossSideShipStatusSweep", () => BroadcastAfterMissionUpdate(SweepCrossSideShipStatuses));
         // P761b — relay every ship's changed c_cmdAccepted slot to its side
         // group (native FedSrvSiteBase::CommandChangedEvent,
         // FedSrv.CPP:13695-13732). The client stores it on the ship entity, which
@@ -375,7 +376,7 @@ public sealed partial class Server
         // per-frame status delta (FedSrv/FedSrv.CPP:3663-3700: on odd frames,
         // only a CHANGED ShipStatus is sent). Runs before broadcastShipStates,
         // after Mission.Update, so SeenBySide reflects this tick's sweep.
-        Step("shipDetection", SweepShipDetection);
+        Step("shipDetection", () => BroadcastAfterMissionUpdate(SweepShipDetection));
         // Step 3: after the mission tick, broadcast every peer ship that moved.
         // Runs on the sim thread, so "only Mission.Update moves ships" holds —
         // this is purely an observation send of the authoritative state.
@@ -383,7 +384,7 @@ public sealed partial class Server
         // ExportShip.Encode() throws past 255 parts, and BroadcastShipStates
         // used to let that escape and kill the server. The barrier + the
         // MountPart part-count cap (Ship.cs) close it.
-        Step("broadcastShipStates", () => BroadcastShipStates((uint)TickIndex));
+        Step("broadcastShipStates", () => BroadcastAfterMissionUpdate(() => BroadcastShipStates((uint)TickIndex)));
         // P133 — periodic per-side STATIONS_UPDATE(57): for each side with
         // seated peers, batch every station that side currently sees (P132's
         // live per-tick sweep) into one message and send it to that side's
@@ -422,7 +423,7 @@ public sealed partial class Server
         // per-side broadcasts above). Runs every tick, the port's established
         // per-tick cadence; see BroadcastShipsUpdate for the heavy/light split
         // decision.
-        Step("broadcastShipsUpdate", () => BroadcastShipsUpdate((uint)TickIndex));
+        Step("broadcastShipsUpdate", () => BroadcastAfterMissionUpdate(() => BroadcastShipsUpdate((uint)TickIndex)));
         // P374 — per-side, change-driven sector-threat (ClusterWarning) sync:
         // for each side with seated peers, recompute each sector's friendly/enemy
         // asset mask from data this server already tracks (Sector._models ships'
@@ -734,6 +735,7 @@ public sealed partial class Server
         // NotStarted/empty missions keeps the scan off the pre-game tick path.
         foreach (var m in _missions)
         {
+            if (!IncludeShipBroadcastMission(m)) continue;
             if (m.Stage != MissionStage.Started && m.Stage != MissionStage.Starting) continue;
             foreach (var sec in m.Sectors)
                 foreach (var mdl in sec.Models)
@@ -1207,7 +1209,7 @@ public sealed partial class Server
         Dictionary<short, BroadcastMessage> positionEncode;
         using (TickProfiler.Enter("bss.snapshot"))
         {
-        peers = _peerShips.ToArray();
+        peers = SnapshotBroadcastPeers();
         if (peers.Length == 0) return;
 
         // Per-side same-side grouping, in `peers` order (mirror of serial :502-510).
@@ -1236,6 +1238,7 @@ public sealed partial class Server
         sameSideNpcBySide = null;
         foreach (var m in _missions)
         {
+            if (!IncludeShipBroadcastMission(m)) continue;
             if (m.Stage != MissionStage.Started && m.Stage != MissionStage.Starting) continue;
             foreach (var sec in m.Sectors)
                 foreach (var mdl in sec.Models)
@@ -1792,6 +1795,7 @@ public sealed partial class Server
             // Started/Starting (Mission.Update early-returns otherwise), so the
             // flags we read are meaningful only then. Defensive gate, same
             // precondition the cross-side machinery has always assumed.
+            if (!IncludeShipBroadcastMission(m)) continue;
             if (m.Stage != MissionStage.Started && m.Stage != MissionStage.Starting) continue;
 
             foreach (var sector in m.Sectors)
@@ -2291,7 +2295,7 @@ public sealed partial class Server
 
         // Peer ships: the own-ship and teammate status paths both source these.
         foreach (var kv in _peerShips)
-            UpdateShipDetection(kv.Value.Ship);
+            if (IncludeShipBroadcastMission(kv.Value.Ship.Mission)) UpdateShipDetection(kv.Value.Ship);
 
         // Same-side NPCs: the P366 path's population. Scanned exactly like
         // BroadcastShipStates' sameSideNpcBySide builder (in-flight missions
@@ -2299,6 +2303,7 @@ public sealed partial class Server
         for (int mi = 0; mi < _missions.Count; mi++)
         {
             var m = _missions[mi];
+            if (!IncludeShipBroadcastMission(m)) continue;
             if (m.Stage != MissionStage.Started && m.Stage != MissionStage.Starting) continue;
             // Index loops, not foreach: Sectors/Models are IReadOnlyList<T>, whose
             // enumerator is boxed by foreach (80 B/sector/tick) — the same
@@ -2382,6 +2387,7 @@ public sealed partial class Server
             // Started/Starting (Mission.Update early-returns otherwise), so the
             // SeenBySide flags we read are meaningful only then — the same
             // precondition the cross-side export sweeps assume.
+            if (!IncludeShipBroadcastMission(m)) continue;
             if (m.Stage != MissionStage.Started && m.Stage != MissionStage.Starting) continue;
 
             foreach (var sector in m.Sectors)
@@ -2633,7 +2639,8 @@ public sealed partial class Server
         foreach (var model in sector.Models)
         {
             if (model is not Ship gunner || gunner.ParentShip is null || gunner.TurretId is null) continue;
-            if (gunner.Dead || gunner.StationId is not null) continue;
+            if (gunner.IsNpc || gunner.Dead || gunner.StationId is not null || gunner.ParentShip.StationId is not null) continue;
+            if ((gunner.StateM & ShipControlState.WeaponsMask) == 0) continue;
             if (ReferenceEquals(gunner, self)) continue;            // FedSrv.CPP:4058
             if (!_lastTurretUpdates.TryGetValue(gunner.Id, out var stu)) continue;
             double dt = stu.TimeMs / 1000.0 - missionNow;
@@ -2859,6 +2866,7 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastShipsUpdate(uint tickIndex)
     {
+        _inactiveTurretRelays.Clear();
         var peers = SnapshotBroadcastPeers();
         if (_broadcastInterestTiersEnabled) CaptureInterestSnapshot(peers);
         try
@@ -2903,7 +2911,7 @@ public sealed partial class Server
                 foreach (var kv in grp.Value) BroadcastShipsUpdatePeer(kv, tickIndex, trackCadence, poseNow);
             });
         }
-        finally { _interestSnapshot.Clear(); }
+        finally { _interestSnapshot.Clear(); _inactiveTurretRelays.Clear(); }
     }
 
     /// <summary>
@@ -3175,21 +3183,9 @@ public sealed partial class Server
                 TimeReference = tickIndex,
                 PositionReference = posRef,
                 HeavyShipEntries = entries.ToArray(),
-                // P803 (SIM-0470) — the active-turret relay (native
-                // FedSrv.CPP:4049-4071): every boarded gunner in THIS cluster
-                // whose stored P109 update is still fresh (|atu.time − g.timeNow|
-                // ≤ 1.5 s, the FedSrv.CPP:3783-3790 gate that filled
-                // rgActiveTurrets) is forwarded to this peer INTACT
-                // (controls + orientation, time compacted as a delta from the
-                // message's timeReference), skipping the peer's own ship
-                // (FedSrv.CPP:4058). The native cadence is inherited: the relay
-                // list is rebuilt on every SendShipUpdates pass from the stored
-                // atu, so a gunner drops out exactly when its last update ages
-                // past 1.5 s. Native's rgInactiveTurretUpdates (LIGHT, the
-                // "stopped firing" identifiers) has no port sender — the port
-                // never emits LIGHT (P219 folded the light tier into heavy; the
-                // stale-ATU drop-out serves the same signal).
-                ActiveTurretUpdates = CollectActiveTurretRelay(sector, self, tickIndex).ToArray(),
+                // Native FedSrv.CPP:3783-3794,4049-4071: only fresh active
+                // updates relay; stopped gunners travel in the sibling LIGHT.
+                ActiveTurretUpdates = CollectActiveTurretRelay(sector, self, tickIndex),
                 BpTargetHull = bpTargetHull,
                 BpTargetShield = bpTargetShield,
                 FractionsHull = Percent(self.Fraction),
@@ -3210,15 +3206,18 @@ public sealed partial class Server
             // P606 — the per-peer HEAVY/LIGHT_SHIPS_UPDATE stream is the biggest
             // N² traffic; coalesce per peer (latest-wins), matching native's
             // FM_NOT_GUARANTEED send (FedSrv.CPP:4189-4196).
-            BroadcastMessage[] frames = lightEntries is { Count: > 0 }
-                ? new[] { Message(heavy), Message(new LightShipsUpdate { LightShipEntries = lightEntries.ToArray() }) }
+            var inactiveTurrets = CollectInactiveTurretRelay(sector);
+            bool hasLight = lightEntries is { Count: > 0 } || inactiveTurrets.Length > 0;
+            BroadcastMessage[] frames = hasLight
+                ? new[] { Message(heavy), Message(new LightShipsUpdate
+                    { LightShipEntries = lightEntries?.ToArray() ?? [], InactiveTurretShipIds = inactiveTurrets }) }
                 : new[] { Message(heavy) };
             var packet = PackBroadcast(frames);
             SendPeerCoalescing(kv.Key, packet, CoalesceShipsUpdate);
             if (cadence is not null) cadence.PacketBytes += HeavyShipsUpdate.FixedSize
                 + entries.Count * HeavyShipUpdateEntry.Width + FedPacket.CrcWidth
-                + (lightEntries is { Count: > 0 }
-                    ? LightShipsUpdate.FixedSize + lightEntries.Count * LightShipUpdateEntry.Size : 0);
+                + (hasLight
+                    ? LightShipsUpdate.FixedSize + (lightEntries?.Count ?? 0) * LightShipUpdateEntry.Size + inactiveTurrets.Length * 2 : 0);
             if (ConsoleLog.Verbose) ConsoleLog.Write($"[ships] peer {kv.Key} side {self.SideId?.ToString() ?? "-"} " +
                               $"target={(targetShip?.Id.ToString() ?? "none")} " +
                               $"=> HEAVY_SHIPS_UPDATE(176) x{entries.Count}" +

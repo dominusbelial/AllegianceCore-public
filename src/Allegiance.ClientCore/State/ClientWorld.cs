@@ -3087,19 +3087,15 @@ public sealed partial class ClientWorld
         }
     }
 
-    /// <summary>
-    /// P347 — the cheap half of the visibility sync (<c>FM_S_LIGHT_SHIPS_UPDATE</c>,
-    /// 175). A light record carries only id + stateM + controls — no time/position/
-    /// orientation — so unlike the heavy variant there is nothing to refresh in
-    /// <c>Latest</c> (the heavy half is what carries pose). This port's server never
-    /// even populates/sends LIGHT (P219 folded the light tier into the heavy list),
-    /// so this branch exists for wire-decode parity with <c>Allegiance.Bot</c> and for
-    /// any future light-tier use: it merely ensures a light-named ship exists in the
-    /// entity table without disturbing any pose (a Latest-less entity is skipped by the
-    /// render/target loops, which all guard on <c>Latest is not null</c>).</summary>
+    /// <summary>Native LIGHT presence records and stopped-turret identifiers
+    /// (clintlib/appmsg.cpp:684-725). Inactive records clear firing on known
+    /// boarded children without creating unknown ships or disturbing facing.</summary>
     private void Apply(LightShipsUpdate light)
     {
         MarkSnapshotDirty();
+        foreach (short id in light.InactiveTurretShipIds)
+            if (id != MyShipId && _ships.TryGetValue(id, out var gunner) && gunner.ParentId >= 0)
+                gunner.TurretFiring = false;
         foreach (var entry in light.LightShipEntries)
             Upsert(entry.ShipId);
     }

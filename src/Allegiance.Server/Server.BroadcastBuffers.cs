@@ -58,6 +58,8 @@ public sealed partial class Server
     private KeyValuePair<ConnectionId, LiveShip>[] _broadcastPeerBuffer = [];
     private KeyValuePair<ConnectionId, LiveShip>[] SnapshotBroadcastPeers()
     {
+        if (_shipBroadcastPhase != 0)
+            return _peerShips.Where(kv => IncludeShipBroadcastMission(kv.Value.Ship.Mission)).ToArray();
         if (!ReuseBroadcastBuffers) return _peerShips.ToArray();
         if (_broadcastPeerBuffer.Length != _peerShips.Count)
             _broadcastPeerBuffer = new KeyValuePair<ConnectionId, LiveShip>[_peerShips.Count];
@@ -95,6 +97,7 @@ public sealed partial class Server
         foreach (var sectors in _broadcastSideSectors.Values) sectors.Clear();
         foreach (var kv in _peerShips)
         {
+            if (!IncludeShipBroadcastMission(kv.Value.Ship.Mission)) continue;
             if (kv.Value.Ship.SideId is not { } sid) continue;
             if (!_sideConnections.TryGetValue(sid, out var list))
             {

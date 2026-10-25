@@ -142,7 +142,7 @@ public sealed partial class Server
 
     private void StartBroadcastProjectionMeasurement()
     {
-        if (_broadcastPublisher is null) return;
+        if (_broadcastPublisher is null || _snapshotBuildStart != 0) return;
         _snapshotBuildStart = Stopwatch.GetTimestamp();
         _snapshotAllocStart = GC.GetAllocatedBytesForCurrentThread();
     }

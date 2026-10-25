@@ -96,4 +96,17 @@ public class P803TurretRelayTests
         Assert.Null(world.Ships[Gunner].TurretFacing);
         Assert.False(world.Ships[Gunner].TurretFiring);
     }
+    [Fact]
+    public void P788c_LIGHT_stops_a_known_boarded_gunner_preserving_facing_and_ignoring_unknown_ids()
+    {
+        var world = BoardedWorld();
+        world.Apply(HeavyWith(ServerActiveTurretUpdate.From(Gunner, 1000, 990,
+            ControlData.Neutral, new Orientation())));
+        var facing = world.Ships[Gunner].TurretFacing;
+        world.Apply(LightShipsUpdate.Decode(new LightShipsUpdate
+            { InactiveTurretShipIds = [Gunner, 32000] }.Encode()));
+        Assert.False(world.Ships[Gunner].TurretFiring);
+        Assert.Same(facing, world.Ships[Gunner].TurretFacing);
+        Assert.False(world.Ships.ContainsKey(32000));
+    }
 }
