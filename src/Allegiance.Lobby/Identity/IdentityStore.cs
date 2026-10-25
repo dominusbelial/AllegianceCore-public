@@ -70,6 +70,13 @@ public sealed class IdentityStore
             CREATE TABLE IF NOT EXISTS career_by_civ (account_id TEXT NOT NULL REFERENCES accounts(id), civ SMALLINT NOT NULL, score REAL NOT NULL, rank SMALLINT NOT NULL, combat_rating REAL NOT NULL, kills INTEGER NOT NULL, deaths INTEGER NOT NULL, base_kills INTEGER NOT NULL, base_captures INTEGER NOT NULL, minutes INTEGER NOT NULL, wins INTEGER NOT NULL, losses INTEGER NOT NULL, games INTEGER NOT NULL, commander_wins INTEGER NOT NULL, commander_losses INTEGER NOT NULL, PRIMARY KEY(account_id, civ));
             CREATE TABLE IF NOT EXISTS match_results (match_id TEXT NOT NULL, account_id TEXT NOT NULL, civ SMALLINT NOT NULL, score REAL NOT NULL, combat_rating REAL NOT NULL, kills INTEGER NOT NULL, deaths INTEGER NOT NULL, base_kills INTEGER NOT NULL, base_captures INTEGER NOT NULL, minutes INTEGER NOT NULL, win INTEGER NOT NULL, loss INTEGER NOT NULL, commander_win INTEGER NOT NULL, commander_loss INTEGER NOT NULL, reported_at BIGINT NOT NULL, server_id TEXT NOT NULL, PRIMARY KEY(match_id, account_id));
             INSERT INTO identity_migrations(version) VALUES(2) ON CONFLICT(version) DO NOTHING;
+            -- P820a — squads (native Zone Club squad database; SquadsScreen.cpp,
+            -- ZoneSquad.cpp). wins/losses/score are native SQUAD_INFO display
+            -- fields, all 0 until P820b ties squads into games.
+            CREATE TABLE IF NOT EXISTS squads (id TEXT PRIMARY KEY, name TEXT NOT NULL UNIQUE, tag TEXT NOT NULL, description TEXT NOT NULL, url TEXT NOT NULL, civ SMALLINT NOT NULL, created_at BIGINT NOT NULL, wins INTEGER NOT NULL DEFAULT 0, losses INTEGER NOT NULL DEFAULT 0, score INTEGER NOT NULL DEFAULT 0, leader_account_id TEXT NOT NULL REFERENCES accounts(id));
+            CREATE TABLE IF NOT EXISTS squad_members (squad_id TEXT NOT NULL REFERENCES squads(id) ON DELETE CASCADE, account_id TEXT NOT NULL REFERENCES accounts(id), status TEXT NOT NULL, last_played BIGINT, joined_at BIGINT NOT NULL, PRIMARY KEY(squad_id, account_id));
+            CREATE TABLE IF NOT EXISTS squad_log (squad_id TEXT NOT NULL REFERENCES squads(id) ON DELETE CASCADE, seq INTEGER NOT NULL, line TEXT NOT NULL, PRIMARY KEY(squad_id, seq));
+            INSERT INTO identity_migrations(version) VALUES(3) ON CONFLICT(version) DO NOTHING;
             """);
         migration.Transaction = tx; migration.ExecuteNonQuery(); tx.Commit();
     }

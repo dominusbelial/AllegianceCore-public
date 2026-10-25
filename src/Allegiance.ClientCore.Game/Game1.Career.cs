@@ -19,7 +19,7 @@ namespace Allegiance.ClientCore.MonoGame;
 public sealed partial class Game1
 {
     /// <summary>Which career sub-view is showing.</summary>
-    private enum CareerMode { CharacterInfo, Leaderboard }
+    private enum CareerMode { CharacterInfo, Leaderboard, Squads }
 
     private CareerApiClient? _careerClient;
     private string _careerOrigin = "";
@@ -33,6 +33,11 @@ public sealed partial class Game1
     private bool _careerEditingDesc;
     private readonly StringBuilder _careerDescBuf = new();
 
+    // P820a — the Squads sub-screen (native SquadsScreen.cpp), driven from the
+    // lobby's squad HTTP API and presented by CareerScreenRenderer.
+    private SquadApiClient? _squadClient;
+    private readonly SquadScreenModel _squads = new();
+
     /// <summary>Enter the career screen (intro main menu "Career" item).</summary>
     private void EnterCareerScreen()
     {
@@ -44,7 +49,7 @@ public sealed partial class Game1
             _careerOrigin = origin;
         }
         // Signed-in player's career is the initial profile; the bearer lets the
-        // owner edit their own description (P808b).
+        // owner edit their own description (P808b) and drive squad actions (P820a).
         if (_identityClient?.Account is { } acct)
         {
             _careerClient.SetSession(_identityClient.SessionBearer);
@@ -55,6 +60,15 @@ public sealed partial class Game1
             _careerViewAccount = "";
             _careerMode = CareerMode.Leaderboard;   // no self -> lead with the board
         }
+        if (_squadClient is null || _careerOrigin != origin)
+        {
+            _squadClient?.Dispose();
+            _squadClient = new SquadApiClient(origin);
+        }
+        _squadClient.SetSession(_identityClient?.SessionBearer);
+        _squads.ViewerAccountId = _identityClient?.Account?.Id ?? "";
+        _squads.ViewerCallsign = _identityClient?.Account?.Callsign ?? "";
+        _squads.PlayerAccountId = _identityClient?.Account?.Id ?? "";
         _careerCursor = 0;
         _careerEditingDesc = false;
         _introView = IntroView.Career;
@@ -64,9 +78,24 @@ public sealed partial class Game1
 
     private void ReloadCareer()
     {
+        if (_careerMode == CareerMode.Squads)
+        {
+            if (_squadClient is null) return;
+            _careerStatus = "Loading squads...";
+            _careerLoad = LoadSquadAsync();
+            return;
+        }
         if (_careerClient is null) return;
         _careerStatus = _careerMode == CareerMode.CharacterInfo ? "Loading character info..." : "Loading leaderboard...";
         _careerLoad = LoadCareerAsync();
+    }
+
+    private void CycleCareerMode(int dir)
+    {
+        int n = Enum.GetValues(typeof(CareerMode)).Length;
+        int i = ((int)_careerMode + dir + n) % n;
+        _careerMode = (CareerMode)i;
+        ReloadCareer();
     }
 
     private async Task LoadCareerAsync()
@@ -83,6 +112,12 @@ public sealed partial class Game1
                 var info = await _careerClient!.GetCareerAsync(_careerViewAccount).ConfigureAwait(false);
                 if (info is null) { _careerStatus = "No career data for this pilot."; return; }
                 _characterInfo.Load(info, id => _shopCatalog?.Core?.Civilizations is { } civs && civs.TryGetValue(id, out var civ) ? civ.Name : null);
+                // P820a — character-info also lists the player's squads (CHARACTER_INFO_SQUAD).
+                if (_squadClient is not null)
+                {
+                    try { _characterInfo.LoadSquads((await _squadClient.GetByPlayerAsync(_careerViewAccount).ConfigureAwait(false)).Select(s => (s.Id, s.Name))); }
+                    catch (Exception e) when (e is HttpRequestException or TaskCanceledException) { _characterInfo.LoadSquads([]); }
+                }
             }
             else
             {
@@ -116,6 +151,9 @@ public sealed partial class Game1
 
         if (_careerLoad is { IsCompleted: false }) return;
 
+        // P820a — the squads sub-screen has its own keyboard handling.
+        if (_careerMode == CareerMode.Squads) { UpdateSquadScreen(ks, up, down, enter, esc, tab); return; }
+
         // A pending search text entry consumes all keys until Enter/Esc.
         if (_careerSearching)
         {
@@ -136,7 +174,7 @@ public sealed partial class Game1
             { _characterInfo.SelectCiv(Math.Min(_characterInfo.CivNames.Count - 1, _characterInfo.SelectedCiv + 1)); }
             if (eKey && !_careerEPrev && _characterInfo.Callsign.Length > 0)
             { _careerDescBuf.Clear(); _careerDescBuf.Append(_characterInfo.Description); _characterInfo.BeginEdit(); _careerEditingDesc = true; }
-            if (tab && !_careerTabPrev) { _careerMode = CareerMode.Leaderboard; ReloadCareer(); }
+            if (tab && !_careerTabPrev) CycleCareerMode(1);
             if (esc && !_careerEscPrev) { _introView = IntroView.Main; _introIndex = 10; return; }
         }
         else
@@ -158,7 +196,7 @@ public sealed partial class Game1
             if (pageDown && !_careerPgDnPrev && _leaderboard.PageDown()) ReloadCareer();
             if (left && !_careerLeftPrev) CycleSort(-1);
             if (right && !_careerRightPrev) CycleSort(+1);
-            if (tab && !_careerTabPrev) { _careerMode = CareerMode.CharacterInfo; ReloadCareer(); }
+            if (tab && !_careerTabPrev) CycleCareerMode(1);
             if (esc && !_careerEscPrev) { _introView = IntroView.Main; _introIndex = 10; return; }
         }
 

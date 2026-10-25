@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Allegiance Lobby — Squad Profile</title>
+  <link rel="stylesheet" href="career.css">
+  <script src="squad-profile.js" defer></script>
+</head>
+<body>
+  <a class="back" href="/squads.html">&larr; All squads</a>
+  <p class="eyebrow">ALLEGIANCE / SQUAD</p>
+  <h1 id="title">Squad</h1>
+  <p id="status">Loading&hellip;</p>
+  <div id="profile" hidden>
+    <p id="description" class="lead"></p>
+    <div class="row">
+      <span class="field"><label>Leader</label><span id="leader"></span></span>
+      <span class="field"><label>Founded</label><span id="founded"></span></span>
+    </div>
+    <h2>Members</h2>
+    <table id="members">
+      <thead><tr><th>Callsign</th><th>Role</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <h2>History</h2>
+    <ul id="log"></ul>
+  </div>
+</body>
+</html>

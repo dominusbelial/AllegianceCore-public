@@ -849,7 +849,8 @@ public sealed partial class Game1
     private void DrawCareerScreen(float w, float h, Color titleCol, Color dimCol, Color textCol)
     {
         CareerScreenRenderer.Draw(_spriteBatch, _hudSmall, _hudBig, _whitePixel, _hudSettings,
-            _characterInfo, _leaderboard, _careerMode == CareerMode.Leaderboard, _careerCursor,
+            _characterInfo, _leaderboard, _squads, _careerMode == CareerMode.Leaderboard,
+            _careerMode == CareerMode.Squads, _careerCursor,
             _careerEditingDesc, _careerDescBuf.ToString(), _careerStatus, _careerViewAccount, w, h);
     }
 

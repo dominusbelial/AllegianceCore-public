@@ -35,6 +35,13 @@ public sealed class CharacterInfoModel
     /// <summary>The lobby's rank for the summed "All" line.</summary>
     public short AllCivsRank { get; private set; }
 
+    /// <summary>P820a — the player's squads (native <c>CHARACTER_INFO_SQUAD</c>,
+    /// <c>Inc/ClubMessages.h:129-138</c>; shown on the character-info screen,
+    /// <c>CharInfoScreen.cpp:618-624</c>).</summary>
+    public IReadOnlyList<(string Id, string Name)> Squads { get; private set; } = [];
+
+    public void LoadSquads(IEnumerable<(string Id, string Name)> squads) => Squads = squads.ToList();
+
     /// <param name="civName">Resolves a civilization id to its core name (native lists
     /// civilizations by name); null or an unknown id falls back to "Civ N".</param>
     public void Load(CareerDto.CareerInfo info, Func<short, string?>? civName = null)
