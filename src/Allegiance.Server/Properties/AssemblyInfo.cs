@@ -11,3 +11,6 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("shieldflare-proof")]
 
 [assembly: InternalsVisibleTo("receive-proof")]
+// P813c — the fault-injection tool reads the reconnect-grace counters and uses
+// ShipSpawner to place a deterministic arena (same seam the test suites use).
+[assembly: InternalsVisibleTo("reconnect-fault")]

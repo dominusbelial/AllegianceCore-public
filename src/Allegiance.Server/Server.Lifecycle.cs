@@ -44,7 +44,7 @@ public sealed partial class Server
     /// crosses the dirty check and gets broadcast. Forward alone misses roll
     /// (rotation about the ship's own forward axis leaves forward unchanged),
     /// so both are tracked; together they fully determine the 3x3 orientation.</summary>
-    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos, Vector3 LastBroadcastForward, Vector3 LastBroadcastUp, PlayerScore PlayerScore, PlayerWallet Wallet, float LastBroadcastShieldFraction, bool LastBroadcastMining, bool PositionEverBroadcast = false, double ConnectSimTime = 0);
+    internal sealed record LiveShip(Ship Ship, Sector Sector, Vector3 LastBroadcastPos, Vector3 LastBroadcastForward, Vector3 LastBroadcastUp, PlayerScore PlayerScore, PlayerWallet Wallet, float LastBroadcastShieldFraction, bool LastBroadcastMining, bool PositionEverBroadcast = false, double ConnectSimTime = 0, uint ResumeToken = 0);
 
     /// <summary>
     /// Load the config file, then <see cref="Boot(ServerConfig)"/>.
@@ -174,6 +174,12 @@ public sealed partial class Server
         // ALLEGIANCE_SHIP_UPDATE_MODEL env var, print it at boot, and stamp it
         // into the profiler report header.
         ResolveShipUpdateModel();
+
+        // P813c (EXPERIMENTAL) — resolve the reconnect grace (config
+        // `reconnect` section or the CLI switches), validate it and PRINT the
+        // active value so every 200v200 A/B run is labelled. Default OFF =
+        // native immediate removal, today's behaviour untouched.
+        ResolveReconnectGrace();
 
         // P667 — resolve the intra-sector parallel sim (sim.parallelSectorCells,
         // default OFF) from config + the ALLEGIANCE_SIM_PARALLEL_CELLS env var
@@ -1838,6 +1844,16 @@ public sealed partial class Server
     /// transport's own OnPeerLeft) is a no-op.</summary>
     private void ReleasePeer(ConnectionId id) => ReleasePeerWithReason(id, QuitSideReason.LinkDead);
 
+    /// <summary>P813c — release a peer whose departure the client requested (a
+    /// graceful <c>FM_CS_LOGOFF</c>), which native treats as an immediate
+    /// delete: <c>FedSrv.CPP:5801</c> deletes the player in the LOGOFF handler
+    /// itself "so we can tell when we get there whether it was a dropped
+    /// connection" (the <see cref="ReleasePeer"/> path,
+    /// <c>FedSrv.CPP:4549-4566</c>). Reconnect grace therefore never holds a
+    /// voluntary quit.</summary>
+    private void ReleasePeerOnRequest(ConnectionId id) =>
+        ReleasePeerWithReason(id, QuitSideReason.Quit, requested: true);
+
     /// <summary>P803 — a pilot leaving with gunners aboard hands the ship to the
     /// first turret gunner, the port of native <c>RemovePlayerFromSide</c>'s
     /// "They are leaving their team ... promote" (<c>fsmission.cpp:895-913</c>:
@@ -1878,7 +1894,7 @@ public sealed partial class Server
             + $"{(sector is not null ? $"sector {sector.Id} wide" : "side-wide (docked)")} (fsmission.cpp:895-913)");
     }
 
-    private void ReleasePeerWithReason(ConnectionId id, QuitSideReason reason)
+    private void ReleasePeerWithReason(ConnectionId id, QuitSideReason reason, bool requested = false)
     {
         // P281 — a pending side-select peer (logged on, not yet spawned) is
         // released the same way: drop it from the pending hold.
@@ -1907,6 +1923,7 @@ public sealed partial class Server
         _lastStatusTick.Remove(id);
         _lastClusterInfoTick.Remove(id);
         _lastPingQuery.Remove(id);
+        var parkedIdentity = _peerIdentities.GetValueOrDefault(id);   // P813c — a resumed seat keeps its verified account
         _peerIdentities.Remove(id);
         _peerRequests.Remove(id);   // P480 — forget the retained LogonRequest with the peer
         RetireViewerUpdateCadence(id);
@@ -1987,6 +2004,37 @@ public sealed partial class Server
         // across connection churn / mission rotation id reuse).
         _shipDetected.Remove(departedShipId);
 
+        // P813c (EXPERIMENTAL) — an UNREQUESTED drop first tries the reconnect
+        // grace: the LiveShip is parked for the configured window and the native
+        // removal below (the expiry behaviour) is deferred. A requested quit
+        // (LOGOFF) never parks, and with the flag off this is a plain false, so
+        // the path is the pre-P813c one byte-for-byte.
+        if (!requested && TryParkLiveShip(id, live, reason, parkedIdentity))
+        {
+            _peerNames.Remove(id);   // the RESUME re-registers both; the parked
+            _playerReady.Remove(id); // lobby state comes back with the join burst
+            return;
+        }
+
+        RetireDepartedPeer(live, reason);
+
+        _peerNames.Remove(id);                     // P62: release the remembered name with the peer
+        _playerReady.Remove(id);                   // P180: release the peer's lobby-ready flag with it
+    }
+
+    /// <summary>
+    /// P813c — the native departure half of <see cref="ReleasePeerWithReason"/>,
+    /// factored out so the reconnect-grace expiry runs the EXACT same code an
+    /// immediate drop does: retire the ship (P128's port of
+    /// <c>CFSShip::~CFSShip</c> → <c>AnnounceExit(NULL, SDR_LOGGEDOFF)</c> +
+    /// <c>m_pShip-&gt;Terminate()</c>, <c>fsship.cpp:58-68</c>) and then announce the
+    /// departure (leader succession, pending-join rejects, QUIT_MISSION, the
+    /// win-by-inactive-sides check) — native's
+    /// <c>RemovePlayerFromMission(QSR_LinkDead)</c>, <c>fsship.cpp:995</c>,
+    /// reached from <c>OnDestroyConnection</c>, <c>FedSrv.CPP:4549-4566</c>.
+    /// Called on the sim thread by both callers.</summary>
+    private void RetireDepartedPeer(LiveShip live, QuitSideReason reason)
+    {
         RetireShipOnDisconnect(live);
 
         // P178 — win-by-elimination (native fsmission.cpp:5371-5427 →
@@ -2045,9 +2093,6 @@ public sealed partial class Server
             if (mission.Stage != MissionStage.NotStarted && departingSideEmpty)
                 DeactivateSideForPeerDeparture(mission, mission.Sides.FirstOrDefault(s => s.Id == departedSideId));
         }
-
-        _peerNames.Remove(id);                     // P62: release the remembered name with the peer
-        _playerReady.Remove(id);                   // P180: release the peer's lobby-ready flag with it
     }
 
     /// <summary>

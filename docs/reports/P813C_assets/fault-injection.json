@@ -1,0 +1,26 @@
+{
+  "task": "P813c",
+  "bots": 10,
+  "graceSeconds": 5,
+  "rounds": [
+    {
+      "Round": 1,
+      "Bots": 10,
+      "Resumed": 10,
+      "SameSeat": true,
+      "Ok": true
+    },
+    {
+      "Round": 2,
+      "Bots": 10,
+      "Resumed": 10,
+      "SameSeat": true,
+      "Ok": true
+    }
+  ],
+  "serverParkedTotal": 20,
+  "serverResumedTotal": 20,
+  "serverExpiredTotal": 0,
+  "serverRefusedTotal": 0,
+  "allGood": true
+}

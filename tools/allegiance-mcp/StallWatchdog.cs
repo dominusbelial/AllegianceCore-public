@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.Json;
+using Allegiance.ClientCore.Session;
 using Allegiance.Core.Transport;
 
 namespace Allegiance.Tools.McpSpawner;
@@ -64,12 +65,31 @@ internal sealed class StallWatchdog : IDisposable
     internal void Connect(ITransportSite client, string name, string host, ushort port)
     {
         var session = Track(client, name);
+        // P813c — the bot host arms the experimental reconnect grace for combat
+        // clients when the operator opts in with ALLEGIANCE_RECONNECT_GRACE_SECONDS
+        // (the same switch the MonoGame client reads). A dropped bot then re-dials
+        // and resumes its seat instead of being reaped as "connection lost"; the
+        // server side needs reconnect.enabled too. Default off = today's behaviour.
+        if (client is ObservedSession observed && observed.Client is ConnectionSession cs
+            && ReconnectGraceSeconds() is { } window)
+            cs.EnableAutoReconnect(host, port, name, window);
         try { session.Transport.Join(host, port, name); }
         catch (Exception ex)
         {
             session.End("connect-exception", $"{ex.GetType().Name}: {ex.Message}");
             throw;
         }
+    }
+
+    /// <summary>P813c — the opt-in reconnect window, in seconds, from
+    /// <c>ALLEGIANCE_RECONNECT_GRACE_SECONDS</c>. Null/unparsable/&lt;=0 = off
+    /// (default), which leaves every bot's session on the pre-P813c contract.</summary>
+    internal static double? ReconnectGraceSeconds()
+    {
+        var raw = Environment.GetEnvironmentVariable("ALLEGIANCE_RECONNECT_GRACE_SECONDS");
+        return double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds) && seconds > 0
+            ? seconds
+            : null;
     }
 
     internal void Close(IDisposable? client)

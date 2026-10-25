@@ -26,7 +26,12 @@ internal sealed partial class BotManager
     }
 
     private static bool IsParticipating(ActiveBot bot) => !bot.Inactive &&
-        (bot.Cs is { } cs ? cs.Connected && !cs.Lost : bot.Bot?.Connected == true);
+        (bot.Cs is { } cs
+            // P813c — a session in its reconnect window is not gone: the server is
+            // holding the seat and the join burst re-syncs the world when the
+            // re-dial lands. Reaping it here would make the grace pointless.
+            ? cs.Reconnecting || (cs.Connected && !cs.Lost)
+            : bot.Bot?.Connected == true);
 
     private void RemoveInactiveBot(ActiveBot bot, string reason)
     {

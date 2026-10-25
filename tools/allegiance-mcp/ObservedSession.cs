@@ -19,6 +19,9 @@ internal sealed class ObservedSession : ITransportSite
     private int _ended;
     internal string Name { get; }
     internal TcpTransport Transport { get; }
+    /// <summary>P813c — the wrapped client (a ConnectionSession for combat bots),
+    /// so the host can arm its auto-reconnect with the endpoint it knows.</summary>
+    internal ITransportSite Client => _client;
     internal bool Ended => Volatile.Read(ref _ended) != 0;
     internal double ReadAgeMs => Math.Max(0, _clock() - Interlocked.Read(ref _lastReadMs));
 

@@ -995,6 +995,52 @@ public sealed class ServerConfig
     /// rules.
     /// </summary>
     public DiscoveryConfig? Discovery { get; set; }
+
+    /// <summary>
+    /// P813c (EXPERIMENTAL) — reconnect grace. An absent section (the default)
+    /// coalesces to <c>Enabled = false</c>: a drop retires the ship immediately,
+    /// exactly as before. See <see cref="ReconnectConfig"/>.
+    /// </summary>
+    public ReconnectConfig Reconnect { get; set; } = new();
+}
+
+/// <summary>
+/// P813c (EXPERIMENTAL) — reconnect grace. Native ends a player's session the
+/// moment their connection dies: the dropped connection's <c>CFSPlayer</c> is
+/// destroyed (<c>FedSrv/FedSrv.CPP:4549-4566</c> <c>OnDestroyConnection</c>),
+/// which runs <c>RemovePlayerFromMission(QSR_LinkDead)</c>
+/// (<c>FedSrv/fsship.cpp:995</c>) and deletes the ship
+/// (<c>FedSrv/fsship.cpp:58-68</c>). That is right for the LAN/Zone hosting
+/// native was built for, but a short WAN drop (or an NAT/relay hiccup, P809)
+/// throws the player out of a battle.
+/// <para>When <see cref="Enabled"/> is true the server instead <b>parks</b> an
+/// unrequested drop's ship for <see cref="GraceSeconds"/> simulation seconds
+/// and lets the same pilot resume it with a session-scoped resume token (the
+/// native <c>LOGONREQ.dwCookie</c> field, <c>Inc/Messages.h:43</c>). The window
+/// expiring runs exactly the native removal above, so nothing is lost by
+/// leaving it off — and <b>off is the default</b>: with the flag off every
+/// disconnect path is byte-for-byte the pre-P813c behaviour. A voluntary
+/// <c>LOGOFF</c> is never held (native deletes the player immediately there
+/// too, <c>FedSrv/FedSrv.CPP:5801</c>). See
+/// <c>docs/reports/P813C_RECONNECT_GRACE.md</c>.</para>
+/// </summary>
+public sealed class ReconnectConfig
+{
+    /// <summary>Whether an unrequested drop parks the ship (default
+    /// <c>false</c> = native immediate removal, today's behaviour). CLI
+    /// <c>--reconnect=true|false</c>.</summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>How long a parked ship is held, in simulation seconds
+    /// (default 5). The expiry runs the native drop path. CLI
+    /// <c>--reconnectGrace=N</c>.</summary>
+    public double GraceSeconds { get; set; } = 5;
+
+    public void Validate()
+    {
+        if (!double.IsFinite(GraceSeconds) || GraceSeconds < 0.25 || GraceSeconds > 300)
+            throw new InvalidDataException("reconnect.graceSeconds must be finite and between 0.25 and 300");
+    }
 }
 
 /// <summary>
@@ -1149,6 +1195,24 @@ public static class ServerConfigLoader
                         config.WarpReEntryGuard = guard;
                     else
                         config.WarpReEntryGuard = true;
+                    recognized++; break;
+                case "reconnect":
+                    // P813c — the experimental reconnect grace switch (default off).
+                    config.Reconnect ??= new ReconnectConfig();
+                    if (bool.TryParse(value, out var reconnect))
+                        config.Reconnect.Enabled = reconnect;
+                    else
+                        config.Reconnect.Enabled = true;   // bare --reconnect
+                    recognized++; break;
+                case "reconnectgrace":
+                case "reconnectgraceseconds":
+                    // P813c — the hold window in simulation seconds; implies enabled.
+                    if (!double.TryParse(value, System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture, out var grace))
+                        throw new InvalidDataException($"--reconnectGrace must be a number of seconds, got '{value}'");
+                    config.Reconnect ??= new ReconnectConfig();
+                    config.Reconnect.Enabled = true;
+                    config.Reconnect.GraceSeconds = grace;
                     recognized++; break;
             }
         }

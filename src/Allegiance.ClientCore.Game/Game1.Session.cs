@@ -1087,6 +1087,16 @@ public sealed partial class Game1
         Console.WriteLine($"[monogame] connecting to {host}:{port} as '{_playerName}' ...");
         try
         {
+            // P813c (EXPERIMENTAL) — opt into the reconnect grace only when the
+            // operator asks for it. The window must match the SERVER's
+            // reconnect.graceSeconds (the server also needs reconnect.enabled=true);
+            // with the variable unset nothing changes (today's session-lost path).
+            if (ReconnectGraceSecondsFromEnvironment() is { } reconnectWindow)
+            {
+                _session.EnableAutoReconnect(reconnectWindow);
+                Console.WriteLine($"[monogame] P813c reconnect grace armed: window {reconnectWindow:0.##}s "
+                    + "(auto-reconnect + resume token; server needs reconnect.enabled=true)");
+            }
             _session.Connect(port, _playerName, host);
             var logon = Request(_playerName);
             if (_skirmish is null && _identityClient?.Account is not null)
@@ -1657,6 +1667,19 @@ public sealed partial class Game1
         if (c >= 'A' && c <= 'Z') return Keys.A + (c - 'A');
         if (c >= 'a' && c <= 'z') return Keys.A + (c - 'a');   // physical key, not shifted
         return null;
+    }
+
+    /// <summary>P813c — the experimental reconnect-grace window (seconds) from
+    /// <c>ALLEGIANCE_RECONNECT_GRACE_SECONDS</c>; null (the default) = off, i.e.
+    /// the pre-P813c behaviour where a dropped session shows the disconnect
+    /// screen and stays there.</summary>
+    private static double? ReconnectGraceSecondsFromEnvironment()
+    {
+        var raw = Environment.GetEnvironmentVariable("ALLEGIANCE_RECONNECT_GRACE_SECONDS");
+        return double.TryParse(raw, System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var seconds) && seconds > 0
+            ? seconds
+            : null;
     }
 
     private static LogonRequest Request(string name) => new()

@@ -117,6 +117,16 @@ public sealed partial class Server
                     continue;
                 }
 
+                // P813c — a reconnecting peer resumes its parked seat BEFORE any
+                // of the fresh-logon machinery (duplicate-name reservation,
+                // ship-id allocation, side-select hold): the seat already exists.
+                // The token is the native LOGONREQ.dwCookie (Inc/Messages.h:43);
+                // a name+token match replays the join burst and this frame is
+                // done. With the feature off this is a constant false, so the
+                // path below is untouched.
+                if (_reconnectGraceEnabled && TryResumeParkedPeer(from, req))
+                    continue;
+
                 // P646 (review finding H3) — ONE LOGON PER CONNECTION. Native
                 // asserts an existing player never sends LOGONREQ
                 // (FedSrv.CPP:4832 `assert (pfm->fmid != FM_C_LOGONREQ);
@@ -1730,7 +1740,11 @@ public sealed partial class Server
                 // ForwardMessage(..., FM_GUARANTEED)), then releases the peer
                 // through the EXACT same cleanup path an abrupt TCP drop uses
                 // (PeerLeftEvt → ReleasePeer) — reusing it, not building a
-                // second mechanism. Native's `delete pfsPlayer` deletes the
+                // second mechanism. P813c: the one thing that differs is that
+                // this is a REQUESTED departure, so the reconnect grace does not
+                // hold it (native deletes the player right here,
+                // FedSrv.CPP:5800-5802) and the announced reason is QSR_Quit.
+                // Native's `delete pfsPlayer` deletes the
                 // player object immediately; ReleasePeer is the port's
                 // immediate effect: dropping the peer from _peerShips/_peerNames
                 // AND (P128) retiring its ship (SHIP_DELETE SDR_LOGGEDOFF +
@@ -1744,7 +1758,12 @@ public sealed partial class Server
                 {
                     _ = command.Read<Logoff>();
                     SendPeer(from, FedPacket.Pack(new[] { m }));   // guaranteed echo back
-                    ReleasePeer(from);
+                    // P813c — a voluntary quit is never held by the reconnect
+                    // grace: native deletes the player right here, in the LOGOFF
+                    // handler (FedSrv.CPP:5800-5802, "so we can tell when we get
+                    // there whether it was a dropped connection"), and the
+                    // departure reason is QSR_Quit, not QSR_LinkDead.
+                    ReleasePeerOnRequest(from);
                     // P654 (H-14) — retire the transport connection now. Native
                     // LOGOFF deletes the player and the connection is NOT reused
                     // (FedSrv.CPP:5787-5802); leaving the socket open re-armed

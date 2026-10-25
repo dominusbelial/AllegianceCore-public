@@ -172,6 +172,23 @@ public sealed partial class BotFixRegressionTests
         Assert.Equal("connection lost", Assert.Single(mgr.RemovedBots()).Reason);
     }
 
+    /// <summary>P813c — a bot whose session is inside its reconnect window is NOT
+    /// gone: the server is holding its seat, so the roster must not reap it as
+    /// "connection lost" (that would make the grace pointless for the 390-client
+    /// rig). The pre-P813c contract — a lost session is not participating — is
+    /// preserved when auto-reconnect is off (the test above).</summary>
+    [Fact]
+    public void ReconnectingBot_IsStillParticipating()
+    {
+        using var cs = Session(true);
+        cs.EnableAutoReconnect("127.0.0.1", 1, "p813c-reconnect-bot", windowSeconds: 5);   // port 1: every dial fails
+        var bot = Bot(cs);
+        ((ITransportSite)cs).OnSessionLost();
+        Assert.True(cs.Reconnecting, "a loss with auto-reconnect armed must enter the reconnect window, not latch Lost");
+        Assert.False(cs.Lost);
+        Assert.True((bool)Call("IsParticipating", null, bot)!, "a reconnecting bot stays on the roster");
+    }
+
     [Fact]
     public void LostBot_DoesNotHoldLivingWing()
     {

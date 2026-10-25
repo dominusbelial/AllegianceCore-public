@@ -142,6 +142,17 @@ list in **reverse**.
   `Server.SideIntegrity.cs`.
 - **Seed pinning** — `ServerConfig.BenchmarkSeed` (sim RNG) vs the P811
   `MapGenConfig.Seed` / `--map-seed` (reproducible generated maps).
+- **Reconnect Grace** (EXPERIMENTAL, `reconnect.enabled`, default **off**) —
+  an unrequested drop parks the player's ship for `reconnect.graceSeconds`
+  (default 5 s) instead of deleting it at once; the same pilot resumes the same
+  ship/seat with a session token carried in the native `LOGONREQ.dwCookie`, and
+  the existing native join burst re-syncs the client world. Expiry runs the
+  native removal (`FedSrv.CPP:4549-4566`, `fsship.cpp:58-68`); a voluntary
+  `LOGOFF` is immediate. `src/Allegiance.Server/Server.ReconnectGrace.cs`,
+  `src/Allegiance.ClientCore/Session/ConnectionSession.cs`
+  (`EnableAutoReconnect`), `tools/reconnect-fault/`,
+  `docs/reports/P813C_RECONNECT_GRACE.md`. Client opt-in:
+  `$ALLEGIANCE_RECONNECT_GRACE_SECONDS`.
 
 ## 4. Client & HUD (`src/Allegiance.ClientCore`, `ClientCore.Game/Rendering`)
 
@@ -297,6 +308,7 @@ list in **reverse**.
 |---|---|
 | World assembly | `src/Allegiance.Core/Model/Mission.cs`, `src/Allegiance.Core/Model/Sector.cs` |
 | Wire messages | `src/Allegiance.Core/Wire/*.cs` (+ `docs/parity/fedmsg-wiring.csv`) |
+| Drop / reconnect | `src/Allegiance.Server/Server.ReconnectGrace.cs`, `src/Allegiance.Server/Server.Lifecycle.cs` (`ReleasePeerWithReason`), `src/Allegiance.ClientCore/Session/ConnectionSession.cs` |
 | Server boot | `src/Allegiance.Server/Program.cs`, `src/Allegiance.Server/ServerConfig.cs`, `src/Allegiance.Server/Server.Lifecycle.cs` |
 | HUD styles | `src/Allegiance.ClientCore.Game/Rendering/HudSettings.cs`, `src/Allegiance.ClientCore.Game/Rendering/ModernHudRenderer.cs` |
 | Server browser / filters | `src/Allegiance.ClientCore.Game/LobbyGameSort.cs`, `src/Allegiance.ClientCore.Game/LobbyGameMetadata.cs` |

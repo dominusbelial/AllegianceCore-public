@@ -172,6 +172,11 @@ public sealed partial class Server
         // order (deterministic). A silent peer is auto-seated only when the
         // opt-in SideSelectAutoSeatSeconds adaptation is enabled (default off).
         Step("sideSelection", () => AdvanceSideSelection(now));
+        // P813c (EXPERIMENTAL) — expire parked reconnect-grace seats: a peer that
+        // did not come back inside its window gets exactly the native drop
+        // removal the flag-off path ran immediately (FedSrv.CPP:4549-4566). Cheap
+        // no-op (an empty table) with the feature off.
+        Step("reconnectGrace", AdvanceReconnectGrace);
         // P187 — resolve pending ballots this tick (the port of native
         // CFSMission::Update's ballot loop, fsmission.cpp:2585-2592): any
         // ballot whose expiration passed or whose votes are all in is tallied
@@ -502,6 +507,9 @@ public sealed partial class Server
                 }
             }
             EmitBroadcastSnapshotMetrics();
+            // P813c — the bounded reconnect-grace telemetry line for the rig A/B
+            // (one line per window; silent with the feature off).
+            EmitReconnectSummary();
             // P670 — simulation payload offers versus actual transport enqueue / socket acceptance.
             // Transport counters include framing; offers do not. Use measured wall time.
             long bytes = Interlocked.Exchange(ref _egressPayloadOfferedBytes, 0);

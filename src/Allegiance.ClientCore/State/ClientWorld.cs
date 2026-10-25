@@ -1886,14 +1886,29 @@ public sealed partial class ClientWorld
     /// intended to be called under the caller's <see cref="Session.ConnectionSession.Gate"/>
     /// lock, exactly where the receive thread mutates the same tables.
     /// </summary>
-    public void Reset()
+    public void Reset() => ResetCore(bumpMissionGeneration: true);
+
+    /// <summary>
+    /// P813c — reset the world for a RECONNECT RESUME: the client's state is
+    /// rebuilt from the server's native join burst (the same fresh-joiner burst a
+    /// player joining an in-progress mission gets,
+    /// <c>fsmission.cpp:3943-3974,4122-4250</c>), but the <b>mission identity is
+    /// the same mission</b> — a resumed player never left it. Everything else is
+    /// cleared exactly as <see cref="Reset"/> does, so no stale entity survives;
+    /// only <see cref="MissionGeneration"/> is preserved, which is how consumers
+    /// (the MCP bot life tracking, the decision snapshot) tell "the mission
+    /// rotated" from "my socket dropped and came back". <c>SectorGeneration</c>
+    /// DOES advance (the sector contents are rebuilt).</summary>
+    public void ResetPreservingMissionIdentity() => ResetCore(bumpMissionGeneration: false);
+
+    private void ResetCore(bool bumpMissionGeneration)
     {
         DetachBotWorld();
         OwnMissilesFired = 0;
         _waitingForRestart = false;
         SectorGeneration++;
         ShipWarnings.Reset();
-        MissionGeneration++;
+        if (bumpMissionGeneration) MissionGeneration++;
         MyShipId = null;
         OwnMissionDeparture = null;
         _mutedPilots.Clear();

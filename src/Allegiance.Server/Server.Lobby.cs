@@ -548,6 +548,10 @@ public sealed partial class Server
         // HUD-17: NPC detection entries are never pruned per ship (ids only grow);
         // drop them all with the old world. A missing entry reads as false.
         _shipDetected.Clear();
+        // P813c — a parked (reconnect-grace) seat belongs to THIS world; a game
+        // over during the gap ends the grace (a peer that reconnects afterwards
+        // gets a normal fresh logon into the rotated mission).
+        DropParkedShipsForMission(mission);
         RetireBroadcastProjectionCaches();
         // Clients discard the old warning state on Over. An unchanged station
         // layout must be announced again in the new world (trekigc.cpp:327-383
@@ -3489,9 +3493,12 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// it runs once the player has chosen a side (or the timeout seated them)
     /// rather than at logon. <paramref name="cookie"/> is the logon ack cookie
     /// (<c>req.DwCookie &amp; 0xFF</c>).</summary>
-    private void CompleteJoinAndLaunch(ConnectionId from, LogonRequest req, short shipId, byte cookie, LiveShip live, bool announceToMission = true)
+    private void CompleteJoinAndLaunch(ConnectionId from, LogonRequest req, short shipId, byte cookie, LiveShip live, bool announceToMission = true, bool resumed = false)
     {
-        _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position, LastBroadcastForward = live.Ship.Orientation.GetForward(), LastBroadcastUp = live.Ship.Orientation.GetUp() };
+        // P813c — a RESUMED seat (reconnect grace) keeps its ship and its
+        // wallet; native re-grants nothing to a player who never left the
+        // mission. The per-seat economy grants below are therefore skipped.
+        _peerShips[from] = live with { LastBroadcastPos = live.Ship.Position, LastBroadcastForward = live.Ship.Orientation.GetForward(), LastBroadcastUp = live.Ship.Orientation.GetUp(), ResumeToken = req.DwCookie };
         _peerNames[from] = req.CharacterName ?? "";   // P62: remember past logon for teammate EXPORT name
         // P775 — the catch-all of native moment (1): a joiner that is never
         // seated (SideId still null at launch) is announced here with its own
@@ -3529,8 +3536,15 @@ private void CompleteStartCountdown(Mission mission, double now)
         // price a harness out of a hull. One line per granted connection.
         if (HarnessGrantFor(from) is { } harness)
         {
-            live.Wallet.Money = harness.Money;
-            Console.WriteLine($"[testharness] {from} '{req.CharacterName}' GRANTED wallet ${harness.Money} at seat (prefix '{harness.CharacterNamePrefix}' matches)");
+            if (!resumed)
+            {
+                live.Wallet.Money = harness.Money;
+                Console.WriteLine($"[testharness] {from} '{req.CharacterName}' GRANTED wallet ${harness.Money} at seat (prefix '{harness.CharacterNamePrefix}' matches)");
+            }
+            else
+            {
+                Console.WriteLine($"[testharness] {from} '{req.CharacterName}' resumed seat — wallet grant skipped (native re-grants nothing on a resume)");
+            }
         }
 
         // P509 — the test-unlock wallet grant, applied ON SEAT like the harness
@@ -3540,8 +3554,15 @@ private void CompleteStartCountdown(Mission mission, double now)
         // price through the real debit path. One line per granted connection.
         if (_config.LiveSettings?.TestUnlock is { Enabled: true } tu)
         {
-            live.Wallet.Money = tu.Money;
-            Console.WriteLine($"[testunlock] {from} '{req.CharacterName}' wallet SET to ${tu.Money} at seat (testUnlock enabled)");
+            if (!resumed)
+            {
+                live.Wallet.Money = tu.Money;
+                Console.WriteLine($"[testunlock] {from} '{req.CharacterName}' wallet SET to ${tu.Money} at seat (testUnlock enabled)");
+            }
+            else
+            {
+                Console.WriteLine($"[testunlock] {from} '{req.CharacterName}' resumed seat — wallet SET skipped (keeps the live wallet)");
+            }
         }
 
         // FM_S_MISSIONDEF(38) then FM_S_JOINED_MISSION(95) FIRST,

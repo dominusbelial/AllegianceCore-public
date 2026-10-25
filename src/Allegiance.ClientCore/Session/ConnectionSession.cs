@@ -147,6 +147,92 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// </summary>
     public event Action? SessionLost;
 
+    // ── P813c (EXPERIMENTAL) — auto-reconnect / resume ──────────────────────
+    //
+    // Native ends a session the moment its connection dies (FedSrv.CPP:4549-4566
+    // → fsship.cpp:995,58-68): there is no client-side reconnect anywhere in
+    // clintlib because native hosting was LAN/Zone. On WAN (and with P809's
+    // NAT/relay) a short drop is common, so this opt-in path re-establishes the
+    // socket and asks the server (whose `reconnect.enabled` flag must also be on,
+    // Server.ReconnectGrace.cs) to resume the SAME seat.
+    //
+    // The resume token is a session-scoped nonce carried in the EXISTING native
+    // field LOGONREQ.dwCookie (Inc/Messages.h:43) — no new wire data. Native
+    // LOGONACK.cookie is the server's in-game session cookie (FedSrv.CPP:983),
+    // so a session token on the logon message is the native-shaped slot; this
+    // port mints the nonce on the CLIENT (it never leaves the session and is
+    // NOT an account — P808a is out of scope).
+    private uint _resumeToken;
+    private string? _resumeHost;
+    private ushort _resumePort;
+    private string? _resumeName;
+    private LogonRequest? _resumeRequest;
+    private double _reconnectWindowSeconds = 5;
+    private volatile bool _autoReconnect;
+    private volatile bool _reconnecting;
+    private volatile bool _reconnectStop;
+    private Thread? _reconnectThread;
+    private int _resumeAttempts;
+    private int _resumeSuccesses;
+    private int _resumeShipMismatches;
+    private short? _resumeShipId;   // the seat held when the drop was noticed
+    private bool _reconnectExhausted;   // one auto-reconnect round per session, then Lost latches
+
+    /// <summary>P813c — opt-in auto-reconnect on an unrequested drop (default
+    /// <c>false</c>: today's behaviour, where the session stays lost). Enable it
+    /// with <see cref="EnableAutoReconnect(string,ushort,string,double)"/>. When a
+    /// loss happens and this is on, <see cref="Lost"/> is NOT latched: the
+    /// session re-dials the same server, re-sends LOGONREQ with the same resume
+    /// token, and lets the server's native join burst re-sync the world. Only if
+    /// the window elapses does the session go <see cref="Lost"/> (and raise
+    /// <see cref="SessionLost"/>).</summary>
+    public bool AutoReconnect => _autoReconnect;
+
+    /// <summary>P813c — true while the session is between sockets, re-dialing and
+    /// waiting for the server's LOGONACK. Command/control sends are no-ops in
+    /// this window; a harness must not treat the bot as gone.</summary>
+    public bool Reconnecting => _reconnecting;
+
+    /// <summary>P813c — the session's resume token (sent as
+    /// <c>LOGONREQ.dwCookie</c> while auto-reconnect is on).</summary>
+    public uint ResumeToken => _resumeToken;
+
+    /// <summary>P813c — connection attempts made by the auto-reconnect loop.</summary>
+    public int ResumeAttempts => Volatile.Read(ref _resumeAttempts);
+
+    /// <summary>P813c — successful resumes (validated LOGONACK after a drop).</summary>
+    public int ResumeSuccesses => Volatile.Read(ref _resumeSuccesses);
+
+    /// <summary>P813c — resumes where the server handed back a DIFFERENT ship id
+    /// than the one held at drop time (grace expired, the ship died during the
+    /// gap, or the mission rotated): the session is live again but in a fresh
+    /// seat, which a caller may want to log or react to.</summary>
+    public int ResumeShipMismatches => Volatile.Read(ref _resumeShipMismatches);
+
+    /// <summary>
+    /// P813c — arm auto-reconnect for <paramref name="host"/>:<paramref name="port"/>.
+    /// Called by <see cref="Connect"/> automatically when the operator opted in,
+    /// and by the MCP bot host for sessions whose transport it injects directly
+    /// (those never call <see cref="Connect"/>).
+    /// </summary>
+    public void EnableAutoReconnect(string host, ushort port, string playerName, double windowSeconds = 5)
+    {
+        _resumeHost = host;
+        _resumePort = port;
+        _resumeName = playerName;
+        _reconnectWindowSeconds = windowSeconds > 0 ? windowSeconds : 5;
+        _autoReconnect = true;
+    }
+
+    /// <summary>P813c — turn auto-reconnect on without naming an endpoint (the
+    /// next <see cref="Connect"/> fills it in). For hosts/tests that call
+    /// <see cref="Connect"/> and want the drop-resume behaviour.</summary>
+    public void EnableAutoReconnect(double windowSeconds = 5)
+    {
+        _reconnectWindowSeconds = windowSeconds > 0 ? windowSeconds : 5;
+        _autoReconnect = true;
+    }
+
     /// <summary>The last LOGONACK (or rejection) received; null until one arrives.</summary>
     public LogonAck? Ack { get { lock (_gate) return _ack; } }
 
@@ -209,6 +295,19 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// peer).</summary>
     public void Connect(ushort port, string playerName, string host = "127.0.0.1")
     {
+        // P813c — an EXPLICIT connect is a fresh session: mint a new resume
+        // nonce (so a rejoin never silently adopts a parked seat) and remember
+        // the endpoint for the automatic reconnect path. Stop any in-flight
+        // reconnect loop first.
+        StopReconnectLoop();
+        _resumeToken = NewResumeToken();
+        _resumeHost = host;
+        _resumePort = port;
+        _resumeName = playerName;
+        _resumeRequest = null;
+        _resumeShipId = null;
+        _reconnectExhausted = false;
+        _lost = false;
         // P321 — a retry must not abandon the previous transport: its socket and
         // receive thread would leak for the process lifetime. Shut it down the
         // same way a normal disconnect does (closes the socket, joins the receive
@@ -312,8 +411,20 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     }
 
     /// <summary>Send a LOGONREQ; the ACK (or rejection) is received asynchronously.</summary>
-    public void SendLogonRequest(LogonRequest req) =>
+    public void SendLogonRequest(LogonRequest req)
+    {
+        // P813c — while auto-reconnect is armed, the logon carries this
+        // session's resume token in the native LOGONREQ.dwCookie field, and the
+        // request is retained so a reconnect can re-send it verbatim (same CD
+        // key / steam ticket), re-tokenised. With the feature off the request is
+        // sent untouched (today's behaviour).
+        if (_autoReconnect)
+        {
+            req.DwCookie = _resumeToken;
+            _resumeRequest = req;
+        }
         Send(FedPacket.Pack(new[] { req.Encode() }));
+    }
 
     /// <summary>
     /// P508 — send a <c>FM_CS_PING(35)</c> so the server echoes its current sim-time
@@ -990,8 +1101,153 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     private void RaiseLost()
     {
         if (_lost) return;
+        // P813c — an unrequested loss with auto-reconnect armed hands off to the
+        // reconnect loop instead of ending the session: the native drop would
+        // have deleted the ship (FedSrv.CPP:4549-4566), but the server's grace
+        // window is holding it for exactly this. If the window elapses without a
+        // validated LOGONACK, the loop calls back here with _reconnecting false
+        // and the session latches lost exactly as before.
+        if (_autoReconnect && !_reconnecting && CanReconnect())
+        {
+            StartReconnectLoop();
+            return;
+        }
         _lost = true;
         SessionLost?.Invoke();
+    }
+
+    /// <summary>P813c — a fresh 32-bit session nonce (never 0: 0 means "no
+    /// token", which the server never parks).</summary>
+    private static uint NewResumeToken()
+    {
+        uint token;
+        do token = (uint)Random.Shared.NextInt64(1, (long)uint.MaxValue + 1);
+        while (token == 0);
+        return token;
+    }
+
+    /// <summary>P813c — the reconnect loop can only run when it knows where to
+    /// dial and what to ask for.</summary>
+    private bool CanReconnect() =>
+        !_reconnectExhausted && _resumeHost is { Length: > 0 } && _resumePort != 0 && _resumeName is { Length: > 0 };
+
+    /// <summary>P813c — start the (single) reconnect thread for a lost session.
+    /// </summary>
+    private void StartReconnectLoop()
+    {
+        lock (_gate)
+        {
+            if (_reconnecting) return;
+            _reconnecting = true;
+            _resumeShipId = _world.MyShipId;   // the seat we are asking the server to give back
+        }
+        _reconnectStop = false;
+        var t = new Thread(ReconnectLoop) { IsBackground = true, Name = "session-reconnect" };
+        _reconnectThread = t;
+        Console.WriteLine($"[reconnect] session lost — auto-reconnect armed, re-dialing "
+            + $"{_resumeHost}:{_resumePort} as '{_resumeName}' for up to {_reconnectWindowSeconds:0.##}s (token 0x{_resumeToken:X8})");
+        t.Start();
+    }
+
+    /// <summary>P813c — stop an in-flight reconnect loop (explicit Connect / Dispose).</summary>
+    private void StopReconnectLoop()
+    {
+        _reconnectStop = true;
+        var t = _reconnectThread;
+        _reconnectThread = null;
+        if (t is not null && t != Thread.CurrentThread)
+            try { t.Join(1500); } catch { /* best effort */ }
+        _reconnecting = false;
+    }
+
+    /// <summary>
+    /// P813c — the auto-reconnect loop: re-dial, re-send the SAME LOGONREQ with
+    /// the same resume token, and wait for a validated LOGONACK. The world is
+    /// reset before the new socket starts (exactly like <see cref="Connect"/>) so
+    /// the server's native join burst re-populates it from authoritative state —
+    /// the same MISSIONDEF → JOINED_MISSION → PLAYERINFO → CLUSTERINFO/exports →
+    /// SET_CLUSTER sequence a fresh joiner gets (fsmission.cpp:3943-3974,
+    /// 4122-4250). On success the session is live again in the same seat; on
+    /// failure (window elapsed, or every attempt refused) it latches
+    /// <see cref="Lost"/>, i.e. today's behaviour.
+    /// </summary>
+    private void ReconnectLoop()
+    {
+        var deadline = Environment.TickCount64 + (long)(_reconnectWindowSeconds * 1000);
+        bool resumed = false;
+        while (!resumed && Environment.TickCount64 <= deadline && !_reconnectStop)
+        {
+            Interlocked.Increment(ref _resumeAttempts);
+            try
+            {
+                var previous = _transport;
+                _transport = null;
+                previous?.Shutdown();
+                lock (_gate)
+                {
+                    // Fresh world: the join burst is the re-sync (native
+                    // JOINED_MISSION → ResetStaticData is the same idea,
+                    // appmsg.cpp:2150-2215).
+                    _ack = null;
+                    _lastPositionRefusal = null;
+                    _lost = false;
+                    // Same mission identity: a resume is not a mission rotation.
+                    _world.ResetPreservingMissionIdentity();
+                    _pingEchoes.Clear();
+                    _connectionGeneration++;
+                }
+
+                var fresh = new TcpTransport(this);
+                _transport = fresh;
+                fresh.Join(_resumeHost!, _resumePort, _resumeName!);
+
+                var req = _resumeRequest ?? new LogonRequest
+                {
+                    CharacterName = _resumeName,
+                    FedsrvVer = LogonRequest.MsgVer,
+                    CrcFileList = -1,
+                };
+                req.DwCookie = _resumeToken;
+                Send(FedPacket.Pack(new[] { req.Encode() }));
+
+                var ack = WaitForAck(1500);
+                if (!ack.FValidated)
+                {
+                    Console.WriteLine($"[reconnect] attempt {ResumeAttempts} refused: {ack.CharNameOrFailureReason}");
+                    continue;
+                }
+
+                // Live again. Report whether the server gave the SAME seat back
+                // (a resume) or a fresh one (window expired / died during the gap).
+                short? held;
+                lock (_gate) held = _resumeShipId;
+                if (held is { } was && ack.ShipID != was)
+                {
+                    Interlocked.Increment(ref _resumeShipMismatches);
+                    Console.WriteLine($"[reconnect] resumed with a NEW ship {ack.ShipID} (held {was}): the grace window "
+                        + "expired or the ship was destroyed during the gap — fresh seat");
+                }
+                Interlocked.Increment(ref _resumeSuccesses);
+                StartKeepAlive();
+                resumed = true;
+                Console.WriteLine($"[reconnect] session restored after {ResumeAttempts} attempt(s): ship {ack.ShipID}, "
+                    + $"resumeToken=0x{_resumeToken:X8}; join burst re-syncing the world");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"[reconnect] attempt {ResumeAttempts} failed: {e.GetType().Name}: {e.Message}");
+                try { _transport?.Shutdown(); } catch { /* best effort */ }
+                _transport = null;
+                Thread.Sleep(250);   // brief back-off; the window is short by design
+            }
+        }
+
+        _reconnecting = false;
+        _reconnectThread = null;
+        if (resumed) return;
+        _reconnectExhausted = true;   // latch: do not start a second round from RaiseLost
+        Console.WriteLine($"[reconnect] gave up after {ResumeAttempts} attempt(s) inside {_reconnectWindowSeconds:0.##}s — session lost");
+        RaiseLost();
     }
 
     void ITransportSite.OnReceive(ConnectionId from, ReadOnlySpan<byte> data)
@@ -1027,6 +1283,14 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                 {
                     case LogonAck.Fmid:
                         _ack = LogonAck.Decode(m);
+                        // Native keeps the accepted name as its own (clintlib/appmsg.cpp:39-40):
+                        // a verified logon's canonical callsign, so a P813c resume claims the
+                        // parked seat under the name the server knows.
+                        if (_ack.FValidated && _ack.CharNameOrFailureReason is { Length: > 0 } accepted)
+                        {
+                            _resumeName = accepted;
+                            if (_resumeRequest is { } pending) pending.CharacterName = accepted;
+                        }
                         break;
                     case RankInfo.Fmid:
                         // P639 — FM_S_RANK_INFO(13): the server's rank-name table,
@@ -1683,11 +1947,18 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
         try { t?.Join(1000); } catch { /* best effort */ }
     }
 
-    /// <summary>Close the client socket. The server sees EOF / a dropped peer.</summary>
-    public void Shutdown() => _transport?.Shutdown();
+    /// <summary>Close the client socket. The server sees EOF / a dropped peer.
+    /// P813c — an explicit shutdown also cancels any in-flight reconnect: a
+    /// caller that deliberately closes the session must never be re-dialed.</summary>
+    public void Shutdown()
+    {
+        StopReconnectLoop();
+        _transport?.Shutdown();
+    }
 
     public void Dispose()
     {
+        StopReconnectLoop();
         StopKeepAlive();
         Shutdown();
         lock (_gate) _world.ReleaseBotView();
