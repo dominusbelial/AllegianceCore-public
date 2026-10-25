@@ -84,14 +84,22 @@ public readonly struct TargetPreviewKey
     public readonly string? ModelStem;
     public readonly string? TextureHint;
 
+    /// <summary>P805b — a treasure's <c>DataTreasureIGC.TreasureId</c> payload (the
+    /// part/development id, the cash amount, the flag's side or the team-lobby
+    /// sentinel). Native resolves a treasure's art from this payload, NOT from the
+    /// object id (<c>treasureIGC.cpp:118-171</c>); P805 passed the object id, so
+    /// every PART treasure resolved to an unknown part and showed nothing.</summary>
+    public readonly int PayloadId;
+
     public TargetPreviewKey(TargetPreviewKind kind, int targetId, int hullId,
-        string? modelStem, string? textureHint)
+        string? modelStem, string? textureHint, int payloadId = 0)
     {
         Kind = kind;
         TargetId = targetId;
         HullId = hullId;
         ModelStem = modelStem;
         TextureHint = textureHint;
+        PayloadId = payloadId;
     }
 
     /// <summary>True when this key identifies the same target AND the same
@@ -101,6 +109,7 @@ public readonly struct TargetPreviewKey
         Kind == other.Kind
         && TargetId == other.TargetId
         && HullId == other.HullId
+        && PayloadId == other.PayloadId
         && string.Equals(ModelStem, other.ModelStem, StringComparison.Ordinal)
         && string.Equals(TextureHint, other.TextureHint, StringComparison.Ordinal);
 }
@@ -217,6 +226,73 @@ public static class TargetModelPreview
            && kind is TargetPreviewKind.Ship or TargetPreviewKind.Station or TargetPreviewKind.Asteroid
               or TargetPreviewKind.Warp or TargetPreviewKind.Probe or TargetPreviewKind.Treasure
               or TargetPreviewKind.Mine;
+
+    /// <summary>
+    /// P805b — which native draw path a resolved preview art uses. The kind alone
+    /// does not decide it: a treasure is a MESH (its buyable's model) or a DECAL
+    /// (the flag's <c>biosflag</c> billboard, <c>treasureIGC.cpp:118-171</c>), and
+    /// a kind whose art is missing must draw nothing rather than dereference a
+    /// null visual. Pure so the dispatch is pinned headlessly — the P805 resolve
+    /// left <see cref="TargetPreviewKind.Probe"/> without a treasure visual while
+    /// the draw switch still read <c>art.Treasure!.Value</c>, which threw on the
+    /// first real probe target.
+    /// </summary>
+    public enum PreviewDrawPath
+    {
+        /// <summary>No drawable art — the native empty fallback.</summary>
+        None,
+        /// <summary>A native ship mesh (<see cref="TargetPreviewKind.Ship"/>).</summary>
+        Ship,
+        /// <summary>A native station mesh.</summary>
+        Station,
+        /// <summary>A native asteroid mesh.</summary>
+        Asteroid,
+        /// <summary>A camera-facing surface quad (a flag treasure's
+        /// <c>biosflag</c> decal).</summary>
+        Decal,
+        /// <summary>The aleph vortex mesh (native <c>LoadAleph</c> builds the
+        /// additive textured funnel, not a flat surface;
+        /// <c>effect/alephgeo.cpp:80-102,205-232</c>).</summary>
+        WarpFunnel,
+        /// <summary>A model mesh drawn through the native treasure renderer (a
+        /// probe's per-type mesh, <c>probetypeigc.cpp:28-33</c>, or a model
+        /// treasure, <c>treasureIGC.cpp:118-171</c>).</summary>
+        TreasureModel,
+    }
+
+    /// <summary>
+    /// P805b — the native draw path for a resolved preview: the target kind plus
+    /// which art actually resolved (a mesh vs the treasure visual vs a decal vs
+    /// the aleph funnel). Never selects a path whose art is absent, so a resolve
+    /// gap shows the native empty viewport instead of throwing.
+    /// </summary>
+    public static PreviewDrawPath DrawPathFor(TargetPreviewKind kind,
+        bool hasShipGeo, bool hasTreasureVisual, bool treasureIsDecal, bool hasWarpTexture)
+    {
+        switch (kind)
+        {
+            case TargetPreviewKind.Ship:
+                return hasShipGeo ? PreviewDrawPath.Ship : PreviewDrawPath.None;
+            case TargetPreviewKind.Station:
+                return hasShipGeo ? PreviewDrawPath.Station : PreviewDrawPath.None;
+            case TargetPreviewKind.Asteroid:
+                return hasShipGeo ? PreviewDrawPath.Asteroid : PreviewDrawPath.None;
+            case TargetPreviewKind.Warp:
+                // warpIGC.cpp:33-34 / modelIGC.cpp:127-132 — LoadAleph builds the
+                // vortex with textureName+"bmp" as its texture.
+                return hasWarpTexture ? PreviewDrawPath.WarpFunnel : PreviewDrawPath.None;
+            case TargetPreviewKind.Treasure:
+                if (!hasTreasureVisual) return PreviewDrawPath.None;
+                return treasureIsDecal ? PreviewDrawPath.Decal : PreviewDrawPath.TreasureModel;
+            case TargetPreviewKind.Probe:
+            case TargetPreviewKind.Mine:
+                // A probe/mine ThingGeo is a real mesh/sprite
+                // (probetypeigc.cpp:28-33; mineigc.cpp:103).
+                return hasTreasureVisual ? PreviewDrawPath.TreasureModel : PreviewDrawPath.None;
+            default:
+                return PreviewDrawPath.None;
+        }
+    }
 
     /// <summary>Native dp = target−player; the constant <c>(0,1,5)</c> replaces
     /// it when the real dp is inside the unit sphere (<c>WinTrek.cpp:438-444</c>).</summary>

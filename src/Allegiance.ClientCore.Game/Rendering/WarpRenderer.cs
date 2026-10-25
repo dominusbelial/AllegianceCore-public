@@ -172,9 +172,12 @@ public sealed class WarpRenderer : IDisposable
     /// </summary>
     public void Draw(Matrix world, Matrix view, Matrix projection, double deltaSeconds,
         float worldRadius, string textureName, short warpId, float funnelBoost = IdleFunnelBoost,
-        float destabilize = 0f)
+        float destabilize = 0f, bool advanceClock = true)
     {
-        _time += (float)Math.Max(0.0, deltaSeconds);
+        // P805b — the target-pane preview renders the SAME funnel art (native's
+        // preview draws the aleph's own ThingGeo) but must not advance the shared
+        // animation clock a second time in the frame; the scene pass owns it.
+        if (advanceClock) _time += (float)Math.Max(0.0, deltaSeconds);
 
         // --- Funnel: textured double-horn vortex ---------------------------------
         int tier = SelectLodTier(world, projection, worldRadius);

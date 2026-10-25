@@ -190,6 +190,33 @@ public sealed partial class Game1
                     break;
                 case LiveProof.AutoActionKind.SelectTarget:
                     _pendingTarget = (LiveProof.AutoTargetKind)a.IntArg;
+                    _pendingTargetEngage = true;   // P805b — the classic --auto-target path keeps flying to the target
+                    break;
+                case LiveProof.AutoActionKind.SelectTargetSeq:
+                    // P805b — a scripted --auto-target-seq selection: select only.
+                    // The target pane preview needs same-cluster, not proximity,
+                    // and an autopilot toward an aleph would transit it.
+                    _pendingTarget = (LiveProof.AutoTargetKind)a.IntArg;
+                    _pendingTargetEngage = false;
+                    break;
+                case LiveProof.AutoActionKind.Stop:
+                    // P805b — the Backspace TK_ThrottleZero preset (WinTrek.cpp:10939-10960).
+                    _throttle = Flight.FlightInput.PresetValue(Flight.FlightInput.ThrottlePreset.Zero);
+                    Console.WriteLine($"[autoproof] throttle ZERO (hold station) at t={_auto?.SecondsSinceLaunch:0.0}s");
+                    break;
+                case LiveProof.AutoActionKind.DropProbe:
+                    // P805b — the N key's real dispenser fire (TK_DropMine,
+                    // trekinput.cpp:1424): FIRE_EXPENDABLE with the shared
+                    // Dispenser mount (a probe or mine dispenser at mount 0).
+                    _session.SendFireExpendable(Allegiance.Core.EquipmentType.Dispenser);
+                    Console.WriteLine($"[autoproof] drop probe/mine (Dispenser) at t={_auto?.SecondsSinceLaunch:0.0}s");
+                    break;
+                case LiveProof.AutoActionKind.SummonEnemy:
+                    // P805b — place an enemy in view (TrySummonEnemy, drained in
+                    // ApplyAutoProofFlying until an enemy is observed in-sector).
+                    _pendingSummonEnemy = true;
+                    _summonEnemyDistance = a.IntArg > 0 ? a.IntArg : 500;
+                    Console.WriteLine($"[autoproof] summon enemy to {_summonEnemyDistance} m ahead");
                     break;
                 case LiveProof.AutoActionKind.TargetClass:
                     // P623 — frame a CLASS-filtered target once airborne
@@ -237,8 +264,12 @@ public sealed partial class Game1
 
     private string? _pendingGotoSector;
     private LiveProof.AutoTargetKind? _pendingTarget;
+    private bool _pendingTargetEngage = true;   // P805b — false for the scripted sequence
     private long _pendingTargetRetryAtMs;
     private string? _pendingTargetClass;   // P623 — "rel:cls[:dir]" class target spec
+    private bool _pendingSummonEnemy;      // P805b — relocate an enemy into view
+    private int _summonEnemyDistance = 500;
+    private long _summonEnemyRetryAtMs;
     private bool _pendingHeadToDock;
     private string? _pendingBoardTarget;   // P803 — --auto-board: pilot name to board
     private int _boardAttempts;
@@ -331,6 +362,9 @@ public sealed partial class Game1
     private void TryAutoLaunch(Rendering.ShopModel shop)
     {
         SelectAutoLaunchHull(shop);
+        // P805b — fill the Dispenser socket with a real probe launcher when the
+        // proof asked for it (the debug arena's spawned hull defaults to chaff).
+        if (_autoPlan.AutoCarryProbe) AutoMountProbeDispenser(shop);
         if (!shop.TryLaunch())
         {
             Console.WriteLine($"[autoproof] auto-launch BLOCKED: {shop.BlockReason}");
@@ -340,6 +374,46 @@ public sealed partial class Game1
         _launchSent = true;
         _throttle = FlightInput.DefaultThrottle;
         Console.WriteLine($"[autoproof] auto-launch BUY_LOADOUT(fLaunch) hull {shop.EffectiveHullId} + {shop.ChosenParts.Count} part(s)");
+    }
+
+    /// <summary>
+    /// P805b — the real docked-shop navigation a player performs to carry a probe:
+    /// the PARTS tab, the hull's Dispenser socket, then the first PROBE launcher the
+    /// station offers (native BuyPartMenu lists exactly the type-compatible,
+    /// <c>CanMount</c> parts, load.cpp:1680-1751; the list is price-ordered, so the
+    /// cheapest probe dispenser is chosen deterministically). Uses only the
+    /// production <see cref="ShopModel"/> navigation the touch/keyboard paths use.
+    /// </summary>
+    private void AutoMountProbeDispenser(Rendering.ShopModel shop)
+    {
+        shop.SwitchTab(Rendering.ShopTab.Parts);
+        var slots = shop.Slots;
+        int dispenser = -1;
+        for (int i = 0; i < slots.Count; i++)
+            if (slots[i].Type == Allegiance.Core.EquipmentType.Dispenser) { dispenser = i; break; }
+        if (dispenser < 0)
+        {
+            Console.WriteLine("[autoproof] --auto-carry-probe: the effective hull has no Dispenser socket — launching as-is");
+            shop.SwitchTab(Rendering.ShopTab.Hulls);
+            return;
+        }
+        shop.MoveCursor(dispenser - shop.Cursor);
+        shop.Activate();                       // open the Dispenser slot
+        var offers = shop.OpenSlotParts;
+        int pick = -1;
+        for (int i = 0; i < offers.Count; i++)
+            if (offers[i].Part.Type is Allegiance.Core.DataPartTypeIGC.ProbeLauncher) { pick = i; break; }
+        if (pick < 0)
+        {
+            Console.WriteLine("[autoproof] --auto-carry-probe: no probe dispenser offered for this hull — launching as-is");
+            shop.Back();
+            shop.SwitchTab(Rendering.ShopTab.Hulls);
+            return;
+        }
+        shop.MoveCursor(pick - shop.Cursor);
+        shop.Activate();                       // fill the slot + close it
+        Console.WriteLine($"[autoproof] --auto-carry-probe: mounted '{offers[pick].Part.Name}' (part {offers[pick].Part.PartId}) in the Dispenser socket");
+        shop.SwitchTab(Rendering.ShopTab.Hulls);
     }
 
     private void SelectAutoLaunchHull(Rendering.ShopModel shop)
@@ -423,6 +497,14 @@ public sealed partial class Game1
         if (_autoFlightPartsStage == 5 && time >= 13) { _boosterToggled = false; _autoFlightPartsStage = 6; }
     }
 
+    /// <summary>P805b — the mouse is centred once after launch so the cockpit
+    /// head-look (P624) starts at zero in a scripted run: the target-pane preview's
+    /// view direction comes from the frame's camera, and native's preview ignores
+    /// head-look entirely (WinTrek.cpp:426 vs :438), so an un-centred pointer made
+    /// the same run frame the same model differently. Mirrors the command-camera
+    /// centring below.</summary>
+    private bool _autoMouseCentered;
+
     private bool _autoCommandOrientationReady;
     private bool _autoCommandSubjectReady;
     private int _autoParityStage;
@@ -474,6 +556,12 @@ public sealed partial class Game1
             ApplyConsoleMode("ConModeInventory");
             _autoInventoryOpened = true;
         }
+        if (!_autoMouseCentered && (_auto?.SecondsSinceLaunch ?? 0) >= 0.5)
+        {
+            Microsoft.Xna.Framework.Input.Mouse.SetPosition(
+                GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2);
+            _autoMouseCentered = true;
+        }
         if (!_autoCommandOrientationReady && _autoPlan.Camera is "command" or "commandtd")
         {
             _commandCamera.TopDown = _autoPlan.Camera == "commandtd";
@@ -524,12 +612,27 @@ public sealed partial class Game1
         {
             _pendingTarget = null;
             // A ship target that is not in the sector yet (a fleet still on its
-            // way) is retried every 2 s instead of being dropped.
-            if (tk != LiveProof.AutoTargetKind.None && !AutoFrameTarget(tk)
-                && tk is LiveProof.AutoTargetKind.Enemy or LiveProof.AutoTargetKind.Friendly)
+            // way) is retried every 2 s instead of being dropped. P805b — the
+            // same retry covers a probe/treasure that has not arrived yet (the
+            // dispenser drop and the mission's treasure spawn both land a little
+            // after the sequence's nominal second).
+            if (tk != LiveProof.AutoTargetKind.None && !AutoFrameTarget(tk, _pendingTargetEngage))
             {
                 _pendingTarget = tk;
                 _pendingTargetRetryAtMs = Environment.TickCount64 + 2000;
+            }
+        }
+        if (_pendingSummonEnemy && Environment.TickCount64 >= _summonEnemyRetryAtMs)
+        {
+            // Re-asserted every 4 s until an enemy is observed in our sector: the
+            // bot may still be docking at the first ask, and re-relocating to the
+            // same anchor is a no-op once it is there. Stops as soon as it lands so
+            // the captured frame is not re-teleported under the crosshair.
+            _summonEnemyRetryAtMs = Environment.TickCount64 + 4000;
+            if (TrySummonEnemy(_summonEnemyDistance))
+            {
+                _pendingSummonEnemy = false;
+                Console.WriteLine("[autoproof] summon-enemy: an enemy is in our sector — summon settled");
             }
         }
         if (_pendingTargetClass is { Length: > 0 } clsSpec)
@@ -571,11 +674,15 @@ public sealed partial class Game1
 
     /// <summary>--auto-target: frame the nearest object of the requested kind
     /// by reusing the client's own real candidate gather + relation filters
-    /// (the same machines T/G use), then engage the autopilot toward it so it
-    /// stays framed as the ship drifts.</summary>
-    private bool AutoFrameTarget(LiveProof.AutoTargetKind kind)
+    /// (the same machines T/G use), then (when <paramref name="approach"/> is set)
+    /// engage the autopilot toward it so it stays framed as the ship drifts.
+    /// P805b — probe and treasure are the remaining native ThingGeo preview
+    /// kinds (row 409); the scripted <c>--auto-target-seq</c> path selects them
+    /// with <paramref name="approach"/> false so a pane-preview run holds
+    /// station.</summary>
+    private bool AutoFrameTarget(LiveProof.AutoTargetKind kind, bool approach = true)
     {
-        if (!TryOwnPose(out var pos, out var orient, out _))
+        if (!TryOwnPose(out var pos, out _, out _))
             return false;
 
         List<CandidateObject> objs;
@@ -587,11 +694,53 @@ public sealed partial class Game1
                 return false;
             objs = GatherSectorCandidates(world.Ships, world.Warps, world.Stations,
                                           world.Asteroids, me, own.SectorId,
-                                          ShipRoleBits, StationRoleBits);
+                                          ShipRoleBits, StationRoleBits,
+                                          world.Probes, world.Treasures);
         }
 
         short? mySide = null;
         lock (_session.Gate) mySide = _session.World.MySideId;
+
+        // P805b — an explicit treasure CODE filter (--auto-treasure part): the
+        // mission's treasure set is random, so "the nearest treasure" is not the
+        // art the proof asked for. Snapshot the wanted ids in the same gather.
+        HashSet<short>? wantedTreasures = null;
+        if (kind == LiveProof.AutoTargetKind.Treasure && _autoPlan.AutoTreasureCode is { } wantedCode)
+        {
+            wantedTreasures = new HashSet<short>();
+            int total = 0;
+            // P805b — for a PART treasure, prefer the spawned plain part whose native
+            // model is the MOST COMPACT (smallest max vertex radius). Native normalises
+            // every preview by 1/m_radiusMesh (effect/thinggeo.cpp:367-381,
+            // 1185-1193), so a compact model is the one that actually fills the 96 px
+            // pane; a slim launcher/gun model would be technically correct but read as
+            // empty. The choice is deterministic for a given spawn set, and both kinds
+            // resolve through the same native art path.
+            short compactId = -1;
+            float compactRadius = float.MaxValue;
+            lock (_session.Gate)
+                foreach (var (tid, te) in _session.World.Treasures)
+                {
+                    total++;
+                    if (te.Code != wantedCode) continue;
+                    bool plainPart = wantedCode != Allegiance.Core.TreasureCode.Part
+                        || _shopCatalog?.Core?.PartTypes.ContainsKey(te.PayloadId) == true;
+                    if (!plainPart) continue;
+                    if (wantedCode != Allegiance.Core.TreasureCode.Part)
+                    {
+                        wantedTreasures.Add(tid);
+                        continue;
+                    }
+                    var core = _shopCatalog?.Core;
+                    if (core?.PartTypes.TryGetValue(te.PayloadId, out var partType) != true) continue;
+                    var model = partType.ModelName;
+                    float r = _nativeTreasureRenderer.MeshFor(model)?.MaxVertexRadius ?? float.MaxValue;
+                    if (r < compactRadius) { compactRadius = r; compactId = tid; }
+                }
+            if (compactId >= 0) wantedTreasures.Add(compactId);
+            Console.WriteLine($"[autoproof] auto-target Treasure: {wantedTreasures.Count}/{total} in sector match {wantedCode}"
+                + (compactId >= 0 ? $" (chose #{compactId}, mesh radius {compactRadius:0.###})" : ""));
+        }
 
         CandidateObject? best = null;
         float bestDsq = float.MaxValue;
@@ -604,6 +753,9 @@ public sealed partial class Game1
                 LiveProof.AutoTargetKind.Station => o.Kind == TargetKind.Station,
                 LiveProof.AutoTargetKind.Aleph => o.Kind == TargetKind.Warp,
                 LiveProof.AutoTargetKind.Asteroid => o.Kind == TargetKind.Asteroid,
+                LiveProof.AutoTargetKind.Probe => o.Kind == TargetKind.Probe,
+                LiveProof.AutoTargetKind.Treasure => o.Kind == TargetKind.Treasure
+                    && (wantedTreasures is null || wantedTreasures.Contains(o.Id)),
                 _ => false,
             };
             if (!kindOk) continue;
@@ -620,11 +772,22 @@ public sealed partial class Game1
             // c_cmdCurrent so the server's Ship.CommandTarget drives the lead
             // predictor and the red order arrow reads the current target command.
             SendCurrentCommandToServer(_autoTarget.Value);
-            // An asteroid is a static rock and a collision hazard: select it (the
-            // pane needs no framing) but do not fly into it.
-            if (kind != LiveProof.AutoTargetKind.Asteroid)
+            // An asteroid is a static rock, a probe is inert and a treasure is a
+            // pickup: select them (the pane needs no framing) but never fly at
+            // them — matching the pre-P805b asteroid rule.
+            bool staticKind = kind is LiveProof.AutoTargetKind.Asteroid
+                or LiveProof.AutoTargetKind.Probe or LiveProof.AutoTargetKind.Treasure;
+            if (approach && !staticKind)
                 EngageAutopilotToward(_autoTarget.Value, "autoproof: frame target");
-            Console.WriteLine($"[autoproof] auto-target {kind} -> {b.Name} (kind {b.Kind})");
+            string extra = "";
+            if (kind == LiveProof.AutoTargetKind.Treasure)
+            {
+                string code;
+                lock (_session.Gate)
+                    code = _session.World.Treasures.TryGetValue(b.Id, out var te) ? te.Code.ToString() : "?";
+                extra = $", treasure code {code}";
+            }
+            Console.WriteLine($"[autoproof] auto-target {kind} -> {b.Name} (kind {b.Kind}{extra})");
             return true;
         }
         else
@@ -632,6 +795,82 @@ public sealed partial class Game1
             Console.WriteLine($"[autoproof] auto-target {kind}: none in sector — leaving default targeting");
             return false;
         }
+    }
+
+    /// <summary>
+    /// P805b — place an enemy ship in view for the selection-box proof. The port's
+    /// privileged <c>relocate</c> chat cheat (a PORT EXTENSION; native has no
+    /// relocate, Server/Server.AdminCheats.cs) moves a ship the privileged pilot
+    /// controls or launched — here an MCP-harness (testHarness) bot on the
+    /// opposite side. <see cref="Server"/> sends that bot's owner a SET_CLUSTER; the
+    /// proof client learns the new sector/pose from the per-cluster
+    /// HEAVY_SHIPS_UPDATE (ClientWorld P375), so a normal <--auto-target enemy>
+    /// selection frames it. Retried by the caller until an airborne enemy exists.
+    /// </summary>
+    private bool TrySummonEnemy(int distance)
+    {
+        short mySector;
+        Allegiance.Core.Collision.Vector3 pos;
+        Allegiance.Core.Collision.Vector3 fwd;
+        var targets = new List<(short Id, string Name)>();
+        bool alreadyHere = false;
+        lock (_session.Gate)
+        {
+            var world = _session.World;
+            if (world.MyShipId is not { } mine || !world.Ships.TryGetValue(mine, out var own)
+                || own.Latest is not { } ownUpd)
+                return false;
+            mySector = own.SectorId;
+            pos = ownUpd.Position;
+            fwd = ownUpd.Orientation.GetForward();
+            short? mySide = world.MySideId;
+            foreach (var (id, s) in world.Ships)
+            {
+                // P805b — identity is NOT required: an enemy the pilot has not
+                // seen yet is known from PLAYERINFO (P775) with its side and
+                // name, which is all the relocate request needs (the server
+                // resolves the ship and refuses anything this pilot does not
+                // control). Station/sector are also unknown before the first
+                // status, so they are not filtered on — a docked target is
+                // refused server-side and the caller retries.
+                if (id == mine || s.SideId == mySide || s.IsDead) continue;
+                targets.Add((id, s.CharacterName ?? $"ship {id}"));
+                // A REAL in-cluster pose (HEAVY_SHIPS_UPDATE stamps the pose's
+                // sector) — a PLAYERINFO-only enemy's default sector 0 is not
+                // evidence it is here.
+                if (s.Latest is not null && s.PoseSectorId == mySector && s.StationId == -1)
+                    alreadyHere = true;
+            }
+        }
+        if (targets.Count == 0)
+        {
+            int ships = 0, enemies = 0;
+            lock (_session.Gate)
+            {
+                ships = _session.World.Ships.Count;
+                enemies = _session.World.Ships.Values.Count(s => s.SideId != _session.World.MySideId);
+            }
+            Console.WriteLine($"[autoproof] summon-enemy: no enemy in the world to summon yet "
+                + $"({ships} ship(s) known, {enemies} on another side) — retrying");
+            return false;
+        }
+        if (alreadyHere) return true;   // already in view; nothing to move
+
+        // Place it ahead of the pilot's own nose, at the requested distance. The
+        // server refuses ships this pilot does not control (a plain NPC miner is
+        // refused; the MCP-harness bot is accepted), so ask about every airborne
+        // enemy and let the server pick — the accepted one is the one that then
+        // arrives in our sector via HEAVY_SHIPS_UPDATE (ClientWorld P375).
+        var p = pos + fwd * distance;
+        foreach (var (id, name) in targets)
+        {
+            var line = $"relocate {id} {mySector} {F(p.X)} {F(p.Y)} {F(p.Z)}";
+            _session.SendChat(line);
+            Console.WriteLine($"[autoproof] summon-enemy: chat '{line}' (enemy {name} #{id})");
+        }
+        return true;
+
+        static string F(float v) => v.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
     }
 
     /// <summary>P623 — --auto-target-class: drive the real class-filter handler

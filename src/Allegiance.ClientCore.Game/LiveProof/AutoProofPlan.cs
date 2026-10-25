@@ -18,6 +18,12 @@ public enum AutoTargetKind
     // HUD-21b — the third target kind with a native ThingGeo preview target:
     // an asteroid (used only by real-window proof shots of the target pane).
     Asteroid,
+    // P805b — the other two ThingGeo preview kinds (row 409): a probe (its real
+    // mesh, probetypeigc.cpp:28-33) and a treasure (the buyable's model or the
+    // flag's biosflag decal, treasureIGC.cpp:118-171). Selecting either is enough
+    // for the pane: the preview gate needs only same-cluster, not proximity.
+    Probe,
+    Treasure,
 }
 
 /// <summary>P639 — which screen overlay a real-window autoshot should have open
@@ -199,6 +205,70 @@ public sealed class AutoProofPlan
     /// Null = run until the user closes it.</summary>
     public double? ExitAfter;
 
+    /// <summary>P805b — one timed scripted target selection inside a proof run
+    /// (<c>--auto-target-seq</c>): the kind to select and the seconds after
+    /// launch at which to select it. Selects WITHOUT engaging the autopilot, so
+    /// a pane-preview proof can walk aleph → probe → treasure → enemy without
+    /// flying out of the sector (an autopilot toward an aleph transits it).</summary>
+    public readonly record struct TimedTarget(AutoTargetKind Kind, double AtSeconds);
+
+    /// <summary>P805b — the scripted target-selection sequence
+    /// (<c>--auto-target-seq "aleph@4,probe@14,..."</c>). Each entry fires once
+    /// at its after-launch time; empty = the single <see cref="Target"/> path.</summary>
+    public TimedTarget[] TargetSequence = [];
+
+    /// <summary>P805b — hide the chat history for the proof frame
+    /// (<c>--auto-hide-chat-history</c>): the session-only native
+    /// <c>ShowChatHistoryHUD</c> toggle (WinTrek.cpp:2897,5074-5078), so scripted
+    /// proof chatter (e.g. the <c>relocate</c> replies) does not sit over the top
+    /// of the capture. The composer still draws.</summary>
+    public bool AutoHideChatHistory;
+
+    /// <summary>P805b — restrict a <c>treasure</c> target selection to one treasure
+    /// CODE (<c>--auto-treasure part|cash|powerup|development|flag</c>).
+    /// The mission's treasure set is random per spawn, so a proof that needs the
+    /// PART-treasure art (the buyable's own model, treasureIGC.cpp:118-171) asks
+    /// for it explicitly; null = the nearest treasure of any kind.</summary>
+    public Allegiance.Core.TreasureCode? AutoTreasureCode;
+
+    /// <summary>P805b — mount a PROBE dispenser in the docked loadout before
+    /// launching (<c>--auto-carry-probe</c>): navigates the real ShopModel to the
+    /// hull's Dispenser socket and fills it with the cheapest probe launcher the
+    /// station offers (native BuyPartMenu rule, load.cpp:1680-1751 — equipment
+    /// type + CanMount). Needed because the debug arena spawns a hull whose
+    /// native preferred loadout carries a CHAFF dispenser, so the real N-key
+    /// "drop mine or probe" would fire chaff (or nothing) instead of a probe.</summary>
+    public bool AutoCarryProbe;
+
+    /// <summary>P805b — seconds after launch to fire the mounted DISPENSER
+    /// (<c>--auto-drop-probe-at</c>): the real N-key "drop mine or probe"
+    /// (TK_DropMine, trekinput.cpp:1424 → FIRE_EXPENDABLE with
+    /// EquipmentType.Dispenser). A probe-dispenser hull (e.g. the Scout's
+    /// preferred "EWS Probe 1") deploys a real probe, which the target sequence
+    /// can then select. Null = never.</summary>
+    public double? AutoDropProbeAt;
+
+    /// <summary>P805b — seconds after launch to summon an enemy into view
+    /// (<c>--auto-summon-enemy-at</c>): relocates an MCP-harness enemy ship to a
+    /// point ahead of the player via the port's privileged <c>relocate</c> chat
+    /// cheat (Server.AdminCheats.cs, a PORT EXTENSION — native has no relocate
+    /// token). It names every known enemy; the server refuses ships this pilot
+    /// neither owns nor launched, so exactly the harness bot moves. Needs
+    /// <c>liveSettings.adminCheats</c> with this pilot's name allow-listed.
+    /// Null = never.</summary>
+    public double? AutoSummonEnemyAt;
+
+    /// <summary>P805b — how far ahead of the own ship to place the summoned
+    /// enemy (<c>--auto-summon-enemy-dist</c>, default 500 m): close enough to
+    /// read at 1080p, far enough not to collide.</summary>
+    public float AutoSummonEnemyDistance = 500f;
+
+    /// <summary>P805b — seconds after launch to stop the ship
+    /// (<c>--auto-stop-after</c>): the Backspace TK_ThrottleZero preset (-1 =
+    /// kill throttle, WinTrek.cpp:10939-10960), so a long scripted sequence
+    /// holds station instead of drifting into an aleph or a rock.</summary>
+    public double? StopAfter;
+
     /// <summary>A dock-hull "kind" token accepted by <c>--auto-target</c>.</summary>
     private static readonly Dictionary<string, AutoTargetKind> TargetKinds = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -207,6 +277,8 @@ public sealed class AutoProofPlan
         ["station"] = AutoTargetKind.Station,
         ["aleph"] = AutoTargetKind.Aleph,
         ["asteroid"] = AutoTargetKind.Asteroid,
+        ["probe"] = AutoTargetKind.Probe,
+        ["treasure"] = AutoTargetKind.Treasure,
         ["none"] = AutoTargetKind.None,
         ["off"] = AutoTargetKind.None,
     };
@@ -332,6 +404,67 @@ public sealed class AutoProofPlan
             else if (a.StartsWith("--auto-target-after=", StringComparison.Ordinal))
             {
                 if (TryParseSeconds(a.Substring("--auto-target-after=".Length), out var d4)) plan.TargetDelaySeconds = d4;
+            }
+            else if (a == "--auto-target-seq")
+            {
+                if (i + 1 < args.Count) plan.TargetSequence = ParseTargetSequence(args[++i]);
+            }
+            else if (a.StartsWith("--auto-target-seq=", StringComparison.Ordinal))
+            {
+                plan.TargetSequence = ParseTargetSequence(a.Substring("--auto-target-seq=".Length));
+            }
+            else if (a == "--auto-hide-chat-history" || a == "--auto-hide-chat-history=true")
+                plan.AutoHideChatHistory = true;
+            else if (a == "--auto-hide-chat-history=false")
+                plan.AutoHideChatHistory = false;
+            else if (a == "--auto-treasure")
+            {
+                if (i + 1 < args.Count) plan.AutoTreasureCode = ParseTreasureCode(args[++i]);
+            }
+            else if (a.StartsWith("--auto-treasure=", StringComparison.Ordinal))
+            {
+                plan.AutoTreasureCode = ParseTreasureCode(a.Substring("--auto-treasure=".Length));
+            }
+            else if (a == "--auto-carry-probe" || a == "--auto-carry-probe=true")
+                plan.AutoCarryProbe = true;
+            else if (a == "--auto-carry-probe=false")
+                plan.AutoCarryProbe = false;
+            else if (a == "--auto-drop-probe-at")
+            {
+                if (i + 1 < args.Count && TryParseSeconds(args[++i], out var dp)) plan.AutoDropProbeAt = dp;
+            }
+            else if (a.StartsWith("--auto-drop-probe-at=", StringComparison.Ordinal))
+            {
+                if (TryParseSeconds(a.Substring("--auto-drop-probe-at=".Length), out var dp2)) plan.AutoDropProbeAt = dp2;
+            }
+            else if (a == "--auto-summon-enemy-at")
+            {
+                if (i + 1 < args.Count && TryParseSeconds(args[++i], out var se)) plan.AutoSummonEnemyAt = se;
+            }
+            else if (a.StartsWith("--auto-summon-enemy-at=", StringComparison.Ordinal))
+            {
+                if (TryParseSeconds(a.Substring("--auto-summon-enemy-at=".Length), out var se2)) plan.AutoSummonEnemyAt = se2;
+            }
+            else if (a == "--auto-summon-enemy-dist")
+            {
+                if (i + 1 < args.Count
+                    && float.TryParse(args[++i], NumberStyles.Float, CultureInfo.InvariantCulture, out var sd)
+                    && float.IsFinite(sd) && sd > 0f)
+                    plan.AutoSummonEnemyDistance = sd;
+            }
+            else if (a.StartsWith("--auto-summon-enemy-dist=", StringComparison.Ordinal))
+            {
+                if (float.TryParse(a.Substring("--auto-summon-enemy-dist=".Length), NumberStyles.Float, CultureInfo.InvariantCulture, out var sd2)
+                    && float.IsFinite(sd2) && sd2 > 0f)
+                    plan.AutoSummonEnemyDistance = sd2;
+            }
+            else if (a == "--auto-stop-after")
+            {
+                if (i + 1 < args.Count && TryParseSeconds(args[++i], out var st)) plan.StopAfter = st;
+            }
+            else if (a.StartsWith("--auto-stop-after=", StringComparison.Ordinal))
+            {
+                if (TryParseSeconds(a.Substring("--auto-stop-after=".Length), out var st2)) plan.StopAfter = st2;
             }
             else if (a == "--auto-parity-commands") plan.AutoParityCommands = true;
             else if (a == "--auto-flight-parts") plan.AutoFlightParts = true;
@@ -461,11 +594,61 @@ public sealed class AutoProofPlan
         return plan;
     }
 
+    /// <summary>P805b — parse <c>--auto-target-seq "kind@seconds,..."</c> into a
+    /// time-ordered sequence of scripted target selections. Entries are sorted by
+    /// time; a malformed entry (unknown kind, missing/invalid time) is skipped
+    /// with a stderr note so a typo cannot silently re-time the run. Pure.</summary>
+    public static TimedTarget[] ParseTargetSequence(string s)
+    {
+        var list = new List<TimedTarget>();
+        foreach (var raw in s.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string entry = raw.Trim();
+            int at = entry.IndexOf('@');
+            if (at <= 0 || at == entry.Length - 1)
+            {
+                Console.Error.WriteLine($"[monogame] --auto-target-seq: expected kind@seconds, got '{entry}' - skipped");
+                continue;
+            }
+            string kindTok = entry[..at].Trim();
+            if (!TargetKinds.TryGetValue(kindTok, out var kind) || kind == AutoTargetKind.None)
+            {
+                Console.Error.WriteLine($"[monogame] --auto-target-seq: unknown kind '{kindTok}' - skipped");
+                continue;
+            }
+            if (!TryParseSeconds(entry[(at + 1)..].Trim(), out var at2))
+            {
+                Console.Error.WriteLine($"[monogame] --auto-target-seq: bad time in '{entry}' - skipped");
+                continue;
+            }
+            list.Add(new TimedTarget(kind, at2));
+        }
+        list.Sort((x, y) => x.AtSeconds.CompareTo(y.AtSeconds));
+        return list.ToArray();
+    }
+
+    /// <summary>P805b — parse an <c>--auto-treasure</c> code token. Null (ignored)
+    /// on an unknown token so a typo cannot silently switch the target kind.</summary>
+    private static Allegiance.Core.TreasureCode? ParseTreasureCode(string s)
+    {
+        switch (s.Trim().ToLowerInvariant())
+        {
+            case "part": return Allegiance.Core.TreasureCode.Part;
+            case "cash": return Allegiance.Core.TreasureCode.Cash;
+            case "powerup": return Allegiance.Core.TreasureCode.Powerup;
+            case "development" or "dev": return Allegiance.Core.TreasureCode.Development;
+            case "flag": return Allegiance.Core.TreasureCode.Flag;
+            default:
+                Console.Error.WriteLine($"[monogame] --auto-treasure: unknown code '{s}' (part|cash|powerup|development|flag) - ignoring");
+                return null;
+        }
+    }
+
     private static AutoTargetKind ParseTarget(string s)
     {
         if (TargetKinds.TryGetValue(s.Trim(), out var kind))
             return kind;
-        Console.Error.WriteLine($"[monogame] --auto-target: unknown kind '{s}' (enemy|friendly|station|aleph|asteroid|none) - ignoring");
+        Console.Error.WriteLine($"[monogame] --auto-target: unknown kind '{s}' (enemy|friendly|station|aleph|asteroid|probe|treasure|none) - ignoring");
         return AutoTargetKind.None;
     }
 
@@ -507,6 +690,9 @@ public sealed class AutoProofPlan
         AutoRadarMode.Length > 0 ||
         AutoDockAfter.HasValue || DockSweepCount > 0 || ExitAfter.HasValue ||
         AutoSuicideAt.Length > 0 ||
+        TargetSequence.Length > 0 || AutoDropProbeAt.HasValue || AutoSummonEnemyAt.HasValue
+            || StopAfter.HasValue || AutoCarryProbe || AutoTreasureCode.HasValue ||
+        AutoHideChatHistory ||
         Director || FollowShip != -1 || DirectorSeed.HasValue ||
         !string.Equals(Camera, "cockpit", StringComparison.OrdinalIgnoreCase);
 

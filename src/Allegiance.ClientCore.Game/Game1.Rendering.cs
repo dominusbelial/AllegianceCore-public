@@ -2503,6 +2503,8 @@ public sealed partial class Game1
         int targetSourceId;
         int ownSourceId;
         int hullId = -1;
+        int treasurePayload = 0;
+        double treasureAge = 0.0;   // P805b — the live tumble phase (native previews the live orientation)
         string? modelStem = null;
         string? textureHint = null;
         bool sameCluster;
@@ -2580,16 +2582,18 @@ public sealed partial class Game1
                 case TargetKind.Warp:
                 {
                     // P805 (row 409) — native's preview shows an aleph: its
-                    // ThingGeo is the LoadAleph surface (warpIGC.cpp:33-34,
-                    // modelIGC.cpp:127-132), so the preview draws the warp
-                    // texture as a camera-facing surface (the port reads the
-                    // same stem the native LoadAleph loads: textureName+"bmp").
+                    // ThingGeo is LoadAleph's additive vortex mesh
+                    // (warpIGC.cpp:33-34, modelIGC.cpp:127-132,
+                    // effect/alephgeo.cpp:80-102). P805b keeps the raw texture
+                    // name (the WarpRenderer resolves textureName+"bmp" exactly
+                    // as native LoadAleph does) and draws the funnel — the flat
+                    // camera-facing quad P805 drew was the wrong art.
                     if (!world.Warps.TryGetValue(t.Id, out var wp)) return false;
                     targetSourceId = -1;                       // a warp is no ship
                     sameCluster = wp.ClusterId == ownSector;
                     visible = true;                            // a warp is always seen
                     kind = TargetPreviewKind.Warp;
-                    modelStem = wp.TextureName + "bmp";         // native LoadAleph: textureName + "bmp"
+                    modelStem = wp.TextureName;                // native LoadAleph: textureName + "bmp"
                     targetPos = PoseConverter.ToXna(Vec(wp.Position));
                     _previewOri.Set(Vec(wp.Forward));
                     worldMat = PoseConverter.ToXnaRotation(_previewOri);
@@ -2623,6 +2627,8 @@ public sealed partial class Game1
                     visible = true;
                     kind = TargetPreviewKind.Treasure;
                     hullId = (int)te.Code;                     // the art resolve re-resolves the visual from it
+                    treasurePayload = te.PayloadId;            // native's DataTreasureIGC.TreasureId (treasureIGC.cpp:118-171)
+                    treasureAge = _treasureAge.TryGetValue(t.Id, out var tAge) ? tAge : 0.0;
                     modelStem = te.Code.ToString();            // cache key only
                     targetPos = PoseConverter.ToXna(te.Position);
                     worldMat = Matrix.Identity;
@@ -2639,8 +2645,8 @@ public sealed partial class Game1
         // only when the selected target OR its hull/model identity changes; a
         // target with NO native mesh is cached as a null resolution (resolved
         // once, not every frame) and the gate sees the real mesh-present state.
-        var key = new TargetPreviewKey(kind, targetId, hullId, modelStem, textureHint);
-        _previewCache ??= new TargetPreviewCache<PreviewArt>(ResolvePreviewArt);
+        var key = new TargetPreviewKey(kind, targetId, hullId, modelStem, textureHint, treasurePayload);
+        _previewCache ??= new TargetPreviewCache<PreviewArt>(ResolvePreviewArtWithLog);
         if (_previewCache.Step(key, targetSourceId, ownSourceId, sameCluster: sameCluster, visible: visible)
             is not { } art)
             return false;
@@ -2661,34 +2667,45 @@ public sealed partial class Game1
         var previewView = TargetModelPreview.View(dp, camUp, camFwd);
         var proj = TargetModelPreview.Projection();
         var lighting = TargetModelPreview.Lighting(dp);
-        switch (kind)
+        // P805b — the path is chosen from the kind AND the art that actually
+        // resolved, so a resolve gap is native's empty viewport rather than a
+        // null dereference (the P805 probe path had no treasure visual yet drew
+        // through RenderTreasureModel).
+        switch (TargetModelPreview.DrawPathFor(kind,
+                    kind == TargetPreviewKind.Station ? art.StationGeo is not null : art.ShipGeo is not null,
+                    art.Treasure is not null, art.Treasure is { IsDecal: true }, art.WarpTextureName is not null))
         {
-            case TargetPreviewKind.Station:
+            case TargetModelPreview.PreviewDrawPath.None:
+                return false;
+            case TargetModelPreview.PreviewDrawPath.Station:
                 _targetModelPreviewRenderer.RenderStation(art.StationGeo!, art.Texture,
                     worldMat, previewView, proj, art.NativeScale, lighting, restoreTo);
                 break;
-            case TargetPreviewKind.Asteroid:
+            case TargetModelPreview.PreviewDrawPath.Asteroid:
                 _targetModelPreviewRenderer.RenderAsteroid(art.ShipGeo!, art.Texture,
                     worldMat, previewView, proj, art.NativeScale, lighting, restoreTo);
                 break;
-            case TargetPreviewKind.Warp:
-                // P805 (row 409) — the aleph surface as a camera-facing quad at the
-                // preview origin (native's preview draws the same ThingGeo the
-                // world does, thinggeo.cpp:1482-1573).
+            case TargetModelPreview.PreviewDrawPath.WarpFunnel:
+                // P805b — native's LoadAleph vortex at the radius-1 framing
+                // (TargetGeo::Render's Scale3(1/GetRadius), effect/thinggeo.cpp:367-381;
+                // AlephGeo::GetRadius returns 1, effect/alephgeo.cpp:151-154).
+                _targetModelPreviewRenderer.RenderWarp(
+                    worldMat, previewView, proj, art.WarpTextureName!, (short)targetId, restoreTo);
+                break;
+            case TargetModelPreview.PreviewDrawPath.Decal:
+                // P805 (row 409) — a flag treasure's biosflag decal as a
+                // camera-facing quad at the preview origin (native's preview draws
+                // the same ThingGeo the world does, thinggeo.cpp:1482-1573).
                 _targetModelPreviewRenderer.RenderTreasureDecal(art.Treasure!.Value,
                     (short)targetId, previewView, proj, lighting, restoreTo);
                 break;
-            case TargetPreviewKind.Treasure when art.IsDecal:
-                _targetModelPreviewRenderer.RenderTreasureDecal(art.Treasure!.Value,
-                    (short)targetId, previewView, proj, lighting, restoreTo);
-                break;
-            case TargetPreviewKind.Probe:
-            case TargetPreviewKind.Treasure:
+            case TargetModelPreview.PreviewDrawPath.TreasureModel:
                 // P805 (row 409) — probe/treasure models go through the native
                 // treasure renderer with the radius-1 scale folded into the world.
                 _targetModelPreviewRenderer.RenderTreasureModel(art.Treasure!.Value,
                     (short)targetId, Matrix.CreateScale(art.NativeScale) * worldMat,
-                    previewView, proj, 0.0, lighting, restoreTo);
+                    previewView, proj, treasureAge, lighting, restoreTo,
+                    spin: kind != TargetPreviewKind.Probe);
                 break;
             default:
                 _targetModelPreviewRenderer.RenderShip(art.ShipGeo!, art.Texture,
@@ -2709,15 +2726,32 @@ public sealed partial class Game1
         /// <summary>P805 (row 409) — the resolved treasure/aleph-surface visual
         /// (drawn through the native treasure renderer).</summary>
         public Rendering.TreasureVisual? Treasure;
-        /// <summary>P805 — true when the visual is a camera-facing decal surface
-        /// (a flag's biosflag billboard or an aleph's surface) rather than a mesh.
-        /// </summary>
-        public bool IsDecal;
+        /// <summary>P805b — an aleph target's funnel texture name (without the
+        /// "bmp" suffix native LoadAleph appends); non-null selects the native
+        /// vortex draw path.</summary>
+        public string? WarpTextureName;
     }
 
     /// <summary>HUD-21b — the allocating art resolve, run by the preview cache
     /// only on a key change. Null = no native mesh (cached; the gate then shows
     /// the native empty fallback).</summary>
+    private PreviewArt? ResolvePreviewArtWithLog(TargetPreviewKey key)
+    {
+        var art = ResolvePreviewArt(key);
+        // P805b — one line per target/model change (this runs only on a key
+        // change) in an automated run, so a real-window proof log shows exactly
+        // which native art each preview kind resolved and where it draws. Silent
+        // in ordinary play (no --auto-* plan → no extra console traffic).
+        if (_auto is null) return art;
+        Console.WriteLine(art is null
+            ? $"[preview] {key.Kind} target={key.TargetId} stem='{key.ModelStem ?? "-"}' tex='{key.TextureHint ?? "-"}': NO ART (native empty viewport)"
+            : $"[preview] {key.Kind} target={key.TargetId} stem='{key.ModelStem ?? "-"}' tex='{key.TextureHint ?? "-"}': "
+              + $"{TargetModelPreview.DrawPathFor(key.Kind, art.StationGeo is not null || art.ShipGeo is not null, art.Treasure is not null, art.Treasure is { IsDecal: true }, art.WarpTextureName is not null)}"
+              + $" scale={art.NativeScale:0.###} treasure={(art.Treasure is { } t ? t.Kind + "/" + (t.TextureStem ?? t.ModelStem ?? "-") : "-")}"
+              + $" warpTex='{art.WarpTextureName ?? "-"}'");
+        return art;
+    }
+
     private PreviewArt? ResolvePreviewArt(TargetPreviewKey key)
     {
         switch (key.Kind)
@@ -2762,23 +2796,23 @@ public sealed partial class Game1
             }
             case TargetPreviewKind.Warp:
             {
-                // P805 (row 409) — the aleph's surface texture (native LoadAleph
-                // loads textureName+"bmp", warpIGC.cpp:33-34, modelIGC.cpp:127-132);
-                // the draw step renders it as the camera-facing surface quad.
+                // P805b — native LoadAleph builds the additive textured vortex
+                // (effect/alephgeo.cpp:239-251; WinTrek/trekigc.cpp:1900-1924) and
+                // loads textureName+"bmp". The vortex is drawn by the shared warp
+                // renderer (the same art the world shows); this resolve only checks
+                // that the aleph's texture exists, which is the native "has a
+                // ThingGeo" condition for this kind.
                 if (key.ModelStem is null) return null;
-                var tex = _nativeTreasureRenderer.TextureFor(key.ModelStem);
-                if (tex is null) return null;
-                return new PreviewArt
-                {
-                    Treasure = new Rendering.TreasureVisual(Rendering.TreasureVisualKind.Flag,
-                        ModelStem: null, TextureStem: key.ModelStem, IconName: "",
-                        DisplayName: "", IsDecal: true),
-                };
+                if (_nativeTreasureRenderer.TextureFor(key.ModelStem + "bmp") is null) return null;
+                return new PreviewArt { WarpTextureName = key.ModelStem };
             }
             case TargetPreviewKind.Probe:
             {
                 // P805 (row 409) — a probe's per-type real mesh
                 // (probetypeigc.cpp:28-33), loaded like any native model.
+                // P805b — the resolve must also carry the TreasureVisual the draw
+                // step consumes (RenderTreasureModel); P805 left it null and the
+                // preview threw for every probe target.
                 if (key.ModelStem is null) return null;
                 var geo = _nativeTreasureRenderer.MeshFor(key.ModelStem);
                 if (geo is null) return null;
@@ -2788,21 +2822,26 @@ public sealed partial class Game1
                     ShipGeo = geo,
                     Texture = pTexStem is null ? null : _nativeTreasureRenderer.TextureFor(pTexStem),
                     NativeScale = TargetModelPreview.ScaleForMaxVertexRadius(geo.MaxVertexRadius),
+                    Treasure = new Rendering.TreasureVisual(Rendering.TreasureVisualKind.Part,
+                        ModelStem: key.ModelStem, TextureStem: pTexStem, IconName: "",
+                        DisplayName: "", IsDecal: false),
                 };
             }
             case TargetPreviewKind.Treasure:
             {
                 // P805 (row 409) — the treasure's own visual (treasureIGC.cpp:118-171):
                 // the buyable's/acs14/artifact model or the flag's biosflag decal.
-                // The key carries the TreasureCode in HullId and the treasure id in
-                // TargetId (the resolver needs both; the stem is cache salt only).
+                // The key carries the TreasureCode in HullId and the treasure's
+                // DataTreasureIGC.TreasureId payload in PayloadId — native resolves
+                // the art from the PAYLOAD (treasureIGC.cpp:118-171); P805 passed
+                // the object id, so a part treasure resolved to a missing part.
                 var visual = Rendering.TreasureVisualResolver.Resolve(
-                    (TreasureCode)key.HullId, (short)key.TargetId, _shopCatalog);
+                    (TreasureCode)key.HullId, (short)key.PayloadId, _shopCatalog);
                 if (visual.IsDecal)
                 {
                     if (visual.TextureStem is null
                         || _nativeTreasureRenderer.TextureFor(visual.TextureStem) is null) return null;
-                    return new PreviewArt { Treasure = visual, IsDecal = true };
+                    return new PreviewArt { Treasure = visual };
                 }
                 if (visual.ModelStem is null
                     || _nativeTreasureRenderer.MeshFor(visual.ModelStem) is not { } tgeo) return null;
@@ -3312,6 +3351,10 @@ public sealed partial class Game1
         // HUD-21 — feed this frame's target-model preview (or null fallback) to
         // the active HUD renderer so DrawTargetPane composites it under the oval.
         ActiveHud.TargetModelPreview = _hudTargetModelPreview;
+        // P805b — the selection-box gate is live on BOTH skins (P805 only passed it
+        // to the classic renderer at construction, so Modern's base gate stayed off
+        // and its bracket never drew).
+        ActiveHud.SelectionBracket = _hudSettings.SelectionBracketOn;
         ActiveHud.Draw(model, GraphicsDevice.Viewport);
         if (_hudSettings.Style == HudStyle.Classic) DrawEjectDeathOverlays(model);
         DrawTargetNoMatchFeedback();

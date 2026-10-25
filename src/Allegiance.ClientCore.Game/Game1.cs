@@ -1555,6 +1555,10 @@ public sealed partial class Game1 : Game
             if (CameraModeFromToken(_autoPlan.Camera) is { } cam)
                 _cameraMode = cam;
             _hideHud = _autoPlan.HideHud;
+            // P805b — the session-only native ShowChatHistoryHUD toggle
+            // (WinTrek.cpp:2897,5074-5078), so proof chatter does not sit over a
+            // capture.
+            if (_autoPlan.AutoHideChatHistory) _chatHistoryVisible = false;
             _autoshotDir = _autoPlan.AutoshotDir;
             // P580 — director / spectator-follow armed at launch: the same thing
             // the F2/F3 keys toggle, seeded for repeatable recordings.

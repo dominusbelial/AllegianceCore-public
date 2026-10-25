@@ -196,7 +196,7 @@ public sealed class NativeTreasureRenderer : IDisposable
     /// false when the model is unavailable (caller falls back to the gem).
     /// </summary>
     public bool DrawModel(TreasureVisual visual, short treasureId, Matrix world,
-        Matrix view, Matrix projection, double elapsed, SectorLighting? lighting)
+        Matrix view, Matrix projection, double elapsed, SectorLighting? lighting, bool spin = true)
     {
         if (visual.ModelStem is null) return false;
         var geo = MeshFor(visual.ModelStem);
@@ -216,7 +216,11 @@ public sealed class NativeTreasureRenderer : IDisposable
 
         // Native scale = the model's own authored size (1.0 in .mdl units); the
         // deterministic tumble is applied as a rotation around the model's centre.
-        var local = SpinTransform(treasureId, elapsed) * world;
+        // P805b — a TREASURE tumbles (native gives it a random orientation+rotation
+        // at creation, treasureIGC.cpp:180-190); a probe does not, so the target
+        // pane draws a probe at its authored orientation instead of inheriting a
+        // tumble keyed off its object id.
+        var local = spin ? SpinTransform(treasureId, elapsed) * world : world;
 
         _effect.World = local;
         _effect.View = view;

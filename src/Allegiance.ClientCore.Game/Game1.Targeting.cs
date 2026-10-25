@@ -180,7 +180,9 @@ public sealed partial class Game1
         IReadOnlyDictionary<short, DataAsteroidIGC> asteroids,
         short me, short mySector,
         Func<short, short>? shipRoleBits = null,
-        Func<short, short>? stationRoleBits = null)
+        Func<short, short>? stationRoleBits = null,
+        IReadOnlyDictionary<short, ProbeEntity>? probes = null,
+        IReadOnlyDictionary<short, TreasureEntity>? treasures = null)
     {
         var objs = new List<CandidateObject>();
 
@@ -221,6 +223,22 @@ public sealed partial class Game1
             if (ast.ClusterId != mySector) continue;
             objs.Add(new CandidateObject(Vec(ast.Position), TargetKind.Asteroid, id, ast.Name));
         }
+        // P805b — the remaining native ThingGeo target kinds a real-window proof
+        // selects by kind: probes (their real per-type mesh, probetypeigc.cpp:28-33)
+        // and treasures (model or flag decal, treasureIGC.cpp:118-171). Optional
+        // sources, so every existing caller's pool is byte-identical.
+        if (probes is not null)
+            foreach (var (id, pb) in probes)
+            {
+                if (pb.ClusterId != mySector) continue;
+                objs.Add(new CandidateObject(pb.Position, TargetKind.Probe, id, $"probe {id}", pb.SideId));
+            }
+        if (treasures is not null)
+            foreach (var (id, te) in treasures)
+            {
+                if (te.ClusterId != mySector) continue;
+                objs.Add(new CandidateObject(te.Position, TargetKind.Treasure, id, $"treasure {id}"));
+            }
 
         return objs;
     }

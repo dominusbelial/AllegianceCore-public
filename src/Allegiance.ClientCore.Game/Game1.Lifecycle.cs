@@ -578,9 +578,6 @@ public sealed partial class Game1
         // a treasure's ThingGeo is its LoadDecal billboard or buyable model,
         // treasureIGC.cpp:118-171).
         _nativeTreasureRenderer = new NativeTreasureRenderer(GraphicsDevice, _assets, _hdMaterials);
-        _targetModelPreviewRenderer = new Rendering.TargetModelPreviewRenderer(
-            GraphicsDevice, _nativeShipRenderer, _nativeStationRenderer, _nativeAsteroidRenderer,
-            _nativeTreasureRenderer);
 
         // P227 — the shared procedural warp funnel mesh (the P218 pattern,
         // different shape). Generated once here (no content-pipeline asset)
@@ -589,7 +586,13 @@ public sealed partial class Game1
         // P562 — now a NATIVE-textured flowing vortex (alephbmp) with a
         // counter-rotating star core and transit swell; resolves the per-warp
         // funnel texture and the f02 star from the artwork tree via _assets.
+        // P805b — created before the target preview so the pane can draw the SAME
+        // funnel art an aleph target shows in the world.
         _warpRenderer = new WarpRenderer(GraphicsDevice, _assets, _hdMaterials);
+
+        _targetModelPreviewRenderer = new Rendering.TargetModelPreviewRenderer(
+            GraphicsDevice, _nativeShipRenderer, _nativeStationRenderer, _nativeAsteroidRenderer,
+            _nativeTreasureRenderer, _warpRenderer);
 
         // P289 — the shared procedural station mesh (the P218/P227 pattern,
         // hub + equatorial ring silhouette). Generated once here (no

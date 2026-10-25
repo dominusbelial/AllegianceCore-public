@@ -108,9 +108,16 @@ public class HudRenderer
     private readonly bool _gaugePercentage;
     /// <summary>P805 (row 418) — the P345/P376 3-D-view target-selection box is
     /// a port superset (native marks the selected target only with the radar
-    /// targetedbmp bracket, radarimage.cpp:307-319,352); default OFF = native.
+    /// targetedbmp bracket, radarimage.cpp:307-319,352); default OFF = native,
+    /// ON in Modern (Domingo, 2026-10-24).
+    /// <para><b>P805b.</b> A live, per-frame value rather than a constructor
+    /// snapshot: P805 only handed the flag to the CLASSIC renderer, so
+    /// <see cref="ModernHudRenderer"/>'s base gate stayed <c>false</c> and the
+    /// Modern selection box never drew. <see cref="Game1"/> sets this from
+    /// <see cref="HudSettings.SelectionBracketOn"/> before every draw, so both
+    /// skins follow the player's setting (and a settings-panel change) live.</para>
     /// </summary>
-    private readonly bool _selectionBracket;
+    public bool SelectionBracket { get; set; }
 
     /// <summary>
     /// HUD-21 — the 3-D target-model preview render target for this frame,
@@ -160,7 +167,7 @@ public class HudRenderer
         _nativeHud = nativeHudTextures;
         _damageWash = damageWash;
         _gaugePercentage = gaugePercentage;
-        _selectionBracket = selectionBracket;
+        SelectionBracket = selectionBracket;
     }
 
     /// <summary>
@@ -310,7 +317,7 @@ public class HudRenderer
             // and is hidden with it.
             if (model.FlightVisible && context.Target is { } ts)
                 {
-                    if (_selectionBracket)
+                    if (SelectionBracket)
                     {
                         DrawTargetSelectionBracket(new(new(ts.Center.X, ts.Center.Y), ts.Engaged, ts.Name, ts.HullFraction, ts.ShieldFraction, ts.IsEnemy, ts.OreFraction, ts.Distance, ts.ClosingSpeed, ts.SideColor));
                         ElementDrawn("Selected target bracket", "Target ore");

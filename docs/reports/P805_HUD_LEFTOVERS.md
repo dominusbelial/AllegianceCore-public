@@ -297,9 +297,17 @@ not a HUD surface) and did not fit this wave; the row stays open with this analy
 
 ## 5. Unfinished / follow-ups
 
+> **P805b follow-up (done).** The real-window proof below was delivered by **P805b**
+> (`docs/reports/P805B_HUD_PROOF.md`), which also fixed four preview/dispatch bugs this task's headless gate tests
+> could not see: the probe preview threw on a null visual; the aleph preview drew the texture as a flat quad instead of
+> native `LoadAleph`'s additive vortex (`effect/alephgeo.cpp:80-102`); part/development treasures resolved their art
+> from the object id instead of the `DataTreasureIGC.TreasureId` payload (`treasureIGC.cpp:118-171`), so they previewed
+> nothing; and the Modern selection box never drew because the `SelectionBracketOn` gate was only wired into the classic
+> renderer's constructor. The §1.2 claim "Modern overrides only the bracket's stroke style" therefore needed the P805b
+> fix to be true in a real window.
+
 - **Radar command subjects (433)** — needs the console.cpp:269-455 individual/group recipient machinery (see §2.3).
 - **Mine target preview** — the gate/art path exists but the port cannot target a mine yet.
-- **Aleph/probe/treasure preview screenshots** — the render path is exercised by the render pass and pinned by the
-  gate tests; a dedicated screenshot with the preview pane unobstructed (the parity tour leaves the main menu open)
-  is a nice-to-have.
+- **Aleph/probe/treasure preview screenshots** — **done in P805b** (Classic + Modern pane captures, both styles plus the
+  Classic `SelectionBracket: true` override).
 - **Modern target-pane slide art** — the offset is applied; a mid-slide capture was not staged (transient state).

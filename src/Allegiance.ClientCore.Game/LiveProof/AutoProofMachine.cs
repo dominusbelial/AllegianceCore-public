@@ -22,6 +22,11 @@ public enum AutoActionKind
     LaunchHull,     // in the hangar: select StrArg hull (or keep current) + launch
     GotoSector,     // P541 starmap goto to StrArg sector (name or id)
     SelectTarget,   // IntArg = (int)AutoTargetKind — frame nearest of that kind
+    SelectTargetSeq, // P805b — IntArg = (int)AutoTargetKind: a scripted --auto-target-seq
+                     // selection; select WITHOUT engaging the autopilot
+    DropProbe,      // P805b — fire the mounted dispenser (the N key, TK_DropMine)
+    SummonEnemy,    // P805b — relocate an MCP-harness enemy ahead of the pilot (port relocate cheat)
+    Stop,           // P805b — the Backspace TK_ThrottleZero preset (hold station)
     TargetClass,    // P623 — StrArg = "rel:cls[:dir]" class-filtered target
     Autoshot,       // real-backbuffer screenshot; ShotIndex = in-flight schedule index
     HeadToDock,     // engage autopilot to the home friendly station (server docks us)
@@ -68,6 +73,10 @@ public sealed class AutoProofMachine
     private bool _gotoEmitted;
     private bool _targetEmitted;
     private bool _targetClassEmitted;   // P623
+    private int _nextSeqTargetIndex;    // P805b — --auto-target-seq cursor
+    private double? _dropProbeAtSent;   // P805b
+    private bool _summonEnemyEmitted;   // P805b
+    private bool _stopEmitted;          // P805b
     private bool _dockHeadingEmitted;
     private bool _sweepStarted;
     private bool _sweepDone;
@@ -226,6 +235,38 @@ public sealed class AutoProofMachine
         {
             _targetClassEmitted = true;
             _due.Enqueue(new AutoAction(AutoActionKind.TargetClass, StrArg: _plan.AutoTargetClass));
+        }
+
+        // P805b — scripted target-selection sequence (--auto-target-seq): each
+        // entry fires its selection once at its after-launch second, and selects
+        // WITHOUT engaging the autopilot (so a pane-preview run can walk aleph →
+        // probe → treasure → enemy and hold station instead of flying into the
+        // aleph and transiting out of the sector).
+        while (_nextSeqTargetIndex < _plan.TargetSequence.Length
+               && t >= _plan.TargetSequence[_nextSeqTargetIndex].AtSeconds)
+        {
+            var seq = _plan.TargetSequence[_nextSeqTargetIndex++];
+            _due.Enqueue(new AutoAction(AutoActionKind.SelectTargetSeq, IntArg: (int)seq.Kind));
+        }
+        // P805b — the real dispenser drop (one probe for a one-round dispenser).
+        if (_plan.AutoDropProbeAt is { } dropAt && t >= dropAt && _dropProbeAtSent is null)
+        {
+            _dropProbeAtSent = dropAt;
+            _due.Enqueue(new AutoAction(AutoActionKind.DropProbe));
+        }
+        // P805b — summon an enemy into view (the executor retries until a real
+        // airborne enemy exists).
+        if (_plan.AutoSummonEnemyAt is { } summonAt && t >= summonAt && !_summonEnemyEmitted)
+        {
+            _summonEnemyEmitted = true;
+            _due.Enqueue(new AutoAction(AutoActionKind.SummonEnemy,
+                IntArg: (int)MathF.Round(_plan.AutoSummonEnemyDistance)));
+        }
+        // P805b — hold station: the Backspace throttle-zero preset (-1).
+        if (_plan.StopAfter is { } stopAt && t >= stopAt && !_stopEmitted)
+        {
+            _stopEmitted = true;
+            _due.Enqueue(new AutoAction(AutoActionKind.Stop));
         }
 
         // Timed after-launch autoshots. When a class-filtered target is set,

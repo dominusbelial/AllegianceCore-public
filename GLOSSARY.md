@@ -177,6 +177,20 @@ list in **reverse**.
 - **Target pane / gauges** — `src/Allegiance.ClientCore.Game/Rendering/TargetPaneModel.cs`,
   `src/Allegiance.ClientCore.Game/Rendering/ClassicGaugeSpec.cs`,
   `src/Allegiance.ClientCore.Game/Rendering/GaugeKind.cs`. Reports HUD3/HUD6/HUD7.
+- **Target model preview** — the 3-D model the target pane shows for the selected
+  target (native `SetTargetGeo` + `targetCamera`, `WinTrek/WinTrek.cpp:8783-8818`):
+  gate/camera/light rules in `Rendering/TargetModelPreview.cs`, the 256² render
+  target + per-kind draws in `Rendering/TargetModelPreviewRenderer.cs`
+  (ship/station/asteroid mesh, aleph vortex via `Rendering/WarpRenderer.cs`,
+  treasure model/decal and probe mesh via `Rendering/NativeTreasureRenderer.cs`).
+  Reports `docs/reports/HUD21_TARGET_MODEL_PREVIEW.md`, `P805B_HUD_PROOF.md`.
+- **Live-proof automation** — the real-window proof harness: the flag grammar and
+  sequencing in `src/Allegiance.ClientCore.Game/LiveProof/` (`AutoProofPlan`,
+  `AutoProofMachine`), the client actions in `Game1.AutoProof.cs`, and the
+  one-command launcher `scripts/live-proof.sh` (local server + MCP bots + a
+  windowed client; `--mapgen` for a seeded generated arena, `--hud-settings` for
+  the style, `--auto-target-seq`/`--auto-drop-probe-at`/`--auto-summon-enemy-at`
+  for scripted targets). Reports P572, P805B.
 - **Starmap / minimap** — `Rendering/Minimap*.cs`, `Rendering/StarmapLayout.cs`.
 - **Screens** — intro, connect, hangar/loadout, team lobby, briefing, panes.
   `src/Allegiance.ClientCore.Game/Game1.*.cs` (Game1.Hangar.cs, Game1.Panes.cs,

@@ -36,6 +36,9 @@ public sealed class TargetModelPreviewRenderer : IDisposable
     private readonly NativeStationRenderer _station;
     private readonly NativeAsteroidRenderer _asteroid;
     private readonly NativeTreasureRenderer _treasure;
+    private readonly WarpRenderer _warp;
+    private readonly bool _ownsTreasure;   // created here (no caller-supplied instance)
+    private readonly bool _ownsWarp;       // P805b — same ownership rule for the funnel renderer
     private RenderTarget2D? _rt;
 
     public TargetModelPreviewRenderer(
@@ -43,13 +46,20 @@ public sealed class TargetModelPreviewRenderer : IDisposable
         NativeShipRenderer ship,
         NativeStationRenderer station,
         NativeAsteroidRenderer asteroid,
-        NativeTreasureRenderer? treasure = null)
+        NativeTreasureRenderer? treasure = null,
+        WarpRenderer? warp = null)
     {
         _gd = gd;
         _ship = ship;
         _station = station;
         _asteroid = asteroid;
+        _ownsTreasure = treasure is null;
         _treasure = treasure ?? new NativeTreasureRenderer(gd, Assets.AssetSources.Game, null);
+        // P805b — the aleph preview draws the port's native-fidelity vortex art
+        // (see RenderWarp); it shares the scene's WarpRenderer so the pane and the
+        // world show the SAME funnel mesh/texture.
+        _ownsWarp = warp is null;
+        _warp = warp ?? new WarpRenderer(gd, Assets.AssetSources.Game, null);
     }
 
     /// <summary>The last rendered preview, or null before the first render.</summary>
@@ -118,10 +128,10 @@ public sealed class TargetModelPreviewRenderer : IDisposable
     /// matrix already carries the radius-1 scale folded in by the caller.</summary>
     public void RenderTreasureModel(Rendering.TreasureVisual visual, short treasureId,
         in Matrix world, in Matrix view, in Matrix proj, double elapsed, SectorLighting lighting,
-        RenderTarget2D? restoreTo)
+        RenderTarget2D? restoreTo, bool spin = true)
     {
         Begin();
-        _treasure.DrawModel(visual, treasureId, world, view, proj, elapsed, lighting);
+        _treasure.DrawModel(visual, treasureId, world, view, proj, elapsed, lighting, spin);
         End(restoreTo);
     }
 
@@ -141,9 +151,32 @@ public sealed class TargetModelPreviewRenderer : IDisposable
         End(restoreTo);
     }
 
+    /// <summary>P805b — the aleph preview. Native's <c>SetTargetGeo</c> hands the
+    /// pane the target's own <c>ThingGeo</c> (<c>WinTrek.cpp:8783-8818</c>); for an
+    /// aleph that ThingGeo is <c>LoadAleph</c>'s geometry — an additive textured
+    /// funnel/vortex (<c>effect/alephgeo.cpp:80-102,205-232</c>;
+    /// <c>WinTrek/trekigc.cpp:1900-1924</c>) — NOT a flat camera-facing surface.
+    /// Renders the port's native-fidelity funnel mesh (the same one the world
+    /// uses, <see cref="WarpMeshFactory"/>) with the native radius-1 framing: the
+    /// preview normalisation is <c>1/m_radiusMesh</c> (<c>effect/thinggeo.cpp:367-381,
+    /// 1185-1193,1482-1573</c>), so it is folded into <paramref name="world"/> and
+    /// the radius passed to the renderer is 1.</summary>
+    public void RenderWarp(Matrix world, Matrix view, Matrix proj, string textureName,
+        short warpId, RenderTarget2D? restoreTo)
+    {
+        Begin();
+        _warp.Draw(world, view, proj, 0.0, worldRadius: 1f, textureName, warpId,
+            advanceClock: false);
+        End(restoreTo);
+    }
+
     public void Dispose()
     {
         _rt?.Dispose();
         _rt = null;
+        // Only the fallbacks this type created are ours to dispose; a
+        // caller-supplied renderer is owned by the caller (Game1 owns both).
+        if (_ownsTreasure) _treasure.Dispose();
+        if (_ownsWarp) _warp.Dispose();
     }
 }

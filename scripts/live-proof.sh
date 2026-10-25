@@ -28,8 +28,18 @@
 #   --name <name>            client player name (default proof)
 #   --chase                  initial chase camera (default cockpit)
 #   --hide-hud               hide the HUD overlay for a clean frame
-#   --bots "<tool> <json>"   spawn bots via MCP before launching the client,
-#                            e.g. 'spawn_scenario {"size":5,"target_sector":"Alderan"}'
+#   --bots "<tool> <json>"   spawn bots via MCP (see --bots-after)
+#   --bots-after <s>         issue the --bots command this many seconds AFTER the
+#                            client starts (0 = before it, the original order).
+#                            Needed when the bots must join a mission the proof
+#                            client has already launched into.
+#   --mapgen <type>          generated map instead of --map (e.g. SingleRing),
+#                            so per-sector treasure counts spawn deterministically
+#                            (P805b target-preview proof: a treasure to select)
+#   --map-seed <n>           fixed generated-map seed (default 805)
+#   --player-treasures <n>   home-sector treasure count for a generated map (default 0)
+#   --hud-settings <file>    hud.json the client loads (ALLEGIANCE_HUD_SETTINGS):
+#                            the style (Classic|Modern) and per-style overrides
 #   --no-admin-cheats        do not enable adminCheats in the server config
 #   --server-config <file>   use an existing server config instead of generating one
 #   --no-window              (debug) skip the client, only boot the server + bots
@@ -41,6 +51,16 @@ set -uo pipefail
 
 DOTNET="${DOTNET:-$(command -v dotnet)}"
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
+
+# Local-only external path overrides (see local.env.example) — e.g. the artwork
+# corpus. Honoured identically by scripts/dev-stack.sh and tools/run-tests.sh;
+# this script's --art help has always promised it, so do it.
+if [ -f "$REPO/local.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$REPO/local.env"
+  set +a
+fi
 ART="${ALLEGIANCE_ARTWORK_PATH:-$REPO/../Artwork}"
 
 PORT=6073
@@ -54,6 +74,11 @@ NAME="proof"
 CAMERA="cockpit"
 HIDE_HUD=0
 BOTS=""
+BOTS_AFTER=0
+MAPGEN=""
+MAP_SEED=805
+PLAYER_TREASURES=0
+HUD_SETTINGS=""
 ADMIN_CHEATS=1
 SERVER_CONFIG=""
 NO_WINDOW=0
@@ -73,6 +98,11 @@ while [ "$#" -gt 0 ]; do
     --chase) CAMERA="chase"; shift;;
     --hide-hud) HIDE_HUD=1; shift;;
     --bots) BOTS="$2"; shift 2;;
+    --bots-after) BOTS_AFTER="$2"; shift 2;;
+    --mapgen) MAPGEN="$2"; shift 2;;
+    --map-seed) MAP_SEED="$2"; shift 2;;
+    --player-treasures) PLAYER_TREASURES="$2"; shift 2;;
+    --hud-settings) HUD_SETTINGS="$2"; shift 2;;
     --no-admin-cheats) ADMIN_CHEATS=0; shift;;
     --server-config) SERVER_CONFIG="$2"; shift 2;;
     --no-window) NO_WINDOW=1; shift;;
@@ -116,6 +146,14 @@ if [ -z "$SERVER_CFG" ]; then
   SERVER_CFG="$OUT_DIR/server.json"
   CHEATS='"adminCheats": { "enabled": true, "allowNames": [ "mcp-*", "proof*" ] },'
   [ "$ADMIN_CHEATS" -eq 0 ] && CHEATS=""
+  if [ -n "$MAPGEN" ]; then
+    # P805b — generated arena: the seed makes the layout rebuildable and the
+    # per-home-sector treasure count spawns real treasures to select.
+    MAP_FIELDS='"mapGen": { "type": '"\"$MAPGEN\""', "seed": '"$MAP_SEED"', "playerSectorTreasures": '"$PLAYER_TREASURES"' },'
+    echo "[live-proof] generated map: type=$MAPGEN seed=$MAP_SEED playerSectorTreasures=$PLAYER_TREASURES"
+  else
+    MAP_FIELDS='"map": '"\"$MAP\""','
+  fi
   cat > "$SERVER_CFG" <<EOF
 {
   "artPath": "$ART",
@@ -123,7 +161,7 @@ if [ -z "$SERVER_CFG" ]; then
   "port": $PORT,
   "updatesPerSecond": 20,
   "games": [
-    { "name": "P572 Live Proof", "map": "$MAP", "teams": 2, "civIds": [ 1, 3 ], "sideNames": [ "Alpha", "Bravo" ] }
+    { "name": "P572 Live Proof", $MAP_FIELDS "teams": 2, "civIds": [ 1, 3 ], "sideNames": [ "Alpha", "Bravo" ] }
   ],
   "liveSettings": {
     "testHarness": { "enabled": true, "characterNamePrefix": "mcp-", "money": 500000, "ignoreTechGate": true },
@@ -150,12 +188,16 @@ for i in $(seq 1 60); do
 done
 echo "[live-proof] server listening on 127.0.0.1:$PORT (pid $SRV_PID)"
 
-# ── optional MCP bot scenario ────────────────────────────────────────────────
-if [ -n "$BOTS" ]; then
-  tool="${BOTS%% *}"
-  args="${BOTS#* }"
+# ── optional MCP bot scenario ─────────────────────────────────────────────────
+# P805b — the spawn command may be issued immediately (the original behaviour) or
+# delayed until after the client has launched (--bots-after), which is what a
+# proof needs when the bots must join a mission the client is already flying.
+start_mcp_driver() {
+  local tool="${BOTS%% *}"
+  local args="${BOTS#* }"
   [ -z "$args" ] && args="{}"
-  echo "[live-proof] spawning bots via MCP: $tool $args"
+  MCP_TOOL="$tool"
+  MCP_ARGS="$args"
   CMD_FILE="$OUT_DIR/mcp_cmds.jsonl"
   MC_OUT="$OUT_DIR/mcp_out.log"
   MC_ERR="$OUT_DIR/mcp_err.log"
@@ -165,14 +207,22 @@ if [ -n "$BOTS" ]; then
   MCP_PID=$!
   PIDS+=("$MCP_PID")
   sleep 3
-  printf '%s\n' "{\"tool\": \"$tool\", \"args\": $args}" >> "$CMD_FILE"
+}
+issue_mcp_command() {
+  echo "[live-proof] spawning bots via MCP: $MCP_TOOL $MCP_ARGS"
+  printf '%s\n' "{\"tool\": \"$MCP_TOOL\", \"args\": $MCP_ARGS}" >> "$CMD_FILE"
   # wait for the RESULT line mentioning the tool (up to 180 s)
-  found=0
+  local found=0
   for i in $(seq 1 180); do
-    if grep -q "RESULT $tool " "$MC_OUT" 2>/dev/null; then found=1; break; fi
+    if grep -q "RESULT $MCP_TOOL " "$MC_OUT" 2>/dev/null; then found=1; break; fi
     sleep 1
   done
   if [ "$found" -eq 1 ]; then echo "[live-proof] bots spawned ($(grep -c 'RESULT ' "$MC_OUT") result(s))"; else echo "[live-proof] WARNING: no MCP result seen (see $MC_OUT)"; fi
+}
+
+if [ -n "$BOTS" ] && [ "$BOTS_AFTER" -le 0 ]; then
+  start_mcp_driver
+  issue_mcp_command
 fi
 
 if [ "$NO_WINDOW" -eq 1 ]; then echo "[live-proof] --no-window: server+bots only; sleeping 20s to observe"; sleep 20; exit 0; fi
@@ -187,11 +237,31 @@ read -r -a EXTRA <<< "$CLIENT_EXTRA"          # split --client-extra into words
 echo "[live-proof] launching windowed client: ${CLIENT_FLAGS[*]} (exit after ${EXIT_AFTER}s)"
 export ALLEGIANCE_ARTWORK_PATH="$ART"
 export MONOGAME_GL_PROFILE=OpenGL
+# A proof run must not clobber the operator's real pilot profile / HUD settings:
+# keep the app's per-user config inside the run directory unless the caller set one.
+# (.NET returns an EMPTY ApplicationData when XDG_CONFIG_HOME points at a missing
+# directory, which would drop the client's data dir into the CWD — create it.)
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$OUT_DIR/xdg}"
+mkdir -p "$XDG_CONFIG_HOME"
+if [ -n "$HUD_SETTINGS" ]; then
+  export ALLEGIANCE_HUD_SETTINGS="$(cd "$(dirname "$HUD_SETTINGS")" && pwd)/$(basename "$HUD_SETTINGS")"
+  echo "[live-proof] HUD settings: $ALLEGIANCE_HUD_SETTINGS -> $(tr -d '\n' < "$ALLEGIANCE_HUD_SETTINGS")"
+fi
 DISPLAY="${DISPLAY:-:0}" WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}" \
   "$CLIENT_EXE" 127.0.0.1 "$PORT" "$NAME" "${CLIENT_FLAGS[@]}" "${EXTRA[@]}" > "$OUT_DIR/client.out" 2>&1 &
 CLIENT_PID=$!
 PIDS+=("$CLIENT_PID")
 echo "[live-proof] client pid $CLIENT_PID (logs: $OUT_DIR/client.out)"
+
+# P805b — the delayed bot scenario (after the client is airborne). The MCP
+# driver is started HERE too: its startup probe seats a ship the moment it
+# connects, so starting it early would take this pilot's side before the client
+# requests it (observed: the client is then refused for TeamBalance).
+if [ -n "$BOTS" ] && [ "$BOTS_AFTER" -gt 0 ]; then
+  sleep "$BOTS_AFTER"
+  start_mcp_driver
+  issue_mcp_command
+fi
 
 # wait for the client to exit (its --exit-after deadline) or an outer timeout
 MAX=$(awk -v n="$EXIT_AFTER" 'BEGIN{print int(n)+40}')
