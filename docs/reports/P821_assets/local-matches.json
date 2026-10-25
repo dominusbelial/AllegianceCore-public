@@ -1,0 +1,798 @@
+[
+  {
+    "source": ".scratch/p821/base-normal",
+    "label": "normal-1",
+    "civs": [
+      25,
+      3
+    ],
+    "winner": 1,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 6,
+        "Deaths": 7
+      },
+      {
+        "Id": 1,
+        "Kills": 12,
+        "Deaths": 2
+      }
+    ],
+    "stage": "Over",
+    "sim": 617.4499999999862,
+    "wall": 289.8448911,
+    "requested": [
+      {
+        "Support": 2,
+        "Fighter": 6,
+        "Interceptor": 3,
+        "Scout": 2,
+        "Bomber": 2
+      },
+      {
+        "Support": 2,
+        "Fighter": 6,
+        "Interceptor": 3,
+        "Scout": 2,
+        "Bomber": 2
+      }
+    ],
+    "initialActual": [
+      {
+        "Support": 2,
+        "Scout": 10,
+        "Interceptor": 3
+      },
+      {
+        "Support": 2,
+        "Scout": 4,
+        "Fighter": 9
+      }
+    ],
+    "oreSold": [
+      67.5,
+      0.0
+    ],
+    "initialReceiptMismatches": [],
+    "minersAtEnd": [
+      {
+        "Side": 0,
+        "Alive": 2
+      },
+      {
+        "Side": 1,
+        "Alive": 1
+      }
+    ],
+    "initialMinerDeaths": [
+      0,
+      1
+    ],
+    "minerSectorSamples": [
+      {
+        "Ganymede": 6,
+        "Rigel": 2,
+        "Alderan": 7
+      },
+      {
+        "Organia": 3,
+        "Gaia": 3,
+        "Alderan": 7
+      }
+    ],
+    "hullRoleSamples": [
+      {
+        "Scout": 108,
+        "Interceptor": 30,
+        "Pod": 11,
+        "Fighter": 1
+      },
+      {
+        "Scout": 54,
+        "Fighter": 81,
+        "Pod": 15
+      }
+    ],
+    "failures": 0,
+    "samples": 10,
+    "limits": "Initial classes use the first authoritative server snapshot; selected/observed hull mismatches are explicit; support is identified by negative-power purchase policy; repeated hull samples count support by hull class and identify pods separately by native ability bit. Ore is logged sale quantity, not credits. Miner census is authoritative; sector counts are 30-second repeated samples. Short matches are not a balance estimate."
+  },
+  {
+    "source": ".scratch/p821/base-normal",
+    "label": "normal-2",
+    "civs": [
+      25,
+      3
+    ],
+    "winner": 1,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 14,
+        "Deaths": 4
+      },
+      {
+        "Id": 1,
+        "Kills": 17,
+        "Deaths": 9
+      }
+    ],
+    "stage": "Over",
+    "sim": 617.8999999999858,
+    "wall": 286.6400273,
+    "requested": [
+      {
+        "Support": 2,
+        "Fighter": 6,
+        "Interceptor": 3,
+        "Scout": 2,
+        "Bomber": 2
+      },
+      {
+        "Support": 2,
+        "Scout": 3,
+        "Fighter": 5,
+        "Interceptor": 3,
+        "Bomber": 2
+      }
+    ],
+    "initialActual": [
+      {
+        "Support": 2,
+        "Scout": 10,
+        "Interceptor": 3
+      },
+      {
+        "Support": 2,
+        "Scout": 4,
+        "Fighter": 9
+      }
+    ],
+    "oreSold": [
+      67.5,
+      90.0
+    ],
+    "initialReceiptMismatches": [],
+    "minersAtEnd": [
+      {
+        "Side": 0,
+        "Alive": 2
+      },
+      {
+        "Side": 1,
+        "Alive": 2
+      }
+    ],
+    "initialMinerDeaths": [
+      0,
+      0
+    ],
+    "minerSectorSamples": [
+      {
+        "Ganymede": 6,
+        "Rigel": 3,
+        "Alderan": 6
+      },
+      {
+        "Organia": 5,
+        "Gaia": 2,
+        "Alderan": 7,
+        "Juniper": 1
+      }
+    ],
+    "hullRoleSamples": [
+      {
+        "Scout": 98,
+        "Interceptor": 26,
+        "Pod": 23,
+        "Fighter": 3
+      },
+      {
+        "Scout": 52,
+        "Fighter": 83,
+        "Pod": 15
+      }
+    ],
+    "failures": 0,
+    "samples": 10,
+    "limits": "Initial classes use the first authoritative server snapshot; selected/observed hull mismatches are explicit; support is identified by negative-power purchase policy; repeated hull samples count support by hull class and identify pods separately by native ability bit. Ore is logged sale quantity, not credits. Miner census is authoritative; sector counts are 30-second repeated samples. Short matches are not a balance estimate."
+  },
+  {
+    "source": ".scratch/p821/base-swapped",
+    "label": "swapped-1",
+    "civs": [
+      3,
+      25
+    ],
+    "winner": 0,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 14,
+        "Deaths": 5
+      },
+      {
+        "Id": 1,
+        "Kills": 12,
+        "Deaths": 4
+      }
+    ],
+    "stage": "Over",
+    "sim": 617.8499999999858,
+    "wall": 286.1005812,
+    "requested": [
+      {
+        "Support": 2,
+        "Fighter": 6,
+        "Interceptor": 3,
+        "Scout": 2,
+        "Bomber": 2
+      },
+      {
+        "Support": 2,
+        "Fighter": 6,
+        "Interceptor": 3,
+        "Scout": 2,
+        "Bomber": 2
+      }
+    ],
+    "initialActual": [
+      {
+        "Support": 2,
+        "Scout": 4,
+        "Fighter": 9
+      },
+      {
+        "Support": 2,
+        "Scout": 10,
+        "Interceptor": 3
+      }
+    ],
+    "oreSold": [
+      90.0,
+      67.5
+    ],
+    "initialReceiptMismatches": [],
+    "minersAtEnd": [
+      {
+        "Side": 0,
+        "Alive": 2
+      },
+      {
+        "Side": 1,
+        "Alive": 2
+      }
+    ],
+    "initialMinerDeaths": [
+      0,
+      0
+    ],
+    "minerSectorSamples": [
+      {
+        "Ganymede": 4,
+        "Rigel": 2,
+        "Alderan": 8,
+        "Plato": 1
+      },
+      {
+        "Organia": 4,
+        "Gaia": 6,
+        "Alderan": 5
+      }
+    ],
+    "hullRoleSamples": [
+      {
+        "Scout": 47,
+        "Fighter": 71,
+        "Pod": 25
+      },
+      {
+        "Scout": 97,
+        "Interceptor": 23,
+        "Pod": 26,
+        "Fighter": 4
+      }
+    ],
+    "failures": 0,
+    "samples": 10,
+    "limits": "Initial classes use the first authoritative server snapshot; selected/observed hull mismatches are explicit; support is identified by negative-power purchase policy; repeated hull samples count support by hull class and identify pods separately by native ability bit. Ore is logged sale quantity, not credits. Miner census is authoritative; sector counts are 30-second repeated samples. Short matches are not a balance estimate."
+  },
+  {
+    "source": ".scratch/p821/base-swapped",
+    "label": "swapped-2",
+    "civs": [
+      3,
+      25
+    ],
+    "winner": 0,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 14,
+        "Deaths": 4
+      },
+      {
+        "Id": 1,
+        "Kills": 10,
+        "Deaths": 8
+      }
+    ],
+    "stage": "Over",
+    "sim": 617.8999999999858,
+    "wall": 286.1193444,
+    "requested": [
+      {
+        "Support": 2,
+        "Scout": 3,
+        "Fighter": 5,
+        "Interceptor": 3,
+        "Bomber": 2
+      },
+      {
+        "Support": 2,
+        "Fighter": 5,
+        "Scout": 3,
+        "Interceptor": 3,
+        "Bomber": 2
+      }
+    ],
+    "initialActual": [
+      {
+        "Support": 2,
+        "Scout": 4,
+        "Fighter": 9
+      },
+      {
+        "Support": 2,
+        "Scout": 10,
+        "Interceptor": 3
+      }
+    ],
+    "oreSold": [
+      0.0,
+      67.5
+    ],
+    "initialReceiptMismatches": [],
+    "minersAtEnd": [
+      {
+        "Side": 0,
+        "Alive": 1
+      },
+      {
+        "Side": 1,
+        "Alive": 2
+      }
+    ],
+    "initialMinerDeaths": [
+      1,
+      0
+    ],
+    "minerSectorSamples": [
+      {
+        "Ganymede": 2,
+        "Rigel": 1,
+        "Alderan": 8,
+        "Plato": 1
+      },
+      {
+        "Organia": 4,
+        "Gaia": 6,
+        "Alderan": 5
+      }
+    ],
+    "hullRoleSamples": [
+      {
+        "Scout": 51,
+        "Fighter": 83,
+        "Pod": 16
+      },
+      {
+        "Scout": 90,
+        "Interceptor": 28,
+        "Pod": 19,
+        "Fighter": 4
+      }
+    ],
+    "failures": 0,
+    "samples": 10,
+    "limits": "Initial classes use the first authoritative server snapshot; selected/observed hull mismatches are explicit; support is identified by negative-power purchase policy; repeated hull samples count support by hull class and identify pods separately by native ability bit. Ore is logged sale quantity, not credits. Miner census is authoritative; sector counts are 30-second repeated samples. Short matches are not a balance estimate."
+  },
+  {
+    "source": ".scratch/p821/after-normal",
+    "label": "normal-1",
+    "civs": [
+      25,
+      3
+    ],
+    "winner": 0,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 18,
+        "Deaths": 6
+      },
+      {
+        "Id": 1,
+        "Kills": 10,
+        "Deaths": 9
+      }
+    ],
+    "stage": "Over",
+    "sim": 617.3999999999862,
+    "wall": 286.9409516,
+    "requested": [
+      {
+        "Support": 2,
+        "Fighter": 6,
+        "Interceptor": 3,
+        "Scout": 2,
+        "Bomber": 2
+      },
+      {
+        "Support": 2,
+        "Fighter": 6,
+        "Interceptor": 3,
+        "Scout": 2,
+        "Bomber": 2
+      }
+    ],
+    "initialActual": [
+      {
+        "Support": 2,
+        "Scout": 8,
+        "Interceptor": 5
+      },
+      {
+        "Support": 2,
+        "Scout": 7,
+        "Fighter": 6
+      }
+    ],
+    "oreSold": [
+      67.5,
+      90.0
+    ],
+    "initialReceiptMismatches": [],
+    "minersAtEnd": [
+      {
+        "Side": 0,
+        "Alive": 2
+      },
+      {
+        "Side": 1,
+        "Alive": 2
+      }
+    ],
+    "initialMinerDeaths": [
+      0,
+      0
+    ],
+    "minerSectorSamples": [
+      {
+        "Ganymede": 6,
+        "Alderan": 7,
+        "Rigel": 2
+      },
+      {
+        "Organia": 4,
+        "Gaia": 2,
+        "Alderan": 8,
+        "Juniper": 1
+      }
+    ],
+    "hullRoleSamples": [
+      {
+        "Scout": 89,
+        "Interceptor": 53,
+        "Pod": 8
+      },
+      {
+        "Scout": 82,
+        "Fighter": 54,
+        "Pod": 14
+      }
+    ],
+    "failures": 0,
+    "samples": 10,
+    "limits": "Initial classes use the first authoritative server snapshot; selected/observed hull mismatches are explicit; support is identified by negative-power purchase policy; repeated hull samples count support by hull class and identify pods separately by native ability bit. Ore is logged sale quantity, not credits. Miner census is authoritative; sector counts are 30-second repeated samples. Short matches are not a balance estimate."
+  },
+  {
+    "source": ".scratch/p821/after-normal",
+    "label": "normal-2",
+    "civs": [
+      25,
+      3
+    ],
+    "winner": 0,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 14,
+        "Deaths": 2
+      },
+      {
+        "Id": 1,
+        "Kills": 11,
+        "Deaths": 7
+      }
+    ],
+    "stage": "Over",
+    "sim": 617.3999999999862,
+    "wall": 289.9336281,
+    "requested": [
+      {
+        "Support": 2,
+        "Fighter": 6,
+        "Interceptor": 3,
+        "Scout": 2,
+        "Bomber": 2
+      },
+      {
+        "Support": 2,
+        "Fighter": 6,
+        "Interceptor": 3,
+        "Scout": 2,
+        "Bomber": 2
+      }
+    ],
+    "initialActual": [
+      {
+        "Support": 2,
+        "Scout": 9,
+        "Interceptor": 4
+      },
+      {
+        "Support": 2,
+        "Scout": 8,
+        "Fighter": 5
+      }
+    ],
+    "oreSold": [
+      67.5,
+      90.0
+    ],
+    "initialReceiptMismatches": [],
+    "minersAtEnd": [
+      {
+        "Side": 0,
+        "Alive": 2
+      },
+      {
+        "Side": 1,
+        "Alive": 2
+      }
+    ],
+    "initialMinerDeaths": [
+      0,
+      0
+    ],
+    "minerSectorSamples": [
+      {
+        "Ganymede": 6,
+        "Alderan": 8,
+        "Rigel": 1
+      },
+      {
+        "Organia": 4,
+        "Gaia": 2,
+        "Alderan": 8,
+        "Juniper": 1
+      }
+    ],
+    "hullRoleSamples": [
+      {
+        "Scout": 82,
+        "Interceptor": 40,
+        "Pod": 23
+      },
+      {
+        "Scout": 84,
+        "Fighter": 48,
+        "Pod": 18
+      }
+    ],
+    "failures": 0,
+    "samples": 10,
+    "limits": "Initial classes use the first authoritative server snapshot; selected/observed hull mismatches are explicit; support is identified by negative-power purchase policy; repeated hull samples count support by hull class and identify pods separately by native ability bit. Ore is logged sale quantity, not credits. Miner census is authoritative; sector counts are 30-second repeated samples. Short matches are not a balance estimate."
+  },
+  {
+    "source": ".scratch/p821/after-swapped",
+    "label": "swapped-1",
+    "civs": [
+      3,
+      25
+    ],
+    "winner": 0,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 8,
+        "Deaths": 3
+      },
+      {
+        "Id": 1,
+        "Kills": 6,
+        "Deaths": 4
+      }
+    ],
+    "stage": "Over",
+    "sim": 617.4999999999861,
+    "wall": 290.595998,
+    "requested": [
+      {
+        "Support": 2,
+        "Fighter": 6,
+        "Interceptor": 3,
+        "Scout": 2,
+        "Bomber": 2
+      },
+      {
+        "Support": 2,
+        "Fighter": 6,
+        "Interceptor": 3,
+        "Scout": 2,
+        "Bomber": 2
+      }
+    ],
+    "initialActual": [
+      {
+        "Support": 2,
+        "Scout": 7,
+        "Fighter": 6
+      },
+      {
+        "Support": 2,
+        "Scout": 8,
+        "Interceptor": 5
+      }
+    ],
+    "oreSold": [
+      90.0,
+      67.5
+    ],
+    "initialReceiptMismatches": [],
+    "minersAtEnd": [
+      {
+        "Side": 0,
+        "Alive": 2
+      },
+      {
+        "Side": 1,
+        "Alive": 2
+      }
+    ],
+    "initialMinerDeaths": [
+      0,
+      0
+    ],
+    "minerSectorSamples": [
+      {
+        "Ganymede": 4,
+        "Rigel": 2,
+        "Alderan": 8,
+        "Plato": 1
+      },
+      {
+        "Organia": 5,
+        "Gaia": 5,
+        "Alderan": 5
+      }
+    ],
+    "hullRoleSamples": [
+      {
+        "Scout": 77,
+        "Fighter": 52,
+        "Pod": 13
+      },
+      {
+        "Scout": 75,
+        "Interceptor": 50,
+        "Pod": 13,
+        "Fighter": 3
+      }
+    ],
+    "failures": 0,
+    "samples": 10,
+    "limits": "Initial classes use the first authoritative server snapshot; selected/observed hull mismatches are explicit; support is identified by negative-power purchase policy; repeated hull samples count support by hull class and identify pods separately by native ability bit. Ore is logged sale quantity, not credits. Miner census is authoritative; sector counts are 30-second repeated samples. Short matches are not a balance estimate."
+  },
+  {
+    "source": ".scratch/p821/after-swapped",
+    "label": "swapped-2",
+    "civs": [
+      3,
+      25
+    ],
+    "winner": 1,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 4,
+        "Deaths": 4
+      },
+      {
+        "Id": 1,
+        "Kills": 5,
+        "Deaths": 2
+      }
+    ],
+    "stage": "Over",
+    "sim": 617.8499999999858,
+    "wall": 288.3723831,
+    "requested": [
+      {
+        "Support": 2,
+        "Fighter": 6,
+        "Interceptor": 3,
+        "Scout": 2,
+        "Bomber": 2
+      },
+      {
+        "Support": 2,
+        "Fighter": 6,
+        "Interceptor": 3,
+        "Scout": 2,
+        "Bomber": 2
+      }
+    ],
+    "initialActual": [
+      {
+        "Support": 2,
+        "Scout": 8,
+        "Fighter": 5
+      },
+      {
+        "Support": 2,
+        "Scout": 8,
+        "Interceptor": 5
+      }
+    ],
+    "oreSold": [
+      90.0,
+      67.5
+    ],
+    "initialReceiptMismatches": [],
+    "minersAtEnd": [
+      {
+        "Side": 0,
+        "Alive": 2
+      },
+      {
+        "Side": 1,
+        "Alive": 2
+      }
+    ],
+    "initialMinerDeaths": [
+      0,
+      0
+    ],
+    "minerSectorSamples": [
+      {
+        "Ganymede": 4,
+        "Rigel": 2,
+        "Alderan": 8,
+        "Plato": 1
+      },
+      {
+        "Organia": 4,
+        "Gaia": 6,
+        "Alderan": 5
+      }
+    ],
+    "hullRoleSamples": [
+      {
+        "Scout": 96,
+        "Fighter": 46,
+        "Pod": 8
+      },
+      {
+        "Scout": 96,
+        "Interceptor": 50,
+        "Pod": 4
+      }
+    ],
+    "failures": 0,
+    "samples": 10,
+    "limits": "Initial classes use the first authoritative server snapshot; selected/observed hull mismatches are explicit; support is identified by negative-power purchase policy; repeated hull samples count support by hull class and identify pods separately by native ability bit. Ore is logged sale quantity, not credits. Miner census is authoritative; sector counts are 30-second repeated samples. Short matches are not a balance estimate."
+  }
+]

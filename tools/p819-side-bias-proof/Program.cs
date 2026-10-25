@@ -9,6 +9,7 @@ using Srv = Allegiance.Server.Server;
 // Pass --swap for the same positions with the civilizations exchanged.
 var directory = Path.GetFullPath(Option("--output", ".scratch/p819/local"));
 Directory.CreateDirectory(directory);
+if (args.Contains("--catalogue")) { P821Catalogue.Write(directory); return; }
 bool swap = args.Contains("--swap");
 int matches = int.Parse(Option("--matches", "1"));
 int tickMs = int.Parse(Option("--tick-ms", "20"));
@@ -28,7 +29,7 @@ for (int match = 1; match <= matches; match++)
         using var server = new Srv();
         server.Boot(new()
         {
-            Port = 0, SideSelectAutoSeatSeconds = 30,
+            Port = 0, SideSelectAutoSeatSeconds = 30, ConsoleVerbose = true,
             Showcase = new() { TechMode = "research", IncomeMultiplier = 5000, ResearchTimeScale = 8,
                 FinaleTimeoutSeconds = finaleSeconds },
             LiveSettings = new() { TimeDilation = "off", AutoNextMatch = new() { Enabled = false } },
@@ -60,6 +61,7 @@ for (int match = 1; match <= matches; match++)
             var mission = server.Missions[0];
             File.WriteAllText(Path.Combine(directory, label + "-geometry.json"), JsonSerializer.Serialize(
                 mission.Sectors.Select(s => new { s.Id, s.Name,
+                    Rocks = s.Mineable.Select(a => new { a.Data.AsteroidId, a.Data.Name, a.Data.Position, a.CanMineHe3, a.OreRemaining }),
                     Stations = s.Stations.Select(st => new { st.SideId, st.StationId, st.Position }),
                     Warps = s.Warps.Select(w => new { w.Warp.WarpId, w.Warp.Position, To = w.Destination?.Id }) }), JsonOptions()));
             double next = 0;
@@ -71,7 +73,9 @@ for (int match = 1; match <= matches; match++)
                     var bots = manager.ActiveBots();
                     writer.WriteLine("[p819-snapshot] " + JsonSerializer.Serialize(new { Wall = watch.Elapsed.TotalSeconds,
                         Sim = server.SimNow, Finale = manager.FinaleStatus(), Bots = bots,
-                        Orders = manager.CommanderOrders() }));
+                        Orders = manager.CommanderOrders(),
+                        Miners = mission.Sectors.SelectMany(s => s.Models.OfType<Ship>()).Where(sh => sh.PilotType == Ship.PilotTypeMiner && !sh.Dead).Select(sh => new { sh.Id, sh.SideId, Sector = sh.Sector?.Name, sh.Ore, Target = sh.MiningAsteroidTarget?.Data.AsteroidId, TargetSector = sh.MiningAsteroidTarget?.Data.ClusterId, sh.Position }),
+                        Actual = mission.Sectors.SelectMany(s => s.Models.OfType<Ship>()).Where(sh => !sh.Dead).Select(sh => new { sh.Id, sh.SideId, Hull = sh.HullType.HullId, Role = Showcase.ClassifyHull(sh.HullType).ToString(), sh.StationId }) }));
                     progress.WriteLine($"{label}: wall={watch.Elapsed.TotalSeconds:F0}s sim={server.SimNow:F0}s "
                         + string.Join(" ", mission.Sides.Select(s => $"side{s.Id}={s.Kills}/{s.Deaths}")));
                     next += 30;
@@ -82,6 +86,7 @@ for (int match = 1; match <= matches; match++)
             var result = new { Label = label, Scale = scale, FinaleSeconds = finaleSeconds, FinaleMinutes = finaleMinutes,
                 GameSeconds = gameSeconds,
                 Civs = mission.Sides.Select(s => s.Civilization.CivilizationId),
+                Miners = mission.Sectors.SelectMany(s => s.Models.OfType<Ship>()).Where(sh => sh.PilotType == Ship.PilotTypeMiner && !sh.Dead).GroupBy(sh => sh.SideId).Select(g => new { Side = g.Key, Alive = g.Count() }),
                 Stage = mission.Stage.ToString(), Wall = watch.Elapsed.TotalSeconds, Sim = server.SimNow,
                 Sides = mission.Sides.Select(s => new { s.Id, s.Kills, s.Deaths }), Finale = manager.FinaleStatus(),
                 Failures = server.SimPassStageFailures };

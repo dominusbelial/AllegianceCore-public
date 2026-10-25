@@ -179,7 +179,9 @@ public sealed class P704TechLoadoutLiveTests(ITestOutputHelper output)
                 {
                     var me = p.Client.World.Ships[Get<short>(p.Bot, "ShipId")];
                     var ack = p.Client.BuyLoadoutAcks.LastOrDefault();
-                    return $"{me.ShipId}: dock={me.StationId}, hull={me.HullId}, attempts={Get<int>(p.Bot, "RelaunchAttempts")}, ack={ack?.HullId}/{ack?.FLaunch}/{ack?.FBoughtEverything}, warning={Get<string?>(p.Bot, "GrantWarning")}";
+                    string expansionOwner = p.Client.World.Stations.TryGetValue(_expansion.StationId, out var expansion)
+                        ? expansion.SideId.ToString() : "unseen";
+                    return $"{me.ShipId}: side={me.SideId}, dock={me.StationId}, hull={me.HullId}, expansionOwner={expansionOwner}, attempts={Get<int>(p.Bot, "RelaunchAttempts")}, ack={ack?.HullId}/{ack?.FLaunch}/{ack?.FBoughtEverything}, warning={Get<string?>(p.Bot, "GrantWarning")}";
                 }
             })));
         }
@@ -223,8 +225,12 @@ public sealed class P704TechLoadoutLiveTests(ITestOutputHelper output)
             var ship = Server.Ships.Single(l => l.Ship.Id == donor.World.MyShipId).Ship;
             Mission.Site.CaptureStationEvent(ship, _expansion);
             _expansion.Capture(0);
-            Pump(() => Bots.All(p => { lock (p.Client.Gate) return p.Client.World.Stations.TryGetValue(7040, out var st) && st.SideId == 0; }));
-            Pump(() => Bots.Where(p => Get<short>(p.Bot, "Side") == 0).All(p =>
+            // Only this side consumes the captured dock's techs. Native always
+            // reveals own objects (FedSrv.CPP:10905-10910); enemy station state
+            // is visibility-gated (fsship.cpp:820-845), not omniscient.
+            var buyers = Bots.Where(p => Get<short>(p.Bot, "Side") == 0).ToArray();
+            Pump(() => buyers.All(p => { lock (p.Client.Gate) return p.Client.World.Stations.TryGetValue(7040, out var st) && st.SideId == 0; }));
+            Pump(() => buyers.All(p =>
             { lock (p.Client.Gate) return p.Client.World.DevelopmentTechsFor(0) == side.DevelopmentTechs; }));
         }
         internal void KillAndRescueAll()

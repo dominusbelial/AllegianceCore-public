@@ -272,6 +272,12 @@ list in **reverse**.
 - **Bot behaviors** — weave/loiter/combat, scenarios, research, defense, siege.
   `tools/allegiance-mcp/BotManager.*.cs` (Combat, Defense, Siege, StrikeMass,
   Research, Support, Coordination, Orders).
+- **Showcase role fallback (P821)** — native hull ability flags do not define
+  scout/interceptor duties. Missing roles score legal small craft for the requested
+  duty, retaining variety and purchase gates: `tools/allegiance-mcp/TechLoadoutSelector.cs`,
+  `tools/allegiance-mcp/BotManager.TechLoadouts.cs`.
+  Census/local proof: `tools/p819-side-bias-proof/P821Catalogue.cs`;
+  report: `docs/reports/P821_ROLE_RESOLUTION.md`.
 - **Scenario spawning** — `tools/allegiance-mcp/BotManager.Scenarios.cs`,
   `SkirmishDriver.cs`, `Showcase.cs`, `ScenarioPlanner.cs`.
 - **Rig driver** — `scripts/mcp_driver.py` (drives the MCP exe from a JSONL

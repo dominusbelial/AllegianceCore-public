@@ -1,0 +1,9 @@
+{
+  "base-proof/allegiance-mcp.dll": "3cb70ff4a64ccc23e723bb2c5d26c2616486b39b8f699e30e72b7dc6469830fd",
+  "after-proof/allegiance-mcp.dll": "6509ec0451cc611abb3a8860a881f1d50091b08f8ac2a2e31d5d790769ac7cf0",
+  "base-proof/Allegiance.Core.dll": "fd4dc27872543b9cebb7530466c6b5f9c1859a46fd7a7db830e4a063fc41c3c7",
+  "after-proof/Allegiance.Core.dll": "fd4dc27872543b9cebb7530466c6b5f9c1859a46fd7a7db830e4a063fc41c3c7",
+  "base-proof/Allegiance.Server.dll": "feb05261fa759d013e5a9b48859ee178cdb5ce02d5ec5cd14d4945ed54325945",
+  "after-proof/Allegiance.Server.dll": "feb05261fa759d013e5a9b48859ee178cdb5ce02d5ec5cd14d4945ed54325945",
+  "base-tests/Allegiance.ClientCore.Tests.dll": "d4aba991078e9a13b92b9d4b87cbda1075324bbbfc8e097aab8fab90de9f8a11"
+}

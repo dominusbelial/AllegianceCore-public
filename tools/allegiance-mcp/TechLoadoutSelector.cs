@@ -97,7 +97,8 @@ internal static class TechLoadoutSelector
     /// Deterministic: (state, seed, ordinal) → selection.</summary>
     internal static Selection? SelectVaried(StaticCore core, short civId, Showcase.HullRole role,
         TechTreeBitMask techs, short dockTypeId, VarietyState variety,
-        DataStationTypeIGC? target = null, long budget = long.MaxValue, bool preferMines = false)
+        DataStationTypeIGC? target = null, long budget = long.MaxValue, bool preferMines = false,
+        bool smallCraftFallback = false)
     {
         // Finale/strike (bomber vs a real station target) keeps today's best
         // loadout — a mandated P796 scope rule. Other roles ignore the target
@@ -106,7 +107,7 @@ internal static class TechLoadoutSelector
         if (!core.StationTypes.TryGetValue(dockTypeId, out var dock)) return null;
         var c = Create(core, civId, techs, dock.TtbmLocal, [dockTypeId], budget);
         var hulls = c.Core.HullTypes.Values.Where(h => c.Hulls.Contains(h.HullId)
-            && Showcase.IsPlayerBuyable(c.Core, h) && Classify(h) == role
+            && Showcase.IsPlayerBuyable(c.Core, h) && EligibleRole(h, role, smallCraftFallback)
             && !SuccessorUpgrade.HullIsObsolete(c.Core, h, c.Local, c.Techs)).OrderBy(h => h.HullId).ToArray();
         if (hulls.Length == 0) return null;
 
@@ -268,8 +269,30 @@ internal static class TechLoadoutSelector
         return Showcase.HullRole.Fighter;
     }
 
+    // P821: roles are bot policy, not native hull flags (Igc/igc.h:725-741).
+    // A missing role uses its OWN hull/gun/equipment scores over legal small
+    // craft, rather than assigning a different role's loadout by label order.
+    // Locked bombers/heavies temporarily perform ordinary fighter duty.
+    internal static Showcase.HullRole FallbackDuty(Showcase.HullRole role)
+        => role is Showcase.HullRole.Bomber or Showcase.HullRole.Heavy ? Showcase.HullRole.Fighter : role;
+
+    private static bool EligibleRole(DataHullTypeIGC h, Showcase.HullRole role, bool smallCraftFallback)
+        => smallCraftFallback
+            ? Classify(h) is Showcase.HullRole.Fighter or Showcase.HullRole.Scout or Showcase.HullRole.Interceptor
+            : Classify(h) == role;
+
+    internal static Selection? SelectRoleFallback(StaticCore core, short civId, Showcase.HullRole requested,
+        TechTreeBitMask techs, short dockTypeId, long budget, bool rescueProbe = false)
+    {
+        if (!core.StationTypes.TryGetValue(dockTypeId, out var dock)) return null;
+        return Select(Create(core, civId, techs, dock.TtbmLocal, [dockTypeId], budget), FallbackDuty(requested),
+            target: null, preferMines: requested != Showcase.HullRole.Scout, rescueProbe: rescueProbe,
+            smallCraftFallback: true);
+    }
+
     private static Selection? Select(Context c, Showcase.HullRole role, DataStationTypeIGC? target,
-        bool preferMines = false, bool rescueProbe = false, StrikeHullPref strikePref = StrikeHullPref.Best)
+        bool preferMines = false, bool rescueProbe = false, StrikeHullPref strikePref = StrikeHullPref.Best,
+        bool smallCraftFallback = false)
     {
         if (role == Showcase.HullRole.Bomber && target is { } station)
         {
@@ -278,7 +301,7 @@ internal static class TechLoadoutSelector
         }
         var options = new List<Selection>();
         foreach (var h in c.Core.HullTypes.Values.Where(h => c.Hulls.Contains(h.HullId)
-                     && Showcase.IsPlayerBuyable(c.Core, h) && Classify(h) == role
+                     && Showcase.IsPlayerBuyable(c.Core, h) && EligibleRole(h, role, smallCraftFallback)
                      && !SuccessorUpgrade.HullIsObsolete(c.Core, h, c.Local, c.Techs)).OrderBy(h => h.HullId))
         {
             var parts = new List<ExpandedPartData>();

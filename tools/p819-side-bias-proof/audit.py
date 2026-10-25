@@ -160,7 +160,10 @@ def audit(server, bots):
                 side = name_sides[m[1]]
                 roles = re.findall(r"\brole=(\w+)", m[2])
                 if roles:
-                    composition[side][roles[-1]] += 1
+                    # P821 fallback retains the requested scoring duty in
+                    # role=; the temporary label describes the actual hull.
+                    temporary = re.search(r"\btemporary (\w+)", m[2])
+                    composition[side][temporary[1] if temporary else roles[-1]] += 1
                     requested[side][roles[0]] += 1
                 hull = re.search(r"human hull (\d+) '([^']+)'", m[2])
                 if hull:

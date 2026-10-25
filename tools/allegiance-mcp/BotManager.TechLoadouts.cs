@@ -108,20 +108,23 @@ internal sealed partial class BotManager
                     : TechLoadoutSelector.StrikeHullPref.Best);
         if (support && selected is null) selected = TechLoadoutSelector.Select(core, shop.Civ, role, shop.Techs, shop.DockType, budget: shop.Budget);
         if (selected is not null || !allowRoleFallback) return selected;
-        // Some roles do not exist until a branch station completes. Keep the
-        // requested role on the bot and fly a legal small combat ship meanwhile.
-        foreach (var fallback in new[] { Showcase.HullRole.Fighter, Showcase.HullRole.Scout, Showcase.HullRole.Interceptor })
+        // P821: keep the requested duty's scores and equipment priorities even
+        // when this civ has no hull carrying that classifier label. All native
+        // purchase gates still apply. Requested role survives until next life.
+        var duty = TechLoadoutSelector.FallbackDuty(role);
+        if (varied && !support && !rescueProbe && !defensiveMines)
         {
-            if (fallback == role) continue;
-            // Dedicated scouts retain scanner probes. Combat roles temporarily
-            // flying scout hulls carry legal defensive mines when available.
-            // The starting interceptor has no dispenser socket; selecting mines
-            // only for non-scout hulls left the whole starting fleet without any.
-            selected = TechLoadoutSelector.Select(core, shop.Civ, fallback, shop.Techs, shop.DockType,
-                budget: shop.Budget, preferMines: role != Showcase.HullRole.Scout);
-            if (selected is not null) return selected with { Reason = $"requested role={role} unavailable/over budget; temporary {fallback}; {selected.Reason}" };
+            selected = TechLoadoutSelector.SelectVaried(core, shop.Civ, duty, shop.Techs, shop.DockType,
+                LoadoutVariety.Begin(shop.Side), budget: shop.Budget,
+                preferMines: role != Showcase.HullRole.Scout, smallCraftFallback: true);
+            if (selected is not null) LoadoutVariety.Record(shop.Side, selected);
         }
-        return null;
+        selected ??= TechLoadoutSelector.SelectRoleFallback(core, shop.Civ, role, shop.Techs, shop.DockType,
+            shop.Budget, rescueProbe);
+        return selected is null ? null : selected with
+        {
+            Reason = $"requested role={role} unavailable/over budget; temporary {TechLoadoutSelector.Classify(core.HullTypes[selected.HullId])}; nearest duty={duty}; {selected.Reason}"
+        };
     }
 
     private static void ApplyTechLoadout(ActiveBot bot, TechLoadoutSelector.Selection selected)

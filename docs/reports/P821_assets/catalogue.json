@@ -1,0 +1,928 @@
+[
+  {
+    "CivilizationId": 1,
+    "Name": "Dreghklar",
+    "Initial": [
+      {
+        "HullId": 14,
+        "Name": "Scout",
+        "Role": "Scout",
+        "ScannerRange": 2400,
+        "Speed": 160,
+        "HitPoints": 200,
+        "MaxAmmo": 800,
+        "MaxFixedWeapons": 1,
+        "MaxWeapons": 1,
+        "Abilities": "0x2092"
+      },
+      {
+        "HullId": 21,
+        "Name": "Lt Interceptor",
+        "Role": "Interceptor",
+        "ScannerRange": 400,
+        "Speed": 75,
+        "HitPoints": 600,
+        "MaxAmmo": 450,
+        "MaxFixedWeapons": 2,
+        "MaxWeapons": 2,
+        "Abilities": "0x00B2"
+      }
+    ],
+    "Plan": "generated",
+    "First": {
+      "Interceptor": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 26,
+        "HullId": 21,
+        "HullName": "Lt Interceptor"
+      },
+      "Scout": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 26,
+        "HullId": 14,
+        "HullName": "Scout"
+      },
+      "Bomber": {
+        "Step": 23,
+        "Unlock": "develop 37 Bomber",
+        "Dock": 4,
+        "HullId": 25,
+        "HullName": "Bomber"
+      },
+      "Fighter": {
+        "Step": 73,
+        "Unlock": "develop 26 Stealth Fighter",
+        "Dock": 4,
+        "HullId": 18,
+        "HullName": "Stealth Fighter"
+      },
+      "Heavy": {
+        "Step": 83,
+        "Unlock": "develop 229 Upgrade Light Class",
+        "Dock": 5,
+        "HullId": 50,
+        "HullName": "Corvette"
+      }
+    },
+    "FirstAtHome": {
+      "Interceptor": {
+        "Step": 0,
+        "HullId": 21,
+        "HullName": "Lt Interceptor"
+      },
+      "Scout": {
+        "Step": 0,
+        "HullId": 14,
+        "HullName": "Scout"
+      },
+      "Bomber": {
+        "Step": 23,
+        "HullId": 25,
+        "HullName": "Bomber"
+      },
+      "Fighter": {
+        "Step": 73,
+        "HullId": 18,
+        "HullName": "Stealth Fighter"
+      },
+      "Heavy": {
+        "Step": 109,
+        "HullId": 22,
+        "HullName": "Gunship"
+      }
+    }
+  },
+  {
+    "CivilizationId": 2,
+    "Name": "Technoflux",
+    "Initial": [
+      {
+        "HullId": 51,
+        "Name": "Scout",
+        "Role": "Scout",
+        "ScannerRange": 2400,
+        "Speed": 160,
+        "HitPoints": 200,
+        "MaxAmmo": 600,
+        "MaxFixedWeapons": 2,
+        "MaxWeapons": 2,
+        "Abilities": "0x2092"
+      }
+    ],
+    "Plan": "generated",
+    "First": {
+      "Scout": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 40,
+        "HullId": 51,
+        "HullName": "Scout"
+      },
+      "Bomber": {
+        "Step": 19,
+        "Unlock": "develop 37 Bomber",
+        "Dock": 30,
+        "HullId": 70,
+        "HullName": "Bomber"
+      },
+      "Interceptor": {
+        "Step": 21,
+        "Unlock": "station 36 Supremacy",
+        "Dock": 30,
+        "HullId": 55,
+        "HullName": "Fighter"
+      },
+      "Fighter": {
+        "Step": 53,
+        "Unlock": "station 38 Tactical",
+        "Dock": 30,
+        "HullId": 59,
+        "HullName": "Lt Stl Fighter"
+      },
+      "Heavy": {
+        "Step": 63,
+        "Unlock": "station 31 Shipyard",
+        "Dock": 31,
+        "HullId": 54,
+        "HullName": "Corvette"
+      }
+    },
+    "FirstAtHome": {
+      "Scout": {
+        "Step": 0,
+        "HullId": 51,
+        "HullName": "Scout"
+      },
+      "Bomber": {
+        "Step": 19,
+        "HullId": 70,
+        "HullName": "Bomber"
+      },
+      "Interceptor": {
+        "Step": 21,
+        "HullId": 55,
+        "HullName": "Fighter"
+      },
+      "Fighter": {
+        "Step": 53,
+        "HullId": 59,
+        "HullName": "Lt Stl Fighter"
+      },
+      "Heavy": {
+        "Step": 88,
+        "HullId": 66,
+        "HullName": "Gunship"
+      }
+    }
+  },
+  {
+    "CivilizationId": 3,
+    "Name": "Ga\u0027Taraan",
+    "Initial": [
+      {
+        "HullId": 114,
+        "Name": "Scout",
+        "Role": "Scout",
+        "ScannerRange": 2400,
+        "Speed": 160,
+        "HitPoints": 200,
+        "MaxAmmo": 960,
+        "MaxFixedWeapons": 2,
+        "MaxWeapons": 2,
+        "Abilities": "0x2092"
+      },
+      {
+        "HullId": 121,
+        "Name": "Fighter",
+        "Role": "Fighter",
+        "ScannerRange": 600,
+        "Speed": 100,
+        "HitPoints": 300,
+        "MaxAmmo": 600,
+        "MaxFixedWeapons": 2,
+        "MaxWeapons": 2,
+        "Abilities": "0x2092"
+      }
+    ],
+    "Plan": "plan_a",
+    "First": {
+      "Fighter": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 44,
+        "HullId": 121,
+        "HullName": "Fighter"
+      },
+      "Scout": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 44,
+        "HullId": 114,
+        "HullName": "Scout"
+      },
+      "Bomber": {
+        "Step": 22,
+        "Unlock": "develop 37 Bomber",
+        "Dock": 42,
+        "HullId": 124,
+        "HullName": "Bomber"
+      },
+      "Interceptor": {
+        "Step": 52,
+        "Unlock": "develop 20 Enh Fighter",
+        "Dock": 42,
+        "HullId": 122,
+        "HullName": "Enh Fighter"
+      },
+      "Heavy": {
+        "Step": 95,
+        "Unlock": "develop 241 Upgrade Light Class",
+        "Dock": 49,
+        "HullId": 57,
+        "HullName": "Corvette"
+      }
+    },
+    "FirstAtHome": {
+      "Fighter": {
+        "Step": 0,
+        "HullId": 121,
+        "HullName": "Fighter"
+      },
+      "Scout": {
+        "Step": 0,
+        "HullId": 114,
+        "HullName": "Scout"
+      },
+      "Bomber": {
+        "Step": 22,
+        "HullId": 124,
+        "HullName": "Bomber"
+      },
+      "Interceptor": {
+        "Step": 52,
+        "HullId": 122,
+        "HullName": "Enh Fighter"
+      },
+      "Heavy": {
+        "Step": 178,
+        "HullId": 129,
+        "HullName": "Mustang"
+      }
+    }
+  },
+  {
+    "CivilizationId": 4,
+    "Name": "Phoenix",
+    "Initial": [
+      {
+        "HullId": 187,
+        "Name": "Scout",
+        "Role": "Scout",
+        "ScannerRange": 2400,
+        "Speed": 160,
+        "HitPoints": 200,
+        "MaxAmmo": 800,
+        "MaxFixedWeapons": 1,
+        "MaxWeapons": 1,
+        "Abilities": "0x2092"
+      },
+      {
+        "HullId": 190,
+        "Name": "Fighter",
+        "Role": "Fighter",
+        "ScannerRange": 600,
+        "Speed": 110,
+        "HitPoints": 300,
+        "MaxAmmo": 600,
+        "MaxFixedWeapons": 2,
+        "MaxWeapons": 2,
+        "Abilities": "0x2092"
+      }
+    ],
+    "Plan": "generated",
+    "First": {
+      "Fighter": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 60,
+        "HullId": 190,
+        "HullName": "Fighter"
+      },
+      "Scout": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 60,
+        "HullId": 187,
+        "HullName": "Scout"
+      },
+      "Bomber": {
+        "Step": 21,
+        "Unlock": "develop 37 Bomber",
+        "Dock": 60,
+        "HullId": 195,
+        "HullName": "Bomber"
+      },
+      "Interceptor": {
+        "Step": 40,
+        "Unlock": "develop 20 Enh Fighter",
+        "Dock": 60,
+        "HullId": 191,
+        "HullName": "Enh Fighter"
+      },
+      "Heavy": {
+        "Step": 89,
+        "Unlock": "develop 296 Upgrade Light Class",
+        "Dock": 68,
+        "HullId": 209,
+        "HullName": "Corvette"
+      }
+    },
+    "FirstAtHome": {
+      "Fighter": {
+        "Step": 0,
+        "HullId": 190,
+        "HullName": "Fighter"
+      },
+      "Scout": {
+        "Step": 0,
+        "HullId": 187,
+        "HullName": "Scout"
+      },
+      "Bomber": {
+        "Step": 21,
+        "HullId": 195,
+        "HullName": "Bomber"
+      },
+      "Interceptor": {
+        "Step": 40,
+        "HullId": 191,
+        "HullName": "Enh Fighter"
+      },
+      "Heavy": {
+        "Step": 115,
+        "HullId": 197,
+        "HullName": "Gunship"
+      }
+    }
+  },
+  {
+    "CivilizationId": 5,
+    "Name": "Omicron",
+    "Initial": [
+      {
+        "HullId": 710,
+        "Name": "Scout",
+        "Role": "Scout",
+        "ScannerRange": 2400,
+        "Speed": 160,
+        "HitPoints": 200,
+        "MaxAmmo": 960,
+        "MaxFixedWeapons": 1,
+        "MaxWeapons": 1,
+        "Abilities": "0x2092"
+      },
+      {
+        "HullId": 715,
+        "Name": "Fighter",
+        "Role": "Fighter",
+        "ScannerRange": 600,
+        "Speed": 100,
+        "HitPoints": 300,
+        "MaxAmmo": 720,
+        "MaxFixedWeapons": 2,
+        "MaxWeapons": 2,
+        "Abilities": "0x2092"
+      }
+    ],
+    "Plan": "generated",
+    "First": {
+      "Fighter": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 715,
+        "HullId": 715,
+        "HullName": "Fighter"
+      },
+      "Scout": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 715,
+        "HullId": 710,
+        "HullName": "Scout"
+      },
+      "Bomber": {
+        "Step": 20,
+        "Unlock": "develop 37 Bomber",
+        "Dock": 702,
+        "HullId": 704,
+        "HullName": "Bomber"
+      },
+      "Heavy": {
+        "Step": 26,
+        "Unlock": "station 711 Supremacy",
+        "Dock": 703,
+        "HullId": 703,
+        "HullName": "Corvette"
+      },
+      "Interceptor": {
+        "Step": 43,
+        "Unlock": "station 712 Expansion",
+        "Dock": 702,
+        "HullId": 712,
+        "HullName": "Interceptor"
+      }
+    },
+    "FirstAtHome": {
+      "Fighter": {
+        "Step": 0,
+        "HullId": 715,
+        "HullName": "Fighter"
+      },
+      "Scout": {
+        "Step": 0,
+        "HullId": 710,
+        "HullName": "Scout"
+      },
+      "Bomber": {
+        "Step": 20,
+        "HullId": 704,
+        "HullName": "Bomber"
+      },
+      "Interceptor": {
+        "Step": 43,
+        "HullId": 712,
+        "HullName": "Interceptor"
+      },
+      "Heavy": {
+        "Step": 92,
+        "HullId": 790,
+        "HullName": "Gunship"
+      }
+    }
+  },
+  {
+    "CivilizationId": 18,
+    "Name": "Gigacorp",
+    "Initial": [
+      {
+        "HullId": 210,
+        "Name": "Scout",
+        "Role": "Scout",
+        "ScannerRange": 2400,
+        "Speed": 160,
+        "HitPoints": 200,
+        "MaxAmmo": 800,
+        "MaxFixedWeapons": 1,
+        "MaxWeapons": 1,
+        "Abilities": "0x2092"
+      }
+    ],
+    "Plan": "generated",
+    "First": {
+      "Scout": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 15,
+        "HullId": 210,
+        "HullName": "Scout"
+      },
+      "Fighter": {
+        "Step": 21,
+        "Unlock": "develop 22 Patroller",
+        "Dock": 2,
+        "HullId": 215,
+        "HullName": "Patroller"
+      },
+      "Bomber": {
+        "Step": 26,
+        "Unlock": "develop 37 Bomber",
+        "Dock": 2,
+        "HullId": 204,
+        "HullName": "Bomber"
+      },
+      "Interceptor": {
+        "Step": 51,
+        "Unlock": "develop 20 Enh Fighter",
+        "Dock": 2,
+        "HullId": 214,
+        "HullName": "Enh Fighter"
+      },
+      "Heavy": {
+        "Step": 97,
+        "Unlock": "develop 39 Gunship",
+        "Dock": 2,
+        "HullId": 290,
+        "HullName": "Gunship"
+      }
+    },
+    "FirstAtHome": {
+      "Scout": {
+        "Step": 0,
+        "HullId": 210,
+        "HullName": "Scout"
+      },
+      "Fighter": {
+        "Step": 21,
+        "HullId": 215,
+        "HullName": "Patroller"
+      },
+      "Bomber": {
+        "Step": 26,
+        "HullId": 204,
+        "HullName": "Bomber"
+      },
+      "Interceptor": {
+        "Step": 51,
+        "HullId": 214,
+        "HullName": "Enh Fighter"
+      },
+      "Heavy": {
+        "Step": 97,
+        "HullId": 290,
+        "HullName": "Gunship"
+      }
+    }
+  },
+  {
+    "CivilizationId": 25,
+    "Name": "Iron Coalition",
+    "Initial": [
+      {
+        "HullId": 410,
+        "Name": "Scout",
+        "Role": "Scout",
+        "ScannerRange": 2400,
+        "Speed": 160,
+        "HitPoints": 200,
+        "MaxAmmo": 960,
+        "MaxFixedWeapons": 1,
+        "MaxWeapons": 1,
+        "Abilities": "0x2092"
+      },
+      {
+        "HullId": 415,
+        "Name": "Lt Interceptor",
+        "Role": "Interceptor",
+        "ScannerRange": 400,
+        "Speed": 75,
+        "HitPoints": 600,
+        "MaxAmmo": 540,
+        "MaxFixedWeapons": 2,
+        "MaxWeapons": 2,
+        "Abilities": "0x00B2"
+      }
+    ],
+    "Plan": "plan_a",
+    "First": {
+      "Interceptor": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 115,
+        "HullId": 415,
+        "HullName": "Lt Interceptor"
+      },
+      "Scout": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 115,
+        "HullId": 410,
+        "HullName": "Scout"
+      },
+      "Fighter": {
+        "Step": 16,
+        "Unlock": "station 113 Tactical",
+        "Dock": 113,
+        "HullId": 411,
+        "HullName": "Stealth Fighter"
+      },
+      "Bomber": {
+        "Step": 19,
+        "Unlock": "develop 37 Bomber",
+        "Dock": 109,
+        "HullId": 404,
+        "HullName": "Bomber"
+      },
+      "Heavy": {
+        "Step": 71,
+        "Unlock": "station 103 Shipyard",
+        "Dock": 103,
+        "HullId": 36,
+        "HullName": "Corvette"
+      }
+    },
+    "FirstAtHome": {
+      "Interceptor": {
+        "Step": 0,
+        "HullId": 415,
+        "HullName": "Lt Interceptor"
+      },
+      "Scout": {
+        "Step": 0,
+        "HullId": 410,
+        "HullName": "Scout"
+      },
+      "Fighter": {
+        "Step": 16,
+        "HullId": 411,
+        "HullName": "Stealth Fighter"
+      },
+      "Bomber": {
+        "Step": 19,
+        "HullId": 404,
+        "HullName": "Bomber"
+      },
+      "Heavy": {
+        "Step": 95,
+        "HullId": 490,
+        "HullName": "Gunship"
+      }
+    }
+  },
+  {
+    "CivilizationId": 35,
+    "Name": "Bios",
+    "Initial": [
+      {
+        "HullId": 310,
+        "Name": "Scout",
+        "Role": "Scout",
+        "ScannerRange": 2400,
+        "Speed": 160,
+        "HitPoints": 200,
+        "MaxAmmo": 800,
+        "MaxFixedWeapons": 1,
+        "MaxWeapons": 1,
+        "Abilities": "0x2092"
+      },
+      {
+        "HullId": 315,
+        "Name": "Fighter",
+        "Role": "Fighter",
+        "ScannerRange": 600,
+        "Speed": 100,
+        "HitPoints": 300,
+        "MaxAmmo": 600,
+        "MaxFixedWeapons": 2,
+        "MaxWeapons": 2,
+        "Abilities": "0x2092"
+      }
+    ],
+    "Plan": "generated",
+    "First": {
+      "Fighter": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 210,
+        "HullId": 315,
+        "HullName": "Fighter"
+      },
+      "Scout": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 210,
+        "HullId": 310,
+        "HullName": "Scout"
+      },
+      "Bomber": {
+        "Step": 30,
+        "Unlock": "develop 37 Bomber",
+        "Dock": 210,
+        "HullId": 304,
+        "HullName": "Bomber"
+      },
+      "Heavy": {
+        "Step": 32,
+        "Unlock": "develop 39 Gunship",
+        "Dock": 210,
+        "HullId": 390,
+        "HullName": "Gunship"
+      },
+      "Interceptor": {
+        "Step": 69,
+        "Unlock": "develop 20 Enh Fighter",
+        "Dock": 202,
+        "HullId": 314,
+        "HullName": "Enh Fighter"
+      }
+    },
+    "FirstAtHome": {
+      "Fighter": {
+        "Step": 0,
+        "HullId": 315,
+        "HullName": "Fighter"
+      },
+      "Scout": {
+        "Step": 0,
+        "HullId": 310,
+        "HullName": "Scout"
+      },
+      "Bomber": {
+        "Step": 30,
+        "HullId": 304,
+        "HullName": "Bomber"
+      },
+      "Heavy": {
+        "Step": 32,
+        "HullId": 390,
+        "HullName": "Gunship"
+      },
+      "Interceptor": {
+        "Step": 69,
+        "HullId": 314,
+        "HullName": "Enh Fighter"
+      }
+    }
+  },
+  {
+    "CivilizationId": 101,
+    "Name": "Belters",
+    "Initial": [
+      {
+        "HullId": 510,
+        "Name": "Scout",
+        "Role": "Scout",
+        "ScannerRange": 2400,
+        "Speed": 160,
+        "HitPoints": 400,
+        "MaxAmmo": 800,
+        "MaxFixedWeapons": 1,
+        "MaxWeapons": 1,
+        "Abilities": "0x2092"
+      },
+      {
+        "HullId": 515,
+        "Name": "Fighter",
+        "Role": "Fighter",
+        "ScannerRange": 600,
+        "Speed": 100,
+        "HitPoints": 600,
+        "MaxAmmo": 600,
+        "MaxFixedWeapons": 2,
+        "MaxWeapons": 2,
+        "Abilities": "0x2092"
+      }
+    ],
+    "Plan": "generated",
+    "First": {
+      "Fighter": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 315,
+        "HullId": 515,
+        "HullName": "Fighter"
+      },
+      "Scout": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 315,
+        "HullId": 510,
+        "HullName": "Scout"
+      },
+      "Bomber": {
+        "Step": 18,
+        "Unlock": "develop 38 Bomber",
+        "Dock": 302,
+        "HullId": 504,
+        "HullName": "Bomber"
+      },
+      "Interceptor": {
+        "Step": 37,
+        "Unlock": "develop 21 Enh Fighter",
+        "Dock": 302,
+        "HullId": 514,
+        "HullName": "Enh Fighter"
+      },
+      "Heavy": {
+        "Step": 71,
+        "Unlock": "station 303 Shipyard",
+        "Dock": 303,
+        "HullId": 37,
+        "HullName": "Corvette"
+      }
+    },
+    "FirstAtHome": {
+      "Fighter": {
+        "Step": 0,
+        "HullId": 515,
+        "HullName": "Fighter"
+      },
+      "Scout": {
+        "Step": 0,
+        "HullId": 510,
+        "HullName": "Scout"
+      },
+      "Bomber": {
+        "Step": 18,
+        "HullId": 504,
+        "HullName": "Bomber"
+      },
+      "Interceptor": {
+        "Step": 37,
+        "HullId": 514,
+        "HullName": "Enh Fighter"
+      },
+      "Heavy": {
+        "Step": 102,
+        "HullId": 590,
+        "HullName": "Gunship"
+      }
+    }
+  },
+  {
+    "CivilizationId": 201,
+    "Name": "Rixian",
+    "Initial": [
+      {
+        "HullId": 610,
+        "Name": "Scout [SR]",
+        "Role": "Scout",
+        "ScannerRange": 2400,
+        "Speed": 160,
+        "HitPoints": 200,
+        "MaxAmmo": 800,
+        "MaxFixedWeapons": 1,
+        "MaxWeapons": 1,
+        "Abilities": "0x3092"
+      },
+      {
+        "HullId": 615,
+        "Name": "Fighter",
+        "Role": "Interceptor",
+        "ScannerRange": 600,
+        "Speed": 110,
+        "HitPoints": 300,
+        "MaxAmmo": 600,
+        "MaxFixedWeapons": 3,
+        "MaxWeapons": 3,
+        "Abilities": "0x2092"
+      }
+    ],
+    "Plan": "generated",
+    "First": {
+      "Interceptor": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 415,
+        "HullId": 615,
+        "HullName": "Fighter"
+      },
+      "Scout": {
+        "Step": 0,
+        "Unlock": "initial",
+        "Dock": 415,
+        "HullId": 610,
+        "HullName": "Scout [SR]"
+      },
+      "Bomber": {
+        "Step": 19,
+        "Unlock": "develop 37 Bomber",
+        "Dock": 402,
+        "HullId": 604,
+        "HullName": "Bomber"
+      },
+      "Fighter": {
+        "Step": 65,
+        "Unlock": "develop 26 Stealth Fighter",
+        "Dock": 402,
+        "HullId": 611,
+        "HullName": "Stealth Fighter"
+      },
+      "Heavy": {
+        "Step": 71,
+        "Unlock": "develop 229 Upgrade Light Class",
+        "Dock": 403,
+        "HullId": 82,
+        "HullName": "Attack Carrier [SR]"
+      }
+    },
+    "FirstAtHome": {
+      "Interceptor": {
+        "Step": 0,
+        "HullId": 615,
+        "HullName": "Fighter"
+      },
+      "Scout": {
+        "Step": 0,
+        "HullId": 610,
+        "HullName": "Scout [SR]"
+      },
+      "Bomber": {
+        "Step": 19,
+        "HullId": 604,
+        "HullName": "Bomber"
+      },
+      "Fighter": {
+        "Step": 65,
+        "HullId": 611,
+        "HullName": "Stealth Fighter"
+      },
+      "Heavy": {
+        "Step": 92,
+        "HullId": 690,
+        "HullName": "Gunship"
+      }
+    }
+  }
+]

@@ -2851,3 +2851,48 @@ for which build the closing series covered.
 | 2026-10-25 | P800HullProofGpuTests.Every_hull_of_the_real_core_renders_in_hangar_flight_and_target_pane | Fails in ~85 ms with "dotnet-…/tools/p800-hull-proof/bin/Debug/net10.0/p800-hull-proof.dll does not exist" on any checkout where `tools/build-tools.sh` has not run (fresh worktrees; also the mini runner's 2026-10-25 nightly and P788c runs). Environment, not product: passes after `tools/build-tools.sh`. |
 | 2026-10-25 | P804ClientLeadTests.Lead_solve_and_green_ramp_allocate_nothing_per_frame | P699b-fix fast tier under parallel load (GLM P824 + Codex P821 on the host); per-frame allocation assertion, same family as Hud12b. 3/3 alone. |
 | 2026-10-25 | P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7) | P699b-fix fast tier under the same load; 3/3 alone. |
+
+## P821 — corrected P704 capture fixture (2026-10-25)
+
+`P704TechLoadoutLiveTests.Real_research_repick_and_simultaneous_death_relaunch_have_no_server_refusals(count: 60)`
+had a deterministic fixture error, not a load flake: it required **enemy** clients
+to know an undiscovered captured expansion. The original fixture timed out at
+`ResearchBomber`'s station-owner wait 3/3 with both the P821 selector and saved
+`9d78ec6b` binaries. Purchase ACKs were full successes. An instrumented run
+showed side-0 clients with expansion owner 0 and side-1 clients with the model
+unseen. Native own-side visibility is unconditional (`FedSrv/FedSrv.CPP:10905-10910`);
+enemy station updates are visibility-gated (`FedSrv/fsship.cpp:820-845`).
+
+The fixture now waits for ownership on the buying/researched side, just like
+its following tech-mask check. The 60-peer purchase count, full ACK, real
+research, hull upgrade, relaunch pacing and intentional-refusal assertions are
+retained. The corrected group passed 3/3 isolated repetitions (all nine cases). No
+server/client visibility behaviour was changed. See
+[the P821 report](reports/P821_ROLE_RESOLUTION.md); original/fixed raw receipts
+and the baseline reproduction are under `.scratch/p821/` in the P821 worktree.
+
+
+## P821 — P745 controlled observation (2026-10-25)
+
+`P745FinaleSiegeLiveTests.Research_showcase_finale_destroys_a_station`: 1/3 controlled isolated repetitions. Failures retained the existing `No station destruction` assertion at a normal match deadline; the ending was decided by native kills. This is the same failure class as the master observation already ledgered above. No P745 routing, research plan, massing threshold or server rule changed. P801 live massing and controlled massed/trickle loopback each passed 3/3. See [P821 verification](reports/P821_assets/verification.json) and [report](reports/P821_ROLE_RESOLUTION.md); raw source logs are under `.scratch/p821/strict/` and `.scratch/p821/tmp/` in the P821 worktree.
+
+
+## P821 — fast-tier observations (2026-10-25)
+
+The single fast sweep recorded 10,662 passed, seven failed and three optional
+skips, with no timing offenders. Five `PlayerBundlePathsTests` cases inherited
+the checkout's `local.env` through workspace-local TMPDIR ancestors; the full
+nine-case class passes 3/3 with a `/proc/<parent>/fd/<directory>` lexical alias
+to the same workspace scratch. The profile-editor method in
+`P761StartChatComposeTests` failed against the read-only default config path;
+it passes 3/3 with task-local XDG_CONFIG_HOME. These are the existing P819/P817
+environment limitations, not product fixes or load flakes.
+
+`P804ClientLeadTests.Lead_solve_and_green_ramp_allocate_nothing_per_frame`
+observed 1,800 bytes instead of zero in the broad sweep and passes 3/3
+unchanged in isolation. Its allocation source is unknown. This meets the
+lane's three-isolated-passes load-flake criterion; no allocation assertion,
+timing budget, UI code or product path was changed. The original fast run
+remains failed and was not repeated. See [P821 report](reports/P821_ROLE_RESOLUTION.md)
+and [verification receipt](reports/P821_assets/verification.json).
+| 2026-10-25 | ChatTargetComposeLiveTests.ComposeDefault_Team_SendsToTeammate_NotEnemy | Failed in the P824 full MonoGame run and the P821 fast tier under parallel host load (Codex + GLM + tiers); 3/3 alone both times. Live chat routing timing. |
