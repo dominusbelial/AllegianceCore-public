@@ -519,7 +519,7 @@ internal sealed partial class BotManager : IDisposable
             var cs = ownership.Own(SeatCombatClient(name, chosenSide, hullId, finalParts, out shipId, out actualSide, out granted, out grantWarning,
                 botId, role, out bool medevacScout, out bool canBuyRescueProbe,
                 techRole, selected => { hullId = selected.HullId; hullName = selected.HullName; finalParts = selected.Parts.ToList(); }, support: string.Equals(role, "support", StringComparison.OrdinalIgnoreCase), defensiveMines: defensiveMines,
-                loadoutVariety: loadoutVariety));
+                loadoutVariety: loadoutVariety, preferTurretBomber: techRole == Showcase.HullRole.Bomber && GunnerPolicy.Effective.Enable));
             DiagnoseProbeLaunch(name, shipId, actualSide);
 
             bot = new ActiveBot(name, hullId, hullName, actualSide, chosenSide, behavior, NextSeed())
@@ -696,7 +696,7 @@ internal sealed partial class BotManager : IDisposable
     private ConnectionSession SeatCombatClient(string name, short side, short hullId, IReadOnlyList<ExpandedPartData> parts, out short shipId, out short actualSide, out LoadoutGrant granted, out string? warning,
         int botId, string? roleName, out bool medevacScout, out bool canBuyRescueProbe,
         Showcase.HullRole? techRole = null, Action<TechLoadoutSelector.Selection>? onSelected = null, bool support = false, bool defensiveMines = false,
-        bool loadoutVariety = false)
+        bool loadoutVariety = false, bool preferTurretBomber = false)
     {
         bool pickedMedevac = false, pickedCanBuy = false;
         using var ownership = new PendingOwnership(DisposePeer);
@@ -752,7 +752,8 @@ internal sealed partial class BotManager : IDisposable
                 }
                 selected = PickTechLoadout(s, techRole ?? Showcase.HullRole.Fighter, support: support,
                     defensiveMines: defensiveMines, medevacScout: pickedMedevac,
-                    varied: loadoutVariety, varietySeed: LoadoutVarietySeed + botId * 1_000_003);
+                    varied: loadoutVariety, varietySeed: LoadoutVarietySeed + botId * 1_000_003,
+                    preferTurretBomber: preferTurretBomber);
                 return selected is not null;
             }, 15000)) throw new InvalidOperationException($"spawn_bot: '{name}' has no observed legal affordable loadout for role {techRole}");
             hullId = selected!.HullId; parts = selected.Parts;
@@ -3929,7 +3930,24 @@ bool isThreat =
     /// </summary>
     private void DrivePodHome(ActiveBot bot, ConnectionSession cs, double now)
     {
-        if (bot.PodDocked) { RelaunchDockedPod(bot, cs, now); return; }
+        if (bot.PodDocked)
+        {
+            // P814b scope 3 — a docked pod that is about to (re)launch first runs
+            // the finale prep then the turret-gunner flow: a carrier holds its
+            // launch for gunners, and a fighter/interceptor prefers to BOARD a
+            // same-side docked turret carrier at this station instead of launching
+            // its own ship (item 4a). PrepareFinaleRelaunch runs first so a finale
+            // bomber still gets its assigned hull/route (visible = turret carrier
+            // that then holds; a lone wolf = Stealth Bomber that launches and
+            // cloaks). Without this the pod-restart path launches immediately and
+            // the docked gather and the fighter boarding never overlap. When
+            // neither the finale nor the gunner flow owns the tick, fall through
+            // to the normal relaunch.
+            PrepareFinaleRelaunch(bot, now);
+            if (TryGunnerFlow(bot, now)) return;
+            RelaunchDockedPod(bot, cs, now);
+            return;
+        }
 
         // P779b-1 — (re)pick the pod's autopilot target: a restart-capable
         // friendly station OR a friendly rescue-capable probe (native eject
@@ -4749,6 +4767,12 @@ bool isThreat =
         // P539 — tally this bot's REAL combat stats (hits/kills) from its own
         // wire/world events each tick.
         SampleCombatStats(bot, cs, my, now);
+
+        // P814 — a docked/boarding bot under the turret-gunner flow owns this
+        // tick (driving a turret, holding a carrier launch for gunners, or
+        // awaiting a board confirmation). Must precede the launch path so a
+        // gunner never flies its own ship and a carrier's gather isn't skipped.
+        if (TryGunnerFlow(bot, now)) return;
 
         // A reseated ship must buy and launch before combat or pod routing.
         if (LaunchNextMission(bot, cs, now)) return;
@@ -6099,6 +6123,29 @@ bool isThreat =
         public double FinaleRefitCheckAt = double.NegativeInfinity;
         public long FinaleMissileLaunchBase;
         public double? FinaleProtectedSince;
+        // ── P814 — bot turret gunners ──
+        // The gunner's own server-clock estimate (fed from FM_CS_PING echoes via
+        // ConnectionSession.TakePingEchoes), used to stamp ACTIVE_TURRET_UPDATE
+        // within the server's ±1.5 s replay window (shipIGC.cpp:3353-3354).
+        public readonly Allegiance.ClientCore.Flight.OwnShipServerClock ServerClock = new();
+        // While this bot is a gunner (boarding / riding a teammate carrier):
+        public short? GunnerCarrierId;          // the carrier it boarded / seeks
+        public short TurretMount = -1;          // the turret slot it crews
+        public Orientation TurretOrientation = new();
+        public bool TurretSeeded;
+        public double GunnerSeekSince = double.NegativeInfinity;  // board-initiate time
+        public long GunnerBoardRev = -1;        // BoardFailureRevision at last initiate
+        // P814b scope 3 — a docked gunner parks (defers its own launch) while a
+        // turret carrier gathers at its station, until this deadline.
+        public double? GunnerParkUntil;
+        // While this bot is a CARRIER holding its launch for gunners:
+        public bool CarrierHullBought;
+        public double? CarrierGatherUntil;
+        // Telemetry (bounded [gunner] lines + counters).
+        public int GunnerBoardings, GunnerBoardNacks, GunnerShots, GunnerHits, GunnerKills;
+        public int GunnerKillsAtLaunch;         // gunners aboard at the carrier's launch
+        public short LastGunnerKill = -1;       // best-effort kill de-dup
+        public float GunnerLastHull = 1f;       // best-effort hit threshold base
         // P778a — bomber push telemetry state (per life; reset in ResetNewLife):
         // the previous driver tick's closing speed / bomber-along-line speed /
         // hull fractions for bounce detection, the last logged contact, and how

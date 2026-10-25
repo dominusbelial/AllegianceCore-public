@@ -115,16 +115,17 @@ internal static class Showcase
     /// <summary>
     /// The showcase composition rule (documented): per side, build a
     /// deterministic mix of the roles that have an eligible hull in the real
-    /// core — fighters as the main line, then interceptors, scouts, and a
-    /// couple of bombers/heavies where available — totalling
+    /// core — fighters as the main line, then interceptors, scouts, bombers,
+    /// and a gunship (Heavy) slot where the core has one — totalling
     /// <c>15 × sizeScale</c> ships by default (rounded to the last role so the
     /// total is exact). Each role contributes its LOWEST-HullId representative
     /// (determinism). The mix weights (by fraction of the total) are:
-    ///   Fighter 0.46, Interceptor 0.20, Scout 0.20, Bomber 0.14
-    /// (heavies share the bomber fraction when no bomber exists). Integer
-    /// allocation uses largest-remainder so the slot counts always sum to the
-    /// target. Single-role sides (only one eligible role) get the whole fleet
-    /// on that role.
+    ///   Fighter 0.46, Interceptor 0.18, Scout 0.18, Bomber 0.13, Heavy 0.05
+    /// (heavies share the bomber fraction when no bomber exists; the Heavy slot
+    /// is a P814b gunship/assault-ship that carries turret gunners when the
+    /// core can field one). Integer allocation uses largest-remainder so the
+    /// slot counts always sum to the target. Single-role sides (only one
+    /// eligible role) get the whole fleet on that role.
     /// </summary>
     public static IReadOnlyList<FleetEntry> ComposeShowcaseFleet(StaticCore core, int sizeScale)
     {
@@ -134,13 +135,24 @@ internal static class Showcase
     public static IReadOnlyList<FleetEntry> ComposeShowcaseFleetCount(StaticCore core, int perSide)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(perSide, 1);
-        var weights = new (HullRole Role, double W)[]
-        {
-            (HullRole.Fighter, 0.46),
-            (HullRole.Interceptor, 0.20),
-            (HullRole.Scout, 0.20),
-            (HullRole.Bomber, 0.14),
-        };
+        // P814b — with bot gunners on, a gunship slot comes out of the fighter line
+        // (fighters are the gunners); off (the default) is the pre-P814 mix exactly.
+        var weights = GunnerPolicy.Effective.Enable
+            ? new (HullRole Role, double W)[]
+            {
+                (HullRole.Fighter, 0.41),
+                (HullRole.Interceptor, 0.20),
+                (HullRole.Scout, 0.20),
+                (HullRole.Bomber, 0.14),
+                (HullRole.Heavy, 0.05),
+            }
+            : new (HullRole Role, double W)[]
+            {
+                (HullRole.Fighter, 0.46),
+                (HullRole.Interceptor, 0.20),
+                (HullRole.Scout, 0.20),
+                (HullRole.Bomber, 0.14),
+            };
         // Fill only roles with an eligible representative.
         var slots = new List<(HullRole Role, DataHullTypeIGC Hull, double W)>();
         foreach (var (role, w) in weights)

@@ -61,7 +61,8 @@ internal sealed partial class BotManager
 
     internal static TechLoadoutSelector.Selection? PickTechLoadout(LoadoutShop shop, Showcase.HullRole role,
         DataStationTypeIGC? target = null, bool allowRoleFallback = true, bool support = false, bool defensiveMines = false,
-        bool medevacScout = false, bool varied = false, long varietySeed = LoadoutVariety.DefaultSeed)
+        bool medevacScout = false, bool varied = false, long varietySeed = LoadoutVariety.DefaultSeed,
+        bool preferTurretBomber = false)
     {
         var core = Catalog.RepresentativeCore();
         // P779b-1 — the medevac exception is scout-only: its Dispenser slot takes
@@ -103,7 +104,8 @@ internal sealed partial class BotManager
         }
         var selected = support ? TechLoadoutSelector.SelectSupport(core, shop.Civ, shop.Techs, shop.DockType, shop.Budget)
             : TechLoadoutSelector.Select(core, shop.Civ, role, shop.Techs, shop.DockType, target ?? shop.Target, shop.Budget,
-                rescueProbe: rescueProbe);
+                rescueProbe: rescueProbe, strikePref: preferTurretBomber ? TechLoadoutSelector.StrikeHullPref.TurretCarrier
+                    : TechLoadoutSelector.StrikeHullPref.Best);
         if (support && selected is null) selected = TechLoadoutSelector.Select(core, shop.Civ, role, shop.Techs, shop.DockType, budget: shop.Budget);
         if (selected is not null || !allowRoleFallback) return selected;
         // Some roles do not exist until a branch station completes. Keep the
@@ -157,7 +159,8 @@ internal sealed partial class BotManager
                 if (!Enum.TryParse<Showcase.HullRole>(bot.Role, true, out var role)) role = Showcase.HullRole.Fighter;
                 selected = PickTechLoadout(shop, role, target, allowRoleFallback: !bot.FinaleBomberActive, support: IsSupport(bot),
                     defensiveMines: bot.DefensiveMineDuty, medevacScout: bot.MedevacScout,
-                    varied: bot.Variety, varietySeed: bot.VarietySeed);
+                    varied: bot.Variety, varietySeed: bot.VarietySeed,
+                    preferTurretBomber: role == Showcase.HullRole.Bomber && !bot.FinaleBomberActive);
                 if (selected is null && bot.FinaleBomberActive && target is { } station
                     && cs.World.ResearchBriefing?.TechMode == "research")
                 {

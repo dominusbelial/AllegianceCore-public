@@ -39,6 +39,10 @@ public sealed record SkirmishOptions
     public static readonly short[] LivesChoices = [Allegiance.Core.Wire.MissionDef.UnlimitedLives, 5, 3, 1];
     public string TechMode { get; init; } = "research";
     public string Map { get; init; } = "m2xspiderw.igc";
+    /// <summary>P814 — bot turret gunners in skirmish (item 4c): ON by default
+    /// (native behaviour, not a flagged experiment); the setup screen can turn
+    /// them off. Reaches the bot driver via <c>ALLEGIANCE_GUNNERS</c>.</summary>
+    public bool BotGunners { get; init; } = true;
     private bool? _startAsSpectator;
     public bool StartAsSpectator { get => _startAsSpectator ?? Size is SkirmishSize.Large or SkirmishSize.Epic or SkirmishSize.Grand; init => _startAsSpectator = value; }
     public int TeamSize => Size switch
@@ -163,15 +167,16 @@ public sealed record SkirmishPrefs(
     string TechMode = "research",
     bool StartAsSpectator = false,
     bool SpectatorDefault = false,
+    bool BotGunners = true,
     short Lives = Allegiance.Core.Wire.MissionDef.UnlimitedLives)
 {
     public static SkirmishPrefs From(SkirmishOptions o) => new(o.Size, o.Difficulty, o.Commander, o.Speed,
-        o.PlayerCiv, o.EnemyCiv, o.TechMode, o.StartAsSpectator, o.SpectatorDefault, o.Lives);
+        o.PlayerCiv, o.EnemyCiv, o.TechMode, o.StartAsSpectator, o.SpectatorDefault, o.BotGunners, o.Lives);
 
     public SkirmishOptions ToOptions() => new()
     {
         Size = Size, Difficulty = Difficulty, Commander = Commander, Speed = Speed,
         PlayerCiv = PlayerCiv, EnemyCiv = EnemyCiv, TechMode = TechMode,
-        StartAsSpectator = StartAsSpectator, SpectatorDefault = SpectatorDefault, Lives = Lives
+        StartAsSpectator = StartAsSpectator, SpectatorDefault = SpectatorDefault, BotGunners = BotGunners, Lives = Lives
     };
 }

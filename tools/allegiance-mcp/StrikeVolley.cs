@@ -90,6 +90,10 @@ internal static class StrikeVolley
         foreach (var part in parts)
         {
             if (part.Amount <= 0 || part.MountId >= 128) continue;   // cargo is not a firing mount
+            // A turret mount fires only with a gunner aboard (weaponIGC.h:236-254), and a
+            // gunner aims at ships, not the station: count FIXED mounts only, or a
+            // turret bomber's unmanned guns make the strike requirement too low (P814b).
+            if (part.MountId >= hull.MaxFixedWeapons && part.MountId < hull.MaxWeapons) continue;
             if (core.PartTypes.TryGetValue(part.PartId, out var type))
             {
                 if (part.MountId == 0 && type.Type is DataPartTypeIGC.Cloak { MaxCloaking: > 0 })

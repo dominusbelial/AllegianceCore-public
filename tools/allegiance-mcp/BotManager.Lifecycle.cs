@@ -1,5 +1,6 @@
 using Allegiance.ClientCore.Session;
 using Allegiance.Core.Collision;
+using Allegiance.Core.Sim;
 using Allegiance.Core.Wire;
 
 namespace Allegiance.Tools.McpSpawner;
@@ -77,6 +78,20 @@ internal sealed partial class BotManager
         bot.PodRouteSector = bot.PodRouteWarpId = -1;
         bot.PodRouteWarpCount = 0;
         bot.PodStationCenter = Vector3.Zero;
+        // P814 — a fresh life resets gunner state (no lingering carrier/board).
+        bot.GunnerCarrierId = null;
+        bot.TurretMount = -1;
+        bot.TurretSeeded = false;
+        bot.TurretOrientation = new Orientation();
+        bot.GunnerSeekSince = double.NegativeInfinity;
+        bot.GunnerBoardRev = -1;
+        bot.GunnerParkUntil = null;
+        bot.CarrierHullBought = false;
+        bot.CarrierGatherUntil = null;
+        bot.GunnerKillsAtLaunch = 0;
+        bot.LastGunnerKill = -1;
+        bot.GunnerLastHull = 1f;
+        bot.ServerClock.Reset();
         bot.PurchaseScheduledAt = double.NegativeInfinity;
         bot.LoadoutRefused = false;
         bot.PendingTechLoadout = null;

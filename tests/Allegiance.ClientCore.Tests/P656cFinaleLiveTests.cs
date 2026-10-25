@@ -92,7 +92,7 @@ public sealed class P656cFinaleLiveTests(Xunit.Abstractions.ITestOutputHelper ou
         var type = Catalog.RepresentativeCore().StationTypes[target.StationTypeId];
         var chosen = (ShowcaseFinale.StrikeLoadout?)typeof(BotManager)
             .GetMethod("SelectFinaleLoadout", BindingFlags.Static | BindingFlags.NonPublic)!
-            .Invoke(null, [bot, type, null]);
+            .Invoke(null, [bot, type, null, false]);
         var serverSide = rig.Mission.Sides.Single(s => s.Id == side);
         output.WriteLine($"side {side}, civ {serverSide.Civilization.CivilizationId}: "
             + $"server techs {serverSide.DevelopmentTechs.PopCount}, client techs {rig.Client.World.DevelopmentTechsFor(side)?.PopCount}, "

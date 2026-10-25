@@ -16,13 +16,38 @@ internal static class TechLoadoutSelector
     private sealed record Context(StaticCore Core, TechTreeBitMask Techs, byte[]? Local,
         HashSet<short> Hulls, HashSet<short> Parts, long Budget);
 
+    /// <summary>P814b — what a strike (bomber) loadout should optimise its hull
+    /// for. The VISIBLE strike element picks a turret-capable carrier (so a bot
+    /// gunner has a seat to board — the whole point of P814); P801 lone wolves
+    /// keep the best cloak hull.</summary>
+    internal enum StrikeHullPref
+    {
+        /// <summary>The best overall strike hull (cloak-priority) — used for P801 lone wolves.</summary>
+        Best,
+        /// <summary>Prefer a TURRET-capable strike hull (MaxWeapons &gt; MaxFixedWeapons,
+        /// a carrier with seats for gunners) when its strike value is within
+        /// <see cref="TurretStrikeMargin"/> of the best strike hull — the visible
+        /// element's bomber (P814b scope 1). Falls back to the best hull when no
+        /// turret-capable strike hull qualifies.</summary>
+        TurretCarrier,
+    }
+
+    /// <summary>P814b — the default margin a visible-element turret bomber's
+    /// strike value may trail the best strike hull by and still be chosen
+    /// (0.25 = 25%). Tunable via <c>ALLEGIANCE_TURRET_STRIKE_MARGIN</c>.</summary>
+    internal static double TurretStrikeMargin =>
+        double.TryParse(Environment.GetEnvironmentVariable("ALLEGIANCE_TURRET_STRIKE_MARGIN"),
+            System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var m)
+            && m > 0 && m <= 1 ? m : 0.25;
+
     internal static Selection? Select(StaticCore core, short civId, Showcase.HullRole role,
         TechTreeBitMask techs, short dockTypeId, DataStationTypeIGC? target = null, long budget = long.MaxValue,
-        bool preferMines = false, bool rescueProbe = false)
+        bool preferMines = false, bool rescueProbe = false,
+        StrikeHullPref strikePref = StrikeHullPref.Best)
     {
         if (!core.StationTypes.TryGetValue(dockTypeId, out var dock)) return null;
         return Select(Create(core, civId, techs, dock.TtbmLocal, [dockTypeId], budget), role,
-            target ?? (role == Showcase.HullRole.Bomber ? dock : null), preferMines, rescueProbe);
+            target ?? (role == Showcase.HullRole.Bomber ? dock : null), preferMines, rescueProbe, strikePref);
     }
 
     /// <summary>P779b-1 — the rescue-probe launcher part a side can actually buy:
@@ -133,6 +158,11 @@ internal static class TechLoadoutSelector
             var w = (DataPartTypeIGC.Weapon)gun.Type;
             energy -= Math.Max(0, w.EnergyPerShot); ammo -= Math.Max(0, (int)w.CAmmoPerShot);
         }
+        // P814 — a turret-capable hull also arms its TURRET mounts so a bot
+        // carrier has crewed seats to offer gunners (native BoardShip requires an
+        // equipped slot, FedSrv.CPP:2377-2392). P796 variety/coverage unchanged:
+        // the turret gun rotates the same least-used legality gates.
+        ArmTurretMounts(c.Core, hull, legal, parts, ref energy, ref ammo, ref spent, c.Budget);
         if (parts.Count == 0) return null;
 
         // Equipment: same order and gates as the best path (scouts reserve their
@@ -205,9 +235,11 @@ internal static class TechLoadoutSelector
 
     // Kept for existing socket-free finale catalogue queries with a local mask.
     internal static Selection? SelectAtLocal(StaticCore core, short civId, Showcase.HullRole role,
-        TechTreeBitMask techs, byte[]? local, DataStationTypeIGC? target = null)
+        TechTreeBitMask techs, byte[]? local, DataStationTypeIGC? target = null,
+        StrikeHullPref strikePref = StrikeHullPref.Best)
         => Select(Create(core, civId, techs, local, core.StationTypes.Keys, long.MaxValue,
-            techs.Or(TechTreeBitMask.FromBytes(local ?? new byte[50]))), role, target);
+            techs.Or(TechTreeBitMask.FromBytes(local ?? new byte[50]))), role, target,
+            strikePref: strikePref);
 
     private static Context Create(StaticCore core, short civId, TechTreeBitMask techs,
         byte[]? local, IEnumerable<short> stations, long budget, TechTreeBitMask? queryTechs = null)
@@ -237,11 +269,11 @@ internal static class TechLoadoutSelector
     }
 
     private static Selection? Select(Context c, Showcase.HullRole role, DataStationTypeIGC? target,
-        bool preferMines = false, bool rescueProbe = false)
+        bool preferMines = false, bool rescueProbe = false, StrikeHullPref strikePref = StrikeHullPref.Best)
     {
         if (role == Showcase.HullRole.Bomber && target is { } station)
         {
-            var strike = SelectBomber(c, station);
+            var strike = SelectBomber(c, station, pref: strikePref);
             return strike is null ? null : Describe(c, role, strike.HullId, strike.Parts, strike);
         }
         var options = new List<Selection>();
@@ -266,6 +298,10 @@ internal static class TechLoadoutSelector
                 var w = (DataPartTypeIGC.Weapon)gun.Type;
                 energy -= Math.Max(0, w.EnergyPerShot); ammo -= Math.Max(0, (int)w.CAmmoPerShot);
             }
+            // P814 — arm turret mounts on turret-capable hulls so a bot carrier
+            // can crew them (native BoardShip needs an equipped slot,
+            // FedSrv.CPP:2377-2392). Anti-fighter DPS ranking: gunners defend.
+            ArmTurretMounts(c.Core, h, legal, parts, ref energy, ref ammo, ref spent, c.Budget);
             if (parts.Count == 0) continue; // automatic steering needs a damaging fixed gun
             // Scouts reserve their optional-equipment budget for stealth first;
             // dedicated mine layers retain their dispenser purchase policy.
@@ -295,6 +331,12 @@ internal static class TechLoadoutSelector
         // A scanner/speed score alone permanently favored uncloaked scouts over
         // legal stealth hulls. Prefer an actually purchased cloak, not a socket
         // or an unresearched part. Native gates above still decide eligibility.
+        // The showcase's Heavy slot is a GUNSHIP (fighter-class hull with turrets, a
+        // seat bot gunners board); capital ships (non-fighter / carrier hulls) also
+        // classify Heavy but fly and dock differently — use one only when the side
+        // has no gunship.
+        if (role == Showcase.HullRole.Heavy && options.Any(o => IsGunship(c.Core, o.HullId)))
+            options.RemoveAll(o => !IsGunship(c.Core, o.HullId));
         return options.OrderByDescending(o => role == Showcase.HullRole.Scout && !preferMines && HasCloak(c.Core, o.Parts))
             .ThenByDescending(o => HullScore(c.Core.HullTypes[o.HullId], role))
             .ThenByDescending(o => o.Parts.Sum(p => WeaponScore(c.Core, Part(c.Core, p.PartId), role)))
@@ -350,6 +392,47 @@ internal static class TechLoadoutSelector
         Showcase.HullRole.Interceptor => h.HitPoints * h.Speed,
         _ => h.HitPoints * Math.Max(1, (int)h.MaxFixedWeapons),
     };
+
+    /// <summary>P814 — arm a turret-capable hull's TURRET mounts
+    /// (<c>[MaxFixedWeapons, Min(MaxWeapons, Hardpoints.Length))</c>) with legal
+    /// weapons, one per mount, per <c>CanMountPart</c> on that mount. The fixed
+    /// mounts are untouched; turrets are armed IN ADDITION, drawing from the same
+    /// shared energy/ammo/budget pool (so a bot that arms its turrets has less
+    /// simultaneous fixed-gun capacity, exactly as a real hull would). This is the
+    /// loadout prerequisite for turret gunners: native <c>BoardShip</c> only lets a
+    /// child occupy a turret slot that is BOTH unoccupied and EQUIPPED
+    /// (<c>FedSrv.CPP:2377-2392</c>, the <c>ppl != NULL</c> check), so without a
+    /// weapon in the mount a gunner can never even sit there. Ranked by
+    /// <see cref="WeaponScore"/> at the <see cref="Showcase.HullRole.Fighter"/>
+    /// weighting — a turret's job is defending the carrier (fighters first), so
+    /// anti-fighter DPS is the right ordering for the seats that crew it.
+    /// Tech/price/research legality comes from <paramref name="legal"/> exactly as
+    /// the fixed-gun loop treats it — nothing is unlocked here.</summary>
+    internal static void ArmTurretMounts(StaticCore core, DataHullTypeIGC h,
+        IEnumerable<DataPartTypeIGC> legal, List<ExpandedPartData> parts,
+        ref float energy, ref int ammo, ref long spent, long budget)
+    {
+        if (h.MaxWeapons <= h.MaxFixedWeapons) return;               // no turret mounts
+        int end = Math.Min(h.MaxWeapons, Math.Min(8, h.Hardpoints.Length));
+        for (int mount = h.MaxFixedWeapons; mount < end; mount++)
+        {
+            // Copy the mutable pool into locals for the LINQ predicate (ref
+            // parameters may not be captured by a lambda).
+            float e = energy; int a = ammo; long s = spent;
+            var gun = legal.Where(p => p.Type is DataPartTypeIGC.Weapon w
+                    && h.CanMountPart(p, mount)
+                    && w.EnergyPerShot <= e && w.CAmmoPerShot <= a
+                    && s + PartPrice(p, 1) <= budget)
+                .OrderByDescending(p => WeaponScore(core, p, Showcase.HullRole.Fighter))
+                .ThenBy(p => p.PartId).FirstOrDefault();
+            if (gun.Type is null) continue;
+            parts.Add(new(gun.PartId, 1, (byte)mount, ExpandedPartData.FullyMounted));
+            spent += PartPrice(gun, 1);
+            var gw = (DataPartTypeIGC.Weapon)gun.Type;
+            energy -= Math.Max(0, gw.EnergyPerShot);
+            ammo -= Math.Max(0, (int)gw.CAmmoPerShot);
+        }
+    }
 
     internal static double WeaponScore(StaticCore core, DataPartTypeIGC p, Showcase.HullRole role)
     {
@@ -451,7 +534,8 @@ internal static class TechLoadoutSelector
         return selected with { Reason = "research finale: no legal affordable bomber; best available station-damage loadout; " + selected.Reason };
     }
 
-    private static ShowcaseFinale.StrikeLoadout? SelectBomber(Context context, DataStationTypeIGC target, bool anyCombatHull = false)
+    private static ShowcaseFinale.StrikeLoadout? SelectBomber(Context context, DataStationTypeIGC target,
+        bool anyCombatHull = false, StrikeHullPref pref = StrikeHullPref.Best)
     {
         var core = context.Core;
         var techs = context.Techs;
@@ -519,6 +603,19 @@ internal static class TechLoadoutSelector
             if (best is null) continue; // fixed aim gun plus station damage from guns or missiles
             var parts = best.Parts.ToList();
             var dps = best.PerSecond;
+            // P814 — a bomber is a prime turret carrier: arm its turret mounts too
+            // so gunners can crew them (native BoardShip needs an equipped slot,
+            // FedSrv.CPP:2377-2392). Drawn from the LEFTOVER energy/ammo/budget, so
+            // the station volley (fixed mounts) is untouched; the turret guns are
+            // the crew's defensive anti-fighter weapons.
+            float turretEnergy = hull.MaxEnergy - best.Energy;
+            int turretAmmo = hull.MaxAmmo - best.Ammo;
+            long turretSpent = hull.Price + best.Price;
+            var turretLegal = context.Parts.Select(id => Part(core, id))
+                .Where(p => p.GroupId != byte.MaxValue
+                    && !SuccessorUpgrade.PartIsObsolete(core, p, stationLocal, techs)).ToArray();
+            ArmTurretMounts(core, hull, turretLegal, parts,
+                ref turretEnergy, ref turretAmmo, ref turretSpent, context.Budget);
             // Role-compatible support keeps the purchased bomber viable.
             foreach (var equipment in new[] { EquipmentType.Cloak, EquipmentType.Shield, EquipmentType.Afterburner, EquipmentType.Dispenser, EquipmentType.ChaffLauncher })
             {
@@ -545,12 +642,39 @@ internal static class TechLoadoutSelector
             options.Add(new(hull.HullId, hull.Name, target.StationTypeId, target.Name,
                 parts, ShowcaseFinale.Volley(core, parts, target), dps, (int)Math.Min(int.MaxValue, price), names));
         }
+        // P814b scope 1 — the VISIBLE element's bomber flies a TURRET-capable
+        // strike hull (a carrier a bot gunner can board) when such a hull's
+        // strike value is within TurretStrikeMargin of the best strike hull.
+        // Lone wolves (P801) keep the cloak-priority Best hull below. When no
+        // turret-capable strike hull qualifies, fall back to the best hull.
+        if (pref == StrikeHullPref.TurretCarrier)
+        {
+            double bestScore = options.Count == 0 ? 0 : options.Max(o => o.Volley.Score(target));
+            var turret = options
+                .Where(o => TurretCapacity(core, o.HullId) > 0
+                    && o.Volley.Score(target) >= bestScore * (1.0 - TurretStrikeMargin))
+                .OrderByDescending(o => o.Volley.Score(target))
+                .ThenByDescending(o => o.PerSecond.Score(target))
+                .ThenBy(o => o.HullId).FirstOrDefault();
+            if (turret is not null) return turret;
+        }
         // Preserve the strongest-strike fallback across other combat roles.
         // For true bomber duty, stealth is useful on the station approach.
         return options.OrderByDescending(o => !anyCombatHull && HasCloak(core, o.Parts))
             .ThenByDescending(o => o.Volley.Score(target)).ThenByDescending(o => o.PerSecond.Score(target))
             .ThenBy(o => o.HullId).FirstOrDefault();
     }
+
+    /// <summary>P814b — the number of TURRET mounts a hull has
+    /// (<c>MaxWeapons - MaxFixedWeapons</c>; 0 = no seats for gunners). The
+    /// same measure the client uses for free-turret reporting
+    /// (teleportpane.cpp:520-531).</summary>
+    private static bool IsGunship(StaticCore core, short hullId)
+        => core.HullTypes.TryGetValue(hullId, out var h) && h.HasCapability(DataHullTypeIGC.HabmFighter)
+            && !h.HasCapability(DataHullTypeIGC.HabmCarrier) && h.MaxWeapons > h.MaxFixedWeapons;
+
+    private static int TurretCapacity(StaticCore core, short hullId)
+        => core.HullTypes.TryGetValue(hullId, out var h) ? Math.Max(0, h.MaxWeapons - h.MaxFixedWeapons) : 0;
 
     private sealed record GunSet(IReadOnlyList<ExpandedPartData> Parts, ShowcaseFinale.Damage Volley,
         ShowcaseFinale.Damage PerSecond, float Energy, int Ammo, long Price, double AimScore);

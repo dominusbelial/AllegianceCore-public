@@ -98,6 +98,9 @@ public sealed partial class SkirmishHost : IDisposable
             start.Environment["ALLEGIANCE_BOT_ACCURACY"] = knobs.Accuracy.ToString(CultureInfo.InvariantCulture);
             start.Environment["ALLEGIANCE_BOT_REACTION"] = knobs.Reaction.ToString(CultureInfo.InvariantCulture);
             start.Environment["ALLEGIANCE_BOT_AGGRESSION"] = knobs.Aggression.ToString(CultureInfo.InvariantCulture);
+            // P814 — item 4c: bot turret gunners ON by default; the setup screen
+            // toggle reaches the driver through this env var (GunnerPolicy reads it).
+            start.Environment["ALLEGIANCE_GUNNERS"] = options.BotGunners ? "on" : "off";
             host._driver = Process.Start(start) ?? throw new IOException("Bot driver failed to start");
             host._ownership.Attach(host._driver);
             host._stderr = host.CopyLogAsync(host._driver.StandardError);

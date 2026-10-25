@@ -53,9 +53,10 @@ public sealed class SP6GameSpeedTests
         Assert.Equal(SkirmishSpeed.Normal, menu.Options.Speed);   // wraps
         Assert.Contains("Game speed: Normal", menu.Rows);
         Assert.Equal(SkirmishScreenModel.RowCount, menu.Rows.Length);
-        // P799 — the Lives row inserted at index 8 shifted Start/Back down one.
-        Assert.Equal(SkirmishScreenModel.StartRow, 9);
-        Assert.Equal(SkirmishScreenModel.BackRow, 10);
+        // P799 — the Lives row inserted at index 8 shifted Start/Back down one;
+        // P814 added a "Bot gunners" row (index 9) shifting them down one more.
+        Assert.Equal(SkirmishScreenModel.StartRow, 10);
+        Assert.Equal(SkirmishScreenModel.BackRow, 11);
     }
 
     [Fact]

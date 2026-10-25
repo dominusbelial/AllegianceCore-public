@@ -107,6 +107,10 @@ public sealed class Weapon
     /// carrier ship.</summary>
     public Ship? Gunner => _gunner;
 
+    /// <summary>P814 — telemetry only (no native counterpart): projectiles this weapon
+    /// created while a gunner was bound, so a live test/rig can prove turrets really fire.</summary>
+    public int TurretRoundsFired { get; private set; }
+
     /// <summary><c>SetGunner(IshipIGC*)</c> (<c>weaponIGC.h:184-192</c>) —
     /// assign (or clear, with <c>null</c>) the ship riding this turret mount.
     /// Mirrors the native setter's <c>AddRef</c>/<c>Release</c> bookkeeping as
@@ -336,6 +340,7 @@ public sealed class Weapon
 
                         // Create the projectile as a real model in the sector (CreateObject,
                         // weaponIGC.cpp:290-304; SetPosition/SetVelocity/SetCluster).
+                        if (_gunner is not null) TurretRoundsFired++;   // P814 telemetry: rounds fired by a manned turret
                         var projectile = new Projectile(
                             id: _ship.Mission!.NextObjectId(),
                             sector,

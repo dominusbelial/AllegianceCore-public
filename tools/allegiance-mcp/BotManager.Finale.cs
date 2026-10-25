@@ -183,7 +183,8 @@ internal sealed partial class BotManager
     }
 
     private static ShowcaseFinale.StrikeLoadout? SelectFinaleLoadout(ActiveBot bot,
-        DataStationTypeIGC target, IReadOnlyList<DataStationIGC>? observedStations = null)
+        DataStationTypeIGC target, IReadOnlyList<DataStationIGC>? observedStations = null,
+        bool preferTurretCarrier = false)
     {
         var core = Catalog.RepresentativeCore();
         var techs = TechTreeBitMask.Empty;
@@ -217,7 +218,8 @@ internal sealed partial class BotManager
                 if (observedCiv is { } id && core.Civilizations.ContainsKey(id)) civ = id;
             }
         var selected = TechLoadoutSelector.Select(core, civ, Showcase.HullRole.Bomber,
-            techs, shop.Value.StationTypeId, target)?.Strike;
+            techs, shop.Value.StationTypeId, target, strikePref: preferTurretCarrier
+                ? TechLoadoutSelector.StrikeHullPref.TurretCarrier : TechLoadoutSelector.StrikeHullPref.Best)?.Strike;
         if (selected is not null) return selected;
         if (ResearchFinale(bot))
         {
@@ -490,7 +492,13 @@ internal sealed partial class BotManager
                 bot.LauncherPartId, bot.MissileReadyTime, bot.WingmanBehaviour, bot.TargetSector, bot.RouteIndex, bot.Role);
             if (bot.FinaleBomberReserved)
             {
-                var loadout = SelectFinaleLoadout(bot, Catalog.RepresentativeCore().StationTypes[plan.TargetTypeId]);
+                // P814b scope 1 — split the strike BEFORE picking the loadout so
+                // the P801 lone wolves keep the cloak (Best) hull and the visible
+                // element flies a TURRET carrier (a seat a bot gunner can board).
+                // The first MaxLoneWolves cloak-capable bombers are the wolves.
+                bool wolfBudget = LiveLoneWolves(run, bot.Side) < ResearchTactics.MaxLoneWolves;
+                var loadout = SelectFinaleLoadout(bot, Catalog.RepresentativeCore().StationTypes[plan.TargetTypeId],
+                    preferTurretCarrier: !wolfBudget && GunnerPolicy.Effective.Enable);
                 plan.Loadout = loadout;
                 if (loadout is not null)
                 {
