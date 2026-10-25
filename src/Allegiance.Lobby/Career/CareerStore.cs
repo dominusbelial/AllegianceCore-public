@@ -179,7 +179,8 @@ public sealed class CareerStore
                 Losses: int.Parse(r[10]),
                 PromotionAt: CareerRankTable.PromotionAt(rank)));
         }
-        return new CareerContracts.CareerInfo(accountId, acct[1], description, rating, civs);
+        short allRank = CareerRankTable.RankFor((int)civs.Sum(c => c.Score));
+        return new CareerContracts.CareerInfo(accountId, acct[1], description, rating, civs, allRank);
     }
 
     /// <summary>Set a player's public profile description (native

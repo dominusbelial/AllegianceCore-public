@@ -82,13 +82,16 @@ public class IntroScreenModelTests
     public void Menu_preserves_the_native_button_set_and_adds_showcase()
     {
         // P757 — Replay Intro and Help join the native button set after
-        // Credits; the port's extra stays at the end. P789 renamed it Showcase.
-        Assert.Equal(10, IntroScreenModel.MainLabels.Length);
+        // Credits; the port's extras stay at the end. P789 renamed it Showcase;
+        // P808c appends Career (the port's lobby-portal entry for the screens).
+        Assert.Equal(11, IntroScreenModel.MainLabels.Length);
         Assert.Equal("Replay Intro", IntroScreenModel.MainLabels[6]);
         Assert.Equal("Help", IntroScreenModel.MainLabels[7]);
         Assert.Equal("Exit", IntroScreenModel.MainLabels[8]);
         Assert.Equal("Showcase", IntroScreenModel.MainLabels[9]);
         Assert.Equal(IntroCommand.Benchmark, IntroScreenModel.Activate(9));
+        Assert.Equal("Career", IntroScreenModel.MainLabels[10]);
+        Assert.Equal(IntroCommand.Career, IntroScreenModel.Activate(10));
         Assert.Equal("Single Player", IntroScreenModel.MainLabels[0]);
     }
 }

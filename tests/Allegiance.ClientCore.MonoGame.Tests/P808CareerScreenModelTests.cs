@@ -47,6 +47,28 @@ public sealed class P808CareerScreenModelTests
         Assert.False(m.Editing);
     }
 
+    [Fact]
+    public void CharacterInfo_commit_description_adopts_text_and_leaves_edit_mode()
+    {
+        var m = new CharacterInfoModel();
+        m.Load(Info());
+        Assert.False(m.Editing);
+        m.BeginEdit();
+        Assert.True(m.Editing);
+        m.CommitDescription("A new bio for Alpha");   // P808c OnButtonApply copy (CharInfoScreen.cpp:837-859)
+        Assert.Equal("A new bio for Alpha", m.Description);
+        Assert.False(m.Editing);
+    }
+
+    [Fact]
+    public void Intro_main_menu_exposes_the_career_entry()
+    {
+        // P808c — the career screens are reached from the intro (the port's lobby
+        // portal; native reaches them from the club lobby).
+        Assert.Equal("Career", IntroScreenModel.MainLabels[^1]);
+        Assert.Equal(IntroCommand.Career, IntroScreenModel.Activate(10));
+    }
+
     // ---- Leaderboard screen (native leaderboardscreen.cpp) ----
 
     [Fact]
@@ -132,4 +154,18 @@ public sealed class P808CareerScreenModelTests
         TotalScore: 1000 - i, MinutesPlayed: 10 + i, BaseKills: 0, BaseCaptures: 0,
         Kills: i, Deaths: 0, Rank: 0, Rating: 0, Wins: 0, Losses: 0, GamesPlayed: 1,
         CommanderWins: 0, CommanderLosses: 0);
+
+    [Fact]
+    public void All_civilizations_line_shows_the_lobby_rank_not_zero()
+    {
+        var info = new CareerDto.CareerInfo("acct", "ArchonAlpha", "", 900,
+        [
+            new CareerDto.CareerCivStats(1, 2, 500, 1, 2, 100, 30, 3, 1, 1, 0, 1200),
+            new CareerDto.CareerCivStats(2, 5, 3000, 0, 1, 150, 60, 8, 2, 2, 1, 5500),
+        ], AllCivsRank: 4);
+        var model = new CharacterInfoModel();
+        model.Load(info, id => id == 1 ? "Iron Coalition" : null);
+        Assert.Equal("Lieutenant", model.RankName);              // the "All" line: rank 4
+        Assert.Equal(new[] { CharacterInfoModel.AllCivsLabel, "Iron Coalition", "Civ 2" }, model.CivNames);
+    }
 }

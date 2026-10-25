@@ -85,7 +85,10 @@ public static class CareerContracts
         string Callsign,
         string Description,
         int Rating,
-        IReadOnlyList<CareerCivStats> Civs);
+        IReadOnlyList<CareerCivStats> Civs,
+        // The "all civilizations" rank: native ranks the summed line like any other
+        // (civid -1 = sum of all civs, Inc/ClubMessages.h:79; FedSrv.CPP:1070-1078).
+        short AllCivsRank = 0);
 
     /// <summary>One leaderboard row (native <c>LeaderBoardEntry</c>,
     /// <c>Inc/ClubMessages.h:329-350</c>).</summary>

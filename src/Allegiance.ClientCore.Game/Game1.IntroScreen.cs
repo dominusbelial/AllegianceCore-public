@@ -27,7 +27,7 @@ public sealed partial class Game1
     /// P785 adds the training slideshow screens (native ScreenIDTrainSlideshow /
     /// ScreenIDPostTrainSlideshow, Treki.h:31-32 — the port uses one view whose
     /// dismiss behaviour follows the slideshow kind).</summary>
-    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSlideshow, TrainingSuggest, Credits, Benchmark, BenchmarkOffer, Settings, Help }
+    private enum IntroView { Main, FindServer, DirectConnect, SinglePlayer, SkirmishSetup, Training, TrainingSlideshow, TrainingSuggest, Credits, Benchmark, BenchmarkOffer, Settings, Help, Career }
 
     private IntroView _introView = IntroView.Main;
     private int _introIndex;
@@ -281,6 +281,9 @@ public sealed partial class Game1
             case IntroView.Credits:
                 if (esc && !_iEsc) { _introView = IntroView.Main; _introIndex = 0; }
                 break;
+            case IntroView.Career:
+                UpdateCareerScreen(ks, up, down, enter, esc, tab);
+                break;
         }
 
         HandleIntroBackspace(ks);
@@ -357,6 +360,9 @@ public sealed partial class Game1
                 break;
             case IntroCommand.Exit:           // native OnButtonExit: GetWindow()->StartClose(), :1799.
                 Exit();
+                break;
+            case IntroCommand.Career:         // P808c — career screens (port's lobby portal).
+                EnterCareerScreen();
                 break;
         }
     }
@@ -624,6 +630,7 @@ public sealed partial class Game1
                 case IntroView.TrainingSuggest: DrawIntroTrainingSuggest(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.Credits: DrawIntroCredits(w, h, titleCol, dimCol, textCol); break;
                 case IntroView.Help: DrawIntroHelp(w, h, titleCol, dimCol, textCol); break;
+                case IntroView.Career: DrawCareerScreen(w, h, titleCol, dimCol, textCol); break;
             }
         }
         finally
@@ -836,6 +843,14 @@ public sealed partial class Game1
         var hint = $"{_trainingSlideshow?.Title}   {( (_trainingSlideshow?.Index ?? 0) + 1)}/{_trainingSlideshow?.Count ?? 0}   any key: next";
         var hsz = _hudSmall.MeasureString(hint);
         _spriteBatch.DrawString(_hudSmall, hint, new Vector2((w - hsz.X) / 2f, h * 0.92f), dimCol);
+    }
+
+    // ── P808c — the career screens (character info + leaderboard) ─────────
+    private void DrawCareerScreen(float w, float h, Color titleCol, Color dimCol, Color textCol)
+    {
+        CareerScreenRenderer.Draw(_spriteBatch, _hudSmall, _hudBig, _whitePixel, _hudSettings,
+            _characterInfo, _leaderboard, _careerMode == CareerMode.Leaderboard, _careerCursor,
+            _careerEditingDesc, _careerDescBuf.ToString(), _careerStatus, _careerViewAccount, w, h);
     }
 
     /// <summary>Greedy word wrap to the pixel width (the intro slideshow's caption

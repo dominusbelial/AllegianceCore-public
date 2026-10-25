@@ -618,6 +618,24 @@ public sealed partial class Server : IDisposable
     // cross-thread-safe LivePlayerCount snapshot — never Ships/_peerShips.
     private LobbyHeartbeat? _heartbeat;
     /// <summary>
+    /// P808c — the lobby's registered-callsign cache used to refuse anonymous
+    /// logons that would take a registered player's name. Constructed alongside
+    /// the heartbeat (needs the Lobby config), torn down in Shutdown. Fail-open:
+    /// when the lobby is unreachable it protects nothing rather than breaking
+    /// anonymous play.
+    /// </summary>
+    private RegisteredCallsignCache? _reservedCallsigns;
+
+    /// <summary>P808c — internal test seam (InternalsVisibleTo) so loopback tests
+    /// can inject a pre-populated reserved-callsign cache (a real TCP logon against
+    /// a server whose lobby is an in-process test server is exercised without a
+    /// second real socket).</summary>
+    internal RegisteredCallsignCache? ReservedCallsignsCache
+    {
+        get => _reservedCallsigns;
+        set => _reservedCallsigns = value;
+    }
+    /// <summary>
     /// P731 — the optional UDP discovery responder (answers the client's
     /// "Find Server" queries). Non-null only when discovery is enabled (the
     /// default; see <see cref="DiscoveryConfig"/>). Started in

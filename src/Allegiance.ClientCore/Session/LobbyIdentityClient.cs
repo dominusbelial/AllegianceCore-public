@@ -10,6 +10,10 @@ public sealed class LobbyIdentityClient : IDisposable
     private readonly HttpClient _http;
     private string? _session;
     public IdentityAccount? Account { get; private set; }
+
+    /// <summary>P808c — the current bearer session token, so the career screens
+    /// can act as the signed-in player (owner-only description edit).</summary>
+    public string? SessionBearer => _session;
     public LobbyIdentityClient(string origin)
     {
         var uri = new Uri(origin);

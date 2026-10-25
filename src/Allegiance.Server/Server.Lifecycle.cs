@@ -288,6 +288,9 @@ public sealed partial class Server
             // for the client's server-list filters and status/skill/settings
             // sort columns. Cross-thread-safe snapshot like the fields above.
             () => LiveGameParams);
+        // Only an identity server refuses reserved names; others never poll the lobby for them.
+        if (_config.Identity is not null)
+            _reservedCallsigns = new RegisteredCallsignCache(_config.Lobby);
         Console.WriteLine($"[lobby] heartbeat enabled -> {_config.Lobby.Url}, every {_config.Lobby.HeartbeatIntervalSeconds}s");
     }
 
@@ -2173,6 +2176,8 @@ public sealed partial class Server
         // transport shutdown (either order is fine) — kept first for reverse-of-boot clarity.
         _heartbeat?.Dispose();
         _heartbeat = null;
+        _reservedCallsigns?.Dispose();
+        _reservedCallsigns = null;
         _discoveryResponder?.Dispose();
         _discoveryResponder = null;
         CompleteBroadcastSnapshot();

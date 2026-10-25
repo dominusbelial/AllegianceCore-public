@@ -44,6 +44,7 @@ namespace Allegiance.Server;
 [JsonSerializable(typeof(LobbyRegisterRequest))]
 [JsonSerializable(typeof(LobbyRegisterResponse))]
 [JsonSerializable(typeof(LobbyMatchReport))]
+[JsonSerializable(typeof(string[]))]
 [JsonSerializable(typeof(Allegiance.Core.Transport.EgressWindow))]
 internal sealed partial class ServerJsonContext : JsonSerializerContext
 {

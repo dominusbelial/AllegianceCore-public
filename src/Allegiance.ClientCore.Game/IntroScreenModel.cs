@@ -24,6 +24,7 @@ public enum IntroCommand
     Help,
     Exit,
     Benchmark,
+    Career,
 }
 
 /// <summary>
@@ -42,7 +43,7 @@ public sealed class IntroScreenModel
     {
         "Single Player", "Play Online", "Play LAN / Find Server",
         "Direct Connect", "Options", "Credits", "Replay Intro", "Help",
-        "Exit", "Showcase",
+        "Exit", "Showcase", "Career",
     };
 
     /// <summary>The currently highlighted main-menu index.</summary>
@@ -67,6 +68,7 @@ public sealed class IntroScreenModel
         7 => IntroCommand.Help,
         8 => IntroCommand.Exit,
         9 => IntroCommand.Benchmark,
+        10 => IntroCommand.Career,
         _ => IntroCommand.None,
     };
 

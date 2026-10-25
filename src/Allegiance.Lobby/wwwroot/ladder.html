@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Allegiance Lobby — Career Ladder</title>
+  <link rel="stylesheet" href="career.css">
+  <script src="ladder.js" defer></script>
+</head>
+<body>
+  <a class="back" href="/">&larr; Server directory</a>
+  <p class="eyebrow">ALLEGIANCE / CAREER</p>
+  <h1>Career Ladder</h1>
+  <p class="lead">Ranked by the native cumulative-score ladder. Click a pilot for their profile.</p>
+  <div class="row">
+    <span class="field"><label for="civ">Civilization</label><select id="civ"><option value="-1">All civilizations</option></select></span>
+    <span class="field"><label for="sort">Sort by</label><select id="sort">
+      <option value="3">Score</option>
+      <option value="0">Name</option>
+      <option value="1">Rank</option>
+      <option value="2">Combat rating</option>
+      <option value="4">Time played</option>
+      <option value="5">Base kills</option>
+      <option value="6">Base captures</option>
+      <option value="7">Kills</option>
+      <option value="8">Games played</option>
+      <option value="9">Deaths</option>
+      <option value="10">Wins</option>
+      <option value="11">Losses</option>
+      <option value="12">Commander wins</option>
+    </select></span>
+  </div>
+  <p id="status">Loading&hellip;</p>
+  <table id="board">
+    <thead><tr>
+      <th class="num">#</th><th>Pilot</th><th>Rank</th><th class="num">Rating</th>
+      <th class="num">Games</th><th class="num">Time</th><th class="num">Kills</th>
+      <th class="num">Deaths</th><th class="num">Wins</th><th class="num">Losses</th>
+      <th class="num">Score</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+</body>
+</html>

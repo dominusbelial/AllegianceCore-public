@@ -51,6 +51,10 @@ public static class IdentityEndpoints
             SetCookie(ctx, settings, store.Session(account.Id)); return Results.Ok(account);
         });
         group.MapGet("/me", (HttpContext ctx, IdentityStore store) => store.Authenticate(SessionSecret(ctx)) is { } account ? Results.Ok(account) : Results.Unauthorized());
+        // P808c — registered callsigns for servers' reserved-name protection
+        // (an anonymous logon must not take a registered player's name). Public
+        // read; servers cache it with a short TTL and fail open if unreachable.
+        group.MapGet("/callsigns", (IdentityStore store) => Results.Ok(store.RegisteredCallsigns()));
         group.MapPost("/signout", (HttpContext ctx, IdentityStore store) =>
         {
             if (SessionSecret(ctx) is { } secret) store.Revoke(secret);

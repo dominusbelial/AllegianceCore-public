@@ -32,13 +32,20 @@ public sealed class CharacterInfoModel
     /// <summary>The civ combo entries: an "All civs" row followed by each played civ.</summary>
     public IReadOnlyList<string> CivNames { get; private set; } = [];
 
-    public void Load(CareerDto.CareerInfo info)
+    /// <summary>The lobby's rank for the summed "All" line.</summary>
+    public short AllCivsRank { get; private set; }
+
+    /// <param name="civName">Resolves a civilization id to its core name (native lists
+    /// civilizations by name); null or an unknown id falls back to "Civ N".</param>
+    public void Load(CareerDto.CareerInfo info, Func<short, string?>? civName = null)
     {
         Callsign = info.Callsign;
         Description = info.Description;
         Civs = info.Civs;
+        AllCivsRank = info.AllCivsRank;
         var names = new List<string> { AllCivsLabel };
-        names.AddRange(info.Civs.Select(c => "Civ " + c.Civ.ToString(CultureInfo.InvariantCulture)));
+        names.AddRange(info.Civs.Select(c => civName?.Invoke(c.Civ) is { Length: > 0 } n
+            ? n : "Civ " + c.Civ.ToString(CultureInfo.InvariantCulture)));
         CivNames = names;
         if (SelectedCiv >= CivNames.Count) SelectedCiv = 0;
     }
@@ -59,7 +66,7 @@ public sealed class CharacterInfoModel
         get
         {
             if (Civs.Count == 0) return null;
-            if (SelectedCiv == 0) return Sum(Civs);
+            if (SelectedCiv == 0) return Sum(Civs) with { Rank = AllCivsRank };
             int i = SelectedCiv - 1;
             return i < Civs.Count ? Civs[i] : null;
         }
@@ -80,9 +87,18 @@ public sealed class CharacterInfoModel
         Editing = false;
     }
 
+    /// <summary>P808c — commit an edited description and leave edit mode (native
+    /// <c>OnButtonApply</c> copying the edit-box text, <c>CharInfoScreen.cpp:837-859</c>).
+    /// The caller persists it to the lobby (owner-only); the model just adopts the text.</summary>
+    public void CommitDescription(string value)
+    {
+        Description = value;
+        Editing = false;
+    }
+
     private static CareerDto.CareerCivStats Sum(IReadOnlyList<CareerDto.CareerCivStats> civs) => new(
         Civ: CareerDto.AllCivs,
-        Rank: (short)(civs.Count == 0 ? 0 : 0),
+        Rank: 0,   // set from the lobby's AllCivsRank by SelectedStats
         Score: civs.Sum(c => c.Score),
         BaseCaptures: civs.Sum(c => c.BaseCaptures),
         BaseKills: civs.Sum(c => c.BaseKills),

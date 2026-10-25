@@ -366,3 +366,31 @@ list in **reverse**.
   `docker-compose.yml`, `docker/compose.override.postgres.yml`, `docker/README.md`.
 - **Identity visual proof** — actual Game1 window with production sign-in code,
   renderer and HTTP client: `tools/p808a-identity-proof/Program.cs`.
+
+## 13. Career / leaderboard (P808b/P808c)
+
+- **Career store + HTTP** — per-account per-civ career statistics, rank rules,
+  leaderboard and profile descriptions on the lobby:
+  `src/Allegiance.Lobby/Career/CareerStore.cs`,
+  `src/Allegiance.Lobby/Career/CareerEndpoints.cs`,
+  `src/Allegiance.Lobby/Career/CareerRankTable.cs`. Native:
+  `FedSrv/FedSrv.CPP:1045-1103` (`SetCharStats`), `Inc/ClubMessages.h`.
+- **Career wire contracts / client mirror** — `src/Allegiance.Lobby/Career/CareerContracts.cs`,
+  `src/Allegiance.ClientCore.Game/Career/CareerModels.cs` (`CareerDto`),
+  `CareerApiClient.cs` (HTTP read/edit).
+- **Career screen models** — `src/Allegiance.ClientCore.Game/Career/CharacterInfoModel.cs`,
+  `Career/LeaderboardModel.cs` (native `WinTrek/CharInfoScreen.cpp` /
+  `leaderboardscreen.cpp` behaviour).
+- **Career screens (P808c, both HUD styles)** — rendered in the MonoGame client,
+  reached from the intro (Career menu): `src/Allegiance.ClientCore.Game/Game1.Career.cs`
+  (drive + fetch), `Rendering/CareerScreenRenderer.cs` (draw both styles),
+  `Game1.IntroScreen.cs` (`IntroView.Career`). Real-window captures in
+  `docs/reports/P808C_assets/`; proof tool `tools/p808c-ui-proof/Program.cs`.
+- **Reserved callsigns (P808c)** — the lobby exposes registered names
+  (`src/Allegiance.Lobby/Identity/IdentityEndpoints.cs`, `IdentityStore.RegisteredCallsigns`)
+  and the server caches them short-TTL, fail-open to refuse anonymous logons that
+  would take a registered name: `src/Allegiance.Server/RegisteredCallsignCache.cs`,
+  `Server.Dispatch.cs`.
+- **Career lobby web pages (P808c)** — read-only ladder + player profile on the
+  lobby site: `src/Allegiance.Lobby/wwwroot/ladder.html`, `ladder.js`,
+  `profile.html`, `profile.js`, `career.css`.

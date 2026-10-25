@@ -28,7 +28,7 @@ public static class CareerDto
 
     public sealed record CareerInfo(
         string AccountId, string Callsign, string Description, int Rating,
-        IReadOnlyList<CareerCivStats> Civs);
+        IReadOnlyList<CareerCivStats> Civs, short AllCivsRank = 0);
 
     public sealed record LeaderboardEntry(
         string AccountId, string Callsign, int Position, float TotalScore, int MinutesPlayed,
@@ -45,7 +45,7 @@ public static class CareerDto
 
 /// <summary>
 /// Client-side rank-name lookup for the career screens, mirroring the lobby's
-/// <c>CareerRankTable</c> ladder (which mirrors native's <c>ranks.txt</c> /
+/// <c>CareerRankTable</c> ladder (which mirrors native's standalone rank table file /
 /// club <c>Ranks</c> table). Both screens paint rank names via native's
 /// <c>BaseClient::LookupRankName</c> clamp-to-top semantics
 /// (<c>clintlib.cpp:2670-2710</c>).

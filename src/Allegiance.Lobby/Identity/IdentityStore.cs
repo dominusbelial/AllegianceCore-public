@@ -162,4 +162,19 @@ public sealed class IdentityStore
     }
     public string? VerifyServer(string? id, string? secret) => id is null || secret is null ? null :
         Row("SELECT id FROM enrolled_servers WHERE id=@p0 AND secret_hash=@p1", id, Hash(secret))?[0];
+
+    /// <summary>
+    /// P808c — the registered (account-held) callsigns, case-preserved. Game
+    /// servers fetch this so an ANONYMOUS logon cannot take the name of a
+    /// registered player (reserved-callsign protection, P808a follow-up).
+    /// </summary>
+    public string[] RegisteredCallsigns()
+    {
+        var names = new List<string>();
+        using var c = Open();
+        using var cmd = Command(c, "SELECT callsign FROM accounts");
+        using var dr = cmd.ExecuteReader();
+        while (dr.Read()) names.Add(dr.IsDBNull(0) ? "" : Convert.ToString(dr.GetValue(0), System.Globalization.CultureInfo.InvariantCulture)!);
+        return names.ToArray();
+    }
 }

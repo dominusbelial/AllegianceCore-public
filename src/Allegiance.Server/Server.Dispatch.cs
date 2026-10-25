@@ -171,6 +171,27 @@ public sealed partial class Server
 
                 bool identityAccepted = BindIdentity(from, req, out var identityFailure);
 
+                // P808c — RESERVED CALLSIGN protection (P808a follow-up): on a
+                // server with identity configured, an ANONYMOUS logon (no lobby
+                // account bound, i.e. AllowAnonymous) must not take the name of a
+                // REGISTERED player. We REFUSE rather than suffix: allowing it
+                // would let anyone impersonate a registered player by name — there
+                // is no authenticated link between the anonymous seat and the
+                // account — and silently renaming someone is worse UX than a clear
+                // refusal. The legitimate owner signs in (brings a join token) and
+                // BindIdentity swaps the name to their canonical callsign anyway.
+                // Fail-open: if the lobby cache is empty/unreachable this protects
+                // nothing (anonymous play never breaks).
+                bool reservedConflict = false;
+                string reservedFailure = "";
+                if (_config.Identity is not null && !_peerIdentities.ContainsKey(from)
+                    && _reservedCallsigns is not null && _reservedCallsigns.Contains(req.CharacterName ?? ""))
+                {
+                    reservedConflict = true;
+                    reservedFailure = "that callsign is registered — sign in to use it";
+                    Console.WriteLine($"[logon] {from} '{ConsoleLog.Sanitize(req.CharacterName)}': anonymous logon refused — registered callsign (reserved-name protection)");
+                }
+
                 // Native private standalone joins refuse duplicate names, case
                 // insensitively (FedSrv/FedSrv.CPP:600-624). USEAUTH instead
                 // removes the old player (:629; fsmission.cpp:1248-1276).
@@ -182,8 +203,8 @@ public sealed partial class Server
                         || _peerShips.Any(p => ReferenceEquals(p.Value.Ship.Mission, _missions[0])
                             && _peerNames.TryGetValue(p.Key, out var name)
                             && string.Equals(name, req.CharacterName ?? "", StringComparison.OrdinalIgnoreCase)));
-                var validated = req.VersionMatches && !duplicateName && identityAccepted;
-                var failureReason = !identityAccepted ? identityFailure : duplicateName ? "character name already in use in this mission" : "wrong client version";
+                var validated = req.VersionMatches && !duplicateName && identityAccepted && !reservedConflict;
+                var failureReason = !identityAccepted ? identityFailure : duplicateName ? "character name already in use in this mission" : reservedConflict ? reservedFailure : "wrong client version";
                 if (!validated) _peerIdentities.Remove(from);
                 if (validated) AuthenticatePrivileges(from, req);
                 // P619c — grant a connected HUMAN client (a character name NOT
