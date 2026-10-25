@@ -57,7 +57,7 @@ public sealed class P540bPodAutopilotCrossSectorLiveTests
         SideSelectAutoSeatSeconds = 30,   // P763: preserve the pre-flag 30 s auto-seat (these peers never send POSITIONREQ)
         Games =
         [
-            new Gm { Name = "P540b Cross-Sector Pod", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { Name = "P540b Cross-Sector Pod", ShowMap = true, Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 
