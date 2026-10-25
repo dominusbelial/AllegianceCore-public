@@ -307,6 +307,30 @@ public sealed class LobbyHeartbeat : IDisposable
         // must still be able to Release after the timer has been disposed.
     }
 
+    /// <summary>
+    /// Best-effort, fire-and-forget POST of a finished match's per-player results
+    /// to the lobby (P808b), carrying the server's enrollment proof so the lobby
+    /// only ingests reports from operator-approved servers (anti-abuse). No-op
+    /// when this server has no enrollment (anonymous/standalone) or is shutting
+    /// down; every failure is caught and logged, never thrown, so a slow/absent
+    /// lobby can never stall the sim. Callers run this on their own async path —
+    /// never synchronously on the sim thread.
+    /// </summary>
+    internal async Task ReportResultsAsync(LobbyMatchReport report)
+    {
+        if (_disposed || _enrollment is null) return;   // verified servers only
+        if (report.ServerId is null) report = report with { ServerId = _enrollment.ServerId, ServerSecret = _enrollment.ServerSecret };
+        try
+        {
+            using var resp = await _http.PostAsJsonAsync("/api/career/results", report,
+                ServerJsonContext.Default.LobbyMatchReport).ConfigureAwait(false);
+            if (!resp.IsSuccessStatusCode)
+                Console.WriteLine($"[lobby] career report status {(int)resp.StatusCode}");
+        }
+        catch (Exception e) when (e is HttpRequestException or JsonException or TaskCanceledException or NotSupportedException)
+        { Console.WriteLine($"[lobby] career report failed: {e.Message}"); }
+    }
+
     private readonly bool _publishPlayers;
     private readonly bool _ownsHttp;
 }
@@ -317,6 +341,38 @@ public sealed class LobbyHeartbeat : IDisposable
 /// wire shape is identical and <see cref="LobbyHeartbeat"/> binds it case-insensitively.
 /// </summary>
 public sealed record LobbyRegisterResponse(string Id, string Token);
+
+/// <summary>
+/// Mirror of <c>Allegiance.Lobby</c>'s career <c>MatchReport</c> / one player's
+/// <c>MatchResultEntry</c> wire shape (P808b), kept local so
+/// <c>Allegiance.Server</c> stays independent of the (Web-SDK) Lobby assembly —
+/// serialized camelCase by the source-generated <see cref="ServerJsonContext"/>,
+/// and the lobby binds it case-insensitively. Carries the server's enrollment
+/// proof (id + secret) so the lobby only ingests verified-server reports.
+/// </summary>
+public sealed record LobbyMatchResultEntry(
+    string AccountId,
+    short Civ,
+    float Score,
+    float CombatRating,
+    int Kills,
+    int Deaths,
+    float BaseKills,
+    float BaseCaptures,
+    int Minutes,
+    bool Win,
+    bool Loss,
+    bool CommanderWin,
+    bool CommanderLoss,
+    bool ScoresCount);
+
+/// <summary>A finished match's results for one server (see
+/// <see cref="LobbyMatchResultEntry"/>).</summary>
+public sealed record LobbyMatchReport(
+    string MatchId,
+    IReadOnlyList<LobbyMatchResultEntry> Players,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? ServerId = null,
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)] string? ServerSecret = null);
 
 /// <summary>
 /// Mirror of <c>Allegiance.Lobby</c>'s <c>RegisterRequest</c> wire shape, promoted from

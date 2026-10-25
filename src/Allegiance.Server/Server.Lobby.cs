@@ -431,6 +431,10 @@ public sealed partial class Server
         FinalizeMissionScores(mission, winnerId);
         if (sw is not null) SwMark(sw, "finalize-scores", mission, winnerId);
 
+        // P808b — report verified players' final results to the lobby (career
+        // stats + leaderboard). Fire-and-forget; never blocks the sim.
+        ReportMissionResultsToLobby(mission, winnerId);
+
         byte[] packet = EncodeGameOverResult(mission, winnerId, reason);
 
         // Whole-mission audience, scoped to THIS mission: every peer whose ship
@@ -1155,6 +1159,51 @@ public sealed partial class Server
                               $"baseKills={score.BaseKills:R} baseCaptures={score.BaseCaptures:R} flags={score.Flags} artifacts={score.Artifacts} " +
                               $"win={score.Win} ratio={score.RankRatio:R} played={score.TimePlayed:F0}s");
         }
+    }
+
+    /// <summary>Per-server monotonic counter for the lobby match id, so a
+    /// finished match has a unique, stable id even as missions rotate (P808b).</summary>
+    private int _careerReportSeq;
+
+    /// <summary>
+    /// P808b — gather each verified player's final per-civ result on
+    /// <paramref name="mission"/> and fire-and-forget it to the lobby. The port of
+    /// native's <c>SetCharStats</c> persist upload (<c>FedSrv/FedSrv.CPP:1045-1140</c>):
+    /// only players who logged in with a verified lobby account are reported (the
+    /// anti-abuse rule that results come only from verified identities), and only
+    /// when this server is itself enrolled (verified) — anonymous/standalone
+    /// servers have no lobby record to credit. Called from the single shared
+    /// <see cref="DeclareGameOver"/> path right after
+    /// <see cref="FinalizeMissionScores"/> so the results reflect the final scores
+    /// before ships migrate to the rotated mission. Never blocks the sim.
+    /// </summary>
+    private void ReportMissionResultsToLobby(Mission mission, short winnerId)
+    {
+        if (_heartbeat is null) return;
+        var entries = new List<LobbyMatchResultEntry>();
+        string? matchId = null;
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission)) continue;
+            if (kv.Value.Ship.SideId is not { } sid) continue;
+            string? accountId = AccountId(kv.Key);
+            if (accountId is null) continue;          // verified accounts only (anti-abuse)
+            short civ = 0;
+            var side = mission.Sides.FirstOrDefault(s => s.Id == sid);
+            if (side?.Civilization is { } civObj) civ = (short)civObj.CivilizationId;
+            var score = kv.Value.PlayerScore;
+            entries.Add(new LobbyMatchResultEntry(
+                AccountId: accountId, Civ: civ, Score: score.Score, CombatRating: score.CombatRating,
+                Kills: score.Kills, Deaths: score.Deaths,
+                BaseKills: score.BaseKills, BaseCaptures: score.BaseCaptures,
+                Minutes: (int)(score.TimePlayed / 60.0),
+                Win: score.Win, Loss: winnerId != GameOver.NA && sid != winnerId,
+                CommanderWin: false, CommanderLoss: false, ScoresCount: true));
+            matchId ??= $"m{_careerReportSeq++:D6}-{(long)_simNow}";
+        }
+        if (entries.Count == 0 || matchId is null) return;
+        Console.WriteLine($"[lobby] career report: {entries.Count} verified player(s), match {matchId}");
+        _ = _heartbeat.ReportResultsAsync(new LobbyMatchReport(matchId, entries));
     }
 
     /// <summary>Build the per-player endgame roster for a mission (the port's

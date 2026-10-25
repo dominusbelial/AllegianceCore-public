@@ -65,6 +65,11 @@ public sealed class IdentityStore
             CREATE TABLE IF NOT EXISTS devices (hash TEXT PRIMARY KEY, user_code TEXT NOT NULL UNIQUE, purpose TEXT NOT NULL, name TEXT NOT NULL, expires BIGINT NOT NULL, last_poll BIGINT NOT NULL, account_id TEXT);
             CREATE TABLE IF NOT EXISTS enrolled_servers (id TEXT PRIMARY KEY, secret_hash TEXT NOT NULL UNIQUE, operator_id TEXT NOT NULL REFERENCES accounts(id), name TEXT NOT NULL);
             INSERT INTO identity_migrations(version) VALUES(1) ON CONFLICT(version) DO NOTHING;
+            -- P808b — career statistics and leaderboard (club-DB equivalent).
+            CREATE TABLE IF NOT EXISTS career_meta (account_id TEXT PRIMARY KEY REFERENCES accounts(id), description TEXT NOT NULL, combat_rating REAL NOT NULL, updated_at BIGINT NOT NULL);
+            CREATE TABLE IF NOT EXISTS career_by_civ (account_id TEXT NOT NULL REFERENCES accounts(id), civ SMALLINT NOT NULL, score REAL NOT NULL, rank SMALLINT NOT NULL, combat_rating REAL NOT NULL, kills INTEGER NOT NULL, deaths INTEGER NOT NULL, base_kills INTEGER NOT NULL, base_captures INTEGER NOT NULL, minutes INTEGER NOT NULL, wins INTEGER NOT NULL, losses INTEGER NOT NULL, games INTEGER NOT NULL, commander_wins INTEGER NOT NULL, commander_losses INTEGER NOT NULL, PRIMARY KEY(account_id, civ));
+            CREATE TABLE IF NOT EXISTS match_results (match_id TEXT NOT NULL, account_id TEXT NOT NULL, civ SMALLINT NOT NULL, score REAL NOT NULL, combat_rating REAL NOT NULL, kills INTEGER NOT NULL, deaths INTEGER NOT NULL, base_kills INTEGER NOT NULL, base_captures INTEGER NOT NULL, minutes INTEGER NOT NULL, win INTEGER NOT NULL, loss INTEGER NOT NULL, commander_win INTEGER NOT NULL, commander_loss INTEGER NOT NULL, reported_at BIGINT NOT NULL, server_id TEXT NOT NULL, PRIMARY KEY(match_id, account_id));
+            INSERT INTO identity_migrations(version) VALUES(2) ON CONFLICT(version) DO NOTHING;
             """);
         migration.Transaction = tx; migration.ExecuteNonQuery(); tx.Commit();
     }

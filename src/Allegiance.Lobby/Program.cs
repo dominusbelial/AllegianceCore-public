@@ -1,4 +1,5 @@
 using Allegiance.Lobby;
+using Allegiance.Lobby.Career;
 using Allegiance.Lobby.Identity;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Net;
@@ -39,6 +40,7 @@ builder.Configuration.GetSection("Lobby:Identity").Bind(identity);
 identity.Validate();
 builder.Services.AddSingleton(identity);
 builder.Services.AddSingleton<IdentityStore>();
+builder.Services.AddSingleton<CareerStore>();
 builder.Services.AddSingleton<IdentitySigningKey>();
 builder.Services.AddSingleton<PasskeyService>();
 builder.Services.AddIdentityProviders(identity);
@@ -78,6 +80,7 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 app.MapLobbyEndpoints();
 app.MapIdentity(app.Services.GetRequiredService<IdentitySettings>());
+app.MapCareer();
 
 app.Run();
 
