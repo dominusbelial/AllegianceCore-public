@@ -1,6 +1,12 @@
 using System.Buffers.Binary;
 
-namespace Allegiance.ClientCore.MonoGame.Rendering;
+// Lives in Allegiance.Core (moved there in P824 so the authoring pipeline in
+// tools/mdl-to-glb can decode AND write textures headless — MdlFile, the mesh
+// half of the format, is in this assembly/namespace already). The old
+// Allegiance.ClientCore.MonoGame.Rendering location is gone; consumers import
+// Allegiance.Core.
+
+namespace Allegiance.Core;
 
 /// <summary>
 /// A single decoded texture from a <c>.mdl</c> file's <c>BinarySurfaceInfo</c>
@@ -16,7 +22,9 @@ public sealed record MdlTexture(int Width, int Height, byte[] Rgba)
 
 /// <summary>
 /// Faithful C# port of the texture half of the <c>.mdl</c> binary-surface
-/// format — the exact recipe proven in
+/// format (native: <c>engine/enginep.h:313</c> <c>BinarySurfaceInfo</c>,
+/// <c>engine/modeler.cpp:715</c> <c>ImportImageFactory::Read</c>,
+/// <c>engine/mdlbin.cpp</c> token stream) — the exact recipe proven in
 /// <c>~/Development/allegiance-tools/reference/decode_texture.py</c> (and the
 /// <c>allegiance-mdl-model-format</c> wiki page). The port already had the MESH
 /// half (<see cref="Allegiance.Core.MdlFile"/>, <c>MeshGeo</c>/<c>FrameData</c>);
@@ -82,7 +90,7 @@ public static class MdlTextureDecoder
 
         int sizeX = (int)ReadI32(data, ref pos);
         int sizeY = (int)ReadI32(data, ref pos);
-        _ = (int)ReadI32(data, ref pos); // pitch
+        int pitch = (int)ReadI32(data, ref pos);   // rows are pitch-padded, not packed
         int bitcount = (int)ReadI32(data, ref pos);
         uint redMask = ReadU32(data, ref pos);
         uint greenMask = ReadU32(data, ref pos);
@@ -97,23 +105,29 @@ public static class MdlTextureDecoder
             throw new InvalidDataException($"invalid texture size {sizeX}x{sizeY}");
 
         int pixelCount = sizeX * sizeY;
-        if (pos + pixelCount * 2 > data.Length)
+        // Native consumes pitch·sizeY bytes (modeler.cpp:724 MovePointer) — the
+        // rows are pitch-padded, not packed, when 2·sizeX isn't 4-aligned
+        // (the corpus' odd-width HUD art, e.g. 91×80/pitch 184).
+        if (pos + (long)pitch * sizeY > data.Length)
             throw new InvalidDataException("truncated .mdl texture (pixel data)");
 
         var rgba = new byte[pixelCount * 4];
-        for (int i = 0; i < pixelCount; i++)
+        int pixelBase = pos;
+        for (int srcRow = 0; srcRow < sizeY; srcRow++)       // row 0 = top of the file's pixel rows
         {
-            ushort v = ReadU16(data, ref pos);
-            int x = i % sizeX;
-            int srcRow = i / sizeX;          // row 0 = top of the file's pixel rows
-            // flipVertical mirrors top-to-bottom for the 3-D convention; when
-            // false (2-D HUD art) file row 0 stays at output row 0.
-            int dstRow = flipVertical ? sizeY - 1 - srcRow : srcRow;
-            int di = (dstRow * sizeX + x) * 4;
-            rgba[di] = (byte)MathF.Round(((v & redMask) >> 11) / 31f * 255f);
-            rgba[di + 1] = (byte)MathF.Round(((v & greenMask) >> 5) / 63f * 255f);
-            rgba[di + 2] = (byte)MathF.Round((v & blueMask) / 31f * 255f);
-            rgba[di + 3] = 255;
+            int rowBase = pixelBase + srcRow * pitch;
+            for (int x = 0; x < sizeX; x++)
+            {
+                ushort v = BinaryPrimitives.ReadUInt16LittleEndian(data.AsSpan(rowBase + x * 2));
+                // flipVertical mirrors top-to-bottom for the 3-D convention; when
+                // false (2-D HUD art) file row 0 stays at output row 0.
+                int dstRow = flipVertical ? sizeY - 1 - srcRow : srcRow;
+                int di = (dstRow * sizeX + x) * 4;
+                rgba[di] = (byte)MathF.Round(((v & redMask) >> 11) / 31f * 255f);
+                rgba[di + 1] = (byte)MathF.Round(((v & greenMask) >> 5) / 63f * 255f);
+                rgba[di + 2] = (byte)MathF.Round((v & blueMask) / 31f * 255f);
+                rgba[di + 3] = 255;
+            }
         }
 
         return new MdlTexture(sizeX, sizeY, rgba);

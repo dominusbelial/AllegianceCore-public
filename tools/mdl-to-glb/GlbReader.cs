@@ -24,6 +24,15 @@ public static class GlbReader
         var meshes = ReadMeshes(root, bin);
         var (mounts, lights) = ReadNodes(root, bin);
 
+        // P824 — base-colour images embedded by the exporter (one PNG per
+        // texture stem, top-left/GPU order). A mesh's stem comes from its
+        // material name (the exporter names the material after the texture
+        // stem), falling back to the writer's "<stem>_<texstem>_<i>" mesh-name
+        // convention; a mesh whose material has no image keeps the parsed name
+        // stem but no image is attached (import then fails loudly unless
+        // --no-texture).
+        var images = ReadImages(root, bin);
+
         // The sidecar is a full SidecarDocument; the reader stub takes the
         // embedded "collision" record, (P823) the raw mdl FrameData and the
         // full light records (GLB light nodes carry position only — the RGBA
@@ -55,7 +64,50 @@ public static class GlbReader
             TextureStems = meshes.Select(m => m.TextureStem).OfType<string>().Distinct().ToArray(),
             Collision = collision,
             SourceMdlFrames = mdlFrames,
+            Images = images.Count > 0 ? images : null,
         };
+    }
+
+    /// <summary>P824 — parse images/samplers/textures/materials and return one
+    /// <see cref="GlbImage"/> per referenced base-colour image, plus fix each
+    /// mesh's texture stem from its material when possible.</summary>
+    private static List<GlbImage> ReadImages(JsonElement root, byte[] bin)
+    {
+        var result = new List<GlbImage>();
+        if (!root.TryGetProperty("images", out var images) || images.ValueKind != JsonValueKind.Array
+            || !root.TryGetProperty("textures", out var textures) || textures.ValueKind != JsonValueKind.Array)
+            return result;   // untextured GLB (the writer omits empty image/texture lists)
+        var bufferViews = root.TryGetProperty("bufferViews", out var bv) ? bv : default;
+
+        // image index → (stem, png bytes)
+        var imageByIndex = new Dictionary<int, (string stem, byte[] png)>();
+        int i = 0;
+        foreach (var img in images.EnumerateArray())
+        {
+            string stem = img.TryGetProperty("name", out var n) ? n.GetString() ?? $"image{i}" : $"image{i}";
+            byte[] png = [];
+            if (img.TryGetProperty("bufferView", out var bvi) && bufferViews.ValueKind == JsonValueKind.Array)
+            {
+                var view = bufferViews[bvi.GetInt32()];
+                int off = view.GetProperty("byteOffset").GetInt32();
+                int len = view.GetProperty("byteLength").GetInt32();
+                png = bin.AsSpan(off, len).ToArray();
+            }
+            imageByIndex[i++] = (stem, png);
+        }
+
+        // The exporter writes one image per texture stem and names the image
+        // (and its material) after the stem, so the stem → image mapping needs
+        // no material/texture indirection here; ReadMeshes resolves each mesh's
+        // stem from its material name (or the mesh-name convention) and the
+        // import step looks the image up by stem.
+        foreach (var (_, (stem, png)) in imageByIndex)
+        {
+            if (png.Length == 0) continue;
+            var decoded = PngCodec.Decode(png);      // validates + carries the dimensions
+            result.Add(new GlbImage(stem, decoded.Width, decoded.Height, png));
+        }
+        return result;
     }
 
     private static (byte[] json, byte[] bin) ParseChunks(Stream glb)
@@ -107,12 +159,25 @@ public static class GlbReader
             var nrm = ReadAccessorVec3(bin, accessors[prim.GetProperty("attributes").GetProperty("NORMAL").GetInt32()], bufferViews);
             var idx = ReadAccessorU16(bin, accessors[prim.GetProperty("indices").GetInt32()], bufferViews);
             string name = mesh.GetProperty("name").GetString() ?? "mesh";
-            // The writer names textured meshes "<stem>_<texstem>_<i>"; keep the
-            // texture stem out of the mesh name when parsing back.
+            // Texture stem: the exporter names the mesh's material after the
+            // stem (P824); fall back to the writer's
+            // "<stem>_<texstem>_<i>" mesh-name convention (P812).
             string? tex = null;
-            var parts = name.Split('_');
-            if (parts.Length >= 3 && parts[^2].EndsWith("bmp", StringComparison.Ordinal))
-                tex = parts[^2];
+            if (prim.TryGetProperty("material", out var matEl)
+                && root.TryGetProperty("materials", out var mats)
+                && matEl.GetInt32() < mats.GetArrayLength())
+            {
+                var mat = mats[matEl.GetInt32()];
+                if (mat.TryGetProperty("name", out var matName)
+                    && matName.GetString() is { } mn && mn.EndsWith("bmp", StringComparison.Ordinal))
+                    tex = mn;
+            }
+            if (tex is null)
+            {
+                var parts = name.Split('_');
+                if (parts.Length >= 3 && parts[^2].EndsWith("bmp", StringComparison.Ordinal))
+                    tex = parts[^2];
+            }
             meshes.Add(new GlbMesh(name, tex, pos, uv, nrm, idx));
         }
         return meshes;

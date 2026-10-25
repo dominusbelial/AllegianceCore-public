@@ -15,18 +15,39 @@ using XnaVec = Microsoft.Xna.Framework.Vector3;
 //
 // Run:  dotnet p823-render-proof.dll --dir <dir-with-written-mdl> --stem <stem>
 //           [--art <artworkDir>] [--out <dir>] [--label <label>]
-// Exit 0 unless the render crashed; PNG paths are printed for review.
+//           [--uv-check "u,v:RRGGBB"]   (P824, repeatable: sample the decoded
+//           texture the renderer actually uploaded at UV (u,v) — top-left
+//           origin — and assert the colour within RGB565 tolerance)
+// Exit 0 unless the render crashed or a --uv-check failed; PNG paths are printed for review.
 
 var options = ProofOptions.Parse(args);
 using var game = new ProofRunner(options);
 game.Run();
-return 0;
+return options.UvChecks.Count > 0 && ProofRunner.UvChecksFailed ? 2 : 0;
 
-sealed record ProofOptions(string WrittenDir, string Stem, string ArtRoot, string OutDir, string Label)
+sealed record UvCheck(float U, float V, byte R, byte G, byte B)
+{
+    /// <summary>"u,v:RRGGBB" — e.g. "0,0:FF00FF" (the TL magenta marker).</summary>
+    public static UvCheck Parse(string spec)
+    {
+        var parts = spec.Split(':');
+        if (parts.Length != 2) throw new ArgumentException($"--uv-check '{spec}' must be 'u,v:RRGGBB'");
+        var uv = parts[0].Split(',');
+        if (uv.Length != 2 || !float.TryParse(uv[0], out var u) || !float.TryParse(uv[1], out var v))
+            throw new ArgumentException($"--uv-check '{spec}' has a malformed 'u,v'");
+        if (parts[1].Length != 6 || !int.TryParse(parts[1], System.Globalization.NumberStyles.HexNumber, null, out var rgb))
+            throw new ArgumentException($"--uv-check '{spec}' has a malformed RRGGBB");
+        return new UvCheck(u, v, (byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb);
+    }
+}
+
+sealed record ProofOptions(string WrittenDir, string Stem, string ArtRoot, string OutDir, string Label,
+    IReadOnlyList<UvCheck> UvChecks)
 {
     public static ProofOptions Parse(string[] args)
     {
         string dir = "", stem = "", art = "", outDir = "", label = "p823";
+        var uvChecks = new List<UvCheck>();
         int i = 0;
         while (i < args.Length)
         {
@@ -37,6 +58,7 @@ sealed record ProofOptions(string WrittenDir, string Stem, string ArtRoot, strin
                 case "--art": art = args[++i]; break;
                 case "--out": outDir = args[++i]; break;
                 case "--label": label = args[++i]; break;
+                case "--uv-check": uvChecks.Add(UvCheck.Parse(args[++i])); break;
                 default: throw new ArgumentException($"unknown option {args[i]}");
             }
             i++;
@@ -51,13 +73,17 @@ sealed record ProofOptions(string WrittenDir, string Stem, string ArtRoot, strin
             outDir = Path.Combine(d?.FullName ?? ".", ".scratch", "p823");
         }
         Directory.CreateDirectory(outDir);
-        return new ProofOptions(dir, stem, art, outDir, label);
+        return new ProofOptions(dir, stem, art, outDir, label, uvChecks);
     }
 }
 
 sealed class ProofRunner : Game
 {
     private const int RtSize = 512;
+
+    /// <summary>Set when a --uv-check assertion failed (sampled texel colour
+    /// outside the RGB565 tolerance of the expected colour).</summary>
+    public static bool UvChecksFailed;
 
     private readonly GraphicsDeviceManager _gdm;
     private readonly ProofOptions _o;
@@ -93,6 +119,36 @@ sealed class ProofRunner : Game
         var tex = texStem is null ? null : native.TextureFor(texStem);
         float radius = native.MeshRadius(_o.Stem);
         Console.WriteLine($"[proof] mesh loaded: tris={geo.TriangleCount} radius={radius} lodLevels={native.LodLevelCount(_o.Stem)} texStem={texStem ?? "(none → lit-solid)"}");
+
+        // P824 — numeric UV proof: sample the decoded texture the renderer
+        // actually uploaded (NativeShipRenderer.TextureFor → MdlTextureDecoder
+        // flipVertical:true → Texture2D) at the given UVs. GPU pixel =
+        // (round(u·w) clamped, round(v·h) clamped) — nearest sampling, the
+        // same top-left-origin convention glTF uses, so a UV that points at a
+        // marker in Blender must point at it here too.
+        if (_o.UvChecks.Count > 0)
+        {
+            if (tex is null)
+            {
+                Console.WriteLine("[proof] FAIL: --uv-check given but the model has no texture");
+                UvChecksFailed = true;
+            }
+            else
+            {
+                var pixels = new Color[tex.Width * tex.Height];
+                tex.GetData(pixels);
+                foreach (var check in _o.UvChecks)
+                {
+                    int x = Math.Clamp((int)MathF.Round(check.U * tex.Width), 0, tex.Width - 1);
+                    int y = Math.Clamp((int)MathF.Round(check.V * tex.Height), 0, tex.Height - 1);
+                    var p = pixels[y * tex.Width + x];
+                    bool pass = Math.Abs(p.R - check.R) <= 8 && Math.Abs(p.G - check.G) <= 8 && Math.Abs(p.B - check.B) <= 8;
+                    Console.WriteLine($"[proof] uv-check ({check.U},{check.V}) → texel ({x},{y}) rgb=({p.R},{p.G},{p.B}) " +
+                                      $"expected ({check.R},{check.G},{check.B}): {(pass ? "PASS" : "FAIL")}");
+                    if (!pass) UvChecksFailed = true;
+                }
+            }
+        }
 
         // Two views per model: the hangar-preview framing (eye on +Z, the
         // client's docked-hull orbit) and a three-quarter in-flight view.

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Allegiance.Core;
 using Allegiance.Core.Model;
 using Allegiance.ClientCore.MonoGame.Assets;
 

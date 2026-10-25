@@ -37,6 +37,18 @@ public sealed record GlbExportModel
     public required CollisionSidecar? Collision { get; init; }
 
     /// <summary>
+    /// P824 — the base-colour images embedded in the GLB, one per texture stem
+    /// (the decoded native <c>&lt;stem&gt;.bmp.mdl</c> texture as a PNG). The
+    /// PNG pixels are in <b>GPU order</b> (top-left origin): exactly the RGBA
+    /// <see cref="MdlTextureDecoder.Decode"/> produces with its 3-D
+    /// <c>flipVertical:true</c> convention — which is also what glTF's
+    /// top-left UV origin samples, so mesh UVs map identically in Blender and
+    /// in the port's renderer. Null when the export ran with
+    /// <c>--no-texture</c> or no texture file was found.
+    /// </summary>
+    public IReadOnlyList<GlbImage>? Images { get; init; }
+
+    /// <summary>
     /// P823 — the source <c>.mdl</c>'s own <c>FrameData</c> records (name,
     /// position, forward and <b>up</b>, in file order) when the model came from
     /// a native file or a sidecar that carried them. The GLB node tree carries
@@ -111,6 +123,11 @@ public sealed record GlbLight(
     float RampUp,
     float Hold,
     float RampDown);
+
+/// <summary>P824 — one base-colour image embedded in the GLB: the PNG bytes
+/// (8-bit RGBA, top-left origin, GPU order — see
+/// <see cref="GlbExportModel.Images"/>) for a texture stem.</summary>
+public sealed record GlbImage(string Stem, int Width, int Height, byte[] Png);
 
 /// <summary>
 /// The collision sidecar: the parsed <c>.cvh</c> (raw file values — the native

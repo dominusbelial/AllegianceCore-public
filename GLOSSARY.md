@@ -354,6 +354,19 @@ list in **reverse**.
   walk), `NativeNameMapper.cs` (HP kinds → native frame names). Render check:
   `tools/p823-render-proof/`. Tests `GlbToMdlTests`. Report
   `docs/reports/P823_GLB_TO_MDL.md`.
+- **Texture half of the pipeline (P824)** — native compiled texture units
+  (`<stem>.bmp.mdl`: `BinarySurfaceInfo` + top-row-first RGB565 rows,
+  *native* `engine/enginep.h:313`, `engine/modeler.cpp:715`,
+  `engine/mdlbin.cpp`) now decode AND write: `MdlTextureDecoder` +
+  `MdlTextureWriter` in `src/Allegiance.Core/Data/` (nearest-decoded-value
+  RGB565 quantisation, power-of-two ≤2048 size rule with box resample,
+  optional Bayer dithering off by default). `tools/mdl-to-glb` `export`
+  embeds the decoded texture as the glTF base-colour PNG, `import` writes the
+  GLB's image back as the native `<stem>.mdl` texture unit (`PngCodec.cs`,
+  built-in minimal PNG codec; `gentexture`/`gentesthull` build the proof
+  texture/hull in code); `tools/p823-render-proof --uv-check` asserts the UV
+  mapping numerically. Tests `P824TexturePipelineTests`. Report
+  `docs/reports/P824_TEXTURE_PIPELINE.md`.
 - **Test runners** — `tools/run-tests.sh`, `tools/build-tools.sh`,
   `tools/test-tiers/runner.py`.
 

@@ -1,4 +1,5 @@
 using Allegiance.ClientCore.MonoGame.Rendering;
+using Allegiance.Core;
 using Allegiance.TestInfra;
 
 namespace Allegiance.ClientCore.MonoGame.Tests;

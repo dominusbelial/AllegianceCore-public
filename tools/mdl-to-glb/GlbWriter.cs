@@ -20,8 +20,9 @@ public static class GlbWriter
     public static void Write(GlbExportModel model, Stream output)
     {
         using var ms = new MemoryStream();
-        var bin = WriteBin(model, out var views, out var accessors, out var meshesJson, out var minMax);
-        var json = BuildJson(model, meshesJson, views, accessors, minMax, bin.Length);
+        var bin = WriteBin(model, out var views, out var accessors, out var meshesJson, out var minMax,
+            out var imagesJson, out var texturesJson, out var materialsJson);
+        var json = BuildJson(model, meshesJson, views, accessors, minMax, bin.Length, imagesJson, texturesJson, materialsJson);
 
         // GLB header + chunks, both 4-byte aligned.
         int jsonPad = (4 - json.Length % 4) % 4;
@@ -54,16 +55,26 @@ public static class GlbWriter
     // -- binary chunk -------------------------------------------------------
 
     private static byte[] WriteBin(GlbExportModel model, out List<object> views, out List<object> accessors,
-        out List<object> meshesJson, out List<(float[] min, float[] max)> minMax)
+        out List<object> meshesJson, out List<(float[] min, float[] max)> minMax,
+        out List<object> imagesJson, out List<object> texturesJson, out List<object> materialsJson)
     {
         var viewsLocal = new List<object>();
         var accessorsLocal = new List<object>();
         var meshesLocal = new List<object>();
         var minMaxLocal = new List<(float[] min, float[] max)>();
+        // P824 — one image/texture/material per texture stem; textured mesh
+        // primitives reference their stem's material (baseColourTexture).
+        var imagesLocal = new List<object>();
+        var texturesLocal = new List<object>();
+        var materialsLocal = new List<object>();
+        var materialIndexByStem = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         views = viewsLocal;
         accessors = accessorsLocal;
         meshesJson = meshesLocal;
         minMax = minMaxLocal;
+        imagesJson = imagesLocal;
+        texturesJson = texturesLocal;
+        materialsJson = materialsLocal;
         using var ms = new MemoryStream();
 
         int AddView(int length)
@@ -76,6 +87,27 @@ public static class GlbWriter
             }
             viewsLocal.Add(new { buffer = 0, byteOffset = offset, byteLength = length });
             return viewsLocal.Count - 1;
+        }
+
+        // -- images/textures/materials (P824): one per embedded texture stem --
+        foreach (var image in model.Images ?? [])
+        {
+            int imgView = AddView(image.Png.Length);
+            WriteBytes(ms, image.Png);
+            imagesLocal.Add(new { bufferView = imgView, mimeType = "image/png", name = image.Stem });
+            texturesLocal.Add(new { sampler = 0, source = imagesLocal.Count - 1 });
+            materialsLocal.Add(new
+            {
+                name = image.Stem,
+                pbrMetallicRoughness = new
+                {
+                    baseColorTexture = new { index = texturesLocal.Count - 1 },
+                    metallicFactor = 0.0,
+                    roughnessFactor = 1.0,
+                },
+                doubleSided = true,
+            });
+            materialIndexByStem[image.Stem] = materialsLocal.Count - 1;
         }
 
         foreach (var mesh in model.Meshes)
@@ -106,18 +138,24 @@ public static class GlbWriter
             int idxAcc = accessorsLocal.Count;
             accessorsLocal.Add(new { bufferView = idxView, componentType = 5123, count = mesh.Indices.Length, type = "SCALAR" });
 
+            object primitive = mesh.TextureStem is { } texStem && materialIndexByStem.TryGetValue(texStem, out var mi)
+                ? new
+                {
+                    attributes = new { POSITION = posAcc, TEXCOORD_0 = uvAcc, NORMAL = nrmAcc },
+                    indices = idxAcc,
+                    material = mi,      // P824 — the stem's baseColour material
+                    mode = 4,
+                }
+                : new
+                {
+                    attributes = new { POSITION = posAcc, TEXCOORD_0 = uvAcc, NORMAL = nrmAcc },
+                    indices = idxAcc,
+                    mode = 4,
+                };
             meshesLocal.Add(new
             {
                 name = mesh.Name,
-                primitives = new object[]
-                {
-                    new
-                    {
-                        attributes = new { POSITION = posAcc, TEXCOORD_0 = uvAcc, NORMAL = nrmAcc },
-                        indices = idxAcc,
-                        mode = 4,
-                    }
-                },
+                primitives = new[] { primitive },
             });
         }
 
@@ -131,6 +169,8 @@ public static class GlbWriter
             BinaryPrimitives.WriteSingleLittleEndian(bytes.AsSpan(i * 4), data[i]);
         ms.Write(bytes);
     }
+
+    private static void WriteBytes(MemoryStream ms, byte[] data) => ms.Write(data);
 
     private static void WriteUshorts(MemoryStream ms, ushort[] data)
     {
@@ -161,7 +201,8 @@ public static class GlbWriter
     // -- JSON chunk ----------------------------------------------------------
 
     private static byte[] BuildJson(GlbExportModel model, List<object> meshesJson, List<object> views,
-        List<object> accessors, List<(float[] min, float[] max)> minMax, int binLength)
+        List<object> accessors, List<(float[] min, float[] max)> minMax, int binLength,
+        List<object> imagesJson, List<object> texturesJson, List<object> materialsJson)
     {
         // Root first, so every child index is stable (children start at 1).
         var nodes = new List<object>();
@@ -208,6 +249,14 @@ public static class GlbWriter
             accessors,
             bufferViews = views,
             buffers = new object[] { new { byteLength = binLength } },
+            // P824 — base-colour images + samplers/textures/materials when
+            // textures were embedded (empty lists omitted from the JSON).
+            images = imagesJson.Count > 0 ? imagesJson : null,
+            samplers = imagesJson.Count > 0
+                ? new object[] { new { magFilter = 9729, minFilter = 9729, wrapS = 10497, wrapT = 10497 } }
+                : null,
+            textures = texturesJson.Count > 0 ? texturesJson : null,
+            materials = materialsJson.Count > 0 ? materialsJson : null,
         };
 
         var options = new JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };

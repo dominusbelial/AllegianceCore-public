@@ -70,4 +70,21 @@ public static class GlbImporter
     }
 
     private static bool IsFinite(float v) => !float.IsNaN(v) && !float.IsInfinity(v);
+
+    /// <summary>
+    /// P824 — a textured mesh must have a base-colour image behind every stem
+    /// it references. Used by the import CLI (the P824 brief: reject a GLB
+    /// whose textured mesh has no image unless <c>--no-texture</c>, which
+    /// strips the texture stems first); deliberately NOT part of
+    /// <see cref="Validate"/>, because a GLB without images remains a legal
+    /// untextured import (the P823 path).
+    /// </summary>
+    public static void ValidateTextureImages(GlbExportModel model)
+    {
+        foreach (var texStem in model.Meshes.Select(m => m.TextureStem).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase))
+            if (model.Images?.Any(i => string.Equals(i.Stem, texStem, StringComparison.OrdinalIgnoreCase)) != true)
+                throw new InvalidDataException(
+                    $"the GLB's textured mesh references stem '{texStem}' but carries no base-colour image for it " +
+                    "(export with textures embedded, or pass --no-texture)");
+    }
 }

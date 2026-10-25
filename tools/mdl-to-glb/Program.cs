@@ -13,15 +13,18 @@ namespace Allegiance.Tools.MdlToGlb;
 /// a <c>.glb</c> (+ sidecar) converts back to native's shipping formats.
 ///
 /// <code>
-///   mdl-to-glb export   &lt;artDir&gt; &lt;stem&gt; [--out &lt;dir&gt;]
+///   mdl-to-glb export   &lt;artDir&gt; &lt;stem&gt; [--out &lt;dir&gt;] [--no-texture]
 ///   mdl-to-glb roundtrip &lt;artDir&gt; &lt;stem&gt; [--out &lt;dir&gt;]
 ///   mdl-to-glb inspect  &lt;artDir&gt; &lt;stem&gt;
 ///   mdl-to-glb import    &lt;glbDir&gt; &lt;stem&gt; [--out &lt;dir&gt;]      (P823: glb+sidecar → .mdl + .cvh)
+///                        [--texture-stem &lt;stem&gt;] [--no-texture]   (P824: + &lt;stem&gt;.mdl texture)
 ///   mdl-to-glb verifyimport &lt;artDir&gt; &lt;stem&gt; [--out &lt;dir&gt;]   (P823: native → glb → mdl/cvh → compare)
+///   mdl-to-glb gentexture  &lt;outDir&gt; &lt;stem&gt; [--size 128]     (P824: built-in proof texture, checker + corner markers)
+///   mdl-to-glb gentesthull &lt;outDir&gt; &lt;stem&gt; [--size 128]     (P824: proof hull + proof texture → glb+sidecar)
 /// </code>
 ///
 /// Writes <c>&lt;stem&gt;.glb</c> + <c>&lt;stem&gt;.glbside.json</c>. This is a
-/// proof tool (investigation tasks P812/P823): nothing here runs in the game.
+/// proof tool (investigation tasks P812/P823/P824): nothing here runs in the game.
 /// </summary>
 internal static class Program
 {
@@ -31,11 +34,13 @@ internal static class Program
         {
             Console.Error.WriteLine("""
                 usage:
-                  mdl-to-glb export       <artDir> <stem> [--out <dir>]
+                  mdl-to-glb export       <artDir> <stem> [--out <dir>] [--no-texture]
                   mdl-to-glb roundtrip    <artDir> <stem> [--out <dir>]
                   mdl-to-glb inspect      <artDir> <stem>
-                  mdl-to-glb import       <glbDir> <stem> [--out <dir>]
+                  mdl-to-glb import       <glbDir> <stem> [--out <dir>] [--texture-stem <stem>] [--no-texture]
                   mdl-to-glb verifyimport <artDir> <stem> [--out <dir>]
+                  mdl-to-glb gentexture   <outDir> <stem> [--size 128]
+                  mdl-to-glb gentesthull  <outDir> <stem> [--size 128]
                 """);
             return 2;
         }
@@ -47,11 +52,15 @@ internal static class Program
 
         return args[0] switch
         {
-            "export" => Export(artDir, stem, outDir),
+            "export" => Export(artDir, stem, outDir, noTexture: HasFlag(args, "--no-texture")),
             "roundtrip" => Roundtrip(artDir, stem, outDir),
             "inspect" => Inspect(artDir, stem),
-            "import" => Import(glbDir(args[1]), stem, outDir),
+            "import" => Import(glbDir(args[1]), stem, outDir,
+                textureStem: GetOption(args, "--texture-stem"),
+                noTexture: HasFlag(args, "--no-texture")),
             "verifyimport" => VerifyImport(artDir, stem, outDir),
+            "gentexture" => GenTextureCommand.Run(artDir, stem, ParseIntOption(args, "--size", 128)),
+            "gentesthull" => GenTestHullCommand.Run(artDir, stem, ParseIntOption(args, "--size", 128)),
             _ => Usage(),
         };
 
@@ -64,6 +73,11 @@ internal static class Program
         int i = Array.IndexOf(args, name);
         return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
     }
+
+    private static bool HasFlag(string[] args, string name) => Array.IndexOf(args, name) >= 0;
+
+    private static int ParseIntOption(string[] args, string name, int fallback) =>
+        int.TryParse(GetOption(args, name), out var v) ? v : fallback;
 
     private static int Usage() { Console.Error.WriteLine("unknown command"); return 2; }
 
@@ -80,9 +94,10 @@ internal static class Program
 
     // -- export --------------------------------------------------------------
 
-    private static int Export(string artDir, string stem, string outDir)
+    private static int Export(string artDir, string stem, string outDir, bool noTexture)
     {
         var (_, _, model) = Load(artDir, stem);
+        model = EmbedTextures(model, artDir, noTexture);
         var glbPath = Path.Combine(outDir, stem + ".glb");
         var sidePath = Path.Combine(outDir, stem + ".glbside.json");
 
@@ -94,6 +109,33 @@ internal static class Program
         Console.WriteLine($"exported {glbPath} ({new FileInfo(glbPath).Length} bytes) + {sidePath}");
         PrintSummary(model);
         return 0;
+    }
+
+    /// <summary>P824 — decode each texture stem's native <c>&lt;stem&gt;.mdl</c>
+    /// texture (the file the hull's TextureGeo imports, i.e. <c>fig30bmp</c> →
+    /// <c>fig30bmp.mdl</c>) and embed it as the GLB's base-colour PNG. The
+    /// decoded RGBA is the decoder's 3-D <c>flipVertical:true</c> output — the
+    /// exact texture the port's renderer uploads — which is also glTF's
+    /// top-left-origin convention, so mesh UVs sample identically in Blender.
+    /// Missing texture files are reported and the GLB stays untextured.</summary>
+    internal static GlbExportModel EmbedTextures(GlbExportModel model, string artDir, bool noTexture)
+    {
+        if (noTexture || model.TextureStems.Count == 0)
+            return model;
+        var images = new List<GlbImage>();
+        foreach (var texStem in model.TextureStems)
+        {
+            var texPath = Path.Combine(artDir, texStem + ".mdl");
+            if (!File.Exists(texPath))
+            {
+                Console.WriteLine($"  (no texture file for stem '{texStem}' at {texPath} — GLB will be untextured)");
+                continue;
+            }
+            var tex = MdlTextureDecoder.Decode(File.ReadAllBytes(texPath));   // flipVertical:true = GPU order
+            images.Add(new GlbImage(texStem, tex.Width, tex.Height, PngCodec.Encode(tex.Width, tex.Height, tex.Rgba)));
+            Console.WriteLine($"  texture {texStem}: {tex.Width}×{tex.Height} embedded as base-colour PNG");
+        }
+        return images.Count > 0 ? model with { Images = images } : model;
     }
 
     private static void PrintSummary(GlbExportModel model)
@@ -135,8 +177,12 @@ internal static class Program
 
     /// <summary>Convert <c>&lt;dir&gt;/&lt;stem&gt;.glb</c> (+ optional
     /// <c>&lt;stem&gt;.glbside.json</c>) to <c>&lt;out&gt;/&lt;stem&gt;.mdl</c>
-    /// + <c>&lt;stem&gt;.cvh</c> (native's shipping formats).</summary>
-    private static int Import(string glbDir, string stem, string outDir)
+    /// + <c>&lt;stem&gt;.cvh</c> (native's shipping formats). P824: when the GLB
+    /// carries base-colour images the matching <c>&lt;texstem&gt;.mdl</c>
+    /// texture units are written next to them (stem from the material name, or
+    /// <c>--texture-stem</c> to override; <c>--no-texture</c> strips the
+    /// texture references instead of failing when an image is missing).</summary>
+    private static int Import(string glbDir, string stem, string outDir, string? textureStem, bool noTexture)
     {
         var glbPath = Path.Combine(glbDir, stem + ".glb");
         var sidePath = Path.Combine(glbDir, stem + ".glbside.json");
@@ -160,42 +206,84 @@ internal static class Program
             }
         }
 
-        byte[] mdl;
-        string cvh;
         try
         {
+            // P824 — resolve the texture-stem naming before validating.
+            if (textureStem is not null)
+            {
+                model = model with
+                {
+                    Meshes = model.Meshes.Select(m => m.TextureStem is null ? m : m with { TextureStem = textureStem }).ToArray(),
+                    TextureStems = model.TextureStems,
+                    Images = model.Images?.Select(img => img with { Stem = textureStem }).ToArray(),
+                };
+                model = model with
+                {
+                    TextureStems = model.Meshes.Select(m => m.TextureStem).OfType<string>().Distinct().ToArray(),
+                };
+            }
+            if (noTexture)
+            {
+                model = model with
+                {
+                    Meshes = model.Meshes.Select(m => m with { TextureStem = null }).ToArray(),
+                    TextureStems = [],
+                    Images = null,
+                };
+            }
+            else if (model.Meshes.Any(m => m.TextureStem is not null))
+            {
+                // A textured mesh must have a base-colour image behind every stem.
+                GlbImporter.ValidateTextureImages(model);
+            }
+
+            byte[] mdl;
+            string cvh;
             (mdl, cvh) = GlbImporter.Convert(model);
+
+            var mdlPath = Path.Combine(outDir, stem + ".mdl");
+            var cvhPath = Path.Combine(outDir, stem + ".cvh");
+            File.WriteAllBytes(mdlPath, mdl);
+            File.WriteAllText(cvhPath, cvh);
+
+            // P824 — write each embedded base-colour image as the native
+            // <stem>.mdl texture unit the written hull file imports.
+            foreach (var image in model.Images ?? [])
+            {
+                var png = PngCodec.Decode(image.Png);
+                var texPath = Path.Combine(outDir, image.Stem + ".mdl");
+                var tex = MdlTextureWriter.Write(image.Stem, png.Width, png.Height, png.Rgba);
+                File.WriteAllBytes(texPath, tex);
+                Console.WriteLine($"  texture {image.Stem}: {png.Width}×{png.Height} PNG → {texPath} ({tex.Length} bytes, native BinarySurfaceInfo layout)");
+            }
+
+            Console.WriteLine($"imported {mdlPath} ({mdl.Length} bytes) + {cvhPath} ({cvh.Length} bytes)");
+            Console.WriteLine($"  meshes={model.Meshes.Count} mounts={model.Mounts.Count} " +
+                              $"lights={model.Lights.Count} collisionHulls={model.Collision?.Hulls.Count ?? 0} (sidecar) / generated");
+            return 0;
         }
         catch (InvalidDataException ex)
         {
             Console.Error.WriteLine($"import failed: {ex.Message}");
             return 1;
         }
-
-        var mdlPath = Path.Combine(outDir, stem + ".mdl");
-        var cvhPath = Path.Combine(outDir, stem + ".cvh");
-        File.WriteAllBytes(mdlPath, mdl);
-        File.WriteAllText(cvhPath, cvh);
-
-        Console.WriteLine($"imported {mdlPath} ({mdl.Length} bytes) + {cvhPath} ({cvh.Length} bytes)");
-        Console.WriteLine($"  meshes={model.Meshes.Count} mounts={model.Mounts.Count} " +
-                          $"lights={model.Lights.Count} collisionHulls={model.Collision?.Hulls.Count ?? 0} (sidecar) / generated");
-        return 0;
     }
 
-    /// <summary>Native → glb (P812) → mdl/cvh (P823): write the converted
-    /// files, parse both sides with the port's own loaders, compare structures
-    /// numerically and diff the bytes. The report's round-trip evidence.</summary>
+    /// <summary>Native → glb (P812, + P824 embedded texture) → mdl/cvh (P823,
+    /// + P824 texture units): write the converted files, parse both sides with
+    /// the port's own loaders, compare structures numerically and diff the
+    /// bytes — mesh, hull AND texture. The report's round-trip evidence.</summary>
     private static int VerifyImport(string artDir, string stem, string outDir)
     {
         var (mdl, cvh, original) = Load(artDir, stem);
+        var withTextures = EmbedTextures(original, artDir, noTexture: false);
 
         // P812 export (in memory + on disk for reference).
         byte[] glb;
         string sidecarJson;
         using (var ms = new MemoryStream())
         {
-            GlbWriter.Write(original, ms);
+            GlbWriter.Write(withTextures, ms);
             glb = ms.ToArray();
         }
         sidecarJson = SidecarDocument.Build(original, Path.Combine(artDir, stem + ".mdl"),
@@ -243,9 +331,60 @@ internal static class Program
         foreach (var r in mdlResults)
             Console.WriteLine($"  {(r.Pass ? "PASS" : "FAIL")} {r.Name,-24} {r.Detail}");
 
-        var ok = pass && cvhPass && mdlPass;
+        // P824 — texture: the embedded base-colour PNG must re-encode to the
+        // native texture file byte-for-byte (except the explained pad bytes).
+        GlbExportModel reimportedWithTextures;
+        using (var glbStream = new MemoryStream(glb))
+            reimportedWithTextures = GlbReader.Read(glbStream, null);
+        var texturePass = VerifyTextureRoundTrip(artDir, reimportedWithTextures);
+
+        var ok = pass && cvhPass && mdlPass && texturePass;
         Console.WriteLine(ok ? $"VERIFY-IMPORT OK: {stem}" : $"VERIFY-IMPORT FAILED: {stem}");
         return ok ? 0 : 1;
+    }
+
+    /// <summary>P824 — for each embedded base-colour image in the re-imported
+    /// GLB: PNG → RGBA (GPU order) → <see cref="MdlTextureWriter.Write"/> →
+    /// byte-diff against the original native texture file. Expected diffs are
+    /// ONLY the 3 uninitialised BinarySurfaceInfo padding bytes mdlc leaves in
+    /// the file (the writer zeroes them; the reader ignores them) — anything
+    /// else fails.</summary>
+    private static bool VerifyTextureRoundTrip(string artDir, GlbExportModel reimported)
+    {
+        var ok = true;
+        foreach (var image in reimported.Images ?? [])
+        {
+            var originalPath = Path.Combine(artDir, image.Stem + ".mdl");
+            if (!File.Exists(originalPath)) { Console.WriteLine($"  FAIL texture {image.Stem}: no original file"); ok = false; continue; }
+            var originalTex = File.ReadAllBytes(originalPath);
+            var png = PngCodec.Decode(image.Png);
+            var writtenTex = MdlTextureWriter.Write(image.Stem, png.Width, png.Height, png.Rgba);
+
+            // The BinarySurfaceInfo padding sits 8 bytes before the structure
+            // end (alphaMask 4 + colourKey 1 + pad 3); the decode/write round
+            // trip may differ exactly there — nowhere else.
+            int structEnd = originalTex.Length - MdlTextureWriter.PitchFor(png.Width) * png.Height - 4;  // − trailing ObjectEnd
+            int padStart = structEnd - 3;   // the 3 trailing pad bytes of the 36-byte BinarySurfaceInfo
+            bool allDiffsInPad = true;
+            int diffCount = 0;
+            for (int i = 0; i < Math.Min(originalTex.Length, writtenTex.Length); i++)
+                if (originalTex[i] != writtenTex[i])
+                {
+                    diffCount++;
+                    if (i < padStart) allDiffsInPad = false;
+                }
+            if (originalTex.Length != writtenTex.Length || diffCount > 3 || !allDiffsInPad)
+            {
+                Console.WriteLine($"  FAIL texture {image.Stem}: {diffCount} differing bytes (pad at [{padStart},{structEnd}))");
+                ok = false;
+            }
+            else
+            {
+                Console.WriteLine($"  PASS texture {image.Stem}: byte round trip " +
+                    (diffCount == 0 ? "identical" : $"differs only in the {diffCount} uninitialised BinarySurfaceInfo pad bytes"));
+            }
+        }
+        return ok;
     }
 
     /// <summary>Byte-level diff: differing-byte count + the differing regions
@@ -307,5 +446,127 @@ internal static class Program
         for (int i = 0; i < Math.Min(a.Length, b.Length); i++)
             worst = Math.Max(worst, Math.Abs(a[i] - b[i]));
         return worst;
+    }
+}
+
+// -- P824: built-in proof texture -------------------------------------------
+
+/// <summary>Write the built-in proof texture (checker + corner markers, see
+/// <see cref="TestTextureGenerator"/>) as a native <c>&lt;stem&gt;.mdl</c>
+/// texture unit. Used by the new-art render proof: the marker must land where
+/// the mesh UVs say, asserted numerically by tools/p823-render-proof.</summary>
+internal static class GenTextureCommand
+{
+    public static int Run(string outDir, string stem, int size)
+    {
+        try
+        {
+            var rgba = TestTextureGenerator.BuildRgba(size);
+            var bytes = MdlTextureWriter.Write(stem, size, size, rgba);
+            var path = Path.Combine(outDir, stem + ".mdl");
+            File.WriteAllBytes(path, bytes);
+            Console.WriteLine($"wrote {path} ({bytes.Length} bytes, {size}×{size} proof texture: " +
+                              "checker + TL magenta / TR yellow / BL cyan / BR green markers)");
+            return 0;
+        }
+        catch (InvalidDataException ex)
+        {
+            Console.Error.WriteLine($"gentexture failed: {ex.Message}");
+            return 1;
+        }
+    }
+}
+
+// -- P824: built-in new-art proof hull ----------------------------------------
+
+/// <summary>Write the P823 hand-built new-art proof hull (the octahedron from
+/// <c>GlbToMdlTests.NewArtModel</c>: 6 verts, 8 tris, nose +Z, UV corners on
+/// the four hull vertices) as <c>&lt;stem&gt;.glb</c> + sidecar, with the
+/// built-in proof texture (<see cref="TestTextureGenerator"/>) embedded as the
+/// base-colour image. Combined with <c>import</c> this is the whole new-art
+/// chain in code: model + texture → GLB → native <c>.mdl</c> +
+/// <c>.cvh</c> + <c>hullbmp.mdl</c> → render proof.</summary>
+internal static class GenTestHullCommand
+{
+    public static int Run(string outDir, string stem, int textureSize)
+    {
+        try
+        {
+            var rgba = TestTextureGenerator.BuildRgba(textureSize);
+            var model = new GlbExportModel
+            {
+                Name = stem,
+                Meshes =
+                [
+                    new GlbMesh(stem + "_hullbmp_0", "hullbmp",
+                        Positions:
+                        [
+                            0f, 0f, 3f,      // nose  — UV (0,0) → TL marker
+                            1f, 0f, 0f,      // +x    — UV (1,0) → TR marker
+                            0f, 1f, 0f,      // +y    — UV (0,1) → BL marker
+                            -1f, 0f, 0f,     // -x
+                            0f, -1f, 0f,     // -y
+                            0f, 0f, -3f,     // tail  — UV (1,1) → BR marker
+                        ],
+                        TexCoords: [0f, 0f, 1f, 0f, 0f, 1f, 1f, 1f, 0.5f, 0.5f, 0.25f, 0.75f],
+                        Normals:
+                        [
+                            0f, 0f, 1f, 1f, 0f, 0f, 0f, 1f, 0f,
+                            -1f, 0f, 0f, 0f, -1f, 0f, 0f, 0f, -1f,
+                        ],
+                        Indices:
+                        [
+                            0, 1, 2, 0, 2, 3, 0, 3, 4, 0, 4, 1,       // front pyramid
+                            5, 2, 1, 5, 3, 2, 5, 4, 3, 5, 1, 4,       // rear pyramid
+                        ]),
+                ],
+                Mounts =
+                [
+                    new MountPoint { NodeName = "HP_Weapon_0", Kind = "Weapon", Index = 0, NativeName = "HP_Weapon_0",
+                        Sources = ["glb"], Position = [1f, 0f, 1f], Forward = [0f, 0f, 1f] },
+                    new MountPoint { NodeName = "HP_MainEngine_0", Kind = "MainEngine", Index = 0, NativeName = "HP_MainEngine_0",
+                        Sources = ["glb"], Position = [0f, 0f, -3f], Forward = [0f, 0f, -1f] },
+                    new MountPoint { NodeName = "HP_Cockpit_0", Kind = "Cockpit", Index = 0, NativeName = "HP_Cockpit_0",
+                        Sources = ["glb"], Position = [0f, 0.5f, 1f], Forward = [0f, 0f, 1f] },
+                ],
+                Lights = [],
+                LodPixelRadii = [],
+                TextureStems = ["hullbmp"],
+                Collision = null,
+                Images = [new GlbImage("hullbmp", textureSize, textureSize, PngCodec.Encode(textureSize, textureSize, rgba))],
+            };
+
+            GlbImporter.Validate(model);
+            var glbPath = Path.Combine(outDir, stem + ".glb");
+            using (var fs = File.Create(glbPath))
+                GlbWriter.Write(model, fs);
+            var sidecar = new SidecarDocument
+            {
+                Format = SidecarDocument.FormatId,
+                Mdl = stem + ".mdl",
+                Cvh = stem + ".cvh",
+                MdlSha256 = "",
+                CvhSha256 = "",
+                ModelSpace = GlbExportModel.ModelSpace,
+                ScaleHint = "synthetic proof hull",
+                IndexWinding = "native DirectX clockwise-front (raw order)",
+                TextureStems = model.TextureStems,
+                LodPixelRadii = model.LodPixelRadii,
+                Lights = model.Lights,
+                Mounts = model.Mounts,
+                Collision = model.Collision,
+                MdlFrames = model.SourceMdlFrames,
+            };
+            var sidePath = Path.Combine(outDir, stem + ".glbside.json");
+            File.WriteAllText(sidePath, sidecar.ToJson());
+            Console.WriteLine($"wrote {glbPath} ({new FileInfo(glbPath).Length} bytes) + {sidePath} " +
+                              $"(proof hull with {textureSize}×{textureSize} proof texture embedded)");
+            return 0;
+        }
+        catch (InvalidDataException ex)
+        {
+            Console.Error.WriteLine($"gentesthull failed: {ex.Message}");
+            return 1;
+        }
     }
 }
