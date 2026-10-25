@@ -1089,6 +1089,11 @@ public sealed partial class Game1
                 // opens the composer (console.cpp:2423; sounddef.mdl:324 text wave).
                 if (ChatKeySound.OnStartChat())
                     _sound?.PlayChatKey();
+                // P818 — native StartComposing runs the new recipient's Reset(true)
+                // before the first keystroke (console.cpp:1656): ships that left the
+                // mission drop out, and an Individual recipient that is yourself or a
+                // drone becomes a Team chat (console.cpp:255-266).
+                ResetChatSubjectOnStart();
                 SetComposeState(NativeComposeState.Chat);   // console.cpp:2423-2431
             }
         }
@@ -1113,7 +1118,11 @@ public sealed partial class Game1
             bool chatTab = ActionDown(ks, "CycleChatTarget");
             if (chatTab && !_chatTabKeyWasDown && ChatTargetLogic.CanCycleWhileComposing(_chatBuffer.ToString()))
             {
-                _chatTarget = ChatTargetLogic.Next(_chatTarget);
+                // P818 — a cycle leaves the picked individual/group behind: native
+                // SetRecipient purges the subject list first (console.cpp:274), and the
+                // no-allies cycle's `default` case sends a picked Group/Individual to
+                // Wing (console.cpp:2684-2687), which ChatTargetLogic.Next reproduces.
+                _chatRecipient.SetChannel(ChatTargetLogic.Next(_chatTarget));
                 // P784 — the channel-filter mode's channel set follows the
                 // compose recipient (native AddChannel rebuilds the view,
                 // chatpane.cpp:340-345), so a mid-compose Tab cycle re-applies
@@ -1185,6 +1194,16 @@ public sealed partial class Game1
         // the P748 hangar keys use) so the flow is drivable headlessly;
         // UpdateFlying remains the only flight caller.
         HandleChatCompose(ks);
+
+        // P818 — real-window auto-proof of the composer's individual/group
+        // recipient selection: a real LEFT click and a real LEFT drag through
+        // the production pick path, so the radar's c_maskSubject brackets can be
+        // photographed for both HUD styles. Runs OUTSIDE the flight-key block
+        // below because that block is composing-gated and this proof needs a
+        // compose open (native's own mouse handler is compose-independent,
+        // console.cpp:2036).
+        if (Environment.GetEnvironmentVariable("ALLEGIANCE_P818_PROOF") == "1")
+            RunChatSubjectProof(gameTime.ElapsedGameTime.TotalSeconds);
 
         // P217 — quick-chat voice macros. R (free in flight) opens the menu;
         // while it is open every shortcut key navigates instead of flying.
@@ -1501,7 +1520,13 @@ public sealed partial class Game1
         // flight input leaks through.
         HandleSpectatorKeys(ks, composing, gameTime.ElapsedGameTime.TotalSeconds);
 
-        if (_cameraMode == CameraMode.Command && !composing)
+        // P818 — native's mouse handler is NOT gated by the compose state (its
+        // only exclusion is the Shell compose, console.cpp:2036): while typing a
+        // chat in the command view the player can still click a ship to make it
+        // the recipient, SHIFT-click to add it to the group, or drag a rectangle
+        // over several ships (console.cpp:2078-2193). Typing can't trip it — the
+        // flight-view buttons below stay composing-gated.
+        if (_cameraMode == CameraMode.Command && LiveComposeState != NativeComposeState.Shell)
             HandleFlightMouseButtons(Mouse.GetState());
 
         // P222 — suicide (TK_Suicide): edge-triggered like the M/V toggles above

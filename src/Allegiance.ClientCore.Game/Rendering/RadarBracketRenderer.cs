@@ -668,15 +668,26 @@ public sealed class RadarBracketRenderer
         for (int q = 0; q < 4; q++)
         {
             var src = ExpandedBlipQuadrant(q, art.Width, art.Height);
-            var offset = q switch
-            {
-                0 => new Vector2(-delta, -delta),
-                1 => new Vector2(delta, -delta),
-                2 => new Vector2(delta, delta),
-                _ => new Vector2(-delta, delta),
-            };
-            _sb.Draw(art, centre + offset, src, tint);
+            _sb.Draw(art, ExpandedBlipQuadrantTopLeft(q, src, centre, delta), src, tint);
         }
+    }
+
+    /// <summary>Where quadrant <paramref name="quadrant"/>'s top-left lands. Native
+    /// draws each quadrant CENTRED on its exploded corner point
+    /// (<c>DrawImage3D(psurface, rect, color, true /*center*/, Point(±delta, ±delta))</c>,
+    /// radarimage.cpp:273-276), so the quadrant's half size is subtracted — drawing the
+    /// top-left at the corner point shifted every bracket down-right by half a quadrant.
+    /// Pure.</summary>
+    public static Vector2 ExpandedBlipQuadrantTopLeft(int quadrant, Rectangle src, Vector2 centre, float delta)
+    {
+        var offset = quadrant switch
+        {
+            0 => new Vector2(-delta, -delta),
+            1 => new Vector2(delta, -delta),
+            2 => new Vector2(delta, delta),
+            _ => new Vector2(-delta, delta),
+        };
+        return centre + offset - new Vector2(src.Width / 2f, src.Height / 2f);
     }
 
     private void DrawOpenCorners(Vector2 c, float half, float thickness, Color colour, float a)

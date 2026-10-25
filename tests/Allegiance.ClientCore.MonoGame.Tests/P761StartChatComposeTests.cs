@@ -46,7 +46,7 @@ public class P761StartChatComposeTests
         Set(game, "_moderation", new ModerationModel());
         Set(game, "_chatPane", new ChatPaneModel());
         Set(game, "_chatBuffer", new System.Text.StringBuilder());
-        Set(game, "_chatTarget", ChatTargetLogic.DefaultTarget);
+        Set(game, "_chatRecipient", new ChatSubjects());   // P818: native m_chsChat (ChatSubject)
         Set(game, "_pilotProfile", new PilotInfoLayout.ProfileEditor());
         var state = typeof(Game1).GetField("_state", Hidden)!;
         state.SetValue(game, Enum.Parse(state.FieldType, "Flying"));
@@ -158,13 +158,13 @@ public class P761StartChatComposeTests
 
         // Empty buffer: Tab cycles the recipient (native OnTab, console.cpp:2747-2755).
         Call(game, "HandleChatCompose", Ks(XnaKeys.Tab));
-        Assert.Equal(ChatTargetLogic.Next(ChatTargetLogic.DefaultTarget), Get<ChatTarget>(game, "_chatTarget"));
+        Assert.Equal(ChatTargetLogic.Next(ChatTargetLogic.DefaultTarget), Get<ChatSubjects>(game, "_chatRecipient").Target);
         Call(game, "HandleChatCompose", Ks());                // release
 
         // With typed text native does name completion instead — a no-op here.
         Type(game, "wave");
         Call(game, "HandleChatCompose", Ks(XnaKeys.Tab));
-        Assert.Equal(ChatTargetLogic.Next(ChatTargetLogic.DefaultTarget), Get<ChatTarget>(game, "_chatTarget"));
+        Assert.Equal(ChatTargetLogic.Next(ChatTargetLogic.DefaultTarget), Get<ChatSubjects>(game, "_chatRecipient").Target);
     }
 
     [Fact]

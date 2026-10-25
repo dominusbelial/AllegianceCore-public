@@ -3594,6 +3594,28 @@ public sealed partial class ClientWorld
         if (_soundEvents.Count > MaxSoundEvents) _soundEvents.RemoveAt(0);
     }
 
+    /// <summary>P818 — native <c>BaseClient::SendChat</c> echoes every line it
+    /// sends into the local chat list itself (<c>if (ctRecipient !=
+    /// CHAT_GROUP_NOECHO) ReceiveChat(sender, ...)</c>, clintlib.cpp:2463-2470);
+    /// the port relies on the server relaying that copy back for every channel
+    /// the server broadcasts to the sender (Team/Everyone/Wing/FriendlySector).
+    /// An INDIVIDUAL or GROUP line addressed to someone else is delivered only
+    /// to that peer, so the composer posts the sender's own copy here — the
+    /// same "sender is my ship" <see cref="ChatMessage"/> the wire would have
+    /// produced, which the pane colours as an own non-echo line (×0.75,
+    /// trekigc.cpp:4736-4741). Public so the MonoGame client can surface it;
+    /// must be called under the session gate like every other world mutation.</summary>
+    public void PostOwnChatLine(string text, ChatTarget target, short oidRecipient)
+    {
+        _events.Record(new ChatMessage
+        {
+            Message = text,
+            SidSender = (short)(MyShipId ?? Na),
+            ChatTarget = (int)target,
+            OidRecipient = oidRecipient,
+        });
+    }
+
     /// <summary>Post a bare system/console line into the transient event log
     /// (sender NA so <see cref="EventLog.Chats"/> renders it with no player
     /// prefix) — the same convention the P230 missile-lock tips and the P414

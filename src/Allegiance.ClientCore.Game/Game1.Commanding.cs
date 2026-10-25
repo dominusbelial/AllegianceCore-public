@@ -242,6 +242,10 @@ public sealed partial class Game1
         _commandGroup.AddRange(ResolveCommandRectangle(candidates, project, start, end, _session.World.MySideId, me));
         _commandee = _commandGroup.Count > 0 ? _commandGroup[0] : null;
         ClearWingRecipient();
+        // P818 — native's drag rectangle sets CHAT_GROUP over the ships it
+        // caught (console.cpp:2130-2147).
+        if (_commandGroup.Count > 0)
+            lock (_session.Gate) ApplyGroupSubjects(_commandGroup);
         // P784 — native Button's left-drag rectangle (console.cpp:2128-2138): a
         // non-empty selection STARTS the MouseCommand compose and sets the
         // Group recipient; an empty rectangle quits composing.
@@ -411,17 +415,17 @@ public sealed partial class Game1
         int recipient = Rendering.CommandBarLayout.RecipientColumn(x, y);
         if (recipient >= 0)
         {
-            // P784 — native OnRecipientButton (console.cpp:1134-1192): Shell
+            // P784/P818 — native OnRecipientButton (console.cpp:1134-1192): Shell
             // swallows the press; from NotComposing it STARTS a chat compose;
             // from a composing state it only retargets. The column maps to the
-            // native chat targets (console.cpp:13-18,1140-1175): 0 = Me
-            // (Individual), 1 = Sector (FriendlySector), 2 = Team, 3 = All
-            // (Everyone), ≥4 = Wing (the wing combo's index).
+            // native chat targets (console.cpp:13-18,1140-1187): 0 = Me
+            // (Individual, the player's OWN ship), 1 = Sector (FriendlySector),
+            // 2 = Team, 3 = All (Everyone), ≥4 = Wing (the wing combo's index).
             SetComposeState(ComposeMachine.Next(LiveComposeState, ComposeMachine.Trigger.RecipientButton));
             _commandRecipientColumn = recipient;
             _commandWing = recipient >= 4 ? recipient - 4 : _commandWing;
             if (LiveComposeState == NativeComposeState.Chat)
-                _chatTarget = Rendering.CommandBarLayout.RecipientChatTarget(recipient);
+                ApplyRecipientButton(Rendering.CommandBarLayout.RecipientChatTarget(recipient));
             Console.WriteLine($"[monogame] command recipient -> column {recipient}");
             return true;
         }

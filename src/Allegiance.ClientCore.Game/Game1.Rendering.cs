@@ -3351,9 +3351,10 @@ public sealed partial class Game1
             else if (_chatTarget == ChatTarget.FriendlySector && world.MyShipId is { } meSector
                      && world.Ships.TryGetValue(meSector, out var sectorOwn))
                 sectorName = world.Clusters.TryGetValue(sectorOwn.SectorId, out var cluster) ? cluster.Name : null;
-            else if (_chatTarget == ChatTarget.Individual && world.MyShipId is { } meSelf
-                     && world.Ships.TryGetValue(meSelf, out var self))
-                shipName = self.CharacterName;
+            else if (_chatTarget == ChatTarget.Individual
+                     && _chatRecipient.IndividualShipId is { } individualShip
+                     && world.Ships.TryGetValue(individualShip, out var picked) /* P818: the PICKED ship's name */)
+                shipName = picked.CharacterName;
             recipientLabel = ChatTargetLogic.ResolvedLabel(_chatTarget, sideName, wingName, sectorName, shipName);
         }
         return new HudChat(lines, _chatPane.Offset,
@@ -3917,12 +3918,23 @@ public sealed partial class Game1
             var queued = world.MyQueuedCommand;
             float ownRadius = HullLength(ownEnt.HullId) * 0.5f;
             // HUD-12 — native c_maskSubject source: the console's chat-subject
-            // list, non-null only while a chat is being composed
-            // (console.cpp:2327-2334). The port's composer state drives the same
-            // gate; the subject set itself is RadarOverlayRules.IsSubject.
-            bool subjectComposing = _chatActive || _qcMenuOpen;
-            var subjectTarget = _chatTarget;
+            // list, non-null in every compose state except NotComposing and Shell
+            // (console.cpp:2327-2333). P818 makes the individual/group
+            // recipients real: the chat states read m_chsChat's ship list and the
+            // mouse-command/command states read m_chsCommand's (the port's
+            // commandee/group selection), so a picked or dragged set is exactly
+            // what the brackets mark.
             short myWingId = ownEnt.WingId;
+            var composeState = LiveComposeState;
+            bool subjectComposing = composeState is not (NativeComposeState.NotComposing or NativeComposeState.Shell);
+            var subjectShips = ComposeSubjectIds(composeState);
+            var subjectTarget = ComposeSubjectTarget(composeState, subjectShips.Count);
+            // Native CHAT_WING membership is the RECIPIENT's wing: the wing
+            // column's index in a command compose (c_iRecipientWing0 = 4,
+            // console.cpp:13-18) or the player's own wing for a chat compose
+            // (clintlib.cpp:2329-2338).
+            short subjectWingId = composeState is NativeComposeState.Command or NativeComposeState.MouseCommand
+                ? (short)_commandWing : myWingId;
             long radarNowMs = (long)(_nowSeconds * 1000);
 
             Color? SideColor(short side)
@@ -4073,7 +4085,7 @@ public sealed partial class Game1
                 bool subject = RadarOverlayRules.SubjectsApply(commandCamera, subjectComposing)
                     && RadarOverlayRules.IsSubject(
                         subjectTarget, subjectComposing, sameSide, sameSector: true,
-                        ship.WingId, myWingId);
+                        ship.WingId, subjectWingId, shipId: id, subjectShips: subjectShips);
                 bool threat = _hostileTracker.Threat(id, radarNowMs);
                 bool threatFlash = threat && _hostileTracker.Flash(id, radarNowMs);
                 byte pilotType = RadarOverlayRules.PilotTypeOf(ship.Player);

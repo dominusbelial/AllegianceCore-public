@@ -189,6 +189,13 @@ list in **reverse**.
   the eleven game filters and the filter dialog (native `gamescreen.cpp`). Key:
   `src/Allegiance.ClientCore.Game/ServerListing.cs`, `LobbyGameSort.cs`,
   `LobbyGameMetadata.cs` (`GameParams`/`NativeGameTypes`), `Game1.Session.cs`.
+- **Chat composer / compose recipients** — the five native compose states and
+  the recipient a compose sends to. Key:
+  `src/Allegiance.ClientCore.Game/Rendering/ComposeMachine.cs`,
+  `Rendering/ChatTargetLogic.cs`, `Rendering/ChatSubjects.cs` (the native
+  `ChatSubject` ship list: individual/group picks, shift-toggle, drag group),
+  `Rendering/ChatSendPlan.cs` (one chat per subject for a group).
+  *Native:* `WinTrek/console.cpp:66-455,1448-1507,2078-2193`; reports P456/P784/P818.
 - **Team-lobby chat pane** — the native `ChatListPane` filter rules (players-only,
   lobby channel set, Filter Chats To All). Key:
   `src/Allegiance.ClientCore.Game/Rendering/ChatPaneModel.cs`,

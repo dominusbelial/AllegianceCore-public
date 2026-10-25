@@ -72,7 +72,7 @@ public sealed class P787BShopHoverAndPickTests
         Set(game, "_moderation", new ModerationModel());
         Set(game, "_chatPane", new ChatPaneModel());
         Set(game, "_pilotProfile", new PilotInfoLayout.ProfileEditor());
-        Set(game, "_chatTarget", ChatTargetLogic.DefaultTarget);
+        Set(game, "_chatRecipient", new ChatSubjects());   // P818: native m_chsChat (ChatSubject)
         var state = typeof(Game1).GetField("_state", Hidden)!;
         state.SetValue(game, Enum.Parse(state.FieldType, "Flying"));
         return game;
@@ -160,7 +160,7 @@ public sealed class P787BShopHoverAndPickTests
         Call(game, "RunConsolePickCluster", (short)7);
 
         Assert.Equal(new[] { "mouseclick" }, sink.Calls);   // sectormap.cpp:1586
-        Assert.Equal(ChatTarget.FriendlySector, Get<ChatTarget>(game, "_chatTarget"));
+        Assert.Equal(ChatTarget.FriendlySector, Get<ChatSubjects>(game, "_chatRecipient").Target);
         Assert.Equal((short)7, Get<short?>(game, "_chatSectorRecipient"));
         Assert.True(Get<bool>(game, "_chatActive"));        // console.cpp:1744 StartComposing(c_csComposeChat)
     }
@@ -173,7 +173,7 @@ public sealed class P787BShopHoverAndPickTests
         var game = Headless(s, sink);
         Call(game, "RunConsolePickCluster", (short)-1);
         Assert.Empty(sink.Calls);
-        Assert.Equal(ChatTargetLogic.DefaultTarget, Get<ChatTarget>(game, "_chatTarget"));
+        Assert.Equal(ChatTargetLogic.DefaultTarget, Get<ChatSubjects>(game, "_chatRecipient").Target);
     }
 
     [Fact]

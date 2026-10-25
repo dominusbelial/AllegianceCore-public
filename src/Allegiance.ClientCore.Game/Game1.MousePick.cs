@@ -216,9 +216,16 @@ public sealed partial class Game1
             // P784 — native PickShip (console.cpp:1776-1790): a left pick of a
             // friendly ship STARTS the MouseCommand compose when not composing
             // (the recipient then becomes the picked ship).
+            bool wasComposing = LiveComposeState is not (NativeComposeState.NotComposing or NativeComposeState.Shell);
             if (LiveComposeState == NativeComposeState.NotComposing)
                 SetComposeState(NativeComposeState.MouseCommand);
-            if (_cameraMode == CameraMode.Command && ActionDown(Keyboard.GetState(), "CommandSelectionAdd"))
+            bool shiftAdd = ActionDown(Keyboard.GetState(), "CommandSelectionAdd");
+            // P818 — the same pick is native's chat-subject pick: the ship
+            // becomes CHAT_INDIVIDUAL, SHIFT toggles it in/out of the group
+            // (console.cpp:2155-2185, PickShip/ToggleSubject). Locked because it
+            // reads the world roster.
+            lock (_session.Gate) ApplyLeftPickSubjects(p, shiftAdd, wasComposing);
+            if (_cameraMode == CameraMode.Command && shiftAdd)
             {
                 if (_commandGroup.Count == 0 && _commandee is { } previous) _commandGroup.Add(previous);
                 if (_commandGroup.Any(t => t.Id == p.Id)) _commandGroup.RemoveAll(t => t.Id == p.Id);
@@ -227,10 +234,15 @@ public sealed partial class Game1
             }
             else { _commandGroup.Clear(); _commandee = p; }
             ClearWingRecipient();
-            Console.WriteLine($"[monogame] pointer: commandee {p.Name} (ship #{p.Id})");
+            Console.WriteLine($"[monogame] pointer: commandee {p.Name} (ship #{p.Id}) chat recipient {_chatTarget}");
         }
         else
         {
+            // P818 — native: a click that picks no ship quits the compose
+            // (console.cpp:2183-2187, the trailing QuitComposing in the
+            // single-point branch).
+            if (LiveComposeState is not (NativeComposeState.NotComposing or NativeComposeState.Shell))
+                SetComposeState(NativeComposeState.NotComposing);
             if (_cameraMode == CameraMode.Command) { _commandGroup.Clear(); _commandee = null; ClearWingRecipient(); }
             Console.WriteLine("[monogame] pointer: no own-side ship under the cursor");
         }

@@ -255,7 +255,7 @@ public sealed partial class Game1
             // Chat, target FriendlySector, sector recipient = the cluster (used
             // by the send path, Game1.Session.SendChatLine).
             SetComposeState(NativeComposeState.Chat);
-            _chatTarget = ChatTarget.FriendlySector;
+            _chatRecipient.SetChannel(ChatTarget.FriendlySector);
             _chatSectorRecipient = cluster;
             Console.WriteLine($"[monogame] starmap right-click: compose chat to sector {cluster} (PickCluster, console.cpp:1743-1751)");
             return;
@@ -279,7 +279,10 @@ public sealed partial class Game1
             oidRecipient = world.MyShipId is { } me && world.Ships.TryGetValue(me, out var own)
                 ? _chatTarget switch
                 {
-                    ChatTarget.Individual => own.ShipId,
+                    // P818 — an individual recipient is the PICKED ship, not
+                    // necessarily the player's own (console.cpp:1782-1791 sends
+                    // to the compose's current subject).
+                    ChatTarget.Individual => _chatRecipient.IndividualShipId ?? own.ShipId,
                     ChatTarget.Wing => own.WingId,
                     ChatTarget.Team => own.SideId,
                     _ => _chatSectorRecipient ?? world.ViewedClusterId ?? own.SectorId,

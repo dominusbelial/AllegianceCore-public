@@ -72,8 +72,15 @@ public class Hud12DataAndArtTests
         // CHAT_FRIENDLY_SECTOR: own side, last seen in the chat cluster.
         Assert.True(RadarOverlayRules.IsSubject(ChatTarget.FriendlySector, true, true, true, 0, 0));
         Assert.False(RadarOverlayRules.IsSubject(ChatTarget.FriendlySector, true, true, sameSector: false, 0, 0));
-        // Not modelled by the port's composer: no fabricated subjects.
+        // P818 — CHAT_INDIVIDUAL / CHAT_GROUP are membership in the compose's
+        // ship list (radarimage.cpp:651); no list ⇒ no fabricated subject.
         Assert.False(RadarOverlayRules.IsSubject(ChatTarget.Individual, true, true, true, 0, 0));
+        Assert.True(RadarOverlayRules.IsSubject(ChatTarget.Individual, true, true, true, 0, 0,
+            shipId: 4, subjectShips: new short[] { 4 }));
+        Assert.True(RadarOverlayRules.IsSubject(ChatTarget.Group, true, sameSide: false, true, 0, 0,
+            shipId: 4, subjectShips: new short[] { 4, 5 }));
+        Assert.False(RadarOverlayRules.IsSubject(ChatTarget.Group, true, true, true, 0, 0,
+            shipId: 6, subjectShips: new short[] { 4, 5 }));
         Assert.False(RadarOverlayRules.IsSubject(ChatTarget.Admin, true, true, true, 0, 0));
         // Native assigns psubjects only when bRangeLabels is OFF (command camera).
         Assert.False(RadarOverlayRules.SubjectsApply(commandCamera: false, composing: true));

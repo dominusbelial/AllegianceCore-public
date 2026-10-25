@@ -1231,7 +1231,8 @@ public sealed partial class Game1
 
     // ── P214 — chat ──────────────────────────────────────────────────────────
     /// <summary>Sends the composed line to the current <see cref="_chatTarget"/>
-    /// (default Team, P456) and closes the input.</summary>
+    /// (default Team, P456) — one chat per subject for an individual/group
+    /// recipient (P818) — and closes the input.</summary>
     private readonly ModerationModel _moderation = new();
 
     private void SendChatLine()
@@ -1253,10 +1254,9 @@ public sealed partial class Game1
         Console.WriteLine($"[monogame] chat ({_chatTarget}) >> {text}");
         // P456: send to the compose's current target, not a hardcoded Everyone —
         // the recipient is client state (_chatTarget) so Tab cycling works and
-        // the target persists across compose sessions. The server relays the
-        // sender's own echo back, which is what actually displays the line (it
-        // is NOT echoed locally). commandId=c_cidNone marks a typed chat as
-        // carrying no order (P457), so the server never queues one from it.
+        // the target persists across compose sessions. commandId=c_cidNone marks
+        // a typed chat as carrying no order (P457), so the server never queues
+        // one from it.
         // P784 — native BaseClient::SendChat converts a NA recipient to the
         // sender's own ids (clintlib.cpp:2312-2367): Individual → own ship id,
         // Wing → own wing id, Team → own side id, FriendlySector/AllSector →
@@ -1264,31 +1264,69 @@ public sealed partial class Game1
         // OidRecipient (ship id), Wing on the wing id and FriendlySector on the
         // sector id, so the compose fills all three from the world.
         short oidRecipient = 0;
+        short selfId = -1;
+        IReadOnlyList<Rendering.ChatSendPlan.Send> plan = [];
         lock (_session.Gate)
         {
             var world = _session.World;
-            if (world.MyShipId is { } me && world.Ships.TryGetValue(me, out var ownShip))
+            // P818 — native SendChatInternal revalidates the subject list before
+            // it sends (m_pchsCurrent->Reset(), console.cpp:1453): a group member
+            // that left the mission drops out and a one-ship group becomes an
+            // individual.
+            ResetChatSubjectBeforeSend(world);
+            short me = world.MyShipId ?? -1;
+            selfId = me;
+            Allegiance.ClientCore.State.ShipEntity? ownShip = null;
+            if (me >= 0) world.Ships.TryGetValue(me, out ownShip);
+            switch (_chatTarget)
             {
-                switch (_chatTarget)
-                {
-                    case ChatTarget.Individual: oidRecipient = ownShip.ShipId; break;
-                    case ChatTarget.Wing: oidRecipient = ownShip.WingId; break;
-                    case ChatTarget.Team: oidRecipient = ownShip.SideId; break;
-                    case ChatTarget.FriendlySector:
-                    case ChatTarget.AllSector:
-                        // P787b — SIM-0332: the compose's sector recipient is the
-                        // last RIGHT-CLICK-picked cluster when set (native
-                        // console.cpp:1745-1746 SetRecipient), else the chat
-                        // cluster fallback (native converts NA → GetChatCluster(),
-                        // clintlib.cpp:2352-2366: the viewed cluster, else the own).
-                        oidRecipient = _chatSectorRecipient
-                            ?? world.ViewedClusterId
-                            ?? ownShip.SectorId;
-                        break;
-                }
+                case ChatTarget.Individual:
+                    // P818 — the picked ship (native m_oidRecipient,
+                    // console.cpp:300-302), the player's own only when the "Me"
+                    // column (or a self pick) chose it.
+                    oidRecipient = _chatRecipient.IndividualShipId ?? (me >= 0 ? me : (short)0);
+                    break;
+                case ChatTarget.Wing: if (ownShip is { } wingOwn) oidRecipient = wingOwn.WingId; break;
+                case ChatTarget.Team: if (ownShip is { } sideOwn) oidRecipient = sideOwn.SideId; break;
+                case ChatTarget.FriendlySector:
+                case ChatTarget.AllSector:
+                    // P787b — SIM-0332: the compose's sector recipient is the
+                    // last RIGHT-CLICK-picked cluster when set (native
+                    // console.cpp:1745-1746 SetRecipient), else the chat
+                    // cluster fallback (native converts NA → GetChatCluster(),
+                    // clintlib.cpp:2352-2366: the viewed cluster, else the own).
+                    oidRecipient = _chatSectorRecipient
+                        ?? world.ViewedClusterId
+                        ?? (ownShip is { } sectorOwn ? sectorOwn.SectorId : (short)0);
+                    break;
             }
+            // The wire plan is native's send loop, built with or without an own
+            // ship: a group recipient still fans out per subject, and an
+            // Individual still addresses the picked ship (a bare transport with
+            // no world simply resolves nothing, like the pre-P818 send).
+            plan = Rendering.ChatSendPlan.Plan(_chatTarget, _chatRecipient.Ships, oidRecipient, selfId);
         }
-        _session.SendChat(text, _chatTarget, oidRecipient: oidRecipient, commandId: OrderChange.CidNone);
+        // No ship list and no individual (a world still settling): one chat for
+        // the channel target, exactly as before P818.
+        if (plan.Count == 0)
+            plan = [new Rendering.ChatSendPlan.Send(_chatTarget, oidRecipient, LocalOnly: false, EchoLocally: false)];
+        // P818 — the send loop (native console.cpp:1448-1507): a Group recipient
+        // goes out as ONE message per subject (first CHAT_GROUP, the rest
+        // CHAT_GROUP_NOECHO — the server rewrites each to CHAT_INDIVIDUAL on its
+        // oidRecipient, FedSrv.CPP:3531-3536); an Individual to yourself is never
+        // put on the wire (clintlib.cpp:2422-2426). The sender's chat history
+        // gains exactly one copy: the server's relay when the line is addressed
+        // to the player's own ship, otherwise the local echo that native's
+        // ReceiveChat performs for every send except CHAT_GROUP_NOECHO.
+        foreach (var send in plan)
+        {
+            if (!send.LocalOnly)
+                _session.SendChat(text, send.Target, oidRecipient: send.OidRecipient,
+                    commandId: OrderChange.CidNone);
+            if (send.EchoLocally)
+                lock (_session.Gate)
+                    _session.World.PostOwnChatLine(text, send.Target, send.OidRecipient);
+        }
     }
 
     /// <summary>MonoGame's real text-input handler (<c>Window.TextInput</c>):

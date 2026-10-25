@@ -1367,7 +1367,12 @@ public sealed partial class Game1 : Game
     // the buffer, never reset when the input line closes.
     private bool _chatActive;
     private readonly StringBuilder _chatBuffer = new();
-    private ChatTarget _chatTarget = ChatTargetLogic.DefaultTarget;
+    // P818 — native keeps the compose recipient AND its ship list in one
+    // ChatSubject member, m_chsChat(CHAT_TEAM) (console.cpp:537,644), which
+    // survives QuitComposing. ChatSubjects is the port of that struct; _chatTarget
+    // stays the recipient view of it so every existing reader is unchanged.
+    private readonly ChatSubjects _chatRecipient = new();
+    private ChatTarget _chatTarget => _chatRecipient.Target;
     // P787b — the compose's sector recipient override (SIM-0332): native's
     // console PickCluster starts a chat compose whose recipient is
     // CHAT_FRIENDLY_SECTOR addressed to the RIGHT-CLICKED cluster

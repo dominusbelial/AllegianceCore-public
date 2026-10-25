@@ -97,6 +97,9 @@ public static class ChatTargetLogic
         ChatTarget.Everyone       => "[EVERYONE] ",
         ChatTarget.Wing           => "[WING] ",
         ChatTarget.FriendlySector => "[FSECTOR] ",
+        // P818 — native's compose recipient box shows the literal "Group" for a
+        // multi-subject recipient (console.cpp:1345-1346).
+        ChatTarget.Group          => "[GROUP] ",
         _                         => "",
     };
 
@@ -116,7 +119,13 @@ public static class ChatTargetLogic
         ChatTarget.Everyone       => "[ALL] ",
         ChatTarget.Wing           => wingName is null ? "[WING] " : $"[WING {wingName}] ",
         ChatTarget.FriendlySector => sectorName is null ? "[FSECTOR] " : $"[{sectorName}] ",
+        // P818 — a picked individual shows the PICKED ship's name, not "me":
+        // native's recipient box prints pship->GetName() for CHAT_INDIVIDUAL
+        // (console.cpp:1381-1386), and the subject is whoever was clicked.
         ChatTarget.Individual     => shipName is null ? "[ME] " : $"[{shipName}] ",
+        // P818 — multi-subject recipient: native prints the literal "Group"
+        // (console.cpp:1345-1346).
+        ChatTarget.Group          => "[GROUP] ",
         _                         => ComposeLabel(target),
     };
 }

@@ -428,7 +428,7 @@ public class P784ComposeTests
         Set(game, "_moderation", new ModerationModel());
         Set(game, "_chatPane", new ChatPaneModel());
         Set(game, "_chatBuffer", new System.Text.StringBuilder());
-        Set(game, "_chatTarget", ChatTargetLogic.DefaultTarget);
+        Set(game, "_chatRecipient", new ChatSubjects());   // P818: native m_chsChat (ChatSubject)
         Set(game, "_pilotProfile", new PilotInfoLayout.ProfileEditor());
         var state = typeof(Game1).GetField("_state", Hidden)!;
         state.SetValue(game, Enum.Parse(state.FieldType, "Flying"));

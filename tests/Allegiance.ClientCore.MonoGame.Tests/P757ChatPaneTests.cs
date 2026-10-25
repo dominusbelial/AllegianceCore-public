@@ -142,7 +142,7 @@ public sealed class P757ChatPaneTests
         Set(game, "_moderation", new ModerationModel());
         Set(game, "_chatPane", new ChatPaneModel());
         Set(game, "_chatBuffer", new System.Text.StringBuilder());
-        Set(game, "_chatTarget", ChatTargetLogic.DefaultTarget);
+        Set(game, "_chatRecipient", new ChatSubjects());   // P818: native m_chsChat (ChatSubject)
         // P761b — the handler now also drives the character-sheet profile
         // editor's Enter/Backspace edges, so its model must exist too.
         Set(game, "_pilotProfile", new Rendering.PilotInfoLayout.ProfileEditor());
@@ -201,7 +201,7 @@ public sealed class P757ChatPaneTests
 
         // 3) Tab with typed text does NOT cycle (native OnTab, console.cpp:2747-2755).
         Call(game, "HandleChatCompose", new KeyboardState(XnaKeys.Tab));
-        Assert.Equal(ChatTarget.Team, Get<ChatTarget>(game, "_chatTarget"));
+        Assert.Equal(ChatTarget.Team, Get<ChatSubjects>(game, "_chatRecipient").Target);
 
         // 4) Backspace deletes the previous character (raw key, allow-listed).
         Call(game, "HandleChatCompose", new KeyboardState(XnaKeys.Back));
@@ -231,7 +231,7 @@ public sealed class P757ChatPaneTests
         Call(game, "HandleChatCompose", new KeyboardState());
         Call(game, "HandleChatCompose", new KeyboardState(XnaKeys.Enter));
         Call(game, "HandleChatCompose", new KeyboardState(XnaKeys.Tab));
-        Assert.Equal(ChatTargetLogic.Next(ChatTarget.Team), Get<ChatTarget>(game, "_chatTarget"));
+        Assert.Equal(ChatTargetLogic.Next(ChatTarget.Team), Get<ChatSubjects>(game, "_chatRecipient").Target);
         Type(game, "hello");
         Call(game, "HandleChatCompose", new KeyboardState(XnaKeys.Enter));
         ChatMessage? sent2 = null;

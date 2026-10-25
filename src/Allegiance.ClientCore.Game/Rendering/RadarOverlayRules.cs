@@ -65,7 +65,9 @@ public static class RadarOverlayRules
     /// <summary>Native subject brackets exist only when range labels are OFF —
     /// the command camera (<c>radarimage.cpp:570-574</c>: <c>psubjects</c> is
     /// assigned only in the <c>else</c> branch of <c>if (bRangeLabels)</c>) —
-    /// and only while a chat is being composed.</summary>
+    /// and only while a compose is open: <c>GetSubjects()</c> returns the list
+    /// for every state except NotComposing and Shell (console.cpp:2327-2334),
+    /// i.e. the chat/quick composes AND the mouse-command/command composes.</summary>
     public static bool SubjectsApply(bool commandCamera, bool composing) =>
         !commandCamera ? false : composing;
 
@@ -86,13 +88,20 @@ public static class RadarOverlayRules
     ///   <item><c>CHAT_FRIENDLY_SECTOR</c> — own-side ships last seen in the
     ///   chat cluster (<c>console.cpp:348-358,393-403</c>); the radar snapshot is
     ///   already sector-scoped, so <paramref name="sameSector"/> carries that.</item>
-    ///   <item><c>CHAT_INDIVIDUAL</c>/<c>CHAT_GROUP</c> — not tracked by the
-    ///   port's composer yet, so they contribute no subjects (never a fabricated
-    ///   one).</item>
+    ///   <item><c>CHAT_INDIVIDUAL</c>/<c>CHAT_GROUP</c> — membership in the
+    ///   compose's own ship list (<c>m_shipsSubject</c>), which P818 now tracks
+    ///   (<see cref="ChatSubjects"/>): native tests exactly
+    ///   <c>psubjects-&gt;find(pship)</c> (radarimage.cpp:651), so the list is
+    ///   the whole rule — no side/sector condition.</item>
     /// </list>
     /// </summary>
+    /// <param name="shipId">The contact's ship id (for the Individual/Group list
+    /// test); ignored by the channel rules.</param>
+    /// <param name="subjectShips">The compose's ship list — native
+    /// <c>GetSubjects()</c> → <c>m_shipsSubject</c> (console.cpp:2327-2334).</param>
     public static bool IsSubject(ChatTarget target, bool composing, bool sameSide,
-        bool sameSector, short shipWingId, short myWingId)
+        bool sameSector, short shipWingId, short myWingId,
+        short shipId = -1, IReadOnlyList<short>? subjectShips = null)
     {
         if (!composing) return false;   // GetSubjects() is NULL unless composing (console.cpp:2327-2334)
         return target switch
@@ -101,7 +110,11 @@ public static class RadarOverlayRules
             ChatTarget.Everyone => true,
             ChatTarget.Wing => sameSide && shipWingId == myWingId,
             ChatTarget.FriendlySector => sameSide && sameSector,
-            _ => false,   // Admin/Leaders/Individual/Group: no subject list modelled
+            // P818 — native c_maskSubject for a picked recipient is pure list
+            // membership (radarimage.cpp:651); no fabricated subject.
+            ChatTarget.Individual or ChatTarget.Group =>
+                subjectShips is not null && subjectShips.Contains(shipId),
+            _ => false,   // Admin/Leaders: no subject list in native either
         };
     }
 }
