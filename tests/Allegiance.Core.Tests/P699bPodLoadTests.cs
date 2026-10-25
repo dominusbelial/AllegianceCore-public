@@ -147,6 +147,14 @@ public sealed class P699bPodLoadTests(ITestOutputHelper output)
                         new(mouth.Position[0], mouth.Position[1], mouth.Position[2]));
                 }
             }
+            // These player ships have no client, so the harness supplies what a pod's
+            // client does: an accepted SHIP_UPDATE at the native 0.15 s cadence
+            // (clintlib.cpp:1832,1858-1863). Since P788c, players re-arm after a warp
+            // only through accepted updates (fsship.cpp:79-82,1185-1191).
+            if (tick % 3 == 0)
+                foreach (var flyer in pods.Select(p => p.Ship).Concat(traffic))
+                    if (!flyer.Dead && flyer.Sector is not null && flyer.StationId is null)
+                        server.AdvanceWarpHandshakeOnAcceptedUpdate(flyer);
             server.TickSim();
             if (results.Count == 200) break;
         }
