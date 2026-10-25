@@ -26,20 +26,22 @@ namespace Allegiance.Core.Tests;
 /// no collision, no debris, no latch).</item>
 /// </list>
 /// </summary>
-public sealed class P769BuilderCollisionBuildTests
+public class P769BuilderCollisionBuildTests
 {
+    protected virtual bool NativeGotoPlanEnabled => false;
     private static object? Invoke(Srv server, string method, params object[] args) =>
         typeof(Srv).GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(server, args);
 
     private static void Set(Srv server, string field, object value) =>
         typeof(Srv).GetField(field, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(server, value);
 
-    private static Mission Mission(IIgcSite site)
+    private Mission Mission(IIgcSite site)
     {
         var core = StaticCore.Load(IgcReader.ParseFile(Path.Combine(TestArtRoot.Value, "PCore001.igc")));
         var map = MissionMap.Load(IgcReader.ParseFile(Path.Combine(TestArtRoot.Value, "XXV_simple.igc")));
         var mission = Allegiance.Core.Model.Mission.Assemble(core, map,
             [new SideSpec(0, "Alpha", 1), new SideSpec(1, "Bravo", 3)], site);
+        mission.NativeGotoPlanEnabled = NativeGotoPlanEnabled;
         mission.Stage = MissionStage.Started;
         CvhFile? Load(string name)
         {
@@ -218,4 +220,10 @@ public sealed class P769BuilderCollisionBuildTests
         Assert.Equal(0, Count(site.Calls, "HullHitEvent("));
         Assert.False(ship.IsDrilling);
     }
+}
+
+/// <summary>P817: unchanged economy/construction assertions with native travel enabled.</summary>
+public sealed class P817NativeP769BuilderCollisionBuildTests : P769BuilderCollisionBuildTests
+{
+    protected override bool NativeGotoPlanEnabled => true;
 }

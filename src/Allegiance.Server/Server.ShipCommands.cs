@@ -2086,8 +2086,9 @@ public sealed partial class Server
     /// target cannot be located (the order is not executed).</summary>
     private GotoOrder? ResolveDroneGoto(Mission? mission, Model? model, IgcObjectType ot, short oid)
     {
+        bool nativeTarget = mission?.NativeGotoPlanEnabled == true;
         if (model is Ship s)
-            return s.Sector is { } ss ? new GotoOrder(GotoKind.Waypoint, ss.Id, s.Position) : null;
+            return s.Sector is { } ss ? new GotoOrder(GotoKind.Waypoint, ss.Id, s.Position, TargetType: nativeTarget ? IgcObjectType.Ship : null, TargetId: nativeTarget ? s.Id : null) : null;
         if (mission is null) return null;
         foreach (var sec in mission.Sectors)
         {
@@ -2099,17 +2100,17 @@ public sealed partial class Server
                             // P766 / SIM-0119 — carry the station object so goto
                             // completion can clear command slots naming it
                             // (shipIGC.cpp:2802-2810).
-                            return new GotoOrder(GotoKind.Waypoint, sec.Id, st.Center, st.StationId);
+                            return new GotoOrder(GotoKind.Waypoint, sec.Id, st.Center, st.StationId, nativeTarget ? IgcObjectType.Station : null, nativeTarget ? st.StationId : null);
                     break;
                 case IgcObjectType.Asteroid:
                     foreach (var rock in sec.Mineable)
                         if (rock.Data.AsteroidId == oid && rock.Data.Position is { Length: 3 } rp)
-                            return new GotoOrder(GotoKind.Waypoint, sec.Id, new Vector3(rp[0], rp[1], rp[2]));
+                            return new GotoOrder(GotoKind.Waypoint, sec.Id, new Vector3(rp[0], rp[1], rp[2]), TargetType: nativeTarget ? IgcObjectType.Asteroid : null, TargetId: nativeTarget ? rock.Data.AsteroidId : null);
                     break;
                 case IgcObjectType.Warp:
                     foreach (var w in sec.Warps)
                         if (w.Warp.WarpId == oid && w.Warp.Position is { Length: 3 } p)
-                            return new GotoOrder(GotoKind.Waypoint, sec.Id, new Vector3(p[0], p[1], p[2]));
+                            return new GotoOrder(GotoKind.Waypoint, sec.Id, new Vector3(p[0], p[1], p[2]), TargetType: nativeTarget ? IgcObjectType.Warp : null, TargetId: nativeTarget ? w.Warp.WarpId : null);
                     break;
             }
         }

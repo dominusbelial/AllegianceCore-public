@@ -1,0 +1,136 @@
+{
+  "branch": [
+    {
+      "run": "p700-1",
+      "nativeGotoPlan": false,
+      "outcome": "Failed",
+      "message": "Most showcase ships must reach their objectives",
+      "summary": [
+        "P700 local 15v15: 480.1s, samples=4789, reached=21/30, longest speed<1 with target=2.105s, shots=7669, hits=3528, kills=24"
+      ]
+    },
+    {
+      "run": "p700-2",
+      "nativeGotoPlan": false,
+      "outcome": "Passed",
+      "message": "",
+      "summary": [
+        "P700 local 15v15: 376.8s, samples=3762, reached=24/30, longest speed<1 with target=2.007s, shots=2202, hits=892, kills=6"
+      ]
+    },
+    {
+      "run": "p700-3",
+      "nativeGotoPlan": true,
+      "outcome": "Passed",
+      "message": "",
+      "summary": [
+        "P700 local 15v15: 432.3s, samples=4317, reached=24/30, longest speed<1 with target=1.905s, shots=8224, hits=3815, kills=31"
+      ]
+    },
+    {
+      "run": "p700-4",
+      "nativeGotoPlan": true,
+      "outcome": "Passed",
+      "message": "",
+      "summary": [
+        "P700 local 15v15: 389.7s, samples=3891, reached=24/30, longest speed<1 with target=2.004s, shots=5301, hits=1860, kills=16"
+      ]
+    },
+    {
+      "run": "p700-5",
+      "nativeGotoPlan": true,
+      "outcome": "Passed",
+      "message": "",
+      "summary": [
+        "P700 local 15v15: 315.0s, samples=3145, reached=24/30, longest speed<1 with target=1.316s, shots=656, hits=350, kills=2"
+      ]
+    }
+  ],
+  "closing": [
+    {
+      "repeat": 1,
+      "nativeGotoPlan": false,
+      "exitCode": 0,
+      "seconds": 454.6828208369843,
+      "outcome": "Passed",
+      "message": "",
+      "summary": [
+        "P700 local 15v15: 451.0s, samples=4502, reached=24/30, longest speed<1 with target=1.904s, shots=4821, hits=1838, kills=15"
+      ]
+    },
+    {
+      "repeat": 2,
+      "nativeGotoPlan": false,
+      "exitCode": 0,
+      "seconds": 414.3471902080055,
+      "outcome": "Passed",
+      "message": "",
+      "summary": [
+        "P700 local 15v15: 410.7s, samples=4101, reached=25/30, longest speed<1 with target=2.011s, shots=7742, hits=3447, kills=28"
+      ]
+    },
+    {
+      "repeat": 3,
+      "nativeGotoPlan": false,
+      "exitCode": 0,
+      "seconds": 407.6636431340012,
+      "outcome": "Passed",
+      "message": "",
+      "summary": [
+        "P700 local 15v15: 403.9s, samples=4034, reached=24/30, longest speed<1 with target=2.005s, shots=9070, hits=4025, kills=35"
+      ]
+    },
+    {
+      "repeat": 4,
+      "nativeGotoPlan": true,
+      "exitCode": 0,
+      "seconds": 388.8738023279875,
+      "outcome": "Passed",
+      "message": "",
+      "summary": [
+        "P700 local 15v15: 384.9s, samples=3844, reached=24/30, longest speed<1 with target=2.005s, shots=2535, hits=1308, kills=16"
+      ]
+    },
+    {
+      "repeat": 5,
+      "nativeGotoPlan": true,
+      "exitCode": 0,
+      "seconds": 345.2457879160065,
+      "outcome": "Passed",
+      "message": "",
+      "summary": [
+        "P700 local 15v15: 341.8s, samples=3413, reached=24/30, longest speed<1 with target=3.911s, shots=5779, hits=2781, kills=26"
+      ]
+    }
+  ],
+  "baseline": [
+    {
+      "run": "base-p700-1",
+      "nativeGotoPlan": false,
+      "outcome": "Passed",
+      "message": "",
+      "summary": [
+        "P700 local 15v15: 422.5s, samples=4219, reached=24/30, longest speed<1 with target=1.613s, shots=1535, hits=739, kills=11"
+      ]
+    },
+    {
+      "run": "base-p700-2",
+      "nativeGotoPlan": false,
+      "outcome": "Passed",
+      "message": "",
+      "summary": [
+        "P700 local 15v15: 376.8s, samples=3763, reached=24/30, longest speed<1 with target=1.819s, shots=1781, hits=717, kills=12"
+      ]
+    },
+    {
+      "run": "base-p700-3",
+      "nativeGotoPlan": false,
+      "outcome": "Passed",
+      "message": "",
+      "summary": [
+        "P700 local 15v15: 359.7s, samples=3592, reached=25/30, longest speed<1 with target=1.518s, shots=1514, hits=499, kills=7"
+      ]
+    }
+  ],
+  "baselineCommit": "041e23a0189c83cc29e35d13008f0e32a72af9bf"
+}

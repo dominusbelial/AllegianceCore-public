@@ -1,0 +1,899 @@
+{
+  "methods": {
+    "Allegiance.Core.Tests.BuildingConstructionLiveTests.Completed_build_keeps_the_base_station_type_when_the_successor_is_not_researched": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.BuildingConstructionLiveTests.Completed_build_replaces_asteroid_with_station_and_consumes_builder": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.BuildingConstructionLiveTests.Completed_build_upgrades_to_the_successor_station_type_when_the_side_has_outteched_it": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.BuildingConstructionLiveTests.Interrupted_build_aborts_without_touching_asteroid_or_creating_station": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.BuildingConstructionLiveTests.StartBuildingEffect_rejects_asteroid_of_wrong_type": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.MinerDecisionCycleLiveTests.Accepted_return_to_base_slot_cleared_on_dock": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.MinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.MinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.NpcBuilderDefaultOrderLiveTests.Idle_builder_autonomously_builds_station_from_neutral_asteroid": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.NpcBuilderDefaultOrderLiveTests.Idle_builder_refuses_asteroid_of_wrong_type": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.NpcBuilderDefaultOrderLiveTests.Idle_builder_without_configured_station_type_stands_by": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P528bMinerSellRegressionLiveTests.Each_initial_miner_completes_two_full_mine_sell_cycles_at_native_rates": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Allied_miners_share_least_ore_selection_without_enemy_lockout": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_build_distance_exception_compares_with_local_repair": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_runs_on_any_new_damage_but_carriers_and_players_never_run": {
+      "invocations": 3,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 9
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_starts_drilling_only_after_arrival_and_does_not_flee_while_building": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Constructor_without_local_repair_keeps_accepted_build_even_with_remote_base": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Damaged_working_drone_interrupts_order_for_repair": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Distant_enemy_with_same_order_does_not_displace_ready_miner": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Enemy_ready_miners_block_all_accrual_and_keep_their_orders": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Equal_ore_tie_uses_sector_order_and_loser_can_return_to_land_only_station": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Every_stock_teleport_refinery_can_unload": {
+      "invocations": 3,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 9
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Geometric_player_participates_in_contested_rock_arbitration": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Live_contention_geometry_keeps_stock_hull_miners_ready_and_locked_out": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Lone_player_mines_by_proximity_without_npc_claim": {
+      "invocations": 3,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 12
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Lone_sideless_drone_with_mine_order_accrues_identity_rate": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Miner_damage_threshold_is_strict_95_percent": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Miner_repaired_in_another_sector_picks_local_work_instead_of_old_rock": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Mounted_shield_uses_75_percent_threshold_even_with_full_hull": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.New_drone_in_old_mission_starts_runaway_clock_at_creation": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.New_order_baseline_and_player_cooldown_are_honored": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.No_repair_destination_preserves_work_and_new_order_cancels_retreat": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Non_miner_near_rock_cannot_accrue": {
+      "invocations": 3,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 9
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Readiness_uses_strict_radius_and_velocity_bounds": {
+      "invocations": 3,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 12
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Refinery_teleport_sells_without_docking_and_picks_new_order": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_dock_keeps_paused_order_until_launch_and_recheck": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_resumes_paused_work_only_after_ten_second_recheck": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_search_uses_reachable_other_sectors": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Repair_ship_search_requires_land_on_carrier_hull": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Same_side_only_least_ore_ready_miner_accrues_regardless_of_insertion_order": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Stock_constructor_reaches_accepted_build_rock_and_starts_construction": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Teleport_requires_capability_goto_plan_and_miner": {
+      "invocations": 3,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 9
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Teleport_sale_scales_loaded_value_and_yield_and_pays_once": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Teleport_unload_strict_range_and_no_velocity_gate": {
+      "invocations": 3,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 9
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Traveling_miner_stops_in_native_mining_envelope_and_accrues": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Wingman_retreat_flags_use_native_thresholds": {
+      "invocations": 3,
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 15
+    },
+    "Allegiance.Core.Tests.P652EconomyDroneAiTests.Working_miner_holds_position_inside_native_envelope": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P769BuilderCollisionBuildTests.Constructor_flies_from_its_station_and_builds_through_the_drilling_collision": {
+      "invocations": 3,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 9
+    },
+    "Allegiance.Core.Tests.P769BuilderCollisionBuildTests.Parked_reservation_constructor_builds_through_the_stopped_sphere_fallback_only": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeBuildingConstructionLiveTests.Completed_build_keeps_the_base_station_type_when_the_successor_is_not_researched": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeBuildingConstructionLiveTests.Completed_build_replaces_asteroid_with_station_and_consumes_builder": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeBuildingConstructionLiveTests.Completed_build_upgrades_to_the_successor_station_type_when_the_side_has_outteched_it": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeBuildingConstructionLiveTests.Interrupted_build_aborts_without_touching_asteroid_or_creating_station": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeBuildingConstructionLiveTests.StartBuildingEffect_rejects_asteroid_of_wrong_type": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Boost_is_cancelled_only_inside_original_target_radius": {
+      "invocations": 6,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 18
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Builder_strip_pivots_then_completes_without_dodging_rock": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Divert_uses_tangent_path_around_stationary_blockers": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Dodge_uses_rcs_not_away_facing_and_respects_skip_and_ships_only": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.FindPath_obeys_visibility_initial_distance_and_coward_final_cluster_exception": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Flag_defaults_off_and_environment_overrides_config": {
+      "invocations": 3,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 18
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Goto_masks_preserve_current_and_rest_position_tests": {
+      "invocations": 3,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 12
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Mine_warp_sell_trajectory_matches_independent_native_formula_trace": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Mines_have_native_speed_gate_and_minefield_slowdown": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Pickup_predicts_intercept_and_flies_through_target": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Production_adapter_allocates_no_bytes_and_excludes_player_pilots": {
+      "invocations": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Pure_control_and_route_loops_allocate_no_bytes_after_warmup": {
+      "invocations": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Reverse_drag_stopping_distance": {
+      "invocations": 3,
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 15
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Station_no_bay_power_glides_and_bay_approach_keeps_native_masks": {
+      "invocations": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Warp_entry_keeps_full_throttle_inside_stopping_distance": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Waypoint_replans_on_ship_and_target_cluster_changes_and_enter_completion": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wide_angle_turn_uses_native_yaw_escape_and_directional_rcs": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Accepted_return_to_base_slot_cleared_on_dock": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Idle_npc_autonomously_mines_full_bag_and_sells_at_friendly_station": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeMinerDecisionCycleLiveTests.Idle_npc_repeats_mine_sell_cycle_indefinitely_after_first_sell": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeNpcBuilderDefaultOrderLiveTests.Idle_builder_autonomously_builds_station_from_neutral_asteroid": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeNpcBuilderDefaultOrderLiveTests.Idle_builder_refuses_asteroid_of_wrong_type": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeNpcBuilderDefaultOrderLiveTests.Idle_builder_without_configured_station_type_stands_by": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP528bMinerSellRegressionLiveTests.Each_initial_miner_completes_two_full_mine_sell_cycles_at_native_rates": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Allied_miners_share_least_ore_selection_without_enemy_lockout": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Constructor_build_distance_exception_compares_with_local_repair": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Constructor_runs_on_any_new_damage_but_carriers_and_players_never_run": {
+      "invocations": 3,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 9
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Constructor_starts_drilling_only_after_arrival_and_does_not_flee_while_building": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Constructor_without_local_repair_keeps_accepted_build_even_with_remote_base": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Damaged_working_drone_interrupts_order_for_repair": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Distant_enemy_with_same_order_does_not_displace_ready_miner": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Enemy_lockout_complains_with_native_voice_id_after_initial_backoff": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Enemy_ready_miners_block_all_accrual_and_keep_their_orders": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Equal_ore_tie_uses_sector_order_and_loser_can_return_to_land_only_station": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Every_stock_teleport_refinery_can_unload": {
+      "invocations": 3,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 9
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Geometric_player_participates_in_contested_rock_arbitration": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Live_contention_geometry_keeps_stock_hull_miners_ready_and_locked_out": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Lone_player_mines_by_proximity_without_npc_claim": {
+      "invocations": 3,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 12
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Lone_sideless_drone_with_mine_order_accrues_identity_rate": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Miner_damage_threshold_is_strict_95_percent": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Miner_repaired_in_another_sector_picks_local_work_instead_of_old_rock": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Mounted_shield_uses_75_percent_threshold_even_with_full_hull": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.New_drone_in_old_mission_starts_runaway_clock_at_creation": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.New_order_baseline_and_player_cooldown_are_honored": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.No_repair_destination_preserves_work_and_new_order_cancels_retreat": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Non_miner_near_rock_cannot_accrue": {
+      "invocations": 3,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 9
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Readiness_uses_strict_radius_and_velocity_bounds": {
+      "invocations": 3,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 12
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Refinery_teleport_sells_without_docking_and_picks_new_order": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Repair_dock_keeps_paused_order_until_launch_and_recheck": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Repair_resumes_paused_work_only_after_ten_second_recheck": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Repair_search_uses_reachable_other_sectors": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Repair_ship_search_requires_land_on_carrier_hull": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Same_side_only_least_ore_ready_miner_accrues_regardless_of_insertion_order": {
+      "invocations": 3,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 6
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Stock_constructor_reaches_accepted_build_rock_and_starts_construction": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Teleport_requires_capability_goto_plan_and_miner": {
+      "invocations": 3,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 9
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Teleport_sale_scales_loaded_value_and_yield_and_pays_once": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Teleport_unload_strict_range_and_no_velocity_gate": {
+      "invocations": 3,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 9
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Traveling_miner_stops_in_native_mining_envelope_and_accrues": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Wingman_retreat_flags_use_native_thresholds": {
+      "invocations": 3,
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 15
+    },
+    "Allegiance.Core.Tests.P817NativeP652EconomyDroneAiTests.Working_miner_holds_position_inside_native_envelope": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeP769BuilderCollisionBuildTests.Constructor_flies_from_its_station_and_builds_through_the_drilling_collision": {
+      "invocations": 3,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 9
+    },
+    "Allegiance.Core.Tests.P817NativeP769BuilderCollisionBuildTests.Parked_reservation_constructor_builds_through_the_stopped_sphere_fallback_only": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Unavailable_target_waits_without_completing_or_steering": {
+      "invocations": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 9
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Moving_ship_targets_use_native_coasting_and_approach_speed_matches": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Station_entry_roll_compensates_current_angular_velocity": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Dodge_horizon_is_inclusive_and_equal_time_ties_keep_first_candidate": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P651EquipmentRulesTests.Each_active_part_adds_signature_and_unmount_removes_it": {
+      "invocations": 3,
+      "passed": 18,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 18
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Explicit_warp_order_enters_at_speed_boost_uses_original_goal_and_arrival_clears_order": {
+      "invocations": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 9
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Enter_station_goto_clears_on_docking_and_moving_ship_goto_reads_live_position": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P766SimDrillSpinTests.Goto_completion_clears_the_accepted_goto_to_the_same_station_only": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Native_layer_waits_for_visible_buoy_stop_then_lays_before_movement_legacy_keeps_reach_radius": {
+      "invocations": 3,
+      "passed": 3,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 3
+    },
+    "Allegiance.Core.Tests.P817NativeGotoPlanTests.Wingman_retreat_or_ammo_goto_boosts_only_at_full_throttle_and_carrier_entry_does_not_brake": {
+      "invocations": 3,
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0,
+      "cases": 15
+    }
+  },
+  "invocations": 405,
+  "uniqueMethods": 127,
+  "passed": 660,
+  "failed": 0,
+  "skipped": 0,
+  "nonzeroExitCodes": []
+}

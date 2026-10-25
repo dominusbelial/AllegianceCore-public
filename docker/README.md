@@ -169,3 +169,11 @@ section absent in `docker/compose.server.json` and pull new images instead
 (`docker compose pull && docker compose up -d` — the same quiet-point restart
 guarantee applies). Bare-metal/binary deployments are the updater's audience.
 See `docs/reports/P810_AUTO_UPDATE.md` and `docs/P810_AUTO_UPDATE_DESIGN.md`.
+
+The experimental NPC native travel planner (P817) is off by default. Set
+`ALLEGIANCE_SIM_NATIVE_GOTOPLAN=1 docker compose up --build` to enable it;
+`0`, `false`, or `off` disables it. The environment overrides the server JSON
+`sim.nativeGotoPlan` boolean. This changes miner, constructor, layer, carrier
+and NPC wingman travel; player autopilot and MCP pilot controls keep their own
+controllers. See `docs/reports/P817_NATIVE_GOTOPLAN.md` for comparison evidence
+and the separate rig acceptance recipe.

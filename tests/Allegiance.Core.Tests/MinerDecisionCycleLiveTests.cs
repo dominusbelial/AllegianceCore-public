@@ -53,8 +53,9 @@ namespace Allegiance.Core.Tests;
 /// expected proceeds exactly.</para>
 /// </remarks>
 [Collection("LiveNetwork")]
-public sealed class MinerDecisionCycleLiveTests
+public class MinerDecisionCycleLiveTests
 {
+    protected virtual bool NativeGotoPlanEnabled => false;
     private static readonly string ArtRoot = TestArtRoot.Value;
 
     private static StaticCore Core()
@@ -65,8 +66,9 @@ public sealed class MinerDecisionCycleLiveTests
         return StaticCore.Load(file);
     }
 
-    private static Cfg Config(int port = 0) => new()
+    private Cfg Config(int port = 0) => new()
     {
+        Sim = new() { NativeGotoPlan = NativeGotoPlanEnabled },
         ArtPath = ArtRoot,
         StaticCore = "PCore001.igc",
         Port = port,
@@ -406,4 +408,10 @@ public sealed class MinerDecisionCycleLiveTests
         Assert.Equal(OrderChange.CidNone, npc.AcceptedCommandId);
         Console.WriteLine($"P386-RTB: flying NPC docked at {npc.StationId}; PlanTarget + AcceptedTarget cleared (CidNone)");
     }
+}
+
+/// <summary>P817: unchanged economy/construction assertions with native travel enabled.</summary>
+public sealed class P817NativeMinerDecisionCycleLiveTests : MinerDecisionCycleLiveTests
+{
+    protected override bool NativeGotoPlanEnabled => true;
 }

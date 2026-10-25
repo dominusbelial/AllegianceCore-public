@@ -43,4 +43,7 @@
     <ProjectReference Include="..\..\src\Allegiance.Lobby\Allegiance.Lobby.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Fixtures/P817NativeGotoTrace.csv" />
+  </ItemGroup>
 </Project>

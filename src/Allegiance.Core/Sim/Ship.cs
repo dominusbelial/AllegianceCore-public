@@ -538,15 +538,37 @@ public sealed partial class Ship : Model, IShipIgc
     /// </summary>
     // Native active-part additions: weaponIGC.h:109,122; afterburnerIGC.h:78,89;
     // shieldIGC.h:72,76; magazineigc.h:74,78; dispenserigc.h:74,79.
-    public float EffectiveSignature =>
-        (HullType.Signature
-         + _weapons.Where(w => w.Active).Sum(w => _parts.FirstOrDefault(p => p.FunctionalWeapon == w)?.Type.Signature
-             ?? Mission?.Core.PartTypes.Values.FirstOrDefault(p => p.Type == w.Type).Signature ?? 0f)
-         + _parts.Where(p => p.MountId == 0 && p.EquipmentType is
-             EquipmentType.Shield or EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher)
-             .Sum(p => p.Type.Signature)
-         + (_afterburnerActive && _mountedAfterburner is { } ab ? ab.Type.Signature : 0f)
-         + (_cloakEmitterActive && _mountedCloak is { } ck ? ck.Type.Signature : 0f)) * Cloaking;
+    public float EffectiveSignature
+    {
+        get
+        {
+            // P817: native travel's personal-scanner check also reads this each
+            // tick. Preserve the signature sums without allocating LINQ iterators.
+            double weapons = 0, parts = 0; // Enumerable.Sum(float) used double accumulators.
+            for (int i = 0; i < _weapons.Count; i++)
+            {
+                var weapon = _weapons[i];
+                if (!weapon.Active) continue;
+                MountedPart? mounted = null;
+                for (int j = 0; j < _parts.Count; j++)
+                    if (_parts[j].FunctionalWeapon == weapon) { mounted = _parts[j]; break; }
+                if (mounted is not null) weapons += mounted.Type.Signature;
+                else if (Mission is { } mission)
+                    // StaticCore's private constructor stores a Dictionary here.
+                    foreach (var part in ((Dictionary<short, DataPartTypeIGC>)mission.Core.PartTypes).Values)
+                        if (part.Type == weapon.Type) { weapons += part.Signature; break; }
+            }
+            for (int i = 0; i < _parts.Count; i++)
+            {
+                var part = _parts[i];
+                if (part.MountId == 0 && part.EquipmentType is EquipmentType.Shield or EquipmentType.Magazine or EquipmentType.Dispenser or EquipmentType.ChaffLauncher)
+                    parts += part.Type.Signature;
+            }
+            return (HullType.Signature + (float)weapons + (float)parts
+                + (_afterburnerActive && _mountedAfterburner is { } ab ? ab.Type.Signature : 0f)
+                + (_cloakEmitterActive && _mountedCloak is { } ck ? ck.Type.Signature : 0f)) * Cloaking;
+        }
+    }
 
     /// <summary>
     /// Fractional hull integrity (<c>m_fraction</c>): 1.0 = full hull, 0.0 =
@@ -1177,7 +1199,26 @@ public sealed partial class Ship : Model, IShipIgc
     /// Owned and written by the host's dock seam (<see cref="IIgcSite.DockWithStationEvent"/>)
     /// and the server's <c>FM_C_DOCKED</c> undock handler, on the sim thread.
     /// </summary>
-    public short? StationId { get; set; }
+    private short? _stationId;
+    public short? StationId
+    {
+        get => _stationId;
+        set
+        {
+            _stationId = value;
+            // Native SetStation completes the NPC's goto to this station
+            // (Igc/shipIGC.h:459-478). The experimental typed-target order must
+            // clear at docking, since an Enter waypoint does not finish in space.
+            if (value is { } station && IsNpc && Mission?.NativeGotoPlanEnabled == true &&
+                GotoWaypoint is { } go && (go.TargetStationId == station || go.TargetType == IgcObjectType.Station && go.TargetId == station))
+            {
+                GotoWaypoint = null;
+                _nativeWaypoints.Reset();
+                if (AcceptedTarget?.StationId == station && AcceptedCommandId == OrderChange.CidGoto)
+                { AcceptedTarget = null; AcceptedCommandId = OrderChange.CidNone; }
+            }
+        }
+    }
 
     /// <summary>
     /// The ship this one is boarded on (riding as a turret gunner or
@@ -4661,6 +4702,13 @@ public sealed partial class Ship : Model, IShipIgc
     {
         if (PilotType != PilotTypeLayer || LayerBuildOrder is not { } lb) return false;
         if (Sector is not { } sector || sector.Id != lb.ClusterId) return false;
+        if (IsNpc && Mission?.NativeGotoPlanEnabled == true)
+        {
+            if (!_nativeLayerPlanFinished || StationId is not null) return false;
+            _nativeLayerPlanFinished = false;
+            PerformLayerLay(now);
+            return true;
+        }
         // Lay when within the goal's reach radius. ArmLayerBuild sizes this to
         // span the warp's transit volume + the mine standoff, so a drone that
         // emerges AT the aleph it is ordered to lay at (its transit entry point)
@@ -5808,6 +5856,9 @@ public sealed partial class Ship : Model, IShipIgc
             return;
         }
 
+        // P817 experimental native waypoint/control path; player and MCP pilots stay on their own controls.
+        if (ApplyNativeNpcAutopilot(now)) return;
+
         // P168 — Stage 1 universal collision avoidance (native Dodge), a
         // PRE-EMPTING check that runs ahead of every goal-resolution branch for
         // every pilot type (incl. idle), mirroring native's call-site precedence
@@ -6817,7 +6868,9 @@ public sealed partial class Ship : Model, IShipIgc
     private bool TryRipcordOrDefer(short targetClusterId, double now, string what)
     {
         if (Mission is not { } mission) return false;
-        var target = mission.Sectors.FirstOrDefault(s => s.Id == targetClusterId);
+        Sector? target = null;
+        for (int i = 0; i < mission.Sectors.Count; i++)
+            if (mission.Sectors[i].Id == targetClusterId) { target = mission.Sectors[i]; break; }
         if (target is null) return false;                 // unknown sector — no ripcord possible; caller warp-paths
 
         // Already ripcording to exactly this cluster: the active countdown owns
@@ -8366,6 +8419,8 @@ public sealed partial class Ship : Model, IShipIgc
             BuilderAsteroidTarget = null;
             return;
         }
+        // Native mode latches only on GotoPlan completion (shipIGC.cpp:2810-2817).
+        if (Mission?.NativeGotoPlanEnabled == true && !_isDrilling) return;
         if (!_isDrilling && Velocity.LengthSquared() >= 1f) return;
         if (BuilderAsteroidTarget is not { } rock || rock.Data.Position is not { Length: 3 } rp) return;
 
@@ -9077,6 +9132,10 @@ public sealed partial class Ship : Model, IShipIgc
             }
         }
 
+        // Native layer completion consumes the drone at timeStart BEFORE
+        // movement (shipIGC.cpp:2795-2828). Legacy arrival remains below.
+        if (IsNpc && Mission?.NativeGotoPlanEnabled == true && TryPerformLayerLay(now - dt)) return;
+
         ExecuteMove(now - dt, now);   // flight kinematics for exactly this chunk
         Position += Velocity * (float)dt;   // integrate Δpos = velocity·ΔT
 
@@ -9417,7 +9476,8 @@ public enum GotoKind
 /// the accepted slot included — that names the same target, matched by object
 /// identity, never by position.</para>
 /// </summary>
-public readonly record struct GotoOrder(GotoKind Kind, short ClusterId, Vector3 Position, short? TargetStationId = null);
+public readonly record struct GotoOrder(GotoKind Kind, short ClusterId, Vector3 Position, short? TargetStationId = null,
+    IgcObjectType? TargetType = null, short? TargetId = null);
 
 /// <summary>
 /// P361 — the outcome of a single auto-reload attempt on an empty-ammo ship

@@ -5,6 +5,16 @@ namespace Allegiance.Server;
 /// JSON deserialization of an absent sim section or an empty sim object.</summary>
 public sealed class SimConfig
 {
+    /// <summary>P817 experimental native NPC GotoPlan. Default off; env override wins.</summary>
+    public bool NativeGotoPlan { get; set; }
+
+    internal bool ResolveNativeGotoPlan() => ResolveNativeGotoPlan(NativeGotoPlan,
+        Environment.GetEnvironmentVariable("ALLEGIANCE_SIM_NATIVE_GOTOPLAN"));
+
+    public static bool ResolveNativeGotoPlan(bool configured, string? environment) =>
+        string.IsNullOrWhiteSpace(environment) ? configured
+        : environment.Trim().ToLowerInvariant() is not ("0" or "false" or "off");
+
     /// <summary>native (default) or off. Does not disable out-of-bounds damage.</summary>
     public string CrowdingPenalty { get; set; } = "native";
 

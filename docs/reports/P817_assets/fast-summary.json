@@ -1,0 +1,86 @@
+{
+  "discovery": {
+    "Allegiance.Lobby.Tests": {
+      "fast": 42,
+      "live": 1,
+      "perf": 0
+    },
+    "Allegiance.ClientCore.MonoGame.Tests": {
+      "fast": 3424,
+      "live": 11,
+      "perf": 9
+    },
+    "Allegiance.ClientCore.Tests": {
+      "fast": 1773,
+      "live": 95,
+      "perf": 6
+    },
+    "Allegiance.Core.Tests": {
+      "fast": 5228,
+      "live": 40,
+      "perf": 56
+    }
+  },
+  "tiers": {
+    "fast": {
+      "tier": "fast",
+      "seconds": 303.82479068799876,
+      "projects": {
+        "Allegiance.Lobby.Tests": {
+          "count": 42,
+          "outcomes": {
+            "Passed": 42
+          }
+        },
+        "Allegiance.ClientCore.MonoGame.Tests": {
+          "count": 3424,
+          "outcomes": {
+            "Passed": 3420,
+            "NotExecuted": 3,
+            "Failed": 1
+          }
+        },
+        "Allegiance.ClientCore.Tests": {
+          "count": 1773,
+          "outcomes": {
+            "Passed": 1773
+          }
+        },
+        "Allegiance.Core.Tests": {
+          "count": 5228,
+          "outcomes": {
+            "Passed": 5223,
+            "Failed": 5
+          }
+        }
+      },
+      "calibration": {
+        "factor": 1.0209018567639259,
+        "referenceMs": 3.8488,
+        "nominalMs": 3.77,
+        "fastLimitSeconds": 10.209018567639259
+      },
+      "timingOffenders": [],
+      "errors": [
+        "Allegiance.ClientCore.MonoGame.Tests: main failed",
+        "Allegiance.Core.Tests: main failed"
+      ],
+      "quarantineFlakes": [],
+      "infrastructure": {
+        "tier": "Fast",
+        "count": 9,
+        "seconds": 0.06879591598408297,
+        "exitCode": 0,
+        "timingGuardPassed": true
+      }
+    }
+  },
+  "infrastructure": {
+    "tier": "Fast",
+    "count": 9,
+    "seconds": 0.06879591598408297,
+    "exitCode": 0,
+    "timingGuardPassed": true
+  },
+  "passed": false
+}

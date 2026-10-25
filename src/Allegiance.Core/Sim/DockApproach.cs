@@ -394,7 +394,7 @@ public static class DockApproach
 
     /// <summary>Port's shared cross-product face law, with native's rearward
     /// escape (<c>Igc/common.cpp:168-175</c>) before the turn signal.</summary>
-    private static (float Yaw, float Pitch) Face(in Orientation o, in Vector3 direction, float turnGain, TurnState? state, float speed, float dt)
+    internal static (float Yaw, float Pitch) Face(in Orientation o, in Vector3 direction, float turnGain, TurnState? state, float speed, float dt)
     {
         float len = direction.Length();
         if (len <= 1e-3f) return (0f, 0f);

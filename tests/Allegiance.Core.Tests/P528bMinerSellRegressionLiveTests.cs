@@ -34,19 +34,21 @@ namespace Allegiance.Core.Tests;
 /// sells, so the two-cycle assertion times out.
 /// </summary>
 [Collection("LiveNetwork")]
-public sealed class P528bMinerSellRegressionLiveTests
+public class P528bMinerSellRegressionLiveTests
 {
+    protected virtual bool NativeGotoPlanEnabled => false;
     private static readonly string ArtRoot = TestArtRoot.Value;
 
-    private static Cfg Config() => new()
+    private Cfg Config() => new()
     {
+        Sim = new() { NativeGotoPlan = NativeGotoPlanEnabled },
         ArtPath = ArtRoot,
         StaticCore = "PCore001.igc",
         Port = 0,
         UpdatesPerSecond = 20,
         Games =
         [
-            new Gm { Name = "P528b Miner Sell Regression", Map = "m2xspiderw.igc", Teams = 2, CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] },
+            new Gm { Name = "P528b Miner Sell Regression", ShowMap = true, Map = "m2xspiderw.igc", Teams = 2, CivIds = [25, 3], SideNames = ["Alpha", "Bravo"] },
         ],
     };
 
@@ -77,6 +79,13 @@ public sealed class P528bMinerSellRegressionLiveTests
         using var server = new Srv();
         server.Boot(Config());
         var mission = server.Missions[0];
+        // This travel regression has no scout pilots: use the configured known map.
+        mission.SeedStartingVisibility();
+        // No scout clients participate in this economic-cycle fixture. The
+        // distant mining field is explicitly known, as a scouted field would be.
+        foreach (var sector in mission.Sectors)
+            foreach (var rock in sector.Mineable)
+                foreach (var side in mission.Sides) rock.SideVisibility.SetSideVisibility(side.Id, true);
         mission.Stage = MissionStage.Started;   // P180: decision loops need a started mission
 
         var miners = Miners(server);
@@ -124,4 +133,10 @@ public sealed class P528bMinerSellRegressionLiveTests
             Console.WriteLine($"[P528B-LIVE] side {m.SideId} miner {m.Id}: {mySells.Count} full cycles, each {m.EffectiveMineCapacity():F1} ore @ {m.EffectiveOreCreditPerUnit():F0}/u = {mySells[^1] * m.EffectiveOreCreditPerUnit():F0} cr");
         }
     }
+}
+
+/// <summary>P817: unchanged economy/construction assertions with native travel enabled.</summary>
+public sealed class P817NativeP528bMinerSellRegressionLiveTests : P528bMinerSellRegressionLiveTests
+{
+    protected override bool NativeGotoPlanEnabled => true;
 }

@@ -122,8 +122,9 @@ public static class VisibilityMath
         // Angle subtended by the target from the eye (common.cpp:2344)
         float visibleAngle = MathF.Asin(target.Radius * overLen12);
 
-        foreach (var obstacle in asteroids)
+        for (int i = 0; i < asteroids.Count; i++)
         {
+            var obstacle = asteroids[i];
             // The native skips the target itself (pmodel2 != pmodel); the target
             // is never an asteroid, so no identity check is needed here.
             Vector3 v13 = obstacle.Position - eye;           // V13 = P3 - P1

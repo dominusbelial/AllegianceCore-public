@@ -38,8 +38,9 @@ namespace Allegiance.Core.Tests;
 /// real core; nothing is hardcoded except the synthetic asteroid/rock geometry
 /// the injected test builds.</para>
 /// </remarks>
-public sealed class BuildingConstructionLiveTests
+public class BuildingConstructionLiveTests
 {
+    protected virtual bool NativeGotoPlanEnabled => false;
     private static StaticCore Core()
     {
         var path = Corpus.Files.FirstOrDefault(p => Path.GetFileName(p).Equals("PCore001.igc", StringComparison.OrdinalIgnoreCase))
@@ -64,11 +65,12 @@ public sealed class BuildingConstructionLiveTests
         throw new InvalidOperationException("no non-empty map found in corpus");
     }
 
-    private static Mission NewStartedMission(IIgcSite site)
+    private Mission NewStartedMission(IIgcSite site)
     {
         var core = Core();
         var civ = core.Civilizations.Values.OrderBy(c => c.CivilizationId).First().CivilizationId;
         var m = Mission.Assemble(core, SomeMap(), [new SideSpec(0, "Team 1", civ)], site);
+        m.NativeGotoPlanEnabled = NativeGotoPlanEnabled;
         m.Stage = MissionStage.Started;
         return m;
     }
@@ -369,4 +371,10 @@ public sealed class BuildingConstructionLiveTests
 
         Console.WriteLine($"P280-REJECT-DIRECT: StartBuildingEffect threw for '{stationType.Name}' (AabmBuild 0x{stationType.AabmBuild:x}) on wrong-type rock {rock.Data.AsteroidId} (cap 0x{rock.Data.AabmCapabilities:x}) — rejected, no effect");
     }
+}
+
+/// <summary>P817: unchanged economy/construction assertions with native travel enabled.</summary>
+public sealed class P817NativeBuildingConstructionLiveTests : BuildingConstructionLiveTests
+{
+    protected override bool NativeGotoPlanEnabled => true;
 }

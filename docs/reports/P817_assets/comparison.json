@@ -1,0 +1,42 @@
+[
+  {
+    "NativeGotoPlan": false,
+    "Seed": 817,
+    "SimSeconds": 2399.9999999999654,
+    "InitialNpcShips": 30,
+    "Miners": 2,
+    "MinerDeaths": 0,
+    "He3Delivered": 540,
+    "He3PerMinute": 13.500000000000194,
+    "OutboundTrips": 9,
+    "OutboundTripMeanSeconds": 205.99444444441565,
+    "LoadedTrips": 7,
+    "LoadedTripMeanSeconds": 245.0142857141221,
+    "Constructors": 2,
+    "ConstructorArrivals": 2,
+    "TickMeanUs": 288.7182907949801,
+    "TickP95Us": 568.9,
+    "TickAllocationMeanBytes": 185343.5690376569,
+    "TickAllocationP95Bytes": 236296
+  },
+  {
+    "NativeGotoPlan": true,
+    "Seed": 817,
+    "SimSeconds": 2399.9999999999654,
+    "InitialNpcShips": 30,
+    "Miners": 2,
+    "MinerDeaths": 0,
+    "He3Delivered": 697.5,
+    "He3PerMinute": 17.437500000000252,
+    "OutboundTrips": 9,
+    "OutboundTripMeanSeconds": 200.58888888875757,
+    "LoadedTrips": 9,
+    "LoadedTripMeanSeconds": 210.11111111117904,
+    "Constructors": 2,
+    "ConstructorArrivals": 2,
+    "TickMeanUs": 361.9411192468635,
+    "TickP95Us": 549.3,
+    "TickAllocationMeanBytes": 180287.3409205021,
+    "TickAllocationP95Bytes": 231744
+  }
+]

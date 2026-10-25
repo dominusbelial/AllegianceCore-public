@@ -42,8 +42,9 @@ namespace Allegiance.Core.Tests;
 /// <see cref="Srv.TickSim"/> (one 0.05 s chunk each).
 /// </summary>
 [Collection("LiveNetwork")]
-public sealed class NpcBuilderDefaultOrderLiveTests
+public class NpcBuilderDefaultOrderLiveTests
 {
+    protected virtual bool NativeGotoPlanEnabled => false;
     private static readonly string ArtRoot = TestArtRoot.Value;
 
     private static StaticCore Core()
@@ -54,8 +55,9 @@ public sealed class NpcBuilderDefaultOrderLiveTests
         return StaticCore.Load(file);
     }
 
-    private static Cfg Config(int port = 0) => new()
+    private Cfg Config(int port = 0) => new()
     {
+        Sim = new() { NativeGotoPlan = NativeGotoPlanEnabled },
         ArtPath = ArtRoot,
         StaticCore = "PCore001.igc",
         Port = port,
@@ -109,7 +111,7 @@ public sealed class NpcBuilderDefaultOrderLiveTests
     /// real station type to build, ONE neutral asteroid (the only rock anywhere
     /// reachable), and a parked peer player ship on the other side (bootstrap
     /// only). Disposes the server and the bot.</summary>
-    private static (Srv Server, Mission Mission, Sector Sector, short BuilderDroneId, Asteroid Rock, DataStationTypeIGC StationType, short NpcSide)
+    private (Srv Server, Mission Mission, Sector Sector, short BuilderDroneId, Asteroid Rock, DataStationTypeIGC StationType, short NpcSide)
         BootFixture(out FltBot bot)
     {
         var server = new Srv();
@@ -311,4 +313,10 @@ public sealed class NpcBuilderDefaultOrderLiveTests
 
     private static Vector3 RockPos(Asteroid rock) =>
         new(rock.Data.Position[0], rock.Data.Position[1], rock.Data.Position[2]);
+}
+
+/// <summary>P817: unchanged economy/construction assertions with native travel enabled.</summary>
+public sealed class P817NativeNpcBuilderDefaultOrderLiveTests : NpcBuilderDefaultOrderLiveTests
+{
+    protected override bool NativeGotoPlanEnabled => true;
 }

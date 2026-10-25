@@ -7,12 +7,13 @@ using Allegiance.TestInfra;
 namespace Allegiance.Core.Tests;
 
 /// <summary>Socket-free native economy/AI regressions, driven through real sector/ship ticks.</summary>
-public sealed class P652EconomyDroneAiTests
+public class P652EconomyDroneAiTests
 {
+    protected virtual bool NativeGotoPlanEnabled => false;
     private static readonly Lazy<StaticCore> Core = new(() => StaticCore.Load(IgcReader.ParseFile(
         Path.Combine(TestArtRoot.Value, "PCore001.igc"))));
 
-    private static Mission Mission(RecordingIgcSite? site = null)
+    private Mission Mission(RecordingIgcSite? site = null)
     {
         var core = Core.Value;
         var cluster = new DataClusterIGC(1, [0, 1, 0], 0, 0, 0, 1, 0, 0, "Test", "", "", 0, 0, 0, true, false);
@@ -22,6 +23,7 @@ public sealed class P652EconomyDroneAiTests
             [cluster, cluster with { ClusterId = 2, Name = "Other" }],
             [warp, warp with { WarpId = 11, DestinationId = 10, ClusterId = 2 }], [], []),
             [new SideSpec(0, "Alpha", civ), new SideSpec(1, "Bravo", civ)], site ?? new RecordingIgcSite());
+        m.NativeGotoPlanEnabled = NativeGotoPlanEnabled;
         m.Stage = MissionStage.Started;
         foreach (var side in m.Sides) side.GlobalAttributes = GlobalAttributeSet.Identity;
         return m;
@@ -616,6 +618,7 @@ public sealed class P652EconomyDroneAiTests
             var map = MissionMap.FromLists(m.Map.Clusters, m.Map.Warps, [], []);
             var civ = core.Civilizations.Values.First().CivilizationId;
             m = Allegiance.Core.Model.Mission.Assemble(core, map, [new SideSpec(0, "Alpha", civ)], new RecordingIgcSite());
+            m.NativeGotoPlanEnabled = NativeGotoPlanEnabled;
             m.Stage = MissionStage.Started;
             var data = new DataStationIGC([2000, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0, 1], 1, 0, 200,
                 type.StationTypeId, 1, 1, "Refinery");
@@ -704,4 +707,10 @@ public sealed class P652EconomyDroneAiTests
         Assert.False(ship.IsRunningAway);
         ship.Update(1031); Assert.True(ship.IsRunningAway);
     }
+}
+
+/// <summary>P817: unchanged economy/construction assertions with native travel enabled.</summary>
+public sealed class P817NativeP652EconomyDroneAiTests : P652EconomyDroneAiTests
+{
+    protected override bool NativeGotoPlanEnabled => true;
 }

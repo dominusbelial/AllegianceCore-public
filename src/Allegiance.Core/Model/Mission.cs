@@ -31,6 +31,9 @@ public sealed partial class Mission : IMissionIgc
     /// <summary>P629 stress-test override. Native sector crowding is enabled by default.</summary>
     public bool CrowdingPenaltyEnabled { get; set; } = true;
 
+    /// <summary>P817 experimental native NPC travel, default off. Player and MCP controls are excluded.</summary>
+    public bool NativeGotoPlanEnabled { get; set; }
+
     /// <summary>The type universe the mission draws on.</summary>
     public StaticCore Core { get; }
 

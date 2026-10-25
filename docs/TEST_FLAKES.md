@@ -2767,3 +2767,39 @@ the profile method passed 3/3 exact-method runs with `XDG_CONFIG_HOME` redirecte
 into workspace scratch. Assertions were unchanged; no second fast-tier run was
 made. See `docs/reports/P819_SIDE_BIAS.md` and `.scratch/p819/fast/summary.json`.
 | 2026-10-25 | P733ResearchTests.No_bomber_tech_finale_reaches_stage_over_and_automatic_next_match_twice | FAILS ON MASTER since P797 native map discovery: `spawn_scenario: finale needs an observed enemy home station` — the fixture has no scouts, and stations are exported to a side only after it has seen them (they are created at mission start, so seeding visibility needs a per-match hook). Live tier; follow-up: give the fixture a per-match "stations seen" seed (P540b was the same class, fixed with ShowMap). |
+
+## P817 validation environment (2026-10-24)
+
+The single Fast-tier invocation recorded 10,458 passed, six failed and three
+optional-Meshy skips. Five failing parameter cases were in the existing
+`Allegiance.Core.Tests.PlayerBundlePathsTests` methods
+`LocalConfigWinsOverBundleWithBlankEnvironment`, `MissingDirectoryHasNoDefault`
+(Artwork and NativeSource), `UsesExecutableDirectoryOutsideRepository`
+(Artwork), and `NativeSourceNeverGuessesAnInstallSubdirectory`. Worktree-local
+TMPDIR made their simulated non-repository directories inherit this checkout's
+`local.env`. This is the ancestor-discovery environment issue recorded above,
+not a changed bundle resolver. The sixth failure,
+`Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`,
+hit the sandbox's read-only default user-config directory.
+
+All five methods passed **3/3 exact-method isolated invocations**, 24 total
+parameter cases, under their intended context. Scratch bytes remained inside
+the worktree; a proc directory-handle alias supplied lexical temp parents
+outside repository discovery, and XDG_CONFIG_HOME selected writable scratch.
+The profile method also passed 3/3 with writable XDG config alone. No production
+resolver/profile code or test assertions were changed to obtain these passes.
+These are deterministic environment limitations, not a claim that the broad
+run was green. [Context audit](reports/P817_assets/context-audit.json) and
+[P817 report](reports/P817_NATIVE_GOTOPLAN.md) preserve the raw-run distinction.
+
+P817 parking observation: the first flag-off P700 showcase run reached 21/30
+by its arrival deadline (longest stopped-with-target interval 2.105 s, below
+the five-second parking limit). It passed **3/3 exact-method flag-off repeats**;
+the closing off×3/on×2 series passed 5/5 (reached 24/25/24/24/24/30;
+longest stop 3.911 s). The initial series was 4/5 overall and all five
+passed the parking bound. Unchanged starting revision
+`041e23a0189c83cc29e35d13008f0e32a72af9bf` passed 3/3 isolated runs
+(reached 24/24/25; longest stops 1.613/1.819/1.518 s). The initial arrival miss
+was transient under this host load; it was **not reproduced on the baseline**.
+See [all parking summaries](reports/P817_assets/parking.json) and the report
+for which build the closing series covered.

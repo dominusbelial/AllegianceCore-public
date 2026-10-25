@@ -804,13 +804,18 @@ public sealed class Sector : IClusterIgc
     /// players/wingmen −2, other enemies −1; friendly carriers +2, friendly
     /// players/wingmen +2, other friendlies +1.
     /// </summary>
-    public bool IsFriendlyCluster(short sideId)
+    public bool IsFriendlyCluster(short sideId) => IsFriendlyCluster(sideId, new HashSet<Sector>());
+
+    // P817 reusable route-search territory workspace (native common.cpp:388-433).
+    internal bool IsFriendlyCluster(short sideId, HashSet<Sector> territoryWorkspace)
     {
-        if (!IsTerritory(sideId)) return false;             // pside->IsTerritory(pcluster), common.cpp:388-391
+        territoryWorkspace.Clear();
+        if (!IsTerritory(sideId, territoryWorkspace, 0)) return false;             // pside->IsTerritory(pcluster), common.cpp:388-391
 
         int friendlyShipCount = 0;
-        foreach (var ship in GetShipUpdateCandidates())
+        for (int i = 0; i < _models.Count; i++)
         {
+            if (_models[i] is not Ship { Dead: false, StationId: null, ParentShip: null } ship) continue;
             if (!ship.SeenBySide(sideId)) continue;         // common.cpp:397
             bool enemy = ship.SideId is not { } shipSide || !IsAlliedSide(sideId, shipSide);
             int weight = ship.PilotType == Ship.PilotTypeCarrier ? (enemy ? 6 : 2)
@@ -861,7 +866,7 @@ public sealed class Sector : IClusterIgc
             if (station.SeenBySide(sideId)) return false;   // sideigc.cpp:328-333 — not empty
 
         int checkedWarpCount = 0;
-        foreach (var warp in Warps)
+        foreach (var warp in _warps)
         {
             if (warp.Destination is not { } dest) continue;
             checkedWarpCount++;                             // sideigc.cpp:335-343

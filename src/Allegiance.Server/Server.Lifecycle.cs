@@ -1280,6 +1280,8 @@ public sealed partial class Server
         // standard the server's own ghost gates compare deaths against.
         mission.Lives = g.Lives;
         mission.CrowdingPenaltyEnabled = _config.Sim.CrowdingEnabled;
+        mission.NativeGotoPlanEnabled = _config.Sim.ResolveNativeGotoPlan();
+        Console.WriteLine($"[boot] sim.nativeGotoPlan = {mission.NativeGotoPlanEnabled.ToString().ToLowerInvariant()} (experimental NPC travel)");
         g.Treasure.Validate();
         mission.TreasureParameters = g.Treasure;
         mission.CountdownDuration = g.GameLengthSeconds;

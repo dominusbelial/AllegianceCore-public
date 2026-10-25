@@ -61,6 +61,14 @@ list in **reverse**.
 - **Flight model / physics** — acceleration, drag, turn rates, afterburner.
   Key: `src/Allegiance.Core/Sim/` (`Acceleration`, `Physics`, `TurnRate`…).
   *Native:* `shipIGC.cpp`, `rotvel.cpp`.
+- **Native NPC GotoPlan (P817, experimental)** — pure waypoint masks, reverse-drag
+  stopping distance, warp route search, directional dodge/diversion, angular
+  stopping drift, boost handling and builder/layer completion: `src/Allegiance.Core/Sim/NativeGotoPlan.cs`,
+  `src/Allegiance.Core/Sim/Ship.NativeGotoPlan.cs`. Per-mission flag
+  `sim.nativeGotoPlan` / `ALLEGIANCE_SIM_NATIVE_GOTOPLAN` defaults off.
+  Native: `Igc/common.cpp:1157-2333`, `Igc/shipIGC.cpp:2795-2833`.
+  Local A/B and independent C++ formula trace: `tools/p817-gotoplan-proof/`;
+  report `docs/reports/P817_NATIVE_GOTOPLAN.md`.
 - **Mounted part** — an equipped part instance (weapon/shield/etc.) with its
   mount and state. `src/Allegiance.Core/Sim/MountedPart.cs`. *Native:*
   `mountc.cpp`.

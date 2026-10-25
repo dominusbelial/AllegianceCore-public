@@ -1,0 +1,14 @@
+[
+  {
+    "configured": true,
+    "environment": null,
+    "resolved": "true",
+    "pidExited": true
+  },
+  {
+    "configured": true,
+    "environment": "0",
+    "resolved": "false",
+    "pidExited": true
+  }
+]
