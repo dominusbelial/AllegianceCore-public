@@ -140,6 +140,17 @@ list in **reverse**.
 - **Broadcast** — sending ship/asteroid/station updates to peers, coalesced and
   interest-tiered. `Server.Broadcast.cs`, `BroadcastSnapshot.cs`,
   `Server.InterestTiers.cs`.
+- **Turret relay (one-shot "last update kind")** — a boarded gunner's accepted
+  `ACTIVE_TURRET_UPDATE(99)` is stored (`Server._lastTurretUpdates`, native
+  `m_atu`) and relayed to every other cluster player by exactly ONE
+  ship-update pass (`Server._pendingTurretRelays`, native `m_ucLastUpdate` +
+  `ResetLastUpdate`), then consumed; active/inactive selection uses that kind,
+  not the weapons state. `Server.ShipCommands.cs`
+  (`RecordAcceptedActiveTurretUpdate`), `Server.Broadcast.cs`
+  (`CollectActiveTurretRelay`), `Server.NativeBroadcastOrder.cs`
+  (`CollectInactiveTurretRelay`, `ConsumePendingTurretRelays`). Native:
+  `FedSrv/FedSrv.CPP:3774-3796,4049-4071`, `FedSrv/fsship.h:290-293`. Report:
+  `docs/reports/P822_TURRET_RELAY_ONESHOT.md`.
 - **Native broadcast order (P788c, EXPERIMENTAL, default off)** —
   `sim.nativeBroadcastOrder` / `ALLEGIANCE_SIM_NATIVE_BROADCAST_ORDER` moves
   started-mission ship/status projection before `Mission.Update`, retaining

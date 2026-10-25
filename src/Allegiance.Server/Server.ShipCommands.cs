@@ -225,6 +225,27 @@ public sealed partial class Server
         return ticket.Emit;
     }
 
+    /// <summary>
+    /// P822 (SIM-0470) — store an ACCEPTED ACTIVE_TURRET_UPDATE(99) the way
+    /// native <c>CFSPlayer::SetActiveTurretUpdate</c> does (<c>fsship.cpp:1206-1218</c>):
+    /// <c>m_atu = atu</c> (the persistent record the S→C relay copies, kept here in
+    /// <see cref="_lastTurretUpdates"/>) plus <c>m_ucLastUpdate = c_ucActiveTurretUpdate</c>
+    /// — the one-shot kind mark (<see cref="_pendingTurretRelays"/>) that
+    /// <c>SendShipUpdates</c> consumes exactly once (<c>FedSrv.CPP:3783-3796</c>).
+    /// Both writes happen under the snapshot capture gate so a parallel sector
+    /// worker never observes a half-updated pair. Internal for the SIM-0470
+    /// one-shot relay tests (InternalsVisibleTo).
+    /// </summary>
+    internal void RecordAcceptedActiveTurretUpdate(Ship gunner, uint timeMs,
+        ControlData controls, Orientation orientation)
+    {
+        lock (_snapshotCaptureGate)
+        {
+            _lastTurretUpdates[gunner.Id] = (timeMs, controls, orientation);
+            _pendingTurretRelays.Add(gunner);
+        }
+    }
+
     private void HandleActiveTurretUpdate(ConnectionId from, Ship gunner, ClientActiveTurretUpdate atu)
     {
         // FedSrv.CPP:4873-4875 — the gate that precedes SetActiveTurretUpdate.
@@ -265,7 +286,10 @@ public sealed partial class Server
             // P803 (SIM-0470) — store the accepted update for the S→C relay
             // (native m_atu = atu, fsship.cpp:1215), copied intact into every
             // other peer's HEAVY_SHIPS_UPDATE(176) (FedSrv.CPP:4049-4071).
-            _lastTurretUpdates[gunner.Id] = (atu.Time, atu.Controls, atu.Orientation);
+            // P822 — the same call arms native's one-shot "last update kind"
+            // (m_ucLastUpdate = c_ucActiveTurretUpdate, fsship.cpp:1213): the
+            // update is relayed by the NEXT ship-update pass only.
+            RecordAcceptedActiveTurretUpdate(gunner, atu.Time, atu.Controls, atu.Orientation);
 
             if (ShouldLogTurret(from)) ConsoleLog.Write($"[turret] ship {gunner.Id} ACTIVE_TURRET_UPDATE time={atu.Time} deltaT={deltaT:F3} -> " +
                               $"StateM=weaponsMaskIGC controls={atu.Controls} orientForward={orientation.GetForward()}");

@@ -63,8 +63,11 @@ public sealed class P803TurretRelayBroadcastTests
         var facing = new Orientation();
         facing.Set(new Vector3(0f, 0f, -1f), new Vector3(0f, 1f, 0f));
         var controls = new ControlData(0.25f, -0.5f, 0f, 1f);
-        server._lastTurretUpdates[gunner.Id] =
-            ((uint)Math.Round((mission.LastUpdate + 0.1) * 1000.0), controls, facing);
+        // P822 — a stored ATU is armed for exactly one relay pass, so it must be
+        // recorded through the same seam the wire handler uses (native
+        // m_ucLastUpdate = c_ucActiveTurretUpdate, fsship.cpp:1213).
+        server.RecordAcceptedActiveTurretUpdate(gunner,
+            (uint)Math.Round((mission.LastUpdate + 0.1) * 1000.0), controls, facing);
 
         var packets = server.TestCollectBroadcast(10, parallel: false, "shipsUpdate");
         var heavyFor = (ConnectionId c) => packets[c]
@@ -113,9 +116,11 @@ public sealed class P803TurretRelayBroadcastTests
 
         // Two seconds ahead of the mission clock — outside native's ±1.5 s
         // window (FedSrv.CPP:3786-3789): the gunner simply drops out.
-        server._lastTurretUpdates[gunner.Id] =
-            ((uint)Math.Round((mission.LastUpdate + 2.0) * 1000.0),
-                new ControlData(0f, 0f, 0f, 1f), new Orientation());
+        // P822 — accepted while fresh (native stores m_atu either way) but aged
+        // out of the ±1.5 s relay window before the pass ran.
+        server.RecordAcceptedActiveTurretUpdate(gunner,
+            (uint)Math.Round((mission.LastUpdate + 2.0) * 1000.0),
+            new ControlData(0f, 0f, 0f, 1f), new Orientation());
 
         var packets = server.TestCollectBroadcast(10, parallel: false, "shipsUpdate");
         var heavy = packets[new ConnectionId(710u)]

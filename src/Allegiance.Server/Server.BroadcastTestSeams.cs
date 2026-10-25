@@ -64,6 +64,10 @@ public sealed partial class Server
         _probeViewers.Clear();
         _retiredPoseAges.Clear();
         _retiredTierAges.Clear();
+        // P822 — the one-shot turret relay latches and their per-pass gathers.
+        lock (_snapshotCaptureGate) _pendingTurretRelays.Clear();
+        _activeTurretCandidates.Clear();
+        _inactiveTurretRelays.Clear();
         _clusterInfoBytes = null;
         foreach (var m in _missions)
             foreach (var s in m.Sectors)

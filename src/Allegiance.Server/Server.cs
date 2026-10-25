@@ -109,8 +109,27 @@ public sealed partial class Server : IDisposable
     // firing. Keyed by ship id; entries for gone ships are inert (the relay
     // only reads live sector models) and replaced on the next board.
     // Internal for the SIM-0470 relay test (InternalsVisibleTo).
+    // P822 splits native's two pieces apart: this map is m_atu (persistent),
+    // _pendingTurretRelays below is m_ucLastUpdate (one-shot).
     internal readonly Dictionary<short, (uint TimeMs, ControlData Controls, Orientation Orientation)>
         _lastTurretUpdates = new();
+
+    // P822 (SIM-0470) — native's per-player "last update kind" discriminator
+    // m_ucLastUpdate (FedSrv/fsship.h:242-243) together with ResetLastUpdate
+    // (fsship.h:290-293): CFSPlayer::SetActiveTurretUpdate sets it to
+    // c_ucActiveTurretUpdate (fsship.cpp:1206-1218), SetInactiveTurretUpdate
+    // overwrites it with c_ucInactiveTurretUpdate (fsship.cpp:1220-1223), and
+    // SendShipUpdates clears it for every player of every processed cluster
+    // after the relay lists are gathered (FedSrv.CPP:3783-3796). An ATU
+    // therefore reaches the relay in exactly ONE pass after it arrived — the
+    // stored m_atu above survives (native keeps it) but is never relayed again
+    // on its own. Membership = "this gunner's accepted ATU has not been
+    // projected yet"; the set is consumed at the end of each ship-update pass,
+    // the port's counterpart of native's per-cluster reset. Guarded by
+    // _snapshotCaptureGate: the sim thread arms it in the datagram handler and
+    // clears it after the pass, while (P603) sector workers may read it
+    // concurrently during parallel projection.
+    internal readonly HashSet<Ship> _pendingTurretRelays = new();
 
     // P646 (review finding H3) — rate-limits the "DUPLICATE LOGONREQ from a
     // seated peer" refusal log so a duplicate-logon flood cannot force

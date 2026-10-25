@@ -440,7 +440,13 @@ public sealed partial class Server
                             // → GetIGCShip()->SetStateM(0) (fsship.cpp:1223) — a full
                             // assignment to 0, clearing the weaponsMaskIGC "shooting"
                             // bit (and every other state bit) exactly as native does.
+                            // P822 — it also overwrites native's one-shot update kind
+                            // (m_ucLastUpdate = c_ucInactiveTurretUpdate, fsship.cpp:1222),
+                            // so a relay still pending for this gunner is cancelled: the
+                            // gunner now travels in the inactive list, not the active one
+                            // (FedSrv.CPP:3783-3791).
                             gunner.StateM = 0;
+                            lock (_snapshotCaptureGate) _pendingTurretRelays.Remove(gunner);
                             if (ShouldLogTurret(from)) ConsoleLog.Write($"[turret] ship {gunner.Id} INACTIVE_TURRET_UPDATE — SetStateM(0) (stop shooting, fsship.cpp:1223)");
                         }
                         else

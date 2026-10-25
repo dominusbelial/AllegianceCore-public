@@ -90,6 +90,15 @@ public sealed partial class Server
 
     private readonly Dictionary<Sector, short[]> _inactiveTurretRelays = new();
 
+    /// <summary>
+    /// P822 (SIM-0470) — native's <c>rgActiveTurrets</c> as a cluster-wide gather
+    /// (FedSrv.CPP:3774-3792), cached per sector for the duration of ONE
+    /// ship-update pass so every viewer of that sector relays the same list and
+    /// the pending one-shot marks are read once. Cleared at the start and end of
+    /// each pass, like <see cref="_inactiveTurretRelays"/>.
+    /// </summary>
+    private readonly Dictionary<Sector, Ship[]> _activeTurretCandidates = new();
+
     private short[] CollectInactiveTurretRelay(Sector sector)
     {
         // Design: native FedSrv.CPP:3791-3794,4009-4020. The same stopped
@@ -97,6 +106,14 @@ public sealed partial class Server
         // no age gate. Observers and unboarded ships are never turret updates.
         // This cluster-wide list is identical for every viewer. Collect once
         // per projection, including when sector workers run in parallel.
+        // P822 — the weapons test is native's *else*-branch test, so it applies
+        // only to gunners whose last update kind is NOT active
+        // (FedSrv.CPP:3783-3791: `else if ((stateM & (oneWeaponIGC|allWeaponsIGC)) == 0)`).
+        // A gunner with a still-pending fresh active update is relayed as ACTIVE
+        // even if its weapons state is clear; a gunner whose pending mark was
+        // consumed (or whose update aged out) and whose weapons are off is
+        // inactive — the full native selection, mutually exclusive by
+        // construction.
         lock (_snapshotCaptureGate)
         {
             if (_inactiveTurretRelays.TryGetValue(sector, out var cached)) return cached;
@@ -104,6 +121,7 @@ public sealed partial class Server
             foreach (var model in sector.Models)
                 if (model is Ship { IsNpc: false, Dead: false, StationId: null,
                         ParentShip: { StationId: null }, TurretId: not null } gunner
+                    && !_pendingTurretRelays.Contains(gunner)
                     && (gunner.StateM & ShipControlState.WeaponsMask) == 0)
                     (ids ??= new()).Add(gunner.Id);
             var result = ids?.ToArray() ?? [];

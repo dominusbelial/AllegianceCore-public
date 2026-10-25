@@ -2630,26 +2630,87 @@ public sealed partial class Server
     /// is taken. The native walk only considers PLAYERS' gunner ships
     /// (FedSrv.CPP:3774 <c>IsPlayer()</c>) — this port has no boarding drones,
     /// so every boarded ship here qualifies.
+    /// <para><b>P822 — selection is native's, not the old weapons test.</b>
+    /// Membership in <c>rgActiveTurrets</c> is decided ONLY by the per-player
+    /// last-update kind: <c>if (ucLastUpdate == c_ucActiveTurretUpdate)</c> plus
+    /// the ±1.5 s window (FedSrv.CPP:3783-3790), with <b>no StateM/weapons
+    /// check</b> — a gunner that just sent a fresh turret update is relayed as
+    /// active even between bursts of fire, so its facing keeps reaching the
+    /// other clients. The <c>SetStateM(weaponsMaskIGC)</c> in
+    /// <c>ProcessShipUpdate(const ClientActiveTurretUpdate&amp;)</c>
+    /// (shipIGC.cpp:3359) is not part of the relay's decision.</para>
+    /// <para>The candidate list is the cluster-wide gather and is therefore
+    /// shared by every viewer of the pass (native builds <c>rgActiveTurrets</c>
+    /// once per cluster), cached per sector exactly like
+    /// <see cref="CollectInactiveTurretRelay"/> so (P603) sector workers agree
+    /// and no viewer is charged a second walk.</para>
     /// </summary>
     private ServerActiveTurretUpdate[] CollectActiveTurretRelay(Sector sector, Ship self, uint timeRef)
     {
+        var candidates = CollectActiveTurretCandidates(sector);
+        if (candidates.Length == 0) return [];
         List<ServerActiveTurretUpdate>? acts = null;
-        double missionNow = self.Mission?.LastUpdate ?? 0.0;
         double msToTicks = Math.Max(1, _config.UpdatesPerSecond) / 1000.0;
-        foreach (var model in sector.Models)
+        foreach (var gunner in candidates)
         {
-            if (model is not Ship gunner || gunner.ParentShip is null || gunner.TurretId is null) continue;
-            if (gunner.IsNpc || gunner.Dead || gunner.StationId is not null || gunner.ParentShip.StationId is not null) continue;
-            if ((gunner.StateM & ShipControlState.WeaponsMask) == 0) continue;
             if (ReferenceEquals(gunner, self)) continue;            // FedSrv.CPP:4058
             if (!_lastTurretUpdates.TryGetValue(gunner.Id, out var stu)) continue;
-            double dt = stu.TimeMs / 1000.0 - missionNow;
-            if (dt is < -1.5 or > 1.5) continue;                    // FedSrv.CPP:3786-3789
             uint timeTicks = (uint)Math.Round(stu.TimeMs * msToTicks);
             (acts ??= new List<ServerActiveTurretUpdate>()).Add(
                 ServerActiveTurretUpdate.From(gunner.Id, timeRef, timeTicks, stu.Controls, stu.Orientation));
         }
         return acts?.ToArray() ?? [];
+    }
+
+    /// <summary>
+    /// P822 (SIM-0470) — the cluster-wide <c>rgActiveTurrets</c> gather
+    /// (FedSrv.CPP:3774-3792): the boarded player gunners of <paramref name="sector"/>
+    /// whose <b>last update kind is active</b> (<see cref="_pendingTurretRelays"/>
+    /// — native <c>m_ucLastUpdate == c_ucActiveTurretUpdate</c>) and whose stored
+    /// update is still inside the ±1.5 s window. Observers/drones/dead/docked/
+    /// unboarded ships never qualify (the P788c exclusions). Computed once per
+    /// pass per sector and shared by every viewer, so (P603) parallel sector
+    /// workers cannot disagree; the pending marks themselves are consumed once
+    /// by the pass (see <see cref="ConsumePendingTurretRelays"/>).
+    /// </summary>
+    private Ship[] CollectActiveTurretCandidates(Sector sector)
+    {
+        lock (_snapshotCaptureGate)
+        {
+            if (_activeTurretCandidates.TryGetValue(sector, out var cached)) return cached;
+            List<Ship>? gunners = null;
+            foreach (var model in sector.Models)
+            {
+                if (model is not Ship gunner || gunner.ParentShip is null || gunner.TurretId is null) continue;
+                if (gunner.IsNpc || gunner.Dead || gunner.StationId is not null || gunner.ParentShip.StationId is not null) continue;
+                if (!_pendingTurretRelays.Contains(gunner)) continue;    // FedSrv.CPP:3783
+                if (!_lastTurretUpdates.TryGetValue(gunner.Id, out var stu)) continue;
+                double dt = stu.TimeMs / 1000.0 - (gunner.Mission?.LastUpdate ?? 0.0);
+                if (dt is < -1.5 or > 1.5) continue;                    // FedSrv.CPP:3786-3789
+                (gunners ??= new()).Add(gunner);
+            }
+            var result = gunners?.ToArray() ?? [];
+            _activeTurretCandidates.Add(sector, result);
+            return result;
+        }
+    }
+
+    /// <summary>
+    /// P822 — native <c>ResetLastUpdate</c> (fsship.h:290-293, called for every
+    /// player of every processed cluster at FedSrv.CPP:3796): the per-player
+    /// "last update kind" is cleared after the pass that gathered the relay
+    /// lists, so the same stored turret update is never relayed twice. Runs on
+    /// the sim thread after every viewer of the pass has been projected (and
+    /// after the sector workers have finished, when P603 projection is
+    /// parallel).
+    /// </summary>
+    private void ConsumePendingTurretRelays()
+    {
+        // Only the missions this pass projected (native resets the players of the
+        // processed clusters only): with sim.nativeBroadcastOrder the pre-update
+        // phase must leave the post-update phase's marks for its own pass.
+        lock (_snapshotCaptureGate)
+            _pendingTurretRelays.RemoveWhere(g => IncludeShipBroadcastMission(g.Mission));
     }
 
     /// <summary>
@@ -2866,6 +2927,9 @@ public sealed partial class Server
     /// </summary>
     private void BroadcastShipsUpdate(uint tickIndex)
     {
+        // P822 — the per-pass gather caches (native rebuilds both relay lists once
+        // per SendShipUpdates pass, FedSrv.CPP:3722-3796).
+        _activeTurretCandidates.Clear();
         _inactiveTurretRelays.Clear();
         var peers = SnapshotBroadcastPeers();
         if (_broadcastInterestTiersEnabled) CaptureInterestSnapshot(peers);
@@ -2911,7 +2975,16 @@ public sealed partial class Server
                 foreach (var kv in grp.Value) BroadcastShipsUpdatePeer(kv, tickIndex, trackCadence, poseNow);
             });
         }
-        finally { _interestSnapshot.Clear(); _inactiveTurretRelays.Clear(); }
+        finally
+        {
+            _interestSnapshot.Clear();
+            _activeTurretCandidates.Clear();
+            _inactiveTurretRelays.Clear();
+            // P822 — native ResetLastUpdate (fsship.h:290-293, FedSrv.CPP:3796):
+            // consume every gunner's "last update kind" once the whole pass has
+            // been projected (all viewers of this pass have their relays).
+            ConsumePendingTurretRelays();
+        }
     }
 
     /// <summary>
