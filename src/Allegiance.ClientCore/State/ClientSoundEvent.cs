@@ -390,6 +390,19 @@ public enum ClientSoundEventKind
     /// sounddef.mdl:1311).</summary>
     ShieldDeactivate,
 
+    // ── P816 (SIM-0267: pickup cannot fit) ─────────────────────────────────
+
+    /// <summary><c>salCargoFullSound</c> — the mount search for an offered part
+    /// treasure found neither a real mount nor a cargo slot that can take it
+    /// (shipIGC.h:1302, the client-side <c>HitTreasure</c> decline leg;
+    /// wave <c>vo_sal_cargofull</c>, sounddef.mdl:810). Native plays it in
+    /// place of the pickup cue — the offer is declined and the part drops back
+    /// into space — so the port also suppresses the P735 <c>PickupPart</c> cue
+    /// for that same offer (see <c>ClientWorld.RecordPartOfferCargoFull</c>).
+    /// The part-SWAP leg of this cue is the P719 in-flight refusal
+    /// (WinTrek.cpp:9114), already wired in Game1.FlightParts.</summary>
+    CargoFull,
+
     /// <summary>Port last-base objective transition; native voFoundEnemyBase (Igc/sounds.h:199).</summary>
     LastEnemyBase,
 }

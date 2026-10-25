@@ -3266,8 +3266,11 @@ public sealed partial class Ship : Model, IShipIgc
             if (part.MountedFraction >= 1f)
             {
                 if (part.EquipmentType is EquipmentType.Weapon or EquipmentType.Cloak or EquipmentType.Shield
-                    or EquipmentType.Dispenser or EquipmentType.ChaffLauncher)
-                    // weaponIGC.h:44-46; cloakigc.cpp:75-76; shieldIGC.cpp:82-83.
+                    or EquipmentType.Dispenser or EquipmentType.ChaffLauncher or EquipmentType.Magazine)
+                    // weaponIGC.h:44-46; cloakigc.cpp:75-76; shieldIGC.cpp:82-83;
+                    // magazineigc.cpp:96-97 (P816/SIM-0239 — the magazine plays the
+                    // same mountedSound + "%s ready." notification when its
+                    // m_mountedFraction reaches 1, identical to the other parts).
                     Mission?.Site.WeaponReady(this, part.Type.Name);
                 RaiseLoadoutChange(part, LoadoutChange.Mounted);
             }

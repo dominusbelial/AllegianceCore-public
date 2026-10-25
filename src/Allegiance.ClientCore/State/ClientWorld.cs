@@ -4309,6 +4309,16 @@ public sealed partial class ClientWorld
                 : $"You received a reward of ${m.Amount}.");
         }
 
+        // P816/SIM-0267 — when the session's mount picker declined the offer
+        // with the native cargo-full condition, this ACQUIRE_TREASURE is the
+        // very offer it declined (the picker runs immediately before this
+        // apply in the same receive-loop iteration), and native plays
+        // salCargoFullSound INSTEAD of pickUpPartSound (shipIGC.h:1302-1307 —
+        // the pickup cue lives on the SUCCESS path only). Consume the flag
+        // here regardless of the code so a queued flag can never leak.
+        bool partOfferDeclinedFull = _partOfferCargoFull;
+        _partOfferCargoFull = false;
+
         ClientSoundEventKind? kind = (Allegiance.Core.TreasureCode)m.TreasureCode switch
         {
             Allegiance.Core.TreasureCode.Powerup => ClientSoundEventKind.PickupPowerup,
@@ -4323,11 +4333,34 @@ public sealed partial class ClientWorld
             Allegiance.Core.TreasureCode.Part => ClientSoundEventKind.PickupPart,
             _ => null,
         };
-        if (kind is { } k)
+        if (kind is { } k && !(partOfferDeclinedFull && k == ClientSoundEventKind.PickupPart))
             RecordSoundEvent(k, m.TreasureId);
     }
 
     // ── Event log (transient, append-only, bounded) ────────────────────────
+    /// <summary>P816/SIM-0267 — the session's part-offer mount search answered
+    /// the current part treasure with the native cargo-full decline: the
+    /// <c>HitTreasure(c_tcPart)</c> search (shipIGC.h:1239-1305) found neither a
+    /// real mount nor a cargo slot, so native's client plays
+    /// <c>salCargoFullSound</c> INSTEAD of the pickup cue and answers
+    /// <c>c_mountNA</c> (shipIGC.h:1302-1304; the offer is declined and the
+    /// part drops back into space). The session's mount picker
+    /// (<c>ConnectionSession.PartOfferMount</c>, the only place the
+    /// <see cref="TreasureMountPicker"/> catalogue source lives) calls this
+    /// BEFORE the same <c>ACQUIRE_TREASURE(162)</c> is applied, so the Part
+    /// branch of <see cref="Apply(AcquireTreasure)"/> records the
+    /// <see cref="ClientSoundEventKind.CargoFull"/> cue recorded here instead
+    /// of <see cref="ClientSoundEventKind.PickupPart"/>. Public like
+    /// <see cref="PostSystemLine"/>: it originates outside the wire, in the
+    /// session's receive loop (which holds the session gate, like every other
+    /// world mutation from that loop).</summary>
+    public void RecordPartOfferCargoFull()
+    {
+        _partOfferCargoFull = true;
+        RecordSoundEvent(ClientSoundEventKind.CargoFull, MyShipId ?? Na);
+    }
+    private bool _partOfferCargoFull;
+
     /// <summary>P710 — classify an incoming chat line's announcement cue
     /// exactly as native's <c>ReceiveChat</c> decides which wave to play
     /// (trekigc.cpp:4536-4560). The port reproduces the non-sonic destination

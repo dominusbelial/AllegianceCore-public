@@ -544,22 +544,30 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
     /// hull cannot be resolved, the offer is declined with
     /// <see cref="TreasureMountPicker.MountNA"/> — the server re-creates the
     /// treasure in space (<c>FedSrv.CPP:6125-6130</c>), never leaving the offer
-    /// buffered forever.</summary>
-    private sbyte PartOfferMount(AcquireTreasure offer)
+    /// buffered forever. P816/SIM-0267: when the search itself ran (hull, part
+    /// and own ship all resolved) and found no room, the returned
+    /// <c>CargoFull</c> flag is set — the caller plays the native
+    /// <c>salCargoFullSound</c> decline cue for the local ship via
+    /// <see cref="ClientWorld.RecordPartOfferCargoFull"/> (shipIGC.h:1302-1304)
+    /// before the same offer is applied.</summary>
+    private (sbyte Mount, bool CargoFull) PartOfferMount(AcquireTreasure offer)
     {
         var source = TreasureMountSource;
         var world = _world;
-        if (source is null) return TreasureMountPicker.MountNA;
+        if (source is null) return (TreasureMountPicker.MountNA, false);
         if (world.MyShipId is not { } me || !world.Ships.TryGetValue(me, out var own))
-            return TreasureMountPicker.MountNA;
+            return (TreasureMountPicker.MountNA, false);
         if (!source.TryGetHull(own.HullId, out var hull)
             || !source.TryGetPart(offer.TreasureId, out var part))
-            return TreasureMountPicker.MountNA;
-        return TreasureMountPicker.PickMount(
+            return (TreasureMountPicker.MountNA, false);
+        var mount = TreasureMountPicker.PickMount(
             hull, source.Core, part,
             own.Loadout ?? Array.Empty<ExpandedPartData>(),
             own.Cargo ?? Array.Empty<ExpandedPartData>(),
             (short)offer.Amount);
+        // shipIGC.h:1302-1304 — no place at all: the native client plays
+        // salCargoFullSound (and no pickUpPartSound) for exactly this outcome.
+        return (mount, mount == TreasureMountPicker.MountNA);
     }
 
     /// <summary>Send a real <c>FM_C_BUY_LOADOUT(4)</c> — what the native
@@ -1396,7 +1404,16 @@ public sealed class ConnectionSession : ITransportSite, IDisposable
                         // c_tcCash reward line).
                         var acquire = AcquireTreasure.Decode(m);
                         if (acquire.TreasureCode == (byte)TreasureCode.Part)
-                            SendTreasureAck(PartOfferMount(acquire));
+                        {
+                            // P816/SIM-0267 — a searched-and-full decline plays
+                            // the native salCargoFullSound cue (shipIGC.h:1302)
+                            // instead of the pickup cue, then still answers
+                            // c_mountNA so the server drops the part back into
+                            // space (FedSrv.CPP:6125-6130).
+                            var (mount, cargoFull) = PartOfferMount(acquire);
+                            if (cargoFull) _world.RecordPartOfferCargoFull();
+                            SendTreasureAck(mount);
+                        }
                         _world.Apply(acquire);
                         break;
                     }

@@ -12,7 +12,7 @@ slot,name,native_reader_under_src,port_reader,PCore001_before,PCore001_after
 10,MountRate,"Igc/afterburnerIGC.cpp:114; Igc/shipIGC.h:608,638",Sim/Ship.cs:MountRate/ReloadDebounceInterval,0.200000003,0.200000003
 11,StartingMoney,FedSrv/fsmission.cpp:1992,Model/Mission.cs:StartingMoneyPerSide,16000,16000
 12,WinTheGameMoney,Igc/missionigc.h:790,Model/Bucket.cs:ForSide/EnumerateDefs,80000 (dev.Price),72000
-13,RipcordTime,FedSrv/FedSrv.CPP:1676 (custom hull generation); Igc/shipIGC.h:1536 (ordinary countdown uses hull speed),Sim/Ship.cs:RipcordSpeed (ordinary hull countdown); custom hull loader absent; SIM-0014 remains partial,unused (stored 10),unused (stored 10)
+13,RipcordTime,FedSrv/FedSrv.CPP:1676 (custom hull generation); Igc/shipIGC.h:1536 (ordinary countdown uses hull speed),"Sim/Ship.cs:RipcordSpeed (ordinary hull countdown); custom hull loader absent; SIM-0014 closed by P816 measurement (slot13=10.0 in all shipped cores; multiply is baked into the asset at build time, FedSrv.CPP:1676,9712-9720)",unused (stored 10),unused (stored 10)
 14,He3Regeneration,Igc/asteroidigc.h:52,Model/Sector.cs:He3Regeneration/ResolveMining,0.025,0.000166667
 15,PointsWarp,Igc/common.cpp:2675,Server/PlayerScore.cs:CalculateScore,2,2
 16,PointsAsteroid,Igc/common.cpp:2676,Server/PlayerScore.cs:CalculateScore,1,1

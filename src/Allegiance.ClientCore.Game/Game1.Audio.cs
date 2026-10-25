@@ -731,6 +731,15 @@ public sealed partial class Game1
                     snd?.PlaySalDispenserEmpty();
                     Console.WriteLine("[monogame] audio: dispenser empty");
                     break;
+                // ── P816 — pickup cannot fit (SIM-0267) ────────────────────
+                case ClientSoundEventKind.CargoFull:
+                    // Native salCargoFullSound (shipIGC.h:1302; wave
+                    // vo_sal_cargofull, sounddef.mdl:810). The part-SWAP leg
+                    // is the P719 in-flight refusal (WinTrek.cpp:9114) wired
+                    // in Game1.FlightParts; this is the pickup leg.
+                    snd?.PlayCargoFull();
+                    Console.WriteLine("[monogame] audio: cargo full (part offer declined)");
+                    break;
             }
         }
     }
