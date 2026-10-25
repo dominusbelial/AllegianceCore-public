@@ -2753,3 +2753,17 @@ P798 WIP and fixed here (see `docs/reports/P798_SCOUT_OPENING.md` §6):
 | 2026-10-24 | ThreePeerSeededSessionTests.SeedThreePeers_TwoSameSide_OneCrossSide_DeterministicVisibility; P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate; P802TeamCivLiveTests.Random_change_resolves_to_a_real_legal_civ_and_relays_it; ConsoleVerbosityLiveTests.Stuck_npc_standby_logs_once_not_per_tick; P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect | P813c fast-tier gate re-runs (host load average ~14 from concurrent delegates): logon-drain/seating order, relay timing, random civ pick, stand-by log transition, rotation migration timing | all pass 3/3 alone on this worktree; every one is already a known load flake above, and P813c touches none of those paths (session park/resume + client reconnect only) — load-timing flakes |
 | 2026-10-24 | SC2NaniteSupportTests.Support_selection_obeys_research_dock_budget_and_mounts(civ: 25) | P813c fast-tier gate, third/"fourth" runs: SLOW FAST 11.203 s against the calibrated 10 s fast limit while the host ran at load average ~14 (every test passed) | 7-8 s for both cases 3/3 alone (limit 10 s standalone); same load-timing class as the `P750NativeAsteroidTypesTests` SLOW FAST entry above |
 | 2026-10-25 | P739TimerLiveTests.Warp_bomb_notice_matches_captured_blast_deadline_and_stays_in_mission(delay: 7) | P805b fast-tier gate (this worktree, concurrent agents on the host): `Assert.InRange` upper bound 7 vs actual `7.0000000000000009` — a float boundary in an untouched `Allegiance.Core` timer test | 3/3 exact-class pass alone (5/5 tests, ~0.56 s each); P805b touches only `src/Allegiance.ClientCore.Game` + the proof script, no Core/server timing path — load-timing flake |
+
+## P819 validation environment (2026-10-25)
+
+The single fast-tier run recorded six environment-context failures (not load
+flakes): the five known `PlayerBundlePathsTests` ancestor/local.env cases, and
+`P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`,
+which attempted to save player.json in the read-only per-user config directory.
+P819 changes MCP showcase policy and proof tools, with no Core path resolver,
+profile or UI change. All nine path cases passed 3/3 exact-class runs using the
+existing SC2 `/proc/<parent>/fd/3` alias technique for workspace-backed scratch;
+the profile method passed 3/3 exact-method runs with `XDG_CONFIG_HOME` redirected
+into workspace scratch. Assertions were unchanged; no second fast-tier run was
+made. See `docs/reports/P819_SIDE_BIAS.md` and `.scratch/p819/fast/summary.json`.
+| 2026-10-25 | P733ResearchTests.No_bomber_tech_finale_reaches_stage_over_and_automatic_next_match_twice | FAILS ON MASTER since P797 native map discovery: `spawn_scenario: finale needs an observed enemy home station` — the fixture has no scouts, and stations are exported to a side only after it has seen them (they are created at mission start, so seeding visibility needs a per-match hook). Live tier; follow-up: give the fixture a per-match "stations seen" seed (P540b was the same class, fixed with ShowMap). |

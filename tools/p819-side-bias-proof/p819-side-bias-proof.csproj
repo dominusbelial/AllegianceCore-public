@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../tools/allegiance-mcp/allegiance-mcp.csproj" />
+    <ProjectReference Include="../../src/Allegiance.Server/Allegiance.Server.csproj" />
+  </ItemGroup>
+</Project>

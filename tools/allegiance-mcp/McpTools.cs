@@ -87,7 +87,7 @@ internal static class McpTools
                         mode = new { type = "string", @enum = new[] { "march" }, @default = "march", description = "Battle start mode. `march` (DEFAULT and now the ONLY mode, the 200v200 baseline): each side launches at home, flies its wings through the alephs (P635 routes), stages, and converges on `target_sector` — wings advance independently. History: the `arena` mode (both fleets spawned directly in `target_sector`, formerly also reachable as the legacy `arena: true` flag) was removed in P795 because it collapsed into a home-sector death loop; an arena request returns a removal error instead of silently marching." },
                         staging = new { type = "boolean", @default = true, description = "P539d — travel-with-staging mode (DEFAULT when `target_sector` is set): each side gathers until its whole living complement is assembled before advancing." },
                         finale_after_minutes = new { type = "number", minimum = 0, description = "Finale minimum battle age in minutes (showcase default 30; other scenarios default 0; 0 disables). Also requires both sides' pod relaunch share and sustained kills." },
-                        finale_side = new { description = "leader (default, ahead on kills; ties side 0), integer 0 or 1, or both", anyOf = new object[] { new { type = "string", @enum = new[] { "leader", "both" } }, new { type = "integer", minimum = 0, maximum = 1 } } },
+                        finale_side = new { description = "both (showcase default), leader (ahead on kills; ties side 0), or integer 0 or 1", anyOf = new object[] { new { type = "string", @enum = new[] { "leader", "both" } }, new { type = "integer", minimum = 0, maximum = 1 } } },
                         finale_min_relaunch_share = new { type = "number", @default = .5, minimum = 0, maximum = 1 },
                         finale_min_kills_last_5_minutes = new { type = "integer", @default = 5, minimum = 1 },
                         finale_bombers = new { type = "integer", @default = 12, minimum = 1, maximum = 200 },
@@ -1384,7 +1384,9 @@ internal static class McpTools
                 throw new ArgumentException($"spawn_scenario: {key} must be an integer");
             return (int)value;
         }
-        string side = "leader";
+        // P819: give both showcase sides the same finale opportunity instead
+        // of reinforcing the current kill lead (and side 0 on a tie).
+        string side = showcase ? "both" : "leader";
         if (args.TryGetValue("finale_side", out var selection))
             side = selection.ValueKind == JsonValueKind.String ? selection.GetString()!
                 : selection.ValueKind == JsonValueKind.Number && selection.TryGetInt32(out int id) ? id.ToString(System.Globalization.CultureInfo.InvariantCulture) : "invalid";

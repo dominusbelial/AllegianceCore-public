@@ -1,0 +1,113 @@
+{
+  "base": "b8f578e2",
+  "solutionBuild": {
+    "warnings": 0,
+    "errors": 0,
+    "log": ".scratch/p819/solution-build-final.log"
+  },
+  "toolsBuild": {
+    "projects": 78,
+    "warnings": 0,
+    "errors": 0,
+    "log": ".scratch/p819/tools-build.log",
+    "proofRebuiltAfterHarnessOptions": true
+  },
+  "newP819": {
+    "cases": 5,
+    "isolatedInvocations": 3,
+    "passedEach": 5
+  },
+  "focusedPolicies": {
+    "cases": 97,
+    "invocations": 3,
+    "passedEach": 97
+  },
+  "neverParks": {
+    "invocations": 5,
+    "passed": 5
+  },
+  "liveCompleted": {
+    "P801": {
+      "passed": 4,
+      "failed": 0
+    },
+    "P798": {
+      "passed": 8,
+      "failed": 0
+    },
+    "P745": {
+      "passed": 2,
+      "failed": 2
+    },
+    "P682": {
+      "passed": 16,
+      "failed": 0
+    }
+  },
+  "P745UntouchedBotBaseline": {
+    "base": "b8f578e2",
+    "passed": 2,
+    "failed": 0,
+    "logs": [
+      ".scratch/p819/base-p745.log",
+      ".scratch/p819/base-p745-2.log"
+    ]
+  },
+  "fastRuns": 1,
+  "fast": {
+    "passed": 10407,
+    "skipped": 3,
+    "failed": 6,
+    "seconds": 298.3845625029935,
+    "timingViolations": 0,
+    "allFailures": "filesystem context; 5 PlayerBundlePathsTests and 1 profile editor write",
+    "isolatedPaths": {
+      "cases": 9,
+      "passedInvocations": 3
+    },
+    "isolatedProfile": {
+      "cases": 1,
+      "passedInvocations": 3
+    }
+  },
+  "logCaptureNote": "An interrupted non-PTY runner continued its children and collided with a reused live-2 filename. Later output was renamed while retaining open file descriptors; per-case P745 logs are separate. Individual live completions, captured final test results and observed pre-collision pass lines support these counts. Wrapper tail/redirection errors from stopping duplicate future launches are not test failures.",
+  "checks": {
+    "glossary": "pass",
+    "parity": "pass",
+    "diffWhitespace": "pass"
+  },
+  "localMatchedSets": {
+    "300Seconds": {
+      "matches": 4,
+      "winsBySide": [
+        1,
+        3
+      ],
+      "finaleCommitsBySide": [
+        0,
+        0
+      ]
+    },
+    "900Seconds": {
+      "matches": 4,
+      "winsBySide": [
+        3,
+        1
+      ],
+      "finaleCommitsBySide": [
+        1,
+        3
+      ],
+      "nativeStationKillsByAttackerSide": [
+        1,
+        2
+      ],
+      "garrisonKillsByAttackerSide": [
+        0,
+        2
+      ]
+    }
+  },
+  "baselineMcpSha256": "96aa63233ca69454ebb6db2717f56981cd4f53cc5c34761f9f97245236b6e7d4",
+  "patchedMcpSha256": "31f2e8f9541fb6e2b4d2a80ac878c8118f48831ed169104a166f1cf3e15a0286"
+}

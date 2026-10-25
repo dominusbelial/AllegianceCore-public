@@ -1,0 +1,3 @@
+area,native_item,native_cite,port_status,port_cite_or_reason,weight
+showcase-policy,Finale supersedes previous autonomous rally,Igc/shipIGC.cpp:1936-1943,na,Showcase-only orchestration; native accepted orders still have priority for ordinary bots. tools/allegiance-mcp/BotManager.Finale.cs AssignResearchSiegeRoute; tests/Allegiance.ClientCore.Tests/P819FinaleOrderTests.cs; docs/reports/P819_SIDE_BIAS.md,1
+showcase-policy,Symmetric default finale selection,No native showcase AI,na,Showcase preset policy defaults both; explicit leader/side remains supported. tools/allegiance-mcp/McpTools.cs ReadFinaleSettings; tests/Allegiance.ClientCore.Tests/P819FinaleOrderTests.cs,1

@@ -264,6 +264,12 @@ list in **reverse**.
   `tools/build-tools.sh --drop-bins` (the `-proof` projects are outside the
   solution). The screen/options proof: `tools/p806-ui-proof/` (intro options
   tree, real lobby server browser, team-lobby chat in both HUD styles).
+- **Showcase side-bias audit** — `tools/p819-side-bias-proof/` runs native-map
+  loopback matches with optional civilization swap; `audit.py` streams copied
+  rig logs into per-side evidence and `transits.py` measures named-bomber warp
+  legs. Finale station duty supersedes its old
+  aleph rally in `tools/allegiance-mcp/BotManager.Finale.cs`; the showcase
+  preset defaults to both sides. Report `docs/reports/P819_SIDE_BIAS.md`.
 - **Corpus utilities** — `tools/cvhdump/`, `tools/fedmsgdump/`, `tools/igcdump/`,
   `tools/corpusvalidate/`.
 - **Benchmark** — `tools/benchmark/` (replay benchmark) and

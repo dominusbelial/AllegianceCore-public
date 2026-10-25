@@ -1,0 +1,392 @@
+[
+  {
+    "source": "baseline",
+    "label": "normal-1",
+    "configuration": {
+      "Scale": null,
+      "FinaleSeconds": null,
+      "FinaleMinutes": null,
+      "GameSeconds": null
+    },
+    "civs": [
+      25,
+      3
+    ],
+    "stage": "Started",
+    "wallSeconds": 601.2168963,
+    "simSeconds": 1268.2499999993943,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 41,
+        "Deaths": 14
+      },
+      {
+        "Id": 1,
+        "Kills": 36,
+        "Deaths": 10
+      }
+    ],
+    "winner": null,
+    "reason": null,
+    "commits": [
+      {},
+      {}
+    ],
+    "supersededOrders": [
+      {},
+      {}
+    ],
+    "commitEvents": [],
+    "targets": [
+      {
+        "side": 1,
+        "targetStation": 4328,
+        "targetSide": 0,
+        "targetSector": 1050,
+        "targetKilledAt": null
+      },
+      {
+        "side": 0,
+        "targetStation": 9189,
+        "targetSide": 1,
+        "targetSector": 1051,
+        "targetKilledAt": null
+      }
+    ],
+    "firstTrigger": "[finale] trigger sides=[0,1] at t=31s: side 0 combat=15 relaunched=15 share=1.00 kills=2; side 1 combat=15 relaunched=15 share=1.00 kills=6 recentKills=8",
+    "armedOwnClientSamples": [
+      6,
+      5
+    ],
+    "transitToTargetSectorWallSeconds": [
+      [],
+      []
+    ],
+    "peakAssembled": [
+      0,
+      0
+    ],
+    "fleetHullSamples": [
+      {
+        "Scout": 202,
+        "Lt Interceptor": 60,
+        "Stealth Fighter": 3,
+        "Adv Stl Fighter": 13,
+        "Bomber": 13,
+        "Enh Fighter": 4,
+        "Stealth Bomber": 5
+      },
+      {
+        "Scout": 104,
+        "Fighter": 166,
+        "Adv Stl Fighter": 16,
+        "Bomber": 8,
+        "Guardian": 3,
+        "Stealth Bomber": 3
+      }
+    ],
+    "simulationFailures": 0,
+    "limits": "Transit is first sampled armed/undocked pose to first sampled target-sector pose in a life (30s sampling). Arriving before the first sample reads 0. Missing arrivals are censored; no inferred transit duration for them. Hull counts are repeated samples, not unique purchases."
+  },
+  {
+    "source": "fixed-normal",
+    "label": "normal-1",
+    "configuration": {
+      "Scale": 1,
+      "FinaleSeconds": 300,
+      "FinaleMinutes": 0.5,
+      "GameSeconds": null
+    },
+    "civs": [
+      25,
+      3
+    ],
+    "stage": "Over",
+    "wallSeconds": 406.5865075,
+    "simSeconds": 863.0999999997628,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 21,
+        "Deaths": 4
+      },
+      {
+        "Id": 1,
+        "Kills": 13,
+        "Deaths": 5
+      }
+    ],
+    "winner": 0,
+    "reason": "The clock has stopped. The winner: Alpha by kills",
+    "commits": [
+      {},
+      {}
+    ],
+    "supersededOrders": [
+      {
+        "1:Ship": 6
+      },
+      {
+        "1:Ship": 5
+      }
+    ],
+    "commitEvents": [],
+    "targets": [
+      {
+        "side": 1,
+        "targetStation": 4328,
+        "targetSide": 0,
+        "targetSector": 1050,
+        "targetKilledAt": null
+      },
+      {
+        "side": 0,
+        "targetStation": 4329,
+        "targetSide": 1,
+        "targetSector": 1051,
+        "targetKilledAt": null
+      }
+    ],
+    "firstTrigger": "[finale] trigger sides=[0,1] at t=31s: side 0 combat=15 relaunched=4 share=0.27 kills=2; side 1 combat=15 relaunched=4 share=0.27 kills=0 recentKills=2",
+    "armedOwnClientSamples": [
+      15,
+      23
+    ],
+    "transitToTargetSectorWallSeconds": [
+      [],
+      []
+    ],
+    "peakAssembled": [
+      0,
+      0
+    ],
+    "fleetHullSamples": [
+      {
+        "Scout": 153,
+        "Lt Interceptor": 42,
+        "Stealth Fighter": 1,
+        "Stealth Bomber": 14
+      },
+      {
+        "Scout": 82,
+        "Fighter": 118,
+        "Stealth Bomber": 10
+      }
+    ],
+    "simulationFailures": 0,
+    "limits": "Transit is first sampled armed/undocked pose to first sampled target-sector pose in a life (30s sampling). Arriving before the first sample reads 0. Missing arrivals are censored; no inferred transit duration for them. Hull counts are repeated samples, not unique purchases."
+  },
+  {
+    "source": "fixed-normal",
+    "label": "normal-2",
+    "configuration": {
+      "Scale": 1,
+      "FinaleSeconds": 300,
+      "FinaleMinutes": 0.5,
+      "GameSeconds": null
+    },
+    "civs": [
+      25,
+      3
+    ],
+    "stage": "Over",
+    "wallSeconds": 820.0833238,
+    "simSeconds": 1721.9999999989816,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 45,
+        "Deaths": 10
+      },
+      {
+        "Id": 1,
+        "Kills": 31,
+        "Deaths": 26
+      }
+    ],
+    "winner": 0,
+    "reason": "The clock has stopped. The winner: Alpha by kills",
+    "commits": [
+      {},
+      {}
+    ],
+    "supersededOrders": [
+      {
+        "1:Station": 2,
+        "1:Ship": 3,
+        "3:Ship": 3
+      },
+      {
+        "5:Warp": 2,
+        "1:Ship": 4
+      }
+    ],
+    "commitEvents": [],
+    "targets": [
+      {
+        "side": 1,
+        "targetStation": 4328,
+        "targetSide": 0,
+        "targetSector": 1050,
+        "targetKilledAt": null
+      },
+      {
+        "side": 0,
+        "targetStation": 9189,
+        "targetSide": 1,
+        "targetSector": 1051,
+        "targetKilledAt": null
+      }
+    ],
+    "firstTrigger": "[finale] trigger sides=[0,1] at t=31s: side 0 combat=15 relaunched=15 share=1.00 kills=2; side 1 combat=15 relaunched=15 share=1.00 kills=0 recentKills=2",
+    "armedOwnClientSamples": [
+      27,
+      25
+    ],
+    "transitToTargetSectorWallSeconds": [
+      [
+        0.0
+      ],
+      [
+        30.01,
+        90.04
+      ]
+    ],
+    "peakAssembled": [
+      2,
+      1
+    ],
+    "fleetHullSamples": [
+      {
+        "Scout": 217,
+        "Lt Interceptor": 84,
+        "Stealth Fighter": 8,
+        "Bomber": 29,
+        "Adv Stl Fighter": 29,
+        "Enh Fighter": 32,
+        "Stealth Bomber": 21
+      },
+      {
+        "Scout": 128,
+        "Fighter": 162,
+        "Adv Stl Fighter": 31,
+        "Guardian": 63,
+        "Bomber": 19,
+        "Stealth Bomber": 17
+      }
+    ],
+    "simulationFailures": 0,
+    "limits": "Transit is first sampled armed/undocked pose to first sampled target-sector pose in a life (30s sampling). Arriving before the first sample reads 0. Missing arrivals are censored; no inferred transit duration for them. Hull counts are repeated samples, not unique purchases."
+  },
+  {
+    "source": "mature-normal",
+    "label": "normal-1",
+    "configuration": {
+      "Scale": 2,
+      "FinaleSeconds": 900,
+      "FinaleMinutes": 3,
+      "GameSeconds": null
+    },
+    "civs": [
+      25,
+      3
+    ],
+    "stage": "Started",
+    "wallSeconds": 1201.1647732,
+    "simSeconds": 2200.9499999992413,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 114,
+        "Deaths": 41
+      },
+      {
+        "Id": 1,
+        "Kills": 85,
+        "Deaths": 67
+      }
+    ],
+    "winner": null,
+    "reason": null,
+    "commits": [
+      {},
+      {}
+    ],
+    "supersededOrders": [
+      {
+        "5:Warp": 1,
+        "1:Ship": 4,
+        "1:Station": 3
+      },
+      {
+        "5:Warp": 3,
+        "1:Ship": 3,
+        "1:Station": 1
+      }
+    ],
+    "commitEvents": [],
+    "targets": [
+      {
+        "side": 1,
+        "targetStation": 4328,
+        "targetSide": 0,
+        "targetSector": 1050,
+        "targetKilledAt": null
+      },
+      {
+        "side": 0,
+        "targetStation": 9189,
+        "targetSide": 1,
+        "targetSector": 1051,
+        "targetKilledAt": null
+      }
+    ],
+    "firstTrigger": "[finale] trigger sides=[0,1] at t=180s: side 0 combat=30 relaunched=30 share=1.00 kills=28; side 1 combat=30 relaunched=29 share=0.97 kills=11 recentKills=39",
+    "armedOwnClientSamples": [
+      86,
+      94
+    ],
+    "transitToTargetSectorWallSeconds": [
+      [
+        89.79,
+        149.81,
+        239.86,
+        120.04
+      ],
+      [
+        60.03,
+        60.03,
+        149.81,
+        149.81,
+        179.83
+      ]
+    ],
+    "peakAssembled": [
+      2,
+      2
+    ],
+    "fleetHullSamples": [
+      {
+        "Scout": 517,
+        "Lt Interceptor": 193,
+        "Stealth Fighter": 11,
+        "Adv Stl Fighter": 135,
+        "Bomber": 56,
+        "Enh Fighter": 130,
+        "Stealth Bomber": 111,
+        "Interceptor": 47
+      },
+      {
+        "Scout": 341,
+        "Fighter": 391,
+        "Bomber": 44,
+        "Adv Stl Fighter": 112,
+        "Guardian": 208,
+        "Stealth Bomber": 104
+      }
+    ],
+    "simulationFailures": 0,
+    "limits": "Transit is first sampled armed/undocked pose to first sampled target-sector pose in a life (30s sampling). Arriving before the first sample reads 0. Missing arrivals are censored; no inferred transit duration for them. Hull counts are repeated samples, not unique purchases."
+  }
+]

@@ -29,6 +29,7 @@
          (mirrors Core.csproj's InternalsVisibleTo convention). -->
     <InternalsVisibleTo Include="Allegiance.ClientCore.Tests" />
     <InternalsVisibleTo Include="p655-proof" />
+    <InternalsVisibleTo Include="p819-side-bias-proof" />
   </ItemGroup>
 
   <ItemGroup>

@@ -538,10 +538,20 @@ internal sealed partial class BotManager
 
     private static void AssignResearchSiegeRoute(ActiveBot bot, FinaleRun run, FinalePlan plan)
     {
-        // Research finale duty policy: retain the showcase's existing entry-wing
-        // routing instead of funneling every relaunch down one shortest path.
-        // Purchases and native movement/warp rules are unchanged.
-        if (ResearchFinale(bot) && bot.Cs is { } cs)
+        if (!ResearchFinale(bot)) return;
+        // P819 — station duty supersedes the previous autonomous rally. Merely
+        // clearing OrderedTargetId leaves OrderedCommand's CidGoto(Warp) alive:
+        // DriveCommanderOrder runs before finale transit and holds at that aleph
+        // forever. This is showcase policy, not a native order/movement change.
+        // Future orders are still accepted normally by HandleOrders.
+        if (bot.OrderedCommand is { } old)
+            Console.WriteLine($"[strike-route] side={bot.Side} ship={bot.ShipId} supersede={old.CommandId}:{old.TargetType}#{old.TargetId} target=station#{plan.TargetId} sector={plan.Sector}");
+        bot.OrderedCommand = null;
+        bot.OrderedWarpOrigin = null;
+        bot.OrderedTargetId = bot.TargetId = null;
+        // Keep the visible element on the shortest entry; wolves use another
+        // lane. All route geometry still comes from this client's observations.
+        if (bot.Cs is { } cs)
             lock (cs.Gate)
                 if (cs.World.Graph is { } graph && cs.World.Ships.TryGetValue(bot.ShipId, out var own))
                 {

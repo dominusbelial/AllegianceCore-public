@@ -1,0 +1,456 @@
+[
+  {
+    "source": "rig-window-normal",
+    "label": "normal-1",
+    "configuration": {
+      "Scale": 1,
+      "FinaleSeconds": 900,
+      "FinaleMinutes": 0.5,
+      "GameSeconds": 3600
+    },
+    "civs": [
+      25,
+      3
+    ],
+    "stage": "Over",
+    "wallSeconds": 722.8974746,
+    "simSeconds": 2759.6000000012737,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 62,
+        "Deaths": 18
+      },
+      {
+        "Id": 1,
+        "Kills": 62,
+        "Deaths": 39
+      }
+    ],
+    "winner": 0,
+    "reason": "The clock has stopped. The winner: Alpha by kills",
+    "commits": [
+      {},
+      {}
+    ],
+    "supersededOrders": [
+      {
+        "1:Ship": 3,
+        "1:Station": 1
+      },
+      {
+        "5:Warp": 1,
+        "1:Ship": 4,
+        "1:Station": 1
+      }
+    ],
+    "commitEvents": [],
+    "stationKillEvents": [],
+    "targets": [
+      {
+        "side": 1,
+        "targetStation": 4328,
+        "targetSide": 0,
+        "targetSector": 1050,
+        "targetKilledAt": null
+      },
+      {
+        "side": 0,
+        "targetStation": 9200,
+        "targetSide": 1,
+        "targetSector": 1051,
+        "targetKilledAt": null
+      }
+    ],
+    "firstTrigger": "[finale] trigger sides=[0,1] at t=31s: side 0 combat=15 relaunched=12 share=0.80 kills=6; side 1 combat=15 relaunched=15 share=1.00 kills=2 recentKills=8",
+    "armedOwnClientSamples": [
+      31,
+      40
+    ],
+    "transitToTargetSectorWallSeconds": [
+      [
+        90.03,
+        210.08,
+        60.02
+      ],
+      [
+        90.03,
+        60.02,
+        90.03,
+        60.02,
+        150.05
+      ]
+    ],
+    "peakAssembled": [
+      1,
+      2
+    ],
+    "fleetHullSamples": [
+      {
+        "Scout": 170,
+        "Lt Interceptor": 56,
+        "Stealth Fighter": 5,
+        "Adv Stl Fighter": 41,
+        "Bomber": 12,
+        "Enh Fighter": 25,
+        "Interceptor": 19,
+        "Stealth Bomber": 43,
+        "Hvy Scout": 4
+      },
+      {
+        "Scout": 100,
+        "Fighter": 99,
+        "Adv Stl Fighter": 34,
+        "Bomber": 23,
+        "Guardian": 52,
+        "Stealth Bomber": 47,
+        "Enh Fighter": 14,
+        "Interceptor": 6
+      }
+    ],
+    "simulationFailures": 0,
+    "limits": "Transit is first sampled armed/undocked pose to first sampled target-sector pose in a life (30s sampling). Arriving before the first sample reads 0. Missing arrivals are censored; no inferred transit duration for them. Hull counts are repeated samples, not unique purchases."
+  },
+  {
+    "source": "rig-window-normal",
+    "label": "normal-2",
+    "configuration": {
+      "Scale": 1,
+      "FinaleSeconds": 900,
+      "FinaleMinutes": 0.5,
+      "GameSeconds": 3600
+    },
+    "civs": [
+      25,
+      3
+    ],
+    "stage": "Over",
+    "wallSeconds": 389.1991474,
+    "simSeconds": 1515.949999999169,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 18,
+        "Deaths": 10
+      },
+      {
+        "Id": 1,
+        "Kills": 18,
+        "Deaths": 12
+      }
+    ],
+    "winner": 0,
+    "reason": "The clock has stopped. The winner: Alpha by kills",
+    "commits": [
+      {
+        "massed": 1
+      },
+      {
+        "massed": 1
+      }
+    ],
+    "supersededOrders": [
+      {
+        "1:Ship": 6
+      },
+      {
+        "1:Ship": 2
+      }
+    ],
+    "commitEvents": [
+      "[strike] side=1 finale commit required=5 assembled=5 visible=5 loneWolves=0 target=station#4328 sector=1050 goIn=5s wait=12.4s stationHull=1.000 stationShield=1.000 reason=massed",
+      "[strike] side=0 finale commit required=4 assembled=4 visible=1 loneWolves=3 target=station#9189 sector=1051 goIn=5s wait=17.5s stationHull=1.000 stationShield=1.000 reason=massed"
+    ],
+    "stationKillEvents": [
+      "[station-damage] t=1310.85 side=0 station=4328:Garrison attackerSide=1 ship=8105 hull=133:Stealth Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.0149->0.0000 killed=True",
+      "[station-damage] t=1385.55 side=1 station=9189:Tactical attackerSide=0 ship=8112 hull=420:Stealth Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.2446->0.0000 killed=True"
+    ],
+    "targets": [
+      {
+        "side": 1,
+        "targetStation": 4328,
+        "targetSide": 0,
+        "targetSector": 1050,
+        "targetKilledAt": 213.0462414
+      },
+      {
+        "side": 0,
+        "targetStation": 9189,
+        "targetSide": 1,
+        "targetSector": 1051,
+        "targetKilledAt": 232.59603639999997
+      }
+    ],
+    "firstTrigger": "[finale] trigger sides=[0,1] at t=31s: side 0 combat=15 relaunched=3 share=0.20 kills=3; side 1 combat=15 relaunched=4 share=0.27 kills=7 recentKills=10",
+    "armedOwnClientSamples": [
+      29,
+      40
+    ],
+    "transitToTargetSectorWallSeconds": [
+      [
+        90.03,
+        150.05,
+        120.04,
+        90.03
+      ],
+      [
+        90.03,
+        90.03,
+        90.03,
+        90.03,
+        90.03,
+        150.05,
+        150.05
+      ]
+    ],
+    "peakAssembled": [
+      4,
+      5
+    ],
+    "fleetHullSamples": [
+      {
+        "Scout": 104,
+        "Lt Interceptor": 39,
+        "Stealth Fighter": 2,
+        "Stealth Bomber": 38,
+        "Adv Stl Fighter": 12
+      },
+      {
+        "Scout": 56,
+        "Fighter": 85,
+        "Adv Stl Fighter": 12,
+        "Stealth Bomber": 42
+      }
+    ],
+    "simulationFailures": 0,
+    "limits": "Transit is first sampled armed/undocked pose to first sampled target-sector pose in a life (30s sampling). Arriving before the first sample reads 0. Missing arrivals are censored; no inferred transit duration for them. Hull counts are repeated samples, not unique purchases."
+  },
+  {
+    "source": "rig-window-swapped",
+    "label": "swapped-1",
+    "configuration": {
+      "Scale": 1,
+      "FinaleSeconds": 900,
+      "FinaleMinutes": 0.5,
+      "GameSeconds": 3600
+    },
+    "civs": [
+      3,
+      25
+    ],
+    "stage": "Over",
+    "wallSeconds": 469.284374,
+    "simSeconds": 1786.9499999989225,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 30,
+        "Deaths": 12
+      },
+      {
+        "Id": 1,
+        "Kills": 36,
+        "Deaths": 20
+      }
+    ],
+    "winner": 1,
+    "reason": "The clock has stopped. The winner: Bravo by kills",
+    "commits": [
+      {},
+      {
+        "massed": 1
+      }
+    ],
+    "supersededOrders": [
+      {
+        "5:Warp": 1,
+        "1:Ship": 7
+      },
+      {
+        "5:Warp": 2,
+        "1:Ship": 5
+      }
+    ],
+    "commitEvents": [
+      "[strike] side=1 finale commit required=3 assembled=3 visible=3 loneWolves=0 target=station#4328 sector=1050 goIn=5s wait=12.4s stationHull=1.000 stationShield=1.000 reason=massed"
+    ],
+    "stationKillEvents": [],
+    "targets": [
+      {
+        "side": 1,
+        "targetStation": 4328,
+        "targetSide": 0,
+        "targetSector": 1050,
+        "targetKilledAt": null
+      },
+      {
+        "side": 0,
+        "targetStation": 4329,
+        "targetSide": 1,
+        "targetSector": 1051,
+        "targetKilledAt": null
+      }
+    ],
+    "firstTrigger": "[finale] trigger sides=[0,1] at t=31s: side 0 combat=15 relaunched=10 share=0.67 kills=6; side 1 combat=15 relaunched=9 share=0.60 kills=2 recentKills=8",
+    "armedOwnClientSamples": [
+      39,
+      42
+    ],
+    "transitToTargetSectorWallSeconds": [
+      [
+        149.81
+      ],
+      [
+        90.03,
+        120.05,
+        89.79,
+        89.79,
+        209.84
+      ]
+    ],
+    "peakAssembled": [
+      1,
+      3
+    ],
+    "fleetHullSamples": [
+      {
+        "Scout": 67,
+        "Fighter": 97,
+        "Bomber": 5,
+        "Stealth Bomber": 52,
+        "Adv Stl Fighter": 14,
+        "Guardian": 5
+      },
+      {
+        "Scout": 115,
+        "Lt Interceptor": 45,
+        "Stealth Fighter": 8,
+        "Adv Stl Fighter": 13,
+        "Bomber": 12,
+        "Stealth Bomber": 44,
+        "Interceptor": 3
+      }
+    ],
+    "simulationFailures": 0,
+    "limits": "Transit is first sampled armed/undocked pose to first sampled target-sector pose in a life (30s sampling). Arriving before the first sample reads 0. Missing arrivals are censored; no inferred transit duration for them. Hull counts are repeated samples, not unique purchases."
+  },
+  {
+    "source": "rig-window-swapped",
+    "label": "swapped-2",
+    "configuration": {
+      "Scale": 1,
+      "FinaleSeconds": 900,
+      "FinaleMinutes": 0.5,
+      "GameSeconds": 3600
+    },
+    "civs": [
+      3,
+      25
+    ],
+    "stage": "Over",
+    "wallSeconds": 584.0232399,
+    "simSeconds": 2243.149999999395,
+    "sides": [
+      {
+        "Id": 0,
+        "Kills": 43,
+        "Deaths": 23
+      },
+      {
+        "Id": 1,
+        "Kills": 35,
+        "Deaths": 24
+      }
+    ],
+    "winner": 0,
+    "reason": "The clock has stopped. The winner: Alpha by kills",
+    "commits": [
+      {},
+      {
+        "massed": 1
+      }
+    ],
+    "supersededOrders": [
+      {
+        "1:Station": 2,
+        "3:Ship": 4,
+        "1:Ship": 1
+      },
+      {
+        "1:Ship": 5,
+        "1:Station": 2
+      }
+    ],
+    "commitEvents": [
+      "[strike] side=1 finale commit required=5 assembled=5 visible=4 loneWolves=1 target=station#4328 sector=1050 goIn=5s wait=26.7s stationHull=1.000 stationShield=1.000 reason=massed"
+    ],
+    "stationKillEvents": [
+      "[station-damage] t=1986.55 side=0 station=4328:Garrison attackerSide=1 ship=8127 hull=420:Stealth Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.0222->0.0000 killed=True"
+    ],
+    "targets": [
+      {
+        "side": 1,
+        "targetStation": 4328,
+        "targetSide": 0,
+        "targetSector": 1050,
+        "targetKilledAt": 200.04955060000003
+      },
+      {
+        "side": 0,
+        "targetStation": 4329,
+        "targetSide": 1,
+        "targetSector": 1051,
+        "targetKilledAt": null
+      }
+    ],
+    "firstTrigger": "[finale] trigger sides=[0,1] at t=31s: side 0 combat=15 relaunched=11 share=0.73 kills=2; side 1 combat=15 relaunched=14 share=0.93 kills=0 recentKills=2",
+    "armedOwnClientSamples": [
+      39,
+      39
+    ],
+    "transitToTargetSectorWallSeconds": [
+      [
+        0.0,
+        0.0,
+        90.03,
+        90.03,
+        59.77,
+        59.77
+      ],
+      [
+        60.02,
+        90.03,
+        90.03,
+        60.02,
+        90.03,
+        90.03,
+        149.81
+      ]
+    ],
+    "peakAssembled": [
+      2,
+      5
+    ],
+    "fleetHullSamples": [
+      {
+        "Scout": 81,
+        "Fighter": 116,
+        "Adv Stl Fighter": 25,
+        "Bomber": 15,
+        "Guardian": 10,
+        "Stealth Bomber": 53
+      },
+      {
+        "Scout": 147,
+        "Lt Interceptor": 60,
+        "Stealth Fighter": 7,
+        "Bomber": 14,
+        "Adv Stl Fighter": 26,
+        "Enh Fighter": 1,
+        "Stealth Bomber": 45
+      }
+    ],
+    "simulationFailures": 0,
+    "limits": "Transit is first sampled armed/undocked pose to first sampled target-sector pose in a life (30s sampling). Arriving before the first sample reads 0. Missing arrivals are censored; no inferred transit duration for them. Hull counts are repeated samples, not unique purchases."
+  }
+]
