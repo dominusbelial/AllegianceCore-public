@@ -103,6 +103,15 @@ public sealed partial class Game1
         /// P447, out of scope).</summary>
         public bool RemoteShipDeadReckoning = true;
 
+        /// <summary>P813b — EXPERIMENTAL (default OFF): render REMOTE ships through
+        /// the cubic-Hermite interpolator on one render clock (RemoteShipHermiteInterpolator),
+        /// drawing each ship slightly behind real time at an adaptive delay sized to
+        /// its measured update cadence, instead of the P448b forward extrapolation.
+        /// Client-only <c>--remoteHermite</c> launch flag; when OFF (default) the
+        /// P448b dead-reckoner renders exactly as today. Never sent on the wire.
+        /// The local player's own ship is never affected (own prediction is P447).</summary>
+        public bool RemoteShipHermite = false;
+
         /// <summary>P508 — render the own ship from its local simulation pose (the
         /// client flies its own ship; default <b>ON</b>) vs the raw last
         /// <c>ServerShipUpdate</c> pose. The client-only <c>--noPrediction</c> launch

@@ -81,6 +81,10 @@ bool noDeadReckon = false;
 // prediction stays ON, per LaunchOptions.OwnShipPrediction=true); --noPrediction
 // flips it so the local hull/camera render on the raw last ServerShipUpdate pose.
 bool noPrediction = false;
+// P813b — EXPERIMENTAL client-only enable flag for the cubic-Hermite remote-ship
+// smoother. Default OFF (dead-reckoner stays the render path); --remoteHermite
+// turns it on so remote ships render on a rendered-late, interpolated pose.
+bool wantRemoteHermite = false;
 // P449a — client-only ambient-dust density (native's user `Debris` preference,
 // default 1.0; 0 = off). Mirrors the P378 liveSettings philosophy as a launch
 // setting; never sent on the wire.
@@ -250,6 +254,14 @@ for (int i = 0; i < args.Length; i++)
         // ON vs OFF). Default OFF (prediction stays ON); never sent on the wire (see
         // the task brief / P378 liveSettings philosophy).
         noPrediction = true;
+    }
+    else if (a == "--remoteHermite")
+    {
+        // P813b — EXPERIMENTAL client-only presence flag: enable the cubic-Hermite
+        // remote-ship smoother on one render clock (adaptive per-ship render delay).
+        // Default OFF (the P448b dead-reckoner renders exactly as today); never sent
+        // on the wire.
+        wantRemoteHermite = true;
     }
     else if (a == "--fx" || a.StartsWith("--fx=", StringComparison.Ordinal))
     {
@@ -579,6 +591,9 @@ var opts = new Game1.LaunchOptions
     // P448b — RemoteShipDeadReckoning defaults ON in LaunchOptions; only the
     // explicit --noDeadReckon flag turns it off (see the flag parse above).
     RemoteShipDeadReckoning = benchmark?.Mode != "replay" && !noDeadReckon,
+    // P813b — EXPERIMENTAL; off by default; --remoteHermite enables it. Disabled
+    // during a benchmark replay (like P448b/P447b) so replays stay comparable.
+    RemoteShipHermite = benchmark?.Mode != "replay" && wantRemoteHermite,
     // P447b — OwnShipPrediction defaults ON in LaunchOptions; only the explicit
     // --noPrediction flag turns it off (see the flag parse above).
     OwnShipPrediction = benchmark?.Mode != "replay" && !noPrediction,

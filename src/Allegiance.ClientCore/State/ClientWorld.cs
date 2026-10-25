@@ -374,6 +374,11 @@ public sealed partial class ClientWorld
     // Own-ship prediction is out of scope (P447), so the local ship never gets one.
     private readonly Dictionary<short, Flight.ShipDeadReckoner> _remoteReckoners = new();
 
+    // P813b — per-remote-ship cubic-Hermite interpolators (EXPERIMENTAL, default
+    // OFF). Populated only when <see cref="HermiteRemotes"/> is true; the dead-
+    // reckoner above remains the default render path.
+    private readonly Dictionary<short, Flight.RemoteShipHermiteInterpolator> _remoteHermite = new();
+
     // P448b — rolling re-seed correction-distance statistics: how far the PREVIOUS
     // seed's extrapolation stood from the new authoritative seed when a fresh update
     // arrived. Used to judge (item 4) whether a visual error-decay is warranted.
@@ -1153,6 +1158,7 @@ public sealed partial class ClientWorld
         // so skip maintaining a dead-reckoner per remote ship per heavy update
         // entirely (real per-bot work + GC pressure nobody consumes at 200v200).
         if (!ReckonRemotes) return;
+        FeedRemoteHermite(e);   // P813b — Hermite feed rides every remote pose arrival
         if (e.IsMine)
         {
             _remoteReckoners.Remove(e.ShipId);
@@ -1188,6 +1194,100 @@ public sealed partial class ClientWorld
             _remoteReckoners[shipId] = r;
         }
         return r;
+    }
+
+    // ── P813b: per-remote-ship Hermite interpolation (EXPERIMENTAL, default OFF) ──
+
+    /// <summary>
+    /// P813b — whether to run the cubic-Hermite remote-ship smoother (feed +
+    /// render). DEFAULT FALSE; the dead-reckoner above stays the default render
+    /// path. When off, this dictionary stays empty and <see cref="TryGetHermiteRenderPose"/>
+    /// reports false (the caller falls back to the dead-reckoner, current
+    /// behaviour unchanged). Behind the flag, samples are stamped and queries
+    /// evaluated on the SAME clock — <see cref="RenderNowSeconds"/> — which the
+    /// graphical host sets to its per-frame render clock (Game1._nowSeconds),
+    /// satisfying "one render clock advanced once per frame".
+    /// </summary>
+    public bool HermiteRemotes { get; set; }
+
+    /// <summary>
+    /// P813b — the single render clock (seconds, monotonic) used to stamp
+    /// Hermite samples and to evaluate <see cref="TryGetHermiteRenderPose"/>.
+    /// When null (default), falls back to <see cref="NowSeconds"/> so the
+    /// flag-off path is indistinguishable from current behaviour; the host sets
+    /// it to its per-frame clock when the flag is on.
+    /// </summary>
+    public Func<double>? RenderNowSeconds { get; set; }
+
+    private double HermiteNow() => RenderNowSeconds?.Invoke() ?? NowSeconds();
+
+    /// <summary>
+    /// P813b — feed one received remote state into the per-ship Hermite
+    /// interpolator, anchored at the shared render clock. No hull resolution is
+    /// needed (Hermite only uses position/velocity/orientation, all on the
+    /// wire), so this runs for every remote pose arrival regardless of the
+    /// hull-catalogue resolver. Own ships are dropped (own-ship prediction is
+    /// P447, out of scope). A no-op when <see cref="HermiteRemotes"/> is false.
+    /// </summary>
+    private void FeedRemoteHermite(ShipEntity e)
+    {
+        if (!HermiteRemotes) return;
+        if (e.IsMine) { _remoteHermite.Remove(e.ShipId); return; }
+        if (e.Latest is not { } up) return;
+        var h = GetHermite(e.ShipId);
+        h.Feed(up.Position, up.Velocity, up.Orientation, HermiteNow());
+    }
+
+    private Flight.RemoteShipHermiteInterpolator GetHermite(short shipId)
+    {
+        if (!_remoteHermite.TryGetValue(shipId, out var h))
+        {
+            h = new Flight.RemoteShipHermiteInterpolator();
+            _remoteHermite[shipId] = h;
+        }
+        return h;
+    }
+
+    private void DropRemoteHermite(short shipId) => _remoteHermite.Remove(shipId);
+
+    /// <summary>
+    /// P813b — bounded telemetry for the experimental smoother: the number of
+    /// active Hermite-interpolated remote ships and the mean/min/max render
+    /// delay (seconds) across them. The host logs this on a throttle so the rig
+    /// can confirm the adaptive delay is engaging per ship. Safe under the world
+    /// gate; allocates nothing in the hot path.
+    /// </summary>
+    public (int Count, double MeanDelay, double MinDelay, double MaxDelay) TakeHermiteStats()
+    {
+        if (!HermiteRemotes || _remoteHermite.Count == 0)
+            return (0, 0d, 0d, 0d);
+        double sum = 0, min = double.MaxValue, max = double.MinValue;
+        foreach (var h in _remoteHermite.Values)
+        {
+            double d = h.RenderDelay;
+            sum += d;
+            if (d < min) min = d;
+            if (d > max) max = d;
+        }
+        int n = _remoteHermite.Count;
+        return (n, sum / n, min, max);
+    }
+
+    /// <summary>
+    /// P813b — the smoothed Hermite render pose for a remote ship at render time
+    /// <paramref name="now"/> (same clock as the feed). Returns false when there
+    /// are not yet two bracketing samples or when <paramref name="now"/> is past
+    /// the newest sample (a stalled stream) — the caller then falls back to the
+    /// dead-reckoner / raw extrapolation, i.e. extrapolation only happens past
+    /// the newest sample, never inside the buffered window.
+    /// </summary>
+    public bool TryGetHermiteRenderPose(int shipId, double now, out Vector3 position, out Orientation orientation)
+    {
+        position = default;
+        orientation = null!;
+        if (!HermiteRemotes) return false;
+        if (!_remoteHermite.TryGetValue((short)shipId, out var h)) return false;
+        return h.TryGetPose(now, out position, out orientation);
     }
 
     /// <summary>P448b — the accumulated re-seed correction-distance statistics (count,
@@ -4099,6 +4199,7 @@ public sealed partial class ClientWorld
             e.IsDead = false;
             e.NewContactSounded = false;
             _remoteReckoners.Remove(id);
+            DropRemoteHermite(id);   // P813b
         }
     }
 
@@ -4466,6 +4567,7 @@ public sealed partial class ClientWorld
             // P448b — a dead ship stops being dead-reckoned (its extrapolation would walk
             // a corpse onward); a recycled id re-seeds fresh when/if it comes back.
             _remoteReckoners.Remove(m.ShipId);
+            DropRemoteHermite(m.ShipId);   // P813b
 
             // P760b — enqueue the kill for the game thread's native-style
             // retargeting (trekigc.cpp:2934-2974). Never raised inline: this
@@ -4767,6 +4869,7 @@ public sealed partial class ClientWorld
         // P448b — a ship that left view (warped/docked/logged off) stops being
         // dead-reckoned; if it returns, the next pose update re-seeds fresh.
         _remoteReckoners.Remove(m.ShipId);
+        DropRemoteHermite(m.ShipId);   // P813b
         // P373 — a ship that leaves view resets its first-sighting latch so a
         // later return (undock / warp-back / re-export) cues as a FRESH sighting.
         e.NewContactSounded = false;
@@ -4790,6 +4893,7 @@ public sealed partial class ClientWorld
         ship.IsGone = true;
         ship.NewContactSounded = false;
         _remoteReckoners.Remove(ship.ShipId);
+        DropRemoteHermite(ship.ShipId);   // P813b
     }
 
     private void ClearSectorEffects()

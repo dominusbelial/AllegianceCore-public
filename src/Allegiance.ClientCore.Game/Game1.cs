@@ -631,11 +631,20 @@ public sealed partial class Game1 : Game
     // touches the wire; own-ship posing is always raw (P447).
     private bool _remoteShipDeadReckoning;
 
+    // P813b — the EXPERIMENTAL cubic-Hermite remote-ship smoother. Default OFF;
+    // --remoteHermite turns it on so remote ships render on a rendered-late,
+    // Hermite-interpolated pose (per-ship adaptive delay on one render clock)
+    // instead of the P448b forward extrapolation. Never touches the wire.
+    private bool _remoteShipHermite;
+
     // P448b — wall-clock (seconds) the re-seed correction statistics were last logged;
     // the pose gather polls ClientWorld.TakeRemoteCorrectionStats every interval so the
     // typical re-seed jump is observable live (and, if it proved visibly large, a
     // decision on item 4's error-decay is data-backed).
     private double _remoteCorrectionLoggedAt;
+
+    // P813b — throttle for the [P813b] hermite telemetry line (logged every ~2 s).
+    private double _hermiteTelemetryAt;
 
     // P508 — the own-ship local simulation (replaces the P447b OwnShipPredictionTransport).
     // The client flies its own ship locally and reports the pose to the server; the
@@ -1674,6 +1683,17 @@ public sealed partial class Game1 : Game
         _remoteShipDeadReckoning = opts.RemoteShipDeadReckoning;
         if (!_remoteShipDeadReckoning)
             Console.WriteLine("[client] --noDeadReckon: remote ships rendered on RAW poses (P448b dead-reckoner OFF)");
+        // P813b — the EXPERIMENTAL Hermite smoother (default OFF). When on, the
+        // per-remote-ship interpolator feeds on the single per-frame render clock
+        // (_nowSeconds) and remote ships render on the smoothed, rendered-late pose;
+        // off keeps the P448b dead-reckoner exactly as-is.
+        _remoteShipHermite = opts.RemoteShipHermite;
+        if (_remoteShipHermite)
+        {
+            _session.World.HermiteRemotes = true;
+            _session.World.RenderNowSeconds = () => _nowSeconds;
+            Console.WriteLine("[client] --remoteHermite: remote ships smoothed via cubic Hermite on the render clock (P813b EXPERIMENTAL)");
+        }
         // P508 — a client-only DEBUG switch (default ON): render the local simulated
         // pose vs the raw last ServerShipUpdate pose. The local simulation ALWAYS runs
         // and drives the native SHIP_UPDATE either way; --noPrediction only switches

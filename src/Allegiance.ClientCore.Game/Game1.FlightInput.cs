@@ -2832,6 +2832,18 @@ public sealed partial class Game1
                 if (cnt > 0)
                     Console.WriteLine($"[P448b] dead-reckon re-seed corrections: n={cnt} mean={mean:0.000}m max={mx:0.000}m");
             }
+
+            // P813b — bounded telemetry for the EXPERIMENTAL smoother: how many
+            // remote ships are being Hermite-smoothed and the adaptive render
+            // delay (s) across them, so the rig can confirm the per-cadence
+            // delay engages. Same ~2 s throttle; cheap fixed-size read.
+            if (_remoteShipHermite && _nowSeconds - _hermiteTelemetryAt >= 2.0)
+            {
+                _hermiteTelemetryAt = _nowSeconds;
+                var (hc, hMean, hMin, hMax) = world.TakeHermiteStats();
+                if (hc > 0)
+                    Console.WriteLine($"[P813b] hermite smoothing: ships={hc} delay(mean/min/max)={hMean:0.000}/{hMin:0.000}/{hMax:0.000}s");
+            }
         }
 
     }
@@ -2914,6 +2926,17 @@ public sealed partial class Game1
         // cache; the per-ship client state is cleared by ABORTED / KILL_SHIP /
         // SHIP_DELETE / reset and expires through RipcordLeadup's safety grace.
         bool ripcording = RemoteShipRipcording(world, id, ship);
+        // P813b — the EXPERIMENTAL Hermite smoother (default OFF). When on, render
+        // the ship on the smoothed, rendered-late pose sampled on the single render
+        // clock (_nowSeconds). If the interpolator cannot yet (too few samples, or
+        // the render instant has fallen past the newest sample = a stalled stream),
+        // fall through to the default P448b dead-reckoner extrapolation — i.e.
+        // extrapolation only happens past the newest sample.
+        if (_remoteShipHermite &&
+            world.TryGetHermiteRenderPose(id, _nowSeconds, out var hPos, out var hOri))
+        {
+            return new Flight.PredictedPose(hPos, hOri);
+        }
         if (_remoteShipDeadReckoning &&
             world.TryGetRenderPose(id, ClientNowMilliseconds / 1000.0, out var pos, out var ori, ripcording))
         {

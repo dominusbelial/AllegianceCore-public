@@ -2803,3 +2803,5 @@ passed the parking bound. Unchanged starting revision
 was transient under this host load; it was **not reproduced on the baseline**.
 See [all parking summaries](reports/P817_assets/parking.json) and the report
 for which build the closing series covered.
+| 2026-10-25 | P775PlayerInfoMomentsTests.Side_switch_sends_no_playerinfo | fast tier on the P813b gate: "Bee: no ship assignment" (live seat wait) | 3/3 alone; P813b is client-only and flag-off — load flake |
+| 2026-10-25 | P660NextMatchLiveTests.Late_game_over_rebuild_ready_countdown_started_has_no_clock_jump(enabled: False, dilation: off) | fast tier on the P813b gate | 3/3 alone; live next-match timing under suite load |
