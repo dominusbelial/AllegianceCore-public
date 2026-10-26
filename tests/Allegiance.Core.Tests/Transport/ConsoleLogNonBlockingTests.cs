@@ -252,4 +252,85 @@ public sealed class ConsoleLogNonBlockingTests
             ConsoleLog.ResetForTest();
         }
     }
+
+    /// <summary>A sink that checks every emitted line is one whole line written by one
+    /// caller (no interleaving, no torn halves). Thread-safe: the drain thread writes.</summary>
+    private sealed class LineCheckingWriter : TextWriter
+    {
+        private readonly object _gate = new();
+        public long Lines, Torn;
+        public string? FirstTorn;
+        public override Encoding Encoding => Encoding.UTF8;
+        public override void WriteLine(string? value)
+        {
+            bool ok = value is { Length: 64 } && (value.StartsWith("OUT-") || value.StartsWith("ERR-"))
+                && value.AsSpan(4).IndexOfAnyExcept(value[0] == 'O' ? 'o' : 'e') < 0;
+            lock (_gate)
+            {
+                Lines++;
+                if (!ok) { Torn++; FirstTorn ??= value; }
+            }
+        }
+        public override void Write(string? value) => WriteLine(value);
+    }
+
+    /// <summary>
+    /// P829 — <see cref="ConsoleLog.Install"/> puts ONE queued writer behind both
+    /// <c>Console.Out</c> and <c>Console.Error</c>; .NET's per-stream <c>SyncTextWriter</c>
+    /// locks do not serialise the two, so concurrent stdout + stderr writers must not tear
+    /// the shared partial-line buffer. On master this threw
+    /// <c>ArgumentOutOfRangeException ('chunkLength')</c> from <c>StringBuilder.ToString</c>
+    /// (it killed a rig bot worker: stall-watchdog stderr vs bot stdout) or emitted torn lines.
+    /// </summary>
+    [Fact]
+    [Trait("Tier", "Live")]
+    public void Installed_concurrent_stdout_and_stderr_writers_never_tear_lines()
+    {
+        var originalOut = Console.Out;
+        var originalError = Console.Error;
+        ConsoleLog.Verbose = false;
+        var sink = new LineCheckingWriter();
+        Exception? failure = null;
+        try
+        {
+            ConsoleLog.Install();
+            ConsoleLog.PointSinkForTest(sink);
+            string outLine = "OUT-" + new string('o', 60), errLine = "ERR-" + new string('e', 60);
+            const int PerThread = 100_000;
+            void Hammer(Func<TextWriter> stream, string line)
+            {
+                try
+                {
+                    var w = stream();
+                    for (int i = 0; i < PerThread; i++)
+                    {
+                        // Mix the single-call TextWriter overloads real callers use (a line
+                        // split across several calls by its caller can interleave on any console).
+                        switch (i & 3)
+                        {
+                            case 0: w.WriteLine(line); break;
+                            case 1: w.Write(line + "\n"); break;
+                            case 2: w.WriteLine(line.ToCharArray()); break;
+                            default: w.WriteLine($"{line}"); break;
+                        }
+                    }
+                }
+                catch (Exception ex) { Interlocked.CompareExchange(ref failure, ex, null); }
+            }
+            var a = new Thread(() => Hammer(() => Console.Out, outLine));
+            var b = new Thread(() => Hammer(() => Console.Error, errLine));
+            a.Start(); b.Start(); a.Join(); b.Join();
+            ConsoleLog.Flush();
+        }
+        finally
+        {
+            ConsoleLog.Uninstall();
+            Console.SetOut(originalOut);
+            Console.SetError(originalError);
+            ConsoleLog.ResetForTest();
+        }
+        Assert.Null(failure);
+        Assert.True(sink.Lines > 0, "nothing reached the sink");
+        Assert.True(sink.Torn == 0, $"{sink.Torn}/{sink.Lines} torn lines, first: '{sink.FirstTorn}'");
+    }
 }

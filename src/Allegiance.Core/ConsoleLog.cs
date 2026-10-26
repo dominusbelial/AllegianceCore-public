@@ -68,8 +68,14 @@ public static class ConsoleLog
         _installed = true;
         var w = new QueuedConsoleWriter(_queue, Console.Out);
         _writer = w;
-        Console.SetOut(w);
-        Console.SetError(w);
+        // P829 — ONE synchronised wrapper for both streams. Console.SetOut/SetError
+        // wrap a plain writer separately (two SyncTextWriters, two locks), and
+        // TextWriter.WriteLine(string) is Write(value) + Write(newline): with two
+        // locks a stdout and a stderr line interleave mid-line. Synchronized() of an
+        // already-synchronised writer returns it as is, so both streams share a lock.
+        var shared = TextWriter.Synchronized(w);
+        Console.SetOut(shared);
+        Console.SetError(shared);
     }
 
     /// <summary>P619c — undo <see cref="Install"/>: restore the original
@@ -218,10 +224,18 @@ public static class ConsoleLog
     /// (never blocks the caller). Partial lines (a Write without a trailing
     /// newline) are buffered until the next newline or <see cref="Flush"/>.
     /// </summary>
+    /// <para>P829 — this ONE instance sits behind both <c>Console.Out</c> and
+    /// <c>Console.Error</c>. <see cref="Install"/> now shares one synchronised wrapper
+    /// between them; the partial-line buffer is also guarded by the writer's own lock so
+    /// no caller path (a direct <c>SetOut</c> of this writer, a test seam) can tear it:
+    /// unguarded, a bot host's stall-watchdog thread (stderr) racing bot logging
+    /// (stdout) corrupted the <c>StringBuilder</c> and killed the process with
+    /// <c>ArgumentOutOfRangeException ('chunkLength')</c> (rig batch 35, 2026-10-26).</para>
     private sealed class QueuedConsoleWriter : TextWriter
     {
         private readonly BlockingCollection<string> _queue;
         private readonly StringBuilder _buf = new();
+        private readonly object _gate = new();
         public TextWriter Passthrough;
 
         public QueuedConsoleWriter(BlockingCollection<string> queue, TextWriter passthrough)
@@ -243,6 +257,11 @@ public static class ConsoleLog
         public override void Write(string? value)
         {
             if (value is null) return;
+            lock (_gate) WriteLocked(value);
+        }
+
+        private void WriteLocked(string value)
+        {
             int start = 0;
             for (int i = 0; i < value.Length; i++)
             {
@@ -260,11 +279,19 @@ public static class ConsoleLog
 
         public override void Write(char value)
         {
-            if (value == '\n') Emit();
-            else if (value != '\r') _buf.Append(value);
+            lock (_gate)
+            {
+                if (value == '\n') Emit();
+                else if (value != '\r') _buf.Append(value);
+            }
         }
 
         public override void Write(char[] buffer, int index, int count)
+        {
+            lock (_gate) WriteLocked(buffer, index, count);
+        }
+
+        private void WriteLocked(char[] buffer, int index, int count)
         {
             int segStart = index;
             for (int i = index; i < index + count; i++)
@@ -281,14 +308,16 @@ public static class ConsoleLog
 
         public override void Write(ReadOnlySpan<char> buffer)
         {
-            for (int i = 0; i < buffer.Length; i++) Write(buffer[i]);
+            lock (_gate)
+                for (int i = 0; i < buffer.Length; i++) Write(buffer[i]);
         }
 
         public override void WriteLine() => Write('\n');
 
         public override void Flush()
         {
-            if (_buf.Length > 0) Emit();   // push any trailing unterminated line
+            lock (_gate)
+                if (_buf.Length > 0) Emit();   // push any trailing unterminated line
         }
     }
 }
