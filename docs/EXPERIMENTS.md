@@ -21,7 +21,7 @@ launches the client, and waits until you close the client. Then it **records the
 | `experiment-telemetry.log` | the server's `[boot]`, `[update-age]`, `[reliable]`, `[reconnect]`, `[gunner]` lines |
 | `stack-logs/` | full server, lobby and bot logs |
 | `client.out` | the client log |
-| `flight.webm` | screen recording, with `--video` (GNOME Shell screencast) |
+| `flight.mp4` | game-window recording, with `--video` (`scripts/record-window.py`: portal window capture, GPU HEVC; no desktop) |
 | `notes.md` | your impressions and verdict |
 
 and appends a row to [`docs/experiments/FLIGHT_LOG.md`](experiments/FLIGHT_LOG.md) (verdict `_pending_` until filled in).

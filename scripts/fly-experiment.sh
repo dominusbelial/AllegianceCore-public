@@ -17,7 +17,7 @@
 #   --bots <N>        bots per side via the MCP driver (default 6; gunners/gotoplan want some)
 #   --map <file>      map file (default m2xspiderw.igc)
 #   --map-gen <TYPE> --map-seed <N>   generated map instead (reproducible with the seed)
-#   --video           also record the screen (GNOME Shell screencast, .webm in the run folder)
+#   --video           also record the game window (scripts/record-window.py, flight.mp4 in the run folder)
 #   --no-build        reuse existing Release binaries
 #
 # Flow: writes the run folder .scratch/experiments/<UTC time>-<experiment>/ (git-ignored), starts the dev stack
@@ -118,21 +118,26 @@ fi
 
 PERF="${XDG_CONFIG_HOME:-$HOME/.config}/AllegianceCore/session-performance.json"
 START_EPOCH=$(date +%s)
-if [ "$VIDEO" -eq 1 ]; then
-  gdbus call --session --dest org.gnome.Shell.Screencast --object-path /org/gnome/Shell/Screencast \
-    --method org.gnome.Shell.Screencast.Screencast "$RUN/flight" "{}" > "$RUN/video.log" 2>&1 \
-    && echo "[fly] recording the screen to $RUN/flight.webm" || echo "[fly] screen recording unavailable (see video.log)"
-fi
-
 echo "[fly] launching the client — fly, then close the client window to finish and record the flight"
 export ALLEGIANCE_ARTWORK_PATH="$ART"
 DISPLAY="${DISPLAY:-:0}" WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}" \
-  "$CLIENT_EXE" 127.0.0.1 6073 "pilot" --auto-ready --window 1280x720 $CLIENT_ARGS > "$RUN/client.out" 2>&1
+  "$CLIENT_EXE" 127.0.0.1 6073 "pilot" --auto-ready --window 1280x720 $CLIENT_ARGS > "$RUN/client.out" 2>&1 &
+CLIENT_PID=$!
+REC_PID=""
+if [ "$VIDEO" -eq 1 ]; then
+  # Game window only, at its own pixels, encoded on the GPU (scripts/record-window.py: desktop portal window capture
+  # -> PipeWire -> VA-API HEVC). The window must exist before the portal picker can offer it; the first run asks you
+  # to pick it, later runs reuse the saved choice when GNOME can match the window.
+  sleep 8
+  python3 "$REPO/scripts/record-window.py" "$RUN/flight.mp4" > "$RUN/video.log" 2>&1 &
+  REC_PID=$!
+  echo "[fly] recording the game window to $RUN/flight.mp4 (pick the client window if GNOME asks)"
+fi
+wait "$CLIENT_PID"
 CLIENT_RC=$?
 
 # Collect the recording.
-[ "$VIDEO" -eq 1 ] && gdbus call --session --dest org.gnome.Shell.Screencast --object-path /org/gnome/Shell/Screencast \
-  --method org.gnome.Shell.Screencast.StopScreencast >> "$RUN/video.log" 2>&1
+if [ -n "$REC_PID" ]; then kill -TERM "$REC_PID" 2>/dev/null; wait "$REC_PID"; fi   # EOS -> finalised MP4
 if [ -f "$PERF" ] && [ "$(stat -c %Y "$PERF")" -ge "$START_EPOCH" ]; then
   cp "$PERF" "$RUN/session-performance.json"
 else
