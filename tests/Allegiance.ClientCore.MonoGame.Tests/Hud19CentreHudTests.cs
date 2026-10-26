@@ -119,14 +119,16 @@ public class Hud19CentreHudTests
     {
         // Native Graphics Options "Joystick Indicator: On/Off" (WinTrek.cpp:4507,
         // :4526). P805 (row 470) added the Center HUD / Target HUD / Chat History
-        // rows, so the row count is 16 now (13 → 16 with Up/Down wrap).
+        // rows (13 → 16) and P828 added the three radar label declutter rows
+        // (16 → 19), so Up/Down wrap on GraphicsRowCount = 19.
         var gpu = Src("Game1.GpuBudget.cs");
         Assert.Contains("\"Joystick indicator: ", gpu);
-        Assert.Contains("% 16", gpu);
+        Assert.Contains("GraphicsRowCount = 19", gpu);
         Assert.Contains("case 12: _hudSettings.ShowJoystickIndicator", gpu);
         Assert.Contains("case 13: _hudSettings.ShowCenterHud", gpu);
         Assert.Contains("case 14: _hudSettings.ShowTargetHud", gpu);
         Assert.Contains("case 15: _chatHistoryVisible", gpu);
+        Assert.Contains("case 16: _hudSettings.RadarDeclutter", gpu);
 
         // Live reflection: the row toggles the setting (and it round-trips).
         const BindingFlags f = BindingFlags.Instance | BindingFlags.NonPublic;

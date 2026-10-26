@@ -4009,6 +4009,13 @@ public sealed partial class Game1
                     objectRadius, (worldPos - cameraEye).Length(), w, h, proj.M22,
                     site.Point.X, site.Point.Y);
 
+            // P828 — the contact's real distance from the RENDER CAMERA eye (not
+            // the own-ship centre distance the range line prints). Only the
+            // Modern-HUD radar label declutter reads it: the distance fade and the
+            // nearest-N order must follow the camera the player is looking through
+            // (chase/external cameras sit away from the own ship).
+            float CameraRange(Vector3 worldPos) => (worldPos - cameraEye).Length();
+
             // HUD-16 — the native radar icon surface for each contact
             // (pmodel->GetIcon(), radarimage.cpp:591-593), resolved from the
             // core's per-type iconName through the once-built cache, exactly
@@ -4085,7 +4092,8 @@ public sealed partial class Game1
                         ClipSeparation: LodSeparation(0f, ownRadius),
                         ScreenRadius: ownBracket.ScreenRadius,
                         DistanceToEdge: ownBracket.DistanceToEdge,
-                        IconStem: iconNames?.Ship(ownEnt.HullId)));
+                        IconStem: iconNames?.Ship(ownEnt.HullId),
+                        CameraDistance: CameraRange(ownXna)));
                 }
             }
 
@@ -4180,7 +4188,8 @@ public sealed partial class Game1
                     ClipSeparation: LodSeparation(separation, HullLength(ship.HullId) * 0.5f),
                     ScreenRadius: shipBracket.ScreenRadius,
                     DistanceToEdge: shipBracket.DistanceToEdge,
-                    IconStem: iconNames?.Ship(ship.HullId)));
+                    IconStem: iconNames?.Ship(ship.HullId),
+                    CameraDistance: CameraRange(shipXna)));
                 // P372 — the in-world hull "team tag": drawn only for ON-SCREEN
                 // ships (an off-screen ship's edge-clamped bracket already
                 // carries its side colour), always in the contact's real side
@@ -4231,7 +4240,8 @@ public sealed partial class Game1
                     ClipSeparation: LodSeparation(centre, objectRadius),
                     ScreenRadius: stationBracket.ScreenRadius,
                     DistanceToEdge: stationBracket.DistanceToEdge,
-                    IconStem: iconNames?.Station(st.StationTypeId)));
+                    IconStem: iconNames?.Station(st.StationTypeId),
+                    CameraDistance: CameraRange(stationXna)));
             }
 
             // Warps in my sector.
@@ -4263,7 +4273,8 @@ public sealed partial class Game1
                     DistanceToEdge: warpBracket.DistanceToEdge,
                     // Native warp icon = the map's warpDef.iconName, which the
                     // wire's DataWarpIGC carries (warpIGC.cpp:34).
-                    IconStem: iconNames?.Warp(wp.IconName)));
+                    IconStem: iconNames?.Warp(wp.IconName),
+                    CameraDistance: CameraRange(warpXna)));
             }
 
             // Missiles — outside All only missiles aimed at the player's own side
@@ -4314,7 +4325,8 @@ public sealed partial class Game1
                     DistanceToEdge: missileBracket.DistanceToEdge,
                     // Native missile icon = dataMissileType->iconName
                     // (missileigc.cpp:50,60), keyed by the wire's type id.
-                    IconStem: iconNames?.Missile(ms.TypeId)));
+                    IconStem: iconNames?.Missile(ms.TypeId),
+                    CameraDistance: CameraRange(missileXna)));
             }
 
             // Probes in my sector.
@@ -4365,7 +4377,8 @@ public sealed partial class Game1
                     ClipSeparation: LodSeparation(centre, objectRadius),
                     ScreenRadius: probeBracket.ScreenRadius,
                     DistanceToEdge: probeBracket.DistanceToEdge,
-                    IconStem: iconNames?.Probe(pb.ProbetypeId)));
+                    IconStem: iconNames?.Probe(pb.ProbetypeId),
+                    CameraDistance: CameraRange(probeXna)));
             }
 
             // Mines in my sector.
@@ -4408,7 +4421,8 @@ public sealed partial class Game1
                     ClipSeparation: LodSeparation(centre, objectRadius),
                     ScreenRadius: mineBracket.ScreenRadius,
                     DistanceToEdge: mineBracket.DistanceToEdge,
-                    IconStem: iconNames?.Mine(mine.MinetypeId)));
+                    IconStem: iconNames?.Mine(mine.MinetypeId),
+                    CameraDistance: CameraRange(mineXna)));
             }
 
             // HUD-4b — resolve the own loadout/hull once per frame so every
@@ -4520,7 +4534,8 @@ public sealed partial class Game1
                     DistanceToEdge: treasureBracket.DistanceToEdge,
                     // Native treasure icon = the treasure model's own icon, with
                     // the useful-tech override to icontechbmp (radarimage.cpp:719,890).
-                    IconStem: iconNames?.Treasure(te.Code, te.PayloadId, isTech)));
+                    IconStem: iconNames?.Treasure(te.Code, te.PayloadId, isTech),
+                    CameraDistance: CameraRange(treasureXna)));
             }
 
             // Asteroids — native ordinary-rock LOD (radarimage.cpp:903-930) plus
@@ -4570,7 +4585,8 @@ public sealed partial class Game1
                     DistanceToEdge: asteroidBracket.DistanceToEdge,
                     // Native asteroid icon = AsteroidDef.iconName, carried by the
                     // wire's DataAsteroidIGC.IconName (asteroidigc.cpp:35).
-                    IconStem: iconNames?.Asteroid(ast.IconName)));
+                    IconStem: iconNames?.Asteroid(ast.IconName),
+                    CameraDistance: CameraRange(asteroidXna)));
             }
 
             // HUD-5b — opt-in evidence line for the frame (see _radarProofEnabled).

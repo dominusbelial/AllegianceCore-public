@@ -4,6 +4,18 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P828 verification observation (2026-10-25) — P699HumanPodHomeLiveTests on the dispatch base
+
+`P699HumanPodHomeLiveTests.Human_eject_autopilot_flies_two_jumps_and_docks_without_oxygen_respawn`
+(both `timeScale` cases) fails **2/2 on the pristine dispatch base `ac932657`**
+(a clean `git worktree` of HEAD, only `ALLEGIANCE_ARTWORK_PATH` set; the test
+*skips* without artwork) at `AutopilotControls` — `Assert.True` on
+`TryGetAutopilotControls`. It is not touched by P828 (a Modern-HUD radar-label
+visual option) and fails identically with and without P828's changes, so it is a
+base failure for whoever owns pod autopilot, not a P828 regression and not a
+flake. The same full MonoGame run had 3 503 passed / 3 failed / 3 skipped, those
+being the only failures.
+
 ## P788c verification observations (2026-10-25)
 
 - `BroadcastSnapshotTests.Recorded_ticks_have_identical_per_peer_bytes_order_and_lanes`:

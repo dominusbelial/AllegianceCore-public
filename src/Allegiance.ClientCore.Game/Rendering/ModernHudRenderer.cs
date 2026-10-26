@@ -58,6 +58,11 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     protected override bool DeferWarpFlash => true;
     protected override bool UsesModernGauges => true;
     protected override float TextScale => _scale;
+    /// <summary>P828 — Modern runs the radar label declutter by default
+    /// (<see cref="HudSettings.RadarDeclutterOn"/>: on for Modern, off for
+    /// Classic), resolved live from the shared settings instance so the options
+    /// menu row takes effect without recreating the renderer.</summary>
+    protected override RadarLabelDeclutterOptions RadarDeclutterPlan => _settings.RadarLabelPlan(TextScale);
     // FONT-1 — Modern deliberately keeps its own SDF small/big fonts for every
     // native identity (mapping lgBoldVerdana to _big, everything else to _small)
     // at its own TextScale, so its rendering is unchanged by the classic skin's

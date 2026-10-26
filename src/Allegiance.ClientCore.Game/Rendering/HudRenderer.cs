@@ -533,6 +533,11 @@ public class HudRenderer
     // HUD-5b — per-contact cache for the resolved radar labels and their
     // formatted lines (no per-frame string/array allocation at 107v107).
     private readonly RadarLabelCache _radarLabels = new();
+    // P828 — the Modern-HUD radar label selection (reused every frame: its
+    // scratch arrays and tag lists are grown once, then cleared in place).
+    private readonly RadarLabelDeclutter _radarDeclutter = new();
+    private string? _radarTelemetryText;
+    private int _radarTelemetryFrame;
     protected virtual float TextScale => 1;
     /// <summary>
     /// FONT-1 — the font+scale a classic-HUD text site uses for a native font
@@ -739,6 +744,13 @@ public class HudRenderer
     /// draws the resolved block and records its measured bounds for the overlap
     /// check. Text routes through <see cref="RenderText"/> so Modern uses its SDF
     /// atlas while Classic keeps the bitmap font.
+    ///
+    /// <para>P828 — <see cref="RadarDeclutterPlan"/> decides whether this is the
+    /// native loop (Classic, or Modern with the option off: every allowed label,
+    /// alpha 1, no tags) or the decluttered one (Modern default: priority + N
+    /// nearest labels, distance fade, overlap count tags). The selector never
+    /// invents or hides an ALLOWED label: it resolves each contact through the
+    /// same native label cache first (<see cref="RadarLabelModel"/>).</para>
     /// </summary>
     protected virtual void DrawRadarLabels(HudModel model, Viewport viewport)
     {
@@ -746,19 +758,81 @@ public class HudRenderer
         float scale = TextScale;
         var centre = new Vector2(viewport.Width / 2f, viewport.Height / 2f);
         var contacts = model.Context.Contacts;
+        var plan = RadarDeclutterPlan;
+        _radarDeclutter.Select(contacts, model.Context.RadarMode, model.Context.CommandView, plan, _radarLabels);
         for (int i = 0; i < contacts.Count; i++)
         {
             var contact = contacts[i];
             // Overlay-bracket rows are drawn by the shared RadarBracketRenderer;
             // record them here so Modern's coverage check sees the model-driven
-            // brackets as well as the label block below.
+            // brackets as well as the label block below. Brackets/icons are never
+            // decluttered — only the label block is.
             MarkRadarBrackets(contact);
+            if (!_radarDeclutter.IsLabelled(i)) continue;
             // HUD-5b — the label block (and every string in it) is cached per
             // contact slot and rebuilt only when the label inputs change.
             var view = _radarLabels.Resolve(i, contact, model.Context.RadarMode, model.Context.CommandView);
             if (view.Label is not { } label) continue;
-            DrawRadarLabelBlock(contact, label, view, centre, scale);
+            DrawRadarLabelBlock(contact, label, view, centre, scale, _radarDeclutter.Alpha(i));
         }
+        if (!plan.Enabled) return;
+        DrawRadarMergeTags(scale);
+        if (plan.Telemetry) DrawRadarDeclutterTelemetry(viewport, scale);
+    }
+
+    /// <summary>P828 — the radar label declutter plan for this frame. Classic
+    /// (this class) is exactly native, so it is inert; <see cref="ModernHudRenderer"/>
+    /// overrides it from <see cref="HudSettings.RadarLabelPlan"/>. Virtual rather
+    /// than a constructor flag so a settings-panel change applies live to both
+    /// skins (the P805b lesson).</summary>
+    protected virtual RadarLabelDeclutterOptions RadarDeclutterPlan => RadarLabelDeclutterOptions.Off;
+
+    /// <summary>P828 — one compact count tag per collapsed label cluster. Drawn
+    /// after the label blocks so <see cref="HudTextLayout.PlaceBlock"/> keeps the
+    /// tags clear of the labels that survived; the tag text comes from the
+    /// allocation-free count cache.</summary>
+    private void DrawRadarMergeTags(float scale)
+    {
+        var tags = _radarDeclutter.Tags;
+        if (tags.Count == 0) return;
+        var radarFont = NativeFontAt(NativeFont.SmallFont);
+        for (int i = 0; i < tags.Count; i++)
+        {
+            var tag = tags[i];
+            var text = RadarLabelDeclutter.CountTag(tag.Count);
+            var size = radarFont.MeasureString(text) * scale;
+            var desired = new Rectangle(
+                (int)MathF.Round(tag.Point.X - size.X / 2f),
+                (int)MathF.Round(tag.Point.Y - size.Y / 2f),
+                Math.Max(1, (int)MathF.Ceiling(size.X) + 6),
+                Math.Max(1, (int)MathF.Ceiling(size.Y) + 2));
+            var placed = Layout.PlaceBlock(text, desired);
+            float alpha = Math.Clamp(tag.Alpha, 0f, 1f);
+            // Side colour (native per-side label colour) — two tags in one cell
+            // keep the two sides readable apart; the fallback is the HUD text tone.
+            var colour = tag.SideColor is { } side ? new Color(side.R, side.G, side.B, side.A) : TextMain;
+            FillRect(placed.X, placed.Y, placed.Width, placed.Height, Color.Black * (.58f * alpha));
+            RenderText(radarFont, text, new Vector2(placed.X + 3f, placed.Y + 1f), colour * alpha, scale);
+        }
+        // A count tag IS the label for those contacts, so the coverage report
+        // still sees the native label row as present in a crowded frame.
+        ElementDrawn("Radar name labels");
+    }
+
+    /// <summary>P828 — the off-by-default tuning overlay: contacts / labels /
+    /// merged per frame, plus how many count tags they became. Rebuilt only a few
+    /// times a second so the debug line never churns strings per frame.</summary>
+    private void DrawRadarDeclutterTelemetry(Viewport viewport, float scale)
+    {
+        _radarTelemetryFrame++;
+        if (_radarTelemetryText is null || (_radarTelemetryFrame & 15) == 0)
+        {
+            _radarTelemetryText = "radar labels: " + _radarDeclutter.ContactCount
+                + " contacts / " + _radarDeclutter.LabelledCount + " labelled / "
+                + _radarDeclutter.MergedCount + " merged into " + _radarDeclutter.TagCount + " tags";
+        }
+        DrawMeasuredText(NativeFontAt(NativeFont.SmallFont), _radarTelemetryText,
+            new Vector2(16f, viewport.Height - 46f), TextDim, fixedAnchor: true, drawScale: scale);
     }
 
     private void MarkRadarBrackets(HudContact contact)
@@ -778,7 +852,7 @@ public class HudRenderer
     }
 
     private void DrawRadarLabelBlock(HudContact contact, RadarLabel label, in RadarLabelView view,
-        Vector2 centre, float scale)
+        Vector2 centre, float scale, float labelAlpha = 1f)
     {
         // HUD-5b — native colorOther: brackets and label text carry the
         // brightness step (×1 important, ×0.75 queued, ×0.5 otherwise,
@@ -809,7 +883,8 @@ public class HudRenderer
         float textLeft = left.Width + (left.AddsLine ? iconGap : 0f);
         string? nameLine = RadarLabelCache.SelectNameLine(view,
             commandArt: commandIcon is not null, eyeArt: eyeIcon is not null);
-        var color = RadarLabelColor(contact) * RadarLabelModel.BracketBrightness(contact);
+        var color = RadarLabelColor(contact)
+            * (RadarLabelModel.BracketBrightness(contact) * Math.Clamp(labelAlpha, 0f, 1f));
         string? rangeLine = view.RangeLine;
         int barCount = (label.Fill is not null ? 1 : 0) + (label.Shield is not null ? 1 : 0)
             + (label.Hull is not null ? 1 : 0);
@@ -851,7 +926,7 @@ public class HudRenderer
             int side = Math.Max(1, (int)MathF.Round(iconSize));
             _sb.Draw(commandIcon, new Rectangle((int)MathF.Round(placed.X),
                 (int)MathF.Round(y + (lineHeight - iconSize) / 2f), side, side),
-                RadarLabelColor(contact));
+                RadarLabelColor(contact) * labelAlpha);
         }
         if (eyeIcon is not null)
         {
@@ -864,7 +939,7 @@ public class HudRenderer
             int side = Math.Max(1, (int)MathF.Round(eyeSize));
             _sb.Draw(eyeIcon, new Rectangle((int)MathF.Round(placed.X),
                 (int)MathF.Round(y + left.EyeTop + (lineHeight - eyeSize) / 2f), side, side),
-                RadarLabelColor(contact));
+                RadarLabelColor(contact) * labelAlpha);
         }
         if (nameLine is not null)
         {
@@ -882,19 +957,22 @@ public class HudRenderer
         }
         if (barCount > 0)
         {
+            // P828 — the stat bars fade with the block's distance fade (they are
+            // part of the same label block, and only labelled contacts reach here).
+            float barAlpha = Math.Clamp(labelAlpha, 0f, 1f);
             float bx = placed.X + textLeft, by = y + 2f * scale;
             if (label.Fill is { } fill)
             {
-                FillRect(bx, by, 24f * scale * Math.Clamp(fill, 0f, 1f), 2f * scale, new Color(0.70f, 0.78f, 0.86f));
+                FillRect(bx, by, 24f * scale * Math.Clamp(fill, 0f, 1f), 2f * scale, new Color(0.70f, 0.78f, 0.86f) * barAlpha);
                 bx += (24f + 4f) * scale;
             }
             if (label.Shield is { } shield)
             {
-                FillRect(bx, by, 24f * scale * Math.Clamp(shield, 0f, 1f), 2f * scale, new Color(0.30f, 0.55f, 0.95f));
+                FillRect(bx, by, 24f * scale * Math.Clamp(shield, 0f, 1f), 2f * scale, new Color(0.30f, 0.55f, 0.95f) * barAlpha);
                 bx += (24f + 4f) * scale;
             }
             if (label.Hull is { } hull)
-                FillRect(bx, by, 24f * scale * Math.Clamp(hull, 0f, 1f), 2f * scale, new Color(0.95f, 0.30f, 0.22f));
+                FillRect(bx, by, 24f * scale * Math.Clamp(hull, 0f, 1f), 2f * scale, new Color(0.95f, 0.30f, 0.22f) * barAlpha);
         }
 
         if (view.Drawn.Length > 0) ElementDrawn(view.Drawn);

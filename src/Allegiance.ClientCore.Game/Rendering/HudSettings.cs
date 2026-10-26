@@ -56,6 +56,33 @@ public sealed class HudSettings
     /// <summary>Whether the 3-D selection box draws: the player's choice, else the
     /// style default.</summary>
     public bool SelectionBracketOn => SelectionBracket ?? Style == HudStyle.Modern;
+    /// <summary>P828 — the Modern-HUD radar label declutter (priority + nearest-N
+    /// labels, distance fade, overlap merge) for crowded battles. A VISUAL port
+    /// option: native labels every ship its radar mode allows
+    /// (radarimage.cpp:747-756), which is unreadable at the 200v200 showcase's
+    /// ~390 in-sector ships. It never changes WHAT the native modes allow, only
+    /// how many of those labels draw and how.</summary>
+    /// <remarks>Null = the style's default (Domingo, 2026-10-25): OFF in Classic
+    /// (Classic stays exactly native), ON in Modern. An explicit true/false is
+    /// the player's choice in either style, persisted like the other HUD options.</remarks>
+    public bool? RadarDeclutter { get; set; }
+    /// <summary>Whether the declutter runs: the player's choice, else the style
+    /// default.</summary>
+    public bool RadarDeclutterOn => RadarDeclutter ?? Style == HudStyle.Modern;
+    /// <summary>P828 — how many ordinary (non-priority) labels per frame the
+    /// declutter keeps ("the nearest N"; the priority contacts are always
+    /// labelled). 0 hides every ordinary label.</summary>
+    public int RadarLabelMax { get; set; } = RadarLabelDeclutter.DefaultExtraLabels;
+    /// <summary>P828 — draw the per-frame contacts / labelled / merged telemetry
+    /// line (off by default; a tuning aid, not gameplay information).</summary>
+    public bool RadarLabelTelemetry { get; set; }
+    /// <summary>P828 — the resolved declutter plan for one renderer at HUD scale
+    /// <paramref name="scale"/>. Classic and Modern both call this so the policy
+    /// lives in one place.</summary>
+    public RadarLabelDeclutterOptions RadarLabelPlan(float scale)
+        => RadarDeclutterOn
+            ? RadarLabelDeclutterOptions.Modern(RadarLabelMax, scale, RadarLabelTelemetry)
+            : RadarLabelDeclutterOptions.Off;
     public static string DefaultPath => Environment.GetEnvironmentVariable("ALLEGIANCE_HUD_SETTINGS")
         ?? Path.Combine(IntroPreferences.DirectoryPath, "hud.json");
     public void Normalize()
@@ -63,6 +90,7 @@ public sealed class HudSettings
         if (!Enum.IsDefined(Style)) Style = HudStyle.Classic;
         Size = float.IsFinite(Size) ? Math.Clamp(Size, .75f, 1.5f) : 1;
         ChatLines = Math.Clamp(ChatLines, 1, 10);
+        RadarLabelMax = Math.Clamp(RadarLabelMax, 0, RadarLabelDeclutter.MaxExtraLabelsLimit);
     }
     public static HudSettings Load(string path, bool existingPlayer)
     {

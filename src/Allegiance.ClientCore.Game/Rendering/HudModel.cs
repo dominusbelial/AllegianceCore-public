@@ -133,7 +133,16 @@ public readonly record struct HudContact(
     /// <summary>Native <c>HasCapability(c_sabmPedestal)</c> (radarimage.cpp:784):
     /// a pedestal station uses the fixed 1000 m clip tier instead of the mode
     /// switch.</summary>
-    bool IsPedestalStation = false);
+    bool IsPedestalStation = false,
+    /// <summary>P828 — the contact's distance from the RENDER CAMERA eye in
+    /// metres (not the own-ship centre distance <see cref="Range"/> prints, and
+    /// not the radius-adjusted <see cref="ClipSeparation"/>). Only the Modern-HUD
+    /// radar label declutter reads it (distance fade + nearest-N order); the
+    /// classic/native label path ignores it and the label cache deliberately
+    /// does not compare it, because a flying contact changes it every frame.
+    /// Null on headless fixtures, where the declutter falls back to
+    /// <see cref="Range"/>.</summary>
+    float? CameraDistance = null);
 public sealed record HudChat(IReadOnlyList<string> Lines, int Offset, string Input,
     bool Composing, double NowSeconds, string Recipient, string? FilterLabel = null,
     NativeComposeState ComposeState = NativeComposeState.NotComposing,

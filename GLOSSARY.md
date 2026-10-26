@@ -208,6 +208,13 @@ list in **reverse**.
 - **Radar** — contacts, icons, brackets, labels, overlays.
   `Rendering/Radar*.cs` (RadarBracketRenderer, RadarIconPlacement,
   RadarLabelModel, RadarProjection, RadarLod).
+- **Radar label declutter** (Modern-only visual option, default on in Modern,
+  off in Classic) — priority + nearest-N label selection, distance fade and the
+  screen-grid count tags for crowded battles: `Rendering/RadarLabelDeclutter.cs`
+  (pure selection model consumed by `HudRenderer.DrawRadarLabels`; options are
+  `HudSettings.RadarDeclutterOn` / `RadarLabelMax` / `RadarLabelTelemetry`, the
+  Ctrl+F6 options rows 16-18). The native label tiers it filters stay in
+  `Rendering/RadarLabelModel.cs`. Report `docs/reports/P828_LABEL_DECLUTTER.md`.
 - **Target pane / gauges** — `src/Allegiance.ClientCore.Game/Rendering/TargetPaneModel.cs`,
   `src/Allegiance.ClientCore.Game/Rendering/ClassicGaugeSpec.cs`,
   `src/Allegiance.ClientCore.Game/Rendering/GaugeKind.cs`. Reports HUD3/HUD6/HUD7.

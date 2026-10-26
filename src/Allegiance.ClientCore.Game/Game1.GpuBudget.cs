@@ -40,6 +40,10 @@ public sealed partial class Game1
     private bool _chatHistoryVisible = true;
     private KeyboardState _graphicsPrevious;
     private int _graphicsRow;
+    /// <summary>P828 — the number of rows in the Ctrl+F6 settings panel (13 → 16
+    /// with P805's Center/Target HUD + Chat History, 16 → 19 with the radar label
+    /// declutter rows). Up/Down wrap on it.</summary>
+    private const int GraphicsRowCount = 19;
     private Action<long, bool, double>? _receiveGpu;
     private long _budgetStart;
     private double _budgetDuration;
@@ -110,6 +114,10 @@ public sealed partial class Game1
         _scaledThisFrame = enabled;
         return enabled;
     }
+    /// <summary>P828 — the settings panel's height: header + one 46 px row per
+    /// option + footer, so the 19 rows (up from 16) stay inside the panel. Pure
+    /// so a test can pin that the panel outgrew the old fixed 700 px.</summary>
+    internal static int GraphicsPanelHeight(int rows) => 60 + 46 * rows + 30;
     private bool UpdateGraphicsSettings(KeyboardState ks)
     {
         bool open = KeyOf("OpenGraphicsSettings").Matches(ks);
@@ -119,8 +127,8 @@ public sealed partial class Game1
         _flightGc.SetFlying(false);
         bool Press(Keys k) => ks.IsKeyDown(k) && !_graphicsPrevious.IsKeyDown(k);
         if (Press(Keys.Escape)) _graphicsSettingsVisible = false;
-        if (Press(Keys.Down)) _graphicsRow = (_graphicsRow + 1) % 16;
-        if (Press(Keys.Up)) _graphicsRow = (_graphicsRow + 15) % 16;
+        if (Press(Keys.Down)) _graphicsRow = (_graphicsRow + 1) % GraphicsRowCount;
+        if (Press(Keys.Up)) _graphicsRow = (_graphicsRow + GraphicsRowCount - 1) % GraphicsRowCount;
         int direction = Press(Keys.Right) ? 1 : Press(Keys.Left) ? -1 : 0;
         bool changed = direction != 0;
         if (changed)
@@ -142,6 +150,11 @@ public sealed partial class Game1
                 case 13: _hudSettings.ShowCenterHud = !_hudSettings.ShowCenterHud; break;
                 case 14: _hudSettings.ShowTargetHud = !_hudSettings.ShowTargetHud; break;
                 case 15: _chatHistoryVisible = !_chatHistoryVisible; break;
+                // P828 — the Modern-HUD radar label declutter: on/off, and the
+                // nearest-N ordinary label budget (left/right steps by 2).
+                case 16: _hudSettings.RadarDeclutter = !_hudSettings.RadarDeclutterOn; break;
+                case 17: _hudSettings.RadarLabelMax = Math.Clamp(_hudSettings.RadarLabelMax + direction * 2, 0, RadarLabelDeclutter.MaxExtraLabelsLimit); break;
+                case 18: _hudSettings.RadarLabelTelemetry = !_hudSettings.RadarLabelTelemetry; break;
                 case 0: _upscaling.Upscaling = _upscaling.Upscaling == UpscalingMode.Off ? UpscalingMode.FSR1 : UpscalingMode.Off; break;
                 case 1: _upscaling.Preset = (FsrPreset)(((int)_upscaling.Preset + direction + 4) % 4); break;
                 case 2: _upscaling.Sharpness = Math.Clamp(_upscaling.Sharpness + direction * .05f, 0, 1); break;
@@ -182,9 +195,6 @@ public sealed partial class Game1
         _spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp);
         if (_graphicsSettingsVisible)
         {
-            int panelHeight = Math.Min(700, GraphicsDevice.Viewport.Height - 32 - 8);
-            _spriteBatch.Draw(_whitePixel, new Rectangle(32, 32, Math.Min(760, GraphicsDevice.Viewport.Width - 48), panelHeight), new Color(5, 15, 22, 245));
-            _spriteBatch.DrawString(_hudSmall, "Settings - Graphics / HUD (Ctrl+F6); arrows change, Esc closes", new Vector2(48, 44), Color.White);
             string[] rows = {
                 $"Upscaling: {_upscaling.Upscaling}",
                 $"Preset: {_upscaling.Preset} ({UpscalingSettings.Scale(_upscaling.Preset):P0})",
@@ -201,15 +211,20 @@ public sealed partial class Game1
                 $"Joystick indicator: {(_hudSettings.ShowJoystickIndicator ? "On" : "Off")}",
                 $"Center HUD: {(_hudSettings.ShowCenterHud ? "On" : "Off")}",
                 $"Target HUD: {(_hudSettings.ShowTargetHud ? "On" : "Off")}",
-                $"Chat history: {(_chatHistoryVisible ? "On" : "Off")}" };
+                $"Chat history: {(_chatHistoryVisible ? "On" : "Off")}",
+                // P828 (Modern-HUD visual option; Classic stays exactly native).
+                $"Radar label declutter: {(_hudSettings.RadarDeclutterOn ? "On" : "Off")} (Modern default)",
+                $"Radar labels kept: {_hudSettings.RadarLabelMax} (nearest, after priority)",
+                $"Radar label telemetry: {(_hudSettings.RadarLabelTelemetry ? "On" : "Off")}" };
+            int panelHeight = Math.Min(GraphicsPanelHeight(rows.Length), GraphicsDevice.Viewport.Height - 24);
+            _spriteBatch.Draw(_whitePixel, new Rectangle(32, 32, Math.Min(760, GraphicsDevice.Viewport.Width - 48), panelHeight), new Color(5, 15, 22, 245));
+            _spriteBatch.DrawString(_hudSmall, "Settings - Graphics / HUD (Ctrl+F6); arrows change, Esc closes", new Vector2(48, 44), Color.White);
             for (int i = 0; i < rows.Length; i++)
                 _spriteBatch.DrawString(_hudSmall, (_graphicsRow == i ? "> " : "  ") + rows[i], new Vector2(48, 78 + i * 46), _graphicsRow == i ? Color.Yellow : Color.White);
             _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, 300, 8), Color.Gray);
             _spriteBatch.Draw(_whitePixel, new Rectangle(52, 198, (int)(300 * _upscaling.Sharpness), 8), Color.Cyan);
             _spriteBatch.Draw(_whitePixel, new Rectangle(360, 430, 260, 8), Color.Gray);
             _spriteBatch.Draw(_whitePixel, new Rectangle(360, 430, (int)(260 * (_hudSettings.Size - .75f) / .75f), 8), Color.Cyan);
-            // HUD-4b — the footer sits below the LAST row (12 rows now, not 11),
-            // so it no longer overlaps the round-radar row.
             _spriteBatch.DrawString(_hudSmall, _fsr is { Ready: true } ? "FSR1 ready; HUD stays at native resolution" : "FSR1 unavailable: using native resolution", new Vector2(48, 78 + rows.Length * 46 + 8), Color.White);
         }
         if (_frameTelemetry is not null)
