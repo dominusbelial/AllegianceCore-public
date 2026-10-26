@@ -30,6 +30,7 @@ internal sealed partial class BotManager
         internal string? EndReason;
         internal double LastUpdate = double.NegativeInfinity;
         internal double LastReadinessLog = double.NegativeInfinity;
+        internal double LastRearmBlockedLog = double.NegativeInfinity;
         internal bool Rotated, NextRunCreated;
         internal long CohesionSamples, Protected, BombersKilled;
         internal double CohesionDistance;
@@ -313,7 +314,7 @@ internal sealed partial class BotManager
     // The old run remains available as the finished game's report. Re-arm only
     // after EVERY participating bot has reset and resolved the fresh world; old
     // station ids and the old maturity/kill window must never drive a new strike.
-    private void RearmRotatedFinales()
+    private void RearmRotatedFinales(double now)
     {
         FinaleRun[] runs;
         lock (_gate) runs = _finales?.ToArray() ?? [];
@@ -323,7 +324,11 @@ internal sealed partial class BotManager
                 if (!run.Rotated || run.NextRunCreated) continue;
             var bots = run.Bots.Where(IsParticipating).ToArray();
             if (bots.Length == 0 || bots.Any(b => !b.FinaleResetObserved || b.ObjectivesPending
-                || !ReferenceEquals(b.Finale, run) || b.LifeGeneration <= run.Generations[b])) continue;
+                || !ReferenceEquals(b.Finale, run) || b.LifeGeneration <= run.Generations[b]))
+            {
+                LogRearmBlocked(run, bots, now);
+                continue;
+            }
             DataStationIGC[] stations = [];
             bool ready = true;
             foreach (var bot in bots)
@@ -337,17 +342,49 @@ internal sealed partial class BotManager
                     if (stations.Length == 0) stations = cs.World.Stations.Values.ToArray();
                 }
             }
-            if (!ready || bots.Any(b => !stations.Any(s => s.SideId >= 0 && s.SideId != b.Side))) continue;
+            if (!ready || bots.Any(b => !stations.Any(s => s.SideId >= 0 && s.SideId != b.Side)))
+            {
+                LogRearmBlocked(run, bots, now, ready ? "no enemy station in the first bot's world" : "world not ready/started");
+                continue;
+            }
             RegisterFinale(run.Settings, bots.Select(b => b.Name).ToArray(), stations);
             lock (run.Sync) run.NextRunCreated = true;
             Console.WriteLine($"[finale] re-armed for next mission with {bots.Length} bots and fresh station objectives");
         }
     }
 
+    // P827 — the re-arm waits for EVERY participating bot; one stuck bot held
+    // batch 34's second match without a deadline for two hours, silently. Name
+    // the blocking condition and bots once a minute while it waits.
+    private static void LogRearmBlocked(FinaleRun run, ActiveBot[] bots, double now, string? gate = null)
+    {
+        lock (run.Sync)
+        {
+            if (now - run.LastRearmBlockedLog < 60) return;
+            run.LastRearmBlockedLog = now;
+        }
+        if (gate is not null)
+        {
+            Console.WriteLine($"[finale] re-arm blocked: {gate} ({bots.Length} participating bots)");
+            return;
+        }
+        var reasons = new (string Reason, Func<ActiveBot, bool> Blocks)[]
+        {
+            ("reset-not-observed", b => !b.FinaleResetObserved),
+            ("objectives-pending", b => b.ObjectivesPending),
+            ("other-run", b => !ReferenceEquals(b.Finale, run)),
+            ("same-generation", b => b.LifeGeneration <= run.Generations[b]),
+        };
+        var parts = reasons.Select(r => (r.Reason, Bots: bots.Where(r.Blocks).ToArray())).Where(r => r.Bots.Length > 0)
+            .Select(r => $"{r.Reason}={r.Bots.Length} [{string.Join(",", r.Bots.Take(5).Select(b =>
+                $"{b.Name}/side{b.Side}/{b.Role}{(b.IsPod ? "/pod" : "")}{(b.TargetSector is { } t ? $"/target{t}" : "")}"))}]");
+        Console.WriteLine($"[finale] re-arm blocked: {bots.Length} participating bots; {string.Join("; ", parts)}");
+    }
+
     private void UpdateFinales(double now)
     {
         RegisterPendingFinales();
-        RearmRotatedFinales();
+        RearmRotatedFinales(now);
         FinaleRun[] runs;
         lock (_gate) runs = _finales?.ToArray() ?? [];
         foreach (var run in runs)
