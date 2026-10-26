@@ -1,0 +1,124 @@
+{
+  "scope": "Analysis only; no gameplay behavior or production C# changed.",
+  "captures": {
+    "b29": {
+      "input": {
+        "file": "server.log",
+        "bytes": 812913078,
+        "sha256": "771ac08e8e8b64351a808b0015417aaee66eec611ef46a462db03fa0cf9f7ba0",
+        "stopAfter": null
+      },
+      "statuses": {
+        "deadline": 7,
+        "censored": 1
+      },
+      "timingReceipts": 7,
+      "deadlineReconciliations": 7
+    },
+    "b32": {
+      "input": {
+        "file": "server.log",
+        "bytes": 481494229,
+        "sha256": "17dfe834bf0cbf5fed6f3917aa699df81538472831350353e7d781fd652c782c",
+        "stopAfter": null
+      },
+      "statuses": {
+        "deadline": 3,
+        "censored": 1
+      },
+      "timingReceipts": 3,
+      "deadlineReconciliations": 3
+    },
+    "b33A": {
+      "input": {
+        "file": "server.log",
+        "bytes": 169391927,
+        "sha256": "b5953beddb2e156232125830787097c2c47933849a09e778169e64e3ead3dec3",
+        "stopAfter": null
+      },
+      "statuses": {
+        "deadline": 1,
+        "ended-without-deadline": 1
+      },
+      "timingReceipts": 2,
+      "deadlineReconciliations": 1
+    },
+    "b33B": {
+      "input": {
+        "file": "server.log",
+        "bytes": 162945872,
+        "sha256": "3d096b28489aec849ad3f22b1b70ab3a641a24a69e7d14f71e6b4eec54aab381",
+        "stopAfter": null
+      },
+      "statuses": {
+        "deadline": 1,
+        "ended-without-deadline": 1
+      },
+      "timingReceipts": 2,
+      "deadlineReconciliations": 1
+    },
+    "b34": {
+      "input": {
+        "file": "server.log",
+        "bytes": 519394665,
+        "sha256": "71c2d85d0a6fe43f64af6adcb76ae69c10bbd06e06b018a97553fa2e64151b72",
+        "stopAfter": 2
+      },
+      "statuses": {
+        "deadline": 1,
+        "censored": 1
+      },
+      "timingReceipts": 1,
+      "deadlineReconciliations": 1
+    }
+  },
+  "completedDeadlineReconciliations": 13,
+  "unmatchedKillPackets": 0,
+  "creditedEventsWithPlayerKillerReceipt": "all",
+  "recentCompletedResultsByPosition": {
+    "1": 5,
+    "0": 1
+  },
+  "recentPhasePattern": {
+    "GaTaraanPre": 5,
+    "IronCoalitionFinale": 6
+  },
+  "coordinateCrossCheck": {
+    "reference": "docs/reports/P819_assets/map-geometry.json",
+    "maximumAbsoluteDifference": 0.00024218749967985786,
+    "passed": true
+  },
+  "focusedPythonTests": {
+    "tests": 6,
+    "isolatedRuns": 3,
+    "passed": [
+      6,
+      6,
+      6
+    ],
+    "logs": ".scratch/p826/tests-{1,2,3}.log"
+  },
+  "existingMatchupTests": {
+    "tests": 2,
+    "passed": true,
+    "log": ".scratch/p826/matchups-tests.log"
+  },
+  "glossaryLinks": {
+    "checkedPaths": 178,
+    "passed": true
+  },
+  "reportAssetLinks": true,
+  "gitDiffCheck": true,
+  "publishGuard": {
+    "base": "ac932657",
+    "head": "1ccd1ced",
+    "passed": true,
+    "limitation": "Commit-only guard; working-tree tool files separately checked for private paths/emails and new media absent."
+  },
+  "solutionBuild": "not run: analysis-only brief gate",
+  "buildTools": "not run: analysis-only brief gate",
+  "fastTier": "not run: analysis-only brief gate",
+  "neverParks": "not run: gameplay unchanged",
+  "localGameplayAB": "not run: gameplay unchanged",
+  "nativeSourceCitations": "Re-read against local native source and current port; no native gameplay rule added or changed."
+}

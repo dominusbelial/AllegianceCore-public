@@ -1,0 +1,688 @@
+{
+  "namedPromotionKeys": 38,
+  "bounds": [
+    {
+      "match": 1,
+      "armSim": 1789.341,
+      "timeout": 900.0
+    }
+  ],
+  "edgesAfterServerArm": [
+    {
+      "1050->1054": 31,
+      "1055->1051": 38,
+      "1054->1055": 35
+    },
+    {
+      "1055->1054": 28,
+      "1054->1050": 25,
+      "1051->1055": 28,
+      "1057->1050": 8,
+      "1058->1057": 3
+    }
+  ],
+  "sectorResidenceBetweenRecordedCrossings": [
+    {
+      "1054": {
+        "count": 30,
+        "median": 85.06600000000003,
+        "p95": 112.91399999999999
+      },
+      "1055": {
+        "count": 30,
+        "median": 92.2610000000002,
+        "p95": 124.94899999999984
+      }
+    },
+    {
+      "1054": {
+        "count": 22,
+        "median": 85.35950000000003,
+        "p95": 126.88400000000001
+      },
+      "1055": {
+        "count": 26,
+        "median": 93.55750000000012,
+        "p95": 137.35099999999989
+      },
+      "1057": {
+        "count": 3,
+        "median": 161.86900000000014,
+        "p95": 162.14700000000016
+      }
+    }
+  ],
+  "targetSectorArrivals": [
+    {
+      "match": 1,
+      "ship": 8462,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 1792.729,
+      "secondsSinceServerArm": 3.3880000000001473
+    },
+    {
+      "match": 1,
+      "ship": 8487,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 1798.13,
+      "secondsSinceServerArm": 8.789000000000215
+    },
+    {
+      "match": 1,
+      "ship": 8464,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 1803.167,
+      "secondsSinceServerArm": 13.826000000000022
+    },
+    {
+      "match": 1,
+      "ship": 8475,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 1815.798,
+      "secondsSinceServerArm": 26.457000000000107
+    },
+    {
+      "match": 1,
+      "ship": 8453,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 1820.142,
+      "secondsSinceServerArm": 30.80100000000016
+    },
+    {
+      "match": 1,
+      "ship": 8456,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 1825.135,
+      "secondsSinceServerArm": 35.794000000000096
+    },
+    {
+      "match": 1,
+      "ship": 8442,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 1826.134,
+      "secondsSinceServerArm": 36.79300000000012
+    },
+    {
+      "match": 1,
+      "ship": 8490,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 1866.105,
+      "secondsSinceServerArm": 76.76400000000012
+    },
+    {
+      "match": 1,
+      "ship": 8477,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 1870.497,
+      "secondsSinceServerArm": 81.15600000000018
+    },
+    {
+      "match": 1,
+      "ship": 8444,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 1873.306,
+      "secondsSinceServerArm": 83.96500000000015
+    },
+    {
+      "match": 1,
+      "ship": 8458,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 1879.613,
+      "secondsSinceServerArm": 90.27200000000016
+    },
+    {
+      "match": 1,
+      "ship": 8495,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 1880.345,
+      "secondsSinceServerArm": 91.00400000000013
+    },
+    {
+      "match": 1,
+      "ship": 8457,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 1900.429,
+      "secondsSinceServerArm": 111.08800000000019
+    },
+    {
+      "match": 1,
+      "ship": 8460,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 1901.822,
+      "secondsSinceServerArm": 112.481
+    },
+    {
+      "match": 1,
+      "ship": 8455,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 1903.189,
+      "secondsSinceServerArm": 113.84800000000018
+    },
+    {
+      "match": 1,
+      "ship": 8446,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 1904.805,
+      "secondsSinceServerArm": 115.46400000000017
+    },
+    {
+      "match": 1,
+      "ship": 8485,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 1918.784,
+      "secondsSinceServerArm": 129.4430000000002
+    },
+    {
+      "match": 1,
+      "ship": 8459,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 1969.549,
+      "secondsSinceServerArm": 180.20800000000008
+    },
+    {
+      "match": 1,
+      "ship": 8443,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 1970.474,
+      "secondsSinceServerArm": 181.13300000000004
+    },
+    {
+      "match": 1,
+      "ship": 8491,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2004.944,
+      "secondsSinceServerArm": 215.60300000000007
+    },
+    {
+      "match": 1,
+      "ship": 8476,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2014.58,
+      "secondsSinceServerArm": 225.23900000000003
+    },
+    {
+      "match": 1,
+      "ship": 8479,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2024.643,
+      "secondsSinceServerArm": 235.30200000000013
+    },
+    {
+      "match": 1,
+      "ship": 8451,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2031.384,
+      "secondsSinceServerArm": 242.04300000000012
+    },
+    {
+      "match": 1,
+      "ship": 8489,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2045.369,
+      "secondsSinceServerArm": 256.028
+    },
+    {
+      "match": 1,
+      "ship": 8468,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2057.332,
+      "secondsSinceServerArm": 267.991
+    },
+    {
+      "match": 1,
+      "ship": 8471,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2064.34,
+      "secondsSinceServerArm": 274.99900000000025
+    },
+    {
+      "match": 1,
+      "ship": 8465,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2078.2,
+      "secondsSinceServerArm": 288.8589999999999
+    },
+    {
+      "match": 1,
+      "ship": 8461,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2091.117,
+      "secondsSinceServerArm": 301.7760000000003
+    },
+    {
+      "match": 1,
+      "ship": 8481,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2094.842,
+      "secondsSinceServerArm": 305.5010000000002
+    },
+    {
+      "match": 1,
+      "ship": 8475,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2097.97,
+      "secondsSinceServerArm": 308.6289999999999
+    },
+    {
+      "match": 1,
+      "ship": 8469,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2099.907,
+      "secondsSinceServerArm": 310.56600000000026
+    },
+    {
+      "match": 1,
+      "ship": 8449,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2102.886,
+      "secondsSinceServerArm": 313.5450000000001
+    },
+    {
+      "match": 1,
+      "ship": 8464,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2128.268,
+      "secondsSinceServerArm": 338.92700000000013
+    },
+    {
+      "match": 1,
+      "ship": 8478,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2128.668,
+      "secondsSinceServerArm": 339.3270000000002
+    },
+    {
+      "match": 1,
+      "ship": 8456,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2157.265,
+      "secondsSinceServerArm": 367.924
+    },
+    {
+      "match": 1,
+      "ship": 8482,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2174.258,
+      "secondsSinceServerArm": 384.9169999999999
+    },
+    {
+      "match": 1,
+      "ship": 8495,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2193.306,
+      "secondsSinceServerArm": 403.96500000000015
+    },
+    {
+      "match": 1,
+      "ship": 8477,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2194.546,
+      "secondsSinceServerArm": 405.2049999999999
+    },
+    {
+      "match": 1,
+      "ship": 8490,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2199.705,
+      "secondsSinceServerArm": 410.36400000000003
+    },
+    {
+      "match": 1,
+      "ship": 8459,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2230.072,
+      "secondsSinceServerArm": 440.7310000000002
+    },
+    {
+      "match": 1,
+      "ship": 8455,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2231.441,
+      "secondsSinceServerArm": 442.0999999999999
+    },
+    {
+      "match": 1,
+      "ship": 8457,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2237.235,
+      "secondsSinceServerArm": 447.89400000000023
+    },
+    {
+      "match": 1,
+      "ship": 8446,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2241.213,
+      "secondsSinceServerArm": 451.8720000000003
+    },
+    {
+      "match": 1,
+      "ship": 8491,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2304.842,
+      "secondsSinceServerArm": 515.5010000000002
+    },
+    {
+      "match": 1,
+      "ship": 8463,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2306.438,
+      "secondsSinceServerArm": 517.0970000000002
+    },
+    {
+      "match": 1,
+      "ship": 8484,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2308.385,
+      "secondsSinceServerArm": 519.0440000000003
+    },
+    {
+      "match": 1,
+      "ship": 8448,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2327.651,
+      "secondsSinceServerArm": 538.31
+    },
+    {
+      "match": 1,
+      "ship": 8468,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2329.946,
+      "secondsSinceServerArm": 540.605
+    },
+    {
+      "match": 1,
+      "ship": 8462,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2374.022,
+      "secondsSinceServerArm": 584.681
+    },
+    {
+      "match": 1,
+      "ship": 8487,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2388.01,
+      "secondsSinceServerArm": 598.6690000000003
+    },
+    {
+      "match": 1,
+      "ship": 8475,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2396.135,
+      "secondsSinceServerArm": 606.7940000000003
+    },
+    {
+      "match": 1,
+      "ship": 8469,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2413.962,
+      "secondsSinceServerArm": 624.6210000000001
+    },
+    {
+      "match": 1,
+      "ship": 8494,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2415.849,
+      "secondsSinceServerArm": 626.5080000000003
+    },
+    {
+      "match": 1,
+      "ship": 8444,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2417.09,
+      "secondsSinceServerArm": 627.7490000000003
+    },
+    {
+      "match": 1,
+      "ship": 8442,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2424.688,
+      "secondsSinceServerArm": 635.3470000000002
+    },
+    {
+      "match": 1,
+      "ship": 8453,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2425.532,
+      "secondsSinceServerArm": 636.1910000000003
+    },
+    {
+      "match": 1,
+      "ship": 8460,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2454.482,
+      "secondsSinceServerArm": 665.1410000000001
+    },
+    {
+      "match": 1,
+      "ship": 8490,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2477.795,
+      "secondsSinceServerArm": 688.4540000000002
+    },
+    {
+      "match": 1,
+      "ship": 8457,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2518.092,
+      "secondsSinceServerArm": 728.7510000000002
+    },
+    {
+      "match": 1,
+      "ship": 8459,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2522.053,
+      "secondsSinceServerArm": 732.712
+    },
+    {
+      "match": 1,
+      "ship": 8485,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2525.766,
+      "secondsSinceServerArm": 736.4250000000002
+    },
+    {
+      "match": 1,
+      "ship": 8458,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2555.423,
+      "secondsSinceServerArm": 766.0819999999999
+    },
+    {
+      "match": 1,
+      "ship": 8446,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2556.859,
+      "secondsSinceServerArm": 767.518
+    },
+    {
+      "match": 1,
+      "ship": 8451,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2560.077,
+      "secondsSinceServerArm": 770.7360000000003
+    },
+    {
+      "match": 1,
+      "ship": 8476,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2566.959,
+      "secondsSinceServerArm": 777.6179999999999
+    },
+    {
+      "match": 1,
+      "ship": 8479,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2571.068,
+      "secondsSinceServerArm": 781.7270000000003
+    },
+    {
+      "match": 1,
+      "ship": 8465,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2621.838,
+      "secondsSinceServerArm": 832.4970000000003
+    },
+    {
+      "match": 1,
+      "ship": 8478,
+      "side": 1,
+      "sector": 1050,
+      "atSim": 2642.932,
+      "secondsSinceServerArm": 853.5909999999999
+    },
+    {
+      "match": 1,
+      "ship": 8448,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2656.692,
+      "secondsSinceServerArm": 867.3510000000001
+    },
+    {
+      "match": 1,
+      "ship": 8491,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2673.988,
+      "secondsSinceServerArm": 884.6469999999999
+    },
+    {
+      "match": 1,
+      "ship": 8464,
+      "side": 0,
+      "sector": 1051,
+      "atSim": 2679.541,
+      "secondsSinceServerArm": 890.2000000000003
+    }
+  ],
+  "enRouteBomberEjections": [
+    {
+      "match": 1,
+      "ship": 8458,
+      "side": 1,
+      "sector": 1051,
+      "atSim": 1991.56,
+      "source": "not attributed by these log records"
+    },
+    {
+      "match": 1,
+      "ship": 8465,
+      "side": 1,
+      "sector": 1054,
+      "atSim": 2341.66,
+      "source": "not attributed by these log records"
+    },
+    {
+      "match": 1,
+      "ship": 8489,
+      "side": 1,
+      "sector": 1054,
+      "atSim": 2342.99,
+      "source": "not attributed by these log records"
+    },
+    {
+      "match": 1,
+      "ship": 8443,
+      "side": 0,
+      "sector": 1055,
+      "atSim": 2476.76,
+      "source": "not attributed by these log records"
+    },
+    {
+      "match": 1,
+      "ship": 8455,
+      "side": 0,
+      "sector": 1055,
+      "atSim": 2506.66,
+      "source": "not attributed by these log records"
+    },
+    {
+      "match": 1,
+      "ship": 8482,
+      "side": 1,
+      "sector": 1054,
+      "atSim": 2681.53,
+      "source": "not attributed by these log records"
+    }
+  ],
+  "arrivalDelaySinceServerArm": [
+    {
+      "count": 38,
+      "median": 385.94450000000006,
+      "p95": 884.6469999999999
+    },
+    {
+      "count": 33,
+      "median": 384.9169999999999,
+      "p95": 832.4970000000003
+    }
+  ],
+  "limits": "Only ships explicitly logged as flying-strike promotions, aligned by each bot's reseating episode. Only flights with a logged hull name containing Bomber are included; legal strike fallbacks are excluded. Residence is between crossings within one life, excluding observed refits; it includes combat/holding. No-arrival lives are censored, not assigned a travel time. Arrival is target-sector entry, not physical standoff assembly. Source weapons cannot be inferred from ejection records."
+}

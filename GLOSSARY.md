@@ -344,6 +344,11 @@ list in **reverse**.
   legs. Finale station duty supersedes its old
   aleph rally in `tools/allegiance-mcp/BotManager.Finale.cs`; the showcase
   preset defaults to both sides. Report `docs/reports/P819_SIDE_BIAS.md`.
+- **Position-bias evidence (P826)** — `tools/p819-side-bias-proof/audit.py`
+  (`--per-match`) reconciles per-life kill/death flags with each deadline,
+  separating finale phases and censored rotations; `summarize.py --position`
+  aggregates the event cubes and `--map` measures the native spider geometry.
+  Report: `docs/reports/P826_POSITION_BIAS.md`.
 - **Corpus utilities** — `tools/cvhdump/`, `tools/fedmsgdump/`, `tools/igcdump/`,
   `tools/corpusvalidate/`.
 - **Benchmark** — `tools/benchmark/` (replay benchmark) and

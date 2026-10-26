@@ -4,7 +4,106 @@ import argparse
 import collections
 import json
 import re
+import hashlib
+import math
+import struct
 from pathlib import Path
+
+
+def position_geometry(path):
+    """Read the small native map, using the fixed Data*IGC layouts.
+
+    Offsets mirror Core/Data/Data{Cluster,Warp,Station}IGC.Decode. No map
+    modifications, simulation, fog bypass or gameplay route selection here.
+    """
+    raw = path.read_bytes()
+    size, = struct.unpack_from('<i', raw)
+    if size != len(raw)-4:
+        raise ValueError('Expected exact DataSize map wrapper')
+    sectors, warps, stations = {}, {}, []
+    offset = 4
+    while offset < len(raw):
+        kind, size = struct.unpack_from('<hi', raw, offset)
+        offset += 6
+        b = raw[offset:offset+size]
+        if len(b) != size: raise ValueError('Truncated map record')
+        offset += size
+        if kind == 13:
+            if size != 92: raise ValueError('Cluster size')
+            sector, = struct.unpack_from('<h', b, 28)
+            sectors[sector] = dict(Id=sector, Name=b[34:59].split(b'\0')[0].decode(), Warps=[], Stations=[])
+        elif kind == 7:
+            if size != 108: raise ValueError('Warp size')
+            wid, partner = struct.unpack_from('<hh', b)
+            warps[wid] = dict(WarpId=wid, Partner=partner,
+                             Position=list(struct.unpack_from('<fff', b, 60)),
+                             Sector=struct.unpack_from('<h', b, 104)[0])
+        elif kind == 1:
+            if size != 88: raise ValueError('Station size')
+            sector, side, station = struct.unpack_from('<hhh', b, 52)
+            stations.append(dict(Sector=sector, SideId=side, StationId=station,
+                                 Position=list(struct.unpack_from('<fff', b))))
+    for w in warps.values():
+        w['To'] = warps[w['Partner']]['Sector']
+        sectors[w['Sector']]['Warps'].append(w)
+    for st in stations: sectors[st['Sector']]['Stations'].append(st)
+
+    def route(home, ids, final=None):
+        position = home['Position']; legs = []; crossings = []
+        for origin, target in zip(ids, ids[1:]):
+            w, = [w for w in sectors[origin]['Warps'] if w['To'] == target]
+            legs.append(math.dist(position, w['Position']))
+            crossings.append(w['WarpId'])
+            position = warps[w['Partner']]['Position']
+        if final is not None: legs.append(math.dist(position, final))
+        return dict(sectors=ids, departures=crossings, flightLegs=legs,
+                    distance=sum(legs), arrivalPosition=position)
+
+    homes = sorted(stations, key=lambda s:s['SideId'])
+    clash, siege = [], []
+    for home in homes:
+        paths = []
+        for w in sectors[home['Sector']]['Warps']:
+            if any(x['To'] == 1052 for x in sectors[w['To']]['Warps']):
+                r = route(home, [home['Sector'],w['To'],1052])
+                r['distanceToClashOrigin'] = r['distance']+math.dist(r['arrivalPosition'],[0,0,0])
+                paths.append(r)
+        clash.append(dict(side=home['SideId'], routes=paths))
+        enemy, = [s for s in homes if s['SideId'] != home['SideId']]
+        ids = [1050,1054,1055,1051] if home['SideId']==0 else [1051,1055,1054,1050]
+        r = route(home, ids, enemy['Position'])
+        r['oldHoldToStation'] = r['flightLegs'][-1]+750
+        r['stationToOldHold'] = sum(r['flightLegs'][:-1])-750
+        r['approximateTo3500Standoff'] = sum(r['flightLegs'][:-1])+max(0,r['flightLegs'][-1]-3500)
+        siege.append(dict(side=home['SideId'], **r))
+    return dict(file=path.name, sha256=hashlib.sha256(raw).hexdigest(), sectors=list(sectors.values()),
+                clash=clash, siege=siege,
+                limits='Straight distances; no turning, obstacles, warp exit clearance or combat. Alderan origin is a reference point, not a measured battle centre. All two-hop home-to-Alderan routes shown; bots choose using their own visible graph.')
+
+
+def position_summary(paths):
+    """Aggregate the reconciled P826 event cubes without pooling medians."""
+    results=[]
+    for path in paths:
+        data=json.loads(path.read_text())
+        for m in data['matches']:
+            phases={}
+            for phase in ('pre','finale'):
+                groups = {k:collections.defaultdict(lambda:[0,0]) for k in ('killsBySector','deathsBySector','killsByVictimKind','killsByVictimHull')}
+                for s,p,sector,hull,kind,credit,death,count in m['events']:
+                    if p!=phase: continue
+                    if credit:
+                        groups['killsBySector'][sector][1-s]+=count
+                        groups['killsByVictimKind'][kind][1-s]+=count
+                        groups['killsByVictimHull'][hull][1-s]+=count
+                    if death: groups['deathsBySector'][sector][s]+=count
+                phases[phase]=dict(groups)
+                phases[phase]['kills']=[sum(v[s] for v in groups['killsBySector'].values()) for s in (0,1)]
+                phases[phase]['deaths']=[sum(v[s] for v in groups['deathsBySector'].values()) for s in (0,1)]
+            bomber_entries = [sum(v for k,v in m['entries'][s].items()
+                                 if k.startswith('finale:') and k.endswith(f'->{1051-s}:bomber')) for s in (0,1)]
+            results.append(dict(batch=data['source'], **{k:m.get(k) for k in ('match','status','countdownUtc','startedUtc','endUtc','lastUtc','finale','deadline','reconciled','economy','miners','initialHulls','skills','trips','launchBounds','stationKills','firstUndocks','firstClashEntries')}, phases=phases, finaleBomberTargetEntries=bomber_entries))
+    return dict(matches=results, limits='Side pairs always 0/1; kills attributed to opposite victim side only on true KILL_SHIP kill flag, not pod deaths. Per-match medians retained, never pooled from medians. Shutdown and censored rounds excluded from winner totals.')
 
 
 def summarize(path):
@@ -87,7 +186,16 @@ def summarize(path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("receipts", type=Path, nargs="+")
+    parser.add_argument("receipts", type=Path, nargs="*")
+    parser.add_argument("--position", action="store_true", help="Summarize --per-match audit cubes")
+    parser.add_argument("--map", type=Path, help="Extract P826 map geometry only")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    args.output.write_text(json.dumps([summarize(p) for p in args.receipts], indent=2) + "\n")
+    if args.map:
+        result=position_geometry(args.map)
+    elif args.position:
+        result=position_summary(args.receipts)
+    else:
+        if not args.receipts: parser.error('receipts required')
+        result=[summarize(p) for p in args.receipts]
+    args.output.write_text(json.dumps(result, indent=2) + "\n")

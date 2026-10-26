@@ -10,6 +10,7 @@ import json
 import re
 import statistics
 from pathlib import Path
+from audit import log_lines
 
 
 def quantiles(values):
@@ -18,11 +19,11 @@ def quantiles(values):
             "p95": values[min(len(values) - 1, int(len(values) * .95))] if values else None}
 
 
-def analyze(server, workers):
+def analyze(server, workers, stop_after=None):
     named = {}
     for path in workers:
         episodes = collections.Counter()
-        for line in path.open(errors="replace"):
+        for _, line in log_lines(path):
             if line.startswith("[p598]"):
                 m = re.search(r"re-readied bot '(.*?)' ship (\d+) after rotation", line)
                 if m:
@@ -37,7 +38,7 @@ def analyze(server, workers):
     residence = [collections.defaultdict(list), collections.defaultdict(list)]
     arrivals, deaths = [], []
     bounds = []
-    for line in server.open(errors="replace"):
+    for _, line in log_lines(server, stop_after):
         if line.startswith("[start]") and "countdown begun" in line:
             match += 1
             hulls.clear(); pods.clear(); last_warp.clear(); life.clear()
@@ -97,8 +98,9 @@ if __name__ == "__main__":
     parser.add_argument("--server", type=Path, required=True)
     parser.add_argument("--bots", type=Path, nargs="+", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--stop-after", type=int, help="Stop after N mission #-1 timing receipts")
     args = parser.parse_args()
-    result = analyze(args.server, args.bots)
+    result = analyze(args.server, args.bots, args.stop_after)
     args.output.write_text(json.dumps(result, indent=2) + "\n")
     print("Named promotions:", result["namedPromotionKeys"], "arrivals:", len(result["targetSectorArrivals"]),
           "en-route ejections:", len(result["enRouteBomberEjections"]))

@@ -1,0 +1,3713 @@
+{
+  "schema": 2,
+  "source": "b33B",
+  "input": {
+    "file": "server.log",
+    "bytes": 162945872,
+    "sha256": "3d096b28489aec849ad3f22b1b70ab3a641a24a69e7d14f71e6b4eec54aab381",
+    "stopAfter": null
+  },
+  "matches": [
+    {
+      "match": 1,
+      "countdownUtc": "2026-10-25T22:08:47.739606260Z",
+      "endUtc": "2026-10-25T23:03:45.746945787Z",
+      "finale": {
+        "utc": "2026-10-25T22:47:25.738488842Z",
+        "armedBy": 0,
+        "armSim": 2003.9250000000002,
+        "deadlineSim": 2903.925
+      },
+      "deadline": {
+        "winner": 1,
+        "scores": [
+          {
+            "side": 0,
+            "kills": 684,
+            "deaths": 628
+          },
+          {
+            "side": 1,
+            "kills": 762,
+            "deaths": 482
+          }
+        ]
+      },
+      "result": "[gameover] mission #0 -> Stage Over, iSideWinner=1, 394 peer(s), result packet 24130 bytes",
+      "skills": {
+        "0": {
+          "flight": 214,
+          "warp": 3608,
+          "autopilot": 19,
+          "targeting": 27632,
+          "guns": 398683,
+          "missiles": 1393,
+          "chaff": 635,
+          "booster": 2319,
+          "cloak": 4016,
+          "probes": 72,
+          "scouting": 12680,
+          "mines": 264,
+          "ship-damage": 118688,
+          "station-damage": 5,
+          "station-kills": 1,
+          "nanite-ship": 863,
+          "nanite-station": 352,
+          "order-goto": 131,
+          "order-attack": 6724,
+          "order-build": 158,
+          "order-repair": 967,
+          "drone-build": 13,
+          "drone-mine": 139,
+          "eject": 781,
+          "pod-rescue": 102,
+          "dock": 22,
+          "relaunch": 940,
+          "purchase": 932,
+          "research": 68,
+          "chat": 7966,
+          "voice": 233,
+          "ship-kills": 964
+        },
+        "1": {
+          "flight": 212,
+          "warp": 3245,
+          "autopilot": 17,
+          "targeting": 27497,
+          "guns": 420649,
+          "missiles": 1511,
+          "chaff": 680,
+          "booster": 2907,
+          "cloak": 3187,
+          "probes": 69,
+          "scouting": 12755,
+          "mines": 315,
+          "ship-damage": 126309,
+          "station-damage": 46,
+          "station-kills": 6,
+          "nanite-ship": 395,
+          "nanite-station": 1,
+          "order-goto": 89,
+          "order-attack": 7908,
+          "order-build": 132,
+          "order-repair": 1551,
+          "drone-build": 11,
+          "drone-mine": 7,
+          "eject": 693,
+          "pod-rescue": 116,
+          "dock": 105,
+          "relaunch": 897,
+          "purchase": 880,
+          "research": 101,
+          "chat": 9817,
+          "voice": 171,
+          "ship-kills": 1161
+        }
+      },
+      "events": [
+        [
+          0,
+          "finale",
+          "1050",
+          "Adv Stl Fighter",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          0,
+          "finale",
+          "1050",
+          "Adv Stl Fighter",
+          "pod",
+          false,
+          true,
+          8
+        ],
+        [
+          0,
+          "finale",
+          "1050",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          9
+        ],
+        [
+          0,
+          "finale",
+          "1050",
+          "Enh Fighter",
+          "pod",
+          false,
+          true,
+          3
+        ],
+        [
+          0,
+          "finale",
+          "1050",
+          "Fighter",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          0,
+          "finale",
+          "1050",
+          "Guardian",
+          "pod",
+          false,
+          true,
+          15
+        ],
+        [
+          0,
+          "finale",
+          "1050",
+          "Interceptor",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          0,
+          "finale",
+          "1050",
+          "Scout",
+          "pod",
+          false,
+          true,
+          20
+        ],
+        [
+          0,
+          "finale",
+          "1050",
+          "Stealth Bomber",
+          "pod",
+          false,
+          true,
+          2
+        ],
+        [
+          0,
+          "finale",
+          "1050",
+          "Stealth Fighter",
+          "pod",
+          false,
+          true,
+          5
+        ],
+        [
+          0,
+          "finale",
+          "1051",
+          "Bomber",
+          "bomber",
+          true,
+          false,
+          34
+        ],
+        [
+          0,
+          "finale",
+          "1051",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          12
+        ],
+        [
+          0,
+          "finale",
+          "1051",
+          "Enh Fighter",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          0,
+          "finale",
+          "1051",
+          "Interceptor",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          0,
+          "finale",
+          "1051",
+          "Scout",
+          "other",
+          true,
+          false,
+          14
+        ],
+        [
+          0,
+          "finale",
+          "1051",
+          "Scout",
+          "pod",
+          false,
+          true,
+          7
+        ],
+        [
+          0,
+          "finale",
+          "1051",
+          "Stealth Bomber",
+          "bomber",
+          true,
+          false,
+          10
+        ],
+        [
+          0,
+          "finale",
+          "1051",
+          "Stealth Bomber",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          0,
+          "finale",
+          "1052",
+          "Adv Stl Fighter",
+          "other",
+          true,
+          false,
+          21
+        ],
+        [
+          0,
+          "finale",
+          "1052",
+          "Adv Stl Fighter",
+          "pod",
+          false,
+          true,
+          12
+        ],
+        [
+          0,
+          "finale",
+          "1052",
+          "Enh Fighter",
+          "other",
+          true,
+          false,
+          9
+        ],
+        [
+          0,
+          "finale",
+          "1052",
+          "Enh Fighter",
+          "pod",
+          false,
+          true,
+          4
+        ],
+        [
+          0,
+          "finale",
+          "1052",
+          "Fighter",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          0,
+          "finale",
+          "1052",
+          "Guardian",
+          "other",
+          true,
+          false,
+          29
+        ],
+        [
+          0,
+          "finale",
+          "1052",
+          "Guardian",
+          "pod",
+          false,
+          true,
+          12
+        ],
+        [
+          0,
+          "finale",
+          "1052",
+          "Interceptor",
+          "other",
+          true,
+          false,
+          8
+        ],
+        [
+          0,
+          "finale",
+          "1052",
+          "Interceptor",
+          "pod",
+          false,
+          true,
+          4
+        ],
+        [
+          0,
+          "finale",
+          "1052",
+          "Scout",
+          "other",
+          true,
+          false,
+          36
+        ],
+        [
+          0,
+          "finale",
+          "1052",
+          "Scout",
+          "pod",
+          false,
+          true,
+          20
+        ],
+        [
+          0,
+          "finale",
+          "1052",
+          "Stealth Fighter",
+          "other",
+          true,
+          false,
+          28
+        ],
+        [
+          0,
+          "finale",
+          "1052",
+          "Stealth Fighter",
+          "pod",
+          false,
+          true,
+          16
+        ],
+        [
+          0,
+          "finale",
+          "1054",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          3
+        ],
+        [
+          0,
+          "finale",
+          "1054",
+          "Scout",
+          "pod",
+          false,
+          true,
+          4
+        ],
+        [
+          0,
+          "finale",
+          "1057",
+          "Stealth Bomber",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          0,
+          "finale",
+          "1059",
+          "Adv Stl Fighter",
+          "other",
+          false,
+          false,
+          1
+        ],
+        [
+          0,
+          "finale",
+          "1059",
+          "Adv Stl Fighter",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1050",
+          "Adv Stl Fighter",
+          "other",
+          false,
+          false,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1050",
+          "Adv Stl Fighter",
+          "other",
+          true,
+          false,
+          2
+        ],
+        [
+          0,
+          "pre",
+          "1050",
+          "Adv Stl Fighter",
+          "pod",
+          false,
+          true,
+          19
+        ],
+        [
+          0,
+          "pre",
+          "1050",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          3
+        ],
+        [
+          0,
+          "pre",
+          "1050",
+          "Fighter",
+          "other",
+          true,
+          false,
+          4
+        ],
+        [
+          0,
+          "pre",
+          "1050",
+          "Fighter",
+          "pod",
+          false,
+          true,
+          38
+        ],
+        [
+          0,
+          "pre",
+          "1050",
+          "Guardian",
+          "pod",
+          false,
+          true,
+          3
+        ],
+        [
+          0,
+          "pre",
+          "1050",
+          "Mine Layer Drone",
+          "other",
+          false,
+          true,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1050",
+          "Scout",
+          "other",
+          false,
+          false,
+          5
+        ],
+        [
+          0,
+          "pre",
+          "1050",
+          "Scout",
+          "other",
+          true,
+          false,
+          5
+        ],
+        [
+          0,
+          "pre",
+          "1050",
+          "Scout",
+          "pod",
+          false,
+          true,
+          79
+        ],
+        [
+          0,
+          "pre",
+          "1051",
+          "Adv Stl Fighter",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1051",
+          "Bomber",
+          "bomber",
+          true,
+          false,
+          41
+        ],
+        [
+          0,
+          "pre",
+          "1051",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          25
+        ],
+        [
+          0,
+          "pre",
+          "1051",
+          "Fighter",
+          "other",
+          true,
+          false,
+          10
+        ],
+        [
+          0,
+          "pre",
+          "1051",
+          "Fighter",
+          "pod",
+          false,
+          true,
+          7
+        ],
+        [
+          0,
+          "pre",
+          "1051",
+          "Scout",
+          "other",
+          true,
+          false,
+          16
+        ],
+        [
+          0,
+          "pre",
+          "1051",
+          "Scout",
+          "pod",
+          false,
+          true,
+          6
+        ],
+        [
+          0,
+          "pre",
+          "1052",
+          "Adv Stl Fighter",
+          "other",
+          true,
+          false,
+          85
+        ],
+        [
+          0,
+          "pre",
+          "1052",
+          "Adv Stl Fighter",
+          "pod",
+          false,
+          true,
+          55
+        ],
+        [
+          0,
+          "pre",
+          "1052",
+          "Enh Fighter",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1052",
+          "Fighter",
+          "other",
+          true,
+          false,
+          65
+        ],
+        [
+          0,
+          "pre",
+          "1052",
+          "Fighter",
+          "pod",
+          false,
+          true,
+          43
+        ],
+        [
+          0,
+          "pre",
+          "1052",
+          "Guardian",
+          "other",
+          true,
+          false,
+          29
+        ],
+        [
+          0,
+          "pre",
+          "1052",
+          "Guardian",
+          "pod",
+          false,
+          true,
+          15
+        ],
+        [
+          0,
+          "pre",
+          "1052",
+          "Scout",
+          "other",
+          false,
+          false,
+          9
+        ],
+        [
+          0,
+          "pre",
+          "1052",
+          "Scout",
+          "other",
+          true,
+          false,
+          185
+        ],
+        [
+          0,
+          "pre",
+          "1052",
+          "Scout",
+          "pod",
+          false,
+          true,
+          91
+        ],
+        [
+          0,
+          "pre",
+          "1052",
+          "Stealth Fighter",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1053",
+          "Fighter",
+          "other",
+          false,
+          false,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1053",
+          "Fighter",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1053",
+          "Scout",
+          "other",
+          false,
+          false,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1053",
+          "Scout",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1054",
+          "Bomber",
+          "bomber",
+          true,
+          false,
+          2
+        ],
+        [
+          0,
+          "pre",
+          "1054",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          8
+        ],
+        [
+          0,
+          "pre",
+          "1054",
+          "Fighter",
+          "other",
+          true,
+          false,
+          2
+        ],
+        [
+          0,
+          "pre",
+          "1054",
+          "Fighter",
+          "pod",
+          false,
+          true,
+          2
+        ],
+        [
+          0,
+          "pre",
+          "1054",
+          "Scout",
+          "other",
+          true,
+          false,
+          5
+        ],
+        [
+          0,
+          "pre",
+          "1054",
+          "Scout",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1055",
+          "Adv Stl Fighter",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1055",
+          "Adv Stl Fighter",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1055",
+          "Fighter",
+          "other",
+          true,
+          false,
+          19
+        ],
+        [
+          0,
+          "pre",
+          "1055",
+          "Fighter",
+          "pod",
+          false,
+          true,
+          9
+        ],
+        [
+          0,
+          "pre",
+          "1055",
+          "Scout",
+          "other",
+          true,
+          false,
+          18
+        ],
+        [
+          0,
+          "pre",
+          "1055",
+          "Scout",
+          "pod",
+          false,
+          true,
+          8
+        ],
+        [
+          0,
+          "pre",
+          "1055",
+          "Stealth Fighter",
+          "other",
+          true,
+          false,
+          3
+        ],
+        [
+          0,
+          "pre",
+          "1055",
+          "Stealth Fighter",
+          "pod",
+          false,
+          true,
+          2
+        ],
+        [
+          0,
+          "pre",
+          "1056",
+          "Scout",
+          "other",
+          false,
+          false,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1056",
+          "Scout",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1057",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1059",
+          "Adv Stl Fighter",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1059",
+          "Scout",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1059",
+          "Scout",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          0,
+          "pre",
+          "1061",
+          "Adv Stl Fighter",
+          "other",
+          true,
+          false,
+          9
+        ],
+        [
+          0,
+          "pre",
+          "1061",
+          "Adv Stl Fighter",
+          "pod",
+          false,
+          true,
+          5
+        ],
+        [
+          0,
+          "pre",
+          "1061",
+          "Fighter",
+          "other",
+          true,
+          false,
+          29
+        ],
+        [
+          0,
+          "pre",
+          "1061",
+          "Fighter",
+          "pod",
+          false,
+          true,
+          17
+        ],
+        [
+          0,
+          "pre",
+          "1061",
+          "Scout",
+          "other",
+          true,
+          false,
+          35
+        ],
+        [
+          0,
+          "pre",
+          "1061",
+          "Scout",
+          "pod",
+          false,
+          true,
+          23
+        ],
+        [
+          1,
+          "finale",
+          "1050",
+          "Bomber",
+          "bomber",
+          true,
+          false,
+          13
+        ],
+        [
+          1,
+          "finale",
+          "1050",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          4
+        ],
+        [
+          1,
+          "finale",
+          "1050",
+          "Enh Fighter",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          1,
+          "finale",
+          "1050",
+          "Interceptor",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          1,
+          "finale",
+          "1050",
+          "Scout",
+          "other",
+          true,
+          false,
+          3
+        ],
+        [
+          1,
+          "finale",
+          "1050",
+          "Scout",
+          "pod",
+          false,
+          true,
+          2
+        ],
+        [
+          1,
+          "finale",
+          "1050",
+          "Stealth Bomber",
+          "bomber",
+          true,
+          false,
+          22
+        ],
+        [
+          1,
+          "finale",
+          "1050",
+          "Stealth Bomber",
+          "pod",
+          false,
+          true,
+          7
+        ],
+        [
+          1,
+          "finale",
+          "1051",
+          "Adv Stl Fighter",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          1,
+          "finale",
+          "1051",
+          "Adv Stl Fighter",
+          "pod",
+          false,
+          true,
+          3
+        ],
+        [
+          1,
+          "finale",
+          "1051",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          10
+        ],
+        [
+          1,
+          "finale",
+          "1051",
+          "Enh Fighter",
+          "other",
+          true,
+          false,
+          3
+        ],
+        [
+          1,
+          "finale",
+          "1051",
+          "Enh Fighter",
+          "pod",
+          false,
+          true,
+          4
+        ],
+        [
+          1,
+          "finale",
+          "1051",
+          "Interceptor",
+          "pod",
+          false,
+          true,
+          2
+        ],
+        [
+          1,
+          "finale",
+          "1051",
+          "Lt Interceptor",
+          "pod",
+          false,
+          true,
+          2
+        ],
+        [
+          1,
+          "finale",
+          "1051",
+          "Scout",
+          "pod",
+          false,
+          true,
+          6
+        ],
+        [
+          1,
+          "finale",
+          "1051",
+          "Stealth Bomber",
+          "pod",
+          false,
+          true,
+          5
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Adv Stl Fighter",
+          "other",
+          false,
+          false,
+          1
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Adv Stl Fighter",
+          "other",
+          true,
+          false,
+          5
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Adv Stl Fighter",
+          "pod",
+          false,
+          true,
+          2
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Enh Fighter",
+          "other",
+          true,
+          false,
+          7
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Enh Fighter",
+          "pod",
+          false,
+          true,
+          2
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Hvy Scout",
+          "other",
+          false,
+          false,
+          1
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Hvy Scout",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Hvy Scout",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Interceptor",
+          "other",
+          true,
+          false,
+          9
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Interceptor",
+          "pod",
+          false,
+          true,
+          5
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Lt Interceptor",
+          "other",
+          true,
+          false,
+          2
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Lt Interceptor",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Scout",
+          "other",
+          false,
+          false,
+          2
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Scout",
+          "other",
+          true,
+          false,
+          5
+        ],
+        [
+          1,
+          "finale",
+          "1052",
+          "Scout",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          1,
+          "finale",
+          "1054",
+          "Enh Fighter",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          1,
+          "finale",
+          "1054",
+          "Hvy Scout",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          1,
+          "finale",
+          "1054",
+          "Interceptor",
+          "other",
+          true,
+          false,
+          2
+        ],
+        [
+          1,
+          "finale",
+          "1054",
+          "Stealth Bomber",
+          "bomber",
+          true,
+          false,
+          2
+        ],
+        [
+          1,
+          "finale",
+          "1055",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          3
+        ],
+        [
+          1,
+          "finale",
+          "1055",
+          "Enh Fighter",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          1,
+          "finale",
+          "1058",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          2
+        ],
+        [
+          1,
+          "finale",
+          "1058",
+          "Stealth Bomber",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1050",
+          "Bomber",
+          "bomber",
+          true,
+          false,
+          42
+        ],
+        [
+          1,
+          "pre",
+          "1050",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          21
+        ],
+        [
+          1,
+          "pre",
+          "1050",
+          "Enh Fighter",
+          "other",
+          true,
+          false,
+          3
+        ],
+        [
+          1,
+          "pre",
+          "1050",
+          "Enh Fighter",
+          "pod",
+          false,
+          true,
+          2
+        ],
+        [
+          1,
+          "pre",
+          "1050",
+          "Lt Interceptor",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1050",
+          "Lt Interceptor",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1050",
+          "Scout",
+          "other",
+          true,
+          false,
+          8
+        ],
+        [
+          1,
+          "pre",
+          "1050",
+          "Scout",
+          "pod",
+          false,
+          true,
+          5
+        ],
+        [
+          1,
+          "pre",
+          "1050",
+          "Stealth Fighter",
+          "other",
+          true,
+          false,
+          2
+        ],
+        [
+          1,
+          "pre",
+          "1050",
+          "Stealth Fighter",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1051",
+          "Adv Stl Fighter",
+          "other",
+          false,
+          false,
+          2
+        ],
+        [
+          1,
+          "pre",
+          "1051",
+          "Adv Stl Fighter",
+          "other",
+          true,
+          false,
+          4
+        ],
+        [
+          1,
+          "pre",
+          "1051",
+          "Adv Stl Fighter",
+          "pod",
+          false,
+          true,
+          36
+        ],
+        [
+          1,
+          "pre",
+          "1051",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          5
+        ],
+        [
+          1,
+          "pre",
+          "1051",
+          "Enh Fighter",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1051",
+          "Enh Fighter",
+          "pod",
+          false,
+          true,
+          11
+        ],
+        [
+          1,
+          "pre",
+          "1051",
+          "Interceptor",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1051",
+          "Lt Interceptor",
+          "other",
+          true,
+          false,
+          2
+        ],
+        [
+          1,
+          "pre",
+          "1051",
+          "Lt Interceptor",
+          "pod",
+          false,
+          true,
+          33
+        ],
+        [
+          1,
+          "pre",
+          "1051",
+          "Scout",
+          "other",
+          false,
+          false,
+          4
+        ],
+        [
+          1,
+          "pre",
+          "1051",
+          "Scout",
+          "other",
+          true,
+          false,
+          4
+        ],
+        [
+          1,
+          "pre",
+          "1051",
+          "Scout",
+          "pod",
+          false,
+          true,
+          66
+        ],
+        [
+          1,
+          "pre",
+          "1051",
+          "Stealth Fighter",
+          "pod",
+          false,
+          true,
+          9
+        ],
+        [
+          1,
+          "pre",
+          "1052",
+          "Adv Stl Fighter",
+          "other",
+          true,
+          false,
+          98
+        ],
+        [
+          1,
+          "pre",
+          "1052",
+          "Adv Stl Fighter",
+          "pod",
+          false,
+          true,
+          42
+        ],
+        [
+          1,
+          "pre",
+          "1052",
+          "Enh Fighter",
+          "other",
+          true,
+          false,
+          36
+        ],
+        [
+          1,
+          "pre",
+          "1052",
+          "Enh Fighter",
+          "pod",
+          false,
+          true,
+          12
+        ],
+        [
+          1,
+          "pre",
+          "1052",
+          "Interceptor",
+          "other",
+          true,
+          false,
+          4
+        ],
+        [
+          1,
+          "pre",
+          "1052",
+          "Interceptor",
+          "pod",
+          false,
+          true,
+          2
+        ],
+        [
+          1,
+          "pre",
+          "1052",
+          "Lt Interceptor",
+          "other",
+          true,
+          false,
+          111
+        ],
+        [
+          1,
+          "pre",
+          "1052",
+          "Lt Interceptor",
+          "pod",
+          false,
+          true,
+          40
+        ],
+        [
+          1,
+          "pre",
+          "1052",
+          "Miner",
+          "miner",
+          true,
+          true,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1052",
+          "Scout",
+          "other",
+          true,
+          false,
+          170
+        ],
+        [
+          1,
+          "pre",
+          "1052",
+          "Scout",
+          "pod",
+          false,
+          true,
+          85
+        ],
+        [
+          1,
+          "pre",
+          "1052",
+          "Stealth Fighter",
+          "other",
+          true,
+          false,
+          15
+        ],
+        [
+          1,
+          "pre",
+          "1052",
+          "Stealth Fighter",
+          "pod",
+          false,
+          true,
+          9
+        ],
+        [
+          1,
+          "pre",
+          "1053",
+          "Scout",
+          "other",
+          true,
+          false,
+          2
+        ],
+        [
+          1,
+          "pre",
+          "1054",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1054",
+          "Lt Interceptor",
+          "other",
+          true,
+          false,
+          6
+        ],
+        [
+          1,
+          "pre",
+          "1054",
+          "Lt Interceptor",
+          "pod",
+          false,
+          true,
+          2
+        ],
+        [
+          1,
+          "pre",
+          "1054",
+          "Scout",
+          "other",
+          true,
+          false,
+          4
+        ],
+        [
+          1,
+          "pre",
+          "1054",
+          "Scout",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1054",
+          "Stealth Fighter",
+          "other",
+          true,
+          false,
+          9
+        ],
+        [
+          1,
+          "pre",
+          "1054",
+          "Stealth Fighter",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1055",
+          "Adv Stl Fighter",
+          "other",
+          true,
+          false,
+          2
+        ],
+        [
+          1,
+          "pre",
+          "1055",
+          "Bomber",
+          "pod",
+          false,
+          true,
+          2
+        ],
+        [
+          1,
+          "pre",
+          "1055",
+          "Enh Fighter",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1055",
+          "Lt Interceptor",
+          "other",
+          true,
+          false,
+          12
+        ],
+        [
+          1,
+          "pre",
+          "1055",
+          "Lt Interceptor",
+          "pod",
+          false,
+          true,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1055",
+          "Scout",
+          "other",
+          true,
+          false,
+          8
+        ],
+        [
+          1,
+          "pre",
+          "1055",
+          "Scout",
+          "pod",
+          false,
+          true,
+          2
+        ],
+        [
+          1,
+          "pre",
+          "1058",
+          "Bomber",
+          "bomber",
+          true,
+          false,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1058",
+          "Scout",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1059",
+          "Scout",
+          "other",
+          true,
+          false,
+          1
+        ],
+        [
+          1,
+          "pre",
+          "1061",
+          "Adv Stl Fighter",
+          "other",
+          true,
+          false,
+          22
+        ],
+        [
+          1,
+          "pre",
+          "1061",
+          "Adv Stl Fighter",
+          "pod",
+          false,
+          true,
+          6
+        ],
+        [
+          1,
+          "pre",
+          "1061",
+          "Lt Interceptor",
+          "other",
+          true,
+          false,
+          19
+        ],
+        [
+          1,
+          "pre",
+          "1061",
+          "Lt Interceptor",
+          "pod",
+          false,
+          true,
+          8
+        ],
+        [
+          1,
+          "pre",
+          "1061",
+          "Scout",
+          "other",
+          true,
+          false,
+          16
+        ],
+        [
+          1,
+          "pre",
+          "1061",
+          "Scout",
+          "pod",
+          false,
+          true,
+          11
+        ]
+      ],
+      "attackers": [
+        [
+          0,
+          "finale",
+          "Adv Stl Fighter",
+          false,
+          "bomber",
+          14
+        ],
+        [
+          0,
+          "finale",
+          "Adv Stl Fighter",
+          false,
+          "other",
+          4
+        ],
+        [
+          0,
+          "finale",
+          "Adv Stl Fighter",
+          true,
+          "other",
+          1
+        ],
+        [
+          0,
+          "finale",
+          "Enh Fighter",
+          false,
+          "bomber",
+          1
+        ],
+        [
+          0,
+          "finale",
+          "Enh Fighter",
+          false,
+          "other",
+          1
+        ],
+        [
+          0,
+          "finale",
+          "Enh Fighter",
+          true,
+          "other",
+          1
+        ],
+        [
+          0,
+          "finale",
+          "Fighter",
+          false,
+          "bomber",
+          8
+        ],
+        [
+          0,
+          "finale",
+          "Fighter",
+          false,
+          "other",
+          1
+        ],
+        [
+          0,
+          "finale",
+          "Guardian",
+          false,
+          "bomber",
+          6
+        ],
+        [
+          0,
+          "finale",
+          "Guardian",
+          false,
+          "other",
+          23
+        ],
+        [
+          0,
+          "finale",
+          "Guardian",
+          true,
+          "other",
+          2
+        ],
+        [
+          0,
+          "finale",
+          "Interceptor",
+          false,
+          "other",
+          1
+        ],
+        [
+          0,
+          "finale",
+          "Scout",
+          false,
+          "bomber",
+          8
+        ],
+        [
+          0,
+          "finale",
+          "Scout",
+          false,
+          "other",
+          6
+        ],
+        [
+          0,
+          "finale",
+          "Stealth Fighter",
+          false,
+          "other",
+          1
+        ],
+        [
+          0,
+          "pre",
+          "Adv Stl Fighter",
+          false,
+          "bomber",
+          10
+        ],
+        [
+          0,
+          "pre",
+          "Adv Stl Fighter",
+          false,
+          "other",
+          69
+        ],
+        [
+          0,
+          "pre",
+          "Adv Stl Fighter",
+          true,
+          "other",
+          2
+        ],
+        [
+          0,
+          "pre",
+          "Bomber",
+          false,
+          "other",
+          16
+        ],
+        [
+          0,
+          "pre",
+          "Fighter",
+          false,
+          "bomber",
+          10
+        ],
+        [
+          0,
+          "pre",
+          "Fighter",
+          false,
+          "miner",
+          1
+        ],
+        [
+          0,
+          "pre",
+          "Fighter",
+          false,
+          "other",
+          256
+        ],
+        [
+          0,
+          "pre",
+          "Fighter",
+          true,
+          "bomber",
+          2
+        ],
+        [
+          0,
+          "pre",
+          "Fighter",
+          true,
+          "other",
+          9
+        ],
+        [
+          0,
+          "pre",
+          "Guardian",
+          false,
+          "bomber",
+          5
+        ],
+        [
+          0,
+          "pre",
+          "Guardian",
+          false,
+          "other",
+          33
+        ],
+        [
+          0,
+          "pre",
+          "Scout",
+          false,
+          "bomber",
+          16
+        ],
+        [
+          0,
+          "pre",
+          "Scout",
+          false,
+          "other",
+          159
+        ],
+        [
+          0,
+          "pre",
+          "Scout",
+          true,
+          "other",
+          9
+        ],
+        [
+          0,
+          "pre",
+          "Stealth Fighter",
+          false,
+          "other",
+          9
+        ],
+        [
+          1,
+          "finale",
+          "Adv Scout",
+          false,
+          "bomber",
+          1
+        ],
+        [
+          1,
+          "finale",
+          "Adv Stl Fighter",
+          false,
+          "bomber",
+          10
+        ],
+        [
+          1,
+          "finale",
+          "Adv Stl Fighter",
+          false,
+          "other",
+          31
+        ],
+        [
+          1,
+          "finale",
+          "Adv Stl Fighter",
+          true,
+          "bomber",
+          1
+        ],
+        [
+          1,
+          "finale",
+          "Enh Fighter",
+          false,
+          "bomber",
+          26
+        ],
+        [
+          1,
+          "finale",
+          "Enh Fighter",
+          false,
+          "other",
+          63
+        ],
+        [
+          1,
+          "finale",
+          "Enh Fighter",
+          true,
+          "other",
+          1
+        ],
+        [
+          1,
+          "finale",
+          "Hvy Scout",
+          false,
+          "other",
+          11
+        ],
+        [
+          1,
+          "finale",
+          "Interceptor",
+          false,
+          "bomber",
+          1
+        ],
+        [
+          1,
+          "finale",
+          "Interceptor",
+          false,
+          "other",
+          28
+        ],
+        [
+          1,
+          "finale",
+          "Lt Interceptor",
+          false,
+          "bomber",
+          1
+        ],
+        [
+          1,
+          "finale",
+          "Lt Interceptor",
+          false,
+          "other",
+          2
+        ],
+        [
+          1,
+          "finale",
+          "Scout",
+          false,
+          "bomber",
+          4
+        ],
+        [
+          1,
+          "finale",
+          "Scout",
+          false,
+          "other",
+          12
+        ],
+        [
+          1,
+          "finale",
+          "Scout",
+          true,
+          "other",
+          1
+        ],
+        [
+          1,
+          "pre",
+          "Adv Stl Fighter",
+          false,
+          "bomber",
+          6
+        ],
+        [
+          1,
+          "pre",
+          "Adv Stl Fighter",
+          false,
+          "other",
+          60
+        ],
+        [
+          1,
+          "pre",
+          "Adv Stl Fighter",
+          true,
+          "bomber",
+          2
+        ],
+        [
+          1,
+          "pre",
+          "Adv Stl Fighter",
+          true,
+          "other",
+          6
+        ],
+        [
+          1,
+          "pre",
+          "Bomber",
+          false,
+          "other",
+          19
+        ],
+        [
+          1,
+          "pre",
+          "Enh Fighter",
+          false,
+          "bomber",
+          12
+        ],
+        [
+          1,
+          "pre",
+          "Enh Fighter",
+          false,
+          "other",
+          119
+        ],
+        [
+          1,
+          "pre",
+          "Enh Fighter",
+          true,
+          "other",
+          6
+        ],
+        [
+          1,
+          "pre",
+          "Interceptor",
+          false,
+          "bomber",
+          3
+        ],
+        [
+          1,
+          "pre",
+          "Interceptor",
+          false,
+          "other",
+          25
+        ],
+        [
+          1,
+          "pre",
+          "Lt Interceptor",
+          false,
+          "bomber",
+          8
+        ],
+        [
+          1,
+          "pre",
+          "Lt Interceptor",
+          false,
+          "other",
+          149
+        ],
+        [
+          1,
+          "pre",
+          "Lt Interceptor",
+          true,
+          "other",
+          8
+        ],
+        [
+          1,
+          "pre",
+          "Scout",
+          false,
+          "bomber",
+          10
+        ],
+        [
+          1,
+          "pre",
+          "Scout",
+          false,
+          "other",
+          116
+        ],
+        [
+          1,
+          "pre",
+          "Scout",
+          true,
+          "other",
+          6
+        ],
+        [
+          1,
+          "pre",
+          "Stealth Fighter",
+          false,
+          "bomber",
+          2
+        ],
+        [
+          1,
+          "pre",
+          "Stealth Fighter",
+          false,
+          "other",
+          12
+        ]
+      ],
+      "lossSources": {
+        "no-player-killer-log": 1138,
+        "player-ship": 1446
+      },
+      "economy": [
+        {
+          "oreSold": 494.2,
+          "sales": 6
+        },
+        {
+          "oreSold": 472.5,
+          "sales": 7
+        }
+      ],
+      "miners": [
+        {
+          "initial": 1,
+          "built": 1
+        },
+        {
+          "initial": 1,
+          "lost": 1,
+          "creditedLosses": 1,
+          "built": 1
+        }
+      ],
+      "developments": [
+        {
+          "222:Weedcore 03": "2026-10-25T22:09:04.159633531Z",
+          "54:Retro Booster": "2026-10-25T22:09:42.916147800Z",
+          "90:MRM Seeker 2": "2026-10-25T22:09:58.278964768Z",
+          "109:Med Shield 2": "2026-10-25T22:10:13.730981446Z",
+          "116:Lt Booster 1": "2026-10-25T22:10:28.957073417Z",
+          "131:Counter 2": "2026-10-25T22:10:44.296329785Z",
+          "58:Enh Constructor": "2026-10-25T22:12:36.741010058Z",
+          "64:Enh Miner": "2026-10-25T22:12:57.330479884Z",
+          "87:ER Nanite 2": "2026-10-25T22:13:21.882532780Z",
+          "97:SRM Seismic": "2026-10-25T22:13:52.706705139Z",
+          "121:Hvy Sig Cloak 1": "2026-10-25T22:14:26.010406813Z",
+          "271:Upgrade Tactical Lab": "2026-10-25T22:21:26.452163932Z",
+          "26:Stealth Fighter": "2026-10-25T22:23:24.671836379Z",
+          "24:Adv Stl Fighter": "2026-10-25T22:23:40.190612720Z",
+          "37:Bomber": "2026-10-25T22:23:55.941966538Z",
+          "33:Stealth Bomber": "2026-10-25T22:24:11.889587211Z",
+          "223:Enh Carrier Drone": "2026-10-25T22:27:04.884043310Z",
+          "263:Upgrade Garrison": "2026-10-25T22:27:21.804544064Z",
+          "258:[P+R] LRR Thunder": "2026-10-25T22:29:52.939540576Z",
+          "259:[P+R] MRR Lightning 2": "2026-10-25T22:30:11.026224673Z",
+          "261:[R] Rescue Drone": "2026-10-25T22:31:55.964701658Z",
+          "256:[R] Guardian": "2026-10-25T22:34:11.888516446Z",
+          "255:[P+R] PT Bomber": "2026-10-25T22:34:27.442230362Z",
+          "262:[P+R] Rocket Targeting": "2026-10-25T22:34:43.865900197Z",
+          "151:GA: Missile Track 1": "2026-10-25T22:36:55.469529155Z",
+          "155:GA: Ripcord 1": "2026-10-25T22:37:10.971844608Z",
+          "157:GA: Ship Sensors 1": "2026-10-25T22:37:26.321724196Z",
+          "159:GA: Ship Hull 1": "2026-10-25T22:37:41.675793282Z",
+          "161:GA: Ship Shield 1": "2026-10-25T22:37:57.451972488Z",
+          "53:Cruise Booster": "2026-10-25T22:38:13.091804162Z",
+          "71:PW Gattling Gun 2": "2026-10-25T22:38:28.952741251Z",
+          "74:EW Disruptor 2": "2026-10-25T22:38:44.371452922Z",
+          "81:PW Auto-Cannon 2": "2026-10-25T22:39:01.142380066Z",
+          "88:SRM Dumbfire 2": "2026-10-25T22:39:16.676989619Z",
+          "96:SRM Anti-Base 2": "2026-10-25T22:39:34.678125686Z",
+          "107:Sm Shield 2": "2026-10-25T22:39:50.152436168Z",
+          "113:Booster 2": "2026-10-25T22:40:11.061428792Z",
+          "129:Mine Pack 1": "2026-10-25T22:42:43.827228625Z",
+          "123:EWS Probe 2": "2026-10-25T22:43:01.766858294Z",
+          "20:Enh Fighter": "2026-10-25T22:43:17.468629929Z",
+          "135:GA: Ship Acceleration 1": "2026-10-25T22:46:01.457160993Z",
+          "143:GA: PW&EW Damage 1": "2026-10-25T22:46:17.187470630Z",
+          "145:GA: Faster He3 1": "2026-10-25T22:46:32.715411908Z",
+          "147:GA: He3 Yield 1": "2026-10-25T22:46:48.651993863Z",
+          "153:GA: PW Range 1": "2026-10-25T22:47:04.323774662Z",
+          "163:GA: Ship Signature 1": "2026-10-25T22:47:20.102438341Z",
+          "167:GA: Station Hull 1": "2026-10-25T22:47:35.976539477Z",
+          "169:GA: Station Shield 1": "2026-10-25T22:47:52.341646048Z",
+          "273:[R] Ion Booster": "2026-10-25T22:48:08.079172054Z",
+          "46:Afterburner 2": "2026-10-25T22:48:24.053810777Z",
+          "77:PW Mini-Gun 2": "2026-10-25T22:48:39.594161329Z",
+          "79:PW EMP Cannon 1": "2026-10-25T22:48:55.704297371Z",
+          "98:SRM EMP Missile": "2026-10-25T22:49:10.951624793Z",
+          "124:Pulse Probe": "2026-10-25T22:49:27.927178060Z",
+          "127:Prox Mine 2": "2026-10-25T22:49:44.701247629Z",
+          "31:Interceptor": "2026-10-25T22:50:47.340228131Z",
+          "137:GA: Ship Agility 1": "2026-10-25T22:51:03.441115245Z",
+          "139:GA: Ship Energy 1": "2026-10-25T22:51:21.706176728Z",
+          "141:GA: EW Range 1": "2026-10-25T22:51:43.784505151Z",
+          "149:GA: Missile Damage 1": "2026-10-25T22:52:04.918798336Z",
+          "165:GA: Ship Speed 1": "2026-10-25T22:52:24.258905066Z",
+          "67:EW Utl Cannon 2": "2026-10-25T22:52:42.271387137Z",
+          "68:EW Sniper Rifle 1": "2026-10-25T22:53:00.013227901Z",
+          "93:LRM Hunter 2": "2026-10-25T23:02:12.991458317Z",
+          "95:LRM Killer 1": "2026-10-25T23:02:29.458400279Z",
+          "118:Sig Cloak 2": "2026-10-25T23:02:45.009023519Z",
+          "246:EMP Mine 1": "2026-10-25T23:03:00.593580953Z",
+          "269:[R] Lt Sig Cloak": "2026-10-25T23:03:16.836375274Z"
+        },
+        {
+          "222:Weedcore 03": "2026-10-25T22:09:04.159908600Z",
+          "54:Retro Booster": "2026-10-25T22:09:42.916879798Z",
+          "90:MRM Seeker 2": "2026-10-25T22:10:05.732037720Z",
+          "109:Med Shield 2": "2026-10-25T22:10:20.935724053Z",
+          "116:Lt Booster 1": "2026-10-25T22:10:36.302253792Z",
+          "131:Counter 2": "2026-10-25T22:10:51.890288029Z",
+          "236:MRM Quickfire 2": "2026-10-25T22:11:07.119489806Z",
+          "58:Enh Constructor": "2026-10-25T22:13:54.124077546Z",
+          "64:Enh Miner": "2026-10-25T22:14:26.699900820Z",
+          "87:ER Nanite 2": "2026-10-25T22:14:47.782801792Z",
+          "10:Upgrade Tactical Lab": "2026-10-25T22:19:34.764908636Z",
+          "37:Bomber": "2026-10-25T22:22:12.715116811Z",
+          "33:Stealth Bomber": "2026-10-25T22:22:28.132497369Z",
+          "97:SRM Seismic": "2026-10-25T22:22:43.481545411Z",
+          "121:Hvy Sig Cloak 1": "2026-10-25T22:22:58.754487195Z",
+          "223:Enh Carrier Drone": "2026-10-25T22:24:45.342425374Z",
+          "151:GA: Missile Track 1": "2026-10-25T22:26:59.384011733Z",
+          "155:GA: Ripcord 1": "2026-10-25T22:27:16.658119929Z",
+          "157:GA: Ship Sensors 1": "2026-10-25T22:27:33.198042861Z",
+          "159:GA: Ship Hull 1": "2026-10-25T22:27:49.170265422Z",
+          "161:GA: Ship Shield 1": "2026-10-25T22:28:04.944613106Z",
+          "53:Cruise Booster": "2026-10-25T22:28:21.317649510Z",
+          "71:PW Gattling Gun 2": "2026-10-25T22:28:36.802738051Z",
+          "74:EW Disruptor 2": "2026-10-25T22:28:55.388058430Z",
+          "81:PW Auto-Cannon 2": "2026-10-25T22:29:20.530835378Z",
+          "88:SRM Dumbfire 2": "2026-10-25T22:29:43.219620311Z",
+          "96:SRM Anti-Base 2": "2026-10-25T22:30:02.351336004Z",
+          "107:Sm Shield 2": "2026-10-25T22:30:19.820424370Z",
+          "113:Booster 2": "2026-10-25T22:30:36.348805052Z",
+          "129:Mine Pack 1": "2026-10-25T22:30:52.777877056Z",
+          "123:EWS Probe 2": "2026-10-25T22:31:08.225538564Z",
+          "253:XRM Anti-Base 1": "2026-10-25T22:31:25.231703083Z",
+          "135:GA: Ship Acceleration 1": "2026-10-25T22:33:38.500179313Z",
+          "143:GA: PW&EW Damage 1": "2026-10-25T22:33:54.804540786Z",
+          "145:GA: Faster He3 1": "2026-10-25T22:34:10.585814180Z",
+          "147:GA: He3 Yield 1": "2026-10-25T22:34:26.175817881Z",
+          "153:GA: PW Range 1": "2026-10-25T22:34:42.617385729Z",
+          "163:GA: Ship Signature 1": "2026-10-25T22:34:58.256175598Z",
+          "167:GA: Station Hull 1": "2026-10-25T22:35:13.797379625Z",
+          "169:GA: Station Shield 1": "2026-10-25T22:35:29.255816378Z",
+          "46:Afterburner 2": "2026-10-25T22:35:44.636814325Z",
+          "77:PW Mini-Gun 2": "2026-10-25T22:35:59.936546556Z",
+          "79:PW EMP Cannon 1": "2026-10-25T22:36:15.683853062Z",
+          "98:SRM EMP Missile": "2026-10-25T22:36:31.497174644Z",
+          "124:Pulse Probe": "2026-10-25T22:36:47.782056021Z",
+          "127:Prox Mine 2": "2026-10-25T22:37:03.231622394Z",
+          "137:GA: Ship Agility 1": "2026-10-25T22:37:18.589333363Z",
+          "139:GA: Ship Energy 1": "2026-10-25T22:37:33.933222842Z",
+          "141:GA: EW Range 1": "2026-10-25T22:37:49.500176090Z",
+          "149:GA: Missile Damage 1": "2026-10-25T22:38:05.417015925Z",
+          "165:GA: Ship Speed 1": "2026-10-25T22:38:20.975451782Z",
+          "67:EW Utl Cannon 2": "2026-10-25T22:38:36.903201409Z",
+          "68:EW Sniper Rifle 1": "2026-10-25T22:38:52.785354663Z",
+          "93:LRM Hunter 2": "2026-10-25T22:39:09.220907462Z",
+          "95:LRM Killer 1": "2026-10-25T22:39:26.536933698Z",
+          "118:Sig Cloak 2": "2026-10-25T22:39:42.789861030Z",
+          "246:EMP Mine 1": "2026-10-25T22:41:20.257339179Z",
+          "281:Tower SC Drone": "2026-10-25T22:41:35.583104298Z",
+          "7:Upgrade Garrison": "2026-10-25T22:42:12.764956469Z",
+          "50:XRM Torpedo 1": "2026-10-25T22:43:54.909081241Z",
+          "83:PW SkyCap 2": "2026-10-25T22:44:10.632652950Z",
+          "100:XRM Hunter Killer 2": "2026-10-25T22:44:26.773536032Z",
+          "104:XRM Cruise 1": "2026-10-25T22:44:42.527559353Z",
+          "105:MRM Seismic": "2026-10-25T22:44:59.884107061Z",
+          "111:Large Shield 2": "2026-10-25T22:45:16.632794507Z",
+          "133:Hvy Counter 2": "2026-10-25T22:45:32.763533119Z",
+          "177:LRM Killer Swarm 1": "2026-10-25T22:45:48.308823562Z",
+          "225:Upgrade Medium Class": "2026-10-25T22:46:12.424097307Z",
+          "91:MRM Seeker 3": "2026-10-25T22:48:05.846386037Z",
+          "108:Med Shield 3": "2026-10-25T22:48:21.749358877Z",
+          "115:Lt Booster 2": "2026-10-25T22:48:37.216608768Z",
+          "130:Counter 3": "2026-10-25T22:48:53.391190386Z",
+          "173:LRM Aleph Res 1": "2026-10-25T22:49:08.669814105Z",
+          "233:LRM Aleph Res 2": "2026-10-25T22:49:25.361679585Z",
+          "234:LRM Aleph Res 3": "2026-10-25T22:49:42.275030519Z",
+          "237:MRM Quickfire 3": "2026-10-25T22:49:59.439700912Z",
+          "120:Hvy Sig Cloak 2": "2026-10-25T22:50:15.900671653Z",
+          "125:Teleport Probe 1": "2026-10-25T22:50:32.127398672Z",
+          "315:ER Nanite 3": "2026-10-25T22:50:47.587257329Z",
+          "15:Adv Scout": "2026-10-25T22:51:04.189200687Z",
+          "35:Hvy Bomber": "2026-10-25T22:51:22.364374174Z",
+          "39:Gunship": "2026-10-25T22:51:44.440126052Z",
+          "231:Hvy Scout": "2026-10-25T22:52:05.468252145Z",
+          "8:Upgrade Heavy Class": "2026-10-25T22:52:33.224222055Z",
+          "51:XRM Torpedo 2": "2026-10-25T22:54:46.506234765Z",
+          "82:PW SkyCap 3": "2026-10-25T22:55:02.488783219Z",
+          "99:XRM Hunter Killer 3": "2026-10-25T22:55:18.098239029Z",
+          "101:SRM Tactical Nuke 2": "2026-10-25T22:55:35.000832806Z",
+          "103:XRM Cruise 2": "2026-10-25T22:55:52.622785561Z",
+          "110:Large Shield 3": "2026-10-25T22:56:09.011644160Z",
+          "132:Hvy Counter 3": "2026-10-25T22:56:35.637320143Z",
+          "176:LRM Killer Swarm 2": "2026-10-25T22:56:52.035333117Z",
+          "6:Upgrade Expansion": "2026-10-25T22:58:40.509378596Z",
+          "136:GA: Ship Acceleration 2": "2026-10-25T23:01:33.178087075Z",
+          "144:GA: PW&EW Damage 2": "2026-10-25T23:01:49.833527998Z",
+          "146:GA: Faster He3 2": "2026-10-25T23:02:07.322770558Z",
+          "148:GA: He3 Yield 2": "2026-10-25T23:02:23.459255552Z",
+          "154:GA: PW Range 2": "2026-10-25T23:02:40.088764991Z",
+          "164:GA: Ship Signature 2": "2026-10-25T23:02:55.494435727Z",
+          "168:GA: Station Hull 2": "2026-10-25T23:03:11.877208648Z",
+          "170:GA: Station Shield 2": "2026-10-25T23:03:28.378167573Z"
+        }
+      ],
+      "purchases": [
+        {
+          "Scout": 373,
+          "Fighter": 150,
+          "Stealth Fighter": 35,
+          "Adv Stl Fighter": 153,
+          "Bomber": 89,
+          "Guardian": 87,
+          "Enh Fighter": 15,
+          "Stealth Bomber": 16,
+          "Interceptor": 14
+        },
+        {
+          "Scout": 264,
+          "Lt Interceptor": 167,
+          "Stealth Fighter": 26,
+          "Adv Stl Fighter": 167,
+          "Bomber": 57,
+          "Enh Fighter": 105,
+          "Interceptor": 34,
+          "Stealth Bomber": 43,
+          "Adv Scout": 1,
+          "Hvy Scout": 13,
+          "Hvy Bomber": 1,
+          "Hvy Interceptor": 2
+        }
+      ],
+      "initialHulls": [
+        {
+          "Scout": 120,
+          "Fighter": 75
+        },
+        {
+          "Scout": 111,
+          "Lt Interceptor": 84
+        }
+      ],
+      "trips": [
+        {
+          "removed": {
+            "count": 12,
+            "median": 0.05000000000001137,
+            "p95": 0.05000000000001137
+          },
+          "clash:removed": {
+            "count": 9,
+            "median": 0.05000000000001137,
+            "p95": 0.05000000000001137
+          },
+          "death": {
+            "count": 398,
+            "median": 0.24509871589884824,
+            "p95": 3.6783785916975376
+          },
+          "clash:death": {
+            "count": 266,
+            "median": 0.19993199999998978,
+            "p95": 3.3660677189914168
+          },
+          "rescued": {
+            "count": 102,
+            "median": 85.8108882854408,
+            "p95": 272.2527266581674
+          },
+          "clash:rescued": {
+            "count": 67,
+            "median": 82.6608281298345,
+            "p95": 152.3153987571884
+          },
+          "oxygen": {
+            "count": 224,
+            "median": 300.02466265489323,
+            "p95": 300.0470670337884
+          },
+          "clash:oxygen": {
+            "count": 134,
+            "median": 300.02450580291145,
+            "p95": 300.0470670337884
+          },
+          "docked": {
+            "count": 11,
+            "median": 187.89601173891077,
+            "p95": 286.4319080623467
+          },
+          "clash:docked": {
+            "count": 6,
+            "median": 203.15160852575136,
+            "p95": 286.4319080623467
+          }
+        },
+        {
+          "death": {
+            "count": 283,
+            "median": 0.24999999999977263,
+            "p95": 4.7426104116822785
+          },
+          "clash:death": {
+            "count": 200,
+            "median": 0.20543991475054213,
+            "p95": 3.979707710654111
+          },
+          "rescued": {
+            "count": 116,
+            "median": 94.10760264519519,
+            "p95": 253.85015600624456
+          },
+          "clash:rescued": {
+            "count": 86,
+            "median": 96.44499764707581,
+            "p95": 198.0344616186283
+          },
+          "docked": {
+            "count": 89,
+            "median": 239.6269605358566,
+            "p95": 289.690124533579
+          },
+          "oxygen": {
+            "count": 195,
+            "median": 300.02702644400824,
+            "p95": 300.04741419018114
+          },
+          "clash:oxygen": {
+            "count": 129,
+            "median": 300.02521114066917,
+            "p95": 300.04474939467264
+          },
+          "clash:docked": {
+            "count": 48,
+            "median": 253.79796961874752,
+            "p95": 289.0190334552762
+          },
+          "removed": {
+            "count": 5,
+            "median": 0.04981583790231525,
+            "p95": 0.0500000000001819
+          },
+          "clash:removed": {
+            "count": 4,
+            "median": 0.04895233445654412,
+            "p95": 0.04998999999997977
+          }
+        }
+      ],
+      "launchBounds": [
+        {
+          "rescued": {
+            "lower": {
+              "count": 89,
+              "median": 0.049531662282333855,
+              "p95": 1.9125984808010799
+            },
+            "upper": {
+              "count": 89,
+              "median": 0.09853166228231203,
+              "p95": 1.9457618143965192
+            }
+          },
+          "oxygen": {
+            "lower": {
+              "count": 218,
+              "median": 0.7024231510407049,
+              "p95": 1.8076965106040461
+            },
+            "upper": {
+              "count": 218,
+              "median": 0.7504231510407067,
+              "p95": 1.8497412893043474
+            }
+          },
+          "docked": {
+            "lower": {
+              "count": 11,
+              "median": 0.04908058382955005,
+              "p95": 0.09908058379050999
+            },
+            "upper": {
+              "count": 11,
+              "median": 0.09687048079990745,
+              "p95": 0.14269829912336718
+            }
+          }
+        },
+        {
+          "rescued": {
+            "lower": {
+              "count": 95,
+              "median": 0.049993060145652635,
+              "p95": 1.8494893344097818
+            },
+            "upper": {
+              "count": 95,
+              "median": 0.09908058387429719,
+              "p95": 1.8861571686587695
+            }
+          },
+          "docked": {
+            "lower": {
+              "count": 89,
+              "median": 0.04916121743849544,
+              "p95": 0.09989728177151846
+            },
+            "upper": {
+              "count": 89,
+              "median": 0.04968458597340941,
+              "p95": 0.14366725525337642
+            }
+          },
+          "oxygen": {
+            "lower": {
+              "count": 190,
+              "median": 0.5995256190198006,
+              "p95": 1.8900594600004297
+            },
+            "upper": {
+              "count": 190,
+              "median": 0.5995256190198006,
+              "p95": 1.899080583853106
+            }
+          }
+        }
+      ],
+      "commute": [
+        {
+          "pre:Scout": {
+            "count": 241,
+            "median": 73.001,
+            "p95": 280.62800000000004
+          },
+          "home:pre:Scout": {
+            "count": 192,
+            "median": 73.001,
+            "p95": 274.36899999999997
+          },
+          "pre:Fighter": {
+            "count": 107,
+            "median": 97.43400000000003,
+            "p95": 163.42899999999997
+          },
+          "home:pre:Fighter": {
+            "count": 98,
+            "median": 97.863,
+            "p95": 178.30899999999997
+          },
+          "pre:Stealth Fighter": {
+            "count": 1,
+            "median": 61.25700000000006,
+            "p95": 61.25700000000006
+          },
+          "home:pre:Stealth Fighter": {
+            "count": 1,
+            "median": 61.25700000000006,
+            "p95": 61.25700000000006
+          },
+          "pre:Adv Stl Fighter": {
+            "count": 107,
+            "median": 66.24299999999994,
+            "p95": 221.63400000000001
+          },
+          "home:pre:Adv Stl Fighter": {
+            "count": 65,
+            "median": 72.70499999999993,
+            "p95": 229.44799999999998
+          },
+          "bomberResidence:pre:1054": {
+            "count": 51,
+            "median": 125.096,
+            "p95": 137.596
+          },
+          "bomberResidence:pre:1055": {
+            "count": 44,
+            "median": 136.47349999999983,
+            "p95": 223.49
+          },
+          "pre:Guardian": {
+            "count": 39,
+            "median": 422.192,
+            "p95": 580.6020000000001
+          },
+          "home:pre:Guardian": {
+            "count": 28,
+            "median": 444.202,
+            "p95": 580.6020000000001
+          },
+          "pre:Enh Fighter": {
+            "count": 1,
+            "median": 88.31700000000001,
+            "p95": 88.31700000000001
+          },
+          "bomberResidence:finale:1055": {
+            "count": 40,
+            "median": 128.08700000000022,
+            "p95": 137.95399999999972
+          },
+          "finale:Adv Stl Fighter": {
+            "count": 20,
+            "median": 118.27449999999988,
+            "p95": 1705.1279999999997
+          },
+          "finale:Enh Fighter": {
+            "count": 9,
+            "median": 109.6880000000001,
+            "p95": 575.5799999999999
+          },
+          "finale:Scout": {
+            "count": 33,
+            "median": 88.06899999999996,
+            "p95": 1213.8109999999997
+          },
+          "finale:Guardian": {
+            "count": 21,
+            "median": 415.81899999999996,
+            "p95": 862.613
+          },
+          "home:finale:Guardian": {
+            "count": 3,
+            "median": 727.999,
+            "p95": 862.613
+          },
+          "bomberResidence:finale:1054": {
+            "count": 38,
+            "median": 116.91799999999989,
+            "p95": 125.91300000000024
+          },
+          "finale:Stealth Fighter": {
+            "count": 28,
+            "median": 80.16150000000016,
+            "p95": 240.41699999999992
+          },
+          "bomberResidence:finale:1057": {
+            "count": 2,
+            "median": 114.08249999999975,
+            "p95": 117.41999999999962
+          },
+          "finale:Interceptor": {
+            "count": 8,
+            "median": 356.45950000000016,
+            "p95": 481.19500000000016
+          },
+          "bomberResidence:finale:1058": {
+            "count": 2,
+            "median": 128.25199999999995,
+            "p95": 128.35699999999997
+          },
+          "finale:Fighter": {
+            "count": 1,
+            "median": 1561.712,
+            "p95": 1561.712
+          },
+          "home:finale:Scout": {
+            "count": 1,
+            "median": 1727.805,
+            "p95": 1727.805
+          }
+        },
+        {
+          "pre:Scout": {
+            "count": 190,
+            "median": 186.45299999999997,
+            "p95": 923.562
+          },
+          "home:pre:Scout": {
+            "count": 163,
+            "median": 191.351,
+            "p95": 925.309
+          },
+          "pre:Lt Interceptor": {
+            "count": 119,
+            "median": 238.49199999999996,
+            "p95": 510.831
+          },
+          "home:pre:Lt Interceptor": {
+            "count": 106,
+            "median": 240.264,
+            "p95": 510.831
+          },
+          "pre:Stealth Fighter": {
+            "count": 15,
+            "median": 420.938,
+            "p95": 465.77000000000004
+          },
+          "home:pre:Stealth Fighter": {
+            "count": 15,
+            "median": 420.938,
+            "p95": 465.77000000000004
+          },
+          "pre:Adv Stl Fighter": {
+            "count": 113,
+            "median": 86.10000000000002,
+            "p95": 181.60800000000006
+          },
+          "home:pre:Adv Stl Fighter": {
+            "count": 58,
+            "median": 97.79450000000003,
+            "p95": 183.65300000000002
+          },
+          "bomberResidence:pre:1058": {
+            "count": 17,
+            "median": 185.4459999999999,
+            "p95": 187.26700000000005
+          },
+          "bomberResidence:pre:1055": {
+            "count": 31,
+            "median": 136.17000000000007,
+            "p95": 181.36299999999983
+          },
+          "pre:Enh Fighter": {
+            "count": 72,
+            "median": 131.89750000000004,
+            "p95": 352.07299999999987
+          },
+          "bomberResidence:pre:1054": {
+            "count": 28,
+            "median": 123.17900000000003,
+            "p95": 190.29200000000014
+          },
+          "home:pre:Enh Fighter": {
+            "count": 40,
+            "median": 160.1969999999999,
+            "p95": 401.80000000000007
+          },
+          "bomberResidence:pre:1057": {
+            "count": 14,
+            "median": 163.0045,
+            "p95": 415.202
+          },
+          "pre:Interceptor": {
+            "count": 14,
+            "median": 154.03049999999996,
+            "p95": 273.922
+          },
+          "home:pre:Interceptor": {
+            "count": 7,
+            "median": 208.89699999999993,
+            "p95": 273.922
+          },
+          "bomberResidence:finale:1054": {
+            "count": 28,
+            "median": 85.19599999999991,
+            "p95": 133.66499999999996
+          },
+          "bomberResidence:finale:1055": {
+            "count": 28,
+            "median": 93.73999999999978,
+            "p95": 127.70000000000027
+          },
+          "bomberResidence:finale:1057": {
+            "count": 10,
+            "median": 146.58499999999992,
+            "p95": 364.99800000000005
+          },
+          "finale:Enh Fighter": {
+            "count": 12,
+            "median": 87.87099999999987,
+            "p95": 225.86399999999958
+          },
+          "bomberResidence:finale:1058": {
+            "count": 7,
+            "median": 128.16800000000012,
+            "p95": 171.21600000000012
+          },
+          "finale:Adv Stl Fighter": {
+            "count": 12,
+            "median": 89.7154999999999,
+            "p95": 1092.5449999999998
+          },
+          "home:finale:Adv Stl Fighter": {
+            "count": 7,
+            "median": 88.55100000000016,
+            "p95": 92.89100000000008
+          },
+          "finale:Scout": {
+            "count": 11,
+            "median": 99.66999999999985,
+            "p95": 987.4069999999999
+          },
+          "home:finale:Scout": {
+            "count": 7,
+            "median": 90.75099999999998,
+            "p95": 987.4069999999999
+          },
+          "home:finale:Enh Fighter": {
+            "count": 3,
+            "median": 224.14499999999998,
+            "p95": 225.86399999999958
+          },
+          "finale:Interceptor": {
+            "count": 9,
+            "median": 144.1550000000002,
+            "p95": 208.7320000000002
+          },
+          "bomberResidence:finale:1050": {
+            "count": 3,
+            "median": 71.60699999999997,
+            "p95": 103.82400000000007
+          },
+          "home:finale:Interceptor": {
+            "count": 3,
+            "median": 144.1550000000002,
+            "p95": 208.7320000000002
+          },
+          "finale:Stealth Bomber": {
+            "count": 6,
+            "median": 159.77949999999987,
+            "p95": 162.31799999999976
+          },
+          "bomberResidence:finale:1061": {
+            "count": 6,
+            "median": 72.4855,
+            "p95": 73.14600000000019
+          },
+          "bomberResidence:finale:1053": {
+            "count": 1,
+            "median": 98.2470000000003,
+            "p95": 98.2470000000003
+          },
+          "bomberResidence:finale:1052": {
+            "count": 6,
+            "median": 57.19399999999973,
+            "p95": 57.70900000000029
+          },
+          "bomberResidence:finale:1059": {
+            "count": 5,
+            "median": 55.29600000000028,
+            "p95": 55.53700000000026
+          },
+          "finale:Hvy Scout": {
+            "count": 9,
+            "median": 78.27500000000009,
+            "p95": 133.2489999999998
+          },
+          "home:finale:Stealth Bomber": {
+            "count": 4,
+            "median": 159.77949999999987,
+            "p95": 161.0970000000002
+          },
+          "home:finale:Hvy Scout": {
+            "count": 1,
+            "median": 86.88000000000011,
+            "p95": 86.88000000000011
+          }
+        }
+      ],
+      "entries": [
+        {
+          "pre:1050->1054:other": 103,
+          "pre:1050->1059:other": 648,
+          "pre:1050->1057:other": 2,
+          "pre:1059->1052:other": 484,
+          "pre:1050->1060:other": 2,
+          "pre:1059->1050:other": 173,
+          "pre:1054->1053:other": 15,
+          "pre:1054->1055:other": 72,
+          "pre:1060->1052:other": 2,
+          "pre:1057->1058:other": 2,
+          "pre:1052->1061:other": 79,
+          "pre:1053->1052:other": 17,
+          "pre:1053->1054:other": 1,
+          "pre:1052->1056:other": 1,
+          "pre:1052->1062:other": 1,
+          "pre:1054->1050:other": 5,
+          "pre:1052->1060:other": 7,
+          "pre:1052->1053:other": 3,
+          "pre:1055->1054:other": 3,
+          "pre:1055->1051:other": 28,
+          "pre:1060->1050:other": 7,
+          "pre:1058->1057:other": 2,
+          "pre:1055->1053:other": 5,
+          "pre:1062->1051:other": 1,
+          "pre:1053->1055:other": 3,
+          "pre:1057->1050:other": 2,
+          "pre:1051->1055:other": 2,
+          "pre:1050->1054:bomber": 60,
+          "pre:1054->1055:bomber": 51,
+          "pre:1052->1059:other": 29,
+          "pre:1055->1051:bomber": 44,
+          "pre:1061->1051:other": 9,
+          "pre:1051->1061:other": 9,
+          "pre:1061->1052:other": 6,
+          "finale:1050->1059:other": 115,
+          "finale:1050->1054:other": 206,
+          "finale:1050->1054:bomber": 32,
+          "finale:1055->1051:bomber": 40,
+          "finale:1059->1052:other": 117,
+          "finale:1059->1050:other": 14,
+          "finale:1054->1050:other": 128,
+          "finale:1054->1055:bomber": 38,
+          "finale:1050->1057:other": 26,
+          "finale:1057->1050:other": 26,
+          "finale:1054->1055:other": 76,
+          "finale:1055->1051:other": 63,
+          "finale:1051->1055:other": 30,
+          "finale:1050->1057:bomber": 2,
+          "finale:1057->1058:bomber": 2,
+          "finale:1052->1060:other": 2,
+          "finale:1060->1050:other": 1,
+          "finale:1058->1051:bomber": 2,
+          "finale:1055->1054:other": 25,
+          "finale:1054->1053:other": 20,
+          "finale:1053->1052:other": 10,
+          "finale:1052->1061:other": 10,
+          "finale:1053->1055:other": 10,
+          "finale:1061->1052:other": 9
+        },
+        {
+          "pre:1051->1062:other": 19,
+          "pre:1051->1058:other": 6,
+          "pre:1051->1055:other": 104,
+          "pre:1051->1061:other": 606,
+          "pre:1058->1056:other": 3,
+          "pre:1061->1051:other": 91,
+          "pre:1055->1054:other": 33,
+          "pre:1062->1052:other": 13,
+          "pre:1055->1053:other": 39,
+          "pre:1061->1052:other": 526,
+          "pre:1062->1051:other": 3,
+          "pre:1058->1051:other": 1,
+          "pre:1056->1057:other": 2,
+          "pre:1053->1054:other": 2,
+          "pre:1052->1061:other": 80,
+          "pre:1062->1061:other": 1,
+          "pre:1054->1050:other": 14,
+          "pre:1057->1050:other": 3,
+          "pre:1055->1051:other": 10,
+          "pre:1050->1054:other": 1,
+          "pre:1053->1052:other": 37,
+          "pre:1054->1053:other": 2,
+          "pre:1056->1052:other": 1,
+          "pre:1051->1058:bomber": 21,
+          "pre:1051->1055:bomber": 33,
+          "pre:1058->1057:bomber": 17,
+          "pre:1055->1054:bomber": 31,
+          "pre:1054->1050:bomber": 28,
+          "pre:1057->1050:bomber": 14,
+          "pre:1052->1059:other": 58,
+          "pre:1059->1052:other": 59,
+          "pre:1050->1059:other": 6,
+          "pre:1058->1057:other": 1,
+          "pre:1059->1050:other": 4,
+          "pre:1054->1055:other": 1,
+          "finale:1062->1052:other": 5,
+          "finale:1061->1051:other": 40,
+          "finale:1051->1061:other": 67,
+          "finale:1054->1050:bomber": 27,
+          "finale:1052->1061:other": 47,
+          "finale:1055->1054:bomber": 27,
+          "finale:1057->1050:bomber": 9,
+          "finale:1061->1052:other": 85,
+          "finale:1058->1057:bomber": 6,
+          "finale:1054->1053:bomber": 1,
+          "finale:1051->1058:bomber": 3,
+          "finale:1051->1055:bomber": 30,
+          "finale:1052->1059:other": 72,
+          "finale:1051->1061:bomber": 7,
+          "finale:1050->1057:bomber": 2,
+          "finale:1051->1055:other": 24,
+          "finale:1059->1050:other": 6,
+          "finale:1059->1052:other": 66,
+          "finale:1061->1052:bomber": 6,
+          "finale:1053->1055:bomber": 1,
+          "finale:1055->1054:other": 9,
+          "finale:1052->1059:bomber": 6,
+          "finale:1054->1050:other": 37,
+          "finale:1055->1051:bomber": 1,
+          "finale:1051->1062:other": 8,
+          "finale:1059->1050:bomber": 5,
+          "finale:1050->1057:other": 1,
+          "finale:1057->1050:other": 1,
+          "finale:1050->1054:other": 32,
+          "finale:1055->1051:other": 14,
+          "finale:1057->1058:bomber": 1,
+          "finale:1050->1054:bomber": 1,
+          "finale:1062->1051:other": 4,
+          "finale:1058->1051:bomber": 1
+        }
+      ],
+      "stationKills": [
+        {
+          "utc": "2026-10-25T22:30:07.259844303Z",
+          "receipt": "[station-damage] t=1014.61 side=0 station=9196:Outpost attackerSide=1 ship=8465 hull=404:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.7556->0.0000 killed=True"
+        },
+        {
+          "utc": "2026-10-25T22:32:07.440549433Z",
+          "receipt": "[station-damage] t=1124.988 side=0 station=9197:[R]esearch attackerSide=1 ship=8489 hull=404:Bomber weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.2579->0.0000 killed=True"
+        },
+        {
+          "utc": "2026-10-25T22:39:35.229386738Z",
+          "receipt": "[station-damage] t=1557.157 side=1 station=9188:Teleport (Hvy) attackerSide=0 ship=8464 hull=113:Lifepod weapon=missile=39:SRM Anti-Base 1 damageType=8 shield=0.0000->0.0000 hull=0.1373->0.0000 killed=True"
+        },
+        {
+          "utc": "2026-10-25T22:39:53.189442596Z",
+          "receipt": "[station-damage] t=1574.383 side=0 station=4328:Garrison attackerSide=1 ship=8493 hull=404:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.1646->0.0000 killed=True"
+        },
+        {
+          "utc": "2026-10-25T22:49:37.516207406Z",
+          "receipt": "[station-damage] t=2130.606 side=0 station=9193:Tactical (Adv) attackerSide=1 ship=8482 hull=444:Lifepod weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.2233->0.0000 killed=True"
+        },
+        {
+          "utc": "2026-10-25T22:52:44.273516113Z",
+          "receipt": "[station-damage] t=2290.257 side=0 station=9207:Tactical (Adv) attackerSide=1 ship=8473 hull=404:Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.0710->0.0000 killed=True"
+        },
+        {
+          "utc": "2026-10-25T23:03:30.015623725Z",
+          "receipt": "[station-damage] t=2890.601 side=0 station=9200:[R]esearch attackerSide=1 ship=8481 hull=420:Stealth Bomber weapon=missile=40:SRM Anti-Base 2 damageType=8 shield=0.0000->0.0000 hull=0.0455->0.0000 killed=True"
+        }
+      ],
+      "firstSpawns": [
+        [
+          {
+            "ship": 8101,
+            "utc": "2026-10-25T22:08:48.039655100Z"
+          },
+          {
+            "ship": 8103,
+            "utc": "2026-10-25T22:09:07.049192640Z"
+          }
+        ],
+        [
+          {
+            "ship": 8100,
+            "utc": "2026-10-25T22:08:47.790130275Z"
+          },
+          {
+            "ship": 8102,
+            "utc": "2026-10-25T22:09:07.047805401Z"
+          }
+        ]
+      ],
+      "firstUndocks": [
+        "2026-10-25T22:09:07.147191908Z",
+        "2026-10-25T22:09:07.097419543Z"
+      ],
+      "firstClashEntries": [
+        "2026-10-25T22:10:15.277091658Z",
+        "2026-10-25T22:11:50.991690201Z"
+      ],
+      "maxSim": 2903.106,
+      "lastUtc": "2026-10-25T23:03:45.746945787Z",
+      "unmatchedKillPackets": 0,
+      "startedUtc": "2026-10-25T22:09:02.666517163Z",
+      "eventColumns": [
+        "victimSide",
+        "phase",
+        "sector",
+        "hull",
+        "kind",
+        "killCredit",
+        "trueDeath",
+        "count"
+      ],
+      "attackerColumns": [
+        "side",
+        "phase",
+        "lastPurchasedHull",
+        "currentlyPod",
+        "victimKind",
+        "count"
+      ],
+      "status": "deadline",
+      "reconciled": {
+        "kills": [
+          684,
+          762
+        ],
+        "deaths": [
+          628,
+          482
+        ],
+        "matchesDeadline": true
+      }
+    },
+    {
+      "match": 2,
+      "countdownUtc": "2026-10-25T23:04:16.093718962Z",
+      "endUtc": "2026-10-25T23:04:17.617461400Z",
+      "finale": null,
+      "deadline": null,
+      "result": "[gameover] mission #0 -> Stage Over, iSideWinner=1, 1 peer(s), result packet 485 bytes",
+      "skills": {
+        "0": {
+          "flight": 1,
+          "warp": 0,
+          "autopilot": 1,
+          "targeting": 0,
+          "guns": 0,
+          "missiles": 0,
+          "chaff": 0,
+          "booster": 0,
+          "cloak": 0,
+          "probes": 0,
+          "scouting": 16,
+          "mines": 0,
+          "ship-damage": 0,
+          "station-damage": 0,
+          "station-kills": 0,
+          "nanite-ship": 0,
+          "nanite-station": 0,
+          "order-goto": 0,
+          "order-attack": 0,
+          "order-build": 0,
+          "order-repair": 0,
+          "drone-build": 0,
+          "drone-mine": 0,
+          "eject": 0,
+          "pod-rescue": 0,
+          "dock": 0,
+          "relaunch": 1,
+          "purchase": 0,
+          "research": 0,
+          "chat": 0,
+          "voice": 0,
+          "ship-kills": 0
+        },
+        "1": {
+          "flight": 1,
+          "warp": 0,
+          "autopilot": 1,
+          "targeting": 0,
+          "guns": 0,
+          "missiles": 0,
+          "chaff": 0,
+          "booster": 0,
+          "cloak": 0,
+          "probes": 0,
+          "scouting": 14,
+          "mines": 0,
+          "ship-damage": 0,
+          "station-damage": 0,
+          "station-kills": 0,
+          "nanite-ship": 0,
+          "nanite-station": 0,
+          "order-goto": 0,
+          "order-attack": 0,
+          "order-build": 0,
+          "order-repair": 0,
+          "drone-build": 0,
+          "drone-mine": 0,
+          "eject": 0,
+          "pod-rescue": 0,
+          "dock": 0,
+          "relaunch": 1,
+          "purchase": 0,
+          "research": 0,
+          "chat": 0,
+          "voice": 0,
+          "ship-kills": 0
+        }
+      },
+      "events": [],
+      "attackers": [],
+      "lossSources": {},
+      "economy": [
+        {},
+        {}
+      ],
+      "miners": [
+        {
+          "initial": 1
+        },
+        {
+          "initial": 1
+        }
+      ],
+      "developments": [
+        {},
+        {}
+      ],
+      "purchases": [
+        {},
+        {}
+      ],
+      "initialHulls": [
+        {},
+        {}
+      ],
+      "trips": [
+        {},
+        {}
+      ],
+      "launchBounds": [
+        {},
+        {}
+      ],
+      "commute": [
+        {},
+        {}
+      ],
+      "entries": [
+        {},
+        {}
+      ],
+      "stationKills": [],
+      "firstSpawns": [
+        [],
+        []
+      ],
+      "firstUndocks": [
+        null,
+        null
+      ],
+      "firstClashEntries": [
+        null,
+        null
+      ],
+      "maxSim": null,
+      "lastUtc": "2026-10-25T23:04:17.617461400Z",
+      "unmatchedKillPackets": 0,
+      "eventColumns": [
+        "victimSide",
+        "phase",
+        "sector",
+        "hull",
+        "kind",
+        "killCredit",
+        "trueDeath",
+        "count"
+      ],
+      "attackerColumns": [
+        "side",
+        "phase",
+        "lastPurchasedHull",
+        "currentlyPod",
+        "victimKind",
+        "count"
+      ],
+      "status": "ended-without-deadline",
+      "reconciled": {
+        "kills": [
+          0,
+          0
+        ],
+        "deaths": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "timingReceipts": 2,
+  "workers": [],
+  "limits": [
+    "Credit is inferred to the opposing side only when KILL_SHIP says true; valid for these two-side captures.",
+    "Sector for ejections is authoritative pod-trip eject; pod deaths use trip EndSector; other true deaths use last warp/home. Unknown remains explicit.",
+    "Attacker hull is last purchased hull plus currentlyPod flag, not weapon launch hull: delayed missiles/mines can score after an ejection.",
+    "Initial hulls are first logged in-place swaps per ship per countdown, not initial role intent or fleet exposure.",
+    "Commute is successful undock to first non-pod Alderan entry in a life, measured from the preceding ping (upper duration estimate); home: restricts to original home station launches. Combat, diversion, exploration included; failures censored. Not a pure travel-time sample.",
+    "Phase boundary is server finale arm, not each worker's slightly later trigger. No per-bomber pose or damage-weapon attribution."
+  ]
+}
