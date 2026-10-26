@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Record ONE window (the game), not the desktop: xdg-desktop-portal ScreenCast (window source) -> PipeWire ->
-GStreamer -> hardware HEVC on the Intel GPU (vapostproc + vah265enc) -> MP4.
+GStreamer -> CPU colour conversion + hardware HEVC on the GPU's media engine (vah265enc) -> MP4.
 
   record-window.py OUT.mp4 [--qp 20] [--fps 60] [--forget]
 
@@ -71,7 +71,11 @@ def started(results):
                                                   GLib.Variant("(oa{sv})", (session[0], {})), 0, -1, None, None)
     fd = fds.get(res.unpack()[0])
     desc = (f"pipewiresrc fd={fd} path={node} do-timestamp=true keepalive-time=1000 always-copy=true "
-            f"! videorate name=rate ! video/x-raw,framerate={a.fps}/1 ! vapostproc ! video/x-raw(memory:VAMemory),format=NV12 "
+            f"! videorate name=rate ! video/x-raw,framerate={a.fps}/1 "
+            # Colour conversion on the CPU: vapostproc runs on the GPU's render engine and hung it
+            # (xe "Timedout job ... Engine reset: engine_class=rcs", Arc Pro B50, 2026-10-25). The
+            # GPU then only encodes, on its media engine.
+            f"! videoconvert n-threads={max(2, min(16, (os.cpu_count() or 4) // 2))} ! video/x-raw,format=NV12 "
             f"! vah265enc rate-control=cqp qpi={a.qp} qpp={a.qp} qpb={a.qp} ! h265parse "
             f"! mp4mux fragment-duration=2000 ! filesink location={a.out}")
     p = Gst.parse_launch(desc); pipeline[0] = p
