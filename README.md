@@ -29,9 +29,6 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
 - **Multiplayer**: lobby server discovery (sort/find), ready check and
   briefing, scoreboard and pilot info. After game over a scoreboard
   intermission runs, then the next match starts automatically.
-- **Multiplayer**: lobby server discovery (sort/find), ready check and
-  briefing, scoreboard and pilot info. After game over a scoreboard
-  intermission runs, then the next match starts automatically.
 - **Showcase**: the intro's Showcase entry launches big AI battles (Small
   5v5 up to Grand 200v200 at Showcase pacing) plus the fixed-seed settings
   tune (seed 729, 5v5, 150 s ×3) that suggests and applies graphics settings.
@@ -80,6 +77,16 @@ bots** and an **MCP bot driver**. Everything is cross-checked against the
   run strike waves on the softest enemy station with defend escorts, plus
   cloak, nanite repair support, chaff/probes/mines, ammo trips and
   medevac/rescue-probe drops. Skirmish uses the same bots.
+- **How a bot match plays**: like chess, a match has three phases.
+  - **Opening**: under native fog of war, scouts sweep the map sector by
+    sector until they find the enemy base. Miners start the economy and the
+    commander starts research.
+  - **Middlegame**: the fleets stage and meet in the contested sector. Pilots
+    eject, get rescued and relaunch in better ships as research unlocks them.
+    Strike waves hit the softest enemy station.
+  - **Endgame**: once research matures, the finale arms. Bombers refit, mass
+    and strike the enemy home. If no base falls, the side with more kills at
+    the deadline wins.
 
 **Verified against native**
 
