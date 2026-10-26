@@ -2919,3 +2919,19 @@ Five other failed cases were corrected civ-validation contracts and related
 fixtures, documented as fixes rather than flakes in
 [the P825 report](reports/P825_RANDOM_CIVS.md). The raw Fast snapshot remains
 failed; its targeted follow-ups do not relabel it as a green broad run.
+
+## P830 observation (2026-10-26)
+
+`P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds`
+failed 3 of 10 isolated runs on the P830 tree (`Parked >5s` with a live combat
+target and zero velocity — Fighter hull, sectors 1051/1052), while the
+unchanged base (`0dee572d`) passed 5/5 the same afternoon. The signature is the
+ledgered P706/P708 parking class (bot-speed-under-machine-load: host load
+average 3–6 with no local test running during the series). The P830 diff does
+not touch the combat engage path that sets a Fighter's target; the only new
+with-target explorer path after the opening window is the unchanged miner-raid
+engage, and 30v30/15v15 P830 proof runs showed no park. Recorded as the same
+host-load artifact, not a product regression; the P830 report carries the full
+A/B series.
+Claude's re-run on an idle host after a reboot (2026-10-26 15:04–15:33, load 0.3–2.5): **5/5 pass** on the
+P830 tree — consistent with the load explanation.

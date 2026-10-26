@@ -138,6 +138,104 @@ public sealed class P798ScoutOpeningTests
         Assert.Empty(far);
     }
 
+    // P830 — synthetic lanes for the churn/hysteresis proof: the score and the
+    // Why are what the assignment stability depends on, not the map.
+    private static FrontierLane Lane(short from, short to, double score, string why) =>
+        new(from, to, -1, true, score, why);
+
+    [Fact]
+    public void P830_Lane_is_kept_across_passes_while_valid_and_taken_again_only_when_it_really_changed()
+    {
+        // The rig churn shape (batch 34/35): the same frontier pool and the same
+        // explorers every 0.5 s pass must produce the SAME assignment — and the
+        // 'assigned lane' line must not fire again.
+        var lanes = new List<FrontierLane>
+        {
+            Lane(1050, 1054, 1005, "aleph 2168, partner alephs known"),
+            Lane(1050, 1059, 1005, "aleph 2176, partner alephs known"),
+            Lane(1052, 1052, 1500, "known sector not yet swept"),
+            Lane(1052, 1053, 955, "aleph 2152, partner alephs known"),
+        };
+        var scouts = new[] { new ScoutPost(1, 1050), new ScoutPost(2, 1050) };
+        int Hops(short _, short __) => 1;
+        var current = ExplorationPlanner.Assign(lanes, scouts, Hops);
+        Assert.Equal(2, current.Count);
+        foreach (var _ in Enumerable.Range(0, 40))                 // 20 s of passes
+        {
+            var next = ExplorationPlanner.Assign(lanes, scouts, Hops, current);
+            Assert.Equal(current.OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value.Key)),
+                next.OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value.Key)));
+            current = next;
+        }
+
+        // A lane that left the pool (swept / timed out / destination known) is
+        // released: its scout takes the next frontier, the other scout holds.
+        var held = current[1];
+        var pool = lanes.Where(l => l.Key != held.Key).ToList();
+        var after = ExplorationPlanner.Assign(pool, scouts, Hops, current);
+        Assert.NotEqual(held.Key, after[1].Key);
+        Assert.Equal(current[2].Key, after[2].Key);                // untouched scout keeps its lane
+        Assert.Equal(after.Keys.Select(k => after[k].Key), after.Keys.Select(k => after[k].Key).Distinct());
+    }
+
+    [Fact]
+    public void P830_No_churn_when_the_frontier_scores_jitter_and_explorers_are_unchanged()
+    {
+        // Race-agnostic: hop/intel jitter shifts a lane's score a little between
+        // passes; a held lane must survive it (no re-assignment storm).
+        var scouts = new[] { new ScoutPost(1, 1050), new ScoutPost(2, 1052) };
+        int Hops(short _, short __) => 1;
+        List<FrontierLane> Pool(int tick) =>
+        [
+            Lane(1050, 1054, 1005 + (tick % 3) * 5, "aleph 2168, partner alephs known"),
+            Lane(1052, 1056, 955 + (tick % 2) * 5, "aleph 2150, partner alephs known"),
+        ];
+        var current = ExplorationPlanner.Assign(Pool(0), scouts, Hops);
+        Assert.Equal(2, current.Count);
+        foreach (var tick in Enumerable.Range(1, 30))
+        {
+            var next = ExplorationPlanner.Assign(Pool(tick), scouts, Hops, current);
+            Assert.Equal(current.OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value.Key)),
+                next.OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value.Key)));
+            current = next;
+        }
+    }
+
+    [Fact]
+    public void P830_Held_lane_only_released_for_a_free_lane_beating_it_by_the_switch_margin()
+    {
+        var scouts = new[] { new ScoutPost(1, 1050), new ScoutPost(2, 1052) };
+        int Hops(short _, short __) => 1;
+        var lanes = new List<FrontierLane>
+        {
+            Lane(1050, 1054, 955, "aleph 2168, partner alephs known"),      // scout 1 holds
+            Lane(1052, 1056, 955, "aleph 2150, partner alephs known"),      // scout 2 holds
+        };
+        var current = new Dictionary<int, FrontierLane>
+        {
+            [1] = lanes[0],
+            [2] = lanes[1],
+        };
+        // A slightly better free lane is NOT enough (below the switch margin).
+        lanes.Add(Lane(1050, 1059, 1005, "aleph 2176, partner alephs known"));
+        var kept = ExplorationPlanner.Assign(lanes, scouts, Hops, current);
+        Assert.Equal(current.OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value.Key)),
+            kept.OrderBy(kv => kv.Key).Select(kv => (kv.Key, kv.Value.Key)));
+
+        // A frontier far above the margin (a known-but-unswept sector) wins the
+        // held lane back — and never one another scout still holds.
+        lanes.Add(Lane(1050, 1052, 1500, "known sector not yet swept"));
+        var switched = ExplorationPlanner.Assign(lanes, scouts, Hops, current);
+        Assert.Equal(new LaneKey(1050, 1052), switched[1].Key);            // released for the better lane
+        Assert.Equal(new LaneKey(1052, 1056), switched[2].Key);            // scout 2 keeps what it holds
+        Assert.Equal(switched.Keys.Select(k => switched[k].Key), switched.Keys.Select(k => switched[k].Key).Distinct());
+
+        // The released lane returns to the pool for whoever is free next pass.
+        var released = ExplorationPlanner.Assign(lanes, scouts, Hops, switched);
+        Assert.Equal(new LaneKey(1050, 1052), released[1].Key);
+        Assert.Equal(new LaneKey(1052, 1056), released[2].Key);            // still held; no thrash
+    }
+
     [SkippableTheory]
     [InlineData("m2xspiderw.igc")]
     [InlineData("m2scatter.igc")]

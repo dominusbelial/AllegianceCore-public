@@ -1,0 +1,264 @@
+{
+  "tag": "before",
+  "elapsedSeconds": 840.118227,
+  "fullKnowledgeSide0": 265.0587786,
+  "fullKnowledgeSide1": 260.058316,
+  "fullSweepSide0": null,
+  "fullSweepSide1": 360.0677045,
+  "firstContactSide0": 142.2,
+  "firstContactSide1": 193.8,
+  "samples": [
+    {
+      "t": 60.0202246,
+      "side": 0,
+      "share": 0.385,
+      "known": 5,
+      "swept": 1,
+      "reachable": 13,
+      "firstStation": null
+    },
+    {
+      "t": 60.0202246,
+      "side": 1,
+      "share": 0.231,
+      "known": 3,
+      "swept": 0,
+      "reachable": 13,
+      "firstStation": null
+    },
+    {
+      "t": 120.0371969,
+      "side": 0,
+      "share": 0.692,
+      "known": 9,
+      "swept": 4,
+      "reachable": 13,
+      "firstStation": null
+    },
+    {
+      "t": 120.0371969,
+      "side": 1,
+      "share": 0.538,
+      "known": 7,
+      "swept": 2,
+      "reachable": 13,
+      "firstStation": null
+    },
+    {
+      "t": 180.0470555,
+      "side": 0,
+      "share": 0.846,
+      "known": 11,
+      "swept": 8,
+      "reachable": 13,
+      "firstStation": 142.2
+    },
+    {
+      "t": 180.0470555,
+      "side": 1,
+      "share": 0.692,
+      "known": 9,
+      "swept": 5,
+      "reachable": 13,
+      "firstStation": null
+    },
+    {
+      "t": 240.0564808,
+      "side": 0,
+      "share": 0.923,
+      "known": 12,
+      "swept": 8,
+      "reachable": 13,
+      "firstStation": 142.2
+    },
+    {
+      "t": 240.0564808,
+      "side": 1,
+      "share": 0.769,
+      "known": 10,
+      "swept": 8,
+      "reachable": 13,
+      "firstStation": 193.8
+    },
+    {
+      "t": 300.0623388,
+      "side": 0,
+      "share": 1,
+      "known": 13,
+      "swept": 10,
+      "reachable": 13,
+      "firstStation": 142.2
+    },
+    {
+      "t": 300.0623388,
+      "side": 1,
+      "share": 1,
+      "known": 13,
+      "swept": 8,
+      "reachable": 13,
+      "firstStation": 193.8
+    },
+    {
+      "t": 360.0677045,
+      "side": 0,
+      "share": 1,
+      "known": 13,
+      "swept": 10,
+      "reachable": 13,
+      "firstStation": 142.2
+    },
+    {
+      "t": 360.0677045,
+      "side": 1,
+      "share": 1,
+      "known": 13,
+      "swept": 12,
+      "reachable": 13,
+      "firstStation": 193.8
+    },
+    {
+      "t": 420.0759787,
+      "side": 0,
+      "share": 1,
+      "known": 13,
+      "swept": 10,
+      "reachable": 13,
+      "firstStation": 142.2
+    },
+    {
+      "t": 420.0759787,
+      "side": 1,
+      "share": 1,
+      "known": 13,
+      "swept": 12,
+      "reachable": 13,
+      "firstStation": 193.8
+    },
+    {
+      "t": 480.0814277,
+      "side": 0,
+      "share": 1,
+      "known": 13,
+      "swept": 11,
+      "reachable": 13,
+      "firstStation": 142.2
+    },
+    {
+      "t": 480.0814277,
+      "side": 1,
+      "share": 1,
+      "known": 13,
+      "swept": 12,
+      "reachable": 13,
+      "firstStation": 193.8
+    },
+    {
+      "t": 540.0914669,
+      "side": 0,
+      "share": 1,
+      "known": 13,
+      "swept": 11,
+      "reachable": 13,
+      "firstStation": 142.2
+    },
+    {
+      "t": 540.0914669,
+      "side": 1,
+      "share": 1,
+      "known": 13,
+      "swept": 12,
+      "reachable": 13,
+      "firstStation": 193.8
+    },
+    {
+      "t": 600.0967978,
+      "side": 0,
+      "share": 1,
+      "known": 13,
+      "swept": 11,
+      "reachable": 13,
+      "firstStation": 142.2
+    },
+    {
+      "t": 600.0967978,
+      "side": 1,
+      "share": 1,
+      "known": 13,
+      "swept": 12,
+      "reachable": 13,
+      "firstStation": 193.8
+    },
+    {
+      "t": 660.1016723,
+      "side": 0,
+      "share": 1,
+      "known": 13,
+      "swept": 11,
+      "reachable": 13,
+      "firstStation": 142.2
+    },
+    {
+      "t": 660.1016723,
+      "side": 1,
+      "share": 1,
+      "known": 13,
+      "swept": 12,
+      "reachable": 13,
+      "firstStation": 193.8
+    },
+    {
+      "t": 720.1067424,
+      "side": 0,
+      "share": 1,
+      "known": 13,
+      "swept": 11,
+      "reachable": 13,
+      "firstStation": 142.2
+    },
+    {
+      "t": 720.1067424,
+      "side": 1,
+      "share": 1,
+      "known": 13,
+      "swept": 12,
+      "reachable": 13,
+      "firstStation": 193.8
+    },
+    {
+      "t": 780.1123589,
+      "side": 0,
+      "share": 1,
+      "known": 13,
+      "swept": 11,
+      "reachable": 13,
+      "firstStation": 142.2
+    },
+    {
+      "t": 780.1123589,
+      "side": 1,
+      "share": 1,
+      "known": 13,
+      "swept": 12,
+      "reachable": 13,
+      "firstStation": 193.8
+    },
+    {
+      "t": 840.1176042,
+      "side": 0,
+      "share": 1,
+      "known": 13,
+      "swept": 11,
+      "reachable": 13,
+      "firstStation": 142.2
+    },
+    {
+      "t": 840.1176042,
+      "side": 1,
+      "share": 1,
+      "known": 13,
+      "swept": 12,
+      "reachable": 13,
+      "firstStation": 193.8
+    }
+  ]
+}

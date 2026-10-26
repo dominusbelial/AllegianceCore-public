@@ -395,8 +395,21 @@ internal sealed partial class BotManager
                     bool raiding = now - bot.LastMinerRaidAt < ScoutOpening.RaidLingerSeconds;
                     bool recon = reconId is { } rid && bot.BotId == rid;
                     bot.ReconTarget = recon ? enemyHome : null;
+                    // P830 — the opening window is a FLOOR, not a cutoff: as
+                    // long as the map is not complete the scouts keep exploring
+                    // after ScoutOpening.OpeningSeconds. Before P830 the window
+                    // expired with sectors unswept, IsExplorer flipped false for
+                    // every scout and the assignment pass cleared + re-assigned
+                    // the SAME lane every 0.5 s (the ~40 % log churn on the rig)
+                    // while nobody actually swept — fog never resolved and the
+                    // match ran on for hours. A scout keeps its lane until the
+                    // sweep completes or the lane becomes invalid (sector
+                    // known/swept, scout dead/pod/rearming, recon duty) or a
+                    // strictly better assignment beats it by the switch margin
+                    // (ExplorationPlanner.Assign hysteresis).
                     bot.IsExplorer = (chosen.Contains(bot.Name) || recon)
-                        && (!complete || raiding || recon) && OpeningActive(now);
+                        && (!complete || raiding || recon)
+                        && (OpeningActive(now) || !complete);
                     if (recon)
                     {
                         if (bot.ExploreLane is not null) _laneStarted.Remove(bot.Name);
@@ -420,8 +433,13 @@ internal sealed partial class BotManager
                 }
                 if (complete || lanes.Count == 0) continue;
 
-                var laneScouts = reconId is { } skip
-                    ? scouts.Where(b => b.BotId != skip).ToList() : scouts;
+                // P830 — lanes are only handed to scouts that ARE explorers this
+                // pass. The previous code assigned to the whole roster even when
+                // IsExplorer had just cleared their lane, which is what made the
+                // 'assigned lane' line fire every pass after the opening window.
+                var laneScouts = (reconId is { } skip
+                    ? scouts.Where(b => b.BotId != skip) : scouts)
+                    .Where(b => b.IsExplorer).ToList();
                 if (laneScouts.Count == 0) continue;
                 var lanePosts = laneScouts.Select(b => new ScoutPost(b.BotId, CsSectorOf(b), ScannerRangeOf(b))).ToArray();
                 var current = laneScouts.Where(b => b.ExploreLane is not null)
@@ -432,7 +450,17 @@ internal sealed partial class BotManager
                 {
                     bool had = bot.ExploreLane is not null;
                     var previous = bot.ExploreLane;
-                    if (!assigned.TryGetValue(bot.BotId, out var lane)) { bot.ExploreLane = null; continue; }
+                    if (!assigned.TryGetValue(bot.BotId, out var lane))
+                    {
+                        bot.ExploreLane = null;
+                        // P830 — fire once per real invalidation (the lane left
+                        // the pool: swept, timed out or its destination became
+                        // known), never per pass.
+                        if (had)
+                            Console.WriteLine($"[opening] scout {bot.Name} side {side} lane " +
+                                $"{previous!.Value.From}->{previous!.Value.To} no longer valid — taking the next frontier");
+                        continue;
+                    }
                     bot.ExploreLane = lane;
                     if (!had || previous!.Value.Key != lane.Key)
                     {
@@ -686,7 +714,11 @@ internal sealed partial class BotManager
     /// rocks and stations.</summary>
     private bool TryDriveExploration(ActiveBot bot, ConnectionSession cs, double now)
     {
-        if (!bot.IsExplorer || bot.OrderedCommand is not null || !OpeningActive(now)) return false;
+        // P830 — no OpeningActive gate here: exploration runs until the side's
+        // map is complete (the stand-down below), not until the opening window
+        // expires; the window only bounds the fleet-phase handover, not the
+        // sweeps.
+        if (!bot.IsExplorer || bot.OrderedCommand is not null) return false;
         var graph = GraphOf(cs);
         bool complete;
         lock (_intel.Sync)

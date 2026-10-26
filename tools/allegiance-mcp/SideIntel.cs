@@ -164,7 +164,10 @@ internal static class ExplorationPlanner
     }
 
     /// <summary>Assign lanes to scouts so that no two scouts in the same call
-    /// take the same lane. Current assignments are kept when still valid; the
+    /// take the same lane. Current assignments are kept when still valid (P830:
+    /// a lane is only released when it left the pool — swept/timed out/known —
+    /// or a free lane beats the held one by <see cref="ScoutOpening.LaneSwitchScoreMargin"/>,
+    /// so an unchanged input assigns exactly the same lanes every pass); the
     /// rest are filled greedily (highest lane score, then fewest hops from the
     /// scout, then scout id) — deterministic and O(scouts × lanes).</summary>
     internal static Dictionary<int, FrontierLane> Assign(IReadOnlyList<FrontierLane> lanes,
@@ -173,16 +176,17 @@ internal static class ExplorationPlanner
     {
         var result = new Dictionary<int, FrontierLane>();
         var used = new HashSet<LaneKey>();
+        var kept = new Dictionary<int, FrontierLane>();
         if (current is not null)
             foreach (var (id, lane) in current.OrderBy(kv => kv.Key))
             {
                 if (!lanes.Any(l => l.Key == lane.Key) || used.Contains(lane.Key)) continue;
-                result[id] = lane;
+                kept[id] = lane;
                 used.Add(lane.Key);
             }
         foreach (var scout in scouts.OrderBy(s => s.Id))
         {
-            if (result.ContainsKey(scout.Id)) continue;
+            if (kept.ContainsKey(scout.Id) || result.ContainsKey(scout.Id)) continue;
             FrontierLane? best = null;
             double bestScore = double.NegativeInfinity;
             int bestHops = int.MaxValue;
@@ -197,6 +201,34 @@ internal static class ExplorationPlanner
                 { best = lane; bestScore = rank; bestHops = h; }
             }
             if (best is { } chosen) { result[scout.Id] = chosen; used.Add(chosen.Key); }
+        }
+        // P830 — hysteresis on the kept lanes: a held lane is given up only for
+        // a free lane that beats it by the switch margin (never one another
+        // scout already holds — no two scouts ever fight over a lane). Ties and
+        // release order are deterministic (kept lanes by scout id).
+        foreach (var (id, lane) in kept.OrderBy(kv => kv.Key))
+        {
+            var post = scouts.FirstOrDefault(s => s.Id == id);
+            FrontierLane? better = null;
+            double betterRank = double.NegativeInfinity;
+            int betterHops = int.MaxValue;
+            if (post.Id == id)
+                foreach (var cand in lanes)
+                {
+                    if (used.Contains(cand.Key)) continue;
+                    int h = hops(post.Sector, cand.From);
+                    if (h < 0) continue;
+                    double rank = cand.Score * 100.0 - h * 10.0;
+                    if (rank > betterRank || (rank == betterRank && h < betterHops))
+                    { better = cand; betterRank = rank; betterHops = h; }
+                }
+            if (better is { } swap && swap.Score >= lane.Score + ScoutOpening.LaneSwitchScoreMargin)
+            {
+                used.Remove(lane.Key);                        // released back to the pool
+                result[id] = swap;
+                used.Add(swap.Key);
+            }
+            else result[id] = lane;
         }
         return result;
     }
@@ -632,6 +664,13 @@ internal static class ScoutOpening
     internal static readonly double ClashDelaySeconds = ReadDouble("ALLEGIANCE_P798_CLASH_DELAY", 75);
     internal static readonly double ClashFallbackSeconds = 420;
     internal static readonly double OpeningSeconds = 600;
+    /// <summary>P830 — lane-switch hysteresis: a scout holds its current lane
+    /// while the lane stays valid; it only releases it when a free lane scores
+    /// this many points higher (a held 955 lane is kept against another 955 or
+    /// a 1000, given up for a 1500 "known sector not yet swept"). Keeps the
+    /// assignment stable across passes without freezing out genuinely better
+    /// frontiers.</summary>
+    internal static readonly double LaneSwitchScoreMargin = ReadDouble("ALLEGIANCE_P798_LANE_SWITCH_MARGIN", 250);
     internal static readonly double IntelLineSeconds = 60;
     internal static readonly double ScanIntervalSeconds = 1;
     internal static readonly double SupportWindowSeconds = 20;

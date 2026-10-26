@@ -1,0 +1,120 @@
+{
+  "tag": "after",
+  "elapsedSeconds": 375.0662327,
+  "fullKnowledgeSide0": 245.0529942,
+  "fullKnowledgeSide1": 270.0556757,
+  "fullSweepSide0": 375.065621,
+  "fullSweepSide1": 375.065621,
+  "firstContactSide0": 167,
+  "firstContactSide1": 199.9,
+  "samples": [
+    {
+      "t": 60.0216441,
+      "side": 0,
+      "share": 0.385,
+      "known": 5,
+      "swept": 0,
+      "reachable": 13,
+      "firstStation": null
+    },
+    {
+      "t": 60.0216441,
+      "side": 1,
+      "share": 0.308,
+      "known": 4,
+      "swept": 0,
+      "reachable": 13,
+      "firstStation": null
+    },
+    {
+      "t": 120.0352066,
+      "side": 0,
+      "share": 0.692,
+      "known": 9,
+      "swept": 4,
+      "reachable": 13,
+      "firstStation": null
+    },
+    {
+      "t": 120.0352066,
+      "side": 1,
+      "share": 0.538,
+      "known": 7,
+      "swept": 2,
+      "reachable": 13,
+      "firstStation": null
+    },
+    {
+      "t": 180.0459014,
+      "side": 0,
+      "share": 0.846,
+      "known": 11,
+      "swept": 6,
+      "reachable": 13,
+      "firstStation": 167
+    },
+    {
+      "t": 180.0459014,
+      "side": 1,
+      "share": 0.692,
+      "known": 9,
+      "swept": 5,
+      "reachable": 13,
+      "firstStation": null
+    },
+    {
+      "t": 240.0525301,
+      "side": 0,
+      "share": 0.923,
+      "known": 12,
+      "swept": 7,
+      "reachable": 13,
+      "firstStation": 167
+    },
+    {
+      "t": 240.0525301,
+      "side": 1,
+      "share": 0.846,
+      "known": 11,
+      "swept": 8,
+      "reachable": 13,
+      "firstStation": 199.9
+    },
+    {
+      "t": 300.058734,
+      "side": 0,
+      "share": 1,
+      "known": 13,
+      "swept": 10,
+      "reachable": 13,
+      "firstStation": 167
+    },
+    {
+      "t": 300.058734,
+      "side": 1,
+      "share": 1,
+      "known": 13,
+      "swept": 11,
+      "reachable": 13,
+      "firstStation": 199.9
+    },
+    {
+      "t": 360.0643541,
+      "side": 0,
+      "share": 1,
+      "known": 13,
+      "swept": 11,
+      "reachable": 13,
+      "firstStation": 167
+    },
+    {
+      "t": 360.0643541,
+      "side": 1,
+      "share": 1,
+      "known": 13,
+      "swept": 11,
+      "reachable": 13,
+      "firstStation": 199.9
+    }
+  ]
+}
