@@ -2229,6 +2229,67 @@ public sealed partial class Server
                     Console.WriteLine($"[wire] bad REQPINGDATA from {from}: {e.Message}");
                 }
             }
+            else if (fmid == QuitSide.Fmid)   // FM_CS_QUIT_SIDE (Messages.h:825-829)
+            {
+                // P850 — the client half of the quit/boot branch, closing the
+                // gap where the server only BUILDS (broadcasts) QUIT_SIDE and
+                // had no inbound dispatch case. Port of FedSrv.CPP:6823-6906.
+                // See HandleQuitSide in Server.Lobby.cs: a moderator removes any
+                // player; an ordinary player quits itself or (as the side
+                // leader) boots a same-side teammate; a leader boot is refused
+                // while LockTeamSettings is set. The leaver is MOVED to the
+                // team lobby (staying in the mission), not removed from it.
+                try
+                {
+                    var qs = command.Read<QuitSide>();
+                    if (!_peerShips.TryGetValue(from, out var qsLive))
+                    {
+                        ConsoleLog.Write($"[quitside] {from}: QUIT_SIDE from a peer with no ship — ignored");
+                    }
+                    else if (qsLive.Ship.Mission is not Mission mission)
+                    {
+                        ConsoleLog.Write($"[quitside] {from} ship {qsLive.Ship.Id}: no mission — QUIT_SIDE ignored");
+                    }
+                    else
+                    {
+                        HandleQuitSide(from, mission, qsLive.Ship, qs);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad QUIT_SIDE from {from}: {e.Message}");
+                }
+            }
+            else if (fmid == SetTeamLeader.Fmid)   // FM_CS_SET_TEAM_LEADER (Messages.h:767-772)
+            {
+                // P850 — the client half of the leader-transfer branch, closing
+                // the gap where the server only BUILDS (broadcasts)
+                // SET_TEAM_LEADER and had no inbound dispatch case. Port of
+                // FedSrv.CPP:7624-7687 minus native's bot-auth sub-branches
+                // (no bot-auth concept in this port): a side leader transfers
+                // leadership to a same-side teammate. See HandleSetTeamLeader
+                // in Server.Lobby.cs.
+                try
+                {
+                    var stl = command.Read<SetTeamLeader>();
+                    if (!_peerShips.TryGetValue(from, out var stlLive))
+                    {
+                        ConsoleLog.Write($"[setleader] {from}: SET_TEAM_LEADER from a peer with no ship — ignored");
+                    }
+                    else if (stlLive.Ship.Mission is not Mission mission)
+                    {
+                        ConsoleLog.Write($"[setleader] {from} ship {stlLive.Ship.Id}: no mission — SET_TEAM_LEADER ignored");
+                    }
+                    else
+                    {
+                        HandleSetTeamLeader(from, mission, stlLive.Ship, stl);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"[wire] bad SET_TEAM_LEADER from {from}: {e.Message}");
+                }
+            }
             else
             {
                 // P315 (H3): rate-limit the per-message refusal log so a flood of

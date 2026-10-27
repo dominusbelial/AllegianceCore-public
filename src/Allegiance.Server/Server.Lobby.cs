@@ -1997,6 +1997,131 @@ private void CompleteStartCountdown(Mission mission, double now)
         }
     }
 
+// ═══════════════════ P850 — inbound QUIT_SIDE / SET_TEAM_LEADER ═══════════════════
+
+    /// <summary>P850 — inbound <c>FM_CS_QUIT_SIDE(126)</c>, the client half of
+    /// the quit/boot branch. Port of <c>FedSrv.CPP:6823-6906</c> (re-verified
+    /// this session); the closest sibling is P762's
+    /// <see cref="HandleQuitMission"/> but the leaver is moved to the team
+    /// lobby — <em>staying in the mission</em> — via <see cref="MoveToTeamLobby"/>
+    /// (the port of native <c>RemovePlayerFromSide</c>'s quit-side effect),
+    /// never removed from the mission.
+    /// <para><b>Moderators.</b> Native's Steam moderator/developer group branch
+    /// (<c>:6848-6856</c>) removes any player with any reason + message. The
+    /// port's equivalent identity is <see cref="ServerConfig.ModeratorAccounts"/>
+    /// (the same bearer-secret <see cref="IsModerator"/> model P762 uses).</para>
+    /// <para><b>Ordinary players.</b> Only quitting themselves or, as the side
+    /// leader, booting a same-side teammate is accepted (<c>:6862-6864</c>).
+    /// The reason must match exactly (<c>TrapHackBoot</c>, <c>:6870</c>):
+    /// <see cref="QuitSideReason.Quit"/> for self,
+    /// <see cref="QuitSideReason.LeaderBooted"/> for a boot. A boot is refused
+    /// while <see cref="GameConfig.LockTeamSettings"/> is set (<c>:6889</c>).
+    /// Native's locked-sides <c>DELPOSITIONREQ(DPR_SidesLocked)</c> block
+    /// (<c>:6875-6885</c>) is unreachable in this port: it requires the sender's
+    /// own side to be <c>SIDE_TEAMLOBBY</c>, which an ordinary player already
+    /// parked there hits earlier at the <c>sideID &lt; 0</c> gate (<c>:6836</c>)
+    /// — that degenerate re-send is handled gracefully by refusing at the same
+    /// gate. Native's banned-side-mask kick-out-of-mission leg
+    /// (<c>:6893-6900</c>) is N/A: this port has no banned-side-mask concept
+    /// (stated in the P195 rebalance writeup) and is deliberately omitted.</summary>
+    private void HandleQuitSide(ConnectionId from, Mission mission, Ship senderShip, QuitSide request)
+    {
+        // Native :6833-6837 — resolve the sender's own side. A NON-moderator
+        // with no real side (sideID < 0; includes a player already parked on
+        // SIDE_TEAMLOBBY/-2) is refused outright.
+        bool isModerator = IsModerator(from);
+        short sideId = senderShip.SideId ?? Na;   // Na = -1, the no-side sentinel
+        if (sideId < 0 && !isModerator) return;
+
+        // Native :6841-6846 — the target ship; not found (already gone) -> nothing.
+        Ship? foundTarget = null;
+        foreach (var kv in _peerShips)
+        {
+            var cand = kv.Value?.Ship;
+            if (cand is null) continue;
+            if (cand.Id == request.ShipId && ReferenceEquals(cand.Mission, mission))
+            { foundTarget = cand; break; }
+        }
+        if (foundTarget is null) return;
+        Ship targetShip = foundTarget;
+
+        // Native :6848-6856 — moderator/administrator branch: remove the target
+        // (any reason/message), no self/leader gate.
+        if (isModerator && LiveOf(targetShip) is not null)   // pfssAck->IsPlayer()
+        {
+            MoveToTeamLobby(mission, targetShip, request.Reason);
+            return;
+        }
+
+        // Native :6862-6864 — the player must be the team leader or booting
+        // themselves (the client might mistakenly think it is the leader).
+        bool self = ReferenceEquals(senderShip, targetShip);
+        bool senderIsSideLeader = sideId >= 0
+            && mission.Sides.FirstOrDefault(s => s.Id == sideId)?.LeaderShipId == senderShip.Id;
+        bool targetOnSenderSide = sideId >= 0 && targetShip.SideId == sideId;
+        if (!self && !(senderIsSideLeader && targetOnSenderSide)) return;
+
+        // Native :6867-6870 — a boot targets someone else; the reason must be
+        // exactly QSR_LeaderBooted (boot) or QSR_Quit (self) (TrapHackBoot).
+        bool bIsBoot = senderShip.Id != request.ShipId;
+        if (request.Reason != (bIsBoot ? QuitSideReason.LeaderBooted : QuitSideReason.Quit)) return;
+
+        // Native :6886-6901 — move to the team lobby unless a locked team's
+        // settings forbid a boot (:6889: !bIsBoot || !bLockTeamSettings).
+        if (!bIsBoot || !GameSettings(mission).LockTeamSettings)
+        {
+            MoveToTeamLobby(mission, targetShip, request.Reason);
+            Console.WriteLine($"[quitside] ship {targetShip.Id} left side -> team lobby (reason {request.Reason}, boot={bIsBoot}, initiated by ship {senderShip.Id})");
+        }
+        else
+        {
+            Console.WriteLine($"[quitside] leader boot of ship {targetShip.Id} refused — team settings locked");
+        }
+    }
+
+    /// <summary>P850 — inbound <c>FM_CS_SET_TEAM_LEADER(121)</c>, the client
+    /// half of the leader-transfer branch. Port of <c>FedSrv.CPP:7624-7687</c>
+    /// minus native's bot-auth sub-branches: the <c>isBot</c> escape hatches
+    /// (bots may take command regardless of leadership, <c>:7639,7641</c>) and
+    /// the "steal all the other players' money" donation grab (<c>:7654-7683</c>)
+    /// are OUT OF SCOPE — this port has no bot-authentication concept
+    /// (<c>szBotAuthenticationGuid</c>). An ordinary side leader transfers
+    /// leadership to a same-side teammate through <see cref="SetLeader"/>
+    /// (native <c>CFSMission::SetLeader</c>: command wing, SET_WINGID,
+    /// SET_TEAM_LEADER).</summary>
+    private void HandleSetTeamLeader(ConnectionId from, Mission mission, Ship senderShip, SetTeamLeader request)
+    {
+        // Native :7635-7637 — the sender's side must be a real side.
+        if (senderShip.SideId is not { } sideId) return;
+        var side = mission.Sides.FirstOrDefault(s => s.Id == sideId);
+        if (side is null) return;
+
+        // Native :7639 — the sender must be the current team leader (the isBot
+        // escape hatch is N/A in this port).
+        if (side.LeaderShipId != senderShip.Id) return;
+
+        // Native :7641 — the named side must be the sender's own side.
+        if (request.SideId != sideId) return;
+
+        // Native :7643-7645 — the target must be a player on the sender's side.
+        Ship? foundTarget = null;
+        foreach (var kv in _peerShips)
+        {
+            var cand = kv.Value?.Ship;
+            if (cand is null) continue;
+            if (cand.Id == request.ShipId && ReferenceEquals(cand.Mission, mission))
+            { foundTarget = cand; break; }
+        }
+        if (foundTarget is null) return;
+        if (foundTarget.SideId != sideId) return;
+
+        // Native :7651-7652 — CFSMission::SetLeader: command wing 0 + side
+        // SET_WINGID, then the whole-mission SET_TEAM_LEADER (fsmission.cpp:1510-1553).
+        SetLeader(mission, side, foundTarget);
+        Console.WriteLine($"[setleader] ship {senderShip.Id} transferred leadership of side {sideId} to ship {foundTarget.Id} — SET_TEAM_LEADER(121) whole-mission");
+    }
+
+
 // ═══════════════════════════ P187 — ballot / voting system ═══════════════════════════
     // Port of native CFSMission::m_ballots + the four Ballot subclasses
     // (fsmission.h:85-180, fsmission.cpp:5817-6194) and the #chat command
