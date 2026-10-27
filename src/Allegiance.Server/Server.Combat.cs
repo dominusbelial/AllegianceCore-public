@@ -2706,6 +2706,36 @@ public sealed partial class Server
         Console.WriteLine($"[tech] ship {ship.Id} recovered tech by docking");
     }
 
+    /// <summary>
+    /// P851 — handler for <see cref="ServerHost.SpotterCredit"/>, the port's home
+    /// for the <c>PlayerScoreObject</c> increments native books inside
+    /// <c>ThingSiteImpl::ShowObject</c>/<c>UpdateSideVisibility</c>:
+    /// <c>AddTargetSpot()</c> for a first-spotted high-value enemy hull
+    /// (<c>FedSrv.CPP:10961-10982</c>), <c>SpotWarp()</c> / <c>SpotSpecialAsteroid()</c>
+    /// for a first-spotted aleph / special asteroid
+    /// (<c>FedSrv.CPP:11103-11111</c>). Native reads the spotter's
+    /// <c>CFSShip::GetPlayerScoreObject()</c>; the port resolves the same ship to
+    /// its owning peer's <see cref="PlayerScore"/> — an unowned (NPC) ship has no
+    /// peer and books nothing, the same outcome as native's player-only gates.
+    /// </summary>
+    private void OnSpotterCredit(Ship ship, SpotCredit credit)
+    {
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship, ship)) continue;
+            var score = kv.Value.PlayerScore;
+            switch (credit)
+            {
+                case SpotCredit.Target: score.AddTargetSpot(); break;
+                case SpotCredit.Warp: score.SpotWarp(); break;
+                case SpotCredit.SpecialAsteroid: score.SpotSpecialAsteroid(); break;
+            }
+            if (ConsoleLog.Verbose)
+                ConsoleLog.Write($"[spot] ship {ship.Id} side {ship.SideId} earned {credit} (targets {score.HighValueTargetsSpotted}, warps {score.WarpsSpotted}, asteroids {score.AsteroidsSpotted})");
+            return;
+        }
+    }
+
     /// <summary>P760 — handler for <see cref="ServerHost.CommandChanged"/>.
     /// Routes <c>FM_CS_ORDER_CHANGE(93)</c> to the correct audience:
     /// side group (guaranteed) for <c>c_cmdAccepted</c>, sector-flying group

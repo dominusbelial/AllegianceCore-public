@@ -65,9 +65,14 @@ public sealed class P692EquipmentLiveTests
         if (allied) mission.AlliedSidePairs.Add((ship.SideId!.Value, viewer.SideId!.Value));
         var type = mission.Core.ProbeTypes.Values.First() with
         { DtRipcord = 2, Lifespan = 100, HitPoints = 1, Radius = 2, Signature = 1, ProjectileTypeId = -1, LauncherName = "P692 Teleport" };
-        var probe = ship.DeployProbe(type, mission.LastUpdate);
+        var probe = ship.DeployProbe(type, mission.LastUpdate)!;
         // The enemy must discover the probe before the native client can
         // announce it. Move its real scanner into the deployment cluster.
+        // P851 — a DOCKED ship is not in a cluster natively (docking calls
+        // SetCluster(NULL), stationIGC.cpp:282-285), so it registers no cluster
+        // scanner (clusterIGC.h:145-148) and spots nothing; the viewer must be
+        // flying for this discovery.
+        viewer.StationId = null;
         viewer.Position = probe.Position + new Vector3(100, 0, 0);
         mission.PlaceShip(viewer, ship.Sector!);
         P660NextMatchLiveTests.Pump(server, () => probe.SeenBySide(viewer.SideId!.Value));
@@ -129,7 +134,7 @@ public sealed class P692EquipmentLiveTests
         Assert.NotEqual(ship.Sector, viewer.Sector);
         var type = ship.Mission!.Core.ProbeTypes.Values.First() with
             { DtRipcord = 0, Lifespan = 100, ProjectileTypeId = -1, LauncherName = "P692 hidden" };
-        var probe = ship.DeployProbe(type, ship.Mission.LastUpdate);
+        var probe = ship.DeployProbe(type, ship.Mission.LastUpdate)!;
         ship.Sector!.Remove(probe);
         enemy.TakePingEchoes(); enemy.SendPing();
         P660NextMatchLiveTests.Pump(server, () => enemy.TakePingEchoes().Count > 0);

@@ -1,0 +1,20 @@
+P851 fast tier — tools/run-tests.sh --tier fast (two runs, this host)
+
+RUN 1  (~/allegiance-evidence/P851/tiers-20261027T215645.801075Z)
+  Core.Tests       5490 passed, 1 failed  (AsteroidsUpdateLiveTests.Mining_depletion_reflected_in_next_update_while_health_fraction_stays_full
+                                            — ore tick timing under parallel load; 3/3 alone afterwards = load flake)
+  ClientCore.Tests 1873 passed, 2 failed  (P692EquipmentLiveTests.Teleport_activation_and_loss_reach_owner_and_enemy_with_native_criticality
+                                            allied False/True — MINE: the theory moved a DOCKED viewer ship in as the spotting
+                                            scanner; a docked ship is not in a cluster natively (stationIGC.cpp:282-285) and was
+                                            excluded by the P851 SetCluster fix. The test now undocks the viewer; 2/2 cases 3x alone = pass)
+  MonoGame.Tests   3610 passed, 3 not executed
+  Lobby.Tests      82 passed
+  Update.Tests     28 passed
+
+RUN 2  (~/allegiance-evidence/P851/tiers-20261027T220301.706461Z)  — after the P692 test fix
+  Core.Tests       5491 passed, 0 failed
+  ClientCore.Tests 1875 passed, 0 failed
+  MonoGame.Tests   3610 passed, 3 not executed
+  Lobby.Tests      82 passed
+  Update.Tests     28 passed
+  exit=0

@@ -634,4 +634,44 @@ public interface IIgcSite
     /// </summary>
     void CollisionEvent(Ship party1, Ship? party2, short clusterId, Vector3 impact,
         float jiggle1, float jiggle2) { }
+
+    /// <summary>
+    /// C#-only (no igc.h member): the score-credit half of native's spotting
+    /// rules. Native books these inside <c>ThingSiteImpl::ShowObject</c> /
+    /// <c>UpdateSideVisibility</c> — FedSrv code that has no <c>IIgcSite</c>
+    /// member because in native the visibility sweep <em>is</em> FedSrv
+    /// (<c>FedSrv/FedSrv.CPP:10952-10982</c> high-value target spot,
+    /// <c>:11103-11111</c> warp / special-asteroid spot). The port keeps the
+    /// sweep in Core (<see cref="Model.Sector.ResolveCrossSideVisibility"/>) and
+    /// the player scores in the host, so the sweep raises this seam at exactly
+    /// the native site: the first sweep on which a side's own scanner sees a
+    /// model (<c>!seenBefore</c> inside the scanner loop). The Core has already
+    /// applied native's own gates (a ship/probe spotter whose pilot is a player,
+    /// the 50 s <c>RecentlySpotted</c> latch for high-value hulls, the
+    /// <c>c_aabmBuildable</c> special-asteroid test), so the host only has to
+    /// credit <paramref name="spotter"/>'s owner. No-op default: a host without
+    /// player scores (every headless fixture) behaves exactly as before.
+    /// </summary>
+    void SpotterCreditEvent(IShipIgc spotter, SpotCredit credit) { }
+}
+
+/// <summary>
+/// The score credit native books for a first sighting — the three
+/// <c>PlayerScoreObject</c> increments <c>ThingSiteImpl</c> calls:
+/// <c>AddTargetSpot</c> (<c>igc.h:5658</c>, FedSrv.CPP:10961-10982),
+/// <c>SpotWarp</c> (<c>igc.h:5648</c>, FedSrv.CPP:11103-11106) and
+/// <c>SpotSpecialAsteroid</c> (<c>igc.h:5653</c>, FedSrv.CPP:11107-11111).
+/// </summary>
+public enum SpotCredit
+{
+    /// <summary>A high-value enemy hull (miner/builder/capital/carrier/bomber/
+    /// APC/teleport ship) first spotted — <c>AddTargetSpot()</c>.</summary>
+    Target,
+
+    /// <summary>An aleph first spotted — <c>SpotWarp()</c>.</summary>
+    Warp,
+
+    /// <summary>A special (non-plain-buildable) asteroid first spotted —
+    /// <c>SpotSpecialAsteroid()</c>.</summary>
+    SpecialAsteroid,
 }

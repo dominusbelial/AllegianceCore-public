@@ -246,7 +246,7 @@ public sealed class ProbeCombatLiveTests
         Assert.Contains(seat.ObserverBot.Exports, e => e.ShipId == deployer.Id);
 
         var mission = deployer.Mission!;
-        var probe = deployer.DeployProbe(probeType, mission.LastUpdate);
+        var probe = deployer.DeployProbe(probeType, mission.LastUpdate)!;
         short pId = probe.Id;
         Assert.Contains(probe, probe.OwnerSector.Models);
         Assert.Equal(1f, probe.Fraction, 3);
@@ -292,7 +292,7 @@ public sealed class ProbeCombatLiveTests
         PumpUntil(seat.Server, () => seat.ObserverBot.Exports.Any(e => e.ShipId == deployer.Id), 9000);
 
         var mission = deployer.Mission!;
-        var probe = deployer.DeployProbe(probeType, mission.LastUpdate);
+        var probe = deployer.DeployProbe(probeType, mission.LastUpdate)!;
         Assert.Equal(deployer.SideId, probe.SideId);   // probe inherits side A
         Assert.Contains(probe, probe.OwnerSector.Models);
         Assert.Equal(1f, probe.Fraction, 3);
@@ -348,7 +348,7 @@ public sealed class ProbeCombatLiveTests
         Assert.Contains(seat.ObserverBot.Exports, e => e.ShipId == deployer.Id);
 
         var mission = deployer.Mission!;
-        var probe = deployer.DeployProbe(probeType, mission.LastUpdate);
+        var probe = deployer.DeployProbe(probeType, mission.LastUpdate)!;
         short pId = probe.Id;
         // Latch that the observer actually received the probe's EXPORT (saw it deploy).
         PumpUntil(seat.Server, () => seat.ObserverBot.ProbeExports.Any(e => e.Probe.ProbeId == pId), 9000);

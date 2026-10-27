@@ -159,7 +159,7 @@ public sealed class P697GhostBattleLiveTests
         {
             case "missile": source.FireMissile(core.MissileTypes.Values.First(), 0); expected = FireMissile.Fmid; break;
             case "mine": deployedMine = source.DeployMine(core.MineTypes.Values.First(), 0); expected = ExportMine.Fmid; break;
-            case "probe": deployedProbe = source.DeployProbe(core.ProbeTypes.Values.First(), 0); expected = ExportProbe.Fmid; break;
+            case "probe": deployedProbe = source.DeployProbe(core.ProbeTypes.Values.First(), 0)!; expected = ExportProbe.Fmid; break;
             default:
                 var p = new Projectile(19001, sector, core.ProjectileTypes.Values.First(), source.Position,
                     Vector3.Zero, new Vector3(0, 0, -1), 0, source);
@@ -380,7 +380,7 @@ public sealed class P697GhostBattleLiveTests
         server.TestPublicationCapture = (peer, bytes, _, _) =>
         { foreach (var message in FedPacket.Unpack(bytes)) sent.Add((peer, message)); };
         var mine = source.DeployMine(homeMission.Core.MineTypes.Values.First(), 0);
-        var probe = source.DeployProbe(homeMission.Core.ProbeTypes.Values.First(), 0);
+        var probe = source.DeployProbe(homeMission.Core.ProbeTypes.Values.First(), 0)!;
         static bool Hazard(byte[] message) => (message[2] | message[3] << 8) == ExportMine.Fmid
             && (BitConverter.ToInt32(message, 8) == ExportMine.OtMine
                 || BitConverter.ToInt32(message, 8) == ExportProbe.OtProbe);
@@ -417,7 +417,7 @@ public sealed class P697GhostBattleLiveTests
         var source = Subject(server, 19600, viewer.SideId!.Value, 0);
         source.Position = viewer.Position + new Vector3(2000, 0, 0);
         var mission = server.TestMission;
-        var probe = source.DeployProbe(mission.Core.ProbeTypes[30], mission.LastUpdate);
+        var probe = source.DeployProbe(mission.Core.ProbeTypes[30], mission.LastUpdate)!;
         var enemy = Subject(server, 19601, (short)(1 - viewer.SideId.Value), 0);
         enemy.Position = probe.Position + new Vector3(0, 0, 100);
         enemy.Velocity = Vector3.Zero;

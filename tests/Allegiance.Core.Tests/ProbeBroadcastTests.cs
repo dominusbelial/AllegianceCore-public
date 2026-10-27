@@ -157,8 +157,8 @@ public class ProbeBroadcastTests
             double now = mission.LastUpdate;
             var deployed = new List<Probe>
             {
-                deployer.DeployProbe(pType, now),
-                deployer.DeployProbe(pType, now),
+                deployer.DeployProbe(pType, now)!,
+                deployer.DeployProbe(pType, now)!,
             };
             var initialPositions = deployed.ToDictionary(p => p.Id, p => p.Position);
             Assert.True(deployed.Select(p => p.Id).Distinct().Count() == 2,

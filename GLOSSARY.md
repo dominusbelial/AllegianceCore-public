@@ -105,6 +105,15 @@ list in **reverse**.
   analysis + bench: `tools/P835Bench/`, report
   `docs/reports/P835_CLASH_PEAK_COST.md`; P858 flag removal:
   `docs/reports/P858_DROP_REJECTED_FLAGS.md`.
+- **Spotting side effects (P851)** — what native books on the false→true edge of
+  a side's own scanner: the first-sight score credits (`AddTargetSpot` for a
+  high-value hull with its 50 s `RecentlySpotted` latch, `SpotWarp` /
+  `SpotSpecialAsteroid`), the station `HandleNewEnemyCluster` miner re-command,
+  and the rule that docked/boarded ships are neither scanners nor targets.
+  Raised from `Sector.ResolveCrossSideVisibility`'s `FirstSightEffects` through
+  `IIgcSite.SpotterCreditEvent` (credited in `Server.Combat.cs OnSpotterCredit`),
+  with `Ship.MarkPreviouslySpotted`/`RecentlySpotted`. Report:
+  `docs/reports/P851_CERTIFY.md`.
 - **Mounted part** — an equipped part instance (weapon/shield/etc.) with its
   mount and state. `src/Allegiance.Core/Sim/MountedPart.cs`. *Native:*
   `mountc.cpp`.

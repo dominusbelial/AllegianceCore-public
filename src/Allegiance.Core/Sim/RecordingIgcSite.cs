@@ -310,4 +310,8 @@ public sealed class RecordingIgcSite : IIgcSite
         float jiggle1, float jiggle2) =>
         Wrap(nameof(CollisionEvent), () => _default.CollisionEvent(party1, party2, clusterId, impact, jiggle1, jiggle2),
              party1, party2, clusterId, impact, jiggle1, jiggle2);
+
+    // ── spotter score credit (P851) ────────────────────────────────────────
+    public void SpotterCreditEvent(IShipIgc spotter, SpotCredit credit) =>
+        Wrap(nameof(SpotterCreditEvent), () => _default.SpotterCreditEvent(spotter, credit), spotter, credit);
 }

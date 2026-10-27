@@ -604,6 +604,35 @@ public sealed partial class Ship : Model, IShipIgc
     /// <summary>True once the hull is dead (<c>m_fraction &lt;= 0</c>).</summary>
     public bool Dead => _fraction <= 0.0f;
 
+    // Native <c>m_timePreviouslySpotted</c> (<c>shipIGC.h:2669</c>), seeded to 0
+    // at creation (<c>shipIGC.cpp:200</c>). Read/written only through
+    // <see cref="RecentlySpotted"/>/<see cref="MarkPreviouslySpotted"/>.
+    private double _timePreviouslySpotted;
+
+    /// <summary>Native <c>c_dtPreviouslySpotted</c>-style window in
+    /// <c>IshipIGC::RecentlySpotted</c> (<c>shipIGC.h:1892-1895</c>):
+    /// <c>GetMyLastUpdate() &lt; m_timePreviouslySpotted + 50.0f</c>.</summary>
+    private const double PreviouslySpottedWindow = 50.0;
+
+    /// <summary>
+    /// Stamp this ship as just spotted — the port of
+    /// <c>CshipIGC::MarkPreviouslySpotted</c> (<c>shipIGC.h:1887-1890</c>,
+    /// <c>m_timePreviouslySpotted = GetMyLastUpdate()</c>). Native's
+    /// <c>ThingSiteImpl::UpdateSideVisibility</c> calls this the first time
+    /// <b>any</b> enemy side spots a high-value hull, "no matter by whom"
+    /// (<c>FedSrv.CPP:10979-10981</c>), so the same miner/builder/capital can be
+    /// credited to a player's <c>AddTargetSpot</c> at most once per window across
+    /// <em>every</em> spotting side. The model clock is the port's
+    /// <c>GetMyLastUpdate()</c> equivalent (<see cref="Model.LastUpdate"/>).
+    /// </summary>
+    public void MarkPreviouslySpotted() => _timePreviouslySpotted = LastUpdate;
+
+    /// <summary>
+    /// Whether this ship was spotted within the last 50 s — the port of
+    /// <c>CshipIGC::RecentlySpotted</c> (<c>shipIGC.h:1892-1895</c>).
+    /// </summary>
+    public bool RecentlySpotted() => LastUpdate < _timePreviouslySpotted + PreviouslySpottedWindow;
+
     /// <summary>
     /// Set the fractional hull integrity — the port of
     /// <c>CshipIGC::SetFraction(float)</c> (<c>shipIGC.h:311-318</c>): a direct
@@ -4653,7 +4682,7 @@ public sealed partial class Ship : Model, IShipIgc
     /// covering <c>magazine</c>/<c>dispenser</c>/<c>chaff</c>), so no dispenser
     /// is consulted.
     /// </remarks>
-    public Probe DeployProbe(DataProbeTypeIGC probeType, double now)
+    public Probe? DeployProbe(DataProbeTypeIGC probeType, double now)
     {
         var sector = Sector
             ?? throw new InvalidOperationException("a placed ship must be in a sector before it can deploy a probe");
@@ -4667,6 +4696,31 @@ public sealed partial class Ship : Model, IShipIgc
         // over P94's side-less Mine.
         var probe = new Probe(mission.NextObjectId(), sector, probeType, Position, now, SideId, this);
         sector.Add(probe);
+
+        // P851 — CprobeIGC::Initialize's S_FALSE rejection: a teleport probe
+        // dropped INSIDE an asteroid is destroyed by the object factory
+        // (`return S_FALSE`, probeigc.cpp:200-212; CmissionIGC::CreateObject then
+        // Terminates and Releases it and hands back NULL, missionigc.cpp:3370-3378),
+        // so the layer/dispenser path never exports it. The probe is already
+        // registered at that point (pMission->AddProbe, probeigc.cpp:148), which is
+        // why the teleport-probe activation/destruction notices still fire — the
+        // Probe constructor and OnRemoved below own those halves. Native's sibling
+        // aleph-tip rejection (probeigc.cpp:161-198) is gated on
+        // MissionParams::bExperimental, a game type this port does not model (era).
+        if (probeType.DtRipcord >= 0)
+            foreach (var rock in sector.Mineable)
+            {
+                if (rock.Data.Position is not { Length: 3 } rp) continue;
+                var rockPosition = new Vector3(rp[0], rp[1], rp[2]);
+                if ((Position - rockPosition).Length() < rock.Radius - 5.0f)
+                {
+                    ConsoleLog.Write($"[probe] teleport probe dropped inside asteroid {rock.Data.AsteroidId} " +
+                        $"(dist {(Position - rockPosition).Length():0} < radius-5 {rock.Radius - 5:0}) — destroyed " +
+                        "by the object factory (probeigc.cpp:200-212, the S_FALSE branch)");
+                    sector.Terminate(probe);   // TerminateModelEvent + DestroyTeleportProbe (probeigc.cpp:222-245)
+                    return null;
+                }
+            }
 
         // Raise the host seam so the server can broadcast the real
         // FM_S_EXPORT(26)/OT_probe about this fresh probe (a no-op default for a

@@ -174,7 +174,7 @@ public sealed class ArmedProbeLiveTests
 
         // Deploy the real armed probe through the P435 dispenser seam (the same
         // terminal call HandleFireExpendable makes).
-        var probe = deployer.DeployProbe(probeType, mission.LastUpdate);
+        var probe = deployer.DeployProbe(probeType, mission.LastUpdate)!;
         Assert.Equal((short)5, probe.Ammo);
         Assert.Contains(probe, probe.OwnerSector.Models);
 
@@ -214,7 +214,7 @@ public sealed class ArmedProbeLiveTests
         using var seat = SeatTwo();
         var mission = seat.Deployer.Mission!;
         var type = PlasGen() with { EabmCapabilities = (short)(0x1040 | (quick ? 8 : 0)), Lifespan = 100 };
-        var probe = seat.Deployer.DeployProbe(type, mission.LastUpdate);
+        var probe = seat.Deployer.DeployProbe(type, mission.LastUpdate)!;
         seat.Enemy.Position = probe.Position + new Vector3(0, 0, 100);
         seat.Enemy.Velocity = Vector3.Zero;
         double deployed = mission.LastUpdate;
