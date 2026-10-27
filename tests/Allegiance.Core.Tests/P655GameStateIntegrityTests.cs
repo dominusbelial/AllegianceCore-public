@@ -326,6 +326,15 @@ public sealed class P655GameStateIntegrityTests
     public void H13_Started_defection_fails_lobby_switch_succeeds()
     {
         using var w = new World();
+        // P852 — native bAllowDefections DEFAULTS TO TRUE (Igc/igc.h:1255), so
+        // the NoDefections refusal needs it disabled explicitly; the default
+        // now allows started switches (pinned by P852MissionRulesCertifyTests
+        // D1). The port previously refused every started switch (no knob).
+        w.Set("_config", new ServerConfig
+        {
+            LiveSettings = new LiveSettingsConfig(),
+            Games = [new GameConfig { AllowDefections = false }],
+        });
         w.Mission.Sides[1].AutoAccept = true;
         w.Send(new PositionReq { SideId = 1 });
         Assert.Equal((short)0, w.Ship.SideId);
@@ -367,7 +376,7 @@ public sealed class P655GameStateIntegrityTests
     }
 
     [SkippableFact]
-    public void H13_Pending_approval_cannot_defect_after_start_but_lobby_approval_works()
+    public void H13_Pending_approval_parks_requester_and_approval_seats()
     {
         using var w = new World();
         w.Mission.Sides[1].LeaderShipId = w.Enemy.Id;
@@ -376,12 +385,19 @@ public sealed class P655GameStateIntegrityTests
         w.Mission.Sides[1].AutoAccept = false;
         w.Mission.Stage = MissionStage.NotStarted;
         w.Send(new PositionReq { SideId = 1 });
+        // P852 — the pending switcher left their old side: they wait in the
+        // team lobby (native RemovePlayerFromSide(QSR_SwitchingSides) →
+        // SetSide(..., SIDE_TEAMLOBBY), fsmission.cpp:4749-4751/1123).
+        Assert.Equal((short)-2, w.Ship.SideId);
         void Approve() => w.Call("ProcessDatagram", new ConnectionId(3), FedPacket.Pack([new PositionAck { ShipId = w.Ship.Id, SideId = 1, FAccepted = true }.Encode()]));
+        // Approval still seats the lobby-parked requester, even after the game
+        // starts — a lobby player requests with the TEAMLOBBY exemption on both
+        // native no-defections gates (fsmission.cpp:4585,4588) and the port's
+        // defections default is native's (true, igc.h:1255). Native's
+        // GetLastSide() branch (:4584-4585) — which would refuse a
+        // defections-disabled switcher back to a different side — has no port
+        // counterpart (no last-side state; documented P852 gap).
         w.Mission.Stage = MissionStage.Started;
-        Approve();
-        Assert.Equal((short)0, w.Ship.SideId);
-        w.Mission.Stage = MissionStage.NotStarted;
-        w.Send(new PositionReq { SideId = 1 });
         Approve();
         Assert.Equal((short)1, w.Ship.SideId);
     }

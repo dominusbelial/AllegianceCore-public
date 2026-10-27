@@ -77,7 +77,11 @@ public sealed class P678LobbyRelayLiveTests
         leader.SendPositionAck(applicantId, 0, false);
         Until(server, () => Read(leader, w => !w.PendingPositionRequests.Contains(pending))
             && Read(applicant, w => w.MyPositionRequestResult?.Reason == DelPositionReqReason.Rejected));
-        Assert.Equal((short)1, applicant.World.MySideId);
+        // P852 — after the rejection the applicant is lobby-parked (-2): the
+        // pending request removed them from side 1 (native
+        // RemovePlayerFromSide(QSR_SwitchingSides) → SIDE_TEAMLOBBY,
+        // fsmission.cpp:4749-4751/1123), where they wait for another pick.
+        Assert.Equal((short)-2, applicant.World.MySideId);
 
         leader.SendLockLobby(true);
         leader.SendLockSides(true);

@@ -157,6 +157,7 @@ public sealed partial class Server
         }
 
         side.Active = false;                           // fsmission.cpp:5325
+        side.Ready = false;                            // P852: rgfReady[sideid] = false, fsmission.cpp:5326-5327
 
         // SIDE_INACTIVE(68) bActive=false, bChangeAET=false, bAET=false
         // (fsmission.cpp:5371-5376).
@@ -257,6 +258,7 @@ public sealed partial class Server
     {
         short sideId = side.Id;
         side.Active = false;                          // fsmission.cpp:5325
+        side.Ready = false;                           // P852: rgfReady[sideid] = false, fsmission.cpp:5326-5327
 
         // Snapshot the side's ships across every sector (native pside->GetShips()).
         // Snapshot BEFORE any kill removes them from the sector's _models.
@@ -379,10 +381,28 @@ public sealed partial class Server
         if (alive.Count == 1)
         {
             winnerId = alive[0].Id;
-            string winnerName = alive[0].Name ?? $"side{alive[0].Id}";
-            reason = $"{winnerName} won by outlasting all other sides.";
+            reason = AlliedWinnerReason(mission, alive[0]);
         }
         DeclareGameOver(mission, winnerId, reason);
+    }
+
+    /// <summary>P852 — native's winner reason for the DeactivateSide victory
+    /// check (fsmission.cpp:5396-5414): a solo surviving side names only
+    /// itself ("A won by outlasting all other sides.", :5413-5414); a side
+    /// with allies (GetAllies() != NA) names every OTHER side sharing its
+    /// alliance group — AlliedSides is equality on the alliance id
+    /// (igc.h:4296-4303), the port's Side.AllyGroup — producing
+    /// "A & B won by outlasting all other sides." Native's loop walks ALL the
+    /// mission's sides with no active filter (:5401-5410), so an eliminated
+    /// but still-present ally is named too.</summary>
+    private static string AlliedWinnerReason(Mission mission, Side winner)
+    {
+        string winnerName = winner.Name ?? $"side{winner.Id}";
+        var allies = winner.AllyGroup is { } winGroup
+            ? mission.Sides.Where(s => !ReferenceEquals(s, winner) && s.AllyGroup == winGroup)
+                .Select(s => s.Name ?? $"side{s.Id}").ToList()
+            : [];
+        return $"{winnerName}{string.Join("", allies.Select(n => " & " + n))} won by outlasting all other sides.";
     }
 
 /// <summary>
@@ -1423,10 +1443,13 @@ public sealed partial class Server
             .ToArray();
 
         bool newReady;
-        if (peersOnSide.Length == 0)
+        var settings = GameSettingsSafe(mission);
+        if (peersOnSide.Length < Math.Max(1, settings.MinPlayersPerTeam))
         {
-            // Floor: <1 connected player → forced not-ready (this port's stand-in
-            // for native's nMinPlayersPerTeam, fsmission.cpp:5501-5503).
+            // Floor: fewer connected players than native's nMinPlayersPerTeam
+            // → forced not-ready (fsmission.cpp:5501-5503). P852 — the port
+            // previously hardcoded a 1-player floor; GameConfig now carries
+            // native's parameter (default 1, igc.h:1333).
             newReady = false;
         }
         else if (side.ForceReady)
@@ -2801,6 +2824,20 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// override (pure rank-sum minimization).</summary>
     private void RebalanceSides(Mission mission)
     {
+        // P852 — native RandomizeSides turns auto-accept OFF on every side that
+        // has it on before moving anyone (KGJV change, "changed to turn on auto
+        // accept off", fsmission.cpp:5142-5160), broadcasting AUTO_ACCEPT(52)
+        // per toggled side. After a rebalance, joining a led side needs the
+        // leader's approval again — exactly native.
+        foreach (var side in mission.Sides)
+        {
+            if (!side.AutoAccept) continue;
+            side.AutoAccept = false;
+            var aa = new AutoAccept { SideId = side.Id, FAutoAccept = false };
+            int n = SendToMissionPeers(mission, FedPacket.Pack(new[] { aa.Encode() }));
+            Console.WriteLine($"[randomizeteams] side {side.Id}: AUTO_ACCEPT(52) fAutoAccept=false whole-mission -> {n} peer(s) (fsmission.cpp:5142-5160)");
+        }
+
         // Step 3 (native fsmission.cpp:5183-5196): clear this mission's pending
         // join requests before reassigning — a mass reassignment would leave
         // stale entries otherwise.
@@ -3177,25 +3214,59 @@ private void CompleteStartCountdown(Mission mission, double now)
         // leader joins the empty side (EstablishSideSquadFromLeader).
         if (mission.Stage == MissionStage.NotStarted)
             ClearSideSquad(mission, side);
-        if (mission.MissionOwnerSideId != oldSideId)
-            return;   // wasn't the mission owner — nothing more to do
 
-        mission.MissionOwnerSideId = null;
-        foreach (var other in mission.Sides)
+        // P852 — native RemovePlayerFromSide's last-player rules for the side
+        // the leader just left (fsmission.cpp:930-952, 1155-1158) run at the
+        // END of the removal, AFTER the succession and owner migration
+        // (SetAutoAccept(psideOld, true) is the function's tail): before the
+        // game starts the side turns auto-accept ON — AUTO_ACCEPT(52)
+        // broadcast (:934-941) and the sweep accepting every pending
+        // requester — while once it is running the pending requests are
+        // "implicitly rejected" (:945-951 RejectSideJoinRequests → boot each
+        // requester). Sitting here (after owner migration, on both exit
+        // paths) lets a sweep-seated requester be elected owner exactly like
+        // native's AddPlayerToSide does.
+        bool wasOwner = mission.MissionOwnerSideId == oldSideId;
+        if (wasOwner)
         {
-            if (other.Id == oldSideId) continue;
-            if (other.LeaderShipId is not { } otherLeaderId) continue;   // an occupied side always has a leader
-            bool occupied = _peerShips.Any(kv => ReferenceEquals(kv.Value.Ship.Mission, mission)
-                                              && kv.Value.Ship.SideId == other.Id);
-            if (!occupied) continue;
-            mission.MissionOwnerSideId = other.Id;
-            BroadcastSetTeamLeader(mission, other.Id, otherLeaderId);
-            BroadcastSetMissionOwner(mission, other.Id, otherLeaderId);
-            return;
+            mission.MissionOwnerSideId = null;
+            foreach (var other in mission.Sides)
+            {
+                if (other.Id == oldSideId) continue;
+                if (other.LeaderShipId is not { } otherLeaderId) continue;   // an occupied side always has a leader
+                bool occupied = _peerShips.Any(kv => ReferenceEquals(kv.Value.Ship.Mission, mission)
+                                                  && kv.Value.Ship.SideId == other.Id);
+                if (!occupied) continue;
+                mission.MissionOwnerSideId = other.Id;
+                BroadcastSetTeamLeader(mission, other.Id, otherLeaderId);
+                BroadcastSetMissionOwner(mission, other.Id, otherLeaderId);
+                break;
+            }
+            // No other occupied side: the mission has no owner — nothing to announce.
+            // (Native unlocks the lobby/sides here via LOCK_LOBBY/LOCK_SIDES;
+            //  neither is ported — separate, unscoped item — so it is a deliberate no-op.)
         }
-        // No other occupied side: the mission has no owner — nothing to announce.
-        // (Native unlocks the lobby/sides here via LOCK_LOBBY/LOCK_SIDES;
-        //  neither is ported — separate, unscoped item — so it is a deliberate no-op.)
+
+        if (mission.Stage == MissionStage.NotStarted)
+        {
+            side.AutoAccept = true;
+            var aa = new AutoAccept { SideId = oldSideId, FAutoAccept = true };
+            int nAa = SendToMissionPeers(mission, FedPacket.Pack(new[] { aa.Encode() }));
+            Console.WriteLine($"[autoaccept] side {oldSideId} emptied pre-game => AUTO_ACCEPT(52) fAutoAccept=true whole-mission -> {nAa} peer(s) (fsmission.cpp:934-941,1158)");
+            SweepAutoAcceptPending(mission, oldSideId);
+        }
+        else
+        {
+            int rejected = 0;
+            foreach (var pend in _pendingJoinRequests.Where(kv => kv.Value.SideId == oldSideId).ToList())
+            {
+                _pendingJoinRequests.Remove(pend.Key);
+                BroadcastDelPositionReq(mission, pend.Value.ShipId, pend.Value.SideId, DelPositionReqReason.Rejected);
+                rejected++;
+            }
+            if (rejected > 0)
+                Console.WriteLine($"[posreq] side {oldSideId} emptied mid-game => {rejected} pending join request(s) implicitly rejected (fsmission.cpp:945-951)");
+        }
     }
 
 /// <summary>
@@ -3236,11 +3307,18 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (targetSide is null) return false;
 
         // Quit the old side first (native AddPlayerToSide, fsmission.cpp:562-563).
+        // P852 — a ship parked on SIDE_TEAMLOBBY (a pended side-switch, P852's
+        // RequestPosition park) is NOT on a side: native skips
+        // RemovePlayerFromSide when GetSide() == SIDE_TEAMLOBBY
+        // (fsmission.cpp:4748-4750), so no second QUIT_SIDE goes out on the
+        // eventual accept — the lobby park already announced the departure.
         short? oldSideId = ship.SideId;
+        short? prevRealSide = oldSideId is { } osv && osv != newSideId ? osv : null;
         if (oldSideId is { } os && os != newSideId)
         {
             HandleLeaderSuccession(ship);
-            if (announce) BroadcastQuitSide(mission, ship.Id, QuitSideReason.SwitchingSides);
+            if (announce && os != SideTeamLobby)
+                BroadcastQuitSide(mission, ship.Id, QuitSideReason.SwitchingSides);
         }
 
         // New-side leadership: the first player onto an empty side becomes its
@@ -3331,6 +3409,30 @@ private void CompleteStartCountdown(Mission mission, double now)
         // stores this CREATE_BUCKETS under that new side.
         if (oldSideId is { } prev && prev != newSideId && ConnOf(ship) is { } sideConn)
             SendSideTechToPeer(sideConn, targetSide);
+
+        // P852 — native RemovePlayerFromSide's readiness tail for the side the
+        // switcher LEFT: `else CheckForSideAllReady(psideOld)`
+        // (fsmission.cpp:1146-1152 — the deactivation branch is P548/P455's
+        // peer-departure scope; a side SWITCH only re-checks readiness). The
+        // port previously left the old side's aggregate Ready stale when a
+        // member (possibly its only ready one) switched away.
+        if (prevRealSide is { } oldReal && oldReal != SideTeamLobby)
+        {
+            var oldSide = mission.Sides.FirstOrDefault(s => s.Id == oldReal);
+            if (oldSide is { Ready: true })
+            {
+                var remaining = _peerShips.Values
+                    .FirstOrDefault(l => ReferenceEquals(l.Ship.Mission, mission) && l.Ship.SideId == oldReal);
+                if (remaining is not null)
+                    RecomputeSideReady(remaining.Ship);
+                else
+                {
+                    // Emptied by the switch: fewer than nMinPlayersPerTeam → not ready.
+                    oldSide.Ready = false;
+                    BroadcastTeamReady(mission, oldReal, false);
+                }
+            }
+        }
 
         return true;
     }
@@ -3647,6 +3749,65 @@ private void CompleteStartCountdown(Mission mission, double now)
         return HomeSectorForSide(mission, sideId) ?? mission.Sectors[0];
     }
 
+    /// <summary>P852 — the auto-pick, the port of native PickNewSide
+    /// (fsmission.cpp:4454-4524) with bAllowTeamLobby effectively false (this
+    /// port has no team lobby to return) and bannedSideMask always 0 (the port
+    /// keeps no banned-side state — stated n/a). Per side, in mission order:
+    /// the side is a candidate only when CheckPositionRequest == NA
+    /// (fsmission.cpp:4481; inactive sides are refused there, covering
+    /// native's rgfActive guard at :4475). Among candidates remember the
+    /// lowest rank sum (default choice, :4494) and the fewest players
+    /// (:4501). The imbalance override (:4506-4516) replaces the rank choice
+    /// with the fewest-players choice when seating the newcomer would exceed
+    /// fewestPlayers + iMaxImbalance; native's duplicated
+    /// <c>nImbalance != 0x7fff</c> test (:4509) is a native bug kept as one
+    /// check. No candidate → returns -1 with <paramref name="refusal"/> set
+    /// (native returns SIDE_TEAMLOBBY; this port has no lobby to return to).
+    /// The rank sum floors every player's rank at one, native GetSideRankSum
+    /// (fsmission.cpp:1352-1369).</summary>
+    private short AutoPickSide(Mission mission, ConnectionId from, string? name, out DelPositionReqReason refusal)
+    {
+        int fewestPlayers = int.MaxValue;
+        long lowestRankSum = long.MaxValue;
+        int chosenSidePlayers = 0;
+        Side? fewestSide = null, chosenSide = null;
+        DelPositionReqReason? firstRefusal = null;
+        foreach (var s in mission.Sides)
+        {
+            if (CheckInitialPositionRequest(from, name, mission, s.Id) is { } r)
+            {
+                firstRefusal ??= r != DelPositionReqReason.TeamFull ? r : null;
+                continue;
+            }
+            int players = _peerShips.Values.Count(l => ReferenceEquals(l.Ship.Mission, mission) && l.Ship.SideId == s.Id);
+            long rankSum = _peerShips.Values
+                .Where(l => ReferenceEquals(l.Ship.Mission, mission) && l.Ship.SideId == s.Id)
+                .Sum(l => (long)Math.Max(1, (int)l.PlayerScore.Rank));
+            if (rankSum < lowestRankSum)
+            {
+                lowestRankSum = rankSum;
+                chosenSide = s;
+                chosenSidePlayers = players;
+            }
+            if (players < fewestPlayers)
+            {
+                fewestPlayers = players;
+                fewestSide = s;
+            }
+        }
+        var settings = GameSettingsSafe(mission);
+        if (chosenSide is not null && settings.MaxTeamImbalance != 0x7fff
+            && chosenSidePlayers + 1 > fewestPlayers + settings.MaxTeamImbalance)
+            chosenSide = fewestSide;   // override rank choice with imbalance choice (fsmission.cpp:4513-4515)
+        if (chosenSide is not null)
+        {
+            refusal = DelPositionReqReason.TeamFull;
+            return chosenSide.Id;
+        }
+        refusal = firstRefusal ?? DelPositionReqReason.TeamFull;
+        return -1;
+    }
+
 /// <summary>P281 — resolve a pending (not-yet-spawned) peer's side selection
     /// and complete its join+launch. Called from the side-select drain
     /// (<see cref="AdvanceSideSelection"/>) for a peer in
@@ -3671,14 +3832,7 @@ private void CompleteStartCountdown(Mission mission, double now)
         DelPositionReqReason autoRefusal = DelPositionReqReason.TeamFull;
         if (requestedSideId == -1)
         {
-            var candidates = mission.Sides.Select(s => (Side: s,
-                Refusal: CheckInitialPositionRequest(from, pend.Request.CharacterName, mission, s.Id))).ToArray();
-            var eligible = candidates.Where(c => c.Refusal is null)
-                .OrderBy(c => _peerShips.Values.Count(l => ReferenceEquals(l.Ship.Mission, mission) && l.Ship.SideId == c.Side.Id))
-                .Select(c => c.Side).FirstOrDefault();
-            if (eligible is not null) requestedSideId = eligible.Id;
-            else autoRefusal = candidates.Select(c => c.Refusal).FirstOrDefault(r => r is not null && r != DelPositionReqReason.TeamFull)
-                ?? DelPositionReqReason.TeamFull;
+            requestedSideId = AutoPickSide(mission, from, pend.Request.CharacterName, out autoRefusal);
         }
         var selectionRefusal = requestedSideId == -1 ? autoRefusal : CheckInitialPositionRequest(from, pend.Request.CharacterName, mission, requestedSideId);
         if (selectionRefusal is { } denied)

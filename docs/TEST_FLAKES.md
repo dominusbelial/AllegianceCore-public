@@ -3149,3 +3149,4 @@ six existing flag/artifact loopbacks passed their prescribed repetitions.
 See [P832e](reports/P832E_CONQUEST_BOTS.md) and its
 [validation summary](reports/P832E_assets/validation.json). Raw receipts remain
 in the worktree's ignored `.scratch/p832e/` directory.
+| 2026-10-27 | P480RotationKeepsPlayersLiveTests.Rotation_migrates_connected_peers_and_new_game_starts_without_reconnect | P852 fast-tier gate (this worktree): 1 fail in the full fast run, then 2/5 alone ("station 1052 was exported to a side that had not seen it"), then 3/3 clean | already ledgered above (2026-10-24 ×2, 2026-10-27 P848); P852 touches no station-export/rotation path (lobby join-request/ready/alliance rules only) — recurrence of the rotation-migration timing flake |

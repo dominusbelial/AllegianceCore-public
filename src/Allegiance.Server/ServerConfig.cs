@@ -165,6 +165,22 @@ public sealed class GameConfig
     /// imbalance after NotStarted (FedSrv/fsmission.cpp:4612-4671).</summary>
     public int MaxTeamImbalance { get; set; } = 0x7ffe;
 
+    /// <summary>P852 — native <c>MissionParams::nMinPlayersPerTeam</c>
+    /// (Igc/igc.h:1211). A side with fewer connected players than this is
+    /// forced not-ready by <c>CheckForSideAllReady</c>
+    /// (FedSrv/fsmission.cpp:5501-5503). Default 1 is native's default
+    /// (Igc/igc.h:1333, KGJV #114), preserving the port's previous
+    /// "at least one connected player" floor.</summary>
+    public int MinPlayersPerTeam { get; set; } = 1;
+
+    /// <summary>P852 — native <c>MissionParams::bAllowDefections</c>
+    /// (Igc/igc.h:1134). When false, a player seated on a real side may not
+    /// switch sides once the mission is STAGE_STARTED —
+    /// <c>CheckPositionRequest</c> refuses with DPR_NoDefections
+    /// (FedSrv/fsmission.cpp:4583-4590). Default <c>true</c> is native's
+    /// default (Igc/igc.h:1255).</summary>
+    public bool AllowDefections { get; set; } = true;
+
     /// <summary>Per-team <c>rgCivID[]</c> — indexes <see cref="ServerConfig.StaticCore"/>
     /// civilizations. JSON null or -1 means random at each assembly; length must be &gt;= Teams.</summary>
     [JsonConverter(typeof(CivIdsJsonConverter))]
