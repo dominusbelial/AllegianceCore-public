@@ -453,6 +453,14 @@ list in **reverse**.
   Report: `docs/reports/P832E_CONQUEST_BOTS.md`.
 - **Rig driver** — `scripts/mcp_driver.py` (drives the MCP exe from a JSONL
   command file). Reports `SC1_SHOWCASE_SKILLS.md`, `P539_MCP_COMBAT_BOTS.md`.
+- **Kills / deathmatch hunting (P832f)** — `tools/allegiance-mcp/BotManager.Kills.cs`
+  observes public KILL_SHIP credits and PLAYERINFO counters, adds hunt/recovery
+  duties to the existing `ScenarioCoordination.cs` budget, focuses weak visible
+  enemy hulls, and returns damaged pilots through ordinary docking/relaunch.
+  Pods earn no team kills. The `kills` scenario preset and goal-aware skirmish
+  suppress timed finales; miners, research and healthy support retain their jobs.
+  Seeded local recipe: `tools/p832f-kills.json`; report:
+  `docs/reports/P832F_KILLS_BOTS.md`.
 - **Fleet-scaled opening (P837)** — the opening's numbers are rig values and are
   scaled down for a small fleet: the clash fallback delay and the commit delay
   scale with the side's combat bots, a side's own home is never the clash

@@ -1630,8 +1630,13 @@ public sealed partial class Server
         if (winner is not null && mission.Stage != MissionStage.Over)
         {
             string winnerName = winner.Name ?? $"side{winner.Id}";
+            // FedSrv/FedSrv.CPP:11790,11846,11875-11880: the outer
+            // pshipCredit stays null (the partial-share loop shadows it), so
+            // native emits the team reason even for a ship-credited kill.
             DeclareGameOver(mission, winner.Id,
-                $"{winnerName} won by achieving the flags/kills victory objective.");
+                mission.KillsEnabled && winner.Kills >= mission.KillsWinGoal
+                    ? $"{winnerName} won by killing enough of their opponents"
+                    : $"{winnerName} won by achieving the flags/kills victory objective.");
         }
     }
 

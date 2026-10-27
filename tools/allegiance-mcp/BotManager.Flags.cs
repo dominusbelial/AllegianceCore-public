@@ -14,7 +14,7 @@ namespace Allegiance.Tools.McpSpawner;
 /// </summary>
 internal sealed partial class BotManager
 {
-    internal enum FlagDuty { None, Raid, Escort, Guard, Intercept, Return, Collect, Search, Siege, Board, Hold, Wing, Recon }
+    internal enum FlagDuty { None, Raid, Escort, Guard, Intercept, Return, Collect, Search, Siege, Board, Hold, Wing, Recon, Hunt, Recover }
     private sealed partial class ActiveBot
     {
         public FlagDuty FlagTask;
@@ -31,7 +31,7 @@ internal sealed partial class BotManager
 
     private static bool FlagsGame(ConnectionSession cs) => cs.World.Mission?.Goals.IsFlagsGame == true;
     private static bool ArtifactsGame(ConnectionSession cs) => cs.World.Mission?.Goals.IsArtifactsGame == true;
-    private static bool ObjectiveGame(ConnectionSession cs) => FlagsGame(cs) || ArtifactsGame(cs) || ConquestGame(cs);
+    private static bool ObjectiveGame(ConnectionSession cs) => FlagsGame(cs) || ArtifactsGame(cs) || ConquestGame(cs) || KillsGame(cs);
     private double _nextFlagAssignment;
 
     private void UpdateFlagDuties(ActiveBot[] bots, double now)
@@ -55,7 +55,7 @@ internal sealed partial class BotManager
             if (bot.Cs is not { } cs || !ObjectiveGame(cs) || !byName.TryGetValue(bot.Name, out var d)
                 || d.Cookie != CookieOf(cs) || d.Side != bot.Side) continue;
             bot.FlagTask = d.Duty; bot.FlagAnchor = d.Anchor; bot.FlagPost = d.Post;
-            if (ConquestGame(cs)) EndDefense(bot);
+            if (ConquestGame(cs) || KillsGame(cs)) EndDefense(bot);
         }
         foreach (var bot in bots) UpdateConquestStrike(bot, now);
     }
@@ -65,15 +65,16 @@ internal sealed partial class BotManager
         var candidates = new List<FlagCandidate>();
         foreach (var b in bots.Where(b => b.Cs is { } cs && ObjectiveGame(cs) && (DefenseAvailable(b)
                 || b.ConquestStrike && b.FinaleRefitting && IsParticipating(b) && !b.SpawnPending && !b.IsPod)
-            && !IsSupport(b) && (ConquestGame(cs) || !b.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase))
+            && (!IsSupport(b) || KillsGame(cs)) && (ConquestGame(cs) || KillsGame(cs) || !b.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase))
             && (b.OrderedCommand is null || !HumanCommands(b.Side)) && (!b.FinaleBomberActive || ConquestGame(cs))
             && Catalog.RepresentativeCore().HullTypes.TryGetValue(ActualHullId(b), out var hull)
-            && (ConquestGame(cs) || hull.HasCapability(DataHullTypeIGC.HabmFighter))))
+            && (ConquestGame(cs) || KillsGame(cs) || hull.HasCapability(DataHullTypeIGC.HabmFighter))))
         {
             bool carrying;
             lock (b.Cs!.Gate) carrying = b.Cs.World.Ships.TryGetValue(b.ShipId, out var me) && IsObjectiveCargo(b.Cs, me.CarriedFlagSideId);
             var thief = FlagThief(b.Cs, b.Side);
             var artifact = ArtifactsGame(b.Cs) ? NearestArtifact(b) : null;
+            var kills = ObserveKills(b);
             candidates.Add(new(CookieOf(b.Cs), b.Side, b.Name, b.ShipId,
                 b.Role.Equals("scout", StringComparison.OrdinalIgnoreCase), carrying, thief?.Id,
                 thief is { } t ? FlagDistance(b, t.Sector, t.Position) : double.MaxValue,
@@ -84,7 +85,9 @@ internal sealed partial class BotManager
                 artifact is { } a ? FlagDistance(b, a.Sector, a.Position) : double.MaxValue,
                 ConquestGame(b.Cs), ConquestPercent(b.Cs, b.Side), b.Cs.World.Mission?.Goals.ConquestPercentage ?? 0,
                 !b.Role.Equals("bomber", StringComparison.OrdinalIgnoreCase) && Catalog.RepresentativeCore().HullTypes[ActualHullId(b)]
-                    .HasCapability(DataHullTypeIGC.HabmFighter), ConquestContacts(b)));
+                    .HasCapability(DataHullTypeIGC.HabmFighter), ConquestContacts(b),
+                KillsGame(b.Cs), kills.Hull, kills.Ours, kills.Enemy, b.Cs.World.Mission?.Goals.TeamKills ?? 0,
+                KillContacts(b), IsSupport(b)));
         }
         return candidates.ToArray();
     }
@@ -97,6 +100,11 @@ internal sealed partial class BotManager
         foreach (var group in candidates.DistinctBy(c => (c.Cookie, c.Side, c.Name)).GroupBy(c => (c.Cookie, c.Side)))
         {
             var available = group.OrderBy(c => c.Name, StringComparer.Ordinal).ToList();
+            if (available.Any(c => c.Kills))
+            {
+                result.AddRange(PlanKillsDuties(available));
+                continue;
+            }
             var (raidCount, guardCount) = FlagShares(available.Count);
             if (available.Any(c => c.Conquest))
             {
@@ -230,6 +238,8 @@ internal sealed partial class BotManager
             }
         }
         if (!IsObjectiveCargo(cs, carried) && TryDriveConquest(bot, cs, now)) return true;
+        if (!IsObjectiveCargo(cs, carried) && TryDriveKills(bot, cs, now)) return true;
+        if (!(FlagsGame(cs) || ArtifactsGame(cs))) return false;
         var duty = IsObjectiveCargo(cs, carried) ? FlagDuty.Return : bot.FlagTask == FlagDuty.Return
             ? ArtifactsGame(cs) ? FlagDuty.Collect : FlagDuty.Raid : bot.FlagTask;
         if (duty == FlagDuty.None || HumanCommands(bot.Side) && bot.OrderedCommand is not null && !IsObjectiveCargo(cs, carried)) return false;

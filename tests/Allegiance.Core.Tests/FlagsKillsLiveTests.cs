@@ -353,6 +353,7 @@ public sealed class FlagsKillsLiveTests
         PumpUntil(h.Server, () => h.Bot.GameOvers.Count >= 1, 4000);
         var go = Assert.Single(h.Bot.GameOvers);
         Assert.Equal(h.KillerSide, go.SideWinner);
+        Assert.Equal($"{h.Mission.Sides.Single(s => s.Id == h.KillerSide).Name} won by killing enough of their opponents", go.GameoverMessage);
 
         Console.WriteLine($"KILLS-LIVE: side {h.KillerSide} ship {h.Killer.Id} killed enemy ship {victim.Id} (side {h.EnemySide}) -> " +
                           $"kills=1/1, mission Over, GAME_OVER(62) winner={go.SideWinner}");

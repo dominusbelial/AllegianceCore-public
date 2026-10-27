@@ -1,0 +1,656 @@
+{
+  "dispatchHead": "208e73fc04c4c9300d03f28d389fb76fbc533923",
+  "builds": [
+    {
+      "check": "tools-build",
+      "exit": 0,
+      "seconds": 123.02
+    },
+    {
+      "check": "server-aot",
+      "exit": 0,
+      "seconds": 17.13
+    }
+  ],
+  "tests": [
+    {
+      "receipt": ".scratch/p832f/final-source-unit-1.trx",
+      "total": 64,
+      "executed": 64,
+      "passed": 64,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    {
+      "receipt": ".scratch/p832f/final-source-unit-2.trx",
+      "total": 64,
+      "executed": 64,
+      "passed": 64,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    {
+      "receipt": ".scratch/p832f/final-source-unit-3.trx",
+      "total": 64,
+      "executed": 64,
+      "passed": 64,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    {
+      "receipt": ".scratch/p832f/final-kills-live-1.trx",
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    {
+      "receipt": ".scratch/p832f/final-kills-live-2.trx",
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    {
+      "receipt": ".scratch/p832f/final-kills-live-3.trx",
+      "total": 1,
+      "executed": 1,
+      "passed": 1,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    {
+      "receipt": ".scratch/p832f/server-kills-1.trx",
+      "total": 12,
+      "executed": 12,
+      "passed": 12,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    {
+      "receipt": ".scratch/p832f/server-kills-2.trx",
+      "total": 12,
+      "executed": 12,
+      "passed": 12,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    {
+      "receipt": ".scratch/p832f/server-kills-3.trx",
+      "total": 12,
+      "executed": 12,
+      "passed": 12,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    {
+      "receipt": ".scratch/p832f/prior-objectives-live-1.trx",
+      "total": 7,
+      "executed": 7,
+      "passed": 7,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    {
+      "receipt": ".scratch/p832f/prior-objectives-live-2.trx",
+      "total": 7,
+      "executed": 7,
+      "passed": 7,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    },
+    {
+      "receipt": ".scratch/p832f/prior-objectives-live-3.trx",
+      "total": 7,
+      "executed": 7,
+      "passed": 7,
+      "failed": 0,
+      "error": 0,
+      "timeout": 0,
+      "aborted": 0,
+      "inconclusive": 0,
+      "passedButRunAborted": 0,
+      "notRunnable": 0,
+      "notExecuted": 0,
+      "disconnected": 0,
+      "warning": 0,
+      "completed": 0,
+      "inProgress": 0,
+      "pending": 0
+    }
+  ],
+  "normalCadenceKillMatches": [
+    {
+      "wallSeconds": 53.8859449,
+      "seed": 832,
+      "winner": 0,
+      "reason": "Alpha won by killing enough of their opponents",
+      "miners": {
+        "0": 1,
+        "1": 1
+      },
+      "sawResearch": true,
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 2,
+          "TotalSteps": 157,
+          "Action": "drone",
+          "Name": ".TowerAC",
+          "Status": "waiting for money",
+          "ProgressPercent": 1.1535739561217269,
+          "StepProgressPercent": 81.11111111111111,
+          "Money": 0,
+          "EtaSeconds": 4.39146354799514,
+          "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_a",
+          "Step": 2,
+          "TotalSteps": 157,
+          "Action": "drone",
+          "Name": ".TowerAC",
+          "Status": "waiting for money",
+          "ProgressPercent": 1.1818825194621372,
+          "StepProgressPercent": 85.55555555555556,
+          "Money": 0,
+          "EtaSeconds": 3.0959285714285714,
+          "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "rawLog": ".scratch/p832f-kills-90aaf7911b4a4c61b1cd56fb814e82c9.log",
+      "huntTraceLines": 479,
+      "recoveryTraceLines": 9
+    },
+    {
+      "wallSeconds": 52.6651156,
+      "seed": 832,
+      "winner": 0,
+      "reason": "Alpha won by killing enough of their opponents",
+      "miners": {
+        "0": 1,
+        "1": 1
+      },
+      "sawResearch": true,
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 2,
+          "TotalSteps": 157,
+          "Action": "drone",
+          "Name": ".TowerAC",
+          "Status": "waiting for money",
+          "ProgressPercent": 1.1535739561217269,
+          "StepProgressPercent": 81.11111111111111,
+          "Money": 0,
+          "EtaSeconds": 4.39146354799514,
+          "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_a",
+          "Step": 2,
+          "TotalSteps": 157,
+          "Action": "drone",
+          "Name": ".TowerAC",
+          "Status": "waiting for money",
+          "ProgressPercent": 1.1818825194621372,
+          "StepProgressPercent": 85.55555555555556,
+          "Money": 0,
+          "EtaSeconds": 3.0959285714285714,
+          "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "rawLog": ".scratch/p832f-kills-a4108dd566f34585b39982c9dd85c9a8.log",
+      "huntTraceLines": 438,
+      "recoveryTraceLines": 13
+    },
+    {
+      "wallSeconds": 48.1561682,
+      "seed": 832,
+      "winner": 1,
+      "reason": "Bravo won by killing enough of their opponents",
+      "miners": {
+        "0": 1,
+        "1": 1
+      },
+      "sawResearch": true,
+      "research": [
+        {
+          "Side": 0,
+          "Plan": "plan_a",
+          "Step": 2,
+          "TotalSteps": 157,
+          "Action": "drone",
+          "Name": ".TowerAC",
+          "Status": "waiting for money",
+          "ProgressPercent": 1.1535739561217269,
+          "StepProgressPercent": 81.11111111111111,
+          "Money": 0,
+          "EtaSeconds": 4.39146354799514,
+          "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        },
+        {
+          "Side": 1,
+          "Plan": "plan_a",
+          "Step": 2,
+          "TotalSteps": 157,
+          "Action": "drone",
+          "Name": ".TowerAC",
+          "Status": "waiting for money",
+          "ProgressPercent": 1.1818825194621372,
+          "StepProgressPercent": 85.55555555555556,
+          "Money": 0,
+          "EtaSeconds": 3.0959285714285714,
+          "EtaBasis": "current step estimate from BUCKET_STATUS, sim time and showcase research scale; income from wallet credits; constructor travel/combat/unknown income = null",
+          "CompletedTechs": [
+            "Weedcore 03"
+          ],
+          "Stations": [
+            "Garrison"
+          ],
+          "Constructor": null,
+          "ReservedRock": null,
+          "Cycles": 0
+        }
+      ],
+      "rawLog": ".scratch/p832f-kills-f5bd16b4b60949d88d1cade943ee3b37.log",
+      "huntTraceLines": 330,
+      "recoveryTraceLines": 10
+    }
+  ],
+  "priorObjectiveMatches": [
+    {
+      "receipt": "prior-objectives-live-1.trx",
+      "test": "Allegiance.ClientCore.Tests.P832dArtifactBotLiveTests.Artifacts_preset_searches_collects_returns_and_wins_under_fog(topology: \"SingleRing\", captures: 1)",
+      "outcome": "Passed",
+      "evidence": [
+        "artifacts topology=SingleRing goal=1 wall=73.1s picked=True stage=Over winner=1 reason=Bravo wins with the artifact recovered by mcp-b011-4957 log=.scratch/p832d-artifacts-d5288b32c87a45fb92805957f94d58b3.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-1.trx",
+      "test": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"SingleRing\", captures: 1)",
+      "outcome": "Passed",
+      "evidence": [
+        "flags topology=SingleRing goal=1 wall=83.4s picked=True stage=Over winner=0 reason=Alpha wins with the flag recovered by mcp-b012-2841 log=.scratch/p832c-flags-dffde615f9504ab4a423fe8201b46f31.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-1.trx",
+      "test": "Allegiance.ClientCore.Tests.P832dArtifactBotLiveTests.Artifacts_preset_searches_collects_returns_and_wins_under_fog(topology: \"Brawl\", captures: 2)",
+      "outcome": "Passed",
+      "evidence": [
+        "artifacts topology=Brawl goal=2 wall=74.4s picked=True stage=Over winner=0 reason=Alpha wins with the artifact recovered by mcp-b012-1061 log=.scratch/p832d-artifacts-d479986e8f8348038b3f5566b25c7f7b.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-1.trx",
+      "test": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"Brawl\", captures: 2)",
+      "outcome": "Passed",
+      "evidence": [
+        "flags topology=Brawl goal=2 wall=88.0s picked=True stage=Over winner=0 reason=Alpha wins with the flag recovered by mcp-b012-3910 log=.scratch/p832c-flags-7f5561efa41347f5870b131db4d11958.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-1.trx",
+      "test": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"Brawl\", captures: 1)",
+      "outcome": "Passed",
+      "evidence": [
+        "flags topology=Brawl goal=1 wall=46.4s picked=True stage=Over winner=0 reason=Alpha wins with the flag recovered by mcp-b012-2722 log=.scratch/p832c-flags-f1a0958033d141198082f2c635f5f6fd.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-1.trx",
+      "test": "Allegiance.ClientCore.Tests.P832eConquestBotLiveTests.Conquest_preset_discovers_and_wins_by_native_station_rule_under_fog",
+      "outcome": "Passed",
+      "evidence": [
+        "conquest goal=65 wall=131.9s stage=Over winner=1 reason=Bravo won because mcp-b003-1544 captured Garrison log=.scratch/p832e-conquest-b16e237bace5491999c14e68265e58bd.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-1.trx",
+      "test": "Allegiance.ClientCore.Tests.P832dArtifactBotLiveTests.Artifacts_preset_searches_collects_returns_and_wins_under_fog(topology: \"Brawl\", captures: 1)",
+      "outcome": "Passed",
+      "evidence": [
+        "artifacts topology=Brawl goal=1 wall=22.6s picked=True stage=Over winner=0 reason=Alpha wins with the artifact recovered by mcp-b012-1521 log=.scratch/p832d-artifacts-74defb1d5eed4664b292b4675fb5e53e.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-2.trx",
+      "test": "Allegiance.ClientCore.Tests.P832eConquestBotLiveTests.Conquest_preset_discovers_and_wins_by_native_station_rule_under_fog",
+      "outcome": "Passed",
+      "evidence": [
+        "conquest goal=65 wall=96.3s stage=Over winner=1 reason=Bravo won because mcp-b003-7908 captured Garrison log=.scratch/p832e-conquest-ee5cf381831f481fb40a230aa510c4da.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-2.trx",
+      "test": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"SingleRing\", captures: 1)",
+      "outcome": "Passed",
+      "evidence": [
+        "flags topology=SingleRing goal=1 wall=84.1s picked=True stage=Over winner=0 reason=Alpha wins with the flag recovered by mcp-b012-6071 log=.scratch/p832c-flags-e0791ecc57cc4b4e8b8f66acfc0eea15.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-2.trx",
+      "test": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"Brawl\", captures: 2)",
+      "outcome": "Passed",
+      "evidence": [
+        "flags topology=Brawl goal=2 wall=84.3s picked=True stage=Over winner=0 reason=Alpha wins with the flag recovered by mcp-b012-1183 log=.scratch/p832c-flags-32774827148b448a909032f1233214c5.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-2.trx",
+      "test": "Allegiance.ClientCore.Tests.P832dArtifactBotLiveTests.Artifacts_preset_searches_collects_returns_and_wins_under_fog(topology: \"Brawl\", captures: 2)",
+      "outcome": "Passed",
+      "evidence": [
+        "artifacts topology=Brawl goal=2 wall=125.6s picked=True stage=Over winner=1 reason=Bravo wins with the artifact recovered by mcp-b007-1074 log=.scratch/p832d-artifacts-aac3daa66e4f4b6b879d78cc5d5e31e9.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-2.trx",
+      "test": "Allegiance.ClientCore.Tests.P832dArtifactBotLiveTests.Artifacts_preset_searches_collects_returns_and_wins_under_fog(topology: \"Brawl\", captures: 1)",
+      "outcome": "Passed",
+      "evidence": [
+        "artifacts topology=Brawl goal=1 wall=31.3s picked=True stage=Over winner=1 reason=Bravo wins with the artifact recovered by mcp-b005-7506 log=.scratch/p832d-artifacts-2c5c7f7c36444491a3daa295b8db458a.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-2.trx",
+      "test": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"Brawl\", captures: 1)",
+      "outcome": "Passed",
+      "evidence": [
+        "flags topology=Brawl goal=1 wall=46.5s picked=True stage=Over winner=0 reason=Alpha wins with the flag recovered by mcp-b012-8265 log=.scratch/p832c-flags-74251232bb3b4268a9c9ad89d1c3d610.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-2.trx",
+      "test": "Allegiance.ClientCore.Tests.P832dArtifactBotLiveTests.Artifacts_preset_searches_collects_returns_and_wins_under_fog(topology: \"SingleRing\", captures: 1)",
+      "outcome": "Passed",
+      "evidence": [
+        "artifacts topology=SingleRing goal=1 wall=42.0s picked=True stage=Over winner=0 reason=Alpha wins with the artifact recovered by mcp-b012-5086 log=.scratch/p832d-artifacts-99629e940bfd4fdd8fb8df55a6345026.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-3.trx",
+      "test": "Allegiance.ClientCore.Tests.P832eConquestBotLiveTests.Conquest_preset_discovers_and_wins_by_native_station_rule_under_fog",
+      "outcome": "Passed",
+      "evidence": [
+        "conquest goal=65 wall=87.5s stage=Over winner=0 reason=Alpha won because mcp-b004-5291 captured Garrison log=.scratch/p832e-conquest-660f3ed934ab40798da239f017ef3681.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-3.trx",
+      "test": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"Brawl\", captures: 1)",
+      "outcome": "Passed",
+      "evidence": [
+        "flags topology=Brawl goal=1 wall=47.0s picked=True stage=Over winner=0 reason=Alpha wins with the flag recovered by mcp-b012-2163 log=.scratch/p832c-flags-25fab4349d464d678431a8d940e63afe.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-3.trx",
+      "test": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"Brawl\", captures: 2)",
+      "outcome": "Passed",
+      "evidence": [
+        "flags topology=Brawl goal=2 wall=82.5s picked=True stage=Over winner=1 reason=Bravo wins with the flag recovered by mcp-b011-4063 log=.scratch/p832c-flags-ad8a8493c607470386b48df415f8ca17.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-3.trx",
+      "test": "Allegiance.ClientCore.Tests.P832dArtifactBotLiveTests.Artifacts_preset_searches_collects_returns_and_wins_under_fog(topology: \"SingleRing\", captures: 1)",
+      "outcome": "Passed",
+      "evidence": [
+        "artifacts topology=SingleRing goal=1 wall=93.0s picked=True stage=Over winner=1 reason=Bravo wins with the artifact recovered by mcp-b005-9731 log=.scratch/p832d-artifacts-fcde36ef157045478ef8ef4e5c464d7e.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-3.trx",
+      "test": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"SingleRing\", captures: 1)",
+      "outcome": "Passed",
+      "evidence": [
+        "flags topology=SingleRing goal=1 wall=83.5s picked=True stage=Over winner=0 reason=Alpha wins with the flag recovered by mcp-b012-7602 log=.scratch/p832c-flags-38c661ccb57f4f7a959f6702816c6647.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-3.trx",
+      "test": "Allegiance.ClientCore.Tests.P832dArtifactBotLiveTests.Artifacts_preset_searches_collects_returns_and_wins_under_fog(topology: \"Brawl\", captures: 1)",
+      "outcome": "Passed",
+      "evidence": [
+        "artifacts topology=Brawl goal=1 wall=91.1s picked=True stage=Over winner=0 reason=Alpha wins with the artifact recovered by mcp-b006-5897 log=.scratch/p832d-artifacts-0420affb2c18428ab13dedc4e2e83239.log"
+      ]
+    },
+    {
+      "receipt": "prior-objectives-live-3.trx",
+      "test": "Allegiance.ClientCore.Tests.P832dArtifactBotLiveTests.Artifacts_preset_searches_collects_returns_and_wins_under_fog(topology: \"Brawl\", captures: 2)",
+      "outcome": "Passed",
+      "evidence": [
+        "artifacts topology=Brawl goal=2 wall=85.3s picked=True stage=Over winner=1 reason=Bravo wins with the artifact recovered by mcp-b011-5188 log=.scratch/p832d-artifacts-dc9a3a0a9ad942379e37de63a36c64d3.log"
+      ]
+    }
+  ],
+  "fast": {
+    "passed": false,
+    "summary": "fast: 11160 tests, 318.2s, FAIL\n  ERROR: Allegiance.ClientCore.MonoGame.Tests: main failed\n  ERROR: Allegiance.Core.Tests: main failed\nFast infrastructure: PASS (9 checks, 0.045s)\nOverall: FAIL\n"
+  },
+  "isolatedFastFollowups": {
+    "profile": [
+      {
+        "check": "profile-environment-1",
+        "exit": 0,
+        "seconds": 1.35
+      },
+      {
+        "check": "profile-environment-2",
+        "exit": 0,
+        "seconds": 1.37
+      },
+      {
+        "check": "profile-environment-3",
+        "exit": 0,
+        "seconds": 1.38
+      }
+    ],
+    "conquestReceipt": [
+      {
+        "check": "conquest-receipt-1",
+        "exit": 0,
+        "seconds": 2.42
+      },
+      {
+        "check": "conquest-receipt-2",
+        "exit": 0,
+        "seconds": 2.38
+      },
+      {
+        "check": "conquest-receipt-3",
+        "exit": 0,
+        "seconds": 2.3
+      }
+    ]
+  },
+  "hygiene": {
+    "addedCodeLinesScanned": 707,
+    "matches": {
+      "absolute-home": 0,
+      "personal-email": 0,
+      "secret": 0
+    },
+    "newMedia": []
+  },
+  "neverParks": {
+    "run": false,
+    "reason": "Busy-host exception in brief; 24 CPUs; pre-task load averages 6.20 / 4.79 / 4.19; task-stopped gap 3.05 / 4.65 / 4.68."
+  }
+}

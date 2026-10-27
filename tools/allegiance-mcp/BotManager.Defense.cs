@@ -44,7 +44,8 @@ internal sealed partial class BotManager
         Math.Max(0, Math.Min(cap, (int)Math.Ceiling(population * share)) - alreadyAssigned);
 
     private static bool IsDefenseFighter(ActiveBot bot) =>
-        (bot.Role.Equals("fighter", StringComparison.OrdinalIgnoreCase)
+        !(bot.Cs is { } cs && KillsGame(cs) && bot.FlagTask != FlagDuty.None)
+        && (bot.Role.Equals("fighter", StringComparison.OrdinalIgnoreCase)
          || bot.Role.Equals("interceptor", StringComparison.OrdinalIgnoreCase))
         && CombatTargetSelector.ClassifyTargetId(ActualHullId(bot)) == BotTargetClass.Fighter;
 
@@ -203,6 +204,7 @@ internal sealed partial class BotManager
             {
                 if (ship.SideId < 0 || ship.SideId == bot.Side || ship.IsNotVisible || ship.IsDead || ship.IsGone
                     || ship.SectorId != sector || ship.Latest is null) continue;
+                if (KillsGame(cs) && !KillTarget(cs.World, ship, bot.Side)) continue;
                 var cls = CombatTargetSelector.ClassifyTargetId(ship.HullId);
                 if (IgnoreMinerTargets && cls == BotTargetClass.MinerDrone) continue;
                 bool assetAttacker = bot.RecentStationAttackers.Any(h => h.Key.Attacker == ship.ShipId

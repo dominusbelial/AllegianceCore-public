@@ -1,0 +1,28 @@
+{
+  "staticCore": "PCore001.igc",
+  "benchmarkSeed": 832,
+  "port": 6073,
+  "updatesPerSecond": 20,
+  "sideSelectAutoSeatSeconds": 30,
+  "showcase": { "techMode": "research", "incomeMultiplier": 5000, "researchTimeScale": 16 },
+  "liveSettings": {
+    "timeDilation": "off",
+    "autoNextMatch": { "enabled": true, "intermissionSeconds": 60 },
+    "testUnlock": { "enabled": false },
+    "testHarness": { "enabled": false, "ignoreTechGate": false }
+  },
+  "games": [{
+    "name": "Kills bot proof",
+    "teams": 2,
+    "civIds": [25, 25],
+    "sideNames": ["Alpha", "Bravo"],
+    "maxTeamImbalance": 32767,
+    "goals": { "teamKills": 3 },
+    "mapGen": {
+      "type": "Brawl", "seed": 832,
+      "playerSectorAsteroids": 8,
+      "playerSectorMineableAsteroids": 4,
+      "playerSectorSpecialAsteroids": 8
+    }
+  }]
+}
