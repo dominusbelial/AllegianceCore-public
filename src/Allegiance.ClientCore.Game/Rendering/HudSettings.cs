@@ -88,7 +88,10 @@ public sealed class HudSettings
     public void Normalize()
     {
         if (!Enum.IsDefined(Style)) Style = HudStyle.Classic;
-        Size = float.IsFinite(Size) ? Math.Clamp(Size, .75f, 1.5f) : 1;
+        // P833 — widen the user Size multiplier (0.5–2.0) so the pilot can
+        // compensate for very high/low density displays; the base HUD scale is
+        // now density-derived (see ModernHudScale) rather than window-height.
+        Size = float.IsFinite(Size) ? Math.Clamp(Size, ModernHudScale.MinSize, ModernHudScale.MaxSize) : 1;
         ChatLines = Math.Clamp(ChatLines, 1, 10);
         RadarLabelMax = Math.Clamp(RadarLabelMax, 0, RadarLabelDeclutter.MaxExtraLabelsLimit);
     }

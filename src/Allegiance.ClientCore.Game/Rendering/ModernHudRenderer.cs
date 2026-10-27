@@ -16,6 +16,10 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     private readonly Dictionary<GaugeKind, float> _animated = new();
     private long _previous;
     private float _dt, _scale = 1;
+    /// <summary>P833 — the OS display density (desktop scale factor) that drives
+    /// the ONE Modern HUD scale (see <see cref="ModernHudScale"/>). Detected at
+    /// construction; a 1.0 desktop behaves exactly as the pre-P833 client.</summary>
+    private readonly float _displayScale;
     private readonly HashSet<string> _drawn = new(StringComparer.Ordinal);
     // HUD-12b — per-source-string chat clip cache: the old per-character loop
     // allocated a new rowText + "..." string for every removed glyph, every line,
@@ -33,11 +37,12 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
 
     public ModernHudRenderer(SpriteBatch batch, Texture2D white, SpriteFont small, SpriteFont big, HudSettings settings,
         SpriteFont? outlineSource = null, StatusTextures? nativeArt = null, HudNativeTextures? nativeHudTextures = null,
-        RadarIconTextures? radarIcons = null)
+        RadarIconTextures? radarIcons = null, float displayScale = 1f)
         : base(batch, white, outlineSource is null ? small : Metrics(outlineSource, .25f), outlineSource is null ? big : Metrics(outlineSource, 30f / 56),
             nativeHudTextures: nativeHudTextures)
     {
         _settings = settings;
+        _displayScale = displayScale > 0f ? displayScale : 1f;
         _smallSdf = new(white.GraphicsDevice, _small, outlineSource is null ? 1 : .25f);
         _bigSdf = new(white.GraphicsDevice, _big, outlineSource is null ? 1 : 30f / 56);
         _radar = new(batch, white, nativeArt);
@@ -73,7 +78,11 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         => (font == _big ? _bigSdf : _smallSdf).Draw(_sb, text, position, color, scale);
     protected override void PrepareLayout(HudModel model, Viewport viewport)
     {
-        float scale = Math.Clamp(viewport.Height / 1080f * _settings.Size, .5f, 4);
+        // P833 — the ONE Modern scale is derived from the display's physical
+        // density (desktop scale) × the user Size, NOT from window height, so a
+        // large high-DPI monitor no longer inflates every glyph. A 1.0 desktop
+        // keeps exactly the pre-P833 behaviour.
+        float scale = ModernHudScale.Core(_displayScale, _settings.Size);
         if (scale != _scale) { _smallSdf.ResetRasterCache(); _bigSdf.ResetRasterCache(); }
         _scale = scale;
         var (mx, my, mw, mh) = MinimapGeometry.CornerPanel(viewport.Width, viewport.Height);
@@ -81,14 +90,14 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         if (model.FlightVisible && (model.Context.InventoryVisible || model.Context.InventorySlide > 0f)
             && model.Context.InventoryPane is { Rows.Count: > 0 } pane)
             Layout.Reserve(InventoryPaneLayout.ReserveRect(pane.Rows.Count, viewport.Width, viewport.Height));
-        float spread = Math.Clamp(viewport.Height / 680f, 1.15f, 2.1f);
+        float spread = ModernHudScale.Cluster(scale);
         foreach (var gauge in model.Gauges.Where(g => g.Visible))
         {
             float x = viewport.Width / 2f + gauge.NativeOffset.X * spread;
             float y = viewport.Height / 2f + gauge.NativeOffset.Y * spread;
             Layout.Reserve(new((int)(x - 56 * _scale), (int)(y - 40 * _scale), (int)(112 * _scale), (int)(112 * _scale)));
         }
-        ReserveTargetPane(model, viewport);
+        ReserveTargetPane(model, viewport, modernScale: scale);
         ReserveCommandSummary(model, viewport);
         ReserveConsoleAnchors(model, viewport);
     }
@@ -116,7 +125,7 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
 
     protected override void DrawGauges(HudModel model, Viewport viewport)
     {
-        float spread = Math.Clamp(viewport.Height / 680f, 1.15f, 2.1f);
+        float spread = ModernHudScale.Cluster(_scale);
         foreach (var gauge in model.Gauges.Where(g => g.Visible))
         {
             var center = new Vector2(viewport.Width / 2f + gauge.NativeOffset.X * spread, viewport.Height / 2f + gauge.NativeOffset.Y * spread);
@@ -178,7 +187,7 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         // HUD-6b — the native TranslateImage anchor is the image CORNER
         // (engine/image.cpp:834-845); draw from that point instead of centring
         // the text on it.
-        var pos = OwnStatusLayout.ScreenPos(id, viewport.Width, viewport.Height);
+        var pos = OwnStatusLayout.ScreenPos(id, viewport.Width, viewport.Height, modernScale: _scale);
         DrawMeasuredText(_small, text, pos, color, instrument: true);
         Mark(id);
     }
@@ -263,7 +272,7 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         var d = new Vector2(direction.X, direction.Y);
         if (d.LengthSquared() < 1e-6f) return;
         d.Normalize();
-        var anchor = center + d * 108f;
+        var anchor = center + d * (108f * _scale);
         var tip = anchor + d * 13f * _scale;
         var side = new Vector2(-d.Y, d.X) * (7f * _scale);
         var back = anchor - d * 4f * _scale;
@@ -282,10 +291,10 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
     {
         if (!model.TargetPaneVisible || model.Context.TargetPane is not { Present: true } tp) return;
         float w = viewport.Width, h = viewport.Height;
-        float s = TargetPaneLayout.Scale(w, h);
-        float x0 = TargetPaneLayout.OriginX(w, h);
+        float s = TargetPaneLayout.Scale(w, h, modernScale: _scale);
+        float x0 = TargetPaneLayout.OriginX(w, h, modernScale: _scale);
         // P805 (row 471) — the native target-pane slide, same rule as classic.
-        float y0 = TargetPaneLayout.OriginY(w, h) + TargetPaneLayout.SlideOffset(model.Context.TargetPaneSlide, s);
+        float y0 = TargetPaneLayout.OriginY(w, h, modernScale: _scale) + TargetPaneLayout.SlideOffset(model.Context.TargetPaneSlide, s);
         var side = tp.SideColor is { } sc ? new Color(sc.R, sc.G, sc.B, sc.A) : new Color(224, 231, 235);
         if (_settings.ColorBlindSafe) side = HudPalette.Side(side);
 

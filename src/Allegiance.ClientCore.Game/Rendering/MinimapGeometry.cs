@@ -39,12 +39,17 @@ public static class MinimapGeometry
     /// stays usable, and anchored <see cref="Margin"/> from the bottom/right
     /// edges. The <see cref="Vector2"/> return lets callers treat it as a
     /// rectangle the same way <see cref="StarmapLayout"/> deals in points.
+    /// <paramref name="coreScale"/> is the P833 Modern-HUD density scale: when
+    /// supplied the widget's size caps grow with the Modern HUD scale so the
+    /// mini-map is no longer dwarfed by the scaled text around it; omitted
+    /// (Classic and the shared global minimap) keeps the fixed caps.
     /// </summary>
     public static (float X, float Y, float Width, float Height) CornerPanel(
-        float viewportW, float viewportH)
+        float viewportW, float viewportH, float? coreScale = null)
     {
-        float w = MathF.Min(viewportW * WidthFraction, MaxWidth);
-        float h = MathF.Min(viewportH * HeightFraction, MaxHeight);
+        float k = coreScale ?? 1f;
+        float w = MathF.Min(viewportW * WidthFraction * k, MaxWidth * k);
+        float h = MathF.Min(viewportH * HeightFraction * k, MaxHeight * k);
         // Never overflow the viewport once the margin is honoured on both sides.
         w = MathF.Min(w, MathF.Max(FloorWidth, viewportW - 2f * Margin));
         h = MathF.Min(h, MathF.Max(FloorHeight, viewportH - 2f * Margin));

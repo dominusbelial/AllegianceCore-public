@@ -56,16 +56,25 @@ public static class OwnStatusLayout
     };
 
     /// <summary>The viewport-relative spread the classic gauge cluster uses,
-    /// kept identical so status icons stay on the same native-anchor grid.</summary>
-    public static float Spread(float viewportHeight) => Math.Clamp(viewportHeight / 680f, 1.15f, 2.1f);
+    /// kept identical so status icons stay on the same native-anchor grid.
+    /// <paramref name="modernScale"/> is the P833 Modern-HUD density scale:
+    /// when supplied the grid follows the one Modern cluster scale; omitted
+    /// (Classic) keeps the native height spread.</summary>
+    public static float Spread(float viewportHeight, float? modernScale = null)
+    {
+        if (modernScale is { } ms)
+            return Math.Clamp(ms * ModernHudScale.ClusterAtReference, 1.047f, 2.1f);
+        return Math.Clamp(viewportHeight / 680f, 1.15f, 2.1f);
+    }
 
     /// <summary>The native TranslateImage point of a status element in y-down
     /// screen coordinates, using the gauge cluster's spread: a bitmap's
-    /// LOWER-left corner, or a StringImage box's UPPER-left corner.</summary>
-    public static Vector2 ScreenPos(string id, int viewportWidth, int viewportHeight)
+    /// LOWER-left corner, or a StringImage box's UPPER-left corner.
+    /// <paramref name="modernScale"/> follows <see cref="Spread"/>.</summary>
+    public static Vector2 ScreenPos(string id, int viewportWidth, int viewportHeight, float? modernScale = null)
     {
         var p = Placement(id);
-        float spread = Spread(viewportHeight);
+        float spread = Spread(viewportHeight, modernScale);
         return new(viewportWidth / 2f + p.X * spread,
             viewportHeight / 2f + p.Y * spread);
     }

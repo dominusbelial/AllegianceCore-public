@@ -535,6 +535,9 @@ public sealed partial class Game1 : Game
     private SpriteFont _hudBig = null!;
     private HudRenderer _hudRenderer = null!;
     private ModernHudRenderer _modernHudRenderer = null!;
+    /// <summary>P833 — the OS display density (desktop scale) that drives the
+    /// Modern HUD scale, detected once at boot (see DisplayDensity).</summary>
+    private float _displayScale = 1f;
     private StarmapRenderer _starmapRenderer = null!;
     private RadarBracketRenderer _radarRenderer = null!;
     // HUD-16 — the native per-contact radar icon surfaces and their

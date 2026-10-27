@@ -629,11 +629,13 @@ public class HudRenderer
     }
 
     /// <summary>Reserve the native bottom target pane so measured text (radar
-    /// labels, notices, projected readouts) is placed around it.</summary>
-    protected void ReserveTargetPane(HudModel model, Viewport viewport)
+    /// labels, notices, projected readouts) is placed around it.
+    /// <paramref name="modernScale"/> is the P833 Modern-HUD density scale,
+    /// threaded through so the reservation matches the drawn pane scale.</summary>
+    protected void ReserveTargetPane(HudModel model, Viewport viewport, float? modernScale = null)
     {
         if (model.TargetPaneVisible && model.Context.TargetPane is { Present: true })
-            Layout.Reserve(TargetPaneLayout.ReserveRect(viewport.Width, viewport.Height));
+            Layout.Reserve(TargetPaneLayout.ReserveRect(viewport.Width, viewport.Height, modernScale));
     }
 
     /// <summary>HUD-9b — reserve the fixed native console anchors before the

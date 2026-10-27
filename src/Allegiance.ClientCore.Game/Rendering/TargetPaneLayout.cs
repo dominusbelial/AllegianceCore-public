@@ -49,9 +49,15 @@ public static class TargetPaneLayout
 
     /// <summary>The native coordinate scale for a viewport, width-clamped so the
     /// pane's right edge never reaches the bottom-right minimap (the HUD-2
-    /// overlap rule). Matches the gauge spread at large heights.</summary>
-    public static float Scale(float viewportW, float viewportH)
+    /// overlap rule). Matches the gauge spread at large heights.
+    /// <paramref name="modernScale"/> is the P833 Modern-HUD density scale: when
+    /// supplied (Modern skin) the pane uses the one density-derived cluster
+    /// scale instead of the height heuristic, so the pane and the Modern text
+    /// stay glued; omitted (Classic) keeps the native height behaviour.</summary>
+    public static float Scale(float viewportW, float viewportH, float? modernScale = null)
     {
+        if (modernScale is { } ms)
+            return Math.Clamp(ms * ModernHudScale.ClusterAtReference, 0.838f, 2.1f);
         float desired = Math.Clamp(viewportH / 680f, 0.9f, 2.1f);
         var (mx, _, _, _) = MinimapGeometry.CornerPanel(viewportW, viewportH);
         float centreX = viewportW / 2f;
@@ -63,26 +69,27 @@ public static class TargetPaneLayout
     }
 
     /// <summary>Screen X (right, +X) of the pane's local origin.</summary>
-    public static float OriginX(float viewportW, float viewportH) =>
-        viewportW / 2f - LocalAnchorX * Scale(viewportW, viewportH);
+    public static float OriginX(float viewportW, float viewportH, float? modernScale = null) =>
+        viewportW / 2f - LocalAnchorX * Scale(viewportW, viewportH, modernScale);
 
     /// <summary>Screen Y (down, +Y) of the pane's local y=0.</summary>
-    public static float OriginY(float viewportW, float viewportH) =>
-        viewportH - LocalAnchorY * Scale(viewportW, viewportH);
+    public static float OriginY(float viewportW, float viewportH, float? modernScale = null) =>
+        viewportH - LocalAnchorY * Scale(viewportW, viewportH, modernScale);
 
     /// <summary>Screen Y (down) of the pane's top edge (name top).</summary>
-    public static float TopY(float viewportW, float viewportH) =>
-        OriginY(viewportW, viewportH) - LocalTop * Scale(viewportW, viewportH);
+    public static float TopY(float viewportW, float viewportH, float? modernScale = null) =>
+        OriginY(viewportW, viewportH, modernScale) - LocalTop * Scale(viewportW, viewportH, modernScale);
 
     /// <summary>The on-screen rectangle the pane occupies (for text-layout
-    /// reservation), excluding the below-anchor oval decoration.</summary>
-    public static Rectangle ReserveRect(float viewportW, float viewportH)
+    /// reservation), excluding the below-anchor oval decoration.
+    /// <paramref name="modernScale"/> follows <see cref="Scale"/>.</summary>
+    public static Rectangle ReserveRect(float viewportW, float viewportH, float? modernScale = null)
     {
-        float s = Scale(viewportW, viewportH);
-        int x = (int)MathF.Round(OriginX(viewportW, viewportH) + LocalLeft * s);
-        int y = (int)MathF.Round(TopY(viewportW, viewportH));
+        float s = Scale(viewportW, viewportH, modernScale);
+        int x = (int)MathF.Round(OriginX(viewportW, viewportH, modernScale) + LocalLeft * s);
+        int y = (int)MathF.Round(TopY(viewportW, viewportH, modernScale));
         int width = (int)MathF.Round((LocalRight - LocalLeft) * s);
-        int height = Math.Max(1, (int)MathF.Round(OriginY(viewportW, viewportH) - TopY(viewportW, viewportH)));
+        int height = Math.Max(1, (int)MathF.Round(OriginY(viewportW, viewportH, modernScale) - TopY(viewportW, viewportH, modernScale)));
         return new Rectangle(x, y, width, height);
     }
 
