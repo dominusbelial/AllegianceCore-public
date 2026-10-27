@@ -1,0 +1,1641 @@
+{
+  "base": "04b860aeb733e0baac490d0a97399a2a6e0f3c0f",
+  "branch": "codex/p832b",
+  "commits": false,
+  "pushes": false,
+  "build": "Build succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:07.17",
+  "toolsBuild": "build-tools: all 89 tool projects built",
+  "newIndividualTests": [
+    {
+      "file": "alone-Enemy_progress_redirects_raiders_to_visible_miners_but_keeps_home_interception_and_support-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Enemy_progress_redirects_raiders_to_visible_miners_but_keeps_home_interception_and_support",
+      "outcome": "Passed",
+      "duration": "00:00:00.0401959"
+    },
+    {
+      "file": "alone-Enemy_progress_redirects_raiders_to_visible_miners_but_keeps_home_interception_and_support-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Enemy_progress_redirects_raiders_to_visible_miners_but_keeps_home_interception_and_support",
+      "outcome": "Passed",
+      "duration": "00:00:00.0395690"
+    },
+    {
+      "file": "alone-Enemy_progress_redirects_raiders_to_visible_miners_but_keeps_home_interception_and_support-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Enemy_progress_redirects_raiders_to_visible_miners_but_keeps_home_interception_and_support",
+      "outcome": "Passed",
+      "duration": "00:00:00.0391423"
+    },
+    {
+      "file": "alone-Enemy_progress_uses_received_mission_and_bucket_messages_and_ignores_allies_and_other_goals-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Enemy_progress_uses_received_mission_and_bucket_messages_and_ignores_allies_and_other_goals",
+      "outcome": "Passed",
+      "duration": "00:00:01.1165322"
+    },
+    {
+      "file": "alone-Enemy_progress_uses_received_mission_and_bucket_messages_and_ignores_allies_and_other_goals-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Enemy_progress_uses_received_mission_and_bucket_messages_and_ignores_allies_and_other_goals",
+      "outcome": "Passed",
+      "duration": "00:00:01.1190511"
+    },
+    {
+      "file": "alone-Enemy_progress_uses_received_mission_and_bucket_messages_and_ignores_allies_and_other_goals-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Enemy_progress_uses_received_mission_and_bucket_messages_and_ignores_allies_and_other_goals",
+      "outcome": "Passed",
+      "duration": "00:00:01.1131211"
+    },
+    {
+      "file": "alone-Far_goal_banks_income_without_draining_the_reserve_on_repeated_ticks-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Far_goal_banks_income_without_draining_the_reserve_on_repeated_ticks",
+      "outcome": "Passed",
+      "duration": "00:00:00.6700202"
+    },
+    {
+      "file": "alone-Far_goal_banks_income_without_draining_the_reserve_on_repeated_ticks-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Far_goal_banks_income_without_draining_the_reserve_on_repeated_ticks",
+      "outcome": "Passed",
+      "duration": "00:00:00.6663092"
+    },
+    {
+      "file": "alone-Far_goal_banks_income_without_draining_the_reserve_on_repeated_ticks-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Far_goal_banks_income_without_draining_the_reserve_on_repeated_ticks",
+      "outcome": "Passed",
+      "duration": "00:00:00.6732946"
+    },
+    {
+      "file": "alone-Goal_funding_uses_configured_price_keeps_defence_and_waits_for_wallet_ack-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Goal_funding_uses_configured_price_keeps_defence_and_waits_for_wallet_ack",
+      "outcome": "Passed",
+      "duration": "00:00:00.6792532"
+    },
+    {
+      "file": "alone-Goal_funding_uses_configured_price_keeps_defence_and_waits_for_wallet_ack-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Goal_funding_uses_configured_price_keeps_defence_and_waits_for_wallet_ack",
+      "outcome": "Passed",
+      "duration": "00:00:00.6784827"
+    },
+    {
+      "file": "alone-Goal_funding_uses_configured_price_keeps_defence_and_waits_for_wallet_ack-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Goal_funding_uses_configured_price_keeps_defence_and_waits_for_wallet_ack",
+      "outcome": "Passed",
+      "duration": "00:00:00.6821386"
+    },
+    {
+      "file": "alone-No_goal_decision_trace_matches_dispatch_base-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.No_goal_decision_trace_matches_dispatch_base",
+      "outcome": "Passed",
+      "duration": "00:00:00.6586326",
+      "traceSha256": "1DFA06A9A3DDFF950DE89ABBC20FFCF913C9065297C3D56300B473B6D08FBD64"
+    },
+    {
+      "file": "alone-No_goal_decision_trace_matches_dispatch_base-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.No_goal_decision_trace_matches_dispatch_base",
+      "outcome": "Passed",
+      "duration": "00:00:00.6706026",
+      "traceSha256": "1DFA06A9A3DDFF950DE89ABBC20FFCF913C9065297C3D56300B473B6D08FBD64"
+    },
+    {
+      "file": "alone-No_goal_decision_trace_matches_dispatch_base-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.No_goal_decision_trace_matches_dispatch_base",
+      "outcome": "Passed",
+      "duration": "00:00:00.7013480",
+      "traceSha256": "1DFA06A9A3DDFF950DE89ABBC20FFCF913C9065297C3D56300B473B6D08FBD64"
+    },
+    {
+      "file": "alone-Observed_He3_grows_miners_first_and_losses_trigger_replacement-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Observed_He3_grows_miners_first_and_losses_trigger_replacement",
+      "outcome": "Passed",
+      "duration": "00:00:01.1482288"
+    },
+    {
+      "file": "alone-Observed_He3_grows_miners_first_and_losses_trigger_replacement-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Observed_He3_grows_miners_first_and_losses_trigger_replacement",
+      "outcome": "Passed",
+      "duration": "00:00:01.1347006"
+    },
+    {
+      "file": "alone-Observed_He3_grows_miners_first_and_losses_trigger_replacement-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Observed_He3_grows_miners_first_and_losses_trigger_replacement",
+      "outcome": "Passed",
+      "duration": "00:00:01.1287006"
+    },
+    {
+      "file": "alone-Other_goals_keep_the_same_commander_trace_as_absent_goals-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Other_goals_keep_the_same_commander_trace_as_absent_goals",
+      "outcome": "Passed",
+      "duration": "00:00:02.1086999"
+    },
+    {
+      "file": "alone-Other_goals_keep_the_same_commander_trace_as_absent_goals-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Other_goals_keep_the_same_commander_trace_as_absent_goals",
+      "outcome": "Passed",
+      "duration": "00:00:02.1113926"
+    },
+    {
+      "file": "alone-Other_goals_keep_the_same_commander_trace_as_absent_goals-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Other_goals_keep_the_same_commander_trace_as_absent_goals",
+      "outcome": "Passed",
+      "duration": "00:00:02.1236359"
+    },
+    {
+      "file": "alone-Research_bots_grow_income_and_deliver_real_prosperity_game_over-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityLiveTests.Research_bots_grow_income_and_deliver_real_prosperity_game_over",
+      "outcome": "Passed",
+      "duration": "00:00:14.3927168",
+      "match": {
+        "wallSeconds": 12.6692244,
+        "simulationSeconds": 112.89999999999573,
+        "peakMiners": {
+          "0": 2,
+          "1": 2
+        },
+        "sawGoals": true,
+        "sawEnemyInvestment": true,
+        "winner": 1,
+        "reason": "Bravo won by achieving the prosperity/artifact victory objective."
+      }
+    },
+    {
+      "file": "alone-Research_bots_grow_income_and_deliver_real_prosperity_game_over-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityLiveTests.Research_bots_grow_income_and_deliver_real_prosperity_game_over",
+      "outcome": "Passed",
+      "duration": "00:00:15.1917032",
+      "match": {
+        "wallSeconds": 13.4673934,
+        "simulationSeconds": 113.4999999999957,
+        "peakMiners": {
+          "0": 2,
+          "1": 2
+        },
+        "sawGoals": true,
+        "sawEnemyInvestment": true,
+        "winner": 1,
+        "reason": "Bravo won by achieving the prosperity/artifact victory objective."
+      }
+    },
+    {
+      "file": "alone-Research_bots_grow_income_and_deliver_real_prosperity_game_over-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityLiveTests.Research_bots_grow_income_and_deliver_real_prosperity_game_over",
+      "outcome": "Passed",
+      "duration": "00:00:14.4406948",
+      "match": {
+        "wallSeconds": 12.6636885,
+        "simulationSeconds": 112.89999999999573,
+        "peakMiners": {
+          "0": 2,
+          "1": 2
+        },
+        "sawGoals": true,
+        "sawEnemyInvestment": true,
+        "winner": 1,
+        "reason": "Bravo won by achieving the prosperity/artifact victory objective."
+      }
+    }
+  ],
+  "finalFunding": [
+    {
+      "file": "sealed-funding-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Goal_funding_uses_configured_price_keeps_defence_and_waits_for_wallet_ack",
+      "outcome": "Passed",
+      "duration": "00:00:00.6934943"
+    },
+    {
+      "file": "sealed-funding-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Goal_funding_uses_configured_price_keeps_defence_and_waits_for_wallet_ack",
+      "outcome": "Passed",
+      "duration": "00:00:00.6820407"
+    },
+    {
+      "file": "sealed-funding-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Goal_funding_uses_configured_price_keeps_defence_and_waits_for_wallet_ack",
+      "outcome": "Passed",
+      "duration": "00:00:00.6737175"
+    }
+  ],
+  "finalKnownOre": [
+    {
+      "file": "sealed-ore-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Observed_He3_grows_miners_first_and_losses_trigger_replacement",
+      "outcome": "Passed",
+      "duration": "00:00:01.1937866"
+    },
+    {
+      "file": "sealed-ore-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Observed_He3_grows_miners_first_and_losses_trigger_replacement",
+      "outcome": "Passed",
+      "duration": "00:00:01.1993385"
+    },
+    {
+      "file": "sealed-ore-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.Observed_He3_grows_miners_first_and_losses_trigger_replacement",
+      "outcome": "Passed",
+      "duration": "00:00:01.2037752"
+    }
+  ],
+  "finalMatches": [
+    {
+      "file": "fleet-live-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityLiveTests.Research_bots_grow_income_and_deliver_real_prosperity_game_over",
+      "outcome": "Passed",
+      "duration": "00:00:16.2326623",
+      "match": {
+        "pilots": 6,
+        "wallSeconds": 14.403414,
+        "simulationSeconds": 114.04999999999566,
+        "peakMiners": {
+          "0": 2,
+          "1": 2
+        },
+        "sawGoals": true,
+        "sawEnemyInvestment": true,
+        "winner": 1,
+        "reason": "Bravo won by achieving the prosperity/artifact victory objective."
+      }
+    },
+    {
+      "file": "fleet-live-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityLiveTests.Research_bots_grow_income_and_deliver_real_prosperity_game_over",
+      "outcome": "Passed",
+      "duration": "00:00:14.9621242",
+      "match": {
+        "pilots": 6,
+        "wallSeconds": 13.0545893,
+        "simulationSeconds": 112.84999999999573,
+        "peakMiners": {
+          "0": 2,
+          "1": 2
+        },
+        "sawGoals": true,
+        "sawEnemyInvestment": true,
+        "winner": 1,
+        "reason": "Bravo won by achieving the prosperity/artifact victory objective."
+      }
+    },
+    {
+      "file": "fleet-live-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityLiveTests.Research_bots_grow_income_and_deliver_real_prosperity_game_over",
+      "outcome": "Passed",
+      "duration": "00:00:15.9763957",
+      "match": {
+        "pilots": 6,
+        "wallSeconds": 14.1735776,
+        "simulationSeconds": 114.04999999999566,
+        "peakMiners": {
+          "0": 2,
+          "1": 2
+        },
+        "sawGoals": true,
+        "sawEnemyInvestment": true,
+        "winner": 1,
+        "reason": "Bravo won by achieving the prosperity/artifact victory objective."
+      }
+    }
+  ],
+  "affectedRegression": [
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_committed_wave_gets_the_nearest_non_strike_fighters_as_defend_escorts",
+      "outcome": "Passed",
+      "duration": "00:00:00.0021091"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.A_short_strike_group_commits_after_the_rally_timeout",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002999"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_member_that_docks_and_relaunches_rejoins_the_rally_not_the_station",
+      "outcome": "Passed",
+      "duration": "00:00:00.0005389"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Massed_wave_holds_until_the_required_volley_assembles_then_releases",
+      "outcome": "Passed",
+      "duration": "00:00:00.0008066"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_roster_of_one_still_commits_its_lone_pilot_after_the_timeout",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001461"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Strike_log_lines_carry_escorts_and_station_health_and_wave_arrival",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001505"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC6CommanderOrdersTests.Repair_acceptance_releases_hostile_focus_and_preserves_named_order",
+      "outcome": "Passed",
+      "duration": "00:00:00.0021242"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Donations_wait_for_ack_and_completion_is_not_inferred_from_elapsed_time",
+      "outcome": "Passed",
+      "duration": "00:00:00.0016502"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_ends_when_the_target_station_is_gone",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002657"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_progressing_goto_is_sent_once_over_120_seconds_a_stalled_one_is_resent",
+      "outcome": "Passed",
+      "duration": "00:00:00.0008154"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Reservations_are_shared_across_three_sides_and_released_when_no_rock_survives",
+      "outcome": "Passed",
+      "duration": "00:00:00.0033005"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Strike_wave_log_lines_match_the_rig_format",
+      "outcome": "Passed",
+      "duration": "00:00:00.0008684"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Every_step_spends_real_wallet_and_waits_for_observed_completion",
+      "outcome": "Passed",
+      "duration": "00:00:00.0046386"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Constructor_uses_native_goto_before_building_in_another_sector",
+      "outcome": "Passed",
+      "duration": "00:00:00.0018875"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_pair_that_re_forms_after_a_wave_end_waits_its_own_timeout",
+      "outcome": "Passed",
+      "duration": "00:00:00.0201511"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Roster_quorum_counts_the_whole_roster_not_the_launched_pilots",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001325"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC6CommanderOrdersTests.Repair_prioritizes_damaged_friendly_station_then_local_ship_and_excludes_self",
+      "outcome": "Passed",
+      "duration": "00:00:00.0101803"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.The_next_wave_re_picks_a_soft_station_and_re_rallies_through_its_aleph",
+      "outcome": "Passed",
+      "duration": "00:00:00.0004940"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_whose_members_all_leave_the_snapshot_ends_once",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002509"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Observed_station_health_marks_a_shield_damaged_station_damaged",
+      "outcome": "Passed",
+      "duration": "00:00:00.0027584"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Finale_bombers_wait_for_the_shared_go_and_a_relaunch_waits_for_the_next_wave",
+      "outcome": "Passed",
+      "duration": "00:00:00.0022054"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_commits_only_the_pilots_at_the_rally_and_latecomers_keep_rallying",
+      "outcome": "Passed",
+      "duration": "00:00:00.0006891"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Non_strike_attack_orders_are_resent_when_the_pilot_makes_no_progress",
+      "outcome": "Passed",
+      "duration": "00:00:00.0004394"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Requirement_scales_with_station_and_loadout_not_with_race",
+      "outcome": "Passed",
+      "duration": "00:00:00.0031474"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Bot_accepts_goto_to_aleph_and_friendly_ship_and_station",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001155"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Constructor_death_rock_loss_and_lost_prerequisites_recover_without_tech_grants",
+      "outcome": "Passed",
+      "duration": "00:00:00.0039550"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Non_strike_attack_orders_are_not_resent_on_a_timer_while_in_the_target_sector",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001622"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Strike_target_prefers_damaged_then_non_garrison_then_garrison_and_is_stable",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003547"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Lone_wolves_take_their_own_aleph_and_join_only_the_shared_go_time",
+      "outcome": "Passed",
+      "duration": "00:00:00.0053118"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Orders_stay_capped_per_tick_across_strike_and_other_pilots",
+      "outcome": "Passed",
+      "duration": "00:00:00.0121073"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC6CommanderOrdersTests.Strike_attacks_enemy_station_while_fighter_intercepts_home_bomber",
+      "outcome": "Passed",
+      "duration": "00:00:00.0014312"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.A_finale_wave_never_commits_a_single_bomber_and_its_cap_starts_at_the_first_arrival",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001904"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Escorts_are_released_when_the_wave_ends_and_get_ordinary_orders",
+      "outcome": "Passed",
+      "duration": "00:00:00.0007767"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_whose_members_are_alive_but_out_of_the_target_sector_ends_after_the_trip_time",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001791"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Strike_rallies_with_goto_then_attacks_one_shared_station",
+      "outcome": "Passed",
+      "duration": "00:00:00.0031422"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_wave_counts_arrived_and_peak_on_target_from_a_scripted_path",
+      "outcome": "Passed",
+      "duration": "00:00:00.0005852"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Waits_require_both_duration_and_live_tech_mask_and_loop_is_opt_in",
+      "outcome": "Passed",
+      "duration": "00:00:00.0048107"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_ends_when_its_members_leave_the_target_sector_and_re_forms_at_the_rally",
+      "outcome": "Passed",
+      "duration": "00:00:00.0011804"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Briefing_production_dev_history_and_asteroid_destruction_use_real_receive_dispatch",
+      "outcome": "Passed",
+      "duration": "00:00:00.8321044"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC6CommanderOrdersTests.Orders_wait_for_start_throttle_repeats_and_share_bandwidth_across_pilots",
+      "outcome": "Passed",
+      "duration": "00:00:00.0043992"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_defend_ship_order_is_accepted_without_adopting_the_protectee_as_a_target",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001087"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.An_escort_re_points_to_a_live_member_when_its_protectee_leaves_the_wave",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003943"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_side_with_one_strike_pilot_still_attacks_after_the_timeout",
+      "outcome": "Passed",
+      "duration": "00:00:00.0005687"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_shield_damaged_station_is_preferred_over_an_undamaged_one",
+      "outcome": "Passed",
+      "duration": "00:00:00.0009296"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Per_tick_cost_with_107_pilots_and_300_targets_stays_within_the_base",
+      "outcome": "Passed",
+      "duration": "00:00:08.2273623"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Timeout_with_one_at_the_rally_refuses_to_commit_a_wave_of_one",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001923"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.A_dead_paused_constructor_cannot_reserve_the_only_rock_needed_for_another_repair",
+      "outcome": "Passed",
+      "duration": "00:00:00.0846566"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Capability_requires_the_hull_station_threat_flag_not_the_requested_role",
+      "outcome": "Passed",
+      "duration": "00:00:00.0006635"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Real_garrison_data_matches_the_native_damage_arithmetic",
+      "outcome": "Passed",
+      "duration": "00:00:00.0227991"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Rally_prefers_an_aleph_outside_enemy_held_sectors",
+      "outcome": "Passed",
+      "duration": "00:00:00.0023063"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.The_same_bombers_massed_kill_and_trickled_never_do",
+      "outcome": "Passed",
+      "duration": "00:00:00.0186735"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_pilot_that_undocks_after_the_commit_gets_the_rally_goto_not_the_attack",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003341"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Never_commits_with_nobody_at_the_rally_even_after_two_timeouts",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003043"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.A_late_lone_wolf_does_not_block_a_strike_that_already_has_enough_bombers",
+      "outcome": "Passed",
+      "duration": "00:00:00.0018994"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Timeout_with_two_at_the_rally_commits_both",
+      "outcome": "Passed",
+      "duration": "00:00:00.0004257"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Finale_visible_bombers_share_the_shortest_route_and_only_lone_wolves_take_alternatives",
+      "outcome": "Passed",
+      "duration": "00:00:00.0005047"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.An_unassemblable_volley_aborts_instead_of_trickling_in",
+      "outcome": "Passed",
+      "duration": "00:00:00.0006762"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.In_the_finale_target_sector_the_visible_element_stays_visible_and_a_wolf_cloaks_only_once_committed",
+      "outcome": "Passed",
+      "duration": "00:00:00.0000805"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_new_station_does_not_change_the_target_while_a_wave_is_in_flight",
+      "outcome": "Passed",
+      "duration": "00:00:00.0016322"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Without_a_cloak_hull_the_strike_is_all_visible",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002655"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Gathering_and_on_target_checks_respect_the_sector",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002905"
+    },
+    {
+      "file": "regression-final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_damaged_Garrison_does_not_outrank_an_undamaged_soft_station",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002411"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Donations_wait_for_ack_and_completion_is_not_inferred_from_elapsed_time",
+      "outcome": "Passed",
+      "duration": "00:00:00.0026604"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_defend_ship_order_is_accepted_without_adopting_the_protectee_as_a_target",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001114"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Waits_require_both_duration_and_live_tech_mask_and_loop_is_opt_in",
+      "outcome": "Passed",
+      "duration": "00:00:00.0049119"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_roster_of_one_still_commits_its_lone_pilot_after_the_timeout",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001309"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Never_commits_with_nobody_at_the_rally_even_after_two_timeouts",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002246"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.The_next_wave_re_picks_a_soft_station_and_re_rallies_through_its_aleph",
+      "outcome": "Passed",
+      "duration": "00:00:00.0004779"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Lone_wolves_take_their_own_aleph_and_join_only_the_shared_go_time",
+      "outcome": "Passed",
+      "duration": "00:00:00.0049043"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Requirement_scales_with_station_and_loadout_not_with_race",
+      "outcome": "Passed",
+      "duration": "00:00:00.0025240"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC6CommanderOrdersTests.Repair_acceptance_releases_hostile_focus_and_preserves_named_order",
+      "outcome": "Passed",
+      "duration": "00:00:00.0019476"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC6CommanderOrdersTests.Repair_prioritizes_damaged_friendly_station_then_local_ship_and_excludes_self",
+      "outcome": "Passed",
+      "duration": "00:00:00.0096026"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Real_garrison_data_matches_the_native_damage_arithmetic",
+      "outcome": "Passed",
+      "duration": "00:00:00.0232352"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Massed_wave_holds_until_the_required_volley_assembles_then_releases",
+      "outcome": "Passed",
+      "duration": "00:00:00.0006008"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_new_station_does_not_change_the_target_while_a_wave_is_in_flight",
+      "outcome": "Passed",
+      "duration": "00:00:00.0017218"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.A_short_strike_group_commits_after_the_rally_timeout",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003128"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_pair_that_re_forms_after_a_wave_end_waits_its_own_timeout",
+      "outcome": "Passed",
+      "duration": "00:00:00.0213304"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_whose_members_all_leave_the_snapshot_ends_once",
+      "outcome": "Passed",
+      "duration": "00:00:00.0004708"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Strike_rallies_with_goto_then_attacks_one_shared_station",
+      "outcome": "Passed",
+      "duration": "00:00:00.0034949"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Every_step_spends_real_wallet_and_waits_for_observed_completion",
+      "outcome": "Passed",
+      "duration": "00:00:00.0038568"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.An_escort_re_points_to_a_live_member_when_its_protectee_leaves_the_wave",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003732"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC6CommanderOrdersTests.Orders_wait_for_start_throttle_repeats_and_share_bandwidth_across_pilots",
+      "outcome": "Passed",
+      "duration": "00:00:00.0054311"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.A_dead_paused_constructor_cannot_reserve_the_only_rock_needed_for_another_repair",
+      "outcome": "Passed",
+      "duration": "00:00:00.0818542"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Constructor_uses_native_goto_before_building_in_another_sector",
+      "outcome": "Passed",
+      "duration": "00:00:00.0021235"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_ends_when_the_target_station_is_gone",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002497"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_shield_damaged_station_is_preferred_over_an_undamaged_one",
+      "outcome": "Passed",
+      "duration": "00:00:00.0008999"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Non_strike_attack_orders_are_resent_when_the_pilot_makes_no_progress",
+      "outcome": "Passed",
+      "duration": "00:00:00.0004681"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_damaged_Garrison_does_not_outrank_an_undamaged_soft_station",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002260"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.The_same_bombers_massed_kill_and_trickled_never_do",
+      "outcome": "Passed",
+      "duration": "00:00:00.0055861"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Gathering_and_on_target_checks_respect_the_sector",
+      "outcome": "Passed",
+      "duration": "00:00:00.0004164"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_wave_counts_arrived_and_peak_on_target_from_a_scripted_path",
+      "outcome": "Passed",
+      "duration": "00:00:00.0005763"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Briefing_production_dev_history_and_asteroid_destruction_use_real_receive_dispatch",
+      "outcome": "Passed",
+      "duration": "00:00:00.8367656"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_commits_only_the_pilots_at_the_rally_and_latecomers_keep_rallying",
+      "outcome": "Passed",
+      "duration": "00:00:00.0005718"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_member_that_docks_and_relaunches_rejoins_the_rally_not_the_station",
+      "outcome": "Passed",
+      "duration": "00:00:00.0004278"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Strike_wave_log_lines_match_the_rig_format",
+      "outcome": "Passed",
+      "duration": "00:00:00.0007505"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_committed_wave_gets_the_nearest_non_strike_fighters_as_defend_escorts",
+      "outcome": "Passed",
+      "duration": "00:00:00.0019268"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.An_unassemblable_volley_aborts_instead_of_trickling_in",
+      "outcome": "Passed",
+      "duration": "00:00:00.0005709"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Strike_target_prefers_damaged_then_non_garrison_then_garrison_and_is_stable",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003989"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.In_the_finale_target_sector_the_visible_element_stays_visible_and_a_wolf_cloaks_only_once_committed",
+      "outcome": "Passed",
+      "duration": "00:00:00.0000539"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Constructor_death_rock_loss_and_lost_prerequisites_recover_without_tech_grants",
+      "outcome": "Passed",
+      "duration": "00:00:00.0039072"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC6CommanderOrdersTests.Strike_attacks_enemy_station_while_fighter_intercepts_home_bomber",
+      "outcome": "Passed",
+      "duration": "00:00:00.0021561"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Timeout_with_two_at_the_rally_commits_both",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003611"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_pilot_that_undocks_after_the_commit_gets_the_rally_goto_not_the_attack",
+      "outcome": "Passed",
+      "duration": "00:00:00.0004581"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.A_late_lone_wolf_does_not_block_a_strike_that_already_has_enough_bombers",
+      "outcome": "Passed",
+      "duration": "00:00:00.0018356"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Roster_quorum_counts_the_whole_roster_not_the_launched_pilots",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001202"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Without_a_cloak_hull_the_strike_is_all_visible",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002096"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Per_tick_cost_with_107_pilots_and_300_targets_stays_within_the_base",
+      "outcome": "Passed",
+      "duration": "00:00:08.1022657"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Non_strike_attack_orders_are_not_resent_on_a_timer_while_in_the_target_sector",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001497"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_ends_when_its_members_leave_the_target_sector_and_re_forms_at_the_rally",
+      "outcome": "Passed",
+      "duration": "00:00:00.0012189"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_progressing_goto_is_sent_once_over_120_seconds_a_stalled_one_is_resent",
+      "outcome": "Passed",
+      "duration": "00:00:00.0007792"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Reservations_are_shared_across_three_sides_and_released_when_no_rock_survives",
+      "outcome": "Passed",
+      "duration": "00:00:00.0036718"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Finale_visible_bombers_share_the_shortest_route_and_only_lone_wolves_take_alternatives",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003900"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Rally_prefers_an_aleph_outside_enemy_held_sectors",
+      "outcome": "Passed",
+      "duration": "00:00:00.0018925"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Strike_log_lines_carry_escorts_and_station_health_and_wave_arrival",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001438"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Timeout_with_one_at_the_rally_refuses_to_commit_a_wave_of_one",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001794"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Orders_stay_capped_per_tick_across_strike_and_other_pilots",
+      "outcome": "Passed",
+      "duration": "00:00:00.0126732"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Capability_requires_the_hull_station_threat_flag_not_the_requested_role",
+      "outcome": "Passed",
+      "duration": "00:00:00.0006920"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_whose_members_are_alive_but_out_of_the_target_sector_ends_after_the_trip_time",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001443"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.A_finale_wave_never_commits_a_single_bomber_and_its_cap_starts_at_the_first_arrival",
+      "outcome": "Passed",
+      "duration": "00:00:00.0122681"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_side_with_one_strike_pilot_still_attacks_after_the_timeout",
+      "outcome": "Passed",
+      "duration": "00:00:00.0005425"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Escorts_are_released_when_the_wave_ends_and_get_ordinary_orders",
+      "outcome": "Passed",
+      "duration": "00:00:00.0007390"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Finale_bombers_wait_for_the_shared_go_and_a_relaunch_waits_for_the_next_wave",
+      "outcome": "Passed",
+      "duration": "00:00:00.0027493"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Bot_accepts_goto_to_aleph_and_friendly_ship_and_station",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001226"
+    },
+    {
+      "file": "regression-final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Observed_station_health_marks_a_shield_damaged_station_damaged",
+      "outcome": "Passed",
+      "duration": "00:00:00.0027193"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Gathering_and_on_target_checks_respect_the_sector",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003777"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Timeout_with_one_at_the_rally_refuses_to_commit_a_wave_of_one",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001689"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Without_a_cloak_hull_the_strike_is_all_visible",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002351"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Orders_stay_capped_per_tick_across_strike_and_other_pilots",
+      "outcome": "Passed",
+      "duration": "00:00:00.0143898"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Briefing_production_dev_history_and_asteroid_destruction_use_real_receive_dispatch",
+      "outcome": "Passed",
+      "duration": "00:00:00.9052856"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_new_station_does_not_change_the_target_while_a_wave_is_in_flight",
+      "outcome": "Passed",
+      "duration": "00:00:00.0015734"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_pilot_that_undocks_after_the_commit_gets_the_rally_goto_not_the_attack",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003043"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Observed_station_health_marks_a_shield_damaged_station_damaged",
+      "outcome": "Passed",
+      "duration": "00:00:00.0040957"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_whose_members_all_leave_the_snapshot_ends_once",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002407"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.A_dead_paused_constructor_cannot_reserve_the_only_rock_needed_for_another_repair",
+      "outcome": "Passed",
+      "duration": "00:00:00.0849248"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.A_finale_wave_never_commits_a_single_bomber_and_its_cap_starts_at_the_first_arrival",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002126"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_shield_damaged_station_is_preferred_over_an_undamaged_one",
+      "outcome": "Passed",
+      "duration": "00:00:00.0014100"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Never_commits_with_nobody_at_the_rally_even_after_two_timeouts",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002835"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Finale_visible_bombers_share_the_shortest_route_and_only_lone_wolves_take_alternatives",
+      "outcome": "Passed",
+      "duration": "00:00:00.0004396"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_pair_that_re_forms_after_a_wave_end_waits_its_own_timeout",
+      "outcome": "Passed",
+      "duration": "00:00:00.0235512"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_whose_members_are_alive_but_out_of_the_target_sector_ends_after_the_trip_time",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001932"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Constructor_uses_native_goto_before_building_in_another_sector",
+      "outcome": "Passed",
+      "duration": "00:00:00.0021484"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.A_late_lone_wolf_does_not_block_a_strike_that_already_has_enough_bombers",
+      "outcome": "Passed",
+      "duration": "00:00:00.0020082"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_commits_only_the_pilots_at_the_rally_and_latecomers_keep_rallying",
+      "outcome": "Passed",
+      "duration": "00:00:00.0005220"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Strike_wave_log_lines_match_the_rig_format",
+      "outcome": "Passed",
+      "duration": "00:00:00.0008034"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.An_unassemblable_volley_aborts_instead_of_trickling_in",
+      "outcome": "Passed",
+      "duration": "00:00:00.0006641"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_defend_ship_order_is_accepted_without_adopting_the_protectee_as_a_target",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001705"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Capability_requires_the_hull_station_threat_flag_not_the_requested_role",
+      "outcome": "Passed",
+      "duration": "00:00:00.0009436"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Timeout_with_two_at_the_rally_commits_both",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003825"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Non_strike_attack_orders_are_not_resent_on_a_timer_while_in_the_target_sector",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001637"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.In_the_finale_target_sector_the_visible_element_stays_visible_and_a_wolf_cloaks_only_once_committed",
+      "outcome": "Passed",
+      "duration": "00:00:00.0000827"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Waits_require_both_duration_and_live_tech_mask_and_loop_is_opt_in",
+      "outcome": "Passed",
+      "duration": "00:00:00.0049282"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.The_next_wave_re_picks_a_soft_station_and_re_rallies_through_its_aleph",
+      "outcome": "Passed",
+      "duration": "00:00:00.0007329"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_side_with_one_strike_pilot_still_attacks_after_the_timeout",
+      "outcome": "Passed",
+      "duration": "00:00:00.0005050"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC6CommanderOrdersTests.Repair_acceptance_releases_hostile_focus_and_preserves_named_order",
+      "outcome": "Passed",
+      "duration": "00:00:00.0020533"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC6CommanderOrdersTests.Repair_prioritizes_damaged_friendly_station_then_local_ship_and_excludes_self",
+      "outcome": "Passed",
+      "duration": "00:00:00.0120915"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.Non_strike_attack_orders_are_resent_when_the_pilot_makes_no_progress",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003663"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Strike_target_prefers_damaged_then_non_garrison_then_garrison_and_is_stable",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003788"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_committed_wave_gets_the_nearest_non_strike_fighters_as_defend_escorts",
+      "outcome": "Passed",
+      "duration": "00:00:00.0030276"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Bot_accepts_goto_to_aleph_and_friendly_ship_and_station",
+      "outcome": "Passed",
+      "duration": "00:00:00.0001575"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_ends_when_its_members_leave_the_target_sector_and_re_forms_at_the_rally",
+      "outcome": "Passed",
+      "duration": "00:00:00.0010646"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_progressing_goto_is_sent_once_over_120_seconds_a_stalled_one_is_resent",
+      "outcome": "Passed",
+      "duration": "00:00:00.0006190"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.An_escort_re_points_to_a_live_member_when_its_protectee_leaves_the_wave",
+      "outcome": "Passed",
+      "duration": "00:00:00.0007487"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Escorts_are_released_when_the_wave_ends_and_get_ordinary_orders",
+      "outcome": "Passed",
+      "duration": "00:00:00.0011822"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Lone_wolves_take_their_own_aleph_and_join_only_the_shared_go_time",
+      "outcome": "Passed",
+      "duration": "00:00:00.0060537"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_member_that_docks_and_relaunches_rejoins_the_rally_not_the_station",
+      "outcome": "Passed",
+      "duration": "00:00:00.0005551"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Finale_bombers_wait_for_the_shared_go_and_a_relaunch_waits_for_the_next_wave",
+      "outcome": "Passed",
+      "duration": "00:00:00.0023018"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Constructor_death_rock_loss_and_lost_prerequisites_recover_without_tech_grants",
+      "outcome": "Passed",
+      "duration": "00:00:00.0037575"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC6CommanderOrdersTests.Strike_attacks_enemy_station_while_fighter_intercepts_home_bomber",
+      "outcome": "Passed",
+      "duration": "00:00:00.0017928"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Reservations_are_shared_across_three_sides_and_released_when_no_rock_survives",
+      "outcome": "Passed",
+      "duration": "00:00:00.0040370"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC8StrikeWaveTests.A_wave_ends_when_the_target_station_is_gone",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002021"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Rally_prefers_an_aleph_outside_enemy_held_sectors",
+      "outcome": "Passed",
+      "duration": "00:00:00.0024505"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Donations_wait_for_ack_and_completion_is_not_inferred_from_elapsed_time",
+      "outcome": "Passed",
+      "duration": "00:00:00.0019753"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_damaged_Garrison_does_not_outrank_an_undamaged_soft_station",
+      "outcome": "Passed",
+      "duration": "00:00:00.0003658"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC6CommanderOrdersTests.Orders_wait_for_start_throttle_repeats_and_share_bandwidth_across_pilots",
+      "outcome": "Passed",
+      "duration": "00:00:00.0055413"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Roster_quorum_counts_the_whole_roster_not_the_launched_pilots",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002104"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Real_garrison_data_matches_the_native_damage_arithmetic",
+      "outcome": "Passed",
+      "duration": "00:00:00.0235161"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P703ResearchCommanderTests.Every_step_spends_real_wallet_and_waits_for_observed_completion",
+      "outcome": "Passed",
+      "duration": "00:00:00.0056451"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.The_same_bombers_massed_kill_and_trickled_never_do",
+      "outcome": "Passed",
+      "duration": "00:00:00.0190813"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_wave_counts_arrived_and_peak_on_target_from_a_scripted_path",
+      "outcome": "Passed",
+      "duration": "00:00:00.0008749"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Strike_log_lines_carry_escorts_and_station_health_and_wave_arrival",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002371"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.A_roster_of_one_still_commits_its_lone_pilot_after_the_timeout",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002530"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.A_short_strike_group_commits_after_the_rally_timeout",
+      "outcome": "Passed",
+      "duration": "00:00:00.0002741"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC7CommanderOrdersTests.Strike_rallies_with_goto_then_attacks_one_shared_station",
+      "outcome": "Passed",
+      "duration": "00:00:00.0028623"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Massed_wave_holds_until_the_required_volley_assembles_then_releases",
+      "outcome": "Passed",
+      "duration": "00:00:00.0009085"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P801StrikeMassTests.Requirement_scales_with_station_and_loadout_not_with_race",
+      "outcome": "Passed",
+      "duration": "00:00:00.0032126"
+    },
+    {
+      "file": "regression-final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.SC9StrikeWaveTests.Per_tick_cost_with_107_pilots_and_300_targets_stays_within_the_base",
+      "outcome": "Passed",
+      "duration": "00:00:08.8293633"
+    }
+  ],
+  "genericInvestment": [
+    {
+      "file": "p832a-invest-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P832aGoalInvestmentTests.Generic_invest_uses_the_configured_prosperity_price_received_over_tcp",
+      "outcome": "Passed",
+      "duration": "00:00:01.8461262"
+    },
+    {
+      "file": "p832a-invest-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P832aGoalInvestmentTests.Generic_invest_uses_the_configured_prosperity_price_received_over_tcp",
+      "outcome": "Passed",
+      "duration": "00:00:01.8008570"
+    },
+    {
+      "file": "p832a-invest-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P832aGoalInvestmentTests.Generic_invest_uses_the_configured_prosperity_price_received_over_tcp",
+      "outcome": "Passed",
+      "duration": "00:00:01.7875912"
+    }
+  ],
+  "baseTrace": [
+    {
+      "file": "base-trace-verified.trx",
+      "name": "Allegiance.ClientCore.Tests.P832bProsperityTests.No_goal_decision_trace_matches_dispatch_base",
+      "outcome": "Passed",
+      "duration": "00:00:00.7180855",
+      "traceSha256": "1DFA06A9A3DDFF950DE89ABBC20FFCF913C9065297C3D56300B473B6D08FBD64"
+    }
+  ],
+  "fast": {
+    "tier": "fast",
+    "seconds": 313.5245664720005,
+    "projects": {
+      "Allegiance.Lobby.Tests": {
+        "count": 82,
+        "outcomes": {
+          "Passed": 82
+        }
+      },
+      "Allegiance.Update.Tests": {
+        "count": 28,
+        "outcomes": {
+          "Passed": 28
+        }
+      },
+      "Allegiance.ClientCore.MonoGame.Tests": {
+        "count": 3585,
+        "outcomes": {
+          "Passed": 3581,
+          "NotExecuted": 3,
+          "Failed": 1
+        }
+      },
+      "Allegiance.ClientCore.Tests": {
+        "count": 1841,
+        "outcomes": {
+          "Passed": 1840,
+          "Failed": 1
+        }
+      },
+      "Allegiance.Core.Tests": {
+        "count": 5433,
+        "outcomes": {
+          "Passed": 5433
+        }
+      }
+    },
+    "calibration": {
+      "factor": 0.9832095490716181,
+      "referenceMs": 3.7067,
+      "nominalMs": 3.77,
+      "fastLimitSeconds": 10
+    },
+    "timingOffenders": [],
+    "errors": [
+      "Allegiance.ClientCore.MonoGame.Tests: main failed",
+      "Allegiance.ClientCore.Tests: main failed"
+    ],
+    "quarantineFlakes": [],
+    "infrastructure": {
+      "tier": "Fast",
+      "count": 9,
+      "seconds": 0.046210031998271006,
+      "exitCode": 0,
+      "timingGuardPassed": true
+    }
+  },
+  "fastFollowups": [
+    {
+      "file": "fast-followup-xdg-1.trx",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+      "outcome": "Passed",
+      "duration": "00:00:00.0575149"
+    },
+    {
+      "file": "fast-followup-xdg-2.trx",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+      "outcome": "Passed",
+      "duration": "00:00:00.0592224"
+    },
+    {
+      "file": "fast-followup-xdg-3.trx",
+      "name": "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed",
+      "outcome": "Passed",
+      "duration": "00:00:00.0664746"
+    },
+    {
+      "file": "retried-connect-1.trx",
+      "name": "Allegiance.ClientCore.Tests.RetriedConnectLiveTests.RepeatedConnects_LeaveNoAccumulatedSocketsOrThreads",
+      "outcome": "Passed",
+      "duration": "00:00:00.0410060"
+    },
+    {
+      "file": "retried-connect-2.trx",
+      "name": "Allegiance.ClientCore.Tests.RetriedConnectLiveTests.RepeatedConnects_LeaveNoAccumulatedSocketsOrThreads",
+      "outcome": "Passed",
+      "duration": "00:00:00.0459282"
+    },
+    {
+      "file": "retried-connect-3.trx",
+      "name": "Allegiance.ClientCore.Tests.RetriedConnectLiveTests.RepeatedConnects_LeaveNoAccumulatedSocketsOrThreads",
+      "outcome": "Passed",
+      "duration": "00:00:00.0348141"
+    }
+  ],
+  "parkingBase": [
+    {
+      "file": "base-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:05:59.2200192",
+      "summary": "P700 local 15v15: 356.5s, samples=3559, reached=24/30, longest speed<1 with target=2.005s, shots=3478, hits=1831, kills=12"
+    },
+    {
+      "file": "base-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:07:08.2910565",
+      "summary": "P700 local 15v15: 425.5s, samples=4248, reached=24/30, longest speed<1 with target=0.301s, shots=1494, hits=527, kills=2"
+    },
+    {
+      "file": "base-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:04:37.0571128",
+      "summary": "P700 local 15v15: 274.2s, samples=2737, reached=24/30, longest speed<1 with target=1.914s, shots=2516, hits=1052, kills=5"
+    },
+    {
+      "file": "base-4.trx",
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:05:16.6711889",
+      "summary": "P700 local 15v15: 314.0s, samples=3135, reached=24/30, longest speed<1 with target=1.820s, shots=627, hits=264, kills=3"
+    },
+    {
+      "file": "base-5.trx",
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:04:43.7319153",
+      "summary": "P700 local 15v15: 280.9s, samples=2805, reached=24/30, longest speed<1 with target=2.006s, shots=3507, hits=1433, kills=7"
+    }
+  ],
+  "parkingFinal": [
+    {
+      "file": "final-1.trx",
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:06:07.1171905",
+      "summary": "P700 local 15v15: 364.4s, samples=3639, reached=24/30, longest speed<1 with target=0.105s, shots=389, hits=1, kills=0"
+    },
+    {
+      "file": "final-2.trx",
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:06:01.5970987",
+      "summary": "P700 local 15v15: 358.9s, samples=3584, reached=24/30, longest speed<1 with target=1.006s, shots=2285, hits=930, kills=5"
+    },
+    {
+      "file": "final-3.trx",
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:04:36.2847575",
+      "summary": "P700 local 15v15: 273.5s, samples=2731, reached=24/30, longest speed<1 with target=1.904s, shots=3411, hits=1683, kills=8"
+    },
+    {
+      "file": "final-4.trx",
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:07:35.8233471",
+      "summary": "P700 local 15v15: 453.1s, samples=4525, reached=24/30, longest speed<1 with target=2.019s, shots=2693, hits=1139, kills=7"
+    },
+    {
+      "file": "final-5.trx",
+      "name": "Allegiance.ClientCore.Tests.P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds",
+      "outcome": "Passed",
+      "duration": "00:05:26.1437212",
+      "summary": "P700 local 15v15: 323.3s, samples=3228, reached=24/30, longest speed<1 with target=1.118s, shots=1044, hits=296, kills=1"
+    }
+  ],
+  "sourceSha256": {
+    "GLOSSARY.md": "621de9f2be378ed25b2365861c1ac4dcbb2d863baa767910d2edd2422faf056e",
+    "docs/TEST_FLAKES.md": "abea44a431cebfbd14bf830a635a43f4519135f5509e37ee8f29e9625bf3bca9",
+    "docs/parity/sim-rules-matrix.csv": "d8a6927f446ff5fc9fc7723006840b4bfafdb0dcc9d83cb1b3907396dbb4e256",
+    "tools/allegiance-mcp/BotManager.Research.cs": "a04668f3ca26d833019c5a9b94b072b00c6a94a214f262f59974ab5021728fb2",
+    "tools/allegiance-mcp/BotManager.ResearchTactics.cs": "bf7a78534928f389d4e1673de74530d250e8b547d5c3b13ee568067b53f53bcf",
+    "tools/allegiance-mcp/ResearchCommander.cs": "736a7e4046d52672c34ae94336f8421cb37387c2575ebb4075ca8e23e6b6c9c0",
+    "tools/allegiance-mcp/ResearchTactics.cs": "d20439c8e61b91d5dae3b7d070f584b8d08eed0631b80225b367e4c037ca2841",
+    "docs/reports/P832B_PROSPERITY_BOTS.md": "e53fe9ff810907edfd05226978e305b30c76c42a21222f0ba259e2d7b8601bc5",
+    "tests/Allegiance.ClientCore.Tests/P832bProsperityLiveTests.cs": "5d597625a70d0cb411171e122c90f8ca73d4558115359ad8c82833fa45910a02",
+    "tests/Allegiance.ClientCore.Tests/P832bProsperityTests.cs": "207a9ccb0ccbe96ff81d83a2f5f414ee6dfdbb86bac01f5eb873eb724e15c0fe",
+    "tools/allegiance-mcp/ResearchCommander.Prosperity.cs": "d6fb3cc6dcf9c317926f37b622022ef2324f7093108a37b14a567f00db9fbaf1",
+    "tools/p832b-prosperity.json": "5895460a5278220f243c47b545ce4915a03572660d20719dc7c3d2b157f63c88"
+  },
+  "rawEvidence": ".scratch/p832b",
+  "nativeInventory": "351 bodies/cases: FedSrv/fsmission.cpp=112, FedSrv/FedSrv.CPP=161, Igc/missionigc.cpp=78",
+  "glossary": "GLOSSARY.md link check OK (197 distinct paths checked).",
+  "parkingBaseIdle": {
+    "base-idle-3.txt": "23:11:02 up  3:20,  1 user,  load average: 6.79, 5.03, 3.81",
+    "base-idle-1.txt": "22:57:53 up  3:06,  1 user,  load average: 5.56, 3.42, 2.71",
+    "base-idle-2.txt": "23:03:53 up  3:12,  1 user,  load average: 3.38, 3.06, 2.68",
+    "base-idle-5.txt": "23:20:57 up  3:29,  1 user,  load average: 4.09, 5.31, 4.87",
+    "base-idle-4.txt": "23:15:40 up  3:24,  1 user,  load average: 4.11, 6.47, 4.95"
+  },
+  "parkingFinalIdle": {
+    "final-idle-1.txt": "23:25:51 up  3:34,  1 user,  load average: 6.07, 5.14, 4.86",
+    "final-idle-2.txt": "23:31:59 up  3:40,  1 user,  load average: 2.04, 3.54, 4.34",
+    "final-idle.txt": "loadPerCpu=0.2714 cpus=24\nloadPerCpu=0.2530 cpus=24",
+    "final-idle-4.txt": "23:42:39 up  3:51,  1 user,  load average: 4.52, 4.31, 4.20",
+    "final-idle-3.txt": "23:38:02 up  3:47,  1 user,  load average: 9.50, 4.43, 4.23",
+    "final-idle-5.txt": "23:50:16 up  3:59,  1 user,  load average: 1.19, 2.38, 3.36"
+  }
+}

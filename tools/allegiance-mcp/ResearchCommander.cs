@@ -7,16 +7,22 @@ namespace Allegiance.Tools.McpSpawner;
 /// <summary>P703 socket-free controller. Policy is a port extension; purchases obey
 /// sideigc.h:237-280, wallet donations FedSrv.CPP:7137-7208, and constructor orders
 /// FedSrv.CPP:11343-11380. Completion always comes from observed world state.</summary>
-internal sealed class ResearchCommander
+internal sealed partial class ResearchCommander
 {
     // Native mission default (igc.h:1331), also used by the current client investment pane.
     private const int MaxDronesPerType = 4;
     internal sealed record Unit(short Id, short DroneType, short StationType, bool Alive, short Sector = -1);
-    internal sealed record Rock(short Id, short Capabilities, bool Available, bool Building = false, short Sector = -1);
+    internal sealed record Rock(short Id, short Capabilities, bool Available, bool Building = false, short Sector = -1, float Ore = 1);
     internal sealed record Funding(long Money, long Milliseconds);
     internal sealed record Snapshot(double Time, bool Started, int Wallet, TechTreeBitMask Developments,
         short[] Stations, HashSet<short> CompletedDevelopments, Unit[] Units, Rock[] Rocks,
-        IReadOnlyDictionary<short, Funding> FundingByBucket);
+        IReadOnlyDictionary<short, Funding> FundingByBucket, MissionGoals? Goals = null)
+    {
+        internal Snapshot(double time, bool started, int wallet, TechTreeBitMask developments,
+            short[] stations, HashSet<short> completedDevelopments, Unit[] units, Rock[] rocks,
+            IReadOnlyDictionary<short, Funding> fundingByBucket)
+            : this(time, started, wallet, developments, stations, completedDevelopments, units, rocks, fundingByBucket, null) { }
+    }
     internal sealed record Command(string Kind, short Id = -1, int Amount = 0, short Target = -1, string Text = "");
     internal sealed record Report(short Side, string Plan, int Step, int TotalSteps, string Action, string Name,
         string Status, double ProgressPercent, double StepProgressPercent, int Money, double? EtaSeconds,
@@ -71,7 +77,7 @@ internal sealed class ResearchCommander
         foreach (var id in _reservations.Where(kv => kv.Value == Side).Select(kv => kv.Key).ToArray()) _reservations.Remove(id);
     }
 
-    internal IReadOnlyList<Command> Tick(Snapshot world)
+    private IReadOnlyList<Command> TickPlan(Snapshot world)
     {
         var commands = new List<Command>();
         if (double.IsNaN(_firstTime)) _firstTime = _lastIncomeTime = world.Time;

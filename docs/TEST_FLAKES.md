@@ -2959,3 +2959,21 @@ host-load artifact, not a product regression; the P830 report carries the full
 A/B series.
 Claude's re-run on an idle host after a reboot (2026-10-26 15:04–15:33, load 0.3–2.5): **5/5 pass** on the
 P830 tree — consistent with the load explanation.
+
+
+## P832b verification (2026-10-26)
+
+The single Fast-tier run had two existing failure signatures:
+
+- `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`
+  could not restore the sandbox's read-only user config. It passes **3/3**
+  with task-local `XDG_CONFIG_HOME`. This is an environment restriction,
+  as recorded under P788c/P821, rather than a product or timing fix.
+- `RetriedConnectLiveTests.RepeatedConnects_LeaveNoAccumulatedSocketsOrThreads`
+  observed 19 cleaned-up connections instead of 20 and passes **3/3** in
+  fresh filtered invocations. This repeats the ledgered socket-cleanup race.
+
+The broad Fast result remains failed; it was run once. No test assertion or
+product code in either area changed. See
+[the P832b report](reports/P832B_PROSPERITY_BOTS.md) for the receipt and
+prosperity/parking verification.

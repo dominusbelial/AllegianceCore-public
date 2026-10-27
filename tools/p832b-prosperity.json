@@ -1,0 +1,31 @@
+{
+  "staticCore": "PCore001.igc",
+  "port": 6073,
+  "updatesPerSecond": 20,
+  "sideSelectAutoSeatSeconds": 30,
+  "showcase": {
+    "techMode": "research",
+    "incomeMultiplier": 5000,
+    "researchTimeScale": 16
+  },
+  "liveSettings": {
+    "timeDilation": "off",
+    "autoNextMatch": { "enabled": true, "intermissionSeconds": 60 },
+    "testUnlock": { "enabled": false },
+    "testHarness": { "enabled": false, "ignoreTechGate": false }
+  },
+  "games": [{
+    "name": "Prosperity bot proof",
+    "teams": 2,
+    "civIds": [25, 3],
+    "sideNames": ["Alpha", "Bravo"],
+    "maxTeamImbalance": 32767,
+    "goals": { "teamMoney": 0.01 },
+    "mapGen": {
+      "type": "SingleRing",
+      "seed": 832,
+      "playerSectorAsteroids": 20,
+      "playerSectorSpecialAsteroids": 8
+    }
+  }]
+}

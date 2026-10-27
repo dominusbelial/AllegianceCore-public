@@ -1,6 +1,7 @@
 using Allegiance.ClientCore.State;
 using Allegiance.Core;
 using Allegiance.Core.Sim;
+using Allegiance.Core.Model;
 
 namespace Allegiance.Tools.McpSpawner;
 
@@ -44,6 +45,29 @@ internal sealed partial class BotManager
             }
         }
         return (pilots.ToArray(), targets.ToArray(), strikeRoster);
+    }
+
+    /// <summary>Native broadcasts economic-victory BUCKET_STATUS mission-wide
+    /// (FedSrv/FedSrv.CPP:7182-7196; FedSrv/fsmission.cpp:808-830).
+    /// Resolve enemy bucket ids using public civ + mission research settings;
+    /// never inspect another side's private commander connection.</summary>
+    internal static double ObserveEnemyProsperity(ClientWorld world, short side, StaticCore core)
+    {
+        var goals = world.MissionGoals;
+        if (!goals.IsProsperityGame || world.ResearchBriefing is not { } briefing) return 0;
+        int price = (int)(goals.TeamMoney * core.Constants.FloatConstants[12]);
+        if (price <= 0) return 0;
+        double progress = 0;
+        foreach (var (other, civ) in world.SideCivilizations)
+        {
+            if (other == side || world.AreAllied(side, other) || !core.Civilizations.TryGetValue(civ.CivId, out var data)) continue;
+            var initial = world.InitialTechsFor(other) ?? briefing.Settings.StartingTechs(data);
+            var bucket = BucketCatalog.Describe(core, initial, GlobalAttributeSet.FromArray(data.GasBaseAttributes), goals.TeamMoney)
+                .FirstOrDefault(b => b.DevelopmentId == Mission.TeamMoneyDevelopmentId);
+            if (bucket is not null && world.BucketFundingOf(other, bucket.Id) is { } funding)
+                progress = Math.Max(progress, Math.Clamp((double)funding.InvestedMoney / price, 0, 1));
+        }
+        return progress;
     }
 
     /// <summary>SC9 — a strike pilot is an anti-base-capable hull, not a requested
@@ -93,7 +117,8 @@ internal sealed partial class BotManager
             && !Catalog.IsLifepodHull(s.HullId)))
             targets.Add(new(ship.ShipId, IgcObjectType.Ship, ship.SectorId, ship.Latest!.Position,
                 ship.SideId == side || world.AreAllied(side, ship.SideId), ship.Latest.HullFraction < 1,
-                CombatTargetSelector.ClassifyTargetId(ship.HullId) == BotTargetClass.Bomber));
+                CombatTargetSelector.ClassifyTargetId(ship.HullId) == BotTargetClass.Bomber,
+                Miner: core.HullTypes.TryGetValue(ship.HullId, out var hull) && hull.HasCapability(DataHullTypeIGC.HabmMiner)));
         // SC7 — warps (alephs) as rally points. DestinationSector = the FAR side
         // (the partner warp's cluster), so the strike policy can pick the aleph
         // that LEADS INTO the target sector. Warps are neutral/shared -> Friendly.
