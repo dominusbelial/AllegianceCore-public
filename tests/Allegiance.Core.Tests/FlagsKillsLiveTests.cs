@@ -176,6 +176,7 @@ public sealed class FlagsKillsLiveTests
         PumpUntil(h.Server, () => h.Bot.GameOvers.Count >= 1, 4000);
         var go = Assert.Single(h.Bot.GameOvers);
         Assert.Equal(h.OwnSide, go.SideWinner);
+        Assert.Contains(" wins with the flag recovered by ", go.GameoverMessage);
 
         Console.WriteLine($"FLAGS-LIVE: side {h.OwnSide} ship {h.Carrier.Id} picked up + secured enemy (side {h.EnemySide}) flag at own station -> " +
                           $"flags=1/1, mission Over, GAME_OVER(62) winner={go.SideWinner}");
@@ -214,6 +215,65 @@ public sealed class FlagsKillsLiveTests
 
         Console.WriteLine($"FLAGS-LIVE-DISABLED: side {h.OwnSide} secured an enemy flag (flags=1) with FlagsEnabled=false -> " +
                           $"stage {mission.Stage}, no GAME_OVER (default unaffected)");
+    }
+
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void P832c_Below_goal_secure_respawns_real_flag_and_sends_native_team_cue()
+    {
+        Require.Artwork();
+        using var h = SeatFlagCarrier(new() { Flags = 2 });
+        var mission = h.Server.Missions[0];
+        var flags = mission.Sectors.SelectMany(s => s.Models.OfType<Treasure>())
+            .Where(t => t.Code == TreasureCode.Flag && t.Data.TreasureId == h.EnemySide).ToArray();
+        Assert.Equal(2, flags.Length);
+        var flag = flags[0];
+        // Fixture places the ship; the server's ordinary collision/pickup and
+        // docking paths still perform the secure. The bot game flies unaided.
+        mission.PlaceShip(h.Carrier, flag.OwnerSector);
+        h.Carrier.Position = flag.Position;
+        h.Carrier.Velocity = Vector3.Zero;
+        Assert.True(PumpUntil(h.Server, () => h.Carrier.Flag == h.EnemySide, 3000) < 3000);
+        h.Bot.ResetChatReceived();
+        var fly = mission.Sectors[0];
+        mission.PlaceShip(h.Carrier, fly);
+        var home = fly.Stations.Single(s => s.Name is not null && s.Name.StartsWith("CAPHOME"));
+        h.Carrier.Position = StationPos(home) + new Vector3(15, 0, 0);
+        Assert.True(PumpUntil(h.Server, () => h.Carrier.StationId is not null && h.Carrier.Flag is null, 4000) < 4000);
+        Assert.Equal(MissionStage.Started, mission.Stage);
+        Assert.Equal(1, mission.Sides.Single(s => s.Id == h.OwnSide).Flags);
+        var respawned = mission.Sectors.SelectMany(s => s.Models.OfType<Treasure>())
+            .Where(t => t.Code == TreasureCode.Flag && t.Data.TreasureId == h.EnemySide).ToArray();
+        Assert.Equal(2, respawned.Length);
+        Assert.DoesNotContain(respawned, t => t.Id == flag.Id);
+        Assert.True(PumpUntil(h.Server, () => h.Bot.Chats.Any(c => c.VoiceOver == 1360), 3000) < 3000);
+        var cue = Assert.Single(h.Bot.Chats, c => c.VoiceOver == 1360);
+        Assert.Equal((int)ChatTarget.Team, cue.ChatTarget);
+        Assert.Equal(h.OwnSide, cue.OidRecipient);
+        Assert.Contains("has secured", cue.Message);
+        Assert.DoesNotContain(h.Bot.Chats, c => c.VoiceOver == 1358);
+        Assert.Empty(h.Bot.GameOvers);
+    }
+
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void P832c_No_eligible_pedestal_after_secure_uses_native_capturer_victory()
+    {
+        Require.Artwork();
+        using var h = SeatFlagCarrier(new() { Flags = 2 });
+        var mission = h.Server.Missions[0];
+        // Both pedestals already have flags: no eligible respawn position.
+        // Native tests eligible-pedestal count, even though its text says bases.
+        h.Carrier.Flag = h.EnemySide;
+        var fly = mission.Sectors[0];
+        var home = fly.Stations.Single(s => s.Name is not null && s.Name.StartsWith("CAPHOME"));
+        h.Carrier.Position = StationPos(home) + new Vector3(15, 0, 0);
+        Assert.True(PumpUntil(h.Server, () => mission.Stage == MissionStage.Over, 4000) < 4000);
+        Assert.True(PumpUntil(h.Server, () => h.Bot.GameOvers.Count > 0, 3000) < 3000);
+        var result = Assert.Single(h.Bot.GameOvers);
+        Assert.Equal(h.OwnSide, result.SideWinner);
+        Assert.Equal($"{mission.Sides.Single(s => s.Id == h.OwnSide).Name} wins. Team owning captured flag has no stations left.", result.GameoverMessage);
+        Assert.Equal(1, mission.Sides.Single(s => s.Id == h.OwnSide).Flags);
     }
 
     // ── (3)+(4) kills: real deathmatch kill-threshold win / disabled no-op ──

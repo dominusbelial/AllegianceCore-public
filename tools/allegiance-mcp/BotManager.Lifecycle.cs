@@ -62,6 +62,9 @@ internal sealed partial class BotManager
                 lock (finale.Sync) finale.StrikeStartedAt ??= now;
         }
         bot.IsPod = bot.PodDocked = bot.PodRestarted = false;
+        bot.FlagTask = FlagDuty.None;
+        bot.FlagAnchor = null;
+        bot.FlagTrace = "";
         bot.SupportRefitting = false;
         bot.SupportTraceTarget = null;
         bot.SupportCheckAt = double.NegativeInfinity;

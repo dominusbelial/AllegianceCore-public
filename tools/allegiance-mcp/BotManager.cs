@@ -1695,6 +1695,7 @@ internal sealed partial class BotManager : IDisposable
                 UpdateFinales(now);
                 UpdateExploration(snap, now);
                 UpdateDefense(snap, now);
+                UpdateFlagDuties(snap, now);
                 if (now >= _nextMedevacRefresh)   // P779b-1: roster changes settle the per-side pick
                 {
                     _nextMedevacRefresh = now + 1;
@@ -4806,6 +4807,7 @@ bool isThreat =
             return;
         }
         bot.ExitClearFrom = null;
+        if (TryDriveFlags(bot, cs, now)) return;
         // P798 — scouts explore the opening before the fleet commits anywhere.
         // (After the aleph exit-clear: a scout that just transited must clear
         // the warp volume first or it bounces back into the aleph.)
@@ -5934,7 +5936,7 @@ bool isThreat =
     /// names/shapes: TargetId, LastTargetAt/BoostAt, Path/PathStart/
     /// PathGoal/LastCluster, WarpDest, Arrived/Launched).
     /// </summary>
-    private sealed class ActiveBot
+    private sealed partial class ActiveBot
     {
         public ActiveBot(string name, short hullId, string hullName, short side, short requestedSide, string behavior, double phase)
         {

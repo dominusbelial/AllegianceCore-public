@@ -83,6 +83,9 @@ internal sealed partial class BotManager
 
     public object ConfigureFinale(ShowcaseFinale.Settings settings, IReadOnlyCollection<string> names)
     {
+        // A selected flags match is decided by flag play, including when the
+        // skirmish driver uses its ordinary showcase fleet preset.
+        if (Probe?.World.Mission?.Goals.IsFlagsGame == true) settings = settings with { AfterMinutes = 0 };
         settings.Validate();
         if (!settings.Enabled) return new { enabled = false };
         var stations = StationsSeenByAnEnemy(names);

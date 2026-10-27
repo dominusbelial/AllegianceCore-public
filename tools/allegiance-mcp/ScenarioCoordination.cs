@@ -7,14 +7,17 @@ internal sealed record DefenseCandidate(DefenseKey Key, string Name, short ShipI
 internal sealed record DefensePopulation(uint? Cookie, long Generation, short Side, int Count);
 internal sealed record DefenseThreat(DefenseKey Key, double AgeSeconds);
 internal sealed record DefenseDeployment(DefenseKey Key, string[] Names);
+internal sealed record FlagCandidate(uint Cookie, short Side, string Name, short ShipId, bool Scout,
+    bool Carrying, short? Thief, double Distance, bool CanCarry = true);
+internal sealed record FlagDeployment(uint Cookie, short Side, string Name, BotManager.FlagDuty Duty, short? Anchor = null, int Post = 0);
 internal sealed record CoordinationState(StageTally[] Stages, DefenseKey[] Bases, DefensePopulation[] Population,
     DefenseCandidate[] Candidates, DefenseThreat[] Threats, long Epoch = 0, long PublishedAtMs = 0,
-    IntelDigest[]? Intel = null)
+    IntelDigest[]? Intel = null, FlagCandidate[]? Flags = null)
 {
     internal static readonly CoordinationState Empty = new([], [], [], [], []);
 }
 internal sealed record CoordinationDecisions(StageKey[] Releases, DefenseDeployment[] Defense, long Epoch = 0,
-    IntelDigest[]? Intel = null)
+    IntelDigest[]? Intel = null, FlagDeployment[]? Flags = null)
 {
     internal static readonly CoordinationDecisions Empty = new([], []);
 }
@@ -46,7 +49,8 @@ internal sealed class ScenarioCoordinator(BotManager.DefenseSettings settings, b
         // inject another side's data because each digest is built from that
         // worker's own bots' worlds.
         var intel = all.SelectMany(s => s.Intel ?? []).ToArray();
-        if (!settings.Enabled) return new(releases, [], 0, intel);
+        var flags = BotManager.PlanFlagDuties(all.SelectMany(s => s.Flags ?? []));
+        if (!settings.Enabled) return new(releases, [], 0, intel, flags);
 
         var bases = all.SelectMany(s => s.Bases).ToHashSet();
         foreach (var threat in all.SelectMany(s => s.Threats))
@@ -74,6 +78,6 @@ internal sealed class ScenarioCoordinator(BotManager.DefenseSettings settings, b
                 .OrderBy(c => c.Hops).ThenBy(c => c.Distance).ThenBy(c => c.ShipId).Take(budget).Select(c => c.Name).ToArray();
             if (names.Length > 0 || budget == 0) { incident.Names = names; incident.Started = now; }
         }
-        return new(releases, _incidents.Select(kv => new DefenseDeployment(kv.Key, kv.Value.Names ?? [])).ToArray(), 0, intel);
+        return new(releases, _incidents.Select(kv => new DefenseDeployment(kv.Key, kv.Value.Names ?? [])).ToArray(), 0, intel, flags);
     }
 }

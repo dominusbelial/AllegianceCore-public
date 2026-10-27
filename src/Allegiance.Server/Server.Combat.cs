@@ -2204,6 +2204,18 @@ public sealed partial class Server
         return p.X * p.X + p.Y * p.Y + p.Z * p.Z / (lm * lm) > r * r;
     }
 
+    private void SendFlagSecureChat(Mission mission, short side, short cue, string text)
+    {
+        var message = new ChatMessage
+        {
+            SidSender = -1, ChatTarget = (int)ChatTarget.Team, OidRecipient = side,
+            VoiceOver = cue, CommandID = OrderChange.CidNone, OtTarget = -1, OidTarget = -1, Message = text,
+        };
+        var packet = FedPacket.Pack([message.Encode()]);
+        foreach (var (connection, peer) in _peerShips)
+            if (ReferenceEquals(peer.Ship.Mission, mission) && peer.Ship.SideId == side) SendPeer(connection, packet);
+    }
+
     /// <summary>
     /// P411 — respawn a jettisoned flag at its home base, the port of native
     /// <c>RespawnFlag</c>'s real-side leg (<c>FedSrv.CPP:13842-13944</c>) reached
@@ -2215,7 +2227,7 @@ public sealed partial class Server
     /// SIDE_TEAMLOBBY artifact (-2) delegates to GenerateTreasure in a random
     /// neutral cluster (FedSrv.CPP:13847-13868).
     /// </summary>
-    private void RespawnCarriedFlag(Mission mission, short sidFlag)
+    private void RespawnCarriedFlag(Mission mission, short sidFlag, Side? capturer = null)
     {
         if (sidFlag == Side.ArtifactSentinelFlag)   // SIDE_TEAMLOBBY = -2 (igc.h:514)
         {
@@ -2240,9 +2252,11 @@ public sealed partial class Server
 
         if (candidates.Count == 0)
         {
-            // Native FedSrv.CPP:13906-13920: with no eligible pedestal station AND no
-            // capturer side (this kill-ship call passes NULL, FedSrv.CPP:11742), the
-            // flag is simply not respawned — no game-over either.
+            // Native FedSrv.CPP:13906-13920: a secure passes the capturer;
+            // death/expiry passes NULL. No eligible pedestal after a capture wins.
+            if (capturer is not null && mission.Stage != MissionStage.Over)
+                DeclareGameOver(mission, capturer.Id,
+                    $"{capturer.Name} wins. Team owning captured flag has no stations left.");
             Console.WriteLine($"[loot] flag {sidFlag}: no eligible pedestal station to respawn at — left unspawned");
             return;
         }
@@ -2894,26 +2908,33 @@ public sealed partial class Server
                     if (aChanged || aWinner is not null)
                         mission.Site.ProsperityArtifactComputed(mission, aChanged, aWinner);
                 }
-                // P303 — the FLAGS win: securing a captured ENEMY flag (carried
-                // value is a real enemy side's id, != the neutral sentinel)
-                // increments Side.Flags, then the flag leg of CheckForVictoryByFlags
-                // scores the game to the first side reaching nGoalFlagsCount
-                // (fsmission.cpp:3883-3887; the secure is the FedSrv.CPP:13149
-                // call site). Gated on FlagsEnabled so a non-flags mission's
-                // flag-secure is unaffected; the recompute raises the seam.
-                if (sidFlag != Side.ArtifactSentinelFlag && mission.FlagsEnabled)
+                // Native FedSrv.CPP:13130-13137: secure messages go only to
+                // the scoring team and the flag's owner, with distinct cues.
+                if (sidFlag >= 0)
                 {
-                    var (fWinner, fChanged) = mission.RecomputeFlagsAndKills();
-                    if (fChanged || fWinner is not null)
-                        mission.Site.FlagsKillsComputed(mission, fChanged, fWinner);
+                    string owner = mission.Sides.First(s => s.Id == sidFlag).Name ?? $"side{sidFlag}";
+                    SendFlagSecureChat(mission, shipSide, 1360,
+                        $"{PeerName(ship) ?? $"ship{ship.Id}"} has secured {owner}'s flag.");
+                    SendFlagSecureChat(mission, sidFlag, 1358,
+                        $"{PeerName(ship) ?? $"ship{ship.Id}"} of {side.Name} has secured your flag.");
                 }
             }
-            if (sidFlag == Side.ArtifactSentinelFlag)
-                RespawnCarriedFlag(mission, sidFlag); // FedSrv.CPP:13161
-            ship.Flag = null;   // pship->SetFlag(NA), FedSrv.CPP:13149
-
-            // Whole-mission announce with sideidFlag = NA (FedSrv.CPP:13150-13157).
+            // Clear and publish before checking victory (FedSrv.CPP:13139-13149).
+            ship.Flag = null;
             BroadcastGainFlag(mission, GainFlag.NA, ship.Id, bIsTreasureDocked: false, parttypeidDocked: 0);
+            if (sidFlag >= 0 && mission.FlagsEnabled)
+            {
+                var (winner, changed) = mission.RecomputeFlagsAndKills();
+                if (changed || winner is not null)
+                    mission.Site.FlagsKillsComputed(mission, changed, null);
+                if (winner is not null && mission.Stage != MissionStage.Over)
+                    DeclareGameOver(mission, winner.Id,
+                        $"{winner.Name} wins with the flag recovered by {PeerName(ship) ?? $"ship{ship.Id}"}"); // FedSrv.CPP:13153-13158
+            }
+            // Respawn BOTH real flags and artifacts; a picked-up treasure does
+            // not respawn, but a secured flag does (FedSrv.CPP:13161,13842-13944).
+            if (sidFlag == Side.ArtifactSentinelFlag || mission.FlagsEnabled)
+                RespawnCarriedFlag(mission, sidFlag, side);
         }
 
         // P370 — the ship just docked (its StationId was latched by the host's

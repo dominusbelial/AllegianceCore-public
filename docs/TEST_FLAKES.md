@@ -3027,3 +3027,30 @@ with the ledgered P775 siblings above. Not fixed here (outside the P841 batch
 surface; the P775 owner should re-derive the expected announcement count).
 
 | 2026-10-27 | P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds | P841 showcase 5×: run 3 failed with no `Parked >5s` sample and no assertion text captured (-v q); runs 1/2/4/5 and two immediate retries of the same test passed — load window while other lanes ran suites on the shared host | 2/2 immediate re-runs alone; P841 changed no bot flight/decision code (join-flow default + departure bookkeeping only) | load flake |
+## P832c — sandbox environment receipt (2026-10-27)
+
+The one Fast sweep recorded **10,979 passed, six failed and three optional
+skips**, with no timing offenders. These are the existing P819/P817/P821
+environment limitations: five `PlayerBundlePathsTests` cases inherited the
+repository's `local.env` because TMPDIR is worktree-local, and
+`P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed`
+tried restoring the read-only user preferences file. The complete nine-case
+path class passes **3/3** using a `/proc/<parent>/fd/<directory>` lexical alias
+to the same workspace scratch; the exact profile method passes **3/3** with
+workspace-local XDG_CONFIG_HOME. No product or test source was changed for
+these retries; no `/tmp` or home-directory writes were used. The original
+broad sweep remains failed and was not repeated. See the
+[P832c report](reports/P832C_FLAG_BOTS.md) and
+[receipt](reports/P832C_assets/verification.json).
+
+
+P832c parking receipt: the prescribed original comparison passed **5/5 base
+and 5/5 changed**; five additional changed-tree trials also passed. Continuous
+CPU monitoring detected sustained host activity in three original runs and
+all five additional trials, so no uninterrupted idle-host certification is
+claimed. The maximum low-speed-with-target duration was 1.913 s on base,
+1.818 s in the original changed series, and 2.011 s in the extra series
+(limit 5 s). No parking failure or new product flake was observed. The extra
+controller was stopped at a completed-trial boundary after repeated host
+interference; all outcomes remain in the P832c receipt. A quiet-host window
+is required for the remaining environmental confirmation.

@@ -5171,6 +5171,9 @@ public sealed class Sector : IClusterIgc
 
         foreach (var t in targets)
         {
+            // Native scanners always see a carrier in their own sector
+            // (Igc/shipIGC.h:351-369; stationIGC.h:316-331; probeigc.h:171-186).
+            bool carriesFlag = t.Body is Ship { Flag: not null };
             // Own side is always visible to itself — no scan needed
             // (FedSrv.CPP:10890-10892).
             if (t.SideId is { } own)
@@ -5220,7 +5223,7 @@ public sealed class Sector : IClusterIgc
                             {
                                 if (VisibilityMath.InScannerRange(
                                         new VisibilityMath.SightBody(last.Position, last.Radius), last.ScannerRange, Id,
-                                        new VisibilityMath.SightBody(t.Position, t.Radius), t.Signature, Id, occluders))
+                                        new VisibilityMath.SightBody(t.Position, t.Radius), t.Signature, Id, occluders, carriesFlag))
                                 {
                                     seen = true;
                                     spotter = last;
@@ -5232,7 +5235,7 @@ public sealed class Sector : IClusterIgc
                             {
                                 if (VisibilityMath.InScannerRange(
                                         new VisibilityMath.SightBody(sc.Position, sc.Radius), sc.ScannerRange, Id,
-                                        new VisibilityMath.SightBody(t.Position, t.Radius), t.Signature, Id, occluders))
+                                        new VisibilityMath.SightBody(t.Position, t.Radius), t.Signature, Id, occluders, carriesFlag))
                                 {
                                     seen = true;
                                     spotter = sc;

@@ -71,14 +71,11 @@ public static class VisibilityMath
     /// The full native <c>InScannerRange</c> (<c>stationIGC.h:308-328</c>,
     /// structurally identical at <c>shipIGC.h:341-364</c> and
     /// <c>probeigc.h:163-180</c>): same cluster, in detection range, and with
-    /// line of sight. The flag-carrier early-return (<c>GetFlag() == NA</c>,
-    /// always-visible) is omitted because this port has <b>no flag concept</b>
-    /// — Phase 6 capture-the-flag is not built and no port model exposes a
-    /// <c>Flag</c> (native <c>shipIGC.h:289</c>); every model is effectively
-    /// <c>NA</c>, so only the normal branch can ever run and a dead branch would
-    /// be misleading. <paramref name="scannerCluster"/>/<paramref
-    /// name="targetCluster"/> are the cluster ids (the native compares
-    /// <c>GetCluster()</c> pointers, <c>stationIGC.h:311-312</c>); the port's
+    /// line of sight. A flag/artifact carrier bypasses range, signature and
+    /// occlusion after the same-sector check (shipIGC.h:351-369,
+    /// stationIGC.h:316-331, probeigc.h:171-186).
+    /// <paramref name="scannerCluster"/>/<paramref name="targetCluster"/>
+    /// are the native GetCluster identities; the port's
     /// cluster id for a ship/probe is <c>Sector.Id</c> and for a station
     /// <c>ClusterId</c>. <paramref name="asteroids"/> are the cluster's asteroid
     /// occluders (native iterates <c>pcluster-&gt;GetAsteroids()</c>).
@@ -86,10 +83,11 @@ public static class VisibilityMath
     public static bool InScannerRange(
         SightBody scanner, float scannerRange, short? scannerCluster,
         SightBody target, float targetSignature, short? targetCluster,
-        IReadOnlyList<SightBody> asteroids)
+        IReadOnlyList<SightBody> asteroids, bool targetCarriesFlag = false)
     {
         if (scannerCluster is null || scannerCluster != targetCluster)
             return false;                                     // stationIGC.h:311-313
+        if (targetCarriesFlag) return true;                    // shipIGC.h:351-369
         if (!InDetectRange(scanner, scannerRange, target, targetSignature))
             return false;
         return LineOfSightExist(scanner.Position, target, asteroids);  // stationIGC.h:322

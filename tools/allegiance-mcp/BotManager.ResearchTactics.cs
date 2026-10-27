@@ -17,7 +17,10 @@ internal sealed partial class BotManager
             // coordinator, not by this wave policy: exclude them from both the
             // snapshot and the roster so the two do not fight over one ship.
             bots = _bots.Where(b => b.Side == side && b.Cs is not null && !b.IsPod && IsParticipating(b)
-                && !b.FinaleBomberActive && !b.FinaleBomberReserved && !b.FinaleRefitting).ToArray();
+                && !b.FinaleBomberActive && !b.FinaleBomberReserved && !b.FinaleRefitting
+                // Flag pilots own an objective; the ordinary attack-order loop
+                // must not pull the raid/guard away (P832c bot policy).
+                && !(FlagsGame(b.Cs!) && b.FlagTask != FlagDuty.None)).ToArray();
             // SC9 — the quorum counts the side's whole strike roster (docked or
             // launched), not just the pilots visible in this snapshot.
             strikeRoster = _bots.Count(b => b.Side == side && b.Cs is not null && !b.IsPod && IsParticipating(b)

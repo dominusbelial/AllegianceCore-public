@@ -97,6 +97,6 @@ internal sealed partial class BotManager
             _lastIntelDigest = _intel.DigestAll();
         }
         Volatile.Write(ref _coordinationState, new(stages, bases.ToArray(), population, candidates.ToArray(),
-            _localThreats.Select(kv => new DefenseThreat(kv.Key, now - kv.Value)).ToArray(), epoch, Environment.TickCount64, _lastIntelDigest));
+            _localThreats.Select(kv => new DefenseThreat(kv.Key, now - kv.Value)).ToArray(), epoch, Environment.TickCount64, _lastIntelDigest, FlagCandidates(bots)));
     }
 }

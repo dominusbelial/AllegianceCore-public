@@ -1,0 +1,639 @@
+{
+  "flagsRuns": [
+    {
+      "run": 1,
+      "cases": 19,
+      "passed": 19,
+      "games": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"Brawl\", captures: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:46.1641886",
+          "intercept": "intercept defender=8102 carrier=8107 wall=25.6s range=188.7->131.4",
+          "summary": "flags topology=Brawl goal=1 wall=44.4s picked=True stage=Over winner=1 reason=Bravo wins with the flag recovered by mcp-b011-4209",
+          "rawLog": ".scratch/p832c-flags-ce6d82bb40d745099353727ca1eaf6d2.log",
+          "flagEvents": [
+            "[flag] ship 8107 picked up side 0's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8107 secured side 0's flag at own-side station 1 -> side 1 flags=1 artifacts=0",
+            "[loot] flag 0 respawned above pedestal station 9189 in sector 0 obj=7732"
+          ]
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"SingleRing\", captures: 1)",
+          "outcome": "Passed",
+          "duration": "00:02:27.7257967",
+          "intercept": "intercept defender=8110 carrier=8107 wall=58.6s range=1297.7->1247.5",
+          "summary": "flags topology=SingleRing goal=1 wall=146.0s picked=True stage=Over winner=0 reason=Alpha wins with the flag recovered by mcp-b012-6989",
+          "rawLog": ".scratch/p832c-flags-21d2c57b084a4fc2b9b32f7636f2c86c.log",
+          "flagEvents": [
+            "[flag] ship 8107 picked up side 0's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8108 picked up side 1's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8108 secured side 1's flag at own-side station 0 -> side 0 flags=1 artifacts=0",
+            "[loot] flag 1 respawned above pedestal station 9189 in sector 2 obj=8499"
+          ]
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"Brawl\", captures: 2)",
+          "outcome": "Passed",
+          "duration": "00:02:24.5336170",
+          "intercept": "intercept defender=8106 carrier=8103 wall=70.1s range=2681.1->2628.6",
+          "summary": "flags topology=Brawl goal=2 wall=142.4s picked=True stage=Over winner=0 reason=Alpha wins with the flag recovered by mcp-b012-4152",
+          "rawLog": ".scratch/p832c-flags-c1bc4d18011e473aa8a10d227ac9bb28.log",
+          "flagEvents": [
+            "[flag] ship 8103 picked up side 0's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[loot] flag 0 respawned above pedestal station 9190 in sector 0 obj=9037",
+            "[flag] ship 8108 picked up side 1's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8108 secured side 1's flag at own-side station 0 -> side 0 flags=1 artifacts=0",
+            "[loot] flag 1 respawned above pedestal station 9187 in sector 0 obj=10273",
+            "[flag] ship 8107 picked up side 0's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8108 picked up side 1's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8107 secured side 0's flag at own-side station 1 -> side 1 flags=1 artifacts=0",
+            "[loot] flag 0 respawned above pedestal station 9189 in sector 0 obj=11309",
+            "[flag] ship 8108 secured side 1's flag at own-side station 0 -> side 0 flags=2 artifacts=0",
+            "[loot] flag 1 respawned above pedestal station 9188 in sector 0 obj=11377"
+          ]
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "cases": 19,
+      "passed": 19,
+      "games": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"Brawl\", captures: 1)",
+          "outcome": "Passed",
+          "duration": "00:00:45.6442113",
+          "intercept": "intercept defender=8102 carrier=8107 wall=25.4s range=210.0->153.2",
+          "summary": "flags topology=Brawl goal=1 wall=43.9s picked=True stage=Over winner=1 reason=Bravo wins with the flag recovered by mcp-b011-8713",
+          "rawLog": ".scratch/p832c-flags-7c9e078f03a5429eaad07b0f9e3d11f2.log",
+          "flagEvents": [
+            "[flag] ship 8107 picked up side 0's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8107 secured side 0's flag at own-side station 1 -> side 1 flags=1 artifacts=0",
+            "[loot] flag 0 respawned above pedestal station 9189 in sector 0 obj=8112"
+          ]
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"SingleRing\", captures: 1)",
+          "outcome": "Passed",
+          "duration": "00:01:37.9797709",
+          "intercept": "intercept defender=8110 carrier=8107 wall=59.0s range=1370.9->1315.4",
+          "summary": "flags topology=SingleRing goal=1 wall=96.3s picked=True stage=Over winner=1 reason=Bravo wins with the flag recovered by mcp-b011-9078",
+          "rawLog": ".scratch/p832c-flags-9ad903bb047a4f7ba184bf0f5a411f73.log",
+          "flagEvents": [
+            "[flag] ship 8107 picked up side 0's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8107 secured side 0's flag at own-side station 1 -> side 1 flags=1 artifacts=0",
+            "[loot] flag 0 respawned above pedestal station 9188 in sector 0 obj=6847"
+          ]
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"Brawl\", captures: 2)",
+          "outcome": "Passed",
+          "duration": "00:02:28.0343794",
+          "intercept": "intercept defender=8103 carrier=8108 wall=65.3s range=2290.2->2232.1",
+          "summary": "flags topology=Brawl goal=2 wall=146.0s picked=True stage=Over winner=1 reason=Bravo wins with the flag recovered by mcp-b011-8030",
+          "rawLog": ".scratch/p832c-flags-6a466e484858485f8713594bb3f189ea.log",
+          "flagEvents": [
+            "[flag] ship 8108 picked up side 1's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8101 picked up side 0's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8108 secured side 1's flag at own-side station 0 -> side 0 flags=1 artifacts=0",
+            "[loot] flag 1 respawned above pedestal station 9188 in sector 0 obj=9388",
+            "[flag] ship 8101 secured side 0's flag at own-side station 1 -> side 1 flags=1 artifacts=0",
+            "[loot] flag 0 respawned above pedestal station 9189 in sector 0 obj=9498",
+            "[flag] ship 8107 picked up side 0's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8107 secured side 0's flag at own-side station 1 -> side 1 flags=2 artifacts=0",
+            "[loot] flag 0 respawned above pedestal station 9189 in sector 0 obj=11405"
+          ]
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "cases": 19,
+      "passed": 19,
+      "games": [
+        {
+          "name": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"Brawl\", captures: 2)",
+          "outcome": "Passed",
+          "duration": "00:02:25.2041966",
+          "intercept": "intercept defender=8101 carrier=8108 wall=83.5s range=733.0->682.0",
+          "summary": "flags topology=Brawl goal=2 wall=143.0s picked=True stage=Over winner=0 reason=Alpha wins with the flag recovered by mcp-b012-1492",
+          "rawLog": ".scratch/p832c-flags-f0396703fd8d416e911abc109ac3a641.log",
+          "flagEvents": [
+            "[flag] ship 8108 picked up side 1's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8108 secured side 1's flag at own-side station 0 -> side 0 flags=1 artifacts=0",
+            "[loot] flag 1 respawned above pedestal station 9187 in sector 0 obj=10275",
+            "[flag] ship 8098 picked up side 0's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8108 picked up side 1's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8098 secured side 0's flag at own-side station 1 -> side 1 flags=1 artifacts=0",
+            "[loot] flag 0 respawned above pedestal station 9189 in sector 0 obj=11001",
+            "[flag] ship 8108 secured side 1's flag at own-side station 0 -> side 0 flags=2 artifacts=0",
+            "[loot] flag 1 respawned above pedestal station 9188 in sector 0 obj=11286"
+          ]
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"Brawl\", captures: 1)",
+          "outcome": "Passed",
+          "duration": "00:01:14.9188557",
+          "intercept": "intercept defender=8103 carrier=8108 wall=52.3s range=1421.4->1371.2",
+          "summary": "flags topology=Brawl goal=1 wall=73.1s picked=True stage=Over winner=0 reason=Alpha wins with the flag recovered by mcp-b012-4911",
+          "rawLog": ".scratch/p832c-flags-f12faaeb21984ca7a89d836bbceb0ef8.log",
+          "flagEvents": [
+            "[flag] ship 8108 picked up side 1's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8108 secured side 1's flag at own-side station 0 -> side 0 flags=1 artifacts=0",
+            "[loot] flag 1 respawned above pedestal station 9187 in sector 0 obj=9144"
+          ]
+        },
+        {
+          "name": "Allegiance.ClientCore.Tests.P832cFlagBotLiveTests.Flags_preset_steals_returns_and_wins_with_native_reason_under_fog(topology: \"SingleRing\", captures: 1)",
+          "outcome": "Passed",
+          "duration": "00:01:37.8411279",
+          "intercept": "intercept defender=8102 carrier=8107 wall=56.3s range=716.2->659.7",
+          "summary": "flags topology=SingleRing goal=1 wall=96.1s picked=True stage=Over winner=1 reason=Bravo wins with the flag recovered by mcp-b011-9117",
+          "rawLog": ".scratch/p832c-flags-7d892b54591c487cb5eb6ff013b5badf.log",
+          "flagEvents": [
+            "[flag] ship 8107 picked up side 0's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+            "[flag] ship 8107 secured side 0's flag at own-side station 1 -> side 1 flags=1 artifacts=0",
+            "[loot] flag 0 respawned above pedestal station 9187 in sector 0 obj=7569"
+          ]
+        }
+      ]
+    }
+  ],
+  "serverRuns": [
+    {
+      "run": 1,
+      "cases": 26,
+      "passed": 26
+    },
+    {
+      "run": 2,
+      "cases": 26,
+      "passed": 26
+    },
+    {
+      "run": 3,
+      "cases": 26,
+      "passed": 26
+    }
+  ],
+  "masterDecisionComparison": {
+    "baseCases": 151,
+    "basePassed": 151,
+    "changedRuns": [
+      {
+        "run": 1,
+        "cases": 151,
+        "identicalNamedOutcomes": true
+      },
+      {
+        "run": 2,
+        "cases": 151,
+        "identicalNamedOutcomes": true
+      },
+      {
+        "run": 3,
+        "cases": 151,
+        "identicalNamedOutcomes": true
+      }
+    ]
+  },
+  "parking": [
+    {
+      "lane": "base",
+      "pair": 1,
+      "exit": 0,
+      "elapsedSeconds": 354.97,
+      "idleSamples": [
+        0.948,
+        0.9798,
+        0.9757
+      ],
+      "loadAverage": "0.89 1.34 2.50 1/4096 305",
+      "outcome": "Passed",
+      "duration": "00:05:54.2263818",
+      "summary": [
+        "P700 local 15v15: 351.5s, samples=3510, reached=24/30, longest speed<1 with target=1.103s, shots=1161, hits=645, kills=4"
+      ],
+      "monitoredSamples": 46,
+      "minimumRunIdle": 0.9449400613325899,
+      "meanRunIdle": 0.9595702223228828,
+      "medianRunIdle": 0.959768521003344,
+      "sustainedHostActivity": false
+    },
+    {
+      "lane": "current",
+      "pair": 1,
+      "exit": 0,
+      "elapsedSeconds": 333.84,
+      "idleSamples": [
+        0.9731,
+        0.9773,
+        0.9747
+      ],
+      "loadAverage": "2.92 2.82 2.79 2/4473 608",
+      "outcome": "Passed",
+      "duration": "00:05:33.0953161",
+      "summary": [
+        "P700 local 15v15: 330.5s, samples=3300, reached=24/30, longest speed<1 with target=0.000s, shots=587, hits=123, kills=0"
+      ],
+      "monitoredSamples": 111,
+      "minimumRunIdle": 0.30665367483296213,
+      "meanRunIdle": 0.8868261104151457,
+      "medianRunIdle": 0.9169806055532301,
+      "sustainedHostActivity": true
+    },
+    {
+      "lane": "base",
+      "pair": 2,
+      "exit": 0,
+      "elapsedSeconds": 414.47,
+      "idleSamples": [
+        0.9636,
+        0.9632,
+        0.9613
+      ],
+      "loadAverage": "1.49 1.79 2.30 3/4542 927",
+      "outcome": "Passed",
+      "duration": "00:06:53.7473111",
+      "summary": [
+        "P700 local 15v15: 410.9s, samples=4104, reached=24/30, longest speed<1 with target=1.913s, shots=1119, hits=181, kills=0"
+      ],
+      "monitoredSamples": 138,
+      "minimumRunIdle": 0.37818993166922327,
+      "meanRunIdle": 0.923636464410025,
+      "medianRunIdle": 0.9463812578440942,
+      "sustainedHostActivity": true
+    },
+    {
+      "lane": "current",
+      "pair": 2,
+      "exit": 0,
+      "elapsedSeconds": 415.97,
+      "idleSamples": [
+        0.9462,
+        0.9462,
+        0.9304
+      ],
+      "loadAverage": "0.83 1.20 1.84 4/3972 1249",
+      "outcome": "Passed",
+      "duration": "00:06:55.2302897",
+      "summary": [
+        "P700 local 15v15: 412.5s, samples=4119, reached=24/30, longest speed<1 with target=1.818s, shots=4291, hits=1835, kills=12"
+      ],
+      "monitoredSamples": 138,
+      "minimumRunIdle": 0.8656049175747416,
+      "meanRunIdle": 0.9441436991893306,
+      "medianRunIdle": 0.9453746424085961,
+      "sustainedHostActivity": false
+    },
+    {
+      "lane": "base",
+      "pair": 3,
+      "exit": 0,
+      "elapsedSeconds": 338.38,
+      "idleSamples": [
+        0.961,
+        0.9612,
+        0.9581
+      ],
+      "loadAverage": "1.94 1.74 1.85 1/3912 1559",
+      "outcome": "Passed",
+      "duration": "00:05:37.6942312",
+      "summary": [
+        "P700 local 15v15: 335.0s, samples=3346, reached=26/30, longest speed<1 with target=0.000s, shots=371, hits=1, kills=0"
+      ],
+      "monitoredSamples": 113,
+      "minimumRunIdle": 0.9193188163037409,
+      "meanRunIdle": 0.9445592986213529,
+      "medianRunIdle": 0.9450258127528952,
+      "sustainedHostActivity": false
+    },
+    {
+      "lane": "current",
+      "pair": 3,
+      "exit": 0,
+      "elapsedSeconds": 402.25,
+      "idleSamples": [
+        0.9661,
+        0.9611,
+        0.9582
+      ],
+      "loadAverage": "1.56 1.27 1.55 3/3785 1871",
+      "outcome": "Passed",
+      "duration": "00:06:41.4876709",
+      "summary": [
+        "P700 local 15v15: 398.8s, samples=3983, reached=24/30, longest speed<1 with target=0.000s, shots=977, hits=239, kills=0"
+      ],
+      "monitoredSamples": 134,
+      "minimumRunIdle": 0.9290394535062039,
+      "meanRunIdle": 0.944862965296364,
+      "medianRunIdle": 0.9453086528327141,
+      "sustainedHostActivity": false
+    },
+    {
+      "lane": "base",
+      "pair": 4,
+      "exit": 0,
+      "elapsedSeconds": 357.75,
+      "idleSamples": [
+        0.9632,
+        0.9646,
+        0.9638
+      ],
+      "loadAverage": "1.45 1.62 1.66 1/3803 2181",
+      "outcome": "Passed",
+      "duration": "00:05:57.0369627",
+      "summary": [
+        "P700 local 15v15: 354.3s, samples=3539, reached=24/30, longest speed<1 with target=0.301s, shots=734, hits=243, kills=1"
+      ],
+      "monitoredSamples": 119,
+      "minimumRunIdle": 0.9297658862876255,
+      "meanRunIdle": 0.9462220712211934,
+      "medianRunIdle": 0.9465755335472172,
+      "sustainedHostActivity": false
+    },
+    {
+      "lane": "current",
+      "pair": 4,
+      "exit": 0,
+      "elapsedSeconds": 356.81,
+      "idleSamples": [
+        0.9628,
+        0.9615,
+        0.962
+      ],
+      "loadAverage": "1.27 1.38 1.53 2/3845 2489",
+      "outcome": "Passed",
+      "duration": "00:05:56.0567051",
+      "summary": [
+        "P700 local 15v15: 353.2s, samples=3528, reached=24/30, longest speed<1 with target=0.000s, shots=1414, hits=364, kills=1"
+      ],
+      "monitoredSamples": 119,
+      "minimumRunIdle": 0.8911801588407413,
+      "meanRunIdle": 0.9391513114350292,
+      "medianRunIdle": 0.9413571628036861,
+      "sustainedHostActivity": false
+    },
+    {
+      "lane": "base",
+      "pair": 5,
+      "exit": 0,
+      "elapsedSeconds": 349.94,
+      "idleSamples": [
+        0.9492,
+        0.9508,
+        0.9493
+      ],
+      "loadAverage": "2.52 2.16 1.85 1/3925 2796",
+      "outcome": "Passed",
+      "duration": "00:05:49.2165094",
+      "summary": [
+        "P700 local 15v15: 346.6s, samples=3461, reached=24/30, longest speed<1 with target=1.002s, shots=1602, hits=505, kills=5"
+      ],
+      "monitoredSamples": 117,
+      "minimumRunIdle": 0.7675132570471672,
+      "meanRunIdle": 0.9284413094921073,
+      "medianRunIdle": 0.9357900614182021,
+      "sustainedHostActivity": false
+    },
+    {
+      "lane": "current",
+      "pair": 5,
+      "exit": 0,
+      "elapsedSeconds": 288.27,
+      "idleSamples": [
+        0.9473,
+        0.9523,
+        0.9487
+      ],
+      "loadAverage": "5.89 3.64 2.52 2/4567 3089",
+      "outcome": "Passed",
+      "duration": "00:04:47.5227947",
+      "summary": [
+        "P700 local 15v15: 284.7s, samples=2842, reached=24/30, longest speed<1 with target=0.000s, shots=1033, hits=122, kills=0"
+      ],
+      "monitoredSamples": 96,
+      "minimumRunIdle": 0.1024961651094687,
+      "meanRunIdle": 0.8164699962821292,
+      "medianRunIdle": 0.8509046114290713,
+      "sustainedHostActivity": true
+    }
+  ],
+  "normalConfigExample": {
+    "flags": 1,
+    "fog": true,
+    "testHarness": false,
+    "mapSeed": 832,
+    "wallSeconds": 192.35,
+    "winner": 1,
+    "flagEvents": [
+      "[flag] ship 8109 picked up side 0's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+      "[flag] ship 8110 picked up side 1's flag -> GAIN_FLAG(156) whole-mission + DESTROY_TREASURE",
+      "[flag] ship 8109 secured side 0's flag at own-side station 1 -> side 1 flags=1 artifacts=0"
+    ]
+  },
+  "fast": {
+    "seconds": 306.0992312650051,
+    "outcomes": {
+      "Passed": 10979,
+      "NotExecuted": 3,
+      "Failed": 6
+    },
+    "timingOffenders": [],
+    "failedCases": [
+      "Allegiance.Core.Tests.PlayerBundlePathsTests.NativeSourceNeverGuessesAnInstallSubdirectory",
+      "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: Artwork)",
+      "Allegiance.Core.Tests.PlayerBundlePathsTests.MissingDirectoryHasNoDefault(kind: NativeSource)",
+      "Allegiance.Core.Tests.PlayerBundlePathsTests.LocalConfigWinsOverBundleWithBlankEnvironment",
+      "Allegiance.Core.Tests.PlayerBundlePathsTests.UsesExecutableDirectoryOutsideRepository(kind: Artwork, folder: \"artwork\")",
+      "Allegiance.ClientCore.MonoGame.Tests.P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed"
+    ],
+    "broadRunRepeated": false
+  },
+  "environmentRetries": [
+    {
+      "receipt": ".scratch/p832c/environment-paths-1/paths.trx",
+      "cases": 9,
+      "passed": 9
+    },
+    {
+      "receipt": ".scratch/p832c/environment-paths-2/paths.trx",
+      "cases": 9,
+      "passed": 9
+    },
+    {
+      "receipt": ".scratch/p832c/environment-paths-3/paths.trx",
+      "cases": 9,
+      "passed": 9
+    },
+    {
+      "receipt": ".scratch/p832c/environment-profile-1/profile.trx",
+      "cases": 1,
+      "passed": 1
+    },
+    {
+      "receipt": ".scratch/p832c/environment-profile-2/profile.trx",
+      "cases": 1,
+      "passed": 1
+    },
+    {
+      "receipt": ".scratch/p832c/environment-profile-3/profile.trx",
+      "cases": 1,
+      "passed": 1
+    }
+  ],
+  "parkingAdditionalRuns": [
+    {
+      "lane": "current",
+      "pair": 1,
+      "repeat": 1,
+      "exit": 0,
+      "elapsedSeconds": 372.06,
+      "outcome": "Passed",
+      "duration": "00:06:10.0582028",
+      "idleSamples": [
+        0.9500069628185489,
+        0.9558680217179452,
+        0.9512602701573597
+      ],
+      "monitoredSamples": 124,
+      "minimumRunIdle": 0.36940350877192984,
+      "medianRunIdle": 0.9264357679138031,
+      "quietHostQualified": false,
+      "summary": [
+        "P700 local 15v15: 367.4s, samples=3669, reached=24/30, longest speed<1 with target=1.115s, shots=1798, hits=655, kills=5"
+      ],
+      "rawReceipt": ".scratch/p832c/never-park/current-1-quiet-1"
+    },
+    {
+      "lane": "current",
+      "pair": 1,
+      "repeat": 2,
+      "exit": 0,
+      "elapsedSeconds": 387.06,
+      "outcome": "Passed",
+      "duration": "00:06:24.6416479",
+      "idleSamples": [
+        0.9431405420508522,
+        0.9396347413913286,
+        0.9311018131101814
+      ],
+      "monitoredSamples": 129,
+      "minimumRunIdle": 0.4173755403709385,
+      "medianRunIdle": 0.8721951219512195,
+      "quietHostQualified": false,
+      "summary": [
+        "P700 local 15v15: 382.0s, samples=3814, reached=24/30, longest speed<1 with target=0.104s, shots=1010, hits=174, kills=0"
+      ],
+      "rawReceipt": ".scratch/p832c/never-park/current-1-quiet-2"
+    },
+    {
+      "lane": "current",
+      "pair": 1,
+      "repeat": 3,
+      "exit": 0,
+      "elapsedSeconds": 279.04,
+      "outcome": "Passed",
+      "duration": "00:04:35.3815162",
+      "idleSamples": [
+        0.887123745819398,
+        0.8845188284518829,
+        0.8945682451253482,
+        0.9367070960546494,
+        0.24655436447166923,
+        0.663695864085782,
+        0.8649477351916376,
+        0.7384572464778909,
+        0.8722546566583264,
+        0.9380222841225627,
+        0.9591637630662021,
+        0.9523809523809523
+      ],
+      "monitoredSamples": 93,
+      "minimumRunIdle": 0.31633365935447816,
+      "medianRunIdle": 0.8967489884191433,
+      "quietHostQualified": false,
+      "summary": [
+        "P700 local 15v15: 272.7s, samples=2723, reached=24/30, longest speed<1 with target=2.005s, shots=2207, hits=980, kills=3"
+      ],
+      "rawReceipt": ".scratch/p832c/never-park/current-1-quiet-3"
+    },
+    {
+      "lane": "current",
+      "pair": 1,
+      "repeat": 4,
+      "exit": 0,
+      "elapsedSeconds": 273.04,
+      "outcome": "Passed",
+      "duration": "00:04:32.0698607",
+      "idleSamples": [
+        0.5465132594359478,
+        0.8753141580564088,
+        0.8908303047246295,
+        0.8938524016244224,
+        0.9348493303571429,
+        0.930648769574944,
+        0.9383647798742139
+      ],
+      "monitoredSamples": 91,
+      "minimumRunIdle": 0.4070561985776042,
+      "medianRunIdle": 0.9127394769962243,
+      "quietHostQualified": false,
+      "summary": [
+        "P700 local 15v15: 269.3s, samples=2690, reached=24/30, longest speed<1 with target=2.011s, shots=2173, hits=758, kills=6"
+      ],
+      "rawReceipt": ".scratch/p832c/never-park/current-1-quiet-4"
+    },
+    {
+      "lane": "current",
+      "pair": 1,
+      "repeat": 5,
+      "exit": 0,
+      "elapsedSeconds": 354.05,
+      "outcome": "Passed",
+      "duration": "00:05:51.3756742",
+      "idleSamples": [
+        0.9357312142757563,
+        0.9332215702710255,
+        0.9336314098085791
+      ],
+      "monitoredSamples": 118,
+      "minimumRunIdle": 0.15976578837306565,
+      "medianRunIdle": 0.9194457019269544,
+      "quietHostQualified": false,
+      "summary": [
+        "P700 local 15v15: 348.8s, samples=3483, reached=24/30, longest speed<1 with target=1.913s, shots=3895, hits=1289, kills=10"
+      ],
+      "rawReceipt": ".scratch/p832c/never-park/current-1-quiet-5"
+    }
+  ],
+  "metadata": {
+    "baseHead": "1e4c33d4660b12eb9395388ae668e4216c9800c8",
+    "baseBinarySha256": {
+      "allegiance-mcp.dll": "07b5c1d97bc24d79f5565634066e156639bd278afcbbc01dae16986a1d67fff0",
+      "Allegiance.Core.dll": "1280966b3a4dccd61c5769b25baf461d488bbc4b2a4ff0cf036add06a85f2375",
+      "Allegiance.Server.dll": "f925bf8d9c36de91b78580cb1845c3c58c7172c29de641cb632fc68900ccca00",
+      "Allegiance.ClientCore.Tests.dll": "19778a9be543e66eb1431134975e87dc3271f3beb5505f5565f89470e0f151dc"
+    },
+    "baseMcpContainsFlagController": false,
+    "solutionBuild": "0 warnings / 0 errors",
+    "toolProjectsBuilt": 90,
+    "serverAot": "linux-x64 self-contained; no IL2026/IL3050",
+    "parkingIdleCriterion": "three consecutive 3-second CPU samples >=90% idle before each process; base/current interleaved; no concurrent local tests or builds",
+    "parkingIdleHostCertified": false,
+    "parkingOriginalOutcomes": {
+      "basePassed": 5,
+      "baseTotal": 5,
+      "changedPassed": 5,
+      "changedTotal": 5
+    },
+    "parkingAdditionalChangedOutcomes": {
+      "passed": 5,
+      "total": 5
+    },
+    "parkingFollowupStop": "Stopped at a completed trial boundary after five additional passing trials all encountered sustained host activity; no active test was cancelled.",
+    "parkingCpuLogicalProcessors": 24,
+    "parkingHostActivityCriterion": "Two consecutive 3-second samples below 75% CPU idle; all runs first waited for three consecutive samples >=90% idle. First baseline monitoring covers its later portion only."
+  }
+}

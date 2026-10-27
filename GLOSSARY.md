@@ -374,6 +374,13 @@ list in **reverse**.
   native `FedSrv/FedSrv.CPP:7182-7196`, `Igc/sideigc.h:237-243`.
   Seeded proof preset: `tools/p832b-prosperity.json`.
   Report: `docs/reports/P832B_PROSPERITY_BOTS.md`.
+- **Flag raids / guards (P832c)** — wire-goal-gated carrier, escort, pedestal
+  guard and visible-thief interception in `tools/allegiance-mcp/BotManager.Flags.cs`.
+  `tools/allegiance-mcp/ScenarioCoordination.cs` shares one raid/guard quota across
+  workers; `spawn_scenario` preset `flags` requires a configured flags goal and
+  suppresses the bomber finale (ordinary showcase/skirmish also detects flags).
+  Native pickup/secure/respawn remain server rules; report:
+  `docs/reports/P832C_FLAG_BOTS.md`.
 - **Rig driver** — `scripts/mcp_driver.py` (drives the MCP exe from a JSONL
   command file). Reports `SC1_SHOWCASE_SKILLS.md`, `P539_MCP_COMBAT_BOTS.md`.
 - **Fleet-scaled opening (P837)** — the opening's numbers are rig values and are
