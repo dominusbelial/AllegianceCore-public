@@ -1385,6 +1385,30 @@ public sealed class Bot : ITransportSite, IDisposable
     }
 
     /// <summary>
+    /// P850 — send a real <c>FM_CS_QUIT_SIDE(126)</c>: the client half of the
+    /// quit / leader-boot branch (FedSrv.CPP:6823-6906). A player quits its
+    /// own side (reason <see cref="QuitSideReason.Quit"/>) or a team leader
+    /// boots a same-side teammate (<see cref="QuitSideReason.LeaderBooted"/>),
+    /// staying in the mission.
+    /// </summary>
+    public void SendQuitSide(short shipId, QuitSideReason reason, string message = "")
+    {
+        var msg = new QuitSide { ShipId = shipId, Reason = reason, Message = message };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
+    /// P850 — send a real <c>FM_CS_SET_TEAM_LEADER(121)</c>: a team leader
+    /// transfers leadership of its side to a same-side teammate
+    /// (FedSrv.CPP:7624-7687, minus native's bot-auth sub-branches).
+    /// </summary>
+    public void SendSetTeamLeader(short sideId, short shipId)
+    {
+        var msg = new SetTeamLeader { SideId = sideId, ShipId = shipId };
+        Send(FedPacket.Pack(new[] { msg.Encode() }));
+    }
+
+    /// <summary>
     /// Send a real <c>FM_C_START_GAME(157)</c> (P188) — the mission owner's
     /// manual trigger to begin the start countdown. A header-only, zero-payload
     /// marker (Messages.h:868-869). The server gates it on ownership +
