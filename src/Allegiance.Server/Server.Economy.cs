@@ -214,8 +214,9 @@ public sealed partial class Server
             var newLeader = PickNewLeader(sideShips, leader, cLeader);
             if (newLeader is not null && cside.LeaderShipId != newLeader.Id)
             {
-                cside.LeaderShipId = newLeader.Id;
-                BroadcastSetTeamLeader(cm, csid, newLeader.Id);
+                // Native routes this through CFSMission::SetLeader (FedSrv.CPP:5607):
+                // command wing 0 + side SET_WINGID, then SET_TEAM_LEADER.
+                SetLeader(cm, cside, newLeader);
                 Console.WriteLine($"[autodonate] donation-confidence: side {csid} leadership passed to ship {newLeader.Id}");
             }
         }

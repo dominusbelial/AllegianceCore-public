@@ -337,6 +337,44 @@ public class PlayerMoneyAutoDonateTests
 
     // ── mutiny wallet gift (reuse the P187 harness) ────────────────────────
 
+
+    /// <summary>P842 review (Claude): a donation-confidence leadership change runs
+    /// native <c>CFSMission::SetLeader</c> (FedSrv.CPP:5607 → fsmission.cpp:1533-1553):
+    /// the new leader goes to command wing 0 and the side hears SET_WINGID(wing 0,
+    /// commanded) before SET_TEAM_LEADER.</summary>
+    [Trait("Requires", "Artwork")]
+    [SkippableFact]
+    public void Donation_confidence_leader_change_puts_the_new_leader_on_the_command_wing()
+    {
+        Require.Artwork();
+        using var server = new Srv();
+        server.Boot(Config());
+        using var a = new FltBot();
+        using var b = new FltBot();
+        using var c = new FltBot();
+        using var d = new FltBot();
+        var (aId, bId, side0) = SeatLeaderAndMateStarted(server, a, b, "DC1", "DC2");
+        short cId = Seat(server, c, "DC3");
+        Assert.True(server.TryJoinSide(ShipOf(server, cId), side0));
+        short dId = Seat(server, d, "DC4");
+        Assert.True(server.TryJoinSide(ShipOf(server, dId), side0));
+        Flush(server);
+        ShipOf(server, bId).WingId = 2;
+        // The leader's toggle stops B donating (FedSrv.CPP:5548-5556), so donations
+        // to B are not chain-redirected to A.
+        a.SendAutoDonate(bId, -1);
+        Assert.True(PumpUntil(server, () => WalletOf(server, bId).AutoDonateTarget is null, 400) < 400);
+        a.ResetSetWingIdsReceived();
+
+        c.SendAutoDonate(bId, 0);
+        Flush(server);
+        d.SendAutoDonate(bId, 0);   // now B has 2 donors, A only 1 → leadership passes to B
+        int got = PumpUntil(server, () => SideOf(server, side0).LeaderShipId == bId
+            && a.SetWingIds.Any(w => w.ShipID == bId && w.WingId == 0 && w.BCommanded), 800);
+        Assert.True(got < 800, $"leader={SideOf(server, side0).LeaderShipId}, wing msgs={a.SetWingIds.Count}");
+        Assert.Equal(0, ShipOf(server, bId).WingId);
+    }
+
     /// <summary>⭐ A passing mutiny transfers the deposed leader's entire wallet
     /// to the new leader as a one-time gift and re-points the deposed leader's
     /// donations at the new leader, sending a compensating MONEY_CHANGE to the
