@@ -4,6 +4,33 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P837 observations (2026-10-27) — the two bot live regressions were defects, not flakes
+
+Both were reproducible 3/3 alone on the dispatch base and are fixed in P837 (see
+[the report](reports/P837_BOT_LIVE_REGRESSIONS.md)); neither is a load flake, and
+neither assertion, deadline, tier or quarantine was changed to get them green.
+
+- `P727SkirmishLiveTests.Local_start_battle_pause_resume_next_match_stop_leaves_no_processes`
+  **first bad commit `a8896574` (P798)**, whose skirmish hunk turned the native map
+  reveal off. Under fog each side's clash became its own home sector (`[clash] side
+  1 chose sector 1051 (ownMiners=1, hops own=0 enemy=3)`), so the two fleets parked
+  at their own bases and `combat.shotsFired` stayed 0 for the whole window. P797
+  (`7734a197`) and the commits until P798 are *unrelated* failures of the same test:
+  they cannot spawn at all (`spawn_scenario: finale needs an observed enemy home
+  station`) — a bisect on "the test fails" stops there, a bisect on the combat
+  symptom stops at `a8896574`.
+- `P682NextMatchCombatLiveTests.P682b_second_match_relaunches_mature_and_strike_then_third_match_starts`
+  (all four rows) **first bad commit `62a5b50f` (P831)**: its per-side "observed an
+  enemy station" re-arm gate needs *both* sides, and a one-bot-per-side finale is
+  below `MinFleetForExploration`, so the second side never got an objective to fly
+  out with; only P831's 300 s grace could release the gate, which is longer than
+  the fixture's 240 s window. This supersedes the P832a note below that read the
+  timeout as a "baseline fixture/behavior mismatch": the fixture was right.
+- P837's one Fast-tier sweep: 10,972 tests, 304.8 s, one failure —
+  `CrossSideCombatVisibilityLiveTests.Fire_is_not_relayed_to_peers_in_other_sectors`,
+  the load flake already ledgered here (`:803`, `:2546`, `:2845`). It passed **3/3
+  alone** after the sweep and touches none of the files P837 changed.
+
 ## P832a verification observations (2026-10-26)
 
 - The one Fast-tier sweep retained five `PlayerBundlePathsTests` failures caused

@@ -53,6 +53,15 @@ internal sealed partial class BotManager
     // Explicit spawn_scenario target_sector: the showcase override. Null means
     // the clash sector is computed from this side's intel (the default).
     private short? _scenarioTargetOverride;
+    /// <summary>P837 — the skirmish's small-fleet meeting engagement (set by
+    /// <c>spawn_scenario</c>'s <c>meeting_engagement</c>): below
+    /// <see cref="ScoutOpening.MeetingEngagementCombatBots"/> combat bots the side
+    /// fights what it meets while it travels, skips the P539d staging barrier, and
+    /// commits to its clash as soon as its scaled opening window allows. Off by
+    /// default, so no other scenario changes behaviour.</summary>
+    private bool _meetingEngagement;
+    internal bool MeetingEngagementEnabled => _meetingEngagement;
+    internal void ConfigureMeetingEngagement(bool on) => _meetingEngagement = on;
 
     /// <summary>P798 — the showcase/skirmish `target_sector` override. When set,
     /// no computed clash is applied (the spawn already gave every bot this target).</summary>
@@ -270,8 +279,13 @@ internal sealed partial class BotManager
             // unless a finale is waiting for this side to find the enemy base
             // (a small skirmish has no scouts; without recon its finale never
             // registers, rig/live test P682b 2026-10-24).
+            // P837 — a ROTATED finale waiting for its re-arm needs the same
+            // sighting: the fresh world leaves a small side with no objective at
+            // all, so without this it never flies, never observes the enemy
+            // station and the re-arm sits out P831's whole grace (live test P682b
+            // timed out at 240 s while its bombers idled in mid-space).
             if (group.Count(b => !b.IsPod && !b.PodDocked && b.Behavior == "combat") < ScoutOpening.MinFleetForExploration
-                && !FinalePendingFor(group))
+                && !FinalePendingFor(group) && !FinaleAwaitingRearm(group))
                 continue;
             var cs = group.First().Cs!;
             ClusterGraph? graph;
@@ -292,7 +306,8 @@ internal sealed partial class BotManager
                 .OrderBy(b => b.BotId).ToList();
             // A pending finale needs this side to find the enemy base: if the side
             // has nothing lighter, its bombers may recon (they are headed there).
-            if (eligible.Count == 0 && FinalePendingFor(group))
+            // P837 — a rotated finale awaiting its re-arm needs the same sighting.
+            if (eligible.Count == 0 && (FinalePendingFor(group) || FinaleAwaitingRearm(group)))
                 eligible = group.Where(b => !b.IsPod && !b.PodDocked && b.Behavior == "combat"
                         && b.OrderedCommand is null
                         && !b.Role.Equals("support", StringComparison.OrdinalIgnoreCase)
@@ -303,7 +318,12 @@ internal sealed partial class BotManager
             // than a 10-bot showcase's two scouts. Fill the opening detachment
             // from the lightest eligible hulls up to a third of the side (capped
             // by ScoutOpening.MaxExplorersPerSide).
-            int want = Math.Clamp(eligible.Count / 3, 2, ScoutOpening.MaxExplorersPerSide);
+            // P837 — the floor scales too: a side of three eligible hulls keeps ONE
+            // scout (a 9-bot skirmish's warps are revealed, so the fleet discovers
+            // on its way) and puts the other two into the clash; the rig's big
+            // sides keep the two-scout floor that P830 measured.
+            int want = Math.Clamp(eligible.Count / 3,
+                MeetingEngagementEnabled && eligible.Count < 6 ? 1 : 2, ScoutOpening.MaxExplorersPerSide);
             var scouts = dedicated.Take(want).ToList();
             foreach (var b in eligible)
                 if (scouts.Count >= want) break;
@@ -516,8 +536,16 @@ internal sealed partial class BotManager
             // unless a finale is waiting for this side to find the enemy base
             // (a small skirmish has no scouts; without recon its finale never
             // registers, rig/live test P682b 2026-10-24).
-            if (group.Count(b => !b.IsPod && !b.PodDocked && b.Behavior == "combat") < ScoutOpening.MinFleetForExploration
-                && !FinalePendingFor(group))
+            int combatBots = group.Count(b => !b.IsPod && !b.PodDocked && b.Behavior == "combat");
+            // P837 — scale the opening down: a small fleet has no wing to keep
+            // assembled and no minutes to spend gathering, so it engages what it
+            // meets in transit (see VisibleEnemyInSector) and does not stage. The
+            // rig's big fleets keep the P539d staging/transit discipline.
+            bool meetingEngagement = MeetingEngagementEnabled
+                && combatBots < ScoutOpening.MeetingEngagementCombatBots;
+            foreach (var b in group) b.MeetingEngagement = meetingEngagement;
+            if (combatBots < ScoutOpening.MinFleetForExploration
+                && !FinalePendingFor(group) && !FinaleAwaitingRearm(group))
                 continue;
             var cs = group.First().Cs!;
             ClusterGraph? graph;
@@ -529,13 +557,23 @@ internal sealed partial class BotManager
                 short ownHome = ResolveOwnHome(intel, graph, side);
                 double elapsed = now - (_openingStartedAt < 0 ? 0 : _openingStartedAt);
                 bool have = _clash.TryGetValue((cookie, side), out var chosen);
-                bool upgrade = !have || (chosen.Resource <= 0 && elapsed >= ScoutOpening.ClashDelaySeconds);
+                // P837 — the commit delay scales with the fleet (see
+                // ScoutOpening.ClashDelaySecondsFor): a small side cannot wait out
+                // the rig's opening window and still fight inside its battle.
+                double clashDelay = meetingEngagement
+                    ? ScoutOpening.ClashDelaySecondsFor(combatBots) : ScoutOpening.ClashDelaySeconds;
+                bool upgrade = !have || (chosen.Resource <= 0 && elapsed >= clashDelay);
                 if (upgrade)
                 {
-                    if (elapsed < ScoutOpening.ClashDelaySeconds) continue;
+                    if (elapsed < clashDelay) continue;
                     var pick = ClashScoring.Choose(graph, ownHome, intel.EnemyHome, intel.KnownSectors,
                         intel.Rocks.Values, intel.OwnMiners.Values, intel.EnemyMiners.Values, intel.EnemyStations.Values,
-                        topologyFallback: elapsed >= ScoutOpening.ClashFallbackSeconds);
+                        // P837 — the midpoint fallback is scaled to the side's fleet
+                        // for the skirmish's meeting engagement: the rig's ~48 combat
+                        // bots keep the 420 s figure, a 9-bot skirmish commits as soon
+                        // as its scaled opening window allows.
+                        topologyFallback: elapsed >= (meetingEngagement
+                            ? ScoutOpening.ClashFallbackSecondsFor(combatBots) : ScoutOpening.ClashFallbackSeconds));
                     if (pick is null) continue;
                     // A provisional topology fallback (no resource seen yet) is
                     // replaced the moment the side actually sees a resource area.
@@ -573,7 +611,7 @@ internal sealed partial class BotManager
                             || (bot.AssignedClashSector is { } prev && bot.TargetSector == prev);
                         if (mine) { bot.TargetSector = chosen.Sector; bot.AssignedClashSector = chosen.Sector; }
                     }
-                    if (bot.TargetSector is not null) bot.UseStaging = true;
+                    if (bot.TargetSector is not null) bot.UseStaging = !meetingEngagement;
                 }
             }
         }
@@ -719,6 +757,16 @@ internal sealed partial class BotManager
         // expires; the window only bounds the fleet-phase handover, not the
         // sweeps.
         if (!bot.IsExplorer || bot.OrderedCommand is not null) return false;
+        // P837 — in a small fleet the scouts are the first ships to meet the
+        // enemy (they are the ones crossing the map), so an explorer that can SEE
+        // an enemy ship hands the tick to the normal combat drive instead of
+        // sweeping past it: two nine-bot fleets' scouts met at 1.2 km and nobody
+        // fired at all (live test P727).
+        if (bot.MeetingEngagement)
+        {
+            short own = CsSector(cs);
+            if (own >= 0 && VisibleEnemyInSector(bot, cs, own) is not null) return false;
+        }
         var graph = GraphOf(cs);
         bool complete;
         lock (_intel.Sync)

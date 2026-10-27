@@ -4845,6 +4845,20 @@ bool isThreat =
 
         if (bot.Arrived && cur == goal) { EngageCombat(bot, now, prep); return; }
 
+        // P837 — a SMALL fleet fights what it meets. Below
+        // <see cref="ScoutOpening.MeetingEngagementCombatBots"/> combat bots there
+        // is no wing discipline to protect: the fleets are already converging on
+        // the same clash sector, and a transiting ship that can SEE an enemy must
+        // engage it instead of flying past (the P727 live test's two nine-bot
+        // fleets crossed the map without a shot). Large fleets keep the P539d
+        // staging/transit discipline untouched.
+        if (bot.MeetingEngagement && VisibleEnemyInSector(bot, cs, cur) is not null)
+        {
+            EngageCombat(bot, now, prep);
+            bot.LastCluster = cur;
+            return;
+        }
+
         // A research finale is a committed station duty: incidental fighter hits
         // must not pin the strike wing in a transit sector. Escort duty handles threats.
         if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase)
@@ -6257,6 +6271,9 @@ bool isThreat =
 
         // ── P539d — travel-with-staging mode ──
         public bool UseStaging;                         // gather the whole side before advancing
+        // P837 — this side is small enough to fight what it meets while travelling
+        // (set by AssignClashTargets from the side's combat-bot count).
+        public bool MeetingEngagement;
         public byte StagePhase;                         // 0 transit-to-stage, 1 holding, 2 released/advanced
         public short StagingSector = -1;                // the last sector before the rendezvous
         public double? FirstStagingAt;                  // when this bot first began holding

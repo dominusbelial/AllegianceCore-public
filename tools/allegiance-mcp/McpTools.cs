@@ -425,6 +425,11 @@ internal static class McpTools
         // P795 — arena was removed. Reject it explicitly instead of silently
         // treating it as march (the old alias would otherwise hide the removal).
         if (ArenaRequested(args)) return Err(ArenaRemovedError);
+        // P837 — the SKIRMISH's small-fleet meeting engagement: the single-player
+        // host asks for it when the whole battle is a handful of bots (see
+        // BotManager.ConfigureMeetingEngagement). Every other scenario keeps the
+        // P539d staging/transit discipline untouched.
+        mgr.ConfigureMeetingEngagement(OptBool(args, "meeting_engagement", def: false));
         bool mixed = args.ContainsKey("fleet") || args.ContainsKey("fleet_a") || args.ContainsKey("fleet_b")
                      || (OptStr(args, "preset") is { Length: > 0 })
                      || args.ContainsKey("minefields") || args.ContainsKey("wingman");
