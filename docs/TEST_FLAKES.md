@@ -3103,3 +3103,4 @@ for workspace scratch avoid the older path/profile environment failures.
 that failure is the AutoAccept fixture issue corrected above, not a P832d regression. The P835/P832c
 spotter-cache isolation race named in the P832d report is gone with P858, which removed the process-global
 toggle.
+| 2026-10-27 | P730ShowcaseLiveTests.Two_local_showcase_matches_keep_mining_research_kills_pods_and_relaunch | merge gate 47d1ac8a (P849/P858/P859/P832d) 5×: run 4 failed at 302 s (slowest run; message not captured, -v q) while three delegate lanes ran suites on the host | 3/3 re-runs alone pass (2:53–4:29); 7/8 overall | load flake (suspected timeout) |
