@@ -20,7 +20,7 @@ internal sealed partial class BotManager
                 && !b.FinaleBomberActive && !b.FinaleBomberReserved && !b.FinaleRefitting
                 // Flag pilots own an objective; the ordinary attack-order loop
                 // must not pull the raid/guard away (P832c bot policy).
-                && !(FlagsGame(b.Cs!) && b.FlagTask != FlagDuty.None)).ToArray();
+                && !((FlagsGame(b.Cs!) || KillsGame(b.Cs!)) && b.FlagTask != FlagDuty.None)).ToArray();
             // SC9 — the quorum counts the side's whole strike roster (docked or
             // launched), not just the pilots visible in this snapshot.
             strikeRoster = _bots.Count(b => b.Side == side && b.Cs is not null && !b.IsPod && IsParticipating(b)
@@ -44,7 +44,10 @@ internal sealed partial class BotManager
                     IsStrikeCapable(bot.FinaleBomberActive, bot.Role, own.HullId),
                     loadout, loadout?.CloakCapable == true));
                 // Team pilots report only what their ordinary clients can see.
-                targets.AddRange(ObserveTacticalTargets(cs.World, side));
+                var observed = ObserveTacticalTargets(cs.World, side);
+                if (KillsGame(cs) && !ConquestGame(cs))
+                    observed = observed.Where(t => t.Type != IgcObjectType.Station).ToArray();
+                targets.AddRange(observed);
             }
         }
         return (pilots.ToArray(), targets.ToArray(), strikeRoster);

@@ -85,7 +85,7 @@ internal sealed partial class BotManager
     {
         // A selected objective match is decided by objective play, including when the
         // skirmish driver uses its ordinary showcase fleet preset.
-        if (Probe?.World.Mission is { } mission && (mission.Goals.IsFlagsGame || mission.Goals.IsArtifactsGame || mission.Goals.IsConquestGame)) settings = settings with { AfterMinutes = 0 };
+        if (Probe?.World.Mission is { } mission && (mission.Goals.IsFlagsGame || mission.Goals.IsArtifactsGame || mission.Goals.IsConquestGame || mission.Goals.IsDeathMatchGame)) settings = settings with { AfterMinutes = 0 };
         settings.Validate();
         if (!settings.Enabled) return new { enabled = false };
         var stations = StationsSeenByAnEnemy(names);

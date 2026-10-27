@@ -2786,6 +2786,7 @@ bool isThreat =
         // co-located, loiter (committed to this order, attacking no one else). The
         // order is only released by a NEW superseding order (DecideAcceptTranslate),
         // not by a transient visibility gap.
+        ReleaseUnscorableKillOrder(bot, cs);
         ClearInvalidOrderedTarget(bot, cs);
         if (!bot.DefendingInPlace && bot.OrderedTargetId is { } ordered)
         {
@@ -2815,7 +2816,7 @@ bool isThreat =
         // The requested role can be locked while this life flies a temporary
         // fighter/scout. Research finales can additionally assign a verified legal
         // station-damaging strike loadout on another player hull.
-        if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase) && !ConquestGame(cs)
+        if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase) && !ConquestGame(cs) && !KillsGame(cs)
             && Catalog.RepresentativeCore().HullTypes.TryGetValue(ActualHullId(bot), out var flyingHull)
             && (Showcase.ClassifyHull(flyingHull) == Showcase.HullRole.Bomber
                 || (bot.FinaleBomberActive && bot.FinaleGrantVerified && ResearchFinale(bot)
@@ -2896,6 +2897,7 @@ bool isThreat =
             {
                 if (ship.ShipId == bot.ShipId || ship.IsNotVisible) continue;
                 if (ship.SideId == bot.Side) continue;      // a DIFFERENT side only
+                if (KillsGame(cs) && !KillTarget(cs.World, ship, bot.Side)) continue;
                 if (ship.SectorId != myCluster) continue;   // co-located
                 if (ship.Latest is not { } lu) continue;
                 if (IgnoreMinerTargets && CombatTargetSelector.ClassifyTargetId(ship.HullId) == BotTargetClass.MinerDrone) continue;   // showcase: never target miners/drones
@@ -2955,6 +2957,9 @@ bool isThreat =
                 }
             }
         }
+        if (KillsGame(cs))
+            lock (cs.Gate) candidates = candidates.Where(c => cs.World.Ships.TryGetValue(c.Id, out var ship)
+                && KillTarget(cs.World, ship, bot.Side)).ToList();
         if (string.Equals(bot.Role, "bomber", StringComparison.OrdinalIgnoreCase)
             && bot.TargetSector is { } destination && destination != myCluster)
             candidates = candidates.Where(c => bot.RecentAttackers.TryGetValue(c.Id, out var at)
@@ -4815,6 +4820,7 @@ bool isThreat =
         // the warp volume first or it bounces back into the aleph.)
         if (TryDriveExploration(bot, cs, now)) return;
         if (TryDriveSupport(bot, now)) return;
+        ReleaseUnscorableKillOrder(bot, cs);
         if (DriveCommanderOrder(bot, now)) return;
         if (TryDriveFinaleEscort(bot, now)) return;
         // P801 — a finale bomber holds at the staging point until the volley is

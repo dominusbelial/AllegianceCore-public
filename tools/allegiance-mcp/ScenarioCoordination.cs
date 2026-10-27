@@ -10,7 +10,10 @@ internal sealed record DefenseDeployment(DefenseKey Key, string[] Names);
 internal sealed record FlagCandidate(uint Cookie, short Side, string Name, short ShipId, bool Scout,
     bool Carrying, short? Thief, double Distance, bool CanCarry = true, bool Artifacts = false, bool Flags = true,
     short? Artifact = null, double ArtifactDistance = double.MaxValue, bool Conquest = false,
-    int ConquestPercent = 0, int ConquestGoal = 0, bool CargoPilot = true, ConquestContact[]? Stations = null);
+    int ConquestPercent = 0, int ConquestGoal = 0, bool CargoPilot = true, ConquestContact[]? Stations = null,
+    bool Kills = false, float Hull = 1, int OurKills = 0, int EnemyKills = 0, int KillGoal = 0,
+    KillContact[]? KillTargets = null, bool Support = false);
+internal sealed record KillContact(short Id, short Sector, double Distance, float Hull, int Friends, int Enemies, BotTargetClass Class);
 internal sealed record ConquestContact(short Id, short Sector, bool Own, double Distance,
     bool Board, bool Strike, bool Threatened);
 internal sealed record FlagDeployment(uint Cookie, short Side, string Name, BotManager.FlagDuty Duty, short? Anchor = null, int Post = 0);
@@ -55,7 +58,7 @@ internal sealed class ScenarioCoordinator(BotManager.DefenseSettings settings, b
         var intel = all.SelectMany(s => s.Intel ?? []).ToArray();
         var flags = BotManager.PlanFlagDuties(all.SelectMany(s => s.Flags ?? []));
         if (!settings.Enabled) return new(releases, [], 0, intel, flags);
-        var conquestSides = all.SelectMany(s => s.Flags ?? []).Where(c => c.Conquest)
+        var conquestSides = all.SelectMany(s => s.Flags ?? []).Where(c => c.Conquest || c.Kills)
             .Select(c => (c.Cookie, c.Side)).ToHashSet();
         var objectivePilots = flags.Where(d => conquestSides.Contains((d.Cookie, d.Side)))
             .Select(d => (d.Cookie, d.Side, d.Name)).ToHashSet();

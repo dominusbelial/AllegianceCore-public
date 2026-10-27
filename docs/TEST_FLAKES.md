@@ -4,6 +4,15 @@ Authoritative, current-state ledger for `AllegianceCore` suite stability (rewrit
 by **P647**; the full historical ledger is preserved verbatim in the History section
 at the end).
 
+## P832f verification observations (2026-10-27)
+
+The single Fast sweep had **11,155 passed / 2 failed / 3 optional skips**, with no timing offenders. See [P832f](reports/P832F_KILLS_BOTS.md) and its verification receipts. The full sweep was not repeated.
+
+- `P761StartChatComposeTests.ProfileEditor_OwnsEnterAndBackspace_AndKeepsChatClosed` repeated the already-ledgered read-only user configuration failure. The exact method passed **3/3** with `XDG_CONFIG_HOME` in task scratch. This is an environment restriction, not a product defect or load flake; preferences and test source were unchanged.
+- `ConquestTerritoryLiveTests.Flag_capture_tips_conquest_and_broadcasts_game_state_then_game_over` received an initial **50%** GAME_STATE where its post-reset event assertion expected **80%**. It passed **3/3 exact-method invocations alone**, with the same source, deadline and assertions. This is consistent with delayed initial-ranking receipt around the list reset, rather than a conquest calculation failure: the fixture's earlier authoritative 80/20 assertions passed. P832f's bots are not instantiated by this fixture, and its kills goal is disabled. Classified as a load/receive-order flake; no production conquest or fixture change made.
+
+All 21 flags/artifacts/conquest bot games passed, as did three normal-cadence kills games and the final 64-case bot controller/planner group in three isolated invocations.
+
 ## P837 observations (2026-10-27) — the two bot live regressions were defects, not flakes
 
 Both were reproducible 3/3 alone on the dispatch base and are fixed in P837 (see

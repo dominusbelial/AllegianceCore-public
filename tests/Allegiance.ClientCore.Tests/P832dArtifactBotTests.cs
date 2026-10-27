@@ -23,7 +23,7 @@ public sealed partial class BotFixRegressionTests
         Require.Artwork();
         using var cs = Session(true);
         cs.World.Apply(new MissionDef { Goals = goal switch
-        { 1 => new() { TeamMoney = 1 }, 2 => new() { TeamKills = 10 }, _ => new() } });
+        { 1 => new() { TeamMoney = 1 }, 2 => new() { GameLengthSeconds = 600 }, _ => new() } });
         var bot = Bot(cs); var manager = Manager(bot);
         Set(bot, "TargetId", (short?)77); Set(bot, "TargetSector", (short?)2);
         for (int tick = 0; tick < 100; tick++)
