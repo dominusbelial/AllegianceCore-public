@@ -2179,6 +2179,8 @@ public sealed partial class Server
             // donation re-pointing (fsmission.cpp:1046-1057) needs the
             // promoted leader, and the payday-to-treasury + old-player save
             // (fsmission.cpp:1042-1063, 2624-2680) round the body out.
+            // P847 — the donation leg is stage-gated inside the helper, matching
+            // native's `if (STAGE_STARTED || STAGE_STARTING)` wrapper.
             RePointDonationsAfterDeparture(mission, live, departedSide);
             ApplyDeparturePaydayAndOldPlayer(mission, live, departedSide, playerName);
         }
@@ -2236,17 +2238,16 @@ public sealed partial class Server
             _oldPlayerScores[(mission, name)] = live.PlayerScore;
 
         var ship = live.Ship;
-        var side = mission.Sides.FirstOrDefault(s => s.Id == departedSideId);
         long payday = 0;
         if (mission.Stage is MissionStage.Started or MissionStage.Starting)
             payday = Math.Max(0, (long)live.Wallet.Money) + ShipFullValue(ship);
         live.Wallet.Money = 0;   // pfsPlayer->SetMoney(0), fsmission.cpp:1068 (unconditional)
-        if (payday > 0 && side is not null)
+        if (payday > 0 && mission.Sides.FirstOrDefault(s => s.Id == departedSideId) is { } side)
         {
-            side.Money += payday;   // GiveSideMoney, fsmission.cpp:1777-1787
-            Console.WriteLine($"[depart] ship {ship.Id}: payday {payday} -> side {departedSideId} treasury (fsmission.cpp:1042-1063)");
-            if (_peerShips.Any(kv => kv.Value.Ship.SideId == departedSideId && ReferenceEquals(kv.Value.Ship.Mission, mission)))
-                OnPayday(side, 0);   // GiveSideMoney's immediate DoPayday redistribution
+            // GiveSideMoney(psideOld, payday), fsmission.cpp:1777-1787 — accrual plus
+            // the immediate DoPayday split to the peers still on the side.
+            GiveSideMoney(side, payday);
+            Console.WriteLine($"[depart] ship {ship.Id}: payday {payday} -> side {departedSideId} treasury, paid out now (fsmission.cpp:1042-1063,1145,1777-1787)");
         }
     }
 
@@ -2266,21 +2267,32 @@ public sealed partial class Server
 
     /// <summary>P841 — re-point (or clear) every same-side auto-donate
     /// relationship that targeted the departing ship, the port of
-    /// fsmission.cpp:1046-1057. Runs AFTER leader succession so the donation
-    /// re-points to the promoted leader, exactly native's
-    /// <c>SetAutoDonate(pfsNewLeader, 0, false)</c>; the new leader's own
-    /// donation to the departed ship is simply cleared. Silent
-    /// (<c>bSend:false</c>), matching native.</summary>
+    /// fsmission.cpp:1046-1057.
+    /// <para><b>P847 — the native target is <c>pfsNewLeader</c>, which is NULL
+    /// unless the LEAVER was the side's leader</b> (<c>CFSPlayer* pfsNewLeader</c>
+    /// is only ever assigned inside the <c>rgShipIDLeaders[sideidOld] == shipid</c>
+    /// succession block, fsmission.cpp:918-990). So every non-leader departure
+    /// reaches this loop with <c>pfsNewLeader == NULL</c> and the native call is
+    /// <c>SetAutoDonate(NULL, 0, false)</c> — the donors simply stop donating,
+    /// they are NOT handed to the current leader. The leader case is already
+    /// handled by <see cref="RetargetDonorsOffLeaver"/> inside
+    /// <see cref="HandleLeaderSuccession"/>, so anything left here is a
+    /// non-leader departure and must be cleared. The whole leg is inside
+    /// native's stage gate (fsmission.cpp:1103), reproduced here.</para>
+    /// Silent (<c>bSend:false</c>), matching native.</summary>
     private void RePointDonationsAfterDeparture(Mission mission, LiveShip departed, short departedSideId)
     {
-        Ship? newLeader = LeaderShip(mission, departedSideId);
+        if (mission.Stage is not (MissionStage.Started or MissionStage.Starting)) return;   // fsmission.cpp:1103
+        // Native's pfsNewLeader is non-null only when the LEAVER was the leader,
+        // and that case is resolved by HandleLeaderSuccession before this runs —
+        // so a donor still pointing at the departed ship is a non-leader case and
+        // native clears it (SetAutoDonate(pfsNewLeader == NULL, 0, false)).
         foreach (var kv in _peerShips)
         {
             if (!ReferenceEquals(kv.Value.Ship.Mission, mission) || kv.Value.Ship.SideId != departedSideId) continue;
             if (!ReferenceEquals(kv.Value.Wallet.AutoDonateTarget, departed.Ship)) continue;
-            bool isTheNewLeader = newLeader is { } nl && ReferenceEquals(kv.Value.Ship, nl);
-            SetAutoDonate(kv.Value, isTheNewLeader ? null : newLeader, 0, bSend: false);
-            Console.WriteLine($"[depart] ship {kv.Value.Ship.Id}: auto-donate {(isTheNewLeader ? "cleared" : "re-pointed to new leader")} (fsmission.cpp:1046-1057)");
+            SetAutoDonate(kv.Value, null, 0, bSend: false);
+            Console.WriteLine($"[depart] ship {kv.Value.Ship.Id}: auto-donate to the departing non-leader cleared (fsmission.cpp:1046-1057, pfsNewLeader == NULL)");
         }
     }
 

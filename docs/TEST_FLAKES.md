@@ -3062,3 +3062,17 @@ claimed. The maximum low-speed-with-target duration was 1.913 s on base,
 controller was stopped at a completed-trial boundary after repeated host
 interference; all outcomes remain in the P832c receipt. A quiet-host window
 is required for the remaining environmental confirmation.
+
+## P847 observation (2026-10-27)
+
+`Allegiance.ClientCore.MonoGame.Tests.P784ComposeTests.Fanout_issues_one_order_message_per_recipient_on_the_wire`
+failed in the P847 fast tier (line 328: the mate ship `8100` is missing from the wing-0 recipient list
+`[8098, 8096]`). **Pre-existing on master, not a flake and not P847's**: reverting every P847 `src/` change
+and re-running the test alone reproduces the identical assertion 3/3. The earlier ledger entry above
+(2026-10-24, different assertion at line 315) recorded a load flake in the same test; this is a different,
+deterministic failure (a same-side wing-0 mate is not selected by `Game1.CommandFanout.Recipients`), so it
+needs an owner rather than a retry. P847 touches no fanout/order-compose code.
+
+P847 also updated two test expectations that pinned the old, non-native dropped-part treasure quantity
+(`TreasureDropLiveTests`, `DropPartTests`): a dropped WEAPON's treasure now carries `amount = 0`
+(FedSrv.CPP:4392), so both suites were re-run 3/3 alone and are green.

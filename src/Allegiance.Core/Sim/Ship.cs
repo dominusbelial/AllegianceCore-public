@@ -4207,12 +4207,20 @@ public sealed partial class Ship : Model, IShipIgc
     /// <item><b>Call only for a non-skipped drop.</b> The native DROP_PART
     /// handler guards creation with <c>((type != OT_pack) &amp;&amp;
     /// !IlauncherIGC::IsLauncher(type)) || (ppart-&gt;GetAmount() != 0)</c>
-    /// (<c>FedSrv.CPP:6323</c>); the launcher branch collapses away in this
-    /// port (no magazine/dispenser/chaff-launcher part subtype exists in
-    /// <see cref="DataPartTypeIGC"/>'s set — only Weapon/Shield/Cloak/
-    /// Afterburner/Pack), so the effective gate is <em>skip iff Pack &amp;&amp;
-    /// Amount == 0</em>. The handler applies that; this method assumes it has
-    /// been.</item>
+    /// (<c>FedSrv.CPP:6323</c>) — a non-consumable (weapon/shield/cloak/
+    /// afterburner) always drops, a consumable (pack / magazine / dispenser /
+    /// chaff launcher) only when it still has something in it. The handler
+    /// applies that gate.</item>
+    /// <item><b>Amount</b> (P847) — the native third overload's switch
+    /// (<c>FedSrv.CPP:4380-4396</c>): a MAGAZINE / DISPENSER / PACK carries its
+    /// <c>GetAmount()</c> into the treasure and returns <c>NULL</c> from the
+    /// overload when that amount is 0 (<c>FedSrv.CPP:4385-4387</c>); every other
+    /// object type falls to <c>default: amount = 0</c> (<c>FedSrv.CPP:4392</c>).
+    /// So a dropped weapon produces a treasure with <c>amount = 0</c> (the client
+    /// mounts it from the treasure's part type, not from a quantity), and an
+    /// empty launcher produces no treasure at all. Both were previously spliced
+    /// to <c>part.Amount</c>, which sent a bogus quantity for every non-consumable
+    /// and a 0-amount launcher treasure native never creates.</item>
     /// <item><b>Radius</b> = the port's established
     /// <c>0.5 × HullType.Length</c> ship-radius convention (analogue of native
     /// <c>pship-&gt;GetRadius()</c>, <c>FedSrv.CPP:4330</c>) — the same sphere
@@ -4221,22 +4229,38 @@ public sealed partial class Ship : Model, IShipIgc
     /// (<c>dv = 25.0f</c> is the DROP_PART call's argument,
     /// <c>FedSrv.CPP:6326</c>). Treasure integrates this initial velocity with
     /// native deceleration (Igc/treasureIGC.cpp:18,221-259).</item>
-    /// <item><b>Amount:</b> set to the dropped part's own <c>Amount</c> per this
-    /// task's spec (the verification demands the treasure's
-    /// <c>TreasureId</c>/<c>Amount</c> match the dropped part). This is a
-    /// deliberate simplification of native, which for non-consumable types
-    /// (weapon/shield/cloak/afterburner) falls into the third overload's
-    /// <c>default: amount = 0</c> branch and reserves the consumed quantity only
-    /// for magazine/dispenser/pack — consumables this port does not represent
-    /// yet. Documented here, not silently dropped.</item>
+    /// <item><b>Amount:</b> carried per the caller — the <c>IpartIGC</c> overload
+    /// derives it from the part's object type (see the entry above); the
+    /// <c>(short amount, IpartTypeIGC*)</c> overload passes its argument
+    /// straight through (<c>FedSrv.CPP:4366-4378</c>).</item>
     /// </list>
     /// </remarks>
     /// <param name="part">The just-removed mounted part (already out of the
     /// ship's <c>_parts</c>).</param>
     /// <param name="now">Current sim time (seeds the treasure's clock).</param>
     /// <param name="time0">Wire creation epoch in server simulation milliseconds.</param>
-    public Treasure CreateDropTreasure(MountedPart part, double now, uint time0, float dv = 25.0f, float lifespan = 120.0f) =>
-        CreateDropTreasure(part.Type, part.Amount, now, time0, dv, lifespan);
+    /// <returns>The placed treasure, or <c>null</c> when native's overload
+    /// declines to create one (an empty consumable, <c>FedSrv.CPP:4385-4387</c>).</returns>
+    public Treasure? CreateDropTreasure(MountedPart part, double now, uint time0, float dv = 25.0f, float lifespan = 120.0f)
+    {
+        // Native third overload (FedSrv.CPP:4380-4396): only magazine /
+        // dispenser / pack carry a quantity; everything else is amount 0, and an
+        // empty consumable yields no treasure at all.
+        short amount;
+        switch (part.Type.EquipmentType)
+        {
+            case EquipmentType.Magazine:
+            case EquipmentType.Dispenser:
+            case EquipmentType.Pack:
+                amount = part.Amount;
+                if (amount == 0) return null;   // FedSrv.CPP:4385-4387
+                break;
+            default:
+                amount = 0;                     // FedSrv.CPP:4392
+                break;
+        }
+        return CreateDropTreasure(part.Type, amount, now, time0, dv, lifespan);
+    }
 
     /// <summary>
     /// P145 — the same drop-treasure creation as the

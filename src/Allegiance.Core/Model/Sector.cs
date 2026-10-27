@@ -1836,12 +1836,15 @@ public sealed class Sector : IClusterIgc
     /// <c>HandleCollision</c> gate verbatim (<c>treasureIGC.h:83-98</c>):
     /// <c>GetPilotType() &gt;= c_ptPlayer</c> <em>and</em>
     /// <c>GetBaseHullType()-&gt;HasCapability(c_habmRescue)</c>. The pilot-type
-    /// leg collapses to always-true in this port: every <see cref="Ship"/> is a
-    /// player ship (the port models no non-player pilot type — <c>Ship.cs</c>
-    /// has no pilot-type field, and the wire messages hard-code <c>c_ptPlayer</c>=10,
-    /// ExportShip.cs:74-75), so <c>10 &gt;= 10</c> always holds. The operative
-    /// gate is <c>HullType.HasCapability(DataHullTypeIGC.HabmRescue)</c>
-    /// (bit 0x02, the <em>same</em> bit P114/P115 already decoded and used for
+    /// leg is real since P160 (P847 fixed the stale claim that it "collapses to
+    /// always-true"): <see cref="Ship.PilotType"/> carries the native
+    /// <c>m_pilotType</c> (a real player pilot is <c>c_ptPlayer</c>=10;
+    /// <c>SpawnNpcShip</c> stores the spawned drone type's own pilot type), so a
+    /// miner/builder/layer drone — which native forbids from picking treasures up
+    /// (<c>treasureIGC.h:86</c>) — is excluded exactly as it is in native. The
+    /// second half of the gate stays
+    /// <c>HullType.HasCapability(DataHullTypeIGC.HabmRescue)</c> (bit 0x02, the
+    /// <em>same</em> bit P114/P115 already decoded and used for
     /// <c>RescueShipEvent</c> — no new capability decode needed).</para>
     /// <para><b>Side-agnostic — confirmed.</b> The native gate has <em>no</em>
     /// side check at all (<c>treasureIGC.h:86-87</c> only tests pilot type and
@@ -1891,8 +1894,12 @@ public sealed class Sector : IClusterIgc
             if (ship.Dead || ship.StationId is not null) continue;   // must be flying
             if (ship.SideId is null || ship.Mission is null) continue; // need a side to credit
             // The native gate (treasureIGC.h:86-87): pilot type >= c_ptPlayer
-            // (collapses to always-true here — see remarks) AND the rescue
-            // capability. No side check (side-agnostic — see remarks).
+            // AND the rescue capability. P847 — the pilot-type half is enforced
+            // now that Ship.PilotType carries the real native value: an NPC drone
+            // (miner/builder/layer, pilot type < c_ptPlayer) never picks a
+            // treasure up, exactly as in native. No side check (side-agnostic —
+            // see remarks).
+            if (ship.PilotType < Ship.PilotTypePlayer) continue;
             if (!ship.HullType.HasCapability(DataHullTypeIGC.HabmRescue)) continue;
 
             float shipR = 0.5f * ship.HullType.Length;

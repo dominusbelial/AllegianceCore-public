@@ -1970,17 +1970,31 @@ private void CompleteStartCountdown(Mission mission, double now)
         // here: this port's side-quit keeps the ship alive (native resets the
         // player and re-seats them, so the hull value is lost to the player),
         // so crediting its value too would mint credits.
-        if (LiveOf(ship) is { } live)
+        // P847 — order fixed to native's: the payday AMOUNT is captured and the
+        // wallet zeroed before the move (fsmission.cpp:1066-1068), but
+        // GiveSideMoney runs AFTER `pfsPlayer->SetSide(..., SIDE_TEAMLOBBY)`
+        // (fsmission.cpp:1141-1145) — so DoPayday's player count no longer
+        // includes the leaver. Paying before the move split the money one extra
+        // way and the leaver's share vanished with the wallet reset.
+        LiveShip? live = LiveOf(ship);
+        long payday = 0;
+        if (live is not null)
         {
-            long payday = mission.Stage is MissionStage.Started or MissionStage.Starting
+            payday = mission.Stage is MissionStage.Started or MissionStage.Starting
                 ? Math.Max(0, live.Wallet.Money) : 0;
             live.Wallet.Money = 0;   // pfsPlayer->SetMoney(0), fsmission.cpp:1068
-            var side = mission.Sides.FirstOrDefault(s => s.Id == oldSideId);
-            if (payday > 0 && side is not null) side.Money += payday;   // GiveSideMoney
         }
         ship.SideId = SideTeamLobby;
         BroadcastQuitSide(mission, ship.Id, reason);
         MarkObjectSyncDirty(oldSideId);
+        if (payday > 0 && mission.Sides.FirstOrDefault(s => s.Id == oldSideId) is { } side)
+        {
+            // GiveSideMoney(psideOld, payday) = accrue + IMMEDIATE DoPayday
+            // (fsmission.cpp:1145 → 1777-1787). P847: the treasury credit
+            // alone left the leaver's money waiting for the next natural
+            // payday instead of paying the remaining side-mates right away.
+            GiveSideMoney(side, payday);
+        }
     }
 
 // ═══════════════════════════ P187 — ballot / voting system ═══════════════════════════
@@ -3351,20 +3365,17 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// <paramref name="characterName"/> on <paramref name="mission"/>, or
     /// null when the name has no departed-seat history on this mission (the
     /// port of native <c>CFSMission::GetOldPlayerLink</c>,
-    /// fsmission.cpp:2608-2602/378, case-insensitive like native's name
-    /// comparisons). A hit means the caller re-seats the returning player
-    /// with their previous score object.</summary>
+    /// fsmission.cpp:2608-2602/378, case-insensitive like native's
+    /// <c>_stricmp</c> comparison, fsmission.h:390-398). A hit means the caller
+    /// re-seats the returning player with their previous score object.
+    /// P847: the cache's key comparer is case-insensitive on the name, so this is
+    /// a plain dictionary take — the same single entry per name
+    /// <c>SaveAsOldPlayer</c> maintains by updating what
+    /// <c>GetOldPlayerLink</c> finds (fsmission.cpp:2624-2631).</summary>
     private PlayerScore? TryTakeOldPlayerScore(Mission mission, string? characterName)
     {
         if (string.IsNullOrEmpty(characterName)) return null;
-        foreach (var k in _oldPlayerScores.Keys)
-            if (ReferenceEquals(k.Mission, mission) && string.Equals(k.Name, characterName, StringComparison.OrdinalIgnoreCase))
-            {
-                var score = _oldPlayerScores[k];
-                _oldPlayerScores.Remove(k);
-                return score;
-            }
-        return null;
+        return _oldPlayerScores.Remove((mission, characterName), out var score) ? score : null;
     }
 
     /// <summary>P480 — create the fresh ship for a peer being MIGRATED into a

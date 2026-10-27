@@ -706,17 +706,28 @@ public sealed partial class Server
 
         // Conditional treasure: native's guard is
         // ((type != OT_pack) && !IsLauncher(type)) || (amount != 0)
-        // (FedSrv.CPP:6323); the launcher branch does not exist in this port, so
-        // it collapses to: skip iff the dropped part is a Pack with Amount == 0
-        // (third CreateTreasure overload also returns NULL in that case,
-        // FedSrv.CPP:4385-4387).
-        if (dropped.Type.EquipmentType == EquipmentType.Pack && dropped.Amount == 0)
+        // (FedSrv.CPP:6323): a non-consumable (weapon/shield/cloak/afterburner)
+        // always drops as a treasure, a pack/launcher only while it still holds
+        // something. P847 — the launcher arm is real now (chaff/mine/probe/missile
+        // launchers exist as mounted parts), so an EMPTY launcher must not spawn a
+        // 0-amount treasure the way a weapon does.
+        bool consumable = dropped.Type.EquipmentType is EquipmentType.Pack
+            or EquipmentType.Magazine or EquipmentType.Dispenser;
+        if (consumable && dropped.Amount == 0)
         {
-            Console.WriteLine($"[droppart] {from} ship {ship.Id}: dropped empty Pack (amount 0) — no treasure (native skip, FedSrv.CPP:6323)");
+            Console.WriteLine($"[droppart] {from} ship {ship.Id}: dropped empty {dropped.Type.EquipmentType} (amount 0) — no treasure (native skip, FedSrv.CPP:6323)");
             return;
         }
 
         var treasure = ship.CreateDropTreasure(dropped, _simNow, (uint)(_simNow * 1000));
+        if (treasure is null)
+        {
+            // CreateTreasure returns NULL for an empty consumable too
+            // (FedSrv.CPP:4385-4387); unreachable after the gate above, kept as
+            // the honest null check.
+            Console.WriteLine($"[droppart] {from} ship {ship.Id}: CreateTreasure declined the drop — no treasure");
+            return;
+        }
         SendTreasureSpawnSectorWide(ship.Sector!, treasure);
         Console.WriteLine($"[droppart] {from} ship {ship.Id}: created part treasure obj={treasure.Data.ObjectId} part={treasure.Data.TreasureId} amount={treasure.Data.Amount} -> TREASURE(28) sector {ship.Sector!.Id} wide");
     }

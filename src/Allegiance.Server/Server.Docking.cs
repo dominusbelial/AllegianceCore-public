@@ -979,7 +979,12 @@ public sealed partial class Server
     /// <c>12493-12509</c>).
     /// </summary>
     /// <remarks>
-    /// <para><b>Pooled-money simplification — confirmed and applied.</b> The
+    /// <para><b>Player/NPC split (current).</b> A player picker credits the
+    /// wallet of its autodonate target (else its own) and broadcasts
+    /// <c>MONEY_CHANGE</c> side-wide; an NPC picker runs the native
+    /// <c>GiveSideMoney</c> accrual + immediate <c>DoPayday</c> (P551, P847).
+    /// The paragraph below is the P123-era pooled-credit plan, kept for
+    /// history; P551 replaced it with the two real branches.</para>
     /// native splits the cash credit by whether the picking ship is a player:
     /// a player credits its autodonate target's per-player wallet and
     /// broadcasts <c>MONEY_CHANGE</c> to the whole side's peer group
@@ -1127,8 +1132,10 @@ public sealed partial class Server
         //     MONEY_CHANGE sidTo = that target's ship (FedSrv.CPP:13605-13606)
         //     — NOT the side pot. This fixes the old port's client/server
         //     mismatch (side.Money += amount while broadcasting sidTo = picker).
-        //   • NPC picker (FedSrv.CPP:13612-13615): pooled credit to the side
-        //     (GiveSideMoney) with no per-player MONEY_CHANGE.
+        //   • NPC picker (FedSrv.CPP:13612-13615): `GiveSideMoney(side, amount)`
+        //     — pooled credit to the side's treasury followed by an IMMEDIATE
+        //     `DoPayday(pside)` split (fsmission.cpp:1777-1787), so the cash
+        //     reaches the side's players on this very tick (P847).
         var pickerLive = _peerShips.Values.FirstOrDefault(l => ReferenceEquals(l.Ship, ship));
         if (pickerLive is not null)
         {
@@ -1140,8 +1147,15 @@ public sealed partial class Server
         }
         else
         {
-            side.Money += amount;                                       // GiveSideMoney (FedSrv.CPP:13614)
-            Console.WriteLine($"[treasure] ship {ship.Id} (npc) picked cash treasure {treasure.Id} amount={amount} -> side {sideId} money {side.Money}");
+            // NPC picker: `m_pfsMission->GiveSideMoney(ship->GetSide(), Money(amount))`
+            // (FedSrv.CPP:13612-13615). GiveSideMoney is NOT a bare treasury
+            // credit: it accrues into m_rgMoney[sideID] and then runs
+            // DoPayday(pside) at once (fsmission.cpp:1777-1787), splitting the
+            // whole treasury across the side's players immediately. P847 — the
+            // port used to leave the cash sitting in the treasury until the next
+            // natural payday, so an NPC cash pickup never reached the players.
+            GiveSideMoney(side, amount);                                // fsmission.cpp:1777-1787
+            Console.WriteLine($"[treasure] ship {ship.Id} (npc) picked cash treasure {treasure.Id} amount={amount} -> side {sideId} treasury credited then paid out now (GiveSideMoney/DoPayday, fsmission.cpp:1777-1787); balance {side.Money}");
         }
 
         BroadcastTreasureDestroyed(treasure);                       // DESTROY_TREASURE whole-mission + remove from sector
@@ -1678,6 +1692,34 @@ public sealed partial class Server
         Console.WriteLine($"[loadout] ship {live.Ship.Id}: saved desired loadout = [{string.Join(", ", desired.Select(d => $"{d.PartId} '{d.Name}'"))}]");
     }
 
+    /// <summary>Native <c>MatchPT</c> (<c>FedSrv.CPP:12617-12635</c>) applied to the
+    /// ship's loadout: true when a mounted or cargo part is
+    /// <paramref name="desired"/> itself or any part in its
+    /// <c>GetSuccessorPartType</c> chain. Native's <c>ErasePart</c>
+    /// (<c>FedSrv.CPP:12637-12653</c>) consumes one desired-list slot per matching
+    /// equipped part, so an upgraded launcher still satisfies the base desired
+    /// entry and must not be re-bought (P847).</summary>
+    private static bool DesiredPartPresent(Ship ship, StaticCore core, DataPartTypeIGC desired)
+    {
+        foreach (var equipped in ship.Parts.Select(p => p.Type).Concat(
+                     ship.CargoHold.Where(c => c is not null).Select(c => c!.Type)))
+        {
+            var cursor = desired;
+            var guard = 0;
+            while (true)
+            {
+                if (equipped.PartId == cursor.PartId) return true;
+                short next = cursor.SuccessorPartId;
+                if (next < 0 || next == cursor.PartId) break;
+                if (++guard > 32768) break;
+                if (!core.PartTypes.TryGetValue(next, out var cand)
+                    && !core.TryBuildExpendableLauncher(next, out cand)) break;
+                cursor = cand;
+            }
+        }
+        return false;
+    }
+
     /// <summary>
     /// P494 (P488b) — the dock auto-restock: when a player-piloted ship docks,
     /// refill the ship's expendable pools and re-buy the desired loadout,
@@ -1726,11 +1768,16 @@ public sealed partial class Server
         var reBuys = new List<DataPartTypeIGC>();
         if (live.Wallet.DesiredLoadout is { Count: > 0 })
         {
+            // ErasePart (FedSrv.CPP:12637-12653): a desired entry is consumed when
+            // a mounted/cargo part MATCHES it through native MatchPT
+            // (FedSrv.CPP:12617-12635) — i.e. the equipped part is the desired type
+            // OR any of its successors. P847 — the port compared PartIds exactly, so
+            // a ship whose launcher had already been upgraded to a successor still
+            // looked "missing" the desired base type and got a SECOND base launcher
+            // mounted at the next dock.
             foreach (var dpt in live.Wallet.DesiredLoadout)
             {
-                bool present = ship.Parts.Any(q => q.Type.PartId == dpt.PartId)
-                            || ship.CargoHold.Any(c => c is { } cc && cc.Type.PartId == dpt.PartId);
-                if (present) continue;
+                if (DesiredPartPresent(ship, mission.Core, dpt)) continue;
                 reBuys.Add(SuccessorUpgrade.PartSuccessor(mission.Core, dpt, null, ttbm));
             }
         }
