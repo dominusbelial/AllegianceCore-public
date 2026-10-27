@@ -32,13 +32,13 @@ public sealed class P856GameDetailsOptionsTests
     {
         var on = ServerDirectorySearch.DetailsLines(Listing(Base with
             { AllowFriendlyFire = true, AllowAlliedViz = true }));
-        Assert.Contains(on, s => s.StartsWith("FF FIRE:") && s.EndsWith("Yes"));
-        Assert.Contains(on, s => s.StartsWith("ALLY VIZ:") && s.EndsWith("Yes"));
+        Assert.Contains(on, s => s.StartsWith("FRIENDLY FIRE:") && s.EndsWith("Yes"));
+        Assert.Contains(on, s => s.StartsWith("ALLIED VIZ:") && s.EndsWith("Yes"));
 
         // Native defaults (both off) read as No, exactly like native's YesNo().
         var off = ServerDirectorySearch.DetailsLines(Listing(Base));
-        Assert.Contains(off, s => s.StartsWith("FF FIRE:") && s.EndsWith("No"));
-        Assert.Contains(off, s => s.StartsWith("ALLY VIZ:") && s.EndsWith("No"));
+        Assert.Contains(off, s => s.StartsWith("FRIENDLY FIRE:") && s.EndsWith("No"));
+        Assert.Contains(off, s => s.StartsWith("ALLIED VIZ:") && s.EndsWith("No"));
     }
 
     [Fact]

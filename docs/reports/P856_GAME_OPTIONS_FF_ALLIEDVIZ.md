@@ -24,7 +24,7 @@ and they appear where the port shows game settings:
 | Mission model | `Mission.AllowFriendlyFire` | `Mission.AllowAlliedViz` |
 | Mission info / wire | `MISSIONDEF(38)` `MissionParams` bit **28** (params byte 111) | `MISSIONDEF(38)` `MissionParams` bit **6** (params byte 108) |
 | Client snapshot | `ClientWorld.MissionAllowFriendlyFire` | `ClientWorld.MissionAllowAlliedViz` |
-| Lobby directory / GAME DETAILS text | `allowFriendlyFire` → “FF FIRE: Yes/No” | `allowAlliedViz` → “ALLY VIZ: Yes/No” |
+| Lobby directory / GAME DETAILS text | `allowFriendlyFire` → “FRIENDLY FIRE: Yes/No” | `allowAlliedViz` → “ALLIED VIZ: Yes/No” |
 | Native log line | `[boot] game '<name>' options: Allow Friendly Fire: yes/no, Allow Allied Viz: yes/no` (`Igc/missionigc.cpp:4116` precedent) | same line |
 
 **Defaults are native's.** `MissionParams::Reset` zeroes the struct and never
@@ -138,7 +138,7 @@ allied-rip owner rather than to this reachability task.
 - `src/Allegiance.ClientCore.Game/LobbyGameMetadata.cs` — `GameParams` carries the
   two switches; `GameParams.YesNo` matches native’s `YesNo()` wording.
 - `src/Allegiance.ClientCore.Game/ServerListing.cs` — GAME DETAILS lines
-  `FF FIRE:` / `ALLY VIZ:` (shared model used by the one drawing path).
+  `FRIENDLY FIRE:` / `ALLIED VIZ:` (shared model used by the one drawing path).
 - `src/Allegiance.ClientCore/State/MissionInfo.cs`,
   `src/Allegiance.ClientCore/State/ClientWorld.cs` — decode/retain the two options
   from `MISSIONDEF`, expose `MissionAllowFriendlyFire` / `MissionAllowAlliedViz`,
@@ -259,9 +259,9 @@ Tool: `tools/p856-options-proof` (build the lobby first). Run:
   a real lobby listing. GAME DETAILS panel reads, top to bottom: GAME Options ON,
   SERVER Options ON, ADDRESS 127.0.0.1:6777, CORE PCore001.igc, VERSION 0.1.0,
   PLAYERS 4/16, TYPE Conquest, STATE running, GOALS conquest, DEVEL on,
-  LIVES unlimited, **FF FIRE: Yes**, **ALLY VIZ: Yes**.
+  LIVES unlimited, **FRIENDLY FIRE: Yes**, **ALLIED VIZ: Yes**.
 - `game-details-options-off-modern.png` — the second registered game (native
-  defaults): the same panel ends **FF FIRE: No**, **ALLY VIZ: No**, STATE waiting,
+  defaults): the same panel ends **FRIENDLY FIRE: No**, **ALLIED VIZ: No**, STATE waiting,
   PLAYERS 0/16.
 - `skirmish-setup-options-classic.png` / `…-modern.png` — Single Player ›
   Skirmish setup: between “Lives: Unlimited” and “Bot gunners: On” the two new

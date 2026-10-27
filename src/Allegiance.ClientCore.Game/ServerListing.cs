@@ -207,8 +207,8 @@ public static class ServerDirectorySearch
             // P856 — native's Game Details summary line ("Allow Friendly Fire:
             // Yes/No", newgamescreen.cpp:347) plus the allied-viz option the
             // create-game screen carries (igc.h:1127); both are directory facts.
-            lines.Add("FF FIRE:  " + GameParams.YesNo(g.AllowFriendlyFire));
-            lines.Add("ALLY VIZ: " + GameParams.YesNo(g.AllowAlliedViz));
+            lines.Add("FRIENDLY FIRE: " + GameParams.YesNo(g.AllowFriendlyFire));
+            lines.Add("ALLIED VIZ:    " + GameParams.YesNo(g.AllowAlliedViz));
         }
         return lines;
     }
