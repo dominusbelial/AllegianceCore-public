@@ -8,7 +8,9 @@ namespace Allegiance.Server;
 public sealed partial class Server
 {
     // Native CheckPositionRequest: FedSrv/fsmission.cpp:4575-4649.
-    // Unported invitations, bans and squads have no corresponding state.
+    // The P854 invitation gate (fsmission.cpp:4605) and squads match are the parts
+    // that consult player identity (callsign + active squads), so those thread
+    // name/squads into the core check; the rest has no player state beyond the ship.
     private DelPositionReqReason? CheckPositionRequest(Mission mission, short sideId, Ship? ship)
         => CheckPositionRequestCore(mission, sideId, ship,
             ship is not null && ConnOf(ship) is { } conn && HarnessGrantFor(conn) is not null,
@@ -16,6 +18,21 @@ public sealed partial class Server
 
     private DelPositionReqReason? CheckInitialPositionRequest(ConnectionId from, string? name, Mission mission, short sideId)
         => CheckPositionRequestCore(mission, sideId, null, IsHarnessPeer(from, name), from, name);
+
+    /// <summary>P854 — a player's callsign for the invitation match (native
+    /// <c>pfsPlayer-&gt;GetName()</c>, fsside.cpp:55): the logon name when given,
+    /// else the peer's recorded name. Unknown → empty string, which no callsign
+    /// entry matches (native: a name-less player matches no invitation).</summary>
+    private string PlayerInvitationName(ConnectionId? peer, string? name)
+        => name ?? (peer is { } c && _peerNames.TryGetValue(c, out var n) ? n ?? "" : "");
+
+    /// <summary>P854 — a player's active squad names for the squad-game invitation
+    /// match (native iterates <c>pfsPlayer-&gt;GetSquadMembershipList()</c>,
+    /// fsside.cpp:40-51). Anonymous/bots have none → empty (no squad entry matches).</summary>
+    private IReadOnlyList<string> PlayerInvitationSquads(ConnectionId? conn)
+        => conn is { } c && PeerSquads(c) is { } sq
+            ? sq.Select(s => s.Name ?? "").ToArray()
+            : Array.Empty<string>();
 
     private DelPositionReqReason? CheckPositionRequestCore(Mission mission, short sideId, Ship? ship, bool authenticatedBot,
         ConnectionId? peer, string? name)
@@ -35,6 +52,13 @@ public sealed partial class Server
             return DelPositionReqReason.NoDefections;
         if (mission.LockSides) return DelPositionReqReason.SidesLocked;
         if (mission.Stage == MissionStage.Over) return DelPositionReqReason.ServerPaused;
+        // P854 — native per-side invitation gate (fsmission.cpp:4605): in a private
+        // mission a player may only join a side that invited them; anything else is
+        // refused with DPR_PrivateGame. Runs before the capacity/balance checks, as
+        // native does (4605 precedes nNumPlayers). Exact native placement after the
+        // banned-side check (4598-4602); the port has no banned mask here.
+        if (mission.RequiresInvitation && !mission.IsSideInvited(sideId, PlayerInvitationName(peer, name), PlayerInvitationSquads(peer)))
+            return DelPositionReqReason.PrivateGame;
         int Count(short sid) => _peerShips.Values.Count(l => ReferenceEquals(l.Ship.Mission, mission)
             && !ReferenceEquals(l.Ship, ship) && l.Ship.SideId == sid);
         int count = Count(sideId);

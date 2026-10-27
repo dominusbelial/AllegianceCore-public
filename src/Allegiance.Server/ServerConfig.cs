@@ -263,6 +263,22 @@ public sealed class GameConfig
     /// </summary>
     public bool SquadGame { get; set; }
 
+    /// <summary>
+    /// P854 — private-game per-side invitation lists, the port's synchronous-config
+    /// substitute for native <c>MissionParams::nInvitationListID</c> +
+    /// the per-row (iTeam, szSubject) SQL invitation lists fed to
+    /// <c>CFSMission::AddInvitation</c> (<c>FedSrv/fsmission.cpp:217-222</c>;
+    /// <c>FedSrv/FedSrv.CPP:1307-1318,785-801</c>). Key = side/team index; value = the
+    /// list of invited subjects for that side. A non-empty side list makes the game
+    /// require an invitation (mirrors <c>nInvitationListID != 0</c> →
+    /// <c>RequiresInvitation()</c>, fsmission.h:407-411). Each subject is a player
+    /// CALLSIGN on a non-squad game and a SQUAD name on a squad game
+    /// (<see cref="SquadGame"/>), matched case-insensitively exactly as native
+    /// <c>CFSSide::IsInvited</c> (fsside.cpp:34-64). Empty/absent = a fully public
+    /// game (the pre-P854 behaviour). Loaded onto <c>Mission</c> at assemble.
+    /// </summary>
+    public Dictionary<short, List<string>> SideInvitations { get; set; } = new();
+
     /// <summary>Permit countdown completion without connected players.
     /// The dedicated server defaults to arena policy; FedSrv.CPP:8237-8243.</summary>
     public bool AllowEmptyTeams { get; set; } = true;

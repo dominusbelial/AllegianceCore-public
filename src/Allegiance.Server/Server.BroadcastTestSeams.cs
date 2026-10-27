@@ -2,6 +2,7 @@ using Allegiance.Core.Identity;
 using Allegiance.Core.Model;
 using Allegiance.Core.Sim;
 using Allegiance.Core.Transport;
+using Allegiance.Core.Wire;
 
 namespace Allegiance.Server;
 
@@ -305,4 +306,19 @@ public sealed partial class Server
     /// so a loopback test can assert that a mid-game succession KEEPS the side's
     /// squad and prefers a squad-capable successor (fix 2).</summary>
     internal void TestHandleLeaderSuccession(Ship ship) => HandleLeaderSuccession(ship);
+
+    /// <summary>P854 test seam — the native per-side invitation gate
+    /// (fsmission.cpp:4605): the refusal reason <see cref="CheckPositionRequest"/>
+    /// produces for a seated ship on a side, or <c>null</c> when the seat is allowed.
+    /// Lets a loopback test assert DPR_PrivateGame for an uninvited side without
+    /// staging a live position request.</summary>
+    internal DelPositionReqReason? TestCheckPositionRequest(Mission mission, short sideId, Ship ship)
+        => CheckPositionRequest(mission, sideId, ship);
+
+    /// <summary>P854 test seam — the native mission-join gate (FedSrv.CPP:581-594):
+    /// whether the peer (connection + callsign) is admitted to a
+    /// <see cref="Mission.RequiresInvitation"/> mission at entry (i.e. invited to at
+    /// least one side). Inert in production (unused).</summary>
+    internal bool TestAdmittedAtMissionJoin(ConnectionId conn, string name, Mission mission)
+        => !(mission.RequiresInvitation && !mission.IsInvited(name, PlayerInvitationSquads(conn)));
 }

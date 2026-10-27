@@ -3824,6 +3824,23 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (!_pendingSideSelect.Remove(from, out var pend))
             return;   // not pending (already seated/launched) — nothing to do
         var mission = _missions[0];
+
+        // P854 — native MISSION-JOIN gate (FedSrv.CPP:581-594): in a private game a
+        // player who is not invited to ANY side is refused at mission entry — before
+        // side selection — with DELPOSITIONREQ(DPR_PrivateGame) (native sets
+        // iSide = NA). Mirrored here with the mission-level IsInvited ("any side",
+        // fsmission.cpp:1182-1192). The peer stays pending (native keeps the
+        // connection in the lobby) and every subsequent attempt is refused the same
+        // way. A player invited to at least one side passes and reaches the per-side
+        // gate below, which still bars them from sides that didn't invite them
+        // (fsmission.cpp:4605).
+        if (mission.RequiresInvitation && !mission.IsInvited(pend.Request.CharacterName ?? "", PlayerInvitationSquads(from)))
+        {
+            RefuseSideSelection(from, pend.ShipId, -1 /* native iSide = NA */, DelPositionReqReason.PrivateGame, pend.Request.CharacterName);
+            _pendingSideSelect[from] = new PendingSideSelect(pend.ShipId, pend.Request, SimNow, pend.JoinSeq);
+            return;
+        }
+
         bool autoSelection = requestedSideId == -1;
 
         // Validate both explicit and auto-assigned initial picks, before spawning.

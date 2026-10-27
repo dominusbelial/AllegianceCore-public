@@ -157,6 +157,105 @@ public sealed partial class Mission : IMissionIgc
     /// </summary>
     public bool SquadGame { get; set; }
 
+    /// <summary>
+    /// P854 — the per-side invitation lists of a private game, the port of native
+    /// <c>CFSMission::AddInvitation</c> (<c>FedSrv/fsmission.cpp:1168-1174</c>) +
+    /// each <c>CFSSide</c>'s <c>m_Invitations</c> vector (<c>FedSrv/fsside.cpp:69-86</c>).
+    /// Key = side id; value = that side's list of invited <b>subjects</b>. Mirroring
+    /// native, whether a mission requires an invitation (<see cref="RequiresInvitation"/>)
+    /// and the lists themselves are set independently: native's SQL list arrives
+    /// <i>asynchronously</i> after mission construction (<c>GetInvitations</c> /
+    /// <c>GotInvitationList</c>, <c>FedSrv/FedSrv.CPP:1307-1318,785-801</c>), so a
+    /// mission can be <see cref="RequiresInvitation"/> with <b>empty</b> lists — the
+    /// native "list not yet loaded" window, during which <i>nobody</i> is invited and
+    /// every join is refused (<c>IsInvited</c> sees only the loaded rows). The port's
+    /// source is the JSON config (already in memory), so the window is normally
+    /// instantaneous, but the gates must tolerate the empty pre-load state exactly as
+    /// native does (refuse with <c>DPR_PrivateGame</c>).
+    /// </summary>
+    private readonly Dictionary<short, List<string>> _sideInvitations = new();
+
+    /// <summary>
+    /// P854 — whether this mission requires an invitation, the port of native
+    /// <c>CFSMission::RequiresInvitation() == (m_nInvitationListID != 0)</c>
+    /// (<c>FedSrv/fsmission.h:407-411</c>, set at construction from
+    /// <c>misparms.nInvitationListID</c>, fsmission.cpp:217). Set by the server at
+    /// assemble when the game config configures any side invitation; independent of
+    /// whether the lists have actually been loaded yet (see <see cref="_sideInvitations"/>).
+    /// </summary>
+    public bool RequiresInvitation { get; set; }
+
+    /// <summary>
+    /// P854 — add one invited subject to a side's list. Port of native
+    /// <c>CFSMission::AddInvitation</c> → <c>CFSSide::AddInvitation</c>
+    /// (fsmission.cpp:1168-1174, fsside.cpp:69-86); native drops an out-of-range side
+    /// (<c>sid &gt;= c_cSidesMax</c>) with no side effect, mirrored here. The subject is a
+    /// callsign on a non-squad game and a squad name on a squad game
+    /// (<see cref="IsSideInvited"/> for the matching rule).
+    /// </summary>
+    public void AddInvitation(short sideId, string subject)
+    {
+        if (sideId < 0 || sideId >= Sides.Count) return;
+        if (!_sideInvitations.TryGetValue(sideId, out var list))
+            _sideInvitations[sideId] = list = new List<string>();
+        // Native CFSSide::AddInvitation (fsside.cpp:73-80): a squad game keeps ONE
+        // invited squad per side — the list is cleared before the push (and native
+        // renames the side to the squad, which this port does not do yet: SIM-0491).
+        if (SquadGame) list.Clear();
+        list.Add(subject);
+    }
+
+    /// <summary>
+    /// P854 — bulk-load the per-side invitation lists at mission assembly (the port's
+    /// synchronous-config substitute for native's async SQL round trip,
+    /// <c>FedSrv.CPP:1307-1318</c>). Idempotent: adds to whatever is already loaded, so
+    /// an async source could later call it again and the gates remain correct throughout.
+    /// </summary>
+    public void LoadInvitations(IReadOnlyDictionary<short, IReadOnlyList<string>> bySide)
+    {
+        foreach (var (sideId, subjects) in bySide)
+            foreach (var s in subjects)
+                AddInvitation(sideId, s);
+    }
+
+    /// <summary>
+    /// P854 — the current per-side invitation subjects (the loaded subset — empty for a
+    /// <see cref="RequiresInvitation"/> mission whose lists have not yet arrived).
+    /// Exposed read-only for the join gates and tests.
+    /// </summary>
+    public IReadOnlyDictionary<short, IReadOnlyList<string>> SideInvitations
+        => _sideInvitations.ToDictionary(kv => kv.Key, kv => (IReadOnlyList<string>)kv.Value.AsReadOnly());
+
+    /// <summary>
+    /// P854 — native <c>CFSSide::IsInvited</c> (<c>FedSrv/fsside.cpp:34-64</c>), pure
+    /// form: whether <paramref name="playerName"/> (with the given active squad
+    /// <paramref name="squadNames"/>) is on <paramref name="sideId"/>'s invitation list.
+    /// Matching copies native exactly — a <b>squad game</b> matches each entry against
+    /// the player's squad memberships, a <b>non-squad</b> game matches each entry
+    /// against the player's callsign, both case-insensitive (<c>_stricmp</c>). An
+    /// empty/absent side list (including the not-yet-loaded window) invites nobody.
+    /// </summary>
+    public bool IsSideInvited(short sideId, string playerName, IReadOnlyCollection<string> squadNames)
+    {
+        if (!_sideInvitations.TryGetValue(sideId, out var list)) return false;
+        if (SquadGame)
+            return squadNames.Any(sq => list.Any(inv => string.Equals(inv, sq, StringComparison.OrdinalIgnoreCase)));
+        return list.Any(inv => string.Equals(inv, playerName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// P854 — native <c>CFSMission::IsInvited</c> (<c>FedSrv/fsmission.cpp:1182-1192</c>,
+    /// "any side invites this player"), pure form. Native asserts
+    /// <c>RequiresInvitation()</c> at its call sites (<c>FedSrv.CPP:584</c>); callers
+    /// gate on <see cref="RequiresInvitation"/> first, as native does.
+    /// </summary>
+    public bool IsInvited(string playerName, IReadOnlyCollection<string> squadNames)
+    {
+        foreach (var side in Sides)
+            if (IsSideInvited(side.Id, playerName, squadNames)) return true;
+        return false;
+    }
+
     private bool _startingVisibilitySeeded;
     private bool _startingVisibilitySwept;
 
