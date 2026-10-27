@@ -28,6 +28,9 @@ namespace Allegiance.Core.Tests;
 /// Each test here fails on the pre-P857 code (NPCs gated by the cooldown /
 /// latch) and passes after.
 /// </summary>
+// Toggles the process-global Sector.WarpReEntryGuardEnabled, as P591cDroneRoutingTests does:
+// same non-parallel collection so neither flips it under the other.
+[Collection("LiveNetwork")]
 public class P857NpcWarpParityTests
 {
     // Same corpus-derived core + warp-bearing map as WarpProximityTests (P776),
