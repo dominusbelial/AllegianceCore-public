@@ -337,7 +337,7 @@ public sealed class RadarLabelDeclutter
                 if (contact.Selected)
                 {
                     _draw[i] = (byte)RadarLabelDraw.Label;
-                    _alpha[i] = Fade(distance, options.FadeNear, options.FadeFar, options.MinAlpha);
+                    _alpha[i] = Fade(distance, options.FadeNear, options.FadeFar, options.MinAlpha, options.MaxAlpha);
                 }
                 continue;
             }
@@ -351,14 +351,14 @@ public sealed class RadarLabelDeclutter
             if (priority)
             {
                 _draw[i] = (byte)RadarLabelDraw.Label;
-                _alpha[i] = Fade(distance, options.FadeNear, options.FadeFar, options.MinAlpha);
+                _alpha[i] = Fade(distance, options.FadeNear, options.FadeFar, options.MinAlpha, options.MaxAlpha);
                 continue;
             }
             // Full — every native-allowed label draws (faded, no cap, no merge).
             if (options.AllAllowed)
             {
                 _draw[i] = (byte)RadarLabelDraw.Label;
-                _alpha[i] = Fade(distance, options.FadeNear, options.FadeFar, options.MinAlpha);
+                _alpha[i] = Fade(distance, options.FadeNear, options.FadeFar, options.MinAlpha, options.MaxAlpha);
                 continue;
             }
             // Combat — friendlies are icon-only and never eat the cap.
@@ -371,7 +371,7 @@ public sealed class RadarLabelDeclutter
         {
             int i = _best[b];
             _draw[i] = (byte)RadarLabelDraw.Label;
-            _alpha[i] = Fade(_distance[i], options.FadeNear, options.FadeFar, options.MinAlpha);
+            _alpha[i] = Fade(_distance[i], options.FadeNear, options.FadeFar, options.MinAlpha, options.MaxAlpha);
         }
 
         // Pass 2 — bucket the ordinary labels into the deterministic screen grid.

@@ -654,7 +654,10 @@ public sealed class ModernHudRenderer : HudRenderer, IDisposable
         if (_levelToastRemain > 0f)
         {
             float alpha = Math.Clamp(_levelToastRemain, 0f, 1f);
-            string toast = auto ? $"AUTO HUD → {name}" : $"HUD LEVEL → {name}";
+            // ASCII-only toast text: the bundled Modern HUD fonts carry ASCII
+            // 32-126 (like native's raster fonts), so an arrow glyph (->) is
+            // used instead of the typographic "→" which would throw at draw.
+            string toast = auto ? $"AUTO HUD -> {name}" : $"HUD LEVEL -> {name}";
             var ts = _small.MeasureString(toast);
             DrawMeasuredText(_small, toast, new(w / 2f - ts.X / 2f, h * 0.30f), Accent * alpha, fixedAnchor: true);
         }

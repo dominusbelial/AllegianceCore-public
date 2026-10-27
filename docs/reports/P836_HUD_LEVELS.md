@@ -23,13 +23,19 @@ table.
 | Cinematic | only the selected target | – | off | 50 / 600 | None |
 | Auto | resolves Full/Tactical/Combat from the in-sector ship count (hysteresis) | – | – | – | – |
 
+- Every level's distance fade uses native's alphas: **0.75 at ≤ near, linear to
+  0.25 at ≥ far** (`radarimage.cpp:686-700`) — only the *distances* differ per
+  level. P836b makes `Select` honour the 0.75 ceiling (it was ignoring
+  `MaxAlpha`). Classic never fades (flat alpha 1).
+
 - The label **selection law** is unchanged from P828 and native: it never labels
   a contact the radar mode suppresses (`RadarLabelModel.Resolve` first). The
   levels only change *how many* of the allowed labels draw and how.
 - **Full** = the native loop (every label, no cap, no merge) **plus** the
   native distance fade — the P828 "off" behaviour with the fade applied. The
-  near ceiling follows P828's shipped `Select` (fades from a 1.0 max, not the
-  commented-out 0.75 — see "classification" note).
+  near ceiling is native's commented-out **0.75** closeAlpha
+  (`radarimage.cpp:686-700`), linear down to 0.25 at far — P836b makes the
+  Modern fade follow that exact curve.
 - **Combat** drops friendlies from the ordinary-label competition
   (`LabelFriendlies=false`): they become icon-only, so every N slot goes to the
   enemies the pilot is fighting.
@@ -87,13 +93,19 @@ alpha 1, no tags), independent of the level setting.
 - `src/.../Rendering/RadarBracketRenderer.cs`: `OffscreenRule` param,
   `OffscreenHidden`, `DrawEdgeDot`, native-icon skip.
 - `src/.../Rendering/ModernHudRenderer.cs`: passes the off-screen rule; level
-  tag + Auto-change toast.
+  tag + Auto-change toast. **P836b** — the toast text is ASCII-only (`->` for
+  the arrow): the bundled HUD fonts carry ASCII 32-126 and the typographic `→`
+  threw a SpriteFont error at draw time.
 - `src/.../Rendering/InputActionCatalog.cs`: `CycleHudLevel` action (0).
 - `src/.../Game1.FlightInput.cs` / `Game1.Director.cs`: cycle-key handling + the
   Auto-level state.
 - `src/.../Game1.GpuBudget.cs`: options row 20 + case 19; `SaveHudSettingsQuietly`.
 - `src/.../Game1.Rendering.cs`: `UpdateHudAutoLevel` (1 Hz in-sector ship count).
-- `tests/.../P836HudLevelTests.cs` (new, 19 tests).
+- **P836b** — `Rendering/RadarLabelDeclutter.cs`: `Select` now passes
+  `options.MaxAlpha` to every `Fade` call, honouring the native 0.75 near
+  ceiling (it was ignored, so near Modern labels drew at 1.0).
+- `tests/.../P836HudLevelTests.cs` (new, 20 tests — includes P836b's
+  `The_level_toast_and_tag_text_is_ascii_safe`).
 - `GLOSSARY.md`: HUD levels entry.
 
 ## Verification
@@ -108,27 +120,77 @@ alpha 1, no tags), independent of the level setting.
 - Regression checks on the two pre-existing tests my edits touched: the P804
   round-border signature test and the Hud19 options-panel row-count test were
   updated (the panel legitimately gained row 20); both now pass 3×.
-- One fast-tier run: `tools/run-tests.sh --tier fast` → **10,865 tests**; the
-  `Allegiance.ClientCore.MonoGame.Tests` suite (which carries every P836 change)
-  **3515 passed / 0 failed**. The run's only failure was the pre-existing,
-  already-documented load flake
-  `P761bCommandRelayTests.QueuedStationGoto_KeepsOwnTarget_AndRelaysTheStationToTheTeammate`
-  (server command-relay timing, untouched by P836; **passes 3/3 alone**; see
-  `docs/TEST_FLAKES.md`).
+- One fast-tier run: `tools/run-tests.sh --tier fast` → **10,865 tests PASS**;
+  `Allegiance.ClientCore.MonoGame.Tests` (which carries every P836 change)
+  **3516 passed / 3 not-executed (private-artwork skips)**. An earlier fast run
+  in the same session failed only the two zero-allocation tests
+  (`P804ClientLeadTests.Lead_solve_and_green_ramp_allocate_nothing_per_frame`,
+  `P828RadarLabelDeclutterTests.The_selection_path_allocates_nothing_per_frame`)
+  — both **pass 3/3 alone** and the rerun passed the whole fast tier, so that
+  was a load flake from the heavily contended box (other lanes' live suites +
+  this task's own proof sims running concurrently), not a regression.
+- **P836b** — the same gate after the toast fix: whole-solution build **0/0**,
+  `tools/build-tools.sh` **87 projects**, affected suites (`P836HudLevelTests`
+  20/20 + `P828RadarLabelDeclutterTests` 15/15) **35/35, 3× alone**, and one
+  fast tier run **10,866 tests PASS**.
 
-## Screenshots — PENDING (Claude runs the live 200v200)
-The brief asks for 2560×1440 proof frames of each Modern level in a crowded
-(~390-ship) sector, plus Classic and a `NativeBlock` vs `EdgeDot` pair, each
-< 1 MB, in `docs/reports/P836_assets/`. Producing those needs the full client
-against a live **200v200** showcase sector — per the pi-lane rule *"Skip anything
-that says live on the rig / 221 / 200v200: Claude runs those"*, these are handed
-to Claude. Recipe:
-`scripts/live-proof.sh` with the existing crowded/showcase proof setup (P828
-used the same `omega` crowd), `--size 2560x1440`, per level: set `HudSettings.Level`
-via the `0` cycle key or the F6 row 20, capture Full/Tactical/Combat/Cinematic
-(Modern), one Classic frame, and one frame with the Tactical off-screen rule
-flipping between NativeBlock (force via `RadarDeclutter=false` to emulate the
-P828 look, or set Full) and EdgeDot. Look at each PNG and describe the density.
+## Screenshots — LOCAL capture (this workstation, `DISPLAY=:0`)
+
+P836b produced these here, per the clarified pi-lane rule ("skip the rig" =
+don't touch the remote rig; a local crowded proof is ours to run). Setup:
+`scripts/live-proof.sh`-style — one local `Allegiance.Server` (127.0.0.1:6083,
+`m2xspiderw.igc`, `maxPlayersPerTeam:200`, `transport.maxConnectionsPerIp:512`,
+`maxTeamImbalance:32767` to defeat the rank-balance seat refusal), the
+`allegiance-mcp` **90v90 `showcase`** crowd marched to **Alderan** (battle away
+from the pilot's home, P828's recipe), and a windowed MonoGame client
+(2560×1440 real backbuffer, `--camera chase`, `--auto-goto Omega`/`Alderan`,
+`ALLEGIANCE_HUD_SETTINGS` pointing at a per-level `hud.json`). One windowed
+client run per level/style; autoshots saved `SaveAsPng` real presented frames.
+
+The four curated PNGs (each < 1 MB, in `P836_assets/`; all full-res captures
+kept in `~/allegiance-evidence/P836/{omega,alderan}/`, linked here for the
+record):
+
+- [`full_nativeblock_alderan_t110.9.png`](P836_assets/full_nativeblock_alderan_t110.9.png)
+  — **Full (NativeBlock)** in the Alderan battle (a "SECTOR CROWDED" fight).
+  Dozens of on-screen contact labels (`mcp-b147-8931 · 881 m`, `mcp-b041-6999 ·
+  3354 m`, …) plus a dense **wall of full contact blocks pinned to the screen
+  edges** for off-screen ships — a ~20-block column down the right edge
+  (`mcp-b092-5159`, `mcp-b081-7729`, `mcp-b075-4085`, …), blocks across the top
+  and bottom. "HUD Full" tag bottom-left. Legibility suffers where blocks pile
+  up — exactly the native look P828 called "excel".
+- [`tactical_edgedot_alderan.png`](P836_assets/tactical_edgedot_alderan.png)
+  — **Tactical (EdgeDot)** in the same battle: only 2 on-screen labels
+  (`mcp-b155-8286 (Ally)`, `mcp-b047-2835`) and the edges are **clear** — no
+  full blocks; off-screen ordinary contacts are the small 5×5 side-coloured
+  pips. "HUD Tactical" tag bottom-left. This is the off-screen-rule trade
+  Domingo weighs: NativeBlock keeps readable blocks at the cost of edge clutter;
+  EdgeDot frees the edges to small pips.
+- [`classic_omega.png`](P836_assets/classic_omega.png) and
+  [`modern_tactical_omega.png`](P836_assets/modern_tactical_omega.png) — the
+  **Classic vs Modern** pair in the pilot's home Omega (the both-styles rule):
+  Classic draws every native-allowed label (here a handful on-screen, `mcp-b170-3031`,
+  `mcp-b004-5657`, …) at full alpha; Modern Tactical declutters to the nearest-N
+  set. Both styles show the same radar scene; only the label treatment differs.
+
+Captured-but-not-curated (all in `~/allegiance-evidence/P836/`, full 2560×1440):
+6 frames per level for Modern Full/Tactical/Combat/Cinematic, Classic and Auto
+at Omega (each shows its **level tag** — `HUD Full`, `HUD Combat`, `HUD
+Cinematic`, and `HUD Tactical (AUTO)` for Auto, which resolved to Tactical on
+~48–58 in-sector ships), plus the Alderan battle frames for Full/Tactical/Auto.
+**Auto toast:** the transient 3 s `AUTO HUD -> level` banner needs a live
+band-flip (a ship count crossing 40/120); in both local runs Auto held Tactical,
+so the toast wasn't time-captured — but the toast-arrow crash it exposed was
+fixed and is pinned by `P836HudLevelTests.The_level_toast_and_tag_text_is_ascii_safe`.
+
+**Honesty note on density:** with the battle marched to Alderan (P828's recipe
+for pilot stability), the pilot's home Omega held ~48–58 ships, so the Omega
+frames are *moderate*-crowded, not the 180-ship showcase wall P828 shot in the
+same sector after a 40-min fight. The genuinely dense, decision-relevant frames
+are the Alderan ones above, where the pilot flew into the fight. A full 200v200
+single-sector clash is the one thing still best captured on the calmer rig
+(original P836 handoff note stands); these local frames are the reproducible
+subset.
 
 ## Native-intent classification + modern approach note
 - **Native intent:** `radarimage.cpp:747-756` (c_rlDefault) labels *every*
@@ -143,11 +205,40 @@ P828 look, or set Full) and EdgeDot. Look at each PNG and describe the density.
   both styles and the tests share one table; the levels tune only *what fraction
   of the native-allowed labels draw*, never the native allow-set, so there is no
   parity divergence to defend. Auto with hysteresis addresses the actual failure
-  mode (the sector slowly filling) without flicker. One honest deviation to
-  flag: the level fade **near ceiling** stays at P828's shipped effective 1.0
-  (the commented-out native `closeAlpha` 0.75 was never actually honoured by the
-  shipped `Select` — P828's own fast-tier test pins alpha 1.0 near), so the
-  levels preserve P828's shipped look rather than reviving the dormant 0.75.
-  If Domingo wants the true native 0.75 ceiling, that is a one-line change
-  (`Select` passing `options.MaxAlpha`) but it would alter the P828 fast-tier
-  test that pins 1.0 — flagged rather than silently changed.
+  mode (the sector slowly filling) without flicker.
+
+## P836b — fade ceiling honoured + local screenshots (2026-10-26)
+
+Two gaps closed since the first pass:
+
+1. **The fade ceiling was ignored.** P828's `Select` called `Fade(...)` with
+   `options.MinAlpha` only, leaving `maxAlpha` at its 1.0 default, so near
+   Modern labels drew at 1.0. P836b passes `options.MaxAlpha` to every `Fade`
+   call in `Select` (`RadarLabelDeclutter.cs`), so the Modern fade follows
+   native's commented-out curve exactly — **0.75 at ≤ near, linear to 0.25 at
+   ≥ far** (`radarimage.cpp:686-700`), distances per HUD level. Every level's
+   preset already carried 0.75/0.25 (`FromPreset` uses
+   `DefaultMaxAlpha = NativeNearAlpha` and `DefaultMinAlpha = NativeFarAlpha`);
+   now the ceiling is actually applied. **Classic is unaffected** — its `Off`
+   plan still draws every native label at full 1.0 opacity (`Select`'s
+   `!options.Enabled` branch sets `_alpha = 1f` directly and never fades), so
+   the two P828/P836 tests that pin Classic alpha 1.0
+   (`classic.Alpha(i) == 1f`, `classicPlan.MaxAlpha == 1f`) stay unchanged.
+2. **Screenshots are local** (this workstation, `DISPLAY=:0`), per the
+   clarified pi-lane rule — the "skip the rig" lane meant don't touch the
+   remote rig, not "no local crowded proof". See the Screenshots section.
+
+Updated tests (pinning 1.0 → native 0.75, and why):
+- `P828RadarLabelDeclutterTests.Fade_is_full_near_faint_far_and_monotonic` —
+  renamed `Fade_near_faints_from_native_ceiling_far_to_floor_and_is_monotonic`;
+  it pinned `Fade(...) == 1f` at/below near and `model.Alpha(0) == 1f` for a
+  Modern near contact. Both now pin the native ceiling
+  (`RadarLabelDeclutter.NativeNearAlpha` = 0.75). The `Select`-path assertion
+  (`model.Alpha(0)`) is the direct regression guard for this fix.
+- `P836HudLevelTests` Full-fade test — its `Alpha(0) < 1f` / range-bound
+  assertions already held under the ceiling; the comment was updated (the "1.0
+  max" wording was stale) and the far-label range bound tightened to
+  `NativeNearAlpha`.
+- Untouched on purpose: the two **Classic** alpha-1.0 pins (Classic never
+  fades), and `Modern_fade_uses_native_close_and_far_alpha` (already asserted
+  the 0.75/0.25 endpoints).

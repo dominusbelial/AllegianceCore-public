@@ -59,13 +59,13 @@ public class P836HudLevelTests
         Assert.Equal(200, model.LabelledCount);
         Assert.Equal(0, model.MergedCount);
         Assert.Equal(0, model.TagCount);
-        // The fade is applied (native SHAPE; the near ceiling follows P828's
-        // shipped Select, which fades from a 1.0 max): a far contact's label is
-        // fainter than a near one's, and the fixture's nearest (~200 m) is
-        // already past the 100 m near point so it is not flat at 1.0.
+        // The fade is applied (native shape; the near ceiling is native's 0.75
+        // closeAlpha — P836b honours the ceiling, radarimage.cpp:686-700): a far
+        // contact's label is fainter than a near one's, and the fixture's nearest
+        // (~200 m) is already past the 100 m near point so it is below the ceiling.
         Assert.True(model.Alpha(0) < 1f, "Full fades, it is not the flat native loop");
         Assert.True(model.Alpha(contacts.Length - 1) < model.Alpha(0), "a farther label must be fainter");
-        Assert.InRange(model.Alpha(contacts.Length - 1), RadarLabelDeclutter.DefaultMinAlpha, 1f);
+        Assert.InRange(model.Alpha(contacts.Length - 1), RadarLabelDeclutter.DefaultMinAlpha, RadarLabelDeclutter.NativeNearAlpha);
 
         // Full uses the NATIVE fade pair (100/1000).
         Assert.Equal(RadarLabelDeclutter.NativeFadeNear, HudLevels.Preset(HudLevel.Full).FadeNear);
@@ -409,6 +409,22 @@ public class P836HudLevelTests
         Assert.Contains("case 19: _hudSettings.Level", gpu);
         Assert.Contains("GraphicsRowCount = 20", gpu);
         Assert.True(Game1.GraphicsPanelHeight(20) > 920, "20 rows must fit the panel");
+    }
+
+    [Fact]
+    public void The_level_toast_and_tag_text_is_ascii_safe()
+    {
+        // The bundled Modern HUD fonts carry ASCII 32-126 only (the same native
+        // raster-font range P828 documented), so any non-ASCII glyph in the
+        // drawn level tag/toast throws a SpriteFont resolution error at draw
+        // time. P836b caught this live: the typographic arrow in the "AUTO HUD ->
+        // level" toast crashed the HUD the moment any non-default level was active
+        // (the fast-tier crash surfaced it here). Pin the toast strings to ASCII.
+        string src = SourcePath("Rendering/ModernHudRenderer.cs");
+        var toastLines = src.Split('\n').Where(l => l.Contains("AUTO HUD") || l.Contains("HUD LEVEL"));
+        Assert.NotEmpty(toastLines);
+        foreach (var line in toastLines)
+            Assert.True(line.All(c => c <= 0x7E), $"non-ASCII char in level toast text: {line.Trim()}");
     }
 
     [Fact]
