@@ -655,4 +655,36 @@ public sealed class Side : ISideIgc
             if (canNotify) AdjustBucketsIfTechsChanged();
         }
     }
+
+    /// <summary>
+    /// P845 — the station-successor half of native
+    /// <c>FedSrvSiteBase::SideDevelopmentTechChange</c>
+    /// (<c>FedSrv.CPP:11304-11313</c>): when a side's development techs change,
+    /// every station the side owns is upgraded in place to its buyable
+    /// successor station type — <c>SetName(successor-&gt;GetName())</c> +
+    /// <c>SetBaseStationType(successor)</c> when the effective successor differs.
+    /// Native runs this <b>unconditionally</b> (outside the <c>Stage == Started</c>
+    /// gate that guards only the SIDE_TECH_CHANGE broadcast), after that
+    /// broadcast; this port's analogue is called from the development-completion
+    /// flow (<c>CompleteDevelopment</c>) right where native fires it, gated on a
+    /// genuinely-new tech bit the same way <c>ApplyDevelopmentTechs</c> is
+    /// (sideigc.h:194-210). Enumerates stations via the mission's sectors (the
+    /// side carries no station list; <see cref="BuildingTechs"/> walks the same
+    /// way).
+    /// </summary>
+    public void UpgradeStationsToSuccessors()
+    {
+        if (Mission is not { } m || m.Core is not { } core) return;
+        foreach (var sector in m.Sectors)
+            foreach (var station in sector.StationRuntimes)
+                if (station.SideId == Id)
+                {
+                    var successor = SuccessorUpgrade.StationSuccessor(core, station.Type, DevelopmentTechs);
+                    if (successor.StationTypeId != station.Type.StationTypeId)
+                    {
+                        station.SetName(successor.Name);
+                        station.SetBaseStationType(successor);
+                    }
+                }
+    }
 }

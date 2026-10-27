@@ -158,6 +158,14 @@ public sealed class Station : IStationIgc, ISideVisible
     public DataStationTypeIGC Type { get; private set; }
 
     /// <summary>
+    /// Native <c>SetName</c>: the display name only. Callers that also retype
+    /// call it first, as the successor upgrade does (<c>FedSrv.CPP:11307-11309</c>),
+    /// so <see cref="SetBaseStationType"/>'s sync carries the new name. A civ
+    /// change retypes without renaming (<c>sideigc.h:92-100</c>).
+    /// </summary>
+    public void SetName(string name) => Data = Data with { Name = name };
+
+    /// <summary>
     /// Igc/stationIGC.cpp:210-276: replace capacity/geometry, retaining pose and
     /// damage fractions; recompute building techs before the type notification.
     /// </summary>

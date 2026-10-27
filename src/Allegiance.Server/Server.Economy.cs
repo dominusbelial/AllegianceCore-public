@@ -1074,6 +1074,12 @@ public sealed partial class Server
             side.DevelopmentTechs = side.DevelopmentTechs.Or(effects);
             if (mission.Stage == MissionStage.Started)
                 BroadcastSideTechChange(mission, side);
+            // P845 — native SideDevelopmentTechChange (FedSrv.CPP:11304-11313):
+            // after the (stage-gated) broadcast, upgrade every station the side
+            // owns to its buyable successor type, unconditionally. (The trailing
+            // UpgradeDrones — same native fn, FedSrv.CPP:11312 — is SIM-0636's
+            // scope, realised in this port at dock-time.)
+            side.UpgradeStationsToSuccessors();
         }
 
         // 2. DEV_COMPLETED — unconditional, side's own group (FedSrv.CPP:11262-11266).
