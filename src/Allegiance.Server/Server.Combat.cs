@@ -1007,38 +1007,7 @@ public sealed partial class Server
         //    branch (fsmission.cpp:4789) — because losing the last restart
         //    station fires SideLostRestartStation → DeactivateSide, which
         //    force-kills the docked ghosts.
-        foreach (var kv in _peerShips.ToArray())
-        {
-            if (kv.Value.Ship.StationId != station.StationId) continue;
-            if (IsGhost(kv.Value))
-            {
-                var ghostMission = kv.Value.Ship.Mission;
-                var ghostSide = kv.Value.Ship.SideId;
-                var altBase = ghostMission is { } gm && ghostSide is { } gs
-                    ? FindNearestRestartStation(gm, gs, station.ClusterId, station.Center)
-                    : null;
-                if (altBase is { } dest)
-                {
-                    var destSector = ghostMission!.Sectors.First(s => s.Id == dest.ClusterId);
-                    kv.Value.Ship.StationId = dest.StationId;                       // pship->SetStation(ps), fsmission.cpp:4846
-                    kv.Value.Ship.LastDockTime = _simNow;
-                    _peerShips[kv.Key] = _peerShips[kv.Key] with { Sector = destSector };  // status frames follow the new dock
-                    // Acknowledge the relocation like the manual teleport path does
-                    // (FM_S_TELEPORT_ACK, FedSrv.CPP:7054-7131): native VacateStation
-                    // sends no message (the docked SHIP_STATUS carries the new
-                    // station), but the port's own-ship status latch benefits from
-                    // the explicit ack. Port adaptation, stated plainly.
-                    SendPeer(kv.Key, FedPacket.Pack(new[] { new TeleportAck { StationId = dest.StationId, BNewHull = false }.Encode() }));
-                    Console.WriteLine($"[station] ghost ship {kv.Value.Ship.Id} relocated dock {station.StationId} (destroyed) -> restart base {dest.StationId} '{dest.Name}' (fsmission.cpp:4805-4849)");
-                }
-                else
-                {
-                    Console.WriteLine($"[station] ghost ship {kv.Value.Ship.Id} keeps its destroyed station {station.StationId} — no alternate restart base; side elimination will collect it (fsmission.cpp:4789)");
-                }
-                continue;
-            }
-            PerformUndock(kv.Key, kv.Value);
-        }
+        VacateStation(station);
 
         // 2. Whole-mission broadcast: every connected peer with a seated ship,
         //    regardless of side (GetGroupRealSides(), FedSrv.CPP:12279).
@@ -1408,6 +1377,45 @@ public sealed partial class Server
             _ => $"Model {launcher.Id}",
         };
 
+    // Native fsmission.cpp:4783-4850: eject real pilots and relocate ghosts.
+    // Capture calls this after its victory check, before the captor docks
+    // (fsship.cpp:686-695); destruction uses the same operation.
+    private void VacateStation(Station station)
+    {
+        foreach (var kv in _peerShips.ToArray())
+        {
+            if (kv.Value.Ship.StationId != station.StationId || !ReferenceEquals(kv.Value.Ship.Mission, station.Mission)) continue;
+            if (IsGhost(kv.Value))
+            {
+                var ghostMission = kv.Value.Ship.Mission;
+                var ghostSide = kv.Value.Ship.SideId;
+                var altBase = ghostMission is { } gm && ghostSide is { } gs
+                    ? FindNearestRestartStation(gm, gs, station.ClusterId, station.Center)
+                    : null;
+                if (altBase is { } dest)
+                {
+                    var destSector = ghostMission!.Sectors.First(s => s.Id == dest.ClusterId);
+                    kv.Value.Ship.StationId = dest.StationId;                       // pship->SetStation(ps), fsmission.cpp:4846
+                    kv.Value.Ship.LastDockTime = _simNow;
+                    _peerShips[kv.Key] = _peerShips[kv.Key] with { Sector = destSector };  // status frames follow the new dock
+                    // Acknowledge the relocation like the manual teleport path does
+                    // (FM_S_TELEPORT_ACK, FedSrv.CPP:7054-7131): native VacateStation
+                    // sends no message (the docked SHIP_STATUS carries the new
+                    // station), but the port's own-ship status latch benefits from
+                    // the explicit ack. Port adaptation, stated plainly.
+                    SendPeer(kv.Key, FedPacket.Pack(new[] { new TeleportAck { StationId = dest.StationId, BNewHull = false }.Encode() }));
+                    Console.WriteLine($"[station] ghost ship {kv.Value.Ship.Id} relocated dock {station.StationId} (destroyed) -> restart base {dest.StationId} '{dest.Name}' (fsmission.cpp:4805-4849)");
+                }
+                else
+                {
+                    Console.WriteLine($"[station] ghost ship {kv.Value.Ship.Id} keeps its destroyed station {station.StationId} — no alternate restart base; side elimination will collect it (fsmission.cpp:4789)");
+                }
+                continue;
+            }
+            PerformUndock(kv.Key, kv.Value);
+        }
+    }
+
     /// <summary>
     /// Handle a captured station (<see cref="ServerHost.CaptureStationEvent"/>,,
     /// raised from <c>Model.Sector.ResolveDockCollisions</c> on the sim thread
@@ -1424,17 +1432,11 @@ public sealed partial class Server
     /// real sides, the same audience as <see cref="BroadcastStationDestroyed"/>'s
     /// STATION_DESTROYED and P102's ASTEROID_DESTROYED. Do not &quot;fix&quot; it
     /// to same-side.</para>
-    /// <para><b>No vacate.</b> Unlike a destroyed base
-    /// (<see cref="BroadcastStationDestroyed"/>), capture does NOT eject ships
-    /// already docked at the station — confirmed reading the native: neither
-    /// <c>CFSShip::CaptureStation</c> nor its callers call <c>VacateStation</c> on
-    /// capture (unlike the kill path, <c>FedSrv.CPP:12237-12279</c>); docked ships
-    /// simply remain docked, now at a re-sided base. The score/Steam bookkeeping
-    /// in the native (<c>CaptureBase</c>, <c>AwardBaseKillOrCapture</c>,
-    /// <c>AddBaseCapture</c>, <c>fsship.cpp:600-617</c>) is confirmed N/A — no
-    /// score or Steam system, and <see cref="Model.Side"/> tracks no base-capture
-    /// counter, anywhere in this port. Runs on the sim thread (same one that owns
-    /// <c>_peerShips</c>), so no extra locking.</para>
+    /// <para>After re-siding and the victory check, a non-winning capture
+    /// vacates the old active owner's docked ships (fsship.cpp:686-695,
+    /// fsmission.cpp:4783-4850). The captor docks afterwards. This callback only
+    /// broadcasts the pre-reside ownership change and updates capture scores;
+    /// OnVictoryByStationsComputed performs that post-check vacate.</para>
     /// </summary>
     private void BroadcastStationCapture(Ship ship, Station station)
     {
@@ -1498,7 +1500,7 @@ public sealed partial class Server
     /// Runs on the sim thread (same one that owns <c>_peerShips</c>), so no extra
     /// locking.
     /// </summary>
-    private void OnVictoryByStationsComputed(Mission mission, bool changed, Side? winner)
+    private void OnVictoryByStationsComputed(Mission mission, bool changed, Side? winner, StationVictory? victory = null)
     {
         if (changed)
         {
@@ -1521,11 +1523,23 @@ public sealed partial class Server
                 SendPeer(t, packet);
         }
 
+        if (winner is null && victory is { Captured: true } capture)
+        {
+            // Native CheckForVictoryByStationKill deactivates a side with no
+            // restart base before CaptureStation tests its old active flag
+            // (fsmission.cpp:3698-3715; fsship.cpp:693-695).
+            OnSideLostRestartStation(mission, capture.OldSide);
+            if (mission.Sides.Any(side => side.Id == capture.OldSide && side.Active))
+                VacateStation(capture.Station);
+        }
+
         if (winner is not null && mission.Stage != MissionStage.Over)
         {
             string winnerName = winner.Name ?? $"side{winner.Id}";
             DeclareGameOver(mission, winner.Id,
-                $"{winnerName} won by achieving the conquest/territory victory objective.");
+                victory is null ? $"{winnerName} won by achieving the conquest/territory victory objective."
+                    : mission.StationVictoryReason(winner, victory.Station, victory.Launcher,
+                        victory.Launcher is Ship actor ? PeerName(actor) : null, victory.Captured, victory.Built));
         }
     }
 

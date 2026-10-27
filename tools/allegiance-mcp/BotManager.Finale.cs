@@ -83,9 +83,9 @@ internal sealed partial class BotManager
 
     public object ConfigureFinale(ShowcaseFinale.Settings settings, IReadOnlyCollection<string> names)
     {
-        // A selected flags/artifacts match is decided by objective play, including when the
+        // A selected objective match is decided by objective play, including when the
         // skirmish driver uses its ordinary showcase fleet preset.
-        if (Probe?.World.Mission is { } mission && (mission.Goals.IsFlagsGame || mission.Goals.IsArtifactsGame)) settings = settings with { AfterMinutes = 0 };
+        if (Probe?.World.Mission is { } mission && (mission.Goals.IsFlagsGame || mission.Goals.IsArtifactsGame || mission.Goals.IsConquestGame)) settings = settings with { AfterMinutes = 0 };
         settings.Validate();
         if (!settings.Enabled) return new { enabled = false };
         var stations = StationsSeenByAnEnemy(names);
@@ -280,7 +280,7 @@ internal sealed partial class BotManager
                 + $"developmentTechs={(knownTech ? developmentBits.ToString() : "unknown (no CREATE_BUCKETS/SIDE_TECH_CHANGE)")}, "
                 + $"sideTechBits={techs.PopCount}, shopType={shop?.StationTypeId}, dock={dock}, "
                 + $"ownedStations(id:type)=[{stationTypes}], targetType={target.StationTypeId}; "
-                + (ResearchFinale(bot) ? "research finale uses available combat loadout and bounded server deadline" : "keeping existing bomber loadout"));
+                + (ResearchFinale(bot) ? ConquestGame(bot.Cs!) ? "conquest awaits a legal strike loadout" : "research finale uses available combat loadout and bounded server deadline" : "keeping existing bomber loadout"));
             return null;
         }
     }
@@ -674,7 +674,8 @@ internal sealed partial class BotManager
     private static bool ResearchFinale(ActiveBot bot)
     {
         if (bot.Cs is not { } cs) return false;
-        lock (cs.Gate) return cs.World.ResearchBriefing?.TechMode == "research";
+        // Conquest uses legal strike refits in either tech mode, without a deadline.
+        lock (cs.Gate) return cs.World.ResearchBriefing?.TechMode == "research" || ConquestGame(cs);
     }
 
     private static bool IsFinaleBomber(ActiveBot bot) =>
@@ -792,16 +793,7 @@ internal sealed partial class BotManager
                 run.Winner = over.SideWinner;
                 run.EndReason = over.GameoverMessage;
             }
-            if (bot.FinaleOriginal is { } original)
-            {
-                bot.HullId = original.Hull; bot.HullName = original.Name; bot.Parts = original.Parts;
-                bot.WeaponPartId = original.Weapon; bot.LauncherPartId = original.Launcher;
-                bot.MissileReadyTime = original.ReadyTime; bot.WingmanBehaviour = original.Wingman;
-                bot.TargetSector = original.Target;
-                bot.RouteIndex = original.RouteIndex; bot.Role = original.Role;
-                bot.MineDispenserPartId = original.Parts is { } parts ? FindMineDispenser(parts) : null;
-            }
-            bot.FinaleOriginal = null;
+            RestoreFinaleLoadout(bot);
             bot.FinaleBomberReserved = bot.FinaleBomberActive = bot.FinaleEscort = false;
             bot.FinaleLoneWolf = bot.FinaleReleaseLogged = bot.FinaleStrikeSpent = false;
             bot.FinaleReleaseAt = null;
@@ -811,6 +803,35 @@ internal sealed partial class BotManager
             bot.FinaleGrantVerified = false;
             bot.CompletedPodCycles = 0;
             bot.FinaleResetObserved = true;
+            bot.ConquestStrike = false;
+        }
+    }
+
+    private static void RestoreFinaleLoadout(ActiveBot bot, bool currentHardware = false)
+    {
+        if (bot.FinaleOriginal is { } original)
+        {
+            bot.HullId = original.Hull; bot.HullName = original.Name; bot.Parts = original.Parts;
+            bot.WeaponPartId = original.Weapon; bot.LauncherPartId = original.Launcher;
+            bot.MissileReadyTime = original.ReadyTime; bot.WingmanBehaviour = original.Wingman;
+            bot.TargetSector = original.Target;
+            bot.RouteIndex = original.RouteIndex; bot.Role = original.Role;
+            bot.MineDispenserPartId = original.Parts is { } parts ? FindMineDispenser(parts) : null;
+        }
+        bot.FinaleOriginal = null;
+        // A conquest detour can end during the same life after a real refit.
+        // Restore its ordinary role/route, but steer/fire using the hardware
+        // actually granted, until the next ordinary purchase picks a loadout.
+        if (currentHardware && bot.Granted.Parts is { } mounted
+            && Catalog.RepresentativeCore().HullTypes.TryGetValue(bot.Granted.HullId, out var hull))
+        {
+            var core = Catalog.RepresentativeCore();
+            bot.HullId = hull.HullId; bot.HullName = hull.Name; bot.Parts = mounted;
+            bot.WeaponPartId = Catalog.FirstWeaponPartId(mounted);
+            bot.LauncherPartId = mounted.Where(p => core.Launchers.TryGetValue(p.PartId, out var launcher)
+                    && core.MissileTypes.ContainsKey(launcher.ExpendabletypeId)).Select(p => (short?)p.PartId).FirstOrDefault();
+            bot.MissileReadyTime = bot.LauncherPartId is { } id ? Catalog.LauncherReadyTime(id) : 0;
+            bot.MineDispenserPartId = FindMineDispenser(mounted);
         }
     }
 

@@ -1046,7 +1046,7 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// multi-mission server; <paramref name="changed"/> is the native
     /// <c>bChange</c> gate deciding whether to broadcast at all; a non-null
     /// <paramref name="winner"/> is the side that crossed its win threshold.</summary>
-    public Action<Allegiance.Core.Model.Mission, bool, Allegiance.Core.Model.Side?>? VictoryByStationsComputedHook;
+    public Action<Allegiance.Core.Model.Mission, bool, Allegiance.Core.Model.Side?, Allegiance.Core.Model.StationVictory?>? VictoryByStationsComputedHook;
 
     /// <summary>The world-mission site implementation of
     /// <c>VictoryByStationsComputed</c> (IIgcSite, C#-only — no igc.h member).
@@ -1055,8 +1055,8 @@ internal sealed class ServerHost : IIgcSite, ITransportSite
     /// Mirrors <see cref="CaptureStationEvent"/>'s bridge shape (declared public
     /// so the hook and the site override live together; a class member shadows
     /// the interface default in dispatch).</summary>
-    public void VictoryByStationsComputed(Allegiance.Core.Model.Mission mission, bool changed, Allegiance.Core.Model.Side? winner) =>
-        VictoryByStationsComputedHook?.Invoke(mission, changed, winner);
+    public void VictoryByStationsComputed(Allegiance.Core.Model.Mission mission, bool changed, Allegiance.Core.Model.Side? winner, Allegiance.Core.Model.StationVictory? victory = null) =>
+        VictoryByStationsComputedHook?.Invoke(mission, changed, winner, victory);
 
     /// <summary>
     /// P455 — the site seam counterpart of the station-elimination win

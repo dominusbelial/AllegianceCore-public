@@ -2494,9 +2494,7 @@ public sealed class Sector : IClusterIgc
                     captureMission.Site.CaptureStationEvent(captor, station);
                     station.Capture(captureSide);
                     SyncStationData(station);
-                    var (winner, changed) = captureMission.RecomputeConquestAndTerritory(null);
-                    if (changed || winner is not null)
-                        captureMission.Site.VictoryByStationsComputed(captureMission, changed, winner);
+                    captureMission.NotifyStationVictory(station, captor, captured: true, oldSide: oldSide);
                     captureMission.Site.SideLostRestartStation(captureMission, oldSide);
                 }
 
@@ -2548,9 +2546,7 @@ public sealed class Sector : IClusterIgc
                         // FedSrv.CPP:12344) is naturally satisfied; surface the
                         // result so the host can broadcast GAME_STATE and declare
                         // the win via the P178 path.
-                        var (gWinner, gChanged) = m.RecomputeConquestAndTerritory(null);
-                        if (gChanged || gWinner is not null)
-                            m.Site.VictoryByStationsComputed(m, gChanged, gWinner);
+                        m.NotifyStationVictory(station, ord.Launcher);
                         // P455 — a restart-capable station just died for its owner
                         // (station.SideId is still the owning side; a kill never
                         // re-sides). The host checks whether that was the side's
@@ -3458,9 +3454,7 @@ public sealed class Sector : IClusterIgc
                 {
                     float stationShare = hp1 * damage2 / (hp1 + damage2);
                     sm.Site.KillStationEvent(station, ship, stationShare);
-                    var (gWinner, gChanged) = sm.RecomputeConquestAndTerritory(null);
-                    if (gChanged || gWinner is not null)
-                        sm.Site.VictoryByStationsComputed(sm, gChanged, gWinner);
+                    sm.NotifyStationVictory(station, ship);
                     sm.Site.SideLostRestartStation(sm, station.SideId);
                 }
             }
@@ -3980,8 +3974,7 @@ public sealed class Sector : IClusterIgc
                 mission?.Site.KillStationEvent(station, e.Launcher!, amount);
                 if (mission is not null)
                 {
-                    var (winner, changed) = mission.RecomputeConquestAndTerritory(null);
-                    if (changed || winner is not null) mission.Site.VictoryByStationsComputed(mission, changed, winner);
+                    mission.NotifyStationVictory(station, e.Launcher);
                     mission.Site.SideLostRestartStation(mission, station.SideId);
                 }
             }
@@ -4663,9 +4656,7 @@ public sealed class Sector : IClusterIgc
                     // captured station" assumption, verified against the live
                     // native source). The host broadcasts GAME_STATE(155) and
                     // declares the win via the P178 GameOver path.
-                    var (gWinner, gChanged) = ship.Mission.RecomputeConquestAndTerritory(null);
-                    if (gChanged || gWinner is not null)
-                        ship.Mission.Site.VictoryByStationsComputed(ship.Mission, gChanged, gWinner);
+                    ship.Mission.NotifyStationVictory(rt, ship, captured: true, oldSide: oldSideId);
                     // P455 — the OLD side (pre-capture owner) just lost this
                     // restart-capable station to a capture. The host checks whether
                     // that was its LAST restart station and, if so, eliminates the
@@ -5327,6 +5318,7 @@ public sealed class Sector : IClusterIgc
         var station = asteroid.ConstructedStation ?? BuildStation(asteroid, side, effect.StationType, now, seen);
         mission.Skills?.Record(builder.SideId, ShowcaseSkill.DroneBuild);
         mission.Site.StationBuiltEvent(asteroid, builder, station);
+        mission.NotifyStationVictory(station, builder, built: true);
     }
 
     // FedSrv/FedSrv.CPP:11373-11462: native BuildStation world transformation.

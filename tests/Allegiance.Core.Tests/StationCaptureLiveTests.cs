@@ -37,7 +37,7 @@ namespace Allegiance.Core.Tests;
 /// <see cref="Bot.StationCaptures"/> on every peer.
 /// </summary>
 [Collection("LiveNetwork")]
-public sealed class StationCaptureLiveTests
+public sealed partial class StationCaptureLiveTests
 {
     private static readonly string ArtRoot = TestArtRoot.Value;
     private const short BaseId = 7901;

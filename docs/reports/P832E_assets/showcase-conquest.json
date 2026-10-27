@@ -1,0 +1,27 @@
+{
+  "port": 6073,
+  "bindAddress": "127.0.0.1",
+  "benchmarkSeed": 832,
+  "discovery": { "enabled": false },
+  "showcase": { "techMode": "unlocked" },
+  "liveSettings": {
+    "timeDilation": "off",
+    "autoNextMatch": { "enabled": false },
+    "testUnlock": { "enabled": true, "allTech": true, "money": 1000000 }
+  },
+  "games": [{
+    "name": "Conquest showcase",
+    "teams": 2,
+    "civIds": [25, 25],
+    "sideNames": ["Alpha", "Bravo"],
+    "maxTeamImbalance": 32767,
+    "maxPlayersPerTeam": 220,
+    "goals": { "conquestPercentage": 100 },
+    "mapGen": {
+      "type": "Brawl", "seed": 832,
+      "playerSectorAsteroids": 0, "playerSectorMineableAsteroids": 0, "playerSectorSpecialAsteroids": 0,
+      "neutralSectorAsteroids": 0, "neutralSectorMineableAsteroids": 0, "neutralSectorSpecialAsteroids": 0
+    }
+  }],
+  "transport": { "maxConnections": 1024, "maxConnectionsPerIp": 1024 }
+}

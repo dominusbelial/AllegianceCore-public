@@ -427,7 +427,7 @@ public interface IIgcSite
     /// P178 GameOver path), or <c>null</c>. No-op default so a host that has not
     /// installed a handler behaves as before — matching the seam style of
     /// <see cref="ProjectileCreatedEvent"/> and kin.</summary>
-    void VictoryByStationsComputed(Allegiance.Core.Model.Mission mission, bool changed, Allegiance.Core.Model.Side? winner) { }
+    void VictoryByStationsComputed(Allegiance.Core.Model.Mission mission, bool changed, Allegiance.Core.Model.Side? winner, Allegiance.Core.Model.StationVictory? victory = null) { }
 
     /// <summary>
     /// P455 — a side just lost one of its restart-capable stations, to a kill

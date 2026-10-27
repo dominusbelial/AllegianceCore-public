@@ -199,8 +199,8 @@ public sealed class RecordingIgcSite : IIgcSite
     public void CaptureStationEvent(IShipIgc ship, IStationIgc station) =>
         Wrap(nameof(CaptureStationEvent), () => { }, ship, station);
     public void VictoryByStationsComputed(
-        Allegiance.Core.Model.Mission mission, bool changed, Allegiance.Core.Model.Side? winner) =>
-        Wrap(nameof(VictoryByStationsComputed), () => { }, mission, changed, winner);
+        Allegiance.Core.Model.Mission mission, bool changed, Allegiance.Core.Model.Side? winner, Allegiance.Core.Model.StationVictory? victory = null) =>
+        Wrap(nameof(VictoryByStationsComputed), () => { }, mission, changed, winner, victory);
     public bool LandOnCarrierEvent(IShipIgc shipCarrier, IShipIgc ship, float tCollision) =>
         Wrap(nameof(LandOnCarrierEvent), () => _default.LandOnCarrierEvent(shipCarrier, ship, tCollision), shipCarrier, ship, tCollision);
     public bool RescueShipEvent(IShipIgc shipRescued, IShipIgc? shipRescuer) =>

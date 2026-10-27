@@ -4712,6 +4712,10 @@ private void CompleteStartCountdown(Mission mission, double now)
         if (nFlagSync > 0)
             Console.WriteLine($"[gainflag] peer {from} '{req.CharacterName}' -> GAIN_FLAG(156) join-sync x{nFlagSync} for flag-carrying ship(s)");
 
+        // Native SendMissionInfo ends with all victory rankings, including
+        // before the first capture/kill (FedSrv/fsmission.cpp:4324-4339).
+        SendPeer(from, FedPacket.Pack(new[] { GameState.ForMission(goalMission).Encode() }));
+
         // FM_S_ENTER_GAME(128): the final "you're ready" signal at the
         // real end of the join-sync burst (P141). Native fires it inside
         // the mission-join path gated on STAGE_STARTED == GetStage()
