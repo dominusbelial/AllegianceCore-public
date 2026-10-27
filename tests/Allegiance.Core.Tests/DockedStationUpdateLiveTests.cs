@@ -179,6 +179,16 @@ public sealed class DockedStationUpdateLiveTests
             ticks++;
             arrived = bot.StationsUpdates.Any(u => HasEntry(u, station.StationId));
         }
+        // The broadcast publisher (snapshot default, f4d9263d) sends on its own
+        // thread: an update the server emitted on the last allowed tick may still be
+        // in flight. Wait briefly in wall time WITHOUT ticking — the cadence bound
+        // (sent within maxTicks) is unchanged.
+        var drain = System.Diagnostics.Stopwatch.StartNew();
+        while (!arrived && drain.ElapsedMilliseconds < 500)
+        {
+            Thread.Sleep(5);
+            arrived = bot.StationsUpdates.Any(u => HasEntry(u, station.StationId));
+        }
 
         Assert.True(arrived,
             $"STATIONS_UPDATE for docked station did not arrive within {maxTicks} ticks ({ticks * period:F3}s sim time)");
@@ -260,6 +270,16 @@ public sealed class DockedStationUpdateLiveTests
             server.TickSim();
             Thread.Sleep(1);
             ticks++;
+            arrived = bot.StationsUpdates.Any(u => HasEntry(u, station.StationId));
+        }
+        // The broadcast publisher (snapshot default, f4d9263d) sends on its own
+        // thread: an update the server emitted on the last allowed tick may still be
+        // in flight. Wait briefly in wall time WITHOUT ticking — the cadence bound
+        // (sent within maxTicks) is unchanged.
+        var drain = System.Diagnostics.Stopwatch.StartNew();
+        while (!arrived && drain.ElapsedMilliseconds < 500)
+        {
+            Thread.Sleep(5);
             arrived = bot.StationsUpdates.Any(u => HasEntry(u, station.StationId));
         }
 
