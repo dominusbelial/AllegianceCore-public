@@ -46,7 +46,7 @@ public readonly record struct DataMineTypeIGC(
     short ExpendableTypeId,
     short EabmCapabilities,
     string IconName,
-    float MineRadius,   // mine blast radius; base model Radius is above
+    float MineRadius,   // native derived radius shadows DataObjectIGC.radius; used by mineigc.cpp:103-106
     float Power,
     float Endurance,
     byte DamageType)

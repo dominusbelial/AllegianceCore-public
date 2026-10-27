@@ -35,6 +35,14 @@ namespace Allegiance.Tools.McpSpawner;
 /// know the edge exists.</summary>
 internal readonly record struct WarpKnowledge(short WarpId, short Sector, short PartnerSector);
 
+/// <summary>Side-observed artifact trajectory sample. Tombstones stop sibling
+/// workers resurrecting a collected treasure; monotonic stamps share a host clock.</summary>
+internal sealed record ArtifactSighting(short Id, short Sector, float X, float Y, float Z,
+    long AtMs, bool Present = true)
+{
+    internal const long RetentionMs = 180_000;
+}
+
 /// <summary>One rock this side has seen. <see cref="Ore"/> is the ore that was
 /// visible when it was seen — native's per-side oreSeen store
 /// (Igc/asteroidigc.h:78-323); it is never re-read from server truth.</summary>
@@ -470,6 +478,25 @@ internal sealed class SideIntel(short side, uint cookie)
     /// have been swept, otherwise the scouts stop before hunting the miners).</summary>
     internal readonly HashSet<short> SweptSectors = [];
     internal readonly Dictionary<short, WarpKnowledge> Warps = [];
+    internal readonly Dictionary<short, ArtifactSighting> Artifacts = [];
+
+    internal void ObserveArtifacts(short sector, ArtifactSighting[] seen, long stamp)
+    {
+        var ids = seen.Select(a => a.Id).ToHashSet();
+        foreach (var old in Artifacts.Values.Where(a => a.Present && a.Sector == sector
+                     && !ids.Contains(a.Id) && stamp - a.AtMs > 2000).ToArray())
+            MergeArtifact(old with { AtMs = stamp, Present = false });
+        foreach (var a in seen) MergeArtifact(a);
+        foreach (var id in Artifacts.Where(kv => stamp - kv.Value.AtMs >= ArtifactSighting.RetentionMs)
+                     .Select(kv => kv.Key).ToArray()) Artifacts.Remove(id);
+    }
+
+    internal void MergeArtifact(ArtifactSighting a)
+    {
+        if (Environment.TickCount64 - a.AtMs >= ArtifactSighting.RetentionMs) return;
+        if (!Artifacts.TryGetValue(a.Id, out var old) || a.AtMs > old.AtMs
+            || a.AtMs == old.AtMs && !a.Present) Artifacts[a.Id] = a;
+    }
     internal readonly Dictionary<short, RockSighting> Rocks = [];
     internal readonly Dictionary<short, StationSighting> OwnStations = [];
     internal readonly Dictionary<short, StationSighting> EnemyStations = [];
@@ -625,7 +652,7 @@ internal sealed class SideIntelStore
         i.EnemyMiners.Values.OrderBy(m => m.ShipId).ToArray(),
         i.EnemyShips.Values.OrderBy(h => h.ShipId).ToArray(),
         i.FirstAlephAt, i.FirstEnemyStationAt, i.FirstMinerRaidAt, i.FirstSupportCallAt,
-        i.MinerRaids, i.SupportCalls);
+        i.MinerRaids, i.SupportCalls, i.Artifacts.Values.OrderBy(a => a.Id).ToArray());
 
     internal void Apply(IntelDigest digest)
     {
@@ -639,6 +666,7 @@ internal sealed class SideIntelStore
             if (intel.FirstEnemyStationAt < 0) intel.FirstEnemyStationAt = digest.FirstEnemyStationAt;
             if (intel.FirstMinerRaidAt < 0) intel.FirstMinerRaidAt = digest.FirstMinerRaidAt;
             if (intel.FirstSupportCallAt < 0) intel.FirstSupportCallAt = digest.FirstSupportCallAt;
+            foreach (var artifact in digest.Artifacts ?? []) intel.MergeArtifact(artifact);
             intel.MinerRaids = Math.Max(intel.MinerRaids, digest.MinerRaids);
             intel.SupportCalls = Math.Max(intel.SupportCalls, digest.SupportCalls);
             foreach (var sector in digest.KnownSectors) intel.KnownSectors.Add(sector);
@@ -668,7 +696,7 @@ internal sealed record IntelDigest(
     StationSighting[] OwnStations, StationSighting[] EnemyStations,
     MinerSighting[] OwnMiners, MinerSighting[] EnemyMiners, HullSighting[] EnemyShips,
     double FirstAlephAt, double FirstEnemyStationAt, double FirstMinerRaidAt, double FirstSupportCallAt,
-    int MinerRaids, int SupportCalls);
+    int MinerRaids, int SupportCalls, ArtifactSighting[]? Artifacts = null);
 
 /// <summary>P798 tunables — the one place the opening's numbers live. Defaults
 /// are stated here; the live tests pin them. A few can be overridden by env for

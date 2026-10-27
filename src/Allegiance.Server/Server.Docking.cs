@@ -492,12 +492,13 @@ public sealed partial class Server
     /// a treasure the creation path already sent (native's <c>ShowObject</c> fires
     /// once; the port has both a creation broadcast and a discovery sweep, and the
     /// native client's <c>CreateObject</c> is not an upsert). Used by every
-    /// treasure-spawn site (drop, death drop, artifact flag).</summary>
+    /// treasure-spawn site (drop, death drop, artifact flag). New artifacts
+    /// wait for side visibility (FedSrv.CPP:10750-10778).</summary>
     private void SendTreasureSpawnSectorWide(Sector sector, Treasure treasure)
     {
         var packet = FedPacket.Pack(new[] { new TreasureSpawn { Data = treasure.Data }.Encode() });
         foreach (var kv in _peerShips)
-            if (ReferenceEquals(kv.Value.Ship.Sector, sector))
+            if (ReferenceEquals(kv.Value.Ship.Sector, sector) && ArtifactKnownToPeer(treasure, kv.Value.Ship))
             {
                 SendPeer(kv.Key, packet);
                 _crossSideDiscoverySent.Add((kv.Key, (byte)IgcObjectType.Treasure, treasure.Id));

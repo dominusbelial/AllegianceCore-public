@@ -2896,21 +2896,12 @@ public sealed partial class Server
                     Console.WriteLine($"[scoring] ship {ship.Id} {(sidFlag == Side.ArtifactSentinelFlag ? "artifact" : "flag")} secure +1 (player peer)");
                 }
 
-                // P302 — the artifact win: securing a neutral artifact (carried
-                // value == SIDE_TEAMLOBBY sentinel) increments Side.Artifacts,
-                // then CheckForVictoryByFlags scores the game to the first side
-                // reaching nGoalArtifactsCount (fsmission.cpp:3888-3894). Gated
-                // on ArtifactEnabled so a non-artifact mission's flag-secure is
-                // unaffected; the recompute raises the seam the host consumes.
-                if (sidFlag == Side.ArtifactSentinelFlag && mission.ArtifactEnabled)
-                {
-                    var (aWinner, aChanged) = mission.RecomputeProsperityAndArtifacts();
-                    if (aChanged || aWinner is not null)
-                        mission.Site.ProsperityArtifactComputed(mission, aChanged, aWinner);
-                }
-                // Native FedSrv.CPP:13130-13137: secure messages go only to
-                // the scoring team and the flag's owner, with distinct cues.
-                if (sidFlag >= 0)
+                // Native FedSrv.CPP:13116-13137: artifact chat goes to the
+                // scoring team; real flags also notify their owner.
+                if (sidFlag == Side.ArtifactSentinelFlag)
+                    SendFlagSecureChat(mission, shipSide, 1362,
+                        $"{PeerName(ship) ?? $"ship{ship.Id}"} has secured an artifact."); // FedSrv.CPP:13116-13123; Igc/sounds.h:420
+                else if (sidFlag >= 0)
                 {
                     string owner = mission.Sides.First(s => s.Id == sidFlag).Name ?? $"side{sidFlag}";
                     SendFlagSecureChat(mission, shipSide, 1360,
@@ -2922,7 +2913,18 @@ public sealed partial class Server
             // Clear and publish before checking victory (FedSrv.CPP:13139-13149).
             ship.Flag = null;
             BroadcastGainFlag(mission, GainFlag.NA, ship.Id, bIsTreasureDocked: false, parttypeidDocked: 0);
-            if (sidFlag >= 0 && mission.FlagsEnabled)
+            if (sidFlag == Side.ArtifactSentinelFlag && mission.ArtifactEnabled)
+            {
+                var (winner, changed) = mission.RecomputeProsperityAndArtifacts();
+                if (changed || winner is not null)
+                    mission.Site.ProsperityArtifactComputed(mission, changed, null);
+                if (winner is not null && mission.Stage != MissionStage.Over)
+                    DeclareGameOver(mission, winner.Id,
+                        $"{winner.Name} wins with the artifact recovered by {PeerName(ship) ?? $"ship{ship.Id}"}");
+                // Native intent: FedSrv.CPP:13149-13158 artifact text; its
+                // sidFlag != NA ternary erroneously selects flag text for -2.
+            }
+            else if (sidFlag >= 0 && mission.FlagsEnabled)
             {
                 var (winner, changed) = mission.RecomputeFlagsAndKills();
                 if (changed || winner is not null)

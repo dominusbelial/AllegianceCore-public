@@ -92,6 +92,12 @@ public sealed partial class Mission
                 {
                     Ship ship => 500f + 0.5f * ship.HullType.Length,
                     Treasure => 25f + Treasure.PickupRadius,
+                    // DataMineTypeIGC shadows DataObjectIGC.radius. Native
+                    // mineigc.cpp:103-106 sets the model radius from the tail
+                    // field (minetypeigc.h:104-106), not the uninitialized base.
+                    Mine mine when code == TreasureCode.Flag && payload == Side.ArtifactSentinelFlag
+                        => 25f + mine.MineType.MineRadius,
+                    // Other treasure codes keep their existing behavior in this artifact slice.
                     Mine mine => 25f + mine.MineType.Radius,
                     Probe probe => 25f + probe.ProbeType.Radius,
                     IOrdnance ordnance => 25f + ordnance.Radius,

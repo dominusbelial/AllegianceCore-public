@@ -905,7 +905,8 @@ internal sealed partial class BotManager
     /// position across lane windows. A frontier is marked swept when its mouth
     /// aleph is seen (or its contents window ends); a mouth hunt only ends when
     /// the aleph is seen, so a ring is never abandoned half-way.</summary>
-    private void SweepSector(ActiveBot bot, ConnectionSession cs, short sector, double now, FrontierLane? lane, short mouthTo = -1)
+    private void SweepSector(ActiveBot bot, ConnectionSession cs, short sector, double now, FrontierLane? lane, short mouthTo = -1,
+        float? radiusOverride = null)
     {
         if (bot.SweepSector != sector)
         {
@@ -990,7 +991,7 @@ internal sealed partial class BotManager
             }
         }
 
-        float radius = SweepRadius(cs, sector, bot.Side, SideKey(bot).Cookie);
+        float radius = radiusOverride ?? SweepRadius(cs, sector, bot.Side, SideKey(bot).Cookie);
         // Each scout starts at a different angle so two explorers do not fly the
         // same arc; an unfinished pattern keeps its progress across ticks.
         // The SECTOR PLANE IS XY — every map's warps/rocks/stations have the small

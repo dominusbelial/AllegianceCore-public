@@ -65,6 +65,7 @@ internal sealed partial class BotManager
         bot.FlagTask = FlagDuty.None;
         bot.FlagAnchor = null;
         bot.FlagTrace = "";
+        bot.ArtifactSearchRound = 0;
         bot.SupportRefitting = false;
         bot.SupportTraceTarget = null;
         bot.SupportCheckAt = double.NegativeInfinity;

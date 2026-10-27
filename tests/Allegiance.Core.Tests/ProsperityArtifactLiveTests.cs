@@ -33,7 +33,7 @@ namespace Allegiance.Core.Tests;
 /// live suites.
 /// </summary>
 [Collection("LiveNetwork")]
-public sealed class ProsperityArtifactLiveTests
+public sealed partial class ProsperityArtifactLiveTests
 {
     private static readonly string ArtRoot = TestArtRoot.Value;
 
@@ -289,6 +289,14 @@ public sealed class ProsperityArtifactLiveTests
         PumpUntil(h.Server, () => h.Bot.GameOvers.Count >= 1, 4000);
         var go = Assert.Single(h.Bot.GameOvers);
         Assert.Equal(h.OwnSide, go.SideWinner);
+        Assert.Equal($"{mission.Sides.Single(s => s.Id == h.OwnSide).Name} wins with the artifact recovered by acrt", go.GameoverMessage);
+        Assert.True(PumpUntil(h.Server, () => h.Bot.Chats.Any(c => c.VoiceOver == 1362), 3000) < 3000);
+        var cue = Assert.Single(h.Bot.Chats, c => c.VoiceOver == 1362);
+        Assert.Equal((int)ChatTarget.Team, cue.ChatTarget);
+        Assert.Equal(h.OwnSide, cue.OidRecipient);
+        Assert.Equal("acrt has secured an artifact.", cue.Message);
+        Assert.Null(h.Carrier.Flag);
+        Assert.Contains(h.Bot.GainFlags, f => f.SideidFlag == GainFlag.NA);
 
         Console.WriteLine($"ARTIFACT-LIVE: side {h.OwnSide} ship {h.Carrier.Id} picked up + returned a neutral artifact to own station -> " +
                           $"artifacts=1/1, mission Over, GAME_OVER(62) winner={go.SideWinner}");
