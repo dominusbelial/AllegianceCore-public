@@ -3014,3 +3014,16 @@ recorded the same known load flake once in `Allegiance.Core`:
 (Assert.Equal "goto Garrison" vs "goto" — a command-relay seating-order/timing race, the same signature as the
 HUD-19 and 2026-10-24 entries above). It passed **3/3** isolated invocations on this worktree. P843 changes no
 production code, so this is the existing live-network/load artifact, not a regression.
+## P841 validation environment (2026-10-26)
+
+`Allegiance.Core.Tests.P775PlayerInfoMomentsTests.Mid_game_sighting_of_a_joined_enemy_sends_no_playerinfo`
+("exactly one PLAYERINFO announcement for the joined enemy, got 2") fails **3/3
+exact-test isolated invocations on this worktree's base (master @ 1e4c33d4)
+with all P841 source changes reverted** — i.e. red at base, independent of the
+P841 batch (P841 touches no PLAYERINFO join-announcement path). The count
+depends on whether the joiner's PLAYERINFO reaches the peer after the peer's
+MISSION_STAGE(Started) — a message-interleaving timing dependency, consistent
+with the ledgered P775 siblings above. Not fixed here (outside the P841 batch
+surface; the P775 owner should re-derive the expected announcement count).
+
+| 2026-10-27 | P700ShowcaseLiveTests.Local_showcase_never_parks_with_target_for_five_seconds | P841 showcase 5×: run 3 failed with no `Parked >5s` sample and no assertion text captured (-v q); runs 1/2/4/5 and two immediate retries of the same test passed — load window while other lanes ran suites on the shared host | 2/2 immediate re-runs alone; P841 changed no bot flight/decision code (join-flow default + departure bookkeeping only) | load flake |

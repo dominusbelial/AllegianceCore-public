@@ -47,6 +47,17 @@ public sealed partial class Server : IDisposable
     private double? _lifepodEnduranceOverrideSeconds;
     private ServerHost _host = null!;
     private List<Mission> _missions = null!;
+    // P841 / SIM-0521 — the old-player score cache, the port of native
+    // CFSMission::m_oldPlayers (fsmission.cpp:2624-2680 SaveAsOldPlayer):
+    // when a peer departs a mission, their live PlayerScore instance is
+    // retained under (mission, case-insensitive character name); the next
+    // join of that name to the SAME mission (AddPlayerToMission's
+    // GetOldPlayerLink branch, fsmission.cpp:378-401) re-seats them with
+    // their previous score instead of a fresh one, and consumes the entry
+    // (native deletes the OldPlayerLink in AddPlayerToSide,
+    // fsmission.cpp:572-577). Entries die with their mission (cleared by the
+    // game-over rotation, native ~CFSMission discards m_oldPlayers).
+    private readonly Dictionary<(Mission Mission, string Name), PlayerScore> _oldPlayerScores = new();
     // P439 — the loaded static core and the shared hull-landing-bay resolver
     // are kept after boot so DeclareGameOver can rebuild a finished mission
     // from the SAME inputs InstantiateGames used. Native regenerates the world
@@ -968,6 +979,14 @@ public sealed partial class Server : IDisposable
     /// </summary>
     private static Sector? HomeSectorForSide(Mission mission, short sideId)
     {
+        // P841 / SIM-0502 — native GetBase(pside)'s answer first
+        // (fsmission.cpp:1433-1447): the sector holding the side's first
+        // restart-capable (c_sabmRestart) station — the side's HOME base,
+        // which is what native docks joiners/respawners at.
+        foreach (var sector in mission.Sectors)
+            foreach (var st in sector.StationRuntimes)
+                if (st.SideId == sideId && st.Type.HasCapability(DataStationTypeIGC.SabmRestart))
+                    return sector;
         // Primary: a runtime Station the side owns (live ownership, re-sided
         // on STATION_CAPTURE — the authoritative "whose home is this" answer).
         foreach (var sector in mission.Sectors)

@@ -337,14 +337,20 @@ public sealed class Side : ISideIgc
     /// <summary>
     /// Whether this side auto-accepts pending side-join requests without
     /// leader approval (P186) — the port of the native per-side
-    /// <c>m_misdef.rgfAutoAccept[sideID]</c> flag (<c>fsmission.cpp</c>), toggled
-    /// by <c>AUTO_ACCEPT(52)</c> (<c>fsmission.cpp:4974-5011 SetAutoAccept</c>).
-    /// While <c>true</c>, a <c>POSITIONREQ</c> for this side seats the requester
-    /// immediately instead of routing it to the leader, and turning it <b>on</b>
+    /// <c>m_misdef.rgfAutoAccept[sideID]</c> flag (<c>fsmission.cpp</c>), seeded
+    /// <c>true</c> by <c>InitSide</c> (<c>fsmission.cpp:58</c>) and toggled
+    /// by <c>AUTO_ACCEPT(52)</c> (<c>fsmission.cpp:4974-5011 SetAutoAccept</c>;
+    /// native's only other toggle is the flush-teams <c>FlushSides</c>
+    /// command, <c>fsmission.cpp:5084</c>). While <c>true</c>, a
+    /// <c>POSITIONREQ</c> for this side seats the requester
+    /// immediately instead of routing it to the leader (<c>RequestPosition</c>'s
+    /// <c>rgfAutoAccept[sideID]</c> branch, <c>fsmission.cpp:4759</c>), and turning it <b>on</b>
     /// instantly seats any player with a currently-pending request on the side.
-    /// Starts <c>false</c>. Follows the same direct-field-on-Side shape as
+    /// Starts <c>true</c>, exactly as native seeds it — every side begins
+    /// auto-accepting and only an explicit leader toggle (or the flush-teams
+    /// command) turns that off. Follows the same direct-field-on-Side shape as
     /// <see cref="Ready"/>.</summary>
-    public bool AutoAccept { get; set; }
+    public bool AutoAccept { get; set; } = true;
 
     /// <summary>
     /// The side's alliance-group number (P190) — the port of the native

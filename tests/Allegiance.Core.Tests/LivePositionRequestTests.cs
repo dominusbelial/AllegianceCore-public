@@ -273,7 +273,15 @@ public class LivePositionRequestTests
 
         // Establish A as side0's leader; B spawns on side1 (no leader).
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends
+        // (fsmission.cpp:4759 seats immediately while it is on).
+        Side(server, side0).AutoAccept = false;
         Assert.Equal(aId, Side(server, side0).LeaderShipId);
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) — reproduce that here
+        // so the request pends (fsmission.cpp:4759 seats immediately while on).
+        Side(server, side0).AutoAccept = false;
         Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));
 
         Flush(server);
@@ -311,6 +319,10 @@ public class LivePositionRequestTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));   // A leads side0
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends
+        // (fsmission.cpp:4759 seats immediately while it is on).
+        Side(server, side0).AutoAccept = false;
         Flush(server);
 
         b.SendPositionReq(side0);                                      // B requests side0 (pending)
@@ -326,7 +338,11 @@ public class LivePositionRequestTests
         Assert.True(got < 800, "accept did not seat the requester");
 
         Assert.Equal(side0, SideOfShip(ShipOf(server, bId)));
-        Assert.Equal(aId, Side(server, side0).LeaderShipId);           // A stays leader
+        Assert.Equal(aId, Side(server, side0).LeaderShipId);
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) — reproduce that here
+        // so the request pends (fsmission.cpp:4759 seats immediately while on).
+        Side(server, side0).AutoAccept = false;           // A stays leader
         Assert.Contains(b.JoinSides, j => j.ShipId == bId && j.SideId == side0);
         Assert.DoesNotContain(b.DelPositionReqs, d => d.ShipId == bId); // no DELPOSITIONREQ on accept
 
@@ -357,6 +373,10 @@ public class LivePositionRequestTests
         short side0 = server.Missions[0].Sides[0].Id;
         short side1 = server.Missions[0].Sides[1].Id;
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));   // A leads side0
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends
+        // (fsmission.cpp:4759 seats immediately while it is on).
+        Side(server, side0).AutoAccept = false;
         Flush(server);
 
         b.SendPositionReq(side0);
@@ -401,9 +421,17 @@ public class LivePositionRequestTests
         // and C (non-leader → side0 via spawn round-robin) arrive.
         short aId = Seat(server, a, "PE1");
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends
+        // (fsmission.cpp:4759 seats immediately while it is on).
+        Side(server, side0).AutoAccept = false;
         short bId = Seat(server, b, "PE2");   // peer1 → side1 (requester)
         short cId = Seat(server, c, "PE3");   // peer2 → side0 (non-leader)
         Assert.Equal(aId, Side(server, side0).LeaderShipId);
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) — reproduce that here
+        // so the request pends (fsmission.cpp:4759 seats immediately while on).
+        Side(server, side0).AutoAccept = false;
         Flush(server);
 
         b.SendPositionReq(side0);
@@ -460,9 +488,17 @@ public class LivePositionRequestTests
         // round-robin: peer N -> side N%2).
         short aId = Seat(server, a, "PF1");
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends
+        // (fsmission.cpp:4759 seats immediately while it is on).
+        Side(server, side0).AutoAccept = false;
         short bId = Seat(server, b, "PF2");
         short cId = Seat(server, c, "PF3");
         Assert.Equal(aId, Side(server, side0).LeaderShipId);
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) — reproduce that here
+        // so the request pends (fsmission.cpp:4759 seats immediately while on).
+        Side(server, side0).AutoAccept = false;
         Flush(server);
 
         b.SendPositionReq(side0);
@@ -513,6 +549,10 @@ public class LivePositionRequestTests
         short side0 = server.Missions[0].Sides[0].Id;
         short side1 = server.Missions[0].Sides[1].Id;
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));   // A leads side0
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends
+        // (fsmission.cpp:4759 seats immediately while it is on).
+        Side(server, side0).AutoAccept = false;
         Flush(server);
 
         b.SendPositionReq(side0);
@@ -589,6 +629,10 @@ public class LivePositionRequestTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));   // A leads side0
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends
+        // (fsmission.cpp:4759 seats immediately while it is on).
+        Side(server, side0).AutoAccept = false;
         Flush(server);
 
         b.SendPositionReq(side0);
@@ -626,8 +670,16 @@ public class LivePositionRequestTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));   // A leads side0
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends
+        // (fsmission.cpp:4759 seats immediately while it is on).
+        Side(server, side0).AutoAccept = false;
         Assert.True(server.TryJoinSide(ShipOf(server, cId), side0));   // C non-leader on side0
         Assert.Equal(aId, Side(server, side0).LeaderShipId);
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) — reproduce that here
+        // so the request pends (fsmission.cpp:4759 seats immediately while on).
+        Side(server, side0).AutoAccept = false;
         Flush(server);
 
         // A ready, C explicitly NOT ready → per-player check says side0 not-ready.
@@ -670,6 +722,10 @@ public class LivePositionRequestTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends
+        // (fsmission.cpp:4759 seats immediately while it is on).
+        Side(server, side0).AutoAccept = false;
         Assert.True(server.TryJoinSide(ShipOf(server, cId), side0));   // C unready on side0
         Flush(server);
 
@@ -705,6 +761,10 @@ public class LivePositionRequestTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));   // A leads side0
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends
+        // (fsmission.cpp:4759 seats immediately while it is on).
+        Side(server, side0).AutoAccept = false;
         Assert.True(server.TryJoinSide(ShipOf(server, cId), side0));   // C non-leader
         Flush(server);
 
@@ -750,6 +810,10 @@ public class LivePositionRequestTests
         // a0 leads A-side0; b0 leads B-side0.
         Assert.True(server.TryJoinSide(ShipOf(server, a0Id), mA0));
         Assert.True(server.TryJoinSide(ShipOf(server, b0Id), mB0));
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a
+        // leader vetting joiners turns it off via AUTO_ACCEPT(52) so the
+        // request pends (fsmission.cpp:4759 seats immediately while it is on).
+        server.Missions[0].Sides.First(s => s.Id == mA0).AutoAccept = false;
         Flush(server);
 
         a0.ResetLeadershipSignals();

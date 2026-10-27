@@ -371,6 +371,9 @@ public sealed class P655GameStateIntegrityTests
     {
         using var w = new World();
         w.Mission.Sides[1].LeaderShipId = w.Enemy.Id;
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); the
+        // vetting leader turns it off via AUTO_ACCEPT(52) so the request pends.
+        w.Mission.Sides[1].AutoAccept = false;
         w.Mission.Stage = MissionStage.NotStarted;
         w.Send(new PositionReq { SideId = 1 });
         void Approve() => w.Call("ProcessDatagram", new ConnectionId(3), FedPacket.Pack([new PositionAck { ShipId = w.Ship.Id, SideId = 1, FAccepted = true }.Encode()]));

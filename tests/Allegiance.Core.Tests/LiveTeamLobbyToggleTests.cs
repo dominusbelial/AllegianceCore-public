@@ -167,6 +167,9 @@ public class LiveTeamLobbyToggleTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         LeadEmptySide(server, a, aId, side0);   // A leads side0 AND is the mission owner (no owner yet)
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends.
+        Side(server, side0).AutoAccept = false;
         Flush(server);
         Assert.Equal(side0, server.Missions[0].MissionOwnerSideId);
         Assert.Equal(aId, Side(server, side0).LeaderShipId);
@@ -213,6 +216,9 @@ public class LiveTeamLobbyToggleTests
         short side0 = server.Missions[0].Sides[0].Id;
         short side1 = server.Missions[0].Sides[1].Id;
         LeadEmptySide(server, a, aId, side0);   // A: side0 leader + mission owner
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends.
+        Side(server, side0).AutoAccept = false;
         LeadEmptySide(server, b, bId, side1);   // B: side1 leader, NOT the owner
         Flush(server);
         Assert.Equal(aId, Side(server, side0).LeaderShipId);
@@ -250,6 +256,9 @@ public class LiveTeamLobbyToggleTests
         short side0 = server.Missions[0].Sides[0].Id;
         short side1 = server.Missions[0].Sides[1].Id;
         LeadEmptySide(server, a, aId, side0);   // A: owner
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends.
+        Side(server, side0).AutoAccept = false;
         LeadEmptySide(server, b, bId, side1);   // B: non-owner leader
         Flush(server);
 
@@ -302,6 +311,9 @@ public class LiveTeamLobbyToggleTests
         short side0 = server.Missions[0].Sides[0].Id;
         short side1 = server.Missions[0].Sides[1].Id;
         LeadEmptySide(server, a, aId, side0);   // A: side0 leader (B spawns on side1)
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends.
+        Side(server, side0).AutoAccept = false;
         Flush(server);
         Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));
 
@@ -356,6 +368,9 @@ public class LiveTeamLobbyToggleTests
         short side0 = server.Missions[0].Sides[0].Id;
         short side1 = server.Missions[0].Sides[1].Id;
         LeadEmptySide(server, a, aId, side0);   // A leads side0; B on side1
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends.
+        Side(server, side0).AutoAccept = false;
         Flush(server);
         Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));
 
@@ -398,6 +413,9 @@ public class LiveTeamLobbyToggleTests
         short side0 = server.Missions[0].Sides[0].Id;
         short side1 = server.Missions[0].Sides[1].Id;
         LeadEmptySide(server, a, aId, side0);   // A leads side0
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends.
+        Side(server, side0).AutoAccept = false;
         Assert.Equal(side1, SideOfShip(ShipOf(server, bId)));   // B spawns on side1 (peer1)
 
         a.SendAutoAccept(side0, true);
@@ -431,6 +449,9 @@ public class LiveTeamLobbyToggleTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         LeadEmptySide(server, a, aId, side0);                    // A leads side0
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends.
+        Side(server, side0).AutoAccept = false;
         Assert.True(server.TryJoinSide(ShipOf(server, cId), side0));  // C non-leader on side0
         Flush(server);
 
@@ -459,6 +480,9 @@ public class LiveTeamLobbyToggleTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         LeadEmptySide(server, a, aId, side0);
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends.
+        Side(server, side0).AutoAccept = false;
         Flush(server);
         a.ResetLeadershipSignals();
 
@@ -491,6 +515,9 @@ public class LiveTeamLobbyToggleTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         LeadEmptySide(server, a, aId, side0);   // A leads side0; B on side1
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends.
+        Side(server, side0).AutoAccept = false;
         Flush(server);
         Assert.Equal(MissionStage.NotStarted, server.Missions[0].Stage);
 
@@ -528,6 +555,9 @@ public class LiveTeamLobbyToggleTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         LeadEmptySide(server, a, aId, side0);
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends.
+        Side(server, side0).AutoAccept = false;
         Flush(server);
 
         short before = Side(server, side0).Civilization.CivilizationId;
@@ -557,6 +587,9 @@ public class LiveTeamLobbyToggleTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         LeadEmptySide(server, a, aId, side0);
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends.
+        Side(server, side0).AutoAccept = false;
         Assert.True(server.TryJoinSide(ShipOf(server, cId), side0));   // C non-leader
         Flush(server);
 
@@ -586,6 +619,9 @@ public class LiveTeamLobbyToggleTests
 
         short side0 = server.Missions[0].Sides[0].Id;
         LeadEmptySide(server, a, aId, side0);
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); a leader
+        // vetting joiners turns it off via AUTO_ACCEPT(52) so the request pends.
+        Side(server, side0).AutoAccept = false;
         Flush(server);
 
         short before = Side(server, side0).Civilization.CivilizationId;

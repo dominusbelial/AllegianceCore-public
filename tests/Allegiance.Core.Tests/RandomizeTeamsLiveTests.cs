@@ -293,6 +293,9 @@ public class RandomizeTeamsLiveTests
         short side0 = m.Sides[0].Id, side1 = m.Sides[1].Id;
         Assert.True(server.TryJoinSide(ShipOf(server, aId), side0));   // A leader + owner
         Assert.True(server.TryJoinSide(ShipOf(server, bId), side1));   // B non-leader on side1
+        // P841: native InitSide seeds rgfAutoAccept=true (fsmission.cpp:58); the
+        // leader turns it off via AUTO_ACCEPT(52) so the request pends.
+        m.Sides[0].AutoAccept = false;
 
         // B requests side0 (led by A, auto-accept off) → recorded as pending.
         b.SendPositionReq(side0);

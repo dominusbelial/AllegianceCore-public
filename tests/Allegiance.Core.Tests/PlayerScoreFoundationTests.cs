@@ -97,13 +97,14 @@ public class PlayerScoreFoundationTests
         Console.WriteLine("PSCORE-DEFAULT-LIVE: both seated players start Rank=0, Score=0");
     }
 
-    /// <summary>⭐ The <b>non-persistence proof</b>: mutate a seated player's
-    /// <c>PlayerScore</c> to non-zero, disconnect, then reconnect — the fresh
-    /// connection gets a brand-new <c>PlayerScore</c> back at the neutral
-    /// defaults. The disconnect/reconnect cycle discards (rather than preserves)
-    /// the score, so this is genuinely connection-lifetime-only state, not an
-    /// accidental persistence leak. (There is no account identity to carry a
-    /// value across connections — reconnect simply allocates a new one.)</summary>
+    /// <summary>⭐ The old-player contract (P841 / SIM-0521): mutate a seated
+    /// player's <c>PlayerScore</c> to non-zero, disconnect, then reconnect —
+    /// a rejoin under the SAME character name restores the cached score
+    /// object (native AddPlayerToMission's GetOldPlayerLink branch,
+    /// fsmission.cpp:378-401, cached by SaveAsOldPlayer,
+    /// fsmission.cpp:2624-2680), while a DIFFERENT character name gets a
+    /// brand-new <c>PlayerScore</c> at the neutral defaults — the score is
+    /// name-scoped per mission, never global.</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
     public void Player_score_is_discarded_across_a_disconnect_and_reconnect()
@@ -112,34 +113,44 @@ public class PlayerScoreFoundationTests
         using var server = new Srv();
         server.Boot(Config());
 
+        short idA;
         using (var first = new FltBot())
         {
             first.Connect(server.BoundPort, "RECON"); first.SendLogonRequest(Request("RECON"));
             int got = PumpUntil(server, () => first.ShipAssignment is not null, 4000);
             Assert.True(got < 4000, "first connection must seat");
-            short idA = first.ShipAssignment!.Ship.ShipId;
+            idA = first.ShipAssignment!.Ship.ShipId;
 
             var psA = PlayerScoreOf(server, first);
             psA.Rank = 42;
             psA.Score = 987.5f;
 
-            first.Dispose();                       // abrupt drop → ReleasePeer removes the LiveShip
+            first.Dispose();                       // abrupt drop → SaveAsOldPlayer caches the score
             int released = PumpUntil(server, () => !server.Ships.Any(s => s.Ship.Id == idA), 800);
             Assert.True(released < 800, "first peer must be released");
         }
 
-        // Reconnect (same character name — but there is no identity layer, so
-        // this is a brand-new connection and a brand-new PlayerScore).
+        // Reconnect under the SAME character name — the old-player cache
+        // restores the score object (fsmission.cpp:378-401).
         using var second = new FltBot();
         second.Connect(server.BoundPort, "RECON"); second.SendLogonRequest(Request("RECON"));
         int reseat = PumpUntil(server, () => second.ShipAssignment is not null, 4000);
         Assert.True(reseat < 4000, "reconnect must seat");
 
         var psB = PlayerScoreOf(server, second);
-        Assert.Equal((short)0, psB.Rank);
-        Assert.Equal(0f, psB.Score);
+        Assert.Equal((short)42, psB.Rank);       // restored by the GetOldPlayerLink branch
+        Assert.Equal(987.5f, psB.Score);
 
-        Console.WriteLine("PSCORE-RECONNECT-LIVE: Rank 42/Score 987.5 discarded — reconnect sees Rank=0, Score=0");
+        // A DIFFERENT name has no cached old-player entry: brand-new defaults.
+        using var third = new FltBot();
+        third.Connect(server.BoundPort, "FRESH"); third.SendLogonRequest(Request("FRESH"));
+        int reseat3 = PumpUntil(server, () => third.ShipAssignment is not null, 4000);
+        Assert.True(reseat3 < 4000, "fresh-name connect must seat");
+        var psC = PlayerScoreOf(server, third);
+        Assert.Equal((short)0, psC.Rank);
+        Assert.Equal(0f, psC.Score);
+
+        Console.WriteLine("PSCORE-RECONNECT-LIVE: same-name rejoin restored Rank 42/Score 987.5; fresh name started at Rank=0, Score=0");
     }
 
     /// <summary>⭐ Independence: two players in the same mission hold distinct

@@ -2091,7 +2091,7 @@ public sealed partial class Server
             return;
         }
 
-        RetireDepartedPeer(live, reason);
+        RetireDepartedPeer(live, reason, _peerNames.GetValueOrDefault(id));
 
         _peerNames.Remove(id);                     // P62: release the remembered name with the peer
         _playerReady.Remove(id);                   // P180: release the peer's lobby-ready flag with it
@@ -2108,8 +2108,13 @@ public sealed partial class Server
     /// <c>RemovePlayerFromMission(QSR_LinkDead)</c>, <c>fsship.cpp:995</c>,
     /// reached from <c>OnDestroyConnection</c>, <c>FedSrv.CPP:4549-4566</c>.
     /// Called on the sim thread by both callers.</summary>
-    private void RetireDepartedPeer(LiveShip live, QuitSideReason reason)
+    private void RetireDepartedPeer(LiveShip live, QuitSideReason reason, string? playerName = null)
     {
+        var departureMission = live.Ship.Mission as Mission;
+        short? departedSideId = live.Ship.SideId;
+        if (departureMission is not null && departedSideId is not null)
+            DropFlagOnSideDeparture(departureMission, live, departedSideId.Value);
+
         RetireShipOnDisconnect(live);
 
         // P178 — win-by-elimination (native fsmission.cpp:5371-5427 →
@@ -2125,8 +2130,10 @@ public sealed partial class Server
         // mission). This matches native, where RemovePlayerFromSide (succession)
         // and the QUIT_MISSION send happen during removal and the
         // win-by-inactive-sides check runs later in the sim loop.
-        if (live.Ship.Mission is { } mission && live.Ship.SideId is { })
+        if (departureMission is not null && departedSideId is not null)
         {
+            var mission = departureMission;
+            short departedSide = departedSideId.Value;
             // P183 — the RemovePlayerFromSide port's leader-succession
             // (fsmission.cpp:848-1099): if the departing ship was its side's
             // leader, promote a successor (or clear the role), broadcasting
@@ -2163,10 +2170,117 @@ public sealed partial class Server
             // deactivates only a side left empty. LAST so the succession + QUIT
             // broadcasts above reach the original-mission peers before any
             // rotation + migration re-seats them.
-            short departedSideId = live.Ship.SideId.Value;
-            bool departingSideEmpty = CountPlayersOnSideExcluding(mission, departedSideId, live.Ship) == 0;
+            bool departingSideEmpty = CountPlayersOnSideExcluding(mission, departedSide, live.Ship) == 0;
             if (mission.Stage != MissionStage.NotStarted && departingSideEmpty)
-                DeactivateSideForPeerDeparture(mission, mission.Sides.FirstOrDefault(s => s.Id == departedSideId));
+                DeactivateSideForPeerDeparture(mission, mission.Sides.FirstOrDefault(s => s.Id == departedSide));
+
+            // P841 — the remaining RemovePlayerFromSide departure effects,
+            // which native applies after its succession block:
+            // donation re-pointing (fsmission.cpp:1046-1057) needs the
+            // promoted leader, and the payday-to-treasury + old-player save
+            // (fsmission.cpp:1042-1063, 2624-2680) round the body out.
+            RePointDonationsAfterDeparture(mission, live, departedSide);
+            ApplyDeparturePaydayAndOldPlayer(mission, live, departedSide, playerName);
+        }
+    }
+
+    /// <summary>P841 — the flag-drop half of native
+    /// <c>CFSMission::RemovePlayerFromSide</c> (fsmission.cpp:875-893), run
+    /// while the departing ship is still a live sector member: a departing
+    /// flag carrier either respawns the flag at its home base (when outside
+    /// the universe radius) or jettisons it as a <c>c_tcFlag</c> treasure at
+    /// the ship's position; either way the carrier stops carrying it and the
+    /// whole mission hears <c>GAIN_FLAG(NA, ship)</c>.</summary>
+    private void DropFlagOnSideDeparture(Mission mission, LiveShip live, short departedSideId)
+    {
+        var ship = live.Ship;
+        if (ship.Flag is not { } sidFlag) return;
+        ship.Flag = null;   // pship->SetFlag(NA), FedSrv.CPP:11735
+        if (ship.Sector is { } sector)
+        {
+            if (IsOutsideUniverse(mission, ship.Position))
+                RespawnCarriedFlag(mission, sidFlag);
+            else
+            {
+                var ft = ship.CreateFlagTreasure(sidFlag, SimNow, (uint)(SimNow * 1000));
+                SendTreasureSpawnSectorWide(sector, ft);
+            }
+        }
+        else
+            RespawnCarriedFlag(mission, sidFlag);   // docked/unplaced: cannot jettison, return it home
+        BroadcastGainFlag(mission, GainFlag.NA, ship.Id, bIsTreasureDocked: false, parttypeidDocked: 0);
+        Console.WriteLine($"[depart] ship {ship.Id} left carrying flag of side {sidFlag} — flag returned/dropped (fsmission.cpp:875-893)");
+    }
+
+    /// <summary>P841 — the payday + old-player half of native
+    /// <c>CFSMission::RemovePlayerFromSide</c>, applied after succession:
+    /// <list type="number">
+    /// <item><b>Payday-to-treasury</b> (fsmission.cpp:1042-1063): when the
+    /// mission has started, the leaver's personal money plus their ship's
+    /// full hardware value (<c>IshipIGC::GetValue</c>, shipIGC.h:396-406)
+    /// goes to the old side's treasury (<c>GiveSideMoney</c>,
+    /// fsmission.cpp:1777-1787), and the leaver's wallet is zeroed regardless
+    /// of stage (<c>fsmission.cpp:1068</c>); the immediate
+    /// <c>DoPayday</c> redistribution runs when the side still has peers to
+    /// receive it.</item>
+    /// <item><b>Old-player save</b> (fsmission.cpp:2624-2680
+    /// SaveAsOldPlayer): the departed peer's score object is cached under
+    /// (mission, name) so a same-name rejoin restores it
+    /// (fsmission.cpp:378-401).</item>
+    /// </list>
+    /// </summary>
+    private void ApplyDeparturePaydayAndOldPlayer(Mission mission, LiveShip live, short departedSideId, string? playerName)
+    {
+        // Old-player save (fsmission.cpp:2624).
+        if (playerName is { Length: > 0 } name)
+            _oldPlayerScores[(mission, name)] = live.PlayerScore;
+
+        var ship = live.Ship;
+        var side = mission.Sides.FirstOrDefault(s => s.Id == departedSideId);
+        long payday = 0;
+        if (mission.Stage is MissionStage.Started or MissionStage.Starting)
+            payday = Math.Max(0, (long)live.Wallet.Money) + ShipFullValue(ship);
+        live.Wallet.Money = 0;   // pfsPlayer->SetMoney(0), fsmission.cpp:1068 (unconditional)
+        if (payday > 0 && side is not null)
+        {
+            side.Money += payday;   // GiveSideMoney, fsmission.cpp:1777-1787
+            Console.WriteLine($"[depart] ship {ship.Id}: payday {payday} -> side {departedSideId} treasury (fsmission.cpp:1042-1063)");
+            if (_peerShips.Any(kv => kv.Value.Ship.SideId == departedSideId && ReferenceEquals(kv.Value.Ship.Mission, mission)))
+                OnPayday(side, 0);   // GiveSideMoney's immediate DoPayday redistribution
+        }
+    }
+
+    /// <summary>The ship's full hardware value — hull price plus every
+    /// mounted and cargo part at FULL price — the port of
+    /// <c>IshipIGC::GetValue</c> (shipIGC.h:396-406). Unlike the docking
+    /// refund (<c>RefundableShipValue</c>), free-spawn hardware counts at its
+    /// full price: native's GetValue prices every part the ship carries,
+    /// regardless of who paid for it.</summary>
+    private long ShipFullValue(Ship ship)
+    {
+        long value = ship.HullType.Price;
+        foreach (var p in ship.Parts) value += PartValue(p.Type, p.Amount);
+        foreach (var p in ship.CargoHold) if (p is { } part) value += PartValue(part.Type, part.Amount);
+        return value;
+    }
+
+    /// <summary>P841 — re-point (or clear) every same-side auto-donate
+    /// relationship that targeted the departing ship, the port of
+    /// fsmission.cpp:1046-1057. Runs AFTER leader succession so the donation
+    /// re-points to the promoted leader, exactly native's
+    /// <c>SetAutoDonate(pfsNewLeader, 0, false)</c>; the new leader's own
+    /// donation to the departed ship is simply cleared. Silent
+    /// (<c>bSend:false</c>), matching native.</summary>
+    private void RePointDonationsAfterDeparture(Mission mission, LiveShip departed, short departedSideId)
+    {
+        Ship? newLeader = LeaderShip(mission, departedSideId);
+        foreach (var kv in _peerShips)
+        {
+            if (!ReferenceEquals(kv.Value.Ship.Mission, mission) || kv.Value.Ship.SideId != departedSideId) continue;
+            if (!ReferenceEquals(kv.Value.Wallet.AutoDonateTarget, departed.Ship)) continue;
+            bool isTheNewLeader = newLeader is { } nl && ReferenceEquals(kv.Value.Ship, nl);
+            SetAutoDonate(kv.Value, isTheNewLeader ? null : newLeader, 0, bSend: false);
+            Console.WriteLine($"[depart] ship {kv.Value.Ship.Id}: auto-donate {(isTheNewLeader ? "cleared" : "re-pointed to new leader")} (fsmission.cpp:1046-1057)");
         }
     }
 

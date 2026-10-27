@@ -196,7 +196,7 @@ public sealed partial class Server
             Console.WriteLine($"[reconnect] {from} '{ConsoleLog.Sanitize(name)}' claims a parked seat with token "
                 + $"0x{req.DwCookie:X8} != 0x{parked.Token:X8} — REFUSED; retiring the parked ship {parked.Live.Ship.Id} now (native path)");
             _parkedShips.Remove(name);
-            RetireDepartedPeer(parked.Live, parked.Reason);
+            RetireDepartedPeer(parked.Live, parked.Reason, parked.Name);
             return false;
         }
 
@@ -213,7 +213,7 @@ public sealed partial class Server
             Interlocked.Increment(ref _reconnectRefusedTotal);
             Console.WriteLine($"[reconnect] {from} '{ConsoleLog.Sanitize(name)}' resume REFUSED — the name is now used by "
                 + $"another live peer; retiring the parked ship {live.Ship.Id} (native path)");
-            RetireDepartedPeer(live, parked.Reason);
+            RetireDepartedPeer(live, parked.Reason, parked.Name);
             return false;
         }
         bool resumable = live.Ship.Sector is not null
@@ -306,7 +306,7 @@ public sealed partial class Server
             Console.WriteLine($"[reconnect] '{ConsoleLog.Sanitize(parked.Name)}' did not return within "
                 + $"{_reconnectGraceSeconds:0.##}s — running the native drop removal for ship {parked.Live.Ship.Id} "
                 + "(SDR_LOGGEDOFF + departure, FedSrv.CPP:4549-4566)");
-            RetireDepartedPeer(parked.Live, parked.Reason);
+            RetireDepartedPeer(parked.Live, parked.Reason, parked.Name);
         }
     }
 

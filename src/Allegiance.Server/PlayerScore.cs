@@ -461,4 +461,45 @@ public sealed class PlayerScore
         killer.CombatRating = killer.CombatRating * (1.0f - k) + k;
         killee.CombatRating = killee.CombatRating * (1.0f - k);
     }
+
+    /// <summary>
+    /// P841 / SIM-0761 — exact port of native's static
+    /// <c>GetExpMult</c> (<c>FedSrv/fsmission.cpp:3144-3158</c>), the
+    /// game-over experience-balancing multiplier: a side whose accumulated
+    /// experience (Σ player <c>timePlayed · persisted career score</c>) exceeds
+    /// the average of the OTHER sides' experience has its whole score scaled
+    /// down by <c>avgExp / sideExp</c>, floored at 0.1 (native
+    /// <c>minExpMult</c>), so stacked/veteran-heavy teams earn proportionally
+    /// less. Pure, testable math — every branch of the native body:
+    /// <list type="number">
+    /// <item><c>nSides &lt; 2</c> or <c>sideExp &lt;= 0</c> → 1.0 (nothing to
+    /// balance against; side with no experienced players is never scaled).</item>
+    /// <item><c>sideExp &lt;= avgExp</c> (avg over the OTHER <c>nSides−1</c>
+    /// sides) → 1.0.</item>
+    /// <item>otherwise <c>max(avgExp/sideExp, 0.1)</c>.</item>
+    /// </list>
+    /// Native's three <c>ProcessGameOver</c> call sites
+    /// (<c>fsmission.cpp:3308,3325,3354</c>) apply it to live players' scores,
+    /// departed old players' cached scores, and command scores. This port's
+    /// game-over path has no persisted career score to accumulate
+    /// (<c>PlayerScore</c> is per-connection, no stats DB), so the multiplier
+    /// is currently inert at its call sites — wiring it to session scores
+    /// would diverge from native's career-based balancing (documented in
+    /// docs/reports/P841_CERTIFY.md).
+    /// </summary>
+    public static float GetExpMult(float totalExp, float sideExp, int nSides)
+    {
+        const float minExpMult = 0.1f;
+
+        if ((nSides < 2) || (sideExp <= 0.0f))
+            return 1.0f;
+
+        float avgExp = (totalExp - sideExp) / (nSides - 1);
+        if (sideExp <= avgExp)
+            return 1.0f;
+
+        float m = avgExp / sideExp;
+
+        return (m < minExpMult) ? minExpMult : m;
+    }
 }

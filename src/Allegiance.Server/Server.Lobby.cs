@@ -557,6 +557,11 @@ public sealed partial class Server
         _mapGenMissions.Remove(mission);
         _matchups.Remove(mission);
         _missionConfigs.Remove(mission);   // P802 — the rebuilt mission re-registers its config
+        // P841 — the old-player score cache dies with its mission (native
+        // ~CFSMission discards m_oldPlayers; a rotated mission's joiners start
+        // fresh).
+        foreach (var k in _oldPlayerScores.Keys.Where(k => ReferenceEquals(k.Mission, mission)).ToList())
+            _oldPlayerScores.Remove(k);
         // HUD-17: NPC detection entries are never pruned per ship (ids only grow);
         // drop them all with the old world. A missing entry reads as false.
         _shipDetected.Clear();
@@ -1196,6 +1201,13 @@ public sealed partial class Server
             if (kv.Value.Ship.SideId is not { } sid) continue;
             string? accountId = AccountId(kv.Key);
             if (accountId is null) continue;          // verified accounts only (anti-abuse)
+            // P841 / SIM-0764 — native SetCharStats returns before posting the
+            // query when the player's time played is zero (FedSrv.CPP:1051-1054,
+            // under !ALLSRV_STANDALONE): a peer who never really played leaves
+            // no stat row. The port mirrors that gate on its collapsed
+            // Connect/Disconnect accounting (the same TimePlayed the score
+            // finalize sets).
+            if (kv.Value.PlayerScore.TimePlayed <= 0f) continue;
             short civ = 0;
             var side = mission.Sides.FirstOrDefault(s => s.Id == sid);
             if (side?.Civilization is { } civObj) civ = (short)civObj.CivilizationId;
@@ -1952,6 +1964,20 @@ private void CompleteStartCountdown(Mission mission, double now)
     {
         if (ship.SideId is not { } oldSideId) return;
         HandleLeaderSuccession(ship);
+        // P841 — native RemovePlayerFromSide zeroes the leaver's money into
+        // the old side's treasury while the game runs (fsmission.cpp:1042-1063;
+        // GiveSideMoney fsmission.cpp:1777). The ship-value leg is not applied
+        // here: this port's side-quit keeps the ship alive (native resets the
+        // player and re-seats them, so the hull value is lost to the player),
+        // so crediting its value too would mint credits.
+        if (LiveOf(ship) is { } live)
+        {
+            long payday = mission.Stage is MissionStage.Started or MissionStage.Starting
+                ? Math.Max(0, live.Wallet.Money) : 0;
+            live.Wallet.Money = 0;   // pfsPlayer->SetMoney(0), fsmission.cpp:1068
+            var side = mission.Sides.FirstOrDefault(s => s.Id == oldSideId);
+            if (payday > 0 && side is not null) side.Money += payday;   // GiveSideMoney
+        }
         ship.SideId = SideTeamLobby;
         BroadcastQuitSide(mission, ship.Id, reason);
         MarkObjectSyncDirty(oldSideId);
@@ -3306,12 +3332,39 @@ private void CompleteStartCountdown(Mission mission, double now)
         // purchase cost to refund, for BOTH the default and injected spawn paths.
         ship.MarkSpawnLoadoutFree();
 
+        // P841 / SIM-0521 — an old player rejoining this mission restores their
+        // cached score (native AddPlayerToMission's GetOldPlayerLink branch,
+        // fsmission.cpp:378-401: kills/deaths/ejections/score carry over), and
+        // the cache entry is consumed (native deletes the OldPlayerLink in
+        // AddPlayerToSide, fsmission.cpp:572-577).
+        var playerScore = TryTakeOldPlayerScore(mission, req.CharacterName) ?? new PlayerScore();
+
         // Native fresh seats enter the hangar (fsmission.cpp:791-796).
         // Include built-in debug arenas used by MCP BUY_LOADOUT(fLaunch).
         // An explicitly replaced test hook still owns its placement/state.
         if (ShipSpawner is null || ReferenceEquals(ShipSpawner, _hangarShipSpawner))
             DockInitialLoadout(ship, sector);
-        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), new PlayerScore(), new PlayerWallet(), ship.ShieldFraction, false, ConnectSimTime: _simNow);
+        return new LiveShip(ship, sector, ship.Position, ship.Orientation.GetForward(), ship.Orientation.GetUp(), playerScore, new PlayerWallet(), ship.ShieldFraction, false, ConnectSimTime: _simNow);
+    }
+
+    /// <summary>P841 — consume the cached old-player score for
+    /// <paramref name="characterName"/> on <paramref name="mission"/>, or
+    /// null when the name has no departed-seat history on this mission (the
+    /// port of native <c>CFSMission::GetOldPlayerLink</c>,
+    /// fsmission.cpp:2608-2602/378, case-insensitive like native's name
+    /// comparisons). A hit means the caller re-seats the returning player
+    /// with their previous score object.</summary>
+    private PlayerScore? TryTakeOldPlayerScore(Mission mission, string? characterName)
+    {
+        if (string.IsNullOrEmpty(characterName)) return null;
+        foreach (var k in _oldPlayerScores.Keys)
+            if (ReferenceEquals(k.Mission, mission) && string.Equals(k.Name, characterName, StringComparison.OrdinalIgnoreCase))
+            {
+                var score = _oldPlayerScores[k];
+                _oldPlayerScores.Remove(k);
+                return score;
+            }
+        return null;
     }
 
     /// <summary>P480 — create the fresh ship for a peer being MIGRATED into a
@@ -3339,7 +3392,14 @@ private void CompleteStartCountdown(Mission mission, double now)
     /// reconcile an explicitly-requested side against an injected ShipSpawner
     /// that dropped the ship elsewhere; returns the sector the ship now lives
     /// in.</summary>
-    private Sector RepositionShipToSideHome(Ship ship, Mission mission, short sideId)
+    /// <summary>P841 — the runtime stations of <paramref name="sector"/> that
+    /// <paramref name="sideId"/> owns, in mission order (the list
+    /// <see cref="RepositionShipToSideHome"/> and the GetBase port scan
+    /// filter).</summary>
+    internal static IEnumerable<Station> StationRuntimesForSide(Sector sector, short sideId) =>
+        sector.StationRuntimes.Where(st => st.SideId == sideId);
+
+    internal Sector RepositionShipToSideHome(Ship ship, Mission mission, short sideId)
     {
         // Unregister from the spawner's sector first, so PlaceShip does not
         // double-register the ship in two sectors' model lists (P368 pitfall:
@@ -3353,8 +3413,15 @@ private void CompleteStartCountdown(Mission mission, double now)
         // station's exact center but sits comfortably inside its dock radius.
         // The spawner's per-side slot grid is not replicated (it needs that
         // closure's private counter) — P390 report documents the judgment call.
+        // P841 / SIM-0502 — the station picked is native GetBase(pside)'s
+        // answer (fsmission.cpp:1433-1447): the side's first station with the
+        // c_sabmRestart capability (the restart/home base), not merely the
+        // first side-owned station; fall back to the first owned station when
+        // the side owns no restart-capable one (GetBase returns NULL there,
+        // and the port still needs a spawn anchor).
         Vector3 basePos;
-        var rt = home.StationRuntimes.FirstOrDefault(st => st.SideId == sideId);
+        var rt = StationRuntimesForSide(home, sideId).FirstOrDefault(st => st.Type.HasCapability(DataStationTypeIGC.SabmRestart))
+                 ?? StationRuntimesForSide(home, sideId).FirstOrDefault();
         if (rt is not null)
         {
             basePos = rt.Center;
