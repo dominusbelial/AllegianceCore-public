@@ -72,9 +72,6 @@ services:
       ALLEGIANCE_SIM_NATIVE_BROADCAST_ORDER: "${ALLEGIANCE_SIM_NATIVE_BROADCAST_ORDER:-0}"
       # P813d — the reliable one-shot park lane (docs/reports/P813D_RELIABLE_TIER_AUDIT.md).
       ALLEGIANCE_TRANSPORT_RELIABLE_ONESHOT: "${ALLEGIANCE_TRANSPORT_RELIABLE_ONESHOT:-0}"
-      # P835 — the visibility sweep's native last-spotter short-circuit
-      # (docs/reports/P835_CLASH_PEAK_COST.md; FedSrv.CPP:10896-10903).
-      ALLEGIANCE_VIS_SPOTTER_CACHE: "${ALLEGIANCE_VIS_SPOTTER_CACHE:-0}"
     restart: unless-stopped
 
 volumes:

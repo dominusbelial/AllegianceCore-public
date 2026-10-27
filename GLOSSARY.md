@@ -98,10 +98,13 @@ list in **reverse**.
   `Sim/VisibilityMath.cs`, `Sim/SideVisibilityState.cs`). P835 adds the sweep's
   sub-step timers (`vis.enumerate`/`vis.scan`/`vis.write`), a conservative
   exact-result occlusion pre-filter in `LineOfSightExist`, and the native
-  last-spotter short-circuit (`FedSrv.CPP:10896-10903`) behind the default-off
-  `sim.visibilitySpotterCache` / `ALLEGIANCE_VIS_SPOTTER_CACHE`
-  (`Sim/VisibilitySpotterCache.cs`). Clash-peak cost analysis + bench:
-  `tools/P835Bench/`, report `docs/reports/P835_CLASH_PEAK_COST.md`.
+  last-spotter short-circuit (`FedSrv.CPP:10896-10903`, sticky spotter identity
+  `FedSrv.CPP:11026`) — unconditional since P858 (the rig A/B rejected the
+  `sim.visibilitySpotterCache` on/off flag; the identity rule is native
+  behaviour and is wire-observable in OBJECT_SPOTTED). Clash-peak cost
+  analysis + bench: `tools/P835Bench/`, report
+  `docs/reports/P835_CLASH_PEAK_COST.md`; P858 flag removal:
+  `docs/reports/P858_DROP_REJECTED_FLAGS.md`.
 - **Mounted part** — an equipped part instance (weapon/shield/etc.) with its
   mount and state. `src/Allegiance.Core/Sim/MountedPart.cs`. *Native:*
   `mountc.cpp`.

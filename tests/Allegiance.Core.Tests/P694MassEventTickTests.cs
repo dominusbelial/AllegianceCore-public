@@ -25,58 +25,52 @@ public sealed class P694MassEventTickTests(ITestOutputHelper output)
 #endif
     [Trait("Requires", "Artwork")]
     [SkippableTheory]
-    [InlineData(195, false, false, false, false)]
-    [InlineData(195, true, false, false, false)]
-    [InlineData(195, false, true, false, false)]
-    [InlineData(195, true, true, false, false)]
-    [InlineData(195, false, false, true, false)]
-    [InlineData(195, true, false, true, false)]
-    [InlineData(195, false, true, true, false)]
-    [InlineData(195, true, true, true, false)]
-    [InlineData(150, false, true, false, false)]
-    [InlineData(150, true, true, false, false)]
-    [InlineData(200, false, false, false, true)]
-    [InlineData(200, true, false, false, true)]
-    [InlineData(200, false, true, false, true)]
-    [InlineData(200, true, true, false, true)]
-    public void Launch_point_mass_events(int count, bool parallel, bool stationDeath, bool coincident, bool nativeLaunch)
+    [InlineData(195, false, false, false)]
+    [InlineData(195, true, false, false)]
+    [InlineData(195, false, true, false)]
+    [InlineData(195, true, true, false)]
+    [InlineData(195, false, false, true)]
+    [InlineData(195, true, false, true)]
+    [InlineData(195, false, true, true)]
+    [InlineData(195, true, true, true)]
+    [InlineData(150, false, true, false)]
+    [InlineData(150, true, true, false)]
+    [InlineData(200, false, false, true)]
+    [InlineData(200, true, false, true)]
+    [InlineData(200, false, true, true)]
+    [InlineData(200, true, true, true)]
+    public void Launch_point_mass_events(int count, bool stationDeath, bool coincident, bool nativeLaunch)
     {
         Require.Artwork();
-        ParallelSectorSim.Enabled = parallel;
-        ParallelSectorSim.ThreadCount = 4;
-        try
-        {
-            // Station death / next-match launches occur in an already running
+        // Station death / next-match launches occur in an already running
             // server. Exercise the numerical helpers long enough for the default
             // tiered JIT to finish background promotion, then time fresh worlds.
             // A single-row invocation also has a cold core importer and JIT
-            // queue. One second mostly spent booting fixtures left numerical
-            // helpers cold, although the whole theory matrix looked warm.
-            // Use a fixed preparation interval and minimum world count, never
-            // an observed "fast enough" tick or a failure-triggered retry.
-            var warmup = Stopwatch.StartNew();
-            int warmupWorlds = 0;
-            do
-            {
-                Run(count, stationDeath, coincident, parallel, nativeLaunch, false);
-                warmupWorlds++;
-            }
-            while (warmup.Elapsed < TimeSpan.FromSeconds(5) || warmupWorlds < 10);
-            // Five independent worlds: a scheduler/GC outlier must not fail a
-            // busy developer machine, but sustained slow ticks still must.
-            // The configuration's budget covers BOTH sector updates together,
-            // including callbacks and all in-tick allocation/GC. This is not a
-            // per-sector budget and no samples are discarded or retried.
-            var samples = new double[5];
-            for (int sample = 0; sample < samples.Length; sample++)
-                samples[sample] = Run(count, stationDeath, coincident, parallel, nativeLaunch, true);
-            Array.Sort(samples);
-            double median = samples[samples.Length / 2];
-            output.WriteLine($"P694 median={median:F3}ms samples=[{string.Join(", ", samples.Select(s => $"{s:F3}"))}] budget={MedianBudgetMs}ms");
-            Assert.True(median < MedianBudgetMs,
-                $"median tick={median:F3}ms (five fresh worlds, two sectors; budget={MedianBudgetMs}ms)");
+        // queue. One second mostly spent booting fixtures left numerical
+        // helpers cold, although the whole theory matrix looked warm.
+        // Use a fixed preparation interval and minimum world count, never
+        // an observed "fast enough" tick or a failure-triggered retry.
+        var warmup = Stopwatch.StartNew();
+        int warmupWorlds = 0;
+        do
+        {
+            Run(count, stationDeath, coincident, nativeLaunch, false);
+            warmupWorlds++;
         }
-        finally { ParallelSectorSim.Reset(); }
+        while (warmup.Elapsed < TimeSpan.FromSeconds(5) || warmupWorlds < 10);
+        // Five independent worlds: a scheduler/GC outlier must not fail a
+        // busy developer machine, but sustained slow ticks still must.
+        // The configuration's budget covers BOTH sector updates together,
+        // including callbacks and all in-tick allocation/GC. This is not a
+        // per-sector budget and no samples are discarded or retried.
+        var samples = new double[5];
+        for (int sample = 0; sample < samples.Length; sample++)
+            samples[sample] = Run(count, stationDeath, coincident, nativeLaunch, true);
+        Array.Sort(samples);
+        double median = samples[samples.Length / 2];
+        output.WriteLine($"P694 median={median:F3}ms samples=[{string.Join(", ", samples.Select(s => $"{s:F3}"))}] budget={MedianBudgetMs}ms");
+        Assert.True(median < MedianBudgetMs,
+            $"median tick={median:F3}ms (five fresh worlds, two sectors; budget={MedianBudgetMs}ms)");
     }
 
     // P788c: reuse the exact P694 collision/mass-launch fixtures but measure the
@@ -93,11 +87,11 @@ public sealed class P694MassEventTickTests(ITestOutputHelper output)
         Require.Artwork();
         var warmup = Stopwatch.StartNew();
         int worlds = 0;
-        do { Run(195, stationDeath, coincident, false, !coincident, false, true, nativeOrder); worlds++; }
+        do { Run(195, stationDeath, coincident, !coincident, false, true, nativeOrder); worlds++; }
         while (warmup.Elapsed.TotalSeconds < 5 || worlds < 10);
         var samples = new double[12];
         for (int i = 0; i < samples.Length; i++)
-            samples[i] = Run(195, stationDeath, coincident, false, !coincident, true, true, nativeOrder);
+            samples[i] = Run(195, stationDeath, coincident, !coincident, true, true, nativeOrder);
         Array.Sort(samples);
         double p50 = samples[samples.Length / 2], p95 = samples[(int)Math.Ceiling(samples.Length * .95) - 1];
         output.WriteLine($"P788c nativeOrder={nativeOrder} death={stationDeath} coincident={coincident} n={samples.Length} p50={p50:F3} p95={p95:F3} worst={samples[^1]:F3}ms samples=[{string.Join(",", samples.Select(v => v.ToString("F3", System.Globalization.CultureInfo.InvariantCulture)))}]");
@@ -106,7 +100,7 @@ public sealed class P694MassEventTickTests(ITestOutputHelper output)
         // flag timings; the rig compares full tick p95/worst across matches.
     }
 
-    private double Run(int count, bool stationDeath, bool coincident, bool parallel, bool nativeLaunch, bool measured, bool fullTick = false, bool nativeOrder = false)
+    private double Run(int count, bool stationDeath, bool coincident, bool nativeLaunch, bool measured, bool fullTick = false, bool nativeOrder = false)
     {
         var console = Console.Out;
         try
@@ -114,12 +108,12 @@ public sealed class P694MassEventTickTests(ITestOutputHelper output)
             // Boot and warmup are outside the measurement. Do not queue their
             // many megabytes of console output immediately ahead of timed work.
             Console.SetOut(TextWriter.Null);
-            return RunWorld(count, stationDeath, coincident, parallel, nativeLaunch, measured, console, fullTick, nativeOrder);
+            return RunWorld(count, stationDeath, coincident, nativeLaunch, measured, console, fullTick, nativeOrder);
         }
         finally { Console.SetOut(console); }
     }
 
-    private double RunWorld(int count, bool stationDeath, bool coincident, bool parallel, bool nativeLaunch, bool measured, TextWriter console, bool fullTick, bool nativeOrder)
+    private double RunWorld(int count, bool stationDeath, bool coincident, bool nativeLaunch, bool measured, TextWriter console, bool fullTick, bool nativeOrder)
     {
         using var server = new Srv();
         server.Boot(new Allegiance.Server.ServerConfig
@@ -127,12 +121,10 @@ public sealed class P694MassEventTickTests(ITestOutputHelper output)
             ArtPath = TestArtRoot.Value, StaticCore = "PCore001.igc", Port = 0,
             Broadcast = fullTick ? new Allegiance.Server.BroadcastConfig
             { ShipUpdateModel = "native", ImmutableSnapshot = true, EncodeOnce = true, ParallelBuild = true } : null,
-            Sim = new Allegiance.Server.SimConfig { NativeBroadcastOrder = nativeOrder, ParallelSectorCells = parallel, ParallelSectorCellThreads = 4 },
+            Sim = new Allegiance.Server.SimConfig { NativeBroadcastOrder = nativeOrder },
             Games = [new Allegiance.Server.GameConfig
             { Name = "P694", Map = "XXV_simple.igc", Teams = 2, CivIds = [1, 3], SideNames = ["Alpha", "Bravo"] }]
         });
-        Assert.Equal(parallel, ParallelSectorSim.Enabled);
-        Assert.Equal(4, ParallelSectorSim.ThreadCount);
         var m = server.Missions[0];
         m.Stage = MissionStage.Started;
         m.CrowdingPenaltyEnabled = false;
@@ -239,7 +231,7 @@ public sealed class P694MassEventTickTests(ITestOutputHelper output)
             TickProfiler.EndTick(); TickProfiler.ForceReport(); TickProfiler.Shutdown();
             if (measured)
             {
-                output.WriteLine($"P694 count={count} parallel={ParallelSectorSim.Enabled} death={stationDeath} coincident={coincident} native={nativeLaunch}: {sw.Elapsed.TotalMilliseconds:F3} ms");
+                output.WriteLine($"P694 count={count} death={stationDeath} coincident={coincident} native={nativeLaunch}: {sw.Elapsed.TotalMilliseconds:F3} ms");
                 output.WriteLine($"P694 allocations={tickAllocated} gc={tickGc0}/{tickGc1}/{tickGc2} pauseMs={tickPause:F3}");
                 output.WriteLine(File.ReadAllText(csv));
             }

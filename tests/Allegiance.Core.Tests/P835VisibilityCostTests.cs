@@ -14,11 +14,12 @@ namespace Allegiance.Core.Tests;
 /// proved differentially against the unfiltered reference algorithm on randomized
 /// scenes, including boundary-adjacent geometry), and</item>
 /// <item>the native last-spotter short-circuit in
-/// <see cref="Sector.ResolveCrossSideVisibility"/> behind the default-OFF
-/// <c>sim.visibilitySpotterCache</c> flag (<see cref="VisibilitySpotterCache"/>,
-/// FedSrv.CPP:10896-10903): seen flags identical to the full loop for every input,
-/// spotter identity the native sticky one (FedSrv.CPP:11026) instead of the
-/// pre-P835 re-pick of the first scanner in enumeration order.</item>
+/// <see cref="Sector.ResolveCrossSideVisibility"/> — UNCONDITIONAL since P858
+/// removed the rejected <c>sim.visibilitySpotterCache</c> flag (the rig A/B
+/// showed no gain, but the identity rule is native behaviour:
+/// FedSrv.CPP:10896-10903): seen flags identical to the full loop for every
+/// input, spotter identity the native sticky one (FedSrv.CPP:11026) instead of
+/// the pre-P835 re-pick of the first scanner in enumeration order.</item>
 /// </list>
 /// </summary>
 public class P835VisibilityCostTests
@@ -151,7 +152,7 @@ public class P835VisibilityCostTests
         Assert.Equal(3000, boundary);
     }
 
-    // ── 2. the spotter cache (default OFF) ───────────────────────────────────
+    // ── 2. the (unconditional) last-spotter short-circuit ─────────────────────────
 
     private static readonly Lazy<StaticCore> RepresentativeCore = new(() =>
     {
@@ -228,112 +229,85 @@ public class P835VisibilityCostTests
     }
 
     /// <summary>
-    /// Build the two-scanner scene (identical every call): scanner <paramref name="bId"/>
-    /// ("B", side 0) is placed FIRST (so it precedes A in the sector's model order = the
+    /// Build the two-scanner scene (identical every call): scanner B ("B", side 0)
+    /// is placed FIRST (so it precedes A in the sector's model order = the
     /// full loop's scan order), scanner A second; the side-1 target starts where ONLY
     /// A sees it (B is beyond its 1952 detection radius), then moves to where BOTH see.
     /// Runs one sweep per stage and returns the per-stage (seen, spotterId) pairs.
     /// </summary>
-    private static List<(bool Seen, short SpotterId)> RunTwoScannerScene(bool spotterCache)
+    private static List<(bool Seen, short SpotterId)> RunTwoScannerScene()
     {
-        VisibilitySpotterCache.Reset();
-        VisibilitySpotterCache.Enabled = spotterCache;
-        try
-        {
-            var mission = NewStartedMission();
-            var (sector, basePos) = CleanBase(mission);
+        var mission = NewStartedMission();
+        var (sector, basePos) = CleanBase(mission);
 
-            // B first (earlier in the sweep's scanner list), then A.
-            var b = NewShip(9601, ScannerHull, 0, basePos);                    // at +0
-            var a = NewShip(9602, ScannerHull, 0, basePos + new Vector3(700f, 0f, 0f)); // at +700
-            mission.PlaceShip(b, sector);
-            mission.PlaceShip(a, sector);
-            var target = NewShip(9603, TargetHull, 1, basePos + new Vector3(2000f, 0f, 0f));
-            mission.PlaceShip(target, sector);
-            // Detection radius faohshcar→dreghpod = 150 + 2 + 3600·0.5·gaScanRange
-            // (CrossSideVisibilitySweepTests' derivation, ga divisors ≤ 1 → r in
-            // [1500, 1952]). Stage 1: target 2000 from B (beyond any ga-scaled
-            // radius, unseen by B), 1300 from A (decisively seen by A).
+        // B first (earlier in the sweep's scanner list), then A.
+        var b = NewShip(9601, ScannerHull, 0, basePos);                    // at +0
+        var a = NewShip(9602, ScannerHull, 0, basePos + new Vector3(700f, 0f, 0f)); // at +700
+        mission.PlaceShip(b, sector);
+        mission.PlaceShip(a, sector);
+        var target = NewShip(9603, TargetHull, 1, basePos + new Vector3(2000f, 0f, 0f));
+        mission.PlaceShip(target, sector);
+        // Detection radius faohshcar→dreghpod = 150 + 2 + 3600·0.5·gaScanRange
+        // (CrossSideVisibilitySweepTests' derivation, ga divisors ≤ 1 → r in
+        // [1500, 1952]). Stage 1: target 2000 from B (beyond any ga-scaled
+        // radius, unseen by B), 1300 from A (decisively seen by A).
 
-            var stages = new List<(bool, short)>();
-            mission.Update(0.25);   // stage-1 sweep
-            stages.Add((target.SeenBySide(0), target.SideVisibility.LastSpotter.ObjectId));
+        var stages = new List<(bool, short)>();
+        mission.Update(0.25);   // stage-1 sweep
+        stages.Add((target.SeenBySide(0), target.SideVisibility.LastSpotter.ObjectId));
 
-            target.Position = basePos + new Vector3(1400f, 0f, 0f);   // both see it now (≤ any ga-scaled radius)
-            ReSweep(mission, 1.0);
-            stages.Add((target.SeenBySide(0), target.SideVisibility.LastSpotter.ObjectId));
+        target.Position = basePos + new Vector3(1400f, 0f, 0f);   // both see it now (≤ any ga-scaled radius)
+        ReSweep(mission, 1.0);
+        stages.Add((target.SeenBySide(0), target.SideVisibility.LastSpotter.ObjectId));
 
-            target.Position = basePos + new Vector3(50_000f, 0f, 0f); // nobody sees it
-            ReSweep(mission, 6.0);
-            stages.Add((target.SeenBySide(0), target.SideVisibility.LastSpotter.ObjectId));
+        target.Position = basePos + new Vector3(50_000f, 0f, 0f); // nobody sees it
+        ReSweep(mission, 6.0);
+        stages.Add((target.SeenBySide(0), target.SideVisibility.LastSpotter.ObjectId));
 
-            return stages;
-        }
-        finally
-        {
-            VisibilitySpotterCache.Reset();
-        }
-    }
-
-    /// <summary>The spotter cache is OFF by default and Reset restores OFF.</summary>
-    [Fact]
-    public void Spotter_cache_defaults_off()
-    {
-        VisibilitySpotterCache.Reset();
-        Assert.False(VisibilitySpotterCache.Enabled);
-        VisibilitySpotterCache.Enabled = true;
-        VisibilitySpotterCache.Reset();
-        Assert.False(VisibilitySpotterCache.Enabled);
+        return stages;
     }
 
     /// <summary>
-    /// Seen flags are IDENTICAL between the default full loop and the
-    /// spotter-cache short-circuit at every stage of a two-scanner scene
-    /// (the short-circuit can only answer "seen" when the full loop would too —
-    /// FedSrv.CPP:10896-10903 — and otherwise runs the full loop unchanged).
+    /// The short-circuit can only answer "seen" when the full loop would too
+    /// (FedSrv.CPP:10896-10903) — it re-tests the recorded spotter, then falls
+    /// back to the full scanner loop. Both observations of the same scene must
+    /// agree with the analytic expectation at every stage: seen when a scanner
+    /// is in range (stages 1 and 2), unseen when none is (stage 3).
     /// </summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Spotter_cache_seen_flags_match_the_full_loop()
+    public void Spotter_short_circuit_seen_flags_match_the_full_loop()
     {
         Require.Artwork();
-        var fullLoop = RunTwoScannerScene(spotterCache: false);
-        var cached = RunTwoScannerScene(spotterCache: true);
-        Assert.Equal(fullLoop.Count, cached.Count);
-        for (int i = 0; i < fullLoop.Count; i++)
-            Assert.True(fullLoop[i].Seen == cached[i].Seen,
-                $"stage {i}: seen flag differs (full loop {fullLoop[i].Seen} vs cached {cached[i].Seen})");
-        Console.WriteLine("P835-SPOTTER: seen flags identical (full loop vs short-circuit) across all three stages.");
+        var stages = RunTwoScannerScene();
+        Assert.True(stages[0].Seen, "stage 1: only A is in range — seen");
+        Assert.True(stages[1].Seen, "stage 2: both scanners in range — seen");
+        Assert.False(stages[2].Seen, "stage 3: nobody in range — unseen");
+        Console.WriteLine("P835-SPOTTER: seen flags match the analytic full-loop outcome at all three stages.");
     }
 
     /// <summary>
-    /// Spotter identity: with the cache ON the side keeps its previous spotter while
-    /// that spotter still sees the target (native FedSrv.CPP:10896-10903, sticky
-    /// pLastSpotter) — so stage 2 keeps A — while the default full loop re-picks the
-    /// FIRST scanner in enumeration order that sees it (B, placed first). Both record
-    /// A at stage 1 (only A sees) and clear when nobody sees (stage 3).
+    /// Spotter identity — the native sticky rule (FedSrv.CPP:10896-10903,
+    /// :11026 "Keep track of who spotted it"), UNCONDITIONAL since P858: once a
+    /// scanner is recorded as the side's last spotter, the side KEEPS it while
+    /// it still sees the target, instead of re-picking the first scanner in
+    /// enumeration order every sweep. Stage 1: only A sees → A recorded.
+    /// Stage 2: both see → A kept (sticky; B precedes A in scan order, so a
+    /// re-pick would return B). Stage 3: nobody sees → cleared.
     /// </summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Spotter_cache_is_sticky_like_native_and_the_full_loop_re_picks()
+    public void Spotter_identity_is_sticky_like_native()
     {
         Require.Artwork();
-        var fullLoop = RunTwoScannerScene(spotterCache: false);
-        var cached = RunTwoScannerScene(spotterCache: true);
-        // Stage 1: only A sees -> both record A.
-        Assert.True(fullLoop[0].Seen);
-        Assert.Equal(fullLoop[0].SpotterId, cached[0].SpotterId);
-        // Stage 2: both see -> full loop re-picks B (first in scan order);
-        // the cache keeps A (sticky, native).
-        Assert.True(fullLoop[1].Seen);
-        Assert.True(cached[1].Seen);
-        Assert.NotEqual(fullLoop[1].SpotterId, cached[1].SpotterId);
-        // Stage 3: nobody sees -> both clear.
-        Assert.False(fullLoop[2].Seen);
-        Assert.False(cached[2].Seen);
-        Assert.Equal(fullLoop[2].SpotterId, cached[2].SpotterId);
+        var stages = RunTwoScannerScene();
+        Assert.True(stages[0].Seen);
+        Assert.Equal(9602, stages[0].SpotterId);   // only A sees → A
+        Assert.True(stages[1].Seen);
+        Assert.Equal(9602, stages[1].SpotterId);   // sticky: A kept even though B is first in scan order
+        Assert.False(stages[2].Seen);
+        Assert.Equal(-1, stages[2].SpotterId);     // nobody sees → cleared
 
-        Console.WriteLine($"P835-SPOTTER: stage1 spotter {cached[0].SpotterId} (both modes); " +
-                          $"stage2 full-loop={fullLoop[1].SpotterId} cached={cached[1].SpotterId} (sticky); stage3 cleared.");
+        Console.WriteLine($"P835-SPOTTER: stage1 spotter {stages[0].SpotterId}; stage2 sticky {stages[1].SpotterId} (B=9601 is first in scan order); stage3 cleared.");
     }
 }

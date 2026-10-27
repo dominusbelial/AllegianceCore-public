@@ -362,33 +362,29 @@ public sealed class P790PodRescueOnContactTests
                           $"physics resolved {sector.LastShipShipResolved} collision(s), fighter vz {preVz:0.##} -> {fighter.Velocity.Z:0.##}.");
     }
 
+    // ═════════════════════════════════════════════════════════════════════
+    // (5) rescue-set latch (serial path — P858 removed the parallel flag)
     // ═══════════════════════════════════════════════════════════════════════
-    // (5) determinism — serial vs parallel, several thread counts
-    // ═══════════════════════════════════════════════════════════════════════
-    /// <summary>⭐ P667/P790 determinism gate: the rescue set (and its order) is
-    /// identical with <see cref="ParallelSectorSim"/> off and on at 1/2/4/8
-    /// workers. The scene mixes both triggers — three contact groups (two
-    /// head-on, one glancing), one proximity-only group (the pair is inside the
-    /// sphere-sum radius but the hulls never touch) and one pod with two
-    /// rescue-capable ships touching it — plus an enemy pod (head-on contact)
-    /// that must never be rescued. The contact trigger runs inside the physics
-    /// pass (whose detector ordering is already thread-independent) and both
-    /// triggers share the per-tick one-rescue-per-ship latch, so no pod is ever
-    /// booked twice.</summary>
+    /// <summary>⭐ P790 rescue-set gate. The scene mixes both triggers — three
+    /// contact groups (two head-on, one glancing), one proximity-only group (the
+    /// pair is inside the sphere-sum radius but the hulls never touch) and one
+    /// pod with two rescue-capable ships touching it — plus an enemy pod
+    /// (head-on contact) that must never be rescued. The contact trigger runs
+    /// inside the physics pass and both triggers share the per-tick
+    /// one-rescue-per-ship latch, so no pod is ever booked twice. (The former
+    /// parallel-vs-serial comparison is gone with
+    /// <c>sim.parallelSectorCells</c>, removed in P858; the serial assertions
+    /// it was built on are kept.)</summary>
     [Trait("Requires", "Artwork")]
     [SkippableFact]
-    public void Serial_and_parallel_produce_identical_rescue_sets_for_any_thread_count()
+    public void Rescue_latch_books_each_pod_exactly_once_in_scan_order()
     {
         Require.Artwork();
         const int Ticks = 20;
 
-        List<(short Rescuee, short Rescuer)> Run(bool parallel, int threads)
+        List<(short Rescuee, short Rescuer)> Run()
         {
-            ParallelSectorSim.Enabled = parallel;
-            ParallelSectorSim.ThreadCount = threads;
-            try
-            {
-                var mission = Assembly(ProductionSite(restartStationExists: true));
+            var mission = Assembly(ProductionSite(restartStationExists: true));
                 var (spot, sector) = FarSpot(mission);
                 var core = mission.Core;
                 var podHull = Lifepod(core);
@@ -402,9 +398,8 @@ public sealed class P790PodRescueOnContactTests
                 //   4     enemy pod: never a rescue pair
                 //   5     ONE pod with TWO rescue-capable ships touching it at
                 //         rest: the pod must be rescued exactly once, by the
-                //         first pair in scan order, for any thread count (the
-                //         old serial loop could book a pod twice here while the
-                //         parallel latch booked it once — a real divergence).
+                //         first pair in scan order (the latch makes a second
+                //         booking of the same pod impossible).
                 for (int k = 0; k < 6; k++)
                 {
                     var c = spot + new Vector3(60f * k, 0f, 0f);
@@ -447,11 +442,9 @@ public sealed class P790PodRescueOnContactTests
                     }
                 }
                 return pairs;
-            }
-            finally { ParallelSectorSim.Reset(); }
         }
 
-        var serial = Run(parallel: false, threads: 1);
+        var serial = Run();
         // One rescue per pod, never twice; the two contact groups, the glancing
         // contact group, the proximity-only group and the two-rescuer group are
         // all rescued (five pods); the enemy pod (9108) never is.
@@ -464,13 +457,7 @@ public sealed class P790PodRescueOnContactTests
         Assert.Contains((short)9110, serial.Select(p => p.Item1));
         Assert.DoesNotContain(serial, p => p.Item1 == 9108);
 
-        foreach (var (parallel, threads) in new[] { (true, 1), (true, 2), (true, 4), (true, 8) })
-        {
-            var other = Run(parallel, threads);
-            Assert.Equal(serial, other);
-        }
-
-        Console.WriteLine($"P790-DETERMINISM: rescue set {string.Join(", ", serial.Select(p => $"{p.Item1}->{p.Item2}"))} " +
-                          $"identical for serial and parallel t=1/2/4/8 over {Ticks} ticks.");
+        Console.WriteLine($"P790-LATCH: rescue set {string.Join(", ", serial.Select(p => $"{p.Item1}->{p.Item2}"))} " +
+                          $"over {Ticks} ticks — one rescue per pod, scan-order winner, enemy pod untouched.");
     }
 }
